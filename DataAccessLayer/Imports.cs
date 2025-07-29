@@ -1,0 +1,10 @@
+﻿global using DataAccessLayer.Models.Base;
+global using DataAccessLayer.Models.Order;
+global using DataAccessLayer.Models.Order.Interfaces;
+global using DataAccessLayer.Models.Product;
+global using DataAccessLayer.Models.Product.Interfaces;
+global using DataAccessLayer.Models.User;
+global using DataAccessLayer.Models.User.Interfaces;
+global using Microsoft.EntityFrameworkCore;
+global using System.ComponentModel.DataAnnotations;
+global using System.ComponentModel.DataAnnotations.Schema;
