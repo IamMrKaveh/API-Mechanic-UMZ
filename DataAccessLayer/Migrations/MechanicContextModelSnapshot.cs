@@ -22,6 +22,69 @@ namespace DataAccessLayer.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("DataAccessLayer.Models.Cart.TCartItems", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CartId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CartId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("TCartItems");
+                });
+
+            modelBuilder.Entity("DataAccessLayer.Models.Cart.TCarts", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TCarts");
+                });
+
+            modelBuilder.Entity("DataAccessLayer.Models.Order.TOrderStatus", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Icon")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TOrderStatus");
+                });
+
             modelBuilder.Entity("DataAccessLayer.Models.Order.TOrders", b =>
                 {
                     b.Property<int>("Id")
@@ -30,22 +93,36 @@ namespace DataAccessLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("IsDelivered")
-                        .HasColumnType("bit");
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("PurchaseDate")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("TotalAmount")
+                    b.Property<DateTime?>("DeliveryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrderStatusId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TotalProfit")
+                    b.Property<string>("PostalCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TotalAmount")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserId")
+                    b.Property<int>("TotalProfit")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrderStatusId");
 
                     b.HasIndex("UserId");
 
@@ -112,13 +189,20 @@ namespace DataAccessLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Icon")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FirstName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Name")
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -126,7 +210,7 @@ namespace DataAccessLayer.Migrations
                     b.ToTable("TUsers");
                 });
 
-            modelBuilder.Entity("TOrderDetails", b =>
+            modelBuilder.Entity("TOrderItems", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -134,54 +218,81 @@ namespace DataAccessLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.PrimitiveCollection<string>("Amount")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Amount")
+                        .HasColumnType("int");
 
-                    b.PrimitiveCollection<string>("Profit")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
 
-                    b.PrimitiveCollection<string>("PurchasePrice")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Profit")
+                        .HasColumnType("int");
 
-                    b.PrimitiveCollection<string>("Quantity")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("PurchasePrice")
+                        .HasColumnType("int");
 
-                    b.PrimitiveCollection<string>("SellingPrice")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
 
-                    b.Property<int?>("UserOrderId")
+                    b.Property<int>("SellingPrice")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserOrderId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserOrderId")
-                        .IsUnique()
-                        .HasFilter("[UserOrderId] IS NOT NULL");
+                    b.HasIndex("ProductId");
 
-                    b.ToTable("TOrderDetails");
+                    b.HasIndex("UserOrderId");
+
+                    b.ToTable("TOrderItems");
                 });
 
-            modelBuilder.Entity("TOrderDetailsTProducts", b =>
+            modelBuilder.Entity("DataAccessLayer.Models.Cart.TCartItems", b =>
                 {
-                    b.Property<int>("OrderDetailsId")
-                        .HasColumnType("int");
+                    b.HasOne("DataAccessLayer.Models.Cart.TCarts", "Cart")
+                        .WithMany("CartItems")
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Property<int>("ProductsId")
-                        .HasColumnType("int");
+                    b.HasOne("DataAccessLayer.Models.Product.TProducts", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
-                    b.HasKey("OrderDetailsId", "ProductsId");
+                    b.Navigation("Cart");
 
-                    b.HasIndex("ProductsId");
+                    b.Navigation("Product");
+                });
 
-                    b.ToTable("TOrderDetailsTProducts");
+            modelBuilder.Entity("DataAccessLayer.Models.Cart.TCarts", b =>
+                {
+                    b.HasOne("DataAccessLayer.Models.User.TUsers", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.Order.TOrders", b =>
                 {
+                    b.HasOne("DataAccessLayer.Models.Order.TOrderStatus", "OrderStatus")
+                        .WithMany("Orders")
+                        .HasForeignKey("OrderStatusId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("DataAccessLayer.Models.User.TUsers", "User")
                         .WithMany("UserOrders")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("OrderStatus");
 
                     b.Navigation("User");
                 });
@@ -196,39 +307,48 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("ProductType");
                 });
 
-            modelBuilder.Entity("TOrderDetails", b =>
+            modelBuilder.Entity("TOrderItems", b =>
                 {
+                    b.HasOne("DataAccessLayer.Models.Product.TProducts", "Product")
+                        .WithMany("OrderDetails")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("DataAccessLayer.Models.Order.TOrders", "UserOrder")
-                        .WithOne("OrderDetail")
-                        .HasForeignKey("TOrderDetails", "UserOrderId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .WithMany("OrderItems")
+                        .HasForeignKey("UserOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
 
                     b.Navigation("UserOrder");
                 });
 
-            modelBuilder.Entity("TOrderDetailsTProducts", b =>
+            modelBuilder.Entity("DataAccessLayer.Models.Cart.TCarts", b =>
                 {
-                    b.HasOne("TOrderDetails", null)
-                        .WithMany()
-                        .HasForeignKey("OrderDetailsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("CartItems");
+                });
 
-                    b.HasOne("DataAccessLayer.Models.Product.TProducts", null)
-                        .WithMany()
-                        .HasForeignKey("ProductsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            modelBuilder.Entity("DataAccessLayer.Models.Order.TOrderStatus", b =>
+                {
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.Order.TOrders", b =>
                 {
-                    b.Navigation("OrderDetail");
+                    b.Navigation("OrderItems");
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.Product.TProductTypes", b =>
                 {
                     b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("DataAccessLayer.Models.Product.TProducts", b =>
+                {
+                    b.Navigation("OrderDetails");
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.User.TUsers", b =>

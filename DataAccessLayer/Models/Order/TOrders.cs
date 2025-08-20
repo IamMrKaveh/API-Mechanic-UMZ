@@ -6,14 +6,21 @@ public class TOrders : IOrder
     public int Id { get; set; }
 
     public virtual TUsers? User { get; set; }
-    public int? UserId { get; set; }
+    public int UserId { get; set; }
+    public string? Name { get; set; }
 
-    public virtual TOrderDetails? OrderDetail { get; set; }
+    public string? Address { get; set; }
+    public string? PostalCode { get; set; }
 
-    public int? TotalAmount { get; set; }
-    public int? TotalProfit { get; set; }
+    public virtual ICollection<TOrderItems> OrderItems 
+    { get; set; } = new List<TOrderItems>();
 
-    public DateTime? PurchaseDate { get; set; }
+    public int TotalAmount { get; set; }
+    public int TotalProfit { get; set; }
 
-    public bool IsDelivered { get; set; } = false;
+    public DateTime CreatedAt { get; set; }
+    public DateTime? DeliveryDate { get; set; }
+
+    public virtual TOrderStatus? OrderStatus { get; set; }
+    public int OrderStatusId { get; set; }
 }

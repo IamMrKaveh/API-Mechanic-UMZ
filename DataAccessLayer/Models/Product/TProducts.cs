@@ -15,6 +15,6 @@ public class TProducts : IProduct
     public virtual TProductTypes? ProductType { get; set; }
     public int? ProductTypeId { get; set; }
 
-    public virtual ICollection<TOrderDetails>? OrderDetails
+    public virtual ICollection<TOrderItems>? OrderDetails
     { get; set; }
 }
