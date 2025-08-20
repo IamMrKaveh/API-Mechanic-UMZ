@@ -1,4 +1,6 @@
-﻿namespace DataAccessLayer;
+﻿using DataAccessLayer.Models.Auth;
+
+namespace DataAccessLayer;
 
 public class MechanicContext : DbContext
 {
@@ -13,12 +15,18 @@ TrustServerCertificate = True;
 
     #region DbSets
 
+    #region Cart
+
+    public DbSet<TCarts> TCarts { get; set; }
+    public DbSet<TCartItems> TCartItems { get; set; }
+
+    #endregion
+
     #region Order
 
     public DbSet<TOrders> TOrders { get; set; }
-
-    public DbSet<TOrderDetails> TOrderDetails
-    { get; set; }
+    public DbSet<TOrderItems> TOrderItems { get; set; }
+    public DbSet<TOrderStatus> TOrderStatus { get; set; }
 
     #endregion Order
 
@@ -51,6 +59,40 @@ TrustServerCertificate = True;
     {
         base.OnModelCreating(builder);
 
+        #region Cart
+
+        builder.Entity<TCarts>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id)
+                .ValueGeneratedOnAdd();
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+            entity.HasMany(x => x.CartItems)
+                .WithOne(ci => ci.Cart)
+                .HasForeignKey(ci => ci.CartId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<TCartItems>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id)
+                .ValueGeneratedOnAdd();
+            entity.HasOne(x => x.Cart)
+                .WithMany(c => c.CartItems)
+                .HasForeignKey(x => x.CartId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        #endregion
+
         #region Order
 
         builder.Entity<TOrders>(entity =>
@@ -58,32 +100,56 @@ TrustServerCertificate = True;
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.Id)
-            .ValueGeneratedOnAdd();
-
-            entity.HasOne(x => x.OrderDetail)
-                .WithOne(xd => xd.UserOrder)
-                .HasForeignKey<TOrderDetails>(xd => xd.UserOrderId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .ValueGeneratedOnAdd();
 
             entity.HasOne(x => x.User)
-                .WithMany(c => c.UserOrders)
-                .HasForeignKey(u => u.UserId)
+                .WithMany(u => u.UserOrders)
+                .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(x => x.OrderStatus)
+                .WithMany(os => os.Orders)
+                .HasForeignKey(x => x.OrderStatusId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasMany(x => x.OrderItems)
+                .WithOne(oi => oi.UserOrder)
+                .HasForeignKey(oi => oi.UserOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        builder.Entity<TOrderDetails>(entity =>
+        builder.Entity<TOrderItems>(entity =>
         {
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.Id)
-            .ValueGeneratedOnAdd();
+                .ValueGeneratedOnAdd();
 
-            entity.HasMany(x => x.Products)
-                .WithMany(p => p.OrderDetails);
+            entity.HasOne(x => x.UserOrder)
+                .WithMany(o => o.OrderItems)
+                .HasForeignKey(x => x.UserOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.Product)
+                .WithMany(p => p.OrderDetails)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
+        builder.Entity<TOrderStatus>(entity =>
+        {
+            entity.HasKey(x => x.Id);
 
-        #endregion Order
+            entity.Property(x => x.Id)
+                .ValueGeneratedOnAdd();
+
+            entity.HasMany(x => x.Orders)
+                .WithOne(o => o.OrderStatus)
+                .HasForeignKey(o => o.OrderStatusId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        #endregion
 
         #region Product
 
@@ -92,15 +158,17 @@ TrustServerCertificate = True;
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.Id)
-            .ValueGeneratedOnAdd();
+                .ValueGeneratedOnAdd();
 
-            entity.HasOne(p => p.ProductType)
-            .WithMany(pt => pt.Products)
-            .HasForeignKey(x => x.ProductTypeId)
-            .OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.ProductType)
+                .WithMany(pt => pt.Products)
+                .HasForeignKey(x => x.ProductTypeId)
+                .OnDelete(DeleteBehavior.NoAction);
 
-            entity.HasMany(p => p.OrderDetails)
-            .WithMany(p => p.Products);
+            entity.HasMany(x => x.OrderDetails)
+                .WithOne(od => od.Product)
+                .HasForeignKey(od => od.ProductId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         builder.Entity<TProductTypes>(entity =>
@@ -108,15 +176,15 @@ TrustServerCertificate = True;
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.Id)
-            .ValueGeneratedOnAdd();
+                .ValueGeneratedOnAdd();
 
-            entity.HasMany(s => s.Products)
-            .WithOne(s => s.ProductType)
-            .HasForeignKey(x => x.ProductTypeId)
-            .OnDelete(DeleteBehavior.NoAction);
+            entity.HasMany(x => x.Products)
+                .WithOne(p => p.ProductType)
+                .HasForeignKey(p => p.ProductTypeId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
-        #endregion Product
+        #endregion
 
         #region User
 
@@ -125,15 +193,14 @@ TrustServerCertificate = True;
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.Id)
-            .ValueGeneratedOnAdd();
+                .ValueGeneratedOnAdd();
 
-            entity.HasMany(c => c.UserOrders)
-                .WithOne(c => c.User)
+            entity.HasMany(x => x.UserOrders)
+                .WithOne(o => o.User)
                 .HasForeignKey(o => o.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
 
-
-        #endregion User
+        #endregion
     }
 }
