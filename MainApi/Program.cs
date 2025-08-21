@@ -1,3 +1,5 @@
+using MainApi.Controllers.User;
+
 var builder = WebApplication.CreateBuilder(args);
 
 //Add needed services to dependency injection
@@ -66,6 +68,8 @@ builder.Services
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "default_secret_key"))
     };
 });
+
+builder.Services.AddSingleton<RateLimitService>();
 
 var app = builder.Build();
 

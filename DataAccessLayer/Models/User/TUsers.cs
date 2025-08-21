@@ -12,7 +12,11 @@ public class TUsers : IUser
 
     public DateTime CreatedAt { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsAdmin { get; set; } = false;
 
     public virtual ICollection<TOrders> UserOrders 
     { get; set; } = new List<TOrders>();
+
+    public virtual ICollection<TUserOtp> UserOtps { get; set; } = new List<TUserOtp>();
+
 }

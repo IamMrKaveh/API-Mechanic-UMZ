@@ -15,6 +15,12 @@ TrustServerCertificate = True;
 
     #region DbSets
 
+    #region Auth
+
+    public DbSet<TRefreshToken> TRefreshToken { get; set; }
+
+    #endregion
+
     #region Cart
 
     public DbSet<TCarts> TCarts { get; set; }
@@ -39,6 +45,7 @@ TrustServerCertificate = True;
 
     #region User
 
+    public DbSet<TUserOtp> TUserOtps { get; set; }
     public DbSet<TUsers> TUsers { get; set; }
 
     #endregion User
@@ -188,6 +195,22 @@ TrustServerCertificate = True;
 
         #region User
 
+        builder.Entity<TUserOtp>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Id)
+            .ValueGeneratedOnAdd();
+
+            entity.Property(o => o.OtpHash).IsRequired();
+
+            entity.Property(o => o.CreatedAt)
+            .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.Property(o => o.IsUsed)
+            .HasDefaultValue(false);
+        });
+
         builder.Entity<TUsers>(entity =>
         {
             entity.HasKey(x => x.Id);
@@ -195,10 +218,18 @@ TrustServerCertificate = True;
             entity.Property(x => x.Id)
                 .ValueGeneratedOnAdd();
 
+            entity.HasIndex(u => u.PhoneNumber)
+            .IsUnique();
+
             entity.HasMany(x => x.UserOrders)
                 .WithOne(o => o.User)
                 .HasForeignKey(o => o.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasMany(u => u.UserOtps)
+              .WithOne(o => o.User)
+              .HasForeignKey(o => o.UserId)
+              .OnDelete(DeleteBehavior.Cascade);
         });
 
         #endregion

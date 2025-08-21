@@ -17,4 +17,7 @@ public class TProducts : IProduct
 
     public virtual ICollection<TOrderItems>? OrderDetails
     { get; set; }
+
+    [Timestamp]
+    public byte[] RowVersion { get; set; }
 }

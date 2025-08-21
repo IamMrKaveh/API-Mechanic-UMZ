@@ -2,6 +2,7 @@
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class OrderStatusController : ControllerBase
 {
     private readonly MechanicContext _context;

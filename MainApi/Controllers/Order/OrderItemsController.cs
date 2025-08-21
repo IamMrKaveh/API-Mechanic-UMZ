@@ -2,6 +2,7 @@
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class OrderItemsController : ControllerBase
 {
     private readonly MechanicContext _context;
@@ -115,7 +116,7 @@ public class OrderItemsController : ControllerBase
         if (product == null)
             return BadRequest("Product not found");
 
-        if (product.Count < itemDto.Quantity)
+        if ((product.Count ?? 0) < itemDto.Quantity)
             return BadRequest("Insufficient product stock");
 
         var order = await _context.TOrders.FindAsync(itemDto.UserOrderId);
@@ -175,7 +176,8 @@ public class OrderItemsController : ControllerBase
             if (itemDto.Quantity.HasValue && itemDto.Quantity.Value != oldQuantity)
             {
                 var quantityDifference = itemDto.Quantity.Value - oldQuantity;
-                if (orderItem.Product.Count < quantityDifference)
+
+                if ((orderItem.Product.Count ?? 0) < quantityDifference)
                     return BadRequest("Insufficient product stock");
 
                 orderItem.Product.Count -= quantityDifference;

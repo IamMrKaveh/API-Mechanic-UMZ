@@ -2,6 +2,7 @@
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class OrdersController : ControllerBase
 {
     private readonly MechanicContext _context;
@@ -82,7 +83,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<object>> GetTOrders(int id)
+    public async Task<ActionResult<object>> GetOrderById(int id)
     {
         var order = await _context.TOrders
             .Include(o => o.User)
@@ -142,6 +143,7 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
+
     [HttpPost]
     public async Task<ActionResult<TOrders>> PostTOrders(CreateOrderDto orderDto)
     {
@@ -168,7 +170,7 @@ public class OrdersController : ControllerBase
             foreach (var itemDto in orderDto.OrderItems)
             {
                 var product = await _context.TProducts.FindAsync(itemDto.ProductId);
-                if (product == null || product.Count < itemDto.Quantity)
+                if (product == null || (product.Count ?? 0) < itemDto.Quantity)
                 {
                     await transaction.RollbackAsync();
                     return BadRequest($"Product {itemDto.ProductId} not available or insufficient stock");
@@ -198,7 +200,7 @@ public class OrdersController : ControllerBase
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return CreatedAtAction("GetTOrders", new { id = order.Id }, order);
+            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
         }
         catch
         {
@@ -206,6 +208,104 @@ public class OrdersController : ControllerBase
             throw;
         }
     }
+
+
+    [HttpPost("checkout-from-cart")]
+    [Authorize]
+    public async Task<ActionResult<TOrders>> CheckoutFromCart([FromBody] CreateOrderDto orderDto)
+    {
+        if (orderDto == null || string.IsNullOrWhiteSpace(orderDto.Address) || string.IsNullOrWhiteSpace(orderDto.PostalCode))
+            return BadRequest("Address and PostalCode are required");
+
+        var userId = GetCurrentUserId();
+        if (userId == null)
+            return Unauthorized();
+
+        var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(idempotencyKey))
+        {
+            var existingOrder = await _context.TOrders.FirstOrDefaultAsync(o => o.Name == idempotencyKey && o.UserId == userId.Value);
+            if (existingOrder != null)
+                return Conflict(new { Message = "Duplicate request", OrderId = existingOrder.Id });
+        }
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var cart = await _context.TCarts
+                .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Product)
+                .FirstOrDefaultAsync(c => c.UserId == userId.Value);
+
+            if (cart == null || cart.CartItems == null || !cart.CartItems.Any())
+                return BadRequest("Cart is empty");
+
+            var order = new TOrders
+            {
+                UserId = userId.Value,
+                Name = idempotencyKey ?? $"Order-{Guid.NewGuid()}",
+                Address = orderDto.Address,
+                PostalCode = orderDto.PostalCode,
+                CreatedAt = DateTime.UtcNow,
+                OrderStatusId = 1
+            };
+
+            _context.TOrders.Add(order);
+            await _context.SaveChangesAsync();
+
+            var totalAmount = 0;
+            var totalProfit = 0;
+
+            foreach (var item in cart.CartItems)
+            {
+                if (item.Quantity <= 0)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest("Invalid item quantity");
+                }
+
+                var product = await _context.TProducts.FirstOrDefaultAsync(p => p.Id == item.ProductId);
+                if (product == null || (product.Count ?? 0) < item.Quantity)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest($"Product {item.ProductId} not available or insufficient stock");
+                }
+
+                var orderItem = new TOrderItems
+                {
+                    UserOrderId = order.Id,
+                    ProductId = product.Id,
+                    PurchasePrice = product.PurchasePrice ?? 0,
+                    SellingPrice = product.SellingPrice ?? 0,
+                    Quantity = item.Quantity,
+                    Amount = (product.SellingPrice ?? 0) * item.Quantity,
+                    Profit = ((product.SellingPrice ?? 0) - (product.PurchasePrice ?? 0)) * item.Quantity
+                };
+
+                totalAmount += orderItem.Amount;
+                totalProfit += orderItem.Profit;
+
+                product.Count -= item.Quantity;
+                _context.TOrderItems.Add(orderItem);
+            }
+
+            order.TotalAmount = totalAmount;
+            order.TotalProfit = totalProfit;
+
+            _context.TCartItems.RemoveRange(cart.CartItems);
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
 
     [HttpPut("{id}")]
     public async Task<IActionResult> PutTOrders(int id, UpdateOrderDto orderDto)
@@ -342,4 +442,11 @@ public class OrdersController : ControllerBase
     {
         return _context.TOrders.Any(e => e.Id == id);
     }
+
+    private int? GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(userIdClaim, out var userId) ? userId : (int?)null;
+    }
+
 }
