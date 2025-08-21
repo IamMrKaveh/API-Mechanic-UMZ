@@ -61,7 +61,7 @@ public class CartsController : ControllerBase
         if (product == null)
             return NotFound("Product not found");
 
-        if (product.Count < dto.Quantity)
+        if ((product.Count ?? 0) < dto.Quantity)
             return BadRequest("Insufficient stock");
 
         var cart = await _context.TCarts
@@ -122,7 +122,7 @@ public class CartsController : ControllerBase
         }
         else
         {
-            if (dto.Quantity > cartItem.Product.Count)
+            if (dto.Quantity > (cartItem.Product.Count ?? 0))
                 return BadRequest("Quantity exceeds available stock");
 
             cartItem.Quantity = dto.Quantity;

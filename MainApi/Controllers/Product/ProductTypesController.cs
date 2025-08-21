@@ -2,6 +2,7 @@
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class ProductTypesController : ControllerBase
 {
     private readonly MechanicContext _context;
@@ -11,38 +12,91 @@ public class ProductTypesController : ControllerBase
         _context = context;
     }
 
-    // GET: api/ProductTypes
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TProductTypes>>> GetTProductTypes()
+    public async Task<ActionResult<IEnumerable<object>>> GetTProductTypes([FromQuery] string? search = null)
     {
-        return await _context.TProductTypes.ToListAsync();
+        var query = _context.TProductTypes.Include(pt => pt.Products).AsQueryable();
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            query = query.Where(pt => pt.Name.Contains(search));
+        }
+
+        var productTypes = await query
+            .Select(pt => new
+            {
+                pt.Id,
+                pt.Name,
+                pt.Icon,
+                ProductCount = pt.Products != null ? pt.Products.Count : 0,
+                TotalValue = pt.Products != null ? pt.Products.Sum(p => (p.Count ?? 0) * (p.PurchasePrice ?? 0)) : 0
+            })
+            .OrderBy(pt => pt.Name)
+            .ToListAsync();
+
+        return Ok(productTypes);
     }
 
-    // GET: api/ProductTypes/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<TProductTypes>> GetTProductTypes(int id)
+    public async Task<ActionResult<object>> GetTProductTypes(int id)
     {
-        var tProductTypes = await _context.TProductTypes.FindAsync(id);
+        var productType = await _context.TProductTypes
+            .Include(pt => pt.Products)
+            .Where(pt => pt.Id == id)
+            .Select(pt => new
+            {
+                pt.Id,
+                pt.Name,
+                pt.Icon,
+                Products = pt.Products.Select(p => new
+                {
+                    p.Id,
+                    p.Name,
+                    p.Count,
+                    p.SellingPrice
+                }).ToList(),
+                ProductCount = pt.Products.Count,
+                TotalValue = pt.Products.Sum(p => (p.Count ?? 0) * (p.PurchasePrice ?? 0))
+            })
+            .FirstOrDefaultAsync();
 
-        if (tProductTypes == null)
+        if (productType == null)
         {
             return NotFound();
         }
 
-        return tProductTypes;
+        return Ok(productType);
     }
 
-    // PUT: api/ProductTypes/5
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutTProductTypes(int id, TProductTypes tProductTypes)
+    public async Task<IActionResult> PutTProductTypes(int id, ProductTypeDto productTypeDto)
     {
-        if (id != tProductTypes.Id)
+        if (id != productTypeDto.Id)
         {
             return BadRequest();
         }
 
-        _context.Entry(tProductTypes).State = EntityState.Modified;
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var existingProductType = await _context.TProductTypes.FindAsync(id);
+        if (existingProductType == null)
+        {
+            return NotFound();
+        }
+
+        var duplicateExists = await _context.TProductTypes
+            .AnyAsync(pt => pt.Name == productTypeDto.Name && pt.Id != id);
+
+        if (duplicateExists)
+        {
+            return BadRequest("Product type with this name already exists");
+        }
+
+        existingProductType.Name = productTypeDto.Name;
+        existingProductType.Icon = productTypeDto.Icon;
 
         try
         {
@@ -63,28 +117,52 @@ public class ProductTypesController : ControllerBase
         return NoContent();
     }
 
-    // POST: api/ProductTypes
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
-    public async Task<ActionResult<TProductTypes>> PostTProductTypes(TProductTypes tProductTypes)
+    public async Task<ActionResult<TProductTypes>> PostTProductTypes(ProductTypeDto productTypeDto)
     {
-        _context.TProductTypes.Add(tProductTypes);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var duplicateExists = await _context.TProductTypes
+            .AnyAsync(pt => pt.Name == productTypeDto.Name);
+
+        if (duplicateExists)
+        {
+            return BadRequest("Product type with this name already exists");
+        }
+
+        var productType = new TProductTypes
+        {
+            Name = productTypeDto.Name,
+            Icon = productTypeDto.Icon
+        };
+
+        _context.TProductTypes.Add(productType);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction("GetTProductTypes", new { id = tProductTypes.Id }, tProductTypes);
+        return CreatedAtAction("GetTProductTypes", new { id = productType.Id }, productType);
     }
 
-    // DELETE: api/ProductTypes/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTProductTypes(int id)
     {
-        var tProductTypes = await _context.TProductTypes.FindAsync(id);
-        if (tProductTypes == null)
+        var productType = await _context.TProductTypes
+            .Include(pt => pt.Products)
+            .FirstOrDefaultAsync(pt => pt.Id == id);
+
+        if (productType == null)
         {
             return NotFound();
         }
 
-        _context.TProductTypes.Remove(tProductTypes);
+        if (productType.Products?.Any() == true)
+        {
+            return BadRequest("Cannot delete product type that has associated products");
+        }
+
+        _context.TProductTypes.Remove(productType);
         await _context.SaveChangesAsync();
 
         return NoContent();
