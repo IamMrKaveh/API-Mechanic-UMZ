@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql_local
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SA_PASSWORD}
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$SA_PASSWORD\" -Q \"SELECT 1\" > /dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  db-init:
+    image: mcr.microsoft.com/mssql-tools
+    depends_on:
+      - db
+    entrypoint: >
+      /bin/bash -c "
+      echo waiting for db...;
+      sleep 20;
+      /opt/mssql-tools/bin/sqlcmd -S db -U sa -P $SA_PASSWORD -Q
+      \"CREATE DATABASE [${DB_NAME}];
+        IF NOT EXISTS (SELECT * FROM sys.sql_logins WHERE name = '${DB_USER}')
+        BEGIN
+          CREATE LOGIN [${DB_USER}] WITH PASSWORD = '${DB_USER_PASSWORD}', CHECK_POLICY=OFF;
+        END;
+        CREATE USER [${DB_USER}] FOR LOGIN [${DB_USER}];
+        ALTER ROLE db_owner ADD MEMBER [${DB_USER}];\"
+      "
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=${DB_NAME};User Id=${DB_USER};Password=${DB_USER_PASSWORD};TrustServerCertificate=True;Encrypt=False;
+
+volumes:
+  mssql-data:

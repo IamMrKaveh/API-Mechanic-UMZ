@@ -40,16 +40,37 @@ namespace DataAccessLayer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "TRefreshToken",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    TokenHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedByIp = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReplacedByTokenHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TRefreshToken", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TUsers",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsAdmin = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -67,7 +88,8 @@ namespace DataAccessLayer.Migrations
                     PurchasePrice = table.Column<int>(type: "int", nullable: true),
                     SellingPrice = table.Column<int>(type: "int", nullable: true),
                     Count = table.Column<int>(type: "int", nullable: true),
-                    ProductTypeId = table.Column<int>(type: "int", nullable: true)
+                    ProductTypeId = table.Column<int>(type: "int", nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -126,6 +148,29 @@ namespace DataAccessLayer.Migrations
                         column: x => x.UserId,
                         principalTable: "TUsers",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TUserOtps",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    OtpHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    IsUsed = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TUserOtps", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TUserOtps_TUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "TUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -223,6 +268,17 @@ namespace DataAccessLayer.Migrations
                 name: "IX_TProducts_ProductTypeId",
                 table: "TProducts",
                 column: "ProductTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TUserOtps_UserId",
+                table: "TUserOtps",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TUsers_PhoneNumber",
+                table: "TUsers",
+                column: "PhoneNumber",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -233,6 +289,12 @@ namespace DataAccessLayer.Migrations
 
             migrationBuilder.DropTable(
                 name: "TOrderItems");
+
+            migrationBuilder.DropTable(
+                name: "TRefreshToken");
+
+            migrationBuilder.DropTable(
+                name: "TUserOtps");
 
             migrationBuilder.DropTable(
                 name: "TCarts");
