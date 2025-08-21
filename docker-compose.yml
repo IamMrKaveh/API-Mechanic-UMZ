@@ -33,13 +33,12 @@ services:
           CREATE LOGIN [${DB_USER}] WITH PASSWORD = '${DB_USER_PASSWORD}', CHECK_POLICY=OFF;
         END;
         CREATE USER [${DB_USER}] FOR LOGIN [${DB_USER}];
-        ALTER ROLE db_owner ADD MEMBER [${DB_USER}];\"
-      "
+        ALTER ROLE db_owner ADD MEMBER [${DB_USER}];\""
 
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: MainApi/Dockerfile
       args:
         BUILD_CONFIGURATION: Release
     depends_on:

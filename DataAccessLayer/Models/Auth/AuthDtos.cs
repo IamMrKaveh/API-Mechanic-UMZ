@@ -14,7 +14,7 @@ public class VerifyOtpRequestDto
     public string PhoneNumber { get; set; } = string.Empty;
 
     [Required]
-    [Length(6, 6)]
+    [Length(4,4)]
     public string Code { get; set; } = string.Empty;
 }
 

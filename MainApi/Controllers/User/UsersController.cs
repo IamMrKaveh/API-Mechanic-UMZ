@@ -16,184 +16,6 @@ public class UsersController : ControllerBase
         _rateLimitService = rateLimitService;
     }
 
-    [HttpPost("login")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
-    {
-        var limiterKey = $"{request.PhoneNumber}:{HttpContext.Connection.RemoteIpAddress}";
-        if (_rateLimitService.IsLimited(limiterKey))
-            return BadRequest("Too many attempts. Try again later.");
-
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        var user = await _context.TUsers
-            .FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
-
-        if (user == null)
-        {
-            user = new TUsers
-            {
-                PhoneNumber = request.PhoneNumber,
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true
-            };
-            _context.TUsers.Add(user);
-            await _context.SaveChangesAsync();
-        }
-
-        if (!user.IsActive)
-        {
-            return Unauthorized("User account is inactive.");
-        }
-
-        var otp = GenerateOtp();
-
-        var existingOtps = _context.TUserOtps.Where(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
-        _context.TUserOtps.RemoveRange(existingOtps);
-
-        var otpHash = BCrypt.Net.BCrypt.HashPassword(otp);
-
-        var userOtp = new TUserOtp
-        {
-            UserId = user.Id,
-            OtpHash = otpHash,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(2)
-        };
-        _context.TUserOtps.Add(userOtp);
-        await _context.SaveChangesAsync();
-
-        try
-        {
-            var apiKey = _configuration["Kavenegar:ApiKey"];
-            var sender = _configuration["Kavenegar:SenderNumber"];
-
-            var receptor = request.PhoneNumber;
-            var message = $"کد تایید شما: {otp}";
-
-            var api = new KavenegarApi(apiKey);
-            var result = api.Send(sender, receptor, message);
-
-             Console.WriteLine($"SMS sent to {receptor} with status: {result.StatusText}");
-        }
-        catch (ApiException ex)
-        {
-            // Log.Error(ex, "Kavenegar API Error");
-            return StatusCode(500, "An error occurred while sending the OTP code.");
-        }
-        catch (HttpException ex)
-        {
-            // Log.Error(ex, "Kavenegar Connection Error");
-            return StatusCode(500, "An error occurred while sending the OTP code.");
-        }
-
-        return Ok(new { Message = "OTP sent successfully" });
-    }
-
-    [HttpPost("verify-otp")]
-    [AllowAnonymous]
-    public async Task<ActionResult<AuthResponseDto>> VerifyOtp([FromBody] VerifyOtpRequestDto request)
-    {
-        var limiterKey = $"{request.PhoneNumber}:{HttpContext.Connection.RemoteIpAddress}";
-        if (_rateLimitService.IsLimited(limiterKey))
-            return BadRequest("Too many attempts. Try again later.");
-
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        var user = await _context.TUsers
-            .FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && u.IsActive);
-
-        if (user == null)
-            return NotFound("User not found or is inactive.");
-
-        var storedOtp = await _context.TUserOtps
-            .FirstOrDefaultAsync(o => o.UserId == user.Id && o.ExpiresAt > DateTime.UtcNow && !o.IsUsed);
-
-        if (storedOtp == null || !BCrypt.Net.BCrypt.Verify(request.Code, storedOtp.OtpHash))
-        {
-            return BadRequest("Invalid or expired OTP code.");
-        }
-
-        storedOtp.IsUsed = true;
-        await _context.SaveChangesAsync();
-
-        var token = GenerateJwtToken(user);
-        var refreshToken = new TRefreshToken
-        {
-            UserId = user.Id,
-            TokenHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
-            CreatedAt = DateTime.UtcNow,
-            CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "",
-            UserAgent = Request.Headers["User-Agent"].ToString()
-        };
-        _context.Set<TRefreshToken>().Add(refreshToken);
-        await _context.SaveChangesAsync();
-
-        var response = new AuthResponseDto
-        {
-            Token = token,
-            User = new UserProfileDto { Id = user.Id, PhoneNumber = user.PhoneNumber, CreatedAt = user.CreatedAt },
-            ExpiresAt = DateTime.UtcNow.AddHours(24),
-            RefreshToken = refreshToken.TokenHash
-        };
-
-        return Ok(response);
-
-    }
-
-    [HttpPost("refresh-token")]
-    public async Task<ActionResult<AuthResponseDto>> RefreshToken([FromBody] string refreshToken)
-    {
-        if (string.IsNullOrEmpty(refreshToken))
-            return BadRequest("Refresh token is required");
-
-        var storedToken = await _context.Set<TRefreshToken>()
-            .Include(t => t.UserId)
-            .FirstOrDefaultAsync(t => t.TokenHash == refreshToken);
-
-        if (storedToken == null || storedToken.RevokedAt != null || storedToken.ExpiresAt <= DateTime.UtcNow)
-            return BadRequest("Invalid or expired refresh token");
-
-        var user = await _context.TUsers.FirstOrDefaultAsync(u => u.Id == storedToken.UserId && u.IsActive);
-        if (user == null)
-            return NotFound("User not found");
-
-        storedToken.RevokedAt = DateTime.UtcNow;
-
-        var newRefreshToken = new TRefreshToken
-        {
-            UserId = user.Id,
-            TokenHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
-            CreatedAt = DateTime.UtcNow,
-            CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "",
-            UserAgent = Request.Headers["User-Agent"].ToString(),
-            ReplacedByTokenHash = storedToken.TokenHash
-        };
-
-        _context.Set<TRefreshToken>().Add(newRefreshToken);
-        await _context.SaveChangesAsync();
-
-        var newAccessToken = GenerateJwtToken(user);
-
-        var response = new AuthResponseDto
-        {
-            Token = newAccessToken,
-            User = new UserProfileDto
-            {
-                Id = user.Id,
-                PhoneNumber = user.PhoneNumber,
-                CreatedAt = user.CreatedAt
-            },
-            ExpiresAt = DateTime.UtcNow.AddHours(24),
-            RefreshToken = newRefreshToken.TokenHash
-        };
-
-        return Ok(response);
-    }
-
     [HttpGet]
     [Authorize]
     public async Task<ActionResult<IEnumerable<UserProfileDto>>> GetUsers()
@@ -344,28 +166,125 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    
+
+    [HttpPost("login")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+    {
+        var limiterKey = $"{request.PhoneNumber}:{HttpContext.Connection.RemoteIpAddress}";
+        if (_rateLimitService.IsLimited(limiterKey))
+            return BadRequest("Too many attempts. Try again later.");
+
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
+
+        if (user == null)
+        {
+            user = new TUsers
+            {
+                PhoneNumber = request.PhoneNumber,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            };
+            _context.TUsers.Add(user);
+            await _context.SaveChangesAsync();
+        }
+
+        if (!user.IsActive)
+            return Unauthorized("User account is inactive.");
+
+        var otp = GenerateOtp();
+
+        var existingOtps = _context.TUserOtps.Where(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
+        _context.TUserOtps.RemoveRange(existingOtps);
+
+        var userOtp = new TUserOtp
+        {
+            UserId = user.Id,
+            OtpHash = BCrypt.Net.BCrypt.HashPassword(otp),
+            ExpiresAt = DateTime.UtcNow.AddMinutes(2)
+        };
+        _context.TUserOtps.Add(userOtp);
+        await _context.SaveChangesAsync();
+
+        var apiKey = _configuration["Kavenegar:ApiKey"];
+        var sender = _configuration["Kavenegar:SenderNumber"];
+        var receptor = request.PhoneNumber;
+        var message = $"کد تایید شما: {otp}";
+
+        return Ok(new { Message = "OTP sent successfully" });
+    }
+
+    [HttpPost("verify-otp")]
+    [AllowAnonymous]
+    public async Task<ActionResult<AuthResponseDto>> VerifyOtp([FromBody] VerifyOtpRequestDto request)
+    {
+        var limiterKey = $"{request.PhoneNumber}:{HttpContext.Connection.RemoteIpAddress}";
+        if (_rateLimitService.IsLimited(limiterKey))
+            return BadRequest("Too many attempts. Try again later.");
+
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && u.IsActive);
+
+        if (user == null)
+            return NotFound("User not found or is inactive.");
+
+        var storedOtp = await _context.TUserOtps.FirstOrDefaultAsync(o => o.UserId == user.Id && o.ExpiresAt > DateTime.UtcNow && !o.IsUsed);
+
+        if (storedOtp == null || !BCrypt.Net.BCrypt.Verify(request.Code, storedOtp.OtpHash))
+            return BadRequest("Invalid or expired OTP code.");
+
+        storedOtp.IsUsed = true;
+        await _context.SaveChangesAsync();
+
+        var token = GenerateJwtToken(user);
+        var refreshTokenValue = Guid.NewGuid().ToString("N");
+
+        var refreshToken = new TRefreshToken
+        {
+            UserId = user.Id,
+            TokenHash = BCrypt.Net.BCrypt.HashPassword(refreshTokenValue),
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedAt = DateTime.UtcNow,
+            CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "",
+            UserAgent = Request.Headers["User-Agent"].ToString()
+        };
+        _context.Set<TRefreshToken>().Add(refreshToken);
+        await _context.SaveChangesAsync();
+
+        var response = new AuthResponseDto
+        {
+            Token = token,
+            User = new UserProfileDto { Id = user.Id, PhoneNumber = user.PhoneNumber, CreatedAt = user.CreatedAt },
+            ExpiresAt = DateTime.UtcNow.AddHours(24),
+            RefreshToken = refreshTokenValue
+        };
+
+        return Ok(response);
+    }
+
     private string GenerateOtp()
     {
         var random = new Random();
-        return random.Next(100000, 999999).ToString();
+        return random.Next(1000, 9999).ToString();
     }
 
     private string GenerateJwtToken(TUsers user)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "YourSecretKeyHere123456789"));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "00000000000000000000000000000000"));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim("id", user.Id.ToString()),
             new Claim(ClaimTypes.MobilePhone, user.PhoneNumber),
             new Claim(ClaimTypes.Role, user.IsAdmin ? "Admin" : "User"),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
-
-
 
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"] ?? "YourIssuer",
@@ -376,38 +295,6 @@ public class UsersController : ControllerBase
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    private string GenerateRefreshToken()
-    {
-        return Convert.ToBase64String(Guid.NewGuid().ToByteArray());
-    }
-
-    private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
-    {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "YourSecretKeyHere123456789"));
-
-        var tokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = false,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = _configuration["Jwt:Issuer"] ?? "YourIssuer",
-            ValidAudience = _configuration["Jwt:Audience"] ?? "YourAudience",
-            IssuerSigningKey = key
-        };
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        try
-        {
-            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var validatedToken);
-            return principal;
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     private int? GetCurrentUserId()
