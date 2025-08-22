@@ -5,9 +5,16 @@ var builder = WebApplication.CreateBuilder(args);
 //Add needed services to dependency injection
 #region DbContext
 
+//builder.Services.AddDbContext<MechanicContext>(options =>
+//    options.UseSqlServer(
+//        builder.Configuration.GetConnectionString("DefaultConnection") ??
+//        throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")
+//    )
+//);
+
 builder.Services.AddDbContext<MechanicContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection") ??
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("ProductionConnection") ??
         throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")
     )
 );
@@ -93,14 +100,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-//http://localhost:44318/images/
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider
-    (@"C:\ME\Mechanic\Front-End\src\assets\images"),
-
-    RequestPath = "/images"
-});
+//https://mechanic-umz.liara.run/images/
+app.UseStaticFiles();
 
 
 app.Run();

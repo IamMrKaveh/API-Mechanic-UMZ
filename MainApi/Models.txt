@@ -14,7 +14,7 @@ public class VerifyOtpRequestDto
     public string PhoneNumber { get; set; } = string.Empty;
 
     [Required]
-    [Length(6, 6)]
+    [Length(4, 4)]
     public string Code { get; set; } = string.Empty;
 }
 
@@ -271,6 +271,7 @@ public class TProducts : IProduct
     public string? Icon { get; set; }
 
     public int? PurchasePrice { get; set; }
+    public int? OriginalPrice { get; set; }
     public int? SellingPrice { get; set; }
     public int? Count { get; set; }
 

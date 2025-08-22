@@ -13,6 +13,15 @@ Password=1234;
 TrustServerCertificate = True;
 ";
 
+    private readonly string _prodConnectionString =
+@"
+User Id=postgres.suldeexbzqpfiflqzkej;
+Password=Breaking355662Bad!;
+Server=aws-1-eu-north-1.pooler.supabase.com;
+Port=5432;
+Database=postgres;
+";
+
     #region DbSets
 
     #region Auth
@@ -59,7 +68,7 @@ TrustServerCertificate = True;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlServer(_connectionString);
+        optionsBuilder.UseNpgsql(_prodConnectionString);
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -205,7 +214,7 @@ TrustServerCertificate = True;
             entity.Property(o => o.OtpHash).IsRequired();
 
             entity.Property(o => o.CreatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("TIMEZONE('UTC', NOW())");
 
             entity.Property(o => o.IsUsed)
             .HasDefaultValue(false);
