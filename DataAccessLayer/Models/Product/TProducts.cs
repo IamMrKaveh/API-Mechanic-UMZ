@@ -9,6 +9,7 @@ public class TProducts : IProduct
     public string? Icon { get; set; }
 
     public int? PurchasePrice { get; set; }
+    public int? OriginalPrice { get; set; }
     public int? SellingPrice { get; set; }
     public int? Count { get; set; }
 
