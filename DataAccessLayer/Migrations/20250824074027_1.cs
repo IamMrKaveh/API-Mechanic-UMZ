@@ -91,7 +91,7 @@ namespace DataAccessLayer.Migrations
                     SellingPrice = table.Column<int>(type: "integer", nullable: true),
                     Count = table.Column<int>(type: "integer", nullable: true),
                     ProductTypeId = table.Column<int>(type: "integer", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -183,7 +183,7 @@ namespace DataAccessLayer.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     CartId = table.Column<int>(type: "integer", nullable: false),
                     ProductId = table.Column<int>(type: "integer", nullable: false),
-                    Quantity = table.Column<int>(type: "integer", nullable: false)
+                    Quantity = table.Column<int>(type: "integer", nullable: false, defaultValue: 1)
                 },
                 constraints: table =>
                 {
@@ -232,9 +232,10 @@ namespace DataAccessLayer.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_TCartItems_CartId",
+                name: "IX_CartItems_CartId_ProductId",
                 table: "TCartItems",
-                column: "CartId");
+                columns: new[] { "CartId", "ProductId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_TCartItems_ProductId",

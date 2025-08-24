@@ -32,3 +32,9 @@ public class UserProfileDto
     public string PhoneNumber { get; set; } = string.Empty;
     public DateTime? CreatedAt { get; set; }
 }
+
+public class RefreshRequestDto
+{
+    [Required]
+    public string RefreshToken { get; set; } = string.Empty;
+}

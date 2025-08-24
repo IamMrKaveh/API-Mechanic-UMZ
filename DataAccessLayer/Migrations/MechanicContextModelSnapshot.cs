@@ -76,13 +76,17 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CartId");
-
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("CartId", "ProductId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_CartItems_CartId_ProductId");
 
                     b.ToTable("TCartItems");
                 });
@@ -103,6 +107,44 @@ namespace DataAccessLayer.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("TCarts");
+                });
+
+            modelBuilder.Entity("DataAccessLayer.Models.Order.TOrderItems", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Amount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Profit")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PurchasePrice")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SellingPrice")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserOrderId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("UserOrderId");
+
+                    b.ToTable("TOrderItems");
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.Order.TOrderStatus", b =>
@@ -215,7 +257,6 @@ namespace DataAccessLayer.Migrations
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
@@ -299,44 +340,6 @@ namespace DataAccessLayer.Migrations
                     b.ToTable("TUsers");
                 });
 
-            modelBuilder.Entity("TOrderItems", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Profit")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PurchasePrice")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("SellingPrice")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UserOrderId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("UserOrderId");
-
-                    b.ToTable("TOrderItems");
-                });
-
             modelBuilder.Entity("DataAccessLayer.Models.Cart.TCartItems", b =>
                 {
                     b.HasOne("DataAccessLayer.Models.Cart.TCarts", "Cart")
@@ -365,6 +368,25 @@ namespace DataAccessLayer.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DataAccessLayer.Models.Order.TOrderItems", b =>
+                {
+                    b.HasOne("DataAccessLayer.Models.Product.TProducts", "Product")
+                        .WithMany("OrderDetails")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("DataAccessLayer.Models.Order.TOrders", "UserOrder")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("UserOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("UserOrder");
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.Order.TOrders", b =>
@@ -405,25 +427,6 @@ namespace DataAccessLayer.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("TOrderItems", b =>
-                {
-                    b.HasOne("DataAccessLayer.Models.Product.TProducts", "Product")
-                        .WithMany("OrderDetails")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("DataAccessLayer.Models.Order.TOrders", "UserOrder")
-                        .WithMany("OrderItems")
-                        .HasForeignKey("UserOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("UserOrder");
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.Cart.TCarts", b =>

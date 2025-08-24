@@ -33,6 +33,12 @@ public class UserProfileDto
     public DateTime? CreatedAt { get; set; }
 }
 
+public class RefreshRequestDto
+{
+    [Required]
+    public string RefreshToken { get; set; } = string.Empty;
+}
+
 
 namespace DataAccessLayer.Models.Auth;
 
@@ -79,10 +85,14 @@ public class TCarts
 {
     [Key]
     public int Id { get; set; }
-    
+
     [Required]
     public int UserId { get; set; }
-    
+
+    public int TotalItems { get; set; }
+
+    public int TotalPrice { get; set; }
+
     public virtual TUsers? User { get; set; }
 
     public virtual ICollection<TCartItems> CartItems { get; set; } = new List<TCartItems>();
@@ -355,6 +365,8 @@ public class TUserOtp
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public bool IsUsed { get; set; } = false;
+
+    public int AttemptCount { get; set; } = 0;
 }
 
 
