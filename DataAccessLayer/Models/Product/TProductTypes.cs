@@ -1,6 +1,6 @@
 ﻿namespace DataAccessLayer.Models.Product;
 
-public class TProductTypes : IProductType
+public class TProductTypes
 {
     [Key]
     public int Id { get; set; }

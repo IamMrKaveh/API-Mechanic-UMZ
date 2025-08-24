@@ -22,7 +22,11 @@ public class OrderItemsController : ControllerBase
             .AsQueryable();
 
         if (orderId.HasValue)
+        {
+            if (orderId.Value <= 0)
+                return BadRequest("Invalid order ID");
             query = query.Where(oi => oi.UserOrderId == orderId.Value);
+        }
 
         var orderItems = await query
             .Select(oi => new
@@ -59,6 +63,9 @@ public class OrderItemsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<object>> GetTOrderItems(int id)
     {
+        if (id <= 0)
+            return BadRequest("Invalid order item ID");
+
         var orderItem = await _context.TOrderItems
             .Include(oi => oi.Product)
                 .ThenInclude(p => p.ProductType)
@@ -112,12 +119,21 @@ public class OrderItemsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<TOrderItems>> PostTOrderItems(CreateOrderItemDto itemDto)
     {
+        if (itemDto == null)
+            return BadRequest("Order item data is required");
+
+        if (itemDto.Quantity <= 0)
+            return BadRequest("Quantity must be greater than 0");
+
+        if (itemDto.SellingPrice <= 0)
+            return BadRequest("Selling price must be greater than 0");
+
         var product = await _context.TProducts.FindAsync(itemDto.ProductId);
         if (product == null)
             return BadRequest("Product not found");
 
         if ((product.Count ?? 0) < itemDto.Quantity)
-            return BadRequest("Insufficient product stock");
+            return BadRequest($"Insufficient product stock. Available: {product.Count ?? 0}, Requested: {itemDto.Quantity}");
 
         var order = await _context.TOrders.FindAsync(itemDto.UserOrderId);
         if (order == null)
@@ -148,7 +164,7 @@ public class OrderItemsController : ControllerBase
 
             return CreatedAtAction("GetTOrderItems", new { id = orderItem.Id }, orderItem);
         }
-        catch
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             throw;
@@ -158,6 +174,12 @@ public class OrderItemsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> PutTOrderItems(int id, UpdateOrderItemDto itemDto)
     {
+        if (id <= 0)
+            return BadRequest("Invalid order item ID");
+
+        if (itemDto == null)
+            return BadRequest("Order item data is required");
+
         var orderItem = await _context.TOrderItems
             .Include(oi => oi.Product)
             .Include(oi => oi.UserOrder)
@@ -173,19 +195,38 @@ public class OrderItemsController : ControllerBase
             var oldProfit = orderItem.Profit;
             var oldQuantity = orderItem.Quantity;
 
-            if (itemDto.Quantity.HasValue && itemDto.Quantity.Value != oldQuantity)
+            if (itemDto.Quantity.HasValue)
             {
-                var quantityDifference = itemDto.Quantity.Value - oldQuantity;
+                if (itemDto.Quantity.Value <= 0)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest("Quantity must be greater than 0");
+                }
 
-                if ((orderItem.Product.Count ?? 0) < quantityDifference)
-                    return BadRequest("Insufficient product stock");
+                if (itemDto.Quantity.Value != oldQuantity)
+                {
+                    var quantityDifference = itemDto.Quantity.Value - oldQuantity;
 
-                orderItem.Product.Count -= quantityDifference;
-                orderItem.Quantity = itemDto.Quantity.Value;
+                    if ((orderItem.Product.Count ?? 0) < quantityDifference)
+                    {
+                        await transaction.RollbackAsync();
+                        return BadRequest($"Insufficient product stock. Available: {orderItem.Product.Count ?? 0}, Additional needed: {quantityDifference}");
+                    }
+
+                    orderItem.Product.Count -= quantityDifference;
+                    orderItem.Quantity = itemDto.Quantity.Value;
+                }
             }
 
             if (itemDto.SellingPrice.HasValue)
+            {
+                if (itemDto.SellingPrice.Value <= 0)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest("Selling price must be greater than 0");
+                }
                 orderItem.SellingPrice = itemDto.SellingPrice.Value;
+            }
 
             orderItem.Amount = orderItem.SellingPrice * orderItem.Quantity;
             orderItem.Profit = (orderItem.SellingPrice - orderItem.PurchasePrice) * orderItem.Quantity;
@@ -205,7 +246,7 @@ public class OrderItemsController : ControllerBase
                 return NotFound();
             throw;
         }
-        catch
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             throw;
@@ -215,6 +256,9 @@ public class OrderItemsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTOrderItems(int id)
     {
+        if (id <= 0)
+            return BadRequest("Invalid order item ID");
+
         var orderItem = await _context.TOrderItems
             .Include(oi => oi.Product)
             .Include(oi => oi.UserOrder)
@@ -226,7 +270,9 @@ public class OrderItemsController : ControllerBase
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            orderItem.Product.Count += orderItem.Quantity;
+            if (orderItem.Product != null)
+                orderItem.Product.Count += orderItem.Quantity;
+
             orderItem.UserOrder.TotalAmount -= orderItem.Amount;
             orderItem.UserOrder.TotalProfit -= orderItem.Profit;
 
@@ -236,7 +282,7 @@ public class OrderItemsController : ControllerBase
 
             return NoContent();
         }
-        catch
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             throw;

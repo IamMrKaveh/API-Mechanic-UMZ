@@ -1,12 +1,14 @@
 ﻿namespace DataAccessLayer.Models.Cart;
 
-public class TCarts : ICart
+public class TCarts
 {
     [Key]
     public int Id { get; set; }
-    public virtual TUsers? User { get; set; }
+    
+    [Required]
     public int UserId { get; set; }
+    
+    public virtual TUsers? User { get; set; }
 
-    public virtual ICollection<TCartItems>? CartItems 
-    { get; set; }
+    public virtual ICollection<TCartItems> CartItems { get; set; } = new List<TCartItems>();
 }

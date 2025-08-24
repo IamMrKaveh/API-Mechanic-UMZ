@@ -1,6 +1,6 @@
 ﻿namespace DataAccessLayer.Models.User;
 
-public class TUserOtp : IUserOtp
+public class TUserOtp
 {
     [Key]
     public int Id { get; set; }

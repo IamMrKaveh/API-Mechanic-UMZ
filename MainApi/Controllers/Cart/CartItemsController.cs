@@ -12,10 +12,12 @@ public class CartItemsController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
+    [HttpGet("cart-items")]
     public async Task<ActionResult<IEnumerable<CartItemDto>>> GetCartItems()
     {
         var userId = GetCurrentUserId();
+        if (userId == 0)
+            return Unauthorized("Invalid user");
 
         var cartItems = await _context.TCartItems
             .Include(ci => ci.Product)
@@ -35,10 +37,12 @@ public class CartItemsController : ControllerBase
         return Ok(cartItems);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("cart-items/{id}")]
     public async Task<ActionResult<CartItemDto>> GetCartItem(int id)
     {
         var userId = GetCurrentUserId();
+        if (userId == 0)
+            return Unauthorized("Invalid user");
 
         var cartItem = await _context.TCartItems
             .Include(ci => ci.Product)
@@ -56,7 +60,7 @@ public class CartItemsController : ControllerBase
             .FirstOrDefaultAsync();
 
         if (cartItem == null)
-            return NotFound();
+            return NotFound("Cart item not found");
 
         return Ok(cartItem);
     }
@@ -64,6 +68,8 @@ public class CartItemsController : ControllerBase
     private int GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst("id")?.Value;
-        return int.Parse(userIdClaim ?? "0");
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            return 0;
+        return userId;
     }
 }

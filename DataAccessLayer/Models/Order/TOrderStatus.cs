@@ -1,6 +1,6 @@
 ﻿namespace DataAccessLayer.Models.Order;
 
-public class TOrderStatus : IOrderStatus
+public class TOrderStatus
 {
     public int Id { get; set; }
     public string? Name { get; set; }

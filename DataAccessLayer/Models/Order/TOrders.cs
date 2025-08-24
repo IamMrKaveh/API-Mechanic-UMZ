@@ -1,6 +1,6 @@
 ﻿namespace DataAccessLayer.Models.Order;
 
-public class TOrders : IOrder
+public class TOrders
 {
     [Key]
     public int Id { get; set; }

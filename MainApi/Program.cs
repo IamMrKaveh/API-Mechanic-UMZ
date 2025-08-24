@@ -100,7 +100,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-//https://mechanic-umz.liara.run/images/
+//https://mechanic-umz.liara.run/
 app.UseStaticFiles();
 
 

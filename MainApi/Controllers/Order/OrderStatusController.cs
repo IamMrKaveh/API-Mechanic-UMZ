@@ -21,30 +21,26 @@ public class OrderStatusController : ControllerBase
                 s.Id,
                 s.Name,
                 s.Icon,
-                OrderCount = s.Orders.Count()
+                OrderCount = s.Orders != null ? s.Orders.Count() : 0
             })
             .ToListAsync();
 
         return Ok(orderStatuses);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("no-order/{id}")]
     public async Task<ActionResult<object>> GetTOrderStatus(int id)
     {
+        if (id <= 0)
+            return BadRequest("Invalid order status ID");
+
         var orderStatus = await _context.TOrderStatus
             .Select(s => new
             {
                 s.Id,
                 s.Name,
                 s.Icon,
-                OrderCount = s.Orders.Count(),
-                Orders = s.Orders.Select(o => new
-                {
-                    o.Id,
-                    o.Name,
-                    o.TotalAmount,
-                    o.CreatedAt
-                })
+                OrderCount = s.Orders != null ? s.Orders.Count() : 0,
             })
             .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -57,6 +53,12 @@ public class OrderStatusController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<TOrderStatus>> PostTOrderStatus(CreateOrderStatusDto statusDto)
     {
+        if (statusDto == null)
+            return BadRequest("Order status data is required");
+
+        if (string.IsNullOrWhiteSpace(statusDto.Name))
+            return BadRequest("Name is required");
+
         var orderStatus = new TOrderStatus
         {
             Name = statusDto.Name,
@@ -72,12 +74,25 @@ public class OrderStatusController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> PutTOrderStatus(int id, UpdateOrderStatusDto statusDto)
     {
+        if (id <= 0)
+            return BadRequest("Invalid order status ID");
+
+        if (statusDto == null)
+            return BadRequest("Order status data is required");
+
         var orderStatus = await _context.TOrderStatus.FindAsync(id);
         if (orderStatus == null)
             return NotFound();
 
-        orderStatus.Name = statusDto.Name ?? orderStatus.Name;
-        orderStatus.Icon = statusDto.Icon ?? orderStatus.Icon;
+        if (statusDto.Name != null)
+        {
+            if (string.IsNullOrWhiteSpace(statusDto.Name))
+                return BadRequest("Name cannot be empty");
+            orderStatus.Name = statusDto.Name;
+        }
+
+        if (statusDto.Icon != null)
+            orderStatus.Icon = statusDto.Icon;
 
         try
         {
@@ -95,6 +110,9 @@ public class OrderStatusController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTOrderStatus(int id)
     {
+        if (id <= 0)
+            return BadRequest("Invalid order status ID");
+
         var orderStatus = await _context.TOrderStatus.FindAsync(id);
         if (orderStatus == null)
             return NotFound();

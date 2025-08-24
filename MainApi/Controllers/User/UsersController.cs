@@ -212,7 +212,12 @@ public class UsersController : ControllerBase
         var apiKey = _configuration["Kavenegar:ApiKey"];
         var sender = _configuration["Kavenegar:SenderNumber"];
         var receptor = request.PhoneNumber;
-        var message = $"کد تایید شما: {otp}";
+        var message = $"Verification code : {otp}";
+        var template = "verify";
+
+        var api = new KavenegarApi(apiKey);
+
+        api.VerifyLookup(receptor, otp, template);
 
         return Ok(new { Message = "OTP sent successfully" });
     }
