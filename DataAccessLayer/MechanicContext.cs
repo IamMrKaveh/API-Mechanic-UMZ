@@ -2,23 +2,52 @@
 
 public class MechanicContext : DbContext
 {
-    private readonly string _connectionString =
-@"
-Data Source =.;
-Initial Catalog = DB-Mechanic;
-User ID=mrkaveh;
-Password=1234;
-TrustServerCertificate = True;
-";
-
-    private readonly string _prodConnectionString =
-@"
-User Id=postgres.suldeexbzqpfiflqzkej;
-Password=Breaking355662Bad!;
-Server=aws-1-eu-north-1.pooler.supabase.com;
+    // for migration (Supabase direct)
+    private readonly string _directConnectionString =
+    @"
+Host=db.suldeexbzqpfiflqzkej.supabase.co;
 Port=5432;
 Database=postgres;
+Username=postgres;
+Password=Breaking355662Bad!;
+SSL Mode=Require;
+Trust Server Certificate=true;
 ";
+
+    // local connection (SQL Server on local machine)
+    private readonly string _connectionString =
+    @"
+Server=.;
+Database=DB-Mechanic;
+User Id=mrkaveh;
+Password=1234;
+TrustServerCertificate=True;
+";
+
+    // for Worker (Supabase connection pooler, recommended for production)
+    private readonly string _poolerConnectionString =
+    @"
+Host=aws-1-eu-north-1.pooler.supabase.com;
+Port=5432;
+Database=postgres;
+Username=postgres.suldeexbzqpfiflqzkej;
+Password=Breaking355662Bad!;
+SSL Mode=Require;
+Trust Server Certificate=true;
+";
+
+    // for API (Supabase transaction pooler)
+    private readonly string _transactionConnection =
+    @"
+Host=aws-1-eu-north-1.pooler.supabase.com;
+Port=6543;
+Database=postgres;
+Username=postgres.suldeexbzqpfiflqzkej;
+Password=Breaking355662Bad!;
+SSL Mode=Require;
+Trust Server Certificate=true;
+";
+
 
     #region DbSets
 
@@ -66,7 +95,7 @@ Database=postgres;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseNpgsql(_prodConnectionString);
+        optionsBuilder.UseNpgsql(_transactionConnection);
     }
 
     protected override void OnModelCreating(ModelBuilder builder)

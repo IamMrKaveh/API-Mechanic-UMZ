@@ -17,4 +17,6 @@ public class TUserOtp
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public bool IsUsed { get; set; } = false;
+
+    public int AttemptCount { get; set; } = 0;
 }

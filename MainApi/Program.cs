@@ -5,16 +5,9 @@ var builder = WebApplication.CreateBuilder(args);
 //Add needed services to dependency injection
 #region DbContext
 
-//builder.Services.AddDbContext<MechanicContext>(options =>
-//    options.UseSqlServer(
-//        builder.Configuration.GetConnectionString("DefaultConnection") ??
-//        throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")
-//    )
-//);
-
 builder.Services.AddDbContext<MechanicContext>(options =>
     options.UseNpgsql(
-        builder.Configuration.GetConnectionString("ProductionConnection") ??
+        builder.Configuration.GetConnectionString("TransactionConnection") ??
         throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")
     )
 );

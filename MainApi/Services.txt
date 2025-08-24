@@ -83,7 +83,6 @@ namespace MainApi.Controllers.Cart;
 public class CartsController : ControllerBase
 {
     private readonly MechanicContext _context;
-
     public CartsController(MechanicContext context)
     {
         _context = context;
@@ -95,15 +94,13 @@ public class CartsController : ControllerBase
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
         var cart = await _context.TCarts
             .Include(c => c.CartItems)
             .ThenInclude(ci => ci.Product)
             .FirstOrDefaultAsync(c => c.UserId == userId);
-
         if (cart == null)
         {
-            cart = new TCarts { UserId = userId };
+            cart = new TCarts { UserId = userId, TotalItems = 0, TotalPrice = 0 };
             _context.TCarts.Add(cart);
             await _context.SaveChangesAsync();
         }
@@ -121,8 +118,8 @@ public class CartsController : ControllerBase
                 Quantity = ci.Quantity,
                 TotalPrice = (ci.Product?.SellingPrice ?? 0) * ci.Quantity
             }).ToList() ?? new List<CartItemDto>(),
-            TotalItems = cart.CartItems?.Sum(ci => ci.Quantity) ?? 0,
-            TotalPrice = cart.CartItems?.Sum(ci =>(ci.Product?.SellingPrice ?? 0) * ci.Quantity) ?? 0
+            TotalItems = cart.TotalItems,
+            TotalPrice = cart.TotalPrice
         };
 
         return Ok(cartDto);
@@ -133,17 +130,9 @@ public class CartsController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
-        var product = await _context.TProducts.FindAsync(dto.ProductId);
-        if (product == null)
-            return NotFound("Product not found");
-
-        if ((product.Count ?? 0) < dto.Quantity)
-            return BadRequest("Insufficient stock");
 
         var cart = await _context.TCarts
             .Include(c => c.CartItems)
@@ -156,30 +145,45 @@ public class CartsController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-        var existingItem = cart.CartItems?.FirstOrDefault(ci => ci.ProductId == dto.ProductId);
-
-        if (existingItem != null)
+        try
         {
-            var newQuantity = existingItem.Quantity + dto.Quantity;
-            if (newQuantity > (product.Count ?? 0))
+            var product = await _context.TProducts.FindAsync(dto.ProductId);
+            if (product == null)
+                return NotFound("Product not found");
+            if ((product.Count ?? 0) < dto.Quantity)
+                return BadRequest("Insufficient stock");
+
+            var existingItem = cart.CartItems?.FirstOrDefault(ci => ci.ProductId == dto.ProductId);
+            if (existingItem != null)
             {
-                return BadRequest("Total quantity exceeds available stock");
+                var newQuantity = existingItem.Quantity + dto.Quantity;
+                if (newQuantity > (product.Count ?? 0))
+                {
+                    return BadRequest("Total quantity exceeds available stock");
+                }
+                existingItem.Quantity = newQuantity;
             }
-            existingItem.Quantity = newQuantity;
-        }
-        else
-        {
-            var cartItem = new TCartItems
+            else
             {
-                CartId = cart.Id,
-                ProductId = dto.ProductId,
-                Quantity = dto.Quantity
-            };
-            _context.TCartItems.Add(cartItem);
-        }
+                var cartItem = new TCartItems
+                {
+                    CartId = cart.Id,
+                    ProductId = dto.ProductId,
+                    Quantity = dto.Quantity
+                };
+                _context.TCartItems.Add(cartItem);
+            }
 
-        await _context.SaveChangesAsync();
-        return Ok(new { Message = "Item added to cart successfully" });
+            cart.TotalItems += dto.Quantity;
+            cart.TotalPrice += (product.SellingPrice ?? 0) * dto.Quantity;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "Item added to cart successfully" });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict("The stock for this item has just changed. Please try again.");
+        }
     }
 
     [HttpPut("update-item/{itemId}")]
@@ -187,22 +191,21 @@ public class CartsController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
         var cartItem = await _context.TCartItems
             .Include(ci => ci.Cart)
             .Include(ci => ci.Product)
             .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart.UserId == userId);
-
         if (cartItem == null)
             return NotFound("Cart item not found");
-
         if (dto.Quantity > (cartItem.Product?.Count ?? 0))
             return BadRequest("Quantity exceeds available stock");
 
+        int quantityDifference = dto.Quantity - cartItem.Quantity;
+        cartItem.Cart.TotalItems += quantityDifference;
+        cartItem.Cart.TotalPrice += (cartItem.Product?.SellingPrice ?? 0) * quantityDifference;
         cartItem.Quantity = dto.Quantity;
 
         await _context.SaveChangesAsync();
@@ -215,13 +218,15 @@ public class CartsController : ControllerBase
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
         var cartItem = await _context.TCartItems
             .Include(ci => ci.Cart)
+            .Include(ci => ci.Product)
             .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart.UserId == userId);
-
         if (cartItem == null)
             return NotFound("Cart item not found");
+
+        cartItem.Cart.TotalItems -= cartItem.Quantity;
+        cartItem.Cart.TotalPrice -= (cartItem.Product?.SellingPrice ?? 0) * cartItem.Quantity;
 
         _context.TCartItems.Remove(cartItem);
         await _context.SaveChangesAsync();
@@ -235,15 +240,15 @@ public class CartsController : ControllerBase
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
         var cart = await _context.TCarts
             .Include(c => c.CartItems)
             .FirstOrDefaultAsync(c => c.UserId == userId);
-
         if (cart == null || !cart.CartItems.Any())
             return Ok(new { Message = "Cart is already empty" });
 
         _context.TCartItems.RemoveRange(cart.CartItems);
+        cart.TotalItems = 0;
+        cart.TotalPrice = 0;
         await _context.SaveChangesAsync();
 
         return Ok(new { Message = "Cart cleared successfully" });
@@ -255,11 +260,10 @@ public class CartsController : ControllerBase
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
-        var count = await _context.TCartItems
-            .Where(ci => ci.Cart.UserId == userId)
-            .SumAsync(ci => ci.Quantity);
-
+        var count = await _context.TCarts
+            .Where(c => c.UserId == userId)
+            .Select(c => c.TotalItems)
+            .FirstOrDefaultAsync();
         return Ok(count);
     }
 
@@ -1839,19 +1843,17 @@ namespace MainApi.Controllers.User;
 [Authorize]
 public class UsersController : ControllerBase
 {
-    private readonly RateLimitService _rateLimitService;
     private readonly MechanicContext _context;
     private readonly IConfiguration _configuration;
 
-    public UsersController(MechanicContext context, IConfiguration configuration, RateLimitService rateLimitService)
+    public UsersController(MechanicContext context, IConfiguration configuration)
     {
         _context = context;
         _configuration = configuration;
-        _rateLimitService = rateLimitService;
     }
 
     [HttpGet]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserProfileDto>>> GetUsers()
     {
         return await _context.TUsers
@@ -1878,7 +1880,6 @@ public class UsersController : ControllerBase
                 CreatedAt = u.CreatedAt
             })
             .FirstOrDefaultAsync();
-
         if (user == null)
             return NotFound();
 
@@ -1892,7 +1893,6 @@ public class UsersController : ControllerBase
         var userId = GetCurrentUserId();
         if (userId == null)
             return Unauthorized();
-
         var user = await _context.TUsers
             .Where(u => u.Id == userId && u.IsActive)
             .Select(u => new UserProfileDto
@@ -1902,7 +1902,6 @@ public class UsersController : ControllerBase
                 CreatedAt = u.CreatedAt
             })
             .FirstOrDefaultAsync();
-
         if (user == null)
             return NotFound();
 
@@ -1910,18 +1909,15 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<UserProfileDto>> CreateUser([FromBody] TUsers tUsers)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         if (string.IsNullOrWhiteSpace(tUsers.PhoneNumber))
             return BadRequest("Phone number is required.");
-
         if (await _context.TUsers.AnyAsync(u => u.PhoneNumber == tUsers.PhoneNumber))
             return Conflict("User with this phone number already exists.");
-
         tUsers.CreatedAt = DateTime.UtcNow;
         _context.TUsers.Add(tUsers);
         await _context.SaveChangesAsync();
@@ -1932,7 +1928,6 @@ public class UsersController : ControllerBase
             PhoneNumber = tUsers.PhoneNumber,
             CreatedAt = tUsers.CreatedAt
         };
-
         return CreatedAtAction(nameof(GetUser), new { id = dto.Id }, dto);
     }
 
@@ -1942,18 +1937,14 @@ public class UsersController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         if (id != tUsers.Id)
             return BadRequest("ID mismatch");
-
         var existingUser = await _context.TUsers.FindAsync(id);
         if (existingUser == null || !existingUser.IsActive)
             return NotFound();
-
         var currentUserId = GetCurrentUserId();
         if (currentUserId != id)
             return Forbid();
-
         existingUser.FirstName = tUsers.FirstName;
         existingUser.LastName = tUsers.LastName;
 
@@ -1973,7 +1964,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPatch("{id}/status")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ChangeUserStatus(int id, [FromBody] bool isActive)
     {
         var user = await _context.TUsers.FindAsync(id);
@@ -2005,13 +1996,8 @@ public class UsersController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
-        var limiterKey = $"{request.PhoneNumber}:{HttpContext.Connection.RemoteIpAddress}";
-        if (_rateLimitService.IsLimited(limiterKey))
-            return BadRequest("Too many attempts. Try again later.");
-
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
 
         if (user == null)
@@ -2027,18 +2013,16 @@ public class UsersController : ControllerBase
         }
 
         if (!user.IsActive)
-            return Unauthorized("User account is inactive.");
-
+            return Unauthorized("Invalid credentials.");
         var otp = GenerateOtp();
 
-        var existingOtps = _context.TUserOtps.Where(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
+        var existingOtps = _context.TUserOtps.Where(o => o.UserId == user.Id && !o.IsUsed);
         _context.TUserOtps.RemoveRange(existingOtps);
-
         var userOtp = new TUserOtp
         {
             UserId = user.Id,
             OtpHash = BCrypt.Net.BCrypt.HashPassword(otp),
-            ExpiresAt = DateTime.UtcNow.AddMinutes(2)
+            ExpiresAt = DateTime.UtcNow.AddMinutes(5)
         };
         _context.TUserOtps.Add(userOtp);
         await _context.SaveChangesAsync();
@@ -2052,7 +2036,6 @@ public class UsersController : ControllerBase
         var api = new KavenegarApi(apiKey);
 
         api.VerifyLookup(receptor, otp, template);
-
         return Ok(new { Message = "OTP sent successfully" });
     }
 
@@ -2060,29 +2043,28 @@ public class UsersController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponseDto>> VerifyOtp([FromBody] VerifyOtpRequestDto request)
     {
-        var limiterKey = $"{request.PhoneNumber}:{HttpContext.Connection.RemoteIpAddress}";
-        if (_rateLimitService.IsLimited(limiterKey))
-            return BadRequest("Too many attempts. Try again later.");
-
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && u.IsActive);
-
         if (user == null)
-            return NotFound("User not found or is inactive.");
+            return BadRequest("Invalid credentials.");
+        var storedOtp = await _context.TUserOtps.FirstOrDefaultAsync(o => o.UserId == user.Id && !o.IsUsed);
 
-        var storedOtp = await _context.TUserOtps.FirstOrDefaultAsync(o => o.UserId == user.Id && o.ExpiresAt > DateTime.UtcNow && !o.IsUsed);
-
-        if (storedOtp == null || !BCrypt.Net.BCrypt.Verify(request.Code, storedOtp.OtpHash))
+        if (storedOtp == null || storedOtp.ExpiresAt <= DateTime.UtcNow || storedOtp.AttemptCount >= 5)
             return BadRequest("Invalid or expired OTP code.");
+
+        if (!BCrypt.Net.BCrypt.Verify(request.Code, storedOtp.OtpHash))
+        {
+            storedOtp.AttemptCount++;
+            await _context.SaveChangesAsync();
+            return BadRequest("Invalid credentials.");
+        }
 
         storedOtp.IsUsed = true;
         await _context.SaveChangesAsync();
 
         var token = GenerateJwtToken(user);
         var refreshTokenValue = Guid.NewGuid().ToString("N");
-
         var refreshToken = new TRefreshToken
         {
             UserId = user.Id,
@@ -2102,8 +2084,61 @@ public class UsersController : ControllerBase
             ExpiresAt = DateTime.UtcNow.AddHours(24),
             RefreshToken = refreshTokenValue
         };
-
         return Ok(response);
+    }
+
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto request)
+    {
+        var refreshTokenValue = request.RefreshToken;
+        if (string.IsNullOrWhiteSpace(refreshTokenValue))
+            return BadRequest("Refresh token is required.");
+
+        var activeRefreshTokens = await _context.TRefreshToken
+            .Include(rt => rt.User)
+            .Where(rt => rt.ExpiresAt > DateTime.UtcNow && rt.RevokedAt == null)
+            .ToListAsync();
+
+        TRefreshToken? matchingToken = null;
+        foreach (var token in activeRefreshTokens)
+        {
+            if (BCrypt.Net.BCrypt.Verify(refreshTokenValue, token.TokenHash))
+            {
+                matchingToken = token;
+                break;
+            }
+        }
+
+        if (matchingToken == null || matchingToken.User == null || !matchingToken.User.IsActive)
+            return BadRequest("Invalid or expired refresh token.");
+
+        var newRefreshTokenValue = Guid.NewGuid().ToString("N");
+        var newRefreshToken = new TRefreshToken
+        {
+            UserId = matchingToken.UserId,
+            TokenHash = BCrypt.Net.BCrypt.HashPassword(newRefreshTokenValue),
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedAt = DateTime.UtcNow,
+            CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "",
+            UserAgent = Request.Headers["User-Agent"].ToString()
+        };
+
+        matchingToken.RevokedAt = DateTime.UtcNow;
+        matchingToken.ReplacedByTokenHash = newRefreshToken.TokenHash;
+
+        _context.TRefreshToken.Add(newRefreshToken);
+        await _context.SaveChangesAsync();
+
+        var newJwtToken = GenerateJwtToken(matchingToken.User);
+
+        return Ok(new AuthResponseDto
+        {
+            Token = newJwtToken,
+            User = new UserProfileDto { Id = matchingToken.User.Id, PhoneNumber = matchingToken.User.PhoneNumber, CreatedAt = matchingToken.User.CreatedAt },
+            ExpiresAt = DateTime.UtcNow.AddHours(24),
+            RefreshToken = newRefreshTokenValue
+        });
     }
 
     private string GenerateOtp()
@@ -2119,12 +2154,11 @@ public class UsersController : ControllerBase
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim("id", user.Id.ToString()),
             new Claim(ClaimTypes.MobilePhone, user.PhoneNumber),
             new Claim(ClaimTypes.Role, user.IsAdmin ? "Admin" : "User"),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
-
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"] ?? "YourIssuer",
             audience: _configuration["Jwt:Audience"] ?? "YourAudience",
@@ -2132,33 +2166,12 @@ public class UsersController : ControllerBase
             expires: DateTime.UtcNow.AddHours(24),
             signingCredentials: creds
         );
-
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     private int? GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = User.FindFirst("id")?.Value;
         return int.TryParse(userIdClaim, out var userId) ? userId : null;
-    }
-}
-
-public class RateLimitService
-{
-    private static readonly Dictionary<string, (int Count, DateTime ResetAt)> Limits = new();
-    private readonly int _maxAttempts = 5;
-    private readonly TimeSpan _window = TimeSpan.FromMinutes(5);
-
-    public bool IsLimited(string key)
-    {
-        if (!Limits.ContainsKey(key) || Limits[key].ResetAt < DateTime.UtcNow)
-            Limits[key] = (0, DateTime.UtcNow.Add(_window));
-
-        var entry = Limits[key];
-        if (entry.Count >= _maxAttempts)
-            return true;
-
-        Limits[key] = (entry.Count + 1, entry.ResetAt);
-        return false;
     }
 }
