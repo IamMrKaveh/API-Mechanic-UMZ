@@ -1,6 +1,4 @@
-﻿using DataAccessLayer.Models.Auth;
-
-namespace DataAccessLayer;
+﻿namespace DataAccessLayer;
 
 public class MechanicContext : DbContext
 {
@@ -82,10 +80,15 @@ Database=postgres;
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id)
                 .ValueGeneratedOnAdd();
+
+            entity.Property(x => x.UserId)
+                .IsRequired();
+
             entity.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
+
             entity.HasMany(x => x.CartItems)
                 .WithOne(ci => ci.Cart)
                 .HasForeignKey(ci => ci.CartId)
@@ -97,14 +100,30 @@ Database=postgres;
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id)
                 .ValueGeneratedOnAdd();
+
+            entity.Property(x => x.CartId)
+                .IsRequired();
+
+            entity.Property(x => x.ProductId)
+                .IsRequired();
+
+            entity.Property(x => x.Quantity)
+                .IsRequired()
+                .HasDefaultValue(1);
+
             entity.HasOne(x => x.Cart)
                 .WithMany(c => c.CartItems)
                 .HasForeignKey(x => x.CartId)
                 .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasOne(x => x.Product)
                 .WithMany()
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasIndex(x => new { x.CartId, x.ProductId })
+                .IsUnique()
+                .HasDatabaseName("IX_CartItems_CartId_ProductId");
         });
 
         #endregion

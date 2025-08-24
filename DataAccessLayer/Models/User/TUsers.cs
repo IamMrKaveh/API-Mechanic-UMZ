@@ -1,5 +1,6 @@
 ﻿namespace DataAccessLayer.Models.User;
-public class TUsers : IUser
+
+public class TUsers
 {
     [Key]
     public int Id { get; set; }

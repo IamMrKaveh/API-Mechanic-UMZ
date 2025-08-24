@@ -1,4 +1,6 @@
-﻿public class TOrderItems : IOrderItem
+﻿namespace DataAccessLayer.Models.Order;
+
+public class TOrderItems
 {
     [Key]
     public int Id { get; set; }

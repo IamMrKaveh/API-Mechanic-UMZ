@@ -1,6 +1,6 @@
 ﻿namespace DataAccessLayer.Models.Product;
 
-public class TProducts : IProduct
+public class TProducts
 {
     [Key]
     public int Id { get; set; }
@@ -10,15 +10,16 @@ public class TProducts : IProduct
 
     public int? PurchasePrice { get; set; }
     public int? OriginalPrice { get; set; }
+
     public int? SellingPrice { get; set; }
+
     public int? Count { get; set; }
 
     public virtual TProductTypes? ProductType { get; set; }
     public int? ProductTypeId { get; set; }
 
-    public virtual ICollection<TOrderItems>? OrderDetails
-    { get; set; }
+    public virtual ICollection<TOrderItems>? OrderDetails { get; set; }
 
     [Timestamp]
-    public byte[] RowVersion { get; set; }
+    public byte[]? RowVersion { get; set; }
 }

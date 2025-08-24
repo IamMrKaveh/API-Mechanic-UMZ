@@ -16,6 +16,8 @@ public class CartsController : ControllerBase
     public async Task<ActionResult<CartDto>> GetMyCart()
     {
         var userId = GetCurrentUserId();
+        if (userId == 0)
+            return Unauthorized("Invalid user");
 
         var cart = await _context.TCarts
             .Include(c => c.CartItems)
@@ -43,7 +45,7 @@ public class CartsController : ControllerBase
                 TotalPrice = (ci.Product?.SellingPrice ?? 0) * ci.Quantity
             }).ToList() ?? new List<CartItemDto>(),
             TotalItems = cart.CartItems?.Sum(ci => ci.Quantity) ?? 0,
-            TotalPrice = cart.CartItems?.Sum(ci => (ci.Product?.SellingPrice ?? 0) * ci.Quantity) ?? 0
+            TotalPrice = cart.CartItems?.Sum(ci =>(ci.Product?.SellingPrice ?? 0) * ci.Quantity) ?? 0
         };
 
         return Ok(cartDto);
@@ -56,6 +58,8 @@ public class CartsController : ControllerBase
             return BadRequest(ModelState);
 
         var userId = GetCurrentUserId();
+        if (userId == 0)
+            return Unauthorized("Invalid user");
 
         var product = await _context.TProducts.FindAsync(dto.ProductId);
         if (product == null)
@@ -79,11 +83,12 @@ public class CartsController : ControllerBase
 
         if (existingItem != null)
         {
-            existingItem.Quantity += dto.Quantity;
-            if (existingItem.Quantity > product.Count)
+            var newQuantity = existingItem.Quantity + dto.Quantity;
+            if (newQuantity > (product.Count ?? 0))
             {
                 return BadRequest("Total quantity exceeds available stock");
             }
+            existingItem.Quantity = newQuantity;
         }
         else
         {
@@ -107,6 +112,8 @@ public class CartsController : ControllerBase
             return BadRequest(ModelState);
 
         var userId = GetCurrentUserId();
+        if (userId == 0)
+            return Unauthorized("Invalid user");
 
         var cartItem = await _context.TCartItems
             .Include(ci => ci.Cart)
@@ -116,17 +123,10 @@ public class CartsController : ControllerBase
         if (cartItem == null)
             return NotFound("Cart item not found");
 
-        if (dto.Quantity <= 0)
-        {
-            _context.TCartItems.Remove(cartItem);
-        }
-        else
-        {
-            if (dto.Quantity > (cartItem.Product.Count ?? 0))
-                return BadRequest("Quantity exceeds available stock");
+        if (dto.Quantity > (cartItem.Product?.Count ?? 0))
+            return BadRequest("Quantity exceeds available stock");
 
-            cartItem.Quantity = dto.Quantity;
-        }
+        cartItem.Quantity = dto.Quantity;
 
         await _context.SaveChangesAsync();
         return Ok(new { Message = "Cart item updated successfully" });
@@ -136,6 +136,8 @@ public class CartsController : ControllerBase
     public async Task<ActionResult> RemoveFromCart(int itemId)
     {
         var userId = GetCurrentUserId();
+        if (userId == 0)
+            return Unauthorized("Invalid user");
 
         var cartItem = await _context.TCartItems
             .Include(ci => ci.Cart)
@@ -154,6 +156,8 @@ public class CartsController : ControllerBase
     public async Task<ActionResult> ClearCart()
     {
         var userId = GetCurrentUserId();
+        if (userId == 0)
+            return Unauthorized("Invalid user");
 
         var cart = await _context.TCarts
             .Include(c => c.CartItems)
@@ -172,6 +176,8 @@ public class CartsController : ControllerBase
     public async Task<ActionResult<int>> GetCartItemsCount()
     {
         var userId = GetCurrentUserId();
+        if (userId == 0)
+            return Unauthorized("Invalid user");
 
         var count = await _context.TCartItems
             .Where(ci => ci.Cart.UserId == userId)
@@ -183,6 +189,8 @@ public class CartsController : ControllerBase
     private int GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst("id")?.Value;
-        return int.Parse(userIdClaim ?? "0");
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            return 0;
+        return userId;
     }
 }
