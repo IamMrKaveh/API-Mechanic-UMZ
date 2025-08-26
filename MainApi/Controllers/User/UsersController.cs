@@ -1,6 +1,4 @@
-﻿using DataAccessLayer.Models.User;
-
-namespace MainApi.Controllers.User;
+﻿namespace MainApi.Controllers.User;
 
 [Route("api/[controller]")]
 [ApiController]

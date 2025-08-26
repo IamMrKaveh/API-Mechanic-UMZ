@@ -54,9 +54,9 @@
               "Title": "UsersController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\User\\UsersController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\User\\UsersController.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\User\\UsersController.cs*",
-              "RelativeToolTip": "MainApi\\Controllers\\User\\UsersController.cs*",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAA2AAAAAAAAAA==",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\User\\UsersController.cs",
+              "RelativeToolTip": "MainApi\\Controllers\\User\\UsersController.cs",
+              "ViewState": "AgIAAKkBAAAAAAAAAABAwMQBAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-08-26T03:30:29.094Z",
               "EditorCaption": ""
@@ -71,8 +71,7 @@
               "RelativeToolTip": "DataAccessLayer\\Models\\DTO\\Auth.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-26T03:23:37.06Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-26T03:23:37.06Z"
             },
             {
               "$type": "Document",
@@ -84,8 +83,7 @@
               "RelativeToolTip": "DataAccessLayer\\MechanicContext.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-26T03:06:52.825Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-26T03:06:52.825Z"
             },
             {
               "$type": "Document",
@@ -97,8 +95,7 @@
               "RelativeToolTip": "MainApi\\Services.txt",
               "ViewState": "AgIAAEAMAAAAAAAAAAAwwFIMAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
-              "WhenOpened": "2025-08-26T03:05:59.692Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-26T03:05:59.692Z"
             },
             {
               "$type": "Document",
@@ -110,8 +107,7 @@
               "RelativeToolTip": "MainApi\\appsettings.json",
               "ViewState": "AgIAAAEAAAAAAAAAAAAiwA0AAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-08-26T03:01:16.697Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-26T03:01:16.697Z"
             },
             {
               "$type": "Document",
@@ -123,8 +119,7 @@
               "RelativeToolTip": "MainApi\\Services\\RateLimit\\RateLimitService.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAAAAwC0AAAAOAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-26T02:59:42.26Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-26T02:59:42.26Z"
             },
             {
               "$type": "Document",
@@ -134,7 +129,7 @@
               "RelativeDocumentMoniker": "MainApi\\Program.cs",
               "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
               "RelativeToolTip": "MainApi\\Program.cs",
-              "ViewState": "AgIAAA4AAAAAAAAAAAAuwB4AAAADAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-08-26T02:57:56.982Z",
               "EditorCaption": ""
