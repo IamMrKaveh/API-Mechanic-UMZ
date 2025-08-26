@@ -20,4 +20,6 @@ public class TUsers
 
     public virtual ICollection<TUserOtp> UserOtps { get; set; } = new List<TUserOtp>();
 
+    public virtual ICollection<TRefreshToken> RefreshTokens { get; set; } = new List<TRefreshToken>();
+
 }

@@ -1,4 +1,6 @@
-﻿namespace MainApi.Controllers.User;
+﻿using DataAccessLayer.Models.User;
+
+namespace MainApi.Controllers.User;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -7,67 +9,96 @@ public class UsersController : ControllerBase
 {
     private readonly MechanicContext _context;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(MechanicContext context, IConfiguration configuration)
+    public UsersController(MechanicContext context, IConfiguration configuration, ILogger<UsersController> logger)
     {
         _context = context;
         _configuration = configuration;
+        _logger = logger;
     }
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserProfileDto>>> GetUsers()
     {
-        return await _context.TUsers
-            .Where(u => u.IsActive)
-            .Select(u => new UserProfileDto
-            {
-                Id = u.Id,
-                PhoneNumber = u.PhoneNumber,
-                CreatedAt = u.CreatedAt
-            })
-            .ToListAsync();
+        try
+        {
+            var users = await _context.TUsers
+                .Where(u => u.IsActive)
+                .Select(u => new UserProfileDto
+                {
+                    Id = u.Id,
+                    PhoneNumber = u.PhoneNumber,
+                    CreatedAt = u.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(users);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving users");
+            return StatusCode(500, "An error occurred while retrieving users");
+        }
     }
 
     [HttpGet("{id}")]
-    [Authorize]
     public async Task<ActionResult<UserProfileDto>> GetUser(int id)
     {
-        var user = await _context.TUsers
-            .Where(u => u.Id == id && u.IsActive)
-            .Select(u => new UserProfileDto
-            {
-                Id = u.Id,
-                PhoneNumber = u.PhoneNumber,
-                CreatedAt = u.CreatedAt
-            })
-            .FirstOrDefaultAsync();
-        if (user == null)
-            return NotFound();
+        try
+        {
+            var user = await _context.TUsers
+                .Where(u => u.Id == id && u.IsActive)
+                .Select(u => new UserProfileDto
+                {
+                    Id = u.Id,
+                    PhoneNumber = u.PhoneNumber,
+                    CreatedAt = u.CreatedAt
+                })
+                .FirstOrDefaultAsync();
 
-        return user;
+            if (user == null)
+                return NotFound();
+
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving user {UserId}", id);
+            return StatusCode(500, "An error occurred while retrieving user");
+        }
     }
 
     [HttpGet("profile")]
-    [Authorize]
     public async Task<ActionResult<UserProfileDto>> GetProfile()
     {
-        var userId = GetCurrentUserId();
-        if (userId == null)
-            return Unauthorized();
-        var user = await _context.TUsers
-            .Where(u => u.Id == userId && u.IsActive)
-            .Select(u => new UserProfileDto
-            {
-                Id = u.Id,
-                PhoneNumber = u.PhoneNumber,
-                CreatedAt = u.CreatedAt
-            })
-            .FirstOrDefaultAsync();
-        if (user == null)
-            return NotFound();
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized();
 
-        return user;
+            var user = await _context.TUsers
+                .Where(u => u.Id == userId && u.IsActive)
+                .Select(u => new UserProfileDto
+                {
+                    Id = u.Id,
+                    PhoneNumber = u.PhoneNumber,
+                    CreatedAt = u.CreatedAt
+                })
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+                return NotFound();
+
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving user profile");
+            return StatusCode(500, "An error occurred while retrieving profile");
+        }
     }
 
     [HttpPost]
@@ -76,83 +107,118 @@ public class UsersController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
+
         if (string.IsNullOrWhiteSpace(tUsers.PhoneNumber))
             return BadRequest("Phone number is required.");
-        if (await _context.TUsers.AnyAsync(u => u.PhoneNumber == tUsers.PhoneNumber))
-            return Conflict("User with this phone number already exists.");
-        tUsers.CreatedAt = DateTime.UtcNow;
-        _context.TUsers.Add(tUsers);
-        await _context.SaveChangesAsync();
-
-        var dto = new UserProfileDto
-        {
-            Id = tUsers.Id,
-            PhoneNumber = tUsers.PhoneNumber,
-            CreatedAt = tUsers.CreatedAt
-        };
-        return CreatedAtAction(nameof(GetUser), new { id = dto.Id }, dto);
-    }
-
-    [HttpPut("{id}")]
-    [Authorize]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] TUsers tUsers)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-        if (id != tUsers.Id)
-            return BadRequest("ID mismatch");
-        var existingUser = await _context.TUsers.FindAsync(id);
-        if (existingUser == null || !existingUser.IsActive)
-            return NotFound();
-        var currentUserId = GetCurrentUserId();
-        if (currentUserId != id)
-            return Forbid();
-        existingUser.FirstName = tUsers.FirstName;
-        existingUser.LastName = tUsers.LastName;
 
         try
         {
+            if (await _context.TUsers.AnyAsync(u => u.PhoneNumber == tUsers.PhoneNumber))
+                return Conflict("User with this phone number already exists.");
+
+            tUsers.CreatedAt = DateTime.UtcNow;
+            tUsers.IsActive = true;
+
+            _context.TUsers.Add(tUsers);
+            await _context.SaveChangesAsync();
+
+            var dto = new UserProfileDto
+            {
+                Id = tUsers.Id,
+                PhoneNumber = tUsers.PhoneNumber,
+                CreatedAt = tUsers.CreatedAt
+            };
+
+            return CreatedAtAction(nameof(GetUser), new { id = dto.Id }, dto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating user");
+            return StatusCode(500, "An error occurred while creating user");
+        }
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] TUsers updateRequest)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId != id && !User.IsInRole("Admin"))
+                return Forbid();
+
+            var existingUser = await _context.TUsers.FindAsync(id);
+            if (existingUser == null || !existingUser.IsActive)
+                return NotFound();
+
+            existingUser.FirstName = updateRequest.FirstName;
+            existingUser.LastName = updateRequest.LastName;
+
             _context.Entry(existingUser).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+
+            return NoContent();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateConcurrencyException ex)
         {
+            _logger.LogError(ex, "Concurrency error updating user {UserId}", id);
             if (!await _context.TUsers.AnyAsync(u => u.Id == id))
                 return NotFound();
-            throw;
+            return Conflict("User was modified by another process");
         }
-
-        return NoContent();
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating user {UserId}", id);
+            return StatusCode(500, "An error occurred while updating user");
+        }
     }
 
     [HttpPatch("{id}/status")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ChangeUserStatus(int id, [FromBody] bool isActive)
     {
-        var user = await _context.TUsers.FindAsync(id);
-        if (user == null)
-            return NotFound();
+        try
+        {
+            var user = await _context.TUsers.FindAsync(id);
+            if (user == null)
+                return NotFound();
 
-        user.IsActive = isActive;
-        await _context.SaveChangesAsync();
+            user.IsActive = isActive;
+            await _context.SaveChangesAsync();
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error changing user status {UserId}", id);
+            return StatusCode(500, "An error occurred while changing user status");
+        }
     }
 
     [HttpDelete("{id}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        var user = await _context.TUsers.FindAsync(id);
-        if (user == null)
-            return NotFound();
+        try
+        {
+            var user = await _context.TUsers.FindAsync(id);
+            if (user == null)
+                return NotFound();
 
-        user.IsActive = false;
-        await _context.SaveChangesAsync();
+            user.IsActive = false;
+            await _context.SaveChangesAsync();
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting user {UserId}", id);
+            return StatusCode(500, "An error occurred while deleting user");
+        }
     }
-
 
     [HttpPost("login")]
     [AllowAnonymous]
@@ -160,45 +226,79 @@ public class UsersController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-        var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
 
-        if (user == null)
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var rateLimitKey = $"login_{clientIp}_{request.PhoneNumber}";
+
+        if (await IsRateLimited(rateLimitKey))
         {
-            user = new TUsers
-            {
-                PhoneNumber = request.PhoneNumber,
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true
-            };
-            _context.TUsers.Add(user);
-            await _context.SaveChangesAsync();
+            _logger.LogWarning("Rate limit exceeded for login attempt from IP: {ClientIP}, Phone: {PhoneNumber}", clientIp, request.PhoneNumber);
+            return BadRequest("Too many login attempts. Please try again later.");
         }
 
-        if (!user.IsActive)
-            return Unauthorized("Invalid credentials.");
-        var otp = GenerateOtp();
-
-        var existingOtps = _context.TUserOtps.Where(o => o.UserId == user.Id && !o.IsUsed);
-        _context.TUserOtps.RemoveRange(existingOtps);
-        var userOtp = new TUserOtp
+        try
         {
-            UserId = user.Id,
-            OtpHash = BCrypt.Net.BCrypt.HashPassword(otp),
-            ExpiresAt = DateTime.UtcNow.AddMinutes(5)
-        };
-        _context.TUserOtps.Add(userOtp);
-        await _context.SaveChangesAsync();
+            var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
 
-        var apiKey = _configuration["Kavenegar:ApiKey"];
-        var sender = _configuration["Kavenegar:SenderNumber"];
-        var receptor = request.PhoneNumber;
-        var message = $"Verification code : {otp}";
-        var template = "verify";
+            if (user == null)
+            {
+                user = new TUsers
+                {
+                    PhoneNumber = request.PhoneNumber,
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true,
+                    IsAdmin = false
+                };
+                _context.TUsers.Add(user);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("New user created with phone: {PhoneNumber}", request.PhoneNumber);
+            }
 
-        var api = new KavenegarApi(apiKey);
+            if (!user.IsActive)
+            {
+                _logger.LogWarning("Login attempt for inactive user: {PhoneNumber}", request.PhoneNumber);
+                return Unauthorized("Account is inactive.");
+            }
 
-        api.VerifyLookup(receptor, otp, template);
-        return Ok(new { Message = "OTP sent successfully" });
+            await RemoveExpiredOtps(user.Id);
+
+            var activeOtpExists = await _context.TUserOtps.AnyAsync(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
+
+            if (activeOtpExists)
+                return BadRequest("An active OTP already exists. Please wait before requesting a new one.");
+
+            var otp = GenerateSecureOtp();
+
+            var userOtp = new TUserOtp
+            {
+                UserId = user.Id,
+                OtpHash = BCrypt.Net.BCrypt.HashPassword(otp),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(5),
+                CreatedAt = DateTime.UtcNow,
+                IsUsed = false,
+                AttemptCount = 0
+            };
+
+            _context.TUserOtps.Add(userOtp);
+            await _context.SaveChangesAsync();
+
+            var apiKey = _configuration["Kavenegar:ApiKey"];
+            var template = "verify";
+
+            if (string.IsNullOrEmpty(apiKey))
+                throw new InvalidOperationException("SMS service is not configured.");
+
+            var api = new KavenegarApi(apiKey);
+            await Task.Run(() => api.VerifyLookup(request.PhoneNumber, otp, template));
+
+            _logger.LogInformation("OTP sent successfully to phone: {PhoneNumber}", request.PhoneNumber);
+            return Ok(new { Message = "OTP sent successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during login process for phone: {PhoneNumber}", request.PhoneNumber);
+            return StatusCode(500, "Failed to send SMS verification code.");
+        }
     }
 
     [HttpPost("verify-otp")]
@@ -207,153 +307,256 @@ public class UsersController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
+
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var rateLimitKey = $"otp_{clientIp}_{request.PhoneNumber}";
+
+        if (await IsRateLimited(rateLimitKey))
+            return BadRequest("Too many verification attempts. Please try again later.");
+
         var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && u.IsActive);
         if (user == null)
             return BadRequest("Invalid credentials.");
-        var storedOtp = await _context.TUserOtps.FirstOrDefaultAsync(o => o.UserId == user.Id && !o.IsUsed);
 
-        if (storedOtp == null || storedOtp.ExpiresAt <= DateTime.UtcNow || storedOtp.AttemptCount >= 5)
+        var storedOtp = await _context.TUserOtps
+            .Where(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
+            .OrderByDescending(o => o.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (storedOtp == null)
             return BadRequest("Invalid or expired OTP code.");
+
+        if (storedOtp.AttemptCount >= 3)
+        {
+            storedOtp.IsUsed = true;
+            await _context.SaveChangesAsync();
+            return BadRequest("Too many failed attempts. Please request a new OTP.");
+        }
 
         if (!BCrypt.Net.BCrypt.Verify(request.Code, storedOtp.OtpHash))
         {
             storedOtp.AttemptCount++;
             await _context.SaveChangesAsync();
-            return BadRequest("Invalid credentials.");
+            return BadRequest("Invalid OTP code.");
         }
 
         storedOtp.IsUsed = true;
         await _context.SaveChangesAsync();
 
+        await RevokeUserRefreshTokens(user.Id);
+
         var token = GenerateJwtToken(user);
-        var refreshTokenValue = Guid.NewGuid().ToString("N");
+        var refreshTokenValue = GenerateSecureToken();
+
+        var userAgent = Request.Headers.UserAgent.ToString();
+        var safeUserAgent = string.IsNullOrEmpty(userAgent) ? "unknown" : userAgent.Length > 500 ? userAgent[..500] : userAgent;
+
         var refreshToken = new TRefreshToken
         {
             UserId = user.Id,
             TokenHash = BCrypt.Net.BCrypt.HashPassword(refreshTokenValue),
             ExpiresAt = DateTime.UtcNow.AddDays(7),
             CreatedAt = DateTime.UtcNow,
-            CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "",
-            UserAgent = Request.Headers["User-Agent"].ToString()
+            CreatedByIp = clientIp,
+            UserAgent = safeUserAgent
         };
-        _context.Set<TRefreshToken>().Add(refreshToken);
+
+        _context.TRefreshToken.Add(refreshToken);
         await _context.SaveChangesAsync();
 
-        var response = new AuthResponseDto
+        return Ok(new AuthResponseDto
         {
             Token = token,
-            User = new UserProfileDto { Id = user.Id, PhoneNumber = user.PhoneNumber, CreatedAt = user.CreatedAt },
-            ExpiresAt = DateTime.UtcNow.AddHours(24),
+            User = new UserProfileDto
+            {
+                Id = user.Id,
+                PhoneNumber = user.PhoneNumber,
+                CreatedAt = user.CreatedAt
+            },
+            ExpiresAt = DateTime.UtcNow.AddHours(1),
             RefreshToken = refreshTokenValue
-        };
-        return Ok(response);
+        });
     }
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto request)
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshRequestDto request)
     {
-        var refreshTokenValue = request.RefreshToken;
-        if (string.IsNullOrWhiteSpace(refreshTokenValue))
-            return BadRequest("Refresh token is required.");
+        var storedTokens = _context.TRefreshToken
+            .Include(x => x.User)
+            .Where(x => x.ExpiresAt > DateTime.UtcNow && x.RevokedAt == null)
+            .AsEnumerable()
+            .Where(x => BCrypt.Net.BCrypt.Verify(request.RefreshToken, x.TokenHash))
+            .ToList();
 
-        var activeRefreshTokens = await _context.TRefreshToken
-            .Include(rt => rt.User)
-            .Where(rt => rt.ExpiresAt > DateTime.UtcNow && rt.RevokedAt == null)
-            .ToListAsync();
+        var storedToken = storedTokens.FirstOrDefault();
 
-        TRefreshToken? matchingToken = null;
-        foreach (var token in activeRefreshTokens)
+        if (storedToken == null || storedToken.User == null || !storedToken.User.IsActive)
+            return Unauthorized(new { message = "توکن معتبر نیست یا منقضی شده است" });
+
+        storedToken.RevokedAt = DateTime.UtcNow;
+
+        var newJwt = GenerateJwtToken(storedToken.User);
+        var newRefreshValue = GenerateSecureToken();
+
+        var userAgent = Request.Headers.UserAgent.ToString();
+        var safeUserAgent = string.IsNullOrEmpty(userAgent) ? "unknown" : userAgent.Length > 500 ? userAgent[..500] : userAgent;
+
+        var newRefresh = new TRefreshToken
         {
-            if (BCrypt.Net.BCrypt.Verify(refreshTokenValue, token.TokenHash))
-            {
-                matchingToken = token;
-                break;
-            }
-        }
-
-        if (matchingToken == null || matchingToken.User == null || !matchingToken.User.IsActive)
-            return BadRequest("Invalid or expired refresh token.");
-
-        var newRefreshTokenValue = Guid.NewGuid().ToString("N");
-        var newRefreshToken = new TRefreshToken
-        {
-            UserId = matchingToken.UserId,
-            TokenHash = BCrypt.Net.BCrypt.HashPassword(newRefreshTokenValue),
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            UserId = storedToken.UserId,
+            TokenHash = BCrypt.Net.BCrypt.HashPassword(newRefreshValue),
             CreatedAt = DateTime.UtcNow,
-            CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "",
-            UserAgent = Request.Headers["User-Agent"].ToString()
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            UserAgent = safeUserAgent
         };
 
-        matchingToken.RevokedAt = DateTime.UtcNow;
-        matchingToken.ReplacedByTokenHash = newRefreshToken.TokenHash;
-
-        _context.TRefreshToken.Add(newRefreshToken);
+        _context.TRefreshToken.Add(newRefresh);
         await _context.SaveChangesAsync();
 
-        var newJwtToken = GenerateJwtToken(matchingToken.User);
-
-        return Ok(new AuthResponseDto
+        return Ok(new
         {
-            Token = newJwtToken,
-            User = new UserProfileDto { Id = matchingToken.User.Id, PhoneNumber = matchingToken.User.PhoneNumber, CreatedAt = matchingToken.User.CreatedAt },
-            ExpiresAt = DateTime.UtcNow.AddHours(24),
-            RefreshToken = newRefreshTokenValue
+            token = newJwt,
+            refreshToken = newRefreshValue
         });
     }
 
-    private string GenerateOtp()
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] RefreshRequestDto request)
     {
-        var random = new Random();
-        return random.Next(1000, 9999).ToString();
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+            return BadRequest(new { message = "Refresh token is required" });
+
+        var query = _context.TRefreshToken
+            .Where(x => x.RevokedAt == null && x.ExpiresAt > DateTime.UtcNow)
+            .AsEnumerable()
+            .Where(x => BCrypt.Net.BCrypt.Verify(request.RefreshToken, x.TokenHash));
+
+        var tokenList = query.ToList();
+
+        if (!tokenList.Any())
+            return NotFound(new { message = "توکن یافت نشد" });
+
+        foreach (var token in tokenList)
+            token.RevokedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "خروج با موفقیت انجام شد" });
     }
 
-    private string GenerateJwtToken(TUsers user)
+    [NonAction]
+    private async Task<bool> IsRateLimited(string key, int maxAttempts = 5, int windowMinutes = 15)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "00000000000000000000000000000000"));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var now = DateTime.UtcNow;
+        var entry = await _context.TRateLimit.FirstOrDefaultAsync(r => r.Key == key);
 
-        var claims = new[]
+        if (entry == null)
         {
-            new Claim("id", user.Id.ToString()),
-            new Claim(ClaimTypes.MobilePhone, user.PhoneNumber),
-            new Claim(ClaimTypes.Role, user.IsAdmin ? "Admin" : "User"),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"] ?? "YourIssuer",
-            audience: _configuration["Jwt:Audience"] ?? "YourAudience",
-            claims: claims,
-            expires: DateTime.UtcNow.AddHours(24),
-            signingCredentials: creds
-        );
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
+            await _context.TRateLimit.AddAsync(new TRateLimit
+            {
+                Key = key,
+                Count = 1,
+                ResetAt = now.AddMinutes(windowMinutes),
+                UpdatedAt = now
+            });
+            await _context.SaveChangesAsync();
+            return false;
+        }
 
-    private int? GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        return int.TryParse(userIdClaim, out var userId) ? userId : null;
-    }
-}
+        if (entry.ResetAt < now)
+        {
+            await _context.TRateLimit
+                .Where(r => r.Key == key)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(r => r.Count, 1)
+                    .SetProperty(r => r.ResetAt, now.AddMinutes(windowMinutes))
+                    .SetProperty(r => r.UpdatedAt, now));
+            return false;
+        }
 
-public class RateLimitService
-{
-    private static readonly Dictionary<string, (int Count, DateTime ResetAt)> Limits = new();
-    private readonly int _maxAttempts = 5;
-    private readonly TimeSpan _window = TimeSpan.FromMinutes(5);
-
-    public bool IsLimited(string key)
-    {
-        if (!Limits.ContainsKey(key) || Limits[key].ResetAt < DateTime.UtcNow)
-            Limits[key] = (0, DateTime.UtcNow.Add(_window));
-
-        var entry = Limits[key];
-        if (entry.Count >= _maxAttempts)
+        if (entry.Count >= maxAttempts)
             return true;
 
-        Limits[key] = (entry.Count + 1, entry.ResetAt);
+        await _context.TRateLimit
+            .Where(r => r.Key == key)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(r => r.Count, entry.Count + 1)
+                .SetProperty(r => r.UpdatedAt, now));
+
         return false;
+    }
+
+    [NonAction]
+    public async Task RemoveExpiredOtps(int userId)
+    {
+        var query = _context.TUserOtps
+            .Where(o => o.UserId == userId && (o.ExpiresAt <= DateTime.UtcNow || o.IsUsed));
+
+        await query.ExecuteDeleteAsync();
+    }
+
+    [NonAction]
+    public async Task RevokeUserRefreshTokens(int userId)
+    {
+        var query = _context.TRefreshToken
+            .Where(rt => rt.UserId == userId && rt.RevokedAt == null && rt.ExpiresAt > DateTime.UtcNow);
+
+        await query.ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.RevokedAt, DateTime.UtcNow));
+    }
+
+    [NonAction]
+    private string GenerateSecureOtp()
+    {
+        using var rng = RandomNumberGenerator.Create();
+        var bytes = new byte[4];
+        rng.GetBytes(bytes);
+        var value = Math.Abs(BitConverter.ToInt32(bytes, 0)) % 9000 + 1000;
+        return value.ToString();
+    }
+
+    [NonAction]
+    private string GenerateSecureToken()
+    {
+        using var rng = RandomNumberGenerator.Create();
+        var bytes = new byte[32];
+        rng.GetBytes(bytes);
+        return Convert.ToBase64String(bytes);
+    }
+    
+    [NonAction]
+    private string GenerateJwtToken(TUsers user)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
+
+        var claims = new List<Claim>
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+        new Claim(JwtRegisteredClaimNames.UniqueName, user.PhoneNumber),
+        new Claim("isAdmin", user.IsAdmin.ToString())
+    };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddHours(1),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            Audience = _configuration["Jwt:Audience"],
+            Issuer = _configuration["Jwt:Issuer"]
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+
+    [NonAction]
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
+        if (userIdClaim == null)
+            throw new UnauthorizedAccessException("کاربر احراز هویت نشده است");
+        return int.Parse(userIdClaim.Value);
     }
 }

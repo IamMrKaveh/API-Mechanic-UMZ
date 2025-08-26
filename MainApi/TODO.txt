@@ -1,0 +1,122 @@
+﻿# گزارش ایرادات حیاتی پروژه
+
+## ایرادات Data Integrity
+
+### 4. Stock Management غیر Atomic
+- **ایراد**: در checkout process، validation موجودی و کاهش stock در transaction های جداگانه انجام می‌شود
+- **محل**: `OrdersController.CheckoutFromCart`
+- **خطر**: Negative stock و overselling
+
+### 5. Cart Total Calculation
+- **ایراد**: `UpdateCartTotalsAsync` در صورت null بودن `SellingPrice` مقدار 0 در نظر می‌گیرد
+- **محل**: `CartService.UpdateCartTotalsAsync`
+- **خطر**: نادیده گیری محصولات بدون قیمت
+
+### 6. Missing Foreign Key Constraints
+- **ایراد**: برخی روابط foreign key بدون proper cascade behavior تعریف شده‌اند
+- **محل**: `MechanicContext.OnModelCreating`
+- **خطر**: Orphaned records و data inconsistency
+
+## ایرادات Performance
+
+### 7. N+1 Query Problem
+- **ایراد**: در `GetCartItems` و سایر endpoint ها Include های غیرضروری
+- **محل**: `CartItemsController.GetCartItems`
+- **خطر**: Performance degradation در data های زیاد
+
+### 8. Inefficient Bulk Operations
+- **ایراد**: حلقه foreach برای update کردن محصولات در `PostTOrders`
+- **محل**: `OrdersController.PostTOrders`
+- **خطر**: کند شدن در order های بزرگ
+
+## ایرادات Validation
+
+### 9. Inadequate Input Validation
+- **ایراد**: فقط model validation انجام می‌شود، business rule validation ناکافی است
+- **محل**: اکثر Controller ها
+- **خطر**: ایجاد data corruption
+
+### 10. Phone Number Validation
+- **ایراد**: فقط `[Phone]` attribute استفاده شده، format validation خاصی نیست
+- **محل**: `LoginRequestDto` و `TUsers`
+- **خطر**: قبول phone number های نامعتبر
+
+### 11. Quantity Validation
+- **ایراد**: حداکثر quantity 1000 hard-coded است بدون توجه به stock واقعی
+- **محل**: `CartItemsController`
+- **خطر**: User experience ضعیف و validation غیرمنطقی
+
+## ایرادات Error Handling
+
+### 12. Generic Exception Handling
+- **ایراد**: catch کردن `Exception` به جای specific exceptions
+- **محل**: تمام Controller ها
+- **خطر**: پنهان شدن ایرادات واقعی
+
+### 13. Transaction Rollback Issues
+- **ایراد**: در برخی موارد transaction rollback انجام می‌شود ولی error message مناسب برنمی‌گردد
+- **محل**: `OrdersController.PostTOrders`
+- **خطر**: Confusion برای end user
+
+### 14. SMS Service Error Handling
+- **ایراد**: exception در SMS service باعث failure کل login process می‌شود
+- **محل**: `UsersController.Login`
+- **خطر**: Block شدن کاربران در صورت مشکل SMS service
+
+## ایرادات Business Logic
+
+### 15. OTP Security
+- **ایراد**: OTP فقط 4 رقم است که به راحتی قابل brute force است
+- **محل**: `GenerateSecureOtp`
+- **خطر**: Security vulnerability
+
+### 16. Refresh Token Rotation
+- **ایراد**: old refresh token ها revoke می‌شوند ولی cleanup mechanism وجود ندارد
+- **محل**: `UsersController.Refresh`
+- **خطر**: Database bloat
+
+### 17. Order Status Validation
+- **ایراد**: هیچ validation برای logical flow وضعیت سفارش وجود ندارد
+- **محل**: `OrdersController.UpdateOrderStatus`
+- **خطر**: غیرمنطقی بودن workflow
+
+## ایرادات Resource Management
+
+### 18. Connection Management
+- **ایراد**: استفاده از `using var` ولی dispose pattern کامل implement نشده
+- **محل**: Controller ها
+- **خطر**: Memory leaks احتمالی
+
+### 19. Large Result Sets
+- **ایراد**: هیچ محدودیت default برای result size وجود ندارد
+- **محل**: `GetProducts`, `GetTOrders`
+- **خطر**: Memory exhaustion در datasets بزرگ
+
+## ایرادات Configuration
+
+### 20. Magic Numbers
+- **ایراد**: مقادیر hard-coded مثل OTP expiry (5 minutes), token expiry (1 hour)
+- **محل**: `UsersController`
+- **خطر**: سخت بودن configuration و maintenance
+
+### 21. Missing Environment Checks
+- **ایراد**: هیچ validation برای required configuration values در startup وجود ندارد
+- **محل**: کل پروژه
+- **خطر**: Runtime failures در production
+
+## توصیه‌های اولویت‌دار
+
+**فوری (Critical)**:
+1. رفع مشکل stock concurrency
+2. بهبود OTP security
+3. اصلاح error handling
+
+**مهم (High)**:
+4. بهبود input validation
+5. اصلاح transaction management
+6. رفع N+1 query problems
+
+**متوسط (Medium)**:
+7. Configuration management
+8. Resource cleanup
+9. Performance optimization

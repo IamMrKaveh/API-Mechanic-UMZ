@@ -187,7 +187,9 @@ public class CreateOrderItemDto
 {
     public int UserOrderId { get; set; }
     public int ProductId { get; set; }
+    [Range(1, int.MaxValue, ErrorMessage = "Selling price must be greater than 0")]
     public int SellingPrice { get; set; }
+    [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0")]
     public int Quantity { get; set; }
 }
 
@@ -281,7 +283,6 @@ public class TOrders
 
     public virtual ICollection<TOrderItems> OrderItems 
     { get; set; } = new List<TOrderItems>();
-
     public int TotalAmount { get; set; }
     public int TotalProfit { get; set; }
 
@@ -290,6 +291,9 @@ public class TOrders
 
     public virtual TOrderStatus? OrderStatus { get; set; }
     public int OrderStatusId { get; set; }
+
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 }
 
 
@@ -302,6 +306,39 @@ public class TOrderStatus
     public string? Icon { get; set; }
 
     public virtual ICollection<TOrders>? Orders { get; set; }
+}
+
+
+namespace DataAccessLayer.Models.Security;
+
+public class TRateLimit
+{
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    [MaxLength(200)]
+    public string Key { get; set; } = string.Empty;
+
+    [Required]
+    public int Count { get; set; }
+
+    [Required]
+    public DateTime ResetAt { get; set; }
+
+    [Required]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+
+namespace DataAccessLayer.Models.Security;
+
+public class TRateLimits
+{
+    public int Id { get; set; }
+    public string PhoneNumber { get; set; } = string.Empty;
+    public int Attempts { get; set; }
+    public DateTime LastAttempt { get; set; }
 }
 
 
@@ -392,4 +429,5 @@ public class TUsers
 
     public virtual ICollection<TUserOtp> UserOtps { get; set; } = new List<TUserOtp>();
 
+    public virtual ICollection<TRefreshToken> RefreshTokens { get; set; } = new List<TRefreshToken>();
 }

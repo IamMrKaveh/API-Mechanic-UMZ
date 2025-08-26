@@ -41,23 +41,34 @@ namespace DataAccessLayer.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "TRefreshToken",
+                name: "TRateLimit",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
-                    TokenHash = table.Column<string>(type: "text", nullable: false),
-                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedByIp = table.Column<string>(type: "text", nullable: false),
-                    RevokedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ReplacedByTokenHash = table.Column<string>(type: "text", nullable: true),
-                    UserAgent = table.Column<string>(type: "text", nullable: true)
+                    Key = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Count = table.Column<int>(type: "integer", nullable: false),
+                    ResetAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TRefreshToken", x => x.Id);
+                    table.PrimaryKey("PK_TRateLimit", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TRateLimits",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PhoneNumber = table.Column<string>(type: "text", nullable: false),
+                    Attempts = table.Column<int>(type: "integer", nullable: false),
+                    LastAttempt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TRateLimits", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -109,7 +120,9 @@ namespace DataAccessLayer.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false)
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    TotalItems = table.Column<int>(type: "integer", nullable: false),
+                    TotalPrice = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -135,7 +148,8 @@ namespace DataAccessLayer.Migrations
                     TotalProfit = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DeliveryDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    OrderStatusId = table.Column<int>(type: "integer", nullable: false)
+                    OrderStatusId = table.Column<int>(type: "integer", nullable: false),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -153,6 +167,32 @@ namespace DataAccessLayer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "TRefreshToken",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    TokenHash = table.Column<string>(type: "text", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedByIp = table.Column<string>(type: "text", nullable: false),
+                    RevokedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ReplacedByTokenHash = table.Column<string>(type: "text", nullable: true),
+                    UserAgent = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TRefreshToken", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TRefreshToken_TUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "TUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TUserOtps",
                 columns: table => new
                 {
@@ -162,7 +202,8 @@ namespace DataAccessLayer.Migrations
                     OtpHash = table.Column<string>(type: "text", nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "TIMEZONE('UTC', NOW())"),
-                    IsUsed = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
+                    IsUsed = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    AttemptCount = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -243,9 +284,10 @@ namespace DataAccessLayer.Migrations
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TCarts_UserId",
+                name: "IX_Carts_UserId_Unique",
                 table: "TCarts",
-                column: "UserId");
+                column: "UserId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_TOrderItems_ProductId",
@@ -273,6 +315,17 @@ namespace DataAccessLayer.Migrations
                 column: "ProductTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_TRateLimit_Key",
+                table: "TRateLimit",
+                column: "Key",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TRefreshToken_UserId",
+                table: "TRefreshToken",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_TUserOtps_UserId",
                 table: "TUserOtps",
                 column: "UserId");
@@ -292,6 +345,12 @@ namespace DataAccessLayer.Migrations
 
             migrationBuilder.DropTable(
                 name: "TOrderItems");
+
+            migrationBuilder.DropTable(
+                name: "TRateLimit");
+
+            migrationBuilder.DropTable(
+                name: "TRateLimits");
 
             migrationBuilder.DropTable(
                 name: "TRefreshToken");
