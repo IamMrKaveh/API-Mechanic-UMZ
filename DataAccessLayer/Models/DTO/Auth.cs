@@ -1,4 +1,4 @@
-﻿namespace DataAccessLayer.Models.Auth;
+﻿namespace DataAccessLayer.Models.DTO;
 
 public class LoginRequestDto
 {

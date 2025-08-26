@@ -60,18 +60,18 @@ public class OrdersController : ControllerBase
                 o.DeliveryDate,
                 User = new
                 {
-                    o.User.Id,
+                    o.User!.Id,
                     o.User.PhoneNumber,
                     o.User.FirstName,
                     o.User.LastName
                 },
                 OrderStatus = new
                 {
-                    o.OrderStatus.Id,
+                    o.OrderStatus!.Id,
                     o.OrderStatus.Name,
                     o.OrderStatus.Icon
                 },
-                OrderItemsCount = o.OrderItems.Count()
+                OrderItemsCount = o.OrderItems.Count
             })
             .ToListAsync();
 
@@ -96,7 +96,8 @@ public class OrdersController : ControllerBase
             .Include(o => o.OrderStatus)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.Product)
-                    .ThenInclude(p => p.ProductType)
+                    .ThenInclude(p => p!.ProductType)
+            .Where(o => o.Id == id)
             .Select(o => new
             {
                 o.Id,
@@ -109,14 +110,14 @@ public class OrdersController : ControllerBase
                 o.DeliveryDate,
                 User = new
                 {
-                    o.User.Id,
+                    o.User!.Id,
                     o.User.PhoneNumber,
                     o.User.FirstName,
                     o.User.LastName
                 },
                 OrderStatus = new
                 {
-                    o.OrderStatus.Id,
+                    o.OrderStatus!.Id,
                     o.OrderStatus.Name,
                     o.OrderStatus.Icon
                 },
@@ -130,30 +131,31 @@ public class OrdersController : ControllerBase
                     oi.Profit,
                     Product = new
                     {
-                        oi.Product.Id,
+                        oi.Product!.Id,
                         oi.Product.Name,
                         oi.Product.Icon,
-                        ProductType = new
+                        ProductType = oi.Product.ProductType != null ? new
                         {
                             oi.Product.ProductType.Id,
                             oi.Product.ProductType.Name
-                        }
+                        } : null
                     }
                 })
             })
-            .FirstOrDefaultAsync(o => o.Id == id);
+            .FirstOrDefaultAsync();
 
         if (order == null)
-            return NotFound();
+            return NotFound("Order not found");
 
         return Ok(order);
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TOrders>> PostTOrders(CreateOrderDto orderDto)
     {
-        if (orderDto == null)
-            return BadRequest("Order data is required");
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
         if (string.IsNullOrWhiteSpace(orderDto.Address) || string.IsNullOrWhiteSpace(orderDto.PostalCode))
             return BadRequest("Address and PostalCode are required");
@@ -161,48 +163,28 @@ public class OrdersController : ControllerBase
         if (orderDto.OrderItems == null || !orderDto.OrderItems.Any())
             return BadRequest("At least one order item is required");
 
-        if (!await _context.TUsers.AnyAsync(u => u.Id == orderDto.UserId))
+        var userExists = await _context.TUsers.AnyAsync(u => u.Id == orderDto.UserId);
+        if (!userExists)
             return BadRequest("Invalid user ID");
 
-        if (!await _context.TOrderStatus.AnyAsync(s => s.Id == orderDto.OrderStatusId))
+        var statusExists = await _context.TOrderStatus.AnyAsync(s => s.Id == orderDto.OrderStatusId);
+        if (!statusExists)
             return BadRequest("Invalid order status ID");
 
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var order = new TOrders
-            {
-                UserId = orderDto.UserId,
-                Name = orderDto.Name,
-                Address = orderDto.Address,
-                PostalCode = orderDto.PostalCode,
-                CreatedAt = DateTime.UtcNow,
-                OrderStatusId = orderDto.OrderStatusId,
-                DeliveryDate = orderDto.DeliveryDate
-            };
-
-            _context.TOrders.Add(order);
-            await _context.SaveChangesAsync();
+            var productIds = orderDto.OrderItems.Select(i => i.ProductId).ToList();
+            var products = await _context.TProducts
+                .Where(p => productIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id, p => p);
 
             var totalAmount = 0;
             var totalProfit = 0;
 
             foreach (var itemDto in orderDto.OrderItems)
             {
-                if (itemDto.Quantity <= 0)
-                {
-                    await transaction.RollbackAsync();
-                    return BadRequest($"Invalid quantity for product {itemDto.ProductId}");
-                }
-
-                if (itemDto.SellingPrice <= 0)
-                {
-                    await transaction.RollbackAsync();
-                    return BadRequest($"Invalid selling price for product {itemDto.ProductId}");
-                }
-
-                var product = await _context.TProducts.FindAsync(itemDto.ProductId);
-                if (product == null)
+                if (!products.TryGetValue(itemDto.ProductId, out var product))
                 {
                     await transaction.RollbackAsync();
                     return BadRequest($"Product {itemDto.ProductId} not found");
@@ -214,48 +196,67 @@ public class OrdersController : ControllerBase
                     return BadRequest($"Product {itemDto.ProductId} insufficient stock. Available: {product.Count ?? 0}, Requested: {itemDto.Quantity}");
                 }
 
-                var orderItem = new TOrderItems
-                {
-                    UserOrderId = order.Id,
-                    ProductId = itemDto.ProductId,
-                    PurchasePrice = product.PurchasePrice ?? 0,
-                    SellingPrice = itemDto.SellingPrice,
-                    Quantity = itemDto.Quantity,
-                    Amount = itemDto.SellingPrice * itemDto.Quantity,
-                    Profit = (itemDto.SellingPrice - (product.PurchasePrice ?? 0)) * itemDto.Quantity
-                };
+                product.Count = Math.Max(0, (product.Count ?? 0) - itemDto.Quantity);
 
-                totalAmount += orderItem.Amount;
-                totalProfit += orderItem.Profit;
+                var amount = itemDto.SellingPrice * itemDto.Quantity;
+                var profit = (itemDto.SellingPrice - (product.PurchasePrice ?? 0)) * itemDto.Quantity;
 
-                product.Count -= itemDto.Quantity;
-                _context.TOrderItems.Add(orderItem);
+                totalAmount += amount;
+                totalProfit += profit;
             }
 
-            order.TotalAmount = totalAmount;
-            order.TotalProfit = totalProfit;
+            var order = new TOrders
+            {
+                UserId = orderDto.UserId,
+                Name = orderDto.Name,
+                Address = orderDto.Address,
+                PostalCode = orderDto.PostalCode,
+                CreatedAt = DateTime.UtcNow,
+                OrderStatusId = orderDto.OrderStatusId,
+                DeliveryDate = orderDto.DeliveryDate,
+                TotalAmount = totalAmount,
+                TotalProfit = totalProfit
+            };
 
+            _context.TOrders.Add(order);
+            await _context.SaveChangesAsync();
+
+            var orderItems = orderDto.OrderItems.Select(itemDto => new TOrderItems
+            {
+                UserOrderId = order.Id,
+                ProductId = itemDto.ProductId,
+                PurchasePrice = products[itemDto.ProductId].PurchasePrice ?? 0,
+                SellingPrice = itemDto.SellingPrice,
+                Quantity = itemDto.Quantity,
+                Amount = itemDto.SellingPrice * itemDto.Quantity,
+                Profit = (itemDto.SellingPrice - (products[itemDto.ProductId].PurchasePrice ?? 0)) * itemDto.Quantity
+            }).ToList();
+
+            _context.TOrderItems.AddRange(orderItems);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
             return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            throw;
+            return StatusCode(500, $"An error occurred while creating the order: {ex.Message}");
         }
     }
 
     [HttpPost("checkout-from-cart")]
     public async Task<ActionResult<TOrders>> CheckoutFromCart([FromBody] CreateOrderDto orderDto)
     {
-        if (orderDto == null || string.IsNullOrWhiteSpace(orderDto.Address) || string.IsNullOrWhiteSpace(orderDto.PostalCode))
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (string.IsNullOrWhiteSpace(orderDto.Address) || string.IsNullOrWhiteSpace(orderDto.PostalCode))
             return BadRequest("Address and PostalCode are required");
 
         var userId = GetCurrentUserId();
-        if (userId == null)
-            return Unauthorized();
+        if (!userId.HasValue)
+            return Unauthorized("User not authenticated");
 
         var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
         if (!string.IsNullOrEmpty(idempotencyKey))
@@ -274,24 +275,16 @@ public class OrdersController : ControllerBase
                 .ThenInclude(ci => ci.Product)
                 .FirstOrDefaultAsync(c => c.UserId == userId.Value);
 
-            if (cart == null || cart.CartItems == null || !cart.CartItems.Any())
-                return BadRequest("Cart is empty");
-
-            var order = new TOrders
+            if (cart == null || !cart.CartItems.Any())
             {
-                UserId = userId.Value,
-                Name = idempotencyKey ?? $"Order-{Guid.NewGuid()}",
-                Address = orderDto.Address,
-                PostalCode = orderDto.PostalCode,
-                CreatedAt = DateTime.UtcNow,
-                OrderStatusId = 1
-            };
+                await transaction.RollbackAsync();
+                return BadRequest("Cart is empty");
+            }
 
-            _context.TOrders.Add(order);
-            await _context.SaveChangesAsync();
-
+            var productUpdates = new List<TProducts>();
             var totalAmount = 0;
             var totalProfit = 0;
+            var orderItems = new List<TOrderItems>();
 
             foreach (var item in cart.CartItems)
             {
@@ -301,7 +294,10 @@ public class OrdersController : ControllerBase
                     return BadRequest($"Invalid quantity for product {item.ProductId}");
                 }
 
-                var product = await _context.TProducts.FirstOrDefaultAsync(p => p.Id == item.ProductId);
+                var product = await _context.TProducts
+                    .Where(p => p.Id == item.ProductId)
+                    .FirstOrDefaultAsync();
+
                 if (product == null)
                 {
                     await transaction.RollbackAsync();
@@ -320,9 +316,11 @@ public class OrdersController : ControllerBase
                     return BadRequest($"Product {item.ProductId} has invalid price");
                 }
 
+                product.Count = Math.Max(0, (product.Count ?? 0) - item.Quantity);
+                productUpdates.Add(product);
+
                 var orderItem = new TOrderItems
                 {
-                    UserOrderId = order.Id,
                     ProductId = product.Id,
                     PurchasePrice = product.PurchasePrice ?? 0,
                     SellingPrice = product.SellingPrice ?? 0,
@@ -333,14 +331,31 @@ public class OrdersController : ControllerBase
 
                 totalAmount += orderItem.Amount;
                 totalProfit += orderItem.Profit;
-
-                product.Count -= item.Quantity;
-                _context.TOrderItems.Add(orderItem);
+                orderItems.Add(orderItem);
             }
 
-            order.TotalAmount = totalAmount;
-            order.TotalProfit = totalProfit;
+            var order = new TOrders
+            {
+                UserId = userId.Value,
+                Name = idempotencyKey ?? $"Order-{Guid.NewGuid()}",
+                Address = orderDto.Address,
+                PostalCode = orderDto.PostalCode,
+                CreatedAt = DateTime.UtcNow,
+                OrderStatusId = 1,
+                TotalAmount = totalAmount,
+                TotalProfit = totalProfit
+            };
 
+            _context.TOrders.Add(order);
+            await _context.SaveChangesAsync();
+
+            foreach (var orderItem in orderItems)
+            {
+                orderItem.UserOrderId = order.Id;
+            }
+
+            _context.TOrderItems.AddRange(orderItems);
+            _context.TProducts.UpdateRange(productUpdates);
             _context.TCartItems.RemoveRange(cart.CartItems);
 
             await _context.SaveChangesAsync();
@@ -348,34 +363,42 @@ public class OrdersController : ControllerBase
 
             return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            throw;
+            return StatusCode(500, "An error occurred while processing the checkout");
         }
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> PutTOrders(int id, UpdateOrderDto orderDto)
     {
         if (id <= 0)
             return BadRequest("Invalid order ID");
 
-        if (orderDto == null)
-            return BadRequest("Order data is required");
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
         var order = await _context.TOrders.FindAsync(id);
         if (order == null)
-            return NotFound();
+            return NotFound("Order not found");
 
-        if (orderDto.OrderStatusId.HasValue && !await _context.TOrderStatus.AnyAsync(s => s.Id == orderDto.OrderStatusId.Value))
-            return BadRequest("Invalid order status ID");
+        if (orderDto.OrderStatusId.HasValue)
+        {
+            var statusExists = await _context.TOrderStatus.AnyAsync(s => s.Id == orderDto.OrderStatusId.Value);
+            if (!statusExists)
+                return BadRequest("Invalid order status ID");
+        }
 
-        order.Name = orderDto.Name ?? order.Name;
-        order.Address = orderDto.Address ?? order.Address;
-        order.PostalCode = orderDto.PostalCode ?? order.PostalCode;
-        order.DeliveryDate = orderDto.DeliveryDate ?? order.DeliveryDate;
-
+        if (!string.IsNullOrWhiteSpace(orderDto.Name))
+            order.Name = orderDto.Name;
+        if (!string.IsNullOrWhiteSpace(orderDto.Address))
+            order.Address = orderDto.Address;
+        if (!string.IsNullOrWhiteSpace(orderDto.PostalCode))
+            order.PostalCode = orderDto.PostalCode;
+        if (orderDto.DeliveryDate.HasValue)
+            order.DeliveryDate = orderDto.DeliveryDate;
         if (orderDto.OrderStatusId.HasValue)
             order.OrderStatusId = orderDto.OrderStatusId.Value;
 
@@ -386,26 +409,32 @@ public class OrdersController : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!TOrdersExists(id))
-                return NotFound();
+            if (!await TOrdersExistsAsync(id))
+                return NotFound("Order not found");
             throw;
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "An error occurred while updating the order");
         }
     }
 
     [HttpPut("{id}/status")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusDto statusDto)
     {
         if (id <= 0)
             return BadRequest("Invalid order ID");
 
-        if (statusDto == null)
-            return BadRequest("Status data is required");
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
         var order = await _context.TOrders.FindAsync(id);
         if (order == null)
-            return NotFound();
+            return NotFound("Order not found");
 
-        if (!await _context.TOrderStatus.AnyAsync(s => s.Id == statusDto.OrderStatusId))
+        var statusExists = await _context.TOrderStatus.AnyAsync(s => s.Id == statusDto.OrderStatusId);
+        if (!statusExists)
             return BadRequest("Invalid order status ID");
 
         order.OrderStatusId = statusDto.OrderStatusId;
@@ -417,63 +446,76 @@ public class OrdersController : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!TOrdersExists(id))
-                return NotFound();
+            if (!await TOrdersExistsAsync(id))
+                return NotFound("Order not found");
             throw;
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "An error occurred while updating the order status");
         }
     }
 
     [HttpGet("statistics")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<object>> GetOrderStatistics(
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null)
     {
-        var query = _context.TOrders.AsQueryable();
-
-        if (fromDate.HasValue)
-            query = query.Where(o => o.CreatedAt >= fromDate.Value);
-
-        if (toDate.HasValue)
-            query = query.Where(o => o.CreatedAt <= toDate.Value);
-
-        var statistics = await query
-            .GroupBy(o => 1)
-            .Select(g => new
-            {
-                TotalOrders = g.Count(),
-                TotalRevenue = g.Sum(o => o.TotalAmount),
-                TotalProfit = g.Sum(o => o.TotalProfit),
-                AverageOrderValue = g.Average(o => (double)o.TotalAmount)
-            })
-            .FirstOrDefaultAsync();
-
-        var statusStatistics = await _context.TOrders
-            .Include(o => o.OrderStatus)
-            .Where(o => fromDate == null || o.CreatedAt >= fromDate.Value)
-            .Where(o => toDate == null || o.CreatedAt <= toDate.Value)
-            .GroupBy(o => new { o.OrderStatusId, o.OrderStatus.Name })
-            .Select(g => new
-            {
-                StatusId = g.Key.OrderStatusId,
-                StatusName = g.Key.Name,
-                Count = g.Count()
-            })
-            .ToListAsync();
-
-        return Ok(new
+        try
         {
-            GeneralStatistics = statistics ?? new
+            var query = _context.TOrders.AsQueryable();
+
+            if (fromDate.HasValue)
+                query = query.Where(o => o.CreatedAt >= fromDate.Value);
+
+            if (toDate.HasValue)
+                query = query.Where(o => o.CreatedAt <= toDate.Value);
+
+            var statistics = await query
+                .GroupBy(o => 1)
+                .Select(g => new
+                {
+                    TotalOrders = g.Count(),
+                    TotalRevenue = g.Sum(o => o.TotalAmount),
+                    TotalProfit = g.Sum(o => o.TotalProfit),
+                    AverageOrderValue = g.Average(o => (double)o.TotalAmount)
+                })
+                .FirstOrDefaultAsync();
+
+            var statusStatistics = await _context.TOrders
+                .Include(o => o.OrderStatus)
+                .Where(o => !fromDate.HasValue || o.CreatedAt >= fromDate.Value)
+                .Where(o => !toDate.HasValue || o.CreatedAt <= toDate.Value)
+                .GroupBy(o => new { o.OrderStatusId, o.OrderStatus!.Name })
+                .Select(g => new
+                {
+                    StatusId = g.Key.OrderStatusId,
+                    StatusName = g.Key.Name,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+
+            return Ok(new
             {
-                TotalOrders = 0,
-                TotalRevenue = 0,
-                TotalProfit = 0,
-                AverageOrderValue = 0.0
-            },
-            StatusStatistics = statusStatistics
-        });
+                GeneralStatistics = statistics ?? new
+                {
+                    TotalOrders = 0,
+                    TotalRevenue = 0,
+                    TotalProfit = 0,
+                    AverageOrderValue = 0.0
+                },
+                StatusStatistics = statusStatistics
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "An error occurred while retrieving statistics");
+        }
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteTOrders(int id)
     {
         if (id <= 0)
@@ -488,13 +530,13 @@ public class OrdersController : ControllerBase
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null)
-                return NotFound();
+                return NotFound("Order not found");
 
             foreach (var orderItem in order.OrderItems)
             {
                 if (orderItem.Product != null)
                 {
-                    orderItem.Product.Count += orderItem.Quantity;
+                    orderItem.Product.Count = (orderItem.Product.Count ?? 0) + orderItem.Quantity;
                 }
             }
 
@@ -506,16 +548,16 @@ public class OrdersController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            throw;
+            return StatusCode(500, "An error occurred while deleting the order");
         }
     }
 
-    private bool TOrdersExists(int id)
+    private async Task<bool> TOrdersExistsAsync(int id)
     {
-        return _context.TOrders.Any(e => e.Id == id);
+        return await _context.TOrders.AnyAsync(e => e.Id == id);
     }
 
     private int? GetCurrentUserId()

@@ -28,19 +28,34 @@ public class OrderStatusController : ControllerBase
         return Ok(orderStatuses);
     }
 
-    [HttpGet("no-order/{id}")]
+    [HttpGet("{id}")]
     public async Task<ActionResult<object>> GetTOrderStatus(int id)
     {
         if (id <= 0)
             return BadRequest("Invalid order status ID");
 
         var orderStatus = await _context.TOrderStatus
+            .Include(s => s.Orders)
             .Select(s => new
             {
                 s.Id,
                 s.Name,
                 s.Icon,
                 OrderCount = s.Orders != null ? s.Orders.Count() : 0,
+                Orders = s.Orders != null ? s.Orders.Select(o => new
+                {
+                    o.Id,
+                    o.Name,
+                    o.TotalAmount,
+                    o.CreatedAt,
+                    User = new
+                    {
+                        o.User.Id,
+                        o.User.PhoneNumber,
+                        o.User.FirstName,
+                        o.User.LastName
+                    }
+                }).Cast<object>().ToList() : new List<object>()
             })
             .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -59,10 +74,16 @@ public class OrderStatusController : ControllerBase
         if (string.IsNullOrWhiteSpace(statusDto.Name))
             return BadRequest("Name is required");
 
+        var existingStatus = await _context.TOrderStatus
+            .FirstOrDefaultAsync(s => s.Name.ToLower() == statusDto.Name.ToLower());
+
+        if (existingStatus != null)
+            return BadRequest("Order status with this name already exists");
+
         var orderStatus = new TOrderStatus
         {
-            Name = statusDto.Name,
-            Icon = statusDto.Icon
+            Name = statusDto.Name.Trim(),
+            Icon = statusDto.Icon?.Trim()
         };
 
         _context.TOrderStatus.Add(orderStatus);
@@ -88,11 +109,18 @@ public class OrderStatusController : ControllerBase
         {
             if (string.IsNullOrWhiteSpace(statusDto.Name))
                 return BadRequest("Name cannot be empty");
-            orderStatus.Name = statusDto.Name;
+
+            var existingStatus = await _context.TOrderStatus
+                .FirstOrDefaultAsync(s => s.Name.ToLower() == statusDto.Name.ToLower() && s.Id != id);
+
+            if (existingStatus != null)
+                return BadRequest("Order status with this name already exists");
+
+            orderStatus.Name = statusDto.Name.Trim();
         }
 
         if (statusDto.Icon != null)
-            orderStatus.Icon = statusDto.Icon;
+            orderStatus.Icon = statusDto.Icon.Trim();
 
         try
         {

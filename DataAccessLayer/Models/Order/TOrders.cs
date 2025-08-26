@@ -1,6 +1,4 @@
-﻿namespace DataAccessLayer.Models.Order;
-
-public class TOrders
+﻿public class TOrders
 {
     [Key]
     public int Id { get; set; }
@@ -12,9 +10,8 @@ public class TOrders
     public string? Address { get; set; }
     public string? PostalCode { get; set; }
 
-    public virtual ICollection<TOrderItems> OrderItems 
+    public virtual ICollection<TOrderItems> OrderItems
     { get; set; } = new List<TOrderItems>();
-
     public int TotalAmount { get; set; }
     public int TotalProfit { get; set; }
 
@@ -23,4 +20,7 @@ public class TOrders
 
     public virtual TOrderStatus? OrderStatus { get; set; }
     public int OrderStatusId { get; set; }
+
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 }

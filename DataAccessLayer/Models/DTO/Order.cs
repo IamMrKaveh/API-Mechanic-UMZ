@@ -37,7 +37,9 @@ public class CreateOrderItemDto
 {
     public int UserOrderId { get; set; }
     public int ProductId { get; set; }
+    [Range(1, int.MaxValue, ErrorMessage = "Selling price must be greater than 0")]
     public int SellingPrice { get; set; }
+    [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0")]
     public int Quantity { get; set; }
 }
 

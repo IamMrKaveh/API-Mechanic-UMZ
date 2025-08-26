@@ -58,6 +58,8 @@ namespace DataAccessLayer.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("TRefreshToken");
                 });
 
@@ -99,12 +101,20 @@ namespace DataAccessLayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("TotalItems")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalPrice")
+                        .HasColumnType("integer");
+
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Carts_UserId_Unique");
 
                     b.ToTable("TCarts");
                 });
@@ -164,50 +174,6 @@ namespace DataAccessLayer.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("TOrderStatus");
-                });
-
-            modelBuilder.Entity("DataAccessLayer.Models.Order.TOrders", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Address")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("text");
-
-                    b.Property<int>("OrderStatusId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PostalCode")
-                        .HasColumnType("text");
-
-                    b.Property<int>("TotalAmount")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TotalProfit")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderStatusId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("TOrders");
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.Product.TProductTypes", b =>
@@ -270,6 +236,59 @@ namespace DataAccessLayer.Migrations
                     b.ToTable("TProducts");
                 });
 
+            modelBuilder.Entity("DataAccessLayer.Models.Security.TRateLimit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Count")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("ResetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("TRateLimit");
+                });
+
+            modelBuilder.Entity("DataAccessLayer.Models.Security.TRateLimits", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("LastAttempt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TRateLimits");
+                });
+
             modelBuilder.Entity("DataAccessLayer.Models.User.TUserOtp", b =>
                 {
                     b.Property<int>("Id")
@@ -277,6 +296,9 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -340,6 +362,66 @@ namespace DataAccessLayer.Migrations
                     b.ToTable("TUsers");
                 });
 
+            modelBuilder.Entity("TOrders", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeliveryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<int>("OrderStatusId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PostalCode")
+                        .HasColumnType("text");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<int>("TotalAmount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalProfit")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderStatusId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TOrders");
+                });
+
+            modelBuilder.Entity("DataAccessLayer.Models.Auth.TRefreshToken", b =>
+                {
+                    b.HasOne("DataAccessLayer.Models.User.TUsers", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("DataAccessLayer.Models.Cart.TCartItems", b =>
                 {
                     b.HasOne("DataAccessLayer.Models.Cart.TCarts", "Cart")
@@ -378,7 +460,7 @@ namespace DataAccessLayer.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("DataAccessLayer.Models.Order.TOrders", "UserOrder")
+                    b.HasOne("TOrders", "UserOrder")
                         .WithMany("OrderItems")
                         .HasForeignKey("UserOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -387,25 +469,6 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("UserOrder");
-                });
-
-            modelBuilder.Entity("DataAccessLayer.Models.Order.TOrders", b =>
-                {
-                    b.HasOne("DataAccessLayer.Models.Order.TOrderStatus", "OrderStatus")
-                        .WithMany("Orders")
-                        .HasForeignKey("OrderStatusId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("DataAccessLayer.Models.User.TUsers", "User")
-                        .WithMany("UserOrders")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("OrderStatus");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.Product.TProducts", b =>
@@ -429,6 +492,25 @@ namespace DataAccessLayer.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TOrders", b =>
+                {
+                    b.HasOne("DataAccessLayer.Models.Order.TOrderStatus", "OrderStatus")
+                        .WithMany("Orders")
+                        .HasForeignKey("OrderStatusId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("DataAccessLayer.Models.User.TUsers", "User")
+                        .WithMany("UserOrders")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("OrderStatus");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("DataAccessLayer.Models.Cart.TCarts", b =>
                 {
                     b.Navigation("CartItems");
@@ -437,11 +519,6 @@ namespace DataAccessLayer.Migrations
             modelBuilder.Entity("DataAccessLayer.Models.Order.TOrderStatus", b =>
                 {
                     b.Navigation("Orders");
-                });
-
-            modelBuilder.Entity("DataAccessLayer.Models.Order.TOrders", b =>
-                {
-                    b.Navigation("OrderItems");
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.Product.TProductTypes", b =>
@@ -456,9 +533,16 @@ namespace DataAccessLayer.Migrations
 
             modelBuilder.Entity("DataAccessLayer.Models.User.TUsers", b =>
                 {
+                    b.Navigation("RefreshTokens");
+
                     b.Navigation("UserOrders");
 
                     b.Navigation("UserOtps");
+                });
+
+            modelBuilder.Entity("TOrders", b =>
+                {
+                    b.Navigation("OrderItems");
                 });
 #pragma warning restore 612, 618
         }
