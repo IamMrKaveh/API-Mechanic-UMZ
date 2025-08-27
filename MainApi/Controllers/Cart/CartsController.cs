@@ -20,9 +20,6 @@ public class CartsController : ControllerBase
             return Unauthorized("Invalid user");
 
         var cart = await _cartService.GetCartByUserIdAsync(userId);
-        if (cart == null)
-            return NotFound("Cart not found");
-
         return Ok(cart);
     }
 
@@ -31,15 +28,12 @@ public class CartsController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
         var result = await _cartService.AddItemToCartAsync(userId, dto);
         if (!result)
             return BadRequest("Unable to add item to cart. Check product availability or stock.");
-
         return Ok(new { Message = "Item added to cart successfully" });
     }
 
@@ -48,15 +42,12 @@ public class CartsController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
         var result = await _cartService.UpdateCartItemAsync(userId, itemId, dto);
         if (!result)
             return BadRequest("Unable to update cart item. Check quantity or item existence.");
-
         return Ok(new { Message = "Cart item updated successfully" });
     }
 
@@ -66,11 +57,9 @@ public class CartsController : ControllerBase
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
         var result = await _cartService.RemoveItemFromCartAsync(userId, itemId);
         if (!result)
             return NotFound("Cart item not found");
-
         return Ok(new { Message = "Item removed from cart successfully" });
     }
 
@@ -91,11 +80,11 @@ public class CartsController : ControllerBase
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
         var count = await _cartService.GetCartItemsCountAsync(userId);
         return Ok(count);
     }
 
+    [NonAction]
     private int GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst("id")?.Value;

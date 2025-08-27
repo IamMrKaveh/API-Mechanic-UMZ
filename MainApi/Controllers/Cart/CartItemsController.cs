@@ -325,6 +325,7 @@ public class CartItemsController : ControllerBase
         }
     }
 
+    [NonAction]
     private async Task UpdateCartTotalsAsync(int cartId)
     {
         var cart = await _context.TCarts
@@ -340,6 +341,7 @@ public class CartItemsController : ControllerBase
         }
     }
 
+    [NonAction]
     private int GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst("id")?.Value;

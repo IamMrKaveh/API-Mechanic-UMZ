@@ -155,6 +155,7 @@ public class OrderStatusController : ControllerBase
         return NoContent();
     }
 
+    [NonAction]
     private bool TOrderStatusExists(int id)
     {
         return _context.TOrderStatus.Any(e => e.Id == id);

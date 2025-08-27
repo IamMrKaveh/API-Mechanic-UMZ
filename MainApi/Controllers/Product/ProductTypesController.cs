@@ -248,6 +248,7 @@ public class ProductTypesController : ControllerBase
         }
     }
 
+    [NonAction]
     private async Task<bool> ProductTypeExistsAsync(int id)
     {
         return await _context.TProductTypes.AnyAsync(e => e.Id == id);
