@@ -555,11 +555,13 @@ public class OrdersController : ControllerBase
         }
     }
 
+    [NonAction]
     private async Task<bool> TOrdersExistsAsync(int id)
     {
         return await _context.TOrders.AnyAsync(e => e.Id == id);
     }
 
+    [NonAction]
     private int? GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

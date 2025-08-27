@@ -33,15 +33,14 @@ builder.Services.AddSwaggerGen(c =>
 // CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAngularFrontend", b =>
-        b.WithOrigins("http://localhost:4200")
-         .AllowAnyHeader()
-         .AllowAnyMethod()
-    );
-    options.AddPolicy("AllowNetlify", b =>
-        b.WithOrigins("https://mechanic-umz.netlify.app")
-         .AllowAnyHeader()
-         .AllowAnyMethod()
+    options.AddPolicy("AllowAll", b =>
+        b.WithOrigins(
+            "http://localhost:4200",
+            "https://mechanic-umz.netlify.app"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
     );
 });
 
@@ -120,8 +119,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 // Apply CORS
-app.UseCors("AllowAngularFrontend");
-app.UseCors("AllowNetlify");
+app.UseCors("AllowAll");
 
 // Auth
 app.UseAuthentication();

@@ -300,6 +300,7 @@ public class OrderItemsController : ControllerBase
         }
     }
 
+    [NonAction]
     private async Task<bool> OrderItemExistsAsync(int id)
     {
         return await _context.TOrderItems.AnyAsync(e => e.Id == id);

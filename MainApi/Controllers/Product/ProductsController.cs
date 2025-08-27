@@ -414,6 +414,7 @@ public class ProductsController : ControllerBase
         return Ok(new { Message = "Product deleted successfully" });
     }
 
+    [NonAction]
     private async Task<bool> ProductExistsAsync(int id)
     {
         return await _context.TProducts.AnyAsync(e => e.Id == id);
