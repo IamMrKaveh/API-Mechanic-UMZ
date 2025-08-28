@@ -1,4 +1,307 @@
-﻿namespace MainApi.Controllers.Cart;
+﻿namespace MainApi.Services.Cart;
+
+public interface ICartService
+{
+    Task<CartDto?> GetCartByUserIdAsync(int userId);
+    Task<bool> AddItemToCartAsync(int userId, AddToCartDto dto);
+    Task<bool> UpdateCartItemAsync(int userId, int itemId, UpdateCartItemDto dto);
+    Task<bool> RemoveItemFromCartAsync(int userId, int itemId);
+    Task<bool> ClearCartAsync(int userId);
+    Task<int> GetCartItemsCountAsync(int userId);
+}
+
+public class CartService : ICartService
+{
+    private readonly MechanicContext _context;
+    private readonly ILogger<CartService> _logger;
+
+    public CartService(MechanicContext context, ILogger<CartService> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    public async Task<CartDto?> GetCartByUserIdAsync(int userId)
+    {
+        try
+        {
+            var cart = await _context.TCarts
+                .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Product)
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (cart == null)
+            {
+                cart = new TCarts
+                {
+                    UserId = userId,
+                    TotalItems = 0,
+                    TotalPrice = 0
+                };
+                _context.TCarts.Add(cart);
+                await _context.SaveChangesAsync();
+            }
+
+            return new CartDto
+            {
+                Id = cart.Id,
+                UserId = cart.UserId,
+                CartItems = cart.CartItems?.Select(ci => new CartItemDto
+                {
+                    Id = ci.Id,
+                    ProductId = ci.ProductId,
+                    ProductName = ci.Product?.Name ?? "",
+                    SellingPrice = ci.Product?.SellingPrice ?? 0,
+                    Quantity = ci.Quantity,
+                    TotalPrice = (ci.Product?.SellingPrice ?? 0) * ci.Quantity
+                }).ToList() ?? new List<CartItemDto>(),
+                TotalItems = cart.TotalItems,
+                TotalPrice = cart.TotalPrice
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving cart for user {UserId}", userId);
+            return null;
+        }
+    }
+
+    public async Task<bool> AddItemToCartAsync(int userId, AddToCartDto dto)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var cart = await GetOrCreateCartAsync(userId);
+
+            var product = await _context.TProducts
+                .FirstOrDefaultAsync(p => p.Id == dto.ProductId);
+
+            if (product == null)
+            {
+                _logger.LogWarning("Product not found when adding to cart: ProductId {ProductId}, UserId {UserId}", dto.ProductId, userId);
+                return false;
+            }
+
+            var currentStock = product.Count ?? 0;
+            if (currentStock < dto.Quantity)
+            {
+                _logger.LogWarning("Insufficient stock when adding to cart: ProductId {ProductId}, Available {Available}, Requested {Requested}",
+                    dto.ProductId, currentStock, dto.Quantity);
+                return false;
+            }
+
+            var existingItem = cart.CartItems?.FirstOrDefault(ci => ci.ProductId == dto.ProductId);
+
+            if (existingItem != null)
+            {
+                var newQuantity = existingItem.Quantity + dto.Quantity;
+                if (newQuantity > currentStock)
+                {
+                    _logger.LogWarning("Insufficient stock for updated cart quantity: ProductId {ProductId}, Available {Available}, Requested {Requested}",
+                        dto.ProductId, currentStock, newQuantity);
+                    return false;
+                }
+
+                existingItem.Quantity = newQuantity;
+                _context.TCartItems.Update(existingItem);
+            }
+            else
+            {
+                var cartItem = new TCartItems
+                {
+                    CartId = cart.Id,
+                    ProductId = dto.ProductId,
+                    Quantity = dto.Quantity
+                };
+                _context.TCartItems.Add(cartItem);
+            }
+
+            var reloadedProduct = await _context.TProducts
+                .FirstOrDefaultAsync(p => p.Id == dto.ProductId);
+
+            if (reloadedProduct == null || (reloadedProduct.Count ?? 0) < dto.Quantity)
+            {
+                _logger.LogWarning("Stock changed during cart operation: ProductId {ProductId}, UserId {UserId}", dto.ProductId, userId);
+                return false;
+            }
+
+            await UpdateCartTotalsAsync(cart);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("Added item to cart: ProductId {ProductId}, Quantity {Quantity}, UserId {UserId}",
+                dto.ProductId, dto.Quantity, userId);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error adding item to cart: ProductId {ProductId}, UserId {UserId}", dto.ProductId, userId);
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateCartItemAsync(int userId, int itemId, UpdateCartItemDto dto)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var cartItem = await _context.TCartItems
+                .Include(ci => ci.Cart)
+                .Include(ci => ci.Product)
+                .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart.UserId == userId);
+
+            if (cartItem == null)
+            {
+                _logger.LogWarning("Cart item not found: ItemId {ItemId}, UserId {UserId}", itemId, userId);
+                return false;
+            }
+
+            var product = await _context.TProducts
+                .FirstOrDefaultAsync(p => p.Id == cartItem.ProductId);
+
+            if (product == null || dto.Quantity > (product.Count ?? 0))
+            {
+                _logger.LogWarning("Insufficient stock for cart item update: ItemId {ItemId}, Available {Available}, Requested {Requested}",
+                    itemId, product?.Count ?? 0, dto.Quantity);
+                return false;
+            }
+
+            cartItem.Quantity = dto.Quantity;
+            _context.TCartItems.Update(cartItem);
+
+            await UpdateCartTotalsAsync(cartItem.Cart);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("Updated cart item: ItemId {ItemId}, Quantity {Quantity}, UserId {UserId}",
+                itemId, dto.Quantity, userId);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error updating cart item: ItemId {ItemId}, UserId {UserId}", itemId, userId);
+            return false;
+        }
+    }
+
+    public async Task<bool> RemoveItemFromCartAsync(int userId, int itemId)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var cartItem = await _context.TCartItems
+                .Include(ci => ci.Cart)
+                .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart.UserId == userId);
+
+            if (cartItem == null)
+            {
+                _logger.LogWarning("Cart item not found for removal: ItemId {ItemId}, UserId {UserId}", itemId, userId);
+                return false;
+            }
+
+            _context.TCartItems.Remove(cartItem);
+            await UpdateCartTotalsAsync(cartItem.Cart);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("Removed cart item: ItemId {ItemId}, UserId {UserId}", itemId, userId);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error removing cart item: ItemId {ItemId}, UserId {UserId}", itemId, userId);
+            return false;
+        }
+    }
+
+    public async Task<bool> ClearCartAsync(int userId)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var cart = await _context.TCarts
+                .Include(c => c.CartItems)
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (cart == null || !cart.CartItems.Any())
+            {
+                _logger.LogInformation("Cart already empty or not found: UserId {UserId}", userId);
+                return true;
+            }
+
+            _context.TCartItems.RemoveRange(cart.CartItems);
+            cart.TotalItems = 0;
+            cart.TotalPrice = 0;
+            _context.TCarts.Update(cart);
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("Cleared cart: UserId {UserId}", userId);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error clearing cart: UserId {UserId}", userId);
+            return false;
+        }
+    }
+
+    public async Task<int> GetCartItemsCountAsync(int userId)
+    {
+        try
+        {
+            return await _context.TCarts
+                .Where(c => c.UserId == userId)
+                .Select(c => c.TotalItems)
+                .FirstOrDefaultAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting cart items count: UserId {UserId}", userId);
+            return 0;
+        }
+    }
+
+    private async Task<TCarts> GetOrCreateCartAsync(int userId)
+    {
+        var cart = await _context.TCarts
+            .Include(c => c.CartItems)
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+
+        if (cart == null)
+        {
+            cart = new TCarts { UserId = userId, TotalItems = 0, TotalPrice = 0 };
+            _context.TCarts.Add(cart);
+            await _context.SaveChangesAsync();
+        }
+
+        return cart;
+    }
+
+    private async Task UpdateCartTotalsAsync(TCarts cart)
+    {
+        var cartItems = await _context.TCartItems
+            .Include(ci => ci.Product)
+            .Where(ci => ci.CartId == cart.Id)
+            .ToListAsync();
+
+        cart.TotalItems = cartItems.Sum(ci => ci.Quantity);
+        cart.TotalPrice = cartItems.Sum(ci => (ci.Product?.SellingPrice ?? 0) * ci.Quantity);
+        _context.TCarts.Update(cart);
+    }
+}
+
+
+namespace MainApi.Controllers.Cart;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -325,6 +628,7 @@ public class CartItemsController : ControllerBase
         }
     }
 
+    [NonAction]
     private async Task UpdateCartTotalsAsync(int cartId)
     {
         var cart = await _context.TCarts
@@ -340,315 +644,13 @@ public class CartItemsController : ControllerBase
         }
     }
 
+    [NonAction]
     private int GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst("id")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             return 0;
         return userId;
-    }
-}
-
-
-namespace BusinessLayer.Services.Cart;
-
-public interface ICartService
-{
-    Task<CartDto?> GetCartByUserIdAsync(int userId);
-    Task<bool> AddItemToCartAsync(int userId, AddToCartDto dto);
-    Task<bool> UpdateCartItemAsync(int userId, int itemId, UpdateCartItemDto dto);
-    Task<bool> RemoveItemFromCartAsync(int userId, int itemId);
-    Task<bool> ClearCartAsync(int userId);
-    Task<int> GetCartItemsCountAsync(int userId);
-}
-
-public class CartService : ICartService
-{
-    private readonly MechanicContext _context;
-    private readonly ILogger<CartService> _logger;
-
-    public CartService(MechanicContext context, ILogger<CartService> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
-
-    public async Task<CartDto?> GetCartByUserIdAsync(int userId)
-    {
-        try
-        {
-            var cart = await _context.TCarts
-                .Include(c => c.CartItems)
-                .ThenInclude(ci => ci.Product)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cart == null)
-            {
-                cart = new TCarts
-                {
-                    UserId = userId,
-                    TotalItems = 0,
-                    TotalPrice = 0
-                };
-                _context.TCarts.Add(cart);
-                await _context.SaveChangesAsync();
-            }
-
-            return new CartDto
-            {
-                Id = cart.Id,
-                UserId = cart.UserId,
-                CartItems = cart.CartItems?.Select(ci => new CartItemDto
-                {
-                    Id = ci.Id,
-                    ProductId = ci.ProductId,
-                    ProductName = ci.Product?.Name ?? "",
-                    SellingPrice = ci.Product?.SellingPrice ?? 0,
-                    Quantity = ci.Quantity,
-                    TotalPrice = (ci.Product?.SellingPrice ?? 0) * ci.Quantity
-                }).ToList() ?? new List<CartItemDto>(),
-                TotalItems = cart.TotalItems,
-                TotalPrice = cart.TotalPrice
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving cart for user {UserId}", userId);
-            return null;
-        }
-    }
-
-    public async Task<bool> AddItemToCartAsync(int userId, AddToCartDto dto)
-    {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
-        {
-            var cart = await GetOrCreateCartAsync(userId);
-
-            var product = await _context.TProducts
-                .FirstOrDefaultAsync(p => p.Id == dto.ProductId);
-
-            if (product == null)
-            {
-                _logger.LogWarning("Product not found when adding to cart: ProductId {ProductId}, UserId {UserId}", dto.ProductId, userId);
-                return false;
-            }
-
-            var currentStock = product.Count ?? 0;
-            if (currentStock < dto.Quantity)
-            {
-                _logger.LogWarning("Insufficient stock when adding to cart: ProductId {ProductId}, Available {Available}, Requested {Requested}",
-                    dto.ProductId, currentStock, dto.Quantity);
-                return false;
-            }
-
-            var existingItem = cart.CartItems?.FirstOrDefault(ci => ci.ProductId == dto.ProductId);
-
-            if (existingItem != null)
-            {
-                var newQuantity = existingItem.Quantity + dto.Quantity;
-                if (newQuantity > currentStock)
-                {
-                    _logger.LogWarning("Insufficient stock for updated cart quantity: ProductId {ProductId}, Available {Available}, Requested {Requested}",
-                        dto.ProductId, currentStock, newQuantity);
-                    return false;
-                }
-
-                existingItem.Quantity = newQuantity;
-                _context.TCartItems.Update(existingItem);
-            }
-            else
-            {
-                var cartItem = new TCartItems
-                {
-                    CartId = cart.Id,
-                    ProductId = dto.ProductId,
-                    Quantity = dto.Quantity
-                };
-                _context.TCartItems.Add(cartItem);
-            }
-
-            var reloadedProduct = await _context.TProducts
-                .FirstOrDefaultAsync(p => p.Id == dto.ProductId);
-
-            if (reloadedProduct == null || (reloadedProduct.Count ?? 0) < dto.Quantity)
-            {
-                _logger.LogWarning("Stock changed during cart operation: ProductId {ProductId}, UserId {UserId}", dto.ProductId, userId);
-                return false;
-            }
-
-            await UpdateCartTotalsAsync(cart);
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            _logger.LogInformation("Added item to cart: ProductId {ProductId}, Quantity {Quantity}, UserId {UserId}",
-                dto.ProductId, dto.Quantity, userId);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            _logger.LogError(ex, "Error adding item to cart: ProductId {ProductId}, UserId {UserId}", dto.ProductId, userId);
-            return false;
-        }
-    }
-
-    public async Task<bool> UpdateCartItemAsync(int userId, int itemId, UpdateCartItemDto dto)
-    {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
-        {
-            var cartItem = await _context.TCartItems
-                .Include(ci => ci.Cart)
-                .Include(ci => ci.Product)
-                .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart.UserId == userId);
-
-            if (cartItem == null)
-            {
-                _logger.LogWarning("Cart item not found: ItemId {ItemId}, UserId {UserId}", itemId, userId);
-                return false;
-            }
-
-            var product = await _context.TProducts
-                .FirstOrDefaultAsync(p => p.Id == cartItem.ProductId);
-
-            if (product == null || dto.Quantity > (product.Count ?? 0))
-            {
-                _logger.LogWarning("Insufficient stock for cart item update: ItemId {ItemId}, Available {Available}, Requested {Requested}",
-                    itemId, product?.Count ?? 0, dto.Quantity);
-                return false;
-            }
-
-            cartItem.Quantity = dto.Quantity;
-            _context.TCartItems.Update(cartItem);
-
-            await UpdateCartTotalsAsync(cartItem.Cart);
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            _logger.LogInformation("Updated cart item: ItemId {ItemId}, Quantity {Quantity}, UserId {UserId}",
-                itemId, dto.Quantity, userId);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            _logger.LogError(ex, "Error updating cart item: ItemId {ItemId}, UserId {UserId}", itemId, userId);
-            return false;
-        }
-    }
-
-    public async Task<bool> RemoveItemFromCartAsync(int userId, int itemId)
-    {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
-        {
-            var cartItem = await _context.TCartItems
-                .Include(ci => ci.Cart)
-                .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart.UserId == userId);
-
-            if (cartItem == null)
-            {
-                _logger.LogWarning("Cart item not found for removal: ItemId {ItemId}, UserId {UserId}", itemId, userId);
-                return false;
-            }
-
-            _context.TCartItems.Remove(cartItem);
-            await UpdateCartTotalsAsync(cartItem.Cart);
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            _logger.LogInformation("Removed cart item: ItemId {ItemId}, UserId {UserId}", itemId, userId);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            _logger.LogError(ex, "Error removing cart item: ItemId {ItemId}, UserId {UserId}", itemId, userId);
-            return false;
-        }
-    }
-
-    public async Task<bool> ClearCartAsync(int userId)
-    {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
-        {
-            var cart = await _context.TCarts
-                .Include(c => c.CartItems)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cart == null || !cart.CartItems.Any())
-            {
-                _logger.LogInformation("Cart already empty or not found: UserId {UserId}", userId);
-                return true;
-            }
-
-            _context.TCartItems.RemoveRange(cart.CartItems);
-            cart.TotalItems = 0;
-            cart.TotalPrice = 0;
-            _context.TCarts.Update(cart);
-
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            _logger.LogInformation("Cleared cart: UserId {UserId}", userId);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            _logger.LogError(ex, "Error clearing cart: UserId {UserId}", userId);
-            return false;
-        }
-    }
-
-    public async Task<int> GetCartItemsCountAsync(int userId)
-    {
-        try
-        {
-            return await _context.TCarts
-                .Where(c => c.UserId == userId)
-                .Select(c => c.TotalItems)
-                .FirstOrDefaultAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting cart items count: UserId {UserId}", userId);
-            return 0;
-        }
-    }
-
-    private async Task<TCarts> GetOrCreateCartAsync(int userId)
-    {
-        var cart = await _context.TCarts
-            .Include(c => c.CartItems)
-            .FirstOrDefaultAsync(c => c.UserId == userId);
-
-        if (cart == null)
-        {
-            cart = new TCarts { UserId = userId, TotalItems = 0, TotalPrice = 0 };
-            _context.TCarts.Add(cart);
-            await _context.SaveChangesAsync();
-        }
-
-        return cart;
-    }
-
-    private async Task UpdateCartTotalsAsync(TCarts cart)
-    {
-        var cartItems = await _context.TCartItems
-            .Include(ci => ci.Product)
-            .Where(ci => ci.CartId == cart.Id)
-            .ToListAsync();
-
-        cart.TotalItems = cartItems.Sum(ci => ci.Quantity);
-        cart.TotalPrice = cartItems.Sum(ci => (ci.Product?.SellingPrice ?? 0) * ci.Quantity);
-        _context.TCarts.Update(cart);
     }
 }
 
@@ -739,6 +741,7 @@ public class CartsController : ControllerBase
         return Ok(count);
     }
 
+    [NonAction]
     private int GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst("id")?.Value;
@@ -1051,6 +1054,7 @@ public class OrderItemsController : ControllerBase
         }
     }
 
+    [NonAction]
     private async Task<bool> OrderItemExistsAsync(int id)
     {
         return await _context.TOrderItems.AnyAsync(e => e.Id == id);
@@ -1615,11 +1619,13 @@ public class OrdersController : ControllerBase
         }
     }
 
+    [NonAction]
     private async Task<bool> TOrdersExistsAsync(int id)
     {
         return await _context.TOrders.AnyAsync(e => e.Id == id);
     }
 
+    [NonAction]
     private int? GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -1785,6 +1791,7 @@ public class OrderStatusController : ControllerBase
         return NoContent();
     }
 
+    [NonAction]
     private bool TOrderStatusExists(int id)
     {
         return _context.TOrderStatus.Any(e => e.Id == id);
@@ -2208,6 +2215,7 @@ public class ProductsController : ControllerBase
         return Ok(new { Message = "Product deleted successfully" });
     }
 
+    [NonAction]
     private async Task<bool> ProductExistsAsync(int id)
     {
         return await _context.TProducts.AnyAsync(e => e.Id == id);
@@ -2465,6 +2473,7 @@ public class ProductTypesController : ControllerBase
         }
     }
 
+    [NonAction]
     private async Task<bool> ProductTypeExistsAsync(int id)
     {
         return await _context.TProductTypes.AnyAsync(e => e.Id == id);
@@ -2481,14 +2490,12 @@ public class UsersController : ControllerBase
 {
     private readonly MechanicContext _context;
     private readonly IConfiguration _configuration;
-    private readonly RateLimitService _rateLimitService;
     private readonly ILogger<UsersController> _logger;
 
     public UsersController(MechanicContext context, IConfiguration configuration, ILogger<UsersController> logger)
     {
         _context = context;
         _configuration = configuration;
-        _rateLimitService = new RateLimitService();
         _logger = logger;
     }
 
@@ -2704,17 +2711,15 @@ public class UsersController : ControllerBase
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var rateLimitKey = $"login_{clientIp}_{request.PhoneNumber}";
 
-        if (_rateLimitService.IsLimited(rateLimitKey))
+        if (await IsRateLimited(rateLimitKey))
         {
-            _logger.LogWarning("Rate limit exceeded for login attempt from IP: {ClientIP}, Phone: {PhoneNumber}",
-                clientIp, request.PhoneNumber);
+            _logger.LogWarning("Rate limit exceeded for login attempt from IP: {ClientIP}, Phone: {PhoneNumber}", clientIp, request.PhoneNumber);
             return BadRequest("Too many login attempts. Please try again later.");
         }
 
         try
         {
-            var user = await _context.TUsers
-                .FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
+            var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
 
             if (user == null)
             {
@@ -2738,8 +2743,7 @@ public class UsersController : ControllerBase
 
             await RemoveExpiredOtps(user.Id);
 
-            var activeOtpExists = await _context.TUserOtps
-                .AnyAsync(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
+            var activeOtpExists = await _context.TUserOtps.AnyAsync(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
 
             if (activeOtpExists)
                 return BadRequest("An active OTP already exists. Please wait before requesting a new one.");
@@ -2763,10 +2767,7 @@ public class UsersController : ControllerBase
             var template = "verify";
 
             if (string.IsNullOrEmpty(apiKey))
-            {
-                _logger.LogError("SMS API key is not configured");
                 throw new InvalidOperationException("SMS service is not configured.");
-            }
 
             var api = new KavenegarApi(apiKey);
             await Task.Run(() => api.VerifyLookup(request.PhoneNumber, otp, template));
@@ -2791,224 +2792,202 @@ public class UsersController : ControllerBase
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var rateLimitKey = $"otp_{clientIp}_{request.PhoneNumber}";
 
-        if (_rateLimitService.IsLimited(rateLimitKey))
-        {
-            _logger.LogWarning("Rate limit exceeded for OTP verification from IP: {ClientIP}, Phone: {PhoneNumber}",
-                clientIp, request.PhoneNumber);
+        if (await IsRateLimited(rateLimitKey))
             return BadRequest("Too many verification attempts. Please try again later.");
-        }
 
-        try
+        var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && u.IsActive);
+        if (user == null)
+            return BadRequest("Invalid credentials.");
+
+        var storedOtp = await _context.TUserOtps
+            .Where(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
+            .OrderByDescending(o => o.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (storedOtp == null)
+            return BadRequest("Invalid or expired OTP code.");
+
+        if (storedOtp.AttemptCount >= 3)
         {
-            var user = await _context.TUsers
-                .FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && u.IsActive);
-
-            if (user == null)
-            {
-                _logger.LogWarning("OTP verification attempt for non-existent user: {PhoneNumber}", request.PhoneNumber);
-                return BadRequest("Invalid credentials.");
-            }
-
-            var storedOtp = await _context.TUserOtps
-                .Where(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
-                .OrderByDescending(o => o.CreatedAt)
-                .FirstOrDefaultAsync();
-
-            if (storedOtp == null)
-            {
-                _logger.LogWarning("No valid OTP found for user: {PhoneNumber}", request.PhoneNumber);
-                return BadRequest("Invalid or expired OTP code.");
-            }
-
-            if (storedOtp.AttemptCount >= 3)
-            {
-                storedOtp.IsUsed = true;
-                await _context.SaveChangesAsync();
-                _logger.LogWarning("Too many OTP attempts for user: {PhoneNumber}", request.PhoneNumber);
-                return BadRequest("Too many failed attempts. Please request a new OTP.");
-            }
-
-            if (!BCrypt.Net.BCrypt.Verify(request.Code, storedOtp.OtpHash))
-            {
-                storedOtp.AttemptCount++;
-                await _context.SaveChangesAsync();
-                _logger.LogWarning("Invalid OTP attempt for user: {PhoneNumber}, Attempts: {AttemptCount}",
-                    request.PhoneNumber, storedOtp.AttemptCount);
-                return BadRequest("Invalid OTP code.");
-            }
-
             storedOtp.IsUsed = true;
             await _context.SaveChangesAsync();
-
-            await RevokeUserRefreshTokens(user.Id);
-
-            var token = GenerateJwtToken(user);
-            var refreshTokenValue = GenerateSecureToken();
-
-            var userAgent = Request.Headers.UserAgent.ToString();
-            var safeUserAgent = string.IsNullOrEmpty(userAgent) ? "unknown" :
-                userAgent.Length > 500 ? userAgent.Substring(0, 500) : userAgent;
-
-            var refreshToken = new TRefreshToken
-            {
-                UserId = user.Id,
-                TokenHash = BCrypt.Net.BCrypt.HashPassword(refreshTokenValue),
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
-                CreatedAt = DateTime.UtcNow,
-                CreatedByIp = clientIp,
-                UserAgent = safeUserAgent,
-                RevokedAt = null,
-                ReplacedByTokenHash = null
-            };
-
-            _context.TRefreshToken.Add(refreshToken);
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("User logged in successfully: {PhoneNumber}", request.PhoneNumber);
-
-            var response = new AuthResponseDto
-            {
-                Token = token,
-                User = new UserProfileDto
-                {
-                    Id = user.Id,
-                    PhoneNumber = user.PhoneNumber,
-                    CreatedAt = user.CreatedAt
-                },
-                ExpiresAt = DateTime.UtcNow.AddHours(1),
-                RefreshToken = refreshTokenValue
-            };
-
-            return Ok(response);
+            return BadRequest("Too many failed attempts. Please request a new OTP.");
         }
-        catch (Exception ex)
+
+        if (!BCrypt.Net.BCrypt.Verify(request.Code, storedOtp.OtpHash))
         {
-            _logger.LogError(ex, "Error during OTP verification for phone: {PhoneNumber}", request.PhoneNumber);
-            return StatusCode(500, "An error occurred during verification");
+            storedOtp.AttemptCount++;
+            await _context.SaveChangesAsync();
+            return BadRequest("Invalid OTP code.");
         }
+
+        storedOtp.IsUsed = true;
+        await _context.SaveChangesAsync();
+
+        await RevokeUserRefreshTokens(user.Id);
+
+        var token = GenerateJwtToken(user);
+        var refreshTokenValue = GenerateSecureToken();
+
+        var userAgent = Request.Headers.UserAgent.ToString();
+        var safeUserAgent = string.IsNullOrEmpty(userAgent) ? "unknown" : userAgent.Length > 500 ? userAgent[..500] : userAgent;
+
+        var refreshToken = new TRefreshToken
+        {
+            UserId = user.Id,
+            TokenHash = BCrypt.Net.BCrypt.HashPassword(refreshTokenValue),
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedAt = DateTime.UtcNow,
+            CreatedByIp = clientIp,
+            UserAgent = safeUserAgent
+        };
+
+        _context.TRefreshToken.Add(refreshToken);
+        await _context.SaveChangesAsync();
+
+        return Ok(new AuthResponseDto
+        {
+            Token = token,
+            User = new UserProfileDto
+            {
+                Id = user.Id,
+                PhoneNumber = user.PhoneNumber,
+                CreatedAt = user.CreatedAt
+            },
+            ExpiresAt = DateTime.UtcNow.AddHours(1),
+            RefreshToken = refreshTokenValue
+        });
     }
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto request)
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshRequestDto request)
     {
-        if (string.IsNullOrWhiteSpace(request.RefreshToken))
-            return BadRequest("Refresh token is required.");
+        var storedTokens = _context.TRefreshToken
+            .Include(x => x.User)
+            .Where(x => x.ExpiresAt > DateTime.UtcNow && x.RevokedAt == null)
+            .AsEnumerable()
+            .Where(x => BCrypt.Net.BCrypt.Verify(request.RefreshToken, x.TokenHash))
+            .ToList();
 
-        try
+        var storedToken = storedTokens.FirstOrDefault();
+
+        if (storedToken == null || storedToken.User == null || !storedToken.User.IsActive)
+            return Unauthorized(new { message = "توکن معتبر نیست یا منقضی شده است" });
+
+        storedToken.RevokedAt = DateTime.UtcNow;
+
+        var newJwt = GenerateJwtToken(storedToken.User);
+        var newRefreshValue = GenerateSecureToken();
+
+        var userAgent = Request.Headers.UserAgent.ToString();
+        var safeUserAgent = string.IsNullOrEmpty(userAgent) ? "unknown" : userAgent.Length > 500 ? userAgent[..500] : userAgent;
+
+        var newRefresh = new TRefreshToken
         {
-            var activeRefreshTokens = await _context.TRefreshToken
-                .Include(rt => rt.User)
-                .Where(rt => rt.ExpiresAt > DateTime.UtcNow && rt.RevokedAt == null)
-                .ToListAsync();
+            UserId = storedToken.UserId,
+            TokenHash = BCrypt.Net.BCrypt.HashPassword(newRefreshValue),
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            UserAgent = safeUserAgent
+        };
 
-            TRefreshToken? matchingToken = null;
-            foreach (var token in activeRefreshTokens)
-            {
-                if (BCrypt.Net.BCrypt.Verify(request.RefreshToken, token.TokenHash))
-                {
-                    matchingToken = token;
-                    break;
-                }
-            }
+        _context.TRefreshToken.Add(newRefresh);
+        await _context.SaveChangesAsync();
 
-            if (matchingToken == null || matchingToken.User == null || !matchingToken.User.IsActive)
-            {
-                _logger.LogWarning("Invalid refresh token attempt from IP: {ClientIP}",
-                    HttpContext.Connection.RemoteIpAddress?.ToString());
-                return BadRequest("Invalid or expired refresh token.");
-            }
-
-            var newRefreshTokenValue = GenerateSecureToken();
-            var userAgent = Request.Headers.UserAgent.ToString();
-            var safeUserAgent = string.IsNullOrEmpty(userAgent) ? "unknown" :
-                userAgent.Length > 500 ? userAgent.Substring(0, 500) : userAgent;
-
-            var newRefreshToken = new TRefreshToken
-            {
-                UserId = matchingToken.UserId,
-                TokenHash = BCrypt.Net.BCrypt.HashPassword(newRefreshTokenValue),
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
-                CreatedAt = DateTime.UtcNow,
-                CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                UserAgent = safeUserAgent,
-                RevokedAt = null,
-                ReplacedByTokenHash = null
-            };
-
-            matchingToken.RevokedAt = DateTime.UtcNow;
-            matchingToken.ReplacedByTokenHash = newRefreshToken.TokenHash;
-
-            _context.TRefreshToken.Add(newRefreshToken);
-            await _context.SaveChangesAsync();
-
-            var newJwtToken = GenerateJwtToken(matchingToken.User);
-
-            return Ok(new AuthResponseDto
-            {
-                Token = newJwtToken,
-                User = new UserProfileDto
-                {
-                    Id = matchingToken.User.Id,
-                    PhoneNumber = matchingToken.User.PhoneNumber,
-                    CreatedAt = matchingToken.User.CreatedAt
-                },
-                ExpiresAt = DateTime.UtcNow.AddHours(1),
-                RefreshToken = newRefreshTokenValue
-            });
-        }
-        catch (Exception ex)
+        return Ok(new
         {
-            _logger.LogError(ex, "Error during token refresh");
-            return StatusCode(500, "An error occurred during token refresh");
-        }
+            token = newJwt,
+            refreshToken = newRefreshValue
+        });
     }
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout([FromBody] RefreshRequestDto request)
     {
-        try
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null)
-                return Unauthorized();
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+            return BadRequest(new { message = "Refresh token is required" });
 
-            await RevokeUserRefreshTokens(userId.Value);
+        var query = _context.TRefreshToken
+            .Where(x => x.RevokedAt == null && x.ExpiresAt > DateTime.UtcNow)
+            .AsEnumerable()
+            .Where(x => BCrypt.Net.BCrypt.Verify(request.RefreshToken, x.TokenHash));
 
-            _logger.LogInformation("User logged out successfully: {UserId}", userId);
-            return Ok(new { Message = "Logged out successfully" });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during logout");
-            return StatusCode(500, "An error occurred during logout");
-        }
-    }
+        var tokenList = query.ToList();
 
-    private async Task RemoveExpiredOtps(int userId)
-    {
-        await _context.TUserOtps
-            .Where(o => o.UserId == userId && (o.ExpiresAt <= DateTime.UtcNow || o.IsUsed))
-            .ExecuteDeleteAsync();
-    }
+        if (!tokenList.Any())
+            return NotFound(new { message = "توکن یافت نشد" });
 
-    private async Task RevokeUserRefreshTokens(int userId)
-    {
-        var activeTokens = await _context.TRefreshToken
-            .Where(rt => rt.UserId == userId && rt.RevokedAt == null && rt.ExpiresAt > DateTime.UtcNow)
-            .ToListAsync();
-
-        foreach (var token in activeTokens)
-        {
+        foreach (var token in tokenList)
             token.RevokedAt = DateTime.UtcNow;
-        }
 
-        if (activeTokens.Any())
-        {
-            await _context.SaveChangesAsync();
-        }
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "خروج با موفقیت انجام شد" });
     }
 
+    [NonAction]
+    private async Task<bool> IsRateLimited(string key, int maxAttempts = 5, int windowMinutes = 15)
+    {
+        var now = DateTime.UtcNow;
+        var entry = await _context.TRateLimit.FirstOrDefaultAsync(r => r.Key == key);
+
+        if (entry == null)
+        {
+            await _context.TRateLimit.AddAsync(new TRateLimit
+            {
+                Key = key,
+                Count = 1,
+                ResetAt = now.AddMinutes(windowMinutes),
+                UpdatedAt = now
+            });
+            await _context.SaveChangesAsync();
+            return false;
+        }
+
+        if (entry.ResetAt < now)
+        {
+            await _context.TRateLimit
+                .Where(r => r.Key == key)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(r => r.Count, 1)
+                    .SetProperty(r => r.ResetAt, now.AddMinutes(windowMinutes))
+                    .SetProperty(r => r.UpdatedAt, now));
+            return false;
+        }
+
+        if (entry.Count >= maxAttempts)
+            return true;
+
+        await _context.TRateLimit
+            .Where(r => r.Key == key)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(r => r.Count, entry.Count + 1)
+                .SetProperty(r => r.UpdatedAt, now));
+
+        return false;
+    }
+
+    [NonAction]
+    public async Task RemoveExpiredOtps(int userId)
+    {
+        var query = _context.TUserOtps
+            .Where(o => o.UserId == userId && (o.ExpiresAt <= DateTime.UtcNow || o.IsUsed));
+
+        await query.ExecuteDeleteAsync();
+    }
+
+    [NonAction]
+    public async Task RevokeUserRefreshTokens(int userId)
+    {
+        var query = _context.TRefreshToken
+            .Where(rt => rt.UserId == userId && rt.RevokedAt == null && rt.ExpiresAt > DateTime.UtcNow);
+
+        await query.ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.RevokedAt, DateTime.UtcNow));
+    }
+
+    [NonAction]
     private string GenerateSecureOtp()
     {
         using var rng = RandomNumberGenerator.Create();
@@ -3018,6 +2997,7 @@ public class UsersController : ControllerBase
         return value.ToString();
     }
 
+    [NonAction]
     private string GenerateSecureToken()
     {
         using var rng = RandomNumberGenerator.Create();
@@ -3025,57 +3005,40 @@ public class UsersController : ControllerBase
         rng.GetBytes(bytes);
         return Convert.ToBase64String(bytes);
     }
-
+    
+    [NonAction]
     private string GenerateJwtToken(TUsers user)
     {
-        var jwtKey = _configuration["Jwt:Key"];
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
 
-        if (string.IsNullOrWhiteSpace(jwtKey))
+        var claims = new List<Claim>
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+        new Claim(JwtRegisteredClaimNames.UniqueName, user.PhoneNumber),
+        new Claim("isAdmin", user.IsAdmin.ToString())
+    };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
         {
-            throw new InvalidOperationException("JWT secret key is not configured.");
-        }
-
-        var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
-
-        if (keyBytes.Length < 32)
-        {
-            throw new InvalidOperationException("JWT secret key must be at least 32 bytes (256 bits) long for security.");
-        }
-
-        if (keyBytes.Length < 64)
-        {
-            _logger.LogWarning("JWT secret key is shorter than recommended 64 bytes (512 bits). Consider using a longer key for better security.");
-        }
-
-        var key = new SymmetricSecurityKey(keyBytes);
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
-        {
-            new Claim("id", user.Id.ToString()),
-            new Claim(ClaimTypes.MobilePhone, user.PhoneNumber),
-            new Claim(ClaimTypes.Role, user.IsAdmin ? "Admin" : "User"),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(JwtRegisteredClaimNames.Iat,
-                new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds().ToString(),
-                ClaimValueTypes.Integer64)
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddHours(1),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            Audience = _configuration["Jwt:Audience"],
+            Issuer = _configuration["Jwt:Issuer"]
         };
 
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"] ?? "MechanicApi",
-            audience: _configuration["Jwt:Audience"] ?? "MechanicClient",
-            claims: claims,
-            expires: DateTime.UtcNow.AddHours(1),
-            signingCredentials: creds
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
     }
 
-    private int? GetCurrentUserId()
+    [NonAction]
+    private int GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        return int.TryParse(userIdClaim, out var userId) ? userId : null;
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
+        if (userIdClaim == null)
+            throw new UnauthorizedAccessException("کاربر احراز هویت نشده است");
+        return int.Parse(userIdClaim.Value);
     }
 }
 
