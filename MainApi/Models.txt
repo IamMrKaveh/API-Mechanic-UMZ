@@ -1,52 +1,13 @@
 ﻿namespace DataAccessLayer.Models.Auth;
 
-public class LoginRequestDto
-{
-    [Required]
-    [Phone]
-    public string PhoneNumber { get; set; } = string.Empty;
-}
-
-public class VerifyOtpRequestDto
-{
-    [Required]
-    [Phone]
-    public string PhoneNumber { get; set; } = string.Empty;
-
-    [Required]
-    [Length(4,4)]
-    public string Code { get; set; } = string.Empty;
-}
-
-public class AuthResponseDto
-{
-    public string Token { get; set; } = string.Empty;
-    public UserProfileDto User { get; set; } = new();
-    public DateTime ExpiresAt { get; set; }
-    public string RefreshToken { get; set; } = string.Empty;
-}
-
-public class UserProfileDto
-{
-    public int Id { get; set; }
-    public string PhoneNumber { get; set; } = string.Empty;
-    public DateTime? CreatedAt { get; set; }
-}
-
-public class RefreshRequestDto
-{
-    [Required]
-    public string RefreshToken { get; set; } = string.Empty;
-}
-
-
-namespace DataAccessLayer.Models.Auth;
-
 public class TRefreshToken
 {
-    [Key]
     public int Id { get; set; }
+
     public int UserId { get; set; }
+    public virtual TUsers? User { get; set; }
+
+
     public string TokenHash { get; set; } = string.Empty;
     public DateTime ExpiresAt { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -88,14 +49,56 @@ public class TCarts
 
     [Required]
     public int UserId { get; set; }
+    public virtual TUsers? User { get; set; }
+
 
     public int TotalItems { get; set; }
 
     public int TotalPrice { get; set; }
 
-    public virtual TUsers? User { get; set; }
-
     public virtual ICollection<TCartItems> CartItems { get; set; } = new List<TCartItems>();
+}
+
+
+namespace DataAccessLayer.Models.DTO;
+
+public class LoginRequestDto
+{
+    [Required]
+    [Phone]
+    public string PhoneNumber { get; set; } = string.Empty;
+}
+
+public class VerifyOtpRequestDto
+{
+    [Required]
+    [Phone]
+    public string PhoneNumber { get; set; } = string.Empty;
+
+    [Required]
+    [Length(4,4)]
+    public string Code { get; set; } = string.Empty;
+}
+
+public class AuthResponseDto
+{
+    public string Token { get; set; } = string.Empty;
+    public UserProfileDto User { get; set; } = new();
+    public DateTime ExpiresAt { get; set; }
+    public string RefreshToken { get; set; } = string.Empty;
+}
+
+public class UserProfileDto
+{
+    public int Id { get; set; }
+    public string PhoneNumber { get; set; } = string.Empty;
+    public DateTime? CreatedAt { get; set; }
+}
+
+public class RefreshRequestDto
+{
+    [Required]
+    public string RefreshToken { get; set; } = string.Empty;
 }
 
 
@@ -267,8 +270,6 @@ public class TOrderItems
 }
 
 
-namespace DataAccessLayer.Models.Order;
-
 public class TOrders
 {
     [Key]
@@ -281,7 +282,7 @@ public class TOrders
     public string? Address { get; set; }
     public string? PostalCode { get; set; }
 
-    public virtual ICollection<TOrderItems> OrderItems 
+    public virtual ICollection<TOrderItems> OrderItems
     { get; set; } = new List<TOrderItems>();
     public int TotalAmount { get; set; }
     public int TotalProfit { get; set; }
@@ -306,39 +307,6 @@ public class TOrderStatus
     public string? Icon { get; set; }
 
     public virtual ICollection<TOrders>? Orders { get; set; }
-}
-
-
-namespace DataAccessLayer.Models.Security;
-
-public class TRateLimit
-{
-    [Key]
-    public int Id { get; set; }
-
-    [Required]
-    [MaxLength(200)]
-    public string Key { get; set; } = string.Empty;
-
-    [Required]
-    public int Count { get; set; }
-
-    [Required]
-    public DateTime ResetAt { get; set; }
-
-    [Required]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-}
-
-
-namespace DataAccessLayer.Models.Security;
-
-public class TRateLimits
-{
-    public int Id { get; set; }
-    public string PhoneNumber { get; set; } = string.Empty;
-    public int Attempts { get; set; }
-    public DateTime LastAttempt { get; set; }
 }
 
 
@@ -380,6 +348,39 @@ public class TProductTypes
     public string? Icon { get; set; }
 
     public virtual ICollection<TProducts>? Products { get; set; }
+}
+
+
+namespace DataAccessLayer.Models.Security;
+
+public class TRateLimit
+{
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    [MaxLength(200)]
+    public string Key { get; set; } = string.Empty;
+
+    [Required]
+    public int Count { get; set; }
+
+    [Required]
+    public DateTime ResetAt { get; set; }
+
+    [Required]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+
+namespace DataAccessLayer.Models.Security;
+
+public class TRateLimits
+{
+    public int Id { get; set; }
+    public string PhoneNumber { get; set; } = string.Empty;
+    public int Attempts { get; set; }
+    public DateTime LastAttempt { get; set; }
 }
 
 
@@ -430,4 +431,5 @@ public class TUsers
     public virtual ICollection<TUserOtp> UserOtps { get; set; } = new List<TUserOtp>();
 
     public virtual ICollection<TRefreshToken> RefreshTokens { get; set; } = new List<TRefreshToken>();
+
 }
