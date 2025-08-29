@@ -250,14 +250,11 @@ public class OrdersController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         if (string.IsNullOrWhiteSpace(orderDto.Address) || string.IsNullOrWhiteSpace(orderDto.PostalCode))
             return BadRequest("Address and PostalCode are required");
-
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
             return Unauthorized("User not authenticated");
-
         var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
         if (!string.IsNullOrEmpty(idempotencyKey))
         {
@@ -266,7 +263,6 @@ public class OrdersController : ControllerBase
             if (existingOrder != null)
                 return Conflict(new { Message = "Duplicate request", OrderId = existingOrder.Id });
         }
-
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
@@ -274,18 +270,15 @@ public class OrdersController : ControllerBase
                 .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.Product)
                 .FirstOrDefaultAsync(c => c.UserId == userId.Value);
-
             if (cart == null || !cart.CartItems.Any())
             {
                 await transaction.RollbackAsync();
                 return BadRequest("Cart is empty");
             }
-
             var productUpdates = new List<TProducts>();
             var totalAmount = 0;
             var totalProfit = 0;
             var orderItems = new List<TOrderItems>();
-
             foreach (var item in cart.CartItems)
             {
                 if (item.Quantity <= 0)
@@ -293,32 +286,26 @@ public class OrdersController : ControllerBase
                     await transaction.RollbackAsync();
                     return BadRequest($"Invalid quantity for product {item.ProductId}");
                 }
-
                 var product = await _context.TProducts
                     .Where(p => p.Id == item.ProductId)
                     .FirstOrDefaultAsync();
-
                 if (product == null)
                 {
                     await transaction.RollbackAsync();
                     return BadRequest($"Product {item.ProductId} not found");
                 }
-
                 if ((product.Count ?? 0) < item.Quantity)
                 {
                     await transaction.RollbackAsync();
                     return BadRequest($"Product {item.ProductId} insufficient stock. Available: {product.Count ?? 0}, Requested: {item.Quantity}");
                 }
-
                 if ((product.SellingPrice ?? 0) <= 0)
                 {
                     await transaction.RollbackAsync();
                     return BadRequest($"Product {item.ProductId} has invalid price");
                 }
-
                 product.Count = Math.Max(0, (product.Count ?? 0) - item.Quantity);
                 productUpdates.Add(product);
-
                 var orderItem = new TOrderItems
                 {
                     ProductId = product.Id,
@@ -328,12 +315,10 @@ public class OrdersController : ControllerBase
                     Amount = (product.SellingPrice ?? 0) * item.Quantity,
                     Profit = ((product.SellingPrice ?? 0) - (product.PurchasePrice ?? 0)) * item.Quantity
                 };
-
                 totalAmount += orderItem.Amount;
                 totalProfit += orderItem.Profit;
                 orderItems.Add(orderItem);
             }
-
             var order = new TOrders
             {
                 UserId = userId.Value,
@@ -345,22 +330,17 @@ public class OrdersController : ControllerBase
                 TotalAmount = totalAmount,
                 TotalProfit = totalProfit
             };
-
             _context.TOrders.Add(order);
             await _context.SaveChangesAsync();
-
             foreach (var orderItem in orderItems)
             {
                 orderItem.UserOrderId = order.Id;
             }
-
             _context.TOrderItems.AddRange(orderItems);
             _context.TProducts.UpdateRange(productUpdates);
             _context.TCartItems.RemoveRange(cart.CartItems);
-
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
-
             return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
         }
         catch (Exception ex)
@@ -564,7 +544,7 @@ public class OrdersController : ControllerBase
     [NonAction]
     private int? GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return int.TryParse(userIdClaim, out var userId) ? userId : null;
     }
 }

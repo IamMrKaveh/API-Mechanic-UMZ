@@ -53,7 +53,6 @@ public class CartItemsController : ControllerBase
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
         try
         {
             var cartItem = await _context.TCartItems
@@ -70,10 +69,8 @@ public class CartItemsController : ControllerBase
                     TotalPrice = (ci.Product.SellingPrice ?? 0) * ci.Quantity
                 })
                 .FirstOrDefaultAsync();
-
             if (cartItem == null)
                 return NotFound("Cart item not found");
-
             return Ok(cartItem);
         }
         catch (Exception ex)
@@ -196,14 +193,11 @@ public class CartItemsController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
         if (updateCartItemDto.Quantity > 1000)
             return BadRequest("Quantity cannot exceed 1000");
-
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
@@ -211,32 +205,25 @@ public class CartItemsController : ControllerBase
                 .Include(ci => ci.Cart)
                 .Include(ci => ci.Product)
                 .FirstOrDefaultAsync(ci => ci.Id == id && ci.Cart!.UserId == userId);
-
             if (cartItem == null)
             {
                 await transaction.RollbackAsync();
                 return NotFound("Cart item not found");
             }
-
             var product = await _context.TProducts
                 .FirstOrDefaultAsync(p => p.Id == cartItem.ProductId);
-
             if (product == null || (product.Count ?? 0) < updateCartItemDto.Quantity)
             {
                 await transaction.RollbackAsync();
                 return BadRequest($"Not enough stock available. Current stock: {product?.Count ?? 0}");
             }
-
             cartItem.Quantity = updateCartItemDto.Quantity;
             _context.TCartItems.Update(cartItem);
-
             await UpdateCartTotalsAsync(cartItem.CartId);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
-
             _logger.LogInformation("Updated cart item: ItemId {ItemId}, Quantity {Quantity}, UserId {UserId}",
                 id, updateCartItemDto.Quantity, userId);
-
             return NoContent();
         }
         catch (Exception ex)
@@ -253,29 +240,23 @@ public class CartItemsController : ControllerBase
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
-
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var cartItem = await _context.TCartItems
                 .Include(ci => ci.Cart)
                 .FirstOrDefaultAsync(ci => ci.Id == id && ci.Cart!.UserId == userId);
-
             if (cartItem == null)
             {
                 await transaction.RollbackAsync();
                 return NotFound("Cart item not found");
             }
-
             var cartId = cartItem.CartId;
             _context.TCartItems.Remove(cartItem);
-
             await UpdateCartTotalsAsync(cartId);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
-
             _logger.LogInformation("Deleted cart item: ItemId {ItemId}, UserId {UserId}", id, userId);
-
             return NoContent();
         }
         catch (Exception ex)
