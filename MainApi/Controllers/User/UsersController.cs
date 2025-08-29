@@ -386,20 +386,14 @@ public class UsersController : ControllerBase
             .AsEnumerable()
             .Where(x => BCrypt.Net.BCrypt.Verify(request.RefreshToken, x.TokenHash))
             .ToList();
-
         var storedToken = storedTokens.FirstOrDefault();
-
         if (storedToken == null || storedToken.User == null || !storedToken.User.IsActive)
             return Unauthorized(new { message = "توکن معتبر نیست یا منقضی شده است" });
-
         storedToken.RevokedAt = DateTime.UtcNow;
-
         var newJwt = GenerateJwtToken(storedToken.User);
         var newRefreshValue = GenerateSecureToken();
-
         var userAgent = Request.Headers.UserAgent.ToString();
         var safeUserAgent = string.IsNullOrEmpty(userAgent) ? "unknown" : userAgent.Length > 500 ? userAgent[..500] : userAgent;
-
         var newRefresh = new TRefreshToken
         {
             UserId = storedToken.UserId,
@@ -409,10 +403,8 @@ public class UsersController : ControllerBase
             CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             UserAgent = safeUserAgent
         };
-
         _context.TRefreshToken.Add(newRefresh);
         await _context.SaveChangesAsync();
-
         return Ok(new
         {
             token = newJwt,
@@ -500,7 +492,6 @@ public class UsersController : ControllerBase
     {
         var query = _context.TRefreshToken
             .Where(rt => rt.UserId == userId && rt.RevokedAt == null && rt.ExpiresAt > DateTime.UtcNow);
-
         await query.ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.RevokedAt, DateTime.UtcNow));
     }
 

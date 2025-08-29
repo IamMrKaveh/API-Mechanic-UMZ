@@ -45,3 +45,14 @@ public class ProductStockDto
     public int Quantity { get; set; }
     public string? Notes { get; set; }
 }
+
+public class SetDiscountDto
+{
+    [Required]
+    [Range(1, int.MaxValue, ErrorMessage = "Original price must be greater than 0")]
+    public int OriginalPrice { get; set; }
+
+    [Required]
+    [Range(1, int.MaxValue, ErrorMessage = "Discounted price must be greater than 0")]
+    public int DiscountedPrice { get; set; }
+}

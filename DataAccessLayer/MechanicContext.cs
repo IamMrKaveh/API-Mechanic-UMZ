@@ -1,4 +1,5 @@
 ﻿using DataAccessLayer.Models.Security;
+using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessLayer;
 
@@ -184,10 +185,23 @@ public class MechanicContext : DbContext
         builder.Entity<TUserOtp>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(o => o.OtpHash).IsRequired();
-            entity.Property(o => o.CreatedAt).HasDefaultValueSql("TIMEZONE('UTC', NOW())");
-            entity.Property(o => o.IsUsed).HasDefaultValue(false);
+
+            entity.Property(x => x.Id)
+            .ValueGeneratedOnAdd();
+
+            entity.Property(o => o.OtpHash)
+            .IsRequired();
+
+            entity.Property(o => o.CreatedAt)
+            .HasDefaultValueSql("TIMEZONE('UTC', NOW())");
+
+            entity.Property(o => o.IsUsed)
+            .HasDefaultValue(false);
+
+            entity.HasOne(o => o.User)
+                  .WithMany(u => u.UserOtps)
+                  .HasForeignKey(o => o.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<TUsers>(entity =>
