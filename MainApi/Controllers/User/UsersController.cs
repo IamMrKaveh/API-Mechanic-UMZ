@@ -8,12 +8,14 @@ public class UsersController : ControllerBase
     private readonly MechanicContext _context;
     private readonly IConfiguration _configuration;
     private readonly ILogger<UsersController> _logger;
+    private readonly IRateLimitService _rateLimitService;
 
-    public UsersController(MechanicContext context, IConfiguration configuration, ILogger<UsersController> logger)
+    public UsersController(MechanicContext context, IConfiguration configuration, ILogger<UsersController> logger, IRateLimitService rateLimitService)
     {
         _context = context;
         _configuration = configuration;
         _logger = logger;
+        _rateLimitService = rateLimitService;
     }
 
     [HttpGet]
@@ -23,7 +25,7 @@ public class UsersController : ControllerBase
         try
         {
             var users = await _context.TUsers
-                .Where(u => u.IsActive)
+                .Where(u => !u.IsDeleted)
                 .Select(u => new UserProfileDto
                 {
                     Id = u.Id,
@@ -47,7 +49,7 @@ public class UsersController : ControllerBase
         try
         {
             var user = await _context.TUsers
-                .Where(u => u.Id == id && u.IsActive)
+                .Where(u => u.Id == id && !u.IsDeleted)
                 .Select(u => new UserProfileDto
                 {
                     Id = u.Id,
@@ -78,7 +80,7 @@ public class UsersController : ControllerBase
                 return Unauthorized();
 
             var user = await _context.TUsers
-                .Where(u => u.Id == userId && u.IsActive)
+                .Where(u => u.Id == userId && !u.IsDeleted)
                 .Select(u => new UserProfileDto
                 {
                     Id = u.Id,
@@ -149,7 +151,7 @@ public class UsersController : ControllerBase
                 return Forbid();
 
             var existingUser = await _context.TUsers.FindAsync(id);
-            if (existingUser == null || !existingUser.IsActive)
+            if (existingUser == null || existingUser.IsDeleted)
                 return NotFound();
 
             existingUser.FirstName = updateRequest.FirstName;
@@ -203,10 +205,13 @@ public class UsersController : ControllerBase
         try
         {
             var user = await _context.TUsers.FindAsync(id);
-            if (user == null)
+            if (user == null || user.IsDeleted)
                 return NotFound();
 
+            user.IsDeleted = true;
+            user.DeletedAt = DateTime.UtcNow;
             user.IsActive = false;
+
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -226,18 +231,30 @@ public class UsersController : ControllerBase
             return BadRequest(ModelState);
 
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var rateLimitKey = $"login_{clientIp}_{request.PhoneNumber}";
 
-        if (await IsRateLimited(rateLimitKey))
+        var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && !u.IsDeleted);
+
+        if (user == null)
         {
-            _logger.LogWarning("Rate limit exceeded for login attempt from IP: {ClientIP}, Phone: {PhoneNumber}", clientIp, request.PhoneNumber);
-            return BadRequest("Too many login attempts. Please try again later.");
+            var newUserRateLimitKey = $"new_user_creation_{clientIp}";
+            if (await _rateLimitService.IsLimitedAsync(newUserRateLimitKey, 1, 5))
+            {
+                _logger.LogWarning("Rate limit exceeded for new user creation from IP: {ClientIP}", clientIp);
+                return StatusCode(429, "Too many attempts to create new users. Please try again later.");
+            }
+        }
+        else
+        {
+            var loginRateLimitKey = $"login_{clientIp}_{request.PhoneNumber}";
+            if (await _rateLimitService.IsLimitedAsync(loginRateLimitKey, 5, 15))
+            {
+                _logger.LogWarning("Rate limit exceeded for login attempt from IP: {ClientIP}, Phone: {PhoneNumber}", clientIp, request.PhoneNumber);
+                return StatusCode(429, "Too many login attempts. Please try again later.");
+            }
         }
 
         try
         {
-            var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
-
             if (user == null)
             {
                 user = new TUsers
@@ -245,7 +262,8 @@ public class UsersController : ControllerBase
                     PhoneNumber = request.PhoneNumber,
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true,
-                    IsAdmin = false
+                    IsAdmin = false,
+                    IsDeleted = false
                 };
                 _context.TUsers.Add(user);
                 await _context.SaveChangesAsync();
@@ -260,7 +278,7 @@ public class UsersController : ControllerBase
 
             await RemoveExpiredOtps(user.Id);
 
-            var activeOtpExists = await _context.TUserOtps.AnyAsync(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
+            var activeOtpExists = await _context.TUserOtp.AnyAsync(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
 
             if (activeOtpExists)
                 return BadRequest("An active OTP already exists. Please wait before requesting a new one.");
@@ -277,7 +295,7 @@ public class UsersController : ControllerBase
                 AttemptCount = 0
             };
 
-            _context.TUserOtps.Add(userOtp);
+            _context.TUserOtp.Add(userOtp);
             await _context.SaveChangesAsync();
 
             var apiKey = _configuration["Kavenegar:ApiKey"];
@@ -309,14 +327,14 @@ public class UsersController : ControllerBase
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var rateLimitKey = $"otp_{clientIp}_{request.PhoneNumber}";
 
-        if (await IsRateLimited(rateLimitKey))
-            return BadRequest("Too many verification attempts. Please try again later.");
+        if (await _rateLimitService.IsLimitedAsync(rateLimitKey, 5, 15))
+            return StatusCode(429, "Too many verification attempts. Please try again later.");
 
         var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && u.IsActive);
         if (user == null)
             return BadRequest("Invalid credentials.");
 
-        var storedOtp = await _context.TUserOtps
+        var storedOtp = await _context.TUserOtp
             .Where(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
             .OrderByDescending(o => o.CreatedAt)
             .FirstOrDefaultAsync();
@@ -347,7 +365,7 @@ public class UsersController : ControllerBase
         var refreshTokenValue = GenerateSecureToken();
 
         var userAgent = Request.Headers.UserAgent.ToString();
-        var safeUserAgent = string.IsNullOrEmpty(userAgent) ? "unknown" : userAgent.Length > 500 ? userAgent[..500] : userAgent;
+        var safeUserAgent = SanitizeUserAgent(userAgent);
 
         var refreshToken = new TRefreshToken
         {
@@ -386,25 +404,49 @@ public class UsersController : ControllerBase
             .AsEnumerable()
             .Where(x => BCrypt.Net.BCrypt.Verify(request.RefreshToken, x.TokenHash))
             .ToList();
+
         var storedToken = storedTokens.FirstOrDefault();
-        if (storedToken == null || storedToken.User == null || !storedToken.User.IsActive)
-            return Unauthorized(new { message = "توکن معتبر نیست یا منقضی شده است" });
-        storedToken.RevokedAt = DateTime.UtcNow;
-        var newJwt = GenerateJwtToken(storedToken.User);
-        var newRefreshValue = GenerateSecureToken();
+
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var userAgent = Request.Headers.UserAgent.ToString();
-        var safeUserAgent = string.IsNullOrEmpty(userAgent) ? "unknown" : userAgent.Length > 500 ? userAgent[..500] : userAgent;
+        var safeUserAgent = SanitizeUserAgent(userAgent);
+
+        if (storedToken == null || storedToken.User == null || !storedToken.User.IsActive)
+        {
+            if (storedToken != null)
+            {
+                _logger.LogWarning("Potential token reuse detected for token belonging to user {UserId}. Revoking chain.", storedToken.UserId);
+                await RevokeTokenChainAsync(storedToken);
+            }
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        if (storedToken.UserAgent != safeUserAgent || storedToken.CreatedByIp != clientIp)
+        {
+            _logger.LogWarning("Session context mismatch for user {UserId}. IP or UserAgent changed. IP: {StoredIP} vs {CurrentIP}, UA: {StoredUA} vs {CurrentUA}",
+                storedToken.UserId, storedToken.CreatedByIp, clientIp, storedToken.UserAgent, safeUserAgent);
+        }
+
+        var newRefreshValue = GenerateSecureToken();
+        var newRefreshHash = BCrypt.Net.BCrypt.HashPassword(newRefreshValue);
+
+        storedToken.RevokedAt = DateTime.UtcNow;
+        storedToken.ReplacedByTokenHash = newRefreshHash;
+
+        var newJwt = GenerateJwtToken(storedToken.User);
+
         var newRefresh = new TRefreshToken
         {
             UserId = storedToken.UserId,
-            TokenHash = BCrypt.Net.BCrypt.HashPassword(newRefreshValue),
+            TokenHash = newRefreshHash,
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
-            CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            CreatedByIp = clientIp,
             UserAgent = safeUserAgent
         };
         _context.TRefreshToken.Add(newRefresh);
         await _context.SaveChangesAsync();
+
         return Ok(new
         {
             token = newJwt,
@@ -423,65 +465,48 @@ public class UsersController : ControllerBase
             .AsEnumerable()
             .Where(x => BCrypt.Net.BCrypt.Verify(request.RefreshToken, x.TokenHash));
 
-        var tokenList = query.ToList();
+        var token = query.FirstOrDefault();
 
-        if (!tokenList.Any())
-            return NotFound(new { message = "توکن یافت نشد" });
+        if (token == null)
+            return NotFound(new { message = "Token not found" });
 
-        foreach (var token in tokenList)
-            token.RevokedAt = DateTime.UtcNow;
+        await RevokeTokenChainAsync(token);
 
-        await _context.SaveChangesAsync();
-
-        return Ok(new { message = "خروج با موفقیت انجام شد" });
+        return Ok(new { message = "Logged out successfully" });
     }
 
     [NonAction]
-    private async Task<bool> IsRateLimited(string key, int maxAttempts = 5, int windowMinutes = 15)
+    private string SanitizeUserAgent(string userAgent)
     {
-        var now = DateTime.UtcNow;
-        var entry = await _context.TRateLimit.FirstOrDefaultAsync(r => r.Key == key);
+        if (string.IsNullOrEmpty(userAgent)) return "unknown";
+        var sanitized = new string(userAgent.Where(c => !char.IsControl(c)).ToArray());
+        return sanitized.Length > 255 ? sanitized[..255] : sanitized;
+    }
 
-        if (entry == null)
+    [NonAction]
+    private async Task RevokeTokenChainAsync(TRefreshToken token)
+    {
+        if (token == null) return;
+
+        token.RevokedAt = DateTime.UtcNow;
+
+        if (!string.IsNullOrEmpty(token.ReplacedByTokenHash))
         {
-            await _context.TRateLimit.AddAsync(new TRateLimit
+            var childTokens = await _context.TRefreshToken
+                .Where(t => t.TokenHash == token.ReplacedByTokenHash && t.RevokedAt == null)
+                .ToListAsync();
+
+            foreach (var child in childTokens)
             {
-                Key = key,
-                Count = 1,
-                ResetAt = now.AddMinutes(windowMinutes),
-                UpdatedAt = now
-            });
-            await _context.SaveChangesAsync();
-            return false;
+                await RevokeTokenChainAsync(child);
+            }
         }
-
-        if (entry.ResetAt < now)
-        {
-            await _context.TRateLimit
-                .Where(r => r.Key == key)
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(r => r.Count, 1)
-                    .SetProperty(r => r.ResetAt, now.AddMinutes(windowMinutes))
-                    .SetProperty(r => r.UpdatedAt, now));
-            return false;
-        }
-
-        if (entry.Count >= maxAttempts)
-            return true;
-
-        await _context.TRateLimit
-            .Where(r => r.Key == key)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(r => r.Count, entry.Count + 1)
-                .SetProperty(r => r.UpdatedAt, now));
-
-        return false;
     }
 
     [NonAction]
     public async Task RemoveExpiredOtps(int userId)
     {
-        var query = _context.TUserOtps
+        var query = _context.TUserOtp
             .Where(o => o.UserId == userId && (o.ExpiresAt <= DateTime.UtcNow || o.IsUsed));
 
         await query.ExecuteDeleteAsync();
@@ -498,22 +523,18 @@ public class UsersController : ControllerBase
     [NonAction]
     private string GenerateSecureOtp()
     {
-        using var rng = RandomNumberGenerator.Create();
-        var bytes = new byte[4];
-        rng.GetBytes(bytes);
-        var value = Math.Abs(BitConverter.ToInt32(bytes, 0)) % 9000 + 1000;
-        return value.ToString();
+        return RandomNumberGenerator.GetInt32(1000, 9999).ToString();
     }
 
     [NonAction]
     private string GenerateSecureToken()
     {
-        using var rng = RandomNumberGenerator.Create();
         var bytes = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(bytes);
         return Convert.ToBase64String(bytes);
     }
-    
+
     [NonAction]
     private string GenerateJwtToken(TUsers user)
     {
@@ -521,11 +542,16 @@ public class UsersController : ControllerBase
         var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
 
         var claims = new List<Claim>
-    {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-        new Claim(JwtRegisteredClaimNames.UniqueName, user.PhoneNumber),
-        new Claim("isAdmin", user.IsAdmin.ToString())
-    };
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.UniqueName, user.PhoneNumber),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        };
+
+        if (user.IsAdmin)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+        }
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -541,11 +567,11 @@ public class UsersController : ControllerBase
     }
 
     [NonAction]
-    private int GetCurrentUserId()
+    private int? GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
-        if (userIdClaim == null)
-            throw new UnauthorizedAccessException("کاربر احراز هویت نشده است");
-        return int.Parse(userIdClaim.Value);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            return null;
+        return userId;
     }
 }

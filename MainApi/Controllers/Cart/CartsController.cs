@@ -6,13 +6,15 @@
 public class CartsController : ControllerBase
 {
     private readonly ICartService _cartService;
+    private readonly ILogger<CartsController> _logger;
 
-    public CartsController(ICartService cartService)
+    public CartsController(ICartService cartService, ILogger<CartsController> logger)
     {
         _cartService = cartService;
+        _logger = logger;
     }
 
-    [HttpGet("my-cart")]
+    [HttpGet]
     public async Task<ActionResult<CartDto>> GetMyCart()
     {
         var userId = GetCurrentUserId();
@@ -20,11 +22,15 @@ public class CartsController : ControllerBase
             return Unauthorized("Invalid user");
 
         var cart = await _cartService.GetCartByUserIdAsync(userId);
+        if (cart == null)
+        {
+            return StatusCode(500, "Could not retrieve cart.");
+        }
         return Ok(cart);
     }
 
-    [HttpPost("add-item")]
-    public async Task<ActionResult> AddToCart([FromBody] AddToCartDto dto)
+    [HttpPost("items")]
+    public async Task<ActionResult> AddItemToCart([FromBody] AddToCartDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -33,11 +39,11 @@ public class CartsController : ControllerBase
             return Unauthorized("Invalid user");
         var result = await _cartService.AddItemToCartAsync(userId, dto);
         if (!result)
-            return BadRequest("Unable to add item to cart. Check product availability or stock.");
+            return Conflict("Failed to add item. Stock may have changed or item is unavailable.");
         return Ok(new { Message = "Item added to cart successfully" });
     }
 
-    [HttpPut("update-item/{itemId}")]
+    [HttpPut("items/{itemId}")]
     public async Task<ActionResult> UpdateCartItem(int itemId, [FromBody] UpdateCartItemDto dto)
     {
         if (!ModelState.IsValid)
@@ -47,19 +53,19 @@ public class CartsController : ControllerBase
             return Unauthorized("Invalid user");
         var result = await _cartService.UpdateCartItemAsync(userId, itemId, dto);
         if (!result)
-            return BadRequest("Unable to update cart item. Check quantity or item existence.");
+            return Conflict("Failed to update item. Stock may have changed or item not found.");
         return Ok(new { Message = "Cart item updated successfully" });
     }
 
-    [HttpDelete("remove-item/{itemId}")]
-    public async Task<ActionResult> RemoveFromCart(int itemId)
+    [HttpDelete("items/{itemId}")]
+    public async Task<ActionResult> RemoveItemFromCart(int itemId)
     {
         var userId = GetCurrentUserId();
         if (userId == 0)
             return Unauthorized("Invalid user");
         var result = await _cartService.RemoveItemFromCartAsync(userId, itemId);
         if (!result)
-            return NotFound("Cart item not found");
+            return NotFound("Cart item not found or could not be removed.");
         return Ok(new { Message = "Item removed from cart successfully" });
     }
 
@@ -70,11 +76,15 @@ public class CartsController : ControllerBase
         if (userId == 0)
             return Unauthorized("Invalid user");
 
-        await _cartService.ClearCartAsync(userId);
-        return Ok(new { Message = "Cart cleared successfully" });
+        var success = await _cartService.ClearCartAsync(userId);
+        if (!success)
+        {
+            return StatusCode(500, "An error occurred while clearing the cart.");
+        }
+        return NoContent();
     }
 
-    [HttpGet("count")]
+    [HttpGet("items/count")]
     public async Task<ActionResult<int>> GetCartItemsCount()
     {
         var userId = GetCurrentUserId();
@@ -87,7 +97,7 @@ public class CartsController : ControllerBase
     [NonAction]
     private int GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirst("id")?.Value;
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             return 0;
         return userId;

@@ -15,45 +15,63 @@ public class OrderItemsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<object>>> GetOrderItems([FromQuery] int? orderId = null)
     {
+        var currentUserId = GetCurrentUserId();
+
+        if (!orderId.HasValue)
+        {
+            if (!User.IsInRole("Admin"))
+            {
+                return Forbid();
+            }
+        }
+        else
+        {
+            if (orderId.Value <= 0)
+                return BadRequest("Invalid order ID");
+
+            var order = await _context.TOrders.FindAsync(orderId.Value);
+            if (order == null) return NotFound("Order not found");
+
+            if (order.UserId != currentUserId && !User.IsInRole("Admin"))
+            {
+                return Forbid();
+            }
+        }
+
         var query = _context.TOrderItems
             .Include(oi => oi.Product)
-                .ThenInclude(p => p.ProductType)
+                .ThenInclude(p => p.Category)
             .Include(oi => oi.UserOrder)
             .AsQueryable();
 
         if (orderId.HasValue)
         {
-            if (orderId.Value <= 0)
-                return BadRequest("شناسه سفارش نامعتبر است");
-
             query = query.Where(oi => oi.UserOrderId == orderId.Value);
+        }
+        else if (!User.IsInRole("Admin"))
+        {
+            return Forbid();
         }
 
         var orderItems = await query
-            .Select(oi => new
+            .Select(oi => new PublicOrderItemViewDto
             {
-                oi.Id,
-                oi.PurchasePrice,
-                oi.SellingPrice,
-                oi.Quantity,
-                oi.Amount,
-                oi.Profit,
-                Product = new
+                Id = oi.Id,
+                SellingPrice = oi.SellingPrice,
+                Quantity = oi.Quantity,
+                Amount = oi.Amount,
+                Product = new PublicOrderItemProductViewDto
                 {
-                    oi.Product.Id,
-                    oi.Product.Name,
-                    oi.Product.Icon,
-                    ProductType = oi.Product.ProductType != null ? new
-                    {
-                        oi.Product.ProductType.Id,
-                        oi.Product.ProductType.Name
-                    } : null
+                    Id = oi.Product.Id,
+                    Name = oi.Product.Name,
+                    Icon = oi.Product.Icon,
+                    CategoryName = oi.Product.Category != null ? oi.Product.Category.Name : null
                 },
-                Order = new
+                Order = new PublicOrderItemOrderViewDto
                 {
-                    oi.UserOrder.Id,
-                    oi.UserOrder.Name,
-                    oi.UserOrder.CreatedAt
+                    Id = oi.UserOrder.Id,
+                    Name = oi.UserOrder.Name,
+                    CreatedAt = oi.UserOrder.CreatedAt
                 }
             })
             .OrderByDescending(oi => oi.Id)
@@ -66,57 +84,70 @@ public class OrderItemsController : ControllerBase
     public async Task<ActionResult<object>> GetOrderItem(int id)
     {
         if (id <= 0)
-            return BadRequest("شناسه آیتم سفارش نامعتبر است");
+            return BadRequest("Invalid order item ID");
+
+        var currentUserId = GetCurrentUserId();
 
         var orderItem = await _context.TOrderItems
             .Include(oi => oi.Product)
-                .ThenInclude(p => p.ProductType)
+                .ThenInclude(p => p.Category)
             .Include(oi => oi.UserOrder)
                 .ThenInclude(o => o.User)
             .Where(oi => oi.Id == id)
             .Select(oi => new
             {
-                oi.Id,
-                oi.PurchasePrice,
-                oi.SellingPrice,
-                oi.Quantity,
-                oi.Amount,
-                oi.Profit,
-                Product = new
-                {
-                    oi.Product.Id,
-                    oi.Product.Name,
-                    oi.Product.Icon,
-                    oi.Product.PurchasePrice,
-                    oi.Product.SellingPrice,
-                    oi.Product.Count,
-                    ProductType = oi.Product.ProductType != null ? new
-                    {
-                        oi.Product.ProductType.Id,
-                        oi.Product.ProductType.Name
-                    } : null
-                },
-                Order = new
-                {
-                    oi.UserOrder.Id,
-                    oi.UserOrder.Name,
-                    oi.UserOrder.Address,
-                    oi.UserOrder.CreatedAt,
-                    User = new
-                    {
-                        oi.UserOrder.User.Id,
-                        oi.UserOrder.User.PhoneNumber,
-                        oi.UserOrder.User.FirstName,
-                        oi.UserOrder.User.LastName
-                    }
-                }
+                OrderItem = oi,
+                OrderUserId = oi.UserOrder.UserId
             })
             .FirstOrDefaultAsync();
 
         if (orderItem == null)
-            return NotFound("آیتم سفارش یافت نشد");
+            return NotFound("Order item not found");
 
-        return Ok(orderItem);
+        if (orderItem.OrderUserId != currentUserId && !User.IsInRole("Admin"))
+        {
+            return Forbid();
+        }
+
+        var result = new
+        {
+            orderItem.OrderItem.Id,
+            orderItem.OrderItem.PurchasePrice,
+            orderItem.OrderItem.SellingPrice,
+            orderItem.OrderItem.Quantity,
+            orderItem.OrderItem.Amount,
+            orderItem.OrderItem.Profit,
+            Product = new
+            {
+                orderItem.OrderItem.Product.Id,
+                orderItem.OrderItem.Product.Name,
+                orderItem.OrderItem.Product.Icon,
+                orderItem.OrderItem.Product.PurchasePrice,
+                orderItem.OrderItem.Product.SellingPrice,
+                orderItem.OrderItem.Product.Count,
+                Category = orderItem.OrderItem.Product.Category != null ? new
+                {
+                    orderItem.OrderItem.Product.Category.Id,
+                    orderItem.OrderItem.Product.Category.Name
+                } : null
+            },
+            Order = new
+            {
+                orderItem.OrderItem.UserOrder.Id,
+                orderItem.OrderItem.UserOrder.Name,
+                orderItem.OrderItem.UserOrder.Address,
+                orderItem.OrderItem.UserOrder.CreatedAt,
+                User = new
+                {
+                    orderItem.OrderItem.UserOrder.User.Id,
+                    orderItem.OrderItem.UserOrder.User.PhoneNumber,
+                    orderItem.OrderItem.UserOrder.User.FirstName,
+                    orderItem.OrderItem.UserOrder.User.LastName
+                }
+            }
+        };
+
+        return Ok(result);
     }
 
     [HttpPost]
@@ -128,46 +159,45 @@ public class OrderItemsController : ControllerBase
 
         var order = await _context.TOrders.FindAsync(itemDto.UserOrderId);
         if (order == null)
-            return BadRequest("سفارش یافت نشد");
+            return BadRequest("Order not found");
 
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var product = await _context.TProducts.FindAsync(itemDto.ProductId);
             if (product == null)
-                return BadRequest("محصول یافت نشد");
+                return BadRequest("Product not found");
 
-            if ((product.Count ?? 0) < itemDto.Quantity)
-                return BadRequest($"موجودی کافی نیست. موجودی: {product.Count ?? 0}, درخواستی: {itemDto.Quantity}");
+            if (product.Count < itemDto.Quantity)
+                return BadRequest($"Not enough stock. Available: {product.Count}, Requested: {itemDto.Quantity}");
 
             var orderItem = new TOrderItems
             {
                 UserOrderId = itemDto.UserOrderId,
                 ProductId = itemDto.ProductId,
-                PurchasePrice = product.PurchasePrice ?? 0,
+                PurchasePrice = product.PurchasePrice,
                 SellingPrice = itemDto.SellingPrice,
-                Quantity = itemDto.Quantity,
-                Amount = itemDto.SellingPrice * itemDto.Quantity,
-                Profit = (itemDto.SellingPrice - (product.PurchasePrice ?? 0)) * itemDto.Quantity
+                Quantity = itemDto.Quantity
             };
             _context.TOrderItems.Add(orderItem);
 
-            product.Count = (product.Count ?? 0) - itemDto.Quantity;
+            product.Count = product.Count - itemDto.Quantity;
             _context.TProducts.Update(product);
-
-            order.TotalAmount += orderItem.Amount;
-            order.TotalProfit += orderItem.Profit;
-            _context.TOrders.Update(order);
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
             return CreatedAtAction("GetOrderItem", new { id = orderItem.Id }, orderItem);
         }
-        catch (Exception ex)
+        catch (DbUpdateConcurrencyException)
         {
             await transaction.RollbackAsync();
-            return StatusCode(500, "خطا در ایجاد آیتم سفارش");
+            return Conflict("The item's stock has changed. Please try again.");
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            return StatusCode(500, "Error creating order item");
         }
     }
 
@@ -176,7 +206,7 @@ public class OrderItemsController : ControllerBase
     public async Task<IActionResult> UpdateOrderItem(int id, UpdateOrderItemDto itemDto)
     {
         if (id <= 0)
-            return BadRequest("شناسه آیتم سفارش نامعتبر است");
+            return BadRequest("Invalid order item ID");
 
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -186,33 +216,28 @@ public class OrderItemsController : ControllerBase
         {
             var orderItem = await _context.TOrderItems
                 .Include(oi => oi.Product)
-                .Include(oi => oi.UserOrder)
                 .FirstOrDefaultAsync(oi => oi.Id == id);
 
             if (orderItem == null)
-                return NotFound("آیتم سفارش یافت نشد");
-
-            var oldAmount = orderItem.Amount;
-            var oldProfit = orderItem.Profit;
-            var oldQuantity = orderItem.Quantity;
+                return NotFound("Order item not found");
 
             if (itemDto.Quantity.HasValue)
             {
                 if (itemDto.Quantity.Value <= 0)
                 {
                     await transaction.RollbackAsync();
-                    return BadRequest("مقدار باید بیشتر از صفر باشد");
+                    return BadRequest("Quantity must be greater than zero");
                 }
 
-                if (itemDto.Quantity.Value != oldQuantity)
+                if (itemDto.Quantity.Value != orderItem.Quantity)
                 {
-                    var quantityDifference = itemDto.Quantity.Value - oldQuantity;
-                    var currentStock = orderItem.Product!.Count ?? 0;
+                    var quantityDifference = itemDto.Quantity.Value - orderItem.Quantity;
+                    var currentStock = orderItem.Product!.Count;
 
                     if (currentStock < quantityDifference)
                     {
                         await transaction.RollbackAsync();
-                        return BadRequest($"موجودی کافی نیست. موجودی: {currentStock}, نیاز اضافی: {quantityDifference}");
+                        return BadRequest($"Not enough stock. Available: {currentStock}, Additional required: {quantityDifference}");
                     }
 
                     orderItem.Product.Count = currentStock - quantityDifference;
@@ -226,19 +251,12 @@ public class OrderItemsController : ControllerBase
                 if (itemDto.SellingPrice.Value <= 0)
                 {
                     await transaction.RollbackAsync();
-                    return BadRequest("قیمت فروش باید بیشتر از صفر باشد");
+                    return BadRequest("Selling price must be greater than zero");
                 }
                 orderItem.SellingPrice = itemDto.SellingPrice.Value;
             }
 
-            orderItem.Amount = orderItem.SellingPrice * orderItem.Quantity;
-            orderItem.Profit = (orderItem.SellingPrice - orderItem.PurchasePrice) * orderItem.Quantity;
-
-            orderItem.UserOrder!.TotalAmount = orderItem.UserOrder.TotalAmount - oldAmount + orderItem.Amount;
-            orderItem.UserOrder.TotalProfit = orderItem.UserOrder.TotalProfit - oldProfit + orderItem.Profit;
-
             _context.TOrderItems.Update(orderItem);
-            _context.TOrders.Update(orderItem.UserOrder);
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -249,13 +267,13 @@ public class OrderItemsController : ControllerBase
         {
             await transaction.RollbackAsync();
             if (!await OrderItemExistsAsync(id))
-                return NotFound("آیتم سفارش یافت نشد");
-            return Conflict("داده‌ها توسط کاربر دیگری تغییر یافته است");
+                return NotFound("Order item not found");
+            return Conflict("Data has been modified by another user.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await transaction.RollbackAsync();
-            return StatusCode(500, "خطا در بروزرسانی آیتم سفارش");
+            return StatusCode(500, "Error updating order item");
         }
     }
 
@@ -264,28 +282,23 @@ public class OrderItemsController : ControllerBase
     public async Task<IActionResult> DeleteOrderItem(int id)
     {
         if (id <= 0)
-            return BadRequest("شناسه آیتم سفارش نامعتبر است");
+            return BadRequest("Invalid order item ID");
 
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var orderItem = await _context.TOrderItems
                 .Include(oi => oi.Product)
-                .Include(oi => oi.UserOrder)
                 .FirstOrDefaultAsync(oi => oi.Id == id);
 
             if (orderItem == null)
-                return NotFound("آیتم سفارش یافت نشد");
+                return NotFound("Order item not found");
 
             if (orderItem.Product != null)
             {
-                orderItem.Product.Count = (orderItem.Product.Count ?? 0) + orderItem.Quantity;
+                orderItem.Product.Count = orderItem.Product.Count + orderItem.Quantity;
                 _context.TProducts.Update(orderItem.Product);
             }
-
-            orderItem.UserOrder!.TotalAmount -= orderItem.Amount;
-            orderItem.UserOrder.TotalProfit -= orderItem.Profit;
-            _context.TOrders.Update(orderItem.UserOrder);
 
             _context.TOrderItems.Remove(orderItem);
             await _context.SaveChangesAsync();
@@ -293,11 +306,23 @@ public class OrderItemsController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch (DbUpdateConcurrencyException)
         {
             await transaction.RollbackAsync();
-            return StatusCode(500, "خطا در حذف آیتم سفارش");
+            return Conflict("The item's stock or order has changed. Please try again.");
         }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            return StatusCode(500, "Error deleting order item");
+        }
+    }
+
+    [NonAction]
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(userIdClaim, out var userId) ? userId : 0;
     }
 
     [NonAction]

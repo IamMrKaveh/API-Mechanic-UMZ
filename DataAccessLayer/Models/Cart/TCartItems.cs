@@ -12,7 +12,7 @@ public class TCartItems
     public int ProductId { get; set; }
 
     [Required]
-    [Range(1, int.MaxValue)]
+    [Range(1, 1000)]
     public int Quantity { get; set; }
 
     public virtual TCarts? Cart { get; set; }

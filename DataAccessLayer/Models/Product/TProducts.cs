@@ -4,22 +4,22 @@ public class TProducts
 {
     [Key]
     public int Id { get; set; }
-
-    public string? Name { get; set; }
+    public string Name { get; set; }
     public string? Icon { get; set; }
+    public int PurchasePrice { get; set; }
+    public int OriginalPrice { get; set; }
+    public int SellingPrice { get; set; }
 
-    public int? PurchasePrice { get; set; }
-    public int? OriginalPrice { get; set; }
+    public bool HasDiscount => OriginalPrice > SellingPrice;
 
-    public int? SellingPrice { get; set; }
+    public double DiscountPercentage => (double)(HasDiscount && OriginalPrice > 0 ? ((double)(OriginalPrice - SellingPrice) / OriginalPrice * 100)
+        : 0);
 
-    public int? Count { get; set; }
-
-    public virtual TProductTypes? ProductType { get; set; }
-    public int? ProductTypeId { get; set; }
-
+    public int Count { get; set; }
+    public bool IsUnlimited { get; set; } = false;
+    public virtual TCategory? Category { get; set; }
+    public int CategoryId { get; set; }
     public virtual ICollection<TOrderItems>? OrderDetails { get; set; }
-
     [Timestamp]
     public byte[]? RowVersion { get; set; }
 }
