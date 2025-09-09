@@ -1,4 +1,6 @@
-﻿namespace MainApi.Controllers.Order;
+﻿using Npgsql;
+
+namespace MainApi.Controllers.Order;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -91,15 +93,20 @@ public class OrdersController : ControllerBase
         if (id <= 0)
             return BadRequest("Invalid order ID");
 
+        var currentUserId = GetCurrentUserId();
+        if (!currentUserId.HasValue)
+            return Unauthorized();
+
         var order = await _context.TOrders
             .Include(o => o.User)
             .Include(o => o.OrderStatus)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.Product)
-                    .ThenInclude(p => p!.ProductType)
+                    .ThenInclude(p => p!.Category)
             .Where(o => o.Id == id)
             .Select(o => new
             {
+                OrderEntity = o,
                 o.Id,
                 o.Name,
                 o.Address,
@@ -134,10 +141,10 @@ public class OrdersController : ControllerBase
                         oi.Product!.Id,
                         oi.Product.Name,
                         oi.Product.Icon,
-                        ProductType = oi.Product.ProductType != null ? new
+                        Category = oi.Product.Category != null ? new
                         {
-                            oi.Product.ProductType.Id,
-                            oi.Product.ProductType.Name
+                            oi.Product.Category.Id,
+                            oi.Product.Category.Name
                         } : null
                     }
                 })
@@ -147,7 +154,25 @@ public class OrdersController : ControllerBase
         if (order == null)
             return NotFound("Order not found");
 
-        return Ok(order);
+        if (order.OrderEntity.UserId != currentUserId.Value && !User.IsInRole("Admin"))
+        {
+            return Forbid();
+        }
+
+        return Ok(new
+        {
+            order.Id,
+            order.Name,
+            order.Address,
+            order.PostalCode,
+            order.TotalAmount,
+            order.TotalProfit,
+            order.CreatedAt,
+            order.DeliveryDate,
+            order.User,
+            order.OrderStatus,
+            order.OrderItems
+        });
     }
 
     [HttpPost]
@@ -171,6 +196,13 @@ public class OrdersController : ControllerBase
         if (!statusExists)
             return BadRequest("Invalid order status ID");
 
+        var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
+        if (string.IsNullOrEmpty(idempotencyKey))
+            return BadRequest("Idempotency-Key header is required.");
+
+        if (await _context.TOrders.AnyAsync(o => o.IdempotencyKey == idempotencyKey))
+            return Conflict("Duplicate request. Order already processed.");
+
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
@@ -178,9 +210,6 @@ public class OrdersController : ControllerBase
             var products = await _context.TProducts
                 .Where(p => productIds.Contains(p.Id))
                 .ToDictionaryAsync(p => p.Id, p => p);
-
-            var totalAmount = 0;
-            var totalProfit = 0;
 
             foreach (var itemDto in orderDto.OrderItems)
             {
@@ -190,19 +219,16 @@ public class OrdersController : ControllerBase
                     return BadRequest($"Product {itemDto.ProductId} not found");
                 }
 
-                if ((product.Count ?? 0) < itemDto.Quantity)
+                if (!product.IsUnlimited && product.Count < itemDto.Quantity)
                 {
                     await transaction.RollbackAsync();
-                    return BadRequest($"Product {itemDto.ProductId} insufficient stock. Available: {product.Count ?? 0}, Requested: {itemDto.Quantity}");
+                    return BadRequest($"Product {itemDto.ProductId} insufficient stock. Available: {product.Count}, Requested: {itemDto.Quantity}");
                 }
 
-                product.Count = Math.Max(0, (product.Count ?? 0) - itemDto.Quantity);
-
-                var amount = itemDto.SellingPrice * itemDto.Quantity;
-                var profit = (itemDto.SellingPrice - (product.PurchasePrice ?? 0)) * itemDto.Quantity;
-
-                totalAmount += amount;
-                totalProfit += profit;
+                if (!product.IsUnlimited)
+                {
+                    product.Count = product.Count - itemDto.Quantity;
+                }
             }
 
             var order = new TOrders
@@ -214,22 +240,23 @@ public class OrdersController : ControllerBase
                 CreatedAt = DateTime.UtcNow,
                 OrderStatusId = orderDto.OrderStatusId,
                 DeliveryDate = orderDto.DeliveryDate,
-                TotalAmount = totalAmount,
-                TotalProfit = totalProfit
+                IdempotencyKey = idempotencyKey
             };
 
             _context.TOrders.Add(order);
             await _context.SaveChangesAsync();
 
-            var orderItems = orderDto.OrderItems.Select(itemDto => new TOrderItems
+            var orderItems = orderDto.OrderItems.Select(itemDto =>
             {
-                UserOrderId = order.Id,
-                ProductId = itemDto.ProductId,
-                PurchasePrice = products[itemDto.ProductId].PurchasePrice ?? 0,
-                SellingPrice = itemDto.SellingPrice,
-                Quantity = itemDto.Quantity,
-                Amount = itemDto.SellingPrice * itemDto.Quantity,
-                Profit = (itemDto.SellingPrice - (products[itemDto.ProductId].PurchasePrice ?? 0)) * itemDto.Quantity
+                var product = products[itemDto.ProductId];
+                return new TOrderItems
+                {
+                    UserOrderId = order.Id,
+                    ProductId = itemDto.ProductId,
+                    PurchasePrice = product.PurchasePrice,
+                    SellingPrice = product.SellingPrice,
+                    Quantity = itemDto.Quantity,
+                };
             }).ToList();
 
             _context.TOrderItems.AddRange(orderItems);
@@ -237,6 +264,11 @@ public class OrdersController : ControllerBase
             await transaction.CommitAsync();
 
             return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+        {
+            await transaction.RollbackAsync();
+            return Conflict("Duplicate request. Order already exists.");
         }
         catch (Exception ex)
         {
@@ -252,17 +284,19 @@ public class OrdersController : ControllerBase
             return BadRequest(ModelState);
         if (string.IsNullOrWhiteSpace(orderDto.Address) || string.IsNullOrWhiteSpace(orderDto.PostalCode))
             return BadRequest("Address and PostalCode are required");
+
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
             return Unauthorized("User not authenticated");
+
         var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(idempotencyKey))
-        {
-            var existingOrder = await _context.TOrders
-                .FirstOrDefaultAsync(o => o.Name == idempotencyKey && o.UserId == userId.Value);
-            if (existingOrder != null)
-                return Conflict(new { Message = "Duplicate request", OrderId = existingOrder.Id });
-        }
+        if (string.IsNullOrEmpty(idempotencyKey))
+            return BadRequest("Idempotency-Key header is required.");
+
+        var existingOrderByIdempotency = await _context.TOrders.FirstOrDefaultAsync(o => o.IdempotencyKey == idempotencyKey && o.UserId == userId.Value);
+        if (existingOrderByIdempotency != null)
+            return Conflict(new { Message = "Duplicate request. Order already processed.", OrderId = existingOrderByIdempotency.Id });
+
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
@@ -270,83 +304,78 @@ public class OrdersController : ControllerBase
                 .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.Product)
                 .FirstOrDefaultAsync(c => c.UserId == userId.Value);
+
             if (cart == null || !cart.CartItems.Any())
-            {
-                await transaction.RollbackAsync();
                 return BadRequest("Cart is empty");
-            }
-            var productUpdates = new List<TProducts>();
-            var totalAmount = 0;
-            var totalProfit = 0;
-            var orderItems = new List<TOrderItems>();
-            foreach (var item in cart.CartItems)
-            {
-                if (item.Quantity <= 0)
-                {
-                    await transaction.RollbackAsync();
-                    return BadRequest($"Invalid quantity for product {item.ProductId}");
-                }
-                var product = await _context.TProducts
-                    .Where(p => p.Id == item.ProductId)
-                    .FirstOrDefaultAsync();
-                if (product == null)
-                {
-                    await transaction.RollbackAsync();
-                    return BadRequest($"Product {item.ProductId} not found");
-                }
-                if ((product.Count ?? 0) < item.Quantity)
-                {
-                    await transaction.RollbackAsync();
-                    return BadRequest($"Product {item.ProductId} insufficient stock. Available: {product.Count ?? 0}, Requested: {item.Quantity}");
-                }
-                if ((product.SellingPrice ?? 0) <= 0)
-                {
-                    await transaction.RollbackAsync();
-                    return BadRequest($"Product {item.ProductId} has invalid price");
-                }
-                product.Count = Math.Max(0, (product.Count ?? 0) - item.Quantity);
-                productUpdates.Add(product);
-                var orderItem = new TOrderItems
-                {
-                    ProductId = product.Id,
-                    PurchasePrice = product.PurchasePrice ?? 0,
-                    SellingPrice = product.SellingPrice ?? 0,
-                    Quantity = item.Quantity,
-                    Amount = (product.SellingPrice ?? 0) * item.Quantity,
-                    Profit = ((product.SellingPrice ?? 0) - (product.PurchasePrice ?? 0)) * item.Quantity
-                };
-                totalAmount += orderItem.Amount;
-                totalProfit += orderItem.Profit;
-                orderItems.Add(orderItem);
-            }
+
+            const int pendingPaymentStatusId = 1; // Assuming 1 is 'Pending Payment'
+
             var order = new TOrders
             {
                 UserId = userId.Value,
-                Name = idempotencyKey ?? $"Order-{Guid.NewGuid()}",
+                Name = orderDto.Name,
                 Address = orderDto.Address,
                 PostalCode = orderDto.PostalCode,
                 CreatedAt = DateTime.UtcNow,
-                OrderStatusId = 1,
-                TotalAmount = totalAmount,
-                TotalProfit = totalProfit
+                OrderStatusId = pendingPaymentStatusId,
+                IdempotencyKey = idempotencyKey,
             };
-            _context.TOrders.Add(order);
-            await _context.SaveChangesAsync();
-            foreach (var orderItem in orderItems)
+
+            foreach (var item in cart.CartItems)
             {
-                orderItem.UserOrderId = order.Id;
+                var product = item.Product;
+                if (product == null)
+                {
+                    await transaction.RollbackAsync();
+                    return Conflict($"Product with ID '{item.ProductId}' not found.");
+                }
+                if (!product.IsUnlimited && product.Count < item.Quantity)
+                {
+                    await transaction.RollbackAsync();
+                    return Conflict($"Product '{product.Name}' is out of stock or has insufficient quantity.");
+                }
+                if (!product.IsUnlimited)
+                {
+                    product.Count -= item.Quantity;
+                    _context.TProducts.Update(product);
+                }
+
+                order.OrderItems.Add(new TOrderItems
+                {
+                    ProductId = item.ProductId,
+                    PurchasePrice = product.PurchasePrice,
+                    SellingPrice = product.SellingPrice,
+                    Quantity = item.Quantity,
+                });
             }
-            _context.TOrderItems.AddRange(orderItems);
-            _context.TProducts.UpdateRange(productUpdates);
+
+            _context.TOrders.Add(order);
             _context.TCartItems.RemoveRange(cart.CartItems);
+            _context.TCarts.Remove(cart);
+
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
+
             return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
         }
-        catch (Exception ex)
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
         {
             await transaction.RollbackAsync();
-            return StatusCode(500, "An error occurred while processing the checkout");
+            var existingOrder = await _context.TOrders.FirstOrDefaultAsync(o => o.UserId == userId.Value && o.IdempotencyKey == idempotencyKey);
+            if (existingOrder != null)
+                return Conflict(new { Message = "Duplicate request. Order already exists.", OrderId = existingOrder.Id });
+
+            return Conflict("A concurrency error occurred. Please try again.");
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync();
+            return Conflict("The stock for an item in your cart has changed. Please review your cart and try again.");
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            return StatusCode(500, "An error occurred while processing the checkout.");
         }
     }
 
@@ -364,11 +393,17 @@ public class OrdersController : ControllerBase
         if (order == null)
             return NotFound("Order not found");
 
+        if (orderDto.RowVersion != null)
+        {
+            _context.Entry(order).Property("RowVersion").OriginalValue = orderDto.RowVersion;
+        }
+
         if (orderDto.OrderStatusId.HasValue)
         {
             var statusExists = await _context.TOrderStatus.AnyAsync(s => s.Id == orderDto.OrderStatusId.Value);
             if (!statusExists)
                 return BadRequest("Invalid order status ID");
+            order.OrderStatusId = orderDto.OrderStatusId.Value;
         }
 
         if (!string.IsNullOrWhiteSpace(orderDto.Name))
@@ -379,8 +414,6 @@ public class OrdersController : ControllerBase
             order.PostalCode = orderDto.PostalCode;
         if (orderDto.DeliveryDate.HasValue)
             order.DeliveryDate = orderDto.DeliveryDate;
-        if (orderDto.OrderStatusId.HasValue)
-            order.OrderStatusId = orderDto.OrderStatusId.Value;
 
         try
         {
@@ -389,13 +422,7 @@ public class OrdersController : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!await TOrdersExistsAsync(id))
-                return NotFound("Order not found");
-            throw;
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, "An error occurred while updating the order");
+            return Conflict(new { message = "The order was modified by another user. Please reload and try again." });
         }
     }
 
@@ -516,7 +543,7 @@ public class OrdersController : ControllerBase
             {
                 if (orderItem.Product != null)
                 {
-                    orderItem.Product.Count = (orderItem.Product.Count ?? 0) + orderItem.Quantity;
+                    orderItem.Product.Count = orderItem.Product.Count + orderItem.Quantity;
                 }
             }
 
@@ -536,15 +563,15 @@ public class OrdersController : ControllerBase
     }
 
     [NonAction]
-    private async Task<bool> TOrdersExistsAsync(int id)
+    private int? GetCurrentUserId()
     {
-        return await _context.TOrders.AnyAsync(e => e.Id == id);
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(userIdClaim, out var userId) ? userId : null;
     }
 
     [NonAction]
-    private int? GetCurrentUserId()
+    private async Task<bool> TOrdersExistsAsync(int id)
     {
-        var userIdClaim = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return int.TryParse(userIdClaim, out var userId) ? userId : null;
+        return await _context.TOrders.AnyAsync(e => e.Id == id);
     }
 }

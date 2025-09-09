@@ -2,78 +2,89 @@
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public class ProductsController : ControllerBase
 {
     private readonly MechanicContext _context;
+    private readonly IHtmlSanitizer _htmlSanitizer;
 
-    public ProductsController(MechanicContext context)
+    public ProductsController(MechanicContext context, IHtmlSanitizer htmlSanitizer)
     {
         _context = context;
+        _htmlSanitizer = htmlSanitizer;
     }
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<object>> GetProducts([FromQuery] ProductSearchDto? search = null)
+    public async Task<ActionResult<object>> GetProducts([FromQuery] ProductSearchDto search)
     {
-        search ??= new ProductSearchDto();
-
         if (search.Page < 1) search.Page = 1;
         if (search.PageSize < 1) search.PageSize = 10;
         if (search.PageSize > 100) search.PageSize = 100;
 
         try
         {
-            var query = _context.TProducts.Include(p => p.ProductType).AsQueryable();
+            var query = _context.TProducts.Include(p => p.Category).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search.Name))
             {
-                query = query.Where(p => p.Name != null && p.Name.ToLower().Contains(search.Name.ToLower()));
+                var sanitizedName = _htmlSanitizer.Sanitize(search.Name);
+                var pattern = $"%{sanitizedName}%";
+                query = query.Where(p => p.Name != null && EF.Functions.Like(p.Name, pattern));
             }
 
-            if (search.ProductTypeId.HasValue)
+            if (search.CategoryId.HasValue)
             {
-                query = query.Where(p => p.ProductTypeId == search.ProductTypeId);
+                query = query.Where(p => p.CategoryId == search.CategoryId);
             }
 
             if (search.MinPrice.HasValue)
             {
-                query = query.Where(p => p.SellingPrice >= search.MinPrice);
+                query = query.Where(p => p.SellingPrice >= search.MinPrice.Value);
             }
 
             if (search.MaxPrice.HasValue)
             {
-                query = query.Where(p => p.SellingPrice <= search.MaxPrice);
+                query = query.Where(p => p.SellingPrice <= search.MaxPrice.Value);
             }
 
-            if (search.InStock.HasValue)
+            if (search.InStock.HasValue && search.InStock.Value)
             {
-                if (search.InStock.Value)
-                    query = query.Where(p => p.Count > 0);
-                else
-                    query = query.Where(p => p.Count == 0 || p.Count == null);
+                query = query.Where(p => (!p.IsUnlimited && p.Count > 0) || p.IsUnlimited);
             }
+
+            var sortBy = Request.Query["sortBy"].ToString();
+            if (string.IsNullOrWhiteSpace(sortBy)) sortBy = Request.Query["sort"].ToString();
+
+            query = (sortBy?.ToLowerInvariant()) switch
+            {
+                "price_asc" => query.OrderBy(p => p.SellingPrice).ThenByDescending(p => p.Id),
+                "price_desc" => query.OrderByDescending(p => p.SellingPrice).ThenByDescending(p => p.Id),
+                "name_asc" => query.OrderBy(p => p.Name).ThenByDescending(p => p.Id),
+                "name_desc" => query.OrderByDescending(p => p.Name).ThenByDescending(p => p.Id),
+                "discount_desc" => query.OrderByDescending(p => p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / p.OriginalPrice) : 0).ThenByDescending(p => p.Id),
+                "discount_asc" => query.OrderBy(p => p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / p.OriginalPrice) : 0).ThenByDescending(p => p.Id),
+                "oldest" => query.OrderBy(p => p.Id),
+                "newest" => query.OrderByDescending(p => p.Id),
+                _ => query.OrderByDescending(p => p.Id)
+            };
 
             var totalItems = await query.CountAsync();
             var items = await query
-                .OrderBy(p => p.Id)
                 .Skip((search.Page - 1) * search.PageSize)
                 .Take(search.PageSize)
-                .Select(p => new
+                .Select(p => new PublicProductViewDto
                 {
-                    p.Id,
-                    p.Name,
-                    p.Icon,
-                    p.PurchasePrice,
-                    p.OriginalPrice,
-                    p.SellingPrice,
-                    HasDiscount = p.OriginalPrice != null && p.SellingPrice != null && p.OriginalPrice > p.SellingPrice,
-                    DiscountPercentage = p.OriginalPrice != null && p.SellingPrice != null && p.OriginalPrice > p.SellingPrice
-                        ? ((p.OriginalPrice.Value - p.SellingPrice.Value) * 100.0 / p.OriginalPrice.Value)
-                        : 0,
-                    p.Count,
-                    p.ProductTypeId,
-                    ProductType = p.ProductType != null ? new { p.ProductType.Id, p.ProductType.Name } : null,
+                    Id = p.Id,
+                    Name = p.Name,
+                    Icon = p.Icon,
+                    OriginalPrice = p.OriginalPrice,
+                    SellingPrice = p.SellingPrice,
+                    HasDiscount = p.HasDiscount,
+                    DiscountPercentage = p.DiscountPercentage,
+                    Count = p.Count,
+                    IsUnlimited = p.IsUnlimited,
+                    CategoryId = p.CategoryId,
+                    Category = p.Category != null ? new { p.Category.Id, p.Category.Name } : null,
                 })
                 .ToListAsync();
 
@@ -94,6 +105,7 @@ public class ProductsController : ControllerBase
         }
     }
 
+
     [HttpGet("{id:int}")]
     [AllowAnonymous]
     public async Task<ActionResult<object>> GetProduct(int id)
@@ -105,33 +117,53 @@ public class ProductsController : ControllerBase
 
         try
         {
-            var product = await _context.TProducts
-                .Include(p => p.ProductType)
-                .Where(p => p.Id == id)
-                .Select(p => new
-                {
-                    p.Id,
-                    p.Name,
-                    p.Icon,
-                    p.PurchasePrice,
-                    p.OriginalPrice,
-                    p.SellingPrice,
-                    HasDiscount = p.OriginalPrice != null && p.SellingPrice != null && p.OriginalPrice > p.SellingPrice,
-                    DiscountPercentage = p.OriginalPrice != null && p.SellingPrice != null && p.OriginalPrice > p.SellingPrice
-                        ? ((p.OriginalPrice.Value - p.SellingPrice.Value) * 100.0 / p.OriginalPrice.Value)
-                        : 0,
-                    p.Count,
-                    p.ProductTypeId,
-                    ProductType = p.ProductType != null ? new { p.ProductType.Id, p.ProductType.Name } : null,
-                })
-                .FirstOrDefaultAsync();
+            var productQuery = _context.TProducts
+                .Include(p => p.Category)
+                .Where(p => p.Id == id);
 
-            if (product == null)
+            var isAdmin = User.Identity?.IsAuthenticated == true && User.IsInRole("Admin");
+
+            var product = await productQuery.FirstOrDefaultAsync();
+
+            if (product == null) return NotFound(new { Message = $"Product with ID {id} not found" });
+
+            if (isAdmin)
             {
-                return NotFound(new { Message = $"Product with ID {id} not found" });
+                var adminDto = new AdminProductViewDto
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    Icon = product.Icon,
+                    PurchasePrice = product.PurchasePrice,
+                    OriginalPrice = product.OriginalPrice,
+                    SellingPrice = product.SellingPrice,
+                    HasDiscount = product.HasDiscount,
+                    DiscountPercentage = product.DiscountPercentage,
+                    Count = product.Count,
+                    IsUnlimited = product.IsUnlimited,
+                    CategoryId = product.CategoryId,
+                    Category = product.Category != null ? new { product.Category.Id, product.Category.Name } : null
+                };
+                return Ok(adminDto);
             }
-
-            return Ok(product);
+            else
+            {
+                var publicDto = new PublicProductViewDto
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    Icon = product.Icon,
+                    OriginalPrice = product.OriginalPrice,
+                    SellingPrice = product.SellingPrice,
+                    HasDiscount = product.HasDiscount,
+                    DiscountPercentage = product.DiscountPercentage,
+                    Count = product.Count,
+                    IsUnlimited = product.IsUnlimited,
+                    CategoryId = product.CategoryId,
+                    Category = product.Category != null ? new { product.Category.Id, product.Category.Name } : null
+                };
+                return Ok(publicDto);
+            }
         }
         catch (Exception ex)
         {
@@ -141,148 +173,114 @@ public class ProductsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<object>> CreateProduct([FromBody] ProductDto productDto)
+    public async Task<ActionResult<object>> CreateProduct([FromForm] ProductDto productDto)
     {
-        if (productDto == null)
-        {
-            return BadRequest(new { Message = "Product data is required" });
-        }
+        if (productDto == null) return BadRequest(new { Message = "Product data is required" });
+        if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+        if (productDto.OriginalPrice > 0 && productDto.SellingPrice >= productDto.OriginalPrice)
+            return BadRequest(new { Message = "Selling price must be less than original price when a discount is applied." });
 
-        if (string.IsNullOrWhiteSpace(productDto.Name))
-        {
-            return BadRequest(new { Message = "Product name is required" });
-        }
+        if (productDto.PurchasePrice > productDto.SellingPrice)
+            return BadRequest(new { Message = "Purchase price cannot be greater than selling price." });
 
-        if ((productDto.SellingPrice ?? 0) < 0 || (productDto.PurchasePrice ?? 0) < 0)
+        string? iconUrl = null;
+        if (productDto.IconFile != null)
         {
-            return BadRequest(new { Message = "Prices cannot be negative" });
-        }
+            if (productDto.IconFile.Length > 2 * 1024 * 1024)
+                return BadRequest("File size cannot exceed 2MB.");
 
-        if ((productDto.Count ?? 0) < 0)
-        {
-            return BadRequest(new { Message = "Count cannot be negative" });
-        }
+            var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
+            if (!allowedMimeTypes.Contains(productDto.IconFile.ContentType.ToLower()))
+                return BadRequest("Invalid file type. Only JPG, PNG, WebP, GIF are allowed.");
 
-        try
-        {
-            if (productDto.ProductTypeId.HasValue)
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(productDto.IconFile.FileName)}";
+            var filePath = Path.Combine("wwwroot", "uploads", "products", fileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+
+            await using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                var productTypeExists = await _context.TProductTypes.AnyAsync(pt => pt.Id == productDto.ProductTypeId);
-                if (!productTypeExists)
-                {
-                    return BadRequest(new { Message = "Invalid ProductTypeId - Product type does not exist" });
-                }
+                await productDto.IconFile.CopyToAsync(stream);
             }
-
-            var product = new TProducts
-            {
-                Name = productDto.Name?.Trim(),
-                Icon = productDto.Icon?.Trim(),
-                PurchasePrice = productDto.PurchasePrice,
-                SellingPrice = productDto.SellingPrice,
-                Count = productDto.Count ?? 0,
-                ProductTypeId = productDto.ProductTypeId
-            };
-
-            _context.TProducts.Add(product);
-            await _context.SaveChangesAsync();
-
-            var result = new
-            {
-                product.Id,
-                product.Name,
-                product.Icon,
-                product.PurchasePrice,
-                product.SellingPrice,
-                product.Count,
-                product.ProductTypeId
-            };
-
-            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, result);
+            iconUrl = $"/uploads/products/{fileName}";
         }
-        catch (Exception ex)
+
+        var product = new TProducts
         {
-            return StatusCode(500, new { Message = "Error creating product", Error = ex.Message });
-        }
+            Name = productDto.Name,
+            Icon = iconUrl,
+            PurchasePrice = productDto.PurchasePrice,
+            SellingPrice = productDto.SellingPrice,
+            OriginalPrice = productDto.OriginalPrice,
+            Count = productDto.IsUnlimited ? 0 : productDto.Count,
+            IsUnlimited = productDto.IsUnlimited,
+            CategoryId = productDto.CategoryId
+        };
+
+        _context.TProducts.Add(product);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
     }
+
 
     [HttpPut("{id:int}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductDto productDto)
+    public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDto productDto)
     {
-        if (id <= 0)
+        if (id <= 0) return BadRequest(new { Message = "Invalid product ID" });
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        if (productDto.OriginalPrice > 0 && productDto.SellingPrice >= productDto.OriginalPrice)
+            return BadRequest(new { Message = "Selling price must be less than original price when a discount is applied." });
+
+        if (productDto.PurchasePrice > productDto.SellingPrice)
+            return BadRequest(new { Message = "Purchase price cannot be greater than selling price." });
+
+        var existingProduct = await _context.TProducts.FindAsync(id);
+        if (existingProduct == null) return NotFound(new { Message = $"Product with ID {id} not found" });
+
+        if (productDto.RowVersion != null)
         {
-            return BadRequest(new { Message = "Invalid product ID" });
+            _context.Entry(existingProduct).Property("RowVersion").OriginalValue = productDto.RowVersion;
         }
 
-        if (productDto == null)
+        if (productDto.IconFile != null)
         {
-            return BadRequest(new { Message = "Product data is required" });
+            if (productDto.IconFile.Length > 2 * 1024 * 1024)
+                return BadRequest("File size cannot exceed 2MB.");
+
+            var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
+            if (!allowedMimeTypes.Contains(productDto.IconFile.ContentType.ToLower()))
+                return BadRequest("Invalid file type. Only JPG, PNG, WebP, GIF are allowed.");
+
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(productDto.IconFile.FileName)}";
+            var filePath = Path.Combine("wwwroot", "uploads", "products", fileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+
+            await using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await productDto.IconFile.CopyToAsync(stream);
+            }
+            existingProduct.Icon = $"/uploads/products/{fileName}";
         }
 
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
-        if (string.IsNullOrWhiteSpace(productDto.Name))
-        {
-            return BadRequest(new { Message = "Product name is required" });
-        }
-
-        if ((productDto.SellingPrice ?? 0) < 0 || (productDto.PurchasePrice ?? 0) < 0)
-        {
-            return BadRequest(new { Message = "Prices cannot be negative" });
-        }
-
-        if ((productDto.Count ?? 0) < 0)
-        {
-            return BadRequest(new { Message = "Count cannot be negative" });
-        }
+        existingProduct.Name = productDto.Name;
+        existingProduct.PurchasePrice = productDto.PurchasePrice;
+        existingProduct.SellingPrice = productDto.SellingPrice;
+        existingProduct.OriginalPrice = productDto.OriginalPrice;
+        existingProduct.Count = productDto.IsUnlimited ? 0 : productDto.Count;
+        existingProduct.IsUnlimited = productDto.IsUnlimited;
+        existingProduct.CategoryId = productDto.CategoryId;
 
         try
         {
-            var existingProduct = await _context.TProducts.FindAsync(id);
-            if (existingProduct == null)
-            {
-                return NotFound(new { Message = $"Product with ID {id} not found" });
-            }
-
-            if (productDto.ProductTypeId.HasValue)
-            {
-                var productTypeExists = await _context.TProductTypes.AnyAsync(pt => pt.Id == productDto.ProductTypeId);
-                if (!productTypeExists)
-                {
-                    return BadRequest(new { Message = "Invalid ProductTypeId - Product type does not exist" });
-                }
-            }
-
-            existingProduct.Name = productDto.Name?.Trim();
-            existingProduct.Icon = productDto.Icon?.Trim();
-            existingProduct.PurchasePrice = productDto.PurchasePrice;
-            existingProduct.SellingPrice = productDto.SellingPrice;
-            existingProduct.Count = productDto.Count;
-            existingProduct.ProductTypeId = productDto.ProductTypeId;
-
             await _context.SaveChangesAsync();
-            return Ok(new { Message = "Product updated successfully" });
+            return NoContent();
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!await ProductExistsAsync(id))
-            {
-                return NotFound(new { Message = $"Product with ID {id} was deleted by another user" });
-            }
-            throw;
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { Message = "Error updating product", Error = ex.Message });
+            return Conflict(new { Message = "The product was modified by another user. Please reload and try again." });
         }
     }
 
@@ -304,13 +302,25 @@ public class ProductsController : ControllerBase
         {
             var product = await _context.TProducts.FindAsync(id);
             if (product == null)
+            {
+                await transaction.RollbackAsync();
                 return NotFound(new { Message = $"Product with ID {id} not found" });
+            }
 
-            var currentStock = product.Count ?? 0;
+            if (product.IsUnlimited)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(new { Message = "Cannot change stock for an unlimited product." });
+            }
+
+            var currentStock = product.Count;
             var newStock = currentStock + stockDto.Quantity;
 
             if (newStock > int.MaxValue || newStock < 0)
+            {
+                await transaction.RollbackAsync();
                 return BadRequest(new { Message = "Stock overflow - resulting quantity would be invalid" });
+            }
 
             product.Count = newStock;
             await _context.SaveChangesAsync();
@@ -343,11 +353,23 @@ public class ProductsController : ControllerBase
         {
             var product = await _context.TProducts.FindAsync(id);
             if (product == null)
+            {
+                await transaction.RollbackAsync();
                 return NotFound(new { Message = $"Product with ID {id} not found" });
+            }
 
-            var currentStock = product.Count ?? 0;
+            if (product.IsUnlimited)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(new { Message = "Cannot change stock for an unlimited product." });
+            }
+
+            var currentStock = product.Count;
             if (currentStock < stockDto.Quantity)
+            {
+                await transaction.RollbackAsync();
                 return BadRequest(new { Message = $"Insufficient stock. Current stock: {currentStock}, Requested: {stockDto.Quantity}" });
+            }
 
             product.Count = currentStock - stockDto.Quantity;
             await _context.SaveChangesAsync();
@@ -371,15 +393,15 @@ public class ProductsController : ControllerBase
         try
         {
             var products = await _context.TProducts
-                .Include(p => p.ProductType)
-                .Where(p => p.Count.HasValue && p.Count <= threshold && p.Count > 0)
+                .Include(p => p.Category)
+                .Where(p => !p.IsUnlimited && p.Count <= threshold && p.Count > 0)
                 .OrderBy(p => p.Count)
                 .Select(p => new
                 {
                     p.Id,
                     p.Name,
                     p.Count,
-                    ProductType = p.ProductType != null ? p.ProductType.Name : null,
+                    Category = p.Category != null ? p.Category.Name : null,
                     p.SellingPrice
                 })
                 .ToListAsync();
@@ -401,14 +423,14 @@ public class ProductsController : ControllerBase
             var totalProducts = await _context.TProducts.CountAsync();
 
             var totalValue = await _context.TProducts
-                .Where(p => p.Count.HasValue && p.PurchasePrice.HasValue && p.Count > 0)
-                .SumAsync(p => (decimal)p.Count.Value * p.PurchasePrice.Value);
+                .Where(p => !p.IsUnlimited && p.Count > 0)
+                .SumAsync(p => (decimal)p.Count * p.PurchasePrice);
 
             var outOfStockCount = await _context.TProducts
-                .CountAsync(p => !p.Count.HasValue || p.Count == 0);
+                .CountAsync(p => !p.IsUnlimited && p.Count == 0);
 
             var lowStockCount = await _context.TProducts
-                .CountAsync(p => p.Count.HasValue && p.Count <= 5 && p.Count > 0);
+                .CountAsync(p => !p.IsUnlimited && p.Count <= 5 && p.Count > 0);
 
             return Ok(new
             {
@@ -433,10 +455,10 @@ public class ProductsController : ControllerBase
             return BadRequest(new { Message = "Price updates data is required" });
         }
 
-        var invalidPrices = priceUpdates.Where(p => p.Value < 0).ToList();
+        var invalidPrices = priceUpdates.Where(p => p.Value <= 0).ToList();
         if (invalidPrices.Any())
         {
-            return BadRequest(new { Message = "Prices cannot be negative" });
+            return BadRequest(new { Message = "Prices must be greater than zero." });
         }
 
         try
@@ -514,9 +536,9 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<object>> GetDiscountedProducts(
     [FromQuery] int page = 1,
     [FromQuery] int pageSize = 10,
-    [FromQuery] int? minDiscount = null,
-    [FromQuery] int? maxDiscount = null,
-    [FromQuery] int? productTypeId = null)
+    [FromQuery] int minDiscount = 0,
+    [FromQuery] int maxDiscount = 0,
+    [FromQuery] int CategoryId = 0)
     {
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 10;
@@ -524,34 +546,32 @@ public class ProductsController : ControllerBase
         try
         {
             var query = _context.TProducts
-                .Include(p => p.ProductType)
-                .Where(p => p.OriginalPrice != null &&
-                           p.SellingPrice != null &&
-                           p.OriginalPrice > p.SellingPrice &&
-                           p.Count > 0)
+                .Include(p => p.Category)
+                .Where(p => p.OriginalPrice > p.SellingPrice &&
+                           (p.Count > 0 || p.IsUnlimited))
                 .AsQueryable();
 
-            if (productTypeId.HasValue)
+            if (CategoryId > 0)
             {
-                query = query.Where(p => p.ProductTypeId == productTypeId);
+                query = query.Where(p => p.CategoryId == CategoryId);
             }
 
-            if (minDiscount.HasValue)
+            if (minDiscount > 0)
             {
-                query = query.Where(p =>
-                    ((p.OriginalPrice!.Value - p.SellingPrice!.Value) * 100 / p.OriginalPrice.Value) >= minDiscount.Value);
+                query = query.Where(p => p.OriginalPrice > 0 &&
+                    ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / p.OriginalPrice) >= minDiscount);
             }
 
-            if (maxDiscount.HasValue)
+            if (maxDiscount > 0)
             {
-                query = query.Where(p =>
-                    ((p.OriginalPrice!.Value - p.SellingPrice!.Value) * 100 / p.OriginalPrice.Value) <= maxDiscount.Value);
+                query = query.Where(p => p.OriginalPrice > 0 &&
+                    ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / p.OriginalPrice) <= maxDiscount);
             }
 
             var totalItems = await query.CountAsync();
 
             var items = await query
-                .OrderByDescending(p => (p.OriginalPrice!.Value - p.SellingPrice!.Value) * 100 / p.OriginalPrice.Value)
+                .OrderByDescending(p => p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / p.OriginalPrice) : 0)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(p => new
@@ -561,11 +581,12 @@ public class ProductsController : ControllerBase
                     p.Icon,
                     p.OriginalPrice,
                     p.SellingPrice,
-                    DiscountAmount = p.OriginalPrice!.Value - p.SellingPrice!.Value,
-                    DiscountPercentage = ((p.OriginalPrice.Value - p.SellingPrice!.Value) * 100 / p.OriginalPrice.Value),
+                    DiscountAmount = p.OriginalPrice - p.SellingPrice,
+                    DiscountPercentage = p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / p.OriginalPrice) : 0,
                     p.Count,
-                    p.ProductTypeId,
-                    ProductType = p.ProductType != null ? new { p.ProductType.Id, p.ProductType.Name } : null
+                    p.IsUnlimited,
+                    p.CategoryId,
+                    Category = p.Category != null ? new { p.Category.Id, p.Category.Name } : null
                 })
                 .ToListAsync();
 
@@ -600,11 +621,6 @@ public class ProductsController : ControllerBase
             return BadRequest(new { Message = "Invalid discount data" });
         }
 
-        if (discountDto.OriginalPrice <= 0 || discountDto.DiscountedPrice <= 0)
-        {
-            return BadRequest(new { Message = "Prices must be greater than zero" });
-        }
-
         if (discountDto.DiscountedPrice >= discountDto.OriginalPrice)
         {
             return BadRequest(new { Message = "Discounted price must be less than original price" });
@@ -623,7 +639,7 @@ public class ProductsController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            var discountPercentage = ((discountDto.OriginalPrice - discountDto.DiscountedPrice) * 100 / discountDto.OriginalPrice);
+            var discountPercentage = ((discountDto.OriginalPrice - discountDto.DiscountedPrice) * 100.0 / discountDto.OriginalPrice);
 
             return Ok(new
             {
@@ -654,12 +670,12 @@ public class ProductsController : ControllerBase
             {
                 return NotFound(new { Message = $"Product with ID {id} not found" });
             }
-            if (product.OriginalPrice == null || product.SellingPrice == null ||
-                product.OriginalPrice == product.SellingPrice)
+            if (product.OriginalPrice <= product.SellingPrice)
             {
-                return BadRequest(new { Message = "Product does not have a discount" });
+                return BadRequest(new { Message = "Product does not have a valid discount to remove" });
             }
             product.SellingPrice = product.OriginalPrice;
+            product.OriginalPrice = 0;
             await _context.SaveChangesAsync();
             return Ok(new { Message = "Discount removed successfully" });
         }
@@ -676,37 +692,30 @@ public class ProductsController : ControllerBase
         try
         {
             var totalDiscountedProducts = await _context.TProducts
-                .CountAsync(p => p.OriginalPrice != null &&
-                               p.SellingPrice != null &&
-                               p.OriginalPrice > p.SellingPrice);
+                .CountAsync(p => p.OriginalPrice > p.SellingPrice);
 
             var averageDiscountPercentage = await _context.TProducts
-                .Where(p => p.OriginalPrice != null &&
-                           p.SellingPrice != null &&
+                .Where(p => p.OriginalPrice > 0 &&
                            p.OriginalPrice > p.SellingPrice)
-                .Select(p => ((p.OriginalPrice!.Value - p.SellingPrice!.Value) * 100.0 / p.OriginalPrice.Value))
+                .Select(p => ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / p.OriginalPrice))
                 .DefaultIfEmpty(0)
                 .AverageAsync();
 
             var totalDiscountValue = await _context.TProducts
-                .Where(p => p.OriginalPrice != null &&
-                           p.SellingPrice != null &&
-                           p.OriginalPrice > p.SellingPrice &&
-                           p.Count > 0)
-                .SumAsync(p => (p.OriginalPrice!.Value - p.SellingPrice!.Value) * p.Count!.Value);
+                .Where(p => p.OriginalPrice > p.SellingPrice &&
+                           !p.IsUnlimited && p.Count > 0)
+                .SumAsync(p => (long)(p.OriginalPrice - p.SellingPrice) * p.Count);
 
             var discountByCategory = await _context.TProducts
-                .Include(p => p.ProductType)
-                .Where(p => p.OriginalPrice != null &&
-                           p.SellingPrice != null &&
-                           p.OriginalPrice > p.SellingPrice)
-                .GroupBy(p => new { p.ProductTypeId, p.ProductType!.Name })
+                .Include(p => p.Category)
+                .Where(p => p.OriginalPrice > 0 && p.OriginalPrice > p.SellingPrice)
+                .GroupBy(p => new { p.CategoryId, p.Category!.Name })
                 .Select(g => new
                 {
-                    CategoryId = g.Key.ProductTypeId,
+                    CategoryId = g.Key.CategoryId,
                     CategoryName = g.Key.Name,
                     Count = g.Count(),
-                    AverageDiscount = g.Average(p => ((p.OriginalPrice!.Value - p.SellingPrice!.Value) * 100.0 / p.OriginalPrice.Value))
+                    AverageDiscount = g.Average(p => ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / p.OriginalPrice))
                 })
                 .ToListAsync();
 

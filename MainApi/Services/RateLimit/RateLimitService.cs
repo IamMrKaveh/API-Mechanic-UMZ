@@ -1,61 +1,38 @@
-﻿namespace MainApi.Services;
+﻿namespace MainApi.Services.RateLimit;
 
-public class RateLimitService
+public interface IRateLimitService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly int _maxAttempts = 5;
-    private readonly TimeSpan _window = TimeSpan.FromMinutes(2);
+    Task<bool> IsLimitedAsync(string key, int maxAttempts = 5, int windowMinutes = 15);
+}
 
-    public RateLimitService(IServiceScopeFactory scopeFactory)
+public class RateLimitService : IRateLimitService
+{
+    private readonly IConnectionMultiplexer _redis;
+
+    public RateLimitService(IConnectionMultiplexer redis)
     {
-        _scopeFactory = scopeFactory;
+        _redis = redis;
     }
 
-    public async Task<bool> IsLimitedAsync(string phoneNumber)
+    public async Task<bool> IsLimitedAsync(string key, int maxAttempts = 5, int windowMinutes = 15)
     {
-        using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<MechanicContext>();
+        var db = _redis.GetDatabase();
+        var now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var window = System.TimeSpan.FromMinutes(windowMinutes);
+        var windowStart = now - (long)window.TotalSeconds;
 
-        var rate = await context.TRateLimits.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber);
-        if (rate == null) return false;
+        var transaction = db.CreateTransaction();
+        transaction.SortedSetRemoveRangeByScoreAsync(key, 0, windowStart);
+        var countTask = transaction.SortedSetLengthAsync(key);
+        transaction.SortedSetAddAsync(key, now.ToString(), now);
+        transaction.KeyExpireAsync(key, window, ExpireWhen.Always);
 
-        if (DateTime.UtcNow - rate.LastAttempt > _window)
+        if (await transaction.ExecuteAsync())
         {
-            rate.Attempts = 0;
-            await context.SaveChangesAsync();
-            return false;
+            var count = await countTask;
+            return count >= maxAttempts;
         }
 
-        return rate.Attempts >= _maxAttempts;
-    }
-
-    public async Task RegisterAttemptAsync(string phoneNumber)
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<MechanicContext>();
-
-        var rate = await context.TRateLimits.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber);
-
-        if (rate == null)
-        {
-            rate = new TRateLimits
-            {
-                PhoneNumber = phoneNumber,
-                Attempts = 1,
-                LastAttempt = DateTime.UtcNow
-            };
-            context.TRateLimits.Add(rate);
-        }
-        else
-        {
-            if (DateTime.UtcNow - rate.LastAttempt > _window)
-                rate.Attempts = 1;
-            else
-                rate.Attempts++;
-
-            rate.LastAttempt = DateTime.UtcNow;
-        }
-
-        await context.SaveChangesAsync();
+        return true;
     }
 }

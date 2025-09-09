@@ -1,41 +1,49 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// DbContext
+var connectionString = builder.Configuration.GetConnectionString("PoolerConnection") ??
+                       throw new InvalidOperationException("Connection string 'PoolerConnection' not found.");
+
 builder.Services.AddDbContext<MechanicContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("PoolerConnection") ??
-        throw new InvalidOperationException("Connection string 'PoolerConnection' not found.")
-    )
+    options.UseNpgsql(connectionString)
 );
 
-// Controllers with JSON options
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles
-    );
+builder.Services.AddControllers();
 
-// Swagger
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
 {
-    try
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        // Optional: configure Swagger here
-    }
-    catch (Exception ex)
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter 'Bearer' [space] and then your token in the text input below.\n\nExample: \"Bearer 12345abcdef\""
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-        Console.WriteLine("Swagger generation error:");
-        Console.WriteLine(ex);
-    }
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
 });
 
-// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", b =>
         b.WithOrigins(
-            "https://mechanic-umz.netlify.app"
+            "https://mechanic-umz.netlify.app",
+            "http://localhost:4200"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
@@ -43,7 +51,6 @@ builder.Services.AddCors(options =>
     );
 });
 
-// Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -60,27 +67,27 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "default_secret_key"))
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "default_secret_key_that_is_long_enough_for_hs256"))
     };
 });
 
-// Services
-builder.Services.AddSingleton<RateLimitService>();
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? "localhost")
+);
+
+builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
 builder.Services.AddScoped<ICartService, CartService>();
 
 var app = builder.Build();
 
-// Enable Swagger only in Development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Developer exception page
 app.UseDeveloperExceptionPage();
 
-// Global exception logging and Swagger-specific logging
 app.Use(async (context, next) =>
 {
     try
@@ -107,28 +114,18 @@ app.Use(async (context, next) =>
             await context.Response.WriteAsJsonAsync(new
             {
                 error = "Internal Server Error",
-                message = ex.Message,
-                stackTrace = ex.StackTrace
+                message = "An unexpected error occurred.",
+                details = ex.Message
             });
         }
     }
 });
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
-
-// Apply CORS
 app.UseCors("AllowAll");
-
-// Auth
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Map controllers
 app.MapControllers();
-
-// Serve static files if any
-app.UseStaticFiles();
-
-// Run app
 app.Run();
