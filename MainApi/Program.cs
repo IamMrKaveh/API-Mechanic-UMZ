@@ -41,13 +41,10 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", b =>
-        b.WithOrigins(
-            "https://mechanic-umz.netlify.app",
-            "http://localhost:4200"
-        )
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials()
+        b.WithOrigins("https://mechanic-umz.netlify.app")
+         .AllowAnyHeader()
+         .AllowAnyMethod()
+         .AllowCredentials()
     );
 });
 
@@ -71,8 +68,17 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+var redisConfig = builder.Configuration.GetSection("RedisSettings");
+var opts = new ConfigurationOptions
+{
+    EndPoints = { $"{redisConfig["Host"]}:{redisConfig["Port"]}" },
+    Password = redisConfig["Password"],
+    Ssl = bool.Parse(redisConfig["Ssl"]),
+    AbortOnConnectFail = bool.Parse(redisConfig["AbortOnConnectFail"])
+};
+
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? "localhost")
+    ConnectionMultiplexer.Connect(opts)
 );
 
 builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
@@ -84,42 +90,8 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
-
-app.UseDeveloperExceptionPage();
-
-app.Use(async (context, next) =>
-{
-    try
-    {
-        await next();
-    }
-    catch (Exception ex)
-    {
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("Unhandled exception:");
-        Console.WriteLine(ex.ToString());
-        Console.ResetColor();
-
-        context.Response.StatusCode = 500;
-
-        if (context.Request.Path.StartsWithSegments("/swagger"))
-        {
-            context.Response.ContentType = "text/plain";
-            await context.Response.WriteAsync("Swagger generation failed:\n\n");
-            await context.Response.WriteAsync(ex.ToString());
-        }
-        else
-        {
-            await context.Response.WriteAsJsonAsync(new
-            {
-                error = "Internal Server Error",
-                message = "An unexpected error occurred.",
-                details = ex.Message
-            });
-        }
-    }
-});
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
