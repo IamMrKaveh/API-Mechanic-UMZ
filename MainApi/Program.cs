@@ -20,7 +20,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter 'Bearer' [space] and then your token in the text input below.\n\nExample: \"Bearer 12345abcdef\""
+        Description = "Enter 'Bearer' [space] and then your token"
     });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -40,11 +40,12 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", b =>
-        b.WithOrigins("https://mechanic-umz.netlify.app")
-         .AllowAnyHeader()
-         .AllowAnyMethod()
-         .AllowCredentials()
+    options.AddPolicy("AllowNetlify", b =>
+        b
+        //.WithOrigins("http://localhost:4200")
+        .WithOrigins("https://mechanic-umz.netlify.app")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
     );
 });
 
@@ -68,18 +69,15 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-var redisConfig = builder.Configuration.GetSection("RedisSettings");
-var opts = new ConfigurationOptions
-{
-    EndPoints = { $"{redisConfig["Host"]}:{redisConfig["Port"]}" },
-    Password = redisConfig["Password"],
-    Ssl = bool.Parse(redisConfig["Ssl"]),
-    AbortOnConnectFail = bool.Parse(redisConfig["AbortOnConnectFail"])
-};
-
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-    ConnectionMultiplexer.Connect(opts)
-);
+{
+    var options = ConfigurationOptions.Parse(redisConnectionString);
+    options.AbortOnConnectFail = false;
+    options.SslProtocols = SslProtocols.Tls12;
+    return ConnectionMultiplexer.Connect(options);
+});
+
 
 builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
 builder.Services.AddScoped<ICartService, CartService>();
@@ -96,7 +94,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-app.UseCors("AllowAll");
+app.UseCors("AllowNetlify");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
