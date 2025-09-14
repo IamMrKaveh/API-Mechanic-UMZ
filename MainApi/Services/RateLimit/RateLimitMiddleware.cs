@@ -25,11 +25,20 @@ public class RateLimitMiddleware
         using var scope = _scopeFactory.CreateScope();
         var rateLimitService = scope.ServiceProvider.GetRequiredService<IRateLimitService>();
 
-        var key = $"global_{clientIp}";
+        var key = $"global_anon_{clientIp}";
+        var maxAttempts = 100;
+        var windowMinutes = 1;
 
-        if (await rateLimitService.IsLimitedAsync(key, 100, 1))
+        var userIdClaim = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
         {
-            _logger.LogWarning("Global rate limit exceeded for IP: {ClientIP}", clientIp);
+            key = $"global_user_{userId}";
+            maxAttempts = 200;
+        }
+
+        if (await rateLimitService.IsLimitedAsync(key, maxAttempts, windowMinutes))
+        {
+            _logger.LogWarning("Global rate limit exceeded for {Key}", key);
             context.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
             await context.Response.WriteAsync("Rate limit exceeded. Try again later.");
             return;

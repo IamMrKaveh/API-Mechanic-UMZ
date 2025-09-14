@@ -1,18 +1,24 @@
-﻿using DataAccessLayer.Models.Product;
-
-namespace MainApi.Controllers.Product;
+﻿namespace MainApi.Controllers.Product;
 
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class CategoryController : ControllerBase
+public class CategoryController : BaseApiController
 {
     private readonly MechanicContext _context;
+    private readonly ILogger<CategoryController> _logger;
+    private readonly IStorageService _storageService;
 
-    public CategoryController(MechanicContext context)
+    public CategoryController(
+        MechanicContext context,
+        ILogger<CategoryController> logger,
+        IStorageService storageService)
     {
         _context = context;
+        _logger = logger;
+        _storageService = storageService;
     }
+
 
     [HttpGet]
     [AllowAnonymous]
@@ -30,13 +36,13 @@ public class CategoryController : ControllerBase
                 query = query.Where(pt => pt.Name != null && pt.Name.ToLower().Contains(search.ToLower()));
             }
 
-            var totalCount = await query.CountAsync();
+            var totalItems = await query.CountAsync();
             var Categories = await query
                 .Select(pt => new
                 {
                     pt.Id,
                     pt.Name,
-                    pt.Icon,
+                    Icon = string.IsNullOrEmpty(pt.Icon) ? null : BaseUrl + pt.Icon,
                     pt.ProductCount,
                     pt.TotalValue,
                     pt.InStockProducts
@@ -48,11 +54,11 @@ public class CategoryController : ControllerBase
 
             var response = new
             {
-                Data = Categories,
-                TotalCount = totalCount,
+                Items = Categories,
+                TotalItems = totalItems,
                 Page = page,
                 PageSize = pageSize,
-                TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                TotalPages = (int)Math.Ceiling((double)totalItems / pageSize)
             };
 
             return Ok(response);
@@ -82,7 +88,7 @@ public class CategoryController : ControllerBase
                 {
                     pt.Id,
                     pt.Name,
-                    pt.Icon,
+                    Icon = string.IsNullOrEmpty(pt.Icon) ? null : BaseUrl + pt.Icon,
                     ProductCount = pt.Products != null ? pt.Products.Count() : 0,
                     InStockProducts = pt.Products != null ? pt.Products.Count(p => p.Count > 0) : 0,
                     TotalValue = pt.Products != null ? pt.Products.Sum(p => p.Count * p.PurchasePrice) : 0,
@@ -106,7 +112,7 @@ public class CategoryController : ControllerBase
                     p.Count,
                     p.SellingPrice,
                     p.PurchasePrice,
-                    p.Icon,
+                    Icon = string.IsNullOrEmpty(p.Icon) ? null : BaseUrl + p.Icon,
                     IsInStock = p.Count > 0
                 })
                 .OrderBy(p => p.Name)
@@ -125,8 +131,8 @@ public class CategoryController : ControllerBase
                 category.TotalSellingValue,
                 Products = new
                 {
-                    Data = products,
-                    TotalCount = totalProductCount,
+                    Items = products,
+                    TotalItems = totalProductCount,
                     Page = page,
                     PageSize = pageSize,
                     TotalPages = (int)Math.Ceiling((double)totalProductCount / pageSize)
@@ -141,144 +147,142 @@ public class CategoryController : ControllerBase
         }
     }
 
-    [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateCategory(int id, [FromForm] CategoryDto categoryDto)
-    {
-        if (id <= 0 || id != categoryDto.Id)
-            return BadRequest("شناسه نامعتبر است");
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        var existingCategory = await _context.TCategory.FindAsync(id);
-        if (existingCategory == null)
-            return NotFound("نوع محصول یافت نشد");
-
-        var duplicateExists = await _context.TCategory
-            .AnyAsync(pt => pt.Name != null && pt.Name.ToLower() == categoryDto.Name.ToLower() && pt.Id != id);
-        if (duplicateExists)
-            return BadRequest("نوع محصولی با این نام قبلاً وجود دارد");
-
-        if (categoryDto.IconFile != null)
-        {
-            if (categoryDto.IconFile.Length > 2 * 1024 * 1024)
-                return BadRequest("File size cannot exceed 2MB.");
-
-            var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
-            if (!allowedMimeTypes.Contains(categoryDto.IconFile.ContentType.ToLower()))
-                return BadRequest("Invalid file type. Only JPG, PNG, WebP, GIF are allowed.");
-
-            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(categoryDto.IconFile.FileName)}";
-            var filePath = Path.Combine("wwwroot", "uploads", "categories", fileName);
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
-            await using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await categoryDto.IconFile.CopyToAsync(stream);
-            }
-            existingCategory.Icon = $"/uploads/categories/{fileName}";
-        }
-
-        existingCategory.Name = categoryDto.Name.Trim();
-
-        try
-        {
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Conflict("تضاد در به‌روزرسانی داده‌ها");
-        }
-    }
-
-
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TCategory>> CreateCategory([FromForm] CategoryDto categoryDto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        if (string.IsNullOrWhiteSpace(categoryDto.Name))
-            return BadRequest("نام نوع محصول الزامی است");
+        if (string.IsNullOrWhiteSpace(categoryDto.Name)) return BadRequest("نام نوع محصول الزامی است");
 
-        var duplicateExists = await _context.TCategory
-            .AnyAsync(pt => pt.Name != null && pt.Name.ToLower() == categoryDto.Name.ToLower());
-        if (duplicateExists)
-            return BadRequest("نوع محصولی با این نام قبلاً وجود دارد");
+        var duplicateExists = await _context.TCategory.AnyAsync(pt => pt.Name != null && pt.Name.ToLower() == categoryDto.Name.ToLower());
+        if (duplicateExists) return BadRequest("نوع محصولی با این نام قبلاً وجود دارد");
 
         string? iconUrl = null;
         if (categoryDto.IconFile != null)
         {
-            if (categoryDto.IconFile.Length > 2 * 1024 * 1024)
-                return BadRequest("File size cannot exceed 2MB.");
-
-            var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
-            if (!allowedMimeTypes.Contains(categoryDto.IconFile.ContentType.ToLower()))
-                return BadRequest("Invalid file type. Only JPG, PNG, WebP, GIF are allowed.");
-
-            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(categoryDto.IconFile.FileName)}";
-            var filePath = Path.Combine("wwwroot", "uploads", "categories", fileName);
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
-            await using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await categoryDto.IconFile.CopyToAsync(stream);
-            }
-            iconUrl = $"/uploads/categories/{fileName}";
+            iconUrl = await _storageService.UploadFileAsync(categoryDto.IconFile, "images/category");
         }
 
+        var sanitizer = new HtmlSanitizer();
         var category = new TCategory
         {
-            Name = categoryDto.Name.Trim(),
+            Name = sanitizer.Sanitize(categoryDto.Name.Trim()),
             Icon = iconUrl
         };
 
         _context.TCategory.Add(category);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction("GetCategory", new { id = category.Id }, category);
+        return CreatedAtAction("GetCategory", new { id = category.Id }, new
+        {
+            category.Id,
+            category.Name,
+            Icon = string.IsNullOrEmpty(category.Icon) ? null : BaseUrl + category.Icon
+        });
     }
 
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateCategory(int id, [FromForm] CategoryDto categoryDto)
+    {
+        if (id <= 0 || id != categoryDto.Id) return BadRequest("شناسه نامعتبر است");
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var existingCategory = await _context.TCategory.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
+        if (existingCategory == null) return NotFound("نوع محصول یافت نشد");
+
+        var duplicateExists = await _context.TCategory.AnyAsync(pt => pt.Name != null && pt.Name.ToLower() == categoryDto.Name.ToLower() && pt.Id != id);
+        if (duplicateExists) return BadRequest("نوع محصولی با این نام قبلاً وجود دارد");
+
+        var sanitizer = new HtmlSanitizer();
+        var categoryToUpdate = new TCategory { Id = id, Name = sanitizer.Sanitize(categoryDto.Name.Trim()), Icon = existingCategory.Icon };
+
+        if (categoryDto.IconFile != null)
+        {
+            if (!string.IsNullOrEmpty(existingCategory.Icon))
+            {
+                await _storageService.DeleteFileAsync(existingCategory.Icon);
+            }
+            categoryToUpdate.Icon = await _storageService.UploadFileAsync(categoryDto.IconFile, "images/category");
+        }
+
+        _context.TCategory.Update(categoryToUpdate);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteCategory(int id)
     {
-        try
+        if (id <= 0) return BadRequest("شناسه نامعتبر است");
+
+        var category = await _context.TCategory.Include(pt => pt.Products).FirstOrDefaultAsync(pt => pt.Id == id);
+        if (category == null) return NotFound("نوع محصول یافت نشد");
+        if (category.Products?.Any() == true) return BadRequest("امکان حذف نوع محصولی که دارای محصول وابسته است وجود ندارد");
+
+        string? iconPath = category.Icon;
+
+        _context.TCategory.Remove(category);
+        await _context.SaveChangesAsync();
+
+        if (!string.IsNullOrEmpty(iconPath))
         {
-            if (id <= 0)
-            {
-                return BadRequest("شناسه نامعتبر است");
-            }
-
-            var Category = await _context.TCategory
-                .Include(pt => pt.Products)
-                .FirstOrDefaultAsync(pt => pt.Id == id);
-
-            if (Category == null)
-            {
-                return NotFound("نوع محصول یافت نشد");
-            }
-
-            if (Category.Products?.Any() == true)
-            {
-                return BadRequest("امکان حذف نوع محصولی که دارای محصول وابسته است وجود ندارد");
-            }
-
-            _context.TCategory.Remove(Category);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            await _storageService.DeleteFileAsync(iconPath);
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, "خطا در حذف نوع محصول");
-        }
+
+        return NoContent();
     }
 
     [NonAction]
-    private async Task<bool> CategoryExistsAsync(int id)
+    private async Task<string> SaveIconFile(IFormFile iconFile)
     {
-        return await _context.TCategory.AnyAsync(e => e.Id == id);
+        if (iconFile.Length > 2 * 1024 * 1024)
+            throw new ArgumentException("File size cannot exceed 2MB.");
+
+        var allowedExtensions = new Dictionary<string, string>
+    {
+        { "image/jpeg", ".jpg" },
+        { "image/png", ".png" },
+        { "image/webp", ".webp" },
+        { "image/gif", ".gif" }
+    };
+
+        if (!allowedExtensions.TryGetValue(iconFile.ContentType.ToLower(), out var extension))
+            throw new ArgumentException("Invalid file type. Only JPG, PNG, WebP, GIF are allowed.");
+
+        var fileName = $"{Guid.NewGuid()}{extension}";
+        var directoryPath = Path.Combine("wwwroot", "images", "category");
+        Directory.CreateDirectory(directoryPath);
+        var filePath = Path.Combine(directoryPath, fileName);
+
+        if (filePath.Length > 260) // MAX_PATH
+            throw new ArgumentException("Generated file path is too long.");
+
+        await using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await iconFile.CopyToAsync(stream);
+        }
+        return $"images/category/{fileName}";
+    }
+
+    [NonAction]
+    private void DeleteIconFile(string iconPath)
+    {
+        if (string.IsNullOrEmpty(iconPath)) return;
+
+        var fullPath = Path.Combine("wwwroot", iconPath.TrimStart('/'));
+        if (System.IO.File.Exists(fullPath))
+        {
+            try
+            {
+                System.IO.File.Delete(fullPath);
+            }
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "Error deleting old category icon: {Path}", fullPath);
+            }
+        }
     }
 }

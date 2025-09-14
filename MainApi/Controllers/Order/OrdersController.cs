@@ -1,30 +1,47 @@
-﻿using Npgsql;
-
-namespace MainApi.Controllers.Order;
+﻿namespace MainApi.Controllers.Order;
 
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class OrdersController : ControllerBase
+public class OrdersController : BaseApiController
 {
     private readonly MechanicContext _context;
+    private readonly ILogger<OrdersController> _logger;
+    private readonly IRateLimitService _rateLimitService;
 
-    public OrdersController(MechanicContext context)
+    public OrdersController(
+        MechanicContext context,
+        ILogger<OrdersController> logger,
+        IRateLimitService rateLimitService)
     {
         _context = context;
+        _logger = logger;
+        _rateLimitService = rateLimitService;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<object>>> GetTOrders(
-        [FromQuery] int? userId = null,
-        [FromQuery] int? statusId = null,
-        [FromQuery] DateTime? fromDate = null,
-        [FromQuery] DateTime? toDate = null,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+            [FromQuery] int? userId = null,
+            [FromQuery] int? statusId = null,
+            [FromQuery] DateTime? fromDate = null,
+            [FromQuery] DateTime? toDate = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
     {
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
+        var isAdmin = User.IsInRole("Admin");
+        var currentUserId = GetCurrentUserId();
+
+        if (!userId.HasValue && !isAdmin)
+        {
+            userId = currentUserId;
+        }
+        else if (userId.HasValue && userId.Value != currentUserId && !isAdmin)
+        {
+            return Forbid();
+        }
 
         var query = _context.TOrders
             .Include(o => o.User)
@@ -45,7 +62,7 @@ public class OrdersController : ControllerBase
         if (toDate.HasValue)
             query = query.Where(o => o.CreatedAt <= toDate.Value);
 
-        var totalCount = await query.CountAsync();
+        var totalItems = await query.CountAsync();
         var orders = await query
             .OrderByDescending(o => o.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -57,7 +74,7 @@ public class OrdersController : ControllerBase
                 o.Address,
                 o.PostalCode,
                 o.TotalAmount,
-                o.TotalProfit,
+                TotalProfit = isAdmin ? (int?)o.TotalProfit : null,
                 o.CreatedAt,
                 o.DeliveryDate,
                 User = new
@@ -79,11 +96,11 @@ public class OrdersController : ControllerBase
 
         return Ok(new
         {
-            Data = orders,
-            TotalCount = totalCount,
+            Items = orders,
+            TotalItems = totalItems,
             Page = page,
             PageSize = pageSize,
-            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
         });
     }
 
@@ -94,85 +111,78 @@ public class OrdersController : ControllerBase
             return BadRequest("Invalid order ID");
 
         var currentUserId = GetCurrentUserId();
-        if (!currentUserId.HasValue)
+        if (currentUserId == null)
             return Unauthorized();
 
-        var order = await _context.TOrders
+        var query = _context.TOrders
             .Include(o => o.User)
             .Include(o => o.OrderStatus)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.Product)
                     .ThenInclude(p => p!.Category)
-            .Where(o => o.Id == id)
-            .Select(o => new
+            .Where(o => o.Id == id);
+
+        if (!User.IsInRole("Admin"))
+        {
+            query = query.Where(o => o.UserId == currentUserId);
+        }
+
+        var order = await query.Select(o => new
+        {
+            o.Id,
+            o.UserId,
+            o.Name,
+            o.Address,
+            o.PostalCode,
+            o.TotalAmount,
+            TotalProfit = User.IsInRole("Admin") ? (int?)o.TotalProfit : null,
+            o.CreatedAt,
+            o.DeliveryDate,
+            o.OrderStatusId,
+            User = new
             {
-                OrderEntity = o,
-                o.Id,
-                o.Name,
-                o.Address,
-                o.PostalCode,
-                o.TotalAmount,
-                o.TotalProfit,
-                o.CreatedAt,
-                o.DeliveryDate,
-                User = new
+                o.User!.Id,
+                o.User.PhoneNumber,
+                o.User.FirstName,
+                o.User.LastName,
+                o.User.IsAdmin
+            },
+            OrderStatus = new
+            {
+                o.OrderStatus!.Id,
+                o.OrderStatus.Name,
+                o.OrderStatus.Icon
+            },
+            OrderItems = o.OrderItems.Select(oi => new
+            {
+                oi.Id,
+                oi.ProductId,
+                PurchasePrice = User.IsInRole("Admin") ? (int?)oi.PurchasePrice : null,
+                oi.SellingPrice,
+                oi.Quantity,
+                Amount = oi.Amount,
+                Profit = User.IsInRole("Admin") ? (int?)oi.Profit : null,
+                Product = new
                 {
-                    o.User!.Id,
-                    o.User.PhoneNumber,
-                    o.User.FirstName,
-                    o.User.LastName
-                },
-                OrderStatus = new
-                {
-                    o.OrderStatus!.Id,
-                    o.OrderStatus.Name,
-                    o.OrderStatus.Icon
-                },
-                OrderItems = o.OrderItems.Select(oi => new
-                {
-                    oi.Id,
-                    oi.PurchasePrice,
-                    oi.SellingPrice,
-                    oi.Quantity,
-                    oi.Amount,
-                    oi.Profit,
-                    Product = new
+                    oi.Product!.Id,
+                    oi.Product.Name,
+                    oi.Product.Icon,
+                    Category = oi.Product.Category != null ? new
                     {
-                        oi.Product!.Id,
-                        oi.Product.Name,
-                        oi.Product.Icon,
-                        Category = oi.Product.Category != null ? new
-                        {
-                            oi.Product.Category.Id,
-                            oi.Product.Category.Name
-                        } : null
-                    }
-                })
+                        oi.Product.Category.Id,
+                        oi.Product.Category.Name
+                    } : null
+                }
             })
+        })
             .FirstOrDefaultAsync();
 
         if (order == null)
-            return NotFound("Order not found");
-
-        if (order.OrderEntity.UserId != currentUserId.Value && !User.IsInRole("Admin"))
         {
-            return Forbid();
+            return NotFound("Order not found");
         }
 
-        return Ok(new
-        {
-            order.Id,
-            order.Name,
-            order.Address,
-            order.PostalCode,
-            order.TotalAmount,
-            order.TotalProfit,
-            order.CreatedAt,
-            order.DeliveryDate,
-            order.User,
-            order.OrderStatus,
-            order.OrderItems
-        });
+        return Ok(order);
     }
 
     [HttpPost]
@@ -200,8 +210,9 @@ public class OrdersController : ControllerBase
         if (string.IsNullOrEmpty(idempotencyKey))
             return BadRequest("Idempotency-Key header is required.");
 
-        if (await _context.TOrders.AnyAsync(o => o.IdempotencyKey == idempotencyKey))
-            return Conflict("Duplicate request. Order already processed.");
+        var existingOrder = await _context.TOrders.FirstOrDefaultAsync(o => o.IdempotencyKey == idempotencyKey);
+        if (existingOrder != null)
+            return CreatedAtAction(nameof(GetOrderById), new { id = existingOrder.Id }, existingOrder);
 
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
@@ -219,6 +230,12 @@ public class OrdersController : ControllerBase
                     return BadRequest($"Product {itemDto.ProductId} not found");
                 }
 
+                if (itemDto.SellingPrice < product.PurchasePrice)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest($"Selling price for product {product.Name} cannot be less than its purchase price.");
+                }
+
                 if (!product.IsUnlimited && product.Count < itemDto.Quantity)
                 {
                     await transaction.RollbackAsync();
@@ -231,12 +248,13 @@ public class OrdersController : ControllerBase
                 }
             }
 
+            var sanitizer = new HtmlSanitizer();
             var order = new TOrders
             {
                 UserId = orderDto.UserId,
-                Name = orderDto.Name,
-                Address = orderDto.Address,
-                PostalCode = orderDto.PostalCode,
+                Name = sanitizer.Sanitize(orderDto.Name),
+                Address = sanitizer.Sanitize(orderDto.Address),
+                PostalCode = sanitizer.Sanitize(orderDto.PostalCode),
                 CreatedAt = DateTime.UtcNow,
                 OrderStatusId = orderDto.OrderStatusId,
                 DeliveryDate = orderDto.DeliveryDate,
@@ -254,7 +272,7 @@ public class OrdersController : ControllerBase
                     UserOrderId = order.Id,
                     ProductId = itemDto.ProductId,
                     PurchasePrice = product.PurchasePrice,
-                    SellingPrice = product.SellingPrice,
+                    SellingPrice = itemDto.SellingPrice,
                     Quantity = itemDto.Quantity,
                 };
             }).ToList();
@@ -268,6 +286,9 @@ public class OrdersController : ControllerBase
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
         {
             await transaction.RollbackAsync();
+            var duplicateOrder = await _context.TOrders.FirstOrDefaultAsync(o => o.IdempotencyKey == idempotencyKey);
+            if (duplicateOrder != null)
+                return CreatedAtAction(nameof(GetOrderById), new { id = duplicateOrder.Id }, duplicateOrder);
             return Conflict("Duplicate request. Order already exists.");
         }
         catch (Exception ex)
@@ -278,16 +299,21 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost("checkout-from-cart")]
-    public async Task<ActionResult<TOrders>> CheckoutFromCart([FromBody] CreateOrderDto orderDto)
+    public async Task<ActionResult<object>> CheckoutFromCart([FromBody] CreateOrderFromCartDto orderDto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-        if (string.IsNullOrWhiteSpace(orderDto.Address) || string.IsNullOrWhiteSpace(orderDto.PostalCode))
-            return BadRequest("Address and PostalCode are required");
 
         var userId = GetCurrentUserId();
-        if (!userId.HasValue)
+        if (userId == null)
             return Unauthorized("User not authenticated");
+
+        var rateLimitKey = $"checkout_{userId.Value}";
+        if (await _rateLimitService.IsLimitedAsync(rateLimitKey, 3, 1))
+        {
+            _logger.LogWarning("Rate limit exceeded for checkout by user {UserId}", userId.Value);
+            return StatusCode(429, "Too many checkout attempts. Please try again in a minute.");
+        }
 
         var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
         if (string.IsNullOrEmpty(idempotencyKey))
@@ -295,9 +321,9 @@ public class OrdersController : ControllerBase
 
         var existingOrderByIdempotency = await _context.TOrders.FirstOrDefaultAsync(o => o.IdempotencyKey == idempotencyKey && o.UserId == userId.Value);
         if (existingOrderByIdempotency != null)
-            return Conflict(new { Message = "Duplicate request. Order already processed.", OrderId = existingOrderByIdempotency.Id });
+            return CreatedAtAction(nameof(GetOrderById), new { id = existingOrderByIdempotency.Id }, await GetOrderDtoById(existingOrderByIdempotency.Id));
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
+        using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
         try
         {
             var cart = await _context.TCarts
@@ -308,14 +334,15 @@ public class OrdersController : ControllerBase
             if (cart == null || !cart.CartItems.Any())
                 return BadRequest("Cart is empty");
 
-            const int pendingPaymentStatusId = 1; // Assuming 1 is 'Pending Payment'
+            const int pendingPaymentStatusId = 1;
 
+            var sanitizer = new HtmlSanitizer();
             var order = new TOrders
             {
                 UserId = userId.Value,
-                Name = orderDto.Name,
-                Address = orderDto.Address,
-                PostalCode = orderDto.PostalCode,
+                Name = sanitizer.Sanitize(orderDto.Name),
+                Address = sanitizer.Sanitize(orderDto.Address),
+                PostalCode = sanitizer.Sanitize(orderDto.PostalCode),
                 CreatedAt = DateTime.UtcNow,
                 OrderStatusId = pendingPaymentStatusId,
                 IdempotencyKey = idempotencyKey,
@@ -329,15 +356,16 @@ public class OrdersController : ControllerBase
                     await transaction.RollbackAsync();
                     return Conflict($"Product with ID '{item.ProductId}' not found.");
                 }
-                if (!product.IsUnlimited && product.Count < item.Quantity)
-                {
-                    await transaction.RollbackAsync();
-                    return Conflict($"Product '{product.Name}' is out of stock or has insufficient quantity.");
-                }
+
                 if (!product.IsUnlimited)
                 {
-                    product.Count -= item.Quantity;
-                    _context.TProducts.Update(product);
+                    var productInDb = await _context.TProducts.FindAsync(product.Id);
+                    if (productInDb!.Count < item.Quantity)
+                    {
+                        await transaction.RollbackAsync();
+                        return Conflict($"Product '{product.Name}' is out of stock or has insufficient quantity.");
+                    }
+                    productInDb.Count -= item.Quantity;
                 }
 
                 order.OrderItems.Add(new TOrderItems
@@ -351,19 +379,19 @@ public class OrdersController : ControllerBase
 
             _context.TOrders.Add(order);
             _context.TCartItems.RemoveRange(cart.CartItems);
-            _context.TCarts.Remove(cart);
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
+            var createdOrderDto = await GetOrderDtoById(order.Id);
+            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, createdOrderDto);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
         {
             await transaction.RollbackAsync();
             var existingOrder = await _context.TOrders.FirstOrDefaultAsync(o => o.UserId == userId.Value && o.IdempotencyKey == idempotencyKey);
             if (existingOrder != null)
-                return Conflict(new { Message = "Duplicate request. Order already exists.", OrderId = existingOrder.Id });
+                return CreatedAtAction(nameof(GetOrderById), new { id = existingOrder.Id }, await GetOrderDtoById(existingOrder.Id));
 
             return Conflict("A concurrency error occurred. Please try again.");
         }
@@ -397,6 +425,10 @@ public class OrdersController : ControllerBase
         {
             _context.Entry(order).Property("RowVersion").OriginalValue = orderDto.RowVersion;
         }
+        else
+        {
+            return BadRequest("RowVersion is required for concurrency control.");
+        }
 
         if (orderDto.OrderStatusId.HasValue)
         {
@@ -406,12 +438,13 @@ public class OrdersController : ControllerBase
             order.OrderStatusId = orderDto.OrderStatusId.Value;
         }
 
+        var sanitizer = new HtmlSanitizer();
         if (!string.IsNullOrWhiteSpace(orderDto.Name))
-            order.Name = orderDto.Name;
+            order.Name = sanitizer.Sanitize(orderDto.Name);
         if (!string.IsNullOrWhiteSpace(orderDto.Address))
-            order.Address = orderDto.Address;
+            order.Address = sanitizer.Sanitize(orderDto.Address);
         if (!string.IsNullOrWhiteSpace(orderDto.PostalCode))
-            order.PostalCode = orderDto.PostalCode;
+            order.PostalCode = sanitizer.Sanitize(orderDto.PostalCode);
         if (orderDto.DeliveryDate.HasValue)
             order.DeliveryDate = orderDto.DeliveryDate;
 
@@ -539,11 +572,19 @@ public class OrdersController : ControllerBase
             if (order == null)
                 return NotFound("Order not found");
 
+            const int shippedStatusId = 3;
+            const int deliveredStatusId = 4;
+
+            if (order.OrderStatusId >= shippedStatusId)
+            {
+                return BadRequest("Cannot delete an order that has been shipped or delivered. Consider changing its status instead.");
+            }
+
             foreach (var orderItem in order.OrderItems)
             {
-                if (orderItem.Product != null)
+                if (orderItem.Product != null && !orderItem.Product.IsUnlimited)
                 {
-                    orderItem.Product.Count = orderItem.Product.Count + orderItem.Quantity;
+                    orderItem.Product.Count += orderItem.Quantity;
                 }
             }
 
@@ -558,20 +599,49 @@ public class OrdersController : ControllerBase
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
+            _logger.LogError(ex, "An error occurred while deleting the order with ID {OrderId}", id);
             return StatusCode(500, "An error occurred while deleting the order");
         }
-    }
-
-    [NonAction]
-    private int? GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return int.TryParse(userIdClaim, out var userId) ? userId : null;
     }
 
     [NonAction]
     private async Task<bool> TOrdersExistsAsync(int id)
     {
         return await _context.TOrders.AnyAsync(e => e.Id == id);
+    }
+
+    [NonAction]
+    private async Task<object?> GetOrderDtoById(int id)
+    {
+        var isAdmin = User.IsInRole("Admin");
+        return await _context.TOrders
+            .Where(o => o.Id == id)
+            .Select(o => new
+            {
+                o.Id,
+                o.UserId,
+                o.Name,
+                o.Address,
+                o.PostalCode,
+                o.TotalAmount,
+                TotalProfit = isAdmin ? (int?)o.TotalProfit : null,
+                o.CreatedAt,
+                o.DeliveryDate,
+                o.OrderStatusId,
+                OrderStatus = new { o.OrderStatus.Id, o.OrderStatus.Name, o.OrderStatus.Icon },
+                User = new { o.User.Id, o.User.PhoneNumber, o.User.FirstName, o.User.LastName, o.User.IsAdmin },
+                OrderItems = o.OrderItems.Select(oi => new
+                {
+                    oi.Id,
+                    oi.ProductId,
+                    PurchasePrice = isAdmin ? (int?)oi.PurchasePrice : null,
+                    oi.SellingPrice,
+                    oi.Quantity,
+                    Amount = oi.Amount,
+                    Profit = isAdmin ? (int?)oi.Profit : null,
+                    Product = new { oi.Product.Id, oi.Product.Name, oi.Product.Icon }
+                })
+            })
+            .FirstOrDefaultAsync();
     }
 }

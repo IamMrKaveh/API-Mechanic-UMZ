@@ -12,8 +12,17 @@ public class TProducts
 
     public bool HasDiscount => OriginalPrice > SellingPrice;
 
-    public double DiscountPercentage => (double)(HasDiscount && OriginalPrice > 0 ? ((double)(OriginalPrice - SellingPrice) / OriginalPrice * 100)
-        : 0);
+    public double DiscountPercentage
+    {
+        get
+        {
+            if (HasDiscount && OriginalPrice > 0)
+            {
+                return Math.Max(0, (double)(OriginalPrice - SellingPrice) * 100 / OriginalPrice);
+            }
+            return 0;
+        }
+    }
 
     public int Count { get; set; }
     public bool IsUnlimited { get; set; } = false;

@@ -112,9 +112,7 @@ namespace DataAccessLayer.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
-                    TotalItems = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    TotalPrice = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
+                    UserId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -251,7 +249,8 @@ namespace DataAccessLayer.Migrations
                     SellingPrice = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     Amount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    Profit = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
+                    Profit = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {

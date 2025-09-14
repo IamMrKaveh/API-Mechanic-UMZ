@@ -11,6 +11,11 @@ public class TOrderItems
     public int PurchasePrice { get; set; }
     public int SellingPrice { get; set; }
     public int Quantity { get; set; }
+
     public int Amount { get; set; }
-    public int Profit { get; set; }
+
+    public int Profit {  get; set; }
+
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 }

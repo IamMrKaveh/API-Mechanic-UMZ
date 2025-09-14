@@ -74,8 +74,6 @@ public class MechanicContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
             entity.Property(x => x.UserId).IsRequired();
-            entity.Property(x => x.TotalItems).IsRequired().HasDefaultValue(0);
-            entity.Property(x => x.TotalPrice).IsRequired().HasDefaultValue(0);
             entity.HasOne(x => x.User)
                   .WithMany()
                   .HasForeignKey(x => x.UserId)

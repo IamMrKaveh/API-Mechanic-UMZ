@@ -8,54 +8,51 @@ public interface ICartService
     Task<bool> RemoveItemFromCartAsync(int userId, int itemId);
     Task<bool> ClearCartAsync(int userId);
     Task<int> GetCartItemsCountAsync(int userId);
+    Task<bool> IsLimitedAsync(string key, int maxAttempts = 5, int windowMinutes = 15);
 }
 
 public class CartService : ICartService
 {
     private readonly MechanicContext _context;
     private readonly ILogger<CartService> _logger;
+    private readonly IConnectionMultiplexer _redis;
 
-    public CartService(MechanicContext context, ILogger<CartService> logger)
+    public CartService(MechanicContext context, ILogger<CartService> logger, IConnectionMultiplexer redis)
     {
         _context = context;
         _logger = logger;
+        _redis = redis;
     }
 
     public async Task<CartDto?> GetCartByUserIdAsync(int userId)
     {
         try
         {
-            var cart = await _context.TCarts
-                .Include(c => c.CartItems)
-                .ThenInclude(ci => ci.Product)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
+            var cart = await GetOrCreateCartAsync(userId);
 
-            if (cart == null)
+            await _context.Entry(cart)
+                .Collection(c => c.CartItems)
+                .Query()
+                .Include(ci => ci.Product)
+                .LoadAsync();
+
+            var cartItemsDto = cart.CartItems?.Select(ci => new CartItemDto
             {
-                return new CartDto
-                {
-                    UserId = userId,
-                    CartItems = new List<CartItemDto>(),
-                    TotalItems = 0,
-                    TotalPrice = 0
-                };
-            }
+                Id = ci.Id,
+                ProductId = ci.ProductId,
+                ProductName = ci.Product?.Name ?? "",
+                SellingPrice = ci.Product?.SellingPrice ?? 0,
+                Quantity = ci.Quantity,
+                TotalPrice = (ci.Product?.SellingPrice ?? 0) * ci.Quantity
+            }).ToList() ?? new List<CartItemDto>();
 
             return new CartDto
             {
                 Id = cart.Id,
                 UserId = cart.UserId,
-                CartItems = cart.CartItems?.Select(ci => new CartItemDto
-                {
-                    Id = ci.Id,
-                    ProductId = ci.ProductId,
-                    ProductName = ci.Product?.Name ?? "",
-                    SellingPrice = ci.Product?.SellingPrice ?? 0,
-                    Quantity = ci.Quantity,
-                    TotalPrice = (ci.Product?.SellingPrice ?? 0) * ci.Quantity
-                }).ToList() ?? new List<CartItemDto>(),
-                TotalItems = cart.TotalItems,
-                TotalPrice = cart.TotalPrice
+                CartItems = cartItemsDto,
+                TotalItems = cartItemsDto.Sum(i => i.Quantity),
+                TotalPrice = cartItemsDto.Sum(i => i.TotalPrice)
             };
         }
         catch (Exception ex)
@@ -67,7 +64,7 @@ public class CartService : ICartService
 
     public async Task<bool> AddItemToCartAsync(int userId, AddToCartDto dto)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
         try
         {
             if (dto.Quantity <= 0 || dto.Quantity > 1000)
@@ -86,12 +83,18 @@ public class CartService : ICartService
             }
 
             var existingItem = cart.CartItems?.FirstOrDefault(ci => ci.ProductId == dto.ProductId);
-            var requiredStock = existingItem != null ? existingItem.Quantity + dto.Quantity : dto.Quantity;
+            var newTotalQuantity = (existingItem?.Quantity ?? 0) + dto.Quantity;
 
-            if (!product.IsUnlimited && product.Count < requiredStock)
+            if (newTotalQuantity > 1000)
+            {
+                _logger.LogWarning("Cannot add more than 1000 items of the same product to the cart.");
+                return false;
+            }
+
+            if (!product.IsUnlimited && product.Count < newTotalQuantity)
             {
                 _logger.LogWarning("Insufficient stock for ProductId {ProductId}. Available: {Available}, Required: {Required}",
-                    dto.ProductId, product.Count, requiredStock);
+                    dto.ProductId, product.Count, newTotalQuantity);
                 return false;
             }
 
@@ -124,7 +127,7 @@ public class CartService : ICartService
 
     public async Task<bool> UpdateCartItemAsync(int userId, int itemId, UpdateCartItemDto dto)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
         try
         {
             if (dto.Quantity <= 0 || dto.Quantity > 1000)
@@ -134,6 +137,7 @@ public class CartService : ICartService
             }
             var cartItem = await _context.TCartItems
                 .Include(ci => ci.Product)
+                .Include(ci => ci.Cart)
                 .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart!.UserId == userId);
 
             if (cartItem == null) return false;
@@ -141,13 +145,17 @@ public class CartService : ICartService
             var product = cartItem.Product;
             if (product == null) return false;
 
-            if (!product.IsUnlimited && product.Count < dto.Quantity)
+            if (!product.IsUnlimited)
             {
-                return false;
+                if (product.Count < dto.Quantity)
+                {
+                    _logger.LogWarning("Insufficient stock for ProductId {ProductId} while updating cart. Available: {Available}, Requested: {Required}",
+                        product.Id, product.Count, dto.Quantity);
+                    return false;
+                }
             }
 
             cartItem.Quantity = dto.Quantity;
-            _context.TCartItems.Update(cartItem);
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -198,7 +206,7 @@ public class CartService : ICartService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing cart item: ItemId {ItemId}", itemId);
+            _logger.LogError(ex, "Error removing cart item: ItemId {ItemId} for user {UserId}", itemId, userId);
             return false;
         }
     }
@@ -214,7 +222,6 @@ public class CartService : ICartService
             if (cart == null || !cart.CartItems.Any()) return true;
 
             _context.TCartItems.RemoveRange(cart.CartItems);
-
             await _context.SaveChangesAsync();
             return true;
         }
@@ -225,14 +232,52 @@ public class CartService : ICartService
         }
     }
 
+    public async Task<bool> IsLimitedAsync(string key, int maxAttempts = 5, int windowMinutes = 15)
+    {
+        if (!_redis.IsConnected)
+        {
+            _logger.LogWarning("Redis is not connected. Rate limiting is bypassed.");
+            return false;
+        }
+
+        try
+        {
+            var db = _redis.GetDatabase();
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var window = TimeSpan.FromMinutes(windowMinutes);
+            var windowStart = now - (long)window.TotalSeconds;
+
+            var transaction = db.CreateTransaction();
+            _ = transaction.SortedSetRemoveRangeByScoreAsync(key, 0, windowStart);
+            var countTask = transaction.SortedSetLengthAsync(key);
+            _ = transaction.SortedSetAddAsync(key, now.ToString(), now);
+            _ = transaction.KeyExpireAsync(key, window, ExpireWhen.Always);
+
+            if (await transaction.ExecuteAsync())
+            {
+                var count = await countTask;
+                return count > maxAttempts;
+            }
+
+            _logger.LogWarning($"Redis transaction for rate limiting failed to execute for key: {key}");
+            return false;
+        }
+        catch (RedisException ex)
+        {
+            _logger.LogError(ex, $"Redis error during rate limiting for key: {key}");
+            return false;
+        }
+    }
+
     public async Task<int> GetCartItemsCountAsync(int userId)
     {
         try
         {
-            return await _context.TCarts
-                .Where(c => c.UserId == userId)
-                .Select(c => c.TotalItems)
-                .FirstOrDefaultAsync();
+            var cart = await _context.TCarts
+                .Include(c => c.CartItems)
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            return cart?.CartItems?.Sum(ci => ci.Quantity) ?? 0;
         }
         catch (Exception ex)
         {

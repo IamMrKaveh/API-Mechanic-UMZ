@@ -3,13 +3,17 @@
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class OrderStatusController : ControllerBase
+public class OrderStatusController : BaseApiController
 {
     private readonly MechanicContext _context;
+    private readonly ILogger<OrderStatusController> _logger;
 
-    public OrderStatusController(MechanicContext context)
+    public OrderStatusController(
+        MechanicContext context,
+        ILogger<OrderStatusController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -80,10 +84,11 @@ public class OrderStatusController : ControllerBase
         if (existingStatus != null)
             return BadRequest("Order status with this name already exists");
 
+        var sanitizer = new HtmlSanitizer();
         var orderStatus = new TOrderStatus
         {
-            Name = statusDto.Name.Trim(),
-            Icon = statusDto.Icon?.Trim()
+            Name = sanitizer.Sanitize(statusDto.Name.Trim()),
+            Icon = sanitizer.Sanitize(statusDto.Icon?.Trim())
         };
 
         _context.TOrderStatus.Add(orderStatus);
@@ -105,6 +110,7 @@ public class OrderStatusController : ControllerBase
         if (orderStatus == null)
             return NotFound();
 
+        var sanitizer = new HtmlSanitizer();
         if (statusDto.Name != null)
         {
             if (string.IsNullOrWhiteSpace(statusDto.Name))
@@ -116,11 +122,11 @@ public class OrderStatusController : ControllerBase
             if (existingStatus != null)
                 return BadRequest("Order status with this name already exists");
 
-            orderStatus.Name = statusDto.Name.Trim();
+            orderStatus.Name = sanitizer.Sanitize(statusDto.Name.Trim());
         }
 
         if (statusDto.Icon != null)
-            orderStatus.Icon = statusDto.Icon.Trim();
+            orderStatus.Icon = sanitizer.Sanitize(statusDto.Icon.Trim());
 
         try
         {

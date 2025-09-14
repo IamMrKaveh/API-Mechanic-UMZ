@@ -3,13 +3,18 @@
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class OrderItemsController : ControllerBase
+public class OrderItemsController : BaseApiController
 {
     private readonly MechanicContext _context;
+    private readonly ILogger<OrderItemsController> _logger;
 
-    public OrderItemsController(MechanicContext context)
+    public OrderItemsController(
+        MechanicContext context,
+        ILogger<OrderItemsController> logger)
     {
         _context = context;
+        _logger = logger;
+
     }
 
     [HttpGet]
@@ -54,24 +59,24 @@ public class OrderItemsController : ControllerBase
         }
 
         var orderItems = await query
-            .Select(oi => new PublicOrderItemViewDto
+            .Select(oi => new
             {
-                Id = oi.Id,
-                SellingPrice = oi.SellingPrice,
-                Quantity = oi.Quantity,
-                Amount = oi.Amount,
-                Product = new PublicOrderItemProductViewDto
+                oi.Id,
+                oi.SellingPrice,
+                oi.Quantity,
+                Amount = oi.SellingPrice * oi.Quantity,
+                Product = new
                 {
-                    Id = oi.Product.Id,
-                    Name = oi.Product.Name,
-                    Icon = oi.Product.Icon,
+                    oi.Product.Id,
+                    oi.Product.Name,
+                    Icon = string.IsNullOrEmpty(oi.Product.Icon) ? null : BaseUrl + oi.Product.Icon,
                     CategoryName = oi.Product.Category != null ? oi.Product.Category.Name : null
                 },
-                Order = new PublicOrderItemOrderViewDto
+                Order = new
                 {
-                    Id = oi.UserOrder.Id,
-                    Name = oi.UserOrder.Name,
-                    CreatedAt = oi.UserOrder.CreatedAt
+                    oi.UserOrder.Id,
+                    oi.UserOrder.Name,
+                    oi.UserOrder.CreatedAt
                 }
             })
             .OrderByDescending(oi => oi.Id)
@@ -88,66 +93,57 @@ public class OrderItemsController : ControllerBase
 
         var currentUserId = GetCurrentUserId();
 
-        var orderItem = await _context.TOrderItems
-            .Include(oi => oi.Product)
-                .ThenInclude(p => p.Category)
-            .Include(oi => oi.UserOrder)
-                .ThenInclude(o => o.User)
-            .Where(oi => oi.Id == id)
-            .Select(oi => new
-            {
-                OrderItem = oi,
-                OrderUserId = oi.UserOrder.UserId
-            })
-            .FirstOrDefaultAsync();
+        var orderItemQuery = _context.TOrderItems
+            .Where(oi => oi.Id == id);
 
-        if (orderItem == null)
-            return NotFound("Order item not found");
-
-        if (orderItem.OrderUserId != currentUserId && !User.IsInRole("Admin"))
+        if (!User.IsInRole("Admin"))
         {
-            return Forbid();
+            orderItemQuery = orderItemQuery.Where(oi => oi.UserOrder.UserId == currentUserId);
         }
 
-        var result = new
+        var result = await orderItemQuery.Select(oi => new
         {
-            orderItem.OrderItem.Id,
-            orderItem.OrderItem.PurchasePrice,
-            orderItem.OrderItem.SellingPrice,
-            orderItem.OrderItem.Quantity,
-            orderItem.OrderItem.Amount,
-            orderItem.OrderItem.Profit,
+            oi.Id,
+            oi.PurchasePrice,
+            oi.SellingPrice,
+            oi.Quantity,
+            Amount = oi.SellingPrice * oi.Quantity,
+            Profit = (oi.SellingPrice - oi.PurchasePrice) * oi.Quantity,
             Product = new
             {
-                orderItem.OrderItem.Product.Id,
-                orderItem.OrderItem.Product.Name,
-                orderItem.OrderItem.Product.Icon,
-                orderItem.OrderItem.Product.PurchasePrice,
-                orderItem.OrderItem.Product.SellingPrice,
-                orderItem.OrderItem.Product.Count,
-                Category = orderItem.OrderItem.Product.Category != null ? new
-                {
-                    orderItem.OrderItem.Product.Category.Id,
-                    orderItem.OrderItem.Product.Category.Name
-                } : null
+                oi.Product.Id,
+                oi.Product.Name,
+                Icon = string.IsNullOrEmpty(oi.Product.Icon) ? null : BaseUrl + oi.Product.Icon,
+                CategoryName = oi.Product.Category != null ? oi.Product.Category.Name : null
             },
             Order = new
             {
-                orderItem.OrderItem.UserOrder.Id,
-                orderItem.OrderItem.UserOrder.Name,
-                orderItem.OrderItem.UserOrder.Address,
-                orderItem.OrderItem.UserOrder.CreatedAt,
-                User = new
-                {
-                    orderItem.OrderItem.UserOrder.User.Id,
-                    orderItem.OrderItem.UserOrder.User.PhoneNumber,
-                    orderItem.OrderItem.UserOrder.User.FirstName,
-                    orderItem.OrderItem.UserOrder.User.LastName
-                }
+                oi.UserOrder.Id,
+                oi.UserOrder.Name,
+                oi.UserOrder.CreatedAt
             }
+        }).FirstOrDefaultAsync();
+
+
+        if (result == null)
+            return NotFound("Order item not found");
+
+        if (User.IsInRole("Admin"))
+        {
+            return Ok(result);
+        }
+
+        var publicResult = new
+        {
+            result.Id,
+            result.SellingPrice,
+            result.Quantity,
+            result.Amount,
+            result.Product,
+            result.Order
         };
 
-        return Ok(result);
+        return Ok(publicResult);
     }
 
     [HttpPost]
@@ -161,14 +157,14 @@ public class OrderItemsController : ControllerBase
         if (order == null)
             return BadRequest("Order not found");
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
+        await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
         try
         {
             var product = await _context.TProducts.FindAsync(itemDto.ProductId);
             if (product == null)
                 return BadRequest("Product not found");
 
-            if (product.Count < itemDto.Quantity)
+            if (!product.IsUnlimited && product.Count < itemDto.Quantity)
                 return BadRequest($"Not enough stock. Available: {product.Count}, Requested: {itemDto.Quantity}");
 
             var orderItem = new TOrderItems
@@ -181,10 +177,16 @@ public class OrderItemsController : ControllerBase
             };
             _context.TOrderItems.Add(orderItem);
 
-            product.Count = product.Count - itemDto.Quantity;
-            _context.TProducts.Update(product);
+            if (!product.IsUnlimited)
+            {
+                product.Count -= itemDto.Quantity;
+            }
 
             await _context.SaveChangesAsync();
+
+            await RecalculateOrderTotalsAsync(order.Id);
+            await _context.SaveChangesAsync();
+
             await transaction.CommitAsync();
 
             return CreatedAtAction("GetOrderItem", new { id = orderItem.Id }, orderItem);
@@ -211,53 +213,45 @@ public class OrderItemsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
+        using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
         try
         {
             var orderItem = await _context.TOrderItems
                 .Include(oi => oi.Product)
+                .Include(oi => oi.UserOrder)
                 .FirstOrDefaultAsync(oi => oi.Id == id);
 
             if (orderItem == null)
                 return NotFound("Order item not found");
 
+            var originalQuantity = orderItem.Quantity;
+
+            if (itemDto.RowVersion != null)
+            {
+                _context.Entry(orderItem).OriginalValues["RowVersion"] = itemDto.RowVersion;
+            }
+
             if (itemDto.Quantity.HasValue)
             {
-                if (itemDto.Quantity.Value <= 0)
+                if (itemDto.Quantity.Value <= 0) return BadRequest("Quantity must be greater than zero");
+                var quantityDifference = itemDto.Quantity.Value - originalQuantity;
+                if (!orderItem.Product!.IsUnlimited)
                 {
-                    await transaction.RollbackAsync();
-                    return BadRequest("Quantity must be greater than zero");
+                    if (orderItem.Product.Count < quantityDifference)
+                        return BadRequest($"Not enough stock. Available: {orderItem.Product.Count}, Additional required: {quantityDifference}");
+                    orderItem.Product.Count -= quantityDifference;
                 }
-
-                if (itemDto.Quantity.Value != orderItem.Quantity)
-                {
-                    var quantityDifference = itemDto.Quantity.Value - orderItem.Quantity;
-                    var currentStock = orderItem.Product!.Count;
-
-                    if (currentStock < quantityDifference)
-                    {
-                        await transaction.RollbackAsync();
-                        return BadRequest($"Not enough stock. Available: {currentStock}, Additional required: {quantityDifference}");
-                    }
-
-                    orderItem.Product.Count = currentStock - quantityDifference;
-                    orderItem.Quantity = itemDto.Quantity.Value;
-                    _context.TProducts.Update(orderItem.Product);
-                }
+                orderItem.Quantity = itemDto.Quantity.Value;
             }
 
             if (itemDto.SellingPrice.HasValue)
             {
-                if (itemDto.SellingPrice.Value <= 0)
-                {
-                    await transaction.RollbackAsync();
-                    return BadRequest("Selling price must be greater than zero");
-                }
+                if (itemDto.SellingPrice.Value <= 0) return BadRequest("Selling price must be greater than zero");
                 orderItem.SellingPrice = itemDto.SellingPrice.Value;
             }
 
-            _context.TOrderItems.Update(orderItem);
-
+            await _context.SaveChangesAsync();
+            await RecalculateOrderTotalsAsync(orderItem.UserOrderId);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
@@ -266,9 +260,7 @@ public class OrderItemsController : ControllerBase
         catch (DbUpdateConcurrencyException)
         {
             await transaction.RollbackAsync();
-            if (!await OrderItemExistsAsync(id))
-                return NotFound("Order item not found");
-            return Conflict("Data has been modified by another user.");
+            return Conflict("Data has been modified by another user. Please refresh and try again.");
         }
         catch (Exception)
         {
@@ -284,7 +276,7 @@ public class OrderItemsController : ControllerBase
         if (id <= 0)
             return BadRequest("Invalid order item ID");
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
+        using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
         try
         {
             var orderItem = await _context.TOrderItems
@@ -294,14 +286,19 @@ public class OrderItemsController : ControllerBase
             if (orderItem == null)
                 return NotFound("Order item not found");
 
-            if (orderItem.Product != null)
+            var orderId = orderItem.UserOrderId;
+
+            if (orderItem.Product != null && !orderItem.Product.IsUnlimited)
             {
-                orderItem.Product.Count = orderItem.Product.Count + orderItem.Quantity;
-                _context.TProducts.Update(orderItem.Product);
+                orderItem.Product.Count += orderItem.Quantity;
             }
 
             _context.TOrderItems.Remove(orderItem);
             await _context.SaveChangesAsync();
+
+            await RecalculateOrderTotalsAsync(orderId);
+            await _context.SaveChangesAsync();
+
             await transaction.CommitAsync();
 
             return NoContent();
@@ -319,15 +316,17 @@ public class OrderItemsController : ControllerBase
     }
 
     [NonAction]
-    private int GetCurrentUserId()
+    private async Task RecalculateOrderTotalsAsync(int orderId)
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(userIdClaim, out var userId) ? userId : 0;
-    }
+        var order = await _context.TOrders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
 
-    [NonAction]
-    private async Task<bool> OrderItemExistsAsync(int id)
-    {
-        return await _context.TOrderItems.AnyAsync(e => e.Id == id);
+        if (order != null)
+        {
+            order.TotalAmount = order.OrderItems.Sum(oi => oi.SellingPrice * oi.Quantity);
+            order.TotalProfit = order.OrderItems.Sum(oi => (oi.SellingPrice - oi.PurchasePrice) * oi.Quantity);
+            _context.TOrders.Update(order);
+        }
     }
 }

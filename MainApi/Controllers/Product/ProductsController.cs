@@ -2,15 +2,20 @@
 
 [Route("api/[controller]")]
 [ApiController]
-public class ProductsController : ControllerBase
+public class ProductsController : BaseApiController
 {
     private readonly MechanicContext _context;
-    private readonly IHtmlSanitizer _htmlSanitizer;
+    private readonly ILogger<ProductsController> _logger;
+    private readonly IStorageService _storageService;
 
-    public ProductsController(MechanicContext context, IHtmlSanitizer htmlSanitizer)
+    public ProductsController(
+            MechanicContext context,
+            ILogger<ProductsController> logger,
+            IStorageService storageService)
     {
         _context = context;
-        _htmlSanitizer = htmlSanitizer;
+        _logger = logger;
+        _storageService = storageService;
     }
 
     [HttpGet]
@@ -27,8 +32,7 @@ public class ProductsController : ControllerBase
 
             if (!string.IsNullOrWhiteSpace(search.Name))
             {
-                var sanitizedName = _htmlSanitizer.Sanitize(search.Name);
-                var pattern = $"%{sanitizedName}%";
+                var pattern = $"%{search.Name}%";
                 query = query.Where(p => p.Name != null && EF.Functions.Like(p.Name, pattern));
             }
 
@@ -76,11 +80,9 @@ public class ProductsController : ControllerBase
                 {
                     Id = p.Id,
                     Name = p.Name,
-                    Icon = p.Icon,
+                    Icon = string.IsNullOrEmpty(p.Icon) ? null : BaseUrl + p.Icon,
                     OriginalPrice = p.OriginalPrice,
                     SellingPrice = p.SellingPrice,
-                    HasDiscount = p.HasDiscount,
-                    DiscountPercentage = p.DiscountPercentage,
                     Count = p.Count,
                     IsUnlimited = p.IsUnlimited,
                     CategoryId = p.CategoryId,
@@ -133,12 +135,10 @@ public class ProductsController : ControllerBase
                 {
                     Id = product.Id,
                     Name = product.Name,
-                    Icon = product.Icon,
+                    Icon = string.IsNullOrEmpty(product.Icon) ? null : BaseUrl + product.Icon,
                     PurchasePrice = product.PurchasePrice,
                     OriginalPrice = product.OriginalPrice,
                     SellingPrice = product.SellingPrice,
-                    HasDiscount = product.HasDiscount,
-                    DiscountPercentage = product.DiscountPercentage,
                     Count = product.Count,
                     IsUnlimited = product.IsUnlimited,
                     CategoryId = product.CategoryId,
@@ -152,11 +152,9 @@ public class ProductsController : ControllerBase
                 {
                     Id = product.Id,
                     Name = product.Name,
-                    Icon = product.Icon,
+                    Icon = string.IsNullOrEmpty(product.Icon) ? null : BaseUrl + product.Icon,
                     OriginalPrice = product.OriginalPrice,
                     SellingPrice = product.SellingPrice,
-                    HasDiscount = product.HasDiscount,
-                    DiscountPercentage = product.DiscountPercentage,
                     Count = product.Count,
                     IsUnlimited = product.IsUnlimited,
                     CategoryId = product.CategoryId,
@@ -177,37 +175,19 @@ public class ProductsController : ControllerBase
     {
         if (productDto == null) return BadRequest(new { Message = "Product data is required" });
         if (!ModelState.IsValid) return BadRequest(ModelState);
-
-        if (productDto.OriginalPrice > 0 && productDto.SellingPrice >= productDto.OriginalPrice)
-            return BadRequest(new { Message = "Selling price must be less than original price when a discount is applied." });
-
-        if (productDto.PurchasePrice > productDto.SellingPrice)
-            return BadRequest(new { Message = "Purchase price cannot be greater than selling price." });
+        if (productDto.OriginalPrice > 0 && productDto.SellingPrice >= productDto.OriginalPrice) return BadRequest(new { Message = "Selling price must be less than original price when a discount is applied." });
+        if (productDto.PurchasePrice > productDto.SellingPrice) return BadRequest(new { Message = "Purchase price cannot be greater than selling price." });
 
         string? iconUrl = null;
         if (productDto.IconFile != null)
         {
-            if (productDto.IconFile.Length > 2 * 1024 * 1024)
-                return BadRequest("File size cannot exceed 2MB.");
-
-            var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
-            if (!allowedMimeTypes.Contains(productDto.IconFile.ContentType.ToLower()))
-                return BadRequest("Invalid file type. Only JPG, PNG, WebP, GIF are allowed.");
-
-            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(productDto.IconFile.FileName)}";
-            var filePath = Path.Combine("wwwroot", "uploads", "products", fileName);
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
-            await using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await productDto.IconFile.CopyToAsync(stream);
-            }
-            iconUrl = $"/uploads/products/{fileName}";
+            iconUrl = await _storageService.UploadFileAsync(productDto.IconFile, "images/products");
         }
 
+        var sanitizer = new HtmlSanitizer();
         var product = new TProducts
         {
-            Name = productDto.Name,
+            Name = sanitizer.Sanitize(productDto.Name),
             Icon = iconUrl,
             PurchasePrice = productDto.PurchasePrice,
             SellingPrice = productDto.SellingPrice,
@@ -220,68 +200,17 @@ public class ProductsController : ControllerBase
         _context.TProducts.Add(product);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
-    }
-
-
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDto productDto)
-    {
-        if (id <= 0) return BadRequest(new { Message = "Invalid product ID" });
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-
-        if (productDto.OriginalPrice > 0 && productDto.SellingPrice >= productDto.OriginalPrice)
-            return BadRequest(new { Message = "Selling price must be less than original price when a discount is applied." });
-
-        if (productDto.PurchasePrice > productDto.SellingPrice)
-            return BadRequest(new { Message = "Purchase price cannot be greater than selling price." });
-
-        var existingProduct = await _context.TProducts.FindAsync(id);
-        if (existingProduct == null) return NotFound(new { Message = $"Product with ID {id} not found" });
-
-        if (productDto.RowVersion != null)
+        return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, new
         {
-            _context.Entry(existingProduct).Property("RowVersion").OriginalValue = productDto.RowVersion;
-        }
-
-        if (productDto.IconFile != null)
-        {
-            if (productDto.IconFile.Length > 2 * 1024 * 1024)
-                return BadRequest("File size cannot exceed 2MB.");
-
-            var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
-            if (!allowedMimeTypes.Contains(productDto.IconFile.ContentType.ToLower()))
-                return BadRequest("Invalid file type. Only JPG, PNG, WebP, GIF are allowed.");
-
-            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(productDto.IconFile.FileName)}";
-            var filePath = Path.Combine("wwwroot", "uploads", "products", fileName);
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
-            await using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await productDto.IconFile.CopyToAsync(stream);
-            }
-            existingProduct.Icon = $"/uploads/products/{fileName}";
-        }
-
-        existingProduct.Name = productDto.Name;
-        existingProduct.PurchasePrice = productDto.PurchasePrice;
-        existingProduct.SellingPrice = productDto.SellingPrice;
-        existingProduct.OriginalPrice = productDto.OriginalPrice;
-        existingProduct.Count = productDto.IsUnlimited ? 0 : productDto.Count;
-        existingProduct.IsUnlimited = productDto.IsUnlimited;
-        existingProduct.CategoryId = productDto.CategoryId;
-
-        try
-        {
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Conflict(new { Message = "The product was modified by another user. Please reload and try again." });
-        }
+            product.Id,
+            product.Name,
+            Icon = string.IsNullOrEmpty(product.Icon) ? null : BaseUrl + product.Icon,
+            product.SellingPrice,
+            product.OriginalPrice,
+            product.Count,
+            product.IsUnlimited,
+            product.CategoryId
+        });
     }
 
     [HttpPost("{id:int}/stock/add")]
@@ -297,36 +226,31 @@ public class ProductsController : ControllerBase
         if (stockDto.Quantity <= 0 || stockDto.Quantity > 100000)
             return BadRequest(new { Message = "Quantity must be between 1 and 100000" });
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
+        using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
         try
         {
             var product = await _context.TProducts.FindAsync(id);
             if (product == null)
             {
-                await transaction.RollbackAsync();
                 return NotFound(new { Message = $"Product with ID {id} not found" });
             }
 
             if (product.IsUnlimited)
             {
-                await transaction.RollbackAsync();
                 return BadRequest(new { Message = "Cannot change stock for an unlimited product." });
             }
 
-            var currentStock = product.Count;
-            var newStock = currentStock + stockDto.Quantity;
+            product.Count += stockDto.Quantity;
 
-            if (newStock > int.MaxValue || newStock < 0)
-            {
-                await transaction.RollbackAsync();
-                return BadRequest(new { Message = "Stock overflow - resulting quantity would be invalid" });
-            }
-
-            product.Count = newStock;
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
             return Ok(new { Message = "Stock added successfully", NewCount = product.Count });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync();
+            return Conflict(new { Message = "The product was modified by another user. Please reload and try again." });
         }
         catch (Exception ex)
         {
@@ -348,34 +272,35 @@ public class ProductsController : ControllerBase
         if (stockDto.Quantity <= 0)
             return BadRequest(new { Message = "Quantity must be greater than zero" });
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
+        using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
         try
         {
             var product = await _context.TProducts.FindAsync(id);
             if (product == null)
             {
-                await transaction.RollbackAsync();
                 return NotFound(new { Message = $"Product with ID {id} not found" });
             }
 
             if (product.IsUnlimited)
             {
-                await transaction.RollbackAsync();
                 return BadRequest(new { Message = "Cannot change stock for an unlimited product." });
             }
 
-            var currentStock = product.Count;
-            if (currentStock < stockDto.Quantity)
+            if (product.Count < stockDto.Quantity)
             {
-                await transaction.RollbackAsync();
-                return BadRequest(new { Message = $"Insufficient stock. Current stock: {currentStock}, Requested: {stockDto.Quantity}" });
+                return BadRequest(new { Message = $"Insufficient stock. Current stock: {product.Count}, Requested: {stockDto.Quantity}" });
             }
 
-            product.Count = currentStock - stockDto.Quantity;
+            product.Count -= stockDto.Quantity;
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
             return Ok(new { Message = "Stock removed successfully", NewCount = product.Count });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync();
+            return Conflict(new { Message = "The product was modified by another user. Please reload and try again." });
         }
         catch (Exception ex)
         {
@@ -495,40 +420,66 @@ public class ProductsController : ControllerBase
         }
     }
 
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDto productDto)
+    {
+        if (id <= 0) return BadRequest(new { Message = "Invalid product ID" });
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (productDto.OriginalPrice > 0 && productDto.SellingPrice >= productDto.OriginalPrice) return BadRequest(new { Message = "Selling price must be less than original price when a discount is applied." });
+        if (productDto.PurchasePrice > productDto.SellingPrice) return BadRequest(new { Message = "Purchase price cannot be greater than selling price." });
+
+        var existingProduct = await _context.TProducts.FindAsync(id);
+        if (existingProduct == null) return NotFound(new { Message = $"Product with ID {id} not found" });
+
+        if (productDto.RowVersion != null) _context.Entry(existingProduct).Property("RowVersion").OriginalValue = productDto.RowVersion;
+
+        if (productDto.IconFile != null)
+        {
+            if (!string.IsNullOrEmpty(existingProduct.Icon))
+            {
+                await _storageService.DeleteFileAsync(existingProduct.Icon);
+            }
+            existingProduct.Icon = await _storageService.UploadFileAsync(productDto.IconFile, "images/products");
+        }
+
+        var sanitizer = new HtmlSanitizer();
+        existingProduct.Name = sanitizer.Sanitize(productDto.Name);
+        existingProduct.PurchasePrice = productDto.PurchasePrice;
+        existingProduct.SellingPrice = productDto.SellingPrice;
+        existingProduct.OriginalPrice = productDto.OriginalPrice;
+        existingProduct.Count = productDto.IsUnlimited ? 0 : productDto.Count;
+        existingProduct.IsUnlimited = productDto.IsUnlimited;
+        existingProduct.CategoryId = productDto.CategoryId;
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteProduct(int id)
     {
-        if (id <= 0)
+        if (id <= 0) return BadRequest(new { Message = "Invalid product ID" });
+
+        var product = await _context.TProducts.FindAsync(id);
+        if (product == null) return NotFound(new { Message = $"Product with ID {id} not found" });
+
+        var hasOrderHistory = await _context.TOrderItems.AnyAsync(oi => oi.ProductId == id);
+        if (hasOrderHistory) return BadRequest(new { Message = "Cannot delete product that has order history. Consider deactivating instead." });
+
+        string? iconPath = product.Icon;
+
+        _context.TProducts.Remove(product);
+        await _context.SaveChangesAsync();
+
+        if (!string.IsNullOrEmpty(iconPath))
         {
-            return BadRequest(new { Message = "Invalid product ID" });
+            await _storageService.DeleteFileAsync(iconPath);
         }
 
-        try
-        {
-            var product = await _context.TProducts
-                .Include(p => p.OrderDetails)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (product == null)
-            {
-                return NotFound(new { Message = $"Product with ID {id} not found" });
-            }
-
-            if (product.OrderDetails?.Any() == true)
-            {
-                return BadRequest(new { Message = "Cannot delete product that has order history. Consider deactivating instead." });
-            }
-
-            _context.TProducts.Remove(product);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { Message = "Product deleted successfully" });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { Message = "Error deleting product", Error = ex.Message });
-        }
+        return Ok(new { Message = "Product deleted successfully" });
     }
 
     [HttpGet("discounted")]
@@ -578,7 +529,7 @@ public class ProductsController : ControllerBase
                 {
                     p.Id,
                     p.Name,
-                    p.Icon,
+                    Icon = string.IsNullOrEmpty(p.Icon) ? null : BaseUrl + p.Icon,
                     p.OriginalPrice,
                     p.SellingPrice,
                     DiscountAmount = p.OriginalPrice - p.SellingPrice,
@@ -731,11 +682,5 @@ public class ProductsController : ControllerBase
         {
             return StatusCode(500, new { Message = "Error retrieving discount statistics", Error = ex.Message });
         }
-    }
-
-    [NonAction]
-    private async Task<bool> ProductExistsAsync(int id)
-    {
-        return await _context.TProducts.AnyAsync(e => e.Id == id);
     }
 }

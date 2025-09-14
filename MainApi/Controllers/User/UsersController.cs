@@ -3,7 +3,7 @@
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class UsersController : ControllerBase
+public class UsersController : BaseApiController
 {
     private readonly MechanicContext _context;
     private readonly IConfiguration _configuration;
@@ -20,17 +20,26 @@ public class UsersController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<UserProfileDto>>> GetUsers()
+    public async Task<ActionResult<IEnumerable<UserProfileDto>>> GetUsers([FromQuery] bool includeDeleted = false)
     {
         try
         {
-            var users = await _context.TUsers
-                .Where(u => !u.IsDeleted)
+            var query = _context.TUsers.AsQueryable();
+
+            if (!includeDeleted)
+            {
+                query = query.Where(u => !u.IsDeleted);
+            }
+
+            var users = await query
                 .Select(u => new UserProfileDto
                 {
                     Id = u.Id,
                     PhoneNumber = u.PhoneNumber,
-                    CreatedAt = u.CreatedAt
+                    CreatedAt = u.CreatedAt,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    IsAdmin = u.IsAdmin
                 })
                 .ToListAsync();
 
@@ -44,8 +53,20 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<ActionResult<UserProfileDto>> GetUser(int id)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
+        {
+            return Unauthorized();
+        }
+
+        if (currentUserId != id && !User.IsInRole("Admin"))
+        {
+            return Forbid();
+        }
+
         try
         {
             var user = await _context.TUsers
@@ -54,7 +75,10 @@ public class UsersController : ControllerBase
                 {
                     Id = u.Id,
                     PhoneNumber = u.PhoneNumber,
-                    CreatedAt = u.CreatedAt
+                    CreatedAt = u.CreatedAt,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    IsAdmin = u.IsAdmin
                 })
                 .FirstOrDefaultAsync();
 
@@ -139,7 +163,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] TUsers updateRequest)
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateProfileDto updateRequest)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -147,12 +171,19 @@ public class UsersController : ControllerBase
         try
         {
             var currentUserId = GetCurrentUserId();
-            if (currentUserId != id && !User.IsInRole("Admin"))
+            var isAdmin = User.IsInRole("Admin");
+
+            if (currentUserId != id && !isAdmin)
                 return Forbid();
 
             var existingUser = await _context.TUsers.FindAsync(id);
-            if (existingUser == null || existingUser.IsDeleted)
+            if (existingUser == null)
                 return NotFound();
+
+            if (existingUser.IsDeleted && !isAdmin)
+            {
+                return Forbid("User account is deleted and cannot be modified.");
+            }
 
             existingUser.FirstName = updateRequest.FirstName;
             existingUser.LastName = updateRequest.LastName;
@@ -231,7 +262,6 @@ public class UsersController : ControllerBase
             return BadRequest(ModelState);
 
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
         var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && !u.IsDeleted);
 
         if (user == null)
@@ -245,7 +275,7 @@ public class UsersController : ControllerBase
         }
         else
         {
-            var loginRateLimitKey = $"login_{clientIp}_{request.PhoneNumber}";
+            var loginRateLimitKey = $"login_{request.PhoneNumber}_{clientIp}";
             if (await _rateLimitService.IsLimitedAsync(loginRateLimitKey, 5, 15))
             {
                 _logger.LogWarning("Rate limit exceeded for login attempt from IP: {ClientIP}, Phone: {PhoneNumber}", clientIp, request.PhoneNumber);
@@ -325,14 +355,13 @@ public class UsersController : ControllerBase
             return BadRequest(ModelState);
 
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var rateLimitKey = $"otp_{clientIp}_{request.PhoneNumber}";
-
-        if (await _rateLimitService.IsLimitedAsync(rateLimitKey, 5, 15))
-            return StatusCode(429, "Too many verification attempts. Please try again later.");
-
         var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && u.IsActive);
         if (user == null)
             return BadRequest("Invalid credentials.");
+
+        var rateLimitKey = $"otp_{clientIp}_{user.Id}";
+        if (await _rateLimitService.IsLimitedAsync(rateLimitKey, 3, 5))
+            return StatusCode(429, "Too many verification attempts. Please request a new OTP.");
 
         var storedOtp = await _context.TUserOtp
             .Where(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
@@ -387,7 +416,10 @@ public class UsersController : ControllerBase
             {
                 Id = user.Id,
                 PhoneNumber = user.PhoneNumber,
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                IsAdmin = user.IsAdmin
             },
             ExpiresAt = DateTime.UtcNow.AddHours(1),
             RefreshToken = refreshTokenValue
@@ -398,33 +430,35 @@ public class UsersController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshRequestDto request)
     {
-        var storedTokens = _context.TRefreshToken
+        var storedToken = _context.TRefreshToken
             .Include(x => x.User)
-            .Where(x => x.ExpiresAt > DateTime.UtcNow && x.RevokedAt == null)
             .AsEnumerable()
-            .Where(x => BCrypt.Net.BCrypt.Verify(request.RefreshToken, x.TokenHash))
-            .ToList();
+            .FirstOrDefault(x => BCrypt.Net.BCrypt.Verify(request.RefreshToken, x.TokenHash));
 
-        var storedToken = storedTokens.FirstOrDefault();
+        if (storedToken == null)
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        if (storedToken.RevokedAt != null)
+        {
+            _logger.LogWarning("Attempted reuse of a revoked refresh token for user {UserId}. Revoking token family.", storedToken.UserId);
+            await RevokeTokenChainAsync(storedToken.ReplacedByTokenHash);
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        if (storedToken.ExpiresAt <= DateTime.UtcNow)
+        {
+            return Unauthorized(new { message = "Token expired." });
+        }
 
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var userAgent = Request.Headers.UserAgent.ToString();
         var safeUserAgent = SanitizeUserAgent(userAgent);
 
-        if (storedToken == null || storedToken.User == null || !storedToken.User.IsActive)
+        if (storedToken.User == null || !storedToken.User.IsActive)
         {
-            if (storedToken != null)
-            {
-                _logger.LogWarning("Potential token reuse detected for token belonging to user {UserId}. Revoking chain.", storedToken.UserId);
-                await RevokeTokenChainAsync(storedToken);
-            }
-            return Unauthorized(new { message = "Invalid token." });
-        }
-
-        if (storedToken.UserAgent != safeUserAgent || storedToken.CreatedByIp != clientIp)
-        {
-            _logger.LogWarning("Session context mismatch for user {UserId}. IP or UserAgent changed. IP: {StoredIP} vs {CurrentIP}, UA: {StoredUA} vs {CurrentUA}",
-                storedToken.UserId, storedToken.CreatedByIp, clientIp, storedToken.UserAgent, safeUserAgent);
+            return Unauthorized(new { message = "User account is inactive." });
         }
 
         var newRefreshValue = GenerateSecureToken();
@@ -444,6 +478,7 @@ public class UsersController : ControllerBase
             CreatedByIp = clientIp,
             UserAgent = safeUserAgent
         };
+
         _context.TRefreshToken.Add(newRefresh);
         await _context.SaveChangesAsync();
 
@@ -470,7 +505,7 @@ public class UsersController : ControllerBase
         if (token == null)
             return NotFound(new { message = "Token not found" });
 
-        await RevokeTokenChainAsync(token);
+        await RevokeTokenChainAsync(token.TokenHash);
 
         return Ok(new { message = "Logged out successfully" });
     }
@@ -484,21 +519,29 @@ public class UsersController : ControllerBase
     }
 
     [NonAction]
-    private async Task RevokeTokenChainAsync(TRefreshToken token)
+    private async Task RevokeTokenChainAsync(string? tokenHash)
     {
-        if (token == null) return;
+        if (string.IsNullOrEmpty(tokenHash)) return;
 
-        token.RevokedAt = DateTime.UtcNow;
+        var token = await _context.TRefreshToken.FirstOrDefaultAsync(t => t.TokenHash == tokenHash);
 
-        if (!string.IsNullOrEmpty(token.ReplacedByTokenHash))
+        if (token != null)
         {
-            var childTokens = await _context.TRefreshToken
-                .Where(t => t.TokenHash == token.ReplacedByTokenHash && t.RevokedAt == null)
-                .ToListAsync();
+            var nextTokenHash = token.ReplacedByTokenHash;
 
-            foreach (var child in childTokens)
+            if (token.RevokedAt == null)
             {
-                await RevokeTokenChainAsync(child);
+                token.RevokedAt = DateTime.UtcNow;
+            }
+
+            if (token.ExpiresAt <= DateTime.UtcNow)
+            {
+                _context.TRefreshToken.Remove(token);
+            }
+
+            if (!string.IsNullOrEmpty(nextTokenHash))
+            {
+                await RevokeTokenChainAsync(nextTokenHash);
             }
         }
     }
@@ -564,14 +607,5 @@ public class UsersController : ControllerBase
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
-    }
-
-    [NonAction]
-    private int? GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
-            return null;
-        return userId;
     }
 }
