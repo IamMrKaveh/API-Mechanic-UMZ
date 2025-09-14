@@ -2,12 +2,10 @@
 
 public class ProductDto
 {
-    private string _name = string.Empty;
-
     public int Id { get; set; }
 
     [Required, StringLength(200)]
-    public string Name { get => _name; set => _name = new HtmlSanitizer().Sanitize(value); }
+    public string Name { get; set; } = string.Empty;
 
     public IFormFile? IconFile { get; set; }
 
@@ -32,8 +30,18 @@ public class PublicProductViewDto
     public string Icon { get; set; }
     public int OriginalPrice { get; set; }
     public int SellingPrice { get; set; }
-    public bool HasDiscount { get; set; }
-    public double DiscountPercentage { get; set; }
+    public bool HasDiscount => OriginalPrice > SellingPrice;
+    public double DiscountPercentage
+    {
+        get
+        {
+            if (HasDiscount && OriginalPrice > 0)
+            {
+                return Math.Max(0, (double)(OriginalPrice - SellingPrice) * 100 / OriginalPrice);
+            }
+            return 0;
+        }
+    }
     public int Count { get; set; }
     public bool IsUnlimited { get; set; }
     public int CategoryId { get; set; }
@@ -47,9 +55,8 @@ public class AdminProductViewDto : PublicProductViewDto
 
 public class CategoryDto
 {
-    private string _name = string.Empty;
     [Required, StringLength(100)]
-    public string Name { get => _name; set => _name = new HtmlSanitizer().Sanitize(value); }
+    public string Name { get; set; } = string.Empty;
 
     public IFormFile? IconFile { get; set; }
     public int Id { get; set; }
@@ -70,8 +77,7 @@ public enum ProductSortOptions
 
 public class ProductSearchDto
 {
-    private string? _name;
-    public string? Name { get => _name; set => _name = value == null ? null : new HtmlSanitizer().Sanitize(value); }
+    public string? Name { get; set; }
     public int? CategoryId { get; set; }
     public int? MinPrice { get; set; }
     public int? MaxPrice { get; set; }
@@ -83,10 +89,9 @@ public class ProductSearchDto
 
 public class ProductStockDto
 {
-    private string? _notes;
     [Required, Range(1, int.MaxValue)]
     public int Quantity { get; set; }
-    public string? Notes { get => _notes; set => _notes = value == null ? null : new HtmlSanitizer().Sanitize(value); }
+    public string? Notes { get; set; }
 }
 
 public class SetDiscountDto

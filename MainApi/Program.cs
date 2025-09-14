@@ -7,7 +7,12 @@ builder.Services.AddDbContext<MechanicContext>(options =>
     options.UseNpgsql(connectionString)
 );
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
+        options.JsonSerializerOptions.DictionaryKeyPolicy = null;
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -40,13 +45,17 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowNetlify", b =>
-        b
-        //.WithOrigins("http://localhost:4200")
-        .WithOrigins("https://mechanic-umz.netlify.app")
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-    );
+    options.AddPolicy("AllowFrontEnd", policy =>
+    {
+        policy
+            .WithOrigins(
+            //"https://mechanic-umz.netlify.app"
+            "http://localhost:4200"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
 });
 
 builder.Services.AddAuthentication(options =>
@@ -78,9 +87,13 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     return ConnectionMultiplexer.Connect(options);
 });
 
+builder.Services.AddSingleton<IHtmlSanitizer>(new HtmlSanitizer());
 
 builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
 builder.Services.AddScoped<ICartService, CartService>();
+
+builder.Services.AddSingleton<IStorageService, LiaraStorageService>();
+builder.Services.Configure<LiaraStorageSettings>(builder.Configuration.GetSection("LiaraStorage"));
 
 var app = builder.Build();
 
@@ -94,8 +107,11 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-app.UseCors("AllowNetlify");
+
+app.UseCors("AllowFrontEnd");
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();

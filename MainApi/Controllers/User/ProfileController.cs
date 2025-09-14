@@ -3,7 +3,7 @@ namespace MainApi.Controllers.User;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class ProfileController : ControllerBase
+public class ProfileController : BaseApiController
 {
     private readonly MechanicContext _context;
     private readonly ILogger<ProfileController> _logger;
@@ -12,14 +12,6 @@ public class ProfileController : ControllerBase
     {
         _context = context;
         _logger = logger;
-    }
-
-    private int? GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (int.TryParse(userIdClaim, out var userId))
-            return userId;
-        return null;
     }
 
     [HttpGet]
@@ -58,7 +50,7 @@ public class ProfileController : ControllerBase
         if (userId == null)
             return Unauthorized();
 
-        var existingUser = await _context.TUsers.FindAsync(userId.Value);
+        var existingUser = await _context.TUsers.FindAsync(userId);
         if (existingUser == null || existingUser.IsDeleted)
             return NotFound();
 
@@ -89,7 +81,7 @@ public class ProfileController : ControllerBase
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var user = await _context.TUsers.FindAsync(userId.Value);
+            var user = await _context.TUsers.FindAsync(userId);
             if (user == null || user.IsDeleted)
             {
                 return NotFound();
@@ -99,7 +91,7 @@ public class ProfileController : ControllerBase
             user.DeletedAt = DateTime.UtcNow;
             user.IsActive = false;
 
-            await RevokeAllUserRefreshTokensAsync(userId.Value);
+            await RevokeAllUserRefreshTokensAsync(userId);
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -114,10 +106,17 @@ public class ProfileController : ControllerBase
         }
     }
 
-    private async Task RevokeAllUserRefreshTokensAsync(int userId)
+    private async Task RevokeAllUserRefreshTokensAsync(int? userId)
     {
-        var userTokens = _context.TRefreshToken
-            .Where(rt => rt.UserId == userId && rt.RevokedAt == null && rt.ExpiresAt > DateTime.UtcNow);
-        await userTokens.ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.RevokedAt, DateTime.UtcNow));
+        if (userId != null)
+        {
+            var userTokens = _context.TRefreshToken
+            .Where(
+                rt => rt.UserId == userId &&
+                rt.RevokedAt == null &&
+                rt.ExpiresAt > DateTime.UtcNow);
+
+            await userTokens.ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.RevokedAt, DateTime.UtcNow));
+        }
     }
 }

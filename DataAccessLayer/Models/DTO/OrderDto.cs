@@ -2,13 +2,10 @@
 
 public class CreateOrderDto
 {
-    private string? _name;
-    private string? _address;
-    private string? _postalCode;
     public int UserId { get; set; }
-    public string? Name { get => _name; set => _name = value == null ? null : new HtmlSanitizer().Sanitize(value); }
-    public string? Address { get => _address; set => _address = value == null ? null : new HtmlSanitizer().Sanitize(value); }
-    public string? PostalCode { get => _postalCode; set => _postalCode = value == null ? null : new HtmlSanitizer().Sanitize(value); }
+    public string? Name { get; set; }
+    public string? Address { get; set; }
+    public string? PostalCode { get; set; }
     public int OrderStatusId { get; set; }
     public DateTime? DeliveryDate { get; set; }
     public List<CreateOrderItemDto> OrderItems { get; set; } = new();
@@ -16,12 +13,9 @@ public class CreateOrderDto
 
 public class UpdateOrderDto
 {
-    private string? _name;
-    private string? _address;
-    private string? _postalCode;
-    public string? Name { get => _name; set => _name = value == null ? null : new HtmlSanitizer().Sanitize(value); }
-    public string? Address { get => _address; set => _address = value == null ? null : new HtmlSanitizer().Sanitize(value); }
-    public string? PostalCode { get => _postalCode; set => _postalCode = value == null ? null : new HtmlSanitizer().Sanitize(value); }
+    public string? Name { get; set; }
+    public string? Address { get; set; }
+    public string? PostalCode { get; set; }
     public int? OrderStatusId { get; set; }
     public DateTime? DeliveryDate { get; set; }
     public byte[]? RowVersion { get; set; }
@@ -29,19 +23,29 @@ public class UpdateOrderDto
 
 public class CreateOrderStatusDto
 {
-    private string? _name;
-    private string? _icon;
-    public string? Name { get => _name; set => _name = value == null ? null : new HtmlSanitizer().Sanitize(value); }
-    public string? Icon { get => _icon; set => _icon = value == null ? null : new HtmlSanitizer().Sanitize(value); }
+    public string? Name { get; set; }
+    public string? Icon { get; set; }
+}
+
+public class CreateOrderFromCartDto
+{
+    public string? Name { get; set; }
+
+    [Required]
+    public string? Address { get; set; }
+
+    [Required]
+    public string? PostalCode { get; set; }
 }
 
 public class UpdateOrderStatusDto
 {
-    private string? _name;
-    private string? _icon;
+    [Required]
     public int OrderStatusId { get; set; }
-    public string? Name { get => _name; set => _name = value == null ? null : new HtmlSanitizer().Sanitize(value); }
-    public string? Icon { get => _icon; set => _icon = value == null ? null : new HtmlSanitizer().Sanitize(value); }
+
+    public string? Name { get; set; }
+
+    public string? Icon { get; set; }
 }
 
 public class CreateOrderItemDto
@@ -84,4 +88,20 @@ public class PublicOrderItemViewDto
     public int Amount { get; set; }
     public PublicOrderItemProductViewDto Product { get; set; }
     public PublicOrderItemOrderViewDto Order { get; set; }
+}
+
+public class PublicOrderItemDetailDto
+{
+    public int Id { get; set; }
+    public int SellingPrice { get; set; }
+    public int Quantity { get; set; }
+    public int Amount { get; set; }
+    public PublicOrderItemProductViewDto Product { get; set; }
+    public PublicOrderItemOrderViewDto Order { get; set; }
+}
+
+public class AdminOrderItemDetailDto : PublicOrderItemDetailDto
+{
+    public int PurchasePrice { get; set; }
+    public int Profit { get; set; }
 }
