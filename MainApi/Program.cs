@@ -49,8 +49,8 @@ builder.Services.AddCors(options =>
     {
         policy
             .WithOrigins(
-            //"https://mechanic-umz.netlify.app"
-            "http://localhost:4200"
+            "https://mechanic-umz.netlify.app"
+            //"http://localhost:4200"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
