@@ -76,7 +76,6 @@ public class OrdersController : BaseApiController
                 o.TotalAmount,
                 TotalProfit = isAdmin ? (int?)o.TotalProfit : null,
                 o.CreatedAt,
-                o.DeliveryDate,
                 User = new
                 {
                     o.User!.Id,
@@ -137,7 +136,6 @@ public class OrdersController : BaseApiController
             o.TotalAmount,
             TotalProfit = User.IsInRole("Admin") ? (int?)o.TotalProfit : null,
             o.CreatedAt,
-            o.DeliveryDate,
             o.OrderStatusId,
             User = new
             {
@@ -257,7 +255,6 @@ public class OrdersController : BaseApiController
                 PostalCode = sanitizer.Sanitize(orderDto.PostalCode),
                 CreatedAt = DateTime.UtcNow,
                 OrderStatusId = orderDto.OrderStatusId,
-                DeliveryDate = orderDto.DeliveryDate,
                 IdempotencyKey = idempotencyKey
             };
 
@@ -445,8 +442,6 @@ public class OrdersController : BaseApiController
             order.Address = sanitizer.Sanitize(orderDto.Address);
         if (!string.IsNullOrWhiteSpace(orderDto.PostalCode))
             order.PostalCode = sanitizer.Sanitize(orderDto.PostalCode);
-        if (orderDto.DeliveryDate.HasValue)
-            order.DeliveryDate = orderDto.DeliveryDate;
 
         try
         {
@@ -626,7 +621,6 @@ public class OrdersController : BaseApiController
                 o.TotalAmount,
                 TotalProfit = isAdmin ? (int?)o.TotalProfit : null,
                 o.CreatedAt,
-                o.DeliveryDate,
                 o.OrderStatusId,
                 OrderStatus = new { o.OrderStatus.Id, o.OrderStatus.Name, o.OrderStatus.Icon },
                 User = new { o.User.Id, o.User.PhoneNumber, o.User.FirstName, o.User.LastName, o.User.IsAdmin },

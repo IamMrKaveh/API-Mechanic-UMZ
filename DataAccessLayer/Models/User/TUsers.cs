@@ -11,7 +11,7 @@ public class TUsers
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public bool IsActive { get; set; } = true;
     public bool IsAdmin { get; set; } = false;

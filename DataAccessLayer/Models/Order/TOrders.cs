@@ -13,8 +13,7 @@ public class TOrders
     public int TotalAmount { get; set; }
     public int TotalProfit { get; set; }
 
-    public DateTime CreatedAt { get; set; }
-    public DateTime? DeliveryDate { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public virtual ICollection<TOrderItems> OrderItems { get; set; } = new List<TOrderItems>();
 

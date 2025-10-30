@@ -1,4 +1,4 @@
-﻿namespace DataAccessLayer;
+﻿namespace DataAccessLayer.Data;
 
 public class MechanicContext : DbContext
 {
@@ -19,6 +19,12 @@ public class MechanicContext : DbContext
 
     public DbSet<TCarts> TCarts { get; set; }
     public DbSet<TCartItems> TCartItems { get; set; }
+
+    #endregion
+
+    #region Log
+
+    public DbSet<TAuditLogs> TAuditLogs { get; set; }
 
     #endregion
 
@@ -115,7 +121,6 @@ public class MechanicContext : DbContext
             entity.Property(x => x.Address).HasMaxLength(500);
             entity.Property(x => x.PostalCode).HasMaxLength(20);
             entity.Property(x => x.IdempotencyKey).HasMaxLength(100);
-            entity.Property(x => x.CreatedAt).HasDefaultValueSql("TIMEZONE('UTC', NOW())");
             entity.Property(x => x.TotalAmount).IsRequired().HasDefaultValue(0);
             entity.Property(x => x.TotalProfit).IsRequired().HasDefaultValue(0);
             entity.Property(x => x.RowVersion).IsRowVersion();
@@ -213,7 +218,6 @@ public class MechanicContext : DbContext
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
             entity.Property(o => o.OtpHash).IsRequired().HasMaxLength(500);
             entity.Property(o => o.ExpiresAt).IsRequired();
-            entity.Property(o => o.CreatedAt).HasDefaultValueSql("TIMEZONE('UTC', NOW())");
             entity.Property(o => o.IsUsed).HasDefaultValue(false);
             entity.Property(o => o.AttemptCount).HasDefaultValue(0);
             entity.HasOne(o => o.User)
@@ -229,7 +233,6 @@ public class MechanicContext : DbContext
             entity.Property(x => x.PhoneNumber).IsRequired().HasMaxLength(15);
             entity.Property(x => x.FirstName).HasMaxLength(100);
             entity.Property(x => x.LastName).HasMaxLength(100);
-            entity.Property(x => x.CreatedAt).HasDefaultValueSql("TIMEZONE('UTC', NOW())");
             entity.Property(x => x.IsActive).HasDefaultValue(true);
             entity.Property(x => x.IsAdmin).HasDefaultValue(false);
             entity.HasIndex(u => u.PhoneNumber).IsUnique();
