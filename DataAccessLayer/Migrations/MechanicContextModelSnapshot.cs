@@ -124,21 +124,21 @@ namespace DataAccessLayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Amount")
+                    b.Property<decimal>("Amount")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                        .HasColumnType("numeric")
+                        .HasDefaultValue(0m);
 
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Profit")
+                    b.Property<decimal>("Profit")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                        .HasColumnType("numeric")
+                        .HasDefaultValue(0m);
 
-                    b.Property<int>("PurchasePrice")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("PurchasePrice")
+                        .HasColumnType("numeric");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
@@ -148,8 +148,8 @@ namespace DataAccessLayer.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
-                    b.Property<int>("SellingPrice")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("SellingPrice")
+                        .HasColumnType("numeric");
 
                     b.Property<int>("UserOrderId")
                         .HasColumnType("integer");
@@ -312,19 +312,19 @@ namespace DataAccessLayer.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<int>("OriginalPrice")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("OriginalPrice")
+                        .HasColumnType("numeric");
 
-                    b.Property<int>("PurchasePrice")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("PurchasePrice")
+                        .HasColumnType("numeric");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
-                    b.Property<int>("SellingPrice")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("SellingPrice")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 

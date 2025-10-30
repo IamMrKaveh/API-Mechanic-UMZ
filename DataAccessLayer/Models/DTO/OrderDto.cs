@@ -53,14 +53,14 @@ public class CreateOrderItemDto
     public int UserOrderId { get; set; }
     public int ProductId { get; set; }
     [Range(1, int.MaxValue)]
-    public int SellingPrice { get; set; }
+    public decimal SellingPrice { get; set; }
     [Range(1, int.MaxValue)]
     public int Quantity { get; set; }
 }
 
 public class UpdateOrderItemDto
 {
-    public int? SellingPrice { get; set; }
+    public decimal? SellingPrice { get; set; }
     public int? Quantity { get; set; }
     public byte[]? RowVersion { get; set; }
 }
@@ -83,9 +83,9 @@ public class PublicOrderItemOrderViewDto
 public class PublicOrderItemViewDto
 {
     public int Id { get; set; }
-    public int SellingPrice { get; set; }
+    public decimal SellingPrice { get; set; }
     public int Quantity { get; set; }
-    public int Amount { get; set; }
+    public decimal Amount { get; set; }
     public PublicOrderItemProductViewDto Product { get; set; }
     public PublicOrderItemOrderViewDto Order { get; set; }
 }
@@ -93,15 +93,15 @@ public class PublicOrderItemViewDto
 public class PublicOrderItemDetailDto
 {
     public int Id { get; set; }
-    public int SellingPrice { get; set; }
+    public decimal SellingPrice { get; set; }
     public int Quantity { get; set; }
-    public int Amount { get; set; }
+    public decimal Amount { get; set; }
     public PublicOrderItemProductViewDto Product { get; set; }
     public PublicOrderItemOrderViewDto Order { get; set; }
 }
 
 public class AdminOrderItemDetailDto : PublicOrderItemDetailDto
 {
-    public int PurchasePrice { get; set; }
-    public int Profit { get; set; }
+    public decimal PurchasePrice { get; set; }
+    public decimal Profit { get; set; }
 }

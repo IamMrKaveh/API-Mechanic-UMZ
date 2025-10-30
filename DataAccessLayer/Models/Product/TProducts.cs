@@ -6,9 +6,9 @@ public class TProducts
     public int Id { get; set; }
     public string Name { get; set; }
     public string? Icon { get; set; }
-    public int PurchasePrice { get; set; }
-    public int OriginalPrice { get; set; }
-    public int SellingPrice { get; set; }
+    public decimal PurchasePrice { get; set; }
+    public decimal OriginalPrice { get; set; }
+    public decimal SellingPrice { get; set; }
 
     public bool HasDiscount => OriginalPrice > SellingPrice;
 
@@ -18,7 +18,7 @@ public class TProducts
         {
             if (HasDiscount && OriginalPrice > 0)
             {
-                return Math.Max(0, (double)(OriginalPrice - SellingPrice) * 100 / OriginalPrice);
+                return Math.Max(0, ((double)(OriginalPrice - SellingPrice)) * 100 / ((double)OriginalPrice));
             }
             return 0;
         }

@@ -10,15 +10,15 @@ public class ProductDto
     public IFormFile? IconFile { get; set; }
 
     [Range(1, int.MaxValue)]
-    public int PurchasePrice { get; set; }
+    public decimal PurchasePrice { get; set; }
+    [Range(0, int.MaxValue)]
+    public decimal OriginalPrice { get; set; }
     [Range(1, int.MaxValue)]
-    public int SellingPrice { get; set; }
+    public decimal SellingPrice { get; set; }
     [Range(0, int.MaxValue)]
     public int Count { get; set; }
     public bool IsUnlimited { get; set; }
     public int CategoryId { get; set; }
-    [Range(0, int.MaxValue)]
-    public int OriginalPrice { get; set; }
 
     public byte[]? RowVersion { get; set; }
 }
@@ -28,8 +28,8 @@ public class PublicProductViewDto
     public int Id { get; set; }
     public string Name { get; set; }
     public string Icon { get; set; }
-    public int OriginalPrice { get; set; }
-    public int SellingPrice { get; set; }
+    public decimal OriginalPrice { get; set; }
+    public decimal SellingPrice { get; set; }
     public bool HasDiscount => OriginalPrice > SellingPrice;
     public double DiscountPercentage
     {
@@ -37,7 +37,7 @@ public class PublicProductViewDto
         {
             if (HasDiscount && OriginalPrice > 0)
             {
-                return Math.Max(0, (double)(OriginalPrice - SellingPrice) * 100 / OriginalPrice);
+                return Math.Max(0, (double)(OriginalPrice - SellingPrice) * 100 / Convert.ToDouble(OriginalPrice));
             }
             return 0;
         }
@@ -50,7 +50,7 @@ public class PublicProductViewDto
 
 public class AdminProductViewDto : PublicProductViewDto
 {
-    public int? PurchasePrice { get; set; }
+    public decimal? PurchasePrice { get; set; }
 }
 
 public class CategoryDto
