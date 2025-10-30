@@ -324,8 +324,8 @@ public class OrderItemsController : BaseApiController
 
         if (order != null)
         {
-            order.TotalAmount = order.OrderItems.Sum(oi => oi.SellingPrice * oi.Quantity);
-            order.TotalProfit = order.OrderItems.Sum(oi => (oi.SellingPrice - oi.PurchasePrice) * oi.Quantity);
+            order.TotalAmount = order.OrderItems.Sum(oi => Convert.ToInt32(oi.SellingPrice) * oi.Quantity);
+            order.TotalProfit = order.OrderItems.Sum(oi => Convert.ToInt32(oi.SellingPrice - oi.PurchasePrice) * oi.Quantity);
             _context.TOrders.Update(order);
         }
     }

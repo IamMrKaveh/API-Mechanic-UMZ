@@ -23,7 +23,7 @@ public class CartDto
     public int UserId { get; set; }
     public List<CartItemDto> CartItems { get; set; } = new();
     public int TotalItems { get; set; }
-    public int TotalPrice { get; set; }
+    public decimal TotalPrice { get; set; }
 }
 
 public class CartItemDto
@@ -34,8 +34,8 @@ public class CartItemDto
     [Required]
     public string ProductName { get; set; } = string.Empty;
     [Range(0, int.MaxValue)]
-    public int SellingPrice { get; set; }
+    public decimal SellingPrice { get; set; }
     [Range(1, int.MaxValue)]
     public int Quantity { get; set; }
-    public int TotalPrice { get; set; }
+    public decimal TotalPrice { get; set; }
 }
