@@ -13,6 +13,25 @@ namespace DataAccessLayer.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "TAuditLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: true),
+                    Action = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Details = table.Column<string>(type: "text", nullable: false),
+                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EventType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    UserAgent = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TAuditLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TCategory",
                 columns: table => new
                 {
@@ -68,7 +87,7 @@ namespace DataAccessLayer.Migrations
                     PhoneNumber = table.Column<string>(type: "character varying(15)", maxLength: 15, nullable: false),
                     FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "TIMEZONE('UTC', NOW())"),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     IsAdmin = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
@@ -137,8 +156,7 @@ namespace DataAccessLayer.Migrations
                     PostalCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     TotalAmount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     TotalProfit = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "TIMEZONE('UTC', NOW())"),
-                    DeliveryDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     OrderStatusId = table.Column<int>(type: "integer", nullable: false),
                     IdempotencyKey = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
@@ -195,7 +213,7 @@ namespace DataAccessLayer.Migrations
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     OtpHash = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "TIMEZONE('UTC', NOW())"),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsUsed = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     AttemptCount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
                 },
@@ -270,6 +288,16 @@ namespace DataAccessLayer.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_TAuditLogs_Timestamp",
+                table: "TAuditLogs",
+                column: "Timestamp");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TAuditLogs_UserId_EventType_Timestamp",
+                table: "TAuditLogs",
+                columns: new[] { "UserId", "EventType", "Timestamp" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CartItems_CartId_ProductId",
                 table: "TCartItems",
                 columns: new[] { "CartId", "ProductId" },
@@ -339,6 +367,9 @@ namespace DataAccessLayer.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "TAuditLogs");
+
             migrationBuilder.DropTable(
                 name: "TCartItems");
 
