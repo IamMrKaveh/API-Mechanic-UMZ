@@ -6,6 +6,10 @@ public class TProducts
     public int Id { get; set; }
     public string Name { get; set; }
     public string? Icon { get; set; }
+
+    public string[] Colors { get; set; }
+    public string[] Sizes { get; set; }
+
     public decimal PurchasePrice { get; set; }
     public decimal OriginalPrice { get; set; }
     public decimal SellingPrice { get; set; }

@@ -336,6 +336,10 @@ namespace DataAccessLayer.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("integer");
 
+                    b.PrimitiveCollection<string[]>("Colors")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
                     b.Property<int>("Count")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -366,6 +370,10 @@ namespace DataAccessLayer.Migrations
 
                     b.Property<decimal>("SellingPrice")
                         .HasColumnType("numeric");
+
+                    b.PrimitiveCollection<string[]>("Sizes")
+                        .IsRequired()
+                        .HasColumnType("text[]");
 
                     b.HasKey("Id");
 
