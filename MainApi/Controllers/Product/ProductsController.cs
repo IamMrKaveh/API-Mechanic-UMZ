@@ -81,6 +81,8 @@ public class ProductsController : BaseApiController
                     Id = p.Id,
                     Name = p.Name,
                     Icon = string.IsNullOrEmpty(p.Icon) ? null : BaseUrl + p.Icon,
+                    Colors = p.Colors,
+                    Sizes = p.Sizes,
                     OriginalPrice = p.OriginalPrice,
                     SellingPrice = p.SellingPrice,
                     Count = p.Count,
@@ -136,6 +138,8 @@ public class ProductsController : BaseApiController
                     Id = product.Id,
                     Name = product.Name,
                     Icon = string.IsNullOrEmpty(product.Icon) ? null : BaseUrl + product.Icon,
+                    Colors = product.Colors,
+                    Sizes = product.Sizes,
                     PurchasePrice = product.PurchasePrice,
                     OriginalPrice = product.OriginalPrice,
                     SellingPrice = product.SellingPrice,
@@ -153,6 +157,8 @@ public class ProductsController : BaseApiController
                     Id = product.Id,
                     Name = product.Name,
                     Icon = string.IsNullOrEmpty(product.Icon) ? null : BaseUrl + product.Icon,
+                    Colors = product.Colors,
+                    Sizes = product.Sizes,
                     OriginalPrice = product.OriginalPrice,
                     SellingPrice = product.SellingPrice,
                     Count = product.Count,
@@ -189,6 +195,8 @@ public class ProductsController : BaseApiController
         {
             Name = sanitizer.Sanitize(productDto.Name),
             Icon = iconUrl,
+            Colors = productDto.Colors ?? Array.Empty<string>(),
+            Sizes = productDto.Sizes ?? Array.Empty<string>(),
             PurchasePrice = productDto.PurchasePrice,
             SellingPrice = productDto.SellingPrice,
             OriginalPrice = productDto.OriginalPrice,
@@ -205,6 +213,8 @@ public class ProductsController : BaseApiController
             product.Id,
             product.Name,
             Icon = string.IsNullOrEmpty(product.Icon) ? null : BaseUrl + product.Icon,
+            product.Colors,
+            product.Sizes,
             product.SellingPrice,
             product.OriginalPrice,
             product.Count,
@@ -445,6 +455,8 @@ public class ProductsController : BaseApiController
 
         var sanitizer = new HtmlSanitizer();
         existingProduct.Name = sanitizer.Sanitize(productDto.Name);
+        existingProduct.Colors = productDto.Colors ?? Array.Empty<string>();
+        existingProduct.Sizes = productDto.Sizes ?? Array.Empty<string>();
         existingProduct.PurchasePrice = productDto.PurchasePrice;
         existingProduct.SellingPrice = productDto.SellingPrice;
         existingProduct.OriginalPrice = productDto.OriginalPrice;
@@ -530,6 +542,8 @@ public class ProductsController : BaseApiController
                     p.Id,
                     p.Name,
                     Icon = string.IsNullOrEmpty(p.Icon) ? null : BaseUrl + p.Icon,
+                    p.Colors,
+                    p.Sizes,
                     p.OriginalPrice,
                     p.SellingPrice,
                     DiscountAmount = p.OriginalPrice - p.SellingPrice,
