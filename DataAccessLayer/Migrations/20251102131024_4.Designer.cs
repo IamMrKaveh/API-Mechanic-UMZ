@@ -3,6 +3,7 @@ using System;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(MechanicContext))]
-    partial class MechanicContextModelSnapshot : ModelSnapshot
+    [Migration("20251102131024_4")]
+    partial class _4
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,9 +100,9 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.HasIndex("CartId", "ProductId", "Color", "Size")
+                    b.HasIndex("CartId", "ProductId")
                         .IsUnique()
-                        .HasDatabaseName("IX_CartItems_CartId_ProductId_Color_Size");
+                        .HasDatabaseName("IX_CartItems_CartId_ProductId");
 
                     b.ToTable("TCartItems");
                 });
@@ -293,15 +296,9 @@ namespace DataAccessLayer.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("IdempotencyKey")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<bool?>("IsPaid")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .HasMaxLength(200)
@@ -309,12 +306,6 @@ namespace DataAccessLayer.Migrations
 
                     b.Property<int>("OrderStatusId")
                         .HasColumnType("integer");
-
-                    b.Property<string>("PaymentAuthority")
-                        .HasColumnType("text");
-
-                    b.Property<long?>("PaymentRefId")
-                        .HasColumnType("bigint");
 
                     b.Property<string>("PostalCode")
                         .HasMaxLength(20)

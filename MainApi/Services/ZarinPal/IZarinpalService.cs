@@ -2,6 +2,6 @@
 
 public interface IZarinpalService
 {
-    Task<(string? paymentUrl, string? authority)> RequestPaymentAsync(decimal amount, string description, string callbackUrl, string? mobile, string? email);
-    Task<(bool isSuccess, long? refId)> VerifyPaymentAsync(string authority, decimal amount);
+    Task<ZarinpalRequestResponseDto?> CreatePaymentRequestAsync(decimal amount, string description, string callbackUrl, string? mobile = null, string? email = null);
+    Task<ZarinpalVerificationResponseDataDto?> VerifyPaymentAsync(decimal amount, string authority);
 }

@@ -108,9 +108,9 @@ public class MechanicContext : DbContext
                   .WithMany()
                   .HasForeignKey(x => x.ProductId)
                   .OnDelete(DeleteBehavior.Restrict);
-            entity.HasIndex(x => new { x.CartId, x.ProductId })
+            entity.HasIndex(x => new { x.CartId, x.ProductId, x.Color, x.Size })
                   .IsUnique()
-                  .HasDatabaseName("IX_CartItems_CartId_ProductId");
+                  .HasDatabaseName("IX_CartItems_CartId_ProductId_Color_Size");
         });
 
         builder.Entity<TOrders>(entity =>
@@ -170,6 +170,16 @@ public class MechanicContext : DbContext
                   .WithOne(o => o.OrderStatus)
                   .HasForeignKey(o => o.OrderStatusId)
                   .OnDelete(DeleteBehavior.Restrict);
+
+            // Seed Data for Order Statuses
+            entity.HasData(
+                new TOrderStatus { Id = 1, Name = "در انتظار پرداخت", Icon = "hourglass_empty" },
+                new TOrderStatus { Id = 2, Name = "در حال پردازش", Icon = "sync" },
+                new TOrderStatus { Id = 3, Name = "ارسال شده", Icon = "local_shipping" },
+                new TOrderStatus { Id = 4, Name = "تحویل داده شده", Icon = "done_all" },
+                new TOrderStatus { Id = 5, Name = "لغو شده", Icon = "cancel" },
+                new TOrderStatus { Id = 6, Name = "مرجوعی", Icon = "assignment_return" }
+            );
         });
 
         builder.Entity<TProducts>(entity =>

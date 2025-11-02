@@ -29,12 +29,16 @@ public class CreateOrderStatusDto
 
 public class CreateOrderFromCartDto
 {
+    [Required]
+    [StringLength(200, MinimumLength = 3)]
     public string? Name { get; set; }
 
     [Required]
+    [StringLength(500, MinimumLength = 10)]
     public string? Address { get; set; }
 
     [Required]
+    [RegularExpression(@"^\d{10}$", ErrorMessage = "Postal code must be 10 digits.")]
     public string? PostalCode { get; set; }
 }
 
@@ -46,6 +50,9 @@ public class UpdateOrderStatusDto
     public string? Name { get; set; }
 
     public string? Icon { get; set; }
+
+    [Required]
+    public string RowVersion { get; set; }
 }
 
 public class CreateOrderItemDto
