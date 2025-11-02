@@ -51,6 +51,7 @@
 
   <ItemGroup>
     <Folder Include="Controllers\Base\" />
+    <Folder Include="logs\" />
     <Folder Include="Services\Storage\" />
     <Folder Include="wwwroot\images\" />
   </ItemGroup>

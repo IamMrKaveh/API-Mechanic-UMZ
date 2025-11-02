@@ -62,6 +62,9 @@ try
     var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
 
     builder.Services.AddMemoryCache();
+    var dataProtectionBuilder = builder.Services.AddDataProtection()
+        .SetApplicationName("Ledka")
+        .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
     if (!string.IsNullOrEmpty(redisConnectionString))
     {
@@ -75,24 +78,26 @@ try
             redisOptions.ConnectTimeout = 5000;
             redisOptions.SyncTimeout = 10000;
             redisOptions.KeepAlive = 60;
+            redisOptions.ConnectRetry = 3;
 
-            var redisConnection = await ConnectionMultiplexer.ConnectAsync(redisOptions);
+            var redisConnection = ConnectionMultiplexer.Connect(redisOptions);
             builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
             builder.Services.AddSingleton(sp => redisConnection.GetDatabase());
-            //builder.Services.AddSingleton<ICacheService, RedisCacheService>();
+            builder.Services.AddSingleton<ICacheService, RedisCacheService>();
+            dataProtectionBuilder.PersistKeysToSingletonRedisRepository(redisConnection, "DataProtection-Keys");
 
-            Log.Information("✅ Redis connected successfully.");
+            Log.Information("✅ Redis connected successfully and configured for Data Protection.");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "❌ Redis connection failed, using in-memory cache.");
-            RegisterInMemoryServices(builder);
+            Log.Error(ex, "❌ Redis connection failed, using in-memory cache and file system for Data Protection.");
+            RegisterInMemoryServices(builder, dataProtectionBuilder);
         }
     }
     else
     {
-        Log.Warning("⚠️ Redis connection string not found — using in-memory cache.");
-        RegisterInMemoryServices(builder);
+        Log.Warning("⚠️ Redis connection string not found — using in-memory cache and file system for Data Protection.");
+        RegisterInMemoryServices(builder, dataProtectionBuilder);
     }
 
     builder.Services.AddScoped<ICartService, CartService>();
@@ -487,16 +492,12 @@ static string MaskConnectionString(string connectionString)
     return string.Join(";", parts);
 }
 
-static void RegisterInMemoryServices(WebApplicationBuilder builder)
+static void RegisterInMemoryServices(WebApplicationBuilder builder, IDataProtectionBuilder dataProtectionBuilder)
 {
-    //builder.Services.AddSingleton<ICacheService, MockRedisDatabase>();
+    builder.Services.AddSingleton<ICacheService, MockRedisDatabase>();
     builder.Services.AddOutputCache();
 
-    var dataProtectionBuilder = builder.Services.AddDataProtection()
-        .SetApplicationName("Ledka")
-        .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
-
-    var keysPath = "/tmp/dataprotection-keys";
+    var keysPath = builder.Configuration.GetValue<string>("Security:DataProtectionPath") ?? "./keys";
     try
     {
         if (!Directory.Exists(keysPath))

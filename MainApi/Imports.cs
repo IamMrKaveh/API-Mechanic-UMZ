@@ -64,6 +64,7 @@ global using Asp.Versioning;
 global using Polly;
 global using System.ComponentModel.DataAnnotations.Schema;
 global using Polly.Extensions.Http;
+global using MainApi.Services.Redis;
 global using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 global using System.Diagnostics;
 global using StackExchange.Redis.Profiling;

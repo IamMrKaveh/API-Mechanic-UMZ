@@ -10,7 +10,11 @@ public class UsersController : BaseApiController
     private readonly ILogger<UsersController> _logger;
     private readonly IRateLimitService _rateLimitService;
 
-    public UsersController(MechanicContext context, IConfiguration configuration, ILogger<UsersController> logger, IRateLimitService rateLimitService)
+    public UsersController(
+        MechanicContext context,
+        IConfiguration configuration,
+        ILogger<UsersController> logger,
+        IRateLimitService rateLimitService)
     {
         _context = context;
         _configuration = configuration;
@@ -20,7 +24,8 @@ public class UsersController : BaseApiController
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<UserProfileDto>>> GetUsers([FromQuery] bool includeDeleted = false)
+    public async Task<ActionResult<IEnumerable<UserProfileDto>>> GetUsers(
+        [FromQuery] bool includeDeleted = false)
     {
         try
         {
@@ -54,7 +59,8 @@ public class UsersController : BaseApiController
 
     [HttpGet("{id}")]
     [Authorize]
-    public async Task<ActionResult<UserProfileDto>> GetUser(int id)
+    public async Task<ActionResult<UserProfileDto>> GetUser(
+        int id)
     {
         var currentUserId = GetCurrentUserId();
         if (currentUserId == null)
@@ -127,7 +133,8 @@ public class UsersController : BaseApiController
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<UserProfileDto>> CreateUser([FromBody] TUsers tUsers)
+    public async Task<ActionResult<UserProfileDto>> CreateUser(
+        [FromBody] TUsers tUsers)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -163,7 +170,9 @@ public class UsersController : BaseApiController
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateProfileDto updateRequest)
+    public async Task<IActionResult> UpdateUser(
+        int id,
+        [FromBody] UpdateProfileDto updateRequest)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -209,7 +218,9 @@ public class UsersController : BaseApiController
 
     [HttpPatch("{id}/status")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> ChangeUserStatus(int id, [FromBody] bool isActive)
+    public async Task<IActionResult> ChangeUserStatus(
+        int id,
+        [FromBody] bool isActive)
     {
         try
         {
@@ -231,7 +242,8 @@ public class UsersController : BaseApiController
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeleteUser(int id)
+    public async Task<IActionResult> DeleteUser(
+        int id)
     {
         try
         {
@@ -256,7 +268,8 @@ public class UsersController : BaseApiController
 
     [HttpPost("login")]
     [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+    public async Task<IActionResult> Login(
+        [FromBody] LoginRequestDto request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -328,16 +341,16 @@ public class UsersController : BaseApiController
             _context.TUserOtp.Add(userOtp);
             await _context.SaveChangesAsync();
 
-            var apiKey = _configuration["Kavenegar:ApiKey"];
-            var template = "verify";
+            //var apiKey = _configuration["Kavenegar:ApiKey"];
+            //var template = "verify";
 
-            if (string.IsNullOrEmpty(apiKey))
-                throw new InvalidOperationException("SMS service is not configured.");
+            //if (string.IsNullOrEmpty(apiKey))
+            //    throw new InvalidOperationException("SMS service is not configured.");
 
-            var api = new KavenegarApi(apiKey);
-            await Task.Run(() => api.VerifyLookup(request.PhoneNumber, otp, template));
+            //var api = new KavenegarApi(apiKey);
+            //await Task.Run(() => api.VerifyLookup(request.PhoneNumber, otp, template));
 
-            _logger.LogInformation("OTP sent successfully to phone: {PhoneNumber}", request.PhoneNumber);
+            _logger.LogInformation("OTP sent successfully to phone: {PhoneNumber} (OTP: {Otp})", request.PhoneNumber, otp);
             return Ok(new { Message = "OTP sent successfully" });
         }
         catch (Exception ex)
@@ -349,7 +362,8 @@ public class UsersController : BaseApiController
 
     [HttpPost("verify-otp")]
     [AllowAnonymous]
-    public async Task<ActionResult<AuthResponseDto>> VerifyOtp([FromBody] VerifyOtpRequestDto request)
+    public async Task<ActionResult<AuthResponseDto>> VerifyOtp(
+        [FromBody] VerifyOtpRequestDto request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -428,7 +442,8 @@ public class UsersController : BaseApiController
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshRequestDto request)
+    public async Task<IActionResult> RefreshToken(
+        [FromBody] RefreshRequestDto request)
     {
         var storedToken = _context.TRefreshToken
             .Include(x => x.User)
@@ -490,7 +505,8 @@ public class UsersController : BaseApiController
     }
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] RefreshRequestDto request)
+    public async Task<IActionResult> Logout(
+        [FromBody] RefreshRequestDto request)
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
             return BadRequest(new { message = "Refresh token is required" });
@@ -511,7 +527,8 @@ public class UsersController : BaseApiController
     }
 
     [NonAction]
-    private string SanitizeUserAgent(string userAgent)
+    private string SanitizeUserAgent(
+        string userAgent)
     {
         if (string.IsNullOrEmpty(userAgent)) return "unknown";
         var sanitized = new string(userAgent.Where(c => !char.IsControl(c)).ToArray());
@@ -519,7 +536,8 @@ public class UsersController : BaseApiController
     }
 
     [NonAction]
-    private async Task RevokeTokenChainAsync(string? tokenHash)
+    private async Task RevokeTokenChainAsync(
+        string? tokenHash)
     {
         if (string.IsNullOrEmpty(tokenHash)) return;
 
@@ -547,7 +565,8 @@ public class UsersController : BaseApiController
     }
 
     [NonAction]
-    public async Task RemoveExpiredOtps(int userId)
+    public async Task RemoveExpiredOtps(
+        int userId)
     {
         var query = _context.TUserOtp
             .Where(o => o.UserId == userId && (o.ExpiresAt <= DateTime.UtcNow || o.IsUsed));
@@ -556,7 +575,8 @@ public class UsersController : BaseApiController
     }
 
     [NonAction]
-    public async Task RevokeUserRefreshTokens(int userId)
+    public async Task RevokeUserRefreshTokens(
+        int userId)
     {
         var query = _context.TRefreshToken
             .Where(rt => rt.UserId == userId && rt.RevokedAt == null && rt.ExpiresAt > DateTime.UtcNow);
