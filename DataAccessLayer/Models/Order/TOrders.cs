@@ -15,6 +15,8 @@ public class TOrders
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public DateTime? DeliveryDate { get; set; }
+
     public virtual ICollection<TOrderItems> OrderItems { get; set; } = new List<TOrderItems>();
 
     public virtual TOrderStatus? OrderStatus { get; set; }
@@ -22,6 +24,12 @@ public class TOrders
 
     [MaxLength(100)]
     public string? IdempotencyKey { get; set; }
+
+    public string? PaymentAuthority { get; set; }
+
+    public long? PaymentRefId { get; set; }
+
+    public bool? IsPaid { get; set; }
 
     [Timestamp]
     public byte[]? RowVersion { get; set; }

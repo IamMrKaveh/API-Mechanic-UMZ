@@ -1,4 +1,5 @@
 ﻿global using DataAccessLayer;
+global using MainApi.Services.Order;
 global using Microsoft.Extensions.FileProviders;
 global using System.Text.Json.Serialization;
 global using Microsoft.EntityFrameworkCore;

@@ -62,9 +62,6 @@ try
     var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
 
     builder.Services.AddMemoryCache();
-    var dataProtectionBuilder = builder.Services.AddDataProtection()
-        .SetApplicationName("Ledka")
-        .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
     if (!string.IsNullOrEmpty(redisConnectionString))
     {
@@ -78,29 +75,28 @@ try
             redisOptions.ConnectTimeout = 5000;
             redisOptions.SyncTimeout = 10000;
             redisOptions.KeepAlive = 60;
-            redisOptions.ConnectRetry = 3;
 
-            var redisConnection = ConnectionMultiplexer.Connect(redisOptions);
+            var redisConnection = await ConnectionMultiplexer.ConnectAsync(redisOptions);
             builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
             builder.Services.AddSingleton(sp => redisConnection.GetDatabase());
             builder.Services.AddSingleton<ICacheService, RedisCacheService>();
-            dataProtectionBuilder.PersistKeysToSingletonRedisRepository(redisConnection, "DataProtection-Keys");
 
-            Log.Information("✅ Redis connected successfully and configured for Data Protection.");
+            Log.Information("✅ Redis connected successfully.");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "❌ Redis connection failed, using in-memory cache and file system for Data Protection.");
-            RegisterInMemoryServices(builder, dataProtectionBuilder);
+            Log.Error(ex, "❌ Redis connection failed, using in-memory cache.");
+            RegisterInMemoryServices(builder);
         }
     }
     else
     {
-        Log.Warning("⚠️ Redis connection string not found — using in-memory cache and file system for Data Protection.");
-        RegisterInMemoryServices(builder, dataProtectionBuilder);
+        Log.Warning("⚠️ Redis connection string not found — using in-memory cache.");
+        RegisterInMemoryServices(builder);
     }
 
     builder.Services.AddScoped<ICartService, CartService>();
+    builder.Services.AddScoped<IOrderService, OrderService>();
     builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
     builder.Services.AddScoped<IAuditService, AuditService>();
     builder.Services.AddSingleton<IStorageService, LiaraStorageService>();
@@ -492,12 +488,16 @@ static string MaskConnectionString(string connectionString)
     return string.Join(";", parts);
 }
 
-static void RegisterInMemoryServices(WebApplicationBuilder builder, IDataProtectionBuilder dataProtectionBuilder)
+static void RegisterInMemoryServices(WebApplicationBuilder builder)
 {
     builder.Services.AddSingleton<ICacheService, MockRedisDatabase>();
     builder.Services.AddOutputCache();
 
-    var keysPath = builder.Configuration.GetValue<string>("Security:DataProtectionPath") ?? "./keys";
+    var dataProtectionBuilder = builder.Services.AddDataProtection()
+        .SetApplicationName("MechanicAPI")
+        .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
+
+    var keysPath = "/tmp/dataprotection-keys";
     try
     {
         if (!Directory.Exists(keysPath))
