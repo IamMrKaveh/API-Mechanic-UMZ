@@ -26,9 +26,37 @@ public class CartsController : BaseApiController
         var cart = await _cartService.GetCartByUserIdAsync(userId.Value);
         if (cart == null)
         {
-            return StatusCode(500, "Could not retrieve cart.");
+            // If cart not found, create one for the user
+            var newCart = await _cartService.CreateCartAsync(userId.Value);
+            if (newCart == null)
+            {
+                return StatusCode(500, "Could not create or retrieve a cart for the user.");
+            }
+            return Ok(newCart);
         }
         return Ok(cart);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<CartDto>> CreateCart()
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null)
+            return Unauthorized("Invalid user");
+
+        var existingCart = await _cartService.GetCartByUserIdAsync(userId.Value);
+        if (existingCart != null)
+        {
+            return Ok(existingCart);
+        }
+
+        var newCart = await _cartService.CreateCartAsync(userId.Value);
+        if (newCart == null)
+        {
+            return StatusCode(500, "Could not create a cart for the user.");
+        }
+
+        return CreatedAtAction(nameof(GetMyCart), newCart);
     }
 
     [HttpPost("items")]
@@ -42,10 +70,15 @@ public class CartsController : BaseApiController
             return Unauthorized("Invalid user");
 
         var result = await _cartService.AddItemToCartAsync(userId.Value, dto);
-        if (!result)
-            return Conflict("Failed to add item. Stock may have changed or item is unavailable.");
 
-        return Ok(new { Message = "Item added to cart successfully" });
+        return result switch
+        {
+            CartOperationResult.Success => Ok(new { Message = "Item added to cart successfully" }),
+            CartOperationResult.NotFound => NotFound("Product not found."),
+            CartOperationResult.OutOfStock => Conflict("Failed to add item. Stock may have changed or item is unavailable."),
+            CartOperationResult.OptionsRequired => BadRequest("Color and Size are required for this product."),
+            _ => StatusCode(500, "An unexpected error occurred.")
+        };
     }
 
     [HttpPut("items/{itemId}")]

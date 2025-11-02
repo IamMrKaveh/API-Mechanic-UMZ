@@ -38,7 +38,7 @@ public class PublicProductViewDto
 
     public string Name { get; set; } = string.Empty;
 
-    public string Icon { get; set; } = string.Empty;
+    public string? Icon { get; set; }
 
     public string[] Colors { get; set; } = Array.Empty<string>();
 
@@ -56,7 +56,7 @@ public class PublicProductViewDto
         {
             if (HasDiscount && OriginalPrice > 0)
             {
-                return Math.Max(0, (double)(OriginalPrice - SellingPrice) * 100 / Convert.ToDouble(OriginalPrice));
+                return Math.Max(0, (double)(OriginalPrice - SellingPrice) * 100 / (double)OriginalPrice);
             }
             return 0;
         }
@@ -74,6 +74,7 @@ public class PublicProductViewDto
 public class AdminProductViewDto : PublicProductViewDto
 {
     public decimal? PurchasePrice { get; set; }
+    public byte[]? RowVersion { get; set; }
 }
 
 public class CategoryDto
@@ -112,11 +113,15 @@ public class ProductSearchDto
 
     public bool? InStock { get; set; }
 
+    public bool? HasDiscount { get; set; }
+
+    public bool? IsUnlimited { get; set; }
+
     public int Page { get; set; } = 1;
 
     public int PageSize { get; set; } = 10;
 
-    public ProductSortOptions SortBy { get; set; } = ProductSortOptions.Newest;
+    public ProductSortOptions? SortBy { get; set; } = ProductSortOptions.Newest;
 }
 
 public class ProductStockDto
@@ -130,8 +135,8 @@ public class ProductStockDto
 public class SetDiscountDto
 {
     [Required, Range(1, int.MaxValue)]
-    public int OriginalPrice { get; set; }
+    public decimal OriginalPrice { get; set; }
 
     [Required, Range(1, int.MaxValue)]
-    public int DiscountedPrice { get; set; }
+    public decimal DiscountedPrice { get; set; }
 }

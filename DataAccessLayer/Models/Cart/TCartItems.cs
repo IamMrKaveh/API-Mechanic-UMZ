@@ -15,6 +15,12 @@ public class TCartItems
     [Range(1, 1000)]
     public int Quantity { get; set; }
 
+    [MaxLength(10)]
+    public string? Color { get; set; }
+
+    [MaxLength(20)]
+    public string? Size { get; set; }
+
     public virtual TCarts? Cart { get; set; }
     public virtual TProducts? Product { get; set; }
 }

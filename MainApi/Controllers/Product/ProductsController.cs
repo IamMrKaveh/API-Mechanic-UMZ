@@ -33,7 +33,7 @@ public class ProductsController : BaseApiController
             if (!string.IsNullOrWhiteSpace(search.Name))
             {
                 var pattern = $"%{search.Name}%";
-                query = query.Where(p => p.Name != null && EF.Functions.Like(p.Name, pattern));
+                query = query.Where(p => p.Name != null && EF.Functions.ILike(p.Name, pattern));
             }
 
             if (search.CategoryId.HasValue)
@@ -56,17 +56,26 @@ public class ProductsController : BaseApiController
                 query = query.Where(p => (!p.IsUnlimited && p.Count > 0) || p.IsUnlimited);
             }
 
-            var sortBy = Request.Query["sortBy"].ToString();
-            if (string.IsNullOrWhiteSpace(sortBy)) sortBy = Request.Query["sort"].ToString();
-
-            query = (sortBy?.ToLowerInvariant()) switch
+            if (search.HasDiscount.HasValue && search.HasDiscount.Value)
             {
-                "price_asc" => query.OrderBy(p => p.SellingPrice).ThenByDescending(p => p.Id),
-                "price_desc" => query.OrderByDescending(p => p.SellingPrice).ThenByDescending(p => p.Id),
-                "name_asc" => query.OrderBy(p => p.Name).ThenByDescending(p => p.Id),
-                "name_desc" => query.OrderByDescending(p => p.Name).ThenByDescending(p => p.Id),
-                "discount_desc" => query.OrderByDescending(p => p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / Convert.ToDouble(p.OriginalPrice)) : 0).ThenByDescending(p => p.Id),
-                "discount_asc" => query.OrderBy(p => p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / Convert.ToDouble(p.OriginalPrice)) : 0).ThenByDescending(p => p.Id),
+                query = query.Where(p => p.OriginalPrice > p.SellingPrice);
+            }
+
+            if (search.IsUnlimited.HasValue && search.IsUnlimited.Value)
+            {
+                query = query.Where(p => p.IsUnlimited);
+            }
+
+            var sortBy = search.SortBy?.ToString() ?? "newest";
+
+            query = sortBy.ToLowerInvariant() switch
+            {
+                "priceasc" => query.OrderBy(p => p.SellingPrice).ThenByDescending(p => p.Id),
+                "pricedesc" => query.OrderByDescending(p => p.SellingPrice).ThenByDescending(p => p.Id),
+                "nameasc" => query.OrderBy(p => p.Name).ThenByDescending(p => p.Id),
+                "namedesc" => query.OrderByDescending(p => p.Name).ThenByDescending(p => p.Id),
+                "discountdesc" => query.OrderByDescending(p => p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / (double)p.OriginalPrice) : 0).ThenByDescending(p => p.Id),
+                "discountasc" => query.OrderBy(p => p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / (double)p.OriginalPrice) : 0).ThenByDescending(p => p.Id),
                 "oldest" => query.OrderBy(p => p.Id),
                 "newest" => query.OrderByDescending(p => p.Id),
                 _ => query.OrderByDescending(p => p.Id)
@@ -146,7 +155,8 @@ public class ProductsController : BaseApiController
                     Count = product.Count,
                     IsUnlimited = product.IsUnlimited,
                     CategoryId = product.CategoryId,
-                    Category = product.Category != null ? new { product.Category.Id, product.Category.Name } : null
+                    Category = product.Category != null ? new { product.Category.Id, product.Category.Name } : null,
+                    RowVersion = product.RowVersion
                 };
                 return Ok(adminDto);
             }
@@ -383,7 +393,7 @@ public class ProductsController : BaseApiController
 
     [HttpPost("bulk-update-prices")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> BulkUpdatePrices([FromBody] Dictionary<int, int> priceUpdates, [FromQuery] bool isPurchasePrice = false)
+    public async Task<IActionResult> BulkUpdatePrices([FromBody] Dictionary<int, decimal> priceUpdates, [FromQuery] bool isPurchasePrice = false)
     {
         if (priceUpdates == null || !priceUpdates.Any())
         {
@@ -411,12 +421,12 @@ public class ProductsController : BaseApiController
             var updatedCount = 0;
             foreach (var product in products)
             {
-                if (priceUpdates.ContainsKey(product.Id))
+                if (priceUpdates.TryGetValue(product.Id, out var newPrice))
                 {
                     if (isPurchasePrice)
-                        product.PurchasePrice = priceUpdates[product.Id];
+                        product.PurchasePrice = newPrice;
                     else
-                        product.SellingPrice = priceUpdates[product.Id];
+                        product.SellingPrice = newPrice;
                     updatedCount++;
                 }
             }
@@ -522,19 +532,19 @@ public class ProductsController : BaseApiController
             if (minDiscount > 0)
             {
                 query = query.Where(p => p.OriginalPrice > 0 &&
-                    ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / Convert.ToDouble(p.OriginalPrice)) >= minDiscount);
+                    ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / (double)p.OriginalPrice) >= minDiscount);
             }
 
             if (maxDiscount > 0)
             {
                 query = query.Where(p => p.OriginalPrice > 0 &&
-                    ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / Convert.ToDouble(p.OriginalPrice)) <= maxDiscount);
+                    ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / (double)p.OriginalPrice) <= maxDiscount);
             }
 
             var totalItems = await query.CountAsync();
 
             var items = await query
-                .OrderByDescending(p => p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / Convert.ToDouble(p.OriginalPrice)) : 0)
+                .OrderByDescending(p => p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / (double)p.OriginalPrice) : 0)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(p => new
@@ -547,7 +557,7 @@ public class ProductsController : BaseApiController
                     p.OriginalPrice,
                     p.SellingPrice,
                     DiscountAmount = p.OriginalPrice - p.SellingPrice,
-                    DiscountPercentage = p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / Convert.ToDouble(p.OriginalPrice)) : 0,
+                    DiscountPercentage = p.OriginalPrice > 0 ? ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / (double)p.OriginalPrice) : 0,
                     p.Count,
                     p.IsUnlimited,
                     p.CategoryId,
@@ -604,7 +614,7 @@ public class ProductsController : BaseApiController
 
             await _context.SaveChangesAsync();
 
-            var discountPercentage = ((discountDto.OriginalPrice - discountDto.DiscountedPrice) * 100.0 / discountDto.OriginalPrice);
+            var discountPercentage = ((double)(discountDto.OriginalPrice - discountDto.DiscountedPrice) * 100.0 / (double)discountDto.OriginalPrice);
 
             return Ok(new
             {
@@ -662,7 +672,7 @@ public class ProductsController : BaseApiController
             var averageDiscountPercentage = await _context.TProducts
                 .Where(p => p.OriginalPrice > 0 &&
                            p.OriginalPrice > p.SellingPrice)
-                .Select(p => ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / Convert.ToDouble(p.OriginalPrice)))
+                .Select(p => ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / (double)p.OriginalPrice))
                 .DefaultIfEmpty(0)
                 .AverageAsync();
 
@@ -680,7 +690,7 @@ public class ProductsController : BaseApiController
                     CategoryId = g.Key.CategoryId,
                     CategoryName = g.Key.Name,
                     Count = g.Count(),
-                    AverageDiscount = g.Average(p => ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / Convert.ToDouble(p.OriginalPrice)))
+                    AverageDiscount = g.Average(p => ((double)(p.OriginalPrice - p.SellingPrice) * 100.0 / (double)p.OriginalPrice))
                 })
                 .ToListAsync();
 
