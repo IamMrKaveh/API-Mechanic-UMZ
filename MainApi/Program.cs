@@ -94,7 +94,7 @@ try
         Log.Warning("⚠️ Redis connection string not found — using in-memory cache.");
         RegisterInMemoryServices(builder);
     }
-
+    builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<ICartService, CartService>();
     builder.Services.AddScoped<IOrderService, OrderService>();
     builder.Services.AddSingleton<IRateLimitService, RateLimitService>();

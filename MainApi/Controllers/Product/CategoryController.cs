@@ -42,7 +42,7 @@ public class CategoryController : BaseApiController
                 {
                     pt.Id,
                     pt.Name,
-                    Icon = string.IsNullOrEmpty(pt.Icon) ? null : BaseUrl + pt.Icon,
+                    pt.Icon,
                     pt.ProductCount,
                     pt.TotalValue,
                     pt.InStockProducts
@@ -54,7 +54,15 @@ public class CategoryController : BaseApiController
 
             var response = new
             {
-                Items = Categories,
+                Items = Categories.Select(c => new
+                {
+                    c.Id,
+                    c.Name,
+                    Icon = ToAbsoluteUrl(c.Icon),
+                    c.ProductCount,
+                    c.TotalValue,
+                    c.InStockProducts
+                }),
                 TotalItems = totalItems,
                 Page = page,
                 PageSize = pageSize,
@@ -88,7 +96,7 @@ public class CategoryController : BaseApiController
                 {
                     pt.Id,
                     pt.Name,
-                    Icon = string.IsNullOrEmpty(pt.Icon) ? null : BaseUrl + pt.Icon,
+                    Icon = pt.Icon,
                     ProductCount = pt.Products != null ? pt.Products.Count() : 0,
                     InStockProducts = pt.Products != null ? pt.Products.Count(p => p.Count > 0) : 0,
                     TotalValue = pt.Products != null ? pt.Products.Sum(p => p.Count * p.PurchasePrice) : 0,
@@ -112,7 +120,7 @@ public class CategoryController : BaseApiController
                     p.Count,
                     p.SellingPrice,
                     p.PurchasePrice,
-                    Icon = string.IsNullOrEmpty(p.Icon) ? null : BaseUrl + p.Icon,
+                    p.Icon,
                     IsInStock = p.Count > 0
                 })
                 .OrderBy(p => p.Name)
@@ -124,14 +132,23 @@ public class CategoryController : BaseApiController
             {
                 category.Id,
                 category.Name,
-                category.Icon,
+                Icon = ToAbsoluteUrl(category.Icon),
                 category.ProductCount,
                 category.InStockProducts,
                 category.TotalValue,
                 category.TotalSellingValue,
                 Products = new
                 {
-                    Items = products,
+                    Items = products.Select(p => new
+                    {
+                        p.Id,
+                        p.Name,
+                        p.Count,
+                        p.SellingPrice,
+                        p.PurchasePrice,
+                        Icon = ToAbsoluteUrl(p.Icon),
+                        p.IsInStock
+                    }),
                     TotalItems = totalProductCount,
                     Page = page,
                     PageSize = pageSize,
@@ -167,7 +184,7 @@ public class CategoryController : BaseApiController
         var category = new TCategory
         {
             Name = sanitizer.Sanitize(categoryDto.Name.Trim()),
-            Icon = iconUrl
+            Icon = ToRelativeUrl(iconUrl)
         };
 
         _context.TCategory.Add(category);
@@ -177,7 +194,7 @@ public class CategoryController : BaseApiController
         {
             category.Id,
             category.Name,
-            Icon = string.IsNullOrEmpty(category.Icon) ? null : BaseUrl + category.Icon
+            Icon = ToAbsoluteUrl(category.Icon)
         });
     }
 
@@ -203,10 +220,10 @@ public class CategoryController : BaseApiController
             {
                 await _storageService.DeleteFileAsync(existingCategory.Icon);
             }
-            categoryToUpdate.Icon = await _storageService.UploadFileAsync(categoryDto.IconFile, "images/category");
+            categoryToUpdate.Icon = ToRelativeUrl(await _storageService.UploadFileAsync(categoryDto.IconFile, "images/category"));
         }
 
-        _context.TCategory.Update(categoryToUpdate);
+        _context.Entry(categoryToUpdate).State = EntityState.Modified;
         await _context.SaveChangesAsync();
 
         return NoContent();

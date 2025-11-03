@@ -89,6 +89,11 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(1);
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
                     b.Property<string>("Size")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");

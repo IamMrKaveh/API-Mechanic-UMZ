@@ -89,7 +89,7 @@ public class ProductsController : BaseApiController
                 {
                     Id = p.Id,
                     Name = p.Name,
-                    Icon = string.IsNullOrEmpty(p.Icon) ? null : BaseUrl + p.Icon,
+                    Icon = p.Icon,
                     Colors = p.Colors,
                     Sizes = p.Sizes,
                     OriginalPrice = p.OriginalPrice,
@@ -101,6 +101,7 @@ public class ProductsController : BaseApiController
                 })
                 .ToListAsync();
 
+            items.ForEach(p => p.Icon = ToAbsoluteUrl(p.Icon));
             var totalPages = totalItems == 0 ? 1 : (int)Math.Ceiling((double)totalItems / search.PageSize);
 
             return Ok(new
@@ -146,7 +147,7 @@ public class ProductsController : BaseApiController
                 {
                     Id = product.Id,
                     Name = product.Name,
-                    Icon = string.IsNullOrEmpty(product.Icon) ? null : BaseUrl + product.Icon,
+                    Icon = ToAbsoluteUrl(product.Icon),
                     Colors = product.Colors,
                     Sizes = product.Sizes,
                     PurchasePrice = product.PurchasePrice,
@@ -166,7 +167,7 @@ public class ProductsController : BaseApiController
                 {
                     Id = product.Id,
                     Name = product.Name,
-                    Icon = string.IsNullOrEmpty(product.Icon) ? null : BaseUrl + product.Icon,
+                    Icon = ToAbsoluteUrl(product.Icon),
                     Colors = product.Colors,
                     Sizes = product.Sizes,
                     OriginalPrice = product.OriginalPrice,
@@ -204,7 +205,7 @@ public class ProductsController : BaseApiController
         var product = new TProducts
         {
             Name = sanitizer.Sanitize(productDto.Name),
-            Icon = iconUrl,
+            Icon = ToRelativeUrl(iconUrl),
             Colors = productDto.Colors ?? Array.Empty<string>(),
             Sizes = productDto.Sizes ?? Array.Empty<string>(),
             PurchasePrice = productDto.PurchasePrice,
@@ -222,7 +223,7 @@ public class ProductsController : BaseApiController
         {
             product.Id,
             product.Name,
-            Icon = string.IsNullOrEmpty(product.Icon) ? null : BaseUrl + product.Icon,
+            Icon = ToAbsoluteUrl(product.Icon),
             product.Colors,
             product.Sizes,
             product.SellingPrice,
@@ -460,7 +461,7 @@ public class ProductsController : BaseApiController
             {
                 await _storageService.DeleteFileAsync(existingProduct.Icon);
             }
-            existingProduct.Icon = await _storageService.UploadFileAsync(productDto.IconFile, "images/products");
+            existingProduct.Icon = ToRelativeUrl(await _storageService.UploadFileAsync(productDto.IconFile, "images/products"));
         }
 
         var sanitizer = new HtmlSanitizer();
@@ -474,6 +475,7 @@ public class ProductsController : BaseApiController
         existingProduct.IsUnlimited = productDto.IsUnlimited;
         existingProduct.CategoryId = productDto.CategoryId;
 
+        _context.Entry(existingProduct).State = EntityState.Modified;
         await _context.SaveChangesAsync();
 
         return NoContent();
@@ -551,7 +553,7 @@ public class ProductsController : BaseApiController
                 {
                     p.Id,
                     p.Name,
-                    Icon = string.IsNullOrEmpty(p.Icon) ? null : BaseUrl + p.Icon,
+                    p.Icon,
                     p.Colors,
                     p.Sizes,
                     p.OriginalPrice,
@@ -569,7 +571,22 @@ public class ProductsController : BaseApiController
 
             return Ok(new
             {
-                Items = items,
+                Items = items.Select(p => new
+                {
+                    p.Id,
+                    p.Name,
+                    Icon = ToAbsoluteUrl(p.Icon),
+                    p.Colors,
+                    p.Sizes,
+                    p.OriginalPrice,
+                    p.SellingPrice,
+                    p.DiscountAmount,
+                    p.DiscountPercentage,
+                    p.Count,
+                    p.IsUnlimited,
+                    p.CategoryId,
+                    p.Category
+                }),
                 TotalItems = totalItems,
                 Page = page,
                 PageSize = pageSize,

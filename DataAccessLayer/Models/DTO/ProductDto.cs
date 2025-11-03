@@ -85,8 +85,6 @@ public class CategoryDto
     public IFormFile? IconFile { get; set; }
 
     public int Id { get; set; }
-
-    public byte[]? RowVersion { get; set; }
 }
 
 public enum ProductSortOptions

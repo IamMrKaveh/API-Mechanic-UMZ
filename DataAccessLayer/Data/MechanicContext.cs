@@ -100,6 +100,7 @@ public class MechanicContext : DbContext
             entity.Property(x => x.CartId).IsRequired();
             entity.Property(x => x.ProductId).IsRequired();
             entity.Property(x => x.Quantity).IsRequired().HasDefaultValue(1);
+            entity.Property(x => x.RowVersion).IsRowVersion();
             entity.HasOne(x => x.Cart)
                   .WithMany(c => c.CartItems)
                   .HasForeignKey(x => x.CartId)

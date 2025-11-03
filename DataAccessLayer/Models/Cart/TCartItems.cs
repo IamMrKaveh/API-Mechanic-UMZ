@@ -12,7 +12,7 @@ public class TCartItems
     public int ProductId { get; set; }
 
     [Required]
-    [Range(1, 1000)]
+    [Range(0, 1000)]
     public int Quantity { get; set; }
 
     [MaxLength(10)]
@@ -23,4 +23,7 @@ public class TCartItems
 
     public virtual TCarts? Cart { get; set; }
     public virtual TProducts? Product { get; set; }
+
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 }
