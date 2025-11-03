@@ -6,297 +6,271 @@ public enum CartOperationResult
     NotFound,
     OutOfStock,
     OptionsRequired,
-    Error
+    Error,
+    RateLimited,
+    ConcurrencyConflict
 }
 
 public class CartService : ICartService
 {
     private readonly MechanicContext _context;
     private readonly ILogger<CartService> _logger;
-    private readonly IConnectionMultiplexer _redis;
-
-    public CartService(MechanicContext context, ILogger<CartService> logger, IConnectionMultiplexer redis)
+    private readonly string _baseUrl;
+    private readonly ICacheService _cacheService;
+    private readonly IAuditService _auditService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    public CartService(MechanicContext context, ILogger<CartService> logger, IConfiguration configuration, ICacheService cacheService, IAuditService auditService, IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
         _logger = logger;
-        _redis = redis;
+        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
+        _cacheService = cacheService;
+        _auditService = auditService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    // ✅ دریافت سبد خرید
     public async Task<CartDto?> GetCartByUserIdAsync(int userId)
     {
-        try
+        var cacheKey = $"cart:user:{userId}";
+        var cached = await _cacheService.GetAsync<CartDto>(cacheKey);
+        if (cached != null) return cached;
+        var cart = await _context.TCarts
+            .Include(c => c.CartItems)
+            .ThenInclude(ci => ci.Product)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+        if (cart == null) return null;
+        var items = cart.CartItems?.Select(ci => new CartItemDto
         {
-            var cart = await _context.TCarts
-                .Include(c => c.CartItems)
-                .ThenInclude(ci => ci.Product)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.UserId == userId);
+            Id = ci.Id,
+            ProductId = ci.ProductId,
+            ProductName = ci.Product?.Name ?? string.Empty,
+            SellingPrice = ci.Product?.SellingPrice ?? 0,
+            Quantity = ci.Quantity,
 
-            if (cart == null)
-                return null;
+            TotalPrice = (ci.Product?.SellingPrice ?? 0) * ci.Quantity,
+            Color = ci.Color,
+            Size = ci.Size,
+            ProductIcon = ToAbsoluteUrl(ci.Product?.Icon),
+            RowVersion = ci.RowVersion
+        }).ToList() ??
+        new();
 
-            var items = cart.CartItems?.Select(ci => new CartItemDto
-            {
-                Id = ci.Id,
-                ProductId = ci.ProductId,
-                ProductName = ci.Product?.Name ?? string.Empty,
-                SellingPrice = ci.Product?.SellingPrice ?? 0,
-                Quantity = ci.Quantity,
-                TotalPrice = (ci.Product?.SellingPrice ?? 0) * ci.Quantity,
-                Color = ci.Color,
-                Size = ci.Size,
-                ProductIcon = ci.Product?.Icon
-            }).ToList() ?? new();
-
-            return new CartDto
-            {
-                Id = cart.Id,
-                UserId = cart.UserId,
-                CartItems = items,
-                TotalItems = items.Sum(i => i.Quantity),
-                TotalPrice = items.Sum(i => i.TotalPrice)
-            };
-        }
-        catch (Exception ex)
+        var dto = new CartDto
         {
-            _logger.LogError(ex, "Error retrieving cart for user {UserId}", userId);
-            return null;
-        }
+            Id = cart.Id,
+            UserId = cart.UserId,
+            CartItems = items,
+            TotalItems = items.Sum(i => i.Quantity),
+            TotalPrice = items.Sum(i => i.TotalPrice)
+        };
+        await _cacheService.SetAsync(cacheKey, dto, TimeSpan.FromMinutes(5));
+
+
+        return dto;
     }
 
-    // ✅ ساخت سبد خرید جدید
     public async Task<CartDto?> CreateCartAsync(int userId)
     {
-        try
-        {
-            var existing = await _context.TCarts.AsNoTracking().FirstOrDefaultAsync(c => c.UserId == userId);
-            if (existing != null)
-                return await GetCartByUserIdAsync(userId);
+        var existing = await _context.TCarts.AsNoTracking().FirstOrDefaultAsync(c => c.UserId == userId);
+        if (existing != null)
+            return await GetCartByUserIdAsync(userId);
+        var newCart = new TCarts { UserId = userId };
+        _context.TCarts.Add(newCart);
+        await _context.SaveChangesAsync();
 
-            var newCart = new TCarts { UserId = userId };
-            _context.TCarts.Add(newCart);
-            await _context.SaveChangesAsync();
-
-            return new CartDto
-            {
-                Id = newCart.Id,
-                UserId = newCart.UserId,
-                CartItems = new(),
-                TotalItems = 0,
-                TotalPrice = 0
-            };
-        }
-        catch (Exception ex)
+        await InvalidateCartCache(userId);
+        return new CartDto
         {
-            _logger.LogError(ex, "Error creating cart for user {UserId}", userId);
-            return null;
-        }
+            Id = newCart.Id,
+            UserId = newCart.UserId,
+            CartItems = new(),
+            TotalItems = 0,
+            TotalPrice = 0
+        };
     }
 
-    // ✅ افزودن محصول به سبد خرید (ساده، بدون تراکنش دستی)
-    public async Task<CartOperationResult> AddItemToCartAsync(int userId, AddToCartDto dto)
+    public async Task<(CartOperationResult Result, CartDto? Cart)> AddItemToCartAsync(int userId, AddToCartDto dto)
     {
-        try
+        if (dto == null || dto.Quantity <= 0 || dto.Quantity > 1000)
+            return (CartOperationResult.Error, null);
+        var cart = await GetOrCreateCartAsync(userId);
+        if (cart == null)
+            return (CartOperationResult.Error, null);
+        var product = await _context.TProducts.FirstOrDefaultAsync(p => p.Id == dto.ProductId);
+        if (product == null)
+            return (CartOperationResult.NotFound, null);
+        if (product.Colors.Any() && string.IsNullOrWhiteSpace(dto.Color) || product.Sizes.Any() && string.IsNullOrWhiteSpace(dto.Size))
         {
-            if (dto == null || dto.Quantity <= 0 || dto.Quantity > 1000)
-                return CartOperationResult.Error;
+            return (CartOperationResult.OptionsRequired, null);
+        }
 
-            var cart = await GetOrCreateCartAsync(userId);
-            if (cart == null)
-                return CartOperationResult.Error;
-
-            var product = await _context.TProducts.AsNoTracking().FirstOrDefaultAsync(p => p.Id == dto.ProductId);
-            if (product == null)
-                return CartOperationResult.NotFound;
-
-            if (!product.IsUnlimited && product.Count < dto.Quantity)
-                return CartOperationResult.OutOfStock;
-
-            var existingItem = await _context.TCartItems.FirstOrDefaultAsync(ci =>
+        if (!product.IsUnlimited && product.Count < dto.Quantity)
+            return (CartOperationResult.OutOfStock, null);
+        var existingItem = await _context.TCartItems
+            .FirstOrDefaultAsync(ci =>
                 ci.CartId == cart.Id &&
                 ci.ProductId == dto.ProductId &&
-                (string.IsNullOrEmpty(dto.Color) || ci.Color == dto.Color) &&
-                (string.IsNullOrEmpty(dto.Size) || ci.Size == dto.Size));
+                (ci.Color ?? "") == (dto.Color ?? "") &&
+                (ci.Size ?? "") == (dto.Size ??
+                ""));
 
-            if (existingItem != null)
-            {
-                var newQuantity = existingItem.Quantity + dto.Quantity;
-                if (!product.IsUnlimited && product.Count < newQuantity)
-                    return CartOperationResult.OutOfStock;
-
-                existingItem.Quantity = newQuantity;
-                _context.TCartItems.Update(existingItem);
-            }
-            else
-            {
-                await _context.TCartItems.AddAsync(new TCartItems
-                {
-                    ProductId = dto.ProductId,
-                    Quantity = dto.Quantity,
-                    CartId = cart.Id,
-                    Color = dto.Color?.Trim(),
-                    Size = dto.Size?.Trim()
-                });
-            }
-
-            await _context.SaveChangesAsync();
-            return CartOperationResult.Success;
-        }
-        catch (DbUpdateException dbEx)
+        string action;
+        string details;
+        if (existingItem != null)
         {
-            _logger.LogError(dbEx, "DB update error while adding to cart (UserId={UserId}, ProductId={ProductId})", userId, dto.ProductId);
-            return CartOperationResult.Error;
+            var newQuantity = existingItem.Quantity + dto.Quantity;
+            if (!product.IsUnlimited && product.Count < newQuantity)
+                return (CartOperationResult.OutOfStock, null);
+            existingItem.Quantity = newQuantity;
+            action = "UpdateCartItemQuantity";
+            details = $"Updated quantity for product {dto.ProductId} to {newQuantity}";
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogError(ex, "Unexpected error adding item to cart (UserId={UserId}, ProductId={ProductId})", userId, dto.ProductId);
-            return CartOperationResult.Error;
+            await _context.TCartItems.AddAsync(new TCartItems
+            {
+                ProductId = dto.ProductId,
+                Quantity = dto.Quantity,
+                CartId = cart.Id,
+
+                Color = dto.Color?.Trim(),
+                Size = dto.Size?.Trim()
+            });
+            action = "AddToCart";
+            details = $"Added product {dto.ProductId} with quantity {dto.Quantity}";
         }
+
+        await _context.SaveChangesAsync();
+        await InvalidateCartCache(userId);
+
+        var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "N/A";
+        await _auditService.LogCartEventAsync(userId, action, details, ip);
+
+        var updatedCart = await GetCartByUserIdAsync(userId);
+        return (CartOperationResult.Success, updatedCart);
     }
 
-    // ✅ به‌روزرسانی آیتم سبد خرید
-    public async Task<bool> UpdateCartItemAsync(int userId, int itemId, UpdateCartItemDto dto)
+    public async Task<(CartOperationResult Result, CartDto? Cart)> UpdateCartItemAsync(int userId, int itemId, UpdateCartItemDto dto)
     {
-        try
+        if (dto == null || dto.Quantity < 0 || dto.Quantity > 1000)
+            return (CartOperationResult.Error, null);
+        var cartItem = await _context.TCartItems
+            .Include(ci => ci.Product)
+            .Include(ci => ci.Cart)
+            .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart!.UserId == userId);
+        if (cartItem == null || cartItem.Product == null)
+            return (CartOperationResult.NotFound, null);
+        if (dto.RowVersion != null && dto.RowVersion.Length > 0)
         {
-            if (dto == null || dto.Quantity <= 0 || dto.Quantity > 1000)
-                return false;
+            _context.Entry(cartItem).Property("RowVersion").OriginalValue = dto.RowVersion;
+        }
 
-            var cartItem = await _context.TCartItems
-                .Include(ci => ci.Product)
-                .Include(ci => ci.Cart)
-                .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart!.UserId == userId);
-
-            if (cartItem == null || cartItem.Product == null)
-                return false;
-
+        if (dto.Quantity == 0)
+        {
+            _context.TCartItems.Remove(cartItem);
+        }
+        else
+        {
             if (!cartItem.Product.IsUnlimited && cartItem.Product.Count < dto.Quantity)
-                return false;
-
+                return (CartOperationResult.OutOfStock, null);
             cartItem.Quantity = dto.Quantity;
-            await _context.SaveChangesAsync();
-            return true;
+            _context.TCartItems.Update(cartItem);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating cart item (UserId={UserId}, ItemId={ItemId})", userId, itemId);
-            return false;
-        }
-    }
 
-    // ✅ حذف آیتم از سبد
-    public async Task<bool> RemoveItemFromCartAsync(int userId, int itemId)
-    {
         try
         {
-            var item = await _context.TCartItems
-                .Include(ci => ci.Cart)
-                .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart!.UserId == userId);
-
-            if (item == null)
-                return false;
-
-            _context.TCartItems.Remove(item);
             await _context.SaveChangesAsync();
-            return true;
+            await InvalidateCartCache(userId);
+            var updatedCart = await GetCartByUserIdAsync(userId);
+
+            var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "N/A";
+            var action = dto.Quantity == 0 ?
+            "RemoveCartItem" : "UpdateCartItemQuantity";
+            var details = $"Item {itemId} quantity set to {dto.Quantity}";
+            await _auditService.LogCartEventAsync(userId, action, details, ip);
+
+            return (CartOperationResult.Success, updatedCart);
         }
-        catch (Exception ex)
+        catch (DbUpdateConcurrencyException ex)
         {
-            _logger.LogError(ex, "Error removing cart item (UserId={UserId}, ItemId={ItemId})", userId, itemId);
-            return false;
+            _logger.LogWarning(ex, "Concurrency conflict during UpdateCartItem for user {UserId}, item {ItemId}", userId, itemId);
+            var entry = ex.Entries.Single();
+            await entry.ReloadAsync();
+            var freshCart = await GetCartByUserIdAsync(userId);
+            return (CartOperationResult.ConcurrencyConflict, freshCart);
         }
     }
 
-    // ✅ پاک کردن کل سبد
+    public async Task<(bool Success, CartDto? Cart)> RemoveItemFromCartAsync(int userId, int itemId)
+    {
+        var item = await _context.TCartItems
+            .Include(ci => ci.Cart)
+            .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart!.UserId == userId);
+        if (item == null)
+            return (false, null);
+
+        _context.TCartItems.Remove(item);
+        await _context.SaveChangesAsync();
+        await InvalidateCartCache(userId);
+
+        var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "N/A";
+        await _auditService.LogCartEventAsync(userId, "RemoveFromCart", $"Removed item {itemId}", ip);
+
+        var updatedCart = await GetCartByUserIdAsync(userId);
+        return (true, updatedCart);
+    }
+
     public async Task<bool> ClearCartAsync(int userId)
     {
-        try
-        {
-            var cart = await _context.TCarts
-                .Include(c => c.CartItems)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cart == null || !cart.CartItems.Any())
-                return true;
-
-            _context.TCartItems.RemoveRange(cart.CartItems);
-            await _context.SaveChangesAsync();
+        var cart = await _context.TCarts
+            .Include(c => c.CartItems)
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+        if (cart == null || !cart.CartItems.Any())
             return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error clearing cart for user {UserId}", userId);
-            return false;
-        }
+
+        _context.TCartItems.RemoveRange(cart.CartItems);
+        await _context.SaveChangesAsync();
+        await InvalidateCartCache(userId);
+
+        var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "N/A";
+        await _auditService.LogCartEventAsync(userId, "ClearCart", "Cart cleared", ip);
+
+        return true;
     }
 
-    // ✅ شمارش آیتم‌ها در سبد
     public async Task<int> GetCartItemsCountAsync(int userId)
     {
-        try
-        {
-            var cart = await _context.TCarts
-                .Include(c => c.CartItems)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            return cart?.CartItems?.Sum(ci => ci.Quantity) ?? 0;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting cart count for user {UserId}", userId);
-            return 0;
-        }
+        var cart = await _context.TCarts
+            .Include(c => c.CartItems)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+        return cart?.CartItems?.Sum(ci => ci.Quantity) ?? 0;
     }
 
-    // ✅ محدودیت درخواست‌ها با Redis
-    public async Task<bool> IsLimitedAsync(string key, int maxAttempts = 5, int windowMinutes = 15)
-    {
-        if (!_redis.IsConnected)
-        {
-            _logger.LogWarning("Redis not connected. Skipping rate limiting for key {Key}", key);
-            return false;
-        }
-
-        try
-        {
-            var db = _redis.GetDatabase();
-            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var window = TimeSpan.FromMinutes(windowMinutes);
-            var windowStart = now - (long)window.TotalSeconds;
-
-            var tran = db.CreateTransaction();
-            _ = tran.SortedSetRemoveRangeByScoreAsync(key, 0, windowStart);
-            var countTask = tran.SortedSetLengthAsync(key);
-            _ = tran.SortedSetAddAsync(key, now.ToString(), now);
-            _ = tran.KeyExpireAsync(key, window);
-
-            if (await tran.ExecuteAsync())
-            {
-                var count = await countTask;
-                return count > maxAttempts;
-            }
-
-            return false;
-        }
-        catch (RedisException ex)
-        {
-            _logger.LogError(ex, "Redis error for key {Key}", key);
-            return false;
-        }
-    }
-
-    // ✅ گرفتن یا ساخت سبد
     private async Task<TCarts?> GetOrCreateCartAsync(int userId)
     {
         var cart = await _context.TCarts.FirstOrDefaultAsync(c => c.UserId == userId);
         if (cart != null)
             return cart;
-
         var newCart = new TCarts { UserId = userId };
         await _context.TCarts.AddAsync(newCart);
         await _context.SaveChangesAsync();
         return newCart;
+    }
+
+    private string? ToAbsoluteUrl(string? relativeUrl)
+    {
+        if (string.IsNullOrEmpty(relativeUrl))
+            return null;
+        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
+            return relativeUrl;
+        return $"{_baseUrl}{relativeUrl.TrimStart('~')}";
+    }
+
+    private async Task InvalidateCartCache(int userId)
+    {
+        var cacheKey = $"cart:user:{userId}";
+        await _cacheService.ClearAsync(cacheKey);
     }
 }

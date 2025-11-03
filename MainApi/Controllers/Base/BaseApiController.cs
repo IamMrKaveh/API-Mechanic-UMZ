@@ -1,6 +1,3 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Mvc;
-
 namespace MainApi.Controllers.Base;
 
 [ApiController]
@@ -20,5 +17,32 @@ public abstract class BaseApiController : ControllerBase
         }
 
         return null;
+    }
+
+    [NonAction]
+    protected string? ToAbsoluteUrl(string? relativeUrl)
+    {
+        if (string.IsNullOrEmpty(relativeUrl))
+            return null;
+
+        // If it's already a full URL, return it as is.
+        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
+            return relativeUrl;
+
+        return $"{BaseUrl}{relativeUrl.TrimStart('~')}";
+    }
+
+    [NonAction]
+    protected string? ToRelativeUrl(string? absoluteUrl)
+    {
+        if (string.IsNullOrEmpty(absoluteUrl))
+            return null;
+
+        if (absoluteUrl.StartsWith(BaseUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            return absoluteUrl[BaseUrl.Length..];
+        }
+
+        return absoluteUrl;
     }
 }

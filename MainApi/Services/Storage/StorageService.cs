@@ -30,16 +30,21 @@ public class LiaraStorageService : IStorageService
         using var content = new MultipartFormDataContent();
         using var stream = file.OpenReadStream();
         content.Add(new StreamContent(stream), "file", fileName);
-        var response = await _httpClient.PostAsync($"/storage/buckets/{_bucketName}/upload/{relativePath}", content);
+
+        // Liara expects the object key without a leading slash for upload
+        var objectKey = relativePath.TrimStart('/');
+        var response = await _httpClient.PostAsync($"/storage/buckets/{_bucketName}/objects?key={objectKey}", content);
         response.EnsureSuccessStatusCode();
-        return "/" + relativePath;
+
+        // Return the path with a leading slash for consistency
+        return "/" + objectKey;
     }
 
     public async Task DeleteFileAsync(string relativePath)
     {
         if (string.IsNullOrEmpty(relativePath)) return;
         var path = relativePath.TrimStart('/');
-        var response = await _httpClient.DeleteAsync($"/storage/buckets/{_bucketName}/files/{path}");
+        var response = await _httpClient.DeleteAsync($"/storage/buckets/{_bucketName}/objects/{path}");
         response.EnsureSuccessStatusCode();
     }
 }

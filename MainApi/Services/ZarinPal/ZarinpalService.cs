@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace MainApi.Services.ZarinPal;
+﻿namespace MainApi.Services.ZarinPal;
 
 public class ZarinpalService : IZarinpalService
 {

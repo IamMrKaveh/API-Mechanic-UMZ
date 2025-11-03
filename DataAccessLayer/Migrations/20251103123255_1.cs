@@ -4,6 +4,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace DataAccessLayer.Migrations
 {
     /// <inheritdoc />
@@ -106,6 +108,8 @@ namespace DataAccessLayer.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Icon = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    Colors = table.Column<string[]>(type: "text[]", nullable: false),
+                    Sizes = table.Column<string[]>(type: "text[]", nullable: false),
                     PurchasePrice = table.Column<decimal>(type: "numeric", nullable: false),
                     OriginalPrice = table.Column<decimal>(type: "numeric", nullable: false),
                     SellingPrice = table.Column<decimal>(type: "numeric", nullable: false),
@@ -157,8 +161,12 @@ namespace DataAccessLayer.Migrations
                     TotalAmount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     TotalProfit = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DeliveryDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     OrderStatusId = table.Column<int>(type: "integer", nullable: false),
                     IdempotencyKey = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    PaymentAuthority = table.Column<string>(type: "text", nullable: true),
+                    PaymentRefId = table.Column<long>(type: "bigint", nullable: true),
+                    IsPaid = table.Column<bool>(type: "boolean", nullable: true),
                     RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
@@ -236,7 +244,10 @@ namespace DataAccessLayer.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     CartId = table.Column<int>(type: "integer", nullable: false),
                     ProductId = table.Column<int>(type: "integer", nullable: false),
-                    Quantity = table.Column<int>(type: "integer", nullable: false, defaultValue: 1)
+                    Quantity = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
+                    Color = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
+                    Size = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -287,6 +298,19 @@ namespace DataAccessLayer.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.InsertData(
+                table: "TOrderStatus",
+                columns: new[] { "Id", "Icon", "Name" },
+                values: new object[,]
+                {
+                    { 1, "hourglass_empty", "در انتظار پرداخت" },
+                    { 2, "sync", "در حال پردازش" },
+                    { 3, "local_shipping", "ارسال شده" },
+                    { 4, "done_all", "تحویل داده شده" },
+                    { 5, "cancel", "لغو شده" },
+                    { 6, "assignment_return", "مرجوعی" }
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_TAuditLogs_Timestamp",
                 table: "TAuditLogs",
@@ -298,9 +322,9 @@ namespace DataAccessLayer.Migrations
                 columns: new[] { "UserId", "EventType", "Timestamp" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_CartItems_CartId_ProductId",
+                name: "IX_CartItems_CartId_ProductId_Color_Size",
                 table: "TCartItems",
-                columns: new[] { "CartId", "ProductId" },
+                columns: new[] { "CartId", "ProductId", "Color", "Size" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

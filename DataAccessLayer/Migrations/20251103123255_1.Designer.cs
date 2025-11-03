@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(MechanicContext))]
-    [Migration("20251031174857_2")]
-    partial class _2
+    [Migration("20251103123255_1")]
+    partial class _1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -80,6 +80,10 @@ namespace DataAccessLayer.Migrations
                     b.Property<int>("CartId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Color")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
 
@@ -88,13 +92,22 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(1);
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("Size")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
 
-                    b.HasIndex("CartId", "ProductId")
+                    b.HasIndex("CartId", "ProductId", "Color", "Size")
                         .IsUnique()
-                        .HasDatabaseName("IX_CartItems_CartId_ProductId");
+                        .HasDatabaseName("IX_CartItems_CartId_ProductId_Color_Size");
 
                     b.ToTable("TCartItems");
                 });
@@ -233,6 +246,44 @@ namespace DataAccessLayer.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("TOrderStatus");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Icon = "hourglass_empty",
+                            Name = "در انتظار پرداخت"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Icon = "sync",
+                            Name = "در حال پردازش"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Icon = "local_shipping",
+                            Name = "ارسال شده"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Icon = "done_all",
+                            Name = "تحویل داده شده"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Icon = "cancel",
+                            Name = "لغو شده"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Icon = "assignment_return",
+                            Name = "مرجوعی"
+                        });
                 });
 
             modelBuilder.Entity("DataAccessLayer.Models.Order.TOrders", b =>
@@ -250,9 +301,15 @@ namespace DataAccessLayer.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeliveryDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("IdempotencyKey")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<bool?>("IsPaid")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .HasMaxLength(200)
@@ -260,6 +317,12 @@ namespace DataAccessLayer.Migrations
 
                     b.Property<int>("OrderStatusId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("PaymentAuthority")
+                        .HasColumnType("text");
+
+                    b.Property<long?>("PaymentRefId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("PostalCode")
                         .HasMaxLength(20)

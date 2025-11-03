@@ -17,8 +17,10 @@ public class AddToCartDto
 public class UpdateCartItemDto
 {
     [Required]
-    [Range(1, 1000, ErrorMessage = "Quantity must be at least 1 and at most 1000")]
+    [Range(0, 1000, ErrorMessage = "Quantity must be at least 0 and at most 1000")]
     public int Quantity { get; set; }
+
+    public byte[]? RowVersion { get; set; }
 }
 
 public class CartDto
@@ -48,4 +50,5 @@ public class CartItemDto
 
     public string? ProductIcon { get; set; }
     public decimal TotalPrice { get; set; }
+    public byte[]? RowVersion { get; set; }
 }
