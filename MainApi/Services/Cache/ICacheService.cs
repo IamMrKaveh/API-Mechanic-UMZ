@@ -1,4 +1,4 @@
-﻿namespace MainApi.Services.Redis;
+﻿namespace MainApi.Services.Cache;
 
 public interface ICacheService
 {

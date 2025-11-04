@@ -94,13 +94,18 @@ try
         Log.Warning("⚠️ Redis connection string not found — using in-memory cache.");
         RegisterInMemoryServices(builder);
     }
-    builder.Services.AddHttpContextAccessor();
+
+    // Register application services
+    builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<ICartService, CartService>();
     builder.Services.AddScoped<IOrderService, OrderService>();
-    builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
+    builder.Services.AddScoped<IProductService, ProductService>();
+    builder.Services.AddScoped<ICommentService, CommentService>();
+    builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+    builder.Services.AddScoped<IEmailService, EmailService>();
     builder.Services.AddScoped<IAuditService, AuditService>();
     builder.Services.AddSingleton<IStorageService, LiaraStorageService>();
-
+    builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
 
     builder.Services.Configure<LiaraStorageSettings>(builder.Configuration.GetSection("LiaraStorage"));
     builder.Services.Configure<ZarinpalSettings>(builder.Configuration.GetSection("Zarinpal"));
@@ -134,6 +139,8 @@ try
         AllowedAttributes = { "class" },
         AllowedSchemes = { "http", "https" }
     }));
+
+    builder.Services.AddHttpContextAccessor();
 
     builder.Services.AddAuthorization(options =>
     {

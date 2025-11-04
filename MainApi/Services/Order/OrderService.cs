@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+﻿using MainApi.Services.Cache;
 
 namespace MainApi.Services.Order;
 
@@ -10,6 +10,9 @@ public class OrderService : IOrderService
     private readonly IHtmlSanitizer _htmlSanitizer;
     private readonly IZarinpalService _zarinpalService;
     private readonly IConfiguration _configuration;
+    private readonly string _baseUrl;
+    private readonly IAuditService _auditService;
+    private readonly ICacheService _cacheService;
 
     public OrderService(
         MechanicContext context,
@@ -17,7 +20,9 @@ public class OrderService : IOrderService
         IRateLimitService rateLimitService,
         IHtmlSanitizer htmlSanitizer,
         IZarinpalService zarinpalService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IAuditService auditService,
+        ICacheService cacheService)
     {
         _context = context;
         _logger = logger;
@@ -25,6 +30,20 @@ public class OrderService : IOrderService
         _htmlSanitizer = htmlSanitizer;
         _zarinpalService = zarinpalService;
         _configuration = configuration;
+        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
+        _auditService = auditService;
+        _cacheService = cacheService;
+    }
+
+    private string? ToAbsoluteUrl(string? relativeUrl)
+    {
+        if (string.IsNullOrEmpty(relativeUrl))
+            return null;
+        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
+            return relativeUrl;
+
+        var cleanRelative = relativeUrl.TrimStart('~', '/');
+        return $"{_baseUrl}/{cleanRelative}";
     }
 
     public async Task<(IEnumerable<object> Orders, int TotalItems)> GetOrdersAsync(int? currentUserId, bool isAdmin, int? userId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
@@ -99,7 +118,7 @@ public class OrderService : IOrderService
             query = query.Where(o => o.UserId == currentUserId);
         }
 
-        return await query.Select(o => new
+        var order = await query.Select(o => new
         {
             o.Id,
             o.UserId,
@@ -110,20 +129,20 @@ public class OrderService : IOrderService
             TotalProfit = isAdmin ? (int?)o.TotalProfit : null,
             o.CreatedAt,
             o.OrderStatusId,
-            User = new
+            User = o.User != null ? new
             {
-                o.User!.Id,
+                o.User.Id,
                 o.User.PhoneNumber,
                 o.User.FirstName,
                 o.User.LastName,
                 o.User.IsAdmin
-            },
-            OrderStatus = new
+            } : null,
+            OrderStatus = o.OrderStatus != null ? new
             {
-                o.OrderStatus!.Id,
+                o.OrderStatus.Id,
                 o.OrderStatus.Name,
                 o.OrderStatus.Icon
-            },
+            } : null,
             OrderItems = o.OrderItems.Select(oi => new
             {
                 oi.Id,
@@ -133,20 +152,32 @@ public class OrderService : IOrderService
                 oi.Quantity,
                 Amount = oi.Amount,
                 Profit = isAdmin ? (int?)oi.Profit : null,
-                Product = new
+                Product = oi.Product != null ? new
                 {
-                    oi.Product!.Id,
+                    oi.Product.Id,
                     oi.Product.Name,
-                    oi.Product.Icon,
+                    Icon = ToAbsoluteUrl(oi.Product.Icon),
                     Category = oi.Product.Category != null ? new
                     {
                         oi.Product.Category.Id,
                         oi.Product.Category.Name
                     } : null
-                }
+                } : null
             })
         })
         .FirstOrDefaultAsync();
+
+        if (order == null)
+        {
+            return null;
+        }
+
+        // Authorization check after fetching
+        if (!isAdmin && order.UserId != currentUserId)
+        {
+            return null;
+        }
+        return order;
     }
 
     public async Task<TOrders> CreateOrderAsync(CreateOrderDto orderDto, string idempotencyKey)
@@ -229,9 +260,13 @@ public class OrderService : IOrderService
             throw new Exception("Too many checkout attempts. Please try again in a minute.");
         }
 
-        var existingOrderByIdempotency = await _context.TOrders.FirstOrDefaultAsync(o => o.IdempotencyKey == idempotencyKey && o.UserId == userId);
+        var existingOrderByIdempotency = await _context.TOrders.AsNoTracking().FirstOrDefaultAsync(o => o.IdempotencyKey == idempotencyKey && o.UserId == userId);
         if (existingOrderByIdempotency != null)
+        {
+            _logger.LogInformation("Idempotent checkout request detected for key {IdempotencyKey}, returning existing order {OrderId}", idempotencyKey, existingOrderByIdempotency.Id);
             return existingOrderByIdempotency;
+        }
+
 
         TOrders? order = null;
         var strategy = _context.Database.CreateExecutionStrategy();
@@ -248,7 +283,7 @@ public class OrderService : IOrderService
                 if (cart == null || !cart.CartItems.Any())
                     throw new InvalidOperationException("Cart is empty");
 
-                const int processingStatusId = 2; // "در حال پردازش"
+                const int processingStatusId = 1; // "در انتظار پرداخت"
 
                 order = new TOrders
                 {
@@ -260,19 +295,22 @@ public class OrderService : IOrderService
                     OrderStatusId = processingStatusId,
                     IdempotencyKey = idempotencyKey,
                 };
+                _context.TOrders.Add(order);
+                await _context.SaveChangesAsync();
+
+                var productIds = cart.CartItems.Select(ci => ci.ProductId).ToList();
+                var products = await _context.TProducts.Where(p => productIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id);
 
                 foreach (var item in cart.CartItems)
                 {
-                    var product = item.Product;
-                    if (product == null)
+                    if (!products.TryGetValue(item.ProductId, out var product))
                         throw new InvalidOperationException($"Product with ID '{item.ProductId}' not found.");
 
                     if (!product.IsUnlimited)
                     {
-                        var productInDb = await _context.TProducts.FindAsync(product.Id);
-                        if (productInDb!.Count < item.Quantity)
+                        if (product.Count < item.Quantity)
                             throw new DbUpdateConcurrencyException($"Product '{product.Name}' is out of stock or has insufficient quantity.");
-                        productInDb.Count -= item.Quantity;
+                        product.Count -= item.Quantity;
                     }
 
                     order.OrderItems.Add(new TOrderItems
@@ -289,11 +327,14 @@ public class OrderService : IOrderService
                 order.TotalAmount = (int)order.OrderItems.Sum(oi => oi.Amount);
                 order.TotalProfit = (int)order.OrderItems.Sum(oi => oi.Profit);
 
-                _context.TOrders.Add(order);
+                _context.TOrders.Update(order);
                 _context.TCartItems.RemoveRange(cart.CartItems);
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _auditService.LogOrderEventAsync(order.Id, "CheckoutFromCart", userId, $"Order created with total amount {order.TotalAmount}");
+                await _cacheService.ClearAsync($"cart:user:{userId}");
             }
             catch
             {

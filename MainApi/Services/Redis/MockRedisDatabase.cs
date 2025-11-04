@@ -1,4 +1,6 @@
-﻿namespace MainApi.Services.Redis;
+﻿using MainApi.Services.Cache;
+
+namespace MainApi.Services.Redis;
 
 public class MockRedisDatabase : ICacheService
 {
