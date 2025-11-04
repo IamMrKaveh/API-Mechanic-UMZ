@@ -4,8 +4,7 @@ namespace MainApi.Controllers.Base;
 [Route("api/[controller]")]
 public abstract class BaseApiController : ControllerBase
 {
-    protected readonly string BaseUrl =
-        "https://storage.c2.liara.space/mechanic-umz";
+    protected readonly string BaseUrl = "https://storage.c2.liara.space/mechanic-umz";
 
     [NonAction]
     protected int? GetCurrentUserId()
@@ -15,7 +14,6 @@ public abstract class BaseApiController : ControllerBase
         {
             return userId;
         }
-
         return null;
     }
 
@@ -25,24 +23,25 @@ public abstract class BaseApiController : ControllerBase
         if (string.IsNullOrEmpty(relativeUrl))
             return null;
 
-        // If it's already a full URL, return it as is.
         if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
             return relativeUrl;
 
-        return $"{BaseUrl}{relativeUrl.TrimStart('~')}";
+        var cleanRelative = relativeUrl.TrimStart('~', '/');
+        return $"{BaseUrl}/{cleanRelative}";
     }
 
     [NonAction]
     protected string? ToRelativeUrl(string? absoluteUrl)
     {
         if (string.IsNullOrEmpty(absoluteUrl))
-            return null;
+            return absoluteUrl;
 
         if (absoluteUrl.StartsWith(BaseUrl, StringComparison.OrdinalIgnoreCase))
         {
-            return absoluteUrl[BaseUrl.Length..];
+            var relative = absoluteUrl.Substring(BaseUrl.Length);
+            return relative.StartsWith("/") ? relative : $"/{relative}";
         }
 
-        return absoluteUrl;
+        return absoluteUrl.StartsWith("/") ? absoluteUrl : $"/{absoluteUrl}";
     }
 }

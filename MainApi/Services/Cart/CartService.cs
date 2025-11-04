@@ -1,4 +1,6 @@
-﻿namespace MainApi.Services.Cart;
+﻿using MainApi.Services.Cache;
+
+namespace MainApi.Services.Cart;
 
 public enum CartOperationResult
 {
@@ -265,7 +267,9 @@ public class CartService : ICartService
             return null;
         if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
             return relativeUrl;
-        return $"{_baseUrl}{relativeUrl.TrimStart('~')}";
+
+        var cleanRelative = relativeUrl.TrimStart('~', '/');
+        return $"{_baseUrl}/{cleanRelative}";
     }
 
     private async Task InvalidateCartCache(int userId)

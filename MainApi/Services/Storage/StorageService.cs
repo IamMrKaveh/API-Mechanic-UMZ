@@ -2,7 +2,7 @@ namespace MainApi.Services.Storage;
 
 public interface IStorageService
 {
-    Task<string> UploadFileAsync(IFormFile file, string folder);
+    Task<string> UploadFileAsync(IFormFile file, string folder, int? entityId = null);
     Task DeleteFileAsync(string relativePath);
 }
 
@@ -22,22 +22,24 @@ public class LiaraStorageService : IStorageService
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_accessKey}:{_secretKey}");
     }
 
-    public async Task<string> UploadFileAsync(IFormFile file, string folder)
+    public async Task<string> UploadFileAsync(IFormFile file, string folder, int? entityId = null)
     {
-        var extension = Path.GetExtension(file.FileName);
-        var fileName = $"{Guid.NewGuid()}{extension}";
-        var relativePath = $"{folder}/{fileName}";
+        var extension = Path.GetExtension(file.FileName).ToLower();
+        var fileName = entityId.HasValue
+            ? $"{entityId.Value}{extension}"
+            : $"{Guid.NewGuid()}{extension}";
+
+        var relativePath = $"/{folder}/{fileName}".Replace("//", "/");
+
         using var content = new MultipartFormDataContent();
         using var stream = file.OpenReadStream();
         content.Add(new StreamContent(stream), "file", fileName);
 
-        // Liara expects the object key without a leading slash for upload
         var objectKey = relativePath.TrimStart('/');
         var response = await _httpClient.PostAsync($"/storage/buckets/{_bucketName}/objects?key={objectKey}", content);
         response.EnsureSuccessStatusCode();
 
-        // Return the path with a leading slash for consistency
-        return "/" + objectKey;
+        return relativePath;
     }
 
     public async Task DeleteFileAsync(string relativePath)

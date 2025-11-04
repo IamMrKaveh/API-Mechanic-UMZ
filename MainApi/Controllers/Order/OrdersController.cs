@@ -1,7 +1,4 @@
-﻿using MainApi.Services.Order;
-using Microsoft.AspNetCore.Mvc;
-
-namespace MainApi.Controllers.Order;
+﻿namespace MainApi.Controllers.Order;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -119,16 +116,18 @@ public class OrdersController : BaseApiController
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            _logger.LogWarning(ex, "Checkout failed for user {UserId} with invalid operation.", userId);
+            return BadRequest(new { message = ex.Message });
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateConcurrencyException ex)
         {
-            return Conflict("The stock for an item in your cart has changed. Please review your cart and try again.");
+            _logger.LogWarning(ex, "Checkout failed for user {UserId} due to concurrency.", userId);
+            return Conflict(new { message = "The stock for an item in your cart has changed. Please review your cart and try again." });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during checkout from cart for user {UserId}", userId);
-            return StatusCode(500, ex.Message);
+            return StatusCode(500, new { message = "An internal error occurred during checkout." });
         }
     }
 

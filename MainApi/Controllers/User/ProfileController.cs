@@ -1,3 +1,5 @@
+using MainApi.Services.User;
+
 namespace MainApi.Controllers.User;
 
 [Route("api/[controller]")]
@@ -5,12 +7,12 @@ namespace MainApi.Controllers.User;
 [Authorize]
 public class ProfileController : BaseApiController
 {
-    private readonly MechanicContext _context;
+    private readonly IUserService _userService;
     private readonly ILogger<ProfileController> _logger;
 
-    public ProfileController(MechanicContext context, ILogger<ProfileController> logger)
+    public ProfileController(IUserService userService, ILogger<ProfileController> logger)
     {
-        _context = context;
+        _userService = userService;
         _logger = logger;
     }
 
@@ -21,19 +23,7 @@ public class ProfileController : BaseApiController
         if (userId == null)
             return Unauthorized();
 
-        var user = await _context.TUsers
-            .Where(u => u.Id == userId && !u.IsDeleted)
-            .Select(u => new UserProfileDto
-            {
-                Id = u.Id,
-                PhoneNumber = u.PhoneNumber,
-                CreatedAt = u.CreatedAt,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                IsAdmin = u.IsAdmin
-            })
-            .FirstOrDefaultAsync();
-
+        var user = await _userService.GetUserProfileAsync(userId.Value);
         if (user == null)
             return NotFound();
 
@@ -50,17 +40,12 @@ public class ProfileController : BaseApiController
         if (userId == null)
             return Unauthorized();
 
-        var existingUser = await _context.TUsers.FindAsync(userId);
-        if (existingUser == null || existingUser.IsDeleted)
-            return NotFound();
-
-        existingUser.FirstName = updateRequest.FirstName;
-        existingUser.LastName = updateRequest.LastName;
-
         try
         {
-            await _context.SaveChangesAsync();
-            return NoContent();
+            var (success, error) = await _userService.UpdateProfileAsync(userId.Value, updateRequest);
+            if (success) return NoContent();
+
+            return error == "NotFound" ? NotFound() : StatusCode(500, "An error occurred");
         }
         catch (Exception ex)
         {
@@ -74,49 +59,19 @@ public class ProfileController : BaseApiController
     {
         var userId = GetCurrentUserId();
         if (userId == null)
-        {
             return Unauthorized();
-        }
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var user = await _context.TUsers.FindAsync(userId);
-            if (user == null || user.IsDeleted)
-            {
-                return NotFound();
-            }
+            var (success, error) = await _userService.DeleteAccountAsync(userId.Value);
+            if (success) return Ok(new { message = "Account successfully deleted." });
 
-            user.IsDeleted = true;
-            user.DeletedAt = DateTime.UtcNow;
-            user.IsActive = false;
-
-            await RevokeAllUserRefreshTokensAsync(userId);
-
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            return Ok(new { message = "Account successfully deleted." });
+            return error == "NotFound" ? NotFound() : StatusCode(500, "An error occurred");
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
             _logger.LogError(ex, "Error deleting account for user {UserId}", userId);
             return StatusCode(500, "An error occurred while deleting the account.");
-        }
-    }
-
-    private async Task RevokeAllUserRefreshTokensAsync(int? userId)
-    {
-        if (userId != null)
-        {
-            var userTokens = _context.TRefreshToken
-            .Where(
-                rt => rt.UserId == userId &&
-                rt.RevokedAt == null &&
-                rt.ExpiresAt > DateTime.UtcNow);
-
-            await userTokens.ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.RevokedAt, DateTime.UtcNow));
         }
     }
 }
