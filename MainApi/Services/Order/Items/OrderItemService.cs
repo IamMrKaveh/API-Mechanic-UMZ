@@ -15,6 +15,17 @@ public class OrderItemService : IOrderItemService
         _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
     }
 
+    private string? ToAbsoluteUrl(string? relativeUrl)
+    {
+        if (string.IsNullOrEmpty(relativeUrl))
+            return null;
+        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
+            return relativeUrl;
+
+        var cleanRelative = relativeUrl.TrimStart('~', '/', 'c');
+        return $"{_baseUrl}/{cleanRelative}";
+    }
+
     public async Task<(IEnumerable<object> items, int total)> GetOrderItemsAsync(int? currentUserId, bool isAdmin, int? orderId, int page, int pageSize)
     {
         var query = _context.TOrderItems
@@ -248,16 +259,5 @@ public class OrderItemService : IOrderItemService
             }
         });
         return success;
-    }
-
-    private string? ToAbsoluteUrl(string? relativeUrl)
-    {
-        if (string.IsNullOrEmpty(relativeUrl))
-            return null;
-        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
-            return relativeUrl;
-
-        var cleanRelative = relativeUrl.TrimStart('~', '/');
-        return $"{_baseUrl}/{cleanRelative}";
     }
 }

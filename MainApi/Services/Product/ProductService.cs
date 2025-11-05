@@ -1,25 +1,36 @@
 ﻿namespace MainApi.Services.Product;
 
-public class ProductService : BaseApiController, IProductService
+public class ProductService : IProductService
 {
     private readonly MechanicContext _context;
     private readonly ILogger<ProductService> _logger;
     private readonly IStorageService _storageService;
-    private readonly string _baseUrl;
     private readonly IHtmlSanitizer _htmlSanitizer;
+    private readonly string _baseUrl;
 
     public ProductService(
         MechanicContext context,
         ILogger<ProductService> logger,
         IStorageService storageService,
-        IConfiguration configuration,
-        IHtmlSanitizer htmlSanitizer)
+        IHtmlSanitizer htmlSanitizer,
+        IConfiguration configuration)
     {
         _context = context;
         _logger = logger;
         _storageService = storageService;
-        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
         _htmlSanitizer = htmlSanitizer;
+        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
+    }
+
+    private string? ToAbsoluteUrl(string? relativeUrl)
+    {
+        if (string.IsNullOrEmpty(relativeUrl))
+            return null;
+        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
+            return relativeUrl;
+
+        var cleanRelative = relativeUrl.TrimStart('~', '/', 'c');
+        return $"{_baseUrl}/{cleanRelative}";
     }
 
     public async Task<(IEnumerable<PublicProductViewDto> products, int totalItems)> GetProductsAsync(ProductSearchDto search)
@@ -61,24 +72,38 @@ public class ProductService : BaseApiController, IProductService
         var items = await query
             .Skip((search.Page - 1) * search.PageSize)
             .Take(search.PageSize)
-            .Select(p => new PublicProductViewDto
+            .Select(p => new
             {
-                Id = p.Id,
-                Name = p.Name,
-                Icon = p.Icon,
-                Colors = p.Colors,
-                Sizes = p.Sizes,
-                OriginalPrice = p.OriginalPrice,
-                SellingPrice = p.SellingPrice,
-                Count = p.Count,
-                IsUnlimited = p.IsUnlimited,
-                CategoryId = p.CategoryId,
+                p.Id,
+                p.Name,
+                p.Icon,
+                p.Colors,
+                p.Sizes,
+                p.OriginalPrice,
+                p.SellingPrice,
+                p.Count,
+                p.IsUnlimited,
+                p.CategoryId,
                 Category = p.Category != null ? new { p.Category.Id, p.Category.Name } : null,
             })
             .ToListAsync();
 
-        items.ForEach(p => p.Icon = ToAbsoluteUrl(p.Icon));
-        return (items, totalItems);
+        var products = items.Select(p => new PublicProductViewDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Icon = ToAbsoluteUrl(p.Icon),
+            Colors = p.Colors,
+            Sizes = p.Sizes,
+            OriginalPrice = p.OriginalPrice,
+            SellingPrice = p.SellingPrice,
+            Count = p.Count,
+            IsUnlimited = p.IsUnlimited,
+            CategoryId = p.CategoryId,
+            Category = p.Category
+        }).ToList();
+
+        return (products, totalItems);
     }
 
     public async Task<object?> GetProductByIdAsync(int id, bool isAdmin)
@@ -128,8 +153,6 @@ public class ProductService : BaseApiController, IProductService
 
     public async Task<TProducts> CreateProductAsync(ProductDto productDto)
     {
-        string? iconRelativePath = null;
-
         var product = new TProducts
         {
             Name = _htmlSanitizer.Sanitize(productDto.Name),
@@ -148,7 +171,7 @@ public class ProductService : BaseApiController, IProductService
 
         if (productDto.IconFile != null)
         {
-            iconRelativePath = await _storageService.UploadFileAsync(
+            var iconRelativePath = await _storageService.UploadFileAsync(
                 productDto.IconFile,
                 "images/products",
                 product.Id
@@ -253,7 +276,7 @@ public class ProductService : BaseApiController, IProductService
 
     public async Task<IEnumerable<object>> GetLowStockProductsAsync(int threshold = 5)
     {
-        return await _context.TProducts
+        var products = await _context.TProducts
             .Include(p => p.Category)
             .Where(p => !p.IsUnlimited && p.Count <= threshold && p.Count > 0)
             .OrderBy(p => p.Count)
@@ -266,6 +289,7 @@ public class ProductService : BaseApiController, IProductService
                 p.SellingPrice
             })
             .ToListAsync();
+        return products;
     }
 
     public async Task<object> GetProductStatisticsAsync()
@@ -338,7 +362,7 @@ public class ProductService : BaseApiController, IProductService
             {
                 p.Id,
                 p.Name,
-                Icon = ToAbsoluteUrl(p.Icon),
+                Icon = p.Icon,
                 p.Colors,
                 p.Sizes,
                 p.OriginalPrice,
@@ -352,7 +376,25 @@ public class ProductService : BaseApiController, IProductService
             })
             .ToListAsync();
 
-        return (items, totalItems);
+        var products = items.Select(p => new
+        {
+            p.Id,
+            p.Name,
+            Icon = ToAbsoluteUrl(p.Icon),
+            p.Colors,
+            p.Sizes,
+            p.OriginalPrice,
+            p.SellingPrice,
+            p.DiscountAmount,
+            p.DiscountPercentage,
+            p.Count,
+            p.IsUnlimited,
+            p.CategoryId,
+            p.Category
+        }).ToList();
+
+
+        return (products, totalItems);
     }
 
     public async Task<(bool success, object? result, string? message)> SetProductDiscountAsync(int id, SetDiscountDto discountDto)

@@ -10,9 +10,9 @@ public class OrderService : IOrderService
     private readonly IHtmlSanitizer _htmlSanitizer;
     private readonly IZarinpalService _zarinpalService;
     private readonly IConfiguration _configuration;
-    private readonly string _baseUrl;
     private readonly IAuditService _auditService;
     private readonly ICacheService _cacheService;
+    private readonly string _baseUrl;
 
     public OrderService(
         MechanicContext context,
@@ -30,20 +30,20 @@ public class OrderService : IOrderService
         _htmlSanitizer = htmlSanitizer;
         _zarinpalService = zarinpalService;
         _configuration = configuration;
-        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
         _auditService = auditService;
         _cacheService = cacheService;
+        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
     }
 
-    private static string? ConvertToAbsoluteUrl(string? relativeUrl, string baseUrl)
+    private string? ToAbsoluteUrl(string? relativeUrl)
     {
         if (string.IsNullOrEmpty(relativeUrl))
             return null;
         if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
             return relativeUrl;
 
-        var cleanRelative = relativeUrl.TrimStart('~', '/');
-        return $"{baseUrl}/{cleanRelative}";
+        var cleanRelative = relativeUrl.TrimStart('~', '/', 'c');
+        return $"{_baseUrl}/{cleanRelative}";
     }
 
     public async Task<(IEnumerable<object> Orders, int TotalItems)> GetOrdersAsync(int? currentUserId, bool isAdmin, int? userId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
@@ -118,7 +118,6 @@ public class OrderService : IOrderService
             query = query.Where(o => o.UserId == currentUserId);
         }
 
-        var baseUrl = _baseUrl;
         var order = await query.Select(o => new
         {
             o.Id,
@@ -151,7 +150,7 @@ public class OrderService : IOrderService
                 PurchasePrice = isAdmin ? (decimal?)oi.PurchasePrice : null,
                 oi.SellingPrice,
                 oi.Quantity,
-                Amount = oi.Amount,
+                oi.Amount,
                 Profit = isAdmin ? (decimal?)oi.Profit : null,
                 ProductIcon = oi.Product != null ? oi.Product.Icon : null,
                 ProductId = oi.Product != null ? oi.Product.Id : 0,
@@ -199,7 +198,7 @@ public class OrderService : IOrderService
                 {
                     Id = oi.ProductId,
                     Name = oi.ProductName,
-                    Icon = ConvertToAbsoluteUrl(oi.ProductIcon, baseUrl),
+                    Icon = ToAbsoluteUrl(oi.ProductIcon),
                     Category = oi.CategoryId > 0 ? new
                     {
                         Id = oi.CategoryId,

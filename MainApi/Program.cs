@@ -98,6 +98,7 @@ try
     // Register application services
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<ICartService, CartService>();
+    builder.Services.AddScoped<ICategoryService, CategoryService>();
     builder.Services.AddScoped<IOrderService, OrderService>();
     builder.Services.AddScoped<IOrderItemService, OrderItemService>();
     builder.Services.AddScoped<IOrderStatusService, OrderStatusService>();
