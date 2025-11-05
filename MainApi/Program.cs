@@ -99,6 +99,8 @@ try
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<ICartService, CartService>();
     builder.Services.AddScoped<IOrderService, OrderService>();
+    builder.Services.AddScoped<IOrderItemService, OrderItemService>();
+    builder.Services.AddScoped<IOrderStatusService, OrderStatusService>();
     builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<ICommentService, CommentService>();
     builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();

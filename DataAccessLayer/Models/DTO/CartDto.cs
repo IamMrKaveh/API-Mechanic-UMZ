@@ -8,9 +8,7 @@ public class AddToCartDto
     [Required]
     [Range(1, 1000, ErrorMessage = "Quantity must be at least 1 and at most 1000")]
     public int Quantity { get; set; } = 1;
-    [MaxLength(10)]
     public string? Color { get; set; }
-    [MaxLength(20)]
     public string? Size { get; set; }
 }
 
@@ -43,9 +41,7 @@ public class CartItemDto
     public decimal SellingPrice { get; set; }
     [Range(1, int.MaxValue)]
     public int Quantity { get; set; }
-    [MaxLength(10)]
     public string? Color { get; set; }
-    [MaxLength(20)]
     public string? Size { get; set; }
 
     public string? ProductIcon { get; set; }

@@ -318,7 +318,7 @@ public class OrderService : IOrderService
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
                 var cart = await _context.TCarts
@@ -407,7 +407,7 @@ public class OrderService : IOrderService
             order.IsPaid = true;
             order.PaymentRefId = verificationResponse.RefID;
             order.PaymentAuthority = authority;
-            order.OrderStatusId = 2;
+            order.OrderStatusId = 2; // "در حال پردازش"
             await _context.SaveChangesAsync();
             return true;
         }
@@ -444,19 +444,9 @@ public class OrderService : IOrderService
         if (!string.IsNullOrWhiteSpace(orderDto.PostalCode))
             order.PostalCode = _htmlSanitizer.Sanitize(orderDto.PostalCode);
 
-        await _context.SaveChangesAsync();
-        return true;
-    }
+        if (orderDto.DeliveryDate.HasValue)
+            order.DeliveryDate = orderDto.DeliveryDate;
 
-    public async Task<bool> UpdateOrderStatusAsync(int orderId, int statusId)
-    {
-        var order = await _context.TOrders.FindAsync(orderId);
-        if (order == null) return false;
-
-        if (!await _context.TOrderStatus.AnyAsync(s => s.Id == statusId))
-            throw new ArgumentException("Invalid order status ID");
-
-        order.OrderStatusId = statusId;
         await _context.SaveChangesAsync();
         return true;
     }
@@ -551,71 +541,19 @@ public class OrderService : IOrderService
         };
     }
 
-    public Task<IEnumerable<object>> GetOrderItemsAsync(int? currentUserId, bool isAdmin, int? orderId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<object?> GetOrderItemByIdAsync(int orderItemId, int? currentUserId, bool isAdmin)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<TOrderItems> CreateOrderItemAsync(CreateOrderItemDto itemDto)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<bool> UpdateOrderItemAsync(int orderItemId, UpdateOrderItemDto itemDto)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<bool> DeleteOrderItemAsync(int orderItemId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task<IEnumerable<object>> GetOrderStatusesAsync()
-    {
-        return await _context.TOrderStatus.AsNoTracking().ToListAsync();
-    }
-
-    public async Task<object?> GetOrderStatusByIdAsync(int id)
-    {
-        return await _context.TOrderStatus.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
-    }
-
-    public async Task<TOrderStatus> CreateOrderStatusAsync(CreateOrderStatusDto statusDto)
-    {
-        var status = new TOrderStatus
-        {
-            Name = _htmlSanitizer.Sanitize(statusDto.Name ?? string.Empty),
-            Icon = _htmlSanitizer.Sanitize(statusDto.Icon ?? string.Empty)
-        };
-        _context.TOrderStatus.Add(status);
-        await _context.SaveChangesAsync();
-        return status;
-    }
-
     public async Task<bool> UpdateOrderStatusAsync(int id, UpdateOrderStatusDto statusDto)
     {
-        var status = await _context.TOrderStatus.FindAsync(id);
-        if (status == null) return false;
+        var order = await _context.TOrders.FindAsync(id);
+        if (order == null) return false;
 
-        status.Name = _htmlSanitizer.Sanitize(statusDto.Name ?? status.Name);
-        status.Icon = _htmlSanitizer.Sanitize(statusDto.Icon ?? status.Icon);
+        if (!await _context.TOrderStatus.AnyAsync(s => s.Id == statusDto.OrderStatusId))
+        {
+            throw new ArgumentException("Invalid Order Status ID");
+        }
+
+        order.OrderStatusId = statusDto.OrderStatusId;
         await _context.SaveChangesAsync();
-        return true;
-    }
-
-    public async Task<bool> DeleteOrderStatusAsync(int id)
-    {
-        var status = await _context.TOrderStatus.FindAsync(id);
-        if (status == null) return false;
-
-        _context.TOrderStatus.Remove(status);
-        await _context.SaveChangesAsync();
+        await _auditService.LogOrderEventAsync(id, "UpdateStatus", order.UserId, $"Order status changed to {statusDto.OrderStatusId}");
         return true;
     }
 }
