@@ -81,7 +81,8 @@ public class OrdersController : BaseApiController
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
         {
-            return Conflict("Duplicate request. Order already exists.");
+            _logger.LogWarning("Idempotency key violation for key: {IdempotencyKey}", idempotencyKey);
+            return Conflict("Duplicate request. Order already exists with this idempotency key.");
         }
         catch (ArgumentException ex)
         {
@@ -153,7 +154,7 @@ public class OrdersController : BaseApiController
         }
     }
 
-    [HttpPut("{id}/status")]
+    [HttpPatch("{id}/status")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusDto statusDto)
     {
@@ -162,16 +163,12 @@ public class OrdersController : BaseApiController
 
         try
         {
-            var success = await _orderService.UpdateOrderStatusAsync(id, statusDto.OrderStatusId);
-            return success ? NoContent() : NotFound("Order not found");
+            var success = await _orderService.UpdateOrderStatusAsync(id, statusDto);
+            return success ? NoContent() : NotFound("Order not found or status ID is invalid.");
         }
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Conflict("Concurrency error occurred.");
         }
         catch (Exception ex)
         {

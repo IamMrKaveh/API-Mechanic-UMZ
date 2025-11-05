@@ -15,6 +15,8 @@ global using Microsoft.AspNetCore.DataProtection;
 global using Microsoft.AspNetCore.Identity;
 global using MainApi.Services.Audit;
 global using DataAccessLayer.Models.Security;
+global using MainApi.Services.Order.Items;
+global using MainApi.Services.Order.Status;
 global using System.Text.Json;
 global using MainApi.Extensions;
 global using Microsoft.AspNetCore.Mvc.Filters;

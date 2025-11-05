@@ -8,30 +8,40 @@ namespace MainApi.Controllers.Order;
 [Authorize]
 public class OrderItemsController : BaseApiController
 {
-    private readonly IOrderService _orderService;
+    private readonly IOrderItemService _orderItemService;
     private readonly ILogger<OrderItemsController> _logger;
 
-    public OrderItemsController(IOrderService orderService, ILogger<OrderItemsController> logger)
+    public OrderItemsController(IOrderItemService orderItemService, ILogger<OrderItemsController> logger)
     {
-        _orderService = orderService;
+        _orderItemService = orderItemService;
         _logger = logger;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<object>>> GetOrderItems([FromQuery] int? orderId = null)
+    public async Task<ActionResult<object>> GetOrderItems(
+        [FromQuery] int? orderId = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
         try
         {
-            var items = await _orderService.GetOrderItemsAsync(GetCurrentUserId(), User.IsInRole("Admin"), orderId);
-            return Ok(items);
+            var (items, total) = await _orderItemService.GetOrderItemsAsync(GetCurrentUserId(), User.IsInRole("Admin"), orderId, page, pageSize);
+            return Ok(new
+            {
+                Items = items,
+                TotalItems = total,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
+            });
         }
-        catch (UnauthorizedAccessException)
+        catch (Exception ex)
         {
-            return Forbid();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
+            _logger.LogError(ex, "Error retrieving order items for order {OrderId}", orderId);
+            return StatusCode(500, "An error occurred while retrieving order items.");
         }
     }
 
@@ -40,8 +50,8 @@ public class OrderItemsController : BaseApiController
     {
         if (id <= 0) return BadRequest("Invalid order item ID");
 
-        var item = await _orderService.GetOrderItemByIdAsync(id, GetCurrentUserId(), User.IsInRole("Admin"));
-        if (item == null) return NotFound("Order item not found");
+        var item = await _orderItemService.GetOrderItemByIdAsync(id, GetCurrentUserId(), User.IsInRole("Admin"));
+        if (item == null) return NotFound("Order item not found or you do not have permission to view it.");
 
         return Ok(item);
     }
@@ -54,25 +64,22 @@ public class OrderItemsController : BaseApiController
 
         try
         {
-            var orderItem = await _orderService.CreateOrderItemAsync(itemDto);
-            return CreatedAtAction("GetOrderItem", new { id = orderItem.Id }, orderItem);
+            var orderItem = await _orderItemService.CreateOrderItemAsync(itemDto);
+            var result = await _orderItemService.GetOrderItemByIdAsync(orderItem.Id, GetCurrentUserId(), true);
+            return CreatedAtAction(nameof(GetOrderItem), new { id = orderItem.Id }, result);
         }
         catch (KeyNotFoundException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Conflict("The item's stock has changed. Please try again.");
+            return Conflict(new { Message = ex.Message });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating order item.");
-            return StatusCode(500, "Error creating order item");
+            return StatusCode(500, "An unexpected error occurred while creating the order item.");
         }
     }
 
@@ -85,20 +92,20 @@ public class OrderItemsController : BaseApiController
 
         try
         {
-            var success = await _orderService.UpdateOrderItemAsync(id, itemDto);
-            return success ? NoContent() : NotFound("Order item not found");
+            var success = await _orderItemService.UpdateOrderItemAsync(id, itemDto);
+            return success ? NoContent() : NotFound("Order item not found.");
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Message = ex.Message });
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return Conflict(new { Message = ex.Message });
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -107,7 +114,7 @@ public class OrderItemsController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating order item {Id}", id);
-            return StatusCode(500, "Error updating order item");
+            return StatusCode(500, "An error occurred while updating the order item.");
         }
     }
 
@@ -119,17 +126,17 @@ public class OrderItemsController : BaseApiController
 
         try
         {
-            var success = await _orderService.DeleteOrderItemAsync(id);
-            return success ? NoContent() : NotFound("Order item not found");
+            var success = await _orderItemService.DeleteOrderItemAsync(id);
+            return success ? NoContent() : NotFound("Order item not found.");
         }
-        catch (DbUpdateConcurrencyException)
+        catch (KeyNotFoundException ex)
         {
-            return Conflict("The item's stock or order has changed. Please try again.");
+            return NotFound(new { Message = ex.Message });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting order item {Id}", id);
-            return StatusCode(500, "Error deleting order item");
+            return StatusCode(500, "An error occurred while deleting the order item.");
         }
     }
 }

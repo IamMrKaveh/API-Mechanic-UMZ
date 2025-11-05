@@ -48,11 +48,7 @@ public class UpdateOrderStatusDto
     public int OrderStatusId { get; set; }
 
     public string? Name { get; set; }
-
     public string? Icon { get; set; }
-
-    [Required]
-    public string RowVersion { get; set; }
 }
 
 public class CreateOrderItemDto

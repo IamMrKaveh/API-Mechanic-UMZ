@@ -102,7 +102,8 @@ public class CartService : ICartService
         var product = await _context.TProducts.FirstOrDefaultAsync(p => p.Id == dto.ProductId);
         if (product == null)
             return (CartOperationResult.NotFound, null);
-        if (product.Colors.Any() && string.IsNullOrWhiteSpace(dto.Color) || product.Sizes.Any() && string.IsNullOrWhiteSpace(dto.Size))
+        if ((product.Colors != null && product.Colors.Any() && string.IsNullOrWhiteSpace(dto.Color)) ||
+            (product.Sizes != null && product.Sizes.Any() && string.IsNullOrWhiteSpace(dto.Size)))
         {
             return (CartOperationResult.OptionsRequired, null);
         }
@@ -113,9 +114,8 @@ public class CartService : ICartService
             .FirstOrDefaultAsync(ci =>
                 ci.CartId == cart.Id &&
                 ci.ProductId == dto.ProductId &&
-                (ci.Color ?? "") == (dto.Color ?? "") &&
-                (ci.Size ?? "") == (dto.Size ??
-                ""));
+                ci.Color == dto.Color &&
+                ci.Size == dto.Size);
 
         string action;
         string details;
