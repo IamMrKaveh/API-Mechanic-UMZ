@@ -135,11 +135,24 @@ public class UserService : IUserService
         if (existingUser == null || existingUser.IsDeleted)
             return (false, "NotFound");
 
-        existingUser.FirstName = updateRequest.FirstName;
-        existingUser.LastName = updateRequest.LastName;
+        if (!string.IsNullOrWhiteSpace(updateRequest.FirstName))
+            existingUser.FirstName = updateRequest.FirstName.Trim();
 
-        await _context.SaveChangesAsync();
-        return (true, null);
+        if (!string.IsNullOrWhiteSpace(updateRequest.LastName))
+            existingUser.LastName = updateRequest.LastName.Trim();
+
+        _context.Entry(existingUser).State = EntityState.Modified;
+
+        try
+        {
+            await _context.SaveChangesAsync();
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating profile for user {UserId}", userId);
+            return (false, "Error updating profile");
+        }
     }
 
     public async Task<(bool Success, string? Error)> ChangeUserStatusAsync(int id, bool isActive)
