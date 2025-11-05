@@ -17,18 +17,30 @@ public class CartService : ICartService
 {
     private readonly MechanicContext _context;
     private readonly ILogger<CartService> _logger;
-    private readonly string _baseUrl;
     private readonly ICacheService _cacheService;
     private readonly IAuditService _auditService;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    public CartService(MechanicContext context, ILogger<CartService> logger, IConfiguration configuration, ICacheService cacheService, IAuditService auditService, IHttpContextAccessor httpContextAccessor)
+    private readonly string _baseUrl;
+
+    public CartService(MechanicContext context, ILogger<CartService> logger, ICacheService cacheService, IAuditService auditService, IHttpContextAccessor httpContextAccessor, IConfiguration configuration)
     {
         _context = context;
         _logger = logger;
-        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
         _cacheService = cacheService;
         _auditService = auditService;
         _httpContextAccessor = httpContextAccessor;
+        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
+    }
+
+    private string? ToAbsoluteUrl(string? relativeUrl)
+    {
+        if (string.IsNullOrEmpty(relativeUrl))
+            return null;
+        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
+            return relativeUrl;
+
+        var cleanRelative = relativeUrl.TrimStart('~', '/', 'c');
+        return $"{_baseUrl}/{cleanRelative}";
     }
 
     public async Task<CartDto?> GetCartByUserIdAsync(int userId)
@@ -259,17 +271,6 @@ public class CartService : ICartService
         await _context.TCarts.AddAsync(newCart);
         await _context.SaveChangesAsync();
         return newCart;
-    }
-
-    private string? ToAbsoluteUrl(string? relativeUrl)
-    {
-        if (string.IsNullOrEmpty(relativeUrl))
-            return null;
-        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
-            return relativeUrl;
-
-        var cleanRelative = relativeUrl.TrimStart('~', '/');
-        return $"{_baseUrl}/{cleanRelative}";
     }
 
     private async Task InvalidateCartCache(int userId)
