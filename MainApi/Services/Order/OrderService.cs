@@ -35,7 +35,7 @@ public class OrderService : IOrderService
         _cacheService = cacheService;
     }
 
-    private string? ToAbsoluteUrl(string? relativeUrl)
+    private static string? ConvertToAbsoluteUrl(string? relativeUrl, string baseUrl)
     {
         if (string.IsNullOrEmpty(relativeUrl))
             return null;
@@ -43,7 +43,7 @@ public class OrderService : IOrderService
             return relativeUrl;
 
         var cleanRelative = relativeUrl.TrimStart('~', '/');
-        return $"{_baseUrl}/{cleanRelative}";
+        return $"{baseUrl}/{cleanRelative}";
     }
 
     public async Task<(IEnumerable<object> Orders, int TotalItems)> GetOrdersAsync(int? currentUserId, bool isAdmin, int? userId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
@@ -118,6 +118,7 @@ public class OrderService : IOrderService
             query = query.Where(o => o.UserId == currentUserId);
         }
 
+        var baseUrl = _baseUrl;
         var order = await query.Select(o => new
         {
             o.Id,
@@ -129,6 +130,7 @@ public class OrderService : IOrderService
             TotalProfit = isAdmin ? (int?)o.TotalProfit : null,
             o.CreatedAt,
             o.OrderStatusId,
+            o.RowVersion,
             User = o.User != null ? new
             {
                 o.User.Id,
@@ -146,23 +148,16 @@ public class OrderService : IOrderService
             OrderItems = o.OrderItems.Select(oi => new
             {
                 oi.Id,
-                oi.ProductId,
-                PurchasePrice = isAdmin ? (int?)oi.PurchasePrice : null,
+                PurchasePrice = isAdmin ? (decimal?)oi.PurchasePrice : null,
                 oi.SellingPrice,
                 oi.Quantity,
                 Amount = oi.Amount,
-                Profit = isAdmin ? (int?)oi.Profit : null,
-                Product = oi.Product != null ? new
-                {
-                    oi.Product.Id,
-                    oi.Product.Name,
-                    Icon = ToAbsoluteUrl(oi.Product.Icon),
-                    Category = oi.Product.Category != null ? new
-                    {
-                        oi.Product.Category.Id,
-                        oi.Product.Category.Name
-                    } : null
-                } : null
+                Profit = isAdmin ? (decimal?)oi.Profit : null,
+                ProductIcon = oi.Product != null ? oi.Product.Icon : null,
+                ProductId = oi.Product != null ? oi.Product.Id : 0,
+                ProductName = oi.Product != null ? oi.Product.Name : null,
+                CategoryId = oi.Product != null && oi.Product.Category != null ? oi.Product.Category.Id : 0,
+                CategoryName = oi.Product != null && oi.Product.Category != null ? oi.Product.Category.Name : null
             })
         })
         .FirstOrDefaultAsync();
@@ -172,12 +167,49 @@ public class OrderService : IOrderService
             return null;
         }
 
-        // Authorization check after fetching
         if (!isAdmin && order.UserId != currentUserId)
         {
             return null;
         }
-        return order;
+
+        var result = new
+        {
+            order.Id,
+            order.UserId,
+            order.Name,
+            order.Address,
+            order.PostalCode,
+            order.TotalAmount,
+            order.TotalProfit,
+            order.CreatedAt,
+            order.OrderStatusId,
+            order.RowVersion,
+            order.User,
+            order.OrderStatus,
+            OrderItems = order.OrderItems.Select(oi => new
+            {
+                oi.Id,
+                oi.ProductId,
+                oi.PurchasePrice,
+                oi.SellingPrice,
+                oi.Quantity,
+                oi.Amount,
+                oi.Profit,
+                Product = oi.ProductId > 0 ? new
+                {
+                    Id = oi.ProductId,
+                    Name = oi.ProductName,
+                    Icon = ConvertToAbsoluteUrl(oi.ProductIcon, baseUrl),
+                    Category = oi.CategoryId > 0 ? new
+                    {
+                        Id = oi.CategoryId,
+                        Name = oi.CategoryName
+                    } : null
+                } : null
+            })
+        };
+
+        return result;
     }
 
     public async Task<TOrders> CreateOrderAsync(CreateOrderDto orderDto, string idempotencyKey)
@@ -225,9 +257,18 @@ public class OrderService : IOrderService
                 _context.TOrders.Add(order);
                 await _context.SaveChangesAsync();
 
+                decimal totalAmount = 0;
+                decimal totalProfit = 0;
+
                 var orderItems = orderDto.OrderItems.Select(itemDto =>
                 {
                     var product = products[itemDto.ProductId];
+                    var amount = itemDto.SellingPrice * itemDto.Quantity;
+                    var profit = (itemDto.SellingPrice - product.PurchasePrice) * itemDto.Quantity;
+
+                    totalAmount += amount;
+                    totalProfit += profit;
+
                     return new TOrderItems
                     {
                         UserOrderId = order.Id,
@@ -235,8 +276,13 @@ public class OrderService : IOrderService
                         PurchasePrice = product.PurchasePrice,
                         SellingPrice = itemDto.SellingPrice,
                         Quantity = itemDto.Quantity,
+                        Amount = amount,
+                        Profit = profit
                     };
                 }).ToList();
+
+                order.TotalAmount = (int)totalAmount;
+                order.TotalProfit = (int)totalProfit;
 
                 _context.TOrderItems.AddRange(orderItems);
                 await _context.SaveChangesAsync();
@@ -248,6 +294,7 @@ public class OrderService : IOrderService
                 throw;
             }
         });
+
         return order!;
     }
 
@@ -267,7 +314,6 @@ public class OrderService : IOrderService
             return existingOrderByIdempotency;
         }
 
-
         TOrders? order = null;
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
@@ -283,7 +329,7 @@ public class OrderService : IOrderService
                 if (cart == null || !cart.CartItems.Any())
                     throw new InvalidOperationException("Cart is empty");
 
-                const int processingStatusId = 1; // "در انتظار پرداخت"
+                const int processingStatusId = 1;
 
                 order = new TOrders
                 {
@@ -313,14 +359,17 @@ public class OrderService : IOrderService
                         product.Count -= item.Quantity;
                     }
 
+                    var amount = product.SellingPrice * item.Quantity;
+                    var profit = (product.SellingPrice - product.PurchasePrice) * item.Quantity;
+
                     order.OrderItems.Add(new TOrderItems
                     {
                         ProductId = item.ProductId,
                         PurchasePrice = product.PurchasePrice,
                         SellingPrice = product.SellingPrice,
                         Quantity = item.Quantity,
-                        Amount = product.SellingPrice * item.Quantity,
-                        Profit = (product.SellingPrice - product.PurchasePrice) * item.Quantity
+                        Amount = amount,
+                        Profit = profit
                     });
                 }
 
