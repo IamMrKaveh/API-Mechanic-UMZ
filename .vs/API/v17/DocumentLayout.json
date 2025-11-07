@@ -86,8 +86,7 @@
               "RelativeToolTip": "MainApi\\appsettings.json",
               "ViewState": "AgIAACEAAAAAAAAAAAAAAC8AAAA7AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-11-05T12:02:34.008Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-05T12:02:34.008Z"
             },
             {
               "$type": "Document",
@@ -111,8 +110,7 @@
               "RelativeToolTip": "MainApi\\Services\\Category\\CategoryService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T11:02:06.853Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-05T11:02:06.853Z"
             },
             {
               "$type": "Document",
@@ -124,8 +122,7 @@
               "RelativeToolTip": "MainApi\\Services\\Cart\\CartService.cs",
               "ViewState": "AgIAABYAAAAAAAAAAAA4wCsAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T11:20:15.699Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-05T11:20:15.699Z"
             },
             {
               "$type": "Document",
@@ -137,8 +134,7 @@
               "RelativeToolTip": "MainApi\\Services\\Order\\OrderService.cs",
               "ViewState": "AgIAABEAAAAAAAAAAAAkwC4AAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T11:20:34.592Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-05T11:20:34.592Z"
             },
             {
               "$type": "Document",
@@ -150,8 +146,7 @@
               "RelativeToolTip": "MainApi\\Controllers\\Base\\BaseApiController.cs",
               "ViewState": "AgIAAAQAAAAAAAAAAAA/wAoAAABnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T11:19:58.771Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-05T11:19:58.771Z"
             },
             {
               "$type": "Document",
@@ -176,8 +171,7 @@
               "RelativeToolTip": "MainApi\\Services\\Order\\Items\\OrderItemService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T12:01:10.986Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-05T12:01:10.986Z"
             },
             {
               "$type": "Document",
@@ -189,8 +183,7 @@
               "RelativeToolTip": "MainApi\\Controllers\\Product\\ProductsController.cs",
               "ViewState": "AgIAABAAAAAAAAAAAAA4wBUAAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T11:03:42.029Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-05T11:03:42.029Z"
             },
             {
               "$type": "Document",
@@ -202,8 +195,7 @@
               "RelativeToolTip": "MainApi\\Services\\Product\\ProductService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T11:20:43.706Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-05T11:20:43.706Z"
             },
             {
               "$type": "Document",
