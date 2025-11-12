@@ -1,4 +1,5 @@
-﻿using MainApi.Services.Cache;
+﻿using MainApi.Services.Inventory;
+using MainApi.Services.Media;
 
 namespace MainApi.Services.Order;
 
@@ -12,7 +13,10 @@ public class OrderService : IOrderService
     private readonly IConfiguration _configuration;
     private readonly IAuditService _auditService;
     private readonly ICacheService _cacheService;
-    private readonly string _baseUrl;
+    private readonly IDiscountService _discountService;
+    private readonly IInventoryService _inventoryService;
+    private readonly IMediaService _mediaService;
+    private readonly INotificationService _notificationService;
 
     public OrderService(
         MechanicContext context,
@@ -22,7 +26,11 @@ public class OrderService : IOrderService
         IZarinpalService zarinpalService,
         IConfiguration configuration,
         IAuditService auditService,
-        ICacheService cacheService)
+        ICacheService cacheService,
+        IDiscountService discountService,
+        IInventoryService inventoryService,
+        IMediaService mediaService,
+        INotificationService notificationService)
     {
         _context = context;
         _logger = logger;
@@ -32,18 +40,10 @@ public class OrderService : IOrderService
         _configuration = configuration;
         _auditService = auditService;
         _cacheService = cacheService;
-        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
-    }
-
-    private string? ToAbsoluteUrl(string? relativeUrl)
-    {
-        if (string.IsNullOrEmpty(relativeUrl))
-            return null;
-        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
-            return relativeUrl;
-
-        var cleanRelative = relativeUrl.TrimStart('~', '/', 'c');
-        return $"{_baseUrl}/{cleanRelative}";
+        _discountService = discountService;
+        _inventoryService = inventoryService;
+        _mediaService = mediaService;
+        _notificationService = notificationService;
     }
 
     public async Task<(IEnumerable<object> Orders, int TotalItems)> GetOrdersAsync(int? currentUserId, bool isAdmin, int? userId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
@@ -52,6 +52,7 @@ public class OrderService : IOrderService
             .Include(o => o.User)
             .Include(o => o.OrderStatus)
             .Include(o => o.OrderItems)
+            .Include(o => o.ShippingMethod)
             .AsQueryable();
 
         if (userId.HasValue)
@@ -77,24 +78,30 @@ public class OrderService : IOrderService
             .Select(o => new
             {
                 o.Id,
-                o.Name,
-                o.Address,
-                o.PostalCode,
+                Address = JsonSerializer.Deserialize<UserAddressDto>(o.AddressSnapshot, (JsonSerializerOptions?)null),
                 o.TotalAmount,
-                TotalProfit = isAdmin ? (int?)o.TotalProfit : null,
+                o.ShippingCost,
+                o.DiscountAmount,
+                o.FinalAmount,
+                TotalProfit = isAdmin ? (decimal?)o.TotalProfit : null,
                 o.CreatedAt,
                 User = new
                 {
-                    o.User!.Id,
+                    o.User.Id,
                     o.User.PhoneNumber,
                     o.User.FirstName,
                     o.User.LastName
                 },
                 OrderStatus = new
                 {
-                    o.OrderStatus!.Id,
-                    o.OrderStatus.Name,
-                    o.OrderStatus.Icon
+                    o.OrderStatus.Id,
+                    o.OrderStatus.Name
+                },
+                ShippingMethod = new
+                {
+                    o.ShippingMethod.Id,
+                    o.ShippingMethod.Name,
+                    o.ShippingMethod.Cost
                 },
                 OrderItemsCount = o.OrderItems.Count
             })
@@ -108,9 +115,16 @@ public class OrderService : IOrderService
         var query = _context.TOrders
             .Include(o => o.User)
             .Include(o => o.OrderStatus)
+            .Include(o => o.ShippingMethod)
             .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
-                    .ThenInclude(p => p!.Category)
+                .ThenInclude(oi => oi.Variant)
+                    .ThenInclude(v => v.Product)
+                        .ThenInclude(p => p.CategoryGroup.Category)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Variant)
+                    .ThenInclude(v => v.VariantAttributes)
+                        .ThenInclude(va => va.AttributeValue)
+                            .ThenInclude(av => av.AttributeType)
             .Where(o => o.Id == orderId);
 
         if (!isAdmin)
@@ -118,15 +132,16 @@ public class OrderService : IOrderService
             query = query.Where(o => o.UserId == currentUserId);
         }
 
-        var order = await query.Select(o => new
+        var orderData = await query.Select(o => new
         {
             o.Id,
             o.UserId,
-            o.Name,
-            o.Address,
-            o.PostalCode,
+            Address = JsonSerializer.Deserialize<UserAddressDto>(o.AddressSnapshot, (JsonSerializerOptions?)null),
             o.TotalAmount,
-            TotalProfit = isAdmin ? (int?)o.TotalProfit : null,
+            o.ShippingCost,
+            o.DiscountAmount,
+            o.FinalAmount,
+            TotalProfit = isAdmin ? (decimal?)o.TotalProfit : null,
             o.CreatedAt,
             o.OrderStatusId,
             o.RowVersion,
@@ -141,71 +156,107 @@ public class OrderService : IOrderService
             OrderStatus = o.OrderStatus != null ? new
             {
                 o.OrderStatus.Id,
-                o.OrderStatus.Name,
-                o.OrderStatus.Icon
+                o.OrderStatus.Name
+            } : null,
+            ShippingMethod = o.ShippingMethod != null ? new
+            {
+                o.ShippingMethod.Id,
+                o.ShippingMethod.Name,
+                o.ShippingMethod.Cost
             } : null,
             OrderItems = o.OrderItems.Select(oi => new
             {
                 oi.Id,
-                PurchasePrice = isAdmin ? (decimal?)oi.PurchasePrice : null,
-                oi.SellingPrice,
+                oi.VariantId,
                 oi.Quantity,
+                oi.SellingPrice,
+                PurchasePrice = isAdmin ? (decimal?)oi.PurchasePrice : null,
                 oi.Amount,
-                Profit = isAdmin ? (decimal?)oi.Profit : null,
-                ProductIcon = oi.Product != null ? oi.Product.Icon : null,
-                ProductId = oi.Product != null ? oi.Product.Id : 0,
-                ProductName = oi.Product != null ? oi.Product.Name : null,
-                CategoryId = oi.Product != null && oi.Product.Category != null ? oi.Product.Category.Id : 0,
-                CategoryName = oi.Product != null && oi.Product.Category != null ? oi.Product.Category.Name : null
-            })
+                oi.Profit,
+                ProductId = oi.Variant.Product.Id,
+                ProductName = oi.Variant.Product.Name,
+                CategoryId = oi.Variant.Product.CategoryGroup.Category.Id,
+                CategoryName = oi.Variant.Product.CategoryGroup.Category.Name,
+                Attributes = oi.Variant.VariantAttributes
+                    .Select(va => new
+                    {
+                        va.AttributeValueId,
+                        TypeName = va.AttributeValue.AttributeType.Name,
+                        TypeDisplay = va.AttributeValue.AttributeType.DisplayName,
+                        va.AttributeValue.Value,
+                        va.AttributeValue.DisplayValue,
+                        va.AttributeValue.HexCode
+                    }).ToList()
+            }).ToList()
         })
         .FirstOrDefaultAsync();
 
-        if (order == null)
+        if (orderData == null)
         {
             return null;
         }
 
-        if (!isAdmin && order.UserId != currentUserId)
+        if (!isAdmin && orderData.UserId != currentUserId)
         {
             return null;
         }
 
-        var result = new
+        var enrichedOrderItems = new List<object>();
+        foreach (var oi in orderData.OrderItems)
         {
-            order.Id,
-            order.UserId,
-            order.Name,
-            order.Address,
-            order.PostalCode,
-            order.TotalAmount,
-            order.TotalProfit,
-            order.CreatedAt,
-            order.OrderStatusId,
-            order.RowVersion,
-            order.User,
-            order.OrderStatus,
-            OrderItems = order.OrderItems.Select(oi => new
+            var icon = await _mediaService.GetPrimaryImageUrlAsync("Product", oi.ProductId);
+
+            enrichedOrderItems.Add(new
             {
                 oi.Id,
-                oi.ProductId,
+                oi.VariantId,
                 oi.PurchasePrice,
                 oi.SellingPrice,
                 oi.Quantity,
                 oi.Amount,
                 oi.Profit,
-                Product = oi.ProductId > 0 ? new
+                Product = new
                 {
                     Id = oi.ProductId,
                     Name = oi.ProductName,
-                    Icon = ToAbsoluteUrl(oi.ProductIcon),
-                    Category = oi.CategoryId > 0 ? new
+                    Icon = icon,
+                    Category = new
                     {
                         Id = oi.CategoryId,
                         Name = oi.CategoryName
-                    } : null
-                } : null
-            })
+                    },
+                    Attributes = oi.Attributes.ToDictionary(
+                        a => a.TypeName.ToLower(),
+                        a => new AttributeValueDto
+                        {
+                            Id = a.AttributeValueId,
+                            Type = a.TypeName,
+                            TypeDisplay = a.TypeDisplay,
+                            Value = a.Value,
+                            DisplayValue = a.DisplayValue,
+                            HexCode = a.HexCode
+                        })
+                }
+            });
+        }
+
+        var result = new
+        {
+            orderData.Id,
+            orderData.UserId,
+            orderData.Address,
+            orderData.TotalAmount,
+            orderData.ShippingCost,
+            orderData.DiscountAmount,
+            orderData.FinalAmount,
+            orderData.TotalProfit,
+            orderData.CreatedAt,
+            orderData.OrderStatusId,
+            orderData.RowVersion,
+            orderData.User,
+            orderData.OrderStatus,
+            orderData.ShippingMethod,
+            OrderItems = enrichedOrderItems
         };
 
         return result;
@@ -221,70 +272,90 @@ public class OrderService : IOrderService
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var productIds = orderDto.OrderItems.Select(i => i.ProductId).ToList();
-                var products = await _context.TProducts
-                    .Where(p => productIds.Contains(p.Id))
-                    .ToDictionaryAsync(p => p.Id, p => p);
+                var userAddress = await _context.TUserAddress.FindAsync(orderDto.UserAddressId);
+                if (userAddress == null || userAddress.UserId != orderDto.UserId)
+                    throw new ArgumentException("Invalid user address");
+
+                var variantIds = orderDto.OrderItems.Select(i => i.VariantId).ToList();
+                var variants = await _context.TProductVariant
+                    .Where(v => variantIds.Contains(v.Id))
+                    .ToDictionaryAsync(v => v.Id, v => v);
+
+                decimal totalAmount = 0;
+                var orderItems = new List<TOrderItems>();
 
                 foreach (var itemDto in orderDto.OrderItems)
                 {
-                    if (!products.TryGetValue(itemDto.ProductId, out var product))
-                        throw new ArgumentException($"Product {itemDto.ProductId} not found");
+                    if (!variants.TryGetValue(itemDto.VariantId, out var variant))
+                        throw new ArgumentException($"Product variant {itemDto.VariantId} not found");
 
-                    if (itemDto.SellingPrice < product.PurchasePrice)
-                        throw new ArgumentException($"Selling price for product {product.Name} cannot be less than its purchase price.");
+                    await _inventoryService.LogTransactionAsync(variant.Id, "Sale", -itemDto.Quantity, null, orderDto.UserId, $"Order creation", null, variant.RowVersion);
 
-                    if (!product.IsUnlimited)
+                    totalAmount += itemDto.SellingPrice * itemDto.Quantity;
+
+                    orderItems.Add(new TOrderItems
                     {
-                        if (product.Count < itemDto.Quantity)
-                            throw new InvalidOperationException($"Product {itemDto.ProductId} insufficient stock. Available: {product.Count}, Requested: {itemDto.Quantity}");
-                        product.Count -= itemDto.Quantity;
+                        VariantId = variant.Id,
+                        PurchasePrice = variant.PurchasePrice,
+                        SellingPrice = itemDto.SellingPrice,
+                        Quantity = itemDto.Quantity
+                    });
+                }
+
+                var shippingMethod = await _context.TShippingMethod.FindAsync(orderDto.ShippingMethodId);
+                if (shippingMethod == null) throw new ArgumentException("Invalid shipping method");
+
+                decimal discountAmount = 0;
+                int? discountId = null;
+                if (!string.IsNullOrEmpty(orderDto.DiscountCode))
+                {
+                    var (discount, error) = await _discountService.ValidateAndGetDiscountAsync(orderDto.DiscountCode, orderDto.UserId, totalAmount);
+                    if (error != null) throw new ArgumentException(error);
+
+                    if (discount != null)
+                    {
+                        discountAmount = (totalAmount * discount.Percentage) / 100;
+                        if (discount.MaxDiscountAmount.HasValue && discountAmount > discount.MaxDiscountAmount.Value)
+                        {
+                            discountAmount = discount.MaxDiscountAmount.Value;
+                        }
+                        discountId = discount.Id;
+                        discount.UsedCount++;
                     }
                 }
 
                 order = new TOrders
                 {
                     UserId = orderDto.UserId,
-                    Name = _htmlSanitizer.Sanitize(orderDto.Name ?? string.Empty),
-                    Address = _htmlSanitizer.Sanitize(orderDto.Address ?? string.Empty),
-                    PostalCode = _htmlSanitizer.Sanitize(orderDto.PostalCode ?? string.Empty),
+                    AddressSnapshot = JsonSerializer.Serialize(userAddress),
+                    UserAddressId = userAddress.Id,
                     CreatedAt = DateTime.UtcNow,
                     OrderStatusId = orderDto.OrderStatusId,
-                    IdempotencyKey = idempotencyKey
+                    IdempotencyKey = idempotencyKey,
+                    ShippingMethodId = shippingMethod.Id,
+                    ShippingCost = shippingMethod.Cost,
+                    DiscountAmount = discountAmount,
+                    DiscountCodeId = discountId,
+                    TotalAmount = totalAmount,
+                    OrderItems = orderItems
                 };
 
                 _context.TOrders.Add(order);
                 await _context.SaveChangesAsync();
 
-                decimal totalAmount = 0;
-                decimal totalProfit = 0;
-
-                var orderItems = orderDto.OrderItems.Select(itemDto =>
+                if (discountId.HasValue)
                 {
-                    var product = products[itemDto.ProductId];
-                    var amount = itemDto.SellingPrice * itemDto.Quantity;
-                    var profit = (itemDto.SellingPrice - product.PurchasePrice) * itemDto.Quantity;
-
-                    totalAmount += amount;
-                    totalProfit += profit;
-
-                    return new TOrderItems
+                    _context.TDiscountUsage.Add(new TDiscountUsage
                     {
-                        UserOrderId = order.Id,
-                        ProductId = itemDto.ProductId,
-                        PurchasePrice = product.PurchasePrice,
-                        SellingPrice = itemDto.SellingPrice,
-                        Quantity = itemDto.Quantity,
-                        Amount = amount,
-                        Profit = profit
-                    };
-                }).ToList();
+                        UserId = orderDto.UserId,
+                        DiscountCodeId = discountId.Value,
+                        OrderId = order.Id,
+                        DiscountAmount = discountAmount,
+                        UsedAt = DateTime.UtcNow
+                    });
+                    await _context.SaveChangesAsync();
+                }
 
-                order.TotalAmount = (int)totalAmount;
-                order.TotalProfit = (int)totalProfit;
-
-                _context.TOrderItems.AddRange(orderItems);
-                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
             catch
@@ -317,72 +388,112 @@ public class OrderService : IOrderService
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var cart = await _context.TCarts
                     .Include(c => c.CartItems)
-                    .ThenInclude(ci => ci.Product)
+                        .ThenInclude(ci => ci.Variant)
                     .FirstOrDefaultAsync(c => c.UserId == userId);
 
                 if (cart == null || !cart.CartItems.Any())
                     throw new InvalidOperationException("Cart is empty");
 
-                const int processingStatusId = 1;
+                var userAddress = await _context.TUserAddress.FindAsync(orderDto.UserAddressId);
+                if (userAddress == null || userAddress.UserId != userId)
+                    throw new ArgumentException("Invalid user address");
+
+                var shippingMethod = await _context.TShippingMethod.FindAsync(orderDto.ShippingMethodId);
+                if (shippingMethod == null) throw new ArgumentException("Invalid shipping method");
+
+                const int pendingPaymentStatusId = 1;
+                decimal totalAmount = 0;
+
+                var orderItems = new List<TOrderItems>();
+
+                foreach (var item in cart.CartItems)
+                {
+                    var variant = item.Variant;
+                    if (variant == null)
+                        throw new InvalidOperationException($"Product variant for cart item {item.Id} not found.");
+
+                    await _inventoryService.LogTransactionAsync(variant.Id, "Sale", -item.Quantity, null, userId, $"Checkout for Order", null, variant.RowVersion);
+
+                    var sellingPrice = variant.SellingPrice;
+                    totalAmount += sellingPrice * item.Quantity;
+
+                    orderItems.Add(new TOrderItems
+                    {
+                        VariantId = variant.Id,
+                        PurchasePrice = variant.PurchasePrice,
+                        SellingPrice = sellingPrice,
+                        Quantity = item.Quantity
+                    });
+                }
+
+                decimal discountAmount = 0;
+                int? discountId = null;
+                if (!string.IsNullOrEmpty(orderDto.DiscountCode))
+                {
+                    var (discount, error) = await _discountService.ValidateAndGetDiscountAsync(orderDto.DiscountCode, userId, totalAmount);
+                    if (error != null) throw new ArgumentException(error);
+
+                    if (discount != null)
+                    {
+                        discountAmount = (totalAmount * discount.Percentage) / 100;
+                        if (discount.MaxDiscountAmount.HasValue && discountAmount > discount.MaxDiscountAmount.Value)
+                        {
+                            discountAmount = discount.MaxDiscountAmount.Value;
+                        }
+                        discountId = discount.Id;
+                        discount.UsedCount++;
+                    }
+                }
 
                 order = new TOrders
                 {
                     UserId = userId,
-                    Name = _htmlSanitizer.Sanitize(orderDto.Name ?? string.Empty),
-                    Address = _htmlSanitizer.Sanitize(orderDto.Address ?? string.Empty),
-                    PostalCode = _htmlSanitizer.Sanitize(orderDto.PostalCode ?? string.Empty),
+                    AddressSnapshot = JsonSerializer.Serialize(userAddress),
+                    UserAddressId = userAddress.Id,
                     CreatedAt = DateTime.UtcNow,
-                    OrderStatusId = processingStatusId,
+                    OrderStatusId = pendingPaymentStatusId,
                     IdempotencyKey = idempotencyKey,
+                    ShippingMethodId = shippingMethod.Id,
+                    ShippingCost = shippingMethod.Cost,
+                    DiscountCodeId = discountId,
+                    DiscountAmount = discountAmount,
+                    TotalAmount = totalAmount,
+                    OrderItems = orderItems
                 };
+
                 _context.TOrders.Add(order);
-                await _context.SaveChangesAsync();
-
-                var productIds = cart.CartItems.Select(ci => ci.ProductId).ToList();
-                var products = await _context.TProducts.Where(p => productIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id);
-
-                foreach (var item in cart.CartItems)
-                {
-                    if (!products.TryGetValue(item.ProductId, out var product))
-                        throw new InvalidOperationException($"Product with ID '{item.ProductId}' not found.");
-
-                    if (!product.IsUnlimited)
-                    {
-                        if (product.Count < item.Quantity)
-                            throw new DbUpdateConcurrencyException($"Product '{product.Name}' is out of stock or has insufficient quantity.");
-                        product.Count -= item.Quantity;
-                    }
-
-                    var amount = product.SellingPrice * item.Quantity;
-                    var profit = (product.SellingPrice - product.PurchasePrice) * item.Quantity;
-
-                    order.OrderItems.Add(new TOrderItems
-                    {
-                        ProductId = item.ProductId,
-                        PurchasePrice = product.PurchasePrice,
-                        SellingPrice = product.SellingPrice,
-                        Quantity = item.Quantity,
-                        Amount = amount,
-                        Profit = profit
-                    });
-                }
-
-                order.TotalAmount = (int)order.OrderItems.Sum(oi => oi.Amount);
-                order.TotalProfit = (int)order.OrderItems.Sum(oi => oi.Profit);
-
-                _context.TOrders.Update(order);
                 _context.TCartItems.RemoveRange(cart.CartItems);
 
                 await _context.SaveChangesAsync();
+
+                if (discountId.HasValue)
+                {
+                    _context.TDiscountUsage.Add(new TDiscountUsage
+                    {
+                        UserId = userId,
+                        DiscountCodeId = discountId.Value,
+                        OrderId = order.Id,
+                        DiscountAmount = discountAmount,
+                        UsedAt = DateTime.UtcNow
+                    });
+                    await _context.SaveChangesAsync();
+                }
+
                 await transaction.CommitAsync();
 
                 await _auditService.LogOrderEventAsync(order.Id, "CheckoutFromCart", userId, $"Order created with total amount {order.TotalAmount}");
                 await _cacheService.ClearAsync($"cart:user:{userId}");
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogWarning(ex, "Concurrency conflict during checkout for user {UserId}. Rolling back transaction.", userId);
+                throw;
             }
             catch
             {
@@ -397,21 +508,54 @@ public class OrderService : IOrderService
     public async Task<bool> VerifyPaymentAsync(int orderId, string authority)
     {
         var order = await _context.TOrders.FindAsync(orderId);
-        if (order == null || order.IsPaid == true) return false;
+        if (order == null || order.IsPaid) return false;
 
-        var verificationResponse = await _zarinpalService.VerifyPaymentAsync(order.TotalAmount, authority);
+        var finalAmount = order.FinalAmount;
 
-        if (verificationResponse != null && verificationResponse.Status == 100)
+        var verificationResponse = await _zarinpalService.VerifyPaymentAsync(finalAmount, authority);
+
+        var transaction = new TPaymentTransaction
+        {
+            OrderId = orderId,
+            Amount = finalAmount,
+            Authority = authority,
+            Gateway = "ZarinPal",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        if (verificationResponse != null && (verificationResponse.Code == 100 || verificationResponse.Code == 101))
         {
             order.IsPaid = true;
-            order.PaymentRefId = verificationResponse.RefID;
-            order.PaymentAuthority = authority;
-            order.OrderStatusId = 2; // "در حال پردازش"
+            order.OrderStatusId = 2;
+
+            transaction.Status = "Success";
+            transaction.RefId = verificationResponse.RefID;
+            transaction.CardPan = verificationResponse.CardPan;
+            transaction.CardHash = verificationResponse.CardHash;
+            transaction.Fee = verificationResponse.Fee;
+            transaction.VerifiedAt = DateTime.UtcNow;
+
+            await _context.TPaymentTransaction.AddAsync(transaction);
             await _context.SaveChangesAsync();
+
+            await _notificationService.CreateNotificationAsync(
+                order.UserId,
+                "پرداخت موفق",
+                $"پرداخت شما برای سفارش شماره {order.Id} با موفقیت انجام شد.",
+                "PaymentSuccess",
+                $"/profile/orders/{order.Id}"
+            );
+
             return true;
         }
-
-        return false;
+        else
+        {
+            transaction.Status = "Failed";
+            transaction.ErrorMessage = verificationResponse?.Message;
+            await _context.TPaymentTransaction.AddAsync(transaction);
+            await _context.SaveChangesAsync();
+            return false;
+        }
     }
 
     public string GetFrontendUrl()
@@ -436,12 +580,21 @@ public class OrderService : IOrderService
             order.OrderStatusId = orderDto.OrderStatusId.Value;
         }
 
-        if (!string.IsNullOrWhiteSpace(orderDto.Name))
-            order.Name = _htmlSanitizer.Sanitize(orderDto.Name);
-        if (!string.IsNullOrWhiteSpace(orderDto.Address))
-            order.Address = _htmlSanitizer.Sanitize(orderDto.Address);
-        if (!string.IsNullOrWhiteSpace(orderDto.PostalCode))
-            order.PostalCode = _htmlSanitizer.Sanitize(orderDto.PostalCode);
+        if (orderDto.ShippingMethodId.HasValue)
+        {
+            var shippingMethod = await _context.TShippingMethod.FindAsync(orderDto.ShippingMethodId.Value);
+            if (shippingMethod == null) throw new ArgumentException("Invalid shipping method ID");
+            order.ShippingMethodId = shippingMethod.Id;
+            order.ShippingCost = shippingMethod.Cost;
+        }
+
+        if (orderDto.UserAddressId.HasValue)
+        {
+            var userAddress = await _context.TUserAddress.FirstOrDefaultAsync(ua => ua.Id == orderDto.UserAddressId && ua.UserId == order.UserId);
+            if (userAddress == null) throw new ArgumentException("Invalid user address ID");
+            order.UserAddressId = userAddress.Id;
+            order.AddressSnapshot = JsonSerializer.Serialize(userAddress);
+        }
 
         if (orderDto.DeliveryDate.HasValue)
             order.DeliveryDate = orderDto.DeliveryDate;
@@ -462,7 +615,7 @@ public class OrderService : IOrderService
             {
                 var order = await _context.TOrders
                     .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
+                    .ThenInclude(oi => oi.Variant)
                     .FirstOrDefaultAsync(o => o.Id == orderId);
 
                 if (order == null)
@@ -477,10 +630,7 @@ public class OrderService : IOrderService
 
                 foreach (var orderItem in order.OrderItems)
                 {
-                    if (orderItem.Product != null && !orderItem.Product.IsUnlimited)
-                    {
-                        orderItem.Product.Count += orderItem.Quantity;
-                    }
+                    await _inventoryService.LogTransactionAsync(orderItem.VariantId, "Return", orderItem.Quantity, orderItem.Id, order.UserId, $"Order Deletion {order.Id}", null, orderItem.Variant.RowVersion);
                 }
 
                 _context.TOrderItems.RemoveRange(order.OrderItems);
@@ -490,8 +640,9 @@ public class OrderService : IOrderService
                 await transaction.CommitAsync();
                 result = true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error deleting order {OrderId}", orderId);
                 await transaction.RollbackAsync();
                 throw;
             }
@@ -514,9 +665,9 @@ public class OrderService : IOrderService
             .Select(g => new
             {
                 TotalOrders = g.Count(),
-                TotalRevenue = g.Sum(o => o.TotalAmount),
+                TotalRevenue = g.Sum(o => o.FinalAmount),
                 TotalProfit = g.Sum(o => o.TotalProfit),
-                AverageOrderValue = g.Average(o => (double)o.TotalAmount)
+                AverageOrderValue = g.Average(o => (double)o.FinalAmount)
             })
             .FirstOrDefaultAsync();
 
@@ -535,7 +686,7 @@ public class OrderService : IOrderService
 
         return new
         {
-            GeneralStatistics = statistics ?? new { TotalOrders = 0, TotalRevenue = 0, TotalProfit = 0, AverageOrderValue = 0.0 },
+            GeneralStatistics = statistics ?? new { TotalOrders = 0, TotalRevenue = (decimal)0, TotalProfit = (decimal)0, AverageOrderValue = 0.0 },
             StatusStatistics = statusStatistics
         };
     }
@@ -545,7 +696,8 @@ public class OrderService : IOrderService
         var order = await _context.TOrders.FindAsync(id);
         if (order == null) return false;
 
-        if (!await _context.TOrderStatus.AnyAsync(s => s.Id == statusDto.OrderStatusId))
+        var status = await _context.TOrderStatus.FindAsync(statusDto.OrderStatusId);
+        if (status == null)
         {
             throw new ArgumentException("Invalid Order Status ID");
         }
@@ -553,6 +705,15 @@ public class OrderService : IOrderService
         order.OrderStatusId = statusDto.OrderStatusId;
         await _context.SaveChangesAsync();
         await _auditService.LogOrderEventAsync(id, "UpdateStatus", order.UserId, $"Order status changed to {statusDto.OrderStatusId}");
+
+        await _notificationService.CreateNotificationAsync(
+            order.UserId,
+            "تغییر وضعیت سفارش",
+            $"وضعیت سفارش شما با شماره {order.Id} به '{status.Name}' تغییر کرد.",
+            "OrderStatusChanged",
+            $"/profile/orders/{order.Id}"
+        );
+
         return true;
     }
 }

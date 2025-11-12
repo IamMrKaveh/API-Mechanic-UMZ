@@ -3,19 +3,22 @@
 public class ZarinpalRequestDto
 {
     [JsonPropertyName("merchant_id")]
-    [Required]
+    [Required(ErrorMessage = "شناسه پذیرنده الزامی است")]
     public string MerchantID { get; set; } = string.Empty;
+
     [JsonPropertyName("amount")]
-    [Required]
-    [Range(1000, int.MaxValue)]
+    [Required(ErrorMessage = "مبلغ الزامی است")]
+    [Range(1000, int.MaxValue, ErrorMessage = "مبلغ باید حداقل 1000 تومان باشد")]
     public decimal Amount { get; set; }
+
     [JsonPropertyName("description")]
-    [Required]
-    [StringLength(500)]
+    [Required(ErrorMessage = "توضیحات الزامی است")]
+    [StringLength(500, ErrorMessage = "توضیحات نمی‌تواند بیشتر از 500 کاراکتر باشد")]
     public string Description { get; set; } = string.Empty;
+
     [JsonPropertyName("callback_url")]
-    [Required]
-    [Url]
+    [Required(ErrorMessage = "آدرس بازگشت الزامی است")]
+    [Url(ErrorMessage = "فرمت آدرس بازگشت نامعتبر است")]
     public string CallbackURL { get; set; } = string.Empty;
 
     [JsonPropertyName("metadata")]
@@ -25,19 +28,19 @@ public class ZarinpalRequestDto
 public class ZarinpalMetadataDto
 {
     [JsonPropertyName("mobile")]
-    [Phone]
+    [Phone(ErrorMessage = "فرمت شماره تلفن نامعتبر است")]
     public string? Mobile { get; set; }
 
     [JsonPropertyName("email")]
-    [EmailAddress]
+    [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است")]
     public string? Email { get; set; }
 }
-
 
 public class ZarinpalRequestResponseDto
 {
     [JsonPropertyName("data")]
     public ZarinpalRequestResponseDataDto? Data { get; set; }
+
     [JsonPropertyName("errors")]
     public object? Errors { get; set; }
 }
@@ -46,30 +49,33 @@ public class ZarinpalRequestResponseDataDto
 {
     [JsonPropertyName("code")]
     public int Code { get; set; }
+
     [JsonPropertyName("message")]
     public string? Message { get; set; }
+
     [JsonPropertyName("authority")]
     public string? Authority { get; set; }
+
     [JsonPropertyName("fee_type")]
     public string? FeeType { get; set; }
+
     [JsonPropertyName("fee")]
     public decimal Fee { get; set; }
 }
 
-
 public class ZarinpalVerificationRequestDto
 {
     [JsonPropertyName("merchant_id")]
-    [Required]
+    [Required(ErrorMessage = "شناسه پذیرنده الزامی است")]
     public string MerchantID { get; set; } = string.Empty;
 
     [JsonPropertyName("authority")]
-    [Required]
+    [Required(ErrorMessage = "کد پیگیری الزامی است")]
     public string Authority { get; set; } = string.Empty;
 
     [JsonPropertyName("amount")]
-    [Required]
-    [Range(1000, int.MaxValue)]
+    [Required(ErrorMessage = "مبلغ الزامی است")]
+    [Range(1000, int.MaxValue, ErrorMessage = "مبلغ باید حداقل 1000 تومان باشد")]
     public decimal Amount { get; set; }
 }
 

@@ -32,8 +32,7 @@ public class OrderStatusService : IOrderStatusService
 
         var status = new TOrderStatus
         {
-            Name = _htmlSanitizer.Sanitize(statusDto.Name),
-            Icon = _htmlSanitizer.Sanitize(statusDto.Icon ?? string.Empty)
+            Name = _htmlSanitizer.Sanitize(statusDto.Name)
         };
         _context.TOrderStatus.Add(status);
         await _context.SaveChangesAsync();
@@ -48,9 +47,6 @@ public class OrderStatusService : IOrderStatusService
 
         if (!string.IsNullOrWhiteSpace(statusDto.Name))
             status.Name = _htmlSanitizer.Sanitize(statusDto.Name);
-
-        if (statusDto.Icon != null)
-            status.Icon = _htmlSanitizer.Sanitize(statusDto.Icon);
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Order status updated: {StatusName} (ID: {StatusId})", status.Name, status.Id);

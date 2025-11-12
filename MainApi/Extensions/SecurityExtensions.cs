@@ -22,12 +22,11 @@ public static class SecurityExtensions
                     policy.RequireAssertion(context =>
                     {
                         var httpContext = context.Resource as HttpContext;
-                        if (httpContext?.Connection.RemoteIpAddress == null) return false;
-                        var remoteIp = httpContext.Connection.RemoteIpAddress;
-                        var ipString = remoteIp.IsIPv4MappedToIPv6
-                        ? remoteIp.MapToIPv4().ToString()
-                        : remoteIp.ToString();
-                        return whitelistedIps.Contains(ipString);
+                        if (httpContext == null) return false;
+
+                        var ipString = HttpContextHelper.GetClientIpAddress(httpContext);
+
+                        return !string.IsNullOrEmpty(ipString) && whitelistedIps.Contains(ipString);
                     });
                 });
             });

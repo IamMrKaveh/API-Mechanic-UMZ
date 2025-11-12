@@ -67,9 +67,8 @@ public class CartsController : BaseApiController
         return result switch
         {
             CartOperationResult.Success => Ok(cart),
-            CartOperationResult.NotFound => NotFound(new { message = "Product not found." }),
+            CartOperationResult.NotFound => NotFound(new { message = "Product variant not found." }),
             CartOperationResult.OutOfStock => Conflict(new { message = "Failed to add item. Stock may have changed or item is unavailable." }),
-            CartOperationResult.OptionsRequired => BadRequest(new { message = "Color and Size are required for this product." }),
             _ => StatusCode(500, new { message = "An unexpected error occurred." })
         };
     }

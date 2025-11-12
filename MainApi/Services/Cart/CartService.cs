@@ -1,4 +1,4 @@
-﻿using MainApi.Services.Cache;
+﻿using MainApi.Services.Media;
 
 namespace MainApi.Services.Cart;
 
@@ -7,9 +7,7 @@ public enum CartOperationResult
     Success,
     NotFound,
     OutOfStock,
-    OptionsRequired,
     Error,
-    RateLimited,
     ConcurrencyConflict
 }
 
@@ -19,28 +17,17 @@ public class CartService : ICartService
     private readonly ILogger<CartService> _logger;
     private readonly ICacheService _cacheService;
     private readonly IAuditService _auditService;
+    private readonly IMediaService _mediaService;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly string _baseUrl;
 
-    public CartService(MechanicContext context, ILogger<CartService> logger, ICacheService cacheService, IAuditService auditService, IHttpContextAccessor httpContextAccessor, IConfiguration configuration)
+    public CartService(MechanicContext context, ILogger<CartService> logger, ICacheService cacheService, IAuditService auditService, IHttpContextAccessor httpContextAccessor, IMediaService mediaService)
     {
         _context = context;
         _logger = logger;
         _cacheService = cacheService;
         _auditService = auditService;
         _httpContextAccessor = httpContextAccessor;
-        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
-    }
-
-    private string? ToAbsoluteUrl(string? relativeUrl)
-    {
-        if (string.IsNullOrEmpty(relativeUrl))
-            return null;
-        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
-            return relativeUrl;
-
-        var cleanRelative = relativeUrl.TrimStart('~', '/', 'c');
-        return $"{_baseUrl}/{cleanRelative}";
+        _mediaService = mediaService;
     }
 
     public async Task<CartDto?> GetCartByUserIdAsync(int userId)
@@ -48,27 +35,51 @@ public class CartService : ICartService
         var cacheKey = $"cart:user:{userId}";
         var cached = await _cacheService.GetAsync<CartDto>(cacheKey);
         if (cached != null) return cached;
+
         var cart = await _context.TCarts
             .Include(c => c.CartItems)
-            .ThenInclude(ci => ci.Product)
+                .ThenInclude(ci => ci.Variant)
+                    .ThenInclude(v => v.Product)
+            .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Variant)
+                    .ThenInclude(v => v.Images)
+            .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Variant)
+                    .ThenInclude(v => v.VariantAttributes)
+                        .ThenInclude(va => va.AttributeValue)
+                            .ThenInclude(av => av.AttributeType)
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.UserId == userId);
-        if (cart == null) return null;
-        var items = cart.CartItems?.Select(ci => new CartItemDto
-        {
-            Id = ci.Id,
-            ProductId = ci.ProductId,
-            ProductName = ci.Product?.Name ?? string.Empty,
-            SellingPrice = ci.Product?.SellingPrice ?? 0,
-            Quantity = ci.Quantity,
 
-            TotalPrice = (ci.Product?.SellingPrice ?? 0) * ci.Quantity,
-            Color = ci.Color,
-            Size = ci.Size,
-            ProductIcon = ToAbsoluteUrl(ci.Product?.Icon),
-            RowVersion = ci.RowVersion
-        }).ToList() ??
-        new();
+        if (cart == null) return null;
+
+        var items = new List<CartItemDto>();
+        foreach (var ci in cart.CartItems ?? Enumerable.Empty<TCartItems>())
+        {
+            items.Add(new CartItemDto
+            {
+                Id = ci.Id,
+                VariantId = ci.VariantId,
+                ProductName = ci.Variant.Product.Name,
+                SellingPrice = ci.Variant.SellingPrice,
+                Quantity = ci.Quantity,
+                TotalPrice = ci.Variant.SellingPrice * ci.Quantity,
+                ProductIcon = await _mediaService.GetPrimaryImageUrlAsync("ProductVariant", ci.VariantId) ?? await _mediaService.GetPrimaryImageUrlAsync("Product", ci.Variant.ProductId),
+                RowVersion = ci.RowVersion,
+                Attributes = ci.Variant.VariantAttributes.ToDictionary(
+                    va => va.AttributeValue.AttributeType.Name.ToLower(),
+                    va => new AttributeValueDto
+                    {
+                        Id = va.AttributeValueId,
+                        Type = va.AttributeValue.AttributeType.Name,
+                        TypeDisplay = va.AttributeValue.AttributeType.DisplayName,
+                        Value = va.AttributeValue.Value,
+                        DisplayValue = va.AttributeValue.DisplayValue,
+                        HexCode = va.AttributeValue.HexCode
+                    })
+            });
+        }
+
 
         var dto = new CartDto
         {
@@ -78,9 +89,8 @@ public class CartService : ICartService
             TotalItems = items.Sum(i => i.Quantity),
             TotalPrice = items.Sum(i => i.TotalPrice)
         };
+
         await _cacheService.SetAsync(cacheKey, dto, TimeSpan.FromMinutes(5));
-
-
         return dto;
     }
 
@@ -89,6 +99,7 @@ public class CartService : ICartService
         var existing = await _context.TCarts.AsNoTracking().FirstOrDefaultAsync(c => c.UserId == userId);
         if (existing != null)
             return await GetCartByUserIdAsync(userId);
+
         var newCart = new TCarts { UserId = userId };
         _context.TCarts.Add(newCart);
         await _context.SaveChangesAsync();
@@ -106,56 +117,73 @@ public class CartService : ICartService
 
     public async Task<(CartOperationResult Result, CartDto? Cart)> AddItemToCartAsync(int userId, AddToCartDto dto)
     {
-        if (dto == null || dto.Quantity <= 0 || dto.Quantity > 1000)
+        if (dto.Quantity <= 0 || dto.Quantity > 1000)
             return (CartOperationResult.Error, null);
+
         var cart = await GetOrCreateCartAsync(userId);
         if (cart == null)
             return (CartOperationResult.Error, null);
-        var product = await _context.TProducts.FirstOrDefaultAsync(p => p.Id == dto.ProductId);
-        if (product == null)
-            return (CartOperationResult.NotFound, null);
-        if ((product.Colors != null && product.Colors.Any() && string.IsNullOrWhiteSpace(dto.Color)) ||
-            (product.Sizes != null && product.Sizes.Any() && string.IsNullOrWhiteSpace(dto.Size)))
-        {
-            return (CartOperationResult.OptionsRequired, null);
-        }
 
-        if (!product.IsUnlimited && product.Count < dto.Quantity)
-            return (CartOperationResult.OutOfStock, null);
+        var variant = await _context.TProductVariant
+            .AsNoTracking()
+            .FirstOrDefaultAsync(v => v.Id == dto.VariantId && v.IsActive);
+
+        if (variant == null)
+            return (CartOperationResult.NotFound, null);
+
         var existingItem = await _context.TCartItems
             .FirstOrDefaultAsync(ci =>
                 ci.CartId == cart.Id &&
-                ci.ProductId == dto.ProductId &&
-                ci.Color == dto.Color &&
-                ci.Size == dto.Size);
+                ci.VariantId == dto.VariantId);
 
         string action;
         string details;
-        if (existingItem != null)
+
+        try
         {
-            var newQuantity = existingItem.Quantity + dto.Quantity;
-            if (!product.IsUnlimited && product.Count < newQuantity)
-                return (CartOperationResult.OutOfStock, null);
-            existingItem.Quantity = newQuantity;
-            action = "UpdateCartItemQuantity";
-            details = $"Updated quantity for product {dto.ProductId} to {newQuantity}";
-        }
-        else
-        {
-            await _context.TCartItems.AddAsync(new TCartItems
+            if (existingItem != null)
             {
-                ProductId = dto.ProductId,
-                Quantity = dto.Quantity,
-                CartId = cart.Id,
+                var newQuantity = existingItem.Quantity + dto.Quantity;
+                if (!variant.IsUnlimited && variant.Stock < newQuantity)
+                    return (CartOperationResult.OutOfStock, null);
 
-                Color = dto.Color?.Trim(),
-                Size = dto.Size?.Trim()
-            });
-            action = "AddToCart";
-            details = $"Added product {dto.ProductId} with quantity {dto.Quantity}";
+                if (dto.RowVersion != null && dto.RowVersion.Length > 0)
+                {
+                    _context.Entry(existingItem).Property("RowVersion").OriginalValue = dto.RowVersion;
+                }
+
+                existingItem.Quantity = newQuantity;
+                action = "UpdateCartItemQuantity";
+                details = $"Updated quantity for variant {dto.VariantId} to {newQuantity}";
+            }
+            else
+            {
+                if (!variant.IsUnlimited && variant.Stock < dto.Quantity)
+                    return (CartOperationResult.OutOfStock, null);
+
+                await _context.TCartItems.AddAsync(new TCartItems
+                {
+                    VariantId = dto.VariantId,
+                    Quantity = dto.Quantity,
+                    CartId = cart.Id,
+                });
+                action = "AddToCart";
+                details = $"Added variant {dto.VariantId} with quantity {dto.Quantity}";
+            }
+
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict during AddItemToCart for user {UserId}, variant {VariantId}", userId, dto.VariantId);
+            foreach (var entry in ex.Entries)
+            {
+                await entry.ReloadAsync();
+            }
+            var freshCartDto = await GetCartByUserIdAsync(userId);
+            return (CartOperationResult.ConcurrencyConflict, freshCartDto);
         }
 
-        await _context.SaveChangesAsync();
         await InvalidateCartCache(userId);
 
         var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "N/A";
@@ -167,14 +195,17 @@ public class CartService : ICartService
 
     public async Task<(CartOperationResult Result, CartDto? Cart)> UpdateCartItemAsync(int userId, int itemId, UpdateCartItemDto dto)
     {
-        if (dto == null || dto.Quantity < 0 || dto.Quantity > 1000)
+        if (dto.Quantity < 0 || dto.Quantity > 1000)
             return (CartOperationResult.Error, null);
+
         var cartItem = await _context.TCartItems
-            .Include(ci => ci.Product)
+            .Include(ci => ci.Variant)
             .Include(ci => ci.Cart)
             .FirstOrDefaultAsync(ci => ci.Id == itemId && ci.Cart!.UserId == userId);
-        if (cartItem == null || cartItem.Product == null)
+
+        if (cartItem?.Variant == null)
             return (CartOperationResult.NotFound, null);
+
         if (dto.RowVersion != null && dto.RowVersion.Length > 0)
         {
             _context.Entry(cartItem).Property("RowVersion").OriginalValue = dto.RowVersion;
@@ -186,10 +217,9 @@ public class CartService : ICartService
         }
         else
         {
-            if (!cartItem.Product.IsUnlimited && cartItem.Product.Count < dto.Quantity)
+            if (!cartItem.Variant.IsUnlimited && cartItem.Variant.Stock < dto.Quantity)
                 return (CartOperationResult.OutOfStock, null);
             cartItem.Quantity = dto.Quantity;
-            _context.TCartItems.Update(cartItem);
         }
 
         try
@@ -198,9 +228,8 @@ public class CartService : ICartService
             await InvalidateCartCache(userId);
             var updatedCart = await GetCartByUserIdAsync(userId);
 
-            var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "N/A";
-            var action = dto.Quantity == 0 ?
-            "RemoveCartItem" : "UpdateCartItemQuantity";
+            var ip = HttpContextHelper.GetClientIpAddress(_httpContextAccessor.HttpContext);
+            var action = dto.Quantity == 0 ? "RemoveCartItem" : "UpdateCartItemQuantity";
             var details = $"Item {itemId} quantity set to {dto.Quantity}";
             await _auditService.LogCartEventAsync(userId, action, details, ip);
 
@@ -228,7 +257,7 @@ public class CartService : ICartService
         await _context.SaveChangesAsync();
         await InvalidateCartCache(userId);
 
-        var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "N/A";
+        var ip = HttpContextHelper.GetClientIpAddress(_httpContextAccessor.HttpContext);
         await _auditService.LogCartEventAsync(userId, "RemoveFromCart", $"Removed item {itemId}", ip);
 
         var updatedCart = await GetCartByUserIdAsync(userId);
@@ -247,7 +276,7 @@ public class CartService : ICartService
         await _context.SaveChangesAsync();
         await InvalidateCartCache(userId);
 
-        var ip = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "N/A";
+        var ip = HttpContextHelper.GetClientIpAddress(_httpContextAccessor.HttpContext);
         await _auditService.LogCartEventAsync(userId, "ClearCart", "Cart cleared", ip);
 
         return true;

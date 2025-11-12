@@ -6,12 +6,18 @@
 public class OrdersController : BaseApiController
 {
     private readonly IOrderService _orderService;
+    private readonly IDiscountService _discountService;
+    private readonly IZarinpalService _zarinpalService;
     private readonly ILogger<OrdersController> _logger;
+    private readonly MechanicContext _context;
 
-    public OrdersController(IOrderService orderService, ILogger<OrdersController> logger)
+    public OrdersController(IOrderService orderService, ILogger<OrdersController> logger, IDiscountService discountService, IZarinpalService zarinpalService, MechanicContext context)
     {
         _orderService = orderService;
         _logger = logger;
+        _discountService = discountService;
+        _zarinpalService = zarinpalService;
+        _context = context;
     }
 
     [HttpGet]
@@ -86,11 +92,11 @@ public class OrdersController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -100,7 +106,7 @@ public class OrdersController : BaseApiController
     }
 
     [HttpPost("checkout-from-cart")]
-    public async Task<ActionResult<TOrders>> CheckoutFromCart([FromBody] CreateOrderFromCartDto orderDto)
+    public async Task<ActionResult<object>> CheckoutFromCart([FromBody] CreateOrderFromCartDto orderDto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -113,7 +119,22 @@ public class OrdersController : BaseApiController
         try
         {
             var createdOrder = await _orderService.CheckoutFromCartAsync(orderDto, userId.Value, idempotencyKey);
-            return Ok(createdOrder);
+
+            var paymentResponse = await _zarinpalService.CreatePaymentRequestAsync(
+                createdOrder.FinalAmount,
+                $"Payment for Order #{createdOrder.Id}",
+                $"{Request.Scheme}://{Request.Host}/api/orders/verify-payment",
+                createdOrder.User.PhoneNumber
+            );
+
+            if (paymentResponse?.Data?.Code == 100 && !string.IsNullOrEmpty(paymentResponse.Data.Authority))
+            {
+                var gatewayUrl = _zarinpalService.GetPaymentGatewayUrl(paymentResponse.Data.Authority);
+                return Ok(new { orderId = createdOrder.Id, paymentGatewayUrl = gatewayUrl });
+            }
+
+            _logger.LogError("Failed to create Zarinpal payment request for Order {OrderId}", createdOrder.Id);
+            return StatusCode(500, new { message = "Failed to initiate payment. Please try again." });
         }
         catch (InvalidOperationException ex)
         {
@@ -125,11 +146,32 @@ public class OrdersController : BaseApiController
             _logger.LogWarning(ex, "Checkout failed for user {UserId} due to concurrency.", userId);
             return Conflict(new { message = "The stock for an item in your cart has changed. Please review your cart and try again." });
         }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Checkout failed for user {UserId} with invalid argument.", userId);
+            return BadRequest(new { message = ex.Message });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during checkout from cart for user {UserId}", userId);
             return StatusCode(500, new { message = "An internal error occurred during checkout." });
         }
+    }
+
+    [HttpPost("validate-discount")]
+    public async Task<IActionResult> ValidateDiscount([FromBody] ApplyDiscountDto dto)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
+
+        var (discount, error) = await _discountService.ValidateAndGetDiscountAsync(dto.Code, userId.Value, dto.OrderTotal);
+
+        if (error != null)
+        {
+            return BadRequest(new { message = error });
+        }
+
+        return Ok(discount);
     }
 
     [HttpPut("{id}")]
@@ -146,7 +188,7 @@ public class OrdersController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Message = ex.Message });
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -168,7 +210,7 @@ public class OrdersController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -208,7 +250,7 @@ public class OrdersController : BaseApiController
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -219,22 +261,25 @@ public class OrdersController : BaseApiController
 
     [HttpGet("verify-payment")]
     [AllowAnonymous]
-    public async Task<IActionResult> VerifyPayment(
-    [FromQuery] int orderId,
-    [FromQuery] string authority,
-    [FromQuery] string status)
+    public async Task<IActionResult> VerifyPayment([FromQuery] string authority, [FromQuery] string status)
     {
         var frontendUrl = _orderService.GetFrontendUrl();
+        var tempTransaction = await _context.TPaymentTransaction.FirstOrDefaultAsync(t => t.Authority == authority);
+
+        if (tempTransaction == null)
+        {
+            return Redirect($"{frontendUrl}/payment/failure?reason=notfound");
+        }
 
         if (status.Equals("OK", StringComparison.OrdinalIgnoreCase))
         {
-            var isVerified = await _orderService.VerifyPaymentAsync(orderId, authority);
+            var isVerified = await _orderService.VerifyPaymentAsync(tempTransaction.OrderId, authority);
             if (isVerified)
             {
-                return Redirect($"{frontendUrl}/payment/success?orderId={orderId}");
+                return Redirect($"{frontendUrl}/payment/success?orderId={tempTransaction.OrderId}");
             }
         }
 
-        return Redirect($"{frontendUrl}/payment/failure?orderId={orderId}");
+        return Redirect($"{frontendUrl}/payment/failure?orderId={tempTransaction.OrderId}");
     }
 }
