@@ -1,15 +1,19 @@
-﻿namespace MainApi.Controllers.Product;
+﻿using MainApi.Services.Product;
+
+namespace MainApi.Controllers.Product;
 
 [Route("api/[controller]")]
 [ApiController]
 public class ProductsController : BaseApiController
 {
     private readonly IProductService _productService;
+    private readonly IReviewService _reviewService;
     private readonly ILogger<ProductsController> _logger;
 
-    public ProductsController(IProductService productService, ILogger<ProductsController> logger, IConfiguration configuration) : base(configuration)
+    public ProductsController(IProductService productService, IReviewService reviewService, ILogger<ProductsController> logger, IConfiguration configuration) : base(configuration)
     {
         _productService = productService;
+        _reviewService = reviewService;
         _logger = logger;
     }
 
@@ -67,12 +71,12 @@ public class ProductsController : BaseApiController
     {
         if (productDto == null) return BadRequest(new { Message = "Product data is required" });
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        if (productDto.OriginalPrice > 0 && productDto.SellingPrice >= productDto.OriginalPrice) return BadRequest(new { Message = "Selling price must be less than original price when a discount is applied." });
-        if (productDto.PurchasePrice > productDto.SellingPrice) return BadRequest(new { Message = "Purchase price cannot be greater than selling price." });
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
 
         try
         {
-            var product = await _productService.CreateProductAsync(productDto);
+            var product = await _productService.CreateProductAsync(productDto, userId.Value);
             var result = await _productService.GetProductByIdAsync(product.Id, true);
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, result);
         }
@@ -89,12 +93,12 @@ public class ProductsController : BaseApiController
     {
         if (id <= 0) return BadRequest(new { Message = "Invalid product ID" });
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        if (productDto.OriginalPrice > 0 && productDto.SellingPrice >= productDto.OriginalPrice) return BadRequest(new { Message = "Selling price must be less than original price when a discount is applied." });
-        if (productDto.PurchasePrice > productDto.SellingPrice) return BadRequest(new { Message = "Purchase price cannot be greater than selling price." });
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
 
         try
         {
-            var success = await _productService.UpdateProductAsync(id, productDto);
+            var success = await _productService.UpdateProductAsync(id, productDto, userId.Value);
             if (!success) return NotFound(new { Message = $"Product with ID {id} not found" });
 
             return NoContent();
@@ -141,10 +145,12 @@ public class ProductsController : BaseApiController
         if (id <= 0) return BadRequest(new { Message = "Invalid product ID" });
         if (stockDto == null || !ModelState.IsValid || stockDto.Quantity <= 0 || stockDto.Quantity > 100000)
             return BadRequest(new { Message = "Stock data is required and quantity must be between 1 and 100000" });
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
 
         try
         {
-            var (success, newCount, message) = await _productService.AddStockAsync(id, stockDto);
+            var (success, newCount, message) = await _productService.AddStockAsync(id, stockDto, userId.Value);
             if (!success)
             {
                 if (message != null && message.Contains("not found"))
@@ -171,10 +177,12 @@ public class ProductsController : BaseApiController
         if (id <= 0) return BadRequest(new { Message = "Invalid product ID" });
         if (stockDto == null || !ModelState.IsValid || stockDto.Quantity <= 0)
             return BadRequest(new { Message = "Stock data is required and quantity must be greater than zero." });
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
 
         try
         {
-            var (success, newCount, message) = await _productService.RemoveStockAsync(id, stockDto);
+            var (success, newCount, message) = await _productService.RemoveStockAsync(id, stockDto, userId.Value);
             if (!success)
             {
                 if (message != null && message.Contains("not found"))
@@ -284,11 +292,11 @@ public class ProductsController : BaseApiController
         }
     }
 
-    [HttpPut("{id:int}/discount")]
+    [HttpPut("variants/{id:int}/discount")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> SetProductDiscount(int id, [FromBody] SetDiscountDto discountDto)
     {
-        if (id <= 0) return BadRequest(new { Message = "Invalid product ID" });
+        if (id <= 0) return BadRequest(new { Message = "Invalid variant ID" });
         if (discountDto == null || !ModelState.IsValid || discountDto.DiscountedPrice >= discountDto.OriginalPrice)
             return BadRequest(new { Message = "Invalid discount data. Discounted price must be less than original price." });
 
@@ -302,16 +310,16 @@ public class ProductsController : BaseApiController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error applying discount for product ID {ProductId}", id);
+            _logger.LogError(ex, "Error applying discount for variant ID {VariantId}", id);
             return StatusCode(500, new { Message = "Error applying discount", Error = ex.Message });
         }
     }
 
-    [HttpDelete("{id:int}/discount")]
+    [HttpDelete("variants/{id:int}/discount")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> RemoveProductDiscount(int id)
     {
-        if (id <= 0) return BadRequest(new { Message = "Invalid product ID" });
+        if (id <= 0) return BadRequest(new { Message = "Invalid variant ID" });
 
         try
         {
@@ -326,7 +334,7 @@ public class ProductsController : BaseApiController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing discount for product ID {ProductId}", id);
+            _logger.LogError(ex, "Error removing discount for variant ID {VariantId}", id);
             return StatusCode(500, new { Message = "Error removing discount", Error = ex.Message });
         }
     }
@@ -344,6 +352,35 @@ public class ProductsController : BaseApiController
         {
             _logger.LogError(ex, "Error retrieving discount statistics.");
             return StatusCode(500, new { Message = "Error retrieving discount statistics", Error = ex.Message });
+        }
+    }
+
+    [HttpGet("{id:int}/reviews")]
+    [AllowAnonymous]
+    public async Task<ActionResult<IEnumerable<ProductReviewDto>>> GetProductReviews(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        if (id <= 0) return BadRequest("Invalid product ID");
+        var reviews = await _reviewService.GetProductReviewsAsync(id, page, pageSize);
+        return Ok(reviews);
+    }
+
+    [HttpPost("reviews")]
+    [Authorize]
+    public async Task<ActionResult<ProductReviewDto>> CreateReview([FromBody] CreateReviewDto createReviewDto)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        try
+        {
+            var review = await _reviewService.CreateReviewAsync(createReviewDto, userId.Value);
+            return CreatedAtAction(nameof(GetProductReviews), new { id = review.ProductId }, review);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating review for product {ProductId}", createReviewDto.ProductId);
+            return StatusCode(500, "An error occurred while creating the review.");
         }
     }
 }

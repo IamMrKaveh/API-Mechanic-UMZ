@@ -1,28 +1,26 @@
 ﻿namespace DataAccessLayer.Models.Cart;
 
+[Index(nameof(CartId), nameof(VariantId), IsUnique = true)]
 public class TCartItems
 {
     [Key]
     public int Id { get; set; }
 
-    [Required]
-    public int CartId { get; set; }
-
-    [Required]
-    public int ProductId { get; set; }
-
-    [Required]
-    [Range(0, 1000)]
+    [Required(ErrorMessage = "تعداد الزامی است")]
+    [Range(1, 1000, ErrorMessage = "تعداد باید بین 1 تا 1000 باشد")]
     public int Quantity { get; set; }
 
-    [MaxLength(10)]
-    public string? Color { get; set; }
+    [ForeignKey(nameof(CartId))]
+    public virtual TCarts Cart { get; set; } = null!;
 
-    [MaxLength(20)]
-    public string? Size { get; set; }
+    [Required(ErrorMessage = "شناسه سبد خرید الزامی است")]
+    public int CartId { get; set; }
 
-    public virtual TCarts? Cart { get; set; }
-    public virtual TProducts? Product { get; set; }
+    [ForeignKey(nameof(VariantId))]
+    public virtual TProductVariant Variant { get; set; } = null!;
+
+    [Required(ErrorMessage = "شناسه محصول الزامی است")]
+    public int VariantId { get; set; }
 
     [Timestamp]
     public byte[]? RowVersion { get; set; }

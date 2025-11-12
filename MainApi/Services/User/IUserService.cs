@@ -15,4 +15,5 @@ public interface IUserService
     Task<(AuthResponseDto? Response, string? Error)> VerifyOtpAsync(VerifyOtpRequestDto request, string clientIp, string userAgent);
     Task<(object? Response, string? Error)> RefreshTokenAsync(RefreshRequestDto request, string clientIp, string userAgent);
     Task<(bool Success, string? Error)> LogoutAsync(string refreshToken);
+    Task<IEnumerable<ProductReviewDto>> GetUserReviewsAsync(int userId);
 }

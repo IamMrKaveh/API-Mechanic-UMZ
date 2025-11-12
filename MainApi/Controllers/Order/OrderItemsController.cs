@@ -1,5 +1,4 @@
-﻿using MainApi.Services.Order;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace MainApi.Controllers.Order;
 
@@ -89,10 +88,12 @@ public class OrderItemsController : BaseApiController
     {
         if (id <= 0) return BadRequest("Invalid order item ID");
         if (!ModelState.IsValid) return BadRequest(ModelState);
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
 
         try
         {
-            var success = await _orderItemService.UpdateOrderItemAsync(id, itemDto);
+            var success = await _orderItemService.UpdateOrderItemAsync(id, itemDto, userId.Value);
             return success ? NoContent() : NotFound("Order item not found.");
         }
         catch (KeyNotFoundException ex)
@@ -123,10 +124,12 @@ public class OrderItemsController : BaseApiController
     public async Task<IActionResult> DeleteOrderItem(int id)
     {
         if (id <= 0) return BadRequest("Invalid order item ID");
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
 
         try
         {
-            var success = await _orderItemService.DeleteOrderItemAsync(id);
+            var success = await _orderItemService.DeleteOrderItemAsync(id, userId.Value);
             return success ? NoContent() : NotFound("Order item not found.");
         }
         catch (KeyNotFoundException ex)

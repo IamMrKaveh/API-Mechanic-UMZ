@@ -6,26 +6,29 @@ public class UserService : IUserService
     private readonly IConfiguration _configuration;
     private readonly ILogger<UserService> _logger;
     private readonly IRateLimitService _rateLimitService;
+    private readonly IAuditService _auditService;
 
     public UserService(
         MechanicContext context,
         IConfiguration configuration,
         ILogger<UserService> logger,
-        IRateLimitService rateLimitService)
+        IRateLimitService rateLimitService,
+        IAuditService auditService)
     {
         _context = context;
         _configuration = configuration;
         _logger = logger;
         _rateLimitService = rateLimitService;
+        _auditService = auditService;
     }
 
     public async Task<IEnumerable<UserProfileDto>> GetUsersAsync(bool includeDeleted)
     {
         var query = _context.TUsers.AsQueryable();
 
-        if (!includeDeleted)
+        if (includeDeleted)
         {
-            query = query.Where(u => !u.IsDeleted);
+            query = query.IgnoreQueryFilters();
         }
 
         return await query
@@ -44,7 +47,7 @@ public class UserService : IUserService
     public async Task<UserProfileDto?> GetUserByIdAsync(int id)
     {
         return await _context.TUsers
-            .Where(u => u.Id == id && !u.IsDeleted)
+            .Where(u => u.Id == id)
             .Select(u => new UserProfileDto
             {
                 Id = u.Id,
@@ -60,7 +63,7 @@ public class UserService : IUserService
     public async Task<UserProfileDto?> GetUserProfileAsync(int userId)
     {
         var user = await _context.TUsers
-            .Where(u => u.Id == userId && !u.IsDeleted)
+            .Where(u => u.Id == userId)
             .Select(u => new UserProfileDto
             {
                 Id = u.Id,
@@ -113,6 +116,7 @@ public class UserService : IUserService
 
         existingUser.FirstName = updateRequest.FirstName;
         existingUser.LastName = updateRequest.LastName;
+        existingUser.UpdatedAt = DateTime.UtcNow;
 
         _context.Entry(existingUser).State = EntityState.Modified;
 
@@ -132,7 +136,7 @@ public class UserService : IUserService
     public async Task<(bool Success, string? Error)> UpdateProfileAsync(int userId, UpdateProfileDto updateRequest)
     {
         var existingUser = await _context.TUsers.FindAsync(userId);
-        if (existingUser == null || existingUser.IsDeleted)
+        if (existingUser == null)
             return (false, "NotFound");
 
         if (!string.IsNullOrWhiteSpace(updateRequest.FirstName))
@@ -140,6 +144,8 @@ public class UserService : IUserService
 
         if (!string.IsNullOrWhiteSpace(updateRequest.LastName))
             existingUser.LastName = updateRequest.LastName.Trim();
+
+        existingUser.UpdatedAt = DateTime.UtcNow;
 
         _context.Entry(existingUser).State = EntityState.Modified;
 
@@ -162,6 +168,7 @@ public class UserService : IUserService
             return (false, "NotFound");
 
         user.IsActive = isActive;
+        user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
         return (true, null);
     }
@@ -172,7 +179,7 @@ public class UserService : IUserService
             return (false, "Admins cannot delete their own account this way.");
 
         var user = await _context.TUsers.FindAsync(id);
-        if (user == null || user.IsDeleted)
+        if (user == null)
             return (false, "NotFound");
 
         user.IsDeleted = true;
@@ -187,7 +194,7 @@ public class UserService : IUserService
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
         var user = await _context.TUsers.FindAsync(userId);
-        if (user == null || user.IsDeleted)
+        if (user == null)
         {
             return (false, "NotFound");
         }
@@ -206,7 +213,12 @@ public class UserService : IUserService
 
     public async Task<(bool Success, string? Message, string? Otp)> LoginAsync(LoginRequestDto request, string clientIp)
     {
-        var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && !u.IsDeleted);
+        var user = await _context.TUsers.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
+
+        if (user != null && user.IsDeleted)
+        {
+            return (false, "This account has been deleted.", null);
+        }
 
         if (user == null)
         {
@@ -275,7 +287,7 @@ public class UserService : IUserService
 
     public async Task<(AuthResponseDto? Response, string? Error)> VerifyOtpAsync(VerifyOtpRequestDto request, string clientIp, string userAgent)
     {
-        var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && u.IsActive);
+        var user = await _context.TUsers.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
         if (user == null)
             return (null, "Invalid credentials.");
 
@@ -306,7 +318,6 @@ public class UserService : IUserService
         }
 
         storedOtp.IsUsed = true;
-        await _context.SaveChangesAsync();
         await RevokeAllUserRefreshTokensAsync(user.Id);
 
         var token = GenerateJwtToken(user);
@@ -322,7 +333,23 @@ public class UserService : IUserService
             UserAgent = safeUserAgent
         };
         _context.TRefreshToken.Add(refreshToken);
+
+        var session = new TUserSession
+        {
+            UserId = user.Id,
+            SessionToken = refreshToken.TokenHash,
+            IpAddress = clientIp,
+            UserAgent = safeUserAgent,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = refreshToken.ExpiresAt,
+            LastActivityAt = DateTime.UtcNow,
+            IsActive = true
+        };
+        _context.TUserSession.Add(session);
+
         await _context.SaveChangesAsync();
+
+        await _auditService.LogSecurityEventAsync("LoginSuccess", $"User {user.Id} logged in.", clientIp, user.Id, userAgent);
 
         return (new AuthResponseDto
         {
@@ -343,32 +370,33 @@ public class UserService : IUserService
 
     public async Task<(object? Response, string? Error)> RefreshTokenAsync(RefreshRequestDto request, string clientIp, string userAgent)
     {
-        var storedToken = _context.TRefreshToken
-            .Include(x => x.User)
-            .AsEnumerable()
-            .FirstOrDefault(x => BCrypt.Net.BCrypt.Verify(request.RefreshToken, x.TokenHash));
+        TRefreshToken? storedToken = null;
+        var allTokens = await _context.TRefreshToken.Include(t => t.User).Where(t => t.RevokedAt == null).ToListAsync();
+
+        foreach (var token in allTokens)
+        {
+            if (BCrypt.Net.BCrypt.Verify(request.RefreshToken, token.TokenHash))
+            {
+                storedToken = token;
+                break;
+            }
+        }
 
         if (storedToken == null)
             return (null, "Invalid token.");
 
-        if (storedToken.RevokedAt != null)
-        {
-            _logger.LogWarning("Attempted reuse of a revoked refresh token for user {UserId}. Revoking token family.", storedToken.UserId);
-            await RevokeTokenChainAsync(storedToken.ReplacedByTokenHash);
-            return (null, "Invalid token.");
-        }
-
         if (storedToken.ExpiresAt <= DateTime.UtcNow)
             return (null, "Token expired.");
 
-        if (storedToken.User == null || !storedToken.User.IsActive)
-            return (null, "User account is inactive.");
+        if (storedToken.User == null)
+            return (null, "User not found for this token.");
 
         var newRefreshValue = GenerateSecureToken();
         var newRefreshHash = BCrypt.Net.BCrypt.HashPassword(newRefreshValue);
         storedToken.RevokedAt = DateTime.UtcNow;
         storedToken.ReplacedByTokenHash = newRefreshHash;
         var newJwt = GenerateJwtToken(storedToken.User);
+
         var newRefresh = new TRefreshToken
         {
             UserId = storedToken.UserId,
@@ -376,9 +404,30 @@ public class UserService : IUserService
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
             CreatedByIp = clientIp,
-            UserAgent = SanitizeUserAgent(userAgent)
+            UserAgent = SanitizeUserAgent(userAgent),
+            UpdatedAt = DateTime.UtcNow
         };
         _context.TRefreshToken.Add(newRefresh);
+
+        var session = await _context.TUserSession.FirstOrDefaultAsync(s => s.SessionToken == storedToken.TokenHash);
+        if (session != null)
+        {
+            session.IsActive = false;
+        }
+
+        var newSession = new TUserSession
+        {
+            UserId = storedToken.UserId,
+            SessionToken = newRefreshHash,
+            IpAddress = clientIp,
+            UserAgent = SanitizeUserAgent(userAgent),
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = newRefresh.ExpiresAt,
+            LastActivityAt = DateTime.UtcNow,
+            IsActive = true
+        };
+        _context.TUserSession.Add(newSession);
+
         await _context.SaveChangesAsync();
 
         return (new { token = newJwt, refreshToken = newRefreshValue }, null);
@@ -392,11 +441,19 @@ public class UserService : IUserService
         var tokens = await _context.TRefreshToken
             .Where(t => t.RevokedAt == null && t.ExpiresAt > DateTime.UtcNow)
             .ToListAsync();
-        var token = tokens.FirstOrDefault(t => BCrypt.Net.BCrypt.Verify(refreshToken, t.TokenHash));
-        if (token == null)
+
+        var tokenToRevoke = tokens.FirstOrDefault(t => BCrypt.Net.BCrypt.Verify(refreshToken, t.TokenHash));
+
+        if (tokenToRevoke == null)
             return (false, "Active token not found.");
 
-        await RevokeTokenChainAsync(token.TokenHash);
+        var session = await _context.TUserSession.FirstOrDefaultAsync(s => s.SessionToken == tokenToRevoke.TokenHash);
+        if (session != null)
+        {
+            session.IsActive = false;
+        }
+
+        await RevokeTokenChainAsync(tokenToRevoke);
         return (true, "Logged out successfully.");
     }
 
@@ -407,22 +464,24 @@ public class UserService : IUserService
         return sanitized.Length > 255 ? sanitized[..255] : sanitized;
     }
 
-    private async Task RevokeTokenChainAsync(string? tokenHash)
+    private async Task RevokeTokenChainAsync(TRefreshToken? token)
     {
-        if (string.IsNullOrEmpty(tokenHash)) return;
-        var token = await _context.TRefreshToken.FirstOrDefaultAsync(t => t.TokenHash == tokenHash);
-        if (token != null)
+        if (token == null) return;
+
+        if (token.RevokedAt == null)
         {
-            if (token.RevokedAt == null)
-                token.RevokedAt = DateTime.UtcNow;
-
-            if (token.ExpiresAt <= DateTime.UtcNow)
-                _context.TRefreshToken.Remove(token);
-
-            if (!string.IsNullOrEmpty(token.ReplacedByTokenHash))
-                await RevokeTokenChainAsync(token.ReplacedByTokenHash);
+            token.RevokedAt = DateTime.UtcNow;
         }
+
+        if (!string.IsNullOrEmpty(token.ReplacedByTokenHash))
+        {
+            var nextToken = await _context.TRefreshToken.FirstOrDefaultAsync(t => t.TokenHash == token.ReplacedByTokenHash);
+            await RevokeTokenChainAsync(nextToken);
+        }
+
+        await _context.SaveChangesAsync();
     }
+
 
     private async Task RemoveExpiredOtps(int userId)
     {
@@ -436,6 +495,9 @@ public class UserService : IUserService
         var query = _context.TRefreshToken
             .Where(rt => rt.UserId == userId && rt.RevokedAt == null && rt.ExpiresAt > DateTime.UtcNow);
         await query.ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.RevokedAt, DateTime.UtcNow));
+
+        var sessionQuery = _context.TUserSession.Where(s => s.UserId == userId && s.IsActive);
+        await sessionQuery.ExecuteUpdateAsync(s => s.SetProperty(p => p.IsActive, false));
     }
 
     private string GenerateSecureOtp()
@@ -475,5 +537,26 @@ public class UserService : IUserService
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
+    }
+
+    public async Task<IEnumerable<ProductReviewDto>> GetUserReviewsAsync(int userId)
+    {
+        return await _context.TProductReview
+            .Where(r => r.UserId == userId)
+            .Include(r => r.User)
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new ProductReviewDto
+            {
+                Id = r.Id,
+                ProductId = r.ProductId,
+                UserId = r.UserId,
+                UserName = r.User != null ? (r.User.FirstName + " " + r.User.LastName) : "کاربر",
+                Rating = r.Rating,
+                Title = r.Title,
+                Comment = r.Comment,
+                CreatedAt = r.CreatedAt,
+                IsVerifiedPurchase = r.IsVerifiedPurchase,
+            })
+            .ToListAsync();
     }
 }

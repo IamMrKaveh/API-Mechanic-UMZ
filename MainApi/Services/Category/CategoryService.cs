@@ -1,33 +1,24 @@
-﻿namespace MainApi.Services.Category;
+﻿using MainApi.Services.Media;
+
+namespace MainApi.Services.Category;
 
 public class CategoryService : ICategoryService
 {
     private readonly MechanicContext _context;
     private readonly IStorageService _storageService;
+    private readonly IMediaService _mediaService;
     private readonly IHtmlSanitizer _htmlSanitizer;
-    private readonly string _baseUrl;
 
     public CategoryService(
         MechanicContext context,
         IStorageService storageService,
         IHtmlSanitizer htmlSanitizer,
-        IConfiguration configuration)
+        IMediaService mediaService)
     {
         _context = context;
         _storageService = storageService;
         _htmlSanitizer = htmlSanitizer;
-        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
-    }
-
-    private string? ToAbsoluteUrl(string? relativeUrl)
-    {
-        if (string.IsNullOrEmpty(relativeUrl))
-            return null;
-        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
-            return relativeUrl;
-
-        var cleanRelative = relativeUrl.TrimStart('~', '/', 'c');
-        return $"{_baseUrl}/{cleanRelative}";
+        _mediaService = mediaService;
     }
 
     public async Task<(IEnumerable<object> Categories, int TotalItems)> GetCategoriesAsync(string? search, int page, int pageSize)
@@ -41,14 +32,22 @@ public class CategoryService : ICategoryService
 
         var totalItems = await query.CountAsync();
         var categories = await query
-            .Select(pt => new
+            .Include(c => c.CategoryGroups)
+                .ThenInclude(cg => cg.Products)
+                    .ThenInclude(p => p.Variants)
+            .Select(c => new
             {
-                pt.Id,
-                pt.Name,
-                pt.Icon,
-                pt.ProductCount,
-                pt.TotalValue,
-                pt.InStockProducts
+                c.Id,
+                c.Name,
+                CategoryGroups = c.CategoryGroups.Select(cg => new
+                {
+                    cg.Id,
+                    cg.Name,
+                    ProductCount = cg.Products.Count(),
+                    InStockProducts = cg.Products.Count(p => p.Variants.Any(v => v.IsUnlimited || v.Stock > 0)),
+                    TotalValue = cg.Products.SelectMany(p => p.Variants).Sum(v => v.PurchasePrice * v.Stock),
+                    TotalSellingValue = cg.Products.SelectMany(p => p.Variants).Sum(v => v.SellingPrice * v.Stock),
+                }).ToList()
             })
             .OrderBy(pt => pt.Name)
             .Skip((page - 1) * pageSize)
@@ -59,10 +58,8 @@ public class CategoryService : ICategoryService
         {
             c.Id,
             c.Name,
-            Icon = ToAbsoluteUrl(c.Icon),
-            c.ProductCount,
-            c.TotalValue,
-            c.InStockProducts
+            Icon = _mediaService.GetPrimaryImageUrlAsync("Category", c.Id).Result,
+            c.CategoryGroups
         });
 
         return (result, totalItems);
@@ -71,16 +68,23 @@ public class CategoryService : ICategoryService
     public async Task<object?> GetCategoryByIdAsync(int id, int page, int pageSize)
     {
         var category = await _context.TCategory
+            .Include(pt => pt.CategoryGroups)
+                .ThenInclude(cg => cg.Products)
+                    .ThenInclude(p => p.Variants)
             .Where(pt => pt.Id == id)
             .Select(pt => new
             {
                 pt.Id,
                 pt.Name,
-                Icon = pt.Icon,
-                ProductCount = pt.Products != null ? pt.Products.Count() : 0,
-                InStockProducts = pt.Products != null ? pt.Products.Count(p => p.Count > 0) : 0,
-                TotalValue = pt.Products != null ? pt.Products.Sum(p => p.Count * p.PurchasePrice) : 0,
-                TotalSellingValue = pt.Products != null ? pt.Products.Sum(p => p.Count * p.SellingPrice) : 0
+                CategoryGroups = pt.CategoryGroups.Select(cg => new
+                {
+                    cg.Id,
+                    cg.Name,
+                    ProductCount = cg.Products.Count(),
+                    InStockProducts = cg.Products.Count(p => p.Variants.Any(v => v.IsUnlimited || v.Stock > 0)),
+                    TotalValue = cg.Products.SelectMany(p => p.Variants).Sum(v => v.PurchasePrice * v.Stock),
+                    TotalSellingValue = cg.Products.SelectMany(p => p.Variants).Sum(v => v.SellingPrice * v.Stock),
+                }).ToList()
             })
             .FirstOrDefaultAsync();
 
@@ -89,18 +93,19 @@ public class CategoryService : ICategoryService
             return null;
         }
 
-        var productsQuery = _context.TProducts.Where(p => p.CategoryId == id);
+        var productsQuery = _context.TProducts.Where(p => p.CategoryGroup.CategoryId == id);
         var totalProductCount = await productsQuery.CountAsync();
         var products = await productsQuery
+            .Include(p => p.Variants)
+            .Include(p => p.Images)
             .Select(p => new
             {
                 p.Id,
                 p.Name,
-                p.Count,
-                p.SellingPrice,
-                p.PurchasePrice,
-                p.Icon,
-                IsInStock = p.Count > 0
+                TotalStock = p.Variants.Sum(v => v.Stock),
+                SellingPrice = p.Variants.Any() ? p.Variants.Min(v => v.SellingPrice) : 0,
+                PurchasePrice = p.Variants.Any() ? p.Variants.Min(v => v.PurchasePrice) : 0,
+                IsInStock = p.Variants.Any(v => v.IsUnlimited || v.Stock > 0)
             })
             .OrderBy(p => p.Name)
             .Skip((page - 1) * pageSize)
@@ -111,21 +116,18 @@ public class CategoryService : ICategoryService
         {
             category.Id,
             category.Name,
-            Icon = ToAbsoluteUrl(category.Icon),
-            category.ProductCount,
-            category.InStockProducts,
-            category.TotalValue,
-            category.TotalSellingValue,
+            Icon = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id),
+            category.CategoryGroups,
             Products = new
             {
                 Items = products.Select(p => new
                 {
                     p.Id,
                     p.Name,
-                    p.Count,
+                    Count = p.TotalStock,
                     p.SellingPrice,
                     p.PurchasePrice,
-                    Icon = ToAbsoluteUrl(p.Icon),
+                    Icon = _mediaService.GetPrimaryImageUrlAsync("Product", p.Id).Result,
                     p.IsInStock
                 }),
                 TotalItems = totalProductCount,
@@ -156,19 +158,14 @@ public class CategoryService : ICategoryService
 
         if (categoryDto.IconFile != null)
         {
-            category.Icon = await _storageService.UploadFileAsync(
-                categoryDto.IconFile,
-                "images/category",
-                category.Id
-            );
-            await _context.SaveChangesAsync();
+            await _mediaService.AttachFileToEntityAsync(categoryDto.IconFile, "Category", category.Id, true);
         }
 
         return new
         {
             category.Id,
             category.Name,
-            Icon = ToAbsoluteUrl(category.Icon)
+            Icon = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id)
         };
     }
 
@@ -189,15 +186,7 @@ public class CategoryService : ICategoryService
 
         if (categoryDto.IconFile != null)
         {
-            if (!string.IsNullOrEmpty(existingCategory.Icon))
-            {
-                await _storageService.DeleteFileAsync(existingCategory.Icon);
-            }
-            existingCategory.Icon = await _storageService.UploadFileAsync(
-                categoryDto.IconFile,
-                "images/category",
-                id
-            );
+            await _mediaService.AttachFileToEntityAsync(categoryDto.IconFile, "Category", id, true);
         }
 
         await _context.SaveChangesAsync();
@@ -206,22 +195,30 @@ public class CategoryService : ICategoryService
 
     public async Task<(bool Success, string? ErrorMessage)> DeleteCategoryAsync(int id)
     {
-        var category = await _context.TCategory.Include(pt => pt.Products).FirstOrDefaultAsync(pt => pt.Id == id);
+        var category = await _context.TCategory.Include(c => c.CategoryGroups).ThenInclude(cg => cg.Products).FirstOrDefaultAsync(pt => pt.Id == id);
         if (category == null)
             return (false, "Category not found.");
 
-        if (category.Products?.Any() == true)
-            return (false, "Cannot delete a category that has associated products.");
+        if (category.CategoryGroups.Any(cg => cg.Products.Any()))
+            return (false, "Cannot delete a category that has associated products in its groups.");
 
-        string? iconPath = category.Icon;
+        var media = await _mediaService.GetEntityMediaAsync("Category", id);
+        foreach (var m in media)
+        {
+            await _mediaService.DeleteMediaAsync(m.Id);
+        }
+
+        foreach (var group in category.CategoryGroups.ToList())
+        {
+            var groupMedia = await _mediaService.GetEntityMediaAsync("CategoryGroup", group.Id);
+            foreach (var m in groupMedia)
+            {
+                await _mediaService.DeleteMediaAsync(m.Id);
+            }
+        }
 
         _context.TCategory.Remove(category);
         await _context.SaveChangesAsync();
-
-        if (!string.IsNullOrEmpty(iconPath))
-        {
-            await _storageService.DeleteFileAsync(iconPath);
-        }
 
         return (true, null);
     }

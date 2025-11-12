@@ -1,46 +1,40 @@
-﻿namespace MainApi.Services.Order.Items;
+﻿using MainApi.Services.Inventory;
+using MainApi.Services.Media;
+
+namespace MainApi.Services.Order.Items;
 
 public class OrderItemService : IOrderItemService
 {
     private readonly MechanicContext _context;
     private readonly ILogger<OrderItemService> _logger;
     private readonly IHtmlSanitizer _htmlSanitizer;
-    private readonly string _baseUrl;
+    private readonly IMediaService _mediaService;
+    private readonly IInventoryService _inventoryService;
 
-    public OrderItemService(MechanicContext context, ILogger<OrderItemService> logger, IHtmlSanitizer htmlSanitizer, IConfiguration configuration)
+    public OrderItemService(MechanicContext context, ILogger<OrderItemService> logger, IHtmlSanitizer htmlSanitizer, IMediaService mediaService, IInventoryService inventoryService)
     {
         _context = context;
         _logger = logger;
         _htmlSanitizer = htmlSanitizer;
-        _baseUrl = configuration["LiaraStorage:BaseUrl"] ?? "https://storage.c2.liara.space/mechanic-umz";
-    }
-
-    private string? ToAbsoluteUrl(string? relativeUrl)
-    {
-        if (string.IsNullOrEmpty(relativeUrl))
-            return null;
-        if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
-            return relativeUrl;
-
-        var cleanRelative = relativeUrl.TrimStart('~', '/', 'c');
-        return $"{_baseUrl}/{cleanRelative}";
+        _mediaService = mediaService;
+        _inventoryService = inventoryService;
     }
 
     public async Task<(IEnumerable<object> items, int total)> GetOrderItemsAsync(int? currentUserId, bool isAdmin, int? orderId, int page, int pageSize)
     {
         var query = _context.TOrderItems
-            .Include(oi => oi.Product)
-            .Include(oi => oi.UserOrder)
+            .Include(oi => oi.Variant.Product)
+            .Include(oi => oi.Order)
             .AsQueryable();
 
         if (orderId.HasValue)
         {
-            query = query.Where(oi => oi.UserOrderId == orderId.Value);
+            query = query.Where(oi => oi.OrderId == orderId.Value);
         }
 
         if (!isAdmin)
         {
-            query = query.Where(oi => oi.UserOrder != null && oi.UserOrder.UserId == currentUserId);
+            query = query.Where(oi => oi.Order != null && oi.Order.UserId == currentUserId);
         }
 
         var total = await query.CountAsync();
@@ -52,9 +46,9 @@ public class OrderItemService : IOrderItemService
             .Select(oi => new
             {
                 oi.Id,
-                oi.UserOrderId,
-                oi.ProductId,
-                ProductName = oi.Product != null ? oi.Product.Name : "N/A",
+                oi.OrderId,
+                oi.VariantId,
+                ProductName = oi.Variant.Product != null ? oi.Variant.Product.Name : "N/A",
                 PurchasePrice = isAdmin ? (decimal?)oi.PurchasePrice : null,
                 oi.SellingPrice,
                 oi.Quantity,
@@ -69,16 +63,15 @@ public class OrderItemService : IOrderItemService
     public async Task<object?> GetOrderItemByIdAsync(int orderItemId, int? currentUserId, bool isAdmin)
     {
         var query = _context.TOrderItems
-            .Include(oi => oi.Product)
-            .ThenInclude(p => p!.Category)
-            .Include(oi => oi.UserOrder)
+            .Include(oi => oi.Variant.Product.CategoryGroup.Category)
+            .Include(oi => oi.Order)
             .Where(oi => oi.Id == orderItemId);
 
         var item = await query.FirstOrDefaultAsync();
 
         if (item == null) return null;
 
-        if (!isAdmin && (item.UserOrder == null || item.UserOrder.UserId != currentUserId))
+        if (!isAdmin && (item.Order == null || item.Order.UserId != currentUserId))
         {
             _logger.LogWarning("Unauthorized access attempt for OrderItem {OrderItemId} by User {UserId}", orderItemId, currentUserId);
             return null;
@@ -87,14 +80,14 @@ public class OrderItemService : IOrderItemService
         return new
         {
             item.Id,
-            item.UserOrderId,
-            item.ProductId,
-            Product = item.Product != null ? new
+            item.OrderId,
+            item.VariantId,
+            Product = item.Variant.Product != null ? new
             {
-                item.Product.Id,
-                item.Product.Name,
-                Icon = ToAbsoluteUrl(item.Product.Icon),
-                Category = item.Product.Category != null ? new { item.Product.Category.Id, item.Product.Category.Name } : null
+                item.Variant.Product.Id,
+                item.Variant.Product.Name,
+                Icon = _mediaService.GetPrimaryImageUrlAsync("Product", item.Variant.Product.Id).Result,
+                Category = item.Variant.Product.CategoryGroup != null && item.Variant.Product.CategoryGroup.Category != null ? new { item.Variant.Product.CategoryGroup.Category.Id, item.Variant.Product.CategoryGroup.Category.Name } : null
             } : null,
             PurchasePrice = isAdmin ? (decimal?)item.PurchasePrice : null,
             item.SellingPrice,
@@ -115,37 +108,34 @@ public class OrderItemService : IOrderItemService
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var order = await _context.TOrders.FindAsync(itemDto.UserOrderId);
+                var order = await _context.TOrders.FindAsync(itemDto.OrderId);
                 if (order == null) throw new KeyNotFoundException("Order not found");
 
-                var product = await _context.TProducts.FindAsync(itemDto.ProductId);
-                if (product == null) throw new KeyNotFoundException("Product not found");
+                var variant = await _context.TProductVariant
+                    .Include(v => v.Product)
+                    .FirstOrDefaultAsync(v => v.Id == itemDto.VariantId);
 
-                if (!product.IsUnlimited)
-                {
-                    if (product.Count < itemDto.Quantity)
-                        throw new InvalidOperationException($"Insufficient stock for product {product.Name}.");
-                    product.Count -= itemDto.Quantity;
-                }
+                if (variant?.Product == null) throw new KeyNotFoundException("Product variant not found");
+                var product = variant.Product;
+
+                await _inventoryService.LogTransactionAsync(variant.Id, "Sale", -itemDto.Quantity, null, order.UserId, $"Added to order {order.Id}");
 
                 var amount = itemDto.SellingPrice * itemDto.Quantity;
-                var profit = (itemDto.SellingPrice - product.PurchasePrice) * itemDto.Quantity;
+                var profit = (itemDto.SellingPrice - variant.PurchasePrice) * itemDto.Quantity;
 
                 newOrderItem = new TOrderItems
                 {
-                    UserOrderId = itemDto.UserOrderId,
-                    ProductId = itemDto.ProductId,
+                    OrderId = itemDto.OrderId,
+                    VariantId = itemDto.VariantId,
                     Quantity = itemDto.Quantity,
                     SellingPrice = itemDto.SellingPrice,
-                    PurchasePrice = product.PurchasePrice,
-                    Amount = amount,
-                    Profit = profit
+                    PurchasePrice = variant.PurchasePrice
                 };
 
                 _context.TOrderItems.Add(newOrderItem);
 
-                order.TotalAmount += (int)amount;
-                order.TotalProfit += (int)profit;
+                order.TotalAmount += amount;
+                order.TotalProfit += profit;
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -159,7 +149,7 @@ public class OrderItemService : IOrderItemService
         return newOrderItem!;
     }
 
-    public async Task<bool> UpdateOrderItemAsync(int orderItemId, UpdateOrderItemDto itemDto)
+    public async Task<bool> UpdateOrderItemAsync(int orderItemId, UpdateOrderItemDto itemDto, int userId)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
         var success = false;
@@ -169,12 +159,14 @@ public class OrderItemService : IOrderItemService
             try
             {
                 var item = await _context.TOrderItems
-                    .Include(oi => oi.Product)
-                    .Include(oi => oi.UserOrder)
+                    .Include(oi => oi.Variant.Product)
+                    .Include(oi => oi.Order)
                     .FirstOrDefaultAsync(oi => oi.Id == orderItemId);
 
-                if (item == null || item.Product == null || item.UserOrder == null)
-                    throw new KeyNotFoundException("Order item, product, or order not found.");
+                if (item?.Variant?.Product == null || item.Order == null)
+                    throw new KeyNotFoundException("Order item, variant, product, or order not found.");
+
+                var product = item.Variant.Product;
 
                 if (itemDto.RowVersion != null)
                     _context.Entry(item).Property(p => p.RowVersion).OriginalValue = itemDto.RowVersion;
@@ -186,27 +178,25 @@ public class OrderItemService : IOrderItemService
                 if (itemDto.Quantity.HasValue)
                 {
                     quantityChange = itemDto.Quantity.Value - item.Quantity;
-                    if (!item.Product.IsUnlimited)
+                    if (quantityChange != 0)
                     {
-                        if (item.Product.Count < quantityChange)
-                            throw new InvalidOperationException("Insufficient stock.");
-                        item.Product.Count -= quantityChange;
+                        await _inventoryService.LogTransactionAsync(item.VariantId, "OrderItemUpdate", quantityChange, item.Id, userId, $"Quantity updated in order {item.OrderId}");
                     }
                     item.Quantity = itemDto.Quantity.Value;
                 }
 
                 if (itemDto.SellingPrice.HasValue)
                 {
-                    if (itemDto.SellingPrice.Value < item.Product.PurchasePrice)
+                    if (itemDto.SellingPrice.Value < item.Variant.PurchasePrice)
                         throw new ArgumentException("Selling price cannot be less than purchase price.");
                     item.SellingPrice = itemDto.SellingPrice.Value;
                 }
 
-                item.Amount = item.SellingPrice * item.Quantity;
-                item.Profit = (item.SellingPrice - item.Product.PurchasePrice) * item.Quantity;
+                var newAmount = item.SellingPrice * item.Quantity;
+                var newProfit = (item.SellingPrice - item.Variant.PurchasePrice) * item.Quantity;
 
-                item.UserOrder.TotalAmount = item.UserOrder.TotalAmount - (int)oldAmount + (int)item.Amount;
-                item.UserOrder.TotalProfit = item.UserOrder.TotalProfit - (int)oldProfit + (int)item.Profit;
+                item.Order.TotalAmount = item.Order.TotalAmount - oldAmount + newAmount;
+                item.Order.TotalProfit = item.Order.TotalProfit - oldProfit + newProfit;
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -222,7 +212,7 @@ public class OrderItemService : IOrderItemService
     }
 
 
-    public async Task<bool> DeleteOrderItemAsync(int orderItemId)
+    public async Task<bool> DeleteOrderItemAsync(int orderItemId, int userId)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
         var success = false;
@@ -232,19 +222,16 @@ public class OrderItemService : IOrderItemService
             try
             {
                 var item = await _context.TOrderItems
-                    .Include(oi => oi.Product)
-                    .Include(oi => oi.UserOrder)
+                    .Include(oi => oi.Variant.Product)
+                    .Include(oi => oi.Order)
                     .FirstOrDefaultAsync(oi => oi.Id == orderItemId);
 
-                if (item == null || item.UserOrder == null) throw new KeyNotFoundException("Order item or order not found.");
+                if (item?.Order == null) throw new KeyNotFoundException("Order item or order not found.");
 
-                if (item.Product != null && !item.Product.IsUnlimited)
-                {
-                    item.Product.Count += item.Quantity;
-                }
+                await _inventoryService.LogTransactionAsync(item.VariantId, "Return", item.Quantity, item.Id, userId, $"Item removed from order {item.OrderId}");
 
-                item.UserOrder.TotalAmount -= (int)item.Amount;
-                item.UserOrder.TotalProfit -= (int)item.Profit;
+                item.Order.TotalAmount -= item.Amount;
+                item.Order.TotalProfit -= item.Profit;
 
                 _context.TOrderItems.Remove(item);
 

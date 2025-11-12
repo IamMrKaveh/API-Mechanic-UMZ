@@ -15,7 +15,7 @@ public class RateLimitMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var clientIp = context.Connection.RemoteIpAddress?.ToString();
+        var clientIp = HttpContextHelper.GetClientIpAddress(context);
         if (string.IsNullOrEmpty(clientIp))
         {
             await _next(context);

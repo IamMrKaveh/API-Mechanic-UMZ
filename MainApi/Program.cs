@@ -54,7 +54,7 @@ try
             npgsqlOptions.SetPostgresVersion(new Version(15, 0));
         });
 
-        options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+        options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
     }, poolSize: 15);
 
     Log.Information("Database context registered successfully (EF Core 8 + Supabase)");
@@ -95,7 +95,6 @@ try
         RegisterInMemoryServices(builder);
     }
 
-    // Register application services
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<ICartService, CartService>();
     builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -103,16 +102,28 @@ try
     builder.Services.AddScoped<IOrderItemService, OrderItemService>();
     builder.Services.AddScoped<IOrderStatusService, OrderStatusService>();
     builder.Services.AddScoped<IProductService, ProductService>();
-    builder.Services.AddScoped<ICommentService, CommentService>();
+    builder.Services.AddScoped<IReviewService, ReviewService>();
+    builder.Services.AddScoped<INotificationService, NotificationService>();
+    builder.Services.AddScoped<IEmailService, EmailService>();
     builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
     builder.Services.AddScoped<IEmailService, EmailService>();
     builder.Services.AddScoped<IAuditService, AuditService>();
+    builder.Services.AddScoped<IDiscountService, DiscountService>();
+    builder.Services.AddScoped<IInventoryService, InventoryService>();
+    builder.Services.AddScoped<IMediaService, MediaService>();
     builder.Services.AddSingleton<IStorageService, LiaraStorageService>();
     builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
 
     builder.Services.Configure<LiaraStorageSettings>(builder.Configuration.GetSection("LiaraStorage"));
     builder.Services.Configure<ZarinpalSettings>(builder.Configuration.GetSection("Zarinpal"));
     builder.Services.Configure<SecurityHeadersOptions>(builder.Configuration.GetSection("SecurityHeaders"));
+
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
 
     Log.Information("Application services registered");
 
@@ -206,7 +217,7 @@ try
         .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
             onRetry: (outcome, timespan, retryCount, context) =>
             {
-                Log.Warning("Zarinpal retry {RetryCount} after {Timespan}s due to: {Result}",
+                Log.Warning("External API retry {RetryCount} after {Timespan}s due to: {Result}",
                     retryCount, timespan.TotalSeconds, outcome.Result?.StatusCode);
             });
 
@@ -214,9 +225,9 @@ try
         .HandleTransientHttpError()
         .CircuitBreakerAsync(5, TimeSpan.FromSeconds(30),
             onBreak: (outcome, duration) =>
-                Log.Error("Zarinpal circuit breaker opened for {Duration}s", duration.TotalSeconds),
+                Log.Error("External API circuit breaker opened for {Duration}s", duration.TotalSeconds),
             onReset: () =>
-                Log.Information("Zarinpal circuit breaker reset"));
+                Log.Information("External API circuit breaker reset"));
 
     builder.Services.AddHttpClient<IZarinpalService, ZarinpalService>(client =>
     {
@@ -225,6 +236,10 @@ try
     })
     .AddPolicyHandler(retryPolicy)
     .AddPolicyHandler(circuitBreakerPolicy);
+
+    builder.Services.AddHttpClient<ILocationService, LocationService>()
+        .AddPolicyHandler(retryPolicy)
+        .AddPolicyHandler(circuitBreakerPolicy);
 
     Log.Information("HTTP clients configured");
 
@@ -338,6 +353,8 @@ try
     var app = builder.Build();
 
     Log.Information("Application built successfully");
+
+    app.UseForwardedHeaders();
 
     if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Swagger:Enabled"))
     {
@@ -500,7 +517,7 @@ static string MaskConnectionString(string connectionString)
 
 static void RegisterInMemoryServices(WebApplicationBuilder builder)
 {
-    builder.Services.AddSingleton<ICacheService, MockRedisDatabase>();
+    builder.Services.AddSingleton<ICacheService, InMemoryCacheService>();
     builder.Services.AddOutputCache();
 
     var dataProtectionBuilder = builder.Services.AddDataProtection()

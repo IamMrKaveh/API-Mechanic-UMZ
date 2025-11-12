@@ -81,10 +81,16 @@ public class RedisCacheService : ICacheService
 
             var endpoints = _redis.GetEndPoints();
             var server = _redis.GetServer(endpoints.First());
-            var keys = server.Keys(pattern: $"{prefix}*").ToArray();
-            if (keys.Any())
+
+            var keysToDelete = new List<RedisKey>();
+            await foreach (var key in server.KeysAsync(pattern: $"{prefix}*"))
             {
-                await _database.KeyDeleteAsync(keys);
+                keysToDelete.Add(key);
+            }
+
+            if (keysToDelete.Any())
+            {
+                await _database.KeyDeleteAsync(keysToDelete.ToArray());
             }
         }
         catch (Exception ex)

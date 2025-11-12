@@ -74,4 +74,14 @@ public class ProfileController : BaseApiController
             return StatusCode(500, "An error occurred while deleting the account.");
         }
     }
+
+    [HttpGet("reviews")]
+    public async Task<ActionResult<IEnumerable<ProductReviewDto>>> GetMyReviews()
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
+
+        var reviews = await _userService.GetUserReviewsAsync(userId.Value);
+        return Ok(reviews);
+    }
 }
