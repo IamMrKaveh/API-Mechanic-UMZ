@@ -10,6 +10,7 @@ public interface IUserService
     Task<(bool Success, string? Error)> UpdateProfileAsync(int userId, UpdateProfileDto updateRequest);
     Task<(bool Success, string? Error)> ChangeUserStatusAsync(int id, bool isActive);
     Task<(bool Success, string? Error)> DeleteUserAsync(int id, int currentUserId);
+    Task<(bool Success, string? Error)> RestoreUserAsync(int id);
     Task<(bool Success, string? Error)> DeleteAccountAsync(int userId);
     Task<(bool Success, string? Message, string? Otp)> LoginAsync(LoginRequestDto request, string clientIp);
     Task<(AuthResponseDto? Response, string? Error)> VerifyOtpAsync(VerifyOtpRequestDto request, string clientIp, string userAgent);

@@ -4,10 +4,12 @@ public class InMemoryCacheService : ICacheService
 {
     private readonly IMemoryCache _cache;
     private readonly ConcurrentDictionary<string, byte> _locks = new();
+    private readonly ILogger<InMemoryCacheService> _logger;
 
-    public InMemoryCacheService(IMemoryCache cache)
+    public InMemoryCacheService(IMemoryCache cache, ILogger<InMemoryCacheService> logger)
     {
         _cache = cache;
+        _logger = logger;
     }
 
     public Task<T?> GetAsync<T>(string key) where T : class
@@ -35,11 +37,7 @@ public class InMemoryCacheService : ICacheService
 
     public Task ClearByPrefixAsync(string prefix)
     {
-        // This is a simplified implementation. For real-world scenarios,
-        // this can be inefficient and might require a different approach.
-        var keysToRemove = new List<string>();
-        // Cannot directly iterate keys in IMemoryCache, this is a limitation.
-        // For a full implementation, a separate list of keys would be needed.
+        _logger.LogWarning("ClearByPrefixAsync is not efficiently implemented for InMemoryCacheService. This operation may not work as expected.");
         return Task.CompletedTask;
     }
 

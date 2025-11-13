@@ -18,6 +18,7 @@ global using Microsoft.AspNetCore.Identity;
 global using MainApi.Services.Audit;
 global using DataAccessLayer.Models.Security;
 global using Microsoft.AspNetCore.HttpOverrides;
+global using MainApi.Services.Review;
 global using MainApi.Services.Notification;
 global using MainApi.Services.Order.Items;
 global using MainApi.Services.Order.Status;

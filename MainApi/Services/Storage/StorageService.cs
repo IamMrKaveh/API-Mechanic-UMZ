@@ -4,6 +4,7 @@ public interface IStorageService
 {
     Task<string> UploadFileAsync(IFormFile file, string folder, int? entityId = null);
     Task DeleteFileAsync(string relativePath);
+    string GetFileUrl(string relativePath);
 }
 
 public class LiaraStorageService : IStorageService
@@ -12,12 +13,15 @@ public class LiaraStorageService : IStorageService
     private readonly string _secretKey;
     private readonly string _bucketName;
     private readonly HttpClient _httpClient;
+    private readonly string _baseUrl;
+
 
     public LiaraStorageService(IConfiguration configuration)
     {
         _accessKey = configuration["LiaraStorage:AccessKey"];
         _secretKey = configuration["LiaraStorage:SecretKey"];
         _bucketName = configuration["LiaraStorage:BucketName"];
+        _baseUrl = configuration["LiaraStorage:BaseUrl"];
         _httpClient = new HttpClient { BaseAddress = new Uri("https://api.liara.ir/") };
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_accessKey}:{_secretKey}");
     }
@@ -48,5 +52,11 @@ public class LiaraStorageService : IStorageService
         var path = relativePath.TrimStart('/');
         var response = await _httpClient.DeleteAsync($"/storage/buckets/{_bucketName}/objects/{path}");
         response.EnsureSuccessStatusCode();
+    }
+
+    public string GetFileUrl(string relativePath)
+    {
+        if (string.IsNullOrEmpty(relativePath)) return string.Empty;
+        return $"{_baseUrl}{relativePath}";
     }
 }

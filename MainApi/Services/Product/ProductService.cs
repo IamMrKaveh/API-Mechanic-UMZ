@@ -56,6 +56,8 @@ public class ProductService : IProductService
             query = query.Where(p => p.Variants.Any(v => v.IsUnlimited || v.Stock > 0));
         if (search.HasDiscount == true)
             query = query.Where(p => p.Variants.Any(v => v.OriginalPrice > v.SellingPrice));
+        if (search.IsUnlimited.HasValue)
+            query = query.Where(p => p.Variants.Any(v => v.IsUnlimited == search.IsUnlimited.Value));
 
         query = search.SortBy switch
         {
@@ -63,8 +65,8 @@ public class ProductService : IProductService
             ProductSortOptions.PriceDesc => query.OrderByDescending(p => p.MinPrice).ThenByDescending(p => p.Id),
             ProductSortOptions.NameAsc => query.OrderBy(p => p.Name).ThenByDescending(p => p.Id),
             ProductSortOptions.NameDesc => query.OrderByDescending(p => p.Name).ThenByDescending(p => p.Id),
-            ProductSortOptions.DiscountDesc => query.OrderByDescending(p => p.Variants.Max(v => v.DiscountPercentage)).ThenByDescending(p => p.Id),
-            ProductSortOptions.DiscountAsc => query.OrderBy(p => p.Variants.Max(v => v.DiscountPercentage)).ThenByDescending(p => p.Id),
+            ProductSortOptions.DiscountDesc => query.OrderByDescending(p => p.Variants.Max(v => v.OriginalPrice > 0 ? (1 - v.SellingPrice / v.OriginalPrice) * 100 : 0)).ThenByDescending(p => p.Id),
+            ProductSortOptions.DiscountAsc => query.OrderBy(p => p.Variants.Max(v => v.OriginalPrice > 0 ? (1 - v.SellingPrice / v.OriginalPrice) * 100 : 0)).ThenByDescending(p => p.Id),
             ProductSortOptions.Oldest => query.OrderBy(p => p.Id),
             _ => query.OrderByDescending(p => p.Id)
         };
@@ -81,14 +83,13 @@ public class ProductService : IProductService
             var productImages = new List<MediaDto>();
             foreach (var img in p.Images)
             {
-                productImages.Add(new MediaDto
-                {
-                    Id = img.Id,
-                    Url = await _mediaService.GetPrimaryImageUrlAsync("Product", p.Id),
-                    AltText = img.AltText,
-                    IsPrimary = img.IsPrimary,
-                    SortOrder = img.SortOrder
-                });
+                productImages.Add(new MediaDto(
+                    img.Id,
+                    _storageService.GetFileUrl(img.FilePath),
+                    img.AltText,
+                    img.IsPrimary,
+                    img.SortOrder
+                ));
             }
 
             var variantDtos = new List<ProductVariantResponseDto>();
@@ -97,56 +98,54 @@ public class ProductService : IProductService
                 var variantImages = new List<MediaDto>();
                 foreach (var img in v.Images)
                 {
-                    variantImages.Add(new MediaDto
-                    {
-                        Id = img.Id,
-                        Url = await _mediaService.GetPrimaryImageUrlAsync("ProductVariant", v.Id),
-                        AltText = img.AltText,
-                        IsPrimary = img.IsPrimary,
-                        SortOrder = img.SortOrder
-                    });
+                    variantImages.Add(new MediaDto(
+                        img.Id,
+                        _storageService.GetFileUrl(img.FilePath),
+                        img.AltText,
+                        img.IsPrimary,
+                        img.SortOrder
+                    ));
                 }
-                variantDtos.Add(new ProductVariantResponseDto
-                {
-                    Id = v.Id,
-                    Sku = v.Sku,
-                    SellingPrice = v.SellingPrice,
-                    OriginalPrice = v.OriginalPrice,
-                    Stock = v.Stock,
-                    IsUnlimited = v.IsUnlimited,
-                    IsInStock = v.IsInStock,
-                    DiscountPercentage = v.DiscountPercentage,
-                    Images = variantImages,
-                    Attributes = v.VariantAttributes.ToDictionary(
+                variantDtos.Add(new ProductVariantResponseDto(
+                    v.Id,
+                    v.Sku,
+                    v.PurchasePrice,
+                    v.OriginalPrice,
+                    v.SellingPrice,
+                    v.Stock,
+                    v.IsUnlimited,
+                    v.IsInStock,
+                    v.DiscountPercentage,
+                    variantImages,
+                    v.VariantAttributes.ToDictionary(
                         va => va.AttributeValue.AttributeType.Name.ToLower(),
-                        va => new AttributeValueDto
-                        {
-                            Id = va.AttributeValueId,
-                            Type = va.AttributeValue.AttributeType.Name,
-                            TypeDisplay = va.AttributeValue.AttributeType.DisplayName,
-                            Value = va.AttributeValue.Value,
-                            DisplayValue = va.AttributeValue.DisplayValue,
-                            HexCode = va.AttributeValue.HexCode
-                        })
-                });
+                        va => new AttributeValueDto(
+                            va.AttributeValueId,
+                            va.AttributeValue.AttributeType.Name,
+                            va.AttributeValue.AttributeType.DisplayName,
+                            va.AttributeValue.Value,
+                            va.AttributeValue.DisplayValue,
+                            va.AttributeValue.HexCode
+                        ))
+                ));
             }
 
-            dtos.Add(new PublicProductViewDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Sku = p.Sku,
-                IsActive = p.IsActive,
-                CategoryGroupId = p.CategoryGroupId,
-                CategoryGroup = p.CategoryGroup != null ? new { p.CategoryGroup.Id, p.CategoryGroup.Name, CategoryName = p.CategoryGroup.Category.Name } : null,
-                Images = productImages,
-                MinPrice = p.MinPrice,
-                MaxPrice = p.MaxPrice,
-                TotalStock = p.TotalStock,
-                HasMultipleVariants = p.HasMultipleVariants,
-                Variants = variantDtos
-            });
+            dtos.Add(new PublicProductViewDto(
+                p.Id,
+                p.Name,
+                await _mediaService.GetPrimaryImageUrlAsync("Product", p.Id),
+                p.Description,
+                p.Sku,
+                p.IsActive,
+                p.CategoryGroupId,
+                p.CategoryGroup != null ? new { p.CategoryGroup.Id, p.CategoryGroup.Name, CategoryName = p.CategoryGroup.Category.Name } : null,
+                variantDtos,
+                productImages,
+                p.MinPrice,
+                p.MaxPrice,
+                p.TotalStock,
+                p.HasMultipleVariants
+            ));
         }
 
         return (dtos, totalItems);
@@ -171,14 +170,13 @@ public class ProductService : IProductService
         var productImages = new List<MediaDto>();
         foreach (var img in product.Images)
         {
-            productImages.Add(new MediaDto
-            {
-                Id = img.Id,
-                Url = await _mediaService.GetPrimaryImageUrlAsync("Product", product.Id),
-                AltText = img.AltText,
-                IsPrimary = img.IsPrimary,
-                SortOrder = img.SortOrder
-            });
+            productImages.Add(new MediaDto(
+                img.Id,
+                _storageService.GetFileUrl(img.FilePath),
+                img.AltText,
+                img.IsPrimary,
+                img.SortOrder
+            ));
         }
 
         var variantDtos = new List<ProductVariantResponseDto>();
@@ -187,77 +185,74 @@ public class ProductService : IProductService
             var variantImages = new List<MediaDto>();
             foreach (var img in v.Images)
             {
-                variantImages.Add(new MediaDto
-                {
-                    Id = img.Id,
-                    Url = await _mediaService.GetPrimaryImageUrlAsync("ProductVariant", v.Id),
-                    AltText = img.AltText,
-                    IsPrimary = img.IsPrimary,
-                    SortOrder = img.SortOrder
-                });
+                variantImages.Add(new MediaDto(
+                    img.Id,
+                    _storageService.GetFileUrl(img.FilePath),
+                    img.AltText,
+                    img.IsPrimary,
+                    img.SortOrder
+                ));
             }
-            variantDtos.Add(new ProductVariantResponseDto
-            {
-                Id = v.Id,
-                Sku = v.Sku,
-                SellingPrice = v.SellingPrice,
-                OriginalPrice = v.OriginalPrice,
-                Stock = v.Stock,
-                IsUnlimited = v.IsUnlimited,
-                IsInStock = v.IsInStock,
-                DiscountPercentage = v.DiscountPercentage,
-                PurchasePrice = isAdmin ? v.PurchasePrice : 0,
-                Images = variantImages,
-                Attributes = v.VariantAttributes.ToDictionary(
+            variantDtos.Add(new ProductVariantResponseDto(
+                v.Id,
+                v.Sku,
+                isAdmin ? v.PurchasePrice : 0,
+                v.OriginalPrice,
+                v.SellingPrice,
+                v.Stock,
+                v.IsUnlimited,
+                v.IsInStock,
+                v.DiscountPercentage,
+                variantImages,
+                v.VariantAttributes.ToDictionary(
                     va => va.AttributeValue.AttributeType.Name.ToLower(),
-                    va => new AttributeValueDto
-                    {
-                        Id = va.AttributeValueId,
-                        Type = va.AttributeValue.AttributeType.Name,
-                        TypeDisplay = va.AttributeValue.AttributeType.DisplayName,
-                        Value = va.AttributeValue.Value,
-                        DisplayValue = va.AttributeValue.DisplayValue,
-                        HexCode = va.AttributeValue.HexCode
-                    })
-            });
+                    va => new AttributeValueDto(
+                        va.AttributeValueId,
+                        va.AttributeValue.AttributeType.Name,
+                        va.AttributeValue.AttributeType.DisplayName,
+                        va.AttributeValue.Value,
+                        va.AttributeValue.DisplayValue,
+                        va.AttributeValue.HexCode
+                    ))
+            ));
         }
 
-        var baseDto = new PublicProductViewDto
-        {
-            Id = product.Id,
-            Name = product.Name,
-            Description = product.Description,
-            Sku = product.Sku,
-            IsActive = product.IsActive,
-            CategoryGroupId = product.CategoryGroupId,
-            CategoryGroup = product.CategoryGroup != null ? new { product.CategoryGroup.Id, product.CategoryGroup.Name, CategoryName = product.CategoryGroup.Category.Name } : null,
-            Images = productImages,
-            MinPrice = product.MinPrice,
-            MaxPrice = product.MaxPrice,
-            TotalStock = product.TotalStock,
-            HasMultipleVariants = product.HasMultipleVariants,
-            Variants = variantDtos
-        };
+        var baseDto = new PublicProductViewDto(
+            product.Id,
+            product.Name,
+            await _mediaService.GetPrimaryImageUrlAsync("Product", product.Id),
+            product.Description,
+            product.Sku,
+            product.IsActive,
+            product.CategoryGroupId,
+            product.CategoryGroup != null ? new { product.CategoryGroup.Id, product.CategoryGroup.Name, CategoryName = product.CategoryGroup.Category.Name } : null,
+            variantDtos,
+            productImages,
+            product.MinPrice,
+            product.MaxPrice,
+            product.TotalStock,
+            product.HasMultipleVariants
+        );
 
         if (isAdmin)
         {
-            return new AdminProductViewDto
-            {
-                Id = baseDto.Id,
-                Name = baseDto.Name,
-                Description = baseDto.Description,
-                Sku = baseDto.Sku,
-                IsActive = baseDto.IsActive,
-                CategoryGroupId = baseDto.CategoryGroupId,
-                CategoryGroup = baseDto.CategoryGroup,
-                Images = baseDto.Images,
-                MinPrice = baseDto.MinPrice,
-                MaxPrice = baseDto.MaxPrice,
-                TotalStock = baseDto.TotalStock,
-                HasMultipleVariants = baseDto.HasMultipleVariants,
-                Variants = baseDto.Variants,
-                RowVersion = product.RowVersion
-            };
+            return new AdminProductViewDto(
+                baseDto.Id,
+                baseDto.Name,
+                baseDto.IconUrl,
+                baseDto.Description,
+                baseDto.Sku,
+                baseDto.IsActive,
+                baseDto.CategoryGroupId,
+                baseDto.CategoryGroup,
+                baseDto.Variants,
+                baseDto.Images,
+                baseDto.MinPrice,
+                baseDto.MaxPrice,
+                baseDto.TotalStock,
+                baseDto.HasMultipleVariants,
+                product.RowVersion
+            );
         }
 
         return baseDto;
@@ -269,7 +264,7 @@ public class ProductService : IProductService
         {
             Name = _htmlSanitizer.Sanitize(productDto.Name),
             Sku = productDto.Sku,
-            Description = productDto.Description,
+            Description = _htmlSanitizer.Sanitize(productDto.Description ?? ""),
             IsActive = productDto.IsActive,
             CategoryGroupId = productDto.CategoryGroupId
         };
@@ -309,7 +304,8 @@ public class ProductService : IProductService
             }
         }
         await _context.SaveChangesAsync();
-        await RecalculateProductAggregatesAsync(product.Id);
+        RecalculateProductAggregates(product);
+        await _context.SaveChangesAsync();
 
         if (productDto.Files != null)
         {
@@ -345,7 +341,7 @@ public class ProductService : IProductService
 
         existingProduct.Name = _htmlSanitizer.Sanitize(productDto.Name);
         existingProduct.Sku = productDto.Sku;
-        existingProduct.Description = productDto.Description;
+        existingProduct.Description = _htmlSanitizer.Sanitize(productDto.Description ?? "");
         existingProduct.IsActive = productDto.IsActive;
         existingProduct.CategoryGroupId = productDto.CategoryGroupId;
 
@@ -372,7 +368,6 @@ public class ProductService : IProductService
 
                 if (variantToUpdate != null)
                 {
-                    // Update existing variant
                     variantToUpdate.PurchasePrice = dto.PurchasePrice;
                     variantToUpdate.OriginalPrice = dto.OriginalPrice;
                     variantToUpdate.SellingPrice = dto.SellingPrice;
@@ -393,7 +388,6 @@ public class ProductService : IProductService
                 }
                 else
                 {
-                    // Add new variant
                     var newVariant = new TProductVariant
                     {
                         ProductId = id,
@@ -429,7 +423,8 @@ public class ProductService : IProductService
 
         await _context.SaveChangesAsync();
 
-        await RecalculateProductAggregatesAsync(id);
+        RecalculateProductAggregates(existingProduct);
+        await _context.SaveChangesAsync();
 
         return true;
     }
@@ -474,7 +469,13 @@ public class ProductService : IProductService
         await _inventoryService.LogTransactionAsync(variant.Id, "Adjustment", stockDto.Quantity, null, userId, "Manual stock addition by admin");
         await _context.SaveChangesAsync();
         var newStock = await _inventoryService.GetCurrentStockAsync(variant.Id);
-        await RecalculateProductAggregatesAsync(id);
+
+        var product = await _context.TProducts.Include(p => p.Variants).FirstOrDefaultAsync(p => p.Id == id);
+        if (product != null)
+        {
+            RecalculateProductAggregates(product);
+            await _context.SaveChangesAsync();
+        }
 
         return (true, newStock, "Stock added successfully");
     }
@@ -492,7 +493,13 @@ public class ProductService : IProductService
         await _inventoryService.LogTransactionAsync(variant.Id, "Adjustment", -stockDto.Quantity, null, userId, "Manual stock removal by admin");
         await _context.SaveChangesAsync();
         var newStock = await _inventoryService.GetCurrentStockAsync(variant.Id);
-        await RecalculateProductAggregatesAsync(id);
+
+        var product = await _context.TProducts.Include(p => p.Variants).FirstOrDefaultAsync(p => p.Id == id);
+        if (product != null)
+        {
+            RecalculateProductAggregates(product);
+            await _context.SaveChangesAsync();
+        }
 
         return (true, newStock, "Stock removed successfully");
     }
@@ -565,8 +572,13 @@ public class ProductService : IProductService
         var productIds = variants.Select(v => v.ProductId).Distinct();
         foreach (var productId in productIds)
         {
-            await RecalculateProductAggregatesAsync(productId);
+            var product = await _context.TProducts.Include(p => p.Variants).FirstOrDefaultAsync(p => p.Id == productId);
+            if (product != null)
+            {
+                RecalculateProductAggregates(product);
+            }
         }
+        await _context.SaveChangesAsync();
         await _cacheService.ClearByPrefixAsync("cart:user:");
 
         return (updatedCount, $"{updatedCount} variants updated successfully");
@@ -584,7 +596,7 @@ public class ProductService : IProductService
             query = query.Where(v => v.Product.CategoryGroup.CategoryId == categoryId);
         if (minDiscount > 0)
             query = query.Where(v => v.DiscountPercentage >= minDiscount);
-        if (maxDiscount > 0 && maxDiscount > minDiscount)
+        if (maxDiscount > 0)
             query = query.Where(v => v.DiscountPercentage <= maxDiscount);
 
         var totalItems = await query.CountAsync();
@@ -632,7 +644,14 @@ public class ProductService : IProductService
         variant.SellingPrice = discountDto.DiscountedPrice;
 
         await _context.SaveChangesAsync();
-        await RecalculateProductAggregatesAsync(variant.ProductId);
+
+        var product = await _context.TProducts.Include(p => p.Variants).FirstOrDefaultAsync(p => p.Id == variant.ProductId);
+        if (product != null)
+        {
+            RecalculateProductAggregates(product);
+            await _context.SaveChangesAsync();
+        }
+
         await _cacheService.ClearByPrefixAsync("cart:user:");
 
         var result = new
@@ -655,7 +674,14 @@ public class ProductService : IProductService
         variant.OriginalPrice = variant.SellingPrice;
 
         await _context.SaveChangesAsync();
-        await RecalculateProductAggregatesAsync(variant.ProductId);
+
+        var product = await _context.TProducts.Include(p => p.Variants).FirstOrDefaultAsync(p => p.Id == variant.ProductId);
+        if (product != null)
+        {
+            RecalculateProductAggregates(product);
+            await _context.SaveChangesAsync();
+        }
+
         await _cacheService.ClearByPrefixAsync("cart:user:");
 
         return (true, "Discount removed successfully");
@@ -698,11 +724,8 @@ public class ProductService : IProductService
         };
     }
 
-    private async Task RecalculateProductAggregatesAsync(int productId)
+    private void RecalculateProductAggregates(TProducts product)
     {
-        var product = await _context.TProducts.Include(p => p.Variants).FirstOrDefaultAsync(p => p.Id == productId);
-        if (product == null) return;
-
         var activeVariants = product.Variants.Where(v => v.IsActive).ToList();
         if (activeVariants.Any())
         {
@@ -716,7 +739,5 @@ public class ProductService : IProductService
             product.MaxPrice = 0;
             product.TotalStock = 0;
         }
-
-        await _context.SaveChangesAsync();
     }
 }

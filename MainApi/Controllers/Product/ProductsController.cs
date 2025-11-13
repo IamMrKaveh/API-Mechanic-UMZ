@@ -23,9 +23,6 @@ public class ProductsController : BaseApiController
     {
         try
         {
-            if (search.Page < 1) search.Page = 1;
-            if (search.PageSize < 1 || search.PageSize > 100) search.PageSize = 100;
-
             var (products, totalItems) = await _productService.GetProductsAsync(search);
             var totalPages = totalItems == 0 ? 1 : (int)Math.Ceiling((double)totalItems / search.PageSize);
 

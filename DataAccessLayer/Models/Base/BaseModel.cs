@@ -1,0 +1,33 @@
+﻿namespace DataAccessLayer.Models.Base;
+
+public interface IAuditable
+{
+    DateTime CreatedAt { get; set; }
+    DateTime? UpdatedAt { get; set; }
+}
+
+public interface ISoftDeletable
+{
+    bool IsDeleted { get; set; }
+    DateTime? DeletedAt { get; set; }
+    int? DeletedBy { get; set; }
+}
+
+public interface IBaseEntity
+{
+    int Id { get; set; }
+    string? Name { get; set; }
+}
+
+public abstract class BaseEntity : IAuditable, ISoftDeletable
+{
+    [Key]
+    public int Id { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public int? DeletedBy { get; set; }
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
+}

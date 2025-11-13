@@ -3,60 +3,68 @@
   "WorkspaceRootPath": "C:\\ME\\Mechanic\\API\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\redis\\rediscacheservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\redis\\rediscacheservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|c:\\me\\mechanic\\api\\dataaccesslayer\\todo.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|solutionrelative:dataaccesslayer\\todo.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\order\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\order\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\product\\productservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\product\\productservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\inventory\\iinventoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\inventory\\iinventoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\inventory\\inventoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\inventory\\inventoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\extensions\\httpcontexthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\extensions\\httpcontexthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\ratelimit\\ratelimitmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\ratelimit\\ratelimitmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\extensions\\securityextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\extensions\\securityextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\discount\\discountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\discount\\discountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\cart\\cartservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\cart\\cartservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|c:\\me\\mechanic\\api\\dataaccesslayer\\models\\dto\\cartdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|solutionrelative:dataaccesslayer\\models\\dto\\cartdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\inventory\\inventoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\inventory\\inventoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|c:\\me\\mechanic\\api\\dataaccesslayer\\models\\user\\tusers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|solutionrelative:dataaccesslayer\\models\\user\\tusers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\order\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\order\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|c:\\me\\mechanic\\api\\dataaccesslayer\\data\\mechaniccontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|solutionrelative:dataaccesslayer\\data\\mechaniccontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\cache\\inmemorycacheservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\cache\\inmemorycacheservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|c:\\me\\mechanic\\api\\dataaccesslayer\\models\\order\\ordermodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|solutionrelative:dataaccesslayer\\models\\order\\ordermodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\order\\items\\orderitemservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\order\\items\\orderitemservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|c:\\me\\mechanic\\api\\dataaccesslayer\\models\\inventory\\inventorymodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|solutionrelative:dataaccesslayer\\models\\inventory\\inventorymodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|c:\\me\\mechanic\\api\\dataaccesslayer\\models\\dto\\modelsdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|solutionrelative:dataaccesslayer\\models\\dto\\modelsdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\user\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\user\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|c:\\me\\mechanic\\api\\dataaccesslayer\\data\\mechaniccontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A9FCCEB3-DD88-F8C0-89A3-FD31A7C54F23}|DataAccessLayer\\DataAccessLayer.csproj|solutionrelative:dataaccesslayer\\data\\mechaniccontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\services\\review\\reviewservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\services\\review\\reviewservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -83,45 +91,97 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "RedisCacheService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Redis\\RedisCacheService.cs",
-              "RelativeDocumentMoniker": "MainApi\\Services\\Redis\\RedisCacheService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Redis\\RedisCacheService.cs",
-              "RelativeToolTip": "MainApi\\Services\\Redis\\RedisCacheService.cs",
-              "ViewState": "AgIAAIoAAAAAAAAAAAAmwJIAAAANAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:50:05.403Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "OrderService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Order\\OrderService.cs",
-              "RelativeDocumentMoniker": "MainApi\\Services\\Order\\OrderService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Order\\OrderService.cs",
-              "RelativeToolTip": "MainApi\\Services\\Order\\OrderService.cs",
-              "ViewState": "AgIAALcCAAAAAAAAAAAmwM4CAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:49:54.856Z",
+              "Title": "TODO.txt",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\TODO.txt",
+              "RelativeDocumentMoniker": "DataAccessLayer\\TODO.txt",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\TODO.txt",
+              "RelativeToolTip": "DataAccessLayer\\TODO.txt",
+              "ViewState": "AgIAAFgCAAAAAAAAAAAxwF8CAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-11-13T13:30:16.543Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "IInventoryService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Inventory\\IInventoryService.cs",
-              "RelativeDocumentMoniker": "MainApi\\Services\\Inventory\\IInventoryService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Inventory\\IInventoryService.cs",
-              "RelativeToolTip": "MainApi\\Services\\Inventory\\IInventoryService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
+              "Title": "DiscountService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Discount\\DiscountService.cs",
+              "RelativeDocumentMoniker": "MainApi\\Services\\Discount\\DiscountService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Discount\\DiscountService.cs",
+              "RelativeToolTip": "MainApi\\Services\\Discount\\DiscountService.cs",
+              "ViewState": "AgIAABEAAAAAAAAAAAAmwCgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:49:44.849Z",
+              "WhenOpened": "2025-11-13T08:35:16.265Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 6,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
+              "RelativeDocumentMoniker": "MainApi\\appsettings.json",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
+              "RelativeToolTip": "MainApi\\appsettings.json",
+              "ViewState": "AgIAADsAAAAAAAAAAAAkwGEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-11-13T08:34:00.948Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
+              "RelativeDocumentMoniker": "MainApi\\Program.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
+              "RelativeToolTip": "MainApi\\Program.cs",
+              "ViewState": "AgIAABwCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T08:23:41.089Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "InMemoryCacheService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Cache\\InMemoryCacheService.cs",
+              "RelativeDocumentMoniker": "MainApi\\Services\\Cache\\InMemoryCacheService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Cache\\InMemoryCacheService.cs",
+              "RelativeToolTip": "MainApi\\Services\\Cache\\InMemoryCacheService.cs",
+              "ViewState": "AgIAACYAAAAAAAAAAAAcwDUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T08:23:13.521Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ProductService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Product\\ProductService.cs",
+              "RelativeDocumentMoniker": "MainApi\\Services\\Product\\ProductService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Product\\ProductService.cs",
+              "RelativeToolTip": "MainApi\\Services\\Product\\ProductService.cs",
+              "ViewState": "AgIAANcCAAAAAAAAAAA2wOICAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T08:22:57.572Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "OrderService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Order\\OrderService.cs",
+              "RelativeDocumentMoniker": "MainApi\\Services\\Order\\OrderService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Order\\OrderService.cs",
+              "RelativeToolTip": "MainApi\\Services\\Order\\OrderService.cs",
+              "ViewState": "AgIAAOQCAAAAAAAAAAAmwPsCAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T07:41:11.459Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "InventoryService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Inventory\\InventoryService.cs",
               "RelativeDocumentMoniker": "MainApi\\Services\\Inventory\\InventoryService.cs",
@@ -129,137 +189,111 @@
               "RelativeToolTip": "MainApi\\Services\\Inventory\\InventoryService.cs",
               "ViewState": "AgIAAGwAAAAAAAAAAAAmwIMAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:49:38.867Z",
+              "WhenOpened": "2025-11-13T08:22:06.22Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "HttpContextHelper.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Extensions\\HttpContextHelper.cs",
-              "RelativeDocumentMoniker": "MainApi\\Extensions\\HttpContextHelper.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Extensions\\HttpContextHelper.cs",
-              "RelativeToolTip": "MainApi\\Extensions\\HttpContextHelper.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:49:20.081Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "RateLimitMiddleware.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\RateLimit\\RateLimitMiddleware.cs",
-              "RelativeDocumentMoniker": "MainApi\\Services\\RateLimit\\RateLimitMiddleware.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\RateLimit\\RateLimitMiddleware.cs",
-              "RelativeToolTip": "MainApi\\Services\\RateLimit\\RateLimitMiddleware.cs",
-              "ViewState": "AgIAAAIAAAAAAAAAAAA+wDAAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:48:54.134Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "SecurityExtensions.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Extensions\\SecurityExtensions.cs",
-              "RelativeDocumentMoniker": "MainApi\\Extensions\\SecurityExtensions.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Extensions\\SecurityExtensions.cs",
-              "RelativeToolTip": "MainApi\\Extensions\\SecurityExtensions.cs",
-              "ViewState": "AgIAABQAAAAAAAAAAAAAAEgAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:48:33.113Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "Imports.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Imports.cs",
-              "RelativeDocumentMoniker": "MainApi\\Imports.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Imports.cs",
-              "RelativeToolTip": "MainApi\\Imports.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAwAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:48:14.823Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
-              "RelativeDocumentMoniker": "MainApi\\Program.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
-              "RelativeToolTip": "MainApi\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:48:05.37Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "CartDto.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Models\\DTO\\CartDto.cs",
-              "RelativeDocumentMoniker": "DataAccessLayer\\Models\\DTO\\CartDto.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Models\\DTO\\CartDto.cs",
-              "RelativeToolTip": "DataAccessLayer\\Models\\DTO\\CartDto.cs",
-              "ViewState": "AgIAABUAAAAAAAAAAAA6wCwAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:47:51.434Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 3,
               "Title": "CartService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Cart\\CartService.cs",
               "RelativeDocumentMoniker": "MainApi\\Services\\Cart\\CartService.cs",
               "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Cart\\CartService.cs",
               "RelativeToolTip": "MainApi\\Services\\Cart\\CartService.cs",
-              "ViewState": "AgIAABABAAAAAAAAAAAAADUBAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAJ0BAAAAAAAAAAAmwK4BAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:47:39.047Z",
+              "WhenOpened": "2025-11-13T07:42:28.214Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "OrderModel.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Models\\Order\\OrderModel.cs",
+              "RelativeDocumentMoniker": "DataAccessLayer\\Models\\Order\\OrderModel.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Models\\Order\\OrderModel.cs",
+              "RelativeToolTip": "DataAccessLayer\\Models\\Order\\OrderModel.cs",
+              "ViewState": "AgIAAIEAAAAAAAAAAAAywIsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T08:22:43.599Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 11,
-              "Title": "TUsers.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Models\\User\\TUsers.cs",
-              "RelativeDocumentMoniker": "DataAccessLayer\\Models\\User\\TUsers.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Models\\User\\TUsers.cs",
-              "RelativeToolTip": "DataAccessLayer\\Models\\User\\TUsers.cs",
-              "ViewState": "AgIAACEAAAAAAAAAAAAYwCgAAAABAAAAAAAAAA==",
+              "Title": "OrderItemService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Order\\Items\\OrderItemService.cs",
+              "RelativeDocumentMoniker": "MainApi\\Services\\Order\\Items\\OrderItemService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Order\\Items\\OrderItemService.cs",
+              "RelativeToolTip": "MainApi\\Services\\Order\\Items\\OrderItemService.cs",
+              "ViewState": "AgIAAOMAAAAAAAAAAAAmwPoAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:47:20.06Z",
+              "WhenOpened": "2025-11-13T08:22:28.36Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 12,
-              "Title": "UserService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\User\\UserService.cs",
-              "RelativeDocumentMoniker": "MainApi\\Services\\User\\UserService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\User\\UserService.cs",
-              "RelativeToolTip": "MainApi\\Services\\User\\UserService.cs",
-              "ViewState": "AgIAABoCAAAAAAAAAAAmwDECAAABAAAAAAAAAA==",
+              "Title": "InventoryModel.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Models\\Inventory\\InventoryModel.cs",
+              "RelativeDocumentMoniker": "DataAccessLayer\\Models\\Inventory\\InventoryModel.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Models\\Inventory\\InventoryModel.cs",
+              "RelativeToolTip": "DataAccessLayer\\Models\\Inventory\\InventoryModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:47:10.936Z",
+              "WhenOpened": "2025-11-13T08:21:59.552Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 8,
               "Title": "MechanicContext.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Data\\MechanicContext.cs",
               "RelativeDocumentMoniker": "DataAccessLayer\\Data\\MechanicContext.cs",
               "ToolTip": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Data\\MechanicContext.cs",
               "RelativeToolTip": "DataAccessLayer\\Data\\MechanicContext.cs",
-              "ViewState": "AgIAAEQAAAAAAAAAAAAAAOEBAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAMgBAAAAAAAAAAAmwNwBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T09:46:53.866Z",
+              "WhenOpened": "2025-11-13T07:40:46.749Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "UserService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\User\\UserService.cs",
+              "RelativeDocumentMoniker": "MainApi\\Services\\User\\UserService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\User\\UserService.cs",
+              "RelativeToolTip": "MainApi\\Services\\User\\UserService.cs",
+              "ViewState": "AgIAACQCAAAAAAAAAAAmwCsCAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T07:42:04.591Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "ReviewService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Review\\ReviewService.cs",
+              "RelativeDocumentMoniker": "MainApi\\Services\\Review\\ReviewService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Services\\Review\\ReviewService.cs",
+              "RelativeToolTip": "MainApi\\Services\\Review\\ReviewService.cs",
+              "ViewState": "AgIAAFoAAAAAAAAAAAAmwHEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T07:41:42.266Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "ModelsDto.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Models\\DTO\\ModelsDto.cs",
+              "RelativeDocumentMoniker": "DataAccessLayer\\Models\\DTO\\ModelsDto.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\DataAccessLayer\\Models\\DTO\\ModelsDto.cs",
+              "RelativeToolTip": "DataAccessLayer\\Models\\DTO\\ModelsDto.cs",
+              "ViewState": "AgIAAH0BAAAAAAAAAAAUwKYBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T07:39:56.198Z",
               "EditorCaption": ""
             }
           ]

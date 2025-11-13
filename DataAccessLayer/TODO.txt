@@ -1,0 +1,608 @@
+﻿سؤال بسیار خوبی پرسیدی 👏
+تو هم‌اکنون یک **پایه فوق‌العاده قوی و ساختارمند** داری — چیزی که ۹۰٪ پروژه‌ها ازش عقب‌اند.
+اما اگر هدفت ساخت **فروشگاه آنلاین پیشرفته و مقیاس‌پذیر** است، می‌تونی با مجموعه‌ای از بهبودها در **طراحی مدل‌ها، ارتباط‌ها، امنیت، و بهینه‌سازی داده‌ها** پروژه‌ات رو به سطح Enterprise برسونی.
+
+در ادامه، گزارش راهبردی و فنی «بهبود و توسعه مدل‌های پروژه» را به تفکیک حوزه آورده‌ام 👇
+
+---
+
+## 🧱 ۱. بهبود لایه پایه (Base & Common)
+
+### 🔹 افزودن BaseAudit + Entity Tracking
+
+مدل‌های تو از `IAuditable` و `ISoftDeletable` استفاده می‌کنند، اما می‌توانی این موارد را تقویت کنی:
+
+* ثبت **CreatedBy / UpdatedBy (UserId)** برای ردیابی تغییرات.
+* ذخیره **Source (API / Panel / CronJob)** جهت ممیزی کامل.
+* افزودن **ChangeLog** خودکار با EF Core Interceptor برای ثبت تغییرات هر entity.
+
+### 🔹 اضافه کردن TenantId یا OrganizationId
+
+اگر در آینده بخواهی فروشگاه چندفروشنده‌ای (Marketplace / Multi-tenant) بسازی، اضافه کردن فیلد اختیاری `TenantId` یا `StoreId` از الان مفید است.
+
+---
+
+## 👥 ۲. بهبود مدل کاربران (UserModel)
+
+### ✅ پیشنهادها:
+
+* افزودن **Email** و **PasswordHash (در صورت پشتیبانی از ورود با ایمیل)**
+* افزودن `Role` و `Permissions` برای کنترل سطح دسترسی (Admin, Seller, Support, Customer).
+* افزودن `LoyaltyPoints` و `WalletBalance` برای برنامه‌های وفاداری یا کیف پول.
+* جدول جدید `TUserActivity` برای ثبت رفتار کاربران (ورود، مشاهده محصول، افزودن به سبد).
+
+📘 **مزیت:** این تغییرات زیرساخت را برای سیستم‌های پاداش، امتیازدهی و سطوح کاربری آماده می‌کند.
+
+---
+
+## 🛒 ۳. توسعه مدل سبد خرید (CartModel)
+
+* افزودن **فیلد `CouponCode` و `ShippingCost`** برای تخمین قیمت نهایی قبل از پرداخت.
+* پشتیبانی از **سبد چند فروشنده‌ای (Vendor-based cart)** در آینده با افزودن `SellerId`.
+* ذخیره‌سازی **قیمت لحظه‌ای هر Variant** در زمان اضافه شدن به سبد (برای جلوگیری از تغییر قیمت).
+* افزودن **PromotionId / CampaignId** برای تخفیف‌های خودکار.
+
+---
+
+## 🧾 ۴. بهبود سیستم سفارش‌ها (OrderModel)
+
+### ✅ پیشنهادها:
+
+1. افزودن **TrackingNumber / ShippingStatusHistory** برای رهگیری پست.
+2. افزودن **InvoiceNumber و InvoiceDate** برای تولید فاکتور رسمی.
+3. جداسازی وضعیت پرداخت از وضعیت سفارش (در حال حاضر در `IsPaid` خلاصه شده).
+4. ذخیره اسنپ‌شات قیمت‌ها، مالیات و هزینه بسته‌بندی در زمان ثبت سفارش.
+5. افزودن جدول `TOrderLog` برای تاریخچه وضعیت سفارش.
+
+📘 **مزیت:** گزارش‌گیری و رهگیری حرفه‌ای سفارش‌ها.
+
+---
+
+## 💰 ۵. بهبود تخفیف‌ها (DiscountModel)
+
+* افزودن **DiscountType** (درصدی / مبلغ ثابت / ارسال رایگان).
+* پشتیبانی از **تخفیف‌های ترکیبی** (مثلاً همزمان درصدی و سقف مبلغی).
+* اضافه کردن **تاریخ شروع (StartAt)** و **شرط حداقل تعداد کالاها**.
+* پشتیبانی از **کدهای تخفیف اختصاصی برای کاربران خاص یا گروه‌ها.**
+
+📘 **مزیت:** ساخت کمپین‌های بازاریابی پیچیده مثل Black Friday یا تخفیف تولد کاربر.
+
+---
+
+## 📦 ۶. توسعه مدل محصول (ProductModel)
+
+### ✅ پیشنهادها:
+
+1. افزودن `Brand` یا `Manufacturer` مدل جدید:
+
+   ```csharp
+   public class TBrand : BaseEntity {
+       public required string Name { get; set; }
+       public ICollection<TProducts> Products { get; set; } = [];
+   }
+   ```
+2. افزودن `TaxRate`, `Weight`, `Dimensions` برای محاسبه ارسال.
+3. افزودن `SeoTitle`, `MetaDescription`, `Slug` برای SEO.
+4. مدل جدید `TProductTag` برای تگ‌گذاری محصولات (جستجو و فیلتر).
+5. افزودن `RelatedProducts` و `UpsellProducts`.
+6. افزودن `PriceHistory` برای نمودار قیمت در زمان.
+
+📘 **مزیت:** بهینه‌سازی برای SEO، فیلتر پیشرفته، و گزارش قیمت‌گذاری پویا.
+
+---
+
+## 🎨 ۷. ویژگی‌ها و واریانت‌ها (ProductAttributeModel)
+
+* اضافه کردن **AttributeType: color / size / material / warranty** با meta-type قابل‌گسترش.
+* افزودن `GroupName` برای نمایش ویژگی‌ها در تب‌های جدا (مثلاً مشخصات فنی / ظاهری).
+* پشتیبانی از **AttributeSet** برای گروه‌بندی سریع ویژگی‌های محصولات مشابه.
+
+📘 **مزیت:** سرعت بالاتر در افزودن محصولات جدید و UI تمیزتر در فرانت‌اند.
+
+---
+
+## 🏪 ۸. انبار و موجودی (InventoryModel)
+
+* افزودن **WarehouseId** (چند انبار، چند موقعیت).
+* افزودن **InventoryAdjustmentReason** (خرید، برگشت، آسیب، انقضا).
+* مدل جدید `TWarehouse`:
+
+  ```csharp
+  public class TWarehouse : BaseEntity {
+      public string Location { get; set; }
+      public ICollection<TInventoryTransaction> Transactions { get; set; } = [];
+  }
+  ```
+
+📘 **مزیت:** پشتیبانی از چند انبار و گزارش انبارداری دقیق.
+
+---
+
+## 💳 ۹. بهبود پرداخت‌ها (PaymentModel)
+
+* افزودن **PaymentMethod** (Online, COD, Wallet, GiftCard).
+* افزودن `PaymentStatusHistory` برای ثبت وضعیت تراکنش‌ها.
+* ذخیره IP و کاربر به شکل الزامی‌تر برای پیگیری تقلب.
+* افزودن `RefundRequest` و `RefundTransaction`.
+
+📘 **مزیت:** امکان بازپرداخت و چند روش پرداخت همزمان.
+
+---
+
+## 🧠 ۱۰. مدل‌های تحلیل و گزارش‌گیری جدید
+
+### مدل‌های پیشنهادی جدید:
+
+* `TSalesReport` (تجمیع فروش روزانه/ماهیانه)
+* `TProductViewAnalytics` (برای ردیابی بازدید محصولات)
+* `TUserBehavior` (افزودن به علاقه‌مندی‌ها، کلیک‌ها)
+* `TSearchLog` (تحلیل واژه‌های جستجو برای SEO)
+
+📘 **مزیت:** ایجاد داشبورد مدیریتی هوشمند (BI Dashboard).
+
+---
+
+## 🔔 ۱۱. سیستم اعلان‌ها (NotificationModel)
+
+* افزودن **Priority** (info, warning, critical)
+* افزودن **NotificationChannel** (Email, SMS, Push)
+* جدول `TUserNotificationSetting` برای تعیین نوع اطلاع‌رسانی‌های مجاز هر کاربر.
+
+---
+
+## 🧠 ۱۲. بهبود DTOها (ModelsDto.cs)
+
+* جداسازی DTOها به فولدرهای منطقی (User, Cart, Product, Payment).
+* افزودن `BaseResponseDto` برای استانداردسازی پاسخ‌ها (Status, Message, Data).
+* استفاده از `PaginationDto` برای APIهای لیستی.
+* پشتیبانی از `SearchFilterDto` برای فیلترهای چندبعدی.
+
+---
+
+## ⚙️ ۱۳. بهبود عملکرد و مقیاس‌پذیری
+
+* افزودن **Cache Layer (Redis)** برای خواندن‌های سنگین مثل محصولات و دسته‌ها.
+* استفاده از **Soft Delete Filter Global** در EF Core.
+* ایندکس‌گذاری دقیق‌تر روی فیلدهای پرتکرار (`IsActive`, `CreatedAt`, `CategoryGroupId`).
+* استفاده از **Read/Write DB Split** در آینده.
+
+---
+
+## 🔐 ۱۴. امنیت و کنترل دسترسی
+
+* افزودن جدول `TRole` و `TRolePermission`.
+* افزودن `AuditTrail` برای هر تغییر مدل حساس (مثلاً تغییر قیمت).
+* استفاده از `TRateLimit` برای همه APIهای حساس.
+
+---
+
+## 🧩 ۱۵. امکانات خاص فروشگاه‌های حرفه‌ای
+
+| قابلیت          | مدل پیشنهادی                        |
+| --------------- | ----------------------------------- |
+| علاقه‌مندی‌ها   | `TWishlist (UserId, VariantId)`     |
+| مقایسه محصولات  | `TProductComparison`                |
+| امتیاز وفاداری  | `TUserPointTransaction`             |
+| کیف پول         | `TWalletTransaction`                |
+| کوپن‌های هدیه   | `TGiftCard`                         |
+| پشتیبانی / تیکت | `TSupportTicket`, `TSupportMessage` |
+
+---
+
+## 🔚 جمع‌بندی نهایی
+
+✅ آنچه داری = زیرساخت حرفه‌ای برای فروشگاه تک‌فروشنده
+🚀 آنچه می‌توانی بسازی = پلتفرم پیشرفته با:
+
+* چند انبار + چند فروشنده
+* تحلیل رفتار کاربر + گزارش مالی
+* پرداخت چندحالته + سیستم تخفیف هوشمند
+* پشتیبانی از چندزبان و سئو
+
+===================================================================
+===================================================================
+===================================================================
+===================================================================
+===================================================================
+===================================================================
+
+عالی — همه‌ی موارد را به‌صورت **متنی و کامل** آماده کردم: نقشهٔ توسعه مرحله‌ای (MVP → Enterprise)، دیاگرام ERD توصیفی به شکل متن، تغییرات مدل‌ها با مثال‌های EF Core/C#، اسکریپت‌های مهاجرت/نگهداری داده، اولویت‌ها و چک‌لیست پذیرش برای هر فاز، و نکات عملکردی/امنیتی/استقرار. شروع می‌کنیم — طولانی اما عملی و قابل اجرا. 🚀
+
+# خلاصهٔ هدف
+
+هدف: تبدیل پروژهٔ فعلی (یک فروشگاه آنلاین با مدل‌های قوی) به یک **پلتفرم فروشگاهی پیشرفته، مقیاس‌پذیر و آمادهٔ Enterprise** با قابلیت‌های: چند فروشنده / چند انبار، گزارش‌گیری و BI، سیستم تخفیف پیشرفته، کیف پول و وفاداری، سازگاری SEO و بین‌المللی‌سازی، امنیت سطح بالا و مانیتورینگ.
+
+---
+
+# نقشهٔ توسعه مرحله‌ای (متنی — از کم به زیاد)
+
+## فاز 0 — آماده‌سازی و پاک‌سازی (پیش‌نیاز همه چیز)
+
+هدف: پایه را ثابت، تمیز و آماده برای توسعهٔ بزرگ کنیم.
+
+* بازبینی و استانداردسازی نام‌گذاری کلاس‌ها/فایل‌ها و پوشه‌ها (Folder: Models/{Auth,User,Product,...}).
+* جداسازی DTOها به فولدرهای منطقی (DTOs/{User,Product,Order,...}).
+* حذف یا قفل‌کردن فیلدهای `public` بدون نیاز و اضافه کردن `private set` جایی که منطقی است.
+* اضافه کردن فیلدهای audit کامل: `CreatedBy`, `UpdatedBy`, `Source`.
+* اضافه کردن global query filters برای `IsDeleted`.
+* بازبینی Indexها و افزودن missing indexes اولیه (`CategoryGroupId`, `IsActive`, `CreatedAt`, `Sku`).
+* ارتقا EF Core به آخرین نسخه‌ی پایداری که پروژه پشتیبانی می‌کند.
+* نوشتن migration اولیه‌ی پاک‌سازی (تفصیلی در بخش مهاجرت).
+
+**چک‌لیست پذیرش فاز0**
+
+* همه‌ی مدل‌ها مستندسازی شده‌اند.
+* Query filter `IsDeleted` فعال.
+* پایهٔ audit شامل `CreatedBy`/`UpdatedBy`.
+* پروژه بیلد می‌شود و دیتابیس با migrations جدید همگام است.
+
+---
+
+## فاز 1 — MVP پیشرفته (Customer + Admin)
+
+هدف: قابلیت‌های ضروری اما قدرتمند برای فروش و مدیریت.
+
+* ارتقا محصول:
+
+  * افزودن `Brand`, `Weight`, `Dimensions`, `TaxRate`, `Slug`, `SeoTitle`, `MetaDescription`.
+* سفارش و پرداخت:
+
+  * `InvoiceNumber`, `ShippingTrackingNumber`, `ShippingStatusHistory`.
+  * `RefundRequest` مدل + وضعیت بازپرداخت.
+* سبد خرید:
+
+  * ذخیرهٔ `PriceAtAddTime`, `AppliedCouponCode`, `EstimatedShippingCost`.
+* کاربر:
+
+  * Email, PasswordHash (اختیاری)، Roles پایه (`Customer`, `Admin`).
+* گزارش:
+
+  * مدل `TSalesSummaryDaily` یا امکان اجرای سادهٔ aggregation query.
+* API:
+
+  * Pagination استاندارد، BaseResponseDto، Error handling استاندارد.
+* Performance:
+
+  * Cache read-heavy endpoints با Redis (محصولات و دسته‌ها).
+
+**چک‌لیست پذیرش فاز1**
+
+* کاربر می‌تواند محصول بخرد و سفارش ثبت شود با فاکتور.
+* مدیر می‌تواند سفارش‌ها، وضعیت ارسال و بازپرداخت را مدیریت کند.
+* محصولات کش می‌شوند و لیست محصولات سریع برگشت داده می‌شود.
+
+---
+
+## فاز 2 — Marketplace & Inventory پیشرفته
+
+هدف: پشتیبانی از چند فروشنده، چند انبار، و مدیریت پیچیدهٔ موجودی.
+
+* چندفروشنده:
+
+  * مدل `TStore` / `TSeller` با `StoreId` در `TProducts` و `TOrders` (اختیاری).
+  * Permissions: `SellerAdmin`, `SellerStaff`.
+* انبار:
+
+  * مدل `TWarehouse`, `TStockLocation`, `TWarehouseStock` (VariantId, WarehouseId, Quantity).
+  * لوکالیزه‌سازی ورود/خروج بر اساس انبار.
+* رزرو موجودی (inventory reservation) هنگام Checkout برای جلوگیری از oversell:
+
+  * `TInventoryReservation` با `ExpiresAt` و cleanup job.
+* پرداخت و تسویه بین فروشندگان:
+
+  * `TSellerSettlement`، محاسبهٔ کمسیون در هر سفارش.
+
+**چک‌لیست پذیرش فاز2**
+
+* هر محصول می‌تواند متعلق به فروشندهٔ مشخصی باشد.
+* موجودی در چند انبار نگهداری شده و اختصاص آن هنگام سفارش انجام می‌شود.
+* سازوکار تسویهٔ بین فروشنده و پلتفرم وجود دارد (ثبت ورودی در `TSellerSettlement`).
+
+---
+
+## فاز 3 — تجربه مشتری و بازاریابی (Conversion / Retention)
+
+هدف: افزایش نرخ تبدیل و نگهداری مشتری.
+
+* سیستم وفاداری:
+
+  * `TUserPointTransaction`, `User.LoyaltyPoints`.
+* کیف پول و اعتبار:
+
+  * `TWallet`, `TWalletTransaction`.
+* تخفیف پیشرفته:
+
+  * `DiscountType` (percent, fixed, free_shipping), `StackingRules`, `StartAt`, `Priority`.
+  * کمپین‌های زمان‌بندی‌شده با `TCampaign`.
+* سیستم ایمیل، SMS و Push:
+
+  * `TNotificationChannel`, تنظیمات کاربر.
+* Wishlist, Compare, Recently Viewed:
+
+  * `TWishlist`, `TProductComparison`, `TProductView`.
+
+**چک‌لیست پذیرش فاز3**
+
+* کاربر می‌تواند از کیف پول/امتیاز برای پرداخت استفاده کند.
+* کمپین/کد تخفیف با شرط‌ها و اولویت‌بندی کار می‌کند.
+* Wishlist و Recently Viewed فعال و قابل استفاده در UI.
+
+---
+
+## فاز 4 — Analytics, Search, و Scalability
+
+هدف: مقیاس‌پذیری برای میلیون‌ها کاربر و قابلیت گزارش‌گیری پیشرفته.
+
+* Search:
+
+  * ادغام با Elasticsearch/Opensearch یا Azure Cognitive Search؛ ایندکسینگ محصولات، فیلترها، پیشنهاد هوشمند.
+* Analytics:
+
+  * `TProductViewAnalytics` (save aggregations hourly/day), `TSearchLog`.
+  * ETL برای BI (export to data-warehouse).
+* آرشیو و Partitioning:
+
+  * Partitioned tables برای لاگ‌ها و تراکنش‌ها (Postgres partitioning یا SQL Server).
+* CQRS & Event Sourcing (اختیاری برای مقیاس بالا):
+
+  * جدا کردن read models از write models، event bus (Kafka/RabbitMQ).
+* Read replicas & DB sharding:
+
+  * آماده‌سازی برای Read/Write split.
+
+**چک‌لیست پذیرش فاز4**
+
+* قابلیت جستجوی full-text با فیلتر دقیق.
+* داشبورد مدیریتی با گزارش‌های فروش/موجودی/کاربر.
+* طراحی مقیاس‌پذیر (replicas, cache, CDNs).
+
+---
+
+## فاز 5 — Enterprise features (اختیاری/پیشرفته)
+
+* Multi-tenant کامل با isolation، billing per store.
+* Advanced Fraud Detection (machine learning signals).
+* Internationalization (i18n) و multi-currency.
+* SLA-grade High Availability، Disaster Recovery، Zero-downtime deployments.
+
+---
+
+# دیاگرام ERD (متن توصیفی — کلیدها و ارتباط‌ها)
+
+(این یک ERD متنی خلاصه است؛ برای دیاگرام واقعی می‌توان در ابزار‌های ERD کشید)
+
+* `TUsers` 1—* `TUserAddress`
+* `TUsers` 1—* `TCarts`
+* `TCarts` 1—* `TCartItems` (VariantId -> TProductVariant)
+* `TProducts` 1—* `TProductVariant`
+* `TProductVariant` *—* `TAttributeValue` (از طریق TProductVariantAttribute)
+* `TProducts` *—* `TMedia` (EntityType = Product)
+* `TOrders` 1—* `TOrderItems` (VariantId -> TProductVariant)
+* `TOrders` many—1 `TUsers`
+* `TDiscountCode` 1—* `TDiscountUsage`
+* `TProductVariant` 1—* `TInventoryTransaction`
+* New: `TWarehouse` 1—* `TWarehouseStock` (VariantId, Quantity)
+* New: `TSeller` 1—* `TProducts` (Product.StoreId)
+
+---
+
+# نمونهٔ تغییرات مدل (کد EF Core / C#) — انتخابی و عملی
+
+### اضافه کردن Brand و SEO به محصول
+
+```csharp
+public class TBrand : BaseEntity {
+    [Required, StringLength(200)]
+    public string Name { get; set; } = null!;
+    public ICollection<TProducts> Products { get; set; } = new List<TProducts>();
+}
+
+public class TProducts : BaseEntity {
+    // existing...
+    public int? BrandId { get; set; }
+    public TBrand? Brand { get; set; }
+
+    [StringLength(200)]
+    public string? SeoTitle { get; set; }
+    [StringLength(500)]
+    public string? MetaDescription { get; set; }
+    [StringLength(200)]
+    public string? Slug { get; set; }
+}
+```
+
+### اضافه کردن Warehouse + Stock
+
+```csharp
+public class TWarehouse : BaseEntity {
+    [Required]
+    public string Location { get; set; } = null!;
+    public ICollection<TWarehouseStock> Stocks { get; set; } = new();
+}
+
+public class TWarehouseStock {
+    [Key]
+    public int Id { get; set; }
+    [Required] public int VariantId { get; set; }
+    public TProductVariant Variant { get; set; } = null!;
+    [Required] public int WarehouseId { get; set; }
+    public TWarehouse Warehouse { get; set; } = null!;
+    [Required] public int Quantity { get; set; }
+}
+```
+
+### افزودن CreatedBy / UpdatedBy در BaseEntity
+
+```csharp
+public abstract class BaseEntity : IAuditable, ISoftDeletable {
+    [Key] public int Id { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public int? CreatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public int? UpdatedBy { get; set; }
+    // ...
+}
+```
+
+---
+
+# نگاشت داده (مهاجرت / مایگریشن) — نکات عملی
+
+1. **مهاجرت مرحله‌ای**: هر فاز را به یک یا چند migration منطقی تقسیم کن تا rollback ساده باشد.
+2. **مهاجرت داده حین افزودن فیلدهای اجباری**:
+
+   * اگر فیلدی required اضافه می‌کنی، ابتدا آن را nullable اضافه کن، سپس script برای پر کردن مقدار پیش‌فرض و بعد آنرا required کن.
+3. **Snapshot داده‌های حیاتی**:
+
+   * قبل از تغییرات ساختاری، snapshot/backup کامل DB بگیر.
+4. **انتقال موجودی به TWarehouseStock**:
+
+   * create `TWarehouse` default warehouse (e.g., "Default Warehouse")
+   * populate `TWarehouseStock` با مقدار از `TProductVariant.Stock`
+   * سپس حذف `TProductVariant.Stock` یا نگه داشتن برای compatibility (و علامت گذاری deprecated).
+5. **مهاجرت `CartItem` برای priceAtAddTime**:
+
+   * اضافه کردن ستون `PriceAtAddTime` و مقداردهی از `Variant.SellingPrice` برای همهٔ cart items فعلی.
+
+---
+
+# Indexing و بهبود کوئری‌ها (عملی)
+
+* ایندکس‌های پیشنهادی:
+
+  * `TProducts (IsActive, CategoryGroupId, MinPrice)`
+  * `TProductVariant (ProductId, IsActive, Stock)`
+  * `TOrders (UserId, CreatedAt, OrderStatusId)`
+  * `TInventoryTransaction (VariantId, CreatedAt)`
+* استفاده از **covering indexes** برای کوئری‌های پرتکرار.
+* Use `EXPLAIN` / `Query Plan` و performance tests برای هر index جدید.
+
+---
+
+# Cache & CDN
+
+* Cache نتایج لیست محصول و صفحه محصول با Redis + cache invalidation on change (e.g., product update evicts).
+* برای تصاویر از CDN (S3 + CloudFront)، در DB فقط آدرس ذخیره شود.
+* Cache keys pattern: `product:{id}`, `category:{id}:products:page:{n}`.
+
+---
+
+# Search
+
+* برای جستجوی پیشرفته و فیلترها از Elasticsearch / Opensearch:
+
+  * ایندکس: product id, name, sku, slug, category, attributes (nested), price, isActive, availability.
+  * suggesters و autocomplete.
+* یا برای ساده‌تر: SQL fulltext index (در سطح کوچک‌تر).
+
+---
+
+# امنیت (مهم)
+
+* Password hashing: استفاده از Argon2id یا at least PBKDF2/BCrypt.
+* JWT best practices: store refresh tokens (hashed) در DB (`TUserSession`).
+* Rate limiting: استفاده از `TRateLimit` + global middleware.
+* Input validation: DTOs با attributes و FluentValidation.
+* SQL Injection: هیچ جایی raw SQL با concat نداشته باش.
+* Audit: همه تغییرات مالی و قیمت را در `TOrderLog` یا `ChangeLog` ثبت کن.
+* PCI: هر داده کارت را ذخیره نکن؛ فقط `RefId` و `card_pan` hashed/partial.
+
+---
+
+# تست، QA و data integrity
+
+* Unit tests برای mappingها و business logic.
+* Integration tests برای workflowهای اصلی (checkout, refund).
+* Contract tests برای APIها.
+* Backfill & reconciliation jobs: nightly job که inventory, orders و settlements را reconcile می‌کند.
+
+---
+
+# مانیتورینگ و لاگینگ
+
+* Centralized logging: ELK (Elasticsearch / Logstash / Kibana) یا Grafana Loki.
+* Metrics: Prometheus + Grafana (requests, errors, latency).
+* Alerts for critical events (payment failures, queue backlog).
+* Health checks & readiness probes در deployment.
+
+---
+
+# استقرار و Infra (پیشنهادات)
+
+* Containerize (Docker) + Orchestrator (Kubernetes) برای scale.
+* DB: استفاده از managed DB (RDS/Azure SQL) با replica و backup.
+* Use infra-as-code (Terraform).
+* CI/CD: pipeline برای build/test/migrate/deploy.
+* Zero-downtime migrations: Blue/Green یا Rolling with feature flags.
+
+---
+
+# نمونهٔ API contract / DTO ساده (نمونه)
+
+```csharp
+public record BaseResponseDto<T>(bool Success, string? Message, T? Data);
+
+public record ProductListItemDto(int Id, string Name, string Slug, decimal MinPrice, bool IsInStock);
+
+public record PagedResultDto<T>(List<T> Items, int TotalCount, int Page, int PageSize);
+```
+
+---
+
+# مدیریت تغییرات schema در محیط تولید (پیشنهاد روال)
+
+1. feature branch -> code review -> integration tests.
+2. CI runs migrations against staging DB.
+3. Run migration scripts in *two-step* for breaking changes:
+
+   * add nullable field
+   * backfill data
+   * set NOT NULL + remove old columns
+4. Use maintenance mode or rolling with compatibility flags if absolutely required.
+
+---
+
+# معیارهای پذیرش (Definition of Done) برای هر فاز (نمونه)
+
+* API پاسخ‌دهی صحیح و مستندات OpenAPI (Swagger) بروز شده.
+* Unit + Integration tests coverage برای کامپوننت‌های جدید حداقل 70%.
+* Migration tested on staging and rollback plan موجود.
+* Load tests for endpoints مهم (product list, checkout).
+* Security scan passed (Snyk / Dependabot).
+
+---
+
+# اولویت‌های فوری برای شروع (عملی — 6 کار اول)
+
+1. فاز 0: اضافه کردن CreatedBy/UpdatedBy، global soft-delete filter، و cleanup مدل‌ها.
+2. فاز 1: افزودن fields برای SEO (Slug, SeoTitle) و Brand.
+3. فاز 1: ذخیره قیمت لحظه‌ای در CartItem (`PriceAtAddTime`) و migration.
+4. فاز 1: Payment/Order: افزودن InvoiceNumber و TrackingNumber + RefundRequest model.
+5. Indexing: اضافه کردن index های پرتکرار و اجرای EXPLAIN روی کوئری‌ها.
+6. Cache: پیاده‌سازی Redis cache برای لیست محصولات.
+
+---
+
+# نمونهٔ SQL ساده برای migration (مثال)
+
+```sql
+-- 1) Add slug column nullable
+ALTER TABLE TProducts ADD Slug nvarchar(200) NULL;
+
+-- 2) Backfill slugs (simple)
+UPDATE TProducts SET Slug = LOWER(REPLACE(Name, ' ', '-')) WHERE Slug IS NULL;
+
+-- 3) Make slug NOT NULL if filled
+ALTER TABLE TProducts ALTER COLUMN Slug nvarchar(200) NOT NULL;
+CREATE UNIQUE INDEX UX_TProducts_Slug ON TProducts(Slug);
+```
+
+---
+
+# نکات نهایی و پیشنهادات مدیریتی
+
+* **Feature flags** را از روز اول وارد کن — برای rollout کنترل‌شدهٔ ویژگی‌ها حیاتی است.
+* **Documentation**: هر تغییر مدل را در changelog و ER diagram ثبت کن.
+* **DB migrations** را در pipeline اتومات اجرا کن و pre/post migration checks بنویس.
+* **Small increments**: هر فاز را به جت کوچک‌تر (sprint-sized) تقسیم کن تا ریسک کم باشد.
+* **Monitoring & Alerts** را همزمان با deployment features روشن کن (تا زودتر خطاها را ببینی).
