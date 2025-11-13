@@ -1,5 +1,6 @@
 ﻿using MainApi.Services.Inventory;
 using MainApi.Services.Media;
+using System;
 
 namespace MainApi.Services.Order.Items;
 
@@ -76,7 +77,7 @@ public class OrderItemService : IOrderItemService
             _logger.LogWarning("Unauthorized access attempt for OrderItem {OrderItemId} by User {UserId}", orderItemId, currentUserId);
             return null;
         }
-
+        var icon = await _mediaService.GetPrimaryImageUrlAsync("Product", item.Variant.ProductId);
         return new
         {
             item.Id,
@@ -86,7 +87,7 @@ public class OrderItemService : IOrderItemService
             {
                 item.Variant.Product.Id,
                 item.Variant.Product.Name,
-                Icon = _mediaService.GetPrimaryImageUrlAsync("Product", item.Variant.Product.Id).Result,
+                Icon = icon,
                 Category = item.Variant.Product.CategoryGroup != null && item.Variant.Product.CategoryGroup.Category != null ? new { item.Variant.Product.CategoryGroup.Category.Id, item.Variant.Product.CategoryGroup.Category.Name } : null
             } : null,
             PurchasePrice = isAdmin ? (decimal?)item.PurchasePrice : null,
@@ -180,7 +181,7 @@ public class OrderItemService : IOrderItemService
                     quantityChange = itemDto.Quantity.Value - item.Quantity;
                     if (quantityChange != 0)
                     {
-                        await _inventoryService.LogTransactionAsync(item.VariantId, "OrderItemUpdate", quantityChange, item.Id, userId, $"Quantity updated in order {item.OrderId}");
+                        await _inventoryService.LogTransactionAsync(item.VariantId, "OrderItemUpdate", -quantityChange, item.Id, userId, $"Quantity updated in order {item.OrderId}");
                     }
                     item.Quantity = itemDto.Quantity.Value;
                 }

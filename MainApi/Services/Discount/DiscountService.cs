@@ -14,8 +14,9 @@ public class DiscountService : IDiscountService
     public async Task<(TDiscountCode? discount, string? errorMessage)> ValidateAndGetDiscountAsync(string code, int userId, decimal orderTotal)
     {
         var discount = await _context.TDiscountCode
+            .FromSqlRaw("SELECT * FROM \"TDiscountCode\" WHERE LOWER(\"Code\") = LOWER({0}) AND \"IsActive\" = true FOR UPDATE", code)
             .Include(d => d.Restrictions)
-            .FirstOrDefaultAsync(d => d.Code.ToLower() == code.ToLower() && d.IsActive);
+            .FirstOrDefaultAsync();
 
         if (discount == null)
             return (null, "کد تخفیف نامعتبر است.");

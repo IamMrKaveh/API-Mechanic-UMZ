@@ -7,12 +7,13 @@ public class MechanicContext : DbContext
     {
     }
 
-    public DbSet<TRefreshToken> TRefreshToken { get; set; }
     public DbSet<TCarts> TCarts { get; set; }
     public DbSet<TCartItems> TCartItems { get; set; }
     public DbSet<TCategory> TCategory { get; set; }
     public DbSet<TCategoryGroup> TCategoryGroup { get; set; }
     public DbSet<TDiscountCode> TDiscountCode { get; set; }
+    public DbSet<TDiscountRestriction> TDiscountRestriction { get; set; }
+    public DbSet<TDiscountUsage> TDiscountUsage { get; set; }
     public DbSet<TAuditLogs> TAuditLogs { get; set; }
     public DbSet<TOrders> TOrders { get; set; }
     public DbSet<TOrderItems> TOrderItems { get; set; }
@@ -25,15 +26,14 @@ public class MechanicContext : DbContext
     public DbSet<TProductVariantAttribute> TProductVariantAttribute { get; set; }
     public DbSet<TUserOtp> TUserOtp { get; set; }
     public DbSet<TUsers> TUsers { get; set; }
+    public DbSet<TUserAddress> TUserAddress { get; set; }
     public DbSet<TMedia> TMedia { get; set; }
     public DbSet<TInventoryTransaction> TInventoryTransaction { get; set; }
-    public DbSet<TUserAddress> TUserAddress { get; set; }
     public DbSet<TPaymentTransaction> TPaymentTransaction { get; set; }
     public DbSet<TProductReview> TProductReview { get; set; }
     public DbSet<TNotification> TNotification { get; set; }
-    public DbSet<TDiscountRestriction> TDiscountRestriction { get; set; }
-    public DbSet<TDiscountUsage> TDiscountUsage { get; set; }
     public DbSet<TUserSession> TUserSession { get; set; }
+    public DbSet<TRateLimit> TRateLimit { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -52,7 +52,6 @@ public class MechanicContext : DbContext
             }
         }
 
-        ConfigureAuth(builder);
         ConfigureCart(builder);
         ConfigureCategory(builder);
         ConfigureDiscount(builder);
@@ -66,12 +65,25 @@ public class MechanicContext : DbContext
         ConfigureReview(builder);
         ConfigureNotification(builder);
         ConfigureSession(builder);
+        ConfigureSecurity(builder);
+    }
+
+    private static void ConfigureSecurity(ModelBuilder builder)
+    {
+        builder.Entity<TRateLimit>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+        });
     }
 
     private static void ConfigureSession(ModelBuilder builder)
     {
         builder.Entity<TUserSession>(entity =>
         {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+
             entity.HasOne(s => s.User)
                 .WithMany(u => u.UserSessions)
                 .HasForeignKey(s => s.UserId)
@@ -83,16 +95,23 @@ public class MechanicContext : DbContext
     {
         builder.Entity<TNotification>(entity =>
         {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+
             entity.HasOne(n => n.User)
                 .WithMany(u => u.Notifications)
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
+
     private static void ConfigureReview(ModelBuilder builder)
     {
         builder.Entity<TProductReview>(entity =>
         {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+
             entity.HasOne(pr => pr.Product)
                 .WithMany(p => p.Reviews)
                 .HasForeignKey(pr => pr.ProductId)
@@ -114,6 +133,9 @@ public class MechanicContext : DbContext
     {
         builder.Entity<TPaymentTransaction>(entity =>
         {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+
             entity.HasOne(pt => pt.Order)
                 .WithMany(o => o.PaymentTransactions)
                 .HasForeignKey(pt => pt.OrderId)
@@ -125,6 +147,9 @@ public class MechanicContext : DbContext
     {
         builder.Entity<TInventoryTransaction>(entity =>
         {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+
             entity.HasOne(it => it.Variant)
                 .WithMany(v => v.InventoryTransactions)
                 .HasForeignKey(it => it.VariantId)
@@ -144,24 +169,10 @@ public class MechanicContext : DbContext
 
     private static void ConfigureMedia(ModelBuilder builder)
     {
-        builder.Entity<TMedia>();
-    }
-
-    private static void ConfigureAuth(ModelBuilder builder)
-    {
-        builder.Entity<TRefreshToken>(entity =>
+        builder.Entity<TMedia>(entity =>
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.TokenHash).IsRequired().HasMaxLength(512);
-            entity.Property(x => x.CreatedByIp).HasMaxLength(45);
-            entity.Property(x => x.ReplacedByTokenHash).HasMaxLength(512);
-            entity.Property(x => x.UserAgent).HasMaxLength(255);
-
-            entity.HasOne(x => x.User)
-                  .WithMany(u => u.RefreshTokens)
-                  .HasForeignKey(x => x.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 
@@ -171,33 +182,28 @@ public class MechanicContext : DbContext
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.GuestToken).HasMaxLength(100);
-            entity.Property(x => x.CreatedAt).IsRequired();
-            entity.Property(x => x.LastUpdated).IsRequired();
 
             entity.HasOne(x => x.User)
-                  .WithMany(u => u.UserCarts)
-                  .HasForeignKey(x => x.UserId)
-                  .IsRequired(false)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithOne()
+                .HasForeignKey<TCarts>(x => x.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasMany(x => x.CartItems)
-                  .WithOne(ci => ci.Cart)
-                  .HasForeignKey(ci => ci.CartId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(ci => ci.Cart)
+                .HasForeignKey(ci => ci.CartId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<TCartItems>(entity =>
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.Quantity).IsRequired();
-            entity.Property(x => x.RowVersion).IsRowVersion();
 
             entity.HasOne(x => x.Variant)
-                  .WithMany()
-                  .HasForeignKey(x => x.VariantId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithMany()
+                .HasForeignKey(x => x.VariantId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
@@ -207,33 +213,31 @@ public class MechanicContext : DbContext
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.Name).IsRequired().HasMaxLength(200);
 
             entity.HasMany(x => x.CategoryGroups)
-                  .WithOne(cg => cg.Category)
-                  .HasForeignKey(cg => cg.CategoryId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(cg => cg.Category)
+                .HasForeignKey(cg => cg.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasMany(e => e.Images)
-               .WithOne()
-               .HasForeignKey(m => m.EntityId)
-               .HasPrincipalKey(e => e.Id);
+                .WithOne()
+                .HasForeignKey("EntityId")
+                .HasPrincipalKey(e => e.Id);
         });
 
         builder.Entity<TCategoryGroup>(entity =>
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.CategoryId).IsRequired();
 
             entity.HasMany(x => x.Products)
-                  .WithOne(p => p.CategoryGroup)
-                  .HasForeignKey(p => p.CategoryGroupId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(p => p.CategoryGroup)
+                .HasForeignKey(p => p.CategoryGroupId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasMany(e => e.Images)
                 .WithOne()
-                .HasForeignKey(m => m.EntityId)
+                .HasForeignKey("EntityId")
                 .HasPrincipalKey(e => e.Id);
         });
     }
@@ -244,15 +248,6 @@ public class MechanicContext : DbContext
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.Code).IsRequired().HasMaxLength(50);
-            entity.Property(x => x.Percentage).HasColumnType("decimal(5,2)").IsRequired();
-            entity.Property(x => x.MaxDiscountAmount).HasColumnType("decimal(19,4)");
-            entity.Property(x => x.MinOrderAmount).HasColumnType("decimal(19,4)");
-            entity.Property(x => x.UsageLimit).IsRequired(false);
-            entity.Property(x => x.UsedCount).HasDefaultValue(0);
-            entity.Property(x => x.IsActive).HasDefaultValue(true);
-            entity.Property(x => x.CreatedAt).IsRequired();
-            entity.Property(x => x.ExpiresAt).IsRequired(false);
 
             entity.HasMany(d => d.Restrictions)
                 .WithOne(dr => dr.DiscountCode)
@@ -265,8 +260,17 @@ public class MechanicContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<TDiscountRestriction>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+        });
+
         builder.Entity<TDiscountUsage>(entity =>
         {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+
             entity.HasOne(du => du.Order)
                 .WithMany(o => o.DiscountUsages)
                 .HasForeignKey(du => du.OrderId)
@@ -285,12 +289,6 @@ public class MechanicContext : DbContext
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.Action).IsRequired().HasMaxLength(200);
-            entity.Property(x => x.Details).IsRequired().HasMaxLength(2000);
-            entity.Property(x => x.IpAddress).IsRequired().HasMaxLength(45);
-            entity.Property(x => x.EventType).IsRequired().HasMaxLength(100);
-            entity.Property(x => x.UserAgent).HasMaxLength(300);
-            entity.Property(x => x.Timestamp).IsRequired();
         });
     }
 
@@ -301,18 +299,11 @@ public class MechanicContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
             entity.Property(x => x.AddressSnapshot).HasColumnType("jsonb");
-            entity.Property(x => x.TotalAmount).HasColumnType("decimal(19,4)").HasDefaultValue(0);
-            entity.Property(x => x.TotalProfit).HasColumnType("decimal(19,4)").HasDefaultValue(0);
-            entity.Property(x => x.ShippingCost).HasColumnType("decimal(19,4)").HasDefaultValue(0);
-            entity.Property(x => x.IdempotencyKey).IsRequired().HasMaxLength(100);
-            entity.Property(x => x.RowVersion).IsRowVersion();
-            entity.Property(o => o.FinalAmount)
-                  .HasComputedColumnSql("\"TotalAmount\" + \"ShippingCost\" - \"DiscountAmount\"", stored: true);
 
             entity.HasOne(x => x.User)
-                  .WithMany(u => u.UserOrders)
-                  .HasForeignKey(x => x.UserId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(u => u.UserOrders)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(x => x.UserAddress)
                 .WithMany()
@@ -320,31 +311,25 @@ public class MechanicContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasOne(x => x.OrderStatus)
-                  .WithMany(os => os.Orders)
-                  .HasForeignKey(x => x.OrderStatusId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(os => os.Orders)
+                .HasForeignKey(x => x.OrderStatusId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(x => x.ShippingMethod)
-                  .WithMany(sm => sm.Orders)
-                  .HasForeignKey(x => x.ShippingMethodId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(sm => sm.Orders)
+                .HasForeignKey(x => x.ShippingMethodId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasMany(x => x.OrderItems)
-                  .WithOne(oi => oi.Order)
-                  .HasForeignKey(oi => oi.OrderId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(oi => oi.Order)
+                .HasForeignKey(oi => oi.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<TOrderItems>(entity =>
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.PurchasePrice).IsRequired().HasColumnType("decimal(19,4)");
-            entity.Property(x => x.SellingPrice).IsRequired().HasColumnType("decimal(19,4)");
-            entity.Property(x => x.Quantity).IsRequired();
-            entity.Property(x => x.Amount).HasComputedColumnSql("\"SellingPrice\" * \"Quantity\"", stored: true).HasColumnType("decimal(19,4)");
-            entity.Property(x => x.Profit).HasComputedColumnSql("(\"SellingPrice\" - \"PurchasePrice\") * \"Quantity\"", stored: true).HasColumnType("decimal(19,4)");
-            entity.Property(x => x.RowVersion).IsRowVersion();
 
             entity.HasOne(x => x.Variant)
                 .WithMany()
@@ -356,7 +341,6 @@ public class MechanicContext : DbContext
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.Name).IsRequired().HasMaxLength(100);
 
             entity.HasData(
                 new TOrderStatus { Id = 1, Name = "در انتظار پرداخت" },
@@ -365,15 +349,13 @@ public class MechanicContext : DbContext
                 new TOrderStatus { Id = 4, Name = "تحویل داده شده" },
                 new TOrderStatus { Id = 5, Name = "لغو شده" },
                 new TOrderStatus { Id = 6, Name = "مرجوعی" }
-            );
+                );
         });
 
         builder.Entity<TShippingMethod>(entity =>
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.Name).IsRequired().HasMaxLength(100);
-            entity.Property(x => x.Cost).HasColumnType("decimal(19,4)").HasDefaultValue(0);
         });
     }
 
@@ -383,13 +365,11 @@ public class MechanicContext : DbContext
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.Name).IsRequired().HasMaxLength(200);
-            entity.Property(x => x.RowVersion).IsRowVersion();
 
             entity.HasOne(x => x.CategoryGroup)
-                  .WithMany(cg => cg.Products)
-                  .HasForeignKey(x => x.CategoryGroupId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(cg => cg.Products)
+                .HasForeignKey(x => x.CategoryGroupId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasMany(p => p.Variants)
                 .WithOne(v => v.Product)
@@ -398,7 +378,7 @@ public class MechanicContext : DbContext
 
             entity.HasMany(e => e.Images)
                 .WithOne()
-                .HasForeignKey(m => m.EntityId)
+                .HasForeignKey("EntityId")
                 .HasPrincipalKey(e => e.Id);
         });
 
@@ -406,38 +386,49 @@ public class MechanicContext : DbContext
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.PurchasePrice).HasColumnType("decimal(19,4)");
-            entity.Property(x => x.OriginalPrice).HasColumnType("decimal(19,4)");
-            entity.Property(x => x.SellingPrice).HasColumnType("decimal(19,4)");
-            entity.Property(x => x.Stock).HasDefaultValue(0);
 
             entity.ToTable(tb => tb.HasCheckConstraint("CK_ProductVariant_PurchasePrice", "\"PurchasePrice\" >= 0"));
-            entity.ToTable(tb => tb.HasCheckConstraint("CK_ProductVariant_SellingPrice", "\"SellingPrice\" > 0"));
+            entity.ToTable(tb => tb.HasCheckConstraint("CK_ProductVariant_SellingPrice", "\"SellingPrice\" >= 0"));
             entity.ToTable(tb => tb.HasCheckConstraint("CK_ProductVariant_OriginalPrice", "\"OriginalPrice\" >= 0"));
 
             entity.HasOne(x => x.Product)
-                  .WithMany(p => p.Variants)
-                  .HasForeignKey(x => x.ProductId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(p => p.Variants)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasMany(v => v.VariantAttributes)
                 .WithOne(va => va.Variant)
+                .HasForeignKey(va => va.VariantId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasMany(e => e.Images)
                 .WithOne()
-                .HasForeignKey(m => m.EntityId)
+                .HasForeignKey("EntityId")
                 .HasPrincipalKey(e => e.Id);
         });
 
-        builder.Entity<TProductVariantAttribute>()
-            .HasIndex(va => new { va.VariantId, va.AttributeValueId })
-            .IsUnique();
+        builder.Entity<TProductVariantAttribute>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+        });
 
-        builder.Entity<TAttributeType>()
-            .HasMany(at => at.AttributeValues)
-            .WithOne(av => av.AttributeType)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<TAttributeType>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+
+            entity.HasMany(at => at.AttributeValues)
+                .WithOne(av => av.AttributeType)
+                .HasForeignKey(av => av.AttributeTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<TAttributeValue>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+        });
     }
 
     private static void ConfigureUser(ModelBuilder builder)
@@ -446,37 +437,37 @@ public class MechanicContext : DbContext
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.OtpHash).IsRequired().HasMaxLength(512);
-            entity.Property(x => x.ExpiresAt).IsRequired();
-            entity.Property(x => x.IsUsed).HasDefaultValue(false);
-            entity.Property(x => x.AttemptCount).HasDefaultValue(0);
 
             entity.HasOne(x => x.User)
-                  .WithMany(u => u.UserOtps)
-                  .HasForeignKey(x => x.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(u => u.UserOtps)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<TUsers>(entity =>
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.PhoneNumber).IsRequired().HasMaxLength(15);
-            entity.Property(x => x.FirstName).HasMaxLength(100);
-            entity.Property(x => x.LastName).HasMaxLength(100);
-            entity.Property(x => x.IsActive).HasDefaultValue(true);
-            entity.Property(x => x.IsAdmin).HasDefaultValue(false);
-            entity.Property(x => x.IsDeleted).HasDefaultValue(false);
+
+            entity.HasOne<TCarts>()
+                .WithOne(c => c.User)
+                .HasForeignKey<TCarts>(c => c.UserId);
 
             entity.HasMany(x => x.UserOrders)
-                  .WithOne(o => o.User)
-                  .HasForeignKey(o => o.UserId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(o => o.User)
+                .HasForeignKey(o => o.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasMany(x => x.UserAddresses)
-                  .WithOne(o => o.User)
-                  .HasForeignKey(o => o.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(o => o.User)
+                .HasForeignKey(o => o.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<TUserAddress>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
         });
     }
 }

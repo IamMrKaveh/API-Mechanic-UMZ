@@ -78,6 +78,33 @@ public class MediaService : IMediaService
             .FirstOrDefaultAsync();
     }
 
+    public async Task<bool> SetPrimaryMediaAsync(int mediaId, int entityId, string entityType)
+    {
+        var mediaToSetAsPrimary = await _context.TMedia.FindAsync(mediaId);
+        if (mediaToSetAsPrimary == null || mediaToSetAsPrimary.EntityId != entityId || mediaToSetAsPrimary.EntityType != entityType)
+        {
+            return false;
+        }
+
+        var currentPrimary = await _context.TMedia
+            .Where(m => m.EntityId == entityId && m.EntityType == entityType && m.IsPrimary && m.Id != mediaId)
+            .ToListAsync();
+
+        foreach (var item in currentPrimary)
+        {
+            item.IsPrimary = false;
+        }
+
+        mediaToSetAsPrimary.IsPrimary = true;
+        await _context.SaveChangesAsync();
+
+        if (entityType.Equals("Product", StringComparison.OrdinalIgnoreCase) || entityType.Equals("ProductVariant", StringComparison.OrdinalIgnoreCase))
+        {
+            await _cacheService.ClearByPrefixAsync("cart:user:");
+        }
+        return true;
+    }
+
     public async Task<bool> DeleteMediaAsync(int mediaId)
     {
         var media = await _context.TMedia.FindAsync(mediaId);

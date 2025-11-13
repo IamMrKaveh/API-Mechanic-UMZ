@@ -1,57 +1,46 @@
 ﻿namespace MainApi.Controllers.Cart;
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public class CartsController : BaseApiController
 {
     private readonly ICartService _cartService;
     private readonly ILogger<CartsController> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
     public CartsController(
         ICartService cartService,
-        ILogger<CartsController> logger)
+        ILogger<CartsController> logger,
+        IHttpContextAccessor httpContextAccessor)
     {
         _cartService = cartService;
         _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    private string? GetGuestId()
+    {
+        return _httpContextAccessor.HttpContext?.Request.Headers["X-Guest-Token"].FirstOrDefault();
     }
 
     [HttpGet]
-    public async Task<ActionResult<CartDto>> GetMyCart()
+    public async Task<ActionResult<CartDto>> GetCart()
     {
         var userId = GetCurrentUserId();
-        if (userId == null)
-            return Unauthorized("Invalid user");
-        var cart = await _cartService.GetCartByUserIdAsync(userId.Value);
-        if (cart == null)
+        var guestId = GetGuestId();
+
+        if (!userId.HasValue && string.IsNullOrEmpty(guestId))
+        {
+            return Ok(null);
+        }
+
+        var cart = await _cartService.GetCartAsync(userId, guestId);
+        if (cart == null && userId.HasValue)
         {
             var newCart = await _cartService.CreateCartAsync(userId.Value);
-            if (newCart == null)
-            {
-                return StatusCode(500, "Could not create or retrieve a cart for the user.");
-            }
             return Ok(newCart);
         }
+
         return Ok(cart);
-    }
-
-    [HttpPost]
-    public async Task<ActionResult<CartDto>> CreateCart()
-    {
-        var userId = GetCurrentUserId();
-        if (userId == null)
-            return Unauthorized("Invalid user");
-        var existingCart = await _cartService.GetCartByUserIdAsync(userId.Value);
-        if (existingCart != null)
-        {
-            return Ok(existingCart);
-        }
-
-        var newCart = await _cartService.CreateCartAsync(userId.Value);
-        if (newCart == null)
-        {
-            return StatusCode(500, "Could not create a cart for the user.");
-        }
-
-        return CreatedAtAction(nameof(GetMyCart), newCart);
     }
 
     [HttpPost("items")]
@@ -59,16 +48,21 @@ public class CartsController : BaseApiController
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
+
         var userId = GetCurrentUserId();
-        if (userId == null)
-            return Unauthorized("Invalid user");
-        var (result, cart) = await _cartService.AddItemToCartAsync(userId.Value, dto);
+        var guestId = GetGuestId();
+
+        if (!userId.HasValue && string.IsNullOrEmpty(guestId))
+            return Unauthorized("A user or guest token is required.");
+
+        var (result, cart) = await _cartService.AddItemToCartAsync(userId, guestId, dto);
 
         return result switch
         {
             CartOperationResult.Success => Ok(cart),
             CartOperationResult.NotFound => NotFound(new { message = "Product variant not found." }),
             CartOperationResult.OutOfStock => Conflict(new { message = "Failed to add item. Stock may have changed or item is unavailable." }),
+            CartOperationResult.ConcurrencyConflict => Conflict(new { message = "Cart was updated by another process. Please refresh and try again.", cart }),
             _ => StatusCode(500, new { message = "An unexpected error occurred." })
         };
     }
@@ -78,10 +72,14 @@ public class CartsController : BaseApiController
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
+
         var userId = GetCurrentUserId();
-        if (userId == null)
-            return Unauthorized("Invalid user");
-        var (result, cart) = await _cartService.UpdateCartItemAsync(userId.Value, itemId, dto);
+        var guestId = GetGuestId();
+
+        if (!userId.HasValue && string.IsNullOrEmpty(guestId))
+            return Unauthorized("A user or guest token is required.");
+
+        var (result, cart) = await _cartService.UpdateCartItemAsync(userId, guestId, itemId, dto);
 
         return result switch
         {
@@ -97,9 +95,12 @@ public class CartsController : BaseApiController
     public async Task<ActionResult<CartDto>> RemoveItemFromCart(int itemId)
     {
         var userId = GetCurrentUserId();
-        if (userId == null)
-            return Unauthorized("Invalid user");
-        var (success, cart) = await _cartService.RemoveItemFromCartAsync(userId.Value, itemId);
+        var guestId = GetGuestId();
+
+        if (!userId.HasValue && string.IsNullOrEmpty(guestId))
+            return Unauthorized("A user or guest token is required.");
+
+        var (success, cart) = await _cartService.RemoveItemFromCartAsync(userId, guestId, itemId);
         if (!success)
             return NotFound("Cart item not found or could not be removed.");
         return Ok(cart);
@@ -109,9 +110,12 @@ public class CartsController : BaseApiController
     public async Task<ActionResult> ClearCart()
     {
         var userId = GetCurrentUserId();
-        if (userId == null)
-            return Unauthorized("Invalid user");
-        var success = await _cartService.ClearCartAsync(userId.Value);
+        var guestId = GetGuestId();
+
+        if (!userId.HasValue && string.IsNullOrEmpty(guestId))
+            return Unauthorized("A user or guest token is required.");
+
+        var success = await _cartService.ClearCartAsync(userId, guestId);
         if (!success)
         {
             return StatusCode(500, "An error occurred while clearing the cart.");
@@ -123,9 +127,12 @@ public class CartsController : BaseApiController
     public async Task<ActionResult<int>> GetCartItemsCount()
     {
         var userId = GetCurrentUserId();
-        if (userId == null)
-            return Unauthorized("Invalid user");
-        var count = await _cartService.GetCartItemsCountAsync(userId.Value);
+        var guestId = GetGuestId();
+
+        if (!userId.HasValue && string.IsNullOrEmpty(guestId))
+            return Ok(0);
+
+        var count = await _cartService.GetCartItemsCountAsync(userId, guestId);
         return Ok(count);
     }
 }

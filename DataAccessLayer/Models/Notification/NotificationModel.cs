@@ -1,26 +1,27 @@
 ﻿namespace DataAccessLayer.Models.Notification;
 
-[Index(nameof(UserId), nameof(IsRead))]
-[Index(nameof(CreatedAt))]
+[Index(nameof(UserId), nameof(IsRead), nameof(CreatedAt))]
+[Index(nameof(Type), nameof(IsRead))]
 public class TNotification : IAuditable
 {
     [Key]
     public int Id { get; set; }
 
+    [Required]
     public int UserId { get; set; }
-    public virtual TUsers User { get; set; } = null!;
+    public TUsers User { get; set; } = null!;
 
     [Required, MaxLength(200)]
-    public string Title { get; set; } = string.Empty;
+    public required string Title { get; set; }
 
     [Required, MaxLength(1000)]
-    public string Message { get; set; } = string.Empty;
+    public required string Message { get; set; }
 
     [Required, MaxLength(50)]
-    public string Type { get; set; } = string.Empty;
-    // OrderStatusChanged, PaymentSuccess, ProductAvailable, Promotion
+    public required string Type { get; set; }
 
-    public bool IsRead { get; set; } = false;
+    [Required]
+    public bool IsRead { get; set; }
 
     [MaxLength(500)]
     public string? ActionUrl { get; set; }
@@ -30,7 +31,10 @@ public class TNotification : IAuditable
     [MaxLength(50)]
     public string? RelatedEntityType { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    [Required]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     public DateTime? UpdatedAt { get; set; }
+
     public DateTime? ReadAt { get; set; }
 }

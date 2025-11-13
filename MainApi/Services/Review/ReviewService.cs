@@ -1,4 +1,4 @@
-﻿namespace MainApi.Services.Product;
+﻿namespace MainApi.Services.Review;
 
 public class ReviewService : IReviewService
 {
@@ -38,21 +38,21 @@ public class ReviewService : IReviewService
     {
         return await _context.TProductReview
             .Where(r => r.ProductId == productId && r.Status == "Approved")
+            .Include(r => r.User)
             .OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(r => new ProductReviewDto
-            {
-                Id = r.Id,
-                ProductId = r.ProductId,
-                UserId = r.UserId,
-                UserName = r.User.FirstName + " " + r.User.LastName,
-                Rating = r.Rating,
-                Title = r.Title,
-                Comment = r.Comment,
-                CreatedAt = r.CreatedAt,
-                IsVerifiedPurchase = r.IsVerifiedPurchase
-            })
+            .Select(r => new ProductReviewDto(
+                r.Id,
+                r.ProductId,
+                r.UserId,
+                r.User.FirstName + " " + r.User.LastName,
+                r.Rating,
+                r.Title,
+                r.Comment,
+                r.CreatedAt,
+                r.IsVerifiedPurchase
+            ))
             .ToListAsync();
     }
 
@@ -60,19 +60,19 @@ public class ReviewService : IReviewService
     {
         return await _context.TProductReview
             .Where(r => r.UserId == userId)
+            .Include(r => r.User)
             .OrderByDescending(r => r.CreatedAt)
-            .Select(r => new ProductReviewDto
-            {
-                Id = r.Id,
-                ProductId = r.ProductId,
-                UserId = r.UserId,
-                UserName = r.User.FirstName + " " + r.User.LastName,
-                Rating = r.Rating,
-                Title = r.Title,
-                Comment = r.Comment,
-                CreatedAt = r.CreatedAt,
-                IsVerifiedPurchase = r.IsVerifiedPurchase
-            })
+            .Select(r => new ProductReviewDto(
+                r.Id,
+                r.ProductId,
+                r.UserId,
+                r.User.FirstName + " " + r.User.LastName,
+                r.Rating,
+                r.Title,
+                r.Comment,
+                r.CreatedAt,
+                r.IsVerifiedPurchase
+            ))
             .ToListAsync();
     }
 
@@ -99,16 +99,16 @@ public class ReviewService : IReviewService
     private static ProductReviewDto MapToDto(TProductReview review)
     {
         return new ProductReviewDto
-        {
-            Id = review.Id,
-            ProductId = review.ProductId,
-            UserId = review.UserId,
-            UserName = review.User?.FirstName + " " + review.User?.LastName,
-            Rating = review.Rating,
-            Title = review.Title,
-            Comment = review.Comment,
-            CreatedAt = review.CreatedAt,
-            IsVerifiedPurchase = review.IsVerifiedPurchase
-        };
+        (
+            review.Id,
+            review.ProductId,
+            review.UserId,
+            review.User?.FirstName + " " + review.User?.LastName,
+            review.Rating,
+            review.Title,
+            review.Comment,
+            review.CreatedAt,
+            review.IsVerifiedPurchase
+        );
     }
 }

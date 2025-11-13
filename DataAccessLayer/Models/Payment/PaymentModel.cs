@@ -1,29 +1,28 @@
 ﻿namespace DataAccessLayer.Models.Payment;
 
-[Index(nameof(OrderId))]
+[Index(nameof(OrderId), nameof(Status), nameof(CreatedAt))]
 [Index(nameof(Authority), IsUnique = true)]
-[Index(nameof(Status))]
-[Index(nameof(CreatedAt))]
+[Index(nameof(Status), nameof(CreatedAt))]
 public class TPaymentTransaction : IAuditable
 {
     [Key]
     public int Id { get; set; }
 
+    [Required]
     public int OrderId { get; set; }
-    public virtual TOrders Order { get; set; } = null!;
+    public TOrders Order { get; set; } = null!;
 
     [Required, MaxLength(100)]
-    public string Authority { get; set; } = string.Empty;
+    public required string Authority { get; set; }
 
-    [Column(TypeName = "decimal(19,4)")]
+    [Required, Column(TypeName = "decimal(19,4)"), Range(0, double.MaxValue)]
     public decimal Amount { get; set; }
 
     [Required, MaxLength(50)]
-    public string Status { get; set; } = string.Empty;
-    // Pending, Success, Failed, Cancelled
+    public required string Status { get; set; }
 
     [Required, MaxLength(50)]
-    public string Gateway { get; set; } = string.Empty; // ZarinPal, Saman, etc.
+    public required string Gateway { get; set; }
 
     public long? RefId { get; set; }
 
@@ -33,6 +32,7 @@ public class TPaymentTransaction : IAuditable
     [MaxLength(100)]
     public string? CardHash { get; set; }
 
+    [Required, Column(TypeName = "decimal(19,4)"), Range(0, double.MaxValue)]
     public decimal Fee { get; set; }
 
     [MaxLength(45)]
@@ -41,7 +41,10 @@ public class TPaymentTransaction : IAuditable
     [MaxLength(500)]
     public string? ErrorMessage { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    [Required]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     public DateTime? UpdatedAt { get; set; }
+
     public DateTime? VerifiedAt { get; set; }
 }

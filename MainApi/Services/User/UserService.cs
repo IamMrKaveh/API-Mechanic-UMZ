@@ -7,19 +7,26 @@ public class UserService : IUserService
     private readonly ILogger<UserService> _logger;
     private readonly IRateLimitService _rateLimitService;
     private readonly IAuditService _auditService;
+    private readonly ICartService _cartService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
 
     public UserService(
         MechanicContext context,
         IConfiguration configuration,
         ILogger<UserService> logger,
         IRateLimitService rateLimitService,
-        IAuditService auditService)
+        IAuditService auditService,
+        ICartService cartService,
+        IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
         _configuration = configuration;
         _logger = logger;
         _rateLimitService = rateLimitService;
         _auditService = auditService;
+        _cartService = cartService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<IEnumerable<UserProfileDto>> GetUsersAsync(bool includeDeleted)
@@ -32,15 +39,18 @@ public class UserService : IUserService
         }
 
         return await query
-            .Select(u => new UserProfileDto
-            {
-                Id = u.Id,
-                PhoneNumber = u.PhoneNumber,
-                CreatedAt = u.CreatedAt,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                IsAdmin = u.IsAdmin
-            })
+            .Select(u => new UserProfileDto(
+                u.Id,
+                u.PhoneNumber,
+                u.FirstName,
+                u.LastName,
+                u.CreatedAt,
+                u.DeletedAt,
+                u.IsAdmin,
+                u.IsActive,
+                u.IsDeleted,
+                null
+            ))
             .ToListAsync();
     }
 
@@ -48,15 +58,18 @@ public class UserService : IUserService
     {
         return await _context.TUsers
             .Where(u => u.Id == id)
-            .Select(u => new UserProfileDto
-            {
-                Id = u.Id,
-                PhoneNumber = u.PhoneNumber,
-                CreatedAt = u.CreatedAt,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                IsAdmin = u.IsAdmin
-            })
+            .Select(u => new UserProfileDto(
+                u.Id,
+                u.PhoneNumber,
+                u.FirstName,
+                u.LastName,
+                u.CreatedAt,
+                u.DeletedAt,
+                u.IsAdmin,
+                u.IsActive,
+                u.IsDeleted,
+                null
+            ))
             .FirstOrDefaultAsync();
     }
 
@@ -64,15 +77,18 @@ public class UserService : IUserService
     {
         var user = await _context.TUsers
             .Where(u => u.Id == userId)
-            .Select(u => new UserProfileDto
-            {
-                Id = u.Id,
-                PhoneNumber = u.PhoneNumber,
-                CreatedAt = u.CreatedAt,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                IsAdmin = u.IsAdmin
-            })
+            .Select(u => new UserProfileDto(
+                u.Id,
+                u.PhoneNumber,
+                u.FirstName,
+                u.LastName,
+                u.CreatedAt,
+                u.DeletedAt,
+                u.IsAdmin,
+                u.IsActive,
+                u.IsDeleted,
+                u.UserAddresses.Select(a => new UserAddressDto(a.Id, a.Title, a.ReceiverName, a.PhoneNumber, a.Province, a.City, a.Address, a.PostalCode, a.IsDefault)).ToList()
+            ))
             .FirstOrDefaultAsync();
 
         return user;
@@ -92,12 +108,18 @@ public class UserService : IUserService
         _context.TUsers.Add(tUsers);
         await _context.SaveChangesAsync();
 
-        var dto = new UserProfileDto
-        {
-            Id = tUsers.Id,
-            PhoneNumber = tUsers.PhoneNumber,
-            CreatedAt = tUsers.CreatedAt
-        };
+        var dto = new UserProfileDto(
+            tUsers.Id,
+            tUsers.PhoneNumber,
+            tUsers.FirstName,
+            tUsers.LastName,
+            tUsers.CreatedAt,
+            tUsers.DeletedAt,
+            tUsers.IsAdmin,
+            tUsers.IsActive,
+            tUsers.IsDeleted,
+            null
+        );
 
         return (true, dto, null);
     }
@@ -190,6 +212,22 @@ public class UserService : IUserService
         return (true, null);
     }
 
+    public async Task<(bool Success, string? Error)> RestoreUserAsync(int id)
+    {
+        var user = await _context.TUsers.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == id);
+        if (user == null)
+        {
+            return (false, "NotFound");
+        }
+
+        user.IsDeleted = false;
+        user.DeletedAt = null;
+        user.IsActive = true;
+        await _context.SaveChangesAsync();
+        return (true, null);
+    }
+
+
     public async Task<(bool Success, string? Error)> DeleteAccountAsync(int userId)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
@@ -202,8 +240,9 @@ public class UserService : IUserService
         user.IsDeleted = true;
         user.DeletedAt = DateTime.UtcNow;
         user.IsActive = false;
+        user.PhoneNumber = $"{user.PhoneNumber}_deleted_{DateTime.UtcNow.Ticks}";
 
-        await RevokeAllUserRefreshTokensAsync(userId);
+        await RevokeAllUserSessionsAsync(userId);
 
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
@@ -318,119 +357,100 @@ public class UserService : IUserService
         }
 
         storedOtp.IsUsed = true;
-        await RevokeAllUserRefreshTokensAsync(user.Id);
+        await RevokeAllUserSessionsAsync(user.Id);
 
         var token = GenerateJwtToken(user);
         var refreshTokenValue = GenerateSecureToken();
         var safeUserAgent = SanitizeUserAgent(userAgent);
-        var refreshToken = new TRefreshToken
-        {
-            UserId = user.Id,
-            TokenHash = BCrypt.Net.BCrypt.HashPassword(refreshTokenValue),
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
-            CreatedAt = DateTime.UtcNow,
-            CreatedByIp = clientIp,
-            UserAgent = safeUserAgent
-        };
-        _context.TRefreshToken.Add(refreshToken);
 
         var session = new TUserSession
         {
             UserId = user.Id,
-            SessionToken = refreshToken.TokenHash,
-            IpAddress = clientIp,
-            UserAgent = safeUserAgent,
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = refreshToken.ExpiresAt,
-            LastActivityAt = DateTime.UtcNow,
-            IsActive = true
+            TokenHash = BCrypt.Net.BCrypt.HashPassword(refreshTokenValue),
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedByIp = clientIp,
+            UserAgent = safeUserAgent
         };
         _context.TUserSession.Add(session);
+
+        if (_httpContextAccessor.HttpContext?.Request.Headers.TryGetValue("X-Guest-Token", out var guestIdValues) == true)
+        {
+            var guestId = guestIdValues.FirstOrDefault();
+            if (!string.IsNullOrEmpty(guestId))
+            {
+                await _cartService.MergeCartAsync(user.Id, guestId);
+            }
+        }
 
         await _context.SaveChangesAsync();
 
         await _auditService.LogSecurityEventAsync("LoginSuccess", $"User {user.Id} logged in.", clientIp, user.Id, userAgent);
 
-        return (new AuthResponseDto
-        {
-            Token = token,
-            User = new UserProfileDto
-            {
-                Id = user.Id,
-                PhoneNumber = user.PhoneNumber,
-                CreatedAt = user.CreatedAt,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                IsAdmin = user.IsAdmin
-            },
-            ExpiresAt = DateTime.UtcNow.AddHours(1),
-            RefreshToken = refreshTokenValue
-        }, null);
+        return (new AuthResponseDto(
+            token,
+            new UserProfileDto(
+                user.Id,
+                user.PhoneNumber,
+                user.FirstName,
+                user.LastName,
+                user.CreatedAt,
+                user.DeletedAt,
+                user.IsAdmin,
+                user.IsActive,
+                user.IsDeleted,
+                null
+            ),
+            DateTime.UtcNow.AddHours(1),
+            refreshTokenValue
+        ), null);
     }
 
     public async Task<(object? Response, string? Error)> RefreshTokenAsync(RefreshRequestDto request, string clientIp, string userAgent)
     {
-        TRefreshToken? storedToken = null;
-        var allTokens = await _context.TRefreshToken.Include(t => t.User).Where(t => t.RevokedAt == null).ToListAsync();
+        TUserSession? storedSession = null;
+        var allSessions = await _context.TUserSession.Include(t => t.User).Where(t => t.RevokedAt == null && t.IsActive).ToListAsync();
 
-        foreach (var token in allTokens)
+        foreach (var session in allSessions)
         {
-            if (BCrypt.Net.BCrypt.Verify(request.RefreshToken, token.TokenHash))
+            if (BCrypt.Net.BCrypt.Verify(request.RefreshToken, session.TokenHash))
             {
-                storedToken = token;
+                storedSession = session;
                 break;
             }
         }
 
-        if (storedToken == null)
+        if (storedSession == null)
             return (null, "Invalid token.");
 
-        if (storedToken.ExpiresAt <= DateTime.UtcNow)
+        if (storedSession.ExpiresAt <= DateTime.UtcNow)
             return (null, "Token expired.");
 
-        if (storedToken.User == null)
+        if (storedSession.User == null)
             return (null, "User not found for this token.");
 
-        var newRefreshValue = GenerateSecureToken();
-        var newRefreshHash = BCrypt.Net.BCrypt.HashPassword(newRefreshValue);
-        storedToken.RevokedAt = DateTime.UtcNow;
-        storedToken.ReplacedByTokenHash = newRefreshHash;
-        var newJwt = GenerateJwtToken(storedToken.User);
+        var newRefreshTokenValue = GenerateSecureToken();
+        var newRefreshTokenHash = BCrypt.Net.BCrypt.HashPassword(newRefreshTokenValue);
 
-        var newRefresh = new TRefreshToken
+        storedSession.RevokedAt = DateTime.UtcNow;
+        storedSession.ReplacedByTokenHash = newRefreshTokenHash;
+
+        var newJwt = GenerateJwtToken(storedSession.User);
+
+        var newSession = new TUserSession
         {
-            UserId = storedToken.UserId,
-            TokenHash = newRefreshHash,
+            UserId = storedSession.UserId,
+            TokenHash = newRefreshTokenHash,
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
             CreatedByIp = clientIp,
             UserAgent = SanitizeUserAgent(userAgent),
-            UpdatedAt = DateTime.UtcNow
-        };
-        _context.TRefreshToken.Add(newRefresh);
-
-        var session = await _context.TUserSession.FirstOrDefaultAsync(s => s.SessionToken == storedToken.TokenHash);
-        if (session != null)
-        {
-            session.IsActive = false;
-        }
-
-        var newSession = new TUserSession
-        {
-            UserId = storedToken.UserId,
-            SessionToken = newRefreshHash,
-            IpAddress = clientIp,
-            UserAgent = SanitizeUserAgent(userAgent),
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = newRefresh.ExpiresAt,
-            LastActivityAt = DateTime.UtcNow,
-            IsActive = true
+            UpdatedAt = DateTime.UtcNow,
         };
         _context.TUserSession.Add(newSession);
 
         await _context.SaveChangesAsync();
 
-        return (new { token = newJwt, refreshToken = newRefreshValue }, null);
+        return (new { token = newJwt, refreshToken = newRefreshTokenValue }, null);
     }
 
     public async Task<(bool Success, string? Error)> LogoutAsync(string refreshToken)
@@ -438,22 +458,18 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(refreshToken))
             return (false, "Refresh token is required.");
 
-        var tokens = await _context.TRefreshToken
+        var sessions = await _context.TUserSession
             .Where(t => t.RevokedAt == null && t.ExpiresAt > DateTime.UtcNow)
             .ToListAsync();
 
-        var tokenToRevoke = tokens.FirstOrDefault(t => BCrypt.Net.BCrypt.Verify(refreshToken, t.TokenHash));
+        var sessionToRevoke = sessions.FirstOrDefault(t => BCrypt.Net.BCrypt.Verify(refreshToken, t.TokenHash));
 
-        if (tokenToRevoke == null)
-            return (false, "Active token not found.");
+        if (sessionToRevoke == null)
+            return (true, "Logged out successfully.");
 
-        var session = await _context.TUserSession.FirstOrDefaultAsync(s => s.SessionToken == tokenToRevoke.TokenHash);
-        if (session != null)
-        {
-            session.IsActive = false;
-        }
+        await RevokeSessionChainAsync(sessionToRevoke);
+        await _context.SaveChangesAsync();
 
-        await RevokeTokenChainAsync(tokenToRevoke);
         return (true, "Logged out successfully.");
     }
 
@@ -464,22 +480,20 @@ public class UserService : IUserService
         return sanitized.Length > 255 ? sanitized[..255] : sanitized;
     }
 
-    private async Task RevokeTokenChainAsync(TRefreshToken? token)
+    private async Task RevokeSessionChainAsync(TUserSession? session)
     {
-        if (token == null) return;
+        if (session == null) return;
 
-        if (token.RevokedAt == null)
+        if (session.RevokedAt == null)
         {
-            token.RevokedAt = DateTime.UtcNow;
+            session.RevokedAt = DateTime.UtcNow;
         }
 
-        if (!string.IsNullOrEmpty(token.ReplacedByTokenHash))
+        if (!string.IsNullOrEmpty(session.ReplacedByTokenHash))
         {
-            var nextToken = await _context.TRefreshToken.FirstOrDefaultAsync(t => t.TokenHash == token.ReplacedByTokenHash);
-            await RevokeTokenChainAsync(nextToken);
+            var nextSession = await _context.TUserSession.FirstOrDefaultAsync(t => t.TokenHash == session.ReplacedByTokenHash);
+            await RevokeSessionChainAsync(nextSession);
         }
-
-        await _context.SaveChangesAsync();
     }
 
 
@@ -490,14 +504,10 @@ public class UserService : IUserService
         await query.ExecuteDeleteAsync();
     }
 
-    private async Task RevokeAllUserRefreshTokensAsync(int userId)
+    private async Task RevokeAllUserSessionsAsync(int userId)
     {
-        var query = _context.TRefreshToken
-            .Where(rt => rt.UserId == userId && rt.RevokedAt == null && rt.ExpiresAt > DateTime.UtcNow);
-        await query.ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.RevokedAt, DateTime.UtcNow));
-
         var sessionQuery = _context.TUserSession.Where(s => s.UserId == userId && s.IsActive);
-        await sessionQuery.ExecuteUpdateAsync(s => s.SetProperty(p => p.IsActive, false));
+        await sessionQuery.ExecuteUpdateAsync(s => s.SetProperty(p => p.RevokedAt, DateTime.UtcNow));
     }
 
     private string GenerateSecureOtp()
@@ -546,17 +556,17 @@ public class UserService : IUserService
             .Include(r => r.User)
             .OrderByDescending(r => r.CreatedAt)
             .Select(r => new ProductReviewDto
-            {
-                Id = r.Id,
-                ProductId = r.ProductId,
-                UserId = r.UserId,
-                UserName = r.User != null ? (r.User.FirstName + " " + r.User.LastName) : "کاربر",
-                Rating = r.Rating,
-                Title = r.Title,
-                Comment = r.Comment,
-                CreatedAt = r.CreatedAt,
-                IsVerifiedPurchase = r.IsVerifiedPurchase,
-            })
+            (
+                r.Id,
+                r.ProductId,
+                r.UserId,
+                r.User != null ? (r.User.FirstName + " " + r.User.LastName) : "کاربر",
+                r.Rating,
+                r.Title,
+                r.Comment,
+                r.CreatedAt,
+                r.IsVerifiedPurchase
+            ))
             .ToListAsync();
     }
 }

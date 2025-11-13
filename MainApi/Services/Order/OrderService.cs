@@ -1,7 +1,4 @@
-﻿using MainApi.Services.Inventory;
-using MainApi.Services.Media;
-
-namespace MainApi.Services.Order;
+﻿namespace MainApi.Services.Order;
 
 public class OrderService : IOrderService
 {
@@ -83,7 +80,6 @@ public class OrderService : IOrderService
                 o.ShippingCost,
                 o.DiscountAmount,
                 o.FinalAmount,
-                TotalProfit = isAdmin ? (decimal?)o.TotalProfit : null,
                 o.CreatedAt,
                 User = new
                 {
@@ -141,7 +137,6 @@ public class OrderService : IOrderService
             o.ShippingCost,
             o.DiscountAmount,
             o.FinalAmount,
-            TotalProfit = isAdmin ? (decimal?)o.TotalProfit : null,
             o.CreatedAt,
             o.OrderStatusId,
             o.RowVersion,
@@ -227,15 +222,14 @@ public class OrderService : IOrderService
                     },
                     Attributes = oi.Attributes.ToDictionary(
                         a => a.TypeName.ToLower(),
-                        a => new AttributeValueDto
-                        {
-                            Id = a.AttributeValueId,
-                            Type = a.TypeName,
-                            TypeDisplay = a.TypeDisplay,
-                            Value = a.Value,
-                            DisplayValue = a.DisplayValue,
-                            HexCode = a.HexCode
-                        })
+                        a => new AttributeValueDto(
+                            a.AttributeValueId,
+                            a.TypeName,
+                            a.TypeDisplay,
+                            a.Value,
+                            a.DisplayValue,
+                            a.HexCode
+                        ))
                 }
             });
         }
@@ -249,7 +243,6 @@ public class OrderService : IOrderService
             orderData.ShippingCost,
             orderData.DiscountAmount,
             orderData.FinalAmount,
-            orderData.TotalProfit,
             orderData.CreatedAt,
             orderData.OrderStatusId,
             orderData.RowVersion,
@@ -282,6 +275,7 @@ public class OrderService : IOrderService
                     .ToDictionaryAsync(v => v.Id, v => v);
 
                 decimal totalAmount = 0;
+                decimal totalProfit = 0;
                 var orderItems = new List<TOrderItems>();
 
                 foreach (var itemDto in orderDto.OrderItems)
@@ -291,14 +285,20 @@ public class OrderService : IOrderService
 
                     await _inventoryService.LogTransactionAsync(variant.Id, "Sale", -itemDto.Quantity, null, orderDto.UserId, $"Order creation", null, variant.RowVersion);
 
-                    totalAmount += itemDto.SellingPrice * itemDto.Quantity;
+                    var amount = itemDto.SellingPrice * itemDto.Quantity;
+                    var profit = (itemDto.SellingPrice - variant.PurchasePrice) * itemDto.Quantity;
+
+                    totalAmount += amount;
+                    totalProfit += profit;
 
                     orderItems.Add(new TOrderItems
                     {
                         VariantId = variant.Id,
                         PurchasePrice = variant.PurchasePrice,
                         SellingPrice = itemDto.SellingPrice,
-                        Quantity = itemDto.Quantity
+                        Quantity = itemDto.Quantity,
+                        Amount = amount,
+                        Profit = profit
                     });
                 }
 
@@ -337,6 +337,8 @@ public class OrderService : IOrderService
                     DiscountAmount = discountAmount,
                     DiscountCodeId = discountId,
                     TotalAmount = totalAmount,
+                    TotalProfit = totalProfit,
+                    FinalAmount = totalAmount + shippingMethod.Cost - discountAmount,
                     OrderItems = orderItems
                 };
 
@@ -408,6 +410,7 @@ public class OrderService : IOrderService
 
                 const int pendingPaymentStatusId = 1;
                 decimal totalAmount = 0;
+                decimal totalProfit = 0;
 
                 var orderItems = new List<TOrderItems>();
 
@@ -420,14 +423,20 @@ public class OrderService : IOrderService
                     await _inventoryService.LogTransactionAsync(variant.Id, "Sale", -item.Quantity, null, userId, $"Checkout for Order", null, variant.RowVersion);
 
                     var sellingPrice = variant.SellingPrice;
-                    totalAmount += sellingPrice * item.Quantity;
+                    var amount = sellingPrice * item.Quantity;
+                    var profit = (sellingPrice - variant.PurchasePrice) * item.Quantity;
+                    totalAmount += amount;
+                    totalProfit += profit;
+
 
                     orderItems.Add(new TOrderItems
                     {
                         VariantId = variant.Id,
                         PurchasePrice = variant.PurchasePrice,
                         SellingPrice = sellingPrice,
-                        Quantity = item.Quantity
+                        Quantity = item.Quantity,
+                        Amount = amount,
+                        Profit = profit
                     });
                 }
 
@@ -463,7 +472,10 @@ public class OrderService : IOrderService
                     DiscountCodeId = discountId,
                     DiscountAmount = discountAmount,
                     TotalAmount = totalAmount,
-                    OrderItems = orderItems
+                    TotalProfit = totalProfit,
+                    FinalAmount = totalAmount + shippingMethod.Cost - discountAmount,
+                    OrderItems = orderItems,
+                    IsPaid = false
                 };
 
                 _context.TOrders.Add(order);
@@ -485,9 +497,6 @@ public class OrderService : IOrderService
                 }
 
                 await transaction.CommitAsync();
-
-                await _auditService.LogOrderEventAsync(order.Id, "CheckoutFromCart", userId, $"Order created with total amount {order.TotalAmount}");
-                await _cacheService.ClearAsync($"cart:user:{userId}");
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -500,6 +509,21 @@ public class OrderService : IOrderService
                 await transaction.RollbackAsync();
                 throw;
             }
+            finally
+            {
+                if (order != null)
+                {
+                    try
+                    {
+                        await _auditService.LogOrderEventAsync(order.Id, "CheckoutFromCart", userId, $"Order created with total amount {order.TotalAmount}");
+                        await _cacheService.ClearAsync($"cart:user:{userId}");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to log audit or clear cache after checkout");
+                    }
+                }
+            }
         });
 
         return order!;
@@ -507,6 +531,17 @@ public class OrderService : IOrderService
 
     public async Task<bool> VerifyPaymentAsync(int orderId, string authority)
     {
+        var existingTransaction = await _context.TPaymentTransaction
+            .FirstOrDefaultAsync(t => t.Authority == authority);
+
+        if (existingTransaction != null)
+        {
+            if (existingTransaction.Status == "Success")
+                return true;
+
+            return false;
+        }
+
         var order = await _context.TOrders.FindAsync(orderId);
         if (order == null || order.IsPaid) return false;
 
@@ -520,6 +555,7 @@ public class OrderService : IOrderService
             Amount = finalAmount,
             Authority = authority,
             Gateway = "ZarinPal",
+            Status = "Initialized",
             CreatedAt = DateTime.UtcNow
         };
 
@@ -599,6 +635,7 @@ public class OrderService : IOrderService
         if (orderDto.DeliveryDate.HasValue)
             order.DeliveryDate = orderDto.DeliveryDate;
 
+        order.FinalAmount = order.TotalAmount + order.ShippingCost - order.DiscountAmount;
         await _context.SaveChangesAsync();
         return true;
     }
@@ -666,7 +703,6 @@ public class OrderService : IOrderService
             {
                 TotalOrders = g.Count(),
                 TotalRevenue = g.Sum(o => o.FinalAmount),
-                TotalProfit = g.Sum(o => o.TotalProfit),
                 AverageOrderValue = g.Average(o => (double)o.FinalAmount)
             })
             .FirstOrDefaultAsync();
@@ -686,34 +722,62 @@ public class OrderService : IOrderService
 
         return new
         {
-            GeneralStatistics = statistics ?? new { TotalOrders = 0, TotalRevenue = (decimal)0, TotalProfit = (decimal)0, AverageOrderValue = 0.0 },
+            GeneralStatistics = statistics ?? new { TotalOrders = 0, TotalRevenue = (decimal)0, AverageOrderValue = 0.0 },
             StatusStatistics = statusStatistics
         };
     }
 
     public async Task<bool> UpdateOrderStatusAsync(int id, UpdateOrderStatusDto statusDto)
     {
-        var order = await _context.TOrders.FindAsync(id);
-        if (order == null) return false;
+        var strategy = _context.Database.CreateExecutionStrategy();
+        var success = false;
 
-        var status = await _context.TOrderStatus.FindAsync(statusDto.OrderStatusId);
-        if (status == null)
+        await strategy.ExecuteAsync(async () =>
         {
-            throw new ArgumentException("Invalid Order Status ID");
+            var order = await _context.TOrders.FindAsync(id);
+            if (order == null)
+            {
+                success = false;
+                return;
+            }
+
+            var status = await _context.TOrderStatus.FindAsync(statusDto.OrderStatusId);
+            if (status == null)
+            {
+                throw new ArgumentException("Invalid Order Status ID");
+            }
+
+            order.OrderStatusId = statusDto.OrderStatusId;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                success = true;
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency exception when updating status for order {OrderId}. Retrying...", id);
+                throw;
+            }
+        });
+
+        if (success)
+        {
+            var orderForNotification = await _context.TOrders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id);
+            if (orderForNotification != null)
+            {
+                var statusName = (await _context.TOrderStatus.FindAsync(statusDto.OrderStatusId))?.Name;
+                await _auditService.LogOrderEventAsync(id, "UpdateStatus", orderForNotification.UserId, $"Order status changed to {statusDto.OrderStatusId}");
+
+                await _notificationService.CreateNotificationAsync(
+                    orderForNotification.UserId,
+                    "تغییر وضعیت سفارش",
+                    $"وضعیت سفارش شما با شماره {orderForNotification.Id} به '{statusName}' تغییر کرد.",
+                    "OrderStatusChanged",
+                    $"/profile/orders/{orderForNotification.Id}"
+                );
+            }
         }
-
-        order.OrderStatusId = statusDto.OrderStatusId;
-        await _context.SaveChangesAsync();
-        await _auditService.LogOrderEventAsync(id, "UpdateStatus", order.UserId, $"Order status changed to {statusDto.OrderStatusId}");
-
-        await _notificationService.CreateNotificationAsync(
-            order.UserId,
-            "تغییر وضعیت سفارش",
-            $"وضعیت سفارش شما با شماره {order.Id} به '{status.Name}' تغییر کرد.",
-            "OrderStatusChanged",
-            $"/profile/orders/{order.Id}"
-        );
-
-        return true;
+        return success;
     }
 }

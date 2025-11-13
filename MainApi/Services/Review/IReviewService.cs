@@ -1,4 +1,4 @@
-﻿namespace MainApi.Services.Product;
+﻿namespace MainApi.Services.Review;
 
 public interface IReviewService
 {

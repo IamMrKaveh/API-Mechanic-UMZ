@@ -1,4 +1,5 @@
 ﻿using MainApi.Services.Media;
+using System;
 
 namespace MainApi.Services.Category;
 
@@ -32,35 +33,56 @@ public class CategoryService : ICategoryService
 
         var totalItems = await query.CountAsync();
         var categories = await query
-            .Include(c => c.CategoryGroups)
-                .ThenInclude(cg => cg.Products)
-                    .ThenInclude(p => p.Variants)
+            .OrderBy(pt => pt.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(c => new
             {
                 c.Id,
                 c.Name,
+                c.RowVersion,
                 CategoryGroups = c.CategoryGroups.Select(cg => new
                 {
                     cg.Id,
                     cg.Name,
                     ProductCount = cg.Products.Count(),
                     InStockProducts = cg.Products.Count(p => p.Variants.Any(v => v.IsUnlimited || v.Stock > 0)),
-                    TotalValue = cg.Products.SelectMany(p => p.Variants).Sum(v => v.PurchasePrice * v.Stock),
-                    TotalSellingValue = cg.Products.SelectMany(p => p.Variants).Sum(v => v.SellingPrice * v.Stock),
+                    TotalValue = (long)cg.Products.SelectMany(p => p.Variants).Sum(v => v.PurchasePrice * v.Stock),
+                    TotalSellingValue = (long)cg.Products.SelectMany(p => p.Variants).Sum(v => v.SellingPrice * v.Stock),
                 }).ToList()
             })
-            .OrderBy(pt => pt.Name)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
             .ToListAsync();
 
-        var result = categories.Select(c => new
+        var result = new List<object>();
+        foreach (var c in categories)
         {
-            c.Id,
-            c.Name,
-            Icon = _mediaService.GetPrimaryImageUrlAsync("Category", c.Id).Result,
-            c.CategoryGroups
-        });
+            var categoryIcon = await _mediaService.GetPrimaryImageUrlAsync("Category", c.Id);
+            var groups = new List<object>();
+
+            foreach (var cg in c.CategoryGroups)
+            {
+                groups.Add(new
+                {
+                    cg.Id,
+                    cg.Name,
+                    Icon = await _mediaService.GetPrimaryImageUrlAsync("CategoryGroup", cg.Id),
+                    cg.ProductCount,
+                    cg.InStockProducts,
+                    cg.TotalValue,
+                    cg.TotalSellingValue
+                });
+            }
+
+            result.Add(new
+            {
+                c.Id,
+                c.Name,
+                c.RowVersion,
+                Icon = categoryIcon,
+                CategoryGroups = groups
+            });
+        }
+
 
         return (result, totalItems);
     }
@@ -68,22 +90,21 @@ public class CategoryService : ICategoryService
     public async Task<object?> GetCategoryByIdAsync(int id, int page, int pageSize)
     {
         var category = await _context.TCategory
-            .Include(pt => pt.CategoryGroups)
-                .ThenInclude(cg => cg.Products)
-                    .ThenInclude(p => p.Variants)
+            .AsNoTracking()
             .Where(pt => pt.Id == id)
             .Select(pt => new
             {
                 pt.Id,
                 pt.Name,
+                pt.RowVersion,
                 CategoryGroups = pt.CategoryGroups.Select(cg => new
                 {
                     cg.Id,
                     cg.Name,
                     ProductCount = cg.Products.Count(),
                     InStockProducts = cg.Products.Count(p => p.Variants.Any(v => v.IsUnlimited || v.Stock > 0)),
-                    TotalValue = cg.Products.SelectMany(p => p.Variants).Sum(v => v.PurchasePrice * v.Stock),
-                    TotalSellingValue = cg.Products.SelectMany(p => p.Variants).Sum(v => v.SellingPrice * v.Stock),
+                    TotalValue = (long)cg.Products.SelectMany(p => p.Variants).Sum(v => v.PurchasePrice * v.Stock),
+                    TotalSellingValue = (long)cg.Products.SelectMany(p => p.Variants).Sum(v => v.SellingPrice * v.Stock),
                 }).ToList()
             })
             .FirstOrDefaultAsync();
@@ -95,41 +116,64 @@ public class CategoryService : ICategoryService
 
         var productsQuery = _context.TProducts.Where(p => p.CategoryGroup.CategoryId == id);
         var totalProductCount = await productsQuery.CountAsync();
-        var products = await productsQuery
-            .Include(p => p.Variants)
-            .Include(p => p.Images)
+        var productsData = await productsQuery
+            .AsNoTracking()
             .Select(p => new
             {
                 p.Id,
                 p.Name,
-                TotalStock = p.Variants.Sum(v => v.Stock),
-                SellingPrice = p.Variants.Any() ? p.Variants.Min(v => v.SellingPrice) : 0,
-                PurchasePrice = p.Variants.Any() ? p.Variants.Min(v => v.PurchasePrice) : 0,
-                IsInStock = p.Variants.Any(v => v.IsUnlimited || v.Stock > 0)
+                TotalStock = p.TotalStock,
+                MinPrice = p.MinPrice,
+                MaxPrice = p.MaxPrice,
+                IsInStock = p.TotalStock > 0 || p.Variants.Any(v => v.IsUnlimited)
             })
             .OrderBy(p => p.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
+        var productsResult = new List<object>();
+        foreach (var p in productsData)
+        {
+            productsResult.Add(new
+            {
+                p.Id,
+                p.Name,
+                Count = p.TotalStock,
+                SellingPrice = p.MinPrice,
+                PurchasePrice = p.MaxPrice,
+                Icon = await _mediaService.GetPrimaryImageUrlAsync("Product", p.Id),
+                p.IsInStock
+            });
+        }
+
+        var categoryIcon = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id);
+
+        var groups = new List<object>();
+        foreach (var cg in category.CategoryGroups)
+        {
+            groups.Add(new
+            {
+                cg.Id,
+                cg.Name,
+                Icon = await _mediaService.GetPrimaryImageUrlAsync("CategoryGroup", cg.Id),
+                cg.ProductCount,
+                cg.InStockProducts,
+                cg.TotalValue,
+                cg.TotalSellingValue
+            });
+        }
+
         return new
         {
             category.Id,
             category.Name,
-            Icon = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id),
-            category.CategoryGroups,
+            category.RowVersion,
+            Icon = categoryIcon,
+            CategoryGroups = groups,
             Products = new
             {
-                Items = products.Select(p => new
-                {
-                    p.Id,
-                    p.Name,
-                    Count = p.TotalStock,
-                    p.SellingPrice,
-                    p.PurchasePrice,
-                    Icon = _mediaService.GetPrimaryImageUrlAsync("Product", p.Id).Result,
-                    p.IsInStock
-                }),
+                Items = productsResult,
                 TotalItems = totalProductCount,
                 Page = page,
                 PageSize = pageSize,
@@ -175,6 +219,11 @@ public class CategoryService : ICategoryService
         if (existingCategory == null)
             return (false, "Category not found.");
 
+        if (categoryDto.RowVersion != null)
+        {
+            _context.Entry(existingCategory).Property("RowVersion").OriginalValue = categoryDto.RowVersion;
+        }
+
         var duplicateExists = await _context.TCategory.AnyAsync(pt =>
             pt.Name != null &&
             pt.Name.ToLower() == categoryDto.Name.ToLower() &&
@@ -189,8 +238,15 @@ public class CategoryService : ICategoryService
             await _mediaService.AttachFileToEntityAsync(categoryDto.IconFile, "Category", id, true);
         }
 
-        await _context.SaveChangesAsync();
-        return (true, null);
+        try
+        {
+            await _context.SaveChangesAsync();
+            return (true, null);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return (false, "The record you attempted to edit was modified by another user. Please reload and try again.");
+        }
     }
 
     public async Task<(bool Success, string? ErrorMessage)> DeleteCategoryAsync(int id)
@@ -208,13 +264,18 @@ public class CategoryService : ICategoryService
             await _mediaService.DeleteMediaAsync(m.Id);
         }
 
-        foreach (var group in category.CategoryGroups.ToList())
+        var categoryGroups = category.CategoryGroups.ToList();
+        if (categoryGroups.Any())
         {
-            var groupMedia = await _mediaService.GetEntityMediaAsync("CategoryGroup", group.Id);
-            foreach (var m in groupMedia)
+            foreach (var group in categoryGroups)
             {
-                await _mediaService.DeleteMediaAsync(m.Id);
+                var groupMedia = await _mediaService.GetEntityMediaAsync("CategoryGroup", group.Id);
+                foreach (var m in groupMedia)
+                {
+                    await _mediaService.DeleteMediaAsync(m.Id);
+                }
             }
+            _context.TCategoryGroup.RemoveRange(categoryGroups);
         }
 
         _context.TCategory.Remove(category);

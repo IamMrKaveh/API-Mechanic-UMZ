@@ -1,6 +1,4 @@
-﻿using DataAccessLayer.Models.Media;
-
-namespace MainApi.Services.Media;
+﻿namespace MainApi.Services.Media;
 
 public interface IMediaService
 {
@@ -8,4 +6,5 @@ public interface IMediaService
     Task<IEnumerable<TMedia>> GetEntityMediaAsync(string entityType, int entityId);
     Task<bool> DeleteMediaAsync(int mediaId);
     Task<string?> GetPrimaryImageUrlAsync(string entityType, int entityId);
+    Task<bool> SetPrimaryMediaAsync(int mediaId, int entityId, string entityType);
 }

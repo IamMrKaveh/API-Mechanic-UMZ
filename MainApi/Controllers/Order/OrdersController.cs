@@ -73,9 +73,17 @@ public class OrdersController : BaseApiController
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<TOrders>> PostTOrders(CreateOrderDto orderDto)
+    public async Task<ActionResult<TOrders>> PostTOrders([FromBody] CreateOrderDto orderDto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized("User not authenticated");
+
+        if (orderDto.UserId != userId.Value)
+        {
+            _logger.LogWarning("Admin {AdminId} attempting to create order for user {UserId} but claims do not match.", userId.Value, orderDto.UserId);
+        }
 
         var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
         if (string.IsNullOrEmpty(idempotencyKey)) return BadRequest("Idempotency-Key header is required.");
@@ -120,21 +128,7 @@ public class OrdersController : BaseApiController
         {
             var createdOrder = await _orderService.CheckoutFromCartAsync(orderDto, userId.Value, idempotencyKey);
 
-            var paymentResponse = await _zarinpalService.CreatePaymentRequestAsync(
-                createdOrder.FinalAmount,
-                $"Payment for Order #{createdOrder.Id}",
-                $"{Request.Scheme}://{Request.Host}/api/orders/verify-payment",
-                createdOrder.User.PhoneNumber
-            );
-
-            if (paymentResponse?.Data?.Code == 100 && !string.IsNullOrEmpty(paymentResponse.Data.Authority))
-            {
-                var gatewayUrl = _zarinpalService.GetPaymentGatewayUrl(paymentResponse.Data.Authority);
-                return Ok(new { orderId = createdOrder.Id, paymentGatewayUrl = gatewayUrl });
-            }
-
-            _logger.LogError("Failed to create Zarinpal payment request for Order {OrderId}", createdOrder.Id);
-            return StatusCode(500, new { message = "Failed to initiate payment. Please try again." });
+            return Ok(new { orderId = createdOrder.Id, message = "Order created successfully. Pending payment." });
         }
         catch (InvalidOperationException ex)
         {
