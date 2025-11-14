@@ -2,11 +2,11 @@
 
 public class NotificationService : INotificationService
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
-        MechanicContext context,
+        LedkaContext context,
         ILogger<NotificationService> logger)
     {
         _context = context;

@@ -2,9 +2,9 @@
 
 public class ReviewRepository : IReviewRepository
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
 
-    public ReviewRepository(MechanicContext context)
+    public ReviewRepository(LedkaContext context)
     {
         _context = context;
     }

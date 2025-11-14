@@ -2,9 +2,9 @@
 
 public class InventoryRepository : IInventoryRepository
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
 
-    public InventoryRepository(MechanicContext context)
+    public InventoryRepository(LedkaContext context)
     {
         _context = context;
     }

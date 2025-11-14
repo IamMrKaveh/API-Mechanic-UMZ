@@ -1,6 +1,7 @@
 ﻿global using Application.Common.Interfaces;
 global using Application.Common.Interfaces.Persistence;
 global using Application.Common.Mapping;
+global using Application.Context;
 global using Application.DTOs;
 global using Application.Services;
 global using Ganss.Xss;

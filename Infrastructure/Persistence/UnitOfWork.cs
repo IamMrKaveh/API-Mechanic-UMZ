@@ -2,9 +2,9 @@
 
 public class UnitOfWork : IUnitOfWork
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
 
-    public UnitOfWork(MechanicContext context)
+    public UnitOfWork(LedkaContext context)
     {
         _context = context;
     }

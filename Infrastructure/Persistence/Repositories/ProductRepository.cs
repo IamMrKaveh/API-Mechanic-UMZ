@@ -4,9 +4,9 @@ namespace Infrastructure.Persistence.Repositories;
 
 public class ProductRepository : IProductRepository
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
 
-    public ProductRepository(MechanicContext context)
+    public ProductRepository(LedkaContext context)
     {
         _context = context;
     }

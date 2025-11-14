@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
-Log.Logger = new LoggerConfiguration()
+﻿Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
@@ -42,7 +40,7 @@ try
     Log.Information("[RUNTIME MODE] Database connection validated: {Connection}",
         MaskConnectionString(connectionString));
 
-    builder.Services.AddDbContextPool<MechanicContext>((serviceProvider, options) =>
+    builder.Services.AddDbContextPool<LedkaContext>((serviceProvider, options) =>
     {
         options.UseNpgsql(connectionString, npgsqlOptions =>
         {

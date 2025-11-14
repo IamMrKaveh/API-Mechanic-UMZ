@@ -2,9 +2,9 @@
 
 public class UserRepository : IUserRepository
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
 
-    public UserRepository(MechanicContext context)
+    public UserRepository(LedkaContext context)
     {
         _context = context;
     }
