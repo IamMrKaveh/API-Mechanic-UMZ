@@ -42,7 +42,18 @@ public class CartService : ICartService
 
         var dto = await MapCartToDtoAsync(cart);
 
-        await _cacheService.SetAsync(cacheKey, dto, TimeSpan.FromMinutes(5));
+        var productTags = cart.CartItems
+            .Select(ci => $"product:{ci.Variant.ProductId}")
+            .Distinct()
+            .ToList();
+        productTags.AddRange(cart.CartItems.Select(ci => $"variant:{ci.VariantId}").Distinct());
+        if (userId.HasValue)
+        {
+            productTags.Add($"cart:user:{userId.Value}");
+        }
+
+
+        await _cacheService.SetAsync(cacheKey, dto, TimeSpan.FromMinutes(5), productTags);
         return dto;
     }
 
@@ -105,7 +116,7 @@ public class CartService : ICartService
                 cart.LastUpdated = DateTime.UtcNow;
             }
 
-            var variant = await _cartRepository.GetVariantForUpdateAsync(dto.VariantId);
+            var variant = await _cartRepository.GetVariantByIdAsync(dto.VariantId);
 
             if (variant == null || !variant.IsActive)
                 return (CartOperationResult.NotFound, null);
@@ -302,7 +313,7 @@ public class CartService : ICartService
             userCart.LastUpdated = DateTime.UtcNow;
             foreach (var guestItem in guestCart.CartItems)
             {
-                var variant = await _cartRepository.GetVariantForUpdateAsync(guestItem.VariantId);
+                var variant = await _cartRepository.GetVariantByIdAsync(guestItem.VariantId);
                 if (variant == null || !variant.IsActive) continue;
 
                 var userItem = userCart.CartItems.FirstOrDefault(ui => ui.VariantId == guestItem.VariantId);

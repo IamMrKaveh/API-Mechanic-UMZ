@@ -48,11 +48,9 @@ public class CartRepository : ICartRepository
         await _context.Set<Domain.Cart.CartItem>().AddAsync(item);
     }
 
-    public async Task<Domain.Product.ProductVariant?> GetVariantForUpdateAsync(int variantId)
+    public async Task<Domain.Product.ProductVariant?> GetVariantByIdAsync(int variantId)
     {
-        return await _context.Set<Domain.Product.ProductVariant>()
-            .FromSqlInterpolated($"SELECT * FROM \"ProductVariant\" WHERE \"Id\" = {variantId} FOR UPDATE")
-            .FirstOrDefaultAsync();
+        return await _context.Set<Domain.Product.ProductVariant>().FindAsync(variantId);
     }
 
     public async Task<Domain.Cart.CartItem?> GetCartItemAsync(int cartId, int variantId)

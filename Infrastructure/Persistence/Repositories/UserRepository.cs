@@ -1,6 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Scripting;
-
-namespace Infrastructure.Persistence.Repositories;
+﻿namespace Infrastructure.Persistence.Repositories;
 
 public class UserRepository : IUserRepository
 {
@@ -28,7 +26,7 @@ public class UserRepository : IUserRepository
         {
             query = query.IgnoreQueryFilters();
         }
-        return query.FirstOrDefaultAsync(u => u.Id == id);
+        return query.Include(u => u.UserAddresses).FirstOrDefaultAsync(u => u.Id == id);
     }
     public Task<Domain.User.UserAddress?> GetUserAddressAsync(int userAddressId)
     {
@@ -73,19 +71,32 @@ public class UserRepository : IUserRepository
 
     public async Task<Domain.Auth.UserSession?> GetActiveSessionByTokenAsync(string refreshToken)
     {
-        var allSessions = await _context.Set<Domain.Auth.UserSession>()
-            .Include(t => t.User)
-            .Where(t => t.RevokedAt == null && t.ExpiresAt > DateTime.UtcNow)
-            .ToListAsync();
-
-        foreach (var session in allSessions)
+        var parts = refreshToken?.Split(':');
+        if (parts == null || parts.Length != 2)
         {
-            if (BCrypt.Net.BCrypt.Verify(refreshToken, session.TokenHash))
-            {
-                return session;
-            }
+            return null;
         }
-        return null;
+
+        var selector = parts[0];
+        var verifier = parts[1];
+
+        var session = await _context.Set<Domain.Auth.UserSession>()
+            .Include(t => t.User)
+            .SingleOrDefaultAsync(t => t.TokenSelector == selector &&
+                                        t.RevokedAt == null &&
+                                        t.ExpiresAt > DateTime.UtcNow);
+
+        if (session == null)
+        {
+            return null;
+        }
+
+        if (!BCrypt.Net.BCrypt.Verify(verifier, session.TokenVerifierHash))
+        {
+            return null;
+        }
+
+        return session;
     }
 
     public async Task AddSessionAsync(Domain.Auth.UserSession session)
@@ -100,7 +111,7 @@ public class UserRepository : IUserRepository
 
         if (!string.IsNullOrEmpty(session.ReplacedByTokenHash))
         {
-            var nextSession = await _context.Set<Domain.Auth.UserSession>().FirstOrDefaultAsync(t => t.TokenHash == session.ReplacedByTokenHash);
+            var nextSession = await _context.Set<Domain.Auth.UserSession>().FirstOrDefaultAsync(t => t.TokenVerifierHash == session.ReplacedByTokenHash);
             if (nextSession != null)
             {
                 await RevokeSessionAsync(nextSession);

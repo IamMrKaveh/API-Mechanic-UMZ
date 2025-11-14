@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public class OrderService : IOrderService
 {
@@ -261,7 +259,7 @@ public class OrderService : IOrderService
         return order;
     }
 
-    public async Task<Domain.Order.Order> CheckoutFromCartAsync(CreateOrderFromCartDto orderDto, int userId, string idempotencyKey)
+    public async Task<(Domain.Order.Order Order, string? PaymentUrl, string? Error)> CheckoutFromCartAsync(CreateOrderFromCartDto orderDto, int userId, string idempotencyKey)
     {
         var rateLimitKey = $"checkout_{userId}";
         if (await _rateLimitService.IsLimitedAsync(rateLimitKey, 3, 1))
@@ -274,7 +272,7 @@ public class OrderService : IOrderService
         if (existingOrder != null)
         {
             _logger.LogInformation("Idempotent checkout request detected for key {IdempotencyKey}, returning existing order {OrderId}", idempotencyKey, existingOrder.Id);
-            return existingOrder;
+            return (existingOrder, null, "Duplicate request");
         }
 
         Domain.Order.Order? order = null;
@@ -375,7 +373,26 @@ public class OrderService : IOrderService
 
             await _unitOfWork.SaveChangesAsync();
 
-            return order;
+            try
+            {
+                var callbackUrl = $"{_frontendUrls.BaseUrl}/payment-verify?orderId={order.Id}";
+                var paymentResponse = await _zarinpalService.CreatePaymentRequestAsync(_zarinpalSettings, order.FinalAmount, $"پرداخت سفارش شماره {order.Id}", callbackUrl, order.User?.PhoneNumber);
+
+                if (paymentResponse?.Data?.Code == 100 && !string.IsNullOrEmpty(paymentResponse.Data.Authority))
+                {
+                    var gatewayUrl = _zarinpalService.GetPaymentGatewayUrl(_zarinpalSettings.IsSandbox, paymentResponse.Data.Authority);
+                    return (order, gatewayUrl, null);
+                }
+
+                var message = paymentResponse?.Data?.Message ?? "Failed to generate payment link.";
+                _logger.LogError("Zarinpal payment URL is null for order {OrderId}. Reason: {Reason}", order.Id, message);
+                return (order, null, message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create payment request for order {OrderId}", order.Id);
+                return (order, null, "Failed to contact payment provider.");
+            }
         }
         catch (DbUpdateConcurrencyException ex)
         {

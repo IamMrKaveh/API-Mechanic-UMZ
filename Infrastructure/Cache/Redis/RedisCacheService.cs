@@ -36,7 +36,7 @@ public class RedisCacheService : ICacheService
         return null;
     }
 
-    public async Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null) where T : class
+    public async Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null, IEnumerable<string>? tags = null) where T : class
     {
         try
         {
@@ -47,13 +47,32 @@ public class RedisCacheService : ICacheService
             }
 
             var stringValue = JsonSerializer.Serialize(value);
-            return await _database.StringSetAsync(key, stringValue, expiry ?? TimeSpan.FromMinutes(10));
+            var expiryTime = expiry ?? TimeSpan.FromMinutes(10);
+
+            var transaction = _database.CreateTransaction();
+            _ = transaction.StringSetAsync(key, stringValue, expiryTime);
+
+            if (tags != null)
+            {
+                foreach (var tag in tags)
+                {
+                    var tagKey = $"tag:{tag}";
+                    _ = transaction.SetAddAsync(tagKey, key);
+                    _ = transaction.KeyExpireAsync(tagKey, expiryTime.Add(TimeSpan.FromHours(1)));
+                }
+            }
+            return await transaction.ExecuteAsync();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error setting cache for key {Key}", key);
             return false;
         }
+    }
+
+    public Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null) where T : class
+    {
+        return SetAsync(key, value, expiry, null);
     }
 
     public async Task ClearByPrefixAsync(string prefix)
@@ -82,6 +101,25 @@ public class RedisCacheService : ICacheService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error clearing cache for prefix {Prefix}", prefix);
+        }
+    }
+    public async Task ClearByTagAsync(string tag)
+    {
+        try
+        {
+            if (!_redis.IsConnected) return;
+            var tagKey = $"tag:{tag}";
+            var keysToDelete = await _database.SetMembersAsync(tagKey);
+            if (keysToDelete.Length > 0)
+            {
+                var redisKeys = keysToDelete.Select(k => (RedisKey)k.ToString()).ToArray();
+                await _database.KeyDeleteAsync(redisKeys);
+            }
+            await _database.KeyDeleteAsync(tagKey);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error clearing cache for tag {Tag}", tag);
         }
     }
 

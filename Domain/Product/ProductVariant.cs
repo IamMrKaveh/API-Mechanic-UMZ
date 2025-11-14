@@ -13,7 +13,7 @@ public class ProductVariant : BaseEntity
 
     public decimal SellingPrice { get; set; }
 
-    public int Stock { get; set; }
+    public int Stock { get; private protected set; }
 
     public bool IsUnlimited { get; set; }
 
@@ -44,4 +44,38 @@ public class ProductVariant : BaseEntity
     public ICollection<Media.Media> Images { get; set; } = [];
     public ICollection<Inventory.InventoryTransaction> InventoryTransactions { get; set; } = [];
     public ICollection<Cart.CartItem> CartItems { get; set; } = [];
+
+    public InventoryTransaction? AdjustStock(int quantityChange, string transactionType, int? userId, string? notes, int? orderItemId = null)
+    {
+        if (IsUnlimited)
+        {
+            return null;
+        }
+
+        var stockBefore = Stock;
+        var stockAfter = stockBefore + quantityChange;
+
+        if (stockAfter < 0)
+        {
+            throw new InvalidOperationException($"Insufficient stock for variant {Id}. Current: {stockBefore}, Requested change: {quantityChange}");
+        }
+
+        Stock = stockAfter;
+        UpdatedAt = DateTime.UtcNow;
+
+        var transaction = new InventoryTransaction
+        {
+            VariantId = Id,
+            TransactionType = transactionType,
+            Quantity = quantityChange,
+            StockBefore = stockBefore,
+            StockAfter = stockAfter,
+            OrderItemId = orderItemId,
+            UserId = userId,
+            Notes = notes,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        return transaction;
+    }
 }
