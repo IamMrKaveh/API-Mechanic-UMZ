@@ -2,9 +2,9 @@
 
 public class DiscountRepository : IDiscountRepository
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
 
-    public DiscountRepository(MechanicContext context)
+    public DiscountRepository(LedkaContext context)
     {
         _context = context;
     }

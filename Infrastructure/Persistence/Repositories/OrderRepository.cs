@@ -2,9 +2,9 @@
 
 public class OrderRepository : IOrderRepository
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
 
-    public OrderRepository(MechanicContext context)
+    public OrderRepository(LedkaContext context)
     {
         _context = context;
     }

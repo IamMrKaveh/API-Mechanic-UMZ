@@ -2,9 +2,9 @@
 
 public class CartRepository : ICartRepository
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
 
-    public CartRepository(MechanicContext context)
+    public CartRepository(LedkaContext context)
     {
         _context = context;
     }

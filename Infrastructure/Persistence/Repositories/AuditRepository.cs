@@ -2,9 +2,9 @@
 
 public class AuditRepository : IAuditRepository
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
 
-    public AuditRepository(MechanicContext context)
+    public AuditRepository(LedkaContext context)
     {
         _context = context;
     }

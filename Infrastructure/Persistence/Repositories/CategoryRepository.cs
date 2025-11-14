@@ -2,9 +2,9 @@
 
 public class CategoryRepository : ICategoryRepository
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
 
-    public CategoryRepository(MechanicContext context)
+    public CategoryRepository(LedkaContext context)
     {
         _context = context;
     }

@@ -2,9 +2,9 @@
 
 public class MediaRepository : IMediaRepository
 {
-    private readonly MechanicContext _context;
+    private readonly LedkaContext _context;
 
-    public MediaRepository(MechanicContext context)
+    public MediaRepository(LedkaContext context)
     {
         _context = context;
     }
