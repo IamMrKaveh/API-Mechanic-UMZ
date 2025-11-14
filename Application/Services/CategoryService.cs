@@ -1,0 +1,186 @@
+﻿namespace Application.Services;
+
+public class CategoryService : ICategoryService
+{
+    private readonly ICategoryRepository _categoryRepository;
+    private readonly ICategoryGroupRepository _categoryGroupRepository;
+    private readonly IMediaService _mediaService;
+    private readonly IHtmlSanitizer _htmlSanitizer;
+    private readonly IMapper _mapper;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public CategoryService(
+        ICategoryRepository categoryRepository,
+        ICategoryGroupRepository categoryGroupRepository,
+        IMediaService mediaService,
+        IHtmlSanitizer htmlSanitizer,
+        IMapper mapper,
+        IUnitOfWork unitOfWork)
+    {
+        _categoryRepository = categoryRepository;
+        _categoryGroupRepository = categoryGroupRepository;
+        _mediaService = mediaService;
+        _htmlSanitizer = htmlSanitizer;
+        _mapper = mapper;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<ServiceResult<PagedResultDto<CategoryViewDto>>> GetCategoriesAsync(string? search, int page, int pageSize)
+    {
+        var (categories, totalItems) = await _categoryRepository.GetCategoriesAsync(search, page, pageSize);
+        var categoryDtos = new List<CategoryViewDto>();
+
+        foreach (var category in categories)
+        {
+            var dto = _mapper.Map<CategoryViewDto>(category);
+            dto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id);
+
+            var groupDtos = new List<CategoryGroupSummaryDto>();
+            foreach (var group in category.CategoryGroups)
+            {
+                var groupDto = _mapper.Map<CategoryGroupSummaryDto>(group);
+                groupDto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("CategoryGroup", group.Id);
+                groupDtos.Add(groupDto);
+            }
+            dto.CategoryGroups = groupDtos;
+            categoryDtos.Add(dto);
+        }
+
+        var pagedResult = new PagedResultDto<CategoryViewDto>
+        {
+            Items = categoryDtos,
+            TotalItems = totalItems,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return ServiceResult<PagedResultDto<CategoryViewDto>>.Ok(pagedResult);
+    }
+
+    public async Task<ServiceResult<CategoryDetailViewDto?>> GetCategoryByIdAsync(int id, int page, int pageSize)
+    {
+        var category = await _categoryRepository.GetCategoryWithGroupsByIdAsync(id);
+        if (category == null)
+        {
+            return ServiceResult<CategoryDetailViewDto?>.Fail("Category not found.");
+        }
+
+        var (products, totalProductCount) = await _categoryRepository.GetProductsByCategoryIdAsync(id, page, pageSize);
+
+        var categoryDto = _mapper.Map<CategoryDetailViewDto>(category);
+        categoryDto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id);
+
+        var productDtos = new List<ProductSummaryDto>();
+        foreach (var product in products)
+        {
+            var productDto = _mapper.Map<ProductSummaryDto>(product);
+            productDto.Icon = await _mediaService.GetPrimaryImageUrlAsync("Product", product.Id);
+            productDtos.Add(productDto);
+        }
+
+        categoryDto.Products = new PagedResultDto<ProductSummaryDto>
+        {
+            Items = productDtos,
+            TotalItems = totalProductCount,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return ServiceResult<CategoryDetailViewDto?>.Ok(categoryDto);
+    }
+
+    public async Task<ServiceResult<CategoryViewDto>> CreateCategoryAsync(CategoryCreateDto dto)
+    {
+        var sanitizedName = _htmlSanitizer.Sanitize(dto.Name.Trim());
+        if (await _categoryRepository.ExistsByNameAsync(sanitizedName))
+        {
+            return ServiceResult<CategoryViewDto>.Fail("A category with this name already exists.");
+        }
+
+        var category = _mapper.Map<Domain.Category.Category>(dto);
+        await _categoryRepository.AddAsync(category);
+        await _unitOfWork.SaveChangesAsync();
+
+        if (dto.IconFile != null)
+        {
+            await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "Category", category.Id, true);
+        }
+
+        var resultDto = _mapper.Map<CategoryViewDto>(category);
+        resultDto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id);
+
+        return ServiceResult<CategoryViewDto>.Ok(resultDto);
+    }
+
+    public async Task<ServiceResult> UpdateCategoryAsync(int id, CategoryUpdateDto dto)
+    {
+        var existingCategory = await _categoryRepository.GetCategoryWithGroupsByIdAsync(id);
+        if (existingCategory == null)
+        {
+            return ServiceResult.Fail("Category not found.");
+        }
+
+        if (dto.RowVersion != null)
+        {
+            _categoryRepository.SetOriginalRowVersion(existingCategory, dto.RowVersion);
+        }
+
+        var sanitizedName = _htmlSanitizer.Sanitize(dto.Name.Trim());
+        if (await _categoryRepository.ExistsByNameAsync(sanitizedName, id))
+        {
+            return ServiceResult.Fail("A category with this name already exists.");
+        }
+
+        _mapper.Map(dto, existingCategory);
+        _categoryRepository.Update(existingCategory);
+
+        if (dto.IconFile != null)
+        {
+            await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "Category", id, true);
+        }
+
+        try
+        {
+            await _unitOfWork.SaveChangesAsync();
+            return ServiceResult.Ok();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return ServiceResult.Fail("The record you attempted to edit was modified by another user. Please reload and try again.");
+        }
+    }
+
+    public async Task<ServiceResult> DeleteCategoryAsync(int id)
+    {
+        var category = await _categoryRepository.GetCategoryWithProductsAsync(id);
+        if (category == null)
+        {
+            return ServiceResult.Fail("Category not found.");
+        }
+
+        if (category.CategoryGroups.Any(cg => cg.Products.Any()))
+        {
+            return ServiceResult.Fail("Cannot delete a category that has associated products in its groups.");
+        }
+
+        var media = await _mediaService.GetEntityMediaAsync("Category", id);
+        foreach (var m in media)
+        {
+            await _mediaService.DeleteMediaAsync(m.Id);
+        }
+
+        foreach (var group in category.CategoryGroups)
+        {
+            var groupMedia = await _mediaService.GetEntityMediaAsync("CategoryGroup", group.Id);
+            foreach (var m in groupMedia)
+            {
+                await _mediaService.DeleteMediaAsync(m.Id);
+            }
+        }
+
+        _categoryRepository.Delete(category);
+        await _unitOfWork.SaveChangesAsync();
+
+        return ServiceResult.Ok();
+    }
+}

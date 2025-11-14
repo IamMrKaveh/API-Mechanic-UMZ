@@ -13,6 +13,7 @@
 	  <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
 	  <PackageReference Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
 	  <PackageReference Include="AWSSDK.S3" Version="4.0.7.10" />
+	  <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 	  <PackageReference Include="HtmlSanitizer" Version="9.0.886" />
 	  <PackageReference Include="Kavenegar" Version="1.2.5" />
 	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.10" />
@@ -50,14 +51,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\Base\" />
     <Folder Include="logs\" />
-    <Folder Include="Services\Storage\" />
     <Folder Include="wwwroot\images\" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DataAccessLayer\DataAccessLayer.csproj" />
+    <ProjectReference Include="..\Application\Application.csproj" />
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

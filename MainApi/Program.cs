@@ -23,7 +23,7 @@
 
 try
 {
-    Log.Information("Starting Ledka");
+    Log.Information("Starting API");
 
     var builder = WebApplication.CreateBuilder(args);
 
@@ -57,11 +57,13 @@ try
         options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
     }, poolSize: 15);
 
-    Log.Information("Database context registered successfully (EF Core 8 + Supabase)");
+    builder.Services.AddScoped<IUnitOfWork, Infrastructure.Persistence.UnitOfWork>();
+
+
+    Log.Information("Database context registered successfully");
+
 
     var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
-
-    builder.Services.AddMemoryCache();
 
     if (!string.IsNullOrEmpty(redisConnectionString))
     {
@@ -81,48 +83,82 @@ try
             builder.Services.AddSingleton(sp => redisConnection.GetDatabase());
             builder.Services.AddSingleton<ICacheService, RedisCacheService>();
 
-            Log.Information("✅ Redis connected successfully.");
+            Log.Information("Redis connected successfully. Using Redis for caching and Data Protection.");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "❌ Redis connection failed, using in-memory cache.");
-            RegisterInMemoryServices(builder);
+            Log.Error(ex, "Redis connection failed, using in-memory services.");
+            RegisterInMemoryServices(builder.Services);
         }
     }
     else
     {
-        Log.Warning("⚠️ Redis connection string not found — using in-memory cache.");
-        RegisterInMemoryServices(builder);
+        Log.Warning("Redis connection string not found. Using in-memory services.");
+        RegisterInMemoryServices(builder.Services);
     }
 
+    // Application Services
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<ICartService, CartService>();
     builder.Services.AddScoped<ICategoryService, CategoryService>();
+    builder.Services.AddScoped<ICategoryGroupService, CategoryGroupService>();
     builder.Services.AddScoped<IOrderService, OrderService>();
     builder.Services.AddScoped<IOrderItemService, OrderItemService>();
     builder.Services.AddScoped<IOrderStatusService, OrderStatusService>();
     builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<IReviewService, ReviewService>();
-    builder.Services.AddScoped<INotificationService, NotificationService>();
-    builder.Services.AddScoped<IEmailService, EmailService>();
-    builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
-    builder.Services.AddScoped<IEmailService, EmailService>();
-    builder.Services.AddScoped<IAuditService, AuditService>();
     builder.Services.AddScoped<IDiscountService, DiscountService>();
     builder.Services.AddScoped<IInventoryService, InventoryService>();
     builder.Services.AddScoped<IMediaService, MediaService>();
+    builder.Services.AddScoped<IAuditService, AuditService>();
+
+
+    // Infrastructure Services
+    builder.Services.AddScoped<INotificationService, NotificationService>();
+    builder.Services.AddScoped<IEmailService, EmailService>();
+    builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
     builder.Services.AddSingleton<IStorageService, LiaraStorageService>();
     builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
+    builder.Services.AddScoped<ITokenService, TokenService>();
+
+
+    // Repositories
+    builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+    builder.Services.AddScoped<ICategoryGroupRepository, CategoryGroupRepository>();
+    builder.Services.AddScoped<IProductRepository, ProductRepository>();
+    builder.Services.AddScoped<IUserRepository, UserRepository>();
+    builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+    builder.Services.AddScoped<ICartRepository, CartRepository>();
+    builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
+    builder.Services.AddScoped<IMediaRepository, MediaRepository>();
+    builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+    builder.Services.AddScoped<IAuditRepository, AuditRepository>();
+
+
+    // Current User
+    builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
 
     builder.Services.Configure<LiaraStorageSettings>(builder.Configuration.GetSection("LiaraStorage"));
-    builder.Services.Configure<ZarinpalSettings>(builder.Configuration.GetSection("Zarinpal"));
+    builder.Services.Configure<ZarinpalSettingsDto>(builder.Configuration.GetSection("Zarinpal"));
     builder.Services.Configure<SecurityHeadersOptions>(builder.Configuration.GetSection("SecurityHeaders"));
+    builder.Services.Configure<FrontendUrlsDto>(builder.Configuration.GetSection("FrontendUrls"));
+
 
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        options.KnownNetworks.Clear();
-        options.KnownProxies.Clear();
+        // DO NOT clear KnownNetworks and KnownProxies unless you know what you're doing.
+        // This should be configured with your specific reverse proxy IPs.
+        // For example:
+        // var knownProxyIPs = builder.Configuration.GetSection("Security:KnownProxies").Get<string[]>();
+        // if (knownProxyIPs != null)
+        // {
+        //     foreach (var ip in knownProxyIPs)
+        //     {
+        //         options.KnownProxies.Add(IPAddress.Parse(ip));
+        //     }
+        // }
     });
 
     Log.Information("Application services registered");
@@ -132,7 +168,7 @@ try
     {
         options.Limits.MaxRequestBodySize = maxRequestSize;
     });
-    builder.Services.Configure<FormOptions>(options =>
+    builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
     {
         options.MultipartBodyLengthLimit = maxRequestSize;
         options.ValueLengthLimit = (int)maxRequestSize;
@@ -291,22 +327,12 @@ try
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-    builder.Services.AddApiVersioning(options =>
-    {
-        options.DefaultApiVersion = new ApiVersion(1, 0);
-        options.AssumeDefaultVersionWhenUnspecified = true;
-        options.ReportApiVersions = true;
-        options.ApiVersionReader = ApiVersionReader.Combine(
-            new UrlSegmentApiVersionReader(),
-            new HeaderApiVersionReader("X-Api-Version"));
-    }).AddMvc();
-
     Log.Information("Controllers and caching configured");
 
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
     {
-        c.SwaggerDoc("v1", new OpenApiInfo { Title = "Ledka", Version = "v1" });
+        c.SwaggerDoc("v1", new OpenApiInfo { Title = "Mechanic API", Version = "v1" });
         c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
             Description = "JWT Authorization: Bearer {token}",
@@ -363,7 +389,7 @@ try
         app.UseSwagger();
         app.UseSwaggerUI(c =>
         {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ledka v1");
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
             c.RoutePrefix = "swagger";
         });
 
@@ -406,7 +432,7 @@ try
             var errorResponse = new
             {
                 error = "An unexpected error occurred. Please try again later.",
-                traceId = Activity.Current?.Id ?? context.TraceIdentifier
+                traceId = System.Diagnostics.Activity.Current?.Id ?? context.TraceIdentifier
             };
 
             await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
@@ -469,7 +495,7 @@ try
     var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
 
     lifetime.ApplicationStarted.Register(() =>
-        Log.Information("Ledka started successfully in {Environment} mode.",
+        Log.Information("API started successfully in {Environment} mode.",
             app.Environment.EnvironmentName));
 
     lifetime.ApplicationStopping.Register(() =>
@@ -515,12 +541,13 @@ static string MaskConnectionString(string connectionString)
     return string.Join(";", parts);
 }
 
-static void RegisterInMemoryServices(WebApplicationBuilder builder)
+static void RegisterInMemoryServices(IServiceCollection services)
 {
-    builder.Services.AddSingleton<ICacheService, InMemoryCacheService>();
-    builder.Services.AddOutputCache();
+    services.AddSingleton<IMemoryCache, MemoryCache>();
+    services.AddSingleton<ICacheService, InMemoryCacheService>();
+    services.AddOutputCache();
 
-    var dataProtectionBuilder = builder.Services.AddDataProtection()
+    var dataProtectionBuilder = services.AddDataProtection()
         .SetApplicationName("MechanicAPI")
         .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 

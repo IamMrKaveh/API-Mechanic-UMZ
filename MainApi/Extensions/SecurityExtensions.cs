@@ -24,7 +24,7 @@ public static class SecurityExtensions
                         var httpContext = context.Resource as HttpContext;
                         if (httpContext == null) return false;
 
-                        var ipString = HttpContextHelper.GetClientIpAddress(httpContext);
+                        var ipString = httpContext.Connection.RemoteIpAddress?.ToString();
 
                         return !string.IsNullOrEmpty(ipString) && whitelistedIps.Contains(ipString);
                     });
@@ -38,18 +38,6 @@ public static class SecurityExtensions
     /// 
     public static IApplicationBuilder UseSecurityMiddleware(this IApplicationBuilder app)
     {
-        // Correlation ID for better logging and tracing
-        app.Use(async (context, next) =>
-        {
-            var correlationId = context.Request.Headers["X-Correlation-ID"].FirstOrDefault()
-            ?? Guid.NewGuid().ToString();
-            context.TraceIdentifier = correlationId;
-            context.Response.Headers.Append("X-Correlation-ID", correlationId);
-            using (LogContext.PushProperty("CorrelationId", correlationId))
-            {
-                await next();
-            }
-        });
         // Custom middleware for logging slow or failed requests
         app.Use(async (context, next) =>
         {
