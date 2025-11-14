@@ -1,9 +1,4 @@
-﻿using Application.Common.Interfaces;
-using MainApi.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace MainApi.Controllers;
+﻿namespace MainApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -12,11 +7,13 @@ public class NotificationsController : ControllerBase
 {
     private readonly INotificationService _notificationService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public NotificationsController(INotificationService notificationService, ICurrentUserService currentUserService)
+    public NotificationsController(INotificationService notificationService, ICurrentUserService currentUserService, IUnitOfWork unitOfWork)
     {
         _notificationService = notificationService;
         _currentUserService = currentUserService;
+        _unitOfWork = unitOfWork;
     }
 
     [HttpGet]
@@ -47,6 +44,8 @@ public class NotificationsController : ControllerBase
 
         var success = await _notificationService.MarkAsReadAsync(id, userId.Value);
         if (!success) return NotFound("Notification not found or already read.");
+
+        await _unitOfWork.SaveChangesAsync();
 
         return NoContent();
     }

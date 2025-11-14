@@ -18,6 +18,14 @@ public class InMemoryCacheService : ICacheService
         return Task.FromResult(value);
     }
 
+    public Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null, IEnumerable<string>? tags = null) where T : class
+    {
+        if (tags != null && tags.Any())
+        {
+            _logger.LogWarning("InMemoryCacheService does not support tag-based caching. Tags will be ignored.");
+        }
+        return SetAsync(key, value, expiry);
+    }
     public Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null) where T : class
     {
         var options = new MemoryCacheEntryOptions();
@@ -38,6 +46,12 @@ public class InMemoryCacheService : ICacheService
     public Task ClearByPrefixAsync(string prefix)
     {
         _logger.LogWarning("ClearByPrefixAsync is not efficiently implemented for InMemoryCacheService. This operation may not work as expected.");
+        return Task.CompletedTask;
+    }
+
+    public Task ClearByTagAsync(string tag)
+    {
+        _logger.LogWarning("ClearByTagAsync is not implemented for InMemoryCacheService.");
         return Task.CompletedTask;
     }
 

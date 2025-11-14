@@ -1,4 +1,6 @@
-﻿Log.Logger = new LoggerConfiguration()
+﻿using Microsoft.Extensions.DependencyInjection;
+
+Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
@@ -97,6 +99,8 @@ try
         RegisterInMemoryServices(builder.Services);
     }
 
+    builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
+
     // Application Services
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<ICartService, CartService>();
@@ -133,6 +137,9 @@ try
     builder.Services.AddScoped<IMediaRepository, MediaRepository>();
     builder.Services.AddScoped<IOrderRepository, OrderRepository>();
     builder.Services.AddScoped<IAuditRepository, AuditRepository>();
+    builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
+    builder.Services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+    builder.Services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
 
 
     // Current User

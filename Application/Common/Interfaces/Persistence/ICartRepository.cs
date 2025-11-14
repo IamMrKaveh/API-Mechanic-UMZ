@@ -6,7 +6,7 @@ public interface ICartRepository
     Task<Domain.Cart.Cart?> GetCartEntityAsync(int? userId, string? guestId = null);
     Task AddCartAsync(Domain.Cart.Cart cart);
     Task AddCartItemAsync(Domain.Cart.CartItem item);
-    Task<Domain.Product.ProductVariant?> GetVariantForUpdateAsync(int variantId);
+    Task<Domain.Product.ProductVariant?> GetVariantByIdAsync(int variantId);
     Task<Domain.Cart.CartItem?> GetCartItemAsync(int cartId, int variantId);
     void SetCartItemRowVersion(Domain.Cart.CartItem item, byte[] rowVersion);
     Task<Domain.Cart.CartItem?> GetCartItemWithDetailsAsync(int itemId, int? userId, string? guestId);

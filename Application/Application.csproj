@@ -10,7 +10,8 @@
 		<PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
 		<PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
 		<PackageReference Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
-		<PackageReference Include="AutoMapper" Version="15.1.0" />
+		<PackageReference Include="AutoMapper" Version="12.0.1" />
+		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
 		<PackageReference Include="AWSSDK.S3" Version="4.0.7.10" />
 		<PackageReference Include="HtmlSanitizer" Version="9.0.886" />
 		<PackageReference Include="Kavenegar" Version="1.2.5" />

@@ -7,7 +7,8 @@ public class UserSession : IAuditable
     public int UserId { get; set; }
     public User.User User { get; set; } = null!;
 
-    public required string TokenHash { get; set; }
+    public required string TokenSelector { get; set; }
+    public required string TokenVerifierHash { get; set; }
 
     public DateTime ExpiresAt { get; set; }
 

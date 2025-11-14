@@ -1,10 +1,4 @@
-﻿using Application.Common.Interfaces;
-using Application.DTOs;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using BCryptNet = BCrypt.Net.BCrypt;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public class UserService : IUserService
 {
@@ -281,13 +275,19 @@ public class UserService : IUserService
         await _repository.RevokeAllUserSessionsAsync(user.Id);
 
         var token = _tokenService.GenerateJwtToken(user);
-        var refreshTokenValue = GenerateSecureToken();
+
+        var selector = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
+        var verifier = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var refreshTokenValue = $"{selector}:{verifier}";
+        var verifierHash = BCryptNet.HashPassword(verifier);
+
         var safeUserAgent = SanitizeUserAgent(userAgent);
 
         var session = new Domain.Auth.UserSession
         {
             UserId = user.Id,
-            TokenHash = BCryptNet.HashPassword(refreshTokenValue),
+            TokenSelector = selector,
+            TokenVerifierHash = verifierHash,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
             CreatedByIp = clientIp,
             UserAgent = safeUserAgent
@@ -321,17 +321,20 @@ public class UserService : IUserService
         if (storedSession == null) return ServiceResult<(object?, string?)>.Fail("Invalid token.");
         if (storedSession.User == null) return ServiceResult<(object?, string?)>.Fail("User not found for this token.");
 
-        var newRefreshTokenValue = GenerateSecureToken();
-        var newRefreshTokenHash = BCryptNet.HashPassword(newRefreshTokenValue);
+        var selector = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
+        var verifier = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var newRefreshTokenValue = $"{selector}:{verifier}";
+        var newVerifierHash = BCryptNet.HashPassword(verifier);
 
-        await _repository.RevokeSessionAsync(storedSession, newRefreshTokenHash);
+        await _repository.RevokeSessionAsync(storedSession, newVerifierHash);
 
         var newJwt = _tokenService.GenerateJwtToken(storedSession.User);
 
         var newSession = new Domain.Auth.UserSession
         {
             UserId = storedSession.UserId,
-            TokenHash = newRefreshTokenHash,
+            TokenSelector = selector,
+            TokenVerifierHash = newVerifierHash,
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
             CreatedByIp = clientIp,
@@ -368,14 +371,6 @@ public class UserService : IUserService
 
     private string GenerateSecureOtp()
     {
-        return RandomNumberGenerator.GetInt32(1000, 9999).ToString();
-    }
-
-    private string GenerateSecureToken()
-    {
-        var bytes = new byte[32];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(bytes);
-        return Convert.ToBase64String(bytes);
+        return RandomNumberGenerator.GetInt32(100000, 999999).ToString();
     }
 }

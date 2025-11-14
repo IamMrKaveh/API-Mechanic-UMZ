@@ -50,7 +50,6 @@ public class MediaService : IMediaService
         }
 
         await _mediaRepository.AddMediaAsync(media);
-        // Note: SaveChangesAsync is removed from here to be handled by the calling service (Unit of Work pattern)
         _logger.LogInformation("Prepared to attach new media to {EntityType} {EntityId}", entityType, entityId);
 
         if (entityType.Equals("Product", StringComparison.OrdinalIgnoreCase) || entityType.Equals("ProductVariant", StringComparison.OrdinalIgnoreCase))
@@ -153,13 +152,10 @@ public class MediaService : IMediaService
         return true;
     }
 
-    private async Task InvalidateCartsContainingProduct(int productId)
+    private async Task InvalidateCartsContainingProduct(int entityId)
     {
-        // This is a simplified invalidation. A more robust system might use a reverse index.
-        // For now, we accept the inefficiency of clearing all carts as a trade-off.
-        // A better approach would be to not include the image URL in the cart DTO itself.
-        _logger.LogWarning("Product image changed for product {ProductId}. Invalidating all user carts in cache.", productId);
-        await _cacheService.ClearByPrefixAsync("cart:user:");
-        await _cacheService.ClearByPrefixAsync("cart:guest:");
+        _logger.LogInformation("Product image changed for {EntityId}. Invalidating relevant carts.", entityId);
+        await _cacheService.ClearByTagAsync($"product:{entityId}");
+        await _cacheService.ClearByTagAsync($"variant:{entityId}");
     }
 }

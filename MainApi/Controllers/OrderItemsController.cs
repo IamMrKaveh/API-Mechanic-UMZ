@@ -75,11 +75,6 @@ public class OrderItemsController : ControllerBase
         {
             return Conflict(new { Message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating order item.");
-            return StatusCode(500, "An unexpected error occurred while creating the order item.");
-        }
     }
 
     [HttpPut("{id}")]
@@ -112,11 +107,6 @@ public class OrderItemsController : ControllerBase
         {
             return Conflict("Data has been modified by another user. Please refresh and try again.");
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating order item {Id}", id);
-            return StatusCode(500, "An error occurred while updating the order item.");
-        }
     }
 
     [HttpDelete("{id}")]
@@ -135,11 +125,6 @@ public class OrderItemsController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { Message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting order item {Id}", id);
-            return StatusCode(500, "An error occurred while deleting the order item.");
         }
     }
 }

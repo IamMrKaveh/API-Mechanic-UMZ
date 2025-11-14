@@ -7,21 +7,15 @@ public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
     private readonly IDiscountService _discountService;
-    private readonly IZarinpalService _zarinpalService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<OrdersController> _logger;
-    private readonly IOptions<FrontendUrlsDto> _frontendUrls;
-    private readonly IOptions<ZarinpalSettingsDto> _zarinpalSettings;
 
-    public OrdersController(IOrderService orderService, IDiscountService discountService, IZarinpalService zarinpalService, ICurrentUserService currentUserService, ILogger<OrdersController> logger, IOptions<FrontendUrlsDto> frontendUrls, IOptions<ZarinpalSettingsDto> zarinpalSettings)
+    public OrdersController(IOrderService orderService, IDiscountService discountService, ICurrentUserService currentUserService, ILogger<OrdersController> logger)
     {
         _orderService = orderService;
         _discountService = discountService;
-        _zarinpalService = zarinpalService;
         _currentUserService = currentUserService;
         _logger = logger;
-        _frontendUrls = frontendUrls;
-        _zarinpalSettings = zarinpalSettings;
     }
 
     [HttpGet]
@@ -104,11 +98,6 @@ public class OrdersController : ControllerBase
         {
             return BadRequest(new { Message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating order.");
-            return StatusCode(500, $"An error occurred while creating the order: {ex.Message}");
-        }
     }
 
     [HttpPost("checkout-from-cart")]
@@ -124,20 +113,15 @@ public class OrdersController : ControllerBase
 
         try
         {
-            var createdOrder = await _orderService.CheckoutFromCartAsync(orderDto, userId.Value, idempotencyKey);
+            var (createdOrder, paymentUrl, error) = await _orderService.CheckoutFromCartAsync(orderDto, userId.Value, idempotencyKey);
 
-            var callbackUrl = $"{_frontendUrls.Value.BaseUrl}/payment-verify?orderId={createdOrder.Id}";
-            var paymentResponse = await _zarinpalService.CreatePaymentRequestAsync(_zarinpalSettings.Value, createdOrder.FinalAmount, $"پرداخت سفارش شماره {createdOrder.Id}", callbackUrl, createdOrder.User?.PhoneNumber);
-
-            if (paymentResponse?.Data?.Code == 100 && !string.IsNullOrEmpty(paymentResponse.Data.Authority))
+            if (paymentUrl != null)
             {
-                var gatewayUrl = _zarinpalService.GetPaymentGatewayUrl(_zarinpalSettings.Value.IsSandbox, paymentResponse.Data.Authority);
-                return Ok(new { PaymentUrl = gatewayUrl });
+                return Ok(new { PaymentUrl = paymentUrl });
             }
 
-            var message = paymentResponse?.Data?.Message ?? "Failed to generate payment link.";
-            _logger.LogError("Zarinpal payment URL is null for order {OrderId}. Reason: {Reason}", createdOrder.Id, message);
-            return StatusCode(500, new { message });
+            _logger.LogError("Payment URL is null for order {OrderId}. Reason: {Reason}", createdOrder.Id, error);
+            return StatusCode(500, new { message = error ?? "Failed to generate payment link." });
         }
         catch (InvalidOperationException ex)
         {
@@ -153,11 +137,6 @@ public class OrdersController : ControllerBase
         {
             _logger.LogWarning(ex, "Checkout failed for user {UserId} with invalid argument.", userId);
             return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during checkout from cart for user {UserId}", userId);
-            return StatusCode(500, new { message = "An internal error occurred during checkout." });
         }
     }
 
@@ -215,11 +194,6 @@ public class OrdersController : ControllerBase
         {
             return BadRequest(new { Message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating order status for order {OrderId}", id);
-            return StatusCode(500, "An error occurred while updating the order status");
-        }
     }
 
     [HttpGet("statistics")]
@@ -228,16 +202,8 @@ public class OrdersController : ControllerBase
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null)
     {
-        try
-        {
-            var stats = await _orderService.GetOrderStatisticsAsync(fromDate, toDate);
-            return Ok(stats);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving order statistics.");
-            return StatusCode(500, "An error occurred while retrieving statistics");
-        }
+        var stats = await _orderService.GetOrderStatisticsAsync(fromDate, toDate);
+        return Ok(stats);
     }
 
     [HttpDelete("{id}")]
@@ -254,11 +220,6 @@ public class OrdersController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { Message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while deleting the order with ID {OrderId}", id);
-            return StatusCode(500, "An error occurred while deleting the order");
         }
     }
 

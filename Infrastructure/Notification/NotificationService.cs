@@ -28,7 +28,6 @@ public class NotificationService : INotificationService
         };
 
         _context.Set<Domain.Notification.Notification>().Add(notification);
-        // Note: SaveChangesAsync is removed. It will be called by the UnitOfWork in the use case.
         return Task.CompletedTask;
     }
 
@@ -51,7 +50,6 @@ public class NotificationService : INotificationService
 
         notification.IsRead = true;
         notification.ReadAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
         return true;
     }
 

@@ -25,45 +25,18 @@ public class InventoryService : IInventoryService
             throw new KeyNotFoundException($"Variant with ID {variantId} not found.");
         }
 
-        if (variant.IsUnlimited)
-        {
-            _logger.LogInformation("Skipping inventory transaction log for unlimited stock variant {VariantId}.", variantId);
-            return;
-        }
-
         if (rowVersion != null)
         {
             _inventoryRepository.SetVariantRowVersion(variant, rowVersion);
         }
 
-        var stockBefore = variant.Stock;
-        var stockAfter = stockBefore + quantityChange;
+        var transaction = variant.AdjustStock(quantityChange, transactionType, userId, notes, orderItemId);
 
-        if (stockAfter < 0)
+        if (transaction != null)
         {
-            throw new InvalidOperationException($"Insufficient stock for variant {variantId}. Current stock: {stockBefore}, Requested change: {quantityChange}");
+            transaction.ReferenceNumber = referenceNumber;
+            await _inventoryRepository.AddTransactionAsync(transaction);
         }
-
-        variant.Stock = stockAfter;
-
-        var transaction = new Domain.Inventory.InventoryTransaction
-        {
-            VariantId = variantId,
-            TransactionType = transactionType,
-            Quantity = quantityChange,
-            StockBefore = stockBefore,
-            StockAfter = stockAfter,
-            OrderItemId = orderItemId,
-            UserId = userId,
-            Notes = notes,
-            ReferenceNumber = referenceNumber,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        await _inventoryRepository.AddTransactionAsync(transaction);
-
-        _logger.LogInformation("Inventory transaction prepared for Variant {VariantId}. Type: {Type}, Change: {Change}, New Stock: {NewStock}",
-            variantId, transactionType, quantityChange, stockAfter);
     }
 
     public async Task<(IEnumerable<Domain.Inventory.InventoryTransaction> transactions, int total)> GetTransactionsAsync(int variantId, int page, int pageSize)
