@@ -13,8 +13,9 @@ public class CorrelationIdMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        context.TraceIdentifier = context.Request.Headers["X-Correlation-ID"].FirstOrDefault() ?? Guid.NewGuid().ToString();
-        context.Response.Headers["X-Correlation-ID"] = context.TraceIdentifier;
+        var correlationId = context.Request.Headers["X-Correlation-ID"].FirstOrDefault() ?? Guid.NewGuid().ToString();
+        context.TraceIdentifier = correlationId;
+        context.Response.Headers.Append("X-Correlation-ID", correlationId);
 
         using (_logger.BeginScope("CorrelationId: {CorrelationId}", context.TraceIdentifier))
         {

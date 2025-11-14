@@ -10,7 +10,7 @@ public static class DataProtectionExtensions
         builder.Services.AddSingleton<IXmlRepository>(provider =>
         new ResilientRedisXmlRepository(
         redis,
-        provider.GetRequiredService<ILogger<ResilientRedisXmlRepository>>(),
+        provider.GetRequiredService<ILogger<Infrastructure.DataProtection.ResilientRedisXmlRepository>>(),
         keyPrefix,
         TimeSpan.FromDays(90)));
         return builder;
