@@ -24,7 +24,7 @@ public static class SecurityExtensions
                         var httpContext = context.Resource as HttpContext;
                         if (httpContext == null) return false;
 
-                        var ipString = httpContext.Connection.RemoteIpAddress?.ToString();
+                        var ipString = HttpContextHelper.GetClientIpAddress(httpContext);
 
                         return !string.IsNullOrEmpty(ipString) && whitelistedIps.Contains(ipString);
                     });

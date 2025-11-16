@@ -74,9 +74,8 @@ public class InventoryService : IInventoryService
                 }
 
                 await LogTransactionAsync(variantId, "Adjustment", quantityChange, null, userId, notes, null, variant.RowVersion);
-                await _unitOfWork.SaveChangesAsync();
 
-                return (true, "Stock adjusted successfully.");
+                return (true, "Stock adjustment transaction logged.");
             }
             catch (DbUpdateConcurrencyException ex)
             {

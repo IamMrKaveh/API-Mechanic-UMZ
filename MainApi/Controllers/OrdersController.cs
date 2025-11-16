@@ -1,4 +1,6 @@
-﻿namespace MainApi.Controllers;
+﻿using Microsoft.AspNetCore.OutputCaching;
+
+namespace MainApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -198,6 +200,7 @@ public class OrdersController : ControllerBase
 
     [HttpGet("statistics")]
     [Authorize(Roles = "Admin")]
+    [OutputCache(PolicyName = "LongCache")]
     public async Task<ActionResult<object>> GetOrderStatistics(
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null)

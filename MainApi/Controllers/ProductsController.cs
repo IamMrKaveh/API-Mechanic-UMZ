@@ -1,4 +1,6 @@
-﻿namespace MainApi.Controllers;
+﻿using Microsoft.AspNetCore.OutputCaching;
+
+namespace MainApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -21,6 +23,12 @@ public class ProductsController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetProducts([FromQuery] ProductSearchDto search)
     {
+        if (!_currentUserService.IsAdmin)
+        {
+            search.IncludeInactive = false;
+            search.IncludeDeleted = false;
+        }
+
         var result = await _productService.GetProductsAsync(search);
         if (!result.Success)
         {
@@ -47,7 +55,7 @@ public class ProductsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> CreateProduct([FromForm] ProductDto productDto)
+    public async Task<IActionResult> CreateProduct([FromBody] ProductDto productDto)
     {
         if (productDto == null) return BadRequest(new { Message = "Product data is required" });
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -67,7 +75,7 @@ public class ProductsController : ControllerBase
 
     [HttpPut("{id:int}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDto productDto)
+    public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductDto productDto)
     {
         if (id <= 0) return BadRequest(new { Message = "Invalid product ID" });
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -158,6 +166,7 @@ public class ProductsController : ControllerBase
 
     [HttpGet("statistics")]
     [Authorize(Roles = "Admin")]
+    [OutputCache(PolicyName = "LongCache")]
     public async Task<IActionResult> GetProductStatistics()
     {
         var result = await _productService.GetProductStatisticsAsync();
@@ -228,6 +237,7 @@ public class ProductsController : ControllerBase
 
     [HttpGet("discount-statistics")]
     [Authorize(Roles = "Admin")]
+    [OutputCache(PolicyName = "LongCache")]
     public async Task<IActionResult> GetDiscountStatistics()
     {
         var result = await _productService.GetDiscountStatisticsAsync();

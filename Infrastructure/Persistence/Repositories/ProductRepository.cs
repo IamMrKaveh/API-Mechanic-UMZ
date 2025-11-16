@@ -11,15 +11,7 @@ public class ProductRepository : IProductRepository
         _context = context;
     }
 
-    public IQueryable<Domain.Product.Product> GetProductsQuery(
-        string? name,
-        int? categoryId,
-        decimal? minPrice,
-        decimal? maxPrice,
-        bool? inStock,
-        bool? hasDiscount,
-        bool? isUnlimited,
-        ProductSortOptions sortBy)
+    public IQueryable<Domain.Product.Product> GetProductsQuery(ProductSearchDto search)
     {
         var query = _context.Set<Domain.Product.Product>()
             .Include(p => p.CategoryGroup.Category)
@@ -28,29 +20,42 @@ public class ProductRepository : IProductRepository
                     .ThenInclude(va => va.AttributeValue)
                         .ThenInclude(av => av.AttributeType)
             .Include(p => p.Images)
-            .Where(p => p.IsActive)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(name))
+        if (search.IncludeDeleted == true)
         {
-            var pattern = $"%{name}%";
+            query = query.IgnoreQueryFilters().Where(p => p.IsDeleted);
+        }
+        else if (search.IncludeInactive == true)
+        {
+            query = query.IgnoreQueryFilters().Where(p => !p.IsActive);
+        }
+        else
+        {
+            query = query.Where(p => p.IsActive && !p.IsDeleted);
+        }
+
+
+        if (!string.IsNullOrWhiteSpace(search.Name))
+        {
+            var pattern = $"%{search.Name}%";
             query = query.Where(p => p.Name != null && EF.Functions.ILike(p.Name, pattern));
         }
 
-        if (categoryId.HasValue)
-            query = query.Where(p => p.CategoryGroup.CategoryId == categoryId);
-        if (minPrice.HasValue)
-            query = query.Where(p => p.Variants.Any(v => v.SellingPrice >= minPrice.Value));
-        if (maxPrice.HasValue)
-            query = query.Where(p => p.Variants.Any(v => v.SellingPrice <= maxPrice.Value));
-        if (inStock == true)
+        if (search.CategoryId.HasValue)
+            query = query.Where(p => p.CategoryGroup.CategoryId == search.CategoryId);
+        if (search.MinPrice.HasValue)
+            query = query.Where(p => p.Variants.Any(v => v.SellingPrice >= search.MinPrice.Value));
+        if (search.MaxPrice.HasValue)
+            query = query.Where(p => p.Variants.Any(v => v.SellingPrice <= search.MaxPrice.Value));
+        if (search.InStock == true)
             query = query.Where(p => p.Variants.Any(v => v.IsUnlimited || v.Stock > 0));
-        if (hasDiscount == true)
+        if (search.HasDiscount == true)
             query = query.Where(p => p.Variants.Any(v => v.OriginalPrice > v.SellingPrice));
-        if (isUnlimited.HasValue)
-            query = query.Where(p => p.Variants.Any(v => v.IsUnlimited == isUnlimited.Value));
+        if (search.IsUnlimited.HasValue)
+            query = query.Where(p => p.Variants.Any(v => v.IsUnlimited == search.IsUnlimited.Value));
 
-        query = sortBy switch
+        query = search.SortBy switch
         {
             ProductSortOptions.PriceAsc => query.OrderBy(p => p.MinPrice).ThenByDescending(p => p.Id),
             ProductSortOptions.PriceDesc => query.OrderByDescending(p => p.MinPrice).ThenByDescending(p => p.Id),
@@ -78,9 +83,9 @@ public class ProductRepository : IProductRepository
             .ToListAsync();
     }
 
-    public Task<Domain.Product.Product?> GetProductByIdAsync(int id)
+    public Task<Domain.Product.Product?> GetProductByIdAsync(int id, bool isAdmin = false)
     {
-        return _context.Set<Domain.Product.Product>()
+        var query = _context.Set<Domain.Product.Product>()
             .Include(p => p.CategoryGroup.Category)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.VariantAttributes)
@@ -89,8 +94,14 @@ public class ProductRepository : IProductRepository
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Images)
             .Include(p => p.Images)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .AsQueryable();
+
+        if (isAdmin)
+        {
+            query = query.IgnoreQueryFilters();
+        }
+
+        return query.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
     }
 
     public Task AddProductAsync(Domain.Product.Product product)

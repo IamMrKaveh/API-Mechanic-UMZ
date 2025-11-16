@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.ComponentModel.DataAnnotations;
-
-namespace Application.DTOs;
+﻿namespace Application.DTOs;
 
 public enum ProductSortOptions
 {
@@ -24,6 +21,8 @@ public class ProductSearchDto
     public bool? InStock { get; set; }
     public bool? HasDiscount { get; set; }
     public bool? IsUnlimited { get; set; }
+    public bool? IncludeInactive { get; set; }
+    public bool? IncludeDeleted { get; set; }
     public ProductSortOptions SortBy { get; set; } = ProductSortOptions.Newest;
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
@@ -39,8 +38,7 @@ public class ProductDto
     public int CategoryGroupId { get; set; }
     public bool IsActive { get; set; } = true;
     public string? Sku { get; set; }
-    public string? VariantsJson { get; set; }
-    public List<IFormFile>? Files { get; set; }
+    public List<CreateProductVariantDto> Variants { get; set; } = [];
 }
 
 public class CreateProductVariantDto

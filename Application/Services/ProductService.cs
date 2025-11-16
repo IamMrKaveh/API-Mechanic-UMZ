@@ -31,7 +31,7 @@ public class ProductService : IProductService
 
     public async Task<ServiceResult<PagedResultDto<PublicProductViewDto>>> GetProductsAsync(ProductSearchDto search)
     {
-        var query = _repository.GetProductsQuery(search.Name, search.CategoryId, search.MinPrice, search.MaxPrice, search.InStock, search.HasDiscount, search.IsUnlimited, search.SortBy);
+        var query = _repository.GetProductsQuery(search);
         var totalItems = await _repository.GetProductCountAsync(query);
         var items = await _repository.GetPaginatedProductsAsync(query, search.Page, search.PageSize);
 
@@ -54,7 +54,7 @@ public class ProductService : IProductService
 
     public async Task<ServiceResult<object?>> GetProductByIdAsync(int id, bool isAdmin)
     {
-        var product = await _repository.GetProductByIdAsync(id);
+        var product = await _repository.GetProductByIdAsync(id, isAdmin);
         if (product == null)
         {
             return ServiceResult<object?>.Fail("Product not found");
@@ -76,10 +76,9 @@ public class ProductService : IProductService
         {
             var product = _mapper.Map<Domain.Product.Product>(productDto);
 
-            if (productDto.VariantsJson != null)
+            if (productDto.Variants != null)
             {
-                var variants = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(productDto.VariantsJson) ?? new List<CreateProductVariantDto>();
-                foreach (var variantDto in variants)
+                foreach (var variantDto in productDto.Variants)
                 {
                     var newVariant = _mapper.Map<Domain.Product.ProductVariant>(variantDto);
                     product.Variants.Add(newVariant);
@@ -87,6 +86,8 @@ public class ProductService : IProductService
             }
 
             await _repository.AddProductAsync(product);
+            await _unitOfWork.SaveChangesAsync();
+
 
             foreach (var variant in product.Variants)
             {
@@ -98,26 +99,19 @@ public class ProductService : IProductService
 
             product.RecalculateAggregates();
 
-            if (productDto.Files != null)
-            {
-                var fileStreams = productDto.Files.Select(file => (file.OpenReadStream(), file.FileName, file.ContentType, file.Length));
-                await _mediaService.UploadFilesAsync(fileStreams, "Product", product.Id, true, null);
-            }
-
             await _unitOfWork.SaveChangesAsync();
 
             return ServiceResult<Domain.Product.Product>.Ok(product);
         }
         catch (Exception ex)
         {
-            // Transaction will be automatically rolled back by DbContext
             return ServiceResult<Domain.Product.Product>.Fail("Failed to create product: " + ex.Message);
         }
     }
 
     public async Task<ServiceResult> UpdateProductAsync(int id, ProductDto productDto, int userId)
     {
-        var existingProduct = await _repository.GetProductByIdAsync(id);
+        var existingProduct = await _repository.GetProductByIdAsync(id, true);
         if (existingProduct == null)
         {
             return ServiceResult.Fail("Product not found");
@@ -125,22 +119,14 @@ public class ProductService : IProductService
 
         _mapper.Map(productDto, existingProduct);
 
-        if (productDto.VariantsJson != null)
+        if (productDto.Variants != null)
         {
-            var variantDtos = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(productDto.VariantsJson) ?? new List<CreateProductVariantDto>();
-            await UpdateVariants(existingProduct, variantDtos, userId);
+            await UpdateVariants(existingProduct, productDto.Variants, userId);
         }
 
         _repository.UpdateProduct(existingProduct);
 
         existingProduct.RecalculateAggregates();
-
-        if (productDto.Files != null)
-        {
-            var fileStreams = productDto.Files.Select(file => (file.OpenReadStream(), file.FileName, file.ContentType, file.Length));
-            await _mediaService.UploadFilesAsync(fileStreams, "Product", id, true, null);
-            await _cacheService.ClearByPrefixAsync("cart:user:");
-        }
 
         await _unitOfWork.SaveChangesAsync();
 
@@ -149,7 +135,7 @@ public class ProductService : IProductService
 
     public async Task<ServiceResult> DeleteProductAsync(int id)
     {
-        var product = await _repository.GetProductByIdAsync(id);
+        var product = await _repository.GetProductByIdAsync(id, true);
         if (product == null)
         {
             return ServiceResult.Fail("Product not found");
@@ -182,7 +168,7 @@ public class ProductService : IProductService
 
         await _inventoryService.LogTransactionAsync(variant.Id, "Adjustment", stockDto.Quantity, null, userId, "Manual stock addition by admin");
 
-        var product = await _repository.GetProductByIdAsync(id);
+        var product = await _repository.GetProductByIdAsync(id, true);
         if (product != null)
         {
             product.RecalculateAggregates();
@@ -205,7 +191,7 @@ public class ProductService : IProductService
 
         await _inventoryService.LogTransactionAsync(variant.Id, "Adjustment", -stockDto.Quantity, null, userId, "Manual stock removal by admin");
 
-        var product = await _repository.GetProductByIdAsync(id);
+        var product = await _repository.GetProductByIdAsync(id, true);
         if (product != null)
         {
             product.RecalculateAggregates();
@@ -273,7 +259,7 @@ public class ProductService : IProductService
         var productIds = variants.Select(v => v.ProductId).Distinct();
         foreach (var productId in productIds)
         {
-            var product = await _repository.GetProductByIdAsync(productId);
+            var product = await _repository.GetProductByIdAsync(productId, true);
             if (product != null)
             {
                 product.RecalculateAggregates();
@@ -331,7 +317,7 @@ public class ProductService : IProductService
         variant.OriginalPrice = discountDto.OriginalPrice;
         variant.SellingPrice = discountDto.DiscountedPrice;
 
-        var product = await _repository.GetProductByIdAsync(variant.ProductId);
+        var product = await _repository.GetProductByIdAsync(variant.ProductId, true);
         if (product != null)
         {
             product.RecalculateAggregates();
@@ -359,7 +345,7 @@ public class ProductService : IProductService
 
         variant.OriginalPrice = variant.SellingPrice;
 
-        var product = await _repository.GetProductByIdAsync(variant.ProductId);
+        var product = await _repository.GetProductByIdAsync(variant.ProductId, true);
         if (product != null)
         {
             product.RecalculateAggregates();
@@ -402,8 +388,9 @@ public class ProductService : IProductService
                 _mapper.Map(dto, variantToUpdate);
                 if (oldStock != dto.Stock && !variantToUpdate.IsUnlimited)
                 {
+                    var stockChange = dto.Stock - oldStock;
                     var notes = $"Stock adjustment during product update for SKU: {variantToUpdate.Sku}";
-                    await _inventoryService.AdjustStockAsync(variantToUpdate.Id, dto.Stock, userId, notes);
+                    await _inventoryService.LogTransactionAsync(variantToUpdate.Id, "Adjustment", stockChange, null, userId, notes, null, variantToUpdate.RowVersion);
                 }
                 variantToUpdate.VariantAttributes.Clear();
                 foreach (var attrId in dto.AttributeValueIds)
@@ -415,7 +402,6 @@ public class ProductService : IProductService
             {
                 var newVariant = _mapper.Map<Domain.Product.ProductVariant>(dto);
                 product.Variants.Add(newVariant);
-                await _unitOfWork.SaveChangesAsync();
                 if (!newVariant.IsUnlimited && dto.Stock > 0)
                 {
                     await _inventoryService.LogTransactionAsync(newVariant.Id, "InitialStock", dto.Stock, null, userId, $"New variant added for product {product.Id}");
