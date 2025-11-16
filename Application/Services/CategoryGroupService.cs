@@ -75,6 +75,7 @@ public class CategoryGroupService : ICategoryGroupService
         if (dto.IconFile != null)
         {
             await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "CategoryGroup", group.Id, true);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         var resultDto = _mapper.Map<CategoryGroupViewDto>(group);
@@ -108,6 +109,11 @@ public class CategoryGroupService : ICategoryGroupService
 
         if (dto.IconFile != null)
         {
+            var primaryMedia = (await _mediaService.GetEntityMediaAsync("CategoryGroup", id)).FirstOrDefault(m => m.IsPrimary);
+            if (primaryMedia != null)
+            {
+                await _mediaService.DeleteMediaAsync(primaryMedia.Id);
+            }
             await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "CategoryGroup", id, true);
         }
 

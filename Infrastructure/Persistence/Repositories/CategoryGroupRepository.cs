@@ -44,7 +44,10 @@ public class CategoryGroupRepository : ICategoryGroupRepository
 
     public Task<Domain.Category.CategoryGroup?> GetByIdWithProductsAsync(int id)
     {
-        return _context.Set<Domain.Category.CategoryGroup>().Include(g => g.Products).FirstOrDefaultAsync(g => g.Id == id);
+        return _context.Set<Domain.Category.CategoryGroup>()
+            .Include(g => g.Products)
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(g => g.Id == id);
     }
 
     public async Task AddAsync(Domain.Category.CategoryGroup group)

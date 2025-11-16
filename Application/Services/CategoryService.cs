@@ -104,6 +104,7 @@ public class CategoryService : ICategoryService
         if (dto.IconFile != null)
         {
             await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "Category", category.Id, true);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         var resultDto = _mapper.Map<CategoryViewDto>(category);
@@ -136,6 +137,11 @@ public class CategoryService : ICategoryService
 
         if (dto.IconFile != null)
         {
+            var primaryMedia = (await _mediaService.GetEntityMediaAsync("Category", id)).FirstOrDefault(m => m.IsPrimary);
+            if (primaryMedia != null)
+            {
+                await _mediaService.DeleteMediaAsync(primaryMedia.Id);
+            }
             await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "Category", id, true);
         }
 

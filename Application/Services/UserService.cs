@@ -79,7 +79,7 @@ public class UserService : IUserService
     {
         if (currentUserId != id && !isAdmin) return ServiceResult.Fail("Forbidden");
 
-        var existingUser = await _repository.GetUserByIdAsync(id);
+        var existingUser = await _repository.GetUserByIdAsync(id, true);
         if (existingUser == null) return ServiceResult.Fail("NotFound");
         if (existingUser.IsDeleted && !isAdmin) return ServiceResult.Fail("User account is deleted and cannot be modified.");
 
@@ -123,7 +123,7 @@ public class UserService : IUserService
 
     public async Task<ServiceResult> ChangeUserStatusAsync(int id, bool isActive)
     {
-        var user = await _repository.GetUserByIdAsync(id);
+        var user = await _repository.GetUserByIdAsync(id, true);
         if (user == null) return ServiceResult.Fail("NotFound");
 
         user.IsActive = isActive;
@@ -136,12 +136,15 @@ public class UserService : IUserService
     {
         if (id == currentUserId) return ServiceResult.Fail("Admins cannot delete their own account this way.");
 
-        var user = await _repository.GetUserByIdAsync(id);
+        var user = await _repository.GetUserByIdAsync(id, true);
         if (user == null) return ServiceResult.Fail("NotFound");
 
         user.IsDeleted = true;
         user.DeletedAt = DateTime.UtcNow;
         user.IsActive = false;
+        user.PhoneNumber = $"{user.PhoneNumber}_deleted_{DateTime.UtcNow.Ticks}";
+
+        await _repository.RevokeAllUserSessionsAsync(id);
 
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Ok();
@@ -150,7 +153,7 @@ public class UserService : IUserService
     public async Task<ServiceResult> RestoreUserAsync(int id)
     {
         var user = await _repository.GetUserByIdAsync(id, true);
-        if (user == null) return ServiceResult.Fail("NotFound");
+        if (user == null || !user.IsDeleted) return ServiceResult.Fail("NotFound");
 
         user.IsDeleted = false;
         user.DeletedAt = null;

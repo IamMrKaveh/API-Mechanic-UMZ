@@ -1,10 +1,4 @@
-﻿using Application.Common.Interfaces;
-using Application.DTOs;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
-namespace MainApi.Controllers;
+﻿namespace MainApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
