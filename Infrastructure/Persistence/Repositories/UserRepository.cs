@@ -32,6 +32,15 @@ public class UserRepository : IUserRepository
     {
         return _context.Set<Domain.User.UserAddress>().FindAsync(userAddressId).AsTask();
     }
+    public void UpdateUserAddress(UserAddress address)
+    {
+        _context.UserAddresses.Update(address);
+    }
+
+    public void DeleteUserAddress(UserAddress address)
+    {
+        _context.UserAddresses.Remove(address);
+    }
 
 
     public async Task AddUserAsync(Domain.User.User user)

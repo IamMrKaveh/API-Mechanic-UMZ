@@ -3,6 +3,7 @@
 public interface IAuditRepository
 {
     Task AddAuditLogAsync(Domain.Log.AuditLog auditLog);
+
     Task<(IEnumerable<Domain.Log.AuditLog> Logs, int TotalCount)> GetAuditLogsAsync(
         DateTime? fromDate = null,
         DateTime? toDate = null,

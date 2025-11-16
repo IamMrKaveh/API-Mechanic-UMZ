@@ -2,7 +2,6 @@
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public class OrderItemsController : ControllerBase
 {
     private readonly IOrderItemService _orderItemService;
@@ -56,7 +55,6 @@ public class OrderItemsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Domain.Order.OrderItem>> CreateOrderItem(CreateOrderItemDto itemDto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -78,7 +76,6 @@ public class OrderItemsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateOrderItem(int id, UpdateOrderItemDto itemDto)
     {
         if (id <= 0) return BadRequest("Invalid order item ID");
@@ -110,7 +107,6 @@ public class OrderItemsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteOrderItem(int id)
     {
         if (id <= 0) return BadRequest("Invalid order item ID");

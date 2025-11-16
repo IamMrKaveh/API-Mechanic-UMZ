@@ -2,419 +2,74 @@
 
 public class ProductService : IProductService
 {
-    private readonly IProductRepository _repository;
-    private readonly IHtmlSanitizer _htmlSanitizer;
-    private readonly IMediaService _mediaService;
-    private readonly IInventoryService _inventoryService;
-    private readonly ICacheService _cacheService;
+    private readonly IProductRepository _productRepository;
+    private readonly ILogger<ProductService> _logger;
     private readonly IMapper _mapper;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMediaService _mediaService;
 
-
-    public ProductService(
-        IProductRepository repository,
-        IHtmlSanitizer htmlSanitizer,
-        IMediaService mediaService,
-        IInventoryService inventoryService,
-        ICacheService cacheService,
-        IMapper mapper,
-        IUnitOfWork unitOfWork)
+    public ProductService(IProductRepository productRepository, ILogger<ProductService> logger, IMapper mapper, IMediaService mediaService)
     {
-        _repository = repository;
-        _htmlSanitizer = htmlSanitizer;
-        _mediaService = mediaService;
-        _inventoryService = inventoryService;
-        _cacheService = cacheService;
+        _productRepository = productRepository;
+        _logger = logger;
         _mapper = mapper;
-        _unitOfWork = unitOfWork;
+        _mediaService = mediaService;
     }
 
-    public async Task<ServiceResult<PagedResultDto<PublicProductViewDto>>> GetProductsAsync(ProductSearchDto search)
+    public async Task<ServiceResult<PagedResultDto<PublicProductViewDto>>> GetProductsAsync(ProductSearchDto searchDto)
     {
-        var query = _repository.GetProductsQuery(search);
-        var totalItems = await _repository.GetProductCountAsync(query);
-        var items = await _repository.GetPaginatedProductsAsync(query, search.Page, search.PageSize);
+        var (products, totalItems) = await _productRepository.GetPagedAsync(searchDto);
 
-        var dtos = new List<PublicProductViewDto>();
-        foreach (var p in items)
+        var productDtos = new List<PublicProductViewDto>();
+        foreach (var product in products)
         {
-            dtos.Add(_mapper.Map<PublicProductViewDto>(p));
+            productDtos.Add(await MapToPublicViewDto(product));
         }
 
-        var pagedResult = new PagedResultDto<PublicProductViewDto>
-        {
-            Items = dtos,
-            TotalItems = totalItems,
-            Page = search.Page,
-            PageSize = search.PageSize
-        };
-
-        return ServiceResult<PagedResultDto<PublicProductViewDto>>.Ok(pagedResult);
-    }
-
-    public async Task<ServiceResult<object?>> GetProductByIdAsync(int id, bool isAdmin)
-    {
-        var product = await _repository.GetProductByIdAsync(id, isAdmin);
-        if (product == null)
-        {
-            return ServiceResult<object?>.Fail("Product not found");
-        }
-
-        if (isAdmin)
-        {
-            var adminDto = _mapper.Map<AdminProductViewDto>(product);
-            return ServiceResult<object?>.Ok(adminDto);
-        }
-
-        var publicDto = _mapper.Map<PublicProductViewDto>(product);
-        return ServiceResult<object?>.Ok(publicDto);
-    }
-
-    public async Task<ServiceResult<Domain.Product.Product>> CreateProductAsync(ProductDto productDto, int userId)
-    {
-        try
-        {
-            var product = _mapper.Map<Domain.Product.Product>(productDto);
-
-            if (productDto.Variants != null)
-            {
-                foreach (var variantDto in productDto.Variants)
-                {
-                    var newVariant = _mapper.Map<Domain.Product.ProductVariant>(variantDto);
-                    product.Variants.Add(newVariant);
-                }
-            }
-
-            await _repository.AddProductAsync(product);
-            await _unitOfWork.SaveChangesAsync();
-
-
-            foreach (var variant in product.Variants)
-            {
-                if (variant.Stock > 0)
-                {
-                    await _inventoryService.LogTransactionAsync(variant.Id, "InitialStock", variant.Stock, null, userId, "Product Creation");
-                }
-            }
-
-            product.RecalculateAggregates();
-
-            await _unitOfWork.SaveChangesAsync();
-
-            return ServiceResult<Domain.Product.Product>.Ok(product);
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult<Domain.Product.Product>.Fail("Failed to create product: " + ex.Message);
-        }
-    }
-
-    public async Task<ServiceResult> UpdateProductAsync(int id, ProductDto productDto, int userId)
-    {
-        var existingProduct = await _repository.GetProductByIdAsync(id, true);
-        if (existingProduct == null)
-        {
-            return ServiceResult.Fail("Product not found");
-        }
-
-        _mapper.Map(productDto, existingProduct);
-
-        if (productDto.Variants != null)
-        {
-            await UpdateVariants(existingProduct, productDto.Variants, userId);
-        }
-
-        _repository.UpdateProduct(existingProduct);
-
-        existingProduct.RecalculateAggregates();
-
-        await _unitOfWork.SaveChangesAsync();
-
-        return ServiceResult.Ok();
-    }
-
-    public async Task<ServiceResult> DeleteProductAsync(int id)
-    {
-        var product = await _repository.GetProductByIdAsync(id, true);
-        if (product == null)
-        {
-            return ServiceResult.Fail("Product not found");
-        }
-
-        if (await _repository.HasOrderHistoryAsync(id))
-        {
-            return ServiceResult.Fail("Cannot delete product that has order history. Consider deactivating instead.");
-        }
-
-        var media = await _mediaService.GetEntityMediaAsync("Product", id);
-        foreach (var m in media)
-        {
-            await _mediaService.DeleteMediaAsync(m.Id);
-        }
-
-        _repository.DeleteProduct(product);
-        await _unitOfWork.SaveChangesAsync();
-
-        return ServiceResult.Ok();
-    }
-
-    public async Task<ServiceResult<(int? newCount, string? message)>> AddStockAsync(int id, ProductStockDto stockDto, int userId)
-    {
-        if (!stockDto.VariantId.HasValue) return ServiceResult<(int?, string?)>.Fail("VariantId is required.");
-
-        var variant = await _repository.GetVariantByIdAsync(stockDto.VariantId.Value);
-        if (variant == null || variant.ProductId != id) return ServiceResult<(int?, string?)>.Fail($"Variant with ID {stockDto.VariantId} for product {id} not found");
-        if (variant.IsUnlimited) return ServiceResult<(int?, string?)>.Fail("Cannot change stock for an unlimited product.");
-
-        await _inventoryService.LogTransactionAsync(variant.Id, "Adjustment", stockDto.Quantity, null, userId, "Manual stock addition by admin");
-
-        var product = await _repository.GetProductByIdAsync(id, true);
-        if (product != null)
-        {
-            product.RecalculateAggregates();
-        }
-
-        await _unitOfWork.SaveChangesAsync();
-        var newStock = await _inventoryService.GetCurrentStockAsync(variant.Id);
-
-        return ServiceResult<(int?, string?)>.Ok((newStock, "Stock added successfully"));
-    }
-
-    public async Task<ServiceResult<(int? newCount, string? message)>> RemoveStockAsync(int id, ProductStockDto stockDto, int userId)
-    {
-        if (!stockDto.VariantId.HasValue) return ServiceResult<(int?, string?)>.Fail("VariantId is required.");
-
-        var variant = await _repository.GetVariantByIdAsync(stockDto.VariantId.Value);
-        if (variant == null || variant.ProductId != id) return ServiceResult<(int?, string?)>.Fail($"Variant with ID {stockDto.VariantId} for product {id} not found");
-        if (variant.IsUnlimited) return ServiceResult<(int?, string?)>.Fail("Cannot change stock for an unlimited product.");
-        if (variant.Stock < stockDto.Quantity) return ServiceResult<(int?, string?)>.Fail($"Insufficient stock. Current stock: {variant.Stock}, Requested: {stockDto.Quantity}");
-
-        await _inventoryService.LogTransactionAsync(variant.Id, "Adjustment", -stockDto.Quantity, null, userId, "Manual stock removal by admin");
-
-        var product = await _repository.GetProductByIdAsync(id, true);
-        if (product != null)
-        {
-            product.RecalculateAggregates();
-        }
-
-        await _unitOfWork.SaveChangesAsync();
-        var newStock = await _inventoryService.GetCurrentStockAsync(variant.Id);
-
-        return ServiceResult<(int?, string?)>.Ok((newStock, "Stock removed successfully"));
-    }
-
-    public async Task<ServiceResult<IEnumerable<object>>> GetLowStockProductsAsync(int threshold = 5)
-    {
-        var variants = await _repository.GetLowStockVariantsAsync(threshold);
-        var dtos = variants.Select(v => new
-        {
-            ProductId = v.Product.Id,
-            ProductName = v.Product.Name,
-            VariantId = v.Id,
-            VariantDisplayName = v.DisplayName,
-            Stock = v.Stock,
-            Category = v.Product.CategoryGroup.Category?.Name,
-            SellingPrice = v.SellingPrice
-        });
-        return ServiceResult<IEnumerable<object>>.Ok(dtos);
-    }
-
-    public async Task<ServiceResult<object>> GetProductStatisticsAsync()
-    {
-        var totalProducts = await _repository.GetActiveProductCountAsync();
-        var totalValue = await _repository.GetTotalInventoryValueAsync();
-        var outOfStockCount = await _repository.GetOutOfStockCountAsync();
-        var lowStockCount = await _repository.GetLowStockCountAsync(5);
-
-        var stats = new
-        {
-            TotalProducts = totalProducts,
-            TotalInventoryValue = (long)totalValue,
-            OutOfStockProducts = outOfStockCount,
-            LowStockProducts = lowStockCount
-        };
-        return ServiceResult<object>.Ok(stats);
-    }
-
-    public async Task<ServiceResult<(int updatedCount, string? message)>> BulkUpdatePricesAsync(Dictionary<int, decimal> priceUpdates, bool isPurchasePrice)
-    {
-        var variantIds = priceUpdates.Keys.ToList();
-        var variants = await _repository.GetVariantsByIdsAsync(variantIds);
-
-        if (!variants.Any()) return ServiceResult<(int, string?)>.Fail("No variants found with the provided IDs");
-
-        var updatedCount = 0;
-        foreach (var variant in variants)
-        {
-            if (priceUpdates.TryGetValue(variant.Id, out var newPrice))
-            {
-                if (isPurchasePrice)
-                    variant.PurchasePrice = newPrice;
-                else
-                    variant.SellingPrice = newPrice;
-                updatedCount++;
-            }
-        }
-
-        var productIds = variants.Select(v => v.ProductId).Distinct();
-        foreach (var productId in productIds)
-        {
-            var product = await _repository.GetProductByIdAsync(productId, true);
-            if (product != null)
-            {
-                product.RecalculateAggregates();
-            }
-        }
-
-        await _unitOfWork.SaveChangesAsync();
-        await _cacheService.ClearByPrefixAsync("cart:user:");
-
-        return ServiceResult<(int, string?)>.Ok((updatedCount, $"{updatedCount} variants updated successfully"));
-    }
-
-    public async Task<ServiceResult<PagedResultDto<object>>> GetDiscountedProductsAsync(int page, int pageSize, int minDiscount, int maxDiscount, int categoryId)
-    {
-        var query = _repository.GetDiscountedVariantsQuery(minDiscount, maxDiscount, categoryId);
-        var totalItems = await _repository.GetDiscountedVariantsCountAsync(query);
-        var items = await _repository.GetPaginatedDiscountedVariantsAsync(query, page, pageSize);
-
-        var productDtos = new List<object>();
-        foreach (var v in items)
-        {
-            productDtos.Add(new
-            {
-                ProductId = v.Product.Id,
-                ProductName = v.Product.Name,
-                Icon = await _mediaService.GetPrimaryImageUrlAsync("Product", v.Product.Id),
-                VariantId = v.Id,
-                VariantDisplayName = v.DisplayName,
-                OriginalPrice = v.OriginalPrice,
-                SellingPrice = v.SellingPrice,
-                DiscountAmount = v.OriginalPrice - v.SellingPrice,
-                DiscountPercentage = v.DiscountPercentage,
-                Stock = v.Stock,
-                IsUnlimited = v.IsUnlimited,
-                Category = v.Product.CategoryGroup.Category != null ? new { v.Product.CategoryGroup.Category.Id, v.Product.CategoryGroup.Category.Name } : null
-            });
-        }
-
-        var pagedResult = new PagedResultDto<object>
+        var result = new PagedResultDto<PublicProductViewDto>
         {
             Items = productDtos,
             TotalItems = totalItems,
-            Page = page,
-            PageSize = pageSize
+            Page = searchDto.Page,
+            PageSize = searchDto.PageSize
         };
-
-        return ServiceResult<PagedResultDto<object>>.Ok(pagedResult);
+        return ServiceResult<PagedResultDto<PublicProductViewDto>>.Ok(result);
     }
 
-    public async Task<ServiceResult<(object? result, string? message)>> SetProductDiscountAsync(int id, SetDiscountDto discountDto)
+    public async Task<ServiceResult<PublicProductViewDto?>> GetProductByIdAsync(int productId, bool includeInactive = false)
     {
-        var variant = await _repository.GetVariantByIdAsync(id);
-        if (variant == null) return ServiceResult<(object?, string?)>.Fail($"Variant with ID {id} not found");
-
-        variant.OriginalPrice = discountDto.OriginalPrice;
-        variant.SellingPrice = discountDto.DiscountedPrice;
-
-        var product = await _repository.GetProductByIdAsync(variant.ProductId, true);
-        if (product != null)
+        var product = await _productRepository.GetByIdWithVariantsAndAttributesAsync(productId, includeInactive);
+        if (product == null)
         {
-            product.RecalculateAggregates();
+            return ServiceResult<PublicProductViewDto?>.Fail("Product not found.");
         }
-
-        await _unitOfWork.SaveChangesAsync();
-        await _cacheService.ClearByPrefixAsync("cart:user:");
-
-        var result = new
-        {
-            Message = "Discount applied successfully",
-            variant.DiscountPercentage,
-            OriginalPrice = variant.OriginalPrice,
-            DiscountedPrice = variant.SellingPrice
-        };
-
-        return ServiceResult<(object?, string?)>.Ok((result, "Discount applied successfully"));
+        var dto = await MapToPublicViewDto(product);
+        return ServiceResult<PublicProductViewDto?>.Ok(dto);
     }
 
-    public async Task<ServiceResult> RemoveProductDiscountAsync(int id)
+    public async Task<ServiceResult<IEnumerable<AttributeTypeWithValuesDto>>> GetAllAttributesAsync()
     {
-        var variant = await _repository.GetVariantByIdAsync(id);
-        if (variant == null) return ServiceResult.Fail($"Variant with ID {id} not found");
-        if (!variant.HasDiscount) return ServiceResult.Fail("Variant does not have a valid discount to remove");
-
-        variant.OriginalPrice = variant.SellingPrice;
-
-        var product = await _repository.GetProductByIdAsync(variant.ProductId, true);
-        if (product != null)
-        {
-            product.RecalculateAggregates();
-        }
-
-        await _unitOfWork.SaveChangesAsync();
-        await _cacheService.ClearByPrefixAsync("cart:user:");
-
-        return ServiceResult.Ok();
+        var attributes = await _productRepository.GetAllAttributesAsync();
+        var dtos = _mapper.Map<List<AttributeTypeWithValuesDto>>(attributes);
+        return ServiceResult<IEnumerable<AttributeTypeWithValuesDto>>.Ok(dtos);
     }
 
-    public async Task<ServiceResult<object>> GetDiscountStatisticsAsync()
+    private async Task<PublicProductViewDto> MapToPublicViewDto(Product product)
     {
-        var totalDiscountedVariants = await _repository.GetTotalDiscountedVariantsCountAsync();
-        var averageDiscountPercentage = await _repository.GetAverageDiscountPercentageAsync();
-        var totalDiscountValue = await _repository.GetTotalDiscountValueAsync();
-        var discountByCategory = await _repository.GetDiscountStatsByCategoryAsync();
+        var dto = _mapper.Map<PublicProductViewDto>(product);
+        dto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("Product", product.Id);
+        var media = await _mediaService.GetEntityMediaAsync("Product", product.Id);
+        dto.Images = _mapper.Map<IEnumerable<MediaDto>>(media);
 
-        var stats = new
+        var variantDtos = new List<ProductVariantResponseDto>();
+        foreach (var variant in product.Variants.Where(v => v.IsActive))
         {
-            TotalDiscountedProducts = totalDiscountedVariants,
-            AverageDiscountPercentage = Math.Round(averageDiscountPercentage, 2),
-            TotalDiscountValue = totalDiscountValue,
-            DiscountByCategory = discountByCategory
-        };
-
-        return ServiceResult<object>.Ok(stats);
-    }
-
-    private async Task UpdateVariants(Domain.Product.Product product, List<CreateProductVariantDto> variantDtos, int userId)
-    {
-        var variantsToRemove = product.Variants.Where(ev => !variantDtos.Any(dto => dto.Sku == ev.Sku)).ToList();
-
-        foreach (var dto in variantDtos)
-        {
-            var variantToUpdate = product.Variants.FirstOrDefault(v => v.Sku == dto.Sku);
-            if (variantToUpdate != null)
-            {
-                var oldStock = variantToUpdate.Stock;
-                _mapper.Map(dto, variantToUpdate);
-                if (oldStock != dto.Stock && !variantToUpdate.IsUnlimited)
-                {
-                    var stockChange = dto.Stock - oldStock;
-                    var notes = $"Stock adjustment during product update for SKU: {variantToUpdate.Sku}";
-                    await _inventoryService.LogTransactionAsync(variantToUpdate.Id, "Adjustment", stockChange, null, userId, notes, null, variantToUpdate.RowVersion);
-                }
-                variantToUpdate.VariantAttributes.Clear();
-                foreach (var attrId in dto.AttributeValueIds)
-                {
-                    variantToUpdate.VariantAttributes.Add(new Domain.Product.Attribute.ProductVariantAttribute { AttributeValueId = attrId });
-                }
-            }
-            else
-            {
-                var newVariant = _mapper.Map<Domain.Product.ProductVariant>(dto);
-                product.Variants.Add(newVariant);
-                if (!newVariant.IsUnlimited && dto.Stock > 0)
-                {
-                    await _inventoryService.LogTransactionAsync(newVariant.Id, "InitialStock", dto.Stock, null, userId, $"New variant added for product {product.Id}");
-                }
-            }
+            var variantDto = _mapper.Map<ProductVariantResponseDto>(variant);
+            var variantMedia = await _mediaService.GetEntityMediaAsync("ProductVariant", variant.Id);
+            variantDto.Images = _mapper.Map<IEnumerable<MediaDto>>(variantMedia);
+            variantDtos.Add(variantDto);
         }
+        dto.Variants = variantDtos;
 
-        if (variantsToRemove.Any())
-        {
-            foreach (var v in variantsToRemove)
-            {
-                product.Variants.Remove(v);
-            }
-        }
+        return dto;
     }
 }

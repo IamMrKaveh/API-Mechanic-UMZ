@@ -66,4 +66,51 @@ public class ProfileController : ControllerBase
 
         return Ok(result.Data);
     }
+
+    [HttpPost("addresses")]
+    public async Task<IActionResult> AddAddress([FromBody] CreateUserAddressDto addressDto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var userId = _currentUserService.UserId;
+        if (userId == null) return Unauthorized();
+
+        var result = await _userService.AddUserAddressAsync(userId.Value, addressDto);
+        if (!result.Success || result.Data == null)
+        {
+            return BadRequest(new { message = result.Error });
+        }
+
+        return CreatedAtAction(nameof(GetProfile), new { }, result.Data);
+    }
+
+    [HttpPut("addresses/{id}")]
+    public async Task<IActionResult> UpdateAddress(int id, [FromBody] UpdateUserAddressDto addressDto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var userId = _currentUserService.UserId;
+        if (userId == null) return Unauthorized();
+
+        var result = await _userService.UpdateUserAddressAsync(userId.Value, id, addressDto);
+        if (!result.Success)
+        {
+            return NotFound(new { message = result.Error });
+        }
+
+        return Ok(result.Data);
+    }
+
+    [HttpDelete("addresses/{id}")]
+    public async Task<IActionResult> DeleteAddress(int id)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId == null) return Unauthorized();
+
+        var result = await _userService.DeleteUserAddressAsync(userId.Value, id);
+        if (!result.Success)
+        {
+            return NotFound(new { message = result.Error });
+        }
+
+        return NoContent();
+    }
 }

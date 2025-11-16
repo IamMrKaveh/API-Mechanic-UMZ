@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.OutputCaching;
-
-namespace MainApi.Controllers;
+﻿namespace MainApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -21,8 +19,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<object>>> GetOrders(
-        [FromQuery] int? userId = null,
+    public async Task<ActionResult<IEnumerable<object>>> GetMyOrders(
         [FromQuery] int? statusId = null,
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null,
@@ -33,17 +30,9 @@ public class OrdersController : ControllerBase
         if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
         var currentUserId = _currentUserService.UserId;
+        if (!currentUserId.HasValue) return Forbid();
 
-        if (!userId.HasValue && !_currentUserService.IsAdmin)
-        {
-            userId = currentUserId;
-        }
-        else if (userId.HasValue && userId.Value != currentUserId && !_currentUserService.IsAdmin)
-        {
-            return Forbid();
-        }
-
-        var (orders, totalItems) = await _orderService.GetOrdersAsync(currentUserId, _currentUserService.IsAdmin, userId, statusId, fromDate, toDate, page, pageSize);
+        var (orders, totalItems) = await _orderService.GetOrdersAsync(currentUserId, false, currentUserId, statusId, fromDate, toDate, page, pageSize);
 
         return Ok(new
         {
@@ -70,38 +59,6 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
-    [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<Domain.Order.Order>> PostOrder([FromBody] CreateOrderDto orderDto)
-    {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-
-        var userId = _currentUserService.UserId;
-        if (userId == null) return Unauthorized("User not authenticated");
-
-        var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
-        if (string.IsNullOrEmpty(idempotencyKey)) return BadRequest("Idempotency-Key header is required.");
-
-        try
-        {
-            var createdOrder = await _orderService.CreateOrderAsync(orderDto, idempotencyKey);
-            return CreatedAtAction(nameof(GetOrderById), new { id = createdOrder.Id }, createdOrder);
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
-        {
-            _logger.LogWarning("Idempotency key violation for key: {IdempotencyKey}", idempotencyKey);
-            return Conflict("Duplicate request. Order already exists with this idempotency key.");
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { Message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { Message = ex.Message });
-        }
-    }
-
     [HttpPost("checkout-from-cart")]
     public async Task<ActionResult<object>> CheckoutFromCart([FromBody] CreateOrderFromCartDto orderDto)
     {
@@ -119,7 +76,7 @@ public class OrdersController : ControllerBase
 
             if (paymentUrl != null)
             {
-                return Ok(new { PaymentUrl = paymentUrl });
+                return Ok(new { PaymentUrl = paymentUrl, OrderId = createdOrder.Id });
             }
 
             _logger.LogError("Payment URL is null for order {OrderId}. Reason: {Reason}", createdOrder.Id, error);
@@ -156,74 +113,6 @@ public class OrdersController : ControllerBase
         }
 
         return Ok(discount);
-    }
-
-    [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> PutOrder(int id, UpdateOrderDto orderDto)
-    {
-        if (id <= 0) return BadRequest("Invalid order ID");
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-
-        try
-        {
-            var success = await _orderService.UpdateOrderAsync(id, orderDto);
-            return success ? NoContent() : NotFound("Order not found");
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { Message = ex.Message });
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Conflict(new { message = "The order was modified by another user. Please reload and try again." });
-        }
-    }
-
-    [HttpPatch("{id}/status")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusByIdDto statusDto)
-    {
-        if (id <= 0) return BadRequest("Invalid order ID");
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-
-        try
-        {
-            var success = await _orderService.UpdateOrderStatusAsync(id, statusDto);
-            return success ? NoContent() : NotFound("Order not found or status ID is invalid.");
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { Message = ex.Message });
-        }
-    }
-
-    [HttpGet("statistics")]
-    [Authorize(Roles = "Admin")]
-    [OutputCache(PolicyName = "LongCache")]
-    public async Task<ActionResult<object>> GetOrderStatistics(
-        [FromQuery] DateTime? fromDate = null,
-        [FromQuery] DateTime? toDate = null)
-    {
-        var stats = await _orderService.GetOrderStatisticsAsync(fromDate, toDate);
-        return Ok(stats);
-    }
-
-    [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeleteOrder(int id)
-    {
-        if (id <= 0) return BadRequest("Invalid order ID");
-
-        try
-        {
-            var success = await _orderService.DeleteOrderAsync(id);
-            return success ? NoContent() : NotFound("Order not found");
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { Message = ex.Message });
-        }
     }
 
     [HttpGet("verify-payment")]

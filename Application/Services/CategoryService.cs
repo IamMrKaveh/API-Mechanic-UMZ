@@ -8,6 +8,7 @@ public class CategoryService : ICategoryService
     private readonly IHtmlSanitizer _htmlSanitizer;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<CategoryService> _logger;
 
     public CategoryService(
         ICategoryRepository categoryRepository,
@@ -15,7 +16,8 @@ public class CategoryService : ICategoryService
         IMediaService mediaService,
         IHtmlSanitizer htmlSanitizer,
         IMapper mapper,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILogger<CategoryService> logger)
     {
         _categoryRepository = categoryRepository;
         _categoryGroupRepository = categoryGroupRepository;
@@ -23,6 +25,25 @@ public class CategoryService : ICategoryService
         _htmlSanitizer = htmlSanitizer;
         _mapper = mapper;
         _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
+
+    public async Task<ServiceResult<IEnumerable<CategoryHierarchyDto>>> GetCategoryHierarchyAsync()
+    {
+        var (categories, _) = await _categoryRepository.GetCategoriesAsync(null, 1, int.MaxValue);
+
+        var hierarchy = categories.Select(c => new CategoryHierarchyDto
+        {
+            Id = c.Id,
+            Title = c.Name,
+            Groups = c.CategoryGroups.Select(cg => new CategoryGroupHierarchyDto
+            {
+                Id = cg.Id,
+                Title = cg.Name
+            }).ToList()
+        }).ToList();
+
+        return ServiceResult<IEnumerable<CategoryHierarchyDto>>.Ok(hierarchy);
     }
 
     public async Task<ServiceResult<PagedResultDto<CategoryViewDto>>> GetCategoriesAsync(string? search, int page, int pageSize)
@@ -97,15 +118,24 @@ public class CategoryService : ICategoryService
             return ServiceResult<CategoryViewDto>.Fail("A category with this name already exists.");
         }
 
-        var category = _mapper.Map<Domain.Category.Category>(dto);
+        var category = _mapper.Map<Category>(dto);
+        category.Name = sanitizedName;
         await _categoryRepository.AddAsync(category);
         await _unitOfWork.SaveChangesAsync();
 
         if (dto.IconFile != null)
         {
-            await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "Category", category.Id, true);
-            await _unitOfWork.SaveChangesAsync();
+            try
+            {
+                await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "Category", category.Id, true);
+                await _unitOfWork.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to upload icon for new category {CategoryId}", category.Id);
+            }
         }
+
 
         var resultDto = _mapper.Map<CategoryViewDto>(category);
         resultDto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id);
@@ -121,9 +151,9 @@ public class CategoryService : ICategoryService
             return ServiceResult.Fail("Category not found.");
         }
 
-        if (dto.RowVersion != null)
+        if (!string.IsNullOrEmpty(dto.RowVersion))
         {
-            _categoryRepository.SetOriginalRowVersion(existingCategory, dto.RowVersion);
+            _categoryRepository.SetOriginalRowVersion(existingCategory, Convert.FromBase64String(dto.RowVersion));
         }
 
         var sanitizedName = _htmlSanitizer.Sanitize(dto.Name.Trim());
@@ -133,6 +163,7 @@ public class CategoryService : ICategoryService
         }
 
         _mapper.Map(dto, existingCategory);
+        existingCategory.Name = sanitizedName;
         _categoryRepository.Update(existingCategory);
 
         if (dto.IconFile != null)

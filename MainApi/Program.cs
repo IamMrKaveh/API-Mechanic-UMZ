@@ -1,4 +1,6 @@
-﻿Log.Logger = new LoggerConfiguration()
+﻿#region Serilog Configuration
+// پیکربندی Serilog برای لاگ‌گیری از برنامه
+Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
@@ -20,15 +22,17 @@
         flushToDiskInterval: TimeSpan.FromSeconds(1),
         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
     .CreateLogger();
+#endregion
 
 try
 {
     Log.Information("Starting API");
 
     var builder = WebApplication.CreateBuilder(args);
-
     builder.Host.UseSerilog();
 
+    #region Database Configuration
+    // پیکربندی اتصال به دیتابیس PostgreSQL
     var connectionString = builder.Configuration.GetConnectionString("PoolerConnection");
 
     if (string.IsNullOrWhiteSpace(connectionString))
@@ -40,6 +44,7 @@ try
     Log.Information("[RUNTIME MODE] Database connection validated: {Connection}",
         MaskConnectionString(connectionString));
 
+    // ثبت DbContext با Connection Pooling
     builder.Services.AddDbContextPool<LedkaContext>((serviceProvider, options) =>
     {
         options.UseNpgsql(connectionString, npgsqlOptions =>
@@ -58,11 +63,11 @@ try
     }, poolSize: 15);
 
     builder.Services.AddScoped<IUnitOfWork, Infrastructure.Persistence.UnitOfWork>();
-
-
     Log.Information("Database context registered successfully");
+    #endregion
 
-
+    #region Redis Configuration
+    // پیکربندی Redis برای Caching و Data Protection
     var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
 
     if (!string.IsNullOrEmpty(redisConnectionString))
@@ -96,10 +101,15 @@ try
         Log.Warning("Redis connection string not found. Using in-memory services.");
         RegisterInMemoryServices(builder.Services);
     }
+    #endregion
 
+    #region AutoMapper Configuration
+    // ثبت AutoMapper برای Mapping بین Entities و DTOs
     builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
+    #endregion
 
-    // Application Services
+    #region Application Services Registration
+    // ثبت سرویس‌های لایه Application
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<ICartService, CartService>();
     builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -113,18 +123,27 @@ try
     builder.Services.AddScoped<IInventoryService, InventoryService>();
     builder.Services.AddScoped<IMediaService, MediaService>();
     builder.Services.AddScoped<IAuditService, AuditService>();
+    builder.Services.AddScoped<IAdminProductService, AdminProductService>();
+    builder.Services.AddScoped<IAdminCategoryService, AdminCategoryService>();
+    builder.Services.AddScoped<IAdminCategoryGroupService, AdminCategoryGroupService>();
+    builder.Services.AddScoped<IAdminOrderService, AdminOrderService>();
+    builder.Services.AddScoped<IAdminOrderStatusService, AdminOrderStatusService>();
+    builder.Services.AddScoped<IAdminReviewService, AdminReviewService>();
+    builder.Services.AddScoped<IAdminUserService, AdminUserService>();
+    #endregion
 
-
-    // Infrastructure Services
+    #region Infrastructure Services Registration
+    // ثبت سرویس‌های لایه Infrastructure
     builder.Services.AddScoped<INotificationService, NotificationService>();
     builder.Services.AddScoped<IEmailService, EmailService>();
     builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
     builder.Services.AddSingleton<IStorageService, LiaraStorageService>();
     builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
     builder.Services.AddScoped<ITokenService, TokenService>();
+    #endregion
 
-
-    // Repositories
+    #region Repositories Registration
+    // ثبت Repository‌ها برای دسترسی به داده‌ها
     builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
     builder.Services.AddScoped<ICategoryGroupRepository, CategoryGroupRepository>();
     builder.Services.AddScoped<IProductRepository, ProductRepository>();
@@ -138,36 +157,30 @@ try
     builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
     builder.Services.AddScoped<IOrderItemRepository, OrderItemRepository>();
     builder.Services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
+    #endregion
 
-
-    // Current User
+    #region Current User Service
+    // سرویس کاربر جاری برای دسترسی به اطلاعات کاربر لاگین شده
     builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+    #endregion
 
-
+    #region Configuration Options
+    // تنظیمات مختلف برنامه از appsettings.json
     builder.Services.Configure<LiaraStorageSettings>(builder.Configuration.GetSection("LiaraStorage"));
     builder.Services.Configure<ZarinpalSettingsDto>(builder.Configuration.GetSection("Zarinpal"));
     builder.Services.Configure<SecurityHeadersOptions>(builder.Configuration.GetSection("SecurityHeaders"));
     builder.Services.Configure<FrontendUrlsDto>(builder.Configuration.GetSection("FrontendUrls"));
 
-
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        // DO NOT clear KnownNetworks and KnownProxies unless you know what you're doing.
-        // This should be configured with your specific reverse proxy IPs.
-        // For example:
-        // var knownProxyIPs = builder.Configuration.GetSection("Security:KnownProxies").Get<string[]>();
-        // if (knownProxyIPs != null)
-        // {
-        //     foreach (var ip in knownProxyIPs)
-        //     {
-        //         options.KnownProxies.Add(IPAddress.Parse(ip));
-        //     }
-        // }
     });
 
     Log.Information("Application services registered");
+    #endregion
 
+    #region Security Configuration
+    // تنظیمات امنیتی برای محدودیت حجم درخواست‌ها
     var maxRequestSize = builder.Configuration.GetValue<long>("Security:MaxRequestSizeInBytes", 10_485_760);
     builder.Services.Configure<KestrelServerOptions>(options =>
     {
@@ -179,6 +192,7 @@ try
         options.ValueLengthLimit = (int)maxRequestSize;
     });
 
+    // پیکربندی Antiforgery برای جلوگیری از حملات CSRF
     builder.Services.AddAntiforgery(options =>
     {
         options.HeaderName = "X-XSRF-TOKEN";
@@ -188,6 +202,7 @@ try
         options.Cookie.HttpOnly = true;
     });
 
+    // پیکربندی HTML Sanitizer برای جلوگیری از XSS
     builder.Services.AddSingleton<IHtmlSanitizer>(_ => new HtmlSanitizer(new HtmlSanitizerOptions
     {
         AllowedTags = { "b", "i", "em", "strong", "p", "br", "ul", "ol", "li" },
@@ -196,14 +211,20 @@ try
     }));
 
     builder.Services.AddHttpContextAccessor();
+    #endregion
 
+    #region Authorization Configuration
+    // تنظیمات Authorization و Policy‌های دسترسی
     builder.Services.AddAuthorization(options =>
     {
         options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
     });
 
     builder.Services.AddIpWhitelist(builder.Configuration);
+    #endregion
 
+    #region JWT Authentication Configuration
+    // پیکربندی احراز هویت JWT
     var jwtKey = builder.Configuration["Jwt:Key"];
     if (string.IsNullOrEmpty(jwtKey))
     {
@@ -251,7 +272,10 @@ try
     });
 
     Log.Information("Authentication configured");
+    #endregion
 
+    #region HTTP Clients Configuration
+    // پیکربندی HTTP Clients با Retry و Circuit Breaker
     var retryPolicy = HttpPolicyExtensions
         .HandleTransientHttpError()
         .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
@@ -283,9 +307,17 @@ try
         .AddPolicyHandler(circuitBreakerPolicy);
 
     Log.Information("HTTP clients configured");
+    #endregion
 
+    #region CORS Configuration
+    // پیکربندی CORS برای دسترسی از دامنه‌های مجاز
     var allowedOrigins = builder.Configuration.GetSection("Security:AllowedOrigins").Get<string[]>()
         ?? new[] { "https://ledka-co.ir", "https://www.ledka-co.ir" };
+
+    if (builder.Environment.IsDevelopment())
+    {
+        allowedOrigins = allowedOrigins.Concat(new[] { "http://localhost:4200", "https://localhost:4200" }).ToArray();
+    }
 
     builder.Services.AddCors(options =>
     {
@@ -302,7 +334,10 @@ try
     });
 
     Log.Information("CORS configured with origins: {Origins}", string.Join(", ", allowedOrigins));
+    #endregion
 
+    #region Output Cache Configuration
+    // پیکربندی Output Cache برای بهبود عملکرد
     builder.Services.AddOutputCache(options =>
     {
         options.AddBasePolicy(policyBuilder =>
@@ -317,7 +352,10 @@ try
             policyBuilder.Expire(TimeSpan.FromHours(1))
                 .Tag("products", "categories"));
     });
+    #endregion
 
+    #region Controllers Configuration
+    // پیکربندی Controllers و JSON Serialization
     builder.Services.AddControllers(options =>
     {
         options.Filters.Add<ValidationFilter>();
@@ -333,7 +371,10 @@ try
     });
 
     Log.Information("Controllers and caching configured");
+    #endregion
 
+    #region Swagger Configuration
+    // پیکربندی Swagger برای مستندسازی API
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
     {
@@ -361,7 +402,10 @@ try
             }
         });
     });
+    #endregion
 
+    #region Health Checks Configuration
+    // پیکربندی Health Checks برای مانیتورینگ
     var healthChecksBuilder = builder.Services.AddHealthChecks()
         .AddNpgSql(connectionString,
             name: "postgresql",
@@ -369,7 +413,10 @@ try
             tags: new[] { "db", "ready" });
 
     Log.Information("Health checks configured");
+    #endregion
 
+    #region Kestrel Configuration
+    // پیکربندی Kestrel Web Server
     builder.WebHost.ConfigureKestrel(options =>
     {
         options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(2);
@@ -380,13 +427,17 @@ try
         options.ShutdownTimeout = TimeSpan.FromSeconds(30));
 
     Log.Information("Kestrel configured");
+    #endregion
 
+    #region Build Application
     var app = builder.Build();
-
     Log.Information("Application built successfully");
+    #endregion
 
+    #region Middleware Pipeline Configuration
     app.UseForwardedHeaders();
 
+    // پیکربندی Middleware بر اساس محیط (Development/Production)
     if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Swagger:Enabled"))
     {
         app.UseHttpsRedirection();
@@ -398,6 +449,7 @@ try
             c.RoutePrefix = "swagger";
         });
 
+        // حذف Security Headers برای Swagger
         app.Use(async (context, next) =>
         {
             if (context.Request.Path.StartsWithSegments("/swagger"))
@@ -418,6 +470,7 @@ try
         Log.Information("Production middleware enabled");
     }
 
+    // Global Exception Handler
     app.UseExceptionHandler(errorApp =>
     {
         errorApp.Run(async context =>
@@ -450,12 +503,16 @@ try
     app.UseSecurityMiddleware();
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseAntiforgery();
     app.UseOutputCache();
 
     Log.Information("Middleware pipeline configured");
+    #endregion
 
+    #region Endpoint Mapping
     app.MapControllers();
 
+    // Health Check Endpoints
     app.MapHealthChecks("/health", new HealthCheckOptions
     {
         ResponseWriter = async (context, report) =>
@@ -496,7 +553,10 @@ try
     });
 
     Log.Information("Endpoints mapped successfully");
+    #endregion
 
+    #region Application Lifetime Events
+    // رویدادهای چرخه حیات برنامه
     var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
 
     lifetime.ApplicationStarted.Register(() =>
@@ -512,6 +572,7 @@ try
         redis?.Dispose();
         Log.Information("Application stopped.");
     });
+    #endregion
 
     Log.Information("Starting web server...");
     await app.RunAsync();
@@ -527,6 +588,11 @@ finally
     await Log.CloseAndFlushAsync();
 }
 
+#region Helper Methods
+
+/// <summary>
+/// مخفی کردن پسورد در Connection String برای لاگ امن
+/// </summary>
 static string MaskConnectionString(string connectionString)
 {
     var parts = connectionString.Split(';');
@@ -546,6 +612,9 @@ static string MaskConnectionString(string connectionString)
     return string.Join(";", parts);
 }
 
+/// <summary>
+/// ثبت سرویس‌های In-Memory به جای Redis
+/// </summary>
 static void RegisterInMemoryServices(IServiceCollection services)
 {
     services.AddSingleton<IMemoryCache, MemoryCache>();
@@ -571,3 +640,5 @@ static void RegisterInMemoryServices(IServiceCollection services)
         Log.Warning(ex, "Failed to create keys directory at {Path}, using ephemeral keys", keysPath);
     }
 }
+
+#endregion

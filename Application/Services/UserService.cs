@@ -34,13 +34,6 @@ public class UserService : IUserService
         _tokenService = tokenService;
     }
 
-    public async Task<ServiceResult<IEnumerable<UserProfileDto>>> GetUsersAsync(bool includeDeleted)
-    {
-        var users = await _repository.GetUsersAsync(includeDeleted);
-        var dtos = _mapper.Map<IEnumerable<UserProfileDto>>(users);
-        return ServiceResult<IEnumerable<UserProfileDto>>.Ok(dtos);
-    }
-
     public async Task<ServiceResult<UserProfileDto?>> GetUserByIdAsync(int id)
     {
         var user = await _repository.GetUserByIdAsync(id, true);
@@ -55,24 +48,6 @@ public class UserService : IUserService
         if (user == null) return ServiceResult<UserProfileDto?>.Fail("User not found");
         var dto = _mapper.Map<UserProfileDto>(user);
         return ServiceResult<UserProfileDto?>.Ok(dto);
-    }
-
-    public async Task<ServiceResult<(UserProfileDto? User, string? Error)>> CreateUserAsync(Domain.User.User tUsers)
-    {
-        if (string.IsNullOrWhiteSpace(tUsers.PhoneNumber))
-            return ServiceResult<(UserProfileDto?, string?)>.Fail("Phone number is required.");
-
-        if (await _repository.PhoneNumberExistsAsync(tUsers.PhoneNumber))
-            return ServiceResult<(UserProfileDto?, string?)>.Fail("User with this phone number already exists.");
-
-        tUsers.CreatedAt = DateTime.UtcNow;
-        tUsers.IsActive = true;
-
-        await _repository.AddUserAsync(tUsers);
-        await _unitOfWork.SaveChangesAsync();
-
-        var dto = _mapper.Map<UserProfileDto>(tUsers);
-        return ServiceResult<(UserProfileDto?, string?)>.Ok((dto, null));
     }
 
     public async Task<ServiceResult> UpdateUserAsync(int id, UpdateProfileDto updateRequest, int currentUserId, bool isAdmin)
@@ -119,47 +94,6 @@ public class UserService : IUserService
             _logger.LogError(ex, "Error updating profile for user {UserId}", userId);
             return ServiceResult.Fail("Error updating profile");
         }
-    }
-
-    public async Task<ServiceResult> ChangeUserStatusAsync(int id, bool isActive)
-    {
-        var user = await _repository.GetUserByIdAsync(id, true);
-        if (user == null) return ServiceResult.Fail("NotFound");
-
-        user.IsActive = isActive;
-        user.UpdatedAt = DateTime.UtcNow;
-        await _unitOfWork.SaveChangesAsync();
-        return ServiceResult.Ok();
-    }
-
-    public async Task<ServiceResult> DeleteUserAsync(int id, int currentUserId)
-    {
-        if (id == currentUserId) return ServiceResult.Fail("Admins cannot delete their own account this way.");
-
-        var user = await _repository.GetUserByIdAsync(id, true);
-        if (user == null) return ServiceResult.Fail("NotFound");
-
-        user.IsDeleted = true;
-        user.DeletedAt = DateTime.UtcNow;
-        user.IsActive = false;
-        user.PhoneNumber = $"{user.PhoneNumber}_deleted_{DateTime.UtcNow.Ticks}";
-
-        await _repository.RevokeAllUserSessionsAsync(id);
-
-        await _unitOfWork.SaveChangesAsync();
-        return ServiceResult.Ok();
-    }
-
-    public async Task<ServiceResult> RestoreUserAsync(int id)
-    {
-        var user = await _repository.GetUserByIdAsync(id, true);
-        if (user == null || !user.IsDeleted) return ServiceResult.Fail("NotFound");
-
-        user.IsDeleted = false;
-        user.DeletedAt = null;
-        user.IsActive = true;
-        await _unitOfWork.SaveChangesAsync();
-        return ServiceResult.Ok();
     }
 
     public async Task<ServiceResult> DeleteAccountAsync(int userId)
@@ -232,11 +166,11 @@ public class UserService : IUserService
             return ServiceResult<(string?, string?)>.Fail("An active OTP already exists. Please wait before requesting a new one.");
 
         var otp = GenerateSecureOtp();
-        var userOtp = new Domain.User.UserOtp
+        var userOtp = new UserOtp
         {
             UserId = user.Id,
             OtpHash = BCryptNet.HashPassword(otp),
-            ExpiresAt = DateTime.UtcNow.AddMinutes(5),
+            ExpiresAt = DateTime.UtcNow.AddMinutes(2),
             IsUsed = false,
             AttemptCount = 0
         };
@@ -303,7 +237,6 @@ public class UserService : IUserService
             await _cartService.MergeCartAsync(user.Id, guestId);
         }
 
-
         await _unitOfWork.SaveChangesAsync();
         await _auditService.LogSecurityEventAsync("LoginSuccess", $"User {user.Id} logged in.", clientIp, user.Id, userAgent);
 
@@ -360,6 +293,54 @@ public class UserService : IUserService
         if (sessionToRevoke == null) return ServiceResult.Ok();
 
         await _repository.RevokeSessionAsync(sessionToRevoke);
+        await _unitOfWork.SaveChangesAsync();
+
+        return ServiceResult.Ok();
+    }
+
+    public async Task<ServiceResult<UserAddressDto?>> AddUserAddressAsync(int userId, CreateUserAddressDto addressDto)
+    {
+        var user = await _repository.GetUserByIdAsync(userId);
+        if (user == null)
+        {
+            return ServiceResult<UserAddressDto?>.Fail("User not found.");
+        }
+
+        var address = _mapper.Map<UserAddress>(addressDto);
+        address.UserId = userId;
+
+        user.UserAddresses.Add(address);
+
+        await _unitOfWork.SaveChangesAsync();
+
+        var resultDto = _mapper.Map<UserAddressDto>(address);
+        return ServiceResult<UserAddressDto?>.Ok(resultDto);
+    }
+    public async Task<ServiceResult<UserAddressDto?>> UpdateUserAddressAsync(int userId, int addressId, UpdateUserAddressDto addressDto)
+    {
+        var address = await _repository.GetUserAddressAsync(addressId);
+        if (address == null || address.UserId != userId)
+        {
+            return ServiceResult<UserAddressDto?>.Fail("Address not found.");
+        }
+
+        _mapper.Map(addressDto, address);
+        _repository.UpdateUserAddress(address);
+
+        await _unitOfWork.SaveChangesAsync();
+
+        var resultDto = _mapper.Map<UserAddressDto>(address);
+        return ServiceResult<UserAddressDto?>.Ok(resultDto);
+    }
+    public async Task<ServiceResult> DeleteUserAddressAsync(int userId, int addressId)
+    {
+        var address = await _repository.GetUserAddressAsync(addressId);
+        if (address == null || address.UserId != userId)
+        {
+            return ServiceResult.Fail("Address not found.");
+        }
+
+        _repository.DeleteUserAddress(address);
         await _unitOfWork.SaveChangesAsync();
 
         return ServiceResult.Ok();

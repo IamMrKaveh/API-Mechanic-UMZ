@@ -28,13 +28,14 @@ public class UpdateOrderDto
     public DateTime? DeliveryDate { get; set; }
 
     [Required]
-    public required byte[] RowVersion { get; set; }
+    public byte[] RowVersion { get; set; }
 }
 
 public class CreateOrderFromCartDto
 {
-    [Required]
-    public int UserAddressId { get; set; }
+    public int? UserAddressId { get; set; }
+    public CreateUserAddressDto? NewAddress { get; set; }
+    public bool SaveNewAddress { get; set; }
 
     [Required]
     public int ShippingMethodId { get; set; }
@@ -46,6 +47,9 @@ public class UpdateOrderStatusByIdDto
 {
     [Required]
     public int OrderStatusId { get; set; }
+
+    [Required]
+    public byte[] RowVersion { get; set; }
 }
 
 public record ApplyDiscountDto(string Code, decimal OrderTotal);

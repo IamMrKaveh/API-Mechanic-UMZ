@@ -13,6 +13,18 @@ public class CategoryController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet("hierarchy")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetCategoryHierarchy()
+    {
+        var result = await _categoryService.GetCategoryHierarchyAsync();
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.Error });
+        }
+        return Ok(result.Data);
+    }
+
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetCategories([FromQuery] string? search = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -46,57 +58,5 @@ public class CategoryController : ControllerBase
         }
 
         return Ok(result.Data);
-    }
-
-    [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> CreateCategory([FromForm] CategoryCreateDto dto)
-    {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-
-        var result = await _categoryService.CreateCategoryAsync(dto);
-
-        if (!result.Success || result.Data == null)
-        {
-            return Conflict(new { message = result.Error });
-        }
-
-        return CreatedAtAction(nameof(GetCategory), new { id = result.Data.Id }, result.Data);
-    }
-
-    [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateCategory(int id, [FromForm] CategoryUpdateDto dto)
-    {
-        if (id <= 0) return BadRequest("Invalid category ID.");
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-
-        var result = await _categoryService.UpdateCategoryAsync(id, dto);
-
-        if (result.Success) return NoContent();
-
-        return result.Error switch
-        {
-            "Category not found." => NotFound(new { message = result.Error }),
-            "The record you attempted to edit was modified by another user. Please reload and try again." => Conflict(new { message = result.Error }),
-            _ => BadRequest(new { message = result.Error })
-        };
-    }
-
-    [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeleteCategory(int id)
-    {
-        if (id <= 0) return BadRequest("Invalid category ID.");
-
-        var result = await _categoryService.DeleteCategoryAsync(id);
-
-        if (result.Success) return NoContent();
-
-        return result.Error switch
-        {
-            "Category not found." => NotFound(new { message = result.Error }),
-            _ => BadRequest(new { message = result.Error })
-        };
     }
 }

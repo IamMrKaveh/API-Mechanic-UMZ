@@ -1,8 +1,4 @@
-﻿using Application.Common.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace MainApi.Controllers;
+﻿namespace MainApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

@@ -21,7 +21,7 @@ public class Product : BaseEntity
 
     public bool HasMultipleVariants => Variants.Count > 1;
 
-    public ICollection<ProductVariant> Variants { get; set; } = [];
+    public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
     public ICollection<Order.OrderItem> OrderDetails { get; set; } = [];
     public ICollection<Media.Media> Images { get; set; } = [];
     public ICollection<ProductReview> Reviews { get; set; } = [];

@@ -1,6 +1,6 @@
 ﻿namespace MainApi.Controllers;
 
-[Route("api/[controller]")]
+[Route("api/admin/[controller]")]
 [ApiController]
 [Authorize(Roles = "Admin")]
 public class AuditController : ControllerBase

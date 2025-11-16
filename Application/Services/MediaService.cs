@@ -75,7 +75,6 @@ public class MediaService : IMediaService
         return uploadedMedia;
     }
 
-
     public async Task<IEnumerable<object>> GetMediaForEntityAsync(string entityType, int entityId)
     {
         var mediaItems = await _mediaRepository.GetMediaForEntityAsync(entityType, entityId);
