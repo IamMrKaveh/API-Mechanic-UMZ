@@ -1,6 +1,10 @@
 ﻿global using Application.Common.Interfaces;
 global using Application.Common.Interfaces.Persistence;
 global using Application.Context;
+global using Application.DTOs;
+global using Application.Services;
+global using Domain.Product;
+global using Domain.Product.Attribute;
 global using Domain.User;
 global using Ganss.Xss;
 global using Microsoft.AspNetCore.DataProtection.Repositories;

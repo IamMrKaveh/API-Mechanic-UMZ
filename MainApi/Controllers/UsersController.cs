@@ -16,15 +16,6 @@ public class UsersController : ControllerBase
         _currentUserService = currentUserService;
     }
 
-    [HttpGet]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetUsers([FromQuery] bool includeDeleted = false)
-    {
-        var result = await _userService.GetUsersAsync(includeDeleted);
-        if (!result.Success) return StatusCode(500, new { Message = "Error retrieving users" });
-        return Ok(result.Data);
-    }
-
     [HttpGet("{id}")]
     [Authorize]
     public async Task<IActionResult> GetUser(int id)
@@ -36,22 +27,6 @@ public class UsersController : ControllerBase
         var result = await _userService.GetUserByIdAsync(id);
         if (!result.Success) return NotFound(new { Message = result.Error });
         return Ok(result.Data);
-    }
-
-    [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> CreateUser([FromBody] Domain.User.User tUsers)
-    {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-
-        var result = await _userService.CreateUserAsync(tUsers);
-        if (!result.Success)
-        {
-            return result.Data.Error == "User with this phone number already exists."
-                ? Conflict(result.Data.Error)
-                : BadRequest(result.Data.Error);
-        }
-        return CreatedAtAction(nameof(GetUser), new { id = result.Data.User?.Id }, result.Data.User);
     }
 
     [HttpPut("{id}")]
@@ -73,42 +48,6 @@ public class UsersController : ControllerBase
             "User was modified by another process" => Conflict(result.Error),
             _ => StatusCode(500, "An error occurred while updating user")
         };
-    }
-
-    [HttpPatch("{id}/status")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> ChangeUserStatus(int id, [FromBody] ChangeUserStatusDto dto)
-    {
-        var result = await _userService.ChangeUserStatusAsync(id, dto.IsActive);
-        if (result.Success) return NoContent();
-        return result.Error == "NotFound" ? NotFound() : StatusCode(500, "An error occurred");
-    }
-
-    [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeleteUser(int id)
-    {
-        var currentUserId = _currentUserService.UserId;
-        if (currentUserId == null) return Unauthorized();
-
-        var result = await _userService.DeleteUserAsync(id, currentUserId.Value);
-        if (result.Success) return NoContent();
-
-        return result.Error switch
-        {
-            "NotFound" => NotFound(),
-            "Admins cannot delete their own account this way." => BadRequest(result.Error),
-            _ => StatusCode(500, "An error occurred")
-        };
-    }
-
-    [HttpPost("{id}/restore")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> RestoreUser(int id)
-    {
-        var result = await _userService.RestoreUserAsync(id);
-        if (result.Success) return NoContent();
-        return result.Error == "NotFound" ? NotFound("User not found or not deleted.") : BadRequest(result.Error);
     }
 
     [HttpPost("login")]

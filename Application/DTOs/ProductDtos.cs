@@ -26,23 +26,31 @@ public class ProductSearchDto
     public ProductSortOptions SortBy { get; set; } = ProductSortOptions.Newest;
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
+    public int? CategoryGroupId { get; set; }
 }
 
 public class ProductDto
 {
+    public int Id { get; set; }
+
     [Required]
     [StringLength(200)]
-    public required string Name { get; set; }
+    public string Name { get; set; }
+
     public string? Description { get; set; }
+
     [Required]
     public int CategoryGroupId { get; set; }
+
     public bool IsActive { get; set; } = true;
     public string? Sku { get; set; }
-    public List<CreateProductVariantDto> Variants { get; set; } = [];
+    public string? RowVersion { get; set; }
+    public string VariantsJson { get; set; }
 }
 
 public class CreateProductVariantDto
 {
+    public int? Id { get; set; }
     public string? Sku { get; set; }
     public decimal PurchasePrice { get; set; }
     public decimal SellingPrice { get; set; }
@@ -82,15 +90,19 @@ public class ProductVariantResponseDto
 public class PublicProductViewDto
 {
     public int Id { get; set; }
-    public required string Name { get; set; }
+    public string Name { get; set; }
     public string? Description { get; set; }
+    public string? Sku { get; set; }
     public bool IsActive { get; set; }
+    public int CategoryGroupId { get; set; }
     public object? CategoryGroup { get; set; }
     public IEnumerable<ProductVariantResponseDto> Variants { get; set; } = [];
+    public string? IconUrl { get; set; }
     public IEnumerable<MediaDto> Images { get; set; } = [];
     public decimal MinPrice { get; set; }
     public decimal MaxPrice { get; set; }
     public int TotalStock { get; set; }
+    public bool HasMultipleVariants { get; set; }
 }
 
 public class AdminProductViewDto : PublicProductViewDto
@@ -98,6 +110,7 @@ public class AdminProductViewDto : PublicProductViewDto
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
+    public string RowVersion { get; set; }
 }
 
 public class ProductStockDto
@@ -108,6 +121,8 @@ public class ProductStockDto
     [Required]
     [Range(1, 100000)]
     public int Quantity { get; set; }
+
+    public string? Notes { get; set; }
 }
 
 public record SetDiscountDto(
@@ -118,10 +133,18 @@ public record SetDiscountDto(
 public class ProductSummaryDto
 {
     public int Id { get; set; }
-    public required string Name { get; set; }
+    public string Name { get; set; }
     public string? Icon { get; set; }
     public int Count { get; set; }
     public decimal SellingPrice { get; set; }
     public decimal PurchasePrice { get; set; }
     public bool IsInStock { get; set; }
+}
+
+public class AttributeTypeWithValuesDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string DisplayName { get; set; }
+    public List<AttributeValueDto> Values { get; set; }
 }

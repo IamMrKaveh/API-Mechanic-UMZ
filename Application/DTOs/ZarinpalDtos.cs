@@ -9,10 +9,10 @@ public class ZarinpalRequestDto
     public decimal Amount { get; set; }
 
     [JsonPropertyName("description")]
-    public required string Description { get; set; }
+    public string Description { get; set; }
 
     [JsonPropertyName("callback_url")]
-    public required string CallbackURL { get; set; }
+    public string CallbackURL { get; set; }
 
     [JsonPropertyName("metadata")]
     public ZarinpalMetadataDto? Metadata { get; set; }
@@ -63,7 +63,7 @@ public class ZarinpalVerificationRequestDto
     public decimal Amount { get; set; }
 
     [JsonPropertyName("authority")]
-    public required string Authority { get; set; }
+    public string Authority { get; set; }
 }
 
 public class ZarinpalVerificationResponseDto

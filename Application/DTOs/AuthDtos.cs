@@ -20,28 +20,68 @@ public class UpdateProfileDto
 public class UserProfileDto
 {
     public int Id { get; set; }
-    public required string PhoneNumber { get; set; }
+    public string PhoneNumber { get; set; } = string.Empty;
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public bool IsActive { get; set; }
     public bool IsAdmin { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; }
-    public ICollection<UserAddressDto> Addresses { get; set; } = [];
+    public DateTime? DeletedAt { get; set; }
+    public ICollection<UserAddressDto> UserAddresses { get; set; } = [];
 }
 
 public class UserAddressDto
 {
     public int Id { get; set; }
-    public required string Title { get; set; }
-    public required string ReceiverName { get; set; }
-    public required string PhoneNumber { get; set; }
-    public required string Province { get; set; }
-    public required string City { get; set; }
-    public required string Address { get; set; }
-    public required string PostalCode { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string ReceiverName { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty;
+    public string Province { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string PostalCode { get; set; } = string.Empty;
     public bool IsDefault { get; set; }
 }
+
+
+public class CreateUserAddressDto
+{
+    [Required, StringLength(100)]
+    public string Title { get; set; } = string.Empty;
+    [Required, StringLength(100)]
+    public string ReceiverName { get; set; } = string.Empty;
+    [Required, StringLength(15)]
+    public string PhoneNumber { get; set; } = string.Empty;
+    [Required, StringLength(50)]
+    public string Province { get; set; } = string.Empty;
+    [Required, StringLength(50)]
+    public string City { get; set; } = string.Empty;
+    [Required, StringLength(500)]
+    public string Address { get; set; } = string.Empty;
+    [Required, StringLength(10)]
+    public string PostalCode { get; set; } = string.Empty;
+}
+
+public class UpdateUserAddressDto
+{
+    [Required, StringLength(100)]
+    public string Title { get; set; } = string.Empty;
+    [Required, StringLength(100)]
+    public string ReceiverName { get; set; } = string.Empty;
+    [Required, StringLength(15)]
+    public string PhoneNumber { get; set; } = string.Empty;
+    [Required, StringLength(50)]
+    public string Province { get; set; } = string.Empty;
+    [Required, StringLength(50)]
+    public string City { get; set; } = string.Empty;
+    [Required, StringLength(500)]
+    public string Address { get; set; } = string.Empty;
+    [Required, StringLength(10)]
+    public string PostalCode { get; set; } = string.Empty;
+    public bool IsDefault { get; set; }
+}
+
 
 public class ChangeUserStatusDto
 {

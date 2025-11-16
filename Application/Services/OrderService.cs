@@ -17,6 +17,7 @@ public class OrderService : IOrderService
     private readonly ICartRepository _cartRepository;
     private readonly FrontendUrlsDto _frontendUrls;
     private readonly ZarinpalSettingsDto _zarinpalSettings;
+    private readonly IMapper _mapper;
 
     public OrderService(
         IOrderRepository orderRepository,
@@ -33,7 +34,8 @@ public class OrderService : IOrderService
         IUnitOfWork unitOfWork,
         ICartRepository cartRepository,
         IOptions<FrontendUrlsDto> frontendUrlsOptions,
-        IOptions<ZarinpalSettingsDto> zarinpalSettingsOptions)
+        IOptions<ZarinpalSettingsDto> zarinpalSettingsOptions,
+        IMapper mapper)
     {
         _orderRepository = orderRepository;
         _logger = logger;
@@ -50,6 +52,7 @@ public class OrderService : IOrderService
         _cartRepository = cartRepository;
         _frontendUrls = frontendUrlsOptions.Value;
         _zarinpalSettings = zarinpalSettingsOptions.Value;
+        _mapper = mapper;
     }
 
     public async Task<(IEnumerable<object> Orders, int TotalItems)> GetOrdersAsync(int? currentUserId, bool isAdmin, int? userId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
@@ -59,12 +62,15 @@ public class OrderService : IOrderService
         var orderDtos = orders.Select(o => new
         {
             o.Id,
-            Address = JsonSerializer.Deserialize<UserAddressDto>(o.AddressSnapshot, (JsonSerializerOptions?)null),
+            AddressSnapshot = JsonSerializer.Deserialize<UserAddressDto>(o.AddressSnapshot, (JsonSerializerOptions?)null),
             o.TotalAmount,
+            TotalProfit = isAdmin ? (decimal?)o.TotalProfit : null,
             o.ShippingCost,
             o.DiscountAmount,
             o.FinalAmount,
             o.CreatedAt,
+            o.RowVersion,
+            o.OrderStatusId,
             User = new
             {
                 o.User.Id,
@@ -75,7 +81,8 @@ public class OrderService : IOrderService
             OrderStatus = new
             {
                 o.OrderStatus.Id,
-                o.OrderStatus.Name
+                o.OrderStatus.Name,
+                o.OrderStatus.Icon
             },
             ShippingMethod = new
             {
@@ -111,7 +118,7 @@ public class OrderService : IOrderService
                 oi.SellingPrice,
                 oi.Quantity,
                 oi.Amount,
-                oi.Profit,
+                Profit = isAdmin ? (decimal?)oi.Profit : null,
                 Product = new
                 {
                     Id = oi.Variant.ProductId,
@@ -140,13 +147,15 @@ public class OrderService : IOrderService
         {
             orderData.Id,
             orderData.UserId,
-            Address = JsonSerializer.Deserialize<UserAddressDto>(orderData.AddressSnapshot, (JsonSerializerOptions?)null),
+            AddressSnapshot = JsonSerializer.Deserialize<UserAddressDto>(orderData.AddressSnapshot, (JsonSerializerOptions?)null),
             orderData.TotalAmount,
+            TotalProfit = isAdmin ? (decimal?)orderData.TotalProfit : null,
             orderData.ShippingCost,
             orderData.DiscountAmount,
             orderData.FinalAmount,
             orderData.CreatedAt,
             orderData.OrderStatusId,
+            orderData.IsPaid,
             orderData.RowVersion,
             User = orderData.User != null ? new
             {
@@ -156,107 +165,12 @@ public class OrderService : IOrderService
                 orderData.User.LastName,
                 orderData.User.IsAdmin
             } : null,
-            orderData.OrderStatus,
-            orderData.ShippingMethod,
+            OrderStatus = orderData.OrderStatus,
+            ShippingMethod = orderData.ShippingMethod,
             OrderItems = enrichedOrderItems
         };
 
         return result;
-    }
-
-    public async Task<Domain.Order.Order> CreateOrderAsync(CreateOrderDto orderDto, string idempotencyKey)
-    {
-        var userAddress = await _userRepository.GetUserAddressAsync(orderDto.UserAddressId);
-        if (userAddress == null || userAddress.UserId != orderDto.UserId)
-            throw new ArgumentException("Invalid user address");
-
-        var variantIds = orderDto.OrderItems.Select(i => i.VariantId).ToList();
-        var variants = await _orderRepository.GetVariantsByIdsAsync(variantIds);
-
-        decimal totalAmount = 0;
-        decimal totalProfit = 0;
-        var orderItems = new List<Domain.Order.OrderItem>();
-
-        foreach (var itemDto in orderDto.OrderItems)
-        {
-            if (!variants.TryGetValue(itemDto.VariantId, out var variant))
-                throw new ArgumentException($"Product variant {itemDto.VariantId} not found");
-
-            await _inventoryService.LogTransactionAsync(variant.Id, "Sale", -itemDto.Quantity, null, orderDto.UserId, $"Order creation", null, variant.RowVersion);
-
-            var amount = itemDto.SellingPrice * itemDto.Quantity;
-            var profit = (itemDto.SellingPrice - variant.PurchasePrice) * itemDto.Quantity;
-
-            totalAmount += amount;
-            totalProfit += profit;
-
-            orderItems.Add(new Domain.Order.OrderItem
-            {
-                VariantId = variant.Id,
-                PurchasePrice = variant.PurchasePrice,
-                SellingPrice = itemDto.SellingPrice,
-                Quantity = itemDto.Quantity,
-                Amount = amount,
-                Profit = profit
-            });
-        }
-
-        var shippingMethod = await _orderRepository.GetShippingMethodAsync(orderDto.ShippingMethodId);
-        if (shippingMethod == null) throw new ArgumentException("Invalid shipping method");
-
-        decimal discountAmount = 0;
-        int? discountId = null;
-        if (!string.IsNullOrEmpty(orderDto.DiscountCode))
-        {
-            var (discount, error) = await _discountService.ValidateAndGetDiscountAsync(orderDto.DiscountCode, orderDto.UserId, totalAmount);
-            if (error != null) throw new ArgumentException(error);
-
-            if (discount != null)
-            {
-                discountAmount = (totalAmount * discount.Percentage) / 100;
-                if (discount.MaxDiscountAmount.HasValue && discountAmount > discount.MaxDiscountAmount.Value)
-                {
-                    discountAmount = discount.MaxDiscountAmount.Value;
-                }
-                discountId = discount.Id;
-                discount.UsedCount++;
-            }
-        }
-
-        var order = new Domain.Order.Order
-        {
-            UserId = orderDto.UserId,
-            AddressSnapshot = JsonSerializer.Serialize(userAddress),
-            UserAddressId = userAddress.Id,
-            CreatedAt = DateTime.UtcNow,
-            OrderStatusId = orderDto.OrderStatusId,
-            IdempotencyKey = idempotencyKey,
-            ShippingMethodId = shippingMethod.Id,
-            ShippingCost = shippingMethod.Cost,
-            DiscountAmount = discountAmount,
-            DiscountCodeId = discountId,
-            TotalAmount = totalAmount,
-            TotalProfit = totalProfit,
-            FinalAmount = totalAmount + shippingMethod.Cost - discountAmount,
-            OrderItems = orderItems
-        };
-
-        await _orderRepository.AddOrderAsync(order);
-
-        if (discountId.HasValue)
-        {
-            await _orderRepository.AddDiscountUsageAsync(new Domain.Discount.DiscountUsage
-            {
-                UserId = orderDto.UserId,
-                DiscountCodeId = discountId.Value,
-                OrderId = order.Id,
-                DiscountAmount = discountAmount,
-                UsedAt = DateTime.UtcNow
-            });
-        }
-
-        await _unitOfWork.SaveChangesAsync();
-        return order;
     }
 
     public async Task<(Domain.Order.Order Order, string? PaymentUrl, string? Error)> CheckoutFromCartAsync(CreateOrderFromCartDto orderDto, int userId, string idempotencyKey)
@@ -282,9 +196,31 @@ public class OrderService : IOrderService
             if (cart == null || !cart.CartItems.Any())
                 throw new InvalidOperationException("Cart is empty");
 
-            var userAddress = await _userRepository.GetUserAddressAsync(orderDto.UserAddressId);
-            if (userAddress == null || userAddress.UserId != userId)
-                throw new ArgumentException("Invalid user address");
+            UserAddress? userAddress;
+            var user = await _userRepository.GetUserByIdAsync(userId, true);
+            if (user == null) throw new ArgumentException("User not found");
+
+            if (orderDto.UserAddressId.HasValue)
+            {
+                userAddress = await _userRepository.GetUserAddressAsync(orderDto.UserAddressId.Value);
+                if (userAddress == null || userAddress.UserId != userId)
+                {
+                    throw new ArgumentException("Invalid user address");
+                }
+            }
+            else if (orderDto.NewAddress != null)
+            {
+                userAddress = _mapper.Map<UserAddress>(orderDto.NewAddress);
+                if (orderDto.SaveNewAddress)
+                {
+                    userAddress.UserId = userId;
+                    user.UserAddresses.Add(userAddress);
+                }
+            }
+            else
+            {
+                throw new ArgumentException("An address must be provided.");
+            }
 
             var shippingMethod = await _orderRepository.GetShippingMethodAsync(orderDto.ShippingMethodId);
             if (shippingMethod == null) throw new ArgumentException("Invalid shipping method");
@@ -296,7 +232,12 @@ public class OrderService : IOrderService
 
             foreach (var item in cart.CartItems)
             {
-                await _inventoryService.LogTransactionAsync(item.VariantId, "Sale", -item.Quantity, null, userId, $"Checkout for Order", null, item.Variant.RowVersion);
+                if (!item.Variant.IsUnlimited && item.Variant.Stock < item.Quantity)
+                {
+                    throw new InvalidOperationException($"کالای '{item.Variant.Product.Name}' به تعداد کافی در انبار موجود نیست.");
+                }
+
+                await _inventoryService.LogTransactionAsync(item.Variant.Id, "Sale", -item.Quantity, null, userId, $"Checkout for Order", null, item.Variant.RowVersion);
 
                 var sellingPrice = item.Variant.SellingPrice;
                 var amount = sellingPrice * item.Quantity;
@@ -338,7 +279,7 @@ public class OrderService : IOrderService
             {
                 UserId = userId,
                 AddressSnapshot = JsonSerializer.Serialize(userAddress),
-                UserAddressId = userAddress.Id,
+                UserAddressId = userAddress.Id > 0 ? userAddress.Id : null,
                 CreatedAt = DateTime.UtcNow,
                 OrderStatusId = pendingPaymentStatusId,
                 IdempotencyKey = idempotencyKey,
@@ -400,7 +341,6 @@ public class OrderService : IOrderService
             throw;
         }
     }
-
 
     public async Task<(bool IsVerified, string RedirectUrl)> VerifyAndProcessPaymentAsync(int orderId, string authority, string status)
     {
@@ -468,7 +408,7 @@ public class OrderService : IOrderService
         if (verificationResponse != null && (verificationResponse.Code == 100 || verificationResponse.Code == 101))
         {
             order.IsPaid = true;
-            order.OrderStatusId = 2; // Processing
+            order.OrderStatusId = 2;
 
             transaction.Status = "Success";
             transaction.RefId = verificationResponse.RefID;
@@ -498,97 +438,5 @@ public class OrderService : IOrderService
             await _unitOfWork.SaveChangesAsync();
             return false;
         }
-    }
-
-
-    public async Task<bool> UpdateOrderAsync(int orderId, UpdateOrderDto orderDto)
-    {
-        var order = await _orderRepository.GetOrderForUpdateAsync(orderId);
-        if (order == null) return false;
-
-        if (orderDto.RowVersion != null)
-            _orderRepository.SetOrderRowVersion(order, orderDto.RowVersion);
-        else
-            throw new ArgumentException("RowVersion is required for concurrency control.");
-
-        if (orderDto.OrderStatusId.HasValue)
-        {
-            if (!await _orderRepository.OrderStatusExistsAsync(orderDto.OrderStatusId.Value))
-                throw new ArgumentException("Invalid order status ID");
-            order.OrderStatusId = orderDto.OrderStatusId.Value;
-        }
-
-        if (orderDto.ShippingMethodId.HasValue)
-        {
-            var shippingMethod = await _orderRepository.GetShippingMethodAsync(orderDto.ShippingMethodId.Value);
-            if (shippingMethod == null) throw new ArgumentException("Invalid shipping method ID");
-            order.ShippingMethodId = shippingMethod.Id;
-            order.ShippingCost = shippingMethod.Cost;
-        }
-
-        if (orderDto.UserAddressId.HasValue)
-        {
-            var userAddress = await _userRepository.GetUserAddressAsync(orderDto.UserAddressId.Value);
-            if (userAddress == null || userAddress.UserId != order.UserId)
-                throw new ArgumentException("Invalid user address ID");
-            order.UserAddressId = userAddress.Id;
-            order.AddressSnapshot = JsonSerializer.Serialize(userAddress);
-        }
-
-        if (orderDto.DeliveryDate.HasValue)
-            order.DeliveryDate = orderDto.DeliveryDate;
-
-        order.FinalAmount = order.TotalAmount + order.ShippingCost - order.DiscountAmount;
-        await _unitOfWork.SaveChangesAsync();
-        return true;
-    }
-
-    public async Task<bool> DeleteOrderAsync(int orderId)
-    {
-        var order = await _orderRepository.GetOrderWithItemsAsync(orderId);
-        if (order == null) return false;
-
-        const int shippedStatusId = 3;
-        if (order.OrderStatusId >= shippedStatusId)
-            throw new InvalidOperationException("Cannot delete an order that has been shipped or delivered. Consider changing its status instead.");
-
-        foreach (var orderItem in order.OrderItems)
-        {
-            await _inventoryService.LogTransactionAsync(orderItem.VariantId, "Return", orderItem.Quantity, orderItem.Id, order.UserId, $"Order Deletion {order.Id}", null, orderItem.Variant.RowVersion);
-        }
-
-        _orderRepository.DeleteOrder(order);
-        await _unitOfWork.SaveChangesAsync();
-        return true;
-    }
-
-    public async Task<object> GetOrderStatisticsAsync(DateTime? fromDate, DateTime? toDate)
-    {
-        return await _orderRepository.GetOrderStatisticsAsync(fromDate, toDate);
-    }
-
-    public async Task<bool> UpdateOrderStatusAsync(int id, UpdateOrderStatusByIdDto statusDto)
-    {
-        var order = await _orderRepository.GetOrderForUpdateAsync(id);
-        if (order == null) return false;
-
-        if (!await _orderRepository.OrderStatusExistsAsync(statusDto.OrderStatusId))
-            throw new ArgumentException("Invalid Order Status ID");
-
-        order.OrderStatusId = statusDto.OrderStatusId;
-
-        var statusName = await _orderRepository.GetOrderStatusNameAsync(statusDto.OrderStatusId);
-        await _auditService.LogOrderEventAsync(id, "UpdateStatus", order.UserId, $"Order status changed to {statusName}");
-
-        await _notificationService.CreateNotificationAsync(
-            order.UserId,
-            "تغییر وضعیت سفارش",
-            $"وضعیت سفارش شما با شماره {order.Id} به '{statusName}' تغییر کرد.",
-            "OrderStatusChanged",
-            $"/profile/orders/{order.Id}"
-        );
-
-        await _unitOfWork.SaveChangesAsync();
-        return true;
     }
 }

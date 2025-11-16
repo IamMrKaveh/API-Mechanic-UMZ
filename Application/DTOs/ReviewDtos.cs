@@ -19,7 +19,7 @@ public class CreateReviewDto
 public class UpdateReviewStatusDto
 {
     [Required]
-    public required string Status { get; set; }
+    public string Status { get; set; }
 }
 
 public class ProductReviewDto

@@ -1,84 +1,72 @@
-﻿namespace Application.Common.Mapping;
+﻿namespace Infrastructure.Common.Mappings;
 
 public class AutoMapperProfile : Profile
 {
     public AutoMapperProfile()
     {
-        CreateMap<CategoryGroupCreateDto, Domain.Category.CategoryGroup>()
-             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name.Trim()));
+        CreateMap<Product, ProductDto>().ReverseMap();
+        CreateMap<CreateProductVariantDto, ProductVariant>();
+        CreateMap<Product, PublicProductViewDto>()
+            .ForMember(dest => dest.HasMultipleVariants, opt => opt.MapFrom(src => src.Variants.Count > 1))
+            .ForMember(dest => dest.TotalStock, opt => opt.MapFrom(src => src.Variants.Sum(v => v.IsUnlimited ? int.MaxValue : v.Stock)));
 
-        CreateMap<CategoryGroupUpdateDto, Domain.Category.CategoryGroup>()
-            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name.Trim()));
+        CreateMap<Product, AdminProductViewDto>()
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => Convert.ToBase64String(src.RowVersion)))
+            .IncludeBase<Product, PublicProductViewDto>();
 
-        CreateMap<Domain.Category.CategoryGroup, CategoryGroupViewDto>()
-            .ForMember(dest => dest.ProductCount, opt => opt.MapFrom(src => src.Products.Count))
-            .ForMember(dest => dest.IconUrl, opt => opt.Ignore());
+        CreateMap<AttributeType, AttributeTypeWithValuesDto>()
+            .ForMember(dest => dest.Values, opt => opt.MapFrom(src => src.AttributeValues));
 
-        CreateMap<CategoryCreateDto, Domain.Category.Category>()
-            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name.Trim()));
+        CreateMap<AttributeValue, AttributeValueDto>()
+            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.AttributeType.Name))
+            .ForMember(dest => dest.TypeDisplayName, opt => opt.MapFrom(src => src.AttributeType.DisplayName));
 
-        CreateMap<CategoryUpdateDto, Domain.Category.Category>()
-            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name.Trim()));
-
-        CreateMap<Domain.Category.Category, CategoryViewDto>()
-            .ForMember(dest => dest.IconUrl, opt => opt.Ignore())
-            .ForMember(dest => dest.CategoryGroups, opt => opt.Ignore());
-
-        CreateMap<Domain.Category.Category, CategoryDetailViewDto>()
-            .ForMember(dest => dest.IconUrl, opt => opt.Ignore())
-            .ForMember(dest => dest.CategoryGroups, opt => opt.Ignore());
-
-        CreateMap<Domain.Category.CategoryGroup, CategoryGroupSummaryDto>()
-            .ForMember(dest => dest.ProductCount, opt => opt.MapFrom(src => src.Products.Count))
-            .ForMember(dest => dest.InStockProducts, opt => opt.MapFrom(src => src.Products.Count(p => p.Variants.Any(v => v.IsUnlimited || v.Stock > 0))))
-            .ForMember(dest => dest.TotalValue, opt => opt.MapFrom(src => (long)src.Products.SelectMany(p => p.Variants).Sum(v => v.PurchasePrice * v.Stock)))
-            .ForMember(dest => dest.TotalSellingValue, opt => opt.MapFrom(src => (long)src.Products.SelectMany(p => p.Variants).Sum(v => v.SellingPrice * v.Stock)))
-            .ForMember(dest => dest.IconUrl, opt => opt.Ignore());
-
-        CreateMap<Domain.Product.Product, ProductSummaryDto>()
-            .ForMember(dest => dest.Count, opt => opt.MapFrom(src => src.TotalStock))
-            .ForMember(dest => dest.SellingPrice, opt => opt.MapFrom(src => src.MinPrice))
-            .ForMember(dest => dest.PurchasePrice, opt => opt.MapFrom(src => src.MaxPrice))
-            .ForMember(dest => dest.IsInStock, opt => opt.MapFrom(src => src.TotalStock > 0 || src.Variants.Any(v => v.IsUnlimited)))
-            .ForMember(dest => dest.Icon, opt => opt.Ignore());
-
-        CreateMap<ProductDto, Domain.Product.Product>()
-            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name.Trim()))
-            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description != null ? src.Description.Trim() : null));
-
-        CreateMap<CreateProductVariantDto, Domain.Product.ProductVariant>()
-            .ForMember(dest => dest.VariantAttributes, opt => opt.MapFrom(src => src.AttributeValueIds.Select(id => new Domain.Product.Attribute.ProductVariantAttribute { AttributeValueId = id })));
-
-        CreateMap<Domain.Product.Product, PublicProductViewDto>()
-            .ForMember(dest => dest.CategoryGroup, opt => opt.MapFrom(src => src.CategoryGroup != null ? new { src.CategoryGroup.Id, src.CategoryGroup.Name, CategoryName = src.CategoryGroup.Category.Name } : null))
-            .ForMember(dest => dest.Variants, opt => opt.MapFrom(src => src.Variants))
-            .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images));
-
-        CreateMap<Domain.Product.Product, AdminProductViewDto>()
-            .ForMember(dest => dest.CategoryGroup, opt => opt.MapFrom(src => src.CategoryGroup != null ? new { src.CategoryGroup.Id, src.CategoryGroup.Name, CategoryName = src.CategoryGroup.Category.Name } : null))
-            .ForMember(dest => dest.Variants, opt => opt.MapFrom(src => src.Variants))
-            .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images));
-
-        CreateMap<Domain.Product.ProductVariant, ProductVariantResponseDto>()
-            .ForMember(dest => dest.Attributes, opt => opt.MapFrom(src => src.VariantAttributes.ToDictionary(
+        CreateMap<ProductVariant, ProductVariantResponseDto>()
+            .ForMember(dest => dest.IsInStock, opt => opt.MapFrom(src => src.IsUnlimited || src.Stock > 0))
+            .ForMember(dest => dest.HasDiscount, opt => opt.MapFrom(src => src.OriginalPrice > src.SellingPrice))
+            .ForMember(dest => dest.DiscountPercentage, opt => opt.MapFrom(src => src.OriginalPrice > 0 ? ((src.OriginalPrice - src.SellingPrice) / src.OriginalPrice) * 100 : 0))
+            .ForMember(dest => dest.Attributes, opt => opt.MapFrom(src =>
+                src.VariantAttributes.ToDictionary(
                     va => va.AttributeValue.AttributeType.Name.ToLower(),
-                    va => new AttributeValueDto(va.AttributeValueId, va.AttributeValue.AttributeType.Name, va.AttributeValue.AttributeType.DisplayName, va.AttributeValue.Value, va.AttributeValue.DisplayValue, va.AttributeValue.HexCode)
-                )))
-            .ForMember(dest => dest.Images, opt => opt.Ignore());
+                    va => new AttributeValueDto(
+                        va.AttributeValue.Id,
+                        va.AttributeValue.AttributeType.Name,
+                        va.AttributeValue.AttributeType.DisplayName,
+                        va.AttributeValue.Value,
+                        va.AttributeValue.DisplayValue,
+                        va.AttributeValue.HexCode
+                    )
+                )
+            ));
 
-        CreateMap<Domain.Media.Media, MediaDto>()
+        CreateMap<Media, MediaDto>()
             .ForMember(dest => dest.Url, opt => opt.Ignore());
 
-        CreateMap<Domain.User.User, UserProfileDto>()
-            .ForMember(dest => dest.Addresses, opt => opt.MapFrom(src => src.UserAddresses));
+        CreateMap<Category, CategoryViewDto>()
+            .ForMember(dest => dest.IconUrl, opt => opt.Ignore());
 
-        CreateMap<Domain.User.UserAddress, UserAddressDto>();
+        CreateMap<CategoryCreateDto, Category>();
+        CreateMap<CategoryUpdateDto, Category>();
 
-        CreateMap<UpdateProfileDto, Domain.User.User>()
-            .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
-            .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName));
+        CreateMap<Category, CategoryDetailViewDto>()
+            .IncludeBase<Category, CategoryViewDto>();
 
-        CreateMap<Domain.Product.ProductReview, ProductReviewDto>()
-            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => $"{src.User.FirstName} {src.User.LastName}"));
+        CreateMap<CategoryGroup, CategoryGroupSummaryDto>()
+            .ForMember(dest => dest.IconUrl, opt => opt.Ignore());
+
+        CreateMap<CategoryGroupCreateDto, CategoryGroup>();
+        CreateMap<CategoryGroupUpdateDto, CategoryGroup>();
+        CreateMap<CategoryGroup, CategoryGroupViewDto>()
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest => dest.IconUrl, opt => opt.Ignore());
+
+        CreateMap<Product, ProductSummaryDto>();
+
+        CreateMap<User, UserProfileDto>();
+        CreateMap<UserAddress, UserAddressDto>();
+
+        CreateMap<UpdateProfileDto, User>();
+        CreateMap<CreateUserAddressDto, UserAddress>();
+        CreateMap<UpdateUserAddressDto, UserAddress>();
     }
 }

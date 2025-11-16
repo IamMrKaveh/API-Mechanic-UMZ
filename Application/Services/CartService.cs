@@ -52,7 +52,6 @@ public class CartService : ICartService
             productTags.Add($"cart:user:{userId.Value}");
         }
 
-
         await _cacheService.SetAsync(cacheKey, dto, TimeSpan.FromMinutes(5), productTags);
         return dto;
     }
@@ -174,7 +173,6 @@ public class CartService : ICartService
             return (CartOperationResult.ConcurrencyConflict, freshCartDto);
         }
     }
-
 
     public async Task<(CartOperationResult Result, CartDto? Cart)> UpdateCartItemAsync(int? userId, string? guestId, int itemId, UpdateCartItemDto dto)
     {

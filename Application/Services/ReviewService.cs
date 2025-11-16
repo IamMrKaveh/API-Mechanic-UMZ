@@ -41,17 +41,6 @@ public class ReviewService : IReviewService
         return ServiceResult<ProductReviewDto>.Ok(resultDto);
     }
 
-    public async Task<ServiceResult> DeleteReviewAsync(int reviewId)
-    {
-        var review = await _repository.GetReviewByIdAsync(reviewId);
-        if (review == null) return ServiceResult.Fail("Review not found");
-
-        _repository.DeleteReview(review);
-        await _unitOfWork.SaveChangesAsync();
-        _logger.LogInformation("Review with ID {ReviewId} deleted", reviewId);
-        return ServiceResult.Ok();
-    }
-
     public async Task<ServiceResult<PagedResultDto<ProductReviewDto>>> GetProductReviewsAsync(int productId, int page, int pageSize)
     {
         var (reviews, totalCount) = await _repository.GetProductReviewsAsync(productId, page, pageSize);
@@ -67,36 +56,10 @@ public class ReviewService : IReviewService
         return ServiceResult<PagedResultDto<ProductReviewDto>>.Ok(pagedResult);
     }
 
-    public async Task<ServiceResult<PagedResultDto<ProductReviewDto>>> GetReviewsByStatusAsync(string status, int page, int pageSize)
-    {
-        var (reviews, totalCount) = await _repository.GetReviewsByStatusAsync(status, page, pageSize);
-        var dtos = _mapper.Map<List<ProductReviewDto>>(reviews);
-        var pagedResult = new PagedResultDto<ProductReviewDto>
-        {
-            Items = dtos,
-            TotalItems = totalCount,
-            Page = page,
-            PageSize = pageSize
-        };
-        return ServiceResult<PagedResultDto<ProductReviewDto>>.Ok(pagedResult);
-    }
-
     public async Task<ServiceResult<IEnumerable<ProductReviewDto>>> GetUserReviewsAsync(int userId)
     {
         var reviews = await _repository.GetUserReviewsAsync(userId);
         var dtos = _mapper.Map<IEnumerable<ProductReviewDto>>(reviews);
         return ServiceResult<IEnumerable<ProductReviewDto>>.Ok(dtos);
-    }
-
-    public async Task<ServiceResult> UpdateReviewStatusAsync(int reviewId, string status)
-    {
-        var review = await _repository.GetReviewByIdAsync(reviewId);
-        if (review == null) return ServiceResult.Fail("Review not found");
-
-        review.Status = status;
-        review.UpdatedAt = DateTime.UtcNow;
-
-        await _unitOfWork.SaveChangesAsync();
-        return ServiceResult.Ok();
     }
 }

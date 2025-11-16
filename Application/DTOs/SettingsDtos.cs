@@ -2,11 +2,11 @@
 
 public class ZarinpalSettingsDto
 {
-    public required bool IsSandbox { get; init; }
-    public required string MerchantId { get; init; }
+    public bool IsSandbox { get; init; }
+    public string MerchantId { get; init; }
 }
 
 public class FrontendUrlsDto
 {
-    public required string BaseUrl { get; init; }
+    public string BaseUrl { get; init; }
 }

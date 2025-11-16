@@ -46,7 +46,6 @@ public class LedkaContext : DbContext
 
     public DbSet<RateLimit> RateLimits { get; set; } = null!;
 
-
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
