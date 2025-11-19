@@ -37,13 +37,16 @@ public class RateLimitMiddleware
             maxAttempts = 200;
         }
 
-        if (await rateLimitService.IsLimitedAsync(key, maxAttempts, windowMinutes))
+        var (isLimited, retryAfter) = await rateLimitService.IsLimitedAsync(key, maxAttempts, windowMinutes);
+        if (isLimited)
         {
             _logger.LogWarning("Global rate limit exceeded for {Key}", key);
+            context.Response.Headers.Append("Retry-After", retryAfter.ToString());
             context.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
             await context.Response.WriteAsync("Rate limit exceeded. Try again later.");
             return;
         }
+
 
         await _next(context);
     }

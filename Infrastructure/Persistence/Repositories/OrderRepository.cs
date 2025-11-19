@@ -113,6 +113,10 @@ public class OrderRepository : IOrderRepository
     {
         await _context.Set<Domain.Order.Order>().AddAsync(order);
     }
+    public void UpdateOrder(Domain.Order.Order order)
+    {
+        _context.Set<Domain.Order.Order>().Update(order);
+    }
 
     public async Task AddDiscountUsageAsync(Domain.Discount.DiscountUsage discountUsage)
     {
@@ -131,8 +135,9 @@ public class OrderRepository : IOrderRepository
 
     public void DeleteOrder(Domain.Order.Order order)
     {
-        _context.Set<Domain.Order.OrderItem>().RemoveRange(order.OrderItems);
-        _context.Set<Domain.Order.Order>().Remove(order);
+        order.IsDeleted = true;
+        order.DeletedAt = DateTime.UtcNow;
+        _context.Set<Domain.Order.Order>().Update(order);
     }
 
     public Task<bool> OrderStatusExistsAsync(int statusId)

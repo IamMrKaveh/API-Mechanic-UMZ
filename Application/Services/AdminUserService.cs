@@ -19,12 +19,21 @@ public class AdminUserService : IAdminUserService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ServiceResult<IEnumerable<UserProfileDto>>> GetUsersAsync(bool includeDeleted)
+    public async Task<ServiceResult<PagedResultDto<UserProfileDto>>> GetUsersAsync(bool includeDeleted, int page, int pageSize)
     {
-        var users = await _repository.GetUsersAsync(includeDeleted);
+        var (users, total) = await _repository.GetUsersAsync(includeDeleted, page, pageSize);
         var dtos = _mapper.Map<IEnumerable<UserProfileDto>>(users);
-        return ServiceResult<IEnumerable<UserProfileDto>>.Ok(dtos);
+
+        var result = new PagedResultDto<UserProfileDto>
+        {
+            Items = dtos,
+            TotalItems = total,
+            Page = page,
+            PageSize = pageSize
+        };
+        return ServiceResult<PagedResultDto<UserProfileDto>>.Ok(result);
     }
+
 
     public async Task<ServiceResult<UserProfileDto?>> GetUserByIdAsync(int id)
     {
@@ -105,6 +114,7 @@ public class AdminUserService : IAdminUserService
 
         await _repository.RevokeAllUserSessionsAsync(id);
 
+        _repository.UpdateUser(user);
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Ok();
     }
@@ -117,6 +127,8 @@ public class AdminUserService : IAdminUserService
         user.IsDeleted = false;
         user.DeletedAt = null;
         user.IsActive = true;
+
+        _repository.UpdateUser(user);
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Ok();
     }

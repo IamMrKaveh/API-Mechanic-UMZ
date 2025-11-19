@@ -1,6 +1,6 @@
 ﻿namespace Domain.Media;
 
-public class Media : IAuditable
+public class Media : IAuditable, ISoftDeletable, IActivatable
 {
     public int Id { get; set; }
 
@@ -25,4 +25,9 @@ public class Media : IAuditable
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; set; }
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public int? DeletedBy { get; set; }
+    public bool IsActive { get; set; } = true;
 }

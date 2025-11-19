@@ -68,14 +68,18 @@ public class LedkaContext : DbContext
         {
             if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
             {
-                var parameter = Expression.Parameter(entityType.ClrType, "e");
-                var property = Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
-                var notIsDeleted = Expression.Not(property);
-                var lambda = Expression.Lambda(notIsDeleted, parameter);
+                var method = typeof(LedkaContext).GetMethod(nameof(ApplySoftDeleteFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+                    !.MakeGenericMethod(entityType.ClrType);
 
-                builder.Entity(entityType.ClrType).HasQueryFilter(lambda);
+                method.Invoke(null, [builder]);
             }
         }
+    }
+
+    private static void ApplySoftDeleteFilter<TEntity>(ModelBuilder builder)
+    where TEntity : class, ISoftDeletable
+    {
+        builder.Entity<TEntity>().HasQueryFilter(e => !e.IsDeleted);
     }
 
     private void ConfigureUser(ModelBuilder builder)
@@ -88,6 +92,7 @@ public class LedkaContext : DbContext
             entity.Property(e => e.FirstName).HasMaxLength(50);
             entity.Property(e => e.LastName).HasMaxLength(50);
             entity.Property(e => e.RowVersion).IsRowVersion();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
 
         builder.Entity<UserAddress>(entity =>
@@ -104,6 +109,7 @@ public class LedkaContext : DbContext
             entity.Property(e => e.Longitude).HasColumnType("decimal(9,6)");
             entity.Property(e => e.RowVersion).IsRowVersion();
             entity.HasOne(d => d.User).WithMany(p => p.UserAddresses).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
 
         builder.Entity<UserOtp>(entity =>
@@ -111,6 +117,7 @@ public class LedkaContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.OtpHash).IsRequired();
             entity.HasOne(d => d.User).WithMany(p => p.UserOtps).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 
@@ -127,6 +134,7 @@ public class LedkaContext : DbContext
             entity.Property(e => e.RowVersion).IsRowVersion();
             entity.HasOne(d => d.CategoryGroup).WithMany(p => p.Products).HasForeignKey(d => d.CategoryGroupId);
             entity.Ignore(p => p.HasMultipleVariants);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
 
         builder.Entity<ProductVariant>(entity =>
@@ -142,6 +150,7 @@ public class LedkaContext : DbContext
             entity.Ignore(e => e.IsInStock);
             entity.Ignore(e => e.HasDiscount);
             entity.Ignore(e => e.DiscountPercentage);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
 
         builder.Entity<AttributeType>(entity =>
@@ -149,6 +158,7 @@ public class LedkaContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
             entity.Property(e => e.DisplayName).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
 
         builder.Entity<AttributeValue>(entity =>
@@ -158,6 +168,7 @@ public class LedkaContext : DbContext
             entity.Property(e => e.DisplayValue).IsRequired().HasMaxLength(100);
             entity.Property(e => e.HexCode).HasMaxLength(7);
             entity.HasOne(d => d.AttributeType).WithMany(p => p.AttributeValues).HasForeignKey(d => d.AttributeTypeId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
 
         builder.Entity<ProductVariantAttribute>(entity =>
@@ -178,6 +189,7 @@ public class LedkaContext : DbContext
             entity.HasOne(d => d.Product).WithMany(p => p.Reviews).HasForeignKey(d => d.ProductId);
             entity.HasOne(d => d.User).WithMany(p => p.Reviews).HasForeignKey(d => d.UserId);
             entity.HasOne(d => d.Order).WithMany().HasForeignKey(d => d.OrderId).IsRequired(false);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 
@@ -200,6 +212,7 @@ public class LedkaContext : DbContext
             entity.HasOne(d => d.OrderStatus).WithMany(p => p.Orders).HasForeignKey(d => d.OrderStatusId);
             entity.HasOne(d => d.ShippingMethod).WithMany(p => p.Orders).HasForeignKey(d => d.ShippingMethodId);
             entity.HasOne(d => d.DiscountCode).WithMany(p => p.Orders).HasForeignKey(d => d.DiscountCodeId).IsRequired(false);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
 
         builder.Entity<OrderItem>(entity =>
@@ -238,6 +251,7 @@ public class LedkaContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.RowVersion).IsRowVersion();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
 
         builder.Entity<CategoryGroup>(entity =>
@@ -246,6 +260,7 @@ public class LedkaContext : DbContext
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.RowVersion).IsRowVersion();
             entity.HasOne(d => d.Category).WithMany(p => p.CategoryGroups).HasForeignKey(d => d.CategoryId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 
@@ -258,6 +273,7 @@ public class LedkaContext : DbContext
             entity.HasIndex(e => e.UserId).IsUnique().HasFilter("\"UserId\" IS NOT NULL");
             entity.HasIndex(e => e.GuestToken).IsUnique().HasFilter("\"GuestToken\" IS NOT NULL");
             entity.HasOne(d => d.User).WithMany(p => p.UserCarts).HasForeignKey(d => d.UserId).IsRequired(false).OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
 
         builder.Entity<CartItem>(entity =>
@@ -281,6 +297,7 @@ public class LedkaContext : DbContext
             entity.Property(e => e.MaxDiscountAmount).HasColumnType("decimal(18,2)");
             entity.Property(e => e.MinOrderAmount).HasColumnType("decimal(18,2)");
             entity.Property(e => e.RowVersion).IsRowVersion();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
 
         builder.Entity<DiscountRestriction>(entity =>
@@ -297,6 +314,7 @@ public class LedkaContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.DiscountUsages).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(d => d.DiscountCode).WithMany(p => p.Usages).HasForeignKey(d => d.DiscountCodeId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(d => d.Order).WithMany(p => p.DiscountUsages).HasForeignKey(d => d.OrderId).OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.UsedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 
@@ -311,6 +329,7 @@ public class LedkaContext : DbContext
             entity.Property(e => e.EntityType).IsRequired().HasMaxLength(50);
             entity.Property(e => e.AltText).HasMaxLength(255);
             entity.HasIndex(e => new { e.EntityType, e.EntityId });
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 
@@ -325,6 +344,7 @@ public class LedkaContext : DbContext
             entity.HasOne(d => d.Variant).WithMany(p => p.InventoryTransactions).HasForeignKey(d => d.VariantId);
             entity.HasOne(d => d.OrderItem).WithMany(p => p.InventoryTransactions).HasForeignKey(d => d.OrderItemId).IsRequired(false);
             entity.HasOne(d => d.User).WithMany(p => p.InventoryTransactions).HasForeignKey(d => d.UserId).IsRequired(false);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 
@@ -339,6 +359,7 @@ public class LedkaContext : DbContext
             entity.Property(e => e.ActionUrl).HasMaxLength(255);
             entity.Property(e => e.RelatedEntityType).HasMaxLength(50);
             entity.HasOne(d => d.User).WithMany(p => p.Notifications).HasForeignKey(d => d.UserId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 
@@ -355,6 +376,7 @@ public class LedkaContext : DbContext
             entity.HasIndex(e => e.Timestamp);
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.EventType);
+            entity.Property(e => e.Timestamp).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 
@@ -374,6 +396,7 @@ public class LedkaContext : DbContext
             entity.Property(e => e.ErrorMessage).HasMaxLength(256);
             entity.HasIndex(e => e.Authority).IsUnique();
             entity.HasOne(d => d.Order).WithMany(p => p.PaymentTransactions).HasForeignKey(d => d.OrderId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 
@@ -390,6 +413,7 @@ public class LedkaContext : DbContext
             entity.Property(e => e.SessionType).HasMaxLength(50);
             entity.HasIndex(e => e.TokenSelector).IsUnique();
             entity.HasOne(d => d.User).WithMany(p => p.UserSessions).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 
@@ -399,7 +423,7 @@ public class LedkaContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Key).IsRequired().HasMaxLength(256);
-            entity.HasIndex(e => e.Key).IsUnique();
+            entity.Property(e => e.LastAttempt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 }

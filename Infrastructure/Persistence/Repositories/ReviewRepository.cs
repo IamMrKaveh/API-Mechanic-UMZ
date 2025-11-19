@@ -19,6 +19,10 @@ public class ReviewRepository : IReviewRepository
     {
         await _context.Set<Domain.Product.ProductReview>().AddAsync(review);
     }
+    public void UpdateReview(Domain.Product.ProductReview review)
+    {
+        _context.Set<Domain.Product.ProductReview>().Update(review);
+    }
 
     public Task<Domain.Product.ProductReview?> GetReviewByIdAsync(int reviewId)
     {
@@ -27,7 +31,9 @@ public class ReviewRepository : IReviewRepository
 
     public void DeleteReview(Domain.Product.ProductReview review)
     {
-        _context.Set<Domain.Product.ProductReview>().Remove(review);
+        review.IsDeleted = true;
+        review.DeletedAt = DateTime.UtcNow;
+        _context.Set<Domain.Product.ProductReview>().Update(review);
     }
 
     public async Task<(List<Domain.Product.ProductReview> Reviews, int TotalCount)> GetProductReviewsAsync(int productId, int page, int pageSize)

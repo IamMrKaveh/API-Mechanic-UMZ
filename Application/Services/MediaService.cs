@@ -4,157 +4,126 @@ public class MediaService : IMediaService
 {
     private readonly IMediaRepository _mediaRepository;
     private readonly IStorageService _storageService;
-    private readonly ILogger<MediaService> _logger;
-    private readonly ICacheService _cacheService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<MediaService> _logger;
+    private readonly IMapper _mapper;
 
     public MediaService(
         IMediaRepository mediaRepository,
         IStorageService storageService,
+        IUnitOfWork unitOfWork,
         ILogger<MediaService> logger,
-        ICacheService cacheService,
-        IUnitOfWork unitOfWork)
+        IMapper mapper)
     {
         _mediaRepository = mediaRepository;
         _storageService = storageService;
-        _logger = logger;
-        _cacheService = cacheService;
         _unitOfWork = unitOfWork;
+        _logger = logger;
+        _mapper = mapper;
     }
 
-    public async Task<Domain.Media.Media> AttachFileToEntityAsync(Stream stream, string fileName, string contentType, long contentLength, string entityType, int entityId, bool isPrimary, string? altText = null)
+    public async Task<string?> GetPrimaryImageUrlAsync(string entityType, int entityId)
     {
-        if (stream == null || contentLength == 0)
+        var primaryMedia = await _mediaRepository.GetPrimaryMediaByEntityAsync(entityType, entityId);
+        if (primaryMedia != null)
         {
-            throw new ArgumentException("File stream is invalid.", nameof(stream));
+            return _storageService.GetUrl(primaryMedia.FilePath);
         }
 
-        var relativePath = await _storageService.UploadFileAsync(stream, fileName, contentType, $"images/{entityType.ToLower()}", entityId);
-
-        var media = new Domain.Media.Media
+        var anyMedia = (await _mediaRepository.GetByEntityAsync(entityType, entityId)).FirstOrDefault();
+        if (anyMedia != null)
         {
-            FilePath = relativePath,
-            FileName = fileName,
+            return _storageService.GetUrl(anyMedia.FilePath);
+        }
+
+        return string.Empty;
+    }
+
+    public async Task<IEnumerable<MediaDto>> GetEntityMediaAsync(string entityType, int entityId)
+    {
+        var mediaItems = await _mediaRepository.GetByEntityAsync(entityType, entityId);
+        var dtos = _mapper.Map<IEnumerable<MediaDto>>(mediaItems).ToList();
+        foreach (var dto in dtos)
+        {
+            var media = mediaItems.FirstOrDefault(m => m.Id == dto.Id);
+            if (media != null)
+            {
+                dto.Url = _storageService.GetUrl(media.FilePath);
+            }
+        }
+        return dtos.OrderBy(m => m.SortOrder);
+    }
+
+    public async Task<Media> AttachFileToEntityAsync(Stream stream, string fileName, string contentType, long contentLength, string entityType, int entityId, bool isPrimary, string? altText = null)
+    {
+        var (filePath, uniqueFileName) = await _storageService.SaveFileAsync(stream, fileName, entityType, entityId.ToString());
+        var media = new Media
+        {
+            FileName = uniqueFileName,
+            FilePath = filePath,
             FileType = contentType,
             FileSize = contentLength,
             EntityType = entityType,
             EntityId = entityId,
             IsPrimary = isPrimary,
-            AltText = altText,
-            CreatedAt = DateTime.UtcNow
+            AltText = altText
         };
-
-        if (isPrimary)
-        {
-            await _mediaRepository.UnsetPrimaryMediaAsync(entityType, entityId);
-        }
-
-        await _mediaRepository.AddMediaAsync(media);
-        _logger.LogInformation("Prepared to attach new media to {EntityType} {EntityId}", entityType, entityId);
-
-        if (entityType.Equals("Product", StringComparison.OrdinalIgnoreCase) || entityType.Equals("ProductVariant", StringComparison.OrdinalIgnoreCase))
-        {
-            await InvalidateCartsContainingProduct(entityId);
-        }
-
+        await _mediaRepository.AddAsync(media);
+        await _unitOfWork.SaveChangesAsync();
         return media;
     }
 
-    public async Task<List<Domain.Media.Media>> UploadFilesAsync(IEnumerable<(Stream stream, string fileName, string contentType, long contentLength)> files, string entityType, int entityId, bool isPrimary, string? altText)
+    public async Task<IEnumerable<Media>> UploadFilesAsync(IEnumerable<(Stream stream, string fileName, string contentType, long length)> fileStreams, string entityType, int entityId, bool isPrimary = false, string? altText = null)
     {
-        var uploadedMedia = new List<Domain.Media.Media>();
-        var firstFile = true;
-
-        foreach (var (stream, fileName, contentType, contentLength) in files)
+        var uploadedMedia = new List<Media>();
+        foreach (var (stream, fileName, contentType, length) in fileStreams)
         {
-            var media = await AttachFileToEntityAsync(stream, fileName, contentType, contentLength, entityType, entityId, isPrimary && firstFile, altText);
+            var media = await AttachFileToEntityAsync(stream, fileName, contentType, length, entityType, entityId, isPrimary, altText);
             uploadedMedia.Add(media);
-            if (isPrimary) firstFile = false;
         }
-
         return uploadedMedia;
     }
 
-    public async Task<IEnumerable<object>> GetMediaForEntityAsync(string entityType, int entityId)
+
+    public async Task<bool> DeleteMediaAsync(int mediaId)
     {
-        var mediaItems = await _mediaRepository.GetMediaForEntityAsync(entityType, entityId);
+        var media = await _mediaRepository.GetByIdAsync(mediaId);
+        if (media == null) return false;
 
-        return mediaItems.Select(m => new
-        {
-            m.Id,
-            m.AltText,
-            m.IsPrimary,
-            m.SortOrder,
-            Url = _storageService.GetFileUrl(m.FilePath)
-        });
-    }
-
-    public async Task<IEnumerable<Domain.Media.Media>> GetEntityMediaAsync(string entityType, int entityId)
-    {
-        return await _mediaRepository.GetMediaForEntityAsync(entityType, entityId);
-    }
-
-    public async Task<string?> GetPrimaryImageUrlAsync(string entityType, int entityId)
-    {
-        var filePath = await _mediaRepository.GetPrimaryMediaFilePathAsync(entityType, entityId);
-
-        return filePath != null ? _storageService.GetFileUrl(filePath) : null;
+        await _storageService.DeleteFileAsync(media.FilePath);
+        _mediaRepository.Remove(media);
+        await _unitOfWork.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> SetPrimaryMediaAsync(int mediaId, int entityId, string entityType)
     {
-        var mediaToSetAsPrimary = await _mediaRepository.GetMediaByIdAsync(mediaId);
-        if (mediaToSetAsPrimary == null || mediaToSetAsPrimary.EntityId != entityId || mediaToSetAsPrimary.EntityType != entityType)
+        var allMedia = await _mediaRepository.GetByEntityAsync(entityType, entityId);
+        bool found = false;
+        foreach (var m in allMedia)
         {
-            return false;
+            if (m.Id == mediaId)
+            {
+                m.IsPrimary = true;
+                found = true;
+            }
+            else
+            {
+                m.IsPrimary = false;
+            }
         }
 
-        await _mediaRepository.UnsetPrimaryMediaAsync(entityType, entityId, mediaId);
+        if (!found) return false;
 
-        mediaToSetAsPrimary.IsPrimary = true;
         await _unitOfWork.SaveChangesAsync();
-
-        if (entityType.Equals("Product", StringComparison.OrdinalIgnoreCase) || entityType.Equals("ProductVariant", StringComparison.OrdinalIgnoreCase))
-        {
-            await InvalidateCartsContainingProduct(entityId);
-        }
         return true;
     }
 
-    public async Task<bool> DeleteMediaAsync(int mediaId)
+    public string GetUrl(string? filePath)
     {
-        var media = await _mediaRepository.GetMediaByIdAsync(mediaId);
-        if (media == null)
-        {
-            _logger.LogWarning("Attempted to delete non-existent media with ID {MediaId}", mediaId);
-            return false;
-        }
+        if (string.IsNullOrEmpty(filePath))
+            return string.Empty;
 
-        try
-        {
-            await _storageService.DeleteFileAsync(media.FilePath);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to delete file from storage for media {MediaId} at path {Path}", mediaId, media.FilePath);
-        }
-
-        _mediaRepository.DeleteMedia(media);
-        await _unitOfWork.SaveChangesAsync();
-        _logger.LogInformation("Deleted media with ID {MediaId}", mediaId);
-
-        if (media.EntityType.Equals("Product", StringComparison.OrdinalIgnoreCase) || media.EntityType.Equals("ProductVariant", StringComparison.OrdinalIgnoreCase))
-        {
-            await InvalidateCartsContainingProduct(media.EntityId);
-        }
-
-        return true;
-    }
-
-    private async Task InvalidateCartsContainingProduct(int entityId)
-    {
-        _logger.LogInformation("Product image changed for {EntityId}. Invalidating relevant carts.", entityId);
-        await _cacheService.ClearByTagAsync($"product:{entityId}");
-        await _cacheService.ClearByTagAsync($"variant:{entityId}");
+        return _storageService.GetUrl(filePath);
     }
 }

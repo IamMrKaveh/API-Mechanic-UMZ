@@ -1,6 +1,6 @@
 ﻿namespace Domain.Discount;
 
-public class DiscountCode : IAuditable
+public class DiscountCode : IAuditable, ISoftDeletable, IActivatable
 {
     public int Id { get; set; }
 
@@ -29,4 +29,8 @@ public class DiscountCode : IAuditable
     public ICollection<DiscountRestriction> Restrictions { get; set; } = [];
     public ICollection<DiscountUsage> Usages { get; set; } = [];
     public ICollection<Order.Order> Orders { get; set; } = [];
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public int? DeletedBy { get; set; }
 }

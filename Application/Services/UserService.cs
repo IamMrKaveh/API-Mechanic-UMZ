@@ -122,7 +122,8 @@ public class UserService : IUserService
         if (user == null)
         {
             var newUserRateLimitKey = $"new_user_creation_{clientIp}";
-            if (await _rateLimitService.IsLimitedAsync(newUserRateLimitKey, 1, 5))
+            (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(newUserRateLimitKey, 1, 5);
+            if (isLimited)
             {
                 _logger.LogWarning("Rate limit exceeded for new user creation from IP: {ClientIP}", clientIp);
                 return ServiceResult<(string?, string?)>.Fail("Too many attempts to create new users. Please try again later.");
@@ -131,7 +132,8 @@ public class UserService : IUserService
         else
         {
             var loginRateLimitKey = $"login_{request.PhoneNumber}_{clientIp}";
-            if (await _rateLimitService.IsLimitedAsync(loginRateLimitKey, 5, 15))
+            (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(loginRateLimitKey, 5, 15);
+            if (isLimited)
             {
                 _logger.LogWarning("Rate limit exceeded for login attempt from IP: {ClientIP}, Phone: {PhoneNumber}", clientIp, request.PhoneNumber);
                 return ServiceResult<(string?, string?)>.Fail("Too many login attempts. Please try again later.");
@@ -185,14 +187,17 @@ public class UserService : IUserService
     public async Task<ServiceResult<(AuthResponseDto? Response, string? Error)>> VerifyOtpAsync(VerifyOtpRequestDto request, string clientIp, string userAgent)
     {
         var user = await _repository.GetUserByPhoneNumberAsync(request.PhoneNumber);
-        if (user == null) return ServiceResult<(AuthResponseDto?, string?)>.Fail("Invalid credentials.");
+        if (user == null)
+            return ServiceResult<(AuthResponseDto?, string?)>.Fail("Invalid credentials.");
 
         var rateLimitKey = $"otp_{clientIp}_{user.Id}";
-        if (await _rateLimitService.IsLimitedAsync(rateLimitKey, 3, 5))
+        (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(rateLimitKey, 3, 5);
+        if (isLimited)
             return ServiceResult<(AuthResponseDto?, string?)>.Fail("Too many verification attempts. Please request a new OTP.");
 
         var storedOtp = await _repository.GetActiveOtpAsync(user.Id);
-        if (storedOtp == null) return ServiceResult<(AuthResponseDto?, string?)>.Fail("Invalid or expired OTP code.");
+        if (storedOtp == null)
+            return ServiceResult<(AuthResponseDto?, string?)>.Fail("Invalid or expired OTP code.");
 
         if (storedOtp.AttemptCount >= 3)
         {
@@ -211,8 +216,15 @@ public class UserService : IUserService
         storedOtp.IsUsed = true;
         await _repository.RevokeAllUserSessionsAsync(user.Id);
 
-        var token = _tokenService.GenerateJwtToken(user);
+        var guestId = _currentUserService.GuestId;
+        if (!string.IsNullOrEmpty(guestId))
+        {
+            await _cartService.MergeCartAsync(user.Id, guestId);
+        }
 
+        await _unitOfWork.SaveChangesAsync();
+
+        var token = _tokenService.GenerateJwtToken(user);
         var selector = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
         var verifier = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
         var refreshTokenValue = $"{selector}:{verifier}";
@@ -230,12 +242,6 @@ public class UserService : IUserService
             UserAgent = safeUserAgent
         };
         await _repository.AddSessionAsync(session);
-
-        var guestId = _currentUserService.GuestId;
-        if (!string.IsNullOrEmpty(guestId))
-        {
-            await _cartService.MergeCartAsync(user.Id, guestId);
-        }
 
         await _unitOfWork.SaveChangesAsync();
         await _auditService.LogSecurityEventAsync("LoginSuccess", $"User {user.Id} logged in.", clientIp, user.Id, userAgent);

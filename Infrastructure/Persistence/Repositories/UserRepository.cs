@@ -39,7 +39,9 @@ public class UserRepository : IUserRepository
 
     public void DeleteUserAddress(UserAddress address)
     {
-        _context.UserAddresses.Remove(address);
+        address.IsDeleted = true;
+        address.DeletedAt = DateTime.UtcNow;
+        _context.UserAddresses.Update(address);
     }
 
 
@@ -135,7 +137,7 @@ public class UserRepository : IUserRepository
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.RevokedAt, DateTime.UtcNow));
     }
 
-    public async Task<IEnumerable<Domain.User.User>> GetUsersAsync(bool includeDeleted)
+    public async Task<(IEnumerable<User> Users, int TotalCount)> GetUsersAsync(bool includeDeleted, int page, int pageSize)
     {
         var query = _context.Set<Domain.User.User>().AsQueryable();
 
@@ -144,6 +146,14 @@ public class UserRepository : IUserRepository
             query = query.IgnoreQueryFilters();
         }
 
-        return await query.ToListAsync();
+        var totalCount = await query.CountAsync();
+
+        var users = await query
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (users, totalCount);
     }
 }

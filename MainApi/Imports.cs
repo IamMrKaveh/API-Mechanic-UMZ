@@ -1,5 +1,6 @@
 ﻿global using Application.Common.Interfaces;
 global using Application.Common.Interfaces.Persistence;
+global using Application.Common.Mappings;
 global using Application.Common.Models;
 global using Application.Context;
 global using Application.DTOs;
@@ -9,7 +10,6 @@ global using Infrastructure.Analytics;
 global using Infrastructure.Audit;
 global using Infrastructure.Cache;
 global using Infrastructure.Cache.Redis;
-global using Infrastructure.Common.Mappings;
 global using Infrastructure.Communication;
 global using Infrastructure.DataProtection;
 global using Infrastructure.Location;

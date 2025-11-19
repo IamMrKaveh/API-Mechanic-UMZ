@@ -6,6 +6,8 @@ public interface IReviewRepository
 
     Task AddReviewAsync(Domain.Product.ProductReview review);
 
+    void UpdateReview(Domain.Product.ProductReview review);
+
     Task<Domain.Product.ProductReview?> GetReviewByIdAsync(int reviewId);
 
     void DeleteReview(Domain.Product.ProductReview review);

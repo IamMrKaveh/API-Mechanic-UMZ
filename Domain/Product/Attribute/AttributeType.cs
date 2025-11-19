@@ -1,6 +1,6 @@
 ﻿namespace Domain.Product.Attribute;
 
-public class AttributeType : IAuditable
+public class AttributeType : IAuditable, ISoftDeletable, IActivatable
 {
     public int Id { get; set; }
 
@@ -17,4 +17,8 @@ public class AttributeType : IAuditable
     public DateTime? UpdatedAt { get; set; }
 
     public ICollection<AttributeValue> AttributeValues { get; set; } = [];
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public int? DeletedBy { get; set; }
 }

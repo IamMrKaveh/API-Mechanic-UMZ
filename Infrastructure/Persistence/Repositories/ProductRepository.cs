@@ -3,182 +3,168 @@
 public class ProductRepository : IProductRepository
 {
     private readonly LedkaContext _context;
+    private readonly IMapper _mapper;
 
-    public ProductRepository(LedkaContext context)
+    public ProductRepository(LedkaContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
-    public async Task<(List<Product> products, int totalCount)> GetPagedAsync(ProductSearchDto searchDto)
+    public async Task<(List<Product> Products, int TotalItems)> GetPagedAsync(ProductSearchDto searchParams)
     {
         var query = _context.Products
-            .AsNoTracking()
-            .Include(p => p.Variants.Where(v => v.IsActive))
+            .Include(p => p.Variants)
+                .ThenInclude(v => v.VariantAttributes)
+                .ThenInclude(va => va.AttributeValue)
+                .ThenInclude(av => av.AttributeType)
             .Include(p => p.CategoryGroup)
-            .ThenInclude(cg => cg.Category)
+                .ThenInclude(cg => cg.Category)
             .AsQueryable();
 
-        if (searchDto.IncludeInactive == true)
-        {
-            query = _context.Products
-               .AsNoTracking()
-               .Include(p => p.Variants)
-               .Include(p => p.CategoryGroup)
-               .ThenInclude(cg => cg.Category)
-               .AsQueryable();
-        }
-
-        else
-        {
-            query = query.Where(p => p.IsActive);
-        }
-
-        if (!searchDto.IncludeDeleted == true)
+        if (!searchParams.IncludeDeleted == true)
         {
             query = query.Where(p => !p.IsDeleted);
         }
 
-        if (searchDto.CategoryGroupId.HasValue)
+        if (!searchParams.IncludeInactive == true)
         {
-            query = query.Where(p => p.CategoryGroupId == searchDto.CategoryGroupId.Value);
+            query = query.Where(p => p.IsActive);
         }
 
-        if (!string.IsNullOrWhiteSpace(searchDto.Name))
+        if (!string.IsNullOrEmpty(searchParams.Name))
         {
-            var searchTerm = searchDto.Name.Trim();
-            query = query.Where(p => EF.Functions.ILike(p.Name, $"%{searchTerm}%") || (p.Sku != null && EF.Functions.ILike(p.Sku, $"%{searchTerm}%")));
+            query = query.Where(p => EF.Functions.ILike(p.Name, $"%{searchParams.Name}%"));
         }
 
-        if (searchDto.CategoryId.HasValue && searchDto.CategoryId > 0)
+        if (searchParams.CategoryId.HasValue)
         {
-            query = query.Where(p => p.CategoryGroup.CategoryId == searchDto.CategoryId);
+            query = query.Where(p => p.CategoryGroup.CategoryId == searchParams.CategoryId.Value);
         }
 
-        if (searchDto.MinPrice.HasValue)
+        if (searchParams.CategoryGroupId.HasValue)
         {
-            query = query.Where(p => p.MaxPrice >= searchDto.MinPrice.Value);
+            query = query.Where(p => p.CategoryGroupId == searchParams.CategoryGroupId.Value);
         }
 
-        if (searchDto.MaxPrice.HasValue)
+        if (searchParams.MinPrice.HasValue)
         {
-            query = query.Where(p => p.MinPrice <= searchDto.MaxPrice.Value);
+            query = query.Where(p => p.Variants.Any(v => v.SellingPrice >= searchParams.MinPrice.Value));
         }
 
-        if (searchDto.InStock.HasValue && searchDto.InStock.Value)
+        if (searchParams.MaxPrice.HasValue)
         {
-            query = query.Where(p => p.Variants.Any(v => v.IsUnlimited || v.Stock > 0));
+            query = query.Where(p => p.Variants.Any(v => v.SellingPrice <= searchParams.MaxPrice.Value));
         }
 
-        if (searchDto.HasDiscount.HasValue && searchDto.HasDiscount.Value)
+        if (searchParams.InStock.HasValue && searchParams.InStock.Value)
+        {
+            query = query.Where(p => p.Variants.Any(v => v.Stock > 0 || v.IsUnlimited));
+        }
+
+        if (searchParams.HasDiscount.HasValue && searchParams.HasDiscount.Value)
         {
             query = query.Where(p => p.Variants.Any(v => v.OriginalPrice > v.SellingPrice));
         }
 
-        query = searchDto.SortBy switch
+        if (searchParams.IsUnlimited.HasValue)
+        {
+            query = query.Where(p => p.Variants.Any(v => v.IsUnlimited == searchParams.IsUnlimited.Value));
+        }
+
+        query = searchParams.SortBy switch
         {
             ProductSortOptions.Newest => query.OrderByDescending(p => p.CreatedAt),
             ProductSortOptions.Oldest => query.OrderBy(p => p.CreatedAt),
             ProductSortOptions.PriceAsc => query.OrderBy(p => p.MinPrice),
-            ProductSortOptions.PriceDesc => query.OrderByDescending(p => p.MinPrice),
+            ProductSortOptions.PriceDesc => query.OrderByDescending(p => p.MaxPrice),
             ProductSortOptions.NameAsc => query.OrderBy(p => p.Name),
             ProductSortOptions.NameDesc => query.OrderByDescending(p => p.Name),
-            ProductSortOptions.DiscountDesc => query.OrderByDescending(p => p.Variants.Max(v => (v.OriginalPrice - v.SellingPrice) / v.OriginalPrice)),
-            _ => query.OrderByDescending(p => p.CreatedAt),
+            ProductSortOptions.DiscountDesc => query.OrderByDescending(p => p.Variants.Any() ? p.Variants.Max(v => (v.OriginalPrice - v.SellingPrice) / v.OriginalPrice) : 0),
+            ProductSortOptions.DiscountAsc => query.OrderBy(p => p.Variants.Any() ? p.Variants.Min(v => (v.OriginalPrice - v.SellingPrice) / v.OriginalPrice) : 0),
+            _ => query.OrderByDescending(p => p.CreatedAt)
         };
 
-        var totalCount = await query.CountAsync();
-        var products = await query.Skip((searchDto.Page - 1) * searchDto.PageSize).Take(searchDto.PageSize).ToListAsync();
+        var totalItems = await query.CountAsync();
+        var products = await query.Skip((searchParams.Page - 1) * searchParams.PageSize).Take(searchParams.PageSize).ToListAsync();
 
-        return (products, totalCount);
+        return (products, totalItems);
     }
+
+    public async Task<Product?> GetByIdWithVariantsAndAttributesAsync(int productId, bool includeAll = false)
+    {
+        var query = _context.Products.AsQueryable();
+
+        if (includeAll)
+        {
+            query = query.IgnoreQueryFilters();
+        }
+
+        return await query
+            .Include(p => p.Variants.Where(v => includeAll || !v.IsDeleted))
+                .ThenInclude(v => v.VariantAttributes)
+                .ThenInclude(va => va.AttributeValue)
+                .ThenInclude(av => av.AttributeType)
+            .Include(p => p.CategoryGroup)
+            .FirstOrDefaultAsync(p => p.Id == productId);
+    }
+
+    public async Task<Product?> GetByIdWithCategoryAndMediaAsync(int productId)
+    {
+        return await _context.Products
+            .Include(p => p.CategoryGroup)
+                .ThenInclude(cg => cg.Category)
+            .FirstOrDefaultAsync(p => p.Id == productId);
+    }
+
+    public async Task<List<AttributeValue>> GetAttributeValuesByIdsAsync(List<int> ids)
+    {
+        return await _context.AttributeValues.Where(av => ids.Contains(av.Id)).ToListAsync();
+    }
+
+    public async Task<List<AttributeType>> GetAllAttributeTypesWithValuesAsync()
+    {
+        return await _context.AttributeTypes.Include(at => at.AttributeValues).ToListAsync();
+    }
+
 
     public async Task AddAsync(Product product)
     {
         await _context.Products.AddAsync(product);
     }
 
-    public async Task<List<AttributeType>> GetAllAttributesAsync()
-    {
-        return await _context.AttributeTypes
-            .Include(at => at.AttributeValues)
-            .AsNoTracking()
-            .ToListAsync();
-    }
-
-    public async Task<Product?> GetByIdWithVariantsAndAttributesAsync(int productId, bool includeInactive = false)
-    {
-        var query = _context.Products.AsQueryable();
-        if (includeInactive)
-        {
-            query = query.IgnoreQueryFilters();
-        }
-        else
-        {
-            query = query.Where(p => p.IsActive);
-        }
-
-        return await query
-            .Include(p => p.Variants)
-            .ThenInclude(v => v.VariantAttributes)
-            .ThenInclude(va => va.AttributeValue)
-            .ThenInclude(av => av.AttributeType)
-            .Include(p => p.CategoryGroup)
-            .ThenInclude(cg => cg.Category)
-            .FirstOrDefaultAsync(p => p.Id == productId);
-    }
-
-    public async Task<ProductVariant?> GetVariantByIdAsync(int variantId)
-    {
-        return await _context.ProductVariants.FindAsync(variantId);
-    }
-
     public void UpdateVariants(Product product, List<CreateProductVariantDto> variantDtos)
     {
         var existingVariantIds = product.Variants.Select(v => v.Id).ToList();
-        var dtoVariantIds = variantDtos.Where(dto => dto.Id.HasValue).Select(dto => dto.Id!.Value).ToList();
+        var updatedVariantIds = variantDtos.Where(v => v.Id > 0).Select(v => v.Id.Value).ToList();
 
-        var variantsToRemove = product.Variants.Where(v => !dtoVariantIds.Contains(v.Id)).ToList();
-        foreach (var variant in variantsToRemove)
+        var variantsToDelete = product.Variants.Where(v => !updatedVariantIds.Contains(v.Id)).ToList();
+        foreach (var variant in variantsToDelete)
         {
-            _context.ProductVariants.Remove(variant);
+            variant.IsDeleted = true;
+            variant.DeletedAt = DateTime.UtcNow;
         }
 
-        foreach (var variantDto in variantDtos)
+        foreach (var dto in variantDtos)
         {
             ProductVariant variant;
-            if (variantDto.Id.HasValue && existingVariantIds.Contains(variantDto.Id.Value))
+            if (dto.Id > 0)
             {
-                variant = product.Variants.First(v => v.Id == variantDto.Id.Value);
+                variant = product.Variants.FirstOrDefault(v => v.Id == dto.Id);
+                if (variant == null) continue;
+                _mapper.Map(dto, variant);
             }
             else
             {
-                variant = new ProductVariant { Product = product };
+                variant = _mapper.Map<ProductVariant>(dto);
                 product.Variants.Add(variant);
             }
 
-            variant.Sku = variantDto.Sku;
-            variant.PurchasePrice = variantDto.PurchasePrice;
-            variant.SellingPrice = variantDto.SellingPrice;
-            variant.OriginalPrice = variantDto.OriginalPrice;
-            variant.IsUnlimited = variantDto.IsUnlimited;
-            variant.IsActive = variantDto.IsActive;
-
-            var currentAttributeValueIds = variant.VariantAttributes.Select(va => va.AttributeValueId).ToList();
-            var newAttributeValueIds = variantDto.AttributeValueIds;
-
-            var toRemove = variant.VariantAttributes.Where(va => !newAttributeValueIds.Contains(va.AttributeValueId)).ToList();
-            foreach (var va in toRemove)
+            variant.VariantAttributes.Clear();
+            var attributeValues = _context.AttributeValues.Where(av => dto.AttributeValueIds.Contains(av.Id)).ToList();
+            foreach (var attrValue in attributeValues)
             {
-                _context.ProductVariantAttributes.Remove(va);
-            }
-
-            var toAddIds = newAttributeValueIds.Except(currentAttributeValueIds).ToList();
-            if (toAddIds.Any())
-            {
-                foreach (var attrId in toAddIds)
-                {
-                    variant.VariantAttributes.Add(new ProductVariantAttribute { AttributeValueId = attrId });
-                }
+                variant.VariantAttributes.Add(new ProductVariantAttribute { AttributeValue = attrValue });
             }
         }
     }
@@ -188,8 +174,68 @@ public class ProductRepository : IProductRepository
         _context.Entry(product).Property("RowVersion").OriginalValue = rowVersion;
     }
 
-    public async Task<List<AttributeValue>> GetAttributeValuesByIdsAsync(List<int> ids)
+    public void Update(Product product)
     {
-        return await _context.AttributeValues.Where(av => ids.Contains(av.Id)).ToListAsync();
+        _context.Products.Update(product);
+    }
+
+    public async Task<ProductVariant?> GetVariantByIdAsync(int variantId)
+    {
+        return await _context.ProductVariants.FindAsync(variantId);
+    }
+
+    public void UpdateVariant(ProductVariant variant)
+    {
+        _context.ProductVariants.Update(variant);
+    }
+
+    public async Task<Dictionary<int, ProductVariant>> GetVariantsByIdsAsync(List<int> variantIds)
+    {
+        return await _context.ProductVariants
+            .Where(v => variantIds.Contains(v.Id))
+            .ToDictionaryAsync(v => v.Id);
+    }
+
+    public async Task<bool> SkuExistsAsync(string sku, int? variantId = null)
+    {
+        if (string.IsNullOrEmpty(sku)) return false;
+
+        return await _context.ProductVariants
+            .AnyAsync(v => v.Sku == sku && (!variantId.HasValue || v.Id != variantId.Value));
+    }
+
+    public async Task<IEnumerable<object>> GetLowStockProductsAsync(int threshold)
+    {
+        return await _context.ProductVariants
+            .Where(v => !v.IsUnlimited && v.Stock > 0 && v.Stock <= threshold)
+            .Select(v => new
+            {
+                v.Product.Id,
+                v.Product.Name,
+                VariantId = v.Id,
+                VariantDisplayName = string.Join(" / ", v.VariantAttributes.Select(va => va.AttributeValue.Value)),
+                v.Stock,
+                Category = v.Product.CategoryGroup.Category.Name,
+                v.SellingPrice
+            })
+            .ToListAsync();
+    }
+
+    public async Task<object> GetProductStatisticsAsync()
+    {
+        var totalProducts = await _context.Products.CountAsync();
+        var totalVariants = await _context.ProductVariants.CountAsync();
+        var outOfStockProducts = await _context.ProductVariants.Where(v => !v.IsUnlimited && v.Stock == 0).CountAsync();
+        var lowStockProducts = await _context.ProductVariants.Where(v => !v.IsUnlimited && v.Stock > 0 && v.Stock <= 5).CountAsync();
+        var totalInventoryValue = await _context.ProductVariants.SumAsync(v => v.PurchasePrice * v.Stock);
+
+        return new
+        {
+            TotalProducts = totalProducts,
+            TotalVariants = totalVariants,
+            OutOfStockProducts = outOfStockProducts,
+            LowStockProducts = lowStockProducts,
+            TotalInventoryValue = totalInventoryValue
+        };
     }
 }

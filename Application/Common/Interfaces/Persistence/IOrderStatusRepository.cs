@@ -10,6 +10,8 @@ public interface IOrderStatusRepository
 
     Task AddOrderStatusAsync(Domain.Order.OrderStatus status);
 
+    void UpdateOrderStatus(Domain.Order.OrderStatus status);
+
     Task<bool> IsOrderStatusInUseAsync(int id);
 
     void DeleteOrderStatus(Domain.Order.OrderStatus status);

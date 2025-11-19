@@ -22,6 +22,8 @@ public interface IOrderRepository
 
     Task AddOrderAsync(Domain.Order.Order order);
 
+    void UpdateOrder(Domain.Order.Order order);
+
     Task AddDiscountUsageAsync(Domain.Discount.DiscountUsage discountUsage);
 
     Task AddPaymentTransactionAsync(Domain.Payment.PaymentTransaction transaction);

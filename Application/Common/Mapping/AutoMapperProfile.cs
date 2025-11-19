@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Common.Mappings;
+﻿namespace Application.Common.Mappings;
 
 public class AutoMapperProfile : Profile
 {
@@ -25,6 +25,7 @@ public class AutoMapperProfile : Profile
             .ForMember(dest => dest.IsInStock, opt => opt.MapFrom(src => src.IsUnlimited || src.Stock > 0))
             .ForMember(dest => dest.HasDiscount, opt => opt.MapFrom(src => src.OriginalPrice > src.SellingPrice))
             .ForMember(dest => dest.DiscountPercentage, opt => opt.MapFrom(src => src.OriginalPrice > 0 ? ((src.OriginalPrice - src.SellingPrice) / src.OriginalPrice) * 100 : 0))
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null))
             .ForMember(dest => dest.Attributes, opt => opt.MapFrom(src =>
                 src.VariantAttributes.ToDictionary(
                     va => va.AttributeValue.AttributeType.Name.ToLower(),

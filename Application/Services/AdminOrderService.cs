@@ -48,7 +48,7 @@ public class AdminOrderService : IAdminOrderService
             o.DiscountAmount,
             o.FinalAmount,
             o.CreatedAt,
-            o.RowVersion,
+            RowVersion = o.RowVersion != null ? Convert.ToBase64String(o.RowVersion) : null,
             o.OrderStatusId,
             User = new
             {
@@ -135,7 +135,7 @@ public class AdminOrderService : IAdminOrderService
             orderData.CreatedAt,
             orderData.OrderStatusId,
             orderData.IsPaid,
-            orderData.RowVersion,
+            RowVersion = orderData.RowVersion != null ? Convert.ToBase64String(orderData.RowVersion) : null,
             User = orderData.User != null ? new
             {
                 orderData.User.Id,
@@ -218,6 +218,7 @@ public class AdminOrderService : IAdminOrderService
         var order = new Domain.Order.Order
         {
             UserId = orderDto.UserId,
+            ReceiverName = orderDto.ReceiverName,
             AddressSnapshot = JsonSerializer.Serialize(userAddress),
             UserAddressId = userAddress.Id,
             CreatedAt = DateTime.UtcNow,
@@ -257,7 +258,7 @@ public class AdminOrderService : IAdminOrderService
         if (order == null) return false;
 
         if (orderDto.RowVersion != null)
-            _orderRepository.SetOrderRowVersion(order, orderDto.RowVersion);
+            _orderRepository.SetOrderRowVersion(order, Convert.FromBase64String(orderDto.RowVersion));
         else
             throw new ArgumentException("RowVersion is required for concurrency control.");
 
@@ -298,7 +299,7 @@ public class AdminOrderService : IAdminOrderService
         var order = await _orderRepository.GetOrderForUpdateAsync(id);
         if (order == null) return false;
 
-        _orderRepository.SetOrderRowVersion(order, statusDto.RowVersion);
+        _orderRepository.SetOrderRowVersion(order, Convert.FromBase64String(statusDto.RowVersion));
 
         if (!await _orderRepository.OrderStatusExistsAsync(statusDto.OrderStatusId))
             throw new ArgumentException("Invalid Order Status ID");
@@ -334,7 +335,10 @@ public class AdminOrderService : IAdminOrderService
             await _inventoryService.LogTransactionAsync(orderItem.VariantId, "Return", orderItem.Quantity, orderItem.Id, order.UserId, $"Order Deletion {order.Id}", null, orderItem.Variant.RowVersion);
         }
 
-        _orderRepository.DeleteOrder(order);
+        order.IsDeleted = true;
+        order.DeletedAt = DateTime.UtcNow;
+
+        _orderRepository.UpdateOrder(order);
         await _unitOfWork.SaveChangesAsync();
         return true;
     }

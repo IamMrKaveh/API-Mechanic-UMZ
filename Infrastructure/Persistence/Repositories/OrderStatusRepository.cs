@@ -28,6 +28,10 @@ public class OrderStatusRepository : IOrderStatusRepository
     {
         await _context.Set<Domain.Order.OrderStatus>().AddAsync(status);
     }
+    public void UpdateOrderStatus(Domain.Order.OrderStatus status)
+    {
+        _context.Set<Domain.Order.OrderStatus>().Update(status);
+    }
 
     public async Task<bool> IsOrderStatusInUseAsync(int id)
     {
@@ -36,6 +40,8 @@ public class OrderStatusRepository : IOrderStatusRepository
 
     public void DeleteOrderStatus(Domain.Order.OrderStatus status)
     {
-        _context.Set<Domain.Order.OrderStatus>().Remove(status);
+        status.IsDeleted = true;
+        status.DeletedAt = DateTime.UtcNow;
+        _context.Set<Domain.Order.OrderStatus>().Update(status);
     }
 }

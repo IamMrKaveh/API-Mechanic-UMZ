@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Persistence.Repositories;
+﻿using Domain.Media;
+
+namespace Infrastructure.Persistence.Repositories;
 
 public class MediaRepository : IMediaRepository
 {
@@ -9,48 +11,39 @@ public class MediaRepository : IMediaRepository
         _context = context;
     }
 
-    public async Task AddMediaAsync(Domain.Media.Media media)
+    public async Task<Media?> GetByIdAsync(int id)
     {
-        await _context.Set<Domain.Media.Media>().AddAsync(media);
+        return await _context.Medias.FindAsync(id);
     }
 
-    public async Task<Domain.Media.Media?> GetMediaByIdAsync(int mediaId)
+    public async Task<IEnumerable<Media>> GetByEntityAsync(string entityType, int entityId)
     {
-        return await _context.Set<Domain.Media.Media>().FindAsync(mediaId);
-    }
-
-    public async Task<IEnumerable<Domain.Media.Media>> GetMediaForEntityAsync(string entityType, int entityId)
-    {
-        return await _context.Set<Domain.Media.Media>()
+        return await _context.Medias
             .Where(m => m.EntityType == entityType && m.EntityId == entityId)
             .OrderBy(m => m.SortOrder)
-            .ThenByDescending(m => m.IsPrimary)
             .ToListAsync();
     }
 
-    public async Task<string?> GetPrimaryMediaFilePathAsync(string entityType, int entityId)
+    public async Task<Media?> GetPrimaryMediaByEntityAsync(string entityType, int entityId)
     {
-        return await _context.Set<Domain.Media.Media>()
+        return await _context.Medias
             .Where(m => m.EntityType == entityType && m.EntityId == entityId && m.IsPrimary)
-            .Select(m => m.FilePath)
             .FirstOrDefaultAsync();
     }
 
-    public void DeleteMedia(Domain.Media.Media media)
+
+    public async Task AddAsync(Media media)
     {
-        _context.Set<Domain.Media.Media>().Remove(media);
+        await _context.Medias.AddAsync(media);
     }
 
-    public async Task UnsetPrimaryMediaAsync(string entityType, int entityId, int? excludeMediaId = null)
+    public void Remove(Media media)
     {
-        var query = _context.Set<Domain.Media.Media>()
-            .Where(m => m.EntityType == entityType && m.EntityId == entityId && m.IsPrimary);
+        _context.Medias.Remove(media);
+    }
 
-        if (excludeMediaId.HasValue)
-        {
-            query = query.Where(m => m.Id != excludeMediaId.Value);
-        }
-
-        await query.ExecuteUpdateAsync(s => s.SetProperty(m => m.IsPrimary, false));
+    public void SetOriginalRowVersion(Media entity, byte[] rowVersion)
+    {
+        _context.Entry(entity).Property("RowVersion").OriginalValue = rowVersion;
     }
 }

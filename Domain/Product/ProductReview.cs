@@ -1,6 +1,6 @@
 ﻿namespace Domain.Product;
 
-public class ProductReview : IAuditable
+public class ProductReview : IAuditable, ISoftDeletable, IActivatable
 {
     public int Id { get; set; }
 
@@ -34,4 +34,9 @@ public class ProductReview : IAuditable
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; set; }
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public int? DeletedBy { get; set; }
+    public bool IsActive { get; set; } = true;
 }

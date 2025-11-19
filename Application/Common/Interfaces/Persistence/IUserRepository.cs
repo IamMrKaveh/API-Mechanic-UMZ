@@ -30,5 +30,5 @@ public interface IUserRepository
 
     Task RevokeAllUserSessionsAsync(int userId);
 
-    Task<IEnumerable<Domain.User.User>> GetUsersAsync(bool includeDeleted);
+    Task<(IEnumerable<Domain.User.User> Users, int TotalCount)> GetUsersAsync(bool includeDeleted, int page, int pageSize);
 }

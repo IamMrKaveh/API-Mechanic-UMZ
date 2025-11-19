@@ -40,10 +40,10 @@ public class ProductVariant : BaseEntity
 
     public double DiscountPercentage => OriginalPrice > 0 ? Math.Round((double)(1 - (SellingPrice / OriginalPrice)) * 100, 2) : 0;
 
-    public ICollection<Attribute.ProductVariantAttribute> VariantAttributes { get; set; } = [];
+    public ICollection<ProductVariantAttribute> VariantAttributes { get; set; } = [];
     public ICollection<Media.Media> Images { get; set; } = [];
-    public ICollection<Inventory.InventoryTransaction> InventoryTransactions { get; set; } = [];
-    public ICollection<Cart.CartItem> CartItems { get; set; } = [];
+    public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = [];
+    public ICollection<CartItem> CartItems { get; set; } = [];
 
     public InventoryTransaction? AdjustStock(int quantityChange, string transactionType, int? userId, string? notes, int? orderItemId = null)
     {

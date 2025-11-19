@@ -33,7 +33,8 @@ public class AdminOrderStatusService : IAdminOrderStatusService
 
         var status = new Domain.Order.OrderStatus
         {
-            Name = _htmlSanitizer.Sanitize(statusDto.Name)
+            Name = _htmlSanitizer.Sanitize(statusDto.Name),
+            Icon = _htmlSanitizer.Sanitize(statusDto.Icon ?? string.Empty)
         };
         await _orderStatusRepository.AddOrderStatusAsync(status);
         await _unitOfWork.SaveChangesAsync();
@@ -49,6 +50,10 @@ public class AdminOrderStatusService : IAdminOrderStatusService
         if (!string.IsNullOrWhiteSpace(statusDto.Name))
             status.Name = _htmlSanitizer.Sanitize(statusDto.Name);
 
+        if (statusDto.Icon != null)
+            status.Icon = _htmlSanitizer.Sanitize(statusDto.Icon);
+
+        _orderStatusRepository.UpdateOrderStatus(status);
         await _unitOfWork.SaveChangesAsync();
         _logger.LogInformation("Order status updated: {StatusName} (ID: {StatusId})", status.Name, status.Id);
         return true;
@@ -66,7 +71,10 @@ public class AdminOrderStatusService : IAdminOrderStatusService
             throw new InvalidOperationException("Cannot delete order status because it is currently in use by one or more orders.");
         }
 
-        _orderStatusRepository.DeleteOrderStatus(status);
+        status.IsDeleted = true;
+        status.DeletedAt = DateTime.UtcNow;
+
+        _orderStatusRepository.UpdateOrderStatus(status);
         await _unitOfWork.SaveChangesAsync();
         _logger.LogInformation("Order status deleted: ID {StatusId}", id);
         return true;

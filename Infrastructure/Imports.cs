@@ -2,7 +2,8 @@
 global using Application.Common.Interfaces.Persistence;
 global using Application.Context;
 global using Application.DTOs;
-global using Application.Services;
+global using AutoMapper;
+global using Domain.Order;
 global using Domain.Product;
 global using Domain.Product.Attribute;
 global using Domain.User;

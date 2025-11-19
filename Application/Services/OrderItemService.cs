@@ -75,7 +75,7 @@ public class OrderItemService : IOrderItemService
             item.Quantity,
             item.Amount,
             Profit = isAdmin ? (decimal?)item.Profit : null,
-            item.RowVersion
+            RowVersion = item.RowVersion != null ? Convert.ToBase64String(item.RowVersion) : null
         };
     }
 
@@ -120,7 +120,7 @@ public class OrderItemService : IOrderItemService
             throw new KeyNotFoundException("Order item, variant, product, or order not found.");
 
         if (itemDto.RowVersion != null)
-            _orderItemRepository.SetOrderItemRowVersion(item, itemDto.RowVersion);
+            _orderItemRepository.SetOrderItemRowVersion(item, Convert.FromBase64String(itemDto.RowVersion));
 
         var oldAmount = item.Amount;
         var oldProfit = item.Profit;
