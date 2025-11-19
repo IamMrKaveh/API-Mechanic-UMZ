@@ -151,7 +151,10 @@ public class AdminCategoryGroupService : IAdminCategoryGroupService
             await _mediaService.DeleteMediaAsync(m.Id);
         }
 
-        _repository.Delete(group);
+        group.IsDeleted = true;
+        group.DeletedAt = DateTime.UtcNow;
+
+        _repository.Update(group);
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Ok();
     }

@@ -52,6 +52,20 @@ public class AuditService : IAuditService
                     sanitizedEventType, sanitizedDetails, ipAddress, userId);
     }
 
+    public Task LogSystemEventAsync(string eventType, string details, int? userId = null, string? ipAddress = "system", string? userAgent = null)
+    {
+        return LogAuditAsync(new Domain.Log.AuditLog
+        {
+            UserId = userId,
+            Action = "SystemEvent",
+            Details = _htmlSanitizer.Sanitize(details),
+            IpAddress = SanitizeIpAddress(ipAddress ?? "system"),
+            Timestamp = DateTime.UtcNow,
+            EventType = _htmlSanitizer.Sanitize(eventType),
+            UserAgent = userAgent
+        });
+    }
+
     public async Task LogOrderEventAsync(int orderId, string action, int userId, string details)
     {
         await LogAuditAsync(new Domain.Log.AuditLog
@@ -119,6 +133,19 @@ public class AuditService : IAuditService
         {
             _logger.LogError(ex, "Failed to prepare audit log: Action={Action}, EventType={EventType}", auditLog.Action, auditLog.EventType);
         }
+    }
+
+    public async Task LogInventoryEventAsync(int productId, string action, string details, int? userId = null)
+    {
+        await LogAuditAsync(new Domain.Log.AuditLog
+        {
+            UserId = userId,
+            Action = _htmlSanitizer.Sanitize(action),
+            Details = _htmlSanitizer.Sanitize($"Inventory: ProductId={productId}, {details}"),
+            IpAddress = "system",
+            Timestamp = DateTime.UtcNow,
+            EventType = "InventoryEvent"
+        });
     }
 
     private string SanitizeIpAddress(string ipAddress)

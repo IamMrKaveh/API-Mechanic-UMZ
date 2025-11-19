@@ -15,12 +15,16 @@ public class AdminUsersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetUsers([FromQuery] bool includeDeleted = false)
+    public async Task<IActionResult> GetUsers(
+        [FromQuery] bool includeDeleted = false,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
     {
-        var result = await _adminUserService.GetUsersAsync(includeDeleted);
+        var result = await _adminUserService.GetUsersAsync(includeDeleted, page, pageSize);
         if (!result.Success) return StatusCode(500, new { Message = "Error retrieving users" });
         return Ok(result.Data);
     }
+
 
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] Domain.User.User tUsers)

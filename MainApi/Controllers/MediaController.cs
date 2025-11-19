@@ -15,7 +15,7 @@ public class MediaController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<MediaDto>>> GetMediaForEntity(string entityType, int entityId)
     {
-        var media = await _mediaService.GetMediaForEntityAsync(entityType, entityId);
+        var media = await _mediaService.GetEntityMediaAsync(entityType, entityId);
         return Ok(media);
     }
 }

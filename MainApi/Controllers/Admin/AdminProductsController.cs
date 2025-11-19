@@ -19,7 +19,7 @@ public class AdminProductsController : BaseApiController
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateProduct([FromForm] ProductDto productDto)
+    public async Task<IActionResult> CreateProduct([FromBody] ProductDto productDto)
     {
         if (CurrentUser.UserId == null) return Unauthorized();
         var result = await _adminProductService.CreateProductAsync(productDto, CurrentUser.UserId.Value);
@@ -31,7 +31,7 @@ public class AdminProductsController : BaseApiController
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDto productDto)
+    public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductDto productDto)
     {
         if (CurrentUser.UserId == null) return Unauthorized();
         var result = await _adminProductService.UpdateProductAsync(id, productDto, CurrentUser.UserId.Value);

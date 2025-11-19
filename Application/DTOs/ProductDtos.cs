@@ -45,8 +45,10 @@ public class ProductDto
     public bool IsActive { get; set; } = true;
     public string? Sku { get; set; }
     public string? RowVersion { get; set; }
-    public string VariantsJson { get; set; }
+    public string VariantsJson { get; set; } = "[]";
+    public List<IFormFile>? Images { get; set; }
 }
+
 
 public class CreateProductVariantDto
 {
@@ -85,6 +87,7 @@ public class ProductVariantResponseDto
     public double DiscountPercentage { get; set; }
     public Dictionary<string, AttributeValueDto> Attributes { get; set; } = [];
     public IEnumerable<MediaDto> Images { get; set; } = [];
+    public string? RowVersion { get; set; }
 }
 
 public class PublicProductViewDto

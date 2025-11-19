@@ -48,7 +48,7 @@ public class ProductService : IProductService
 
     public async Task<ServiceResult<IEnumerable<AttributeTypeWithValuesDto>>> GetAllAttributesAsync()
     {
-        var attributes = await _productRepository.GetAllAttributesAsync();
+        var attributes = await _productRepository.GetAllAttributeTypesWithValuesAsync();
         var dtos = _mapper.Map<List<AttributeTypeWithValuesDto>>(attributes);
         return ServiceResult<IEnumerable<AttributeTypeWithValuesDto>>.Ok(dtos);
     }

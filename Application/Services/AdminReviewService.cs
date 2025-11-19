@@ -32,7 +32,10 @@ public class AdminReviewService : IAdminReviewService
         var review = await _repository.GetReviewByIdAsync(reviewId);
         if (review == null) return ServiceResult.Fail("Review not found");
 
-        _repository.DeleteReview(review);
+        review.IsDeleted = true;
+        review.DeletedAt = DateTime.UtcNow;
+
+        _repository.UpdateReview(review);
         await _unitOfWork.SaveChangesAsync();
         _logger.LogInformation("Review with ID {ReviewId} deleted", reviewId);
         return ServiceResult.Ok();

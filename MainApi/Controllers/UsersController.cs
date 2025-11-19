@@ -2,7 +2,6 @@
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -52,6 +51,7 @@ public class UsersController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -69,6 +69,7 @@ public class UsersController : ControllerBase
 
     [HttpPost("verify-otp")]
     [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequestDto request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -85,6 +86,7 @@ public class UsersController : ControllerBase
 
     [HttpPost("refresh")]
     [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshRequestDto request)
     {
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";

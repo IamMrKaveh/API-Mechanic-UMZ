@@ -1,6 +1,6 @@
 ﻿namespace Domain.Order;
 
-public class Order : IAuditable
+public class Order : IAuditable, ISoftDeletable, IActivatable
 {
     public int Id { get; set; }
 
@@ -9,6 +9,8 @@ public class Order : IAuditable
 
     public int? UserAddressId { get; set; }
     public User.UserAddress? UserAddress { get; set; }
+
+    public required string ReceiverName { get; set; }
 
     public required string AddressSnapshot { get; set; }
 
@@ -46,4 +48,9 @@ public class Order : IAuditable
     public ICollection<OrderItem> OrderItems { get; set; } = [];
     public ICollection<Payment.PaymentTransaction> PaymentTransactions { get; set; } = [];
     public ICollection<Discount.DiscountUsage> DiscountUsages { get; set; } = [];
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public int? DeletedBy { get; set; }
+    public bool IsActive { get; set; } = true;
 }

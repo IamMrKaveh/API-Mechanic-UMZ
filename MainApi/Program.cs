@@ -117,6 +117,7 @@ try
     builder.Services.AddScoped<IOrderService, OrderService>();
     builder.Services.AddScoped<IOrderItemService, OrderItemService>();
     builder.Services.AddScoped<IOrderStatusService, OrderStatusService>();
+    builder.Services.AddScoped<IShippingService, ShippingService>();
     builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<IReviewService, ReviewService>();
     builder.Services.AddScoped<IDiscountService, DiscountService>();
@@ -256,7 +257,20 @@ try
         {
             OnMessageReceived = context =>
             {
-                context.Token = context.Request.Cookies["jwt_token"];
+                if (context.Request.Headers.ContainsKey("Authorization"))
+                {
+                    var authHeader = context.Request.Headers["Authorization"].ToString();
+                    if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        context.Token = authHeader.Substring("Bearer ".Length).Trim();
+                        return Task.CompletedTask;
+                    }
+                }
+
+                if (context.Request.Cookies.TryGetValue("jwt_token", out var token))
+                {
+                    context.Token = token;
+                }
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>

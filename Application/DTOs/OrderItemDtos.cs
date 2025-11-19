@@ -26,5 +26,5 @@ public class UpdateOrderItemDto
     public decimal? SellingPrice { get; set; }
 
     [Required]
-    public byte[] RowVersion { get; set; }
+    public string RowVersion { get; set; }
 }

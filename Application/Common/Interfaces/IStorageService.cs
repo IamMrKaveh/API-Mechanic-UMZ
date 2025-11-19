@@ -2,9 +2,7 @@
 
 public interface IStorageService
 {
-    Task<string> UploadFileAsync(Stream stream, string fileName, string contentType, string folder, int? entityId = null);
-
+    Task<(string FilePath, string FileName)> SaveFileAsync(Stream stream, string fileName, string entityType, string entityId);
     Task DeleteFileAsync(string relativePath);
-
-    string GetFileUrl(string relativePath);
+    string GetUrl(string? relativePath);
 }

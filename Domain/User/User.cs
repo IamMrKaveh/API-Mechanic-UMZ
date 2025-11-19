@@ -17,8 +17,8 @@ public class User : BaseEntity
     public ICollection<Order.Order> UserOrders { get; set; } = [];
     public ICollection<UserOtp> UserOtps { get; set; } = [];
     public ICollection<Notification.Notification> Notifications { get; set; } = [];
-    public ICollection<Product.ProductReview> Reviews { get; set; } = [];
-    public ICollection<Auth.UserSession> UserSessions { get; set; } = [];
-    public ICollection<Discount.DiscountUsage> DiscountUsages { get; set; } = [];
-    public ICollection<Inventory.InventoryTransaction> InventoryTransactions { get; set; } = [];
+    public ICollection<ProductReview> Reviews { get; set; } = [];
+    public ICollection<UserSession> UserSessions { get; set; } = [];
+    public ICollection<DiscountUsage> DiscountUsages { get; set; } = [];
+    public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = [];
 }

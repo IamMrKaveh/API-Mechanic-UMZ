@@ -84,11 +84,9 @@ public class CategoryRepository : ICategoryRepository
 
     public void Delete(Domain.Category.Category category)
     {
-        if (category.CategoryGroups.Any())
-        {
-            _context.Set<Domain.Category.CategoryGroup>().RemoveRange(category.CategoryGroups);
-        }
-        _context.Set<Domain.Category.Category>().Remove(category);
+        category.IsDeleted = true;
+        category.DeletedAt = DateTime.UtcNow;
+        _context.Set<Domain.Category.Category>().Update(category);
     }
 
     public void SetOriginalRowVersion(Domain.Category.Category category, byte[] rowVersion)

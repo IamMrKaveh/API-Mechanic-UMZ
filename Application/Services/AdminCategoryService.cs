@@ -194,7 +194,10 @@ public class AdminCategoryService : IAdminCategoryService
             }
         }
 
-        _categoryRepository.Delete(category);
+        category.IsDeleted = true;
+        category.DeletedAt = DateTime.UtcNow;
+
+        _categoryRepository.Update(category);
         await _unitOfWork.SaveChangesAsync();
 
         return ServiceResult.Ok();

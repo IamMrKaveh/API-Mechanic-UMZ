@@ -18,6 +18,7 @@ public class OrderService : IOrderService
     private readonly FrontendUrlsDto _frontendUrls;
     private readonly ZarinpalSettingsDto _zarinpalSettings;
     private readonly IMapper _mapper;
+    private readonly string _apiBaseUrl;
 
     public OrderService(
         IOrderRepository orderRepository,
@@ -35,7 +36,8 @@ public class OrderService : IOrderService
         ICartRepository cartRepository,
         IOptions<FrontendUrlsDto> frontendUrlsOptions,
         IOptions<ZarinpalSettingsDto> zarinpalSettingsOptions,
-        IMapper mapper)
+        IMapper mapper,
+        IConfiguration configuration)
     {
         _orderRepository = orderRepository;
         _logger = logger;
@@ -53,6 +55,7 @@ public class OrderService : IOrderService
         _frontendUrls = frontendUrlsOptions.Value;
         _zarinpalSettings = zarinpalSettingsOptions.Value;
         _mapper = mapper;
+        _apiBaseUrl = configuration["BaseUrl"] ?? "https://localhost:4200";
     }
 
     public async Task<(IEnumerable<object> Orders, int TotalItems)> GetOrdersAsync(int? currentUserId, bool isAdmin, int? userId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
@@ -69,7 +72,7 @@ public class OrderService : IOrderService
             o.DiscountAmount,
             o.FinalAmount,
             o.CreatedAt,
-            o.RowVersion,
+            RowVersion = o.RowVersion != null ? Convert.ToBase64String(o.RowVersion) : null,
             o.OrderStatusId,
             User = new
             {
@@ -156,7 +159,7 @@ public class OrderService : IOrderService
             orderData.CreatedAt,
             orderData.OrderStatusId,
             orderData.IsPaid,
-            orderData.RowVersion,
+            RowVersion = orderData.RowVersion != null ? Convert.ToBase64String(orderData.RowVersion) : null,
             User = orderData.User != null ? new
             {
                 orderData.User.Id,
@@ -176,7 +179,8 @@ public class OrderService : IOrderService
     public async Task<(Domain.Order.Order Order, string? PaymentUrl, string? Error)> CheckoutFromCartAsync(CreateOrderFromCartDto orderDto, int userId, string idempotencyKey)
     {
         var rateLimitKey = $"checkout_{userId}";
-        if (await _rateLimitService.IsLimitedAsync(rateLimitKey, 3, 1))
+        (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(rateLimitKey, 3, 1);
+        if (isLimited)
         {
             _logger.LogWarning("Rate limit exceeded for checkout by user {UserId}", userId);
             throw new Exception("Too many checkout attempts. Please try again in a minute.");
@@ -275,9 +279,10 @@ public class OrderService : IOrderService
                 }
             }
 
-            order = new Domain.Order.Order
+            order = new Order
             {
                 UserId = userId,
+                ReceiverName = userAddress.ReceiverName,
                 AddressSnapshot = JsonSerializer.Serialize(userAddress),
                 UserAddressId = userAddress.Id > 0 ? userAddress.Id : null,
                 CreatedAt = DateTime.UtcNow,
@@ -316,7 +321,7 @@ public class OrderService : IOrderService
 
             try
             {
-                var callbackUrl = $"{_frontendUrls.BaseUrl}/payment-verify?orderId={order.Id}";
+                var callbackUrl = $"{_apiBaseUrl}/api/Orders/verify-payment?orderId={order.Id}";
                 var paymentResponse = await _zarinpalService.CreatePaymentRequestAsync(_zarinpalSettings, order.FinalAmount, $"پرداخت سفارش شماره {order.Id}", callbackUrl, order.User?.PhoneNumber);
 
                 if (paymentResponse?.Data?.Code == 100 && !string.IsNullOrEmpty(paymentResponse.Data.Authority))
@@ -358,7 +363,7 @@ public class OrderService : IOrderService
         }
         if (order.IsPaid)
         {
-            return (true, $"{frontendUrl}/payment/success?orderId={orderId}&authority={authority}");
+            return (true, $"{frontendUrl}/payment/success?orderId={orderId}&authority={authority}&status=ok");
         }
 
         if (!status.Equals("OK", StringComparison.OrdinalIgnoreCase))
@@ -371,7 +376,7 @@ public class OrderService : IOrderService
         var isVerified = await VerifyPaymentInternalAsync(orderId, authority);
         if (isVerified)
         {
-            return (true, $"{frontendUrl}/payment/success?orderId={orderId}&authority={authority}");
+            return (true, $"{frontendUrl}/payment/success?orderId={orderId}&authority={authority}&status=ok");
         }
 
         var failedTransaction = await _orderRepository.GetPaymentTransactionAsync(authority);
