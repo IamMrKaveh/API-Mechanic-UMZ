@@ -61,6 +61,12 @@ public class AutoMapperProfile : Profile
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
             .ForMember(dest => dest.IconUrl, opt => opt.Ignore());
 
+        CreateMap<CategoryCreateDto, Category>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+        CreateMap<CategoryGroupCreateDto, CategoryGroup>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore());
+
         CreateMap<Product, ProductSummaryDto>();
 
         CreateMap<User, UserProfileDto>();
@@ -69,5 +75,11 @@ public class AutoMapperProfile : Profile
         CreateMap<UpdateProfileDto, User>();
         CreateMap<CreateUserAddressDto, UserAddress>();
         CreateMap<UpdateUserAddressDto, UserAddress>();
+
+        CreateMap<ShippingMethod, ShippingMethodDto>()
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null));
+        CreateMap<ShippingMethodCreateDto, ShippingMethod>();
+        CreateMap<ShippingMethodUpdateDto, ShippingMethod>()
+            .ForMember(dest => dest.RowVersion, opt => opt.Ignore());
     }
 }

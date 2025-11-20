@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Application.Migrations
 {
     [DbContext(typeof(LedkaContext))]
-    [Migration("20251118163717_1")]
+    [Migration("20251120080926_1")]
     partial class _1
     {
         /// <inheritdoc />
@@ -792,8 +792,7 @@ namespace Application.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Icon")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -803,10 +802,13 @@ namespace Application.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("OrderStatuses");
                 });
@@ -821,6 +823,9 @@ namespace Application.Migrations
 
                     b.Property<decimal>("Cost")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -846,6 +851,12 @@ namespace Application.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -1288,9 +1299,6 @@ namespace Application.Migrations
                         .HasDefaultValueSql("now() at time zone 'utc'");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Key")
-                        .IsUnique();
 
                     b.ToTable("RateLimits");
                 });

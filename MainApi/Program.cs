@@ -158,6 +158,7 @@ try
     builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
     builder.Services.AddScoped<IOrderItemRepository, OrderItemRepository>();
     builder.Services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
+    builder.Services.AddScoped<IShippingMethodRepository, ShippingMethodRepository>();
     #endregion
 
     #region Current User Service
@@ -311,7 +312,7 @@ try
     builder.Services.AddHttpClient<IZarinpalService, ZarinpalService>(client =>
     {
         client.Timeout = TimeSpan.FromSeconds(30);
-        client.DefaultRequestHeaders.Add("User-Agent", "MechanicAPI/1.0");
+        client.DefaultRequestHeaders.Add("User-Agent", "Ledka/1.0");
     })
     .AddPolicyHandler(retryPolicy)
     .AddPolicyHandler(circuitBreakerPolicy);
@@ -392,7 +393,7 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
     {
-        c.SwaggerDoc("v1", new OpenApiInfo { Title = "Mechanic API", Version = "v1" });
+        c.SwaggerDoc("v1", new OpenApiInfo { Title = "Ledka", Version = "v1" });
         c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
             Description = "JWT Authorization: Bearer {token}",
@@ -636,7 +637,7 @@ static void RegisterInMemoryServices(IServiceCollection services)
     services.AddOutputCache();
 
     var dataProtectionBuilder = services.AddDataProtection()
-        .SetApplicationName("MechanicAPI")
+        .SetApplicationName("Ledka")
         .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
     var keysPath = "/tmp/dataprotection-keys";

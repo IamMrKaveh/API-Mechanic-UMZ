@@ -22,7 +22,7 @@ public class ProductService : IProductService
         var productDtos = new List<PublicProductViewDto>();
         foreach (var product in products)
         {
-            productDtos.Add(await MapToPublicViewDto(product));
+            productDtos.Add(await MapToPublicViewDto(product, searchDto));
         }
 
         var result = new PagedResultDto<PublicProductViewDto>
@@ -42,7 +42,7 @@ public class ProductService : IProductService
         {
             return ServiceResult<PublicProductViewDto?>.Fail("Product not found.");
         }
-        var dto = await MapToPublicViewDto(product);
+        var dto = await MapToPublicViewDto(product, new ProductSearchDto());
         return ServiceResult<PublicProductViewDto?>.Ok(dto);
     }
 
@@ -53,15 +53,34 @@ public class ProductService : IProductService
         return ServiceResult<IEnumerable<AttributeTypeWithValuesDto>>.Ok(dtos);
     }
 
-    private async Task<PublicProductViewDto> MapToPublicViewDto(Product product)
+    private async Task<PublicProductViewDto> MapToPublicViewDto(Product product, ProductSearchDto searchDto)
     {
         var dto = _mapper.Map<PublicProductViewDto>(product);
         dto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("Product", product.Id);
         var media = await _mediaService.GetEntityMediaAsync("Product", product.Id);
         dto.Images = _mapper.Map<IEnumerable<MediaDto>>(media);
 
+        var variantsQuery = product.Variants.Where(v => v.IsActive);
+
+        if (searchDto.MinPrice.HasValue)
+        {
+            variantsQuery = variantsQuery.Where(v => v.SellingPrice >= searchDto.MinPrice.Value);
+        }
+        if (searchDto.MaxPrice.HasValue)
+        {
+            variantsQuery = variantsQuery.Where(v => v.SellingPrice <= searchDto.MaxPrice.Value);
+        }
+        if (searchDto.InStock == true)
+        {
+            variantsQuery = variantsQuery.Where(v => v.IsUnlimited || v.Stock > 0);
+        }
+        if (searchDto.HasDiscount == true)
+        {
+            variantsQuery = variantsQuery.Where(v => v.OriginalPrice > v.SellingPrice);
+        }
+
         var variantDtos = new List<ProductVariantResponseDto>();
-        foreach (var variant in product.Variants.Where(v => v.IsActive))
+        foreach (var variant in variantsQuery)
         {
             var variantDto = _mapper.Map<ProductVariantResponseDto>(variant);
             var variantMedia = await _mediaService.GetEntityMediaAsync("ProductVariant", variant.Id);

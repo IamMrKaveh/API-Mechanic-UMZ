@@ -15,6 +15,7 @@ public class OrderService : IOrderService
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICartRepository _cartRepository;
+    private readonly IOrderStatusRepository _orderStatusRepository;
     private readonly FrontendUrlsDto _frontendUrls;
     private readonly ZarinpalSettingsDto _zarinpalSettings;
     private readonly IMapper _mapper;
@@ -34,6 +35,7 @@ public class OrderService : IOrderService
         IUserRepository userRepository,
         IUnitOfWork unitOfWork,
         ICartRepository cartRepository,
+        IOrderStatusRepository orderStatusRepository,
         IOptions<FrontendUrlsDto> frontendUrlsOptions,
         IOptions<ZarinpalSettingsDto> zarinpalSettingsOptions,
         IMapper mapper,
@@ -52,6 +54,7 @@ public class OrderService : IOrderService
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
         _cartRepository = cartRepository;
+        _orderStatusRepository = orderStatusRepository;
         _frontendUrls = frontendUrlsOptions.Value;
         _zarinpalSettings = zarinpalSettingsOptions.Value;
         _mapper = mapper;
@@ -332,12 +335,12 @@ public class OrderService : IOrderService
 
                 var message = paymentResponse?.Data?.Message ?? "Failed to generate payment link.";
                 _logger.LogError("Zarinpal payment URL is null for order {OrderId}. Reason: {Reason}", order.Id, message);
-                return (order, null, message);
+                return (order, null, "خطا در ارتباط با درگاه پرداخت");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create payment request for order {OrderId}", order.Id);
-                return (order, null, "Failed to contact payment provider.");
+                return (order, null, "خطا در ارتباط با درگاه پرداخت");
             }
         }
         catch (DbUpdateConcurrencyException ex)
@@ -412,8 +415,15 @@ public class OrderService : IOrderService
 
         if (verificationResponse != null && (verificationResponse.Code == 100 || verificationResponse.Code == 101))
         {
+            var paidStatus = await _orderStatusRepository.GetStatusByNameAsync("Paid");
+            if (paidStatus == null)
+            {
+                _logger.LogCritical("Order status 'Paid' not found in database. Cannot update order {OrderId} status.", order.Id);
+                return false;
+            }
+
             order.IsPaid = true;
-            order.OrderStatusId = 2;
+            order.OrderStatusId = paidStatus.Id;
 
             transaction.Status = "Success";
             transaction.RefId = verificationResponse.RefID;
