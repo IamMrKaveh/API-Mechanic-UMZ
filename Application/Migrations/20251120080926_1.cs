@@ -104,8 +104,8 @@ namespace Application.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Icon = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Icon = table.Column<string>(type: "text", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedBy = table.Column<int>(type: "integer", nullable: true),
@@ -142,9 +142,12 @@ namespace Application.Migrations
                     Cost = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     EstimatedDeliveryTime = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedBy = table.Column<int>(type: "integer", nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "bytea", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -986,6 +989,12 @@ namespace Application.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderStatuses_Name",
+                table: "OrderStatuses",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PaymentTransactions_Authority",
                 table: "PaymentTransactions",
                 column: "Authority",
@@ -1031,12 +1040,6 @@ namespace Application.Migrations
                 name: "IX_ProductVariants_ProductId",
                 table: "ProductVariants",
                 column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RateLimits_Key",
-                table: "RateLimits",
-                column: "Key",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserAddresses_UserId",

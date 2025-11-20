@@ -141,28 +141,46 @@ public class AdminCategoryService : IAdminCategoryService
             return ServiceResult.Fail("A category with this name already exists.");
         }
 
+        MediaDto? oldPrimaryMedia = null;
+        Media? newMedia = null;
+
+        if (dto.IconFile != null)
+        {
+            oldPrimaryMedia = (await _mediaService.GetEntityMediaAsync("Category", id)).FirstOrDefault(m => m.IsPrimary);
+            newMedia = await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "Category", id, true);
+        }
+
         _mapper.Map(dto, existingCategory);
         existingCategory.Name = sanitizedName;
         _categoryRepository.Update(existingCategory);
 
-        if (dto.IconFile != null)
-        {
-            var primaryMedia = (await _mediaService.GetEntityMediaAsync("Category", id)).FirstOrDefault(m => m.IsPrimary);
-            if (primaryMedia != null)
-            {
-                await _mediaService.DeleteMediaAsync(primaryMedia.Id);
-            }
-            await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "Category", id, true);
-        }
-
         try
         {
             await _unitOfWork.SaveChangesAsync();
+
+            if (oldPrimaryMedia != null)
+            {
+                await _mediaService.DeleteMediaAsync(oldPrimaryMedia.Id);
+            }
+
             return ServiceResult.Ok();
         }
         catch (DbUpdateConcurrencyException)
         {
+            if (newMedia != null)
+            {
+                await _mediaService.DeleteMediaAsync(newMedia.Id);
+            }
             return ServiceResult.Fail("The record you attempted to edit was modified by another user. Please reload and try again.");
+        }
+        catch (Exception ex)
+        {
+            if (newMedia != null)
+            {
+                await _mediaService.DeleteMediaAsync(newMedia.Id);
+            }
+            _logger.LogError(ex, "Error updating category {CategoryId}", id);
+            return ServiceResult.Fail("An error occurred while updating the category.");
         }
     }
 

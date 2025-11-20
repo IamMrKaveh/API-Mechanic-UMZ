@@ -47,7 +47,14 @@ public class AdminProductService : IAdminProductService
         var product = _mapper.Map<Product>(productDto);
         product.Description = _htmlSanitizer.Sanitize(productDto.Description ?? string.Empty);
 
-        var variants = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(productDto.VariantsJson) ?? [];
+        var variants = JsonSerializer
+            .Deserialize<List<CreateProductVariantDto>>(
+            productDto.VariantsJson,
+            new JsonSerializerOptions 
+            {
+                PropertyNameCaseInsensitive = true 
+            }) ?? [];
+
         if (!variants.Any())
         {
             return ServiceResult<AdminProductViewDto>.Fail("Product must have at least one variant.");

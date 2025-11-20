@@ -230,8 +230,9 @@ public class LedkaContext : DbContext
         builder.Entity<OrderStatus>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.Icon).HasMaxLength(50);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.HasIndex(e => e.Name).IsUnique();
         });
 
         builder.Entity<ShippingMethod>(entity =>

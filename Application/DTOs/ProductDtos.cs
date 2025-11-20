@@ -63,14 +63,31 @@ public class CreateProductVariantDto
     public List<int> AttributeValueIds { get; set; } = [];
 }
 
-public record AttributeValueDto(
-    int Id,
-    string TypeName,
-    string TypeDisplayName,
-    string Value,
-    string DisplayValue,
-    string? HexCode
-);
+public class AttributeValueDto
+{
+    public int Id { get; set; }
+    public string TypeName { get; set; } = string.Empty;
+    public string TypeDisplayName { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+    public string DisplayValue { get; set; } = string.Empty;
+    public string? HexCode { get; set; }
+
+    public AttributeValueDto(
+        int id,
+        string typeName,
+        string typeDisplayName,
+        string value,
+        string displayValue,
+        string hexCode)
+    {
+        Id = id;
+        TypeName = typeName;
+        TypeName = typeDisplayName;
+        Value = value;
+        DisplayValue = displayValue;
+        HexCode = hexCode;
+    }
+}
 
 public class ProductVariantResponseDto
 {

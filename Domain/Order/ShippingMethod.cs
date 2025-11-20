@@ -1,9 +1,7 @@
 ﻿namespace Domain.Order;
 
-public class ShippingMethod : ISoftDeletable, IActivatable
+public class ShippingMethod : BaseEntity
 {
-    public int Id { get; set; }
-
     public required string Name { get; set; }
 
     public decimal Cost { get; set; }
@@ -13,9 +11,4 @@ public class ShippingMethod : ISoftDeletable, IActivatable
     public string? EstimatedDeliveryTime { get; set; }
 
     public ICollection<Order> Orders { get; set; } = [];
-
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAt { get; set; }
-    public int? DeletedBy { get; set; }
-    public bool IsActive { get; set; } = true;
 }

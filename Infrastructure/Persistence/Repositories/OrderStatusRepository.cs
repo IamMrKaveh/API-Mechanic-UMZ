@@ -23,6 +23,11 @@ public class OrderStatusRepository : IOrderStatusRepository
         return await _context.Set<Domain.Order.OrderStatus>().FindAsync(id);
     }
 
+    public Task<Domain.Order.OrderStatus?> GetStatusByNameAsync(string name)
+    {
+        return _context.Set<Domain.Order.OrderStatus>()
+            .FirstOrDefaultAsync(s => s.Name.ToLower() == name.ToLower());
+    }
 
     public async Task AddOrderStatusAsync(Domain.Order.OrderStatus status)
     {
