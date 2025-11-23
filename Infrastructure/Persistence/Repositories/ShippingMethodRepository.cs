@@ -1,28 +1,43 @@
-﻿namespace Infrastructure.Persistence.Repositories;
+﻿using Polly;
 
-public class ShippingMethodRepository : GenericRepository<ShippingMethod>, IShippingMethodRepository
+namespace Infrastructure.Persistence.Repositories;
+
+public class ShippingMethodRepository : IShippingMethodRepository
 {
-    public ShippingMethodRepository(LedkaContext context) : base(context)
+    private LedkaContext _context;
+
+    public ShippingMethodRepository(LedkaContext context)
     {
+        _context = context;
     }
 
-    public async Task<List<ShippingMethod>> GetShippingMethodsAsync(bool includeDeleted)
+    public async Task<IEnumerable<ShippingMethod>> GetAllAsync(bool includeDeleted = false)
     {
         var query = _context.ShippingMethods.AsQueryable();
-
-        if (!includeDeleted)
+        if (includeDeleted)
         {
-            query = query.Where(sm => !sm.IsDeleted);
+            query = query.IgnoreQueryFilters();
         }
-
-        return await query.OrderBy(sm => sm.Name).ToListAsync();
+        return await query.OrderBy(s => s.Cost).ToListAsync();
     }
 
-    public async Task<List<ShippingMethod>> GetActiveShippingMethodsAsync()
+    public async Task<ShippingMethod?> GetByIdAsync(int id)
     {
-        return await _context.ShippingMethods
-            .Where(sm => !sm.IsDeleted && sm.IsActive)
-            .OrderBy(sm => sm.Name)
-            .ToListAsync();
+        return await _context.ShippingMethods.FindAsync(id);
+    }
+
+    public async Task AddAsync(ShippingMethod shippingMethod)
+    {
+        await _context.ShippingMethods.AddAsync(shippingMethod);
+    }
+
+    public void Update(ShippingMethod shippingMethod)
+    {
+        _context.ShippingMethods.Update(shippingMethod);
+    }
+
+    public void SetOriginalRowVersion(ShippingMethod shippingMethod, byte[] rowVersion)
+    {
+        _context.Entry(shippingMethod).Property("RowVersion").OriginalValue = rowVersion;
     }
 }

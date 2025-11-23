@@ -1,5 +1,6 @@
 ﻿#region Serilog Configuration
 // پیکربندی Serilog برای لاگ‌گیری از برنامه
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -105,7 +106,7 @@ try
 
     #region AutoMapper Configuration
     // ثبت AutoMapper برای Mapping بین Entities و DTOs
-    builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
+    builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
     #endregion
 
     #region Application Services Registration
@@ -198,10 +199,11 @@ try
     builder.Services.AddAntiforgery(options =>
     {
         options.HeaderName = "X-XSRF-TOKEN";
-        options.Cookie.Name = "__Host-XSRF-TOKEN";
-        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.Name = "XSRF-TOKEN";
+        options.Cookie.SameSite = SameSiteMode.None;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-        options.Cookie.HttpOnly = true;
+        options.Cookie.HttpOnly = false;
+        options.Cookie.Path = "/";
     });
 
     // پیکربندی HTML Sanitizer برای جلوگیری از XSS

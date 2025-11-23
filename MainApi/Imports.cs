@@ -1,9 +1,9 @@
 ﻿global using Application.Common.Interfaces;
 global using Application.Common.Interfaces.Persistence;
-global using Application.Common.Mappings;
 global using Application.Common.Models;
 global using Application.Context;
 global using Application.DTOs;
+global using Application.Mappings;
 global using Application.Services;
 global using Ganss.Xss;
 global using Infrastructure.Analytics;

@@ -16,5 +16,7 @@ public interface IAuditService
 
     Task LogInventoryEventAsync(int productId, string action, string details, int? userId = null);
 
+    Task LogAdminEventAsync(string action, int userId, string details, string? ipAddress = "system", string? userAgent = null);
+
     Task<(IEnumerable<Domain.Log.AuditLog> Logs, int TotalCount)> GetAuditLogsAsync(DateTime? fromDate = null, DateTime? toDate = null, int? userId = null, string? eventType = null, int page = 1, int pageSize = 50);
 }
