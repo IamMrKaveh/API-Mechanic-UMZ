@@ -63,7 +63,7 @@ public class CartService : ICartService
 
     public async Task<CartDto?> CreateCartAsync(int userId)
     {
-        var newCart = new Domain.Cart.Cart { UserId = userId, LastUpdated = DateTime.UtcNow };
+        var newCart = new Cart { UserId = userId, LastUpdated = DateTime.UtcNow };
         await _cartRepository.AddCartAsync(newCart);
         await _unitOfWork.SaveChangesAsync();
         await InvalidateCartCache(userId, null);
@@ -105,7 +105,7 @@ public class CartService : ICartService
             var cart = await GetCartEntityAsync(userId, guestId);
             if (cart == null)
             {
-                var newCartEntity = new Domain.Cart.Cart { UserId = userId, GuestToken = guestId, LastUpdated = DateTime.UtcNow };
+                var newCartEntity = new Cart { UserId = userId, GuestToken = guestId, LastUpdated = DateTime.UtcNow };
                 await _cartRepository.AddCartAsync(newCartEntity);
                 await _unitOfWork.SaveChangesAsync();
                 cart = newCartEntity;
@@ -143,7 +143,7 @@ public class CartService : ICartService
             }
             else
             {
-                await _cartRepository.AddCartItemAsync(new Domain.Cart.CartItem
+                await _cartRepository.AddCartItemAsync(new CartItem
                 {
                     VariantId = dto.VariantId,
                     Quantity = dto.Quantity,
@@ -283,7 +283,7 @@ public class CartService : ICartService
         return await _cartRepository.GetCartItemsCountAsync(userId, guestId);
     }
 
-    public async Task<Domain.Cart.Cart?> GetCartEntityAsync(int? userId, string? guestId)
+    public async Task<Cart?> GetCartEntityAsync(int? userId, string? guestId)
     {
         if (!userId.HasValue && string.IsNullOrEmpty(guestId))
         {
@@ -341,11 +341,11 @@ public class CartService : ICartService
         await InvalidateCartCache(userId, guestId);
     }
 
-    private async Task<CartDto> MapCartToDtoAsync(Domain.Cart.Cart cart)
+    private async Task<CartDto> MapCartToDtoAsync(Cart cart)
     {
         var items = new List<CartItemDto>();
 
-        foreach (var ci in cart.CartItems ?? Enumerable.Empty<Domain.Cart.CartItem>())
+        foreach (var ci in cart.CartItems ?? Enumerable.Empty<CartItem>())
         {
             var productIcon = await _mediaService.GetPrimaryImageUrlAsync("ProductVariant", ci.VariantId)
                               ?? await _mediaService.GetPrimaryImageUrlAsync("Product", ci.Variant.ProductId);

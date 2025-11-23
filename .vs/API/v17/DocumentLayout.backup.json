@@ -3,76 +3,32 @@
   "WorkspaceRootPath": "C:\\ME\\Mechanic\\API\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\order\\shippingmethod.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\order\\shippingmethod.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\common\\interfaces\\persistence\\ishippingmethodrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\common\\interfaces\\persistence\\ishippingmethodrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\common\\mapping\\automapperprofile.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\common\\mapping\\automapperprofile.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\controllers\\admin\\adminshippingmethodcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\controllers\\admin\\adminshippingmethodcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\shippingservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\shippingservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\common\\interfaces\\ishippingservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\common\\interfaces\\ishippingservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\dtos\\shippingmethoddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\dtos\\shippingmethoddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\dtos\\mediadtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\dtos\\mediadtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\dtos\\orderdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\dtos\\orderdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\dtos\\productdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\dtos\\productdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\cartservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\cartservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\adminorderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\adminorderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\adminproductservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\adminproductservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\controllers\\auditcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\controllers\\auditcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\context\\ledkacontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\context\\ledkacontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\adminshippingmethodservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\adminshippingmethodservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\controllers\\shippingmethodscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\controllers\\shippingmethodscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\controllers\\securitycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\controllers\\securitycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\common\\interfaces\\persistence\\ishippingmethodrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\common\\interfaces\\persistence\\ishippingmethodrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\common\\interfaces\\ishippingservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\common\\interfaces\\ishippingservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\common\\interfaces\\iadminshippingmethodservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\common\\interfaces\\iadminshippingmethodservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\persistence\\repositories\\shippingmethodrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\persistence\\repositories\\shippingmethodrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -82,86 +38,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 6,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ShippingMethod.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Order\\ShippingMethod.cs",
-              "RelativeDocumentMoniker": "Domain\\Order\\ShippingMethod.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Order\\ShippingMethod.cs*",
-              "RelativeToolTip": "Domain\\Order\\ShippingMethod.cs*",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T08:07:30.527Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "IShippingMethodRepository.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IShippingMethodRepository.cs",
-              "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\Persistence\\IShippingMethodRepository.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IShippingMethodRepository.cs",
-              "RelativeToolTip": "Application\\Common\\Interfaces\\Persistence\\IShippingMethodRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T08:07:12.801Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "ShippingService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\ShippingService.cs",
-              "RelativeDocumentMoniker": "Application\\Services\\ShippingService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\ShippingService.cs",
-              "RelativeToolTip": "Application\\Services\\ShippingService.cs",
-              "ViewState": "AgIAAE8AAAAAAAAAAAAmwGYAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T08:06:31.278Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "MediaDtos.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\MediaDtos.cs",
-              "RelativeDocumentMoniker": "Application\\DTOs\\MediaDtos.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\MediaDtos.cs",
-              "RelativeToolTip": "Application\\DTOs\\MediaDtos.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:59:12.962Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "ShippingMethodDtos.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\ShippingMethodDtos.cs",
-              "RelativeDocumentMoniker": "Application\\DTOs\\ShippingMethodDtos.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\ShippingMethodDtos.cs",
-              "RelativeToolTip": "Application\\DTOs\\ShippingMethodDtos.cs",
-              "ViewState": "AgIAABoAAAAAAAAAAAA6wDEAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:58:17.636Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "IShippingService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IShippingService.cs",
-              "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IShippingService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IShippingService.cs",
-              "RelativeToolTip": "Application\\Common\\Interfaces\\IShippingService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:55:53.452Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
@@ -176,158 +54,93 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "AdminShippingMethodController.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminShippingMethodController.cs",
-              "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminShippingMethodController.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminShippingMethodController.cs",
-              "RelativeToolTip": "MainApi\\Controllers\\Admin\\AdminShippingMethodController.cs",
-              "ViewState": "AgIAAC8AAAAAAAAAAAAmwEYAAAABAAAAAAAAAA==",
+              "DocumentIndex": 4,
+              "Title": "IShippingService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IShippingService.cs",
+              "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IShippingService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IShippingService.cs",
+              "RelativeToolTip": "Application\\Common\\Interfaces\\IShippingService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:41:20.735Z",
+              "WhenOpened": "2025-11-23T17:30:35.051Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "IShippingMethodRepository.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IShippingMethodRepository.cs",
+              "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\Persistence\\IShippingMethodRepository.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IShippingMethodRepository.cs",
+              "RelativeToolTip": "Application\\Common\\Interfaces\\Persistence\\IShippingMethodRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-23T17:31:24.311Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AdminShippingMethodService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\AdminShippingMethodService.cs",
+              "RelativeDocumentMoniker": "Application\\Services\\AdminShippingMethodService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\AdminShippingMethodService.cs",
+              "RelativeToolTip": "Application\\Services\\AdminShippingMethodService.cs",
+              "ViewState": "AgIAAHUAAAAAAAAAAAAWwIEAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-23T17:34:26.1Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ShippingService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\ShippingService.cs",
+              "RelativeDocumentMoniker": "Application\\Services\\ShippingService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\ShippingService.cs*",
+              "RelativeToolTip": "Application\\Services\\ShippingService.cs*",
+              "ViewState": "AgIAAAwAAAAAAAAAAMBBwBcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-23T17:34:50.709Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "AutoMapperProfile.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Mapping\\AutoMapperProfile.cs",
-              "RelativeDocumentMoniker": "Application\\Common\\Mapping\\AutoMapperProfile.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Common\\Mapping\\AutoMapperProfile.cs",
-              "RelativeToolTip": "Application\\Common\\Mapping\\AutoMapperProfile.cs",
-              "ViewState": "AgIAAD0AAAAAAAAAAAAmwFQAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:41:49.55Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "OrderDtos.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\OrderDtos.cs",
-              "RelativeDocumentMoniker": "Application\\DTOs\\OrderDtos.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\OrderDtos.cs",
-              "RelativeToolTip": "Application\\DTOs\\OrderDtos.cs",
-              "ViewState": "AgIAAB8AAAAAAAAAAAA0wDkAAABAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:58:01.939Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "ProductDtos.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\ProductDtos.cs",
-              "RelativeDocumentMoniker": "Application\\DTOs\\ProductDtos.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\ProductDtos.cs",
-              "RelativeToolTip": "Application\\DTOs\\ProductDtos.cs",
-              "ViewState": "AgIAAB0AAAAAAAAAAAAAACUAAAAMAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:43:30.519Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "CartService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\CartService.cs",
-              "RelativeDocumentMoniker": "Application\\Services\\CartService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\CartService.cs",
-              "RelativeToolTip": "Application\\Services\\CartService.cs",
-              "ViewState": "AgIAAFYBAAAAAAAAAAAWwGgBAAAWAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:50:53.963Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "OrderService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
-              "RelativeDocumentMoniker": "Application\\Services\\OrderService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
-              "RelativeToolTip": "Application\\Services\\OrderService.cs",
-              "ViewState": "AgIAAH8AAAAAAAAAAAAWwIsAAAAhAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:50:52.305Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "AdminOrderService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\AdminOrderService.cs",
-              "RelativeDocumentMoniker": "Application\\Services\\AdminOrderService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\AdminOrderService.cs",
-              "RelativeToolTip": "Application\\Services\\AdminOrderService.cs",
-              "ViewState": "AgIAAGQAAAAAAAAAAAAWwHAAAAAhAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:50:49.597Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "AdminProductService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\AdminProductService.cs",
-              "RelativeDocumentMoniker": "Application\\Services\\AdminProductService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\AdminProductService.cs",
-              "RelativeToolTip": "Application\\Services\\AdminProductService.cs",
-              "ViewState": "AgIAACkAAAAAAAAAAIAywDQAAAAmAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:45:58.823Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "AuditController.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\AuditController.cs",
-              "RelativeDocumentMoniker": "MainApi\\Controllers\\AuditController.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\AuditController.cs",
-              "RelativeToolTip": "MainApi\\Controllers\\AuditController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAC4AAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:45:28.106Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "LedkaContext.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Context\\LedkaContext.cs",
-              "RelativeDocumentMoniker": "Application\\Context\\LedkaContext.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Context\\LedkaContext.cs",
-              "RelativeToolTip": "Application\\Context\\LedkaContext.cs",
-              "ViewState": "AgIAACwAAAAAAAAAAAAnwDYAAAAWAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:44:21.832Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 16,
               "Title": "ShippingMethodsController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\ShippingMethodsController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\ShippingMethodsController.cs",
               "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\ShippingMethodsController.cs",
               "RelativeToolTip": "MainApi\\Controllers\\ShippingMethodsController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAA2AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:41:09.072Z",
+              "WhenOpened": "2025-11-23T17:35:08.789Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
-              "Title": "SecurityController.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\SecurityController.cs",
-              "RelativeDocumentMoniker": "MainApi\\Controllers\\SecurityController.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\SecurityController.cs",
-              "RelativeToolTip": "MainApi\\Controllers\\SecurityController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 5,
+              "Title": "IAdminShippingMethodService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IAdminShippingMethodService.cs",
+              "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IAdminShippingMethodService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IAdminShippingMethodService.cs",
+              "RelativeToolTip": "Application\\Common\\Interfaces\\IAdminShippingMethodService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T07:41:08.224Z",
+              "WhenOpened": "2025-11-23T17:30:17.531Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ShippingMethodRepository.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\ShippingMethodRepository.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Persistence\\Repositories\\ShippingMethodRepository.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\ShippingMethodRepository.cs",
+              "RelativeToolTip": "Infrastructure\\Persistence\\Repositories\\ShippingMethodRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-23T17:32:20.324Z",
               "EditorCaption": ""
             }
           ]

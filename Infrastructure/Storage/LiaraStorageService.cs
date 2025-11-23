@@ -2,12 +2,9 @@
 
 public class LiaraStorageService : IStorageService
 {
-    private readonly string _accessKey;
-    private readonly string _secretKey;
+    private readonly AmazonS3Client _s3Client;
     private readonly string _bucketName;
-    private readonly HttpClient _httpClient;
     private readonly string _baseUrl;
-    private readonly string _apiEndpoint;
     private readonly ILogger<LiaraStorageService> _logger;
 
     public LiaraStorageService(IOptions<LiaraStorageSettings> options, ILogger<LiaraStorageService> logger)
@@ -24,89 +21,101 @@ public class LiaraStorageService : IStorageService
             throw new InvalidOperationException("Liara Storage settings are not fully configured. Please check your configuration.");
         }
 
-        _accessKey = settings.AccessKey;
-        _secretKey = settings.SecretKey;
         _bucketName = settings.BucketName;
         _baseUrl = settings.BaseUrl;
-        _apiEndpoint = settings.ApiEndpoint;
 
-        _httpClient = new HttpClient { BaseAddress = new Uri(_apiEndpoint) };
-        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_accessKey}:{_secretKey}");
+        var config = new AmazonS3Config
+        {
+            ServiceURL = settings.ApiEndpoint,
+            ForcePathStyle = true,
+        };
+
+        var credentials = new BasicAWSCredentials(settings.AccessKey, settings.SecretKey);
+        _s3Client = new AmazonS3Client(credentials, config);
     }
 
-    private async Task EnsureFolderExistsAsync(string folderPath)
+    public async Task<(string FilePath, string FileName)> SaveFileAsync(
+        Stream stream,
+        string fileName,
+        string entityType,
+        string entityId)
     {
-        if (string.IsNullOrWhiteSpace(folderPath))
-        {
-            return;
-        }
-
-        var folderKey = folderPath.TrimEnd('/') + "/";
-        var checkUri = $"storage/buckets/{_bucketName}/objects?prefix={folderKey}&max-keys=1";
-
         try
         {
-            var checkResponse = await _httpClient.GetAsync(checkUri);
-            checkResponse.EnsureSuccessStatusCode();
-            var content = await checkResponse.Content.ReadAsStringAsync();
+            var folder = $"uploads/{entityType}/{entityId}/";
 
-            var jsonDoc = JsonDocument.Parse(content);
-            if (!jsonDoc.RootElement.TryGetProperty("objects", out var objects) || objects.GetArrayLength() == 0)
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+            var key = $"{folder}{uniqueFileName}";
+
+            var putRequest = new PutObjectRequest
             {
-                _logger.LogInformation("Folder '{FolderPath}' does not exist. Creating it.", folderKey);
+                BucketName = _bucketName,
+                Key = key,
+                InputStream = stream,
+                AutoCloseStream = false,
+                ContentType = GetContentType(extension)
+            };
 
-                var createFolderContent = new StringContent(string.Empty);
-                var createFolderUri = $"storage/buckets/{_bucketName}/objects?key={folderKey}";
-                var createResponse = await _httpClient.PostAsync(createFolderUri, createFolderContent);
-                createResponse.EnsureSuccessStatusCode();
+            await _s3Client.PutObjectAsync(putRequest);
 
-                _logger.LogInformation("Successfully created folder '{FolderPath}'.", folderKey);
-            }
+            return (key, uniqueFileName);
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex, "S3 Error uploading file {FileName}", fileName);
+            throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to ensure folder '{FolderPath}' exists in Liara storage.", folderKey);
+            _logger.LogError(ex, "Error uploading file {FileName}", fileName);
             throw;
         }
     }
 
-    public async Task<(string FilePath, string FileName)> SaveFileAsync(Stream stream, string fileName, string entityType, string entityId)
-    {
-        string folder = $"uploads/{entityType}/{entityId}";
-        await EnsureFolderExistsAsync(folder);
-
-        var extension = Path.GetExtension(fileName).ToLowerInvariant();
-        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
-        var relativePath = $"{folder}/{uniqueFileName}".Replace("//", "/");
-
-        using var content = new MultipartFormDataContent();
-        using var streamContent = new StreamContent(stream);
-
-        streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-        content.Add(streamContent, "file", uniqueFileName);
-
-        var objectKey = relativePath.TrimStart('/');
-        var requestUri = $"storage/buckets/{_bucketName}/objects?key={objectKey}";
-
-        var response = await _httpClient.PostAsync(requestUri, content);
-        response.EnsureSuccessStatusCode();
-
-        return (relativePath, uniqueFileName);
-    }
-
-
     public async Task DeleteFileAsync(string relativePath)
     {
-        if (string.IsNullOrEmpty(relativePath)) return;
-        var path = relativePath.TrimStart('/');
-        var response = await _httpClient.DeleteAsync($"storage/buckets/{_bucketName}/objects?key={path}");
-        response.EnsureSuccessStatusCode();
+        if (string.IsNullOrEmpty(relativePath))
+            return;
+
+        try
+        {
+            var key = relativePath.TrimStart('/');
+
+            var deleteRequest = new DeleteObjectRequest
+            {
+                BucketName = _bucketName,
+                Key = key
+            };
+
+            await _s3Client.DeleteObjectAsync(deleteRequest);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting file {Path}", relativePath);
+            throw;
+        }
     }
 
     public string GetUrl(string? relativePath)
     {
-        if (string.IsNullOrEmpty(relativePath)) return string.Empty;
+        if (string.IsNullOrEmpty(relativePath))
+            return string.Empty;
+
         var trimmedPath = relativePath.TrimStart('/');
         return $"{_baseUrl.TrimEnd('/')}/{trimmedPath}";
+    }
+
+    private string GetContentType(string extension)
+    {
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".pdf" => "application/pdf",
+            ".txt" => "text/plain",
+            _ => "application/octet-stream"
+        };
     }
 }

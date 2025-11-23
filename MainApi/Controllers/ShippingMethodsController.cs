@@ -2,13 +2,23 @@
 
 [ApiController]
 [Route("api/[controller]")]
-public class ShippingMethodsController(IShippingService shippingService) : ControllerBase
+public class ShippingMethodsController : ControllerBase
 {
-    [HttpGet]
-    [AllowAnonymous]
-    public async Task<IActionResult> Get()
+    private readonly IShippingService _shippingService;
+
+    public ShippingMethodsController(IShippingService shippingService)
     {
-        var result = await shippingService.GetActiveShippingMethodsAsync();
-        return Ok(result);
+        _shippingService = shippingService;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetActiveShippingMethods()
+    {
+        var result = await _shippingService.GetActiveShippingMethodsAsync();
+        if (result.Success)
+        {
+            return Ok(result.Data);
+        }
+        return BadRequest(new { Message = result.Error });
     }
 }

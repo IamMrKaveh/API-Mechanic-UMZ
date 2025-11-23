@@ -66,6 +66,20 @@ public class AuditService : IAuditService
         });
     }
 
+    public Task LogAdminEventAsync(string action, int userId, string details, string? ipAddress = "system", string? userAgent = null)
+    {
+        return LogAuditAsync(new Domain.Log.AuditLog
+        {
+            UserId = userId,
+            Action = _htmlSanitizer.Sanitize(action),
+            Details = _htmlSanitizer.Sanitize(details),
+            IpAddress = SanitizeIpAddress(ipAddress ?? "system"),
+            Timestamp = DateTime.UtcNow,
+            EventType = "AdminEvent",
+            UserAgent = userAgent
+        });
+    }
+
     public async Task LogOrderEventAsync(int orderId, string action, int userId, string details)
     {
         await LogAuditAsync(new Domain.Log.AuditLog
