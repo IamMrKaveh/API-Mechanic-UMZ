@@ -21,8 +21,8 @@ public class ProductSearchDto
     public bool? InStock { get; set; }
     public bool? HasDiscount { get; set; }
     public bool? IsUnlimited { get; set; }
-    public bool? IncludeInactive { get; set; }
-    public bool? IncludeDeleted { get; set; }
+    public bool? IncludeInactive { get; internal set; }
+    public bool? IncludeDeleted { get; internal set; }
     public ProductSortOptions SortBy { get; set; } = ProductSortOptions.Newest;
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
@@ -31,7 +31,7 @@ public class ProductSearchDto
 
 public class ProductDto
 {
-    public int Id { get; set; }
+    public int? Id { get; set; }
 
     [Required]
     [StringLength(200)]
@@ -47,6 +47,8 @@ public class ProductDto
     public string? RowVersion { get; set; }
     public string VariantsJson { get; set; } = "[]";
     public List<IFormFile>? Images { get; set; }
+    public int? PrimaryImageIndex { get; set; }
+    public List<int>? DeletedMediaIds { get; set; }
 }
 
 
@@ -63,31 +65,14 @@ public class CreateProductVariantDto
     public List<int> AttributeValueIds { get; set; } = [];
 }
 
-public class AttributeValueDto
-{
-    public int Id { get; set; }
-    public string TypeName { get; set; } = string.Empty;
-    public string TypeDisplayName { get; set; } = string.Empty;
-    public string Value { get; set; } = string.Empty;
-    public string DisplayValue { get; set; } = string.Empty;
-    public string? HexCode { get; set; }
-
-    public AttributeValueDto(
-        int id,
-        string typeName,
-        string typeDisplayName,
-        string value,
-        string displayValue,
-        string hexCode)
-    {
-        Id = id;
-        TypeName = typeName;
-        TypeName = typeDisplayName;
-        Value = value;
-        DisplayValue = displayValue;
-        HexCode = hexCode;
-    }
-}
+public record AttributeValueDto(
+    int Id,
+    string TypeName,
+    string TypeDisplayName,
+    string Value,
+    string DisplayValue,
+    string? HexCode
+);
 
 public class ProductVariantResponseDto
 {
@@ -101,7 +86,7 @@ public class ProductVariantResponseDto
     public bool IsActive { get; set; }
     public bool IsInStock { get; set; }
     public bool HasDiscount { get; set; }
-    public double DiscountPercentage { get; set; }
+    public decimal DiscountPercentage { get; set; }
     public Dictionary<string, AttributeValueDto> Attributes { get; set; } = [];
     public IEnumerable<MediaDto> Images { get; set; } = [];
     public string? RowVersion { get; set; }
@@ -166,5 +151,13 @@ public class AttributeTypeWithValuesDto
     public int Id { get; set; }
     public string Name { get; set; }
     public string DisplayName { get; set; }
-    public List<AttributeValueDto> Values { get; set; }
+    public List<AttributeValueSimpleDto> Values { get; set; }
+}
+
+public class AttributeValueSimpleDto
+{
+    public int Id { get; set; }
+    public string Value { get; set; }
+    public string DisplayValue { get; set; }
+    public string? HexCode { get; set; }
 }

@@ -4,168 +4,187 @@ public class OrderItemService : IOrderItemService
 {
     private readonly IOrderItemRepository _orderItemRepository;
     private readonly IOrderRepository _orderRepository;
-    private readonly ILogger<OrderItemService> _logger;
-    private readonly IMediaService _mediaService;
+    private readonly IProductRepository _productRepository;
     private readonly IInventoryService _inventoryService;
+    private readonly IAuditService _auditService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<OrderItemService> _logger;
 
     public OrderItemService(
         IOrderItemRepository orderItemRepository,
         IOrderRepository orderRepository,
-        ILogger<OrderItemService> logger,
-        IMediaService mediaService,
+        IProductRepository productRepository,
         IInventoryService inventoryService,
-        IUnitOfWork unitOfWork)
+        IAuditService auditService,
+        IUnitOfWork unitOfWork,
+        ILogger<OrderItemService> logger)
     {
         _orderItemRepository = orderItemRepository;
         _orderRepository = orderRepository;
-        _logger = logger;
-        _mediaService = mediaService;
+        _productRepository = productRepository;
         _inventoryService = inventoryService;
+        _auditService = auditService;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
-    public async Task<(IEnumerable<object> items, int total)> GetOrderItemsAsync(int? currentUserId, bool isAdmin, int? orderId, int page, int pageSize)
-    {
-        var (items, total) = await _orderItemRepository.GetOrderItemsAsync(currentUserId, isAdmin, orderId, page, pageSize);
-
-        var dtos = items.Select(oi => new
-        {
-            oi.Id,
-            oi.OrderId,
-            oi.VariantId,
-            ProductName = oi.Variant.Product != null ? oi.Variant.Product.Name : "N/A",
-            PurchasePrice = isAdmin ? (decimal?)oi.PurchasePrice : null,
-            oi.SellingPrice,
-            oi.Quantity,
-            oi.Amount,
-            Profit = isAdmin ? (decimal?)oi.Profit : null,
-        });
-
-        return (dtos, total);
-    }
-
-    public async Task<object?> GetOrderItemByIdAsync(int orderItemId, int? currentUserId, bool isAdmin)
-    {
-        var item = await _orderItemRepository.GetOrderItemByIdAsync(orderItemId);
-
-        if (item == null) return null;
-
-        if (!isAdmin && (item.Order == null || item.Order.UserId != currentUserId))
-        {
-            _logger.LogWarning("Unauthorized access attempt for OrderItem {OrderItemId} by User {UserId}", orderItemId, currentUserId);
-            return null;
-        }
-
-        var icon = await _mediaService.GetPrimaryImageUrlAsync("Product", item.Variant.ProductId);
-        return new
-        {
-            item.Id,
-            item.OrderId,
-            item.VariantId,
-            Product = item.Variant.Product != null ? new
-            {
-                item.Variant.Product.Id,
-                item.Variant.Product.Name,
-                Icon = icon,
-                Category = item.Variant.Product.CategoryGroup?.Category != null ? new { item.Variant.Product.CategoryGroup.Category.Id, item.Variant.Product.CategoryGroup.Category.Name } : null
-            } : null,
-            PurchasePrice = isAdmin ? (decimal?)item.PurchasePrice : null,
-            item.SellingPrice,
-            item.Quantity,
-            item.Amount,
-            Profit = isAdmin ? (decimal?)item.Profit : null,
-            RowVersion = item.RowVersion != null ? Convert.ToBase64String(item.RowVersion) : null
-        };
-    }
-
-    public async Task<Domain.Order.OrderItem> CreateOrderItemAsync(CreateOrderItemDto itemDto)
+    public async Task<ServiceResult<OrderItem>> CreateOrderItemAsync(CreateOrderItemDto itemDto, int creatingUserId)
     {
         var order = await _orderRepository.GetOrderForUpdateAsync(itemDto.OrderId);
-        if (order == null) throw new KeyNotFoundException("Order not found");
+        if (order == null)
+            return ServiceResult<OrderItem>.Fail("Order not found.");
 
-        var variant = await _orderItemRepository.GetProductVariantWithProductAsync(itemDto.VariantId);
-        if (variant?.Product == null) throw new KeyNotFoundException("Product variant not found");
+        var variant = await _productRepository.GetVariantByIdForUpdateAsync(itemDto.VariantId);
+        if (variant == null)
+            return ServiceResult<OrderItem>.Fail("Product variant not found.");
 
-        await _inventoryService.LogTransactionAsync(variant.Id, "Sale", -itemDto.Quantity, null, order.UserId, $"Added to order {order.Id}");
+        if (!variant.IsUnlimited && variant.Stock < itemDto.Quantity)
+            return ServiceResult<OrderItem>.Fail($"Not enough stock for product {variant.Product.Name}. Available: {variant.Stock}, Requested: {itemDto.Quantity}.");
 
-        var amount = itemDto.SellingPrice * itemDto.Quantity;
-        var profit = (itemDto.SellingPrice - variant.PurchasePrice) * itemDto.Quantity;
-
-        var newOrderItem = new Domain.Order.OrderItem
+        var orderItem = new OrderItem
         {
             OrderId = itemDto.OrderId,
             VariantId = itemDto.VariantId,
             Quantity = itemDto.Quantity,
             SellingPrice = itemDto.SellingPrice,
             PurchasePrice = variant.PurchasePrice,
-            Amount = amount,
-            Profit = profit
+            Amount = itemDto.Quantity * itemDto.SellingPrice,
+            Profit = itemDto.Quantity * (itemDto.SellingPrice - variant.PurchasePrice)
         };
 
-        await _orderItemRepository.AddOrderItemAsync(newOrderItem);
-
-        order.TotalAmount += amount;
-        order.TotalProfit += profit;
-
+        await _orderItemRepository.AddOrderItemAsync(orderItem);
         await _unitOfWork.SaveChangesAsync();
-        return newOrderItem;
+
+        try
+        {
+            await _inventoryService.LogTransactionAsync(
+                variant.Id,
+                "Sale",
+                -orderItem.Quantity,
+                orderItem.Id,
+                creatingUserId,
+                $"Added to order {order.Id}",
+                $"ORDER-{order.Id}"
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to log inventory transaction for new order item {OrderItemId}. Rolling back.", orderItem.Id);
+            _orderItemRepository.RemoveOrderItem(orderItem);
+            await _unitOfWork.SaveChangesAsync();
+            return ServiceResult<OrderItem>.Fail("Failed to update inventory. Order item creation was rolled back.");
+        }
+
+        order.RecalculateTotals();
+        await _unitOfWork.SaveChangesAsync();
+
+        await _auditService.LogOrderEventAsync(order.Id, "AddItem", creatingUserId, $"Item '{variant.Product.Name}' (Qty: {orderItem.Quantity}) added.");
+        return ServiceResult<OrderItem>.Ok(orderItem);
     }
 
-    public async Task<bool> UpdateOrderItemAsync(int orderItemId, UpdateOrderItemDto itemDto, int userId)
+    public async Task<ServiceResult<bool>> UpdateOrderItemAsync(int orderItemId, UpdateOrderItemDto itemDto, int updatingUserId)
     {
-        var item = await _orderItemRepository.GetOrderItemWithDetailsAsync(orderItemId);
+        var orderItem = await _orderItemRepository.GetOrderItemByIdForUpdateAsync(orderItemId);
+        if (orderItem == null)
+            return ServiceResult<bool>.Fail("Order item not found.");
 
-        if (item?.Variant?.Product == null || item.Order == null)
-            throw new KeyNotFoundException("Order item, variant, product, or order not found.");
+        _orderItemRepository.SetOrderItemRowVersion(orderItem, Convert.FromBase64String(itemDto.RowVersion));
 
-        if (itemDto.RowVersion != null)
-            _orderItemRepository.SetOrderItemRowVersion(item, Convert.FromBase64String(itemDto.RowVersion));
+        var originalQuantity = orderItem.Quantity;
+        var quantityChange = (itemDto.Quantity ?? originalQuantity) - originalQuantity;
 
-        var oldAmount = item.Amount;
-        var oldProfit = item.Profit;
-        var quantityChange = 0;
-
-        if (itemDto.Quantity.HasValue)
+        if (quantityChange != 0)
         {
-            quantityChange = itemDto.Quantity.Value - item.Quantity;
-            if (quantityChange != 0)
-            {
-                await _inventoryService.LogTransactionAsync(item.VariantId, "OrderItemUpdate", -quantityChange, item.Id, userId, $"Quantity updated in order {item.OrderId}");
-            }
-            item.Quantity = itemDto.Quantity.Value;
+            if (!orderItem.Variant.IsUnlimited && (orderItem.Variant.Stock < quantityChange))
+                return ServiceResult<bool>.Fail($"Not enough stock to update quantity. Available: {orderItem.Variant.Stock}, Additional required: {quantityChange}.");
+
+            orderItem.Quantity = itemDto.Quantity ?? orderItem.Quantity;
         }
 
         if (itemDto.SellingPrice.HasValue)
         {
-            if (itemDto.SellingPrice.Value < item.Variant.PurchasePrice)
-                throw new ArgumentException("Selling price cannot be less than purchase price.");
-            item.SellingPrice = itemDto.SellingPrice.Value;
+            orderItem.SellingPrice = itemDto.SellingPrice.Value;
         }
 
-        var newAmount = item.SellingPrice * item.Quantity;
-        var newProfit = (item.SellingPrice - item.Variant.PurchasePrice) * item.Quantity;
+        orderItem.RecalculateTotals();
 
-        item.Order.TotalAmount = item.Order.TotalAmount - oldAmount + newAmount;
-        item.Order.TotalProfit = item.Order.TotalProfit - oldProfit + newProfit;
+        try
+        {
+            if (quantityChange != 0)
+            {
+                await _inventoryService.LogTransactionAsync(
+                    orderItem.VariantId,
+                    "SaleUpdate",
+                    -quantityChange,
+                    orderItem.Id,
+                    updatingUserId,
+                    $"Quantity updated for order {orderItem.OrderId}",
+                    $"ORDER-{orderItem.OrderId}"
+                );
+            }
 
-        await _unitOfWork.SaveChangesAsync();
-        return true;
+            var order = await _orderRepository.GetOrderForUpdateAsync(orderItem.OrderId);
+            order!.RecalculateTotals();
+
+            await _unitOfWork.SaveChangesAsync();
+            await _auditService.LogOrderEventAsync(orderItem.OrderId, "UpdateItem", updatingUserId, $"Item ID {orderItem.Id} updated.");
+            return ServiceResult<bool>.Ok(true);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return ServiceResult<bool>.Fail("This record was modified by another user. Please refresh and try again.", 409);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return ServiceResult<bool>.Fail(ex.Message);
+        }
     }
 
-    public async Task<bool> DeleteOrderItemAsync(int orderItemId, int userId)
+    public async Task<ServiceResult<bool>> DeleteOrderItemAsync(int orderItemId, int deletingUserId)
     {
-        var item = await _orderItemRepository.GetOrderItemWithDetailsAsync(orderItemId);
-        if (item?.Order == null) throw new KeyNotFoundException("Order item or order not found.");
+        var orderItem = await _orderItemRepository.GetOrderItemByIdForUpdateAsync(orderItemId);
+        if (orderItem == null)
+            return ServiceResult<bool>.Fail("Order item not found.");
 
-        await _inventoryService.LogTransactionAsync(item.VariantId, "Return", item.Quantity, item.Id, userId, $"Item removed from order {item.OrderId}");
+        _orderItemRepository.RemoveOrderItem(orderItem);
 
-        item.Order.TotalAmount -= item.Amount;
-        item.Order.TotalProfit -= item.Profit;
+        try
+        {
+            await _inventoryService.LogTransactionAsync(
+               orderItem.VariantId,
+               "Return",
+               orderItem.Quantity,
+               orderItem.Id,
+               deletingUserId,
+               $"Item removed from order {orderItem.OrderId}",
+               $"ORDER-{orderItem.OrderId}"
+           );
 
-        _orderItemRepository.DeleteOrderItem(item);
+            var order = await _orderRepository.GetOrderForUpdateAsync(orderItem.OrderId);
+            order!.RecalculateTotals();
 
-        await _unitOfWork.SaveChangesAsync();
-        return true;
+            await _unitOfWork.SaveChangesAsync();
+            await _auditService.LogOrderEventAsync(orderItem.OrderId, "DeleteItem", deletingUserId, $"Item ID {orderItem.Id} removed from order.");
+            return ServiceResult<bool>.Ok(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete order item {OrderItemId} and adjust inventory.", orderItemId);
+            return ServiceResult<bool>.Fail("An error occurred while deleting the item.");
+        }
+    }
+
+    public async Task<ServiceResult<List<OrderItem>>> GetOrderItemsByOrderIdAsync(int orderId)
+    {
+        var items = await _orderItemRepository.GetOrderItemsByOrderIdAsync(orderId);
+        return ServiceResult<List<OrderItem>>.Ok(items);
+    }
+
+    public async Task<ServiceResult<OrderItem?>> GetOrderItemByIdAsync(int orderItemId)
+    {
+        var item = await _orderItemRepository.GetOrderItemByIdAsync(orderItemId);
+        if (item == null)
+            return ServiceResult<OrderItem?>.Fail("Order item not found.");
+        return ServiceResult<OrderItem?>.Ok(item);
     }
 }

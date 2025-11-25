@@ -10,6 +10,7 @@ public class AdminProductService : IAdminProductService
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediaService _mediaService;
+    private readonly IStorageService _storageService;
 
     public AdminProductService(
         IProductRepository productRepository,
@@ -19,7 +20,8 @@ public class AdminProductService : IAdminProductService
         IHtmlSanitizer htmlSanitizer,
         IMapper mapper,
         IUnitOfWork unitOfWork,
-        IMediaService mediaService)
+        IMediaService mediaService,
+        IStorageService storageService)
     {
         _productRepository = productRepository;
         _inventoryService = inventoryService;
@@ -29,6 +31,7 @@ public class AdminProductService : IAdminProductService
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _mediaService = mediaService;
+        _storageService = storageService;
     }
 
     public async Task<ServiceResult<AdminProductViewDto?>> GetAdminProductByIdAsync(int productId)
@@ -44,157 +47,330 @@ public class AdminProductService : IAdminProductService
 
     public async Task<ServiceResult<AdminProductViewDto>> CreateProductAsync(ProductDto productDto, int userId)
     {
-        var product = _mapper.Map<Product>(productDto);
-        product.Description = _htmlSanitizer.Sanitize(productDto.Description ?? string.Empty);
+        if (!string.IsNullOrEmpty(productDto.Sku) && await _productRepository.ProductSkuExistsAsync(productDto.Sku))
+        {
+            return ServiceResult<AdminProductViewDto>.Fail("Product SKU already exists.");
+        }
 
-        var variants = JsonSerializer
-            .Deserialize<List<CreateProductVariantDto>>(
-            productDto.VariantsJson,
-            new JsonSerializerOptions 
-            {
-                PropertyNameCaseInsensitive = true 
-            }) ?? [];
+        var variants = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(
+               productDto.VariantsJson,
+               new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
 
         if (!variants.Any())
         {
             return ServiceResult<AdminProductViewDto>.Fail("Product must have at least one variant.");
         }
 
-        foreach (var variantDto in variants)
+        var variantAttributeSets = variants
+            .Select(v => new HashSet<int>(v.AttributeValueIds))
+            .ToList();
+
+        if (variantAttributeSets.Count != new HashSet<HashSet<int>>(variantAttributeSets, HashSet<int>.CreateSetComparer()).Count)
         {
-            var variant = _mapper.Map<ProductVariant>(variantDto);
-            variant.Product = product;
-            var attributeValues = await _productRepository.GetAttributeValuesByIdsAsync(variantDto.AttributeValueIds);
-            foreach (var attrValue in attributeValues)
-            {
-                variant.VariantAttributes.Add(new ProductVariantAttribute { AttributeValue = attrValue });
-            }
-            product.Variants.Add(variant);
+            return ServiceResult<AdminProductViewDto>.Fail("Duplicate variant combinations detected. Each variant must have a unique set of attributes.");
         }
 
-        product.RecalculateAggregates();
-
-        await _productRepository.AddAsync(product);
-        await _unitOfWork.SaveChangesAsync();
-
-        if (productDto.Images != null)
+        return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
-            foreach (var image in productDto.Images)
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            var uploadedFilePaths = new List<string>();
+
+            try
             {
-                await _mediaService.AttachFileToEntityAsync(image.OpenReadStream(), image.FileName, image.ContentType, image.Length, "Product", product.Id, false, product.Name);
+                var product = _mapper.Map<Product>(productDto);
+                product.Description = _htmlSanitizer.Sanitize(productDto.Description ?? string.Empty);
+
+                foreach (var variantDto in variants)
+                {
+                    var variant = _mapper.Map<ProductVariant>(variantDto);
+                    variant.Product = product;
+                    var attributeValues = await _productRepository.GetAttributeValuesByIdsAsync(variantDto.AttributeValueIds);
+                    foreach (var attrValue in attributeValues)
+                    {
+                        variant.VariantAttributes.Add(new ProductVariantAttribute { AttributeValue = attrValue });
+                    }
+
+                    if (variantDto.Stock > 0)
+                    {
+                        variant.InventoryTransactions.Add(new InventoryTransaction
+                        {
+                            TransactionType = "StockIn",
+                            QuantityChange = variantDto.Stock,
+                            StockBefore = 0,
+                            Notes = "Initial stock",
+                            UserId = userId
+                        });
+                    }
+
+                    product.Variants.Add(variant);
+                }
+
+                await _productRepository.AddAsync(product);
+                product.RecalculateAggregates();
+                await _unitOfWork.SaveChangesAsync();
+
+                if (productDto.Images != null)
+                {
+                    for (int i = 0; i < productDto.Images.Count; i++)
+                    {
+                        var image = productDto.Images[i];
+                        bool isPrimary = false;
+
+                        if (productDto.PrimaryImageIndex.HasValue)
+                        {
+                            if (productDto.PrimaryImageIndex.Value == i) isPrimary = true;
+                        }
+                        else if (i == 0)
+                        {
+                            isPrimary = true;
+                        }
+
+                        var media = await _mediaService.AttachFileToEntityAsync(
+                            image.OpenReadStream(),
+                            image.FileName,
+                            image.ContentType,
+                            image.Length,
+                            "Product",
+                            product.Id,
+                            isPrimary,
+                            product.Name,
+                            saveChanges: false);
+
+                        uploadedFilePaths.Add(media.FilePath);
+                    }
+                    await _unitOfWork.SaveChangesAsync();
+                }
+
+                await _auditService.LogProductEventAsync(product.Id, "CreateProduct", $"Product '{product.Name}' created.", userId);
+                _logger.LogInformation("Product {ProductId} created by user {UserId}", product.Id, userId);
+
+                await transaction.CommitAsync();
+
+                // Reload the product to ensure all navigation properties (CategoryGroup, Category, etc.) are loaded for mapping
+                var loadedProduct = await _productRepository.GetByIdWithVariantsAndAttributesAsync(product.Id, true);
+
+                var resultDto = await MapToAdminViewDto(loadedProduct ?? product);
+                return ServiceResult<AdminProductViewDto>.Ok(resultDto);
             }
-        }
-        await _unitOfWork.SaveChangesAsync();
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
 
-        await _auditService.LogProductEventAsync(product.Id, "CreateProduct", $"Product '{product.Name}' created.", userId);
-        _logger.LogInformation("Product {ProductId} created by user {UserId}", product.Id, userId);
+                foreach (var path in uploadedFilePaths)
+                {
+                    try
+                    {
+                        await _storageService.DeleteFileAsync(path);
+                    }
+                    catch (Exception deleteEx)
+                    {
+                        _logger.LogError(deleteEx, "Failed to delete orphaned file {Path}", path);
+                    }
+                }
 
-        var resultDto = await MapToAdminViewDto(product);
-        return ServiceResult<AdminProductViewDto>.Ok(resultDto);
+                _logger.LogError(ex, "Error creating product");
+                return ServiceResult<AdminProductViewDto>.Fail("Failed to create product due to an internal error.");
+            }
+        });
     }
 
-    public async Task<ServiceResult> UpdateProductAsync(int productId, ProductDto productDto, int userId)
+    public async Task<ServiceResult<AdminProductViewDto>> UpdateProductAsync(int productId, ProductDto productDto, int userId)
     {
-        var product = await _productRepository.GetByIdWithVariantsAndAttributesAsync(productId, true);
-        if (product == null)
+        return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
-            return ServiceResult.Fail("Product not found.");
-        }
-
-        if (!string.IsNullOrEmpty(productDto.RowVersion))
-        {
-            _productRepository.SetOriginalRowVersion(product, Convert.FromBase64String(productDto.RowVersion));
-        }
-
-        _mapper.Map(productDto, product);
-        product.Description = _htmlSanitizer.Sanitize(productDto.Description ?? string.Empty);
-
-        var variantDtos = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(productDto.VariantsJson) ?? [];
-        _productRepository.UpdateVariants(product, variantDtos);
-        product.RecalculateAggregates();
-
-        if (productDto.Images != null)
-        {
-            foreach (var image in productDto.Images)
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                await _mediaService.AttachFileToEntityAsync(image.OpenReadStream(), image.FileName, image.ContentType, image.Length, "Product", product.Id, false, product.Name);
-            }
-        }
+                var product = await _productRepository.GetByIdWithVariantsAndAttributesAsync(productId, true);
+                if (product == null)
+                {
+                    return ServiceResult<AdminProductViewDto>.Fail("Product not found.");
+                }
 
-        try
-        {
-            await _unitOfWork.SaveChangesAsync();
-            await _auditService.LogProductEventAsync(productId, "UpdateProduct", $"Product '{product.Name}' updated.", userId);
-            return ServiceResult.Ok();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return ServiceResult.Fail("The record was modified by another user. Please refresh and try again.");
-        }
+                if (!string.IsNullOrEmpty(productDto.Sku) && await _productRepository.ProductSkuExistsAsync(productDto.Sku, productId))
+                {
+                    return ServiceResult<AdminProductViewDto>.Fail("Product SKU already exists.");
+                }
+
+                if (!string.IsNullOrEmpty(productDto.RowVersion))
+                {
+                    _productRepository.SetOriginalRowVersion(product, Convert.FromBase64String(productDto.RowVersion));
+                }
+
+                if (productDto.DeletedMediaIds != null && productDto.DeletedMediaIds.Any())
+                {
+                    foreach (var mediaId in productDto.DeletedMediaIds)
+                    {
+                        await _mediaService.DeleteMediaAsync(mediaId);
+                    }
+                }
+
+                _mapper.Map(productDto, product);
+                product.Description = _htmlSanitizer.Sanitize(productDto.Description ?? string.Empty);
+
+                var variantDtos = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(productDto.VariantsJson) ?? [];
+                _productRepository.UpdateVariants(product, variantDtos);
+
+                foreach (var vDto in variantDtos)
+                {
+                    if (vDto.Id.HasValue && vDto.Id > 0)
+                    {
+                        var existingVariant = product.Variants.FirstOrDefault(v => v.Id == vDto.Id);
+                        if (existingVariant != null && !existingVariant.IsUnlimited)
+                        {
+                            int currentStock = existingVariant.Stock;
+                            int newStock = vDto.Stock;
+                            int diff = newStock - currentStock;
+                            if (diff != 0)
+                            {
+                                await _inventoryService.LogTransactionAsync(
+                                   existingVariant.Id,
+                                   "Adjustment",
+                                   diff,
+                                   null,
+                                   userId,
+                                   "Admin update adjustment",
+                                   null,
+                                   null,
+                                   saveChanges: false
+                               );
+                            }
+                        }
+                    }
+                }
+
+                product.RecalculateAggregates();
+
+                if (productDto.Images != null)
+                {
+                    foreach (var image in productDto.Images)
+                    {
+                        await _mediaService.AttachFileToEntityAsync(
+                            image.OpenReadStream(),
+                            image.FileName,
+                            image.ContentType,
+                            image.Length,
+                            "Product",
+                            product.Id,
+                            false,
+                            product.Name,
+                            saveChanges: false);
+                    }
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                await _auditService.LogProductEventAsync(productId, "UpdateProduct", $"Product '{product.Name}' updated.", userId);
+
+                await transaction.CommitAsync();
+
+                var updatedProductDto = await MapToAdminViewDto(product);
+                return ServiceResult<AdminProductViewDto>.Ok(updatedProductDto);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync();
+                return ServiceResult<AdminProductViewDto>.Fail("The record was modified by another user. Please refresh and try again.");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error updating product {ProductId}", productId);
+                return ServiceResult<AdminProductViewDto>.Fail("An error occurred while updating the product.");
+            }
+        });
     }
 
     public async Task<ServiceResult> AddStockAsync(int variantId, int quantity, int userId, string notes)
     {
-        var variant = await _productRepository.GetVariantByIdAsync(variantId);
-        if (variant == null)
+        return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
-            return ServiceResult.Fail("Variant not found.");
-        }
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var variant = await _productRepository.GetVariantByIdAsync(variantId);
+                if (variant == null) return ServiceResult.Fail("Variant not found.");
 
-        await _inventoryService.LogTransactionAsync(variantId, "StockIn", quantity, null, userId, notes, null, variant.RowVersion);
+                await _inventoryService.LogTransactionAsync(variantId, "StockIn", quantity, null, userId, notes, null, variant.RowVersion, saveChanges: false);
 
-        await _unitOfWork.SaveChangesAsync();
-        await _auditService.LogInventoryEventAsync(variant.ProductId, "AddStock", $"Added {quantity} to stock for variant {variantId}.", userId);
+                await _unitOfWork.SaveChangesAsync();
+                await _auditService.LogInventoryEventAsync(variant.ProductId, "AddStock", $"Added {quantity} to stock for variant {variantId}.", userId);
 
-        return ServiceResult.Ok();
+                await transaction.CommitAsync();
+                return ServiceResult.Ok();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error adding stock");
+                return ServiceResult.Fail(ex.Message);
+            }
+        });
     }
 
     public async Task<ServiceResult> RemoveStockAsync(int variantId, int quantity, int userId, string notes)
     {
-        var variant = await _productRepository.GetVariantByIdAsync(variantId);
-        if (variant == null)
+        return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
-            return ServiceResult.Fail("Variant not found.");
-        }
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var variant = await _productRepository.GetVariantByIdAsync(variantId);
+                if (variant == null) return ServiceResult.Fail("Variant not found.");
 
-        await _inventoryService.LogTransactionAsync(variantId, "StockOut", -quantity, null, userId, notes, null, variant.RowVersion);
+                await _inventoryService.LogTransactionAsync(variantId, "StockOut", -quantity, null, userId, notes, null, variant.RowVersion, saveChanges: false);
 
-        await _unitOfWork.SaveChangesAsync();
-        await _auditService.LogInventoryEventAsync(variant.ProductId, "RemoveStock", $"Removed {quantity} from stock for variant {variantId}.", userId);
+                await _unitOfWork.SaveChangesAsync();
+                await _auditService.LogInventoryEventAsync(variant.ProductId, "RemoveStock", $"Removed {quantity} from stock for variant {variantId}.", userId);
 
-        return ServiceResult.Ok();
+                await transaction.CommitAsync();
+                return ServiceResult.Ok();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error removing stock");
+                return ServiceResult.Fail(ex.Message);
+            }
+        });
     }
 
     public async Task<ServiceResult> SetDiscountAsync(int variantId, decimal originalPrice, decimal discountedPrice, int userId)
     {
-        var variant = await _productRepository.GetVariantByIdAsync(variantId);
-        if (variant == null)
+        if (discountedPrice < 0 || originalPrice < 0) return ServiceResult.Fail("Prices cannot be negative.");
+        if (discountedPrice >= originalPrice) return ServiceResult.Fail("Discounted price must be less than the original price.");
+
+        return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
-            return ServiceResult.Fail("Variant not found.");
-        }
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var variant = await _productRepository.GetVariantByIdAsync(variantId);
+                if (variant == null) return ServiceResult.Fail("Variant not found.");
 
-        if (discountedPrice >= originalPrice)
-        {
-            return ServiceResult.Fail("Discounted price must be less than the original price.");
-        }
+                await _auditService.LogProductEventAsync(variant.ProductId, "PriceChange", $"Variant {variantId} price changed from {variant.SellingPrice} (Orig: {variant.OriginalPrice}) to {discountedPrice} (Orig: {originalPrice}).", userId);
 
-        variant.OriginalPrice = originalPrice;
-        variant.SellingPrice = discountedPrice;
+                variant.OriginalPrice = originalPrice;
+                variant.SellingPrice = discountedPrice;
 
-        _productRepository.UpdateVariant(variant);
-        await _unitOfWork.SaveChangesAsync();
+                _productRepository.UpdateVariant(variant);
+                await _unitOfWork.SaveChangesAsync();
 
-        await _auditService.LogProductEventAsync(variant.ProductId, "SetDiscount", $"Discount set for variant {variantId}.", userId);
-        return ServiceResult.Ok();
+                await transaction.CommitAsync();
+                return ServiceResult.Ok();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error setting discount");
+                return ServiceResult.Fail("Failed to set discount.");
+            }
+        });
     }
 
     public async Task<ServiceResult> RemoveDiscountAsync(int variantId, int userId)
     {
         var variant = await _productRepository.GetVariantByIdAsync(variantId);
-        if (variant == null)
-        {
-            return ServiceResult.Fail("Variant not found.");
-        }
+        if (variant == null) return ServiceResult.Fail("Variant not found.");
 
         variant.SellingPrice = variant.OriginalPrice;
 
@@ -207,28 +383,60 @@ public class AdminProductService : IAdminProductService
 
     public async Task<ServiceResult> BulkUpdatePricesAsync(Dictionary<int, decimal> priceUpdates, bool isPurchasePrice, int userId)
     {
-        var variantIds = priceUpdates.Keys.ToList();
-        var variants = await _productRepository.GetVariantsByIdsAsync(variantIds);
+        if (priceUpdates == null || !priceUpdates.Any()) return ServiceResult.Fail("No price updates provided.");
 
-        foreach (var (variantId, newPrice) in priceUpdates)
+        if (priceUpdates.Any(p => p.Value < 0)) return ServiceResult.Fail("Prices cannot be negative.");
+
+        return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
-            if (variants.TryGetValue(variantId, out var variant))
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                if (isPurchasePrice)
-                {
-                    variant.PurchasePrice = newPrice;
-                }
-                else
-                {
-                    variant.SellingPrice = newPrice;
-                }
-                _productRepository.UpdateVariant(variant);
-            }
-        }
+                var variantIds = priceUpdates.Keys.ToList();
+                var variants = await _productRepository.GetVariantsByIdsAsync(variantIds);
 
-        await _unitOfWork.SaveChangesAsync();
-        await _auditService.LogSystemEventAsync("BulkPriceUpdate", $"Bulk price update performed by user {userId}.", userId);
-        return ServiceResult.Ok();
+                var failedIds = new List<int>();
+                var changesLog = new List<string>();
+
+                foreach (var (variantId, newPrice) in priceUpdates)
+                {
+                    if (variants.TryGetValue(variantId, out var variant))
+                    {
+                        var oldPrice = isPurchasePrice ? variant.PurchasePrice : variant.SellingPrice;
+
+                        if (isPurchasePrice)
+                            variant.PurchasePrice = newPrice;
+                        else
+                            variant.SellingPrice = newPrice;
+
+                        _productRepository.UpdateVariant(variant);
+                        changesLog.Add($"Variant {variantId}: {oldPrice} -> {newPrice}");
+                    }
+                    else
+                    {
+                        failedIds.Add(variantId);
+                    }
+                }
+
+                if (failedIds.Any())
+                {
+                    _logger.LogWarning("Bulk update partial failure. Variants not found: {Ids}", string.Join(",", failedIds));
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+
+                await _auditService.LogSystemEventAsync("BulkPriceUpdate", $"User {userId} updated prices. Changes: {string.Join("; ", changesLog)}", userId);
+
+                await transaction.CommitAsync();
+                return ServiceResult.Ok();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error in bulk price update");
+                return ServiceResult.Fail("Bulk update failed.");
+            }
+        });
     }
 
     public async Task<ServiceResult> DeleteProductAsync(int productId, int userId)
@@ -272,7 +480,6 @@ public class AdminProductService : IAdminProductService
         var products = await _productRepository.GetLowStockProductsAsync(threshold);
         return ServiceResult<IEnumerable<object>>.Ok(products);
     }
-
 
     private async Task<AdminProductViewDto> MapToAdminViewDto(Product product)
     {

@@ -347,6 +347,9 @@ namespace Application.Migrations
                     b.Property<int>("DiscountCodeId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsConfirmed")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("OrderId")
                         .HasColumnType("integer");
 
@@ -382,22 +385,35 @@ namespace Application.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now() at time zone 'utc'");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Notes")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
                     b.Property<int?>("OrderItemId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Quantity")
+                    b.Property<int>("QuantityChange")
                         .HasColumnType("integer");
 
                     b.Property<string>("ReferenceNumber")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("StockAfter")
-                        .HasColumnType("integer");
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("bytea");
 
                     b.Property<int>("StockBefore")
                         .HasColumnType("integer");
@@ -1231,12 +1247,6 @@ namespace Application.Migrations
                     b.Property<bool>("IsUnlimited")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("MaxOrderQuantity")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("MinOrderQuantity")
-                        .HasColumnType("integer");
-
                     b.Property<decimal>("OriginalPrice")
                         .HasColumnType("decimal(18,2)");
 
@@ -1674,7 +1684,7 @@ namespace Application.Migrations
                         .IsRequired();
 
                     b.HasOne("Domain.Product.Product", null)
-                        .WithMany("OrderDetails")
+                        .WithMany("OrderItems")
                         .HasForeignKey("ProductId");
 
                     b.HasOne("Domain.Product.ProductVariant", "Variant")
@@ -1864,7 +1874,7 @@ namespace Application.Migrations
                 {
                     b.Navigation("Images");
 
-                    b.Navigation("OrderDetails");
+                    b.Navigation("OrderItems");
 
                     b.Navigation("Reviews");
 

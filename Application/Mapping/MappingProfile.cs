@@ -19,7 +19,6 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Variants, opt => opt.Ignore())
             .ForMember(dest => dest.Reviews, opt => opt.Ignore())
             .ForMember(dest => dest.Images, opt => opt.Ignore())
-            .ForMember(dest => dest.OrderDetails, opt => opt.Ignore())
             .ForMember(dest => dest.MinPrice, opt => opt.Ignore())
             .ForMember(dest => dest.MaxPrice, opt => opt.Ignore())
             .ForMember(dest => dest.TotalStock, opt => opt.Ignore())
@@ -37,7 +36,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
             .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
             .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
-            .ForMember(dest => dest.RowVersion, opt => opt.Ignore());
+            .ForMember(dest => dest.RowVersion, opt => opt.Ignore())
+            .ForMember(dest => dest.Stock, opt => opt.Ignore());
 
         CreateMap<Product, AdminProductViewDto>()
             .ForMember(dest => dest.RowVersion,
@@ -45,23 +45,23 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Images, opt => opt.Ignore())
             .ForMember(dest => dest.Variants, opt => opt.Ignore())
             .ForMember(dest => dest.CategoryGroup,
-                opt => opt.MapFrom(src => new
+                opt => opt.MapFrom(src => src.CategoryGroup != null ? new
                 {
                     Id = src.CategoryGroup.Id,
                     Name = src.CategoryGroup.Name,
-                    CategoryName = src.CategoryGroup.Category.Name
-                }));
+                    CategoryName = src.CategoryGroup.Category != null ? src.CategoryGroup.Category.Name : "N/A"
+                } : null));
 
         CreateMap<Product, PublicProductViewDto>()
             .ForMember(dest => dest.Images, opt => opt.Ignore())
-            .ForMember(dest => dest.Variants, opt => opt.Ignore())
+            // Variants mapping is handled automatically via ProductVariant -> ProductVariantResponseDto map to ensure RowVersion is included
             .ForMember(dest => dest.CategoryGroup,
-                opt => opt.MapFrom(src => new
+                opt => opt.MapFrom(src => src.CategoryGroup != null ? new
                 {
                     Id = src.CategoryGroup.Id,
                     Name = src.CategoryGroup.Name,
-                    CategoryName = src.CategoryGroup.Category.Name
-                }));
+                    CategoryName = src.CategoryGroup.Category != null ? src.CategoryGroup.Category.Name : "N/A"
+                } : null));
 
         CreateMap<ProductVariant, ProductVariantResponseDto>()
             .ForMember(dest => dest.RowVersion,
@@ -83,11 +83,13 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.DiscountPercentage,
                 opt => opt.MapFrom(src =>
                     src.OriginalPrice > src.SellingPrice && src.OriginalPrice > 0
-                        ? Math.Round((1 - (src.SellingPrice / src.OriginalPrice)) * 100, 0)
+                        ? (1 - (src.SellingPrice / src.OriginalPrice)) * 100
                         : 0));
 
         CreateMap<AttributeType, AttributeTypeWithValuesDto>()
             .ForMember(dest => dest.Values, opt => opt.MapFrom(src => src.AttributeValues));
+
+        CreateMap<AttributeValue, AttributeValueSimpleDto>();
 
         CreateMap<AttributeValue, AttributeValueDto>()
             .ConstructUsing(src => new AttributeValueDto(
@@ -103,7 +105,8 @@ public class MappingProfile : Profile
         // ---------------------------------------------------------
 
         CreateMap<Category, CategoryViewDto>()
-            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion));
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null));
+
 
         CreateMap<CategoryGroup, CategoryGroupSummaryDto>();
 
@@ -134,7 +137,8 @@ public class MappingProfile : Profile
 
         CreateMap<CategoryGroup, CategoryGroupViewDto>()
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
-            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion));
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null));
+
 
         CreateMap<CategoryGroupCreateDto, CategoryGroup>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
@@ -206,6 +210,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null));
         CreateMap<ShippingMethodCreateDto, ShippingMethod>();
         CreateMap<ShippingMethodUpdateDto, ShippingMethod>()
-            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null));
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion));
+
     }
 }

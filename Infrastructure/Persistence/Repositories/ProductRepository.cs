@@ -14,13 +14,15 @@ public class ProductRepository : IProductRepository
     public async Task<(List<Product> Products, int TotalItems)> GetPagedAsync(ProductSearchDto searchParams)
     {
         var query = _context.Products
-            .Include(p => p.Variants)
-                .ThenInclude(v => v.VariantAttributes)
-                .ThenInclude(va => va.AttributeValue)
-                .ThenInclude(av => av.AttributeType)
-            .Include(p => p.CategoryGroup)
-                .ThenInclude(cg => cg.Category)
-            .AsQueryable();
+                .Include(p => p.Variants)
+                    .ThenInclude(v => v.VariantAttributes)
+                    .ThenInclude(va => va.AttributeValue)
+                    .ThenInclude(av => av.AttributeType)
+                .Include(p => p.Variants)
+                    .ThenInclude(v => v.InventoryTransactions)
+                .Include(p => p.CategoryGroup)
+                    .ThenInclude(cg => cg.Category)
+                .AsQueryable();
 
         if (!searchParams.IncludeDeleted == true)
         {
@@ -105,7 +107,10 @@ public class ProductRepository : IProductRepository
                 .ThenInclude(v => v.VariantAttributes)
                 .ThenInclude(va => va.AttributeValue)
                 .ThenInclude(av => av.AttributeType)
+            .Include(p => p.Variants)
+                .ThenInclude(v => v.InventoryTransactions)
             .Include(p => p.CategoryGroup)
+                .ThenInclude(cg => cg.Category)
             .FirstOrDefaultAsync(p => p.Id == productId);
     }
 
@@ -136,7 +141,7 @@ public class ProductRepository : IProductRepository
     public void UpdateVariants(Product product, List<CreateProductVariantDto> variantDtos)
     {
         var existingVariantIds = product.Variants.Select(v => v.Id).ToList();
-        var updatedVariantIds = variantDtos.Where(v => v.Id > 0).Select(v => v.Id.Value).ToList();
+        var updatedVariantIds = variantDtos.Where(v => v.Id > 0).Select(v => v.Id!.Value).ToList();
 
         var variantsToDelete = product.Variants.Where(v => !updatedVariantIds.Contains(v.Id)).ToList();
         foreach (var variant in variantsToDelete)
@@ -157,6 +162,17 @@ public class ProductRepository : IProductRepository
             else
             {
                 variant = _mapper.Map<ProductVariant>(dto);
+                if (dto.Stock > 0)
+                {
+                    variant.InventoryTransactions.Add(new InventoryTransaction
+                    {
+                        TransactionType = "StockIn",
+                        QuantityChange = dto.Stock,
+                        StockBefore = 0,
+                        Notes = "Initial stock (Update)",
+                        UserId = null
+                    });
+                }
                 product.Variants.Add(variant);
             }
 
@@ -184,6 +200,19 @@ public class ProductRepository : IProductRepository
         return await _context.ProductVariants.FindAsync(variantId);
     }
 
+    public async Task<ProductVariant?> GetVariantByIdForUpdateAsync(int variantId)
+    {
+        return await _context.ProductVariants
+                    .Include(v => v.Product)
+                    .Include(v => v.InventoryTransactions)
+                    .FirstOrDefaultAsync(v => v.Id == variantId);
+    }
+
+    public void SetVariantRowVersion(ProductVariant variant, byte[] rowVersion)
+    {
+        _context.Entry(variant).Property(p => p.RowVersion).OriginalValue = rowVersion;
+    }
+
     public void UpdateVariant(ProductVariant variant)
     {
         _context.ProductVariants.Update(variant);
@@ -202,6 +231,14 @@ public class ProductRepository : IProductRepository
 
         return await _context.ProductVariants
             .AnyAsync(v => v.Sku == sku && (!variantId.HasValue || v.Id != variantId.Value));
+    }
+
+    public async Task<bool> ProductSkuExistsAsync(string sku, int? productId = null)
+    {
+        if (string.IsNullOrEmpty(sku)) return false;
+
+        return await _context.Products
+            .AnyAsync(p => p.Sku == sku && (!productId.HasValue || p.Id != productId.Value));
     }
 
     public async Task<IEnumerable<object>> GetLowStockProductsAsync(int threshold)

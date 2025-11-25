@@ -2,6 +2,7 @@
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class OrderItemsController : ControllerBase
 {
     private readonly IOrderItemService _orderItemService;
@@ -15,31 +16,28 @@ public class OrderItemsController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<object>> GetOrderItems(
-        [FromQuery] int? orderId = null,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+    [HttpPost]
+    public async Task<ActionResult<Domain.Order.OrderItem>> CreateOrderItem(CreateOrderItemDto itemDto)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var userId = _currentUserService.UserId;
+        if (userId == null) return Unauthorized();
 
         try
         {
-            var (items, total) = await _orderItemService.GetOrderItemsAsync(_currentUserService.UserId, _currentUserService.IsAdmin, orderId, page, pageSize);
-            return Ok(new
+            var result = await _orderItemService.CreateOrderItemAsync(itemDto, userId.Value);
+            if (!result.Success || result.Data == null)
             {
-                Items = items,
-                TotalItems = total,
-                Page = page,
-                PageSize = pageSize,
-                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
-            });
+                return BadRequest(new { Message = result.Error });
+            }
+
+            var itemResult = await _orderItemService.GetOrderItemByIdAsync(result.Data.Id);
+
+            return CreatedAtAction(nameof(GetOrderItem), new { id = result.Data.Id }, itemResult.Data);
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
-            _logger.LogError(ex, "Error retrieving order items for order {OrderId}", orderId);
-            return StatusCode(500, "An error occurred while retrieving order items.");
+            return Conflict(new { Message = ex.Message });
         }
     }
 
@@ -48,31 +46,14 @@ public class OrderItemsController : ControllerBase
     {
         if (id <= 0) return BadRequest("Invalid order item ID");
 
-        var item = await _orderItemService.GetOrderItemByIdAsync(id, _currentUserService.UserId, _currentUserService.IsAdmin);
-        if (item == null) return NotFound("Order item not found or you do not have permission to view it.");
-
-        return Ok(item);
-    }
-
-    [HttpPost]
-    public async Task<ActionResult<Domain.Order.OrderItem>> CreateOrderItem(CreateOrderItemDto itemDto)
-    {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-
-        try
+        var result = await _orderItemService.GetOrderItemByIdAsync(id);
+        if (!result.Success || result.Data == null)
         {
-            var orderItem = await _orderItemService.CreateOrderItemAsync(itemDto);
-            var result = await _orderItemService.GetOrderItemByIdAsync(orderItem.Id, _currentUserService.UserId, true);
-            return CreatedAtAction(nameof(GetOrderItem), new { id = orderItem.Id }, result);
+            return NotFound(new { Message = result.Error });
         }
-        catch (KeyNotFoundException ex)
-        {
-            return BadRequest(new { Message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { Message = ex.Message });
-        }
+
+        // Add authorization check if necessary for admin/user roles
+        return Ok(result.Data);
     }
 
     [HttpPut("{id}")]
@@ -85,20 +66,15 @@ public class OrderItemsController : ControllerBase
 
         try
         {
-            var success = await _orderItemService.UpdateOrderItemAsync(id, itemDto, userId.Value);
-            return success ? NoContent() : NotFound("Order item not found.");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { Message = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { Message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { Message = ex.Message });
+            var result = await _orderItemService.UpdateOrderItemAsync(id, itemDto, userId.Value);
+            if (result.Success) return NoContent();
+
+            return result.StatusCode switch
+            {
+                404 => NotFound(new { Message = result.Error }),
+                409 => Conflict(new { Message = result.Error }),
+                _ => BadRequest(new { Message = result.Error })
+            };
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -113,14 +89,8 @@ public class OrderItemsController : ControllerBase
         var userId = _currentUserService.UserId;
         if (userId == null) return Unauthorized();
 
-        try
-        {
-            var success = await _orderItemService.DeleteOrderItemAsync(id, userId.Value);
-            return success ? NoContent() : NotFound("Order item not found.");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { Message = ex.Message });
-        }
+        var result = await _orderItemService.DeleteOrderItemAsync(id, userId.Value);
+        if (result.Success) return NoContent();
+        return NotFound(new { Message = result.Error });
     }
 }

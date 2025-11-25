@@ -44,6 +44,14 @@ public class CreateOrderFromCartDto
     public int ShippingMethodId { get; set; }
 
     public string? DiscountCode { get; set; }
+
+    public List<CheckoutItemPriceDto> ExpectedItems { get; set; } = [];
+}
+
+public class CheckoutItemPriceDto
+{
+    public int VariantId { get; set; }
+    public decimal Price { get; set; }
 }
 
 public class UpdateOrderStatusByIdDto

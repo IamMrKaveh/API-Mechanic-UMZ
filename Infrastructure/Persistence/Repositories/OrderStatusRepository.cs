@@ -9,33 +9,33 @@ public class OrderStatusRepository : IOrderStatusRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Domain.Order.OrderStatus>> GetOrderStatusesAsync()
+    public async Task<IEnumerable<OrderStatus>> GetOrderStatusesAsync()
     {
-        return await _context.Set<Domain.Order.OrderStatus>().AsNoTracking().OrderBy(s => s.Id).ToListAsync();
+        return await _context.Set<OrderStatus>().AsNoTracking().OrderBy(s => s.Id).ToListAsync();
     }
 
-    public async Task<Domain.Order.OrderStatus?> GetOrderStatusByIdAsync(int id)
+    public async Task<OrderStatus?> GetOrderStatusByIdAsync(int id)
     {
-        return await _context.Set<Domain.Order.OrderStatus>().AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        return await _context.Set<OrderStatus>().AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
     }
-    public async Task<Domain.Order.OrderStatus?> GetOrderStatusByIdForUpdateAsync(int id)
+    public async Task<OrderStatus?> GetOrderStatusByIdForUpdateAsync(int id)
     {
-        return await _context.Set<Domain.Order.OrderStatus>().FindAsync(id);
+        return await _context.Set<OrderStatus>().FindAsync(id);
     }
 
-    public Task<Domain.Order.OrderStatus?> GetStatusByNameAsync(string name)
+    public Task<OrderStatus?> GetStatusByNameAsync(string name)
     {
-        return _context.Set<Domain.Order.OrderStatus>()
+        return _context.Set<OrderStatus>()
             .FirstOrDefaultAsync(s => s.Name.ToLower() == name.ToLower());
     }
 
-    public async Task AddOrderStatusAsync(Domain.Order.OrderStatus status)
+    public async Task AddOrderStatusAsync(OrderStatus status)
     {
-        await _context.Set<Domain.Order.OrderStatus>().AddAsync(status);
+        await _context.Set<OrderStatus>().AddAsync(status);
     }
-    public void UpdateOrderStatus(Domain.Order.OrderStatus status)
+    public void UpdateOrderStatus(OrderStatus status)
     {
-        _context.Set<Domain.Order.OrderStatus>().Update(status);
+        _context.Set<OrderStatus>().Update(status);
     }
 
     public async Task<bool> IsOrderStatusInUseAsync(int id)
@@ -43,10 +43,10 @@ public class OrderStatusRepository : IOrderStatusRepository
         return await _context.Set<Domain.Order.Order>().AnyAsync(o => o.OrderStatusId == id);
     }
 
-    public void DeleteOrderStatus(Domain.Order.OrderStatus status)
+    public void DeleteOrderStatus(OrderStatus status)
     {
         status.IsDeleted = true;
         status.DeletedAt = DateTime.UtcNow;
-        _context.Set<Domain.Order.OrderStatus>().Update(status);
+        _context.Set<OrderStatus>().Update(status);
     }
 }

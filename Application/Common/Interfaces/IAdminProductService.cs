@@ -4,7 +4,7 @@ public interface IAdminProductService
 {
     Task<ServiceResult<AdminProductViewDto?>> GetAdminProductByIdAsync(int productId);
     Task<ServiceResult<AdminProductViewDto>> CreateProductAsync(ProductDto productDto, int userId);
-    Task<ServiceResult> UpdateProductAsync(int productId, ProductDto productDto, int userId);
+    Task<ServiceResult<AdminProductViewDto>> UpdateProductAsync(int productId, ProductDto productDto, int userId);
     Task<ServiceResult> AddStockAsync(int variantId, int quantity, int userId, string notes);
     Task<ServiceResult> RemoveStockAsync(int variantId, int quantity, int userId, string notes);
     Task<ServiceResult> SetDiscountAsync(int variantId, decimal originalPrice, decimal discountedPrice, int userId);

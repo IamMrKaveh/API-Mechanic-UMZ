@@ -132,9 +132,9 @@ public class CartService : ICartService
 
             if (existingItem != null)
             {
-                if (dto.RowVersion != null && dto.RowVersion.Length > 0)
+                if (dto.CartItemRowVersion != null && dto.CartItemRowVersion.Length > 0)
                 {
-                    _cartRepository.SetCartItemRowVersion(existingItem, dto.RowVersion);
+                    _cartRepository.SetCartItemRowVersion(existingItem, dto.CartItemRowVersion);
                 }
 
                 existingItem.Quantity = totalRequested;
@@ -298,6 +298,15 @@ public class CartService : ICartService
         var guestCart = await _cartRepository.GetCartAsync(null, guestId);
         if (guestCart == null || !guestCart.CartItems.Any()) return;
 
+        var userExists = await _cartRepository.UserExistsAsync(userId);
+        if (!userExists)
+        {
+            _logger.LogWarning("Attempted to merge cart for non-existent user {UserId}. Aborting merge.", userId);
+            _cartRepository.RemoveCart(guestCart);
+            await _unitOfWork.SaveChangesAsync();
+            return;
+        }
+
         var userCart = await _cartRepository.GetCartAsync(userId, null);
 
         if (userCart == null)
@@ -358,7 +367,7 @@ public class CartService : ICartService
                     va.AttributeValue.AttributeType.DisplayName,
                     va.AttributeValue.Value,
                     va.AttributeValue.DisplayValue,
-                    va.AttributeValue.HexCode
+                    va.AttributeValue.HexCode ?? string.Empty
                 )
             );
 

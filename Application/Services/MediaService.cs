@@ -1,4 +1,10 @@
-﻿namespace Application.Services;
+﻿using Application.Common.Interfaces;
+using Application.Common.Interfaces.Persistence;
+using Application.DTOs;
+using AutoMapper;
+using Domain.Media;
+
+namespace Application.Services;
 
 public class MediaService : IMediaService
 {
@@ -54,7 +60,7 @@ public class MediaService : IMediaService
         return dtos.OrderBy(m => m.SortOrder);
     }
 
-    public async Task<Media> AttachFileToEntityAsync(Stream stream, string fileName, string contentType, long contentLength, string entityType, int entityId, bool isPrimary, string? altText = null)
+    public async Task<Media> AttachFileToEntityAsync(Stream stream, string fileName, string contentType, long contentLength, string entityType, int entityId, bool isPrimary = false, string? altText = null, bool saveChanges = true)
     {
         var (filePath, uniqueFileName) = await _storageService.SaveFileAsync(stream, fileName, entityType, entityId.ToString());
         var media = new Media
@@ -69,7 +75,11 @@ public class MediaService : IMediaService
             AltText = altText
         };
         await _mediaRepository.AddAsync(media);
-        await _unitOfWork.SaveChangesAsync();
+
+        if (saveChanges)
+        {
+            await _unitOfWork.SaveChangesAsync();
+        }
         return media;
     }
 
@@ -78,7 +88,7 @@ public class MediaService : IMediaService
         var uploadedMedia = new List<Media>();
         foreach (var (stream, fileName, contentType, length) in fileStreams)
         {
-            var media = await AttachFileToEntityAsync(stream, fileName, contentType, length, entityType, entityId, isPrimary, altText);
+            var media = await AttachFileToEntityAsync(stream, fileName, contentType, length, entityType, entityId, isPrimary, altText, saveChanges: true);
             uploadedMedia.Add(media);
         }
         return uploadedMedia;

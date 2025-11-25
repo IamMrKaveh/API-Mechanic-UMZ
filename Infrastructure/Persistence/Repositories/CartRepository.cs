@@ -48,9 +48,11 @@ public class CartRepository : ICartRepository
         await _context.Set<Domain.Cart.CartItem>().AddAsync(item);
     }
 
-    public async Task<Domain.Product.ProductVariant?> GetVariantByIdAsync(int variantId)
+    public async Task<ProductVariant?> GetVariantByIdAsync(int variantId)
     {
-        return await _context.Set<Domain.Product.ProductVariant>().FindAsync(variantId);
+        return await _context.Set<Domain.Product.ProductVariant>()
+        .Include(v => v.InventoryTransactions)
+        .FirstOrDefaultAsync(v => v.Id == variantId);
     }
 
     public async Task<Domain.Cart.CartItem?> GetCartItemAsync(int cartId, int variantId)
@@ -99,5 +101,10 @@ public class CartRepository : ICartRepository
     public void UpdateCartItem(Domain.Cart.CartItem item)
     {
         _context.Set<Domain.Cart.CartItem>().Update(item);
+    }
+
+    public async Task<bool> UserExistsAsync(int userId)
+    {
+        return await _context.Users.AnyAsync(u => u.Id == userId && !u.IsDeleted);
     }
 }

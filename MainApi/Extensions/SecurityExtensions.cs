@@ -1,44 +1,9 @@
 ﻿namespace MainApi.Extensions;
-/// 
-/// Extension methods for configuring security services
-/// 
+
 public static class SecurityExtensions
 {
-    /// 
-    /// Adds IP whitelist authorization policy for admin endpoints
-    /// 
-    public static IServiceCollection AddIpWhitelist(
-    this IServiceCollection services,
-    IConfiguration configuration)
-    {
-        var whitelistedIps = configuration.GetSection("Security:AdminIpWhitelist").Get<string[]>();
-        if (whitelistedIps != null && whitelistedIps.Any())
-        {
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("AdminIpWhitelist", policy =>
-                {
-                    policy.RequireRole("Admin");
-                    policy.RequireAssertion(context =>
-                    {
-                        var httpContext = context.Resource as HttpContext;
-                        if (httpContext == null) return false;
-
-                        var ipString = HttpContextHelper.GetClientIpAddress(httpContext);
-
-                        return !string.IsNullOrEmpty(ipString) && whitelistedIps.Contains(ipString);
-                    });
-                });
-            });
-        }
-        return services;
-    }
-    /// 
-    /// Adds security-related middleware to the application pipeline
-    /// 
     public static IApplicationBuilder UseSecurityMiddleware(this IApplicationBuilder app)
     {
-        // Custom middleware for logging slow or failed requests
         app.Use(async (context, next) =>
         {
             var sw = Stopwatch.StartNew();

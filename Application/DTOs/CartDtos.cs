@@ -3,7 +3,8 @@
 public record AddToCartDto(
     [Required] int VariantId,
     [Range(1, 1000)] int Quantity,
-    byte[]? RowVersion
+    byte[]? VariantRowVersion,
+    byte[]? CartItemRowVersion
 );
 
 public record UpdateCartItemDto(
@@ -31,3 +32,10 @@ public record CartDto(
     int TotalItems,
     decimal TotalPrice
 );
+
+public class CheckoutFromCartResultDto
+{
+    public int OrderId { get; set; }
+    public string? PaymentUrl { get; set; }
+    public string? Error { get; set; }
+}

@@ -1,19 +1,17 @@
 ﻿namespace Domain.Inventory;
 
-public class InventoryTransaction : IAuditable
+public class InventoryTransaction : BaseEntity
 {
-    public int Id { get; set; }
-
     public int VariantId { get; set; }
     public Product.ProductVariant Variant { get; set; } = null!;
 
-    public required string TransactionType { get; set; }
+    public string TransactionType { get; set; } = string.Empty;
 
-    public int Quantity { get; set; }
+    public int QuantityChange { get; set; }
 
     public int StockBefore { get; set; }
 
-    public int StockAfter { get; set; }
+    public int StockAfter => StockBefore + QuantityChange;
 
     public int? OrderItemId { get; set; }
     public Order.OrderItem? OrderItem { get; set; }
@@ -21,11 +19,6 @@ public class InventoryTransaction : IAuditable
     public int? UserId { get; set; }
     public User.User? User { get; set; }
 
-    public string? Notes { get; set; }
-
+    public string Notes { get; set; } = string.Empty;
     public string? ReferenceNumber { get; set; }
-
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    public DateTime? UpdatedAt { get; set; }
 }
