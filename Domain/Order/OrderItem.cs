@@ -23,4 +23,10 @@ public class OrderItem
     public byte[]? RowVersion { get; set; }
 
     public ICollection<Inventory.InventoryTransaction> InventoryTransactions { get; set; } = [];
+
+    public void RecalculateTotals()
+    {
+        Amount = Quantity * SellingPrice;
+        Profit = Quantity * (SellingPrice - PurchasePrice);
+    }
 }

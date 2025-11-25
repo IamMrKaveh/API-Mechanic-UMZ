@@ -8,7 +8,7 @@ public class User : BaseEntity
 
     public string? LastName { get; set; }
 
-    public bool IsActive { get; set; } = true;
+    public new bool IsActive { get; set; } = true;
 
     public bool IsAdmin { get; set; }
 

@@ -27,4 +27,6 @@ public interface ICartRepository
     Task<int> GetCartItemsCountAsync(int? userId, string? guestId);
 
     void UpdateCartItem(Domain.Cart.CartItem item);
+
+    Task<bool> UserExistsAsync(int userId);
 }

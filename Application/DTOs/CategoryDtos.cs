@@ -54,6 +54,6 @@ public class CategoryGroupSummaryDto
     public string? IconUrl { get; set; }
     public int ProductCount { get; set; }
     public int InStockProducts { get; set; }
-    public long TotalValue { get; set; }
-    public long TotalSellingValue { get; set; }
+    public decimal TotalValue { get; set; }
+    public decimal TotalSellingValue { get; set; }
 }

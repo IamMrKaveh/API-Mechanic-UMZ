@@ -21,7 +21,7 @@ public class UserAddress : BaseEntity
 
     public bool IsDefault { get; set; }
 
-    public bool IsActive { get; set; } = true;
+    public new bool IsActive { get; set; } = true;
 
     public decimal? Latitude { get; set; }
 

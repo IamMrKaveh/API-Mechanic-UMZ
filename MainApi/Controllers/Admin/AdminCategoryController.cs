@@ -42,7 +42,6 @@ public class AdminCategoryController : ControllerBase
         return Ok(result.Data);
     }
 
-
     [HttpPost]
     public async Task<IActionResult> CreateCategory([FromForm] CategoryCreateDto dto)
     {

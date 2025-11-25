@@ -11,7 +11,7 @@ public class Product : BaseEntity
     public int CategoryGroupId { get; set; }
     public Category.CategoryGroup CategoryGroup { get; set; } = null!;
 
-    public bool IsActive { get; set; } = true;
+    public new bool IsActive { get; set; } = true;
 
     public decimal MinPrice { get; set; }
 
@@ -22,7 +22,7 @@ public class Product : BaseEntity
     public bool HasMultipleVariants => Variants.Count > 1;
 
     public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
-    public ICollection<Order.OrderItem> OrderDetails { get; set; } = [];
+    public ICollection<OrderItem> OrderItems { get; set; } = [];
     public ICollection<Media.Media> Images { get; set; } = [];
     public ICollection<ProductReview> Reviews { get; set; } = [];
 

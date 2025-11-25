@@ -16,4 +16,6 @@ public class DiscountUsage
     public decimal DiscountAmount { get; set; }
 
     public DateTime UsedAt { get; set; } = DateTime.UtcNow;
+
+    public bool IsConfirmed { get; set; }
 }

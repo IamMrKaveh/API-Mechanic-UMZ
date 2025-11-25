@@ -72,15 +72,15 @@ public class OrdersController : ControllerBase
 
         try
         {
-            var (createdOrder, paymentUrl, error) = await _orderService.CheckoutFromCartAsync(orderDto, userId.Value, idempotencyKey);
+            var result = await _orderService.CheckoutFromCartAsync(orderDto, userId.Value, idempotencyKey);
 
-            if (paymentUrl != null)
+            if (result.PaymentUrl != null)
             {
-                return Ok(new { PaymentUrl = paymentUrl, OrderId = createdOrder.Id });
+                return Ok(new { PaymentUrl = result.PaymentUrl, OrderId = result.OrderId });
             }
 
-            _logger.LogError("Payment URL is null for order {OrderId}. Reason: {Reason}", createdOrder.Id, error);
-            return StatusCode(500, new { message = error ?? "Failed to generate payment link." });
+            _logger.LogError("Payment URL is null for order {OrderId}. Reason: {Reason}", result.OrderId, result.Error);
+            return StatusCode(500, new { message = result.Error ?? "Failed to generate payment link." });
         }
         catch (InvalidOperationException ex)
         {
@@ -121,6 +121,6 @@ public class OrdersController : ControllerBase
     {
         var (isVerified, redirectUrl) = await _orderService.VerifyAndProcessPaymentAsync(orderId, authority, status);
 
-        return Redirect(redirectUrl);
+        return Ok(new { isVerified, redirectUrl });
     }
 }

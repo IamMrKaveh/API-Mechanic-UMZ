@@ -15,15 +15,6 @@ public class SecurityController : ControllerBase
     public IActionResult GetCsrfToken()
     {
         var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
-        Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!,
-                    new CookieOptions
-                    {
-                        HttpOnly = false,
-                        Secure = true,
-                        SameSite = SameSiteMode.Strict,
-
-                        Expires = DateTimeOffset.UtcNow.AddHours(1)
-                    });
         return Ok(new { token = tokens.RequestToken });
     }
 }

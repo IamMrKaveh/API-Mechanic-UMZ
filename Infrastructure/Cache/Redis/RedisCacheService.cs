@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Cache.Redis;
+﻿using IDatabase = StackExchange.Redis.IDatabase;
+
+namespace Infrastructure.Cache.Redis;
 
 public class RedisCacheService : ICacheService
 {
@@ -129,8 +131,8 @@ public class RedisCacheService : ICacheService
         {
             if (!_redis.IsConnected)
             {
-                _logger.LogWarning("Redis is not connected. Lock for key {Key} not acquired.", key);
-                return false;
+                _logger.LogWarning("Redis is not connected. Bypassing lock for key {Key}.", key);
+                return true;
             }
 
             var lockKey = $"lock:{key}";
@@ -139,8 +141,8 @@ public class RedisCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error acquiring lock for key {Key}", key);
-            return false;
+            _logger.LogError(ex, "Error acquiring lock for key {Key}. Proceeding without lock.", key);
+            return true;
         }
     }
 

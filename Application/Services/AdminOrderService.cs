@@ -3,6 +3,7 @@
 public class AdminOrderService : IAdminOrderService
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IOrderStatusRepository _orderStatusRepository;
     private readonly ILogger<AdminOrderService> _logger;
     private readonly IAuditService _auditService;
     private readonly IDiscountService _discountService;
@@ -11,9 +12,13 @@ public class AdminOrderService : IAdminOrderService
     private readonly INotificationService _notificationService;
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+    private readonly IServiceProvider _serviceProvider;
+
 
     public AdminOrderService(
         IOrderRepository orderRepository,
+        IOrderStatusRepository orderStatusRepository,
         ILogger<AdminOrderService> logger,
         IAuditService auditService,
         IDiscountService discountService,
@@ -21,9 +26,12 @@ public class AdminOrderService : IAdminOrderService
         IMediaService mediaService,
         INotificationService notificationService,
         IUserRepository userRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IMapper mapper,
+        IServiceProvider serviceProvider)
     {
         _orderRepository = orderRepository;
+        _orderStatusRepository = orderStatusRepository;
         _logger = logger;
         _auditService = auditService;
         _discountService = discountService;
@@ -32,6 +40,8 @@ public class AdminOrderService : IAdminOrderService
         _notificationService = notificationService;
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<(IEnumerable<object> Orders, int TotalItems)> GetOrdersAsync(int? userId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
@@ -50,25 +60,25 @@ public class AdminOrderService : IAdminOrderService
             o.CreatedAt,
             RowVersion = o.RowVersion != null ? Convert.ToBase64String(o.RowVersion) : null,
             o.OrderStatusId,
-            User = new
+            User = o.User != null ? new
             {
                 o.User.Id,
                 o.User.PhoneNumber,
                 o.User.FirstName,
                 o.User.LastName
-            },
-            OrderStatus = new
+            } : null,
+            OrderStatus = o.OrderStatus != null ? new
             {
                 o.OrderStatus.Id,
                 o.OrderStatus.Name,
                 o.OrderStatus.Icon
-            },
-            ShippingMethod = new
+            } : null,
+            ShippingMethod = o.ShippingMethod != null ? new
             {
                 o.ShippingMethod.Id,
                 o.ShippingMethod.Name,
                 o.ShippingMethod.Cost
-            },
+            } : null,
             OrderItemsCount = o.OrderItems.Count
         });
 
@@ -116,7 +126,7 @@ public class AdminOrderService : IAdminOrderService
                             a.AttributeValue.AttributeType.DisplayName,
                             a.AttributeValue.Value,
                             a.AttributeValue.DisplayValue,
-                            a.AttributeValue.HexCode
+                            a.AttributeValue.HexCode ?? string.Empty
                         ))
                 }
             });
@@ -174,8 +184,6 @@ public class AdminOrderService : IAdminOrderService
             if (!variant.IsUnlimited && variant.Stock < itemDto.Quantity)
                 throw new InvalidOperationException($"Not enough stock for product {variant.Product.Name}.");
 
-            await _inventoryService.LogTransactionAsync(variant.Id, "Sale", -itemDto.Quantity, null, orderDto.UserId, $"Order creation", null, variant.RowVersion);
-
             var amount = itemDto.SellingPrice * itemDto.Quantity;
             var profit = (itemDto.SellingPrice - variant.PurchasePrice) * itemDto.Quantity;
 
@@ -184,7 +192,7 @@ public class AdminOrderService : IAdminOrderService
 
             orderItems.Add(new Domain.Order.OrderItem
             {
-                VariantId = variant.Id,
+                Variant = variant,
                 PurchasePrice = variant.PurchasePrice,
                 SellingPrice = itemDto.SellingPrice,
                 Quantity = itemDto.Quantity,
@@ -215,11 +223,12 @@ public class AdminOrderService : IAdminOrderService
             }
         }
 
+        var userAddressDto = _mapper.Map<UserAddressDto>(userAddress);
         var order = new Domain.Order.Order
         {
             UserId = orderDto.UserId,
             ReceiverName = orderDto.ReceiverName,
-            AddressSnapshot = JsonSerializer.Serialize(userAddress),
+            AddressSnapshot = JsonSerializer.Serialize(userAddressDto),
             UserAddressId = userAddress.Id,
             CreatedAt = DateTime.UtcNow,
             OrderStatusId = orderDto.OrderStatusId,
@@ -235,6 +244,15 @@ public class AdminOrderService : IAdminOrderService
         };
 
         await _orderRepository.AddOrderAsync(order);
+        await _unitOfWork.SaveChangesAsync();
+
+        foreach (var orderItem in order.OrderItems)
+        {
+            if (!variants.TryGetValue(orderItem.VariantId, out var variant)) continue;
+
+            var inventoryService = _serviceProvider.GetRequiredService<IInventoryService>();
+            await inventoryService.LogTransactionAsync(orderItem.VariantId, "Sale", -orderItem.Quantity, orderItem.Id, orderDto.UserId, $"Order Creation {order.Id}", null, variant.RowVersion);
+        }
 
         if (discountId.HasValue)
         {
@@ -282,8 +300,10 @@ public class AdminOrderService : IAdminOrderService
             var userAddress = await _userRepository.GetUserAddressAsync(orderDto.UserAddressId.Value);
             if (userAddress == null || userAddress.UserId != order.UserId)
                 throw new ArgumentException("Invalid user address ID");
+
+            var userAddressDto = _mapper.Map<UserAddressDto>(userAddress);
             order.UserAddressId = userAddress.Id;
-            order.AddressSnapshot = JsonSerializer.Serialize(userAddress);
+            order.AddressSnapshot = JsonSerializer.Serialize(userAddressDto);
         }
 
         if (orderDto.DeliveryDate.HasValue)
@@ -296,8 +316,11 @@ public class AdminOrderService : IAdminOrderService
 
     public async Task<bool> UpdateOrderStatusAsync(int id, UpdateOrderStatusByIdDto statusDto)
     {
-        var order = await _orderRepository.GetOrderForUpdateAsync(id);
+        var order = await _orderRepository.GetOrderWithItemsAsync(id);
         if (order == null) return false;
+
+        var previousStatusId = order.OrderStatusId;
+        var previousStatus = await _orderStatusRepository.GetOrderStatusByIdAsync(previousStatusId);
 
         _orderRepository.SetOrderRowVersion(order, Convert.FromBase64String(statusDto.RowVersion));
 
@@ -305,14 +328,23 @@ public class AdminOrderService : IAdminOrderService
             throw new ArgumentException("Invalid Order Status ID");
 
         order.OrderStatusId = statusDto.OrderStatusId;
+        var newStatus = await _orderStatusRepository.GetOrderStatusByIdAsync(statusDto.OrderStatusId);
 
-        var statusName = await _orderRepository.GetOrderStatusNameAsync(statusDto.OrderStatusId);
-        await _auditService.LogOrderEventAsync(id, "UpdateStatus", order.UserId, $"Order status changed to {statusName}");
+        if (newStatus != null && (newStatus.Name.Contains("Cancelled", StringComparison.OrdinalIgnoreCase) || newStatus.Name.Contains("Failed", StringComparison.OrdinalIgnoreCase)) &&
+            previousStatus != null && !(previousStatus.Name.Contains("Cancelled", StringComparison.OrdinalIgnoreCase) || previousStatus.Name.Contains("Failed", StringComparison.OrdinalIgnoreCase)))
+        {
+            foreach (var orderItem in order.OrderItems)
+            {
+                await _inventoryService.LogTransactionAsync(orderItem.VariantId, "Return", orderItem.Quantity, orderItem.Id, order.UserId, $"Order {order.Id} cancelled.", null, orderItem.Variant.RowVersion);
+            }
+        }
+
+        await _auditService.LogOrderEventAsync(id, "UpdateStatus", order.UserId, $"Order status changed to {newStatus?.Name ?? "N/A"}");
 
         await _notificationService.CreateNotificationAsync(
             order.UserId,
             "تغییر وضعیت سفارش",
-            $"وضعیت سفارش شما با شماره {order.Id} به '{statusName}' تغییر کرد.",
+            $"وضعیت سفارش شما با شماره {order.Id} به '{newStatus?.Name ?? "N/A"}' تغییر کرد.",
             "OrderStatusChanged",
             $"/dashboard/order/{order.Id}"
         );
@@ -332,7 +364,8 @@ public class AdminOrderService : IAdminOrderService
 
         foreach (var orderItem in order.OrderItems)
         {
-            await _inventoryService.LogTransactionAsync(orderItem.VariantId, "Return", orderItem.Quantity, orderItem.Id, order.UserId, $"Order Deletion {order.Id}", null, orderItem.Variant.RowVersion);
+            var inventoryService = _serviceProvider.GetRequiredService<IInventoryService>();
+            await inventoryService.LogTransactionAsync(orderItem.VariantId, "Return", orderItem.Quantity, orderItem.Id, order.UserId, $"Order Deletion {order.Id}", null, orderItem.Variant.RowVersion);
         }
 
         order.IsDeleted = true;

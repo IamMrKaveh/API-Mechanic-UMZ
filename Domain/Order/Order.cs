@@ -53,4 +53,11 @@ public class Order : IAuditable, ISoftDeletable, IActivatable
     public DateTime? DeletedAt { get; set; }
     public int? DeletedBy { get; set; }
     public bool IsActive { get; set; } = true;
+
+    public void RecalculateTotals()
+    {
+        TotalAmount = OrderItems.Sum(oi => oi.Amount);
+        TotalProfit = OrderItems.Sum(oi => oi.Profit);
+        FinalAmount = TotalAmount + ShippingCost - DiscountAmount;
+    }
 }

@@ -12,9 +12,12 @@ public interface IProductRepository
     void SetOriginalRowVersion(Product product, byte[] rowVersion);
     void Update(Product product);
     Task<ProductVariant?> GetVariantByIdAsync(int variantId);
+    Task<ProductVariant?> GetVariantByIdForUpdateAsync(int variantId);
+    void SetVariantRowVersion(ProductVariant variant, byte[] rowVersion);
     void UpdateVariant(ProductVariant variant);
     Task<Dictionary<int, ProductVariant>> GetVariantsByIdsAsync(List<int> variantIds);
     Task<bool> SkuExistsAsync(string sku, int? variantId = null);
+    Task<bool> ProductSkuExistsAsync(string sku, int? productId = null);
     Task<IEnumerable<object>> GetLowStockProductsAsync(int threshold);
     Task<object> GetProductStatisticsAsync();
 }
