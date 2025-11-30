@@ -1,10 +1,8 @@
-﻿using Polly;
-
-namespace Infrastructure.Persistence.Repositories;
+﻿namespace Infrastructure.Persistence.Repositories;
 
 public class ShippingMethodRepository : IShippingMethodRepository
 {
-    private LedkaContext _context;
+    private readonly LedkaContext _context;
 
     public ShippingMethodRepository(LedkaContext context)
     {
@@ -14,11 +12,13 @@ public class ShippingMethodRepository : IShippingMethodRepository
     public async Task<IEnumerable<ShippingMethod>> GetAllAsync(bool includeDeleted = false)
     {
         var query = _context.ShippingMethods.AsQueryable();
+
         if (includeDeleted)
         {
             query = query.IgnoreQueryFilters();
         }
-        return await query.OrderBy(s => s.Cost).ToListAsync();
+
+        return await query.OrderBy(s => s.Name).ToListAsync();
     }
 
     public async Task<ShippingMethod?> GetByIdAsync(int id)
@@ -26,18 +26,37 @@ public class ShippingMethodRepository : IShippingMethodRepository
         return await _context.ShippingMethods.FindAsync(id);
     }
 
-    public async Task AddAsync(ShippingMethod shippingMethod)
+    public async Task<ShippingMethod?> GetByIdIncludingDeletedAsync(int id)
     {
-        await _context.ShippingMethods.AddAsync(shippingMethod);
+        return await _context.ShippingMethods
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(s => s.Id == id);
     }
 
-    public void Update(ShippingMethod shippingMethod)
+    public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
     {
-        _context.ShippingMethods.Update(shippingMethod);
+        var query = _context.ShippingMethods.Where(s => s.Name == name);
+
+        if (excludeId.HasValue)
+        {
+            query = query.Where(s => s.Id != excludeId.Value);
+        }
+
+        return await query.AnyAsync();
     }
 
-    public void SetOriginalRowVersion(ShippingMethod shippingMethod, byte[] rowVersion)
+    public async Task AddAsync(ShippingMethod method)
     {
-        _context.Entry(shippingMethod).Property("RowVersion").OriginalValue = rowVersion;
+        await _context.ShippingMethods.AddAsync(method);
+    }
+
+    public void Update(ShippingMethod method)
+    {
+        _context.ShippingMethods.Update(method);
+    }
+
+    public void SetOriginalRowVersion(ShippingMethod method, byte[] rowVersion)
+    {
+        _context.Entry(method).Property(s => s.RowVersion).OriginalValue = rowVersion;
     }
 }

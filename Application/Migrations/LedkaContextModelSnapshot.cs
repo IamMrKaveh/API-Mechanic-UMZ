@@ -935,6 +935,12 @@ namespace Application.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("VerificationAttemptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("VerificationCount")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("VerifiedAt")
                         .HasColumnType("timestamp with time zone");
 

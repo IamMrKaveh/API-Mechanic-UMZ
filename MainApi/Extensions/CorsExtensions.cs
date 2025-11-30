@@ -6,7 +6,7 @@ public static class CorsExtensions
 
     public static IServiceCollection AddCustomCors(this IServiceCollection services, IConfiguration configuration)
     {
-        var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ??
+        var allowedOrigins = configuration.GetSection("Security:AllowedOrigins").Get<string[]>() ??
                              new[] { "http://localhost:4200", "https://localhost:4201" };
 
         services.AddCors(options =>

@@ -35,4 +35,26 @@ public class DiscountService : IDiscountService
 
         return (discount, null);
     }
+
+    public async Task<ServiceResult<DiscountApplyResultDto>> ValidateAndApplyDiscountAsync(string code, decimal orderTotal, int userId)
+    {
+        var (discount, error) = await ValidateAndGetDiscountAsync(code, userId, orderTotal);
+
+        if (error != null || discount == null)
+        {
+            return ServiceResult<DiscountApplyResultDto>.Fail(error ?? "کد تخفیف نامعتبر است.");
+        }
+
+        var discountAmount = (orderTotal * discount.Percentage) / 100;
+        if (discount.MaxDiscountAmount.HasValue && discountAmount > discount.MaxDiscountAmount.Value)
+        {
+            discountAmount = discount.MaxDiscountAmount.Value;
+        }
+
+        return ServiceResult<DiscountApplyResultDto>.Ok(new DiscountApplyResultDto
+        {
+            DiscountAmount = discountAmount,
+            DiscountCodeId = discount.Id
+        });
+    }
 }

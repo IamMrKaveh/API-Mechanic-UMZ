@@ -34,7 +34,8 @@ public class SecurityHeadersMiddleware
 
         context.Response.Headers["Referrer-Policy"] = _options.ReferrerPolicy ?? "strict-origin-when-cross-origin";
 
-        var permissionsPolicy = _options.PermissionsPolicy ?? "camera=(), microphone=(), geolocation=(), payment=()";
+        // Fix: Allow payment API access to prevent blocking payment gateways
+        var permissionsPolicy = _options.PermissionsPolicy ?? "camera=(), microphone=(), geolocation=(), payment=*";
         context.Response.Headers["Permissions-Policy"] = permissionsPolicy;
 
         if (context.Request.IsHttps && !_environment.IsDevelopment())
@@ -76,30 +77,31 @@ public class SecurityHeadersMiddleware
             return string.Empty;
 
         var cspDirectives = new List<string>();
+        var paymentGateways = "https://*.zarinpal.com https://*.shaparak.ir https://api.zarinpal.com https://www.zarinpal.com";
 
         cspDirectives.Add($"default-src {_options.CspDefaultSrc ?? "'self'"}");
 
         var scriptSrc = _environment.IsDevelopment()
             ? "'self' 'unsafe-inline' 'unsafe-eval'"
             : "'self'";
-        cspDirectives.Add($"script-src {_options.CspScriptSrc ?? scriptSrc}");
+
+        cspDirectives.Add($"script-src {scriptSrc} {paymentGateways}");
 
         var styleSrc = "'self' 'unsafe-inline' https://fonts.googleapis.com";
         cspDirectives.Add($"style-src {_options.CspStyleSrc ?? styleSrc}");
 
-        cspDirectives.Add($"img-src {_options.CspImgSrc ?? "'self' data: https: blob:"}");
-
+        cspDirectives.Add($"img-src {_options.CspImgSrc ?? "'self' data: https: blob:"} {paymentGateways}");
         cspDirectives.Add($"font-src {_options.CspFontSrc ?? "'self' https://fonts.gstatic.com data:"}");
 
         var connectSrc = _options.CspConnectSrc
             ?? "'self' https://mechanic-umz.liara.run https://ledka-co.ir https://www.ledka-co.ir";
-        cspDirectives.Add($"connect-src {connectSrc}");
 
-        cspDirectives.Add($"frame-ancestors {_options.CspFrameAncestors ?? "'self'"}");
+        cspDirectives.Add($"connect-src {connectSrc} {paymentGateways}");
 
+        cspDirectives.Add($"frame-ancestors {_options.CspFrameAncestors ?? "'self'"} {paymentGateways}");
+        cspDirectives.Add($"frame-src 'self' {paymentGateways}");
         cspDirectives.Add("base-uri 'self'");
-
-        cspDirectives.Add("form-action 'self'");
+        cspDirectives.Add($"form-action 'self' {paymentGateways}");
 
         if (!_environment.IsDevelopment())
         {

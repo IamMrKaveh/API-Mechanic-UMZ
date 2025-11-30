@@ -8,5 +8,5 @@ public interface IZarinpalService
 
     string GetPaymentGatewayUrl(bool isSandbox, string authority);
 
-    Task<(string? PaymentUrl, string? ErrorMessage)> RequestPaymentAsync(decimal amount, string description, int orderId, int userId, string callbackUrl, string? userPhone);
+    Task<(string? PaymentUrl, string? ErrorMessage)> RequestPaymentAsync(bool isSandbox, string merchantID, decimal amount, string description, int orderId, int userId, string callbackUrl, string? userPhone);
 }

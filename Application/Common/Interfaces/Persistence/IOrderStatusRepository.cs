@@ -2,17 +2,13 @@
 
 public interface IOrderStatusRepository
 {
-    Task<IEnumerable<Domain.Order.OrderStatus>> GetOrderStatusesAsync();
-
-    Task<Domain.Order.OrderStatus?> GetOrderStatusByIdAsync(int id);
-    Task<Domain.Order.OrderStatus?> GetStatusByNameAsync(string name);
-    Task<Domain.Order.OrderStatus?> GetOrderStatusByIdForUpdateAsync(int id);
-
-    Task AddOrderStatusAsync(Domain.Order.OrderStatus status);
-
-    void UpdateOrderStatus(Domain.Order.OrderStatus status);
-
+    Task<IEnumerable<OrderStatus>> GetOrderStatusesAsync();
+    Task<OrderStatus?> GetOrderStatusByIdAsync(int id);
+    Task<OrderStatus?> GetByIdAsync(int id);
+    Task<OrderStatus?> GetStatusByNameAsync(string name);
+    Task<OrderStatus?> GetOrderStatusByIdForUpdateAsync(int id);
+    Task AddOrderStatusAsync(OrderStatus status);
+    void UpdateOrderStatus(OrderStatus status);
     Task<bool> IsOrderStatusInUseAsync(int id);
-
-    void DeleteOrderStatus(Domain.Order.OrderStatus status);
+    void DeleteOrderStatus(OrderStatus status);
 }

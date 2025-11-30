@@ -232,7 +232,7 @@ public class UserService : IUserService
 
         var safeUserAgent = SanitizeUserAgent(userAgent);
 
-        var session = new Domain.Auth.UserSession
+        var session = new UserSession
         {
             UserId = user.Id,
             TokenSelector = selector,
@@ -272,7 +272,7 @@ public class UserService : IUserService
 
         var newJwt = _tokenService.GenerateJwtToken(storedSession.User);
 
-        var newSession = new Domain.Auth.UserSession
+        var newSession = new UserSession
         {
             UserId = storedSession.UserId,
             TokenSelector = selector,

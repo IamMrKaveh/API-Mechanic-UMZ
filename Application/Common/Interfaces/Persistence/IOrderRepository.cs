@@ -2,39 +2,25 @@
 
 public interface IOrderRepository
 {
-    Task<(IEnumerable<Domain.Order.Order> Orders, int TotalItems)> GetOrdersAsync(int? currentUserId, bool isAdmin, int? userId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize);
-
-    Task<Domain.Order.Order?> GetOrderByIdAsync(int orderId, int? currentUserId, bool isAdmin);
-
-    Task<Domain.Order.Order?> GetOrderByIdempotencyKey(string idempotencyKey, int userId);
-
-    Task<Domain.Order.Order?> GetOrderForPaymentAsync(int orderId);
-
-    Task<Domain.Order.Order?> GetOrderForUpdateAsync(int orderId);
-
-    Task<Domain.Order.Order?> GetOrderWithItemsAsync(int orderId);
-
-    Task<Dictionary<int, Domain.Product.ProductVariant>> GetVariantsByIdsAsync(List<int> variantIds);
-
-    Task<Domain.Order.ShippingMethod?> GetShippingMethodAsync(int shippingMethodId);
-
-    Task<Domain.Payment.PaymentTransaction?> GetPaymentTransactionAsync(string authority);
-
-    Task AddOrderAsync(Domain.Order.Order order);
-
-    void UpdateOrder(Domain.Order.Order order);
-
-    Task AddDiscountUsageAsync(Domain.Discount.DiscountUsage discountUsage);
-
-    Task AddPaymentTransactionAsync(Domain.Payment.PaymentTransaction transaction);
-
-    void SetOrderRowVersion(Domain.Order.Order order, byte[] rowVersion);
-
-    void DeleteOrder(Domain.Order.Order order);
-
-    Task<bool> OrderStatusExistsAsync(int statusId);
-
-    Task<string?> GetOrderStatusNameAsync(int statusId);
-
+    Task<(IEnumerable<Order> Orders, int TotalItems)> GetOrdersAsync(int? userId, bool isAdmin, int? filterUserId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize);
+    Task<Order?> GetOrderByIdAsync(int orderId, int? userId, bool isAdmin);
+    Task<Order?> GetOrderByAuthorityAsync(string authority);
+    Task<Order?> GetOrderForUpdateAsync(int orderId);
+    Task<Order?> GetOrderForPaymentAsync(int orderId);
+    Task<Order?> GetOrderWithItemsAsync(int orderId);
+    Task<Order?> GetOrderByIdempotencyKey(string idempotencyKey, int userId);
+    Task<IEnumerable<ProductVariant>> GetVariantsByIdsAsync(IEnumerable<int> variantIds);
+    Task<IEnumerable<ProductVariant>> GetVariantsByIdsForUpdateAsync(IEnumerable<int> variantIds);
+    Task<ShippingMethod?> GetShippingMethodByIdAsync(int shippingMethodId);
+    Task<ShippingMethod?> GetShippingMethodAsync(int shippingMethodId);
+    Task AddAsync(Order order);
+    Task AddOrderAsync(Order order);
+    Task AddDiscountUsageAsync(DiscountUsage discountUsage);
+    Task AddPaymentTransactionAsync(PaymentTransaction paymentTransaction);
+    Task<PaymentTransaction?> GetPaymentTransactionAsync(string authority);
+    void Update(Order order);
+    void SetOriginalRowVersion(Order order, byte[] rowVersion);
     Task<object> GetOrderStatisticsAsync(DateTime? fromDate, DateTime? toDate);
+    Task<IEnumerable<object>> GetOrderStatusStatisticsAsync(DateTime? fromDate, DateTime? toDate);
+    Task<bool> ExistsByIdempotencyKeyAsync(string idempotencyKey);
 }

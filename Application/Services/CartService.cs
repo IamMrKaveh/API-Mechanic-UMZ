@@ -298,56 +298,72 @@ public class CartService : ICartService
         var guestCart = await _cartRepository.GetCartAsync(null, guestId);
         if (guestCart == null || !guestCart.CartItems.Any()) return;
 
-        var userExists = await _cartRepository.UserExistsAsync(userId);
-        if (!userExists)
-        {
-            _logger.LogWarning("Attempted to merge cart for non-existent user {UserId}. Aborting merge.", userId);
-            _cartRepository.RemoveCart(guestCart);
-            await _unitOfWork.SaveChangesAsync();
-            return;
-        }
-
         var userCart = await _cartRepository.GetCartAsync(userId, null);
+        Domain.Cart.Cart userCartEntity;
 
         if (userCart == null)
         {
-            guestCart.UserId = userId;
-            guestCart.GuestToken = null;
-            guestCart.LastUpdated = DateTime.UtcNow;
+            userCartEntity = new Domain.Cart.Cart
+            {
+                UserId = userId,
+                LastUpdated = DateTime.UtcNow,
+                GuestToken = null
+            };
+            await _cartRepository.AddCartAsync(userCartEntity);
+            await _unitOfWork.SaveChangesAsync();
         }
         else
         {
-            userCart.LastUpdated = DateTime.UtcNow;
-            foreach (var guestItem in guestCart.CartItems)
-            {
-                var variant = await _cartRepository.GetVariantByIdAsync(guestItem.VariantId);
-                if (variant == null || !variant.IsActive) continue;
+            userCartEntity = await _cartRepository.GetCartEntityAsync(userId, null) ?? new Domain.Cart.Cart { UserId = userId };
+            userCartEntity.LastUpdated = DateTime.UtcNow;
+        }
 
-                var userItem = userCart.CartItems.FirstOrDefault(ui => ui.VariantId == guestItem.VariantId);
-                if (userItem != null)
+        foreach (var guestItem in guestCart.CartItems)
+        {
+            var variant = await _cartRepository.GetVariantByIdAsync(guestItem.VariantId);
+            if (variant == null || !variant.IsActive) continue;
+
+            var existingUserItem = await _cartRepository.GetCartItemAsync(userCartEntity.Id, guestItem.VariantId);
+
+            if (existingUserItem != null)
+            {
+                int newQuantity = existingUserItem.Quantity + guestItem.Quantity;
+                if (!variant.IsUnlimited && newQuantity > variant.Stock)
                 {
-                    int totalQuantity = userItem.Quantity + guestItem.Quantity;
-                    if (!variant.IsUnlimited && totalQuantity > variant.Stock)
-                    {
-                        totalQuantity = variant.Stock;
-                    }
-                    userItem.Quantity = totalQuantity;
+                    newQuantity = variant.Stock;
                 }
-                else
-                {
-                    if (!variant.IsUnlimited && guestItem.Quantity > variant.Stock)
-                    {
-                        guestItem.Quantity = variant.Stock;
-                    }
-                    guestItem.CartId = userCart.Id;
-                    _cartRepository.UpdateCartItem(guestItem);
-                }
+
+                existingUserItem.Quantity = newQuantity;
             }
-            _cartRepository.RemoveCart(guestCart);
+            else
+            {
+                int quantity = guestItem.Quantity;
+                if (!variant.IsUnlimited && quantity > variant.Stock)
+                {
+                    quantity = variant.Stock;
+                }
+
+                var newItem = new Domain.Cart.CartItem
+                {
+                    CartId = userCartEntity.Id,
+                    VariantId = guestItem.VariantId,
+                    Quantity = quantity,
+                    RowVersion = guestItem.RowVersion
+                };
+
+                await _cartRepository.AddCartItemAsync(newItem);
+            }
+        }
+
+        var guestCartEntity = await _cartRepository.GetCartEntityAsync(null, guestId);
+        if (guestCartEntity != null)
+        {
+            _cartRepository.RemoveCart(guestCartEntity);
         }
 
         await _unitOfWork.SaveChangesAsync();
-        await InvalidateCartCache(userId, guestId);
+        await _cacheService.ClearAsync($"cart:user:{userId}");
+        await _cacheService.ClearAsync($"cart:guest:{guestId}");
     }
 
     private async Task<CartDto> MapCartToDtoAsync(Cart cart)
@@ -356,8 +372,17 @@ public class CartService : ICartService
 
         foreach (var ci in cart.CartItems ?? Enumerable.Empty<CartItem>())
         {
-            var productIcon = await _mediaService.GetPrimaryImageUrlAsync("ProductVariant", ci.VariantId)
-                              ?? await _mediaService.GetPrimaryImageUrlAsync("Product", ci.Variant.ProductId);
+            string? productIcon = ci.Variant.Images.FirstOrDefault(i => i.IsPrimary)?.FilePath
+                                      ?? ci.Variant.Images.FirstOrDefault()?.FilePath;
+
+            if (string.IsNullOrEmpty(productIcon))
+            {
+                productIcon = await _mediaService.GetPrimaryImageUrlAsync("Product", ci.Variant.ProductId);
+            }
+            else
+            {
+                productIcon = _mediaService.GetUrl(productIcon);
+            }
 
             var attributes = ci.Variant.VariantAttributes.ToDictionary(
                 va => va.AttributeValue.AttributeType.Name.ToLower(),

@@ -37,5 +37,6 @@ public class CheckoutFromCartResultDto
 {
     public int OrderId { get; set; }
     public string? PaymentUrl { get; set; }
+    public string? Authority { get; set; }
     public string? Error { get; set; }
 }

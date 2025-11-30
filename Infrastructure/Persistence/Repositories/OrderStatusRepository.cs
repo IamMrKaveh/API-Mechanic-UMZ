@@ -11,13 +11,26 @@ public class OrderStatusRepository : IOrderStatusRepository
 
     public async Task<IEnumerable<OrderStatus>> GetOrderStatusesAsync()
     {
-        return await _context.Set<OrderStatus>().AsNoTracking().OrderBy(s => s.Id).ToListAsync();
+        return await _context.Set<OrderStatus>()
+            .Where(s => !s.IsDeleted)
+            .AsNoTracking()
+            .OrderBy(s => s.Id)
+            .ToListAsync();
     }
 
     public async Task<OrderStatus?> GetOrderStatusByIdAsync(int id)
     {
-        return await _context.Set<OrderStatus>().AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        return await _context.Set<OrderStatus>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
     }
+
+    public async Task<OrderStatus?> GetByIdAsync(int id)
+    {
+        return await _context.Set<OrderStatus>()
+            .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+    }
+
     public async Task<OrderStatus?> GetOrderStatusByIdForUpdateAsync(int id)
     {
         return await _context.Set<OrderStatus>().FindAsync(id);
@@ -26,7 +39,7 @@ public class OrderStatusRepository : IOrderStatusRepository
     public Task<OrderStatus?> GetStatusByNameAsync(string name)
     {
         return _context.Set<OrderStatus>()
-            .FirstOrDefaultAsync(s => s.Name.ToLower() == name.ToLower());
+            .FirstOrDefaultAsync(s => s.Name.ToLower() == name.ToLower() && !s.IsDeleted);
     }
 
     public async Task AddOrderStatusAsync(OrderStatus status)

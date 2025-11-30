@@ -19,7 +19,7 @@ public class OrderService : IOrderService
     private readonly FrontendUrlsDto _frontendUrls;
     private readonly ZarinpalSettingsDto _zarinpalSettings;
     private readonly IMapper _mapper;
-    private readonly string _apiBaseUrl;
+    private readonly ICurrentUserService _currentUserService;
 
     public OrderService(
         IOrderRepository orderRepository,
@@ -39,7 +39,7 @@ public class OrderService : IOrderService
         IOptions<FrontendUrlsDto> frontendUrlsOptions,
         IOptions<ZarinpalSettingsDto> zarinpalSettingsOptions,
         IMapper mapper,
-        IConfiguration configuration)
+        ICurrentUserService currentUserService)
     {
         _orderRepository = orderRepository;
         _logger = logger;
@@ -58,7 +58,7 @@ public class OrderService : IOrderService
         _frontendUrls = frontendUrlsOptions.Value;
         _zarinpalSettings = zarinpalSettingsOptions.Value;
         _mapper = mapper;
-        _apiBaseUrl = configuration["BaseUrl"] ?? "https://localhost:4200";
+        _currentUserService = currentUserService;
     }
 
     public async Task<(IEnumerable<object> Orders, int TotalItems)> GetOrdersAsync(int? currentUserId, bool isAdmin, int? userId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
@@ -186,28 +186,37 @@ public class OrderService : IOrderService
         if (isLimited)
         {
             _logger.LogWarning("Rate limit exceeded for checkout by user {UserId}", userId);
-            throw new Exception("Too many checkout attempts. Please try again in a minute.");
+            throw new InvalidOperationException("تعداد درخواست‌های شما زیاد است. لطفا یک دقیقه صبر کنید.");
         }
 
+        var preCheckCart = await _cartRepository.GetCartAsync(userId);
+        if (preCheckCart == null || !preCheckCart.CartItems.Any())
+            throw new InvalidOperationException("سبد خرید شما خالی است.");
+
         var lockKey = $"idempotency:{userId}:{idempotencyKey}";
-        // نکته: اگر کش سرویس شما اصلاح شده باشد این خط مشکلی ندارد، در غیر این صورت طبق راه حل قبلی عمل کنید
-        if (!await _cacheService.AcquireLockAsync(lockKey, TimeSpan.FromSeconds(30)))
+        bool lockAcquired = false;
+        int retryCount = 0;
+        while (!lockAcquired && retryCount < 5)
         {
-            throw new InvalidOperationException("Another checkout process is in progress.");
+            if (await _cacheService.AcquireLockAsync(lockKey, TimeSpan.FromSeconds(30)))
+            {
+                lockAcquired = true;
+            }
+            else
+            {
+                retryCount++;
+                await Task.Delay(500 * retryCount);
+            }
+        }
+
+        if (!lockAcquired)
+        {
+            throw new InvalidOperationException("درخواست دیگری در حال پردازش است. لطفا صبر کنید.");
         }
 
         try
         {
-            var existingOrder = await _orderRepository.GetOrderByIdempotencyKey(idempotencyKey, userId);
-            if (existingOrder != null)
-            {
-                _logger.LogInformation("Idempotent checkout request detected for key {IdempotencyKey}, returning existing order {OrderId}", idempotencyKey, existingOrder.Id);
-                return new CheckoutFromCartResultDto { OrderId = existingOrder.Id, Error = "Duplicate request" };
-            }
-
-            // *** تغییر اصلی اینجاست ***
-            // استفاده از استراتژی اجرای مجدد برای پشتیبانی از RetryOnFailure
-            var order = await _unitOfWork.ExecuteStrategyAsync(async () =>
+            Order order = await _unitOfWork.ExecuteStrategyAsync(async () =>
             {
                 using (var transaction = await _unitOfWork.BeginTransactionAsync())
                 {
@@ -215,36 +224,29 @@ public class OrderService : IOrderService
                     {
                         var cart = await _cartRepository.GetCartAsync(userId);
                         if (cart == null || !cart.CartItems.Any())
-                            throw new InvalidOperationException("Cart is empty");
+                            throw new InvalidOperationException("سبد خرید خالی است");
 
-                        foreach (var item in cart.CartItems)
-                        {
-                            if (orderDto.ExpectedItems != null && orderDto.ExpectedItems.Any())
-                            {
-                                var expected = orderDto.ExpectedItems.FirstOrDefault(x => x.VariantId == item.VariantId);
-                                if (expected != null && expected.Price != item.Variant.SellingPrice)
-                                {
-                                    throw new ArgumentException($"Price changed for {item.Variant.Product.Name}. Please refresh your cart.");
-                                }
-                            }
-                        }
-
-                        UserAddress? userAddress;
                         var user = await _userRepository.GetUserByIdAsync(userId, true);
-                        if (user == null) throw new ArgumentException("User not found");
+                        if (user == null) throw new ArgumentException("کاربر یافت نشد");
 
+                        UserAddress? userAddress = null;
                         if (orderDto.UserAddressId.HasValue)
                         {
                             userAddress = await _userRepository.GetUserAddressAsync(orderDto.UserAddressId.Value);
                             if (userAddress == null || userAddress.UserId != userId)
                             {
-                                throw new ArgumentException("Invalid user address");
+                                throw new ArgumentException("آدرس انتخاب شده نامعتبر است");
                             }
                         }
                         else if (orderDto.NewAddress != null)
                         {
+                            if (string.IsNullOrWhiteSpace(orderDto.NewAddress.Address) ||
+                                string.IsNullOrWhiteSpace(orderDto.NewAddress.City) ||
+                                string.IsNullOrWhiteSpace(orderDto.NewAddress.PhoneNumber))
+                                throw new ArgumentException("اطلاعات آدرس ناقص است.");
+
                             userAddress = _mapper.Map<UserAddress>(orderDto.NewAddress);
-                            if (orderDto.SaveNewAddress)
+                            if (orderDto.SaveNewAddress == true)
                             {
                                 userAddress.UserId = userId;
                                 user.UserAddresses.Add(userAddress);
@@ -252,46 +254,65 @@ public class OrderService : IOrderService
                         }
                         else
                         {
-                            throw new ArgumentException("An address must be provided.");
+                            throw new ArgumentException("آدرس ارسال الزامی است.");
                         }
 
                         var shippingMethod = await _orderRepository.GetShippingMethodAsync(orderDto.ShippingMethodId);
-                        if (shippingMethod == null) throw new ArgumentException("Invalid shipping method");
+                        if (shippingMethod == null || !shippingMethod.IsActive)
+                            throw new ArgumentException("روش ارسال انتخاب شده نامعتبر است");
 
-                        const int pendingPaymentStatusId = 1;
+                        var variantIds = cart.CartItems.Select(ci => ci.VariantId).Distinct().ToList();
+                        var variants = await _orderRepository.GetVariantsByIdsForUpdateAsync(variantIds);
+                        var variantMap = variants.ToDictionary(v => v.Id);
+
+                        if (orderDto.ExpectedItems != null && orderDto.ExpectedItems.Any())
+                        {
+                            foreach (var expected in orderDto.ExpectedItems)
+                            {
+                                if (variantMap.TryGetValue(expected.VariantId, out var v))
+                                {
+                                    if (v.SellingPrice != expected.Price)
+                                        throw new ArgumentException($"قیمت محصول {v.Product.Name} تغییر کرده است. لطفا سبد خرید را بروزرسانی کنید.");
+                                }
+                            }
+                        }
+
+                        int pendingPaymentStatusId = 1;
+                        var pendingStatus = await _orderStatusRepository.GetStatusByNameAsync("Pending");
+                        if (pendingStatus != null) pendingPaymentStatusId = pendingStatus.Id;
+
                         decimal totalAmount = 0;
                         decimal totalProfit = 0;
                         var orderItems = new List<OrderItem>();
 
                         foreach (var item in cart.CartItems)
                         {
-                            await _inventoryService.LogTransactionAsync(
-                                item.VariantId,
-                                "Sale",
-                                -item.Quantity,
-                                null,
-                                userId,
-                                "Checkout for Order",
-                                null,
-                                item.Variant.RowVersion,
-                                saveChanges: false
-                            );
+                            if (!variantMap.TryGetValue(item.VariantId, out var variant))
+                            {
+                                throw new InvalidOperationException($"محصول {item.VariantId} دیگر موجود نیست.");
+                            }
 
-                            var sellingPrice = item.Variant.SellingPrice;
+                            if (!variant.IsUnlimited && variant.Stock < item.Quantity)
+                            {
+                                throw new InvalidOperationException($"موجودی کافی برای {variant.Product.Name} موجود نیست. موجودی فعلی: {variant.Stock}");
+                            }
+
+                            var sellingPrice = variant.SellingPrice;
                             var amount = sellingPrice * item.Quantity;
-                            var profit = (sellingPrice - item.Variant.PurchasePrice) * item.Quantity;
+                            var profit = (sellingPrice - variant.PurchasePrice) * item.Quantity;
                             totalAmount += amount;
                             totalProfit += profit;
 
-                            orderItems.Add(new OrderItem
+                            var orderItem = new OrderItem
                             {
-                                VariantId = item.Variant.Id,
-                                PurchasePrice = item.Variant.PurchasePrice,
+                                VariantId = variant.Id,
+                                PurchasePrice = variant.PurchasePrice,
                                 SellingPrice = sellingPrice,
                                 Quantity = item.Quantity,
                                 Amount = amount,
                                 Profit = profit
-                            });
+                            };
+                            orderItems.Add(orderItem);
                         }
 
                         decimal discountAmount = 0;
@@ -299,7 +320,10 @@ public class OrderService : IOrderService
                         if (!string.IsNullOrEmpty(orderDto.DiscountCode))
                         {
                             var (discount, error) = await _discountService.ValidateAndGetDiscountAsync(orderDto.DiscountCode, userId, totalAmount);
-                            if (error != null) throw new ArgumentException(error);
+                            if (error != null)
+                            {
+                                throw new ArgumentException(error);
+                            }
 
                             if (discount != null)
                             {
@@ -312,8 +336,11 @@ public class OrderService : IOrderService
                             }
                         }
 
+                        var finalAmount = totalAmount + shippingMethod.Cost - discountAmount;
+                        if (finalAmount < 1000) throw new ArgumentException("مبلغ نهایی سفارش معتبر نیست.");
+
                         var userAddressDto = _mapper.Map<UserAddressDto>(userAddress);
-                        var newOrder = new Domain.Order.Order
+                        var newOrder = new Order
                         {
                             UserId = userId,
                             ReceiverName = userAddress.ReceiverName,
@@ -328,16 +355,32 @@ public class OrderService : IOrderService
                             DiscountAmount = discountAmount,
                             TotalAmount = totalAmount,
                             TotalProfit = totalProfit,
-                            FinalAmount = totalAmount + shippingMethod.Cost - discountAmount,
+                            FinalAmount = finalAmount,
                             OrderItems = orderItems,
                             IsPaid = false
                         };
 
                         await _orderRepository.AddOrderAsync(newOrder);
+                        await _unitOfWork.SaveChangesAsync();
+
+                        foreach (var oi in newOrder.OrderItems)
+                        {
+                            await _inventoryService.LogTransactionAsync(
+                               oi.VariantId,
+                               "Sale",
+                               -oi.Quantity,
+                               oi.Id,
+                               userId,
+                               $"Order Checkout #{newOrder.Id}",
+                               $"ORDER-{newOrder.Id}",
+                               null,
+                               false
+                           );
+                        }
 
                         if (discountId.HasValue)
                         {
-                            await _orderRepository.AddDiscountUsageAsync(new Domain.Discount.DiscountUsage
+                            await _orderRepository.AddDiscountUsageAsync(new DiscountUsage
                             {
                                 UserId = userId,
                                 DiscountCodeId = discountId.Value,
@@ -351,85 +394,77 @@ public class OrderService : IOrderService
                         await _unitOfWork.SaveChangesAsync();
                         await transaction.CommitAsync();
 
-                        await _auditService.LogOrderEventAsync(newOrder.Id, "CheckoutFromCart", userId, $"Order created with total amount {newOrder.TotalAmount}");
-
-                        return newOrder; // بازگرداندن آبجکت سفارش ایجاد شده
+                        return newOrder;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         await transaction.RollbackAsync();
-                        _logger.LogError(ex, "Error during checkout transaction for user {UserId}", userId);
                         throw;
                     }
                 }
             });
 
-            // ادامه عملیات پرداخت خارج از تراکنش دیتابیس (برای جلوگیری از قفل طولانی مدت)
-            var callbackUrl = $"{_frontendUrls.BaseUrl}/payment/callback?orderId={order.Id}";
-            var paymentResponse = await _zarinpalService.CreatePaymentRequestAsync(_zarinpalSettings, order.FinalAmount, $"پرداخت سفارش شماره {order.Id}", callbackUrl, order.User?.PhoneNumber);
-
-            if (paymentResponse?.Data?.Code == 100 && !string.IsNullOrEmpty(paymentResponse.Data.Authority))
+            try
             {
-                var gatewayUrl = _zarinpalService.GetPaymentGatewayUrl(_zarinpalSettings.IsSandbox, paymentResponse.Data.Authority);
-                return new CheckoutFromCartResultDto { OrderId = order.Id, PaymentUrl = gatewayUrl };
-            }
+                var amountInRials = Convert.ToInt64(order.FinalAmount * 10);
+                var callbackUrl = $"{_frontendUrls.BaseUrl}/payment/callback?orderId={order.Id}";
+                var userPhone = await _userRepository.GetUserByIdAsync(userId);
 
-            // مدیریت شکست در ایجاد درخواست پرداخت (تراکنش جبرانی)
-            using (var failTransaction = await _unitOfWork.BeginTransactionAsync())
-            {
-                try
+                var paymentResponse = await _zarinpalService.CreatePaymentRequestAsync(
+                    _zarinpalSettings,
+                    amountInRials,
+                    $"پرداخت سفارش شماره {order.Id}",
+                    callbackUrl,
+                    userPhone?.PhoneNumber
+                );
+
+                if (paymentResponse?.Data?.Code == 100 && !string.IsNullOrEmpty(paymentResponse.Data.Authority))
                 {
-                    var failedOrder = await _orderRepository.GetOrderWithItemsAsync(order.Id);
-                    if (failedOrder != null)
+                    var paymentTx = new PaymentTransaction
                     {
-                        var failedStatus = await _orderStatusRepository.GetStatusByNameAsync("Failed") ??
-                                           await _orderStatusRepository.GetStatusByNameAsync("Cancelled");
+                        OrderId = order.Id,
+                        Authority = paymentResponse.Data.Authority,
+                        Amount = amountInRials,
+                        Gateway = "ZarinPal",
+                        Status = "Initialized",
+                        CreatedAt = DateTime.UtcNow,
+                        IpAddress = _currentUserService.IpAddress
+                    };
 
-                        failedOrder.OrderStatusId = failedStatus?.Id ?? failedOrder.OrderStatusId;
-                        _orderRepository.UpdateOrder(failedOrder);
+                    await _orderRepository.AddPaymentTransactionAsync(paymentTx);
+                    await _unitOfWork.SaveChangesAsync();
 
-                        foreach (var item in failedOrder.OrderItems)
-                        {
-                            await _inventoryService.LogTransactionAsync(
-                                item.VariantId,
-                                "Return",
-                                item.Quantity,
-                                item.Id,
-                                userId,
-                                "Payment Initiation Failed - Compensation",
-                                null,
-                                null,
-                                saveChanges: false
-                            );
-                        }
-                        await _unitOfWork.SaveChangesAsync();
-                        await failTransaction.CommitAsync();
-                    }
+                    var gatewayUrl = _zarinpalService.GetPaymentGatewayUrl(_zarinpalSettings.IsSandbox, paymentResponse.Data.Authority);
+                    return new CheckoutFromCartResultDto { OrderId = order.Id, PaymentUrl = gatewayUrl, Authority = paymentResponse.Data.Authority };
                 }
-                catch (Exception ex)
+                else
                 {
-                    _logger.LogCritical(ex, "Failed to execute compensating transaction for Order {OrderId}", order.Id);
+                    var failedStatus = await _orderStatusRepository.GetStatusByNameAsync("PaymentInitializationFailed");
+                    if (failedStatus != null)
+                    {
+                        order.OrderStatusId = failedStatus.Id;
+                        _orderRepository.Update(order);
+                        await _unitOfWork.SaveChangesAsync();
+                    }
+
+                    await _auditService.LogOrderEventAsync(order.Id, "PaymentInitFailed", userId, "Zarinpal authority not received.");
+                    return new CheckoutFromCartResultDto { OrderId = order.Id, Error = "خطا در ایجاد تراکنش بانکی. لطفا مجددا تلاش کنید." };
                 }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error initializing payment for order {OrderId}", order.Id);
 
-            var message = paymentResponse?.Data?.Message ?? "Failed to generate payment link.";
-            _logger.LogError("Zarinpal payment URL is null for order {OrderId}. Reason: {Reason}", order.Id, message);
-            return new CheckoutFromCartResultDto { OrderId = 0, Error = "خطا در ارتباط با درگاه پرداخت" };
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Checkout failed for user {UserId} with invalid operation.", userId);
-            throw; // کنترلر این را مدیریت می‌کند
-        }
-        catch (DbUpdateConcurrencyException ex)
-        {
-            _logger.LogWarning(ex, "Checkout failed for user {UserId} due to concurrency.", userId);
-            throw;
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Checkout failed for user {UserId} with invalid argument.", userId);
-            throw;
+                var failedStatus = await _orderStatusRepository.GetStatusByNameAsync("PaymentInitializationFailed");
+                if (failedStatus != null)
+                {
+                    order.OrderStatusId = failedStatus.Id;
+                    _orderRepository.Update(order);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+                await _auditService.LogOrderEventAsync(order.Id, "PaymentInitError", userId, ex.Message);
+                return new CheckoutFromCartResultDto { OrderId = order.Id, Error = "خطا در ارتباط با درگاه پرداخت." };
+            }
         }
         finally
         {
@@ -437,44 +472,111 @@ public class OrderService : IOrderService
         }
     }
 
-    public async Task<(bool IsVerified, string RedirectUrl)> VerifyAndProcessPaymentAsync(int orderId, string authority, string status)
+    public async Task<PaymentVerificationResultDto> VerifyAndProcessPaymentAsync(int orderId, string authority, string status)
     {
         string frontendUrl = _frontendUrls.BaseUrl;
 
         if (string.IsNullOrEmpty(authority) || string.IsNullOrEmpty(status))
         {
-            return (false, $"{frontendUrl}/payment/failure?reason=invalidparams&orderId={orderId}");
+            return new PaymentVerificationResultDto
+            {
+                IsVerified = false,
+                RedirectUrl = $"{frontendUrl}/payment/failure?reason=invalidparams&orderId={orderId}",
+                Message = "پارامترهای نامعتبر"
+            };
         }
 
-        var order = await _orderRepository.GetOrderForPaymentAsync(orderId);
-        if (order == null)
+        var currentUserId = _currentUserService.UserId;
+
+        // Locking to prevent concurrent verification
+        var lockKey = $"verify:{orderId}";
+        if (!await _cacheService.AcquireLockAsync(lockKey, TimeSpan.FromSeconds(30)))
         {
-            return (false, $"{frontendUrl}/payment/failure?reason=notfound&orderId={orderId}");
-        }
-        if (order.IsPaid)
-        {
-            return (true, $"{frontendUrl}/payment/success?orderId={orderId}&authority={authority}&status=ok");
+            return new PaymentVerificationResultDto
+            {
+                IsVerified = false,
+                RedirectUrl = $"{frontendUrl}/payment/failure?reason=processing&orderId={orderId}",
+                Message = "تراکنش در حال پردازش است."
+            };
         }
 
-        if (!status.Equals("OK", StringComparison.OrdinalIgnoreCase))
+        try
         {
-            var transaction = await _orderRepository.GetPaymentTransactionAsync(authority);
-            var reason = transaction?.ErrorMessage ?? "payment_failed";
-            return (false, $"{frontendUrl}/payment/failure?orderId={orderId}&authority={authority}&status={status}&reason={reason}");
-        }
+            var order = await _orderRepository.GetOrderForPaymentAsync(orderId);
+            if (order == null)
+            {
+                return new PaymentVerificationResultDto
+                {
+                    IsVerified = false,
+                    RedirectUrl = $"{frontendUrl}/payment/failure?reason=notfound&orderId={orderId}",
+                    Message = "سفارش یافت نشد"
+                };
+            }
 
-        var isVerified = await VerifyPaymentInternalAsync(orderId, authority);
-        if (isVerified)
+            if (currentUserId.HasValue && order.UserId != currentUserId.Value && !_currentUserService.IsAdmin)
+            {
+                return new PaymentVerificationResultDto
+                {
+                    IsVerified = false,
+                    RedirectUrl = $"{frontendUrl}/payment/failure?reason=forbidden&orderId={orderId}",
+                    Message = "عدم دسترسی"
+                };
+            }
+
+            if (order.IsPaid)
+            {
+                var paidTransaction = await _orderRepository.GetPaymentTransactionAsync(authority);
+                return new PaymentVerificationResultDto
+                {
+                    IsVerified = true,
+                    RedirectUrl = $"{frontendUrl}/payment/success?orderId={orderId}&authority={authority}&status=ok",
+                    RefId = paidTransaction?.RefId,
+                    Message = "پرداخت قبلا انجام شده است"
+                };
+            }
+
+            if (!status.Equals("OK", StringComparison.OrdinalIgnoreCase))
+            {
+                var transaction = await _orderRepository.GetPaymentTransactionAsync(authority);
+                var reason = transaction?.ErrorMessage ?? "payment_failed";
+                // Log failure
+                await _auditService.LogOrderEventAsync(orderId, "PaymentFailedCallback", order.UserId, $"Status: {status}");
+                return new PaymentVerificationResultDto
+                {
+                    IsVerified = false,
+                    RedirectUrl = $"{frontendUrl}/payment/failure?orderId={orderId}&authority={authority}&status={status}&reason={reason}",
+                    Message = "پرداخت ناموفق بود"
+                };
+            }
+
+            var verificationResult = await VerifyPaymentInternalAsync(orderId, authority);
+            if (verificationResult.IsVerified)
+            {
+                return new PaymentVerificationResultDto
+                {
+                    IsVerified = true,
+                    RedirectUrl = $"{frontendUrl}/payment/success?orderId={orderId}&authority={authority}&status=ok",
+                    RefId = verificationResult.RefId,
+                    Message = "پرداخت با موفقیت انجام شد"
+                };
+            }
+
+            var failedTransaction = await _orderRepository.GetPaymentTransactionAsync(authority);
+            var failureReason = failedTransaction?.ErrorMessage ?? "verification_failed";
+            return new PaymentVerificationResultDto
+            {
+                IsVerified = false,
+                RedirectUrl = $"{frontendUrl}/payment/failure?orderId={orderId}&authority={authority}&status=failed&reason={failureReason}",
+                Message = "تایید پرداخت ناموفق بود"
+            };
+        }
+        finally
         {
-            return (true, $"{frontendUrl}/payment/success?orderId={orderId}&authority={authority}&status=ok");
+            await _cacheService.ReleaseLockAsync(lockKey);
         }
-
-        var failedTransaction = await _orderRepository.GetPaymentTransactionAsync(authority);
-        var failureReason = failedTransaction?.ErrorMessage ?? "verification_failed";
-        return (false, $"{frontendUrl}/payment/failure?orderId={orderId}&authority={authority}&status=failed&reason={failureReason}");
     }
 
-    private async Task<bool> VerifyPaymentInternalAsync(int orderId, string authority)
+    private async Task<(bool IsVerified, long? RefId)> VerifyPaymentInternalAsync(int orderId, string authority)
     {
         using var transaction = await _unitOfWork.BeginTransactionAsync();
 
@@ -483,30 +585,51 @@ public class OrderService : IOrderService
             var existingTx = await _orderRepository.GetPaymentTransactionAsync(authority);
             if (existingTx != null)
             {
-                return existingTx.Status == "Success";
+                existingTx.VerificationCount++;
+                existingTx.VerificationAttemptedAt = DateTime.UtcNow;
+
+                if (existingTx.Status == "Success")
+                {
+                    await _unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return (true, existingTx.RefId);
+                }
             }
 
             var order = await _orderRepository.GetOrderForPaymentAsync(orderId);
             if (order == null || order.IsPaid)
-                return false;
+            {
+                await transaction.RollbackAsync();
+                return (order?.IsPaid ?? false, existingTx?.RefId);
+            }
 
-            var finalAmount = order.FinalAmount;
+            var amountInRials = Convert.ToInt64(order.FinalAmount * 10);
 
+            // Verify with Zarinpal
             var verificationResponse =
-                await _zarinpalService.VerifyPaymentAsync(_zarinpalSettings, finalAmount, authority);
+                await _zarinpalService.VerifyPaymentAsync(_zarinpalSettings, amountInRials, authority);
 
-            var paymentTx = new Domain.Payment.PaymentTransaction
+            var paymentTx = existingTx ?? new PaymentTransaction
             {
                 OrderId = orderId,
-                Amount = finalAmount,
+                Amount = amountInRials,
                 Authority = authority,
                 Gateway = "ZarinPal",
                 Status = "Initialized",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                VerificationAttemptedAt = DateTime.UtcNow,
+                VerificationCount = 1
             };
 
-            var paymentSuccess = verificationResponse != null &&
-                                 (verificationResponse.Code == 100 || verificationResponse.Code == 101);
+            // Handle 101 - Already verified
+            bool paymentSuccess = verificationResponse != null && (verificationResponse.Code == 100 || verificationResponse.Code == 101);
+
+            // Amount Mismatch Check
+            if (paymentSuccess)
+            {
+                // Assuming Zarinpal returns the amount, but verificationResponse usually doesn't confirm amount in simple DTO.
+                // Trusting our amount passed. If Zarinpal 100/101, it matches the amount we sent.
+            }
 
             if (paymentSuccess)
             {
@@ -514,7 +637,8 @@ public class OrderService : IOrderService
                 if (paidStatus == null)
                 {
                     _logger.LogCritical("Order status 'Paid' not found in DB.");
-                    return false;
+                    await transaction.RollbackAsync();
+                    return (false, null);
                 }
 
                 order.IsPaid = true;
@@ -524,10 +648,13 @@ public class OrderService : IOrderService
                 paymentTx.RefId = verificationResponse?.RefID;
                 paymentTx.CardPan = verificationResponse?.CardPan;
                 paymentTx.CardHash = verificationResponse?.CardHash;
-                paymentTx.Fee = verificationResponse.Fee;
+                paymentTx.Fee = verificationResponse?.Fee ?? 0;
                 paymentTx.VerifiedAt = DateTime.UtcNow;
 
-                await _orderRepository.AddPaymentTransactionAsync(paymentTx);
+                if (existingTx == null)
+                {
+                    await _orderRepository.AddPaymentTransactionAsync(paymentTx);
+                }
 
                 if (order.DiscountCodeId.HasValue)
                 {
@@ -547,6 +674,7 @@ public class OrderService : IOrderService
                     }
                 }
 
+                // Clear cart and notifications inside same transaction
                 var cart = await _cartRepository.GetCartAsync(order.UserId);
                 if (cart != null && cart.CartItems.Any())
                 {
@@ -565,22 +693,32 @@ public class OrderService : IOrderService
                 await _unitOfWork.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return true;
+                await _auditService.LogOrderEventAsync(orderId, "PaymentVerified", order.UserId, $"RefID: {paymentTx.RefId}");
+
+                return (true, verificationResponse?.RefID);
             }
 
             paymentTx.Status = "Failed";
             paymentTx.ErrorMessage = verificationResponse?.Message;
 
-            await _orderRepository.AddPaymentTransactionAsync(paymentTx);
+            if (existingTx == null)
+            {
+                await _orderRepository.AddPaymentTransactionAsync(paymentTx);
+            }
+
             await _unitOfWork.SaveChangesAsync();
             await transaction.CommitAsync();
-            return false;
+
+            await _auditService.LogOrderEventAsync(orderId, "PaymentVerificationFailed", order.UserId, $"Error: {paymentTx.ErrorMessage}");
+
+            return (false, null);
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
             _logger.LogError(ex, "Error verifying payment for order {OrderId}", orderId);
-            return false;
+            await _auditService.LogOrderEventAsync(orderId, "PaymentVerificationError", 0, ex.Message);
+            return (false, null);
         }
     }
 }

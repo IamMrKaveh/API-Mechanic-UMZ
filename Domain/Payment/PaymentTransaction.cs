@@ -32,4 +32,8 @@ public class PaymentTransaction : IAuditable
     public DateTime? UpdatedAt { get; set; }
 
     public DateTime? VerifiedAt { get; set; }
+
+    public DateTime? VerificationAttemptedAt { get; set; }
+
+    public int VerificationCount { get; set; }
 }
