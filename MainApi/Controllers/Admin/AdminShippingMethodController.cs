@@ -1,85 +1,110 @@
 ﻿namespace MainApi.Controllers.Admin;
 
-[Route("api/admin/shipping-methods")]
 [ApiController]
+[Route("api/admin/shipping-methods")]
 [Authorize(Roles = "Admin")]
-public class AdminShippingMethodController : ControllerBase
+public class AdminShippingMethodsController : ControllerBase
 {
-    private readonly IAdminShippingMethodService _shippingMethodService;
+    private readonly IAdminShippingMethodService _adminShippingMethodService;
     private readonly ICurrentUserService _currentUserService;
 
-    public AdminShippingMethodController(IAdminShippingMethodService shippingMethodService, ICurrentUserService currentUserService)
+    public AdminShippingMethodsController(IAdminShippingMethodService adminShippingMethodService, ICurrentUserService currentUserService)
     {
-        _shippingMethodService = shippingMethodService;
+        _adminShippingMethodService = adminShippingMethodService;
         _currentUserService = currentUserService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetShippingMethods([FromQuery] bool includeDeleted = false)
     {
-        var result = await _shippingMethodService.GetShippingMethodsAsync(includeDeleted);
+        var result = await _adminShippingMethodService.GetShippingMethodsAsync(includeDeleted);
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.Error });
+        }
         return Ok(result.Data);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetShippingMethodById(int id)
     {
-        var result = await _shippingMethodService.GetShippingMethodByIdAsync(id);
-        if (result.Data == null) return NotFound();
+        var result = await _adminShippingMethodService.GetShippingMethodByIdAsync(id);
+        if (!result.Success)
+        {
+            return NotFound(new { message = result.Error });
+        }
         return Ok(result.Data);
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateShippingMethod(ShippingMethodCreateDto dto)
+    public async Task<IActionResult> CreateShippingMethod([FromBody] ShippingMethodCreateDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-        var userId = _currentUserService.UserId;
-        if (userId == null) return Unauthorized();
+        var currentUserId = _currentUserService.UserId;
+        if (!currentUserId.HasValue)
+        {
+            return Unauthorized();
+        }
 
-        var result = await _shippingMethodService.CreateShippingMethodAsync(dto, userId.Value);
-        if (!result.Success) return BadRequest(new { message = result.Error });
+        var result = await _adminShippingMethodService.CreateShippingMethodAsync(dto, currentUserId.Value);
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.Error });
+        }
         return CreatedAtAction(nameof(GetShippingMethodById), new { id = result.Data!.Id }, result.Data);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateShippingMethod(int id, ShippingMethodUpdateDto dto)
+    public async Task<IActionResult> UpdateShippingMethod(int id, [FromBody] ShippingMethodUpdateDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-        var userId = _currentUserService.UserId;
-        if (userId == null) return Unauthorized();
+        var currentUserId = _currentUserService.UserId;
+        if (!currentUserId.HasValue)
+        {
+            return Unauthorized();
+        }
 
-        var result = await _shippingMethodService.UpdateShippingMethodAsync(id, dto, userId.Value);
+        var result = await _adminShippingMethodService.UpdateShippingMethodAsync(id, dto, currentUserId.Value);
         if (!result.Success)
         {
-            return result.Error switch
+            if (result.Error?.Contains("modified by another user") == true)
             {
-                "Shipping method not found." => NotFound(new { message = result.Error }),
-                "The record was modified by another user. Please refresh and try again." => Conflict(new { message = result.Error }),
-                _ => BadRequest(new { message = result.Error })
-            };
+                return Conflict(new { message = result.Error });
+            }
+            return BadRequest(new { message = result.Error });
         }
-        return NoContent();
+        return Ok(new { message = "Shipping method updated successfully" });
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteShippingMethod(int id)
     {
-        var userId = _currentUserService.UserId;
-        if (userId == null) return Unauthorized();
+        var currentUserId = _currentUserService.UserId;
+        if (!currentUserId.HasValue)
+        {
+            return Unauthorized();
+        }
 
-        var result = await _shippingMethodService.DeleteShippingMethodAsync(id, userId.Value);
-        if (!result.Success) return NotFound(new { message = "Method not found." });
-        return NoContent();
+        var result = await _adminShippingMethodService.DeleteShippingMethodAsync(id, currentUserId.Value);
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.Error });
+        }
+        return Ok(new { message = "Shipping method deleted successfully" });
     }
 
     [HttpPost("{id}/restore")]
     public async Task<IActionResult> RestoreShippingMethod(int id)
     {
-        var userId = _currentUserService.UserId;
-        if (userId == null) return Unauthorized();
+        var currentUserId = _currentUserService.UserId;
+        if (!currentUserId.HasValue)
+        {
+            return Unauthorized();
+        }
 
-        var result = await _shippingMethodService.RestoreShippingMethodAsync(id, userId.Value);
-        if (!result.Success) return NotFound(new { message = "Method not found or not deleted." });
-        return NoContent();
+        var result = await _adminShippingMethodService.RestoreShippingMethodAsync(id, currentUserId.Value);
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.Error });
+        }
+        return Ok(new { message = "Shipping method restored successfully" });
     }
 }

@@ -24,16 +24,25 @@ public class CartsController : ControllerBase
         var userId = _currentUserService.UserId;
         var guestId = _currentUserService.GuestId;
 
+        // Fix: Generate Guest Token if missing for unauthenticated users
         if (!userId.HasValue && string.IsNullOrEmpty(guestId))
         {
-            return Ok(null);
+            guestId = Guid.NewGuid().ToString();
+            Response.Headers.Append("X-Guest-Token", guestId);
         }
 
         var cart = await _cartService.GetCartAsync(userId, guestId);
-        if (cart == null && userId.HasValue)
+
+        if (cart == null)
         {
-            var newCart = await _cartService.CreateCartAsync(userId.Value);
-            return Ok(newCart);
+            if (userId.HasValue)
+            {
+                var newCart = await _cartService.CreateCartAsync(userId.Value);
+                return Ok(newCart);
+            }
+
+            // Fix: Return empty cart structure for new guests instead of null/unauthorized
+            return Ok(new CartDto(0, null, guestId, new List<CartItemDto>(), 0, 0));
         }
 
         return Ok(cart);
@@ -48,8 +57,12 @@ public class CartsController : ControllerBase
         var userId = _currentUserService.UserId;
         var guestId = _currentUserService.GuestId;
 
+        // Fix: Generate Guest Token if missing instead of returning Unauthorized
         if (!userId.HasValue && string.IsNullOrEmpty(guestId))
-            return Unauthorized("A user or guest token is required.");
+        {
+            guestId = Guid.NewGuid().ToString();
+            Response.Headers.Append("X-Guest-Token", guestId);
+        }
 
         var (result, cart) = await _cartService.AddItemToCartAsync(userId, guestId, dto);
 
@@ -99,6 +112,7 @@ public class CartsController : ControllerBase
         var (success, cart) = await _cartService.RemoveItemFromCartAsync(userId, guestId, itemId);
         if (!success)
             return NotFound("Cart item not found or could not be removed.");
+
         return Ok(cart);
     }
 

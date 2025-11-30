@@ -9,31 +9,42 @@ public class OrderRepository : IOrderRepository
         _context = context;
     }
 
-    public async Task<(IEnumerable<Domain.Order.Order> Orders, int TotalItems)> GetOrdersAsync(int? currentUserId, bool isAdmin, int? userId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
+    public async Task<(IEnumerable<Domain.Order.Order> Orders, int TotalItems)> GetOrdersAsync(int? userId, bool isAdmin, int? filterUserId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
     {
-        var query = _context.Set<Domain.Order.Order>()
+        var query = _context.Orders
             .Include(o => o.User)
             .Include(o => o.OrderStatus)
-            .Include(o => o.OrderItems)
             .Include(o => o.ShippingMethod)
+            .Include(o => o.OrderItems)
             .AsQueryable();
 
-        if (userId.HasValue)
+        if (!isAdmin && userId.HasValue)
+        {
             query = query.Where(o => o.UserId == userId.Value);
+        }
+
+        if (isAdmin && filterUserId.HasValue)
+        {
+            query = query.Where(o => o.UserId == filterUserId.Value);
+        }
 
         if (statusId.HasValue)
+        {
             query = query.Where(o => o.OrderStatusId == statusId.Value);
+        }
 
         if (fromDate.HasValue)
+        {
             query = query.Where(o => o.CreatedAt >= fromDate.Value);
+        }
 
         if (toDate.HasValue)
+        {
             query = query.Where(o => o.CreatedAt <= toDate.Value);
-
-        if (!isAdmin)
-            query = query.Where(o => o.UserId == currentUserId);
+        }
 
         var totalItems = await query.CountAsync();
+
         var orders = await query
             .OrderByDescending(o => o.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -43,150 +54,194 @@ public class OrderRepository : IOrderRepository
         return (orders, totalItems);
     }
 
-    public async Task<Domain.Order.Order?> GetOrderByIdAsync(int orderId, int? currentUserId, bool isAdmin)
+    public async Task<Domain.Order.Order?> GetOrderByIdAsync(int orderId, int? userId, bool isAdmin)
     {
-        var query = _context.Set<Domain.Order.Order>()
-            .AsNoTracking()
+        var query = _context.Orders
             .Include(o => o.User)
             .Include(o => o.OrderStatus)
             .Include(o => o.ShippingMethod)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.Variant)
                     .ThenInclude(v => v.Product)
-                        .ThenInclude(p => p.CategoryGroup.Category)
+                        .ThenInclude(p => p.CategoryGroup)
+                            .ThenInclude(cg => cg.Category)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.Variant)
                     .ThenInclude(v => v.VariantAttributes)
                         .ThenInclude(va => va.AttributeValue)
                             .ThenInclude(av => av.AttributeType)
-            .Where(o => o.Id == orderId);
+            .AsQueryable();
 
-        if (!isAdmin)
+        if (!isAdmin && userId.HasValue)
         {
-            query = query.Where(o => o.UserId == currentUserId);
+            query = query.Where(o => o.UserId == userId.Value);
         }
 
-        return await query.FirstOrDefaultAsync();
+        return await query.FirstOrDefaultAsync(o => o.Id == orderId);
     }
-    public Task<Domain.Order.Order?> GetOrderByIdempotencyKey(string idempotencyKey, int userId)
+
+    public async Task<Domain.Order.Order?> GetOrderByAuthorityAsync(string authority)
     {
-        return _context.Set<Domain.Order.Order>()
-            .AsNoTracking()
+        return await _context.Orders
+            .Include(o => o.PaymentTransactions)
+            .FirstOrDefaultAsync(o => o.PaymentTransactions.Any(pt => pt.Authority == authority));
+    }
+
+    public async Task<Domain.Order.Order?> GetOrderForUpdateAsync(int orderId)
+    {
+        return await _context.Orders
+             .FromSqlInterpolated($"SELECT * FROM \"Orders\" WHERE \"Id\" = {orderId} FOR UPDATE")
+             .Include(o => o.OrderItems)
+             .FirstOrDefaultAsync();
+    }
+
+    public async Task<Domain.Order.Order?> GetOrderForPaymentAsync(int orderId)
+    {
+        return await _context.Orders
+             .Include(o => o.OrderItems)
+             .FirstOrDefaultAsync(o => o.Id == orderId);
+    }
+
+    public async Task<Domain.Order.Order?> GetOrderWithItemsAsync(int orderId)
+    {
+        return await _context.Orders
+           .Include(o => o.DiscountUsages)
+           .ThenInclude(d => d.DiscountCode)
+           .Include(o => o.OrderItems)
+           .FirstOrDefaultAsync(o => o.Id == orderId);
+    }
+
+    public async Task<Domain.Order.Order?> GetOrderByIdempotencyKey(string idempotencyKey, int userId)
+    {
+        return await _context.Orders
+            .Include(o => o.PaymentTransactions)
             .FirstOrDefaultAsync(o => o.IdempotencyKey == idempotencyKey && o.UserId == userId);
     }
 
-    public Task<Domain.Order.Order?> GetOrderForPaymentAsync(int orderId)
+    public async Task<IEnumerable<ProductVariant>> GetVariantsByIdsAsync(IEnumerable<int> variantIds)
     {
-        return _context.Set<Domain.Order.Order>().FindAsync(orderId).AsTask();
-    }
-    public Task<Domain.Order.Order?> GetOrderForUpdateAsync(int orderId)
-    {
-        return _context.Set<Domain.Order.Order>().FindAsync(orderId).AsTask();
-    }
-
-    public Task<Domain.Order.Order?> GetOrderWithItemsAsync(int orderId)
-    {
-        return _context.Set<Domain.Order.Order>()
-            .Include(o => o.OrderItems)
-            .ThenInclude(oi => oi.Variant)
-            .FirstOrDefaultAsync(o => o.Id == orderId);
-    }
-
-    public async Task<Dictionary<int, Domain.Product.ProductVariant>> GetVariantsByIdsAsync(List<int> variantIds)
-    {
-        return await _context.Set<Domain.Product.ProductVariant>()
+        return await _context.ProductVariants
             .Where(v => variantIds.Contains(v.Id))
-            .ToDictionaryAsync(v => v.Id);
+            .Include(v => v.Product)
+            .ToListAsync();
     }
 
-    public Task<Domain.Order.ShippingMethod?> GetShippingMethodAsync(int shippingMethodId)
+    public async Task<IEnumerable<ProductVariant>> GetVariantsByIdsForUpdateAsync(IEnumerable<int> variantIds)
     {
-        return _context.Set<Domain.Order.ShippingMethod>().FindAsync(shippingMethodId).AsTask();
+        if (!variantIds.Any()) return new List<ProductVariant>();
+        var idsString = string.Join(",", variantIds);
+        return await _context.ProductVariants
+            .FromSqlRaw($"SELECT * FROM \"ProductVariants\" WHERE \"Id\" IN ({idsString}) FOR UPDATE")
+            .Include(v => v.Product)
+            .Include(v => v.InventoryTransactions)
+            .ToListAsync();
     }
 
-    public Task<Domain.Payment.PaymentTransaction?> GetPaymentTransactionAsync(string authority)
+    public async Task<ShippingMethod?> GetShippingMethodByIdAsync(int shippingMethodId)
     {
-        return _context.Set<Domain.Payment.PaymentTransaction>().FirstOrDefaultAsync(t => t.Authority == authority);
+        return await _context.ShippingMethods
+            .FirstOrDefaultAsync(s => s.Id == shippingMethodId && !s.IsDeleted);
+    }
+
+    public async Task<ShippingMethod?> GetShippingMethodAsync(int shippingMethodId)
+    {
+        return await _context.ShippingMethods
+            .FirstOrDefaultAsync(s => s.Id == shippingMethodId && !s.IsDeleted);
+    }
+
+    public async Task AddAsync(Domain.Order.Order order)
+    {
+        await _context.Orders.AddAsync(order);
     }
 
     public async Task AddOrderAsync(Domain.Order.Order order)
     {
-        await _context.Set<Domain.Order.Order>().AddAsync(order);
-    }
-    public void UpdateOrder(Domain.Order.Order order)
-    {
-        _context.Set<Domain.Order.Order>().Update(order);
+        await _context.Orders.AddAsync(order);
     }
 
-    public async Task AddDiscountUsageAsync(Domain.Discount.DiscountUsage discountUsage)
+    public async Task AddDiscountUsageAsync(DiscountUsage discountUsage)
     {
-        await _context.Set<Domain.Discount.DiscountUsage>().AddAsync(discountUsage);
+        await _context.DiscountUsages.AddAsync(discountUsage);
     }
 
-    public async Task AddPaymentTransactionAsync(Domain.Payment.PaymentTransaction transaction)
+    public async Task AddPaymentTransactionAsync(PaymentTransaction paymentTransaction)
     {
-        await _context.Set<Domain.Payment.PaymentTransaction>().AddAsync(transaction);
+        await _context.PaymentTransactions.AddAsync(paymentTransaction);
     }
 
-    public void SetOrderRowVersion(Domain.Order.Order order, byte[] rowVersion)
+    public async Task<PaymentTransaction?> GetPaymentTransactionAsync(string authority)
     {
-        _context.Entry(order).Property("RowVersion").OriginalValue = rowVersion;
+        return await _context.PaymentTransactions.FirstOrDefaultAsync(pt => pt.Authority == authority);
     }
 
-    public void DeleteOrder(Domain.Order.Order order)
+    public void Update(Domain.Order.Order order)
     {
-        order.IsDeleted = true;
-        order.DeletedAt = DateTime.UtcNow;
-        _context.Set<Domain.Order.Order>().Update(order);
+        _context.Orders.Update(order);
     }
 
-    public Task<bool> OrderStatusExistsAsync(int statusId)
+    public void SetOriginalRowVersion(Domain.Order.Order order, byte[] rowVersion)
     {
-        return _context.Set<Domain.Order.OrderStatus>().AnyAsync(s => s.Id == statusId);
-    }
-    public async Task<string?> GetOrderStatusNameAsync(int statusId)
-    {
-        var status = await _context.Set<Domain.Order.OrderStatus>().FindAsync(statusId);
-        return status?.Name;
+        _context.Entry(order).Property(o => o.RowVersion).OriginalValue = rowVersion;
     }
 
     public async Task<object> GetOrderStatisticsAsync(DateTime? fromDate, DateTime? toDate)
     {
-        var query = _context.Set<Domain.Order.Order>().AsQueryable();
+        var query = _context.Orders.Where(o => o.IsPaid);
 
         if (fromDate.HasValue)
+        {
             query = query.Where(o => o.CreatedAt >= fromDate.Value);
+        }
 
         if (toDate.HasValue)
+        {
             query = query.Where(o => o.CreatedAt <= toDate.Value);
+        }
 
-        var generalStats = await query
-            .GroupBy(o => 1)
-            .Select(g => new
-            {
-                TotalOrders = g.Count(),
-                TotalRevenue = g.Sum(o => o.FinalAmount),
-                AverageOrderValue = g.Average(o => (double)o.FinalAmount)
-            })
-            .FirstOrDefaultAsync();
+        var totalOrders = await query.CountAsync();
+        var totalRevenue = await query.SumAsync(o => o.FinalAmount);
+        var totalProfit = await query.SumAsync(o => o.TotalProfit);
+        var averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-        var statusStats = await _context.Set<Domain.Order.Order>()
-            .Include(o => o.OrderStatus)
-            .Where(o => !fromDate.HasValue || o.CreatedAt >= fromDate.Value)
-            .Where(o => !toDate.HasValue || o.CreatedAt <= toDate.Value)
+        return new
+        {
+            TotalOrders = totalOrders,
+            TotalRevenue = totalRevenue,
+            TotalProfit = totalProfit,
+            AverageOrderValue = averageOrderValue
+        };
+    }
+
+    public async Task<IEnumerable<object>> GetOrderStatusStatisticsAsync(DateTime? fromDate, DateTime? toDate)
+    {
+        var query = _context.Orders.AsQueryable();
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(o => o.CreatedAt >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            query = query.Where(o => o.CreatedAt <= toDate.Value);
+        }
+
+        var statusStats = await query
             .GroupBy(o => new { o.OrderStatusId, o.OrderStatus!.Name })
             .Select(g => new
             {
                 StatusId = g.Key.OrderStatusId,
                 StatusName = g.Key.Name,
-                Count = g.Count()
+                Count = g.Count(),
+                TotalAmount = g.Sum(o => o.FinalAmount)
             })
             .ToListAsync();
 
-        return new
-        {
-            GeneralStatistics = generalStats ?? new { TotalOrders = 0, TotalRevenue = (decimal)0, AverageOrderValue = 0.0 },
-            StatusStatistics = statusStats
-        };
+        return statusStats;
+    }
+
+    public async Task<bool> ExistsByIdempotencyKeyAsync(string idempotencyKey)
+    {
+        return await _context.Orders.AnyAsync(o => o.IdempotencyKey == idempotencyKey);
     }
 }

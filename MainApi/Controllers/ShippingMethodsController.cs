@@ -4,9 +4,9 @@
 [Route("api/[controller]")]
 public class ShippingMethodsController : ControllerBase
 {
-    private readonly IShippingService _shippingService;
+    private readonly IShippingMethodService _shippingService;
 
-    public ShippingMethodsController(IShippingService shippingService)
+    public ShippingMethodsController(IShippingMethodService shippingService)
     {
         _shippingService = shippingService;
     }

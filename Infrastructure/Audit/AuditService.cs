@@ -171,4 +171,14 @@ public class AuditService : IAuditService
 
         return ipAddress;
     }
+
+    public Task LogAsync(int? userId, string eventType, string action, string details, string? ipAddress = null, string? userAgent = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<(IEnumerable<AuditLogDto> Logs, int TotalItems)> GetAuditLogsAsync(int? userId, string? eventType, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -70,6 +70,7 @@ public class CartRepository : ICartRepository
     {
         return await _context.Set<Domain.Cart.CartItem>()
             .Include(ci => ci.Variant)
+                .ThenInclude(v => v.InventoryTransactions)
             .Include(ci => ci.Cart)
             .FirstOrDefaultAsync(ci => ci.Id == itemId && ((userId.HasValue && ci.Cart!.UserId == userId) || (!string.IsNullOrEmpty(guestId) && ci.Cart!.GuestToken == guestId)));
     }

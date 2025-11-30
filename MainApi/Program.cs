@@ -65,8 +65,8 @@ try
 
     #region Redis Configuration
     var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
-
-    if (!string.IsNullOrEmpty(redisConnectionString))
+    IConnectionMultiplexer? redis = null;
+    if (!string.IsNullOrWhiteSpace(redisConnectionString))
     {
         try
         {
@@ -79,16 +79,17 @@ try
             redisOptions.SyncTimeout = 10000;
             redisOptions.KeepAlive = 60;
 
-            var redisConnection = await ConnectionMultiplexer.ConnectAsync(redisOptions);
-            builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
-            builder.Services.AddSingleton(sp => redisConnection.GetDatabase());
+            redis = await ConnectionMultiplexer.ConnectAsync(redisOptions);
+            builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
+            builder.Services.AddSingleton(sp => redis.GetDatabase());
             builder.Services.AddSingleton<ICacheService, RedisCacheService>();
 
-            Log.Information("Redis connected successfully. Using Redis for caching and Data Protection.");
+            Log.Information("Redis connected successfully.");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Redis connection failed, using in-memory services.");
+            Log.Warning(ex, "Redis connection failed. Falling back to in-memory and filesystem DataProtection.");
+            redis = null;
             RegisterInMemoryServices(builder.Services);
         }
     }
@@ -111,13 +112,12 @@ try
     builder.Services.AddScoped<IOrderService, OrderService>();
     builder.Services.AddScoped<IOrderItemService, OrderItemService>();
     builder.Services.AddScoped<IOrderStatusService, OrderStatusService>();
-    builder.Services.AddScoped<IShippingService, ShippingService>();
-    builder.Services.AddScoped<IProductService, ProductService>();
+    builder.Services.AddScoped<IShippingMethodService, ShippingMethodService>(); builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<IReviewService, ReviewService>();
     builder.Services.AddScoped<IDiscountService, DiscountService>();
     builder.Services.AddScoped<IInventoryService, InventoryService>();
     builder.Services.AddScoped<IMediaService, MediaService>();
-    builder.Services.AddScoped<IAuditService, AuditService>();
+    builder.Services.AddScoped<IAuditService, Application.Services.AuditService>();
     builder.Services.AddScoped<IAdminProductService, AdminProductService>();
     builder.Services.AddScoped<IAdminCategoryService, AdminCategoryService>();
     builder.Services.AddScoped<IAdminCategoryGroupService, AdminCategoryGroupService>();
@@ -188,8 +188,8 @@ try
     {
         options.HeaderName = "X-XSRF-TOKEN";
         options.Cookie.Name = "XSRF-TOKEN";
-        options.Cookie.SameSite = SameSiteMode.None;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.HttpOnly = false;
         options.Cookie.Path = "/";
     });

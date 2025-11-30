@@ -3,6 +3,8 @@ global using Application.Common.Interfaces.Persistence;
 global using Application.Common.Models;
 global using Application.Context;
 global using Application.DTOs;
+global using Application.Mappings;
+global using Application.Services;
 global using AutoMapper;
 global using Domain.Auth;
 global using Domain.Base;

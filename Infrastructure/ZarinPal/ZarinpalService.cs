@@ -1,12 +1,4 @@
-﻿using Application.Common.Interfaces;
-using Application.DTOs;
-using Infrastructure.Persistence;
-using Microsoft.Extensions.Logging;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-
-namespace Infrastructure.ZarinPal;
+﻿namespace Infrastructure.ZarinPal;
 
 public class ZarinpalService : IZarinpalService
 {
@@ -121,19 +113,17 @@ public class ZarinpalService : IZarinpalService
         }
     }
 
-    public async Task<(string? PaymentUrl, string? ErrorMessage)> RequestPaymentAsync(decimal amount, string description, int orderId, int userId, string callbackUrl, string? userPhone)
+    public async Task<(string? PaymentUrl, string? ErrorMessage)> RequestPaymentAsync(bool isSandbox, string merchantID, decimal amount, string description, int orderId, int userId, string callbackUrl, string? userPhone)
     {
-        // This method now seems redundant as the logic is better handled in OrderService.
-        // It's kept for backward compatibility if other parts of the system use it,
-        // but ideally it should be removed and logic consolidated in OrderService.
-        // The responsibility of fetching settings and user data belongs to the Application layer.
-        _logger.LogWarning("RequestPaymentAsync on IZarinpalService is being called directly. This logic should ideally be in the OrderService.");
-
-        var zarinpalSettings = new ZarinpalSettingsDto { IsSandbox = true, MerchantId = "YourDefaultMerchantId" }; // This is a problem, no access to config.
+        var zarinpalSettings = new ZarinpalSettingsDto
+        {
+            IsSandbox = isSandbox,
+            MerchantId = merchantID,
+        };
 
         var response = await CreatePaymentRequestAsync(zarinpalSettings, amount, description, callbackUrl, userPhone);
 
-        if (response?.Data?.Code == 100 && !string.IsNullOrEmpty(response.Data.Authority))
+        if (response?.Data != null && (response.Data.Code == 100 || response.Data.Code == 101) && !string.IsNullOrEmpty(response.Data.Authority))
         {
             return (GetPaymentGatewayUrl(zarinpalSettings.IsSandbox, response.Data.Authority), null);
         }
