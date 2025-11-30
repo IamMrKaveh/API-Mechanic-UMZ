@@ -3,12 +3,24 @@
   "WorkspaceRootPath": "C:\\ME\\Mechanic\\API\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251130095047_2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Application\\Migrations\\20251130095047_2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\migration.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\migration.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\common\\interfaces\\persistence\\iuserrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\common\\interfaces\\persistence\\iuserrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -19,12 +31,16 @@
       "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\zarinpal\\zarinpalservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\auditservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\auditservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\middleware\\securityheadersmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\middleware\\securityheadersmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\migration.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\migration.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\persistence\\repositories\\orderrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -33,18 +49,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\common\\interfaces\\persistence\\iorderrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\common\\interfaces\\persistence\\iorderrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\extensions\\corsextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -179,10 +183,6 @@
       "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\middleware\\securitymiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\middleware\\securityheadersmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\middleware\\securityheadersmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\extensions\\dataprotectionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\extensions\\dataprotectionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -201,6 +201,10 @@
     {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\cartservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\cartservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\migrations\\20251130095047_2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\migrations\\20251130095047_2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -210,7 +214,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -226,85 +230,59 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "20251130095047_2.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251130095047_2.cs",
-              "RelativeDocumentMoniker": "Application\\Migrations\\20251130095047_2.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251130095047_2.cs",
-              "RelativeToolTip": "Application\\Migrations\\20251130095047_2.cs",
-              "ViewState": "AgIAAAsAAAAAAAAAAAAmwBYAAAAgAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "IUserRepository.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IUserRepository.cs",
+              "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\Persistence\\IUserRepository.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IUserRepository.cs",
+              "RelativeToolTip": "Application\\Common\\Interfaces\\Persistence\\IUserRepository.cs",
+              "ViewState": "AgIAABQAAAAAAAAAAABAwBoAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-30T09:50:47.838Z",
+              "WhenOpened": "2025-11-30T18:04:55.219Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
+              "RelativeDocumentMoniker": "MainApi\\Program.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
+              "RelativeToolTip": "MainApi\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T16:19:31.621Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "migration.txt",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\migration.txt",
-              "RelativeDocumentMoniker": "MainApi\\migration.txt",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\migration.txt",
-              "RelativeToolTip": "MainApi\\migration.txt",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
-              "WhenOpened": "2025-11-30T09:50:31.936Z",
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
+              "RelativeDocumentMoniker": "MainApi\\appsettings.json",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
+              "RelativeToolTip": "MainApi\\appsettings.json",
+              "ViewState": "AgIAAEIAAAAAAAAAAAAAAE4AAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-11-29T17:27:27.127Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "OrderService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
-              "RelativeDocumentMoniker": "Application\\Services\\OrderService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
-              "RelativeToolTip": "Application\\Services\\OrderService.cs",
-              "ViewState": "AgIAAL0BAAAAAAAAAAA3wMUBAAAMAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T12:40:22.853Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
               "Title": "UserService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\UserService.cs",
               "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs",
               "RelativeToolTip": "Application\\Services\\UserService.cs",
-              "ViewState": "AgIAAKIAAAAAAAAAAAA0wKcAAAAcAAAAAAAAAA==",
+              "ViewState": "AgIAAK0AAAAAAAAAAAA3wLUAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-11-25T12:40:29.459Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "IOrderRepository.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IOrderRepository.cs",
-              "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\Persistence\\IOrderRepository.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IOrderRepository.cs",
-              "RelativeToolTip": "Application\\Common\\Interfaces\\Persistence\\IOrderRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-29T18:53:26.584Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "OrderRepository.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\OrderRepository.cs",
-              "RelativeDocumentMoniker": "Infrastructure\\Persistence\\Repositories\\OrderRepository.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\OrderRepository.cs",
-              "RelativeToolTip": "Infrastructure\\Persistence\\Repositories\\OrderRepository.cs",
-              "ViewState": "AgIAAGcAAAAAAAAAAAAiwHEAAAAjAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-29T18:53:52.8Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 19,
               "Title": "IAuditService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IAuditService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IAuditService.cs",
@@ -317,6 +295,57 @@
             {
               "$type": "Document",
               "DocumentIndex": 5,
+              "Title": "OrderService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
+              "RelativeDocumentMoniker": "Application\\Services\\OrderService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
+              "RelativeToolTip": "Application\\Services\\OrderService.cs",
+              "ViewState": "AgIAAM0BAAAAAAAAAAA3wNgBAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T12:40:22.853Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ZarinpalService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\ZarinPal\\ZarinpalService.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\ZarinPal\\ZarinpalService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\ZarinPal\\ZarinpalService.cs",
+              "RelativeToolTip": "Infrastructure\\ZarinPal\\ZarinpalService.cs",
+              "ViewState": "AgIAAD8AAAAAAAAAAAA3wEcAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T17:46:14.833Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "OrdersController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\OrdersController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Controllers\\OrdersController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\OrdersController.cs",
+              "RelativeToolTip": "MainApi\\Controllers\\OrdersController.cs",
+              "ViewState": "AgIAAHcAAAAAAAAAAAA3wH8AAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-29T18:48:40.758Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "SecurityHeadersMiddleware.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Middleware\\SecurityHeadersMiddleware.cs",
+              "RelativeDocumentMoniker": "MainApi\\Middleware\\SecurityHeadersMiddleware.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Middleware\\SecurityHeadersMiddleware.cs",
+              "RelativeToolTip": "MainApi\\Middleware\\SecurityHeadersMiddleware.cs",
+              "ViewState": "AgIAAD4AAAAAAAAAAAA0wEMAAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T15:40:46.46Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
               "Title": "AuditService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\AuditService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\AuditService.cs",
@@ -324,51 +353,59 @@
               "RelativeToolTip": "Application\\Services\\AuditService.cs",
               "ViewState": "AgIAABUAAAAAAAAAAAA3wB0AAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-29T18:58:39.228Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-29T18:58:39.228Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
-              "RelativeDocumentMoniker": "MainApi\\Program.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
-              "RelativeToolTip": "MainApi\\Program.cs",
-              "ViewState": "AgIAAMIBAAAAAAAAAAA3wMQBAAAIAAAAAAAAAA==",
+              "DocumentIndex": 10,
+              "Title": "OrderRepository.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\OrderRepository.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Persistence\\Repositories\\OrderRepository.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\OrderRepository.cs",
+              "RelativeToolTip": "Infrastructure\\Persistence\\Repositories\\OrderRepository.cs",
+              "ViewState": "AgIAAGcAAAAAAAAAAAAiwHEAAAAjAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T16:19:31.621Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-29T18:53:52.8Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "ZarinpalService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\ZarinPal\\ZarinpalService.cs",
-              "RelativeDocumentMoniker": "Infrastructure\\ZarinPal\\ZarinpalService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\ZarinPal\\ZarinpalService.cs",
-              "RelativeToolTip": "Infrastructure\\ZarinPal\\ZarinpalService.cs",
-              "ViewState": "AgIAADkAAAAAAAAAAAA3wEcAAAAEAAAAAAAAAA==",
+              "DocumentIndex": 11,
+              "Title": "IOrderRepository.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IOrderRepository.cs",
+              "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\Persistence\\IOrderRepository.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IOrderRepository.cs",
+              "RelativeToolTip": "Application\\Common\\Interfaces\\Persistence\\IOrderRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T17:46:14.833Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-29T18:53:26.584Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "OrdersController.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\OrdersController.cs",
-              "RelativeDocumentMoniker": "MainApi\\Controllers\\OrdersController.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\OrdersController.cs",
-              "RelativeToolTip": "MainApi\\Controllers\\OrdersController.cs",
-              "ViewState": "AgIAAHMAAAAAAAAAAAAswIAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 50,
+              "Title": "20251130095047_2.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251130095047_2.cs",
+              "RelativeDocumentMoniker": "Application\\Migrations\\20251130095047_2.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251130095047_2.cs",
+              "RelativeToolTip": "Application\\Migrations\\20251130095047_2.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAmwBAAAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-29T18:48:40.758Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-30T09:50:47.838Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 9,
+              "Title": "migration.txt",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\migration.txt",
+              "RelativeDocumentMoniker": "MainApi\\migration.txt",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\migration.txt",
+              "RelativeToolTip": "MainApi\\migration.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-11-30T09:50:31.936Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
               "Title": "AuditRepository.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\AuditRepository.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Persistence\\Repositories\\AuditRepository.cs",
@@ -380,7 +417,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 12,
               "Title": "CorsExtensions.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Extensions\\CorsExtensions.cs",
               "RelativeDocumentMoniker": "MainApi\\Extensions\\CorsExtensions.cs",
@@ -392,19 +429,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
-              "RelativeDocumentMoniker": "MainApi\\appsettings.json",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
-              "RelativeToolTip": "MainApi\\appsettings.json",
-              "ViewState": "AgIAADwAAAAAAAAAAAAAAEIAAAALAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-11-29T17:27:27.127Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 13,
               "Title": "AdminShippingMethodController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminShippingMethodController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminShippingMethodController.cs",
@@ -416,7 +441,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 17,
               "Title": "Imports.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Imports.cs",
               "RelativeDocumentMoniker": "Application\\Imports.cs",
@@ -428,7 +453,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 14,
               "Title": "AuditService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Audit\\AuditService.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Audit\\AuditService.cs",
@@ -440,7 +465,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 20,
               "Title": "AdminOrderService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\AdminOrderService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\AdminOrderService.cs",
@@ -452,7 +477,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 16,
               "Title": "AdminOrdersController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminOrdersController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminOrdersController.cs",
@@ -464,7 +489,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 18,
               "Title": "ServiceCollectionExtensions.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\ServiceCollectionExtensions.cs",
               "RelativeDocumentMoniker": "Application\\ServiceCollectionExtensions.cs",
@@ -476,7 +501,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 21,
               "Title": "OrderStatusRepository.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\OrderStatusRepository.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Persistence\\Repositories\\OrderStatusRepository.cs",
@@ -488,7 +513,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 23,
               "Title": "PaymentTransaction.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Payment\\PaymentTransaction.cs",
               "RelativeDocumentMoniker": "Domain\\Payment\\PaymentTransaction.cs",
@@ -500,7 +525,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 24,
               "Title": "OrderItemService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderItemService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\OrderItemService.cs",
@@ -512,7 +537,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 25,
               "Title": "ShippingMethodService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\ShippingMethodService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\ShippingMethodService.cs",
@@ -524,7 +549,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
+              "DocumentIndex": 26,
               "Title": "DiscountService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\DiscountService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\DiscountService.cs",
@@ -536,7 +561,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 22,
               "Title": "Imports.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Imports.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Imports.cs",
@@ -548,7 +573,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
+              "DocumentIndex": 27,
               "Title": "CartDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\CartDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\CartDtos.cs",
@@ -560,7 +585,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 27,
+              "DocumentIndex": 28,
               "Title": "IOrderService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IOrderService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IOrderService.cs",
@@ -572,7 +597,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 28,
+              "DocumentIndex": 29,
               "Title": "OrderDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\OrderDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\OrderDtos.cs",
@@ -584,7 +609,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 29,
+              "DocumentIndex": 30,
               "Title": "IDiscountService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IDiscountService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IDiscountService.cs",
@@ -596,7 +621,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 31,
+              "DocumentIndex": 32,
               "Title": "IOrderStatusRepository.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IOrderStatusRepository.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\Persistence\\IOrderStatusRepository.cs",
@@ -608,7 +633,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 30,
+              "DocumentIndex": 31,
               "Title": "IShippingMethodService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IShippingMethodService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IShippingMethodService.cs",
@@ -620,7 +645,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 32,
+              "DocumentIndex": 33,
               "Title": "InfrastructureServiceCollectionExtensions.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\InfrastructureServiceCollectionExtensions.cs",
               "RelativeDocumentMoniker": "Infrastructure\\InfrastructureServiceCollectionExtensions.cs",
@@ -632,7 +657,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 33,
+              "DocumentIndex": 34,
               "Title": "AuditLogDto.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\AuditLogDto.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\AuditLogDto.cs",
@@ -644,7 +669,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 35,
+              "DocumentIndex": 36,
               "Title": "ShippingMethodsController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\ShippingMethodsController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\ShippingMethodsController.cs",
@@ -656,7 +681,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 37,
+              "DocumentIndex": 38,
               "Title": "AdminCategoryGroupController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminCategoryGroupController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminCategoryGroupController.cs",
@@ -668,7 +693,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 36,
+              "DocumentIndex": 37,
               "Title": "AdminAuditLogsController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminAuditLogsController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminAuditLogsController.cs",
@@ -680,7 +705,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 34,
+              "DocumentIndex": 35,
               "Title": "CartsController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\CartsController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\CartsController.cs",
@@ -692,7 +717,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 38,
+              "DocumentIndex": 39,
               "Title": "AdminCategoryController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminCategoryController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminCategoryController.cs",
@@ -704,7 +729,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 39,
+              "DocumentIndex": 40,
               "Title": "ShippingMethod.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Order\\ShippingMethod.cs",
               "RelativeDocumentMoniker": "Domain\\Order\\ShippingMethod.cs",
@@ -716,7 +741,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 40,
+              "DocumentIndex": 41,
               "Title": "ShippingMethodRepository.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\ShippingMethodRepository.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Persistence\\Repositories\\ShippingMethodRepository.cs",
@@ -728,7 +753,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 41,
+              "DocumentIndex": 42,
               "Title": "IShippingMethodRepository.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IShippingMethodRepository.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\Persistence\\IShippingMethodRepository.cs",
@@ -740,7 +765,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 42,
+              "DocumentIndex": 43,
               "Title": "IAdminOrderService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IAdminOrderService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IAdminOrderService.cs",
@@ -752,7 +777,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 43,
+              "DocumentIndex": 44,
               "Title": "SecurityMiddleware.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Middleware\\SecurityMiddleware.cs",
               "RelativeDocumentMoniker": "MainApi\\Middleware\\SecurityMiddleware.cs",
@@ -773,18 +798,6 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAA6AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-11-29T18:08:46.612Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 44,
-              "Title": "SecurityHeadersMiddleware.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Middleware\\SecurityHeadersMiddleware.cs",
-              "RelativeDocumentMoniker": "MainApi\\Middleware\\SecurityHeadersMiddleware.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Middleware\\SecurityHeadersMiddleware.cs",
-              "RelativeToolTip": "MainApi\\Middleware\\SecurityHeadersMiddleware.cs",
-              "ViewState": "AgIAAFkAAAAAAAAAAAAmwHAAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T15:40:46.46Z"
             },
             {
               "$type": "Document",

@@ -80,7 +80,7 @@ public class OrdersController : ControllerBase
         if (string.IsNullOrEmpty(idempotencyKey))
         {
             idempotencyKey = Guid.NewGuid().ToString();
-            _logger.LogWarning("No Idempotency-Key provided. Generated: {Key}", idempotencyKey);
+            _logger.LogWarning("No Idempotency-Key provided.  Generated: {Key}", idempotencyKey);
         }
 
         try
@@ -111,7 +111,7 @@ public class OrdersController : ControllerBase
         {
             _logger.LogWarning(ex, "Checkout failed for user {UserId} due to concurrency.", userId);
             await _auditService.LogOrderEventAsync(0, "CheckoutConcurrency", userId.Value, ex.Message);
-            return Conflict(new { message = "موجودی یکی از محصولات تغییر کرده است. لطفا سبد خرید را بررسی کنید." });
+            return Conflict(new { message = "موجودی یکی از محصولات تغییر کرده است.  لطفا سبد خرید را بررسی کنید." });
         }
         catch (ArgumentException ex)
         {
@@ -146,11 +146,12 @@ public class OrdersController : ControllerBase
 
     [HttpGet("verify-payment")]
     [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> VerifyPayment([FromQuery] string authority, [FromQuery] string status, [FromQuery] int? orderId)
     {
         if (string.IsNullOrWhiteSpace(authority) || !orderId.HasValue || orderId <= 0)
         {
-            return BadRequest(new { isVerified = false, message = "پارامترهای پرداخت نامعتبر است." });
+            return Ok(new { isVerified = false, message = "پارامترهای پرداخت نامعتبر است." });
         }
 
         try
@@ -168,13 +169,12 @@ public class OrdersController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Payment verification failed for order {OrderId}", orderId);
-            await _auditService.LogOrderEventAsync(orderId.Value, "VerifyPaymentException", 0, ex.Message);
 
             return Ok(new
             {
                 isVerified = false,
                 orderId = orderId,
-                message = "خطا در تایید پرداخت. لطفا با پشتیبانی تماس بگیرید."
+                message = "خطا در تایید پرداخت.  لطفا با پشتیبانی تماس بگیرید."
             });
         }
     }

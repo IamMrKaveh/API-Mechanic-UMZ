@@ -22,11 +22,11 @@ public interface IUserRepository
 
     Task InvalidateOtpsAsync(int userId);
 
-    Task<Domain.Auth.UserSession?> GetActiveSessionByTokenAsync(string refreshToken);
+    Task<UserSession?> GetActiveSessionByTokenAsync(string refreshToken);
 
-    Task AddSessionAsync(Domain.Auth.UserSession session);
+    Task AddSessionAsync(UserSession session);
 
-    Task RevokeSessionAsync(Domain.Auth.UserSession session, string? newRefreshTokenHash = null);
+    Task RevokeSessionAsync(UserSession session, string? newRefreshTokenHash = null);
 
     Task RevokeAllUserSessionsAsync(int userId);
 

@@ -29,10 +29,8 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
-
     #region Database Configuration
     var connectionString = builder.Configuration.GetConnectionString("PoolerConnection");
-
     if (string.IsNullOrWhiteSpace(connectionString))
     {
         Log.Fatal("Database connection string 'PoolerConnection' is missing!");
@@ -41,7 +39,6 @@ try
 
     Log.Information("[RUNTIME MODE] Database connection validated: {Connection}",
         MaskConnectionString(connectionString));
-
     builder.Services.AddDbContextPool<LedkaContext>((serviceProvider, options) =>
     {
         options.UseNpgsql(connectionString, npgsqlOptions =>
@@ -58,7 +55,6 @@ try
 
         options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
     }, poolSize: 15);
-
     builder.Services.AddScoped<IUnitOfWork, Infrastructure.Persistence.UnitOfWork>();
     Log.Information("Database context registered successfully");
     #endregion
@@ -88,7 +84,7 @@ try
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Redis connection failed. Falling back to in-memory and filesystem DataProtection.");
+            Log.Warning(ex, "Redis connection failed.  Falling back to in-memory and filesystem DataProtection.");
             redis = null;
             RegisterInMemoryServices(builder.Services);
         }
@@ -112,7 +108,8 @@ try
     builder.Services.AddScoped<IOrderService, OrderService>();
     builder.Services.AddScoped<IOrderItemService, OrderItemService>();
     builder.Services.AddScoped<IOrderStatusService, OrderStatusService>();
-    builder.Services.AddScoped<IShippingMethodService, ShippingMethodService>(); builder.Services.AddScoped<IProductService, ProductService>();
+    builder.Services.AddScoped<IShippingMethodService, ShippingMethodService>();
+    builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<IReviewService, ReviewService>();
     builder.Services.AddScoped<IDiscountService, DiscountService>();
     builder.Services.AddScoped<IInventoryService, InventoryService>();
@@ -163,12 +160,10 @@ try
     builder.Services.Configure<ZarinpalSettingsDto>(builder.Configuration.GetSection("Zarinpal"));
     builder.Services.Configure<SecurityHeadersOptions>(builder.Configuration.GetSection("SecurityHeaders"));
     builder.Services.Configure<FrontendUrlsDto>(builder.Configuration.GetSection("FrontendUrls"));
-
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
     });
-
     Log.Information("Application services registered");
     #endregion
 
@@ -183,7 +178,6 @@ try
         options.MultipartBodyLengthLimit = maxRequestSize;
         options.ValueLengthLimit = (int)maxRequestSize;
     });
-
     builder.Services.AddAntiforgery(options =>
     {
         options.HeaderName = "X-XSRF-TOKEN";
@@ -193,14 +187,12 @@ try
         options.Cookie.HttpOnly = false;
         options.Cookie.Path = "/";
     });
-
     builder.Services.AddSingleton<IHtmlSanitizer>(_ => new HtmlSanitizer(new HtmlSanitizerOptions
     {
         AllowedTags = { "b", "i", "em", "strong", "p", "br", "ul", "ol", "li" },
         AllowedAttributes = { "class" },
         AllowedSchemes = { "http", "https" }
     }));
-
     builder.Services.AddHttpContextAccessor();
     #endregion
 
@@ -248,7 +240,7 @@ try
                     var authHeader = context.Request.Headers["Authorization"].ToString();
                     if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                     {
-                        context.Token = authHeader.Substring("Bearer ".Length).Trim();
+                        context.Token = authHeader.Substring("Bearer".Length).Trim();
                         return Task.CompletedTask;
                     }
                 }
@@ -277,14 +269,13 @@ try
     #region HTTP Clients Configuration
     var retryPolicy = HttpPolicyExtensions
         .HandleTransientHttpError()
-        .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+        .OrResult(msg => msg.StatusCode == HttpStatusCode.TooManyRequests)
         .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
             onRetry: (outcome, timespan, retryCount, context) =>
             {
                 Log.Warning("External API retry {RetryCount} after {Timespan}s due to: {Result}",
                     retryCount, timespan.TotalSeconds, outcome.Result?.StatusCode);
             });
-
     var circuitBreakerPolicy = HttpPolicyExtensions
         .HandleTransientHttpError()
         .CircuitBreakerAsync(5, TimeSpan.FromSeconds(30),
@@ -292,7 +283,6 @@ try
                 Log.Error("External API circuit breaker opened for {Duration}s", duration.TotalSeconds),
             onReset: () =>
                 Log.Information("External API circuit breaker reset"));
-
     builder.Services.AddHttpClient<IZarinpalService, ZarinpalService>(client =>
     {
         client.Timeout = TimeSpan.FromSeconds(30);
@@ -300,17 +290,16 @@ try
     })
     .AddPolicyHandler(retryPolicy)
     .AddPolicyHandler(circuitBreakerPolicy);
-
     builder.Services.AddHttpClient<ILocationService, LocationService>()
         .AddPolicyHandler(retryPolicy)
         .AddPolicyHandler(circuitBreakerPolicy);
-
     Log.Information("HTTP clients configured");
     #endregion
 
     #region CORS Configuration
     var allowedOrigins = builder.Configuration.GetSection("Security:AllowedOrigins").Get<string[]>()
-        ?? new[] { "https://ledka-co.ir", "https://www.ledka-co.ir" };
+        ??
+        new[] { "https://ledka-co.ir", "https://www.ledka-co.ir" };
 
     if (builder.Environment.IsDevelopment())
     {
@@ -326,11 +315,11 @@ try
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials()
+                .SetIsOriginAllowedToAllowWildcardSubdomains()
                 .WithExposedHeaders("Content-Disposition", "X-Pagination", "Token-Expired", "X-Correlation-ID")
                 .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
         });
     });
-
     Log.Information("CORS configured with origins: {Origins}", string.Join(", ", allowedOrigins));
     #endregion
 
@@ -365,7 +354,6 @@ try
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
-
     Log.Information("Controllers and caching configured");
     #endregion
 
@@ -405,7 +393,6 @@ try
             name: "postgresql",
             timeout: TimeSpan.FromSeconds(5),
             tags: new[] { "db", "ready" });
-
     Log.Information("Health checks configured");
     #endregion
 
@@ -415,7 +402,6 @@ try
         options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(2);
         options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
     });
-
     builder.Host.ConfigureHostOptions(options =>
         options.ShutdownTimeout = TimeSpan.FromSeconds(30));
 
@@ -430,9 +416,12 @@ try
     #region Middleware Pipeline Configuration
     app.UseForwardedHeaders();
 
+    app.UseCors("SecurePolicy");
+    app.UseSecurityMiddleware();
+
     if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Swagger:Enabled"))
     {
-        app.UseHttpsRedirection();
+        //app.UseHttpsRedirection();
         app.UseDeveloperExceptionPage();
         app.UseSwagger();
         app.UseSwaggerUI(c =>
@@ -440,18 +429,17 @@ try
             c.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
             c.RoutePrefix = "swagger";
         });
-
         app.Use(async (context, next) =>
         {
             if (context.Request.Path.StartsWithSegments("/swagger"))
             {
                 context.Response.Headers.Remove("Content-Security-Policy");
+                context.Response.Headers.Remove("Content-Security-Policy-Report-Only");
                 context.Response.Headers.Remove("X-Frame-Options");
                 context.Response.Headers.Remove("X-Content-Type-Options");
             }
             await next();
         });
-
         Log.Information("Development middleware enabled");
     }
     else
@@ -479,18 +467,102 @@ try
 
             var errorResponse = new
             {
-                error = "An unexpected error occurred. Please try again later.",
+                error = "An unexpected error occurred.  Please try again later.",
                 traceId = System.Diagnostics.Activity.Current?.Id ?? context.TraceIdentifier
             };
 
             await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
         });
     });
+    app.UseDefaultFiles();
 
-    app.UseStaticFiles();
-    app.UseCors("SecurePolicy");
+    var staticFileOptions = new StaticFileOptions
+    {
+        ServeUnknownFileTypes = false,
+        OnPrepareResponse = ctx =>
+        {
+            var path = ctx.File.Name.ToLowerInvariant();
+
+            if (path == "index.html")
+            {
+                ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
+                ctx.Context.Response.Headers.Append("Pragma", "no-cache");
+                ctx.Context.Response.Headers.Append("Expires", "0");
+            }
+            else if (path.EndsWith(".js") || path.EndsWith(".css") || path.EndsWith(".woff2") || path.EndsWith(".png") || path.EndsWith(".jpg"))
+            {
+                ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
+            }
+            else if (path.EndsWith(".js") || path.EndsWith(".mjs"))
+            {
+                ctx.Context.Response.ContentType = "application/javascript";
+                ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
+            }
+            else if (path.EndsWith(".css"))
+            {
+                ctx.Context.Response.ContentType = "text/css";
+                ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
+            }
+            else if (path.EndsWith(".json"))
+            {
+                ctx.Context.Response.ContentType = "application/json";
+            }
+            else if (path.EndsWith(".woff2"))
+            {
+                ctx.Context.Response.ContentType = "font/woff2";
+                ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
+            }
+            else if (path.EndsWith(".woff"))
+            {
+                ctx.Context.Response.ContentType = "font/woff";
+                ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
+            }
+            else if (path.EndsWith(".svg"))
+            {
+                ctx.Context.Response.ContentType = "image/svg+xml";
+            }
+            else if (path.EndsWith(".png"))
+            {
+                ctx.Context.Response.ContentType = "image/png";
+            }
+            else if (path.EndsWith(".jpg") || path.EndsWith(".jpeg"))
+            {
+                ctx.Context.Response.ContentType = "image/jpeg";
+            }
+            else if (path.EndsWith(".ico"))
+            {
+                ctx.Context.Response.ContentType = "image/x-icon";
+            }
+            else if (path.EndsWith(".webp"))
+            {
+                ctx.Context.Response.ContentType = "image/webp";
+            }
+        }
+    };
+
+    var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+    provider.Mappings[".js"] = "application/javascript";
+    provider.Mappings[".mjs"] = "application/javascript";
+    provider.Mappings[".css"] = "text/css";
+    provider.Mappings[".json"] = "application/json";
+    provider.Mappings[".woff"] = "font/woff";
+    provider.Mappings[".woff2"] = "font/woff2";
+    provider.Mappings[".ttf"] = "font/ttf";
+    provider.Mappings[".eot"] = "application/vnd.ms-fontobject";
+    provider.Mappings[".svg"] = "image/svg+xml";
+    provider.Mappings[".png"] = "image/png";
+    provider.Mappings[".jpg"] = "image/jpeg";
+    provider.Mappings[".jpeg"] = "image/jpeg";
+    provider.Mappings[".gif"] = "image/gif";
+    provider.Mappings[".webp"] = "image/webp";
+    provider.Mappings[".ico"] = "image/x-icon";
+    provider.Mappings[".webmanifest"] = "application/manifest+json";
+
+    staticFileOptions.ContentTypeProvider = provider;
+
+    app.UseStaticFiles(staticFileOptions);
+
     app.UseRouting();
-    app.UseSecurityMiddleware();
     app.UseAuthentication();
     app.UseAuthorization();
     app.UseAntiforgery();
@@ -501,7 +573,6 @@ try
 
     #region Endpoint Mapping
     app.MapControllers();
-
     app.MapHealthChecks("/health", new HealthCheckOptions
     {
         ResponseWriter = async (context, report) =>
@@ -528,17 +599,40 @@ try
         },
         AllowCachingResponses = false
     });
-
     app.MapHealthChecks("/health/ready", new HealthCheckOptions
     {
         Predicate = check => check.Tags.Contains("ready"),
         AllowCachingResponses = false
     });
-
     app.MapHealthChecks("/health/live", new HealthCheckOptions
     {
         Predicate = _ => false,
         AllowCachingResponses = false
+    });
+
+    app.MapFallback(async context =>
+    {
+        var path = context.Request.Path.Value ?? "";
+
+        if (path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode = 404;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync("{\"error\":\"API endpoint not found\"}");
+            return;
+        }
+
+        if (Path.HasExtension(path))
+        {
+            context.Response.StatusCode = 404;
+            await context.Response.WriteAsync("File not found");
+            return;
+        }
+
+        context.Request.Path = "/index.html";
+        context.Response.StatusCode = 200;
+        await context.Response.SendFileAsync(
+            Path.Combine(app.Environment.WebRootPath ?? "wwwroot", "index.html"));
     });
 
     Log.Information("Endpoints mapped successfully");
@@ -546,14 +640,11 @@ try
 
     #region Application Lifetime Events
     var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-
     lifetime.ApplicationStarted.Register(() =>
         Log.Information("API started successfully in {Environment} mode.",
             app.Environment.EnvironmentName));
-
     lifetime.ApplicationStopping.Register(() =>
-        Log.Information("Application is shutting down gracefully..."));
-
+        Log.Information("Application is shutting down gracefully... "));
     lifetime.ApplicationStopped.Register(() =>
     {
         var redis = app.Services.GetService<IConnectionMultiplexer>();
@@ -602,11 +693,9 @@ static void RegisterInMemoryServices(IServiceCollection services)
     services.AddSingleton<IMemoryCache, MemoryCache>();
     services.AddSingleton<ICacheService, InMemoryCacheService>();
     services.AddOutputCache();
-
     var dataProtectionBuilder = services.AddDataProtection()
         .SetApplicationName("Ledka")
         .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
-
     var keysPath = "/tmp/dataprotection-keys";
     try
     {

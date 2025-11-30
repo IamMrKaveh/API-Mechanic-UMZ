@@ -177,6 +177,8 @@ public class UserService : IUserService
             AttemptCount = 0
         };
 
+        await SendOtpViaKavenegar(user.PhoneNumber, otp);
+
         await _repository.AddOtpAsync(userOtp);
         await _unitOfWork.SaveChangesAsync();
 
@@ -362,5 +364,27 @@ public class UserService : IUserService
     private string GenerateSecureOtp()
     {
         return RandomNumberGenerator.GetInt32(100000, 999999).ToString();
+    }
+
+    private async Task<bool> SendOtpViaKavenegar(string phoneNumber, string otp)
+    {
+        //var apiKey = _configuration["Kavenegar:ApiKey"];
+        var apiKey = "6C43574D53556774665763527167557A75376D39687A7935666A78353777783238704A302F7053303367383D";
+        if (string.IsNullOrEmpty(apiKey))
+            return false;
+
+        var url = $"https://api.kavenegar.com/v1/{apiKey}/verify/lookup.json";
+
+        using var http = new HttpClient();
+
+        var data = new Dictionary<string, string>
+    {
+        { "receptor", phoneNumber },
+        { "token", otp },
+        { "template", "verify" }
+    };
+
+        var response = await http.PostAsync(url, new FormUrlEncodedContent(data));
+        return response.IsSuccessStatusCode;
     }
 }
