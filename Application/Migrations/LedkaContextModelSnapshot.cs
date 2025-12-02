@@ -694,6 +694,9 @@ namespace Application.Migrations
                     b.Property<int>("OrderStatusId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("PaymentDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("ReceiverName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -905,6 +908,9 @@ namespace Application.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now() at time zone 'utc'");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
                     b.Property<string>("ErrorMessage")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -943,6 +949,9 @@ namespace Application.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("VerificationAttemptedAt")
                         .HasColumnType("timestamp with time zone");
