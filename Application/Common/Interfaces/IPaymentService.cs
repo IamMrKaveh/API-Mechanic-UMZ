@@ -2,15 +2,7 @@
 
 public interface IPaymentService
 {
-    Task<(string? PaymentUrl, string? Authority, string? Error)> InitiatePaymentAsync(
-    int orderId,
-    int userId,
-    decimal amount,
-    string description,
-    string? mobile,
-    string? email,
-    string gatewayName,
-    string ipAddress);
+    Task<PaymentRequestResultDto> InitiatePaymentAsync(PaymentInitiationDto dto);
 
     Task<PaymentVerificationResultDto> VerifyPaymentAsync(string authority, string status);
 

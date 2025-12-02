@@ -110,3 +110,37 @@ public class UpdateOrderStatusByIdDto
     [Required]
     public string RowVersion { get; set; }
 }
+
+public class OrderDto
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public string? ReceiverName { get; set; }
+    public UserAddressDto? UserAddress { get; set; }
+    public decimal TotalAmount { get; set; }
+    public decimal TotalProfit { get; set; }
+    public decimal ShippingCost { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal FinalAmount { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? PaymentDate { get; set; }
+    public int OrderStatusId { get; set; }
+    public string? OrderStatus { get; set; }
+    public int ShippingMethodId { get; set; }
+    public string? ShippingMethod { get; set; }
+    public bool IsPaid { get; set; }
+    public string? IdempotencyKey { get; set; }
+    public ICollection<OrderItemDto> OrderItems { get; set; } = [];
+}
+
+public class OrderItemDto
+{
+    public int Id { get; set; }
+    public int VariantId { get; set; }
+    public string? ProductName { get; set; }
+    public decimal PurchasePrice { get; set; }
+    public decimal SellingPrice { get; set; }
+    public int Quantity { get; set; }
+    public decimal Amount { get; set; }
+    public decimal Profit { get; set; }
+}

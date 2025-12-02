@@ -4,6 +4,8 @@ public interface ICategoryRepository
 {
     Task<(IEnumerable<Domain.Category.Category> Categories, int TotalItems)> GetCategoriesAsync(string? search, int page, int pageSize);
 
+    Task<IEnumerable<Domain.Category.Category>> GetAllCategoriesWithGroupsAsync();
+
     Task<Domain.Category.Category?> GetCategoryWithGroupsByIdAsync(int id);
 
     Task<(IEnumerable<Domain.Product.Product> Products, int TotalCount)> GetProductsByCategoryIdAsync(int categoryId, int page, int pageSize);

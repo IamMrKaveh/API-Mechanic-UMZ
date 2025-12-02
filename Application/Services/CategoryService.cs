@@ -30,7 +30,7 @@ public class CategoryService : ICategoryService
 
     public async Task<ServiceResult<IEnumerable<CategoryHierarchyDto>>> GetCategoryHierarchyAsync()
     {
-        var (categories, _) = await _categoryRepository.GetCategoriesAsync(null, 1, int.MaxValue);
+        var categories = await _categoryRepository.GetAllCategoriesWithGroupsAsync();
 
         var hierarchy = categories.Select(c => new CategoryHierarchyDto
         {

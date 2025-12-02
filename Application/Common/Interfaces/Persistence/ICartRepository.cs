@@ -2,31 +2,35 @@
 
 public interface ICartRepository
 {
-    Task<Domain.Cart.Cart?> GetCartAsync(int? userId, string? guestId = null);
+    Task<Cart?> GetCartAsync(int? userId, string? guestId = null);
 
-    Task<Domain.Cart.Cart?> GetCartEntityAsync(int? userId, string? guestId = null);
+    Task<Cart?> GetCartEntityAsync(int? userId, string? guestId = null);
 
-    Task AddCartAsync(Domain.Cart.Cart cart);
+    Task<Cart?> GetByUserIdAsync(int userId);
 
-    Task AddCartItemAsync(Domain.Cart.CartItem item);
+    Task AddCartAsync(Cart cart);
+
+    Task AddCartItemAsync(CartItem item);
 
     Task<Domain.Product.ProductVariant?> GetVariantByIdAsync(int variantId);
 
-    Task<Domain.Cart.CartItem?> GetCartItemAsync(int cartId, int variantId);
+    Task<CartItem?> GetCartItemAsync(int cartId, int variantId);
 
-    void SetCartItemRowVersion(Domain.Cart.CartItem item, byte[] rowVersion);
+    void SetCartItemRowVersion(CartItem item, byte[] rowVersion);
 
-    Task<Domain.Cart.CartItem?> GetCartItemWithDetailsAsync(int itemId, int? userId, string? guestId);
+    Task<CartItem?> GetCartItemWithDetailsAsync(int itemId, int? userId, string? guestId);
 
-    void RemoveCartItem(Domain.Cart.CartItem item);
+    void RemoveCartItem(CartItem item);
 
-    void RemoveCartItems(IEnumerable<Domain.Cart.CartItem> items);
+    void RemoveCartItems(IEnumerable<CartItem> items);
 
-    void RemoveCart(Domain.Cart.Cart cart);
+    void RemoveCart(Cart cart);
 
     Task<int> GetCartItemsCountAsync(int? userId, string? guestId);
 
-    void UpdateCartItem(Domain.Cart.CartItem item);
+    void UpdateCartItem(CartItem item);
 
     Task<bool> UserExistsAsync(int userId);
+
+    Task ClearCartAsync(int userId);
 }
