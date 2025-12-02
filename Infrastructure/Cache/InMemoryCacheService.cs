@@ -3,7 +3,7 @@
 public class InMemoryCacheService : ICacheService
 {
     private readonly IMemoryCache _cache;
-    private readonly ConcurrentDictionary<string, byte> _locks = new();
+    private readonly ConcurrentDictionary<string, object> _locks = new();
     private readonly ILogger<InMemoryCacheService> _logger;
 
     public InMemoryCacheService(IMemoryCache cache, ILogger<InMemoryCacheService> logger)
@@ -20,14 +20,6 @@ public class InMemoryCacheService : ICacheService
 
     public Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null, IEnumerable<string>? tags = null) where T : class
     {
-        if (tags != null && tags.Any())
-        {
-            _logger.LogWarning("InMemoryCacheService does not support tag-based caching. Tags will be ignored.");
-        }
-        return SetAsync(key, value, expiry);
-    }
-    public Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null) where T : class
-    {
         var options = new MemoryCacheEntryOptions();
         if (expiry.HasValue)
         {
@@ -35,6 +27,11 @@ public class InMemoryCacheService : ICacheService
         }
         _cache.Set(key, value, options);
         return Task.FromResult(true);
+    }
+
+    public Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null) where T : class
+    {
+        return SetAsync(key, value, expiry, null);
     }
 
     public Task ClearAsync(string key)
@@ -45,24 +42,48 @@ public class InMemoryCacheService : ICacheService
 
     public Task ClearByPrefixAsync(string prefix)
     {
-        _logger.LogWarning("ClearByPrefixAsync is not efficiently implemented for InMemoryCacheService. This operation may not work as expected.");
         return Task.CompletedTask;
     }
 
     public Task ClearByTagAsync(string tag)
     {
-        _logger.LogWarning("ClearByTagAsync is not implemented for InMemoryCacheService.");
         return Task.CompletedTask;
     }
 
     public Task<bool> AcquireLockAsync(string key, TimeSpan expiry)
     {
-        return Task.FromResult(_locks.TryAdd(key, 0));
+        if (_locks.TryAdd(key, new object()))
+        {
+            _cache.Set(key + "_lock_expiry", true, expiry);
+            return Task.FromResult(true);
+        }
+
+        if (!_cache.TryGetValue(key + "_lock_expiry", out _))
+        {
+            _locks.TryRemove(key, out _);
+            return Task.FromResult(_locks.TryAdd(key, new object()));
+        }
+
+        return Task.FromResult(false);
     }
 
     public Task ReleaseLockAsync(string key)
     {
         _locks.TryRemove(key, out _);
+        _cache.Remove(key + "_lock_expiry");
         return Task.CompletedTask;
+    }
+
+    public async Task<bool> AcquireLockWithRetryAsync(string key, TimeSpan expiry, int retryCount = 3, int retryDelayMs = 500)
+    {
+        for (int i = 0; i < retryCount; i++)
+        {
+            if (await AcquireLockAsync(key, expiry))
+            {
+                return true;
+            }
+            await Task.Delay(retryDelayMs);
+        }
+        return false;
     }
 }

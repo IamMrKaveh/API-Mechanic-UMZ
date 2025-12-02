@@ -32,6 +32,12 @@ public class UserRepository : IUserRepository
     {
         return _context.Set<Domain.User.UserAddress>().FindAsync(userAddressId).AsTask();
     }
+
+    public async Task AddAddressAsync(Domain.User.UserAddress address)
+    {
+        await _context.Set<Domain.User.UserAddress>().AddAsync(address);
+    }
+
     public void UpdateUserAddress(UserAddress address)
     {
         _context.UserAddresses.Update(address);
@@ -63,8 +69,7 @@ public class UserRepository : IUserRepository
     public Task<Domain.User.UserOtp?> GetActiveOtpAsync(int userId)
     {
         return _context.Set<Domain.User.UserOtp>()
-            .Where(o => o.UserId == userId && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
-            .OrderByDescending(o => o.CreatedAt)
+            .FromSqlInterpolated($"SELECT * FROM \"UserOtps\" WHERE \"UserId\" = {userId} AND \"IsUsed\" = false AND \"ExpiresAt\" > {DateTime.UtcNow} ORDER BY \"CreatedAt\" DESC LIMIT 1 FOR UPDATE")
             .FirstOrDefaultAsync();
     }
 

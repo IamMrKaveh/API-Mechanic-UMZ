@@ -91,3 +91,9 @@ public class ZarinpalVerificationResponseDataDto
     [JsonPropertyName("fee")]
     public decimal Fee { get; set; }
 }
+
+public class ZarinpalSettingsDto
+{
+    public bool IsSandbox { get; init; }
+    public string MerchantId { get; init; }
+}

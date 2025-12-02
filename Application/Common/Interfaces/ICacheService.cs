@@ -14,6 +14,8 @@ public interface ICacheService
 
     Task<bool> AcquireLockAsync(string key, TimeSpan expiry);
 
+    Task<bool> AcquireLockWithRetryAsync(string key, TimeSpan expiry, int retryCount = 3, int retryDelayMs = 500);
+
     Task ReleaseLockAsync(string key);
 
     Task ClearAsync(string key);

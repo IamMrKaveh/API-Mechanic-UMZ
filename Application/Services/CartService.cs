@@ -43,10 +43,10 @@ public class CartService : ICartService
         var dto = await MapCartToDtoAsync(cart);
 
         var productTags = cart.CartItems
-            .Select(ci => $"product:{ci.Variant.ProductId}")
+            .Select(ci => $"product:{ci.VariantId}")
             .Distinct()
             .ToList();
-        productTags.AddRange(cart.CartItems.Select(ci => $"variant:{ci.VariantId}").Distinct());
+
         if (userId.HasValue)
         {
             productTags.Add($"cart:user:{userId.Value}");
@@ -369,9 +369,16 @@ public class CartService : ICartService
     private async Task<CartDto> MapCartToDtoAsync(Cart cart)
     {
         var items = new List<CartItemDto>();
+        var itemsToRemove = new List<CartItem>();
 
         foreach (var ci in cart.CartItems ?? Enumerable.Empty<CartItem>())
         {
+            if (ci.Variant == null || ci.Variant.Product == null)
+            {
+                itemsToRemove.Add(ci);
+                continue;
+            }
+
             string? productIcon = ci.Variant.Images.FirstOrDefault(i => i.IsPrimary)?.FilePath
                                       ?? ci.Variant.Images.FirstOrDefault()?.FilePath;
 
@@ -409,6 +416,12 @@ public class CartService : ICartService
             );
 
             items.Add(item);
+        }
+
+        if (itemsToRemove.Any())
+        {
+            _cartRepository.RemoveCartItems(itemsToRemove);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         var cartDto = new CartDto(

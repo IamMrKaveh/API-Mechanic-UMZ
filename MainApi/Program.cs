@@ -1,18 +1,18 @@
 ﻿#region Serilog Configuration 
-Log.Logger = new LoggerConfiguration() 
-    .MinimumLevel.Information() 
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning) 
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
-    .MinimumLevel.Override("System", LogEventLevel.Warning) 
-    .MinimumLevel.Override("Microsoft.AspNetCore. Authentication", LogEventLevel.Information) 
-    .MinimumLevel.Override("Microsoft.AspNetCore.DataProtection", LogEventLevel.Error) 
-    .Enrich.FromLogContext() 
-    .Enrich.WithEnvironmentName() 
-    .Enrich.WithMachineName() 
-    .Enrich.WithThreadId() 
-    .WriteTo.Console( outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}") 
-    .WriteTo.File( path: "logs/log-.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30, fileSizeLimitBytes: 10_000_000, shared: true, flushToDiskInterval: TimeSpan.FromSeconds(1), outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}") 
-    .CreateLogger(); 
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.AspNetCore. Authentication", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft.AspNetCore.DataProtection", LogEventLevel.Error)
+    .Enrich.FromLogContext()
+    .Enrich.WithEnvironmentName()
+    .Enrich.WithMachineName()
+    .Enrich.WithThreadId()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+    .WriteTo.File(path: "logs/log-.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30, fileSizeLimitBytes: 10_000_000, shared: true, flushToDiskInterval: TimeSpan.FromSeconds(1), outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+    .CreateLogger();
 #endregion
 
 try
@@ -114,7 +114,7 @@ try
     builder.Services.AddScoped<IAdminReviewService, AdminReviewService>();
     builder.Services.AddScoped<IAdminUserService, AdminUserService>();
     builder.Services.AddScoped<IAdminShippingMethodService, AdminShippingMethodService>();
-    builder.Services.AddScoped<IPaymentService, PaymentService>();
+    builder.Services.AddScoped<IPaymentService, Application.Services.PaymentService>();
     #endregion
 
     #region Infrastructure Services Registration
@@ -133,7 +133,7 @@ try
     builder.Services.AddScoped<IOrderItemRepository, OrderItemRepository>();
     builder.Services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
 
-    builder.Services.AddHostedService<PaymentCleanupService>();
+    builder.Services.AddHostedService<Infrastructure.BackgroundJobs.PaymentCleanupService>();
     builder.Services.AddScoped<INotificationService, NotificationService>();
     builder.Services.AddScoped<IEmailService, EmailService>();
     builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
@@ -278,13 +278,22 @@ try
             onReset: () =>
                 Log.Information("External API circuit breaker reset"));
 
-    // Gateway Registration
+    var zarinPalRetryPolicy = HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(msg => msg.StatusCode == HttpStatusCode.TooManyRequests || msg.StatusCode == HttpStatusCode.RequestTimeout || msg.StatusCode == HttpStatusCode.GatewayTimeout)
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+            onRetry: (outcome, timespan, retryCount, context) =>
+            {
+                Log.Warning("ZarinPal API retry {RetryCount} after {Timespan}s due to: {Result}",
+                    retryCount, timespan.TotalSeconds, outcome.Result?.StatusCode);
+            });
+
     builder.Services.AddHttpClient<Infrastructure.Payment.ZarinPal.ZarinPalPaymentGateway>(client =>
     {
         client.Timeout = TimeSpan.FromSeconds(30);
         client.DefaultRequestHeaders.Add("User-Agent", "Ledka/1.0");
     })
-    .AddPolicyHandler(retryPolicy)
+    .AddPolicyHandler(zarinPalRetryPolicy)
     .AddPolicyHandler(circuitBreakerPolicy);
 
     builder.Services.AddScoped<IPaymentGateway, Infrastructure.Payment.ZarinPal.ZarinPalPaymentGateway>();
@@ -673,19 +682,24 @@ finally { Log.Information("Flushing logs..."); await Log.CloseAndFlushAsync(); }
 
 static string MaskConnectionString(string connectionString) { var parts = connectionString.Split(';'); for (int i = 0; i < parts.Length; i++) { var part = parts[i].Trim(); if (part.StartsWith("Password=", StringComparison.OrdinalIgnoreCase) || part.StartsWith("Pwd=", StringComparison.OrdinalIgnoreCase)) { var keyValue = part.Split('='); if (keyValue.Length == 2) { parts[i] = $"{keyValue[0]}=HIDDEN"; } } } return string.Join(";", parts); }
 
-static void RegisterInMemoryServices(IServiceCollection services) 
-{ 
+static void RegisterInMemoryServices(IServiceCollection services)
+{
     services.AddSingleton<IMemoryCache, MemoryCache>();
     services.AddSingleton<ICacheService, InMemoryCacheService>();
-    services.AddOutputCache(); 
-    var dataProtectionBuilder = services.AddDataProtection().SetApplicationName("Ledka").SetDefaultKeyLifetime(TimeSpan.FromDays(90)); 
-    var keysPath = "/tmp/dataprotection-keys"; 
-    try 
-    { 
-        if (!Directory.Exists(keysPath)) 
+    services.AddOutputCache();
+    var dataProtectionBuilder = services.AddDataProtection().SetApplicationName("Ledka").SetDefaultKeyLifetime(TimeSpan.FromDays(90));
+    var keysPath = "/tmp/dataprotection-keys";
+    try
+    {
+        if (!Directory.Exists(keysPath))
         {
             Directory.CreateDirectory(keysPath);
-        } dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(keysPath)); Log.Information("Data Protection using file system at: {Path}", keysPath); } catch (Exception ex) { Log.Warning(ex, "Failed to create keys directory at {Path}, using ephemeral keys", keysPath); 
+        }
+        dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(keysPath)); Log.Information("Data Protection using file system at: {Path}", keysPath);
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Failed to create keys directory at {Path}, using ephemeral keys", keysPath);
     }
 }
 

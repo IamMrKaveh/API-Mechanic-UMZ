@@ -917,12 +917,21 @@ namespace Application.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("GatewayRawResponse")
+                        .HasColumnType("text");
+
                     b.Property<string>("IpAddress")
                         .HasMaxLength(45)
                         .HasColumnType("character varying(45)");
 
+                    b.Property<DateTime?>("LastVerificationAttempt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("OrderId")
                         .HasColumnType("integer");
+
+                    b.Property<decimal>("OriginalAmount")
+                        .HasColumnType("numeric");
 
                     b.Property<long?>("RefId")
                         .HasColumnType("bigint");
@@ -935,7 +944,7 @@ namespace Application.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("VerificationAttemptedAt")
+                    b.Property<DateTime>("VerificationAttemptedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("VerificationCount")

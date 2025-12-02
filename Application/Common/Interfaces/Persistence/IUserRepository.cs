@@ -7,6 +7,7 @@ public interface IUserRepository
     Task<Domain.User.User?> GetUserByIdAsync(int id, bool ignoreQueryFilters = false);
 
     Task<Domain.User.UserAddress?> GetUserAddressAsync(int userAddressId);
+    Task AddAddressAsync(UserAddress address);
     void UpdateUserAddress(UserAddress address);
     void DeleteUserAddress(UserAddress address);
 

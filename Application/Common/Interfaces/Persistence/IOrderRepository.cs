@@ -18,6 +18,7 @@ public interface IOrderRepository
     Task AddDiscountUsageAsync(DiscountUsage discountUsage);
     Task AddPaymentTransactionAsync(PaymentTransaction paymentTransaction);
     Task<PaymentTransaction?> GetPaymentTransactionAsync(string authority);
+    Task<PaymentTransaction?> GetPaymentTransactionForUpdateAsync(string authority);
     void Update(Order order);
     void SetOriginalRowVersion(Order order, byte[] rowVersion);
     Task<object> GetOrderStatisticsAsync(DateTime? fromDate, DateTime? toDate);

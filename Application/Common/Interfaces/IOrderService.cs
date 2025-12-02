@@ -7,11 +7,3 @@ public interface IOrderService
     Task<CheckoutFromCartResultDto> CheckoutFromCartAsync(CreateOrderFromCartDto orderDto, int userId, string idempotencyKey);
     Task<PaymentVerificationResultDto> VerifyAndProcessPaymentAsync(int orderId, string authority, string status);
 }
-
-public class PaymentVerificationResultDto
-{
-    public bool IsVerified { get; set; }
-    public string RedirectUrl { get; set; } = string.Empty;
-    public long? RefId { get; set; }
-    public string? Message { get; set; }
-}

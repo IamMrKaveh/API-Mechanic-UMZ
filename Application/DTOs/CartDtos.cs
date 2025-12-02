@@ -1,5 +1,14 @@
 ﻿namespace Application.DTOs;
 
+public enum CartOperationResult
+{
+    Success,
+    NotFound,
+    OutOfStock,
+    Error,
+    ConcurrencyConflict
+}
+
 public record AddToCartDto(
     [Required] int VariantId,
     [Range(1, 1000)] int Quantity,

@@ -21,8 +21,47 @@ public class PaymentCleanupService : BackgroundService
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
-                    var paymentService = scope.ServiceProvider.GetRequiredService<IPaymentService>();
-                    await paymentService.CleanupAbandonedPaymentsAsync(stoppingToken);
+                    var dbContext = scope.ServiceProvider.GetRequiredService<LedkaContext>();
+                    var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
+                    var inventoryService = scope.ServiceProvider.GetRequiredService<IInventoryService>();
+
+                    var cutoff = DateTime.UtcNow.AddMinutes(-20);
+
+                    var stuckTransactions = await dbContext.PaymentTransactions
+                        .Where(pt => pt.Status == "Pending" && pt.CreatedAt < cutoff)
+                        .Include(pt => pt.Order)
+                        .ThenInclude(o => o.OrderItems)
+                        .ToListAsync(stoppingToken);
+
+                    foreach (var tx in stuckTransactions)
+                    {
+                        tx.Status = "Expired";
+                        if (tx.Order != null && tx.Order.OrderStatusId == 1)
+                        {
+                            tx.Order.IsDeleted = true;
+                            tx.Order.DeletedAt = DateTime.UtcNow;
+                            tx.Order.DeletedBy = 0;
+
+                            foreach (var item in tx.Order.OrderItems)
+                            {
+                                await inventoryService.LogTransactionAsync(
+                                    item.VariantId,
+                                    "ReservationRollback",
+                                    item.Quantity,
+                                    item.Id,
+                                    tx.Order.UserId,
+                                    $"System rollback for expired order {tx.Order.Id}",
+                                    $"ORDER-ROLLBACK-{tx.Order.Id}",
+                                    null,
+                                    false
+                                );
+                            }
+                        }
+
+                        await auditService.LogSystemEventAsync("PaymentExpired", $"Tx {tx.Authority} expired.");
+                    }
+
+                    await dbContext.SaveChangesAsync(stoppingToken);
                 }
             }
             catch (Exception ex)
@@ -30,7 +69,7 @@ public class PaymentCleanupService : BackgroundService
                 _logger.LogError(ex, "Error occurred while cleaning up abandoned payments.");
             }
 
-            await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken);
+            await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
         }
     }
 }

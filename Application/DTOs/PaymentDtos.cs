@@ -20,6 +20,14 @@ public class PaymentRequestResultDto
     public string PaymentUrl { get; set; }
 }
 
+public class PaymentVerificationResultDto
+{
+    public bool IsVerified { get; set; }
+    public string RedirectUrl { get; set; } = string.Empty;
+    public long? RefId { get; set; }
+    public string? Message { get; set; }
+}
+
 public class GatewayVerificationResultDto
 {
     public bool IsVerified { get; set; }

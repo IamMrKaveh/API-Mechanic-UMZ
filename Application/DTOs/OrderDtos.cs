@@ -48,10 +48,58 @@ public class CreateOrderFromCartDto
     public List<CheckoutItemPriceDto> ExpectedItems { get; set; } = [];
 }
 
+public class CreateOrderItemDto
+{
+    [Required]
+    public int OrderId { get; set; }
+
+    [Required]
+    public int VariantId { get; set; }
+
+    [Required]
+    [Range(1, 1000)]
+    public int Quantity { get; set; }
+
+    [Required]
+    [Range(0, double.MaxValue)]
+    public decimal SellingPrice { get; set; }
+}
+
+public class UpdateOrderItemDto
+{
+    [Range(0, 1000)]
+    public int? Quantity { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal? SellingPrice { get; set; }
+
+    [Required]
+    public string RowVersion { get; set; }
+}
+
 public class CheckoutItemPriceDto
 {
     public int VariantId { get; set; }
     public decimal Price { get; set; }
+}
+
+public class CreateOrderStatusDto
+{
+    [Required]
+    [StringLength(100)]
+    public string Name { get; set; }
+
+    [StringLength(50)]
+    public string? Icon { get; set; }
+}
+
+public class UpdateOrderStatusDto
+{
+    public string? Name { get; set; }
+
+    public string? Icon { get; set; }
+
+    public string? RowVersion { get; set; }
 }
 
 public class UpdateOrderStatusByIdDto
@@ -62,5 +110,3 @@ public class UpdateOrderStatusByIdDto
     [Required]
     public string RowVersion { get; set; }
 }
-
-public record ApplyDiscountDto(string Code, decimal OrderTotal);
