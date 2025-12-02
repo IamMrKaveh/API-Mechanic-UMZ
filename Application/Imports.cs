@@ -22,6 +22,7 @@ global using Domain.Product.Attribute;
 global using Domain.Security;
 global using Domain.User;
 global using Ganss.Xss;
+global using Infrastructure.Payment.ZarinPal;
 global using Microsoft.AspNetCore.Http;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.Storage;

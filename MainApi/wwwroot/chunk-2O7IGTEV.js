@@ -1,0 +1,1 @@
+import{a}from"./chunk-6NHH2MS5.js";import{z as n}from"./chunk-QOTKPPKC.js";import{X as r}from"./chunk-6VZDFBBI.js";var l=(o,s)=>{let e=r(a),t=r(n);if(e.isAuthenticated()){let u=e.currentUserValue,i=o.data.roles;return i&&u&&i.includes("Admin")&&!u.isAdmin?(t.navigate(["/"]),!1):!0}return t.navigate(["/auth"],{queryParams:{returnUrl:s.url}}),!1};export{l as a};

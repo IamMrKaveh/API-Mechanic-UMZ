@@ -1,9 +1,8 @@
-﻿namespace Application.DTOs;
+﻿namespace Infrastructure.Payment.ZarinPal;
 
 public class ZarinpalRequestDto
 {
-    [JsonPropertyName("merchant_id")]
-    public string? MerchantID { get; set; }
+    [JsonPropertyName("merchant_id")] public string? MerchantID { get; set; }
 
     [JsonPropertyName("amount")]
     public decimal Amount { get; set; }
@@ -20,8 +19,7 @@ public class ZarinpalRequestDto
 
 public class ZarinpalMetadataDto
 {
-    [JsonPropertyName("mobile")]
-    public string? Mobile { get; set; }
+    [JsonPropertyName("mobile")] public string? Mobile { get; set; }
 
     [JsonPropertyName("email")]
     public string? Email { get; set; }
@@ -29,8 +27,7 @@ public class ZarinpalMetadataDto
 
 public class ZarinpalRequestResponseDto
 {
-    [JsonPropertyName("data")]
-    public ZarinpalRequestResponseDataDto? Data { get; set; }
+    [JsonPropertyName("data")] public ZarinpalRequestResponseDataDto? Data { get; set; }
 
     [JsonPropertyName("errors")]
     public object? Errors { get; set; }
@@ -38,8 +35,7 @@ public class ZarinpalRequestResponseDto
 
 public class ZarinpalRequestResponseDataDto
 {
-    [JsonPropertyName("code")]
-    public int Code { get; set; }
+    [JsonPropertyName("code")] public int Code { get; set; }
 
     [JsonPropertyName("message")]
     public string? Message { get; set; }
@@ -56,8 +52,7 @@ public class ZarinpalRequestResponseDataDto
 
 public class ZarinpalVerificationRequestDto
 {
-    [JsonPropertyName("merchant_id")]
-    public string? MerchantID { get; set; }
+    [JsonPropertyName("merchant_id")] public string? MerchantID { get; set; }
 
     [JsonPropertyName("amount")]
     public decimal Amount { get; set; }
@@ -68,8 +63,7 @@ public class ZarinpalVerificationRequestDto
 
 public class ZarinpalVerificationResponseDto
 {
-    [JsonPropertyName("data")]
-    public ZarinpalVerificationResponseDataDto? Data { get; set; }
+    [JsonPropertyName("data")] public ZarinpalVerificationResponseDataDto? Data { get; set; }
 
     [JsonPropertyName("errors")]
     public object? Errors { get; set; }
@@ -77,8 +71,7 @@ public class ZarinpalVerificationResponseDto
 
 public class ZarinpalVerificationResponseDataDto
 {
-    [JsonPropertyName("code")]
-    public int Code { get; set; }
+    [JsonPropertyName("code")] public int Code { get; set; }
 
     [JsonPropertyName("message")]
     public string? Message { get; set; }
