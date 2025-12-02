@@ -19,22 +19,11 @@ public class RedisCacheService : ICacheService
     {
         try
         {
-            if (!_redis.IsConnected)
-            {
-                _logger.LogWarning("Redis is not connected. Cache Get operation for key {Key} is skipped.", key);
-                return null;
-            }
-
+            if (!_redis.IsConnected) return null;
             var value = await _database.StringGetAsync(key);
-            if (value.HasValue)
-            {
-                return JsonSerializer.Deserialize<T>(value!);
-            }
+            if (value.HasValue) return JsonSerializer.Deserialize<T>(value!);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting cache for key {Key}", key);
-        }
+        catch (Exception ex) { _logger.LogError(ex, "Error getting cache for key {Key}", key); }
         return null;
     }
 
@@ -42,18 +31,11 @@ public class RedisCacheService : ICacheService
     {
         try
         {
-            if (!_redis.IsConnected)
-            {
-                _logger.LogWarning("Redis is not connected. Cache Set operation for key {Key} is skipped.", key);
-                return false;
-            }
-
+            if (!_redis.IsConnected) return false;
             var stringValue = JsonSerializer.Serialize(value);
             var expiryTime = expiry ?? TimeSpan.FromMinutes(10);
-
             var transaction = _database.CreateTransaction();
             _ = transaction.StringSetAsync(key, stringValue, expiryTime);
-
             if (tags != null)
             {
                 foreach (var tag in tags)
@@ -65,46 +47,24 @@ public class RedisCacheService : ICacheService
             }
             return await transaction.ExecuteAsync();
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error setting cache for key {Key}", key);
-            return false;
-        }
+        catch (Exception ex) { _logger.LogError(ex, "Error setting cache for key {Key}", key); return false; }
     }
 
-    public Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null) where T : class
-    {
-        return SetAsync(key, value, expiry, null);
-    }
+    public Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null) where T : class => SetAsync(key, value, expiry, null);
 
     public async Task ClearByPrefixAsync(string prefix)
     {
         try
         {
-            if (!_redis.IsConnected)
-            {
-                return;
-            }
-
-            var endpoints = _redis.GetEndPoints();
-            var server = _redis.GetServer(endpoints.First());
-
+            if (!_redis.IsConnected) return;
+            var server = _redis.GetServer(_redis.GetEndPoints().First());
             var keysToDelete = new List<RedisKey>();
-            await foreach (var key in server.KeysAsync(pattern: $"{prefix}*"))
-            {
-                keysToDelete.Add(key);
-            }
-
-            if (keysToDelete.Any())
-            {
-                await _database.KeyDeleteAsync(keysToDelete.ToArray());
-            }
+            await foreach (var key in server.KeysAsync(pattern: $"{prefix}*")) keysToDelete.Add(key);
+            if (keysToDelete.Any()) await _database.KeyDeleteAsync(keysToDelete.ToArray());
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error clearing cache for prefix {Prefix}", prefix);
-        }
+        catch (Exception ex) { _logger.LogError(ex, "Error clearing cache for prefix {Prefix}", prefix); }
     }
+
     public async Task ClearByTagAsync(string tag)
     {
         try
@@ -112,74 +72,47 @@ public class RedisCacheService : ICacheService
             if (!_redis.IsConnected) return;
             var tagKey = $"tag:{tag}";
             var keysToDelete = await _database.SetMembersAsync(tagKey);
-            if (keysToDelete.Length > 0)
-            {
-                var redisKeys = keysToDelete.Select(k => (RedisKey)k.ToString()).ToArray();
-                await _database.KeyDeleteAsync(redisKeys);
-            }
+            if (keysToDelete.Length > 0) await _database.KeyDeleteAsync(keysToDelete.Select(k => (RedisKey)k.ToString()).ToArray());
             await _database.KeyDeleteAsync(tagKey);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error clearing cache for tag {Tag}", tag);
-        }
+        catch (Exception ex) { _logger.LogError(ex, "Error clearing cache for tag {Tag}", tag); }
     }
 
     public async Task<bool> AcquireLockAsync(string key, TimeSpan expiry)
     {
         try
         {
-            if (!_redis.IsConnected)
-            {
-                _logger.LogWarning("Redis is not connected. Bypassing lock for key {Key}.", key);
-                return true;
-            }
-
+            if (!_redis.IsConnected) return true;
             var lockKey = $"lock:{key}";
             var lockValue = Guid.NewGuid().ToString();
             return await _database.StringSetAsync(lockKey, lockValue, expiry, When.NotExists);
         }
-        catch (Exception ex)
+        catch (Exception ex) { _logger.LogError(ex, "Error acquiring lock {Key}", key); return true; }
+    }
+
+    public async Task<bool> AcquireLockWithRetryAsync(string key, TimeSpan expiry, int retryCount = 3, int retryDelayMs = 500)
+    {
+        for (int i = 0; i < retryCount; i++)
         {
-            _logger.LogError(ex, "Error acquiring lock for key {Key}. Proceeding without lock.", key);
-            return true;
+            if (await AcquireLockAsync(key, expiry)) return true;
+            await Task.Delay(retryDelayMs);
         }
+        return false;
     }
 
     public async Task ReleaseLockAsync(string key)
     {
         try
         {
-            if (!_redis.IsConnected)
-            {
-                _logger.LogWarning("Redis is not connected. Lock for key {Key} might not be released.", key);
-                return;
-            }
-
-            var lockKey = $"lock:{key}";
-            await _database.KeyDeleteAsync(lockKey);
+            if (!_redis.IsConnected) return;
+            await _database.KeyDeleteAsync($"lock:{key}");
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error releasing lock for key {Key}", key);
-        }
+        catch (Exception ex) { _logger.LogError(ex, "Error releasing lock {Key}", key); }
     }
 
     public async Task ClearAsync(string key)
     {
-        try
-        {
-            if (!_redis.IsConnected)
-            {
-                _logger.LogWarning("Redis is not connected. Cache Clear for key {Key} is skipped.", key);
-                return;
-            }
-
-            await _database.KeyDeleteAsync(key);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error clearing cache for key {Key}", key);
-        }
+        try { if (_redis.IsConnected) await _database.KeyDeleteAsync(key); }
+        catch (Exception ex) { _logger.LogError(ex, "Error clearing cache {Key}", key); }
     }
 }

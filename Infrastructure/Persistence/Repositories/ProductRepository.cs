@@ -36,7 +36,7 @@ public class ProductRepository : IProductRepository
 
         if (!string.IsNullOrEmpty(searchParams.Name))
         {
-            query = query.Where(p => EF.Functions.ILike(p.Name, $"%{searchParams.Name}%"));
+            query = query.Where(p => EF.Functions.Like(p.Name, $"{searchParams.Name}%"));
         }
 
         if (searchParams.CategoryId.HasValue)

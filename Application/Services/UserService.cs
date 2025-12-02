@@ -11,6 +11,7 @@ public class UserService : IUserService
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITokenService _tokenService;
+    private readonly ICacheService _cacheService;
 
     public UserService(
         IUserRepository repository,
@@ -21,7 +22,8 @@ public class UserService : IUserService
         ICurrentUserService currentUserService,
         IMapper mapper,
         IUnitOfWork unitOfWork,
-        ITokenService tokenService)
+        ITokenService tokenService,
+        ICacheService cacheService)
     {
         _repository = repository;
         _logger = logger;
@@ -32,6 +34,7 @@ public class UserService : IUserService
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _tokenService = tokenService;
+        _cacheService = cacheService;
     }
 
     public async Task<ServiceResult<UserProfileDto?>> GetUserByIdAsync(int id)
@@ -188,74 +191,81 @@ public class UserService : IUserService
 
     public async Task<ServiceResult<(AuthResponseDto? Response, string? Error)>> VerifyOtpAsync(VerifyOtpRequestDto request, string clientIp, string userAgent)
     {
-        var user = await _repository.GetUserByPhoneNumberAsync(request.PhoneNumber);
-        if (user == null)
-            return ServiceResult<(AuthResponseDto?, string?)>.Fail("Invalid credentials.");
-
-        var rateLimitKey = $"otp_{clientIp}_{user.Id}";
-        (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(rateLimitKey, 3, 5);
-        if (isLimited)
-            return ServiceResult<(AuthResponseDto?, string?)>.Fail("Too many verification attempts. Please request a new OTP.");
-
-        var storedOtp = await _repository.GetActiveOtpAsync(user.Id);
-        if (storedOtp == null)
-            return ServiceResult<(AuthResponseDto?, string?)>.Fail("Invalid or expired OTP code.");
-
-        if (storedOtp.AttemptCount >= 3)
+        try
         {
+            var user = await _repository.GetUserByPhoneNumberAsync(request.PhoneNumber);
+            if (user == null)
+                return ServiceResult<(AuthResponseDto?, string?)>.Fail("Invalid credentials.");
+
+            var rateLimitKey = $"otp_{clientIp}_{user.Id}";
+            (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(rateLimitKey, 3, 5);
+            if (isLimited)
+                return ServiceResult<(AuthResponseDto?, string?)>.Fail("Too many verification attempts. Please request a new OTP.");
+
+            var storedOtp = await _repository.GetActiveOtpAsync(user.Id);
+            if (storedOtp == null)
+                return ServiceResult<(AuthResponseDto?, string?)>.Fail("Invalid or expired OTP code.");
+
+            if (storedOtp.AttemptCount >= 3)
+            {
+                storedOtp.IsUsed = true;
+                await _unitOfWork.SaveChangesAsync();
+                return ServiceResult<(AuthResponseDto?, string?)>.Fail("Too many failed attempts. Please request a new OTP.");
+            }
+
+            if (!BCryptNet.Verify(request.Code, storedOtp.OtpHash))
+            {
+                storedOtp.AttemptCount++;
+                await _unitOfWork.SaveChangesAsync();
+                return ServiceResult<(AuthResponseDto?, string?)>.Fail("Invalid OTP code.");
+            }
+
             storedOtp.IsUsed = true;
+            await _repository.RevokeAllUserSessionsAsync(user.Id);
+
+            var guestId = _currentUserService.GuestId;
+            if (!string.IsNullOrEmpty(guestId))
+            {
+                await _cartService.MergeCartAsync(user.Id, guestId);
+            }
+
             await _unitOfWork.SaveChangesAsync();
-            return ServiceResult<(AuthResponseDto?, string?)>.Fail("Too many failed attempts. Please request a new OTP.");
-        }
 
-        if (!BCryptNet.Verify(request.Code, storedOtp.OtpHash))
-        {
-            storedOtp.AttemptCount++;
+            var token = _tokenService.GenerateJwtToken(user);
+            var selector = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
+            var verifier = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            var refreshTokenValue = $"{selector}:{verifier}";
+            var verifierHash = BCryptNet.HashPassword(verifier);
+
+            var safeUserAgent = SanitizeUserAgent(userAgent);
+
+            var session = new UserSession
+            {
+                UserId = user.Id,
+                TokenSelector = selector,
+                TokenVerifierHash = verifierHash,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                CreatedByIp = clientIp,
+                UserAgent = safeUserAgent
+            };
+            await _repository.AddSessionAsync(session);
+
             await _unitOfWork.SaveChangesAsync();
-            return ServiceResult<(AuthResponseDto?, string?)>.Fail("Invalid OTP code.");
+            await _auditService.LogSecurityEventAsync("LoginSuccess", $"User {user.Id} logged in.", clientIp, user.Id, userAgent);
+
+            var response = new AuthResponseDto(
+                token,
+                _mapper.Map<UserProfileDto>(user),
+                DateTime.UtcNow.AddHours(1),
+                refreshTokenValue
+            );
+
+            return ServiceResult<(AuthResponseDto?, string?)>.Ok((response, null));
         }
-
-        storedOtp.IsUsed = true;
-        await _repository.RevokeAllUserSessionsAsync(user.Id);
-
-        var guestId = _currentUserService.GuestId;
-        if (!string.IsNullOrEmpty(guestId))
+        catch (DbUpdateConcurrencyException)
         {
-            await _cartService.MergeCartAsync(user.Id, guestId);
+            return ServiceResult<(AuthResponseDto?, string?)>.Fail("Concurrency conflict during verification. Please try again.");
         }
-
-        await _unitOfWork.SaveChangesAsync();
-
-        var token = _tokenService.GenerateJwtToken(user);
-        var selector = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
-        var verifier = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-        var refreshTokenValue = $"{selector}:{verifier}";
-        var verifierHash = BCryptNet.HashPassword(verifier);
-
-        var safeUserAgent = SanitizeUserAgent(userAgent);
-
-        var session = new UserSession
-        {
-            UserId = user.Id,
-            TokenSelector = selector,
-            TokenVerifierHash = verifierHash,
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
-            CreatedByIp = clientIp,
-            UserAgent = safeUserAgent
-        };
-        await _repository.AddSessionAsync(session);
-
-        await _unitOfWork.SaveChangesAsync();
-        await _auditService.LogSecurityEventAsync("LoginSuccess", $"User {user.Id} logged in.", clientIp, user.Id, userAgent);
-
-        var response = new AuthResponseDto(
-            token,
-            _mapper.Map<UserProfileDto>(user),
-            DateTime.UtcNow.AddHours(1),
-            refreshTokenValue
-        );
-
-        return ServiceResult<(AuthResponseDto?, string?)>.Ok((response, null));
     }
 
     public async Task<ServiceResult<(object? Response, string? Error)>> RefreshTokenAsync(RefreshRequestDto request, string clientIp, string userAgent)
@@ -265,32 +275,45 @@ public class UserService : IUserService
         if (storedSession == null) return ServiceResult<(object?, string?)>.Fail("Invalid token.");
         if (storedSession.User == null) return ServiceResult<(object?, string?)>.Fail("User not found for this token.");
 
-        var selector = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
-        var verifier = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-        var newRefreshTokenValue = $"{selector}:{verifier}";
-        var newVerifierHash = BCryptNet.HashPassword(verifier);
-
-        await _repository.RevokeSessionAsync(storedSession, newVerifierHash);
-
-        var newJwt = _tokenService.GenerateJwtToken(storedSession.User);
-
-        var newSession = new UserSession
+        var lockKey = $"refresh_lock_{storedSession.UserId}";
+        if (!await _cacheService.AcquireLockWithRetryAsync(lockKey, TimeSpan.FromSeconds(5), 3, 500))
         {
-            UserId = storedSession.UserId,
-            TokenSelector = selector,
-            TokenVerifierHash = newVerifierHash,
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
-            CreatedByIp = clientIp,
-            UserAgent = SanitizeUserAgent(userAgent),
-            UpdatedAt = DateTime.UtcNow,
-        };
-        await _repository.AddSessionAsync(newSession);
+            return ServiceResult<(object?, string?)>.Fail("A refresh operation is already in progress.");
+        }
 
-        await _unitOfWork.SaveChangesAsync();
+        try
+        {
+            var selector = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
+            var verifier = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            var newRefreshTokenValue = $"{selector}:{verifier}";
+            var newVerifierHash = BCryptNet.HashPassword(verifier);
 
-        var response = new { token = newJwt, refreshToken = newRefreshTokenValue };
-        return ServiceResult<(object?, string?)>.Ok((response, null));
+            await _repository.RevokeSessionAsync(storedSession, newVerifierHash);
+
+            var newJwt = _tokenService.GenerateJwtToken(storedSession.User);
+
+            var newSession = new UserSession
+            {
+                UserId = storedSession.UserId,
+                TokenSelector = selector,
+                TokenVerifierHash = newVerifierHash,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                CreatedByIp = clientIp,
+                UserAgent = SanitizeUserAgent(userAgent),
+                UpdatedAt = DateTime.UtcNow,
+            };
+            await _repository.AddSessionAsync(newSession);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            var response = new { token = newJwt, refreshToken = newRefreshTokenValue };
+            return ServiceResult<(object?, string?)>.Ok((response, null));
+        }
+        finally
+        {
+            await _cacheService.ReleaseLockAsync(lockKey);
+        }
     }
 
     public async Task<ServiceResult> LogoutAsync(string refreshToken)
@@ -368,7 +391,6 @@ public class UserService : IUserService
 
     private async Task<bool> SendOtpViaKavenegar(string phoneNumber, string otp)
     {
-        //var apiKey = _configuration["Kavenegar:ApiKey"];
         var apiKey = "6C43574D53556774665763527167557A75376D39687A7935666A78353777783238704A302F7053303367383D";
         if (string.IsNullOrEmpty(apiKey))
             return false;

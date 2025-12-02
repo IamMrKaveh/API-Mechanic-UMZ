@@ -36,3 +36,20 @@ public class CategoryGroupViewDto
     public bool IsActive { get; set; }
     public byte[]? RowVersion { get; set; }
 }
+
+public class CategoryGroupHierarchyDto
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+}
+
+public class CategoryGroupSummaryDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string? IconUrl { get; set; }
+    public int ProductCount { get; set; }
+    public int InStockProducts { get; set; }
+    public decimal TotalValue { get; set; }
+    public decimal TotalSellingValue { get; set; }
+}

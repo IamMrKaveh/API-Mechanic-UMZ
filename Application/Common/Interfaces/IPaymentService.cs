@@ -1,6 +1,5 @@
 ﻿namespace Application.Common.Interfaces;
 
-
 public interface IPaymentService
 {
     Task<(string? PaymentUrl, string? Authority, string? Error)> InitiatePaymentAsync(
@@ -10,14 +9,12 @@ public interface IPaymentService
     string description,
     string? mobile,
     string? email,
-    string gatewayName);
-
+    string gatewayName,
+    string ipAddress);
 
     Task<PaymentVerificationResultDto> VerifyPaymentAsync(string authority, string status);
 
-
     Task ProcessGatewayWebhookAsync(string gatewayName, string authority, string status, long? refId);
-
 
     Task CleanupAbandonedPaymentsAsync(CancellationToken cancellationToken);
 }

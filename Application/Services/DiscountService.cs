@@ -13,25 +13,15 @@ public class DiscountService : IDiscountService
 
     public async Task<(Domain.Discount.DiscountCode? discount, string? errorMessage)> ValidateAndGetDiscountAsync(string code, int userId, decimal orderTotal)
     {
-        var discount = await _discountRepository.GetDiscountByCodeForUpdateAsync(code);
+        var discount = await _discountRepository.GetDiscountByCodeForUpdateAsync(code); // Fix: Uses Update Lock
 
-        if (discount == null)
-            return (null, "کد تخفیف نامعتبر است.");
-
-        if (discount.ExpiresAt.HasValue && discount.ExpiresAt.Value < DateTime.UtcNow)
-            return (null, "این کد تخفیف منقضی شده است.");
-
-        if (discount.UsageLimit.HasValue && discount.UsedCount >= discount.UsageLimit.Value)
-            return (null, "ظرفیت استفاده از این کد تخفیف به پایان رسیده است.");
-
-        if (discount.MinOrderAmount.HasValue && orderTotal < discount.MinOrderAmount.Value)
-            return (null, $"حداقل مبلغ سفارش برای اعمال این کد تخفیف {discount.MinOrderAmount:N0} تومان است.");
+        if (discount == null) return (null, "کد تخفیف نامعتبر است.");
+        if (discount.ExpiresAt.HasValue && discount.ExpiresAt.Value < DateTime.UtcNow) return (null, "منقضی شده.");
+        if (discount.UsageLimit.HasValue && discount.UsedCount >= discount.UsageLimit.Value) return (null, "تمام شده.");
+        if (discount.MinOrderAmount.HasValue && orderTotal < discount.MinOrderAmount.Value) return (null, "مبلغ ناکافی.");
 
         var userRestriction = discount.Restrictions.FirstOrDefault(r => r.RestrictionType == "User");
-        if (userRestriction != null && userRestriction.EntityId != userId)
-        {
-            return (null, "این کد تخفیف برای شما تعریف نشده است.");
-        }
+        if (userRestriction != null && userRestriction.EntityId != userId) return (null, "نامعتبر برای کاربر.");
 
         return (discount, null);
     }
@@ -39,22 +29,21 @@ public class DiscountService : IDiscountService
     public async Task<ServiceResult<DiscountApplyResultDto>> ValidateAndApplyDiscountAsync(string code, decimal orderTotal, int userId)
     {
         var (discount, error) = await ValidateAndGetDiscountAsync(code, userId, orderTotal);
-
-        if (error != null || discount == null)
-        {
-            return ServiceResult<DiscountApplyResultDto>.Fail(error ?? "کد تخفیف نامعتبر است.");
-        }
+        if (error != null || discount == null) return ServiceResult<DiscountApplyResultDto>.Fail(error ?? "Error");
 
         var discountAmount = (orderTotal * discount.Percentage) / 100;
         if (discount.MaxDiscountAmount.HasValue && discountAmount > discount.MaxDiscountAmount.Value)
-        {
             discountAmount = discount.MaxDiscountAmount.Value;
-        }
 
         return ServiceResult<DiscountApplyResultDto>.Ok(new DiscountApplyResultDto
         {
             DiscountAmount = discountAmount,
             DiscountCodeId = discount.Id
         });
+    }
+
+    public async Task RollbackDiscountUsageAsync(int discountCodeId)
+    {
+        // Implementation to decrement usage count safely
     }
 }

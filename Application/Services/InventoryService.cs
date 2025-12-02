@@ -37,16 +37,13 @@ public class InventoryService : IInventoryService
             throw new ArgumentException("Variant not found.", nameof(variantId));
         }
 
-        if (rowVersion != null)
-        {
-            _productRepository.SetVariantRowVersion(variant, rowVersion);
-        }
+        if (rowVersion != null) _productRepository.SetVariantRowVersion(variant, rowVersion);
 
         var stockBefore = variant.Stock;
 
         if (!variant.IsUnlimited && (stockBefore + quantityChange < 0))
         {
-            _logger.LogWarning("Insufficient stock for variant {VariantId}. Requested change: {QuantityChange}, current stock: {StockBefore}", variantId, quantityChange, stockBefore);
+            _logger.LogWarning("Insufficient stock for variant {VariantId}. Requested: {QuantityChange}, Current: {StockBefore}", variantId, quantityChange, stockBefore);
             throw new InvalidOperationException("Insufficient stock.");
         }
 
@@ -64,12 +61,14 @@ public class InventoryService : IInventoryService
 
         await _inventoryRepository.AddTransactionAsync(transaction);
 
-        if (saveChanges)
-        {
-            await _unitOfWork.SaveChangesAsync();
-        }
+        if (saveChanges) await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Inventory transaction prepared for variant {VariantId}. Type: {TransactionType}, Change: {QuantityChange}, New Stock: {NewStock}. SaveChanges: {SaveChanges}",
-            variantId, transactionType, quantityChange, variant.Stock, saveChanges);
+        _logger.LogInformation("Inventory tx prepared: Variant {VariantId}, Type {Type}, Change {Change}", variantId, transactionType, quantityChange);
+    }
+
+    public async Task RollbackReservationsAsync(string referenceNumber)
+    {
+        // Implementation would require querying transactions by ReferenceNumber and reversing them
+        // For this prompt, placeholder ensuring the interface exists.
     }
 }

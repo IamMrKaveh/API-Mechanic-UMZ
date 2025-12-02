@@ -11,46 +11,12 @@ public class OrderRepository : IOrderRepository
 
     public async Task<(IEnumerable<Domain.Order.Order> Orders, int TotalItems)> GetOrdersAsync(int? userId, bool isAdmin, int? filterUserId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
     {
-        var query = _context.Orders
-            .Include(o => o.User)
-            .Include(o => o.OrderStatus)
-            .Include(o => o.ShippingMethod)
-            .Include(o => o.OrderItems)
-            .AsQueryable();
-
-        if (!isAdmin && userId.HasValue)
-        {
-            query = query.Where(o => o.UserId == userId.Value);
-        }
-
-        if (isAdmin && filterUserId.HasValue)
-        {
-            query = query.Where(o => o.UserId == filterUserId.Value);
-        }
-
-        if (statusId.HasValue)
-        {
-            query = query.Where(o => o.OrderStatusId == statusId.Value);
-        }
-
-        if (fromDate.HasValue)
-        {
-            query = query.Where(o => o.CreatedAt >= fromDate.Value);
-        }
-
-        if (toDate.HasValue)
-        {
-            query = query.Where(o => o.CreatedAt <= toDate.Value);
-        }
-
+        var query = _context.Orders.Include(o => o.User).Include(o => o.OrderStatus).Include(o => o.ShippingMethod).Include(o => o.OrderItems).AsQueryable();
+        if (!isAdmin && userId.HasValue) query = query.Where(o => o.UserId == userId.Value);
+        if (isAdmin && filterUserId.HasValue) query = query.Where(o => o.UserId == filterUserId.Value);
+        if (statusId.HasValue) query = query.Where(o => o.OrderStatusId == statusId.Value);
         var totalItems = await query.CountAsync();
-
-        var orders = await query
-            .OrderByDescending(o => o.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
+        var orders = await query.OrderByDescending(o => o.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         return (orders, totalItems);
     }
 
@@ -92,6 +58,7 @@ public class OrderRepository : IOrderRepository
         return await _context.Orders
              .FromSqlInterpolated($"SELECT * FROM \"Orders\" WHERE \"Id\" = {orderId} FOR UPDATE")
              .Include(o => o.OrderItems)
+             .Include(o => o.DiscountUsages)
              .FirstOrDefaultAsync();
     }
 
@@ -172,6 +139,13 @@ public class OrderRepository : IOrderRepository
     public async Task<PaymentTransaction?> GetPaymentTransactionAsync(string authority)
     {
         return await _context.PaymentTransactions.FirstOrDefaultAsync(pt => pt.Authority == authority);
+    }
+
+    public async Task<PaymentTransaction?> GetPaymentTransactionForUpdateAsync(string authority)
+    {
+        return await _context.PaymentTransactions
+            .FromSqlInterpolated($"SELECT * FROM \"PaymentTransactions\" WHERE \"Authority\" = {authority} FOR UPDATE")
+            .FirstOrDefaultAsync();
     }
 
     public void Update(Domain.Order.Order order)

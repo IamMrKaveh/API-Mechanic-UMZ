@@ -12,4 +12,6 @@ public interface IInventoryService
         string? referenceNumber,
         byte[]? rowVersion = null,
         bool saveChanges = true);
+
+    Task RollbackReservationsAsync(string referenceNumber);
 }

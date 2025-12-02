@@ -1,14 +1,5 @@
 ﻿namespace Application.Common.Interfaces;
 
-public enum CartOperationResult
-{
-    Success,
-    NotFound,
-    OutOfStock,
-    Error,
-    ConcurrencyConflict
-}
-
 public interface ICartService
 {
     Task<CartDto?> GetCartAsync(int? userId, string? guestId = null);
