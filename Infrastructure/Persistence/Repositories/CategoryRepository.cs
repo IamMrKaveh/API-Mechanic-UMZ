@@ -32,6 +32,15 @@ public class CategoryRepository : ICategoryRepository
         return (categories, totalItems);
     }
 
+    public async Task<IEnumerable<Domain.Category.Category>> GetAllCategoriesWithGroupsAsync()
+    {
+        return await _context.Set<Domain.Category.Category>()
+            .AsNoTracking()
+            .OrderBy(c => c.Name)
+            .Include(c => c.CategoryGroups)
+            .ToListAsync();
+    }
+
     public Task<Domain.Category.Category?> GetCategoryWithGroupsByIdAsync(int id)
     {
         return _context.Set<Domain.Category.Category>()

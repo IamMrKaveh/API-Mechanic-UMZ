@@ -29,13 +29,19 @@ public class CartRepository : ICartRepository
     {
         return await GetFullCartQuery()
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => (userId.HasValue && c.UserId == userId.Value) || (!string.IsNullOrEmpty(guestId) && c.GuestToken == guestId));
+            .FirstOrDefaultAsync(c => userId.HasValue ? c.UserId == userId.Value : (!string.IsNullOrEmpty(guestId) && c.GuestToken == guestId));
+    }
+
+    public async Task<Domain.Cart.Cart?> GetByUserIdAsync(int userId)
+    {
+        return await GetFullCartQuery()
+           .FirstOrDefaultAsync(c => c.UserId == userId);
     }
 
     public async Task<Domain.Cart.Cart?> GetCartEntityAsync(int? userId, string? guestId)
     {
         return await _context.Set<Domain.Cart.Cart>()
-            .FirstOrDefaultAsync(c => (userId.HasValue && c.UserId == userId.Value) || (!string.IsNullOrEmpty(guestId) && c.GuestToken == guestId));
+            .FirstOrDefaultAsync(c => userId.HasValue ? c.UserId == userId.Value : (!string.IsNullOrEmpty(guestId) && c.GuestToken == guestId));
     }
 
     public async Task AddCartAsync(Domain.Cart.Cart cart)
@@ -72,7 +78,7 @@ public class CartRepository : ICartRepository
             .Include(ci => ci.Variant)
                 .ThenInclude(v => v.InventoryTransactions)
             .Include(ci => ci.Cart)
-            .FirstOrDefaultAsync(ci => ci.Id == itemId && ((userId.HasValue && ci.Cart!.UserId == userId) || (!string.IsNullOrEmpty(guestId) && ci.Cart!.GuestToken == guestId)));
+            .FirstOrDefaultAsync(ci => ci.Id == itemId && (userId.HasValue ? ci.Cart!.UserId == userId : (!string.IsNullOrEmpty(guestId) && ci.Cart!.GuestToken == guestId)));
     }
 
     public void RemoveCartItem(Domain.Cart.CartItem item)
@@ -90,12 +96,24 @@ public class CartRepository : ICartRepository
         _context.Set<Domain.Cart.Cart>().Remove(cart);
     }
 
+    public async Task ClearCartAsync(int userId)
+    {
+        var cart = await _context.Set<Domain.Cart.Cart>()
+            .Include(c => c.CartItems)
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+
+        if (cart != null && cart.CartItems.Any())
+        {
+            _context.Set<Domain.Cart.CartItem>().RemoveRange(cart.CartItems);
+        }
+    }
+
     public async Task<int> GetCartItemsCountAsync(int? userId, string? guestId)
     {
         var cart = await _context.Set<Domain.Cart.Cart>()
             .Include(c => c.CartItems)
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => (userId.HasValue && c.UserId == userId.Value) || (!string.IsNullOrEmpty(guestId) && c.GuestToken == guestId));
+            .FirstOrDefaultAsync(c => userId.HasValue ? c.UserId == userId.Value : (!string.IsNullOrEmpty(guestId) && c.GuestToken == guestId));
         return cart?.CartItems?.Sum(ci => ci.Quantity) ?? 0;
     }
 

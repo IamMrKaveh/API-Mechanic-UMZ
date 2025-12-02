@@ -7,6 +7,10 @@ public class PaymentTransaction : IAuditable
     public int OrderId { get; set; }
     public Order.Order Order { get; set; } = null!;
 
+    public int UserId { get; set; }
+
+    public string? Description { get; set; }
+
     public required string Authority { get; set; }
 
     public decimal Amount { get; set; }
@@ -46,12 +50,12 @@ public class PaymentTransaction : IAuditable
     {
         public const string Initialized = "Initialized";
         public const string Pending = "Pending";
-        public const string VerificationInProgress = "VerificationInProgress"; // Fix: New status
+        public const string VerificationInProgress = "VerificationInProgress";
         public const string Success = "Success";
         public const string Failed = "Failed";
         public const string Timeout = "Timeout";
         public const string Expired = "Expired";
         public const string Refunded = "Refunded";
-        public const string VerificationRetryable = "VerificationFailed-Retryable"; // Fix: New status
+        public const string VerificationRetryable = "VerificationFailed-Retryable";
     }
 }

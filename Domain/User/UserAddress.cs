@@ -9,6 +9,7 @@ public class UserAddress : BaseEntity
 
     public required string ReceiverName { get; set; }
 
+    [RegularExpression(@"^09\d{9}$", ErrorMessage = "Invalid phone number format.")]
     public required string PhoneNumber { get; set; }
 
     public required string Province { get; set; }

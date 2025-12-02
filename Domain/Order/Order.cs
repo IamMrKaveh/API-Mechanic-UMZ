@@ -33,6 +33,8 @@ public class Order : IAuditable, ISoftDeletable, IActivatable
 
     public DateTime? DeliveryDate { get; set; }
 
+    public DateTime? PaymentDate { get; set; } // Added property
+
     public int OrderStatusId { get; set; }
     public OrderStatus OrderStatus { get; set; } = null!;
 

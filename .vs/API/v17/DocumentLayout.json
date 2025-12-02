@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\ME\\Mechanic\\API\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\paymentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\paymentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\dtos\\userdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\dtos\\userdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -25,10 +33,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\paymentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\paymentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\cache\\inmemorycacheservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -223,10 +227,6 @@
       "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\payment\\zarinpal\\zarinpalpaymentgateway.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\payment\\zarinpal\\zarinpalpaymentgateway.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -354,7 +354,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 9,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
@@ -370,7 +370,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "20251202101508_3.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251202101508_3.cs",
               "RelativeDocumentMoniker": "Application\\Migrations\\20251202101508_3.cs",
@@ -383,20 +383,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "InMemoryCacheService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Cache\\InMemoryCacheService.cs",
-              "RelativeDocumentMoniker": "Infrastructure\\Cache\\InMemoryCacheService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Cache\\InMemoryCacheService.cs",
-              "RelativeToolTip": "Infrastructure\\Cache\\InMemoryCacheService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-02T09:08:44.931Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 12,
               "Title": "CartService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\CartService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\CartService.cs",
@@ -409,20 +396,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 0,
               "Title": "PaymentService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\PaymentService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\PaymentService.cs",
               "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\PaymentService.cs",
               "RelativeToolTip": "Application\\Services\\PaymentService.cs",
-              "ViewState": "AgIAAG8AAAAAAAAAAAAcwH0AAAAgAAAAAAAAAA==",
+              "ViewState": "AgIAAHwAAAAAAAAAAAAswJEAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-01T15:37:30.5Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
               "RelativeDocumentMoniker": "MainApi\\Program.cs",
@@ -435,7 +422,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "Imports.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Imports.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Imports.cs",
@@ -448,20 +435,46 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "UserDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\UserDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\UserDtos.cs",
               "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\UserDtos.cs",
               "RelativeToolTip": "Application\\DTOs\\UserDtos.cs",
-              "ViewState": "AgIAAD8AAAAAAAAAAAA1wE0AAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEoAAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-02T09:01:13.11Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "OrderService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
+              "RelativeDocumentMoniker": "Application\\Services\\OrderService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
+              "RelativeToolTip": "Application\\Services\\OrderService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACkAAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T12:40:22.853Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 8,
+              "Title": "InMemoryCacheService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Cache\\InMemoryCacheService.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Cache\\InMemoryCacheService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Cache\\InMemoryCacheService.cs",
+              "RelativeToolTip": "Infrastructure\\Cache\\InMemoryCacheService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-02T09:08:44.931Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
               "Title": "ProductRepository.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\ProductRepository.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Persistence\\Repositories\\ProductRepository.cs",
@@ -474,7 +487,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "Imports.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Imports.cs",
               "RelativeDocumentMoniker": "MainApi\\Imports.cs",
@@ -487,7 +500,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "migration.txt",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\migration.txt",
               "RelativeDocumentMoniker": "MainApi\\migration.txt",
@@ -500,7 +513,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 13,
               "Title": "PaymentCleanupService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\BackgroundJobs\\PaymentCleanupService.cs",
               "RelativeDocumentMoniker": "Infrastructure\\BackgroundJobs\\PaymentCleanupService.cs",
@@ -513,7 +526,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 14,
               "Title": "RedisCacheService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Cache\\Redis\\RedisCacheService.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Cache\\Redis\\RedisCacheService.cs",
@@ -526,7 +539,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 15,
               "Title": "AuditService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Audit\\AuditService.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Audit\\AuditService.cs",
@@ -539,7 +552,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 11,
               "Title": "UserRepository.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\UserRepository.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Persistence\\Repositories\\UserRepository.cs",
@@ -552,7 +565,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 10,
               "Title": "UserService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\UserService.cs",
@@ -565,7 +578,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 16,
               "Title": "AnalyticsService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Analytics\\AnalyticsService.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Analytics\\AnalyticsService.cs",
@@ -578,7 +591,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 18,
               "Title": "ServiceResult.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Models\\ServiceResult.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Models\\ServiceResult.cs",
@@ -591,7 +604,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 19,
               "Title": "Result.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Models\\Result.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Models\\Result.cs",
@@ -604,7 +617,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 20,
               "Title": "PagedResultDto.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Models\\PagedResultDto.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Models\\PagedResultDto.cs",
@@ -617,7 +630,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 24,
               "Title": "IPaymentGateway.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IPaymentGateway.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IPaymentGateway.cs",
@@ -630,7 +643,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 25,
               "Title": "ProductDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\ProductDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\ProductDtos.cs",
@@ -643,7 +656,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
+              "DocumentIndex": 26,
               "Title": "IOrderService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IOrderService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IOrderService.cs",
@@ -656,7 +669,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 17,
               "Title": "AdminOrderService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\AdminOrderService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\AdminOrderService.cs",
@@ -669,7 +682,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
+              "DocumentIndex": 27,
               "Title": "PaymentDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\PaymentDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\PaymentDtos.cs",
@@ -682,7 +695,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 23,
               "Title": "IPaymentService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IPaymentService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IPaymentService.cs",
@@ -695,7 +708,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 22,
               "Title": "IShippingMethodService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IShippingMethodService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IShippingMethodService.cs",
@@ -708,7 +721,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 21,
               "Title": "IZarinpalService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IZarinpalService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IZarinpalService.cs",
@@ -721,7 +734,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 27,
+              "DocumentIndex": 28,
               "Title": "IInventoryService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IInventoryService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IInventoryService.cs",
@@ -734,7 +747,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 28,
+              "DocumentIndex": 29,
               "Title": "IDiscountService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IDiscountService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IDiscountService.cs",
@@ -747,7 +760,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 29,
+              "DocumentIndex": 30,
               "Title": "ICartService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\ICartService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\ICartService.cs",
@@ -760,7 +773,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 30,
+              "DocumentIndex": 31,
               "Title": "CartDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\CartDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\CartDtos.cs",
@@ -773,7 +786,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 32,
+              "DocumentIndex": 33,
               "Title": "IAuditService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IAuditService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IAuditService.cs",
@@ -786,7 +799,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 33,
+              "DocumentIndex": 34,
               "Title": "IAdminOrderStatusService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IAdminOrderStatusService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IAdminOrderStatusService.cs",
@@ -799,7 +812,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 36,
+              "DocumentIndex": 37,
               "Title": "IAdminCategoryService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IAdminCategoryService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IAdminCategoryService.cs",
@@ -812,7 +825,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 37,
+              "DocumentIndex": 38,
               "Title": "IAdminCategoryGroupService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IAdminCategoryGroupService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IAdminCategoryGroupService.cs",
@@ -825,7 +838,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 39,
+              "DocumentIndex": 40,
               "Title": "ShippingMethodDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\ShippingMethodDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\ShippingMethodDtos.cs",
@@ -838,7 +851,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 31,
+              "DocumentIndex": 32,
               "Title": "ICacheService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\ICacheService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\ICacheService.cs",
@@ -851,7 +864,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 40,
+              "DocumentIndex": 41,
               "Title": "SettingsDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\SettingsDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\SettingsDtos.cs",
@@ -864,7 +877,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 34,
+              "DocumentIndex": 35,
               "Title": "IAdminOrderService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IAdminOrderService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IAdminOrderService.cs",
@@ -877,7 +890,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 35,
+              "DocumentIndex": 36,
               "Title": "OrderDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\OrderDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\OrderDtos.cs",
@@ -890,7 +903,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 41,
+              "DocumentIndex": 42,
               "Title": "ReviewDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\ReviewDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\ReviewDtos.cs",
@@ -903,7 +916,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 44,
+              "DocumentIndex": 45,
               "Title": "MediaDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\MediaDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\MediaDtos.cs",
@@ -916,7 +929,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 38,
+              "DocumentIndex": 39,
               "Title": "ZarinpalDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\ZarinpalDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\ZarinpalDtos.cs",
@@ -929,7 +942,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 45,
+              "DocumentIndex": 46,
               "Title": "CategoryGroupDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\CategoryGroupDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\CategoryGroupDtos.cs",
@@ -942,7 +955,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 46,
+              "DocumentIndex": 47,
               "Title": "CategoryDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\CategoryDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\CategoryDtos.cs",
@@ -955,7 +968,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 47,
+              "DocumentIndex": 48,
               "Title": "AuthDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\AuthDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\AuthDtos.cs",
@@ -968,7 +981,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 43,
+              "DocumentIndex": 44,
               "Title": "DiscountDto.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\DiscountDto.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\DiscountDto.cs",
@@ -981,7 +994,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 42,
+              "DocumentIndex": 43,
               "Title": "Imports.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Imports.cs",
               "RelativeDocumentMoniker": "Application\\Imports.cs",
@@ -994,7 +1007,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 50,
+              "DocumentIndex": 51,
               "Title": "InventoryService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\InventoryService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\InventoryService.cs",
@@ -1007,7 +1020,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 52,
+              "DocumentIndex": 53,
               "Title": "IOrderRepository.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Persistence\\IOrderRepository.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\Persistence\\IOrderRepository.cs",
@@ -1020,7 +1033,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 48,
+              "DocumentIndex": 49,
               "Title": "AuditLogDto.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\AuditLogDto.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\AuditLogDto.cs",
@@ -1033,7 +1046,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 53,
+              "DocumentIndex": 54,
               "Title": "PaymentsController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\PaymentsController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\PaymentsController.cs",
@@ -1046,7 +1059,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 54,
+              "DocumentIndex": 55,
               "Title": "OrdersController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\OrdersController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\OrdersController.cs",
@@ -1059,7 +1072,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 49,
+              "DocumentIndex": 50,
               "Title": "DiscountService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\DiscountService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\DiscountService.cs",
@@ -1072,20 +1085,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 55,
-              "Title": "OrderService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
-              "RelativeDocumentMoniker": "Application\\Services\\OrderService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
-              "RelativeToolTip": "Application\\Services\\OrderService.cs",
-              "ViewState": "AgIAACIAAAAAAAAAAAA2wBEAAAAEAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T12:40:22.853Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 51,
+              "DocumentIndex": 52,
               "Title": "OrderRepository.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Repositories\\OrderRepository.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Persistence\\Repositories\\OrderRepository.cs",

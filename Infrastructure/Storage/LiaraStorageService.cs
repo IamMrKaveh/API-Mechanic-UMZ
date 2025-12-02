@@ -102,6 +102,9 @@ public class LiaraStorageService : IStorageService
         if (string.IsNullOrEmpty(relativePath))
             return string.Empty;
 
+        if (relativePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            return relativePath;
+
         var trimmedPath = relativePath.TrimStart('/');
         return $"{_baseUrl.TrimEnd('/')}/{trimmedPath}";
     }
