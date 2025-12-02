@@ -1,32 +1,23 @@
-﻿#region Serilog Configuration
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+﻿#region Serilog Configuration 
+Log.Logger = new LoggerConfiguration() 
+    .MinimumLevel.Information() 
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning) 
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
-    .MinimumLevel.Override("System", LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", LogEventLevel.Information)
-    .MinimumLevel.Override("Microsoft.AspNetCore.DataProtection", LogEventLevel.Error)
-    .Enrich.FromLogContext()
-    .Enrich.WithEnvironmentName()
-    .Enrich.WithMachineName()
-    .Enrich.WithThreadId()
-    .WriteTo.Console(
-        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
-    .WriteTo.File(
-        path: "logs/log-.txt",
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 30,
-        fileSizeLimitBytes: 10_000_000,
-        shared: true,
-        flushToDiskInterval: TimeSpan.FromSeconds(1),
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
-    .CreateLogger();
+    .MinimumLevel.Override("System", LogEventLevel.Warning) 
+    .MinimumLevel.Override("Microsoft.AspNetCore. Authentication", LogEventLevel.Information) 
+    .MinimumLevel.Override("Microsoft.AspNetCore.DataProtection", LogEventLevel.Error) 
+    .Enrich.FromLogContext() 
+    .Enrich.WithEnvironmentName() 
+    .Enrich.WithMachineName() 
+    .Enrich.WithThreadId() 
+    .WriteTo.Console( outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}") 
+    .WriteTo.File( path: "logs/log-.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30, fileSizeLimitBytes: 10_000_000, shared: true, flushToDiskInterval: TimeSpan.FromSeconds(1), outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}") 
+    .CreateLogger(); 
 #endregion
 
 try
 {
     Log.Information("Starting API");
-
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
     #region Database Configuration
@@ -84,14 +75,14 @@ try
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Redis connection failed.  Falling back to in-memory and filesystem DataProtection.");
+            Log.Warning(ex, "Redis connection failed.   Falling back to in-memory and filesystem DataProtection.");
             redis = null;
             RegisterInMemoryServices(builder.Services);
         }
     }
     else
     {
-        Log.Warning("Redis connection string not found. Using in-memory services.");
+        Log.Warning("Redis connection string not found.  Using in-memory services.");
         RegisterInMemoryServices(builder.Services);
     }
     #endregion
@@ -123,18 +114,12 @@ try
     builder.Services.AddScoped<IAdminReviewService, AdminReviewService>();
     builder.Services.AddScoped<IAdminUserService, AdminUserService>();
     builder.Services.AddScoped<IAdminShippingMethodService, AdminShippingMethodService>();
+    builder.Services.AddScoped<IPaymentService, PaymentService>();
     #endregion
 
     #region Infrastructure Services Registration
-    builder.Services.AddScoped<INotificationService, NotificationService>();
-    builder.Services.AddScoped<IEmailService, EmailService>();
-    builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
-    builder.Services.AddSingleton<IStorageService, LiaraStorageService>();
-    builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
-    builder.Services.AddScoped<ITokenService, TokenService>();
-    #endregion
-
-    #region Repositories Registration
+    builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+    builder.Services.AddScoped<IShippingMethodRepository, ShippingMethodRepository>();
     builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
     builder.Services.AddScoped<ICategoryGroupRepository, CategoryGroupRepository>();
     builder.Services.AddScoped<IProductRepository, ProductRepository>();
@@ -143,12 +128,18 @@ try
     builder.Services.AddScoped<ICartRepository, CartRepository>();
     builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
     builder.Services.AddScoped<IMediaRepository, MediaRepository>();
-    builder.Services.AddScoped<IOrderRepository, OrderRepository>();
     builder.Services.AddScoped<IAuditRepository, AuditRepository>();
     builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
     builder.Services.AddScoped<IOrderItemRepository, OrderItemRepository>();
     builder.Services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
-    builder.Services.AddScoped<IShippingMethodRepository, ShippingMethodRepository>();
+
+    builder.Services.AddHostedService<PaymentCleanupService>();
+    builder.Services.AddScoped<INotificationService, NotificationService>();
+    builder.Services.AddScoped<IEmailService, EmailService>();
+    builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+    builder.Services.AddSingleton<IStorageService, LiaraStorageService>();
+    builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
+    builder.Services.AddScoped<ITokenService, TokenService>();
     #endregion
 
     #region Current User Service
@@ -163,6 +154,8 @@ try
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
     });
     Log.Information("Application services registered");
     #endregion
@@ -182,8 +175,8 @@ try
     {
         options.HeaderName = "X-XSRF-TOKEN";
         options.Cookie.Name = "XSRF-TOKEN";
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.Cookie.HttpOnly = false;
         options.Cookie.Path = "/";
     });
@@ -200,6 +193,7 @@ try
     builder.Services.AddAuthorization(options =>
     {
         options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+        options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
     });
     #endregion
 
@@ -283,13 +277,18 @@ try
                 Log.Error("External API circuit breaker opened for {Duration}s", duration.TotalSeconds),
             onReset: () =>
                 Log.Information("External API circuit breaker reset"));
-    builder.Services.AddHttpClient<IZarinpalService, ZarinpalService>(client =>
+
+    // Gateway Registration
+    builder.Services.AddHttpClient<Infrastructure.Payment.ZarinPal.ZarinPalPaymentGateway>(client =>
     {
         client.Timeout = TimeSpan.FromSeconds(30);
         client.DefaultRequestHeaders.Add("User-Agent", "Ledka/1.0");
     })
     .AddPolicyHandler(retryPolicy)
     .AddPolicyHandler(circuitBreakerPolicy);
+
+    builder.Services.AddScoped<IPaymentGateway, Infrastructure.Payment.ZarinPal.ZarinPalPaymentGateway>();
+
     builder.Services.AddHttpClient<ILocationService, LocationService>()
         .AddPolicyHandler(retryPolicy)
         .AddPolicyHandler(circuitBreakerPolicy);
@@ -297,14 +296,15 @@ try
     #endregion
 
     #region CORS Configuration
-    var allowedOrigins = builder.Configuration.GetSection("Security:AllowedOrigins").Get<string[]>()
-        ??
-        new[] { "https://ledka-co.ir", "https://www.ledka-co.ir" };
-
-    if (builder.Environment.IsDevelopment())
+    var allowedOrigins = new[]
     {
-        allowedOrigins = allowedOrigins.Concat(new[] { "http://localhost:4200", "https://localhost:4200", "http://localhost:44318", "https://localhost:44318" }).ToArray();
-    }
+    "https://ledka-co.ir",
+    "https://www.ledka-co.ir",
+    "http://localhost:4200",
+    "https://localhost:4200",
+    "http://localhost:44318",
+    "https://localhost:44318"
+};
 
     builder.Services.AddCors(options =>
     {
@@ -315,8 +315,7 @@ try
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials()
-                .SetIsOriginAllowedToAllowWildcardSubdomains()
-                .WithExposedHeaders("Content-Disposition", "X-Pagination", "Token-Expired", "X-Correlation-ID")
+                .WithExposedHeaders("Content-Disposition", "X-Pagination", "Token-Expired", "X-Correlation-ID", "X-Guest-Token")
                 .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
         });
     });
@@ -371,19 +370,19 @@ try
             Scheme = "Bearer"
         });
         c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
         {
+            new OpenApiSecurityScheme
             {
-                new OpenApiSecurityScheme
+                Reference = new OpenApiReference
                 {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                },
-                Array.Empty<string>()
-            }
-        });
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
     });
     #endregion
 
@@ -417,11 +416,21 @@ try
     app.UseForwardedHeaders();
 
     app.UseCors("SecurePolicy");
+
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Method == "OPTIONS")
+        {
+            context.Response.StatusCode = 204;
+            return;
+        }
+        await next();
+    });
+
     app.UseSecurityMiddleware();
 
     if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Swagger:Enabled"))
     {
-        //app.UseHttpsRedirection();
         app.UseDeveloperExceptionPage();
         app.UseSwagger();
         app.UseSwaggerUI(c =>
@@ -467,7 +476,7 @@ try
 
             var errorResponse = new
             {
-                error = "An unexpected error occurred.  Please try again later.",
+                error = "An unexpected error occurred.   Please try again later.",
                 traceId = System.Diagnostics.Activity.Current?.Id ?? context.TraceIdentifier
             };
 
@@ -498,7 +507,7 @@ try
                 ctx.Context.Response.ContentType = "application/javascript";
                 ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
             }
-            else if (path.EndsWith(".css"))
+            else if (path.EndsWith(". css"))
             {
                 ctx.Context.Response.ContentType = "text/css";
                 ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
@@ -552,7 +561,7 @@ try
     provider.Mappings[".svg"] = "image/svg+xml";
     provider.Mappings[".png"] = "image/png";
     provider.Mappings[".jpg"] = "image/jpeg";
-    provider.Mappings[".jpeg"] = "image/jpeg";
+    provider.Mappings[". jpeg"] = "image/jpeg";
     provider.Mappings[".gif"] = "image/gif";
     provider.Mappings[".webp"] = "image/webp";
     provider.Mappings[".ico"] = "image/x-icon";
@@ -644,7 +653,7 @@ try
         Log.Information("API started successfully in {Environment} mode.",
             app.Environment.EnvironmentName));
     lifetime.ApplicationStopping.Register(() =>
-        Log.Information("Application is shutting down gracefully... "));
+        Log.Information("Application is shutting down gracefully...  "));
     lifetime.ApplicationStopped.Register(() =>
     {
         var redis = app.Services.GetService<IConnectionMultiplexer>();
@@ -653,62 +662,30 @@ try
     });
     #endregion
 
-    Log.Information("Starting web server...");
+    Log.Information("Starting web server.. .");
     await app.RunAsync();
 }
-catch (Exception ex)
-{
-    Log.Fatal(ex, "Application terminated unexpectedly");
-    Environment.ExitCode = 1;
-}
-finally
-{
-    Log.Information("Flushing logs...");
-    await Log.CloseAndFlushAsync();
-}
+
+catch (Exception ex) { Log.Fatal(ex, "Application terminated unexpectedly"); Environment.ExitCode = 1; }
+finally { Log.Information("Flushing logs..."); await Log.CloseAndFlushAsync(); }
 
 #region Helper Methods
 
-static string MaskConnectionString(string connectionString)
-{
-    var parts = connectionString.Split(';');
-    for (int i = 0; i < parts.Length; i++)
-    {
-        var part = parts[i].Trim();
-        if (part.StartsWith("Password=", StringComparison.OrdinalIgnoreCase) ||
-            part.StartsWith("Pwd=", StringComparison.OrdinalIgnoreCase))
-        {
-            var keyValue = part.Split('=');
-            if (keyValue.Length == 2)
-            {
-                parts[i] = $"{keyValue[0]}=***HIDDEN***";
-            }
-        }
-    }
-    return string.Join(";", parts);
-}
+static string MaskConnectionString(string connectionString) { var parts = connectionString.Split(';'); for (int i = 0; i < parts.Length; i++) { var part = parts[i].Trim(); if (part.StartsWith("Password=", StringComparison.OrdinalIgnoreCase) || part.StartsWith("Pwd=", StringComparison.OrdinalIgnoreCase)) { var keyValue = part.Split('='); if (keyValue.Length == 2) { parts[i] = $"{keyValue[0]}=HIDDEN"; } } } return string.Join(";", parts); }
 
-static void RegisterInMemoryServices(IServiceCollection services)
-{
+static void RegisterInMemoryServices(IServiceCollection services) 
+{ 
     services.AddSingleton<IMemoryCache, MemoryCache>();
     services.AddSingleton<ICacheService, InMemoryCacheService>();
-    services.AddOutputCache();
-    var dataProtectionBuilder = services.AddDataProtection()
-        .SetApplicationName("Ledka")
-        .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
-    var keysPath = "/tmp/dataprotection-keys";
-    try
-    {
-        if (!Directory.Exists(keysPath))
+    services.AddOutputCache(); 
+    var dataProtectionBuilder = services.AddDataProtection().SetApplicationName("Ledka").SetDefaultKeyLifetime(TimeSpan.FromDays(90)); 
+    var keysPath = "/tmp/dataprotection-keys"; 
+    try 
+    { 
+        if (!Directory.Exists(keysPath)) 
         {
             Directory.CreateDirectory(keysPath);
-        }
-        dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(keysPath));
-        Log.Information("Data Protection using file system at: {Path}", keysPath);
-    }
-    catch (Exception ex)
-    {
-        Log.Warning(ex, "Failed to create keys directory at {Path}, using ephemeral keys", keysPath);
+        } dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(keysPath)); Log.Information("Data Protection using file system at: {Path}", keysPath); } catch (Exception ex) { Log.Warning(ex, "Failed to create keys directory at {Path}, using ephemeral keys", keysPath); 
     }
 }
 

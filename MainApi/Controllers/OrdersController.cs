@@ -149,14 +149,22 @@ public class OrdersController : ControllerBase
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> VerifyPayment([FromQuery] string authority, [FromQuery] string status, [FromQuery] int? orderId)
     {
+        _logger.LogInformation("[VerifyPayment] Started - Authority: {Authority}, Status: {Status}, OrderId: {OrderId}",
+            authority, status, orderId);
+
         if (string.IsNullOrWhiteSpace(authority) || !orderId.HasValue || orderId <= 0)
         {
-            return Ok(new { isVerified = false, message = "پارامترهای پرداخت نامعتبر است." });
+            _logger.LogWarning("[VerifyPayment] Invalid parameters - Authority: {Authority}, OrderId: {OrderId}",
+                authority, orderId);
+            return Ok(new { isVerified = false, orderId = orderId, message = "پارامترهای پرداخت نامعتبر است." });
         }
 
         try
         {
             var result = await _orderService.VerifyAndProcessPaymentAsync(orderId.Value, authority, status);
+
+            _logger.LogInformation("[VerifyPayment] Result - OrderId: {OrderId}, IsVerified: {IsVerified}, RefId: {RefId}, Message: {Message}",
+                orderId, result.IsVerified, result.RefId, result.Message);
 
             return Ok(new
             {
@@ -168,7 +176,7 @@ public class OrdersController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Payment verification failed for order {OrderId}", orderId);
+            _logger.LogError(ex, "[VerifyPayment] Exception for order {OrderId}", orderId);
 
             return Ok(new
             {

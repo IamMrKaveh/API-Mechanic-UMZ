@@ -36,4 +36,14 @@ public class PaymentTransaction : IAuditable
     public DateTime? VerificationAttemptedAt { get; set; }
 
     public int VerificationCount { get; set; }
+
+    public static class PaymentStatuses
+    {
+        public const string Initialized = "Initialized";
+        public const string Pending = "Pending";
+        public const string Success = "Success";
+        public const string Failed = "Failed";
+        public const string Expired = "Expired";
+        public const string Refunded = "Refunded";
+    }
 }
