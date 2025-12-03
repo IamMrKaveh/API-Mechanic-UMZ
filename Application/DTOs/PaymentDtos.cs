@@ -17,7 +17,8 @@ public class PaymentRequestResultDto
     public string? RedirectUrl { get; set; }
     public string? Authority { get; set; }
     public string? Message { get; set; }
-    public string PaymentUrl { get; set; }
+    public string? PaymentUrl { get; set; }
+    public string? RawResponse { get; set; }
 }
 
 public class PaymentVerificationResultDto
@@ -36,4 +37,5 @@ public class GatewayVerificationResultDto
     public string? CardHash { get; set; }
     public decimal Fee { get; set; }
     public string? Message { get; set; }
+    public string? RawResponse { get; set; }
 }

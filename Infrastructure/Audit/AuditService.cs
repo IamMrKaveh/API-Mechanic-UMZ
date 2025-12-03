@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Audit;
+﻿using Microsoft.AspNetCore.Http;
+
+namespace Infrastructure.Audit;
 
 public class AuditService : IAuditService
 {
@@ -6,179 +8,130 @@ public class AuditService : IAuditService
     private readonly IAuditRepository _auditRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHtmlSanitizer _htmlSanitizer;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AuditService(
         ILogger<AuditService> logger,
         IAuditRepository auditRepository,
         IUnitOfWork unitOfWork,
-        IHtmlSanitizer htmlSanitizer)
+        IHtmlSanitizer htmlSanitizer,
+        IHttpContextAccessor httpContextAccessor)
     {
         _logger = logger;
         _auditRepository = auditRepository;
         _unitOfWork = unitOfWork;
         _htmlSanitizer = htmlSanitizer;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task LogUserActionAsync(int userId, string action, string details, string ipAddress, string? userAgent = null)
-    {
-        await LogAuditAsync(new Domain.Log.AuditLog
-        {
-            UserId = userId,
-            Action = _htmlSanitizer.Sanitize(action),
-            Details = _htmlSanitizer.Sanitize(details),
-            IpAddress = SanitizeIpAddress(ipAddress),
-            Timestamp = DateTime.UtcNow,
-            EventType = "UserAction",
-            UserAgent = userAgent
-        });
-    }
-
-    public async Task LogSecurityEventAsync(string eventType, string details, string ipAddress, int? userId = null, string? userAgent = null)
-    {
-        var sanitizedEventType = _htmlSanitizer.Sanitize(eventType);
-        var sanitizedDetails = _htmlSanitizer.Sanitize(details);
-
-        await LogAuditAsync(new Domain.Log.AuditLog
-        {
-            UserId = userId,
-            Action = "SecurityEvent",
-            Details = sanitizedDetails,
-            IpAddress = SanitizeIpAddress(ipAddress),
-            Timestamp = DateTime.UtcNow,
-            EventType = sanitizedEventType,
-            UserAgent = userAgent
-        });
-        _logger.LogWarning("Security event logged: EventType={EventType}, Details={Details}, IP={IpAddress}, UserId={UserId}",
-                    sanitizedEventType, sanitizedDetails, ipAddress, userId);
-    }
-
-    public Task LogSystemEventAsync(string eventType, string details, int? userId = null, string? ipAddress = "system", string? userAgent = null)
-    {
-        return LogAuditAsync(new Domain.Log.AuditLog
-        {
-            UserId = userId,
-            Action = "SystemEvent",
-            Details = _htmlSanitizer.Sanitize(details),
-            IpAddress = SanitizeIpAddress(ipAddress ?? "system"),
-            Timestamp = DateTime.UtcNow,
-            EventType = _htmlSanitizer.Sanitize(eventType),
-            UserAgent = userAgent
-        });
-    }
-
-    public Task LogAdminEventAsync(string action, int userId, string details, string? ipAddress = "system", string? userAgent = null)
-    {
-        return LogAuditAsync(new Domain.Log.AuditLog
-        {
-            UserId = userId,
-            Action = _htmlSanitizer.Sanitize(action),
-            Details = _htmlSanitizer.Sanitize(details),
-            IpAddress = SanitizeIpAddress(ipAddress ?? "system"),
-            Timestamp = DateTime.UtcNow,
-            EventType = "AdminEvent",
-            UserAgent = userAgent
-        });
-    }
-
-    public async Task LogOrderEventAsync(int orderId, string action, int userId, string details)
-    {
-        await LogAuditAsync(new Domain.Log.AuditLog
-        {
-            UserId = userId,
-            Action = _htmlSanitizer.Sanitize(action),
-            Details = _htmlSanitizer.Sanitize($"OrderId={orderId}, {details}"),
-            IpAddress = "system",
-            Timestamp = DateTime.UtcNow,
-            EventType = "OrderEvent"
-        });
-    }
-
-    public async Task LogCartEventAsync(int userId, string action, string details, string ipAddress, string? userAgent = null)
-    {
-        await LogAuditAsync(new Domain.Log.AuditLog
-        {
-            UserId = userId,
-            Action = _htmlSanitizer.Sanitize(action),
-            Details = _htmlSanitizer.Sanitize(details),
-            IpAddress = SanitizeIpAddress(ipAddress),
-            Timestamp = DateTime.UtcNow,
-            EventType = "CartEvent",
-            UserAgent = userAgent
-        });
-    }
-
-    public async Task LogProductEventAsync(int productId, string action, string details, int? userId = null)
-    {
-        await LogAuditAsync(new Domain.Log.AuditLog
-        {
-            UserId = userId,
-            Action = _htmlSanitizer.Sanitize(action),
-            Details = _htmlSanitizer.Sanitize($"ProductId={productId}, {details}"),
-            IpAddress = "system",
-            Timestamp = DateTime.UtcNow,
-            EventType = "ProductEvent"
-        });
-    }
-
-    public async Task<(IEnumerable<Domain.Log.AuditLog> Logs, int TotalCount)> GetAuditLogsAsync(
-        DateTime? fromDate = null,
-        DateTime? toDate = null,
-        int? userId = null,
-        string? eventType = null,
-        int page = 1,
-        int pageSize = 50)
-    {
-        return await _auditRepository.GetAuditLogsAsync(fromDate, toDate, userId, eventType, page, pageSize);
-    }
-
-    private async Task LogAuditAsync(Domain.Log.AuditLog auditLog)
+    public async Task LogAsync(int? userId, string eventType, string action, string details, string? ipAddress = null, string? userAgent = null)
     {
         try
         {
-            await _auditRepository.AddAuditLogAsync(auditLog);
-            // Intentionally not calling SaveChangesAsync here to allow batching
-            // in an outer transaction (Unit of Work).
-            // If out-of-band logging is required, a separate service/method should handle it.
+            var httpContext = _httpContextAccessor.HttpContext;
 
-            _logger.LogInformation("Audit prepared: UserId={UserId}, Action={Action}, EventType={EventType}, IP={IpAddress}",
-                auditLog.UserId, auditLog.Action, auditLog.EventType, auditLog.IpAddress);
+            var auditLog = new Domain.Log.AuditLog
+            {
+                UserId = userId,
+                EventType = SanitizeInput(eventType),
+                Action = SanitizeInput(action),
+                Details = SanitizeInput(details),
+                IpAddress = SanitizeIpAddress(ipAddress ?? httpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown"),
+                UserAgent = SanitizeUserAgent(userAgent ?? httpContext?.Request?.Headers["User-Agent"].ToString()),
+                Timestamp = DateTime.UtcNow
+            };
+
+            await _auditRepository.AddAuditLogAsync(auditLog);
+
+            _logger.LogInformation(
+                "Audit log: UserId={UserId}, EventType={EventType}, Action={Action}",
+                userId, eventType, action);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to prepare audit log: Action={Action}, EventType={EventType}", auditLog.Action, auditLog.EventType);
+            _logger.LogError(ex, "Failed to create audit log for action: {Action}", action);
         }
     }
 
-    public async Task LogInventoryEventAsync(int productId, string action, string details, int? userId = null)
+    public async Task<(IEnumerable<AuditLogDto> Logs, int TotalItems)> GetAuditLogsAsync(
+        int? userId, string? eventType, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
     {
-        await LogAuditAsync(new Domain.Log.AuditLog
+        var (logs, totalCount) = await _auditRepository.GetAuditLogsAsync(fromDate, toDate, userId, eventType, page, pageSize);
+
+        var dtos = logs.Select(l => new AuditLogDto
         {
-            UserId = userId,
-            Action = _htmlSanitizer.Sanitize(action),
-            Details = _htmlSanitizer.Sanitize($"Inventory: ProductId={productId}, {details}"),
-            IpAddress = "system",
-            Timestamp = DateTime.UtcNow,
-            EventType = "InventoryEvent"
+            Id = l.Id,
+            UserId = l.UserId,
+            EventType = l.EventType,
+            Action = l.Action,
+            Details = l.Details,
+            IpAddress = l.IpAddress,
+            UserAgent = l.UserAgent,
+            Timestamp = l.Timestamp
         });
+
+        return (dtos, totalCount);
+    }
+
+    public Task LogUserActionAsync(int userId, string action, string details, string ipAddress, string? userAgent = null)
+    {
+        return LogAsync(userId, "UserAction", action, details, ipAddress, userAgent);
+    }
+
+    public Task LogSecurityEventAsync(string eventType, string details, string ipAddress, int? userId = null, string? userAgent = null)
+    {
+        _logger.LogWarning("Security event: EventType={EventType}, Details={Details}, IP={IpAddress}",
+            eventType, details, ipAddress);
+        return LogAsync(userId, eventType, "SecurityEvent", details, ipAddress, userAgent);
+    }
+
+    public Task LogSystemEventAsync(string eventType, string details, int? userId = null, string? ipAddress = null, string? userAgent = null)
+    {
+        return LogAsync(userId, eventType, "SystemEvent", details, ipAddress ?? "system", userAgent);
+    }
+
+    public Task LogAdminEventAsync(string action, int userId, string details, string? ipAddress = null, string? userAgent = null)
+    {
+        return LogAsync(userId, "AdminEvent", action, details, ipAddress ?? "system", userAgent);
+    }
+
+    public Task LogOrderEventAsync(int orderId, string action, int userId, string details)
+    {
+        return LogAsync(userId, "OrderEvent", action, $"OrderId={orderId}, {details}");
+    }
+
+    public Task LogCartEventAsync(int userId, string action, string details, string ipAddress, string? userAgent = null)
+    {
+        return LogAsync(userId, "CartEvent", action, details, ipAddress, userAgent);
+    }
+
+    public Task LogProductEventAsync(int productId, string action, string details, int? userId = null)
+    {
+        return LogAsync(userId, "ProductEvent", action, $"ProductId={productId}, {details}");
+    }
+
+    public Task LogInventoryEventAsync(int productId, string action, string details, int? userId = null)
+    {
+        return LogAsync(userId, "InventoryEvent", action, $"Inventory: ProductId={productId}, {details}");
+    }
+
+    private string SanitizeInput(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        return _htmlSanitizer.Sanitize(input);
     }
 
     private string SanitizeIpAddress(string ipAddress)
     {
-        if (string.IsNullOrEmpty(ipAddress))
-            return "unknown";
-        if (ipAddress.Length > 45)
-            return ipAddress.Substring(0, 45);
-
+        if (string.IsNullOrEmpty(ipAddress)) return "unknown";
+        if (ipAddress.Length > 45) return ipAddress.Substring(0, 45);
         return ipAddress;
     }
 
-    public Task LogAsync(int? userId, string eventType, string action, string details, string? ipAddress = null, string? userAgent = null)
+    private string? SanitizeUserAgent(string? userAgent)
     {
-        throw new NotImplementedException();
-    }
-
-    public Task<(IEnumerable<AuditLogDto> Logs, int TotalItems)> GetAuditLogsAsync(int? userId, string? eventType, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
-    {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(userAgent)) return null;
+        if (userAgent.Length > 500) return userAgent.Substring(0, 500);
+        return userAgent;
     }
 }

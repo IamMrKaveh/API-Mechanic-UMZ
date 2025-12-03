@@ -31,4 +31,8 @@ public interface ICartService
     Task<Domain.Cart.Cart?> GetCartEntityAsync(int? userId, string? guestId);
 
     Task MergeCartAsync(int userId, string guestId);
+
+    Task<List<CartPriceChangeDto>> ValidateCartPricesAsync(int? userId, string? guestId);
+
+    Task<bool> UpdateCartItemPricesToCurrentAsync(int? userId, string? guestId);
 }

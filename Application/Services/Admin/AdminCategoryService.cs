@@ -1,4 +1,4 @@
-﻿namespace Application.Services;
+﻿namespace Application.Services.Admin;
 
 public class AdminCategoryService : IAdminCategoryService
 {
@@ -70,6 +70,24 @@ public class AdminCategoryService : IAdminCategoryService
         var categoryDto = _mapper.Map<CategoryDetailViewDto>(category);
         categoryDto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id);
 
+        var groupDtos = new List<CategoryGroupSummaryDto>();
+        foreach (var group in category.CategoryGroups.Where(g => !g.IsDeleted))
+        {
+            var activeProducts = group.Products.Where(p => !p.IsDeleted && p.IsActive).ToList();
+            var groupDto = new CategoryGroupSummaryDto
+            {
+                Id = group.Id,
+                Name = group.Name,
+                IconUrl = await _mediaService.GetPrimaryImageUrlAsync("CategoryGroup", group.Id),
+                ProductCount = activeProducts.Count,
+                InStockProducts = activeProducts.Count(p => p.Variants.Any(v => v.IsUnlimited || v.Stock > 0)),
+                TotalValue = activeProducts.Sum(p => p.Variants.Where(v => !v.IsDeleted).Sum(v => v.PurchasePrice * v.Stock)),
+                TotalSellingValue = activeProducts.Sum(p => p.Variants.Where(v => !v.IsDeleted).Sum(v => v.SellingPrice * v.Stock))
+            };
+            groupDtos.Add(groupDto);
+        }
+        categoryDto.CategoryGroups = groupDtos;
+
         var productDtos = new List<ProductSummaryDto>();
         foreach (var product in products)
         {
@@ -114,7 +132,6 @@ public class AdminCategoryService : IAdminCategoryService
                 _logger.LogError(ex, "Failed to upload icon for new category {CategoryId}", category.Id);
             }
         }
-
 
         var resultDto = _mapper.Map<CategoryViewDto>(category);
         resultDto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id);
@@ -171,7 +188,7 @@ public class AdminCategoryService : IAdminCategoryService
             {
                 await _mediaService.DeleteMediaAsync(newMedia.Id);
             }
-            return ServiceResult.Fail("The record you attempted to edit was modified by another user. Please reload and try again.");
+            return ServiceResult.Fail("The record you attempted to edit was modified by another user.  Please reload and try again.");
         }
         catch (Exception ex)
         {

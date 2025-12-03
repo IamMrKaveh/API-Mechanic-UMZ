@@ -11,7 +11,7 @@ public class CategoryCreateDto
 {
     [Required]
     [StringLength(100)]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     public IFormFile? IconFile { get; set; }
 }
@@ -20,7 +20,7 @@ public class CategoryUpdateDto
 {
     [Required]
     [StringLength(100)]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     public IFormFile? IconFile { get; set; }
     public string? RowVersion { get; set; }
@@ -29,7 +29,7 @@ public class CategoryUpdateDto
 public class CategoryViewDto
 {
     public int Id { get; set; }
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
     public string? IconUrl { get; set; }
     public bool IsActive { get; set; }
     public byte[]? RowVersion { get; set; }

@@ -2,7 +2,7 @@
 
 public interface IUserService
 {
-    Task<ServiceResult<(string? Message, string? Otp)>> LoginAsync(LoginRequestDto request, string clientIp);
+    Task<ServiceResult<string?>> LoginAsync(LoginRequestDto request, string clientIp);
     Task<ServiceResult<(AuthResponseDto? Response, string? Error)>> VerifyOtpAsync(VerifyOtpRequestDto request, string clientIp, string userAgent);
     Task<ServiceResult<(object? Response, string? Error)>> RefreshTokenAsync(RefreshRequestDto request, string clientIp, string userAgent);
     Task<ServiceResult> LogoutAsync(string refreshToken);

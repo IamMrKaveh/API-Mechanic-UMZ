@@ -8,7 +8,13 @@ public class CategoryService : ICategoryService
     private readonly IHtmlSanitizer _htmlSanitizer;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICacheService _cacheService;
     private readonly ILogger<CategoryService> _logger;
+
+    private const string CategoryHierarchyCacheKey = "categories:hierarchy";
+    private const string CategoriesCachePrefix = "categories:list:";
+    private const string CategoryDetailCachePrefix = "categories:detail:";
+    private static readonly TimeSpan CacheExpiry = TimeSpan.FromMinutes(30);
 
     public CategoryService(
         ICategoryRepository categoryRepository,
@@ -17,6 +23,7 @@ public class CategoryService : ICategoryService
         IHtmlSanitizer htmlSanitizer,
         IMapper mapper,
         IUnitOfWork unitOfWork,
+        ICacheService cacheService,
         ILogger<CategoryService> logger)
     {
         _categoryRepository = categoryRepository;
@@ -25,11 +32,18 @@ public class CategoryService : ICategoryService
         _htmlSanitizer = htmlSanitizer;
         _mapper = mapper;
         _unitOfWork = unitOfWork;
+        _cacheService = cacheService;
         _logger = logger;
     }
 
     public async Task<ServiceResult<IEnumerable<CategoryHierarchyDto>>> GetCategoryHierarchyAsync()
     {
+        var cached = await _cacheService.GetAsync<List<CategoryHierarchyDto>>(CategoryHierarchyCacheKey);
+        if (cached != null)
+        {
+            return ServiceResult<IEnumerable<CategoryHierarchyDto>>.Ok(cached);
+        }
+
         var categories = await _categoryRepository.GetAllCategoriesWithGroupsAsync();
 
         var hierarchy = categories.Select(c => new CategoryHierarchyDto
@@ -43,11 +57,24 @@ public class CategoryService : ICategoryService
             }).ToList()
         }).ToList();
 
+        await _cacheService.SetAsync(CategoryHierarchyCacheKey, hierarchy, CacheExpiry);
+
         return ServiceResult<IEnumerable<CategoryHierarchyDto>>.Ok(hierarchy);
     }
 
     public async Task<ServiceResult<PagedResultDto<CategoryViewDto>>> GetCategoriesAsync(string? search, int page, int pageSize)
     {
+        var cacheKey = $"{CategoriesCachePrefix}{search ?? "all"}:{page}:{pageSize}";
+
+        if (string.IsNullOrEmpty(search))
+        {
+            var cached = await _cacheService.GetAsync<PagedResultDto<CategoryViewDto>>(cacheKey);
+            if (cached != null)
+            {
+                return ServiceResult<PagedResultDto<CategoryViewDto>>.Ok(cached);
+            }
+        }
+
         var (categories, totalItems) = await _categoryRepository.GetCategoriesAsync(search, page, pageSize);
         var categoryDtos = new List<CategoryViewDto>();
 
@@ -57,10 +84,19 @@ public class CategoryService : ICategoryService
             dto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id);
 
             var groupDtos = new List<CategoryGroupSummaryDto>();
-            foreach (var group in category.CategoryGroups)
+            foreach (var group in category.CategoryGroups.Where(g => !g.IsDeleted))
             {
-                var groupDto = _mapper.Map<CategoryGroupSummaryDto>(group);
-                groupDto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("CategoryGroup", group.Id);
+                var activeProducts = group.Products.Where(p => !p.IsDeleted && p.IsActive).ToList();
+                var groupDto = new CategoryGroupSummaryDto
+                {
+                    Id = group.Id,
+                    Name = group.Name,
+                    IconUrl = await _mediaService.GetPrimaryImageUrlAsync("CategoryGroup", group.Id),
+                    ProductCount = activeProducts.Count,
+                    InStockProducts = activeProducts.Count(p => p.Variants.Any(v => v.IsUnlimited || v.Stock > 0)),
+                    TotalValue = activeProducts.Sum(p => p.Variants.Where(v => !v.IsDeleted).Sum(v => v.PurchasePrice * v.Stock)),
+                    TotalSellingValue = activeProducts.Sum(p => p.Variants.Where(v => !v.IsDeleted).Sum(v => v.SellingPrice * v.Stock))
+                };
                 groupDtos.Add(groupDto);
             }
             dto.CategoryGroups = groupDtos;
@@ -75,11 +111,24 @@ public class CategoryService : ICategoryService
             PageSize = pageSize
         };
 
+        if (string.IsNullOrEmpty(search))
+        {
+            await _cacheService.SetAsync(cacheKey, pagedResult, CacheExpiry);
+        }
+
         return ServiceResult<PagedResultDto<CategoryViewDto>>.Ok(pagedResult);
     }
 
     public async Task<ServiceResult<CategoryDetailViewDto?>> GetCategoryByIdAsync(int id, int page, int pageSize)
     {
+        var cacheKey = $"{CategoryDetailCachePrefix}{id}:{page}:{pageSize}";
+
+        var cached = await _cacheService.GetAsync<CategoryDetailViewDto>(cacheKey);
+        if (cached != null)
+        {
+            return ServiceResult<CategoryDetailViewDto?>.Ok(cached);
+        }
+
         var category = await _categoryRepository.GetCategoryWithGroupsByIdAsync(id);
         if (category == null)
         {
@@ -90,6 +139,24 @@ public class CategoryService : ICategoryService
 
         var categoryDto = _mapper.Map<CategoryDetailViewDto>(category);
         categoryDto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id);
+
+        var groupDtos = new List<CategoryGroupSummaryDto>();
+        foreach (var group in category.CategoryGroups.Where(g => !g.IsDeleted))
+        {
+            var activeProducts = group.Products.Where(p => !p.IsDeleted && p.IsActive).ToList();
+            var groupDto = new CategoryGroupSummaryDto
+            {
+                Id = group.Id,
+                Name = group.Name,
+                IconUrl = await _mediaService.GetPrimaryImageUrlAsync("CategoryGroup", group.Id),
+                ProductCount = activeProducts.Count,
+                InStockProducts = activeProducts.Count(p => p.Variants.Any(v => v.IsUnlimited || v.Stock > 0)),
+                TotalValue = activeProducts.Sum(p => p.Variants.Where(v => !v.IsDeleted).Sum(v => v.PurchasePrice * v.Stock)),
+                TotalSellingValue = activeProducts.Sum(p => p.Variants.Where(v => !v.IsDeleted).Sum(v => v.SellingPrice * v.Stock))
+            };
+            groupDtos.Add(groupDto);
+        }
+        categoryDto.CategoryGroups = groupDtos;
 
         var productDtos = new List<ProductSummaryDto>();
         foreach (var product in products)
@@ -107,117 +174,8 @@ public class CategoryService : ICategoryService
             PageSize = pageSize
         };
 
+        await _cacheService.SetAsync(cacheKey, categoryDto, CacheExpiry);
+
         return ServiceResult<CategoryDetailViewDto?>.Ok(categoryDto);
-    }
-
-    public async Task<ServiceResult<CategoryViewDto>> CreateCategoryAsync(CategoryCreateDto dto)
-    {
-        var sanitizedName = _htmlSanitizer.Sanitize(dto.Name.Trim());
-        if (await _categoryRepository.ExistsByNameAsync(sanitizedName))
-        {
-            return ServiceResult<CategoryViewDto>.Fail("A category with this name already exists.");
-        }
-
-        var category = _mapper.Map<Category>(dto);
-        category.Name = sanitizedName;
-        await _categoryRepository.AddAsync(category);
-        await _unitOfWork.SaveChangesAsync();
-
-        if (dto.IconFile != null)
-        {
-            try
-            {
-                await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "Category", category.Id, true);
-                await _unitOfWork.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upload icon for new category {CategoryId}", category.Id);
-            }
-        }
-
-
-        var resultDto = _mapper.Map<CategoryViewDto>(category);
-        resultDto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id);
-
-        return ServiceResult<CategoryViewDto>.Ok(resultDto);
-    }
-
-    public async Task<ServiceResult> UpdateCategoryAsync(int id, CategoryUpdateDto dto)
-    {
-        var existingCategory = await _categoryRepository.GetCategoryWithGroupsByIdAsync(id);
-        if (existingCategory == null)
-        {
-            return ServiceResult.Fail("Category not found.");
-        }
-
-        if (!string.IsNullOrEmpty(dto.RowVersion))
-        {
-            _categoryRepository.SetOriginalRowVersion(existingCategory, Convert.FromBase64String(dto.RowVersion));
-        }
-
-        var sanitizedName = _htmlSanitizer.Sanitize(dto.Name.Trim());
-        if (await _categoryRepository.ExistsByNameAsync(sanitizedName, id))
-        {
-            return ServiceResult.Fail("A category with this name already exists.");
-        }
-
-        _mapper.Map(dto, existingCategory);
-        existingCategory.Name = sanitizedName;
-        _categoryRepository.Update(existingCategory);
-
-        if (dto.IconFile != null)
-        {
-            var primaryMedia = (await _mediaService.GetEntityMediaAsync("Category", id)).FirstOrDefault(m => m.IsPrimary);
-            if (primaryMedia != null)
-            {
-                await _mediaService.DeleteMediaAsync(primaryMedia.Id);
-            }
-            await _mediaService.AttachFileToEntityAsync(dto.IconFile.OpenReadStream(), dto.IconFile.FileName, dto.IconFile.ContentType, dto.IconFile.Length, "Category", id, true);
-        }
-
-        try
-        {
-            await _unitOfWork.SaveChangesAsync();
-            return ServiceResult.Ok();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return ServiceResult.Fail("The record you attempted to edit was modified by another user. Please reload and try again.");
-        }
-    }
-
-    public async Task<ServiceResult> DeleteCategoryAsync(int id)
-    {
-        var category = await _categoryRepository.GetCategoryWithProductsAsync(id);
-        if (category == null)
-        {
-            return ServiceResult.Fail("Category not found.");
-        }
-
-        if (category.CategoryGroups.Any(cg => cg.Products.Any()))
-        {
-            return ServiceResult.Fail("Cannot delete a category that has associated products in its groups.");
-        }
-
-        var media = await _mediaService.GetEntityMediaAsync("Category", id);
-        foreach (var m in media)
-        {
-            await _mediaService.DeleteMediaAsync(m.Id);
-        }
-
-        foreach (var group in category.CategoryGroups)
-        {
-            var groupMedia = await _mediaService.GetEntityMediaAsync("CategoryGroup", group.Id);
-            foreach (var m in groupMedia)
-            {
-                await _mediaService.DeleteMediaAsync(m.Id);
-            }
-        }
-
-        _categoryRepository.Delete(category);
-        await _unitOfWork.SaveChangesAsync();
-
-        return ServiceResult.Ok();
     }
 }

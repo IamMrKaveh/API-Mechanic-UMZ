@@ -1,4 +1,4 @@
-﻿namespace Application.Services;
+﻿namespace Application.Services.Admin;
 
 public class AdminOrderService : IAdminOrderService
 {
@@ -111,12 +111,12 @@ public class AdminOrderService : IAdminOrderService
                 Product = new
                 {
                     Id = oi.Variant.ProductId,
-                    Name = oi.Variant.Product.Name,
+                    oi.Variant.Product.Name,
                     Icon = icon,
                     Category = new
                     {
                         Id = oi.Variant.Product.CategoryGroup.CategoryId,
-                        Name = oi.Variant.Product.CategoryGroup.Category.Name
+                        oi.Variant.Product.CategoryGroup.Category.Name
                     },
                     Attributes = oi.Variant.VariantAttributes.ToDictionary(
                         a => a.AttributeValue.AttributeType.Name.ToLower(),
@@ -154,8 +154,8 @@ public class AdminOrderService : IAdminOrderService
                 orderData.User.LastName,
                 orderData.User.IsAdmin
             } : null,
-            OrderStatus = orderData.OrderStatus,
-            ShippingMethod = orderData.ShippingMethod,
+            orderData.OrderStatus,
+            orderData.ShippingMethod,
             OrderItems = enrichedOrderItems
         };
 

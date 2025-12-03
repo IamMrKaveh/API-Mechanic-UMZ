@@ -1,4 +1,4 @@
-﻿namespace Application.Services;
+﻿namespace Application.Services.Admin;
 
 public class AdminUserService : IAdminUserService
 {
@@ -43,7 +43,7 @@ public class AdminUserService : IAdminUserService
         return ServiceResult<UserProfileDto?>.Ok(dto);
     }
 
-    public async Task<ServiceResult<(UserProfileDto? User, string? Error)>> CreateUserAsync(Domain.User.User tUsers)
+    public async Task<ServiceResult<(UserProfileDto? User, string? Error)>> CreateUserAsync(User tUsers)
     {
         if (string.IsNullOrWhiteSpace(tUsers.PhoneNumber))
             return ServiceResult<(UserProfileDto?, string?)>.Fail("Phone number is required.");

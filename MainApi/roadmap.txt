@@ -1,0 +1,14 @@
+﻿
+
+بخش نهم: معماری و طراحی
+ایراد ۱۹: وابستگی مستقیم به LedkaContext در سرویس‌ها
+سرویس‌هایی مانند AdminDiscountService، AdminInventoryService و PaymentService مستقیما به LedkaContext وابسته هستند و از Repository Pattern استفاده نمی‌کنند.
+
+راه حل: باید IDiscountRepository، IInventoryRepository و IPaymentTransactionRepository گسترش یابند تا تمامی عملیات مورد نیاز را پوشش دهند. سرویس‌ها نباید مستقیما با DbContext کار کنند.
+
+ایراد ۲۰: عدم جداسازی منطق کسب‌وکار از Infrastructure
+در Infrastructure سرویس‌هایی مانند AnalyticsService و NotificationService پیاده‌سازی شده‌اند که شامل منطق کسب‌وکار هستند. این موضوع اصل جداسازی لایه‌ها را نقض می‌کند.
+
+راه حل: Interface این سرویس‌ها باید در Application باقی بماند اما پیاده‌سازی آن‌ها باید به Application منتقل شود. Infrastructure فقط باید شامل جزئیات فنی مانند ارتباط با سرویس‌های خارجی باشد.
+
+

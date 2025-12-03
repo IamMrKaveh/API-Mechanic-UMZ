@@ -6,12 +6,13 @@ public class CreateOrderDto
     public int UserId { get; set; }
 
     [Required]
-    public string ReceiverName { get; set; }
+    public required string ReceiverName { get; set; }
 
     [Required]
     public int UserAddressId { get; set; }
 
     [Required]
+    [Range(1, int.MaxValue, ErrorMessage = "ShippingMethodId must be a positive integer. ")]
     public int ShippingMethodId { get; set; }
 
     [Required]
@@ -31,7 +32,7 @@ public class UpdateOrderDto
     public DateTime? DeliveryDate { get; set; }
 
     [Required]
-    public string RowVersion { get; set; }
+    public required string RowVersion { get; set; }
 }
 
 public class CreateOrderFromCartDto
@@ -41,11 +42,16 @@ public class CreateOrderFromCartDto
     public bool SaveNewAddress { get; set; }
 
     [Required]
+    [Range(1, int.MaxValue, ErrorMessage = "ShippingMethodId must be a positive integer. ")]
     public int ShippingMethodId { get; set; }
 
     public string? DiscountCode { get; set; }
 
+    [Required(ErrorMessage = "ExpectedItems is required for price validation.")]
+    [MinLength(1, ErrorMessage = "ExpectedItems must contain at least one item. ")]
     public List<CheckoutItemPriceDto> ExpectedItems { get; set; } = [];
+
+    public string? CallbackUrl { get; set; }
 }
 
 public class CreateOrderItemDto
@@ -74,20 +80,27 @@ public class UpdateOrderItemDto
     public decimal? SellingPrice { get; set; }
 
     [Required]
-    public string RowVersion { get; set; }
+    public required string RowVersion { get; set; }
 }
 
 public class CheckoutItemPriceDto
 {
+    [Required]
+    [Range(1, int.MaxValue, ErrorMessage = "VariantId must be a positive integer.")]
     public int VariantId { get; set; }
+
+    [Required]
+    [Range(0, double.MaxValue, ErrorMessage = "Price must be non-negative.")]
     public decimal Price { get; set; }
+
+    public string? RowVersion { get; set; }
 }
 
 public class CreateOrderStatusDto
 {
     [Required]
     [StringLength(100)]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     [StringLength(50)]
     public string? Icon { get; set; }
@@ -108,7 +121,7 @@ public class UpdateOrderStatusByIdDto
     public int OrderStatusId { get; set; }
 
     [Required]
-    public string RowVersion { get; set; }
+    public required string RowVersion { get; set; }
 }
 
 public class OrderDto

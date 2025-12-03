@@ -1,13 +1,4 @@
-﻿using Application.Common.Interfaces;
-using Application.Common.Models;
-using Application.DTOs;
-using AutoMapper;
-using Domain.Order;
-using Ganss.Xss;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-
-namespace Application.Services;
+﻿namespace Application.Services.Admin;
 
 public class AdminShippingMethodService : IAdminShippingMethodService
 {

@@ -11,7 +11,9 @@ public class CategoryGroupRepository : ICategoryGroupRepository
 
     public async Task<(IEnumerable<Domain.Category.CategoryGroup> Groups, int Total)> GetPagedAsync(int? categoryId, string? search, int page, int pageSize)
     {
-        var query = _context.Set<Domain.Category.CategoryGroup>().AsNoTracking();
+        var query = _context.Set<Domain.Category.CategoryGroup>()
+            .Include(cg => cg.Category)
+            .AsNoTracking();
 
         if (categoryId.HasValue)
         {
@@ -29,22 +31,27 @@ public class CategoryGroupRepository : ICategoryGroupRepository
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Include(cg => cg.Products)
+                .ThenInclude(p => p.Variants)
+                    .ThenInclude(v => v.InventoryTransactions)
             .ToListAsync();
 
         return (groups, total);
     }
 
-    public Task<Domain.Category.CategoryGroup?> GetByIdAsync(int id)
+    public async Task<Domain.Category.CategoryGroup?> GetByIdAsync(int id)
     {
-        return _context.Set<Domain.Category.CategoryGroup>()
+        return await _context.Set<Domain.Category.CategoryGroup>()
             .AsNoTracking()
+            .Include(cg => cg.Category)
             .Include(cg => cg.Products)
+                .ThenInclude(p => p.Variants)
+                    .ThenInclude(v => v.InventoryTransactions)
             .FirstOrDefaultAsync(cg => cg.Id == id);
     }
 
-    public Task<Domain.Category.CategoryGroup?> GetByIdWithProductsAsync(int id)
+    public async Task<Domain.Category.CategoryGroup?> GetByIdWithProductsAsync(int id)
     {
-        return _context.Set<Domain.Category.CategoryGroup>()
+        return await _context.Set<Domain.Category.CategoryGroup>()
             .Include(g => g.Products)
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(g => g.Id == id);
@@ -55,7 +62,7 @@ public class CategoryGroupRepository : ICategoryGroupRepository
         await _context.Set<Domain.Category.CategoryGroup>().AddAsync(group);
     }
 
-    public Task<bool> ExistsAsync(string name, int categoryId, int? excludeId = null)
+    public async Task<bool> ExistsAsync(string name, int categoryId, int? excludeId = null)
     {
         var query = _context.Set<Domain.Category.CategoryGroup>()
             .Where(cg => cg.Name == name && cg.CategoryId == categoryId);
@@ -65,7 +72,7 @@ public class CategoryGroupRepository : ICategoryGroupRepository
             query = query.Where(cg => cg.Id != excludeId.Value);
         }
 
-        return query.AnyAsync();
+        return await query.AnyAsync();
     }
 
     public void Delete(Domain.Category.CategoryGroup group)

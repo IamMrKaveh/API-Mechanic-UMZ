@@ -3,171 +3,183 @@
 public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IOrderStatusRepository _orderStatusRepository;
     private readonly ICartRepository _cartRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IDiscountService _discountService;
     private readonly IPaymentService _paymentService;
     private readonly IInventoryService _inventoryService;
+    private readonly IDiscountService _discountService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly ILogger<OrderService> _logger;
-    private readonly LedkaContext _context;
+    private readonly INotificationService _notificationService;
+    private readonly IAuditService _auditService;
     private readonly IOptions<FrontendUrlsDto> _frontendUrls;
 
     public OrderService(
         IOrderRepository orderRepository,
+        IOrderStatusRepository orderStatusRepository,
         ICartRepository cartRepository,
         IUserRepository userRepository,
-        IDiscountService discountService,
         IPaymentService paymentService,
         IInventoryService inventoryService,
+        IDiscountService discountService,
         IUnitOfWork unitOfWork,
         IMapper mapper,
         ILogger<OrderService> logger,
-        LedkaContext context,
+        INotificationService notificationService,
+        IAuditService auditService,
         IOptions<FrontendUrlsDto> frontendUrls)
     {
         _orderRepository = orderRepository;
+        _orderStatusRepository = orderStatusRepository;
         _cartRepository = cartRepository;
         _userRepository = userRepository;
-        _discountService = discountService;
         _paymentService = paymentService;
         _inventoryService = inventoryService;
+        _discountService = discountService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _logger = logger;
-        _context = context;
+        _notificationService = notificationService;
+        _auditService = auditService;
         _frontendUrls = frontendUrls;
     }
 
-    public async Task<(IEnumerable<OrderDto> Orders, int TotalItems)> GetOrdersAsync(int? userId, bool includeDeleted, int? currentUserId, int? statusId, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
+    public async Task<(IEnumerable<OrderDto> Orders, int TotalItems)> GetOrdersAsync(
+        int? userId,
+        bool includeDeleted,
+        int? currentUserId,
+        int? statusId,
+        DateTime? fromDate,
+        DateTime? toDate,
+        int page,
+        int pageSize)
     {
-        var (orders, total) = await _orderRepository.GetOrdersAsync(userId, includeDeleted, currentUserId, statusId, fromDate, toDate, page, pageSize);
-        return (_mapper.Map<IEnumerable<OrderDto>>(orders), total);
+        if (userId.HasValue && currentUserId.HasValue && userId != currentUserId)
+        {
+            userId = currentUserId;
+        }
+
+        var (orders, totalItems) = await _orderRepository.GetOrdersAsync(null, includeDeleted, userId, statusId, fromDate, toDate, page, pageSize);
+
+        var orderDtos = _mapper.Map<IEnumerable<OrderDto>>(orders);
+
+        return (orderDtos, totalItems);
     }
 
     public async Task<OrderDto?> GetOrderByIdAsync(int id, int? userId, bool isAdmin)
     {
-        var order = await _orderRepository.GetOrderByIdAsync(id, userId, isAdmin);
+        var order = await _orderRepository.GetOrderByIdAsync(id, userId, !isAdmin);
+        if (order == null) return null;
+
+        if (!isAdmin && order.UserId != userId) return null;
+
         return _mapper.Map<OrderDto>(order);
     }
 
     public async Task<CheckoutFromCartResultDto> CheckoutFromCartAsync(CreateOrderFromCartDto dto, int userId, string idempotencyKey)
     {
-        var existingOrder = await _context.Orders
-            .Include(o => o.PaymentTransactions)
-            .FirstOrDefaultAsync(o => o.IdempotencyKey == idempotencyKey);
-
-        if (existingOrder != null)
-        {
-            if (existingOrder.IsPaid)
-            {
-                return new CheckoutFromCartResultDto { Error = "This order has already been paid." };
-            }
-
-            var lastTransaction = existingOrder.PaymentTransactions
-                .OrderByDescending(t => t.CreatedAt)
-                .FirstOrDefault();
-
-            if (lastTransaction != null && lastTransaction.Status == "Pending")
-            {
-                return new CheckoutFromCartResultDto
-                {
-                    OrderId = existingOrder.Id,
-                    Authority = lastTransaction.Authority,
-                    PaymentUrl = $"https://payment.zarinpal.com/pg/StartPay/{lastTransaction.Authority}"
-                };
-            }
-
-            return new CheckoutFromCartResultDto
-            {
-                OrderId = existingOrder.Id,
-                Error = "Order exists but payment link expired or invalid. Please retry payment from order history."
-            };
-        }
-
         return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
             using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
+                if (await _orderRepository.ExistsByIdempotencyKeyAsync(idempotencyKey))
+                {
+                    throw new InvalidOperationException("Duplicate request detected.");
+                }
+
                 var cart = await _cartRepository.GetByUserIdAsync(userId);
                 if (cart == null || !cart.CartItems.Any())
                 {
-                    return new CheckoutFromCartResultDto { Error = "Cart is empty." };
+                    throw new ArgumentException("Cart is empty.");
                 }
 
-                var variantIds = cart.CartItems.Select(c => c.VariantId).ToList();
-                var variants = await _context.ProductVariants
-                    .Include(v => v.Product)
-                    .Where(v => variantIds.Contains(v.Id))
-                    .ToListAsync();
-
-                foreach (var item in cart.CartItems)
+                if (dto.ExpectedItems == null || !dto.ExpectedItems.Any())
                 {
-                    var variant = variants.FirstOrDefault(v => v.Id == item.VariantId);
-                    if (variant == null) return new CheckoutFromCartResultDto { Error = $"Product variant {item.VariantId} not found." };
-
-                    if (dto.ExpectedItems != null)
-                    {
-                        var expected = dto.ExpectedItems.FirstOrDefault(e => e.VariantId == item.VariantId);
-                        if (expected != null && expected.Price != variant.SellingPrice)
-                        {
-                            return new CheckoutFromCartResultDto { Error = "Prices have changed. Please refresh your cart." };
-                        }
-                    }
-
-                    if (!variant.IsUnlimited && variant.Stock < item.Quantity)
-                    {
-                        return new CheckoutFromCartResultDto { Error = $"Insufficient stock for {variant.Product.Name}" };
-                    }
+                    throw new ArgumentException("ExpectedItems is required for price validation.");
                 }
 
-                UserAddress addressToUse;
-                if (dto.UserAddressId.HasValue)
-                {
-                    addressToUse = await _userRepository.GetUserAddressAsync(dto.UserAddressId.Value);
-                    if (addressToUse == null || addressToUse.UserId != userId)
-                    {
-                        return new CheckoutFromCartResultDto { Error = "Invalid user address." };
-                    }
-                }
-                else if (dto.NewAddress != null)
-                {
-                    addressToUse = _mapper.Map<UserAddress>(dto.NewAddress);
-                    addressToUse.UserId = userId;
+                var cartVariantIds = cart.CartItems.Select(ci => ci.VariantId).OrderBy(x => x).ToList();
+                var expectedVariantIds = dto.ExpectedItems.Select(ei => ei.VariantId).OrderBy(x => x).ToList();
 
+                if (!cartVariantIds.SequenceEqual(expectedVariantIds))
+                {
+                    throw new ArgumentException("ExpectedItems must match cart items exactly.");
+                }
+
+                UserAddress? address = null;
+                if (dto.NewAddress != null)
+                {
+                    var addressEntity = _mapper.Map<UserAddress>(dto.NewAddress);
+                    addressEntity.UserId = userId;
                     if (dto.SaveNewAddress)
                     {
-                        await _userRepository.AddAddressAsync(addressToUse);
+                        await _userRepository.AddAddressAsync(addressEntity);
                         await _unitOfWork.SaveChangesAsync();
+                        address = addressEntity;
                     }
+                    else
+                    {
+                        address = addressEntity;
+                        address.Id = 0;
+                    }
+                }
+                else if (dto.UserAddressId.HasValue)
+                {
+                    address = await _userRepository.GetUserAddressAsync(dto.UserAddressId.Value);
+                    if (address == null || address.UserId != userId)
+                        throw new ArgumentException("Invalid address.");
                 }
                 else
                 {
-                    return new CheckoutFromCartResultDto { Error = "Delivery address is required." };
+                    throw new ArgumentException("Address is required.");
                 }
 
-                var shippingMethod = await _context.ShippingMethods.FindAsync(dto.ShippingMethodId);
-                if (shippingMethod == null) return new CheckoutFromCartResultDto { Error = "Invalid shipping method." };
+                var variantIds = cart.CartItems.Select(i => i.VariantId).OrderBy(id => id).ToList();
+                var variants = await _orderRepository.GetVariantsByIdsForUpdateAsync(variantIds);
 
                 decimal totalAmount = 0;
                 decimal totalProfit = 0;
                 var orderItems = new List<OrderItem>();
 
-                foreach (var item in cart.CartItems)
+                foreach (var cartItem in cart.CartItems)
                 {
-                    var variant = variants.First(v => v.Id == item.VariantId);
-                    var amount = variant.SellingPrice * item.Quantity;
-                    var profit = (variant.SellingPrice - variant.PurchasePrice) * item.Quantity;
+                    var variant = variants.FirstOrDefault(v => v.Id == cartItem.VariantId);
+                    if (variant == null) throw new InvalidOperationException($"Product variant {cartItem.VariantId} not found.");
+
+                    if (!variant.IsActive || variant.IsDeleted || !variant.Product.IsActive || variant.Product.IsDeleted)
+                    {
+                        throw new InvalidOperationException($"Product '{variant.Product.Name}' is no longer available.");
+                    }
+
+                    if (!variant.IsUnlimited && variant.Stock < cartItem.Quantity)
+                    {
+                        throw new DbUpdateConcurrencyException($"Insufficient stock for {variant.Product.Name}.");
+                    }
+
+                    var expectedItem = dto.ExpectedItems.FirstOrDefault(e => e.VariantId == variant.Id);
+                    if (expectedItem == null)
+                    {
+                        throw new ArgumentException($"Expected price not provided for variant {variant.Id}.");
+                    }
+
+                    if (expectedItem.Price != variant.SellingPrice)
+                    {
+                        throw new DbUpdateConcurrencyException($"Price changed for {variant.Product.Name}.  Expected: {expectedItem.Price}, Current: {variant.SellingPrice}.  Please refresh cart.");
+                    }
+
+                    var amount = variant.SellingPrice * cartItem.Quantity;
+                    var profit = (variant.SellingPrice - variant.PurchasePrice) * cartItem.Quantity;
 
                     totalAmount += amount;
                     totalProfit += profit;
 
                     orderItems.Add(new OrderItem
                     {
-                        VariantId = item.VariantId,
-                        Quantity = item.Quantity,
+                        VariantId = variant.Id,
+                        Quantity = cartItem.Quantity,
                         SellingPrice = variant.SellingPrice,
                         PurchasePrice = variant.PurchasePrice,
                         Amount = amount,
@@ -177,7 +189,6 @@ public class OrderService : IOrderService
 
                 decimal discountAmount = 0;
                 int? discountCodeId = null;
-
                 if (!string.IsNullOrEmpty(dto.DiscountCode))
                 {
                     var discountResult = await _discountService.ValidateAndApplyDiscountAsync(dto.DiscountCode, totalAmount, userId);
@@ -188,22 +199,34 @@ public class OrderService : IOrderService
                     }
                 }
 
+                var shippingMethod = await _orderRepository.GetShippingMethodByIdAsync(dto.ShippingMethodId);
+                if (shippingMethod == null) throw new ArgumentException("Invalid shipping method.");
+                var shippingCost = shippingMethod.Cost;
+
+                var initialStatus = await _orderStatusRepository.GetStatusByNameAsync("Pending Payment")
+                                    ?? await _orderStatusRepository.GetStatusByNameAsync("در انتظار پرداخت")
+                                    ?? (await _orderStatusRepository.GetOrderStatusesAsync()).FirstOrDefault();
+
+                if (initialStatus == null) throw new InvalidOperationException("No order status found.");
+
                 var order = new Order
                 {
                     UserId = userId,
-                    UserAddressId = dto.SaveNewAddress ? addressToUse.Id : null,
-                    ReceiverName = addressToUse.ReceiverName,
-                    AddressSnapshot = JsonSerializer.Serialize(_mapper.Map<UserAddressDto>(addressToUse)),
+                    UserAddressId = dto.UserAddressId ?? (dto.SaveNewAddress ? address!.Id : null),
+                    ReceiverName = address!.ReceiverName,
+                    AddressSnapshot = JsonSerializer.Serialize(_mapper.Map<UserAddressDto>(address)),
                     TotalAmount = totalAmount,
                     TotalProfit = totalProfit,
-                    ShippingCost = shippingMethod.Cost,
+                    ShippingCost = shippingCost,
                     DiscountAmount = discountAmount,
-                    FinalAmount = totalAmount + shippingMethod.Cost - discountAmount,
-                    OrderStatusId = 1,
-                    ShippingMethodId = dto.ShippingMethodId,
+                    FinalAmount = totalAmount + shippingCost - discountAmount,
+                    OrderStatusId = initialStatus.Id,
+                    ShippingMethodId = shippingMethod.Id,
                     DiscountCodeId = discountCodeId,
                     IdempotencyKey = idempotencyKey,
-                    OrderItems = orderItems
+                    OrderItems = orderItems,
+                    IsPaid = false,
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 await _orderRepository.AddAsync(order);
@@ -212,30 +235,41 @@ public class OrderService : IOrderService
                 foreach (var item in orderItems)
                 {
                     await _inventoryService.LogTransactionAsync(
-                        item.VariantId, "Sale", -item.Quantity, item.Id, userId, "Order placed", $"ORDER-{order.Id}", null, false);
+                        item.VariantId,
+                        "Reservation",
+                        -item.Quantity,
+                        item.Id,
+                        userId,
+                        $"Order Reservation #{order.Id}",
+                        $"ORD-{order.Id}",
+                        null,
+                        false
+                    );
                 }
-
-                await _cartRepository.ClearCartAsync(userId);
-
                 await _unitOfWork.SaveChangesAsync();
-                await transaction.CommitAsync();
 
-                var paymentInitiationDto = new PaymentInitiationDto
+                var callbackUrl = $"{_frontendUrls.Value.BaseUrl}/payment/verify";
+                var user = await _userRepository.GetUserByIdAsync(userId);
+
+                var paymentRequest = new PaymentInitiationDto
                 {
                     Amount = order.FinalAmount,
                     Description = $"Order #{order.Id}",
-                    CallbackUrl = $"{_frontendUrls.Value.BaseUrl}/payment/callback",
-                    Mobile = await _context.Users.Where(u => u.Id == userId).Select(u => u.PhoneNumber).FirstOrDefaultAsync(),
+                    CallbackUrl = callbackUrl,
+                    Mobile = user?.PhoneNumber,
                     OrderId = order.Id,
                     UserId = userId
                 };
 
-                var paymentResult = await _paymentService.InitiatePaymentAsync(paymentInitiationDto);
+                var paymentResult = await _paymentService.InitiatePaymentAsync(paymentRequest);
 
                 if (!paymentResult.IsSuccess)
                 {
-                    return new CheckoutFromCartResultDto { Error = "Failed to initiate payment: " + paymentResult.Message };
+                    throw new Exception($"Payment initiation failed: {paymentResult.Message}");
                 }
+
+                await _unitOfWork.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 return new CheckoutFromCartResultDto
                 {
@@ -244,23 +278,105 @@ public class OrderService : IOrderService
                     Authority = paymentResult.Authority
                 };
             }
-            catch (DbUpdateConcurrencyException)
+            catch
             {
                 await transaction.RollbackAsync();
-                return new CheckoutFromCartResultDto { Error = "Inventory or price changed during checkout. Please try again." };
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Checkout failed");
-                return new CheckoutFromCartResultDto { Error = "An unexpected error occurred." };
+                throw;
             }
         });
     }
 
     public async Task<PaymentVerificationResultDto> VerifyAndProcessPaymentAsync(int orderId, string authority, string status)
     {
-        var result = await _paymentService.VerifyPaymentAsync(authority, status);
-        return result;
+        return await _unitOfWork.ExecuteStrategyAsync(async () =>
+        {
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var order = await _orderRepository.GetOrderByIdAsync(orderId, null, true);
+                if (order == null)
+                {
+                    return new PaymentVerificationResultDto { IsVerified = false, Message = "Order not found." };
+                }
+
+                if (order.IsPaid)
+                {
+                    return new PaymentVerificationResultDto { IsVerified = true, Message = "Order already paid.", RefId = 0, RedirectUrl = $"/payment/success?  orderId={orderId}" };
+                }
+
+                var verificationResult = await _paymentService.VerifyPaymentAsync(authority, status);
+
+                if (verificationResult.IsVerified)
+                {
+                    order.IsPaid = true;
+                    order.PaymentDate = DateTime.UtcNow;
+
+                    var paidStatus = await _orderStatusRepository.GetStatusByNameAsync("Processing")
+                                     ?? await _orderStatusRepository.GetStatusByNameAsync("در حال پردازش");
+
+                    if (paidStatus != null) order.OrderStatusId = paidStatus.Id;
+
+                    _orderRepository.Update(order);
+
+                    await _unitOfWork.SaveChangesAsync();
+                    await _cartRepository.ClearCartAsync(order.UserId);
+                    await transaction.CommitAsync();
+
+                    await _notificationService.CreateNotificationAsync(order.UserId, "ثبت سفارش موفق", $"سفارش #{order.Id} با موفقیت ثبت شد.", "Order", $"/dashboard/order/{order.Id}", order.Id, "Order");
+
+                    return new PaymentVerificationResultDto
+                    {
+                        IsVerified = true,
+                        RefId = verificationResult.RefId,
+                        Message = "Payment verified successfully.",
+                        RedirectUrl = $"/payment/success? orderId={orderId}&refId={verificationResult.RefId}"
+                    };
+                }
+                else
+                {
+                    foreach (var item in order.OrderItems)
+                    {
+                        await _inventoryService.LogTransactionAsync(
+                            item.VariantId,
+                            "Restock",
+                            item.Quantity,
+                            item.Id,
+                            order.UserId,
+                            "Payment Failed - Restock",
+                            $"ORD-FAIL-{order.Id}",
+                            null,
+                            false
+                        );
+                    }
+
+                    var failedStatus = await _orderStatusRepository.GetStatusByNameAsync("Cancelled")
+                                       ?? await _orderStatusRepository.GetStatusByNameAsync("لغو شده")
+                                       ?? await _orderStatusRepository.GetStatusByNameAsync("Payment Failed");
+
+                    if (failedStatus != null)
+                    {
+                        order.OrderStatusId = failedStatus.Id;
+                    }
+
+                    _orderRepository.Update(order);
+
+                    await _unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return new PaymentVerificationResultDto
+                    {
+                        IsVerified = false,
+                        Message = verificationResult.Message ?? "Payment verification failed.",
+                        RedirectUrl = $"/payment/failure?orderId={orderId}&reason={verificationResult.Message}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error verifying payment for order {OrderId}", orderId);
+                return new PaymentVerificationResultDto { IsVerified = false, Message = "An internal error occurred." };
+            }
+        });
     }
 }

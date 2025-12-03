@@ -6,23 +6,49 @@ public class ShippingMethodService : IShippingMethodService
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHtmlSanitizer _htmlSanitizer;
+    private readonly ICacheService _cacheService;
+    private readonly ILogger<ShippingMethodService> _logger;
+
+    private const string ShippingMethodsCacheKey = "shipping_methods:all";
+    private const string ActiveShippingMethodsCacheKey = "shipping_methods:active";
+    private static readonly TimeSpan CacheExpiry = TimeSpan.FromHours(1);
 
     public ShippingMethodService(
         IShippingMethodRepository repository,
         IMapper mapper,
         IUnitOfWork unitOfWork,
-        IHtmlSanitizer htmlSanitizer)
+        IHtmlSanitizer htmlSanitizer,
+        ICacheService cacheService,
+        ILogger<ShippingMethodService> logger)
     {
         _repository = repository;
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _htmlSanitizer = htmlSanitizer;
+        _cacheService = cacheService;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<ShippingMethodDto>> GetAllAsync(bool includeDeleted = false)
     {
+        if (!includeDeleted)
+        {
+            var cached = await _cacheService.GetAsync<List<ShippingMethodDto>>(ShippingMethodsCacheKey);
+            if (cached != null)
+            {
+                return cached;
+            }
+        }
+
         var methods = await _repository.GetAllAsync(includeDeleted);
-        return _mapper.Map<IEnumerable<ShippingMethodDto>>(methods);
+        var dtos = _mapper.Map<List<ShippingMethodDto>>(methods);
+
+        if (!includeDeleted)
+        {
+            await _cacheService.SetAsync(ShippingMethodsCacheKey, dtos, CacheExpiry);
+        }
+
+        return dtos;
     }
 
     public async Task<ShippingMethodDto?> GetByIdAsync(int id)
@@ -46,6 +72,8 @@ public class ShippingMethodService : IShippingMethodService
 
         await _repository.AddAsync(method);
         await _unitOfWork.SaveChangesAsync();
+
+        await InvalidateShippingMethodCacheAsync();
 
         return ServiceResult<ShippingMethodDto>.Ok(_mapper.Map<ShippingMethodDto>(method));
     }
@@ -82,11 +110,14 @@ public class ShippingMethodService : IShippingMethodService
         try
         {
             await _unitOfWork.SaveChangesAsync();
+
+            await InvalidateShippingMethodCacheAsync();
+
             return ServiceResult.Ok();
         }
         catch (DbUpdateConcurrencyException)
         {
-            return ServiceResult.Fail("This record was modified by another user.  Please refresh and try again.");
+            return ServiceResult.Fail("This record was modified by another user.   Please refresh and try again.");
         }
     }
 
@@ -102,6 +133,8 @@ public class ShippingMethodService : IShippingMethodService
         method.DeletedAt = DateTime.UtcNow;
         _repository.Update(method);
         await _unitOfWork.SaveChangesAsync();
+
+        await InvalidateShippingMethodCacheAsync();
 
         return ServiceResult.Ok();
     }
@@ -119,13 +152,33 @@ public class ShippingMethodService : IShippingMethodService
         _repository.Update(method);
         await _unitOfWork.SaveChangesAsync();
 
+        await InvalidateShippingMethodCacheAsync();
+
         return ServiceResult.Ok();
     }
 
     public async Task<ServiceResult<IEnumerable<ShippingMethodDto>>> GetActiveShippingMethodsAsync()
     {
+        var cached = await _cacheService.GetAsync<List<ShippingMethodDto>>(ActiveShippingMethodsCacheKey);
+        if (cached != null)
+        {
+            return ServiceResult<IEnumerable<ShippingMethodDto>>.Ok(cached);
+        }
+
         var methods = await _repository.GetAllAsync(false);
-        var activeMethods = methods.Where(m => m.IsActive);
-        return ServiceResult<IEnumerable<ShippingMethodDto>>.Ok(_mapper.Map<IEnumerable<ShippingMethodDto>>(activeMethods));
+        var activeMethods = methods.Where(m => m.IsActive).ToList();
+        var dtos = _mapper.Map<List<ShippingMethodDto>>(activeMethods);
+
+        await _cacheService.SetAsync(ActiveShippingMethodsCacheKey, dtos, CacheExpiry);
+
+        return ServiceResult<IEnumerable<ShippingMethodDto>>.Ok(dtos);
+    }
+
+    private async Task InvalidateShippingMethodCacheAsync()
+    {
+        await _cacheService.ClearAsync(ShippingMethodsCacheKey);
+        await _cacheService.ClearAsync(ActiveShippingMethodsCacheKey);
+
+        _logger.LogDebug("Shipping method caches invalidated");
     }
 }

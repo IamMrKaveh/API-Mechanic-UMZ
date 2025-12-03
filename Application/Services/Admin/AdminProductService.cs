@@ -1,4 +1,4 @@
-﻿namespace Application.Services;
+﻿namespace Application.Services.Admin;
 
 public class AdminProductService : IAdminProductService
 {
@@ -11,6 +11,12 @@ public class AdminProductService : IAdminProductService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediaService _mediaService;
     private readonly IStorageService _storageService;
+    private readonly ICacheService _cacheService;
+    private readonly LedkaContext _context;
+
+    private const string ProductCachePrefix = "product:";
+    private const string ProductListCachePrefix = "products:list:";
+    private const string ProductTagPrefix = "product_tag:";
 
     public AdminProductService(
         IProductRepository productRepository,
@@ -21,7 +27,9 @@ public class AdminProductService : IAdminProductService
         IMapper mapper,
         IUnitOfWork unitOfWork,
         IMediaService mediaService,
-        IStorageService storageService)
+        IStorageService storageService,
+        ICacheService cacheService,
+        LedkaContext context)
     {
         _productRepository = productRepository;
         _inventoryService = inventoryService;
@@ -32,6 +40,8 @@ public class AdminProductService : IAdminProductService
         _unitOfWork = unitOfWork;
         _mediaService = mediaService;
         _storageService = storageService;
+        _cacheService = cacheService;
+        _context = context;
     }
 
     public async Task<ServiceResult<AdminProductViewDto?>> GetAdminProductByIdAsync(int productId)
@@ -61,13 +71,19 @@ public class AdminProductService : IAdminProductService
             return ServiceResult<AdminProductViewDto>.Fail("Product must have at least one variant.");
         }
 
+        var attributeValidationResult = await ValidateVariantAttributesAsync(variants);
+        if (!attributeValidationResult.IsValid)
+        {
+            return ServiceResult<AdminProductViewDto>.Fail(attributeValidationResult.ErrorMessage!);
+        }
+
         var variantAttributeSets = variants
             .Select(v => new HashSet<int>(v.AttributeValueIds))
             .ToList();
 
         if (variantAttributeSets.Count != new HashSet<HashSet<int>>(variantAttributeSets, HashSet<int>.CreateSetComparer()).Count)
         {
-            return ServiceResult<AdminProductViewDto>.Fail("Duplicate variant combinations detected. Each variant must have a unique set of attributes.");
+            return ServiceResult<AdminProductViewDto>.Fail("Duplicate variant combinations detected.   Each variant must have a unique set of attributes.");
         }
 
         return await _unitOfWork.ExecuteStrategyAsync(async () =>
@@ -84,6 +100,8 @@ public class AdminProductService : IAdminProductService
                 {
                     var variant = _mapper.Map<ProductVariant>(variantDto);
                     variant.Product = product;
+                    variant.StockQuantity = variantDto.Stock;
+
                     var attributeValues = await _productRepository.GetAttributeValuesByIdsAsync(variantDto.AttributeValueIds);
                     foreach (var attrValue in attributeValues)
                     {
@@ -146,7 +164,8 @@ public class AdminProductService : IAdminProductService
 
                 await transaction.CommitAsync();
 
-                // Reload the product to ensure all navigation properties (CategoryGroup, Category, etc.) are loaded for mapping
+                await InvalidateProductCachesAsync(product.Id, product.CategoryGroupId);
+
                 var loadedProduct = await _productRepository.GetByIdWithVariantsAndAttributesAsync(product.Id, true);
 
                 var resultDto = await MapToAdminViewDto(loadedProduct ?? product);
@@ -205,39 +224,24 @@ public class AdminProductService : IAdminProductService
                     }
                 }
 
+                var oldCategoryGroupId = product.CategoryGroupId;
+
                 _mapper.Map(productDto, product);
                 product.Description = _htmlSanitizer.Sanitize(productDto.Description ?? string.Empty);
 
                 var variantDtos = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(productDto.VariantsJson) ?? [];
-                _productRepository.UpdateVariants(product, variantDtos);
 
-                foreach (var vDto in variantDtos)
+                if (variantDtos.Any())
                 {
-                    if (vDto.Id.HasValue && vDto.Id > 0)
+                    var attributeValidationResult = await ValidateVariantAttributesAsync(variantDtos);
+                    if (!attributeValidationResult.IsValid)
                     {
-                        var existingVariant = product.Variants.FirstOrDefault(v => v.Id == vDto.Id);
-                        if (existingVariant != null && !existingVariant.IsUnlimited)
-                        {
-                            int currentStock = existingVariant.Stock;
-                            int newStock = vDto.Stock;
-                            int diff = newStock - currentStock;
-                            if (diff != 0)
-                            {
-                                await _inventoryService.LogTransactionAsync(
-                                   existingVariant.Id,
-                                   "Adjustment",
-                                   diff,
-                                   null,
-                                   userId,
-                                   "Admin update adjustment",
-                                   null,
-                                   null,
-                                   saveChanges: false
-                               );
-                            }
-                        }
+                        await transaction.RollbackAsync();
+                        return ServiceResult<AdminProductViewDto>.Fail(attributeValidationResult.ErrorMessage!);
                     }
                 }
+
+                await UpdateVariantsWithStockAsync(product, variantDtos, userId);
 
                 product.RecalculateAggregates();
 
@@ -263,13 +267,19 @@ public class AdminProductService : IAdminProductService
 
                 await transaction.CommitAsync();
 
+                await InvalidateProductCachesAsync(productId, product.CategoryGroupId);
+                if (oldCategoryGroupId != product.CategoryGroupId)
+                {
+                    await InvalidateCategoryGroupCacheAsync(oldCategoryGroupId);
+                }
+
                 var updatedProductDto = await MapToAdminViewDto(product);
                 return ServiceResult<AdminProductViewDto>.Ok(updatedProductDto);
             }
             catch (DbUpdateConcurrencyException)
             {
                 await transaction.RollbackAsync();
-                return ServiceResult<AdminProductViewDto>.Fail("The record was modified by another user. Please refresh and try again.");
+                return ServiceResult<AdminProductViewDto>.Fail("The record was modified by another user.   Please refresh and try again.");
             }
             catch (Exception ex)
             {
@@ -278,6 +288,122 @@ public class AdminProductService : IAdminProductService
                 return ServiceResult<AdminProductViewDto>.Fail("An error occurred while updating the product.");
             }
         });
+    }
+
+    private async Task<(bool IsValid, string? ErrorMessage)> ValidateVariantAttributesAsync(List<CreateProductVariantDto> variants)
+    {
+        var allAttributeValueIds = variants.SelectMany(v => v.AttributeValueIds).Distinct().ToList();
+
+        if (!allAttributeValueIds.Any())
+        {
+            return (true, null);
+        }
+
+        var existingAttributeValues = await _context.AttributeValues
+            .Where(av => allAttributeValueIds.Contains(av.Id) && !av.IsDeleted && av.IsActive)
+            .Include(av => av.AttributeType)
+            .ToListAsync();
+
+        var existingIds = existingAttributeValues.Select(av => av.Id).ToHashSet();
+        var missingIds = allAttributeValueIds.Where(id => !existingIds.Contains(id)).ToList();
+
+        if (missingIds.Any())
+        {
+            return (false, $"Invalid or inactive attribute values: {string.Join(", ", missingIds)}");
+        }
+
+        foreach (var variantDto in variants)
+        {
+            var variantAttributeValues = existingAttributeValues
+                .Where(av => variantDto.AttributeValueIds.Contains(av.Id))
+                .ToList();
+
+            var attributeTypeGroups = variantAttributeValues
+                .GroupBy(av => av.AttributeTypeId)
+                .ToList();
+
+            var duplicateTypes = attributeTypeGroups.Where(g => g.Count() > 1).ToList();
+            if (duplicateTypes.Any())
+            {
+                var duplicateTypeNames = duplicateTypes
+                    .Select(g => g.First().AttributeType.DisplayName)
+                    .ToList();
+                return (false, $"Each variant can only have one value per attribute type.  Duplicate types found: {string.Join(", ", duplicateTypeNames)}");
+            }
+        }
+
+        return (true, null);
+    }
+
+    private async Task UpdateVariantsWithStockAsync(Product product, List<CreateProductVariantDto> variantDtos, int userId)
+    {
+        var existingVariantIds = product.Variants.Select(v => v.Id).ToList();
+        var updatedVariantIds = variantDtos.Where(v => v.Id > 0).Select(v => v.Id!.Value).ToList();
+
+        var variantsToDelete = product.Variants.Where(v => !updatedVariantIds.Contains(v.Id)).ToList();
+        foreach (var variant in variantsToDelete)
+        {
+            variant.IsDeleted = true;
+            variant.DeletedAt = DateTime.UtcNow;
+        }
+
+        foreach (var dto in variantDtos)
+        {
+            ProductVariant? variant;
+            if (dto.Id > 0)
+            {
+                variant = product.Variants.FirstOrDefault(v => v.Id == dto.Id);
+                if (variant == null) continue;
+
+                int currentStock = variant.StockQuantity;
+                int newStock = dto.Stock;
+                int diff = newStock - currentStock;
+
+                _mapper.Map(dto, variant);
+
+                if (diff != 0 && !variant.IsUnlimited)
+                {
+                    await _inventoryService.LogTransactionAsync(
+                        variant.Id,
+                        "Adjustment",
+                        diff,
+                        null,
+                        userId,
+                        "Admin update adjustment",
+                        null,
+                        null,
+                        saveChanges: false
+                    );
+                }
+            }
+            else
+            {
+                variant = _mapper.Map<ProductVariant>(dto);
+                variant.StockQuantity = dto.Stock;
+
+                if (dto.Stock > 0)
+                {
+                    variant.InventoryTransactions.Add(new InventoryTransaction
+                    {
+                        TransactionType = "StockIn",
+                        QuantityChange = dto.Stock,
+                        StockBefore = 0,
+                        Notes = "Initial stock (Update)",
+                        UserId = userId
+                    });
+                }
+                product.Variants.Add(variant);
+            }
+
+            variant.VariantAttributes.Clear();
+            var attributeValues = await _context.AttributeValues
+                .Where(av => dto.AttributeValueIds.Contains(av.Id))
+                .ToListAsync();
+            foreach (var attrValue in attributeValues)
+            {
+                variant.VariantAttributes.Add(new ProductVariantAttribute { AttributeValue = attrValue });
+            }
+        }
     }
 
     public async Task<ServiceResult> AddStockAsync(int variantId, int quantity, int userId, string notes)
@@ -296,6 +422,9 @@ public class AdminProductService : IAdminProductService
                 await _auditService.LogInventoryEventAsync(variant.ProductId, "AddStock", $"Added {quantity} to stock for variant {variantId}.", userId);
 
                 await transaction.CommitAsync();
+
+                await InvalidateProductCachesAsync(variant.ProductId);
+
                 return ServiceResult.Ok();
             }
             catch (Exception ex)
@@ -323,6 +452,9 @@ public class AdminProductService : IAdminProductService
                 await _auditService.LogInventoryEventAsync(variant.ProductId, "RemoveStock", $"Removed {quantity} from stock for variant {variantId}.", userId);
 
                 await transaction.CommitAsync();
+
+                await InvalidateProductCachesAsync(variant.ProductId);
+
                 return ServiceResult.Ok();
             }
             catch (Exception ex)
@@ -356,6 +488,9 @@ public class AdminProductService : IAdminProductService
                 await _unitOfWork.SaveChangesAsync();
 
                 await transaction.CommitAsync();
+
+                await InvalidateProductCachesAsync(variant.ProductId);
+
                 return ServiceResult.Ok();
             }
             catch (Exception ex)
@@ -378,6 +513,9 @@ public class AdminProductService : IAdminProductService
         await _unitOfWork.SaveChangesAsync();
 
         await _auditService.LogProductEventAsync(variant.ProductId, "RemoveDiscount", $"Discount removed for variant {variantId}.", userId);
+
+        await InvalidateProductCachesAsync(variant.ProductId);
+
         return ServiceResult.Ok();
     }
 
@@ -397,6 +535,7 @@ public class AdminProductService : IAdminProductService
 
                 var failedIds = new List<int>();
                 var changesLog = new List<string>();
+                var affectedProductIds = new HashSet<int>();
 
                 foreach (var (variantId, newPrice) in priceUpdates)
                 {
@@ -411,6 +550,7 @@ public class AdminProductService : IAdminProductService
 
                         _productRepository.UpdateVariant(variant);
                         changesLog.Add($"Variant {variantId}: {oldPrice} -> {newPrice}");
+                        affectedProductIds.Add(variant.ProductId);
                     }
                     else
                     {
@@ -420,14 +560,20 @@ public class AdminProductService : IAdminProductService
 
                 if (failedIds.Any())
                 {
-                    _logger.LogWarning("Bulk update partial failure. Variants not found: {Ids}", string.Join(",", failedIds));
+                    _logger.LogWarning("Bulk update partial failure.   Variants not found: {Ids}", string.Join(",", failedIds));
                 }
 
                 await _unitOfWork.SaveChangesAsync();
 
-                await _auditService.LogSystemEventAsync("BulkPriceUpdate", $"User {userId} updated prices. Changes: {string.Join("; ", changesLog)}", userId);
+                await _auditService.LogSystemEventAsync("BulkPriceUpdate", $"User {userId} updated prices.   Changes: {string.Join("; ", changesLog)}", userId);
 
                 await transaction.CommitAsync();
+
+                foreach (var productId in affectedProductIds)
+                {
+                    await InvalidateProductCachesAsync(productId);
+                }
+
                 return ServiceResult.Ok();
             }
             catch (Exception ex)
@@ -447,6 +593,8 @@ public class AdminProductService : IAdminProductService
             return ServiceResult.Fail("Product not found.");
         }
 
+        var categoryGroupId = product.CategoryGroupId;
+
         product.IsDeleted = true;
         product.DeletedAt = DateTime.UtcNow;
         _productRepository.Update(product);
@@ -459,6 +607,9 @@ public class AdminProductService : IAdminProductService
 
         await _unitOfWork.SaveChangesAsync();
         await _auditService.LogProductEventAsync(productId, "DeleteProduct", $"Product '{product.Name}' deleted.", userId);
+
+        await InvalidateProductCachesAsync(productId, categoryGroupId);
+
         return ServiceResult.Ok();
     }
 
@@ -505,5 +656,27 @@ public class AdminProductService : IAdminProductService
             dtos.Add(dto);
         }
         return dtos;
+    }
+
+    private async Task InvalidateProductCachesAsync(int productId, int? categoryGroupId = null)
+    {
+        await _cacheService.ClearAsync($"{ProductCachePrefix}{productId}");
+
+        await _cacheService.ClearByTagAsync($"{ProductTagPrefix}{productId}");
+
+        await _cacheService.ClearByPrefixAsync(ProductListCachePrefix);
+
+        if (categoryGroupId.HasValue)
+        {
+            await InvalidateCategoryGroupCacheAsync(categoryGroupId.Value);
+        }
+
+        _logger.LogDebug("Product caches invalidated for product {ProductId}", productId);
+    }
+
+    private async Task InvalidateCategoryGroupCacheAsync(int categoryGroupId)
+    {
+        await _cacheService.ClearAsync($"categorygroup:{categoryGroupId}");
+        await _cacheService.ClearByPrefixAsync("categories:");
     }
 }

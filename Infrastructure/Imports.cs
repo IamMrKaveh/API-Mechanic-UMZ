@@ -15,6 +15,7 @@ global using Domain.Product.Attribute;
 global using Domain.User;
 global using Ganss.Xss;
 global using Infrastructure.Payment.ZarinPal;
+global using Infrastructure.Persistence;
 global using Infrastructure.Persistence.Repositories;
 global using Microsoft.AspNetCore.DataProtection.Repositories;
 global using Microsoft.EntityFrameworkCore;

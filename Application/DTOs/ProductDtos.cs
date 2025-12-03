@@ -35,7 +35,7 @@ public class ProductDto
 
     [Required]
     [StringLength(200)]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     public string? Description { get; set; }
 
@@ -95,7 +95,7 @@ public class ProductVariantResponseDto
 public class PublicProductViewDto
 {
     public int Id { get; set; }
-    public string Name { get; set; }
+    public required string Name { get; set; }
     public string? Description { get; set; }
     public string? Sku { get; set; }
     public bool IsActive { get; set; }
@@ -115,7 +115,7 @@ public class AdminProductViewDto : PublicProductViewDto
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
-    public string RowVersion { get; set; }
+    public required string RowVersion { get; set; }
 }
 
 public class ProductStockDto
@@ -138,7 +138,7 @@ public record SetDiscountDto(
 public class ProductSummaryDto
 {
     public int Id { get; set; }
-    public string Name { get; set; }
+    public required string Name { get; set; }
     public string? Icon { get; set; }
     public int Count { get; set; }
     public decimal SellingPrice { get; set; }
@@ -149,15 +149,31 @@ public class ProductSummaryDto
 public class AttributeTypeWithValuesDto
 {
     public int Id { get; set; }
-    public string Name { get; set; }
-    public string DisplayName { get; set; }
-    public List<AttributeValueSimpleDto> Values { get; set; }
+    public required string Name { get; set; }
+    public required string DisplayName { get; set; }
+    public required List<AttributeValueSimpleDto> Values { get; set; }
 }
 
 public class AttributeValueSimpleDto
 {
     public int Id { get; set; }
-    public string Value { get; set; }
-    public string DisplayValue { get; set; }
+    public required string Value { get; set; }
+    public required string DisplayValue { get; set; }
     public string? HexCode { get; set; }
+}
+
+public class StockAdjustmentDto
+{
+    [Required]
+    public int VariantId { get; set; }
+
+    [Required]
+    public required string TransactionType { get; set; }
+
+    [Required]
+    public int QuantityChange { get; set; }
+
+    public string? Notes { get; set; }
+
+    public string? ReferenceNumber { get; set; }
 }

@@ -13,6 +13,13 @@ public class UserService : IUserService
     private readonly ITokenService _tokenService;
     private readonly ICacheService _cacheService;
 
+    private const int LOGIN_MAX_ATTEMPTS = 5;
+    private const int LOGIN_WINDOW_MINUTES = 15;
+    private const int OTP_MAX_ATTEMPTS = 3;
+    private const int OTP_WINDOW_MINUTES = 5;
+    private const int NEW_USER_MAX_ATTEMPTS = 3;
+    private const int NEW_USER_WINDOW_MINUTES = 60;
+
     public UserService(
         IUserRepository repository,
         ILogger<UserService> logger,
@@ -115,31 +122,32 @@ public class UserService : IUserService
         return ServiceResult.Ok();
     }
 
-    public async Task<ServiceResult<(string? Message, string? Otp)>> LoginAsync(LoginRequestDto request, string clientIp)
+    public async Task<ServiceResult<string?>> LoginAsync(LoginRequestDto request, string clientIp)
     {
         var user = await _repository.GetUserByPhoneNumberAsync(request.PhoneNumber, true);
 
         if (user != null && user.IsDeleted)
-            return ServiceResult<(string?, string?)>.Fail("This account has been deleted.");
+            return ServiceResult<string?>.Fail("This account has been deleted.");
 
         if (user == null)
         {
             var newUserRateLimitKey = $"new_user_creation_{clientIp}";
-            (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(newUserRateLimitKey, 1, 5);
+            (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(newUserRateLimitKey, NEW_USER_MAX_ATTEMPTS, NEW_USER_WINDOW_MINUTES);
             if (isLimited)
             {
                 _logger.LogWarning("Rate limit exceeded for new user creation from IP: {ClientIP}", clientIp);
-                return ServiceResult<(string?, string?)>.Fail("Too many attempts to create new users. Please try again later.");
+                return ServiceResult<string?>.Fail($"Too many attempts to create new users. Please try again in {retryAfterSeconds} seconds.");
             }
         }
         else
         {
             var loginRateLimitKey = $"login_{request.PhoneNumber}_{clientIp}";
-            (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(loginRateLimitKey, 5, 15);
+            (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(loginRateLimitKey, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_MINUTES);
             if (isLimited)
             {
                 _logger.LogWarning("Rate limit exceeded for login attempt from IP: {ClientIP}, Phone: {PhoneNumber}", clientIp, request.PhoneNumber);
-                return ServiceResult<(string?, string?)>.Fail("Too many login attempts. Please try again later.");
+                await _auditService.LogSecurityEventAsync("LoginRateLimited", $"Too many login attempts for {request.PhoneNumber}", clientIp);
+                return ServiceResult<string?>.Fail($"Too many login attempts. Please try again in {retryAfterSeconds} seconds.");
             }
         }
 
@@ -161,14 +169,14 @@ public class UserService : IUserService
         if (!user.IsActive)
         {
             _logger.LogWarning("Login attempt for inactive user: {PhoneNumber}", request.PhoneNumber);
-            return ServiceResult<(string?, string?)>.Fail("Account is inactive.");
+            return ServiceResult<string?>.Fail("Account is inactive.");
         }
 
         await _repository.InvalidateOtpsAsync(user.Id);
 
         var activeOtp = await _repository.GetActiveOtpAsync(user.Id);
         if (activeOtp != null)
-            return ServiceResult<(string?, string?)>.Fail("An active OTP already exists. Please wait before requesting a new one.");
+            return ServiceResult<string?>.Fail("An active OTP already exists.  Please wait before requesting a new one.");
 
         var otp = GenerateSecureOtp();
         var userOtp = new UserOtp
@@ -180,13 +188,13 @@ public class UserService : IUserService
             AttemptCount = 0
         };
 
-        //await SendOtpViaKavenegar(user.PhoneNumber, otp);
+        await SendOtpViaKavenegar(user.PhoneNumber, otp);
 
         await _repository.AddOtpAsync(userOtp);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("OTP sent successfully to phone: {PhoneNumber} (OTP: {Otp})", request.PhoneNumber, otp);
-        return ServiceResult<(string?, string?)>.Ok(("OTP sent successfully", otp));
+        _logger.LogInformation("OTP sent successfully to phone: {PhoneNumber}", request.PhoneNumber);
+        return ServiceResult<string?>.Ok("OTP sent successfully");
     }
 
     public async Task<ServiceResult<(AuthResponseDto? Response, string? Error)>> VerifyOtpAsync(VerifyOtpRequestDto request, string clientIp, string userAgent)
@@ -198,9 +206,12 @@ public class UserService : IUserService
                 return ServiceResult<(AuthResponseDto?, string?)>.Fail("Invalid credentials.");
 
             var rateLimitKey = $"otp_{clientIp}_{user.Id}";
-            (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(rateLimitKey, 3, 5);
+            (bool isLimited, int retryAfterSeconds) = await _rateLimitService.IsLimitedAsync(rateLimitKey, OTP_MAX_ATTEMPTS, OTP_WINDOW_MINUTES);
             if (isLimited)
-                return ServiceResult<(AuthResponseDto?, string?)>.Fail("Too many verification attempts. Please request a new OTP.");
+            {
+                await _auditService.LogSecurityEventAsync("OtpRateLimited", $"Too many OTP attempts for user {user.Id}", clientIp, user.Id);
+                return ServiceResult<(AuthResponseDto?, string?)>.Fail($"Too many verification attempts. Please request a new OTP in {retryAfterSeconds} seconds.");
+            }
 
             var storedOtp = await _repository.GetActiveOtpAsync(user.Id);
             if (storedOtp == null)
@@ -264,7 +275,7 @@ public class UserService : IUserService
         }
         catch (DbUpdateConcurrencyException)
         {
-            return ServiceResult<(AuthResponseDto?, string?)>.Fail("Concurrency conflict during verification. Please try again.");
+            return ServiceResult<(AuthResponseDto?, string?)>.Fail("Concurrency conflict during verification.  Please try again.");
         }
     }
 
@@ -272,8 +283,20 @@ public class UserService : IUserService
     {
         var storedSession = await _repository.GetActiveSessionByTokenAsync(request.refreshToken);
 
-        if (storedSession == null) return ServiceResult<(object?, string?)>.Fail("Invalid token.");
-        if (storedSession.User == null) return ServiceResult<(object?, string?)>.Fail("User not found for this token.");
+        if (storedSession == null)
+            return ServiceResult<(object?, string?)>.Fail("Invalid token.");
+
+        if (storedSession.RevokedAt.HasValue)
+        {
+            _logger.LogWarning("Attempt to reuse revoked refresh token for user {UserId}. Possible token theft.", storedSession.UserId);
+            await _auditService.LogSecurityEventAsync("TokenReuseDetected", $"Revoked token reuse attempt for user {storedSession.UserId}", clientIp, storedSession.UserId);
+            await _repository.RevokeAllUserSessionsAsync(storedSession.UserId);
+            await _unitOfWork.SaveChangesAsync();
+            return ServiceResult<(object?, string?)>.Fail("Security violation detected. All sessions have been terminated.");
+        }
+
+        if (storedSession.User == null)
+            return ServiceResult<(object?, string?)>.Fail("User not found for this token.");
 
         var lockKey = $"refresh_lock_{storedSession.UserId}";
         if (!await _cacheService.AcquireLockWithRetryAsync(lockKey, TimeSpan.FromSeconds(5), 3, 500))
@@ -347,6 +370,7 @@ public class UserService : IUserService
         var resultDto = _mapper.Map<UserAddressDto>(address);
         return ServiceResult<UserAddressDto?>.Ok(resultDto);
     }
+
     public async Task<ServiceResult<UserAddressDto?>> UpdateUserAddressAsync(int userId, int addressId, UpdateUserAddressDto addressDto)
     {
         var address = await _repository.GetUserAddressAsync(addressId);
@@ -363,6 +387,7 @@ public class UserService : IUserService
         var resultDto = _mapper.Map<UserAddressDto>(address);
         return ServiceResult<UserAddressDto?>.Ok(resultDto);
     }
+
     public async Task<ServiceResult> DeleteUserAddressAsync(int userId, int addressId)
     {
         var address = await _repository.GetUserAddressAsync(addressId);

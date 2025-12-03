@@ -1,10 +1,4 @@
-﻿using Application.Common.Interfaces;
-using Application.Common.Interfaces.Persistence;
-using Application.DTOs;
-using AutoMapper;
-using Domain.Media;
-
-namespace Application.Services;
+﻿namespace Application.Services;
 
 public class MediaService : IMediaService
 {
@@ -13,6 +7,16 @@ public class MediaService : IMediaService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<MediaService> _logger;
     private readonly IMapper _mapper;
+
+    private static readonly Dictionary<string, List<byte[]>> _fileSignatures = new()
+    {
+        { ".jpg", new List<byte[]> { new byte[] { 0xFF, 0xD8, 0xFF } } },
+        { ".jpeg", new List<byte[]> { new byte[] { 0xFF, 0xD8, 0xFF } } },
+        { ".png", new List<byte[]> { new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A } } },
+        { ".gif", new List<byte[]> { new byte[] { 0x47, 0x49, 0x46, 0x38 } } },
+        { ".webp", new List<byte[]> { new byte[] { 0x52, 0x49, 0x46, 0x46 }, new byte[] { 0x57, 0x45, 0x42, 0x50 } } },
+        { ".pdf", new List<byte[]> { new byte[] { 0x25, 0x50, 0x44, 0x46 } } }
+    };
 
     public MediaService(
         IMediaRepository mediaRepository,
@@ -62,6 +66,8 @@ public class MediaService : IMediaService
 
     public async Task<Media> AttachFileToEntityAsync(Stream stream, string fileName, string contentType, long contentLength, string entityType, int entityId, bool isPrimary = false, string? altText = null, bool saveChanges = true)
     {
+        ValidateFileType(stream, fileName);
+
         var (filePath, uniqueFileName) = await _storageService.SaveFileAsync(stream, fileName, entityType, entityId.ToString());
         var media = new Media
         {
@@ -135,5 +141,32 @@ public class MediaService : IMediaService
             return string.Empty;
 
         return _storageService.GetUrl(filePath);
+    }
+
+    private void ValidateFileType(Stream stream, string fileName)
+    {
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        if (string.IsNullOrEmpty(ext) || !_fileSignatures.ContainsKey(ext))
+        {
+            throw new InvalidOperationException("File type not allowed.");
+        }
+
+        if (stream.CanSeek)
+        {
+            stream.Position = 0;
+            using var reader = new BinaryReader(stream, System.Text.Encoding.UTF8, true);
+            var signatures = _fileSignatures[ext];
+            var headerBytes = reader.ReadBytes(signatures.Max(m => m.Length));
+
+            bool isMatch = signatures.Any(signature =>
+                headerBytes.Take(signature.Length).SequenceEqual(signature));
+
+            stream.Position = 0;
+
+            if (!isMatch)
+            {
+                throw new InvalidOperationException("Invalid file signature detected. Upload rejected.");
+            }
+        }
     }
 }

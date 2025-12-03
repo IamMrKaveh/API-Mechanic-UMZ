@@ -4,9 +4,6 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        // ---------------------------------------------------------
-        // Product Mappings
-        // ---------------------------------------------------------
 
         CreateMap<ProductDto, Product>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
@@ -22,6 +19,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.MinPrice, opt => opt.Ignore())
             .ForMember(dest => dest.MaxPrice, opt => opt.Ignore())
             .ForMember(dest => dest.TotalStock, opt => opt.Ignore())
+            .ForMember(dest => dest.OrderItems, opt => opt.Ignore())
             .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.RowVersion) ? Convert.FromBase64String(src.RowVersion) : null));
 
         CreateMap<CreateProductVariantDto, ProductVariant>()
@@ -44,6 +42,7 @@ public class MappingProfile : Profile
                 opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null))
             .ForMember(dest => dest.Images, opt => opt.Ignore())
             .ForMember(dest => dest.Variants, opt => opt.Ignore())
+            .ForMember(dest => dest.IconUrl, opt => opt.Ignore())
             .ForMember(dest => dest.CategoryGroup,
                 opt => opt.MapFrom(src => src.CategoryGroup != null ? new
                 {
@@ -54,7 +53,8 @@ public class MappingProfile : Profile
 
         CreateMap<Product, PublicProductViewDto>()
             .ForMember(dest => dest.Images, opt => opt.Ignore())
-            // Variants mapping is handled automatically via ProductVariant -> ProductVariantResponseDto map to ensure RowVersion is included
+            .ForMember(dest => dest.IconUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.Variants, opt => opt.Ignore())
             .ForMember(dest => dest.CategoryGroup,
                 opt => opt.MapFrom(src => src.CategoryGroup != null ? new
                 {
@@ -67,7 +67,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.RowVersion,
                 opt => opt.MapFrom(src =>
                     src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null))
-
+            .ForMember(dest => dest.Images, opt => opt.Ignore())
             .ForMember(dest => dest.Attributes,
                 opt => opt.MapFrom(src => src.VariantAttributes.ToDictionary(
                     va => va.AttributeValue.AttributeType.Name.ToLower(),
@@ -79,7 +79,6 @@ public class MappingProfile : Profile
                         va.AttributeValue.DisplayValue,
                         va.AttributeValue.HexCode
                     ))))
-
             .ForMember(dest => dest.DiscountPercentage,
                 opt => opt.MapFrom(src =>
                     src.OriginalPrice > src.SellingPrice && src.OriginalPrice > 0
@@ -100,17 +99,18 @@ public class MappingProfile : Profile
                 src.DisplayValue,
                 src.HexCode));
 
-        // ---------------------------------------------------------
-        // Category Mappings
-        // ---------------------------------------------------------
-
         CreateMap<Category, CategoryViewDto>()
+            .ForMember(dest => dest.IconUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.CategoryGroups, opt => opt.Ignore())
             .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null));
 
-
-        CreateMap<CategoryGroup, CategoryGroupSummaryDto>();
+        CreateMap<CategoryGroup, CategoryGroupSummaryDto>()
+            .ForMember(dest => dest.IconUrl, opt => opt.Ignore());
 
         CreateMap<Category, CategoryDetailViewDto>()
+            .ForMember(dest => dest.IconUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.CategoryGroups, opt => opt.Ignore())
+            .ForMember(dest => dest.Products, opt => opt.Ignore())
             .IncludeBase<Category, CategoryViewDto>();
 
         CreateMap<CategoryCreateDto, Category>()
@@ -122,6 +122,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
             .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
             .ForMember(dest => dest.RowVersion, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.Ignore())
             .ForMember(dest => dest.Images, opt => opt.Ignore());
 
         CreateMap<CategoryUpdateDto, Category>()
@@ -132,13 +133,14 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
             .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
             .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.Ignore())
             .ForMember(dest => dest.Images, opt => opt.Ignore())
             .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.RowVersion) ? Convert.FromBase64String(src.RowVersion) : null));
 
         CreateMap<CategoryGroup, CategoryGroupViewDto>()
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest => dest.IconUrl, opt => opt.Ignore())
             .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null));
-
 
         CreateMap<CategoryGroupCreateDto, CategoryGroup>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
@@ -150,6 +152,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
             .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
             .ForMember(dest => dest.RowVersion, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.Ignore())
             .ForMember(dest => dest.Images, opt => opt.Ignore());
 
         CreateMap<CategoryGroupUpdateDto, CategoryGroup>()
@@ -161,56 +164,110 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
             .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
             .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.Ignore())
             .ForMember(dest => dest.Images, opt => opt.Ignore())
             .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.RowVersion) ? Convert.FromBase64String(src.RowVersion) : null));
 
-        // ---------------------------------------------------------
-        // User Mappings
-        // ---------------------------------------------------------
-
         CreateMap<User, UserProfileDto>()
-            .ForMember(dest => dest.UserAddresses, opt => opt.MapFrom(src => src.UserAddresses));
+            .ForMember(dest => dest.UserAddresses, opt => opt.MapFrom(src => src.UserAddresses.Where(a => !a.IsDeleted)));
 
         CreateMap<UserAddress, UserAddressDto>();
-        CreateMap<CreateUserAddressDto, UserAddress>();
-        CreateMap<UpdateUserAddressDto, UserAddress>();
+        CreateMap<CreateUserAddressDto, UserAddress>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.UserId, opt => opt.Ignore())
+            .ForMember(dest => dest.User, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.RowVersion, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.Ignore())
+            .ForMember(dest => dest.Latitude, opt => opt.Ignore())
+            .ForMember(dest => dest.Longitude, opt => opt.Ignore());
 
+        CreateMap<UpdateUserAddressDto, UserAddress>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.UserId, opt => opt.Ignore())
+            .ForMember(dest => dest.User, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.RowVersion, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.Ignore())
+            .ForMember(dest => dest.Latitude, opt => opt.Ignore())
+            .ForMember(dest => dest.Longitude, opt => opt.Ignore());
 
         CreateMap<UpdateProfileDto, User>()
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
-        // ---------------------------------------------------------
-        // Media Mappings
-        // ---------------------------------------------------------
-
-        CreateMap<Media, MediaDto>();
-
-        // ---------------------------------------------------------
-        // Review Mappings
-        // ---------------------------------------------------------
+        CreateMap<Media, MediaDto>()
+            .ForMember(dest => dest.Url, opt => opt.Ignore());
 
         CreateMap<ProductReview, ProductReviewDto>()
             .ForMember(dest => dest.UserName,
-                opt => opt.MapFrom(src => src.User.FirstName + " " + src.User.LastName));
-
-        // ---------------------------------------------------------
-        // Product Summary
-        // ---------------------------------------------------------
+                opt => opt.MapFrom(src => src.User != null ? (src.User.FirstName + " " + src.User.LastName).Trim() : "کاربر ناشناس"));
 
         CreateMap<Product, ProductSummaryDto>()
             .ForMember(dest => dest.SellingPrice, opt => opt.MapFrom(src => src.MinPrice))
             .ForMember(dest => dest.PurchasePrice, opt => opt.Ignore())
+            .ForMember(dest => dest.Icon, opt => opt.Ignore())
             .ForMember(dest => dest.Count, opt => opt.MapFrom(src => src.TotalStock))
-            .ForMember(dest => dest.IsInStock, opt => opt.MapFrom(src => src.TotalStock > 0));
+            .ForMember(dest => dest.IsInStock, opt => opt.MapFrom(src => src.TotalStock > 0 || src.Variants.Any(v => v.IsUnlimited)));
 
-        // ---------------------------------------------------------
-        // Shipping Method Mappings
-        // ---------------------------------------------------------
         CreateMap<ShippingMethod, ShippingMethodDto>()
             .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null));
-        CreateMap<ShippingMethodCreateDto, ShippingMethod>();
+
+        CreateMap<ShippingMethodCreateDto, ShippingMethod>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.RowVersion, opt => opt.Ignore())
+            .ForMember(dest => dest.Orders, opt => opt.Ignore());
+
         CreateMap<ShippingMethodUpdateDto, ShippingMethod>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.Orders, opt => opt.Ignore())
             .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion));
 
+        CreateMap<CartItem, CartItemDto>()
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null))
+            .ForMember(dest => dest.ProductName, opt => opt.Ignore())
+            .ForMember(dest => dest.SellingPrice, opt => opt.Ignore())
+            .ForMember(dest => dest.ProductIcon, opt => opt.Ignore())
+            .ForMember(dest => dest.TotalPrice, opt => opt.Ignore())
+            .ForMember(dest => dest.Attributes, opt => opt.Ignore());
+
+        CreateMap<Order, OrderDto>()
+            .ForMember(dest => dest.OrderStatus, opt => opt.MapFrom(src => src.OrderStatus != null ? src.OrderStatus.Name : null))
+            .ForMember(dest => dest.ShippingMethod, opt => opt.MapFrom(src => src.ShippingMethod != null ? src.ShippingMethod.Name : null))
+            .ForMember(dest => dest.ReceiverName, opt => opt.MapFrom(src => src.ReceiverName))
+            .ForMember(dest => dest.UserAddress, opt => opt.Ignore());
+
+        CreateMap<OrderItem, OrderItemDto>()
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Variant != null && src.Variant.Product != null ? src.Variant.Product.Name : null));
+
+        CreateMap<DiscountCode, DiscountCodeDto>()
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null));
+
+        CreateMap<InventoryTransaction, InventoryTransactionDto>()
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Variant != null && src.Variant.Product != null ? src.Variant.Product.Name : null))
+            .ForMember(dest => dest.VariantSku, opt => opt.MapFrom(src => src.Variant != null ? src.Variant.Sku : null))
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? (src.User.FirstName + " " + src.User.LastName).Trim() : null))
+            .ForMember(dest => dest.StockAfter, opt => opt.MapFrom(src => src.StockBefore + src.QuantityChange));
+
+        CreateMap<Notification, NotificationDto>();
+
+        CreateMap<AuditLog, AuditLogDto>();
     }
 }

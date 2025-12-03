@@ -24,7 +24,6 @@ public class CartsController : ControllerBase
         var userId = _currentUserService.UserId;
         var guestId = _currentUserService.GuestId;
 
-        // Fix: Generate Guest Token if missing for unauthenticated users
         if (!userId.HasValue && string.IsNullOrEmpty(guestId))
         {
             guestId = Guid.NewGuid().ToString();
@@ -41,8 +40,7 @@ public class CartsController : ControllerBase
                 return Ok(newCart);
             }
 
-            // Fix: Return empty cart structure for new guests instead of null/unauthorized
-            return Ok(new CartDto(0, null, guestId, new List<CartItemDto>(), 0, 0));
+            return Ok(new CartDto(0, null, guestId, new List<CartItemDto>(), 0, 0, new List<CartPriceChangeDto>()));
         }
 
         return Ok(cart);
@@ -57,7 +55,6 @@ public class CartsController : ControllerBase
         var userId = _currentUserService.UserId;
         var guestId = _currentUserService.GuestId;
 
-        // Fix: Generate Guest Token if missing instead of returning Unauthorized
         if (!userId.HasValue && string.IsNullOrEmpty(guestId))
         {
             guestId = Guid.NewGuid().ToString();

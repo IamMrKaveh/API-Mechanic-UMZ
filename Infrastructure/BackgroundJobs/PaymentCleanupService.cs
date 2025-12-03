@@ -4,6 +4,8 @@ public class PaymentCleanupService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<PaymentCleanupService> _logger;
+    private int _errorCount = 0;
+    private const int MaxErrorThreshold = 5;
 
     public PaymentCleanupService(IServiceProvider serviceProvider, ILogger<PaymentCleanupService> logger)
     {
@@ -33,14 +35,25 @@ public class PaymentCleanupService : BackgroundService
                         .ThenInclude(o => o.OrderItems)
                         .ToListAsync(stoppingToken);
 
+                    var cancelledStatus = await dbContext.OrderStatuses
+                        .FirstOrDefaultAsync(s => s.Name == "Cancelled" || s.Name == "Expired" || s.Name == "لغو شده", stoppingToken);
+
                     foreach (var tx in stuckTransactions)
                     {
                         tx.Status = "Expired";
-                        if (tx.Order != null && tx.Order.OrderStatusId == 1)
+
+                        if (tx.Order != null && !tx.Order.IsPaid && tx.Order.OrderStatusId != cancelledStatus?.Id)
                         {
-                            tx.Order.IsDeleted = true;
-                            tx.Order.DeletedAt = DateTime.UtcNow;
-                            tx.Order.DeletedBy = 0;
+                            if (cancelledStatus != null)
+                            {
+                                tx.Order.OrderStatusId = cancelledStatus.Id;
+                            }
+                            else
+                            {
+                                tx.Order.IsDeleted = true;
+                                tx.Order.DeletedAt = DateTime.UtcNow;
+                                tx.Order.DeletedBy = 0;
+                            }
 
                             foreach (var item in tx.Order.OrderItems)
                             {
@@ -63,13 +76,40 @@ public class PaymentCleanupService : BackgroundService
 
                     await dbContext.SaveChangesAsync(stoppingToken);
                 }
+
+                _errorCount = 0;
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while cleaning up abandoned payments.");
-            }
+                _errorCount++;
+                _logger.LogError(ex, "Error occurred while cleaning up abandoned payments. Error count: {Count}", _errorCount);
 
-            await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                if (_errorCount >= MaxErrorThreshold)
+                {
+                    _logger.LogCritical("PaymentCleanupService has failed {Count} times consecutively. Immediate attention required.", _errorCount);
+
+                    try
+                    {
+                        using var alertScope = _serviceProvider.CreateScope();
+                        var notificationService = alertScope.ServiceProvider.GetRequiredService<INotificationService>();
+                        var userRepo = alertScope.ServiceProvider.GetRequiredService<IUserRepository>();
+
+                        var admins = (await userRepo.GetUsersAsync(false, 1, 10)).Users.Where(u => u.IsAdmin).ToList();
+                        foreach (var admin in admins)
+                        {
+                            await notificationService.CreateNotificationAsync(admin.Id, "System Alert", "Payment Cleanup Service is failing repeatedly.", "SystemError");
+                        }
+                    }
+                    catch (Exception alertEx)
+                    {
+                        _logger.LogError(alertEx, "Failed to send error threshold notification.");
+                    }
+                }
+
+                var delaySeconds = Math.Min(300, Math.Pow(2, _errorCount));
+                await Task.Delay(TimeSpan.FromSeconds(delaySeconds), stoppingToken);
+            }
         }
     }
 }
