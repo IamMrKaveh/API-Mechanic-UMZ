@@ -11,7 +11,7 @@ Log.Logger = new LoggerConfiguration()
     .Enrich.WithMachineName()
     .Enrich.WithThreadId()
     .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
-    .WriteTo.File(path: "logs/log-.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30, fileSizeLimitBytes: 10_000_000, shared: true, flushToDiskInterval: TimeSpan.FromSeconds(1), outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss. fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+    .WriteTo.File(path: "logs/log-.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30, fileSizeLimitBytes: 10_000_000, shared: true, flushToDiskInterval: TimeSpan.FromSeconds(1), outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
     .CreateLogger();
 #endregion
 
@@ -78,15 +78,36 @@ try
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Redis connection failed.  Falling back to in-memory and filesystem DataProtection.");
+            Log.Warning(ex, "Redis connection failed. Falling back to in-memory and filesystem DataProtection.");
             redis = null;
             RegisterInMemoryServices(builder.Services);
         }
     }
     else
     {
-        Log.Warning("Redis connection string not found.  Using in-memory services.");
+        Log.Warning("Redis connection string not found. Using in-memory services.");
         RegisterInMemoryServices(builder.Services);
+    }
+    #endregion
+
+    #region DataProtection Configuration
+    var dataProtection = builder.Services.AddDataProtection()
+        .SetApplicationName("Ledka");
+
+    if (redis != null)
+    {
+        dataProtection.PersistKeysToSingletonRedisRepository(redis, "Ledka-DataProtection-Keys");
+        Log.Information("DataProtection configured with Redis");
+    }
+    else
+    {
+        var keysPath = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "DataProtection-Keys"));
+        if (!keysPath.Exists)
+        {
+            keysPath.Create();
+        }
+        dataProtection.PersistKeysToFileSystem(keysPath);
+        Log.Information("DataProtection configured with FileSystem at {Path}", keysPath.FullName);
     }
     #endregion
 
@@ -162,14 +183,6 @@ try
     builder.Services.AddHttpContextAccessor();
     #endregion
 
-    #region Authorization Configuration
-    builder.Services.AddAuthorization(options =>
-    {
-        options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
-        options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-    });
-    #endregion
-
     #region JWT Authentication Configuration
     var jwtKey = builder.Configuration["Jwt:Key"];
     if (string.IsNullOrEmpty(jwtKey))
@@ -231,6 +244,14 @@ try
     });
 
     Log.Information("Authentication configured");
+    #endregion
+
+    #region Authorization Configuration
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+        options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    });
     #endregion
 
     #region HTTP Clients Configuration
@@ -450,7 +471,7 @@ try
 
             var errorResponse = new
             {
-                error = "An unexpected error occurred.  Please try again later.",
+                error = "An unexpected error occurred. Please try again later.",
                 traceId = System.Diagnostics.Activity.Current?.Id ?? context.TraceIdentifier
             };
 
@@ -493,7 +514,7 @@ try
     provider.Mappings[".jpg"] = "image/jpeg";
     provider.Mappings[".jpeg"] = "image/jpeg";
     provider.Mappings[".gif"] = "image/gif";
-    provider.Mappings[". webp"] = "image/webp";
+    provider.Mappings[".webp"] = "image/webp";
     provider.Mappings[".ico"] = "image/x-icon";
     provider.Mappings[".webmanifest"] = "application/manifest+json";
 
@@ -561,9 +582,6 @@ static void RegisterInMemoryServices(IServiceCollection services)
 {
     services.AddMemoryCache();
     services.AddSingleton<ICacheService, InMemoryCacheService>();
-    services.AddDataProtection()
-        .SetApplicationName("Ledka")
-        .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "DataProtection-Keys")));
 }
 
 static string MaskConnectionString(string connectionString)
