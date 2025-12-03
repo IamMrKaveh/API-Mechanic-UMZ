@@ -37,10 +37,11 @@ public class AnalyticsService : IAnalyticsService
             .CountAsync();
 
         var totalProducts = await _context.Products.CountAsync(p => !p.IsDeleted && p.IsActive);
+
         var lowStockCount = await _context.ProductVariants
-            .CountAsync(v => !v.IsUnlimited && !v.IsDeleted && v.Stock > 0 && v.Stock <= 5);
+            .CountAsync(v => !v.IsUnlimited && !v.IsDeleted && v.StockQuantity > 0 && v.StockQuantity <= 5);
         var outOfStockCount = await _context.ProductVariants
-            .CountAsync(v => !v.IsUnlimited && !v.IsDeleted && v.Stock == 0);
+            .CountAsync(v => !v.IsUnlimited && !v.IsDeleted && v.StockQuantity == 0);
 
         var result = new
         {

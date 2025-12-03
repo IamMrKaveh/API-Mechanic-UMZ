@@ -2,11 +2,10 @@
 
 [ApiController]
 [Route("api/admin/AuditLogs")]
-[Authorize(Policy = "AdminOnly")]
+[Authorize(Roles = "Admin")]
 public class AdminAuditLogsController : ControllerBase
 {
     private readonly IAuditService _auditService;
-
     public AdminAuditLogsController(IAuditService auditService)
     {
         _auditService = auditService;
@@ -22,7 +21,6 @@ public class AdminAuditLogsController : ControllerBase
         [FromQuery] int pageSize = 20)
     {
         var (logs, totalItems) = await _auditService.GetAuditLogsAsync(userId, eventType, fromDate, toDate, page, pageSize);
-
         return Ok(new
         {
             Items = logs,

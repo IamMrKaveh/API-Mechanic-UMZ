@@ -345,6 +345,7 @@ public class LedkaContext : DbContext
             entity.HasOne(d => d.Variant).WithMany(p => p.InventoryTransactions).HasForeignKey(d => d.VariantId);
             entity.HasOne(d => d.OrderItem).WithMany(p => p.InventoryTransactions).HasForeignKey(d => d.OrderItemId).IsRequired(false);
             entity.HasOne(d => d.User).WithMany(p => p.InventoryTransactions).HasForeignKey(d => d.UserId).IsRequired(false);
+            entity.Ignore(e => e.StockAfter);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
@@ -414,6 +415,7 @@ public class LedkaContext : DbContext
             entity.Property(e => e.SessionType).HasMaxLength(50);
             entity.HasIndex(e => e.TokenSelector).IsUnique();
             entity.HasOne(d => d.User).WithMany(p => p.UserSessions).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.Ignore(e => e.IsActive);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
         });
     }

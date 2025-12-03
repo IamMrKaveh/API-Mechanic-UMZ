@@ -1,1 +1,0 @@
-import{a as i}from"./chunk-Y6DY6YBM.js";import{z as e}from"./chunk-2CT2PKNK.js";import{X as t}from"./chunk-6VZDFBBI.js";var s=(u,n)=>{let r=t(i),o=t(e);return r.isAuthenticated()&&r.currentUserValue?.isAdmin?!0:(o.navigate(["/"]),!1)};export{s as a};

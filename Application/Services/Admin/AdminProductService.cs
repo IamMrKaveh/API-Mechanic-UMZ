@@ -62,9 +62,14 @@ public class AdminProductService : IAdminProductService
             return ServiceResult<AdminProductViewDto>.Fail("Product SKU already exists.");
         }
 
+        // Fixed: Added JsonNumberHandling.AllowReadingFromString to handle number/string mismatches in attributeValueIds
         var variants = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(
                productDto.VariantsJson,
-               new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+               new JsonSerializerOptions
+               {
+                   PropertyNameCaseInsensitive = true,
+                   NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+               }) ?? [];
 
         if (!variants.Any())
         {
@@ -229,7 +234,14 @@ public class AdminProductService : IAdminProductService
                 _mapper.Map(productDto, product);
                 product.Description = _htmlSanitizer.Sanitize(productDto.Description ?? string.Empty);
 
-                var variantDtos = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(productDto.VariantsJson) ?? [];
+                // Fixed: Added JsonNumberHandling.AllowReadingFromString to handle number/string mismatches
+                var variantDtos = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(
+                    productDto.VariantsJson,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+                    }) ?? [];
 
                 if (variantDtos.Any())
                 {

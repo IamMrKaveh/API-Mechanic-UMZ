@@ -7,6 +7,7 @@ public class MediaService : IMediaService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<MediaService> _logger;
     private readonly IMapper _mapper;
+    private readonly IConfiguration _configuration;
 
     private static readonly Dictionary<string, List<byte[]>> _fileSignatures = new()
     {
@@ -23,13 +24,15 @@ public class MediaService : IMediaService
         IStorageService storageService,
         IUnitOfWork unitOfWork,
         ILogger<MediaService> logger,
-        IMapper mapper)
+        IMapper mapper,
+        IConfiguration configuration)
     {
         _mediaRepository = mediaRepository;
         _storageService = storageService;
         _unitOfWork = unitOfWork;
         _logger = logger;
         _mapper = mapper;
+        _configuration = configuration;
     }
 
     public async Task<string?> GetPrimaryImageUrlAsync(string entityType, int entityId)
@@ -37,13 +40,13 @@ public class MediaService : IMediaService
         var primaryMedia = await _mediaRepository.GetPrimaryMediaByEntityAsync(entityType, entityId);
         if (primaryMedia != null)
         {
-            return _storageService.GetUrl(primaryMedia.FilePath);
+            return GetUrl(primaryMedia.FilePath);
         }
 
         var anyMedia = (await _mediaRepository.GetByEntityAsync(entityType, entityId)).FirstOrDefault();
         if (anyMedia != null)
         {
-            return _storageService.GetUrl(anyMedia.FilePath);
+            return GetUrl(anyMedia.FilePath);
         }
 
         return string.Empty;
@@ -58,7 +61,7 @@ public class MediaService : IMediaService
             var media = mediaItems.FirstOrDefault(m => m.Id == dto.Id);
             if (media != null)
             {
-                dto.Url = _storageService.GetUrl(media.FilePath);
+                dto.Url = GetUrl(media.FilePath);
             }
         }
         return dtos.OrderBy(m => m.SortOrder);
@@ -140,7 +143,17 @@ public class MediaService : IMediaService
         if (string.IsNullOrEmpty(filePath))
             return string.Empty;
 
-        return _storageService.GetUrl(filePath);
+        var url = _storageService.GetUrl(filePath);
+        if (!url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            var baseUrl = _configuration["LiaraStorage:BaseUrl"];
+            if (!string.IsNullOrEmpty(baseUrl))
+            {
+                return $"{baseUrl.TrimEnd('/')}/{url.TrimStart('/')}";
+            }
+        }
+
+        return url;
     }
 
     private void ValidateFileType(Stream stream, string fileName)
