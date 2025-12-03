@@ -249,10 +249,10 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Attributes, opt => opt.Ignore());
 
         CreateMap<Order, OrderDto>()
-            .ForMember(dest => dest.OrderStatus, opt => opt.MapFrom(src => src.OrderStatus != null ? src.OrderStatus.Name : null))
-            .ForMember(dest => dest.ShippingMethod, opt => opt.MapFrom(src => src.ShippingMethod != null ? src.ShippingMethod.Name : null))
             .ForMember(dest => dest.ReceiverName, opt => opt.MapFrom(src => src.ReceiverName))
             .ForMember(dest => dest.UserAddress, opt => opt.Ignore());
+
+        CreateMap<OrderStatus, OrderStatusDto>();
 
         CreateMap<OrderItem, OrderItemDto>()
             .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Variant != null && src.Variant.Product != null ? src.Variant.Product.Name : null));

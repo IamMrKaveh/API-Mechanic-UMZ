@@ -2,11 +2,10 @@
 
 [ApiController]
 [Route("api/admin/analytics")]
-[Authorize(Policy = "AdminOnly")]
+[Authorize(Roles = "Admin")]
 public class AdminAnalyticsController : ControllerBase
 {
     private readonly IAnalyticsService _analyticsService;
-
     public AdminAnalyticsController(IAnalyticsService analyticsService)
     {
         _analyticsService = analyticsService;

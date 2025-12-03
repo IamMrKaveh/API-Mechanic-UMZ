@@ -1,1 +1,0 @@
-import"./chunk-4CLCTAJ7.js";var a=[{path:"callback",loadComponent:()=>import("./chunk-G7JH2USW.js").then(t=>t.PaymentCallback)},{path:"success",loadComponent:()=>import("./chunk-OTVMDCZ4.js").then(t=>t.PaymentSuccess)},{path:"failure",loadComponent:()=>import("./chunk-SLIFG6IF.js").then(t=>t.PaymentFailure)}];export{a as PAYMENT_ROUTES};

@@ -124,6 +124,15 @@ public class UpdateOrderStatusByIdDto
     public required string RowVersion { get; set; }
 }
 
+public class OrderStatusDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Icon { get; set; }
+    public bool IsDeleted { get; set; }
+    public bool IsActive { get; set; }
+}
+
 public class OrderDto
 {
     public int Id { get; set; }
@@ -138,9 +147,9 @@ public class OrderDto
     public DateTime CreatedAt { get; set; }
     public DateTime? PaymentDate { get; set; }
     public int OrderStatusId { get; set; }
-    public string? OrderStatus { get; set; }
+    public OrderStatusDto? OrderStatus { get; set; }
     public int ShippingMethodId { get; set; }
-    public string? ShippingMethod { get; set; }
+    public ShippingMethodDto? ShippingMethod { get; set; }
     public bool IsPaid { get; set; }
     public string? IdempotencyKey { get; set; }
     public ICollection<OrderItemDto> OrderItems { get; set; } = [];

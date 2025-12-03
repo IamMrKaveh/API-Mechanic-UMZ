@@ -11,6 +11,7 @@ public class OrdersController : ControllerBase
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<OrdersController> _logger;
     private readonly IAuditService _auditService;
+    private readonly FrontendUrlsDto _frontendUrls;
 
     private static readonly Regex AuthorityRegex = new(@"^[A-Za-z0-9\-_]{1,100}$", RegexOptions.Compiled);
     private static readonly Regex StatusRegex = new(@"^(OK|NOK|Pending|Cancelled|Failed)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -20,13 +21,15 @@ public class OrdersController : ControllerBase
         IDiscountService discountService,
         ICurrentUserService currentUserService,
         ILogger<OrdersController> logger,
-        IAuditService auditService)
+        IAuditService auditService,
+        IOptions<FrontendUrlsDto> frontendUrls)
     {
         _orderService = orderService;
         _discountService = discountService;
         _currentUserService = currentUserService;
         _logger = logger;
         _auditService = auditService;
+        _frontendUrls = frontendUrls.Value;
     }
 
     [HttpGet]
@@ -88,6 +91,18 @@ public class OrdersController : ControllerBase
             _logger.LogWarning("No Idempotency-Key provided.   Generated: {Key}", idempotencyKey);
         }
 
+        var baseUrl = _frontendUrls.BaseUrl.TrimEnd('/');
+        var callbackUrl = $"{baseUrl}/payment/callback";
+
+        if (!string.IsNullOrEmpty(orderDto.CallbackUrl) &&
+            Uri.TryCreate(orderDto.CallbackUrl, UriKind.Absolute, out _) &&
+            orderDto.CallbackUrl.StartsWith(baseUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            callbackUrl = orderDto.CallbackUrl;
+        }
+
+        orderDto.CallbackUrl = callbackUrl;
+
         try
         {
             var result = await _orderService.CheckoutFromCartAsync(orderDto, userId.Value, idempotencyKey);
@@ -111,7 +126,7 @@ public class OrdersController : ControllerBase
         {
             _logger.LogWarning(ex, "Checkout failed for user {UserId} due to concurrency.", userId);
             await _auditService.LogOrderEventAsync(0, "CheckoutConcurrency", userId.Value, ex.Message);
-            return Conflict(new { message = "موجودی یکی از محصولات تغییر کرده است.   لطفا سبد خرید را بررسی کنید." });
+            return Conflict(new { message = "Cart was updated by another user. Please refresh." });
         }
         catch (ArgumentException ex)
         {
