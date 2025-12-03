@@ -20,11 +20,13 @@ public class CategoryGroupService : ICategoryGroupService
     {
         var (groups, total) = await _repository.GetPagedAsync(categoryId, search, page, pageSize);
 
-        var dtos = _mapper.Map<List<CategoryGroupViewDto>>(groups);
-
-        foreach (var dto in dtos)
+        var dtos = new List<CategoryGroupViewDto>();
+        foreach (var group in groups)
         {
-            dto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("CategoryGroup", dto.Id);
+            var dto = _mapper.Map<CategoryGroupViewDto>(group);
+            dto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("CategoryGroup", group.Id);
+            dto.ProductCount = group.Products.Count(p => !p.IsDeleted && p.IsActive);
+            dtos.Add(dto);
         }
 
         var result = new PagedResultDto<CategoryGroupViewDto>
@@ -48,6 +50,7 @@ public class CategoryGroupService : ICategoryGroupService
 
         var dto = _mapper.Map<CategoryGroupViewDto>(group);
         dto.IconUrl = await _mediaService.GetPrimaryImageUrlAsync("CategoryGroup", id);
+        dto.ProductCount = group.Products.Count(p => !p.IsDeleted && p.IsActive);
 
         return ServiceResult<CategoryGroupViewDto?>.Ok(dto);
     }

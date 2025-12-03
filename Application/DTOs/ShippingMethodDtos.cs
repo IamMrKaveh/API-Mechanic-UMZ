@@ -1,21 +1,22 @@
 ﻿namespace Application.DTOs;
+
 public class ShippingMethodDto
 {
     public int Id { get; set; }
-    public string Name { get; set; }
+    public required string Name { get; set; }
     public decimal Cost { get; set; }
     public string? Description { get; set; }
     public string? EstimatedDeliveryTime { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
-    public byte[]? RowVersion { get; set; }
+    public string? RowVersion { get; set; }
 }
 
 public class ShippingMethodCreateDto
 {
     [Required]
     [StringLength(100)]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     [Range(0, (double)decimal.MaxValue)]
     public decimal Cost { get; set; }
@@ -33,7 +34,7 @@ public class ShippingMethodUpdateDto
 {
     [Required]
     [StringLength(100)]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     [Range(0, (double)decimal.MaxValue)]
     public decimal Cost { get; set; }

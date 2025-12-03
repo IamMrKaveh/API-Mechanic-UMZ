@@ -26,6 +26,7 @@ public class CategoryRepository : ICategoryRepository
             .Include(c => c.CategoryGroups)
                 .ThenInclude(cg => cg.Products)
                     .ThenInclude(p => p.Variants)
+                        .ThenInclude(v => v.InventoryTransactions)
             .AsNoTracking()
             .ToListAsync();
 
@@ -36,22 +37,30 @@ public class CategoryRepository : ICategoryRepository
     {
         return await _context.Set<Domain.Category.Category>()
             .AsNoTracking()
+            .Where(c => c.IsActive && !c.IsDeleted)
             .OrderBy(c => c.Name)
-            .Include(c => c.CategoryGroups)
+            .Include(c => c.CategoryGroups.Where(cg => cg.IsActive && !cg.IsDeleted))
             .ToListAsync();
     }
 
-    public Task<Domain.Category.Category?> GetCategoryWithGroupsByIdAsync(int id)
+    public async Task<Domain.Category.Category?> GetCategoryWithGroupsByIdAsync(int id)
     {
-        return _context.Set<Domain.Category.Category>()
+        return await _context.Set<Domain.Category.Category>()
             .AsNoTracking()
             .Include(c => c.CategoryGroups)
+                .ThenInclude(cg => cg.Products)
+                    .ThenInclude(p => p.Variants)
+                        .ThenInclude(v => v.InventoryTransactions)
             .FirstOrDefaultAsync(c => c.Id == id);
     }
 
     public async Task<(IEnumerable<Domain.Product.Product> Products, int TotalCount)> GetProductsByCategoryIdAsync(int categoryId, int page, int pageSize)
     {
-        var query = _context.Set<Domain.Product.Product>().Where(p => p.CategoryGroup.CategoryId == categoryId);
+        var query = _context.Set<Domain.Product.Product>()
+            .Where(p => p.CategoryGroup.CategoryId == categoryId && p.IsActive && !p.IsDeleted)
+            .Include(p => p.Variants)
+                .ThenInclude(v => v.InventoryTransactions);
+
         var totalCount = await query.CountAsync();
         var products = await query
             .AsNoTracking()
@@ -63,14 +72,14 @@ public class CategoryRepository : ICategoryRepository
         return (products, totalCount);
     }
 
-    public Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
+    public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
     {
         var query = _context.Set<Domain.Category.Category>().Where(c => c.Name != null && c.Name.ToLower() == name.ToLower());
         if (excludeId.HasValue)
         {
             query = query.Where(c => c.Id != excludeId.Value);
         }
-        return query.AnyAsync();
+        return await query.AnyAsync();
     }
 
     public async Task AddAsync(Domain.Category.Category category)
@@ -80,14 +89,15 @@ public class CategoryRepository : ICategoryRepository
 
     public void Update(Domain.Category.Category category)
     {
+        category.UpdatedAt = DateTime.UtcNow;
         _context.Set<Domain.Category.Category>().Update(category);
     }
 
-    public Task<Domain.Category.Category?> GetCategoryWithProductsAsync(int id)
+    public async Task<Domain.Category.Category?> GetCategoryWithProductsAsync(int id)
     {
-        return _context.Set<Domain.Category.Category>()
+        return await _context.Set<Domain.Category.Category>()
             .Include(c => c.CategoryGroups)
-            .ThenInclude(cg => cg.Products)
+                .ThenInclude(cg => cg.Products)
             .FirstOrDefaultAsync(c => c.Id == id);
     }
 

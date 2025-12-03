@@ -1,4 +1,6 @@
-﻿namespace MainApi.Controllers.Admin;
+﻿using Application.Common.Interfaces.Admin;
+
+namespace MainApi.Controllers.Admin;
 
 [Route("api/admin/products")]
 [Authorize(Roles = "Admin")]
@@ -42,7 +44,7 @@ public class AdminProductsController : BaseApiController
     public async Task<IActionResult> AddStock([FromBody] ProductStockDto stockDto)
     {
         if (stockDto.VariantId == null || CurrentUser.UserId == null) return BadRequest("VariantId and user authentication are required.");
-        var result = await _adminProductService.AddStockAsync(stockDto.VariantId.Value, stockDto.Quantity, CurrentUser.UserId.Value, stockDto.Notes);
+        var result = await _adminProductService.AddStockAsync(stockDto.VariantId.Value, stockDto.Quantity, CurrentUser.UserId.Value, stockDto.Notes ?? string.Empty);
         return ToActionResult(result);
     }
 
@@ -50,7 +52,7 @@ public class AdminProductsController : BaseApiController
     public async Task<IActionResult> RemoveStock([FromBody] ProductStockDto stockDto)
     {
         if (stockDto.VariantId == null || CurrentUser.UserId == null) return BadRequest("VariantId and user authentication are required.");
-        var result = await _adminProductService.RemoveStockAsync(stockDto.VariantId.Value, stockDto.Quantity, CurrentUser.UserId.Value, stockDto.Notes);
+        var result = await _adminProductService.RemoveStockAsync(stockDto.VariantId.Value, stockDto.Quantity, CurrentUser.UserId.Value, stockDto.Notes ?? string.Empty);
         return ToActionResult(result);
     }
 

@@ -2,5 +2,5 @@
 
 public class FrontendUrlsDto
 {
-    public string BaseUrl { get; init; }
+    public required string BaseUrl { get; init; }
 }

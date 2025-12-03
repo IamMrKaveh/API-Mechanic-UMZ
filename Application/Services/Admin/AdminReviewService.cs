@@ -1,4 +1,4 @@
-﻿namespace Application.Services;
+﻿namespace Application.Services.Admin;
 
 public class AdminReviewService : IAdminReviewService
 {

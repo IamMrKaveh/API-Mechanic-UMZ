@@ -152,7 +152,7 @@ public class ProductRepository : IProductRepository
 
         foreach (var dto in variantDtos)
         {
-            ProductVariant variant;
+            ProductVariant? variant;
             if (dto.Id > 0)
             {
                 variant = product.Variants.FirstOrDefault(v => v.Id == dto.Id);

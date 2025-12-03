@@ -59,12 +59,12 @@ public class UsersController : ControllerBase
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var result = await _userService.LoginAsync(request, clientIp);
 
-        if (!result.Success || result.Data.Otp == null)
+        if (!result.Success)
         {
             if (result.Error != null && result.Error.StartsWith("Too many")) return StatusCode(429, result.Error);
             return Unauthorized(result.Error);
         }
-        return Ok(new { result.Data.Message });
+        return Ok(new { Message = result.Data });
     }
 
     [HttpPost("verify-otp")]

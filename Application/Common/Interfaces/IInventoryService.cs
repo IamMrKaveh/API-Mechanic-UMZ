@@ -14,4 +14,6 @@ public interface IInventoryService
         bool saveChanges = true);
 
     Task RollbackReservationsAsync(string referenceNumber);
+
+    Task<bool> ReconcileStockAsync(int variantId);
 }

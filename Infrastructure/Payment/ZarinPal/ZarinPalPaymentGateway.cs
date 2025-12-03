@@ -8,88 +8,73 @@ public class ZarinPalPaymentGateway : IPaymentGateway
 
     public string GatewayName => "ZarinPal";
 
-    public ZarinPalPaymentGateway(
-        HttpClient httpClient,
-        IOptions<ZarinpalSettingsDto> settings,
-        ILogger<ZarinPalPaymentGateway> logger)
+    public ZarinPalPaymentGateway(HttpClient httpClient, IOptions<ZarinpalSettingsDto> settings, ILogger<ZarinPalPaymentGateway> logger)
     {
         _httpClient = httpClient;
         _settings = settings.Value;
         _logger = logger;
     }
 
-    public async Task<PaymentRequestResultDto> RequestPaymentAsync(PaymentInitiationDto initiationDto)
+    public async Task<PaymentRequestResultDto> RequestPaymentAsync(decimal amount, string description, string callbackUrl, string? mobile, string? email)
     {
         var requestUrl = _settings.IsSandbox
             ? "https://sandbox.zarinpal.com/pg/v4/payment/request.json"
-            : "https://payment.zarinpal.com/pg/v4/payment/request.json";
+            : "https://api.zarinpal.com/pg/v4/payment/request.json";
 
-        var requestPayload = new ZarinpalRequestDto
+        var payload = new ZarinpalRequestDto
         {
             MerchantID = _settings.MerchantId,
-            Amount = initiationDto.Amount,
-            Description = initiationDto.Description,
-            CallbackURL = initiationDto.CallbackUrl,
-            Metadata = new ZarinpalMetadataDto
-            {
-                Mobile = initiationDto.Mobile,
-                Email = initiationDto.Email
-            }
+            Amount = amount,
+            Description = description,
+            CallbackURL = callbackUrl,
+            Metadata = new ZarinpalMetadataDto { Mobile = mobile, Email = email }
         };
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync(requestUrl, requestPayload);
+            var response = await _httpClient.PostAsJsonAsync(requestUrl, payload);
+            var content = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("ZarinPal Request Failed with Status {StatusCode}. Content: {Content}", response.StatusCode, errorContent);
-                return new PaymentRequestResultDto { IsSuccess = false, Message = "خطا در ارتباط با درگاه پرداخت" };
+                _logger.LogError("ZarinPal Request Failed. Status: {Status}, Content: {Content}", response.StatusCode, content);
+                return new PaymentRequestResultDto { IsSuccess = false, Message = "Gateway connection failed.", RawResponse = content };
             }
 
-            var responseContent = await response.Content.ReadFromJsonAsync<ZarinpalRequestResponseDto>();
+            var result = JsonSerializer.Deserialize<ZarinpalRequestResponseDto>(content);
 
-            if (responseContent?.Data != null && (responseContent.Data.Code == 100 || responseContent.Data.Code == 101))
+            if (result?.Data != null && result.Data.Code == 100)
             {
                 var paymentUrl = _settings.IsSandbox
-                    ? $"https://sandbox.zarinpal.com/pg/StartPay/{responseContent.Data.Authority}"
-                    : $"https://payment.zarinpal.com/pg/StartPay/{responseContent.Data.Authority}";
+                    ? $"https://sandbox.zarinpal.com/pg/StartPay/{result.Data.Authority}"
+                    : $"https://www.zarinpal.com/pg/StartPay/{result.Data.Authority}";
 
                 return new PaymentRequestResultDto
                 {
                     IsSuccess = true,
-                    Authority = responseContent.Data.Authority,
-                    PaymentUrl = paymentUrl
+                    Authority = result.Data.Authority,
+                    PaymentUrl = paymentUrl,
+                    RawResponse = content
                 };
             }
 
-            _logger.LogError("ZarinPal Logic Error. Errors: {Errors}", JsonSerializer.Serialize(responseContent?.Errors));
-            return new PaymentRequestResultDto
-            {
-                IsSuccess = false,
-                Message = responseContent?.Data?.Message ?? "خطای درگاه پرداخت"
-            };
-        }
-        catch (TaskCanceledException ex)
-        {
-            _logger.LogError(ex, "ZarinPal Request Timeout for Order {OrderId}", initiationDto.OrderId);
-            return new PaymentRequestResultDto { IsSuccess = false, Message = "زمان پاسخگویی درگاه به پایان رسید" };
+            _logger.LogWarning("ZarinPal returned error code: {Code}", result?.Data?.Code);
+            return new PaymentRequestResultDto { IsSuccess = false, Message = "Payment request denied by gateway.", RawResponse = content };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ZarinPal Request Exception for Order {OrderId}", initiationDto.OrderId);
-            return new PaymentRequestResultDto { IsSuccess = false, Message = "خطای سیستمی در درخواست پرداخت" };
+            _logger.LogError(ex, "Exception in ZarinPal RequestPayment");
+            return new PaymentRequestResultDto { IsSuccess = false, Message = ex.Message };
         }
     }
 
-    public async Task<GatewayVerificationResultDto> VerifyPaymentAsync(decimal amount, string authority)
+    public async Task<GatewayVerificationResultDto> VerifyPaymentAsync(string authority, int amount)
     {
         var verifyUrl = _settings.IsSandbox
             ? "https://sandbox.zarinpal.com/pg/v4/payment/verify.json"
-            : "https://payment.zarinpal.com/pg/v4/payment/verify.json";
+            : "https://api.zarinpal.com/pg/v4/payment/verify.json";
 
-        var verifyPayload = new ZarinpalVerificationRequestDto
+        var payload = new ZarinpalVerificationRequestDto
         {
             MerchantID = _settings.MerchantId,
             Amount = amount,
@@ -98,62 +83,42 @@ public class ZarinPalPaymentGateway : IPaymentGateway
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync(verifyUrl, verifyPayload);
+            var response = await _httpClient.PostAsJsonAsync(verifyUrl, payload);
+            var content = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("ZarinPal Verify Failed with Status {StatusCode}. Authority: {Authority}. Content: {Content}",
-                    response.StatusCode, authority, errorContent);
-                return new GatewayVerificationResultDto { IsVerified = false, Message = "خطا در ارتباط با درگاه جهت تایید" };
+                _logger.LogError("Zarinpal verification failed with status {StatusCode}. Response: {Response}", response.StatusCode, content);
+                return new GatewayVerificationResultDto { IsVerified = false, Message = "Gateway connection error", RawResponse = content };
             }
 
-            var responseContent = await response.Content.ReadFromJsonAsync<ZarinpalVerificationResponseDto>();
+            var result = JsonSerializer.Deserialize<ZarinpalVerificationResponseDto>(content);
 
-            if (responseContent?.Data != null && (responseContent.Data.Code == 100 || responseContent.Data.Code == 101))
+            if (result?.Data != null && (result.Data.Code == 100 || result.Data.Code == 101))
             {
                 return new GatewayVerificationResultDto
                 {
                     IsVerified = true,
-                    RefId = responseContent.Data.RefID,
-                    CardPan = responseContent.Data.CardPan,
-                    CardHash = responseContent.Data.CardHash,
-                    Fee = responseContent.Data.Fee,
-                    Message = responseContent.Data.Code == 101 ? "Verified (Already)" : "Verified"
+                    RefId = result.Data.RefID,
+                    CardPan = result.Data.CardPan,
+                    CardHash = result.Data.CardHash,
+                    Fee = result.Data.Fee,
+                    Message = result.Data.Code == 101 ? "Already verified" : "Verified",
+                    RawResponse = content
                 };
             }
-
-            _logger.LogWarning("ZarinPal Verification Logic Fail. Authority: {Authority}, Code: {Code}", authority, responseContent?.Data?.Code);
 
             return new GatewayVerificationResultDto
             {
                 IsVerified = false,
-                Message = GetZarinPalErrorMessage(responseContent?.Data?.Code ?? -1)
+                Message = $"Verification failed. Code: {result?.Data?.Code}",
+                RawResponse = content
             };
-        }
-        catch (TaskCanceledException ex)
-        {
-            _logger.LogError(ex, "ZarinPal Verify Timeout for Authority {Authority}", authority);
-            return new GatewayVerificationResultDto { IsVerified = false, Message = "زمان پاسخگویی درگاه به پایان رسید" };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ZarinPal Verify Exception for Authority {Authority}", authority);
-            return new GatewayVerificationResultDto { IsVerified = false, Message = "خطای سیستمی در تایید پرداخت" };
+            _logger.LogError(ex, "Exception in ZarinPal VerifyPayment");
+            return new GatewayVerificationResultDto { IsVerified = false, Message = ex.Message };
         }
-    }
-
-    private string GetZarinPalErrorMessage(int code)
-    {
-        return code switch
-        {
-            -50 => "مبلغ پرداخت شده با مقدار مبلغ در درگاه متفاوت است.",
-            -51 => "پرداخت ناموفق.",
-            -52 => "خطای غیر منتظره با پشتیبانی تماس بگیرید.",
-            -53 => "اتوریتی برای این مرچنت کد نیست.",
-            -54 => "اتوریتی نامعتبر است.",
-            101 => "تراکنش قبلا تایید شده است.",
-            _ => "خطای ناشناخته در پرداخت."
-        };
     }
 }

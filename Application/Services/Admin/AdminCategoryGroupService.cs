@@ -1,4 +1,4 @@
-﻿namespace Application.Services;
+﻿namespace Application.Services.Admin;
 
 public class AdminCategoryGroupService : IAdminCategoryGroupService
 {
@@ -63,7 +63,7 @@ public class AdminCategoryGroupService : IAdminCategoryGroupService
             return ServiceResult<CategoryGroupViewDto>.Fail("A group with this name already exists in this category.");
         }
 
-        var group = _mapper.Map<Domain.Category.CategoryGroup>(dto);
+        var group = _mapper.Map<CategoryGroup>(dto);
         group.Name = sanitizedName;
 
         await _repository.AddAsync(group);

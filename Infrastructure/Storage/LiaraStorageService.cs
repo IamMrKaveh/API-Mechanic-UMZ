@@ -109,6 +109,28 @@ public class LiaraStorageService : IStorageService
         return $"{_baseUrl.TrimEnd('/')}/{trimmedPath}";
     }
 
+    public async Task<IEnumerable<string>> ListFilesAsync(string prefix, int maxKeys = 1000, string? continuationToken = null)
+    {
+        try
+        {
+            var request = new ListObjectsV2Request
+            {
+                BucketName = _bucketName,
+                Prefix = prefix,
+                MaxKeys = maxKeys,
+                ContinuationToken = continuationToken
+            };
+
+            var response = await _s3Client.ListObjectsV2Async(request);
+            return response.S3Objects.Select(o => o.Key);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error listing files from storage");
+            return Enumerable.Empty<string>();
+        }
+    }
+
     private string GetContentType(string extension)
     {
         return extension switch
@@ -118,6 +140,7 @@ public class LiaraStorageService : IStorageService
             ".gif" => "image/gif",
             ".pdf" => "application/pdf",
             ".txt" => "text/plain",
+            ".webp" => "image/webp",
             _ => "application/octet-stream"
         };
     }

@@ -1,4 +1,6 @@
-﻿namespace MainApi.Controllers;
+﻿using System.Text.RegularExpressions;
+
+namespace MainApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -9,6 +11,9 @@ public class OrdersController : ControllerBase
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<OrdersController> _logger;
     private readonly IAuditService _auditService;
+
+    private static readonly Regex AuthorityRegex = new(@"^[A-Za-z0-9\-_]{1,100}$", RegexOptions.Compiled);
+    private static readonly Regex StatusRegex = new(@"^(OK|NOK|Pending|Cancelled|Failed)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public OrdersController(
         IOrderService orderService,
@@ -80,7 +85,7 @@ public class OrdersController : ControllerBase
         if (string.IsNullOrEmpty(idempotencyKey))
         {
             idempotencyKey = Guid.NewGuid().ToString();
-            _logger.LogWarning("No Idempotency-Key provided.  Generated: {Key}", idempotencyKey);
+            _logger.LogWarning("No Idempotency-Key provided.   Generated: {Key}", idempotencyKey);
         }
 
         try
@@ -106,7 +111,7 @@ public class OrdersController : ControllerBase
         {
             _logger.LogWarning(ex, "Checkout failed for user {UserId} due to concurrency.", userId);
             await _auditService.LogOrderEventAsync(0, "CheckoutConcurrency", userId.Value, ex.Message);
-            return Conflict(new { message = "موجودی یکی از محصولات تغییر کرده است.  لطفا سبد خرید را بررسی کنید." });
+            return Conflict(new { message = "موجودی یکی از محصولات تغییر کرده است.   لطفا سبد خرید را بررسی کنید." });
         }
         catch (ArgumentException ex)
         {
@@ -144,19 +149,34 @@ public class OrdersController : ControllerBase
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> VerifyPayment([FromQuery] string authority, [FromQuery] string status, [FromQuery] int? orderId)
     {
-        _logger.LogInformation("[VerifyPayment] Started - Authority: {Authority}, Status: {Status}, OrderId: {OrderId}",
-            authority, status, orderId);
+        var sanitizedAuthority = SanitizeAuthority(authority);
+        var sanitizedStatus = SanitizeStatus(status);
 
-        if (string.IsNullOrWhiteSpace(authority) || !orderId.HasValue || orderId <= 0)
+        _logger.LogInformation("[VerifyPayment] Started - Authority: {Authority}, Status: {Status}, OrderId: {OrderId}",
+            sanitizedAuthority, sanitizedStatus, orderId);
+
+        if (string.IsNullOrWhiteSpace(sanitizedAuthority) || !orderId.HasValue || orderId <= 0)
         {
             _logger.LogWarning("[VerifyPayment] Invalid parameters - Authority: {Authority}, OrderId: {OrderId}",
-                authority, orderId);
+                sanitizedAuthority, orderId);
             return Ok(new { isVerified = false, orderId = orderId, message = "پارامترهای پرداخت نامعتبر است." });
+        }
+
+        if (!IsValidAuthority(sanitizedAuthority))
+        {
+            _logger.LogWarning("[VerifyPayment] Invalid authority format: {Authority}", sanitizedAuthority);
+            return Ok(new { isVerified = false, orderId = orderId, message = "فرمت کد پیگیری نامعتبر است." });
+        }
+
+        if (!IsValidStatus(sanitizedStatus))
+        {
+            _logger.LogWarning("[VerifyPayment] Invalid status format: {Status}", sanitizedStatus);
+            return Ok(new { isVerified = false, orderId = orderId, message = "وضعیت پرداخت نامعتبر است." });
         }
 
         try
         {
-            var result = await _orderService.VerifyAndProcessPaymentAsync(orderId.Value, authority, status);
+            var result = await _orderService.VerifyAndProcessPaymentAsync(orderId.Value, sanitizedAuthority, sanitizedStatus);
 
             _logger.LogInformation("[VerifyPayment] Result - OrderId: {OrderId}, IsVerified: {IsVerified}, RefId: {RefId}, Message: {Message}",
                 orderId, result.IsVerified, result.RefId, result.Message);
@@ -177,8 +197,52 @@ public class OrdersController : ControllerBase
             {
                 isVerified = false,
                 orderId = orderId,
-                message = "خطا در تایید پرداخت.  لطفا با پشتیبانی تماس بگیرید."
+                message = "خطا در تایید پرداخت.   لطفا با پشتیبانی تماس بگیرید."
             });
         }
+    }
+
+    private static string SanitizeAuthority(string? authority)
+    {
+        if (string.IsNullOrWhiteSpace(authority))
+            return string.Empty;
+
+        var sanitized = authority.Trim();
+        sanitized = sanitized.Replace("<", "").Replace(">", "").Replace("\"", "").Replace("'", "");
+
+        if (sanitized.Length > 100)
+            sanitized = sanitized.Substring(0, 100);
+
+        return sanitized;
+    }
+
+    private static string SanitizeStatus(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return string.Empty;
+
+        var sanitized = status.Trim();
+        sanitized = sanitized.Replace("<", "").Replace(">", "").Replace("\"", "").Replace("'", "");
+
+        if (sanitized.Length > 20)
+            sanitized = sanitized.Substring(0, 20);
+
+        return sanitized;
+    }
+
+    private static bool IsValidAuthority(string authority)
+    {
+        if (string.IsNullOrWhiteSpace(authority))
+            return false;
+
+        return AuthorityRegex.IsMatch(authority);
+    }
+
+    private static bool IsValidStatus(string status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return false;
+
+        return StatusRegex.IsMatch(status);
     }
 }

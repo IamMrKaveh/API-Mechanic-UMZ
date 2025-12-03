@@ -4,14 +4,14 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
     .MinimumLevel.Override("System", LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.AspNetCore. Authentication", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", LogEventLevel.Information)
     .MinimumLevel.Override("Microsoft.AspNetCore.DataProtection", LogEventLevel.Error)
     .Enrich.FromLogContext()
     .Enrich.WithEnvironmentName()
     .Enrich.WithMachineName()
     .Enrich.WithThreadId()
     .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
-    .WriteTo.File(path: "logs/log-.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30, fileSizeLimitBytes: 10_000_000, shared: true, flushToDiskInterval: TimeSpan.FromSeconds(1), outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+    .WriteTo.File(path: "logs/log-.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30, fileSizeLimitBytes: 10_000_000, shared: true, flushToDiskInterval: TimeSpan.FromSeconds(1), outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss. fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
     .CreateLogger();
 #endregion
 
@@ -20,6 +20,7 @@ try
     Log.Information("Starting API");
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
+
     #region Database Configuration
     var connectionString = builder.Configuration.GetConnectionString("PoolerConnection");
     if (string.IsNullOrWhiteSpace(connectionString))
@@ -30,6 +31,7 @@ try
 
     Log.Information("[RUNTIME MODE] Database connection validated: {Connection}",
         MaskConnectionString(connectionString));
+
     builder.Services.AddDbContextPool<LedkaContext>((serviceProvider, options) =>
     {
         options.UseNpgsql(connectionString, npgsqlOptions =>
@@ -46,6 +48,7 @@ try
 
         options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
     }, poolSize: 15);
+
     builder.Services.AddScoped<IUnitOfWork, Infrastructure.Persistence.UnitOfWork>();
     Log.Information("Database context registered successfully");
     #endregion
@@ -75,7 +78,7 @@ try
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Redis connection failed.   Falling back to in-memory and filesystem DataProtection.");
+            Log.Warning(ex, "Redis connection failed.  Falling back to in-memory and filesystem DataProtection.");
             redis = null;
             RegisterInMemoryServices(builder.Services);
         }
@@ -92,54 +95,24 @@ try
     #endregion
 
     #region Application Services Registration
-    builder.Services.AddScoped<IUserService, UserService>();
-    builder.Services.AddScoped<ICartService, CartService>();
-    builder.Services.AddScoped<ICategoryService, CategoryService>();
-    builder.Services.AddScoped<ICategoryGroupService, CategoryGroupService>();
-    builder.Services.AddScoped<IOrderService, OrderService>();
-    builder.Services.AddScoped<IOrderItemService, OrderItemService>();
-    builder.Services.AddScoped<IOrderStatusService, OrderStatusService>();
-    builder.Services.AddScoped<IShippingMethodService, ShippingMethodService>();
-    builder.Services.AddScoped<IProductService, ProductService>();
-    builder.Services.AddScoped<IReviewService, ReviewService>();
-    builder.Services.AddScoped<IDiscountService, DiscountService>();
-    builder.Services.AddScoped<IInventoryService, InventoryService>();
-    builder.Services.AddScoped<IMediaService, MediaService>();
-    builder.Services.AddScoped<IAuditService, Application.Services.AuditService>();
-    builder.Services.AddScoped<IAdminProductService, AdminProductService>();
-    builder.Services.AddScoped<IAdminCategoryService, AdminCategoryService>();
-    builder.Services.AddScoped<IAdminCategoryGroupService, AdminCategoryGroupService>();
-    builder.Services.AddScoped<IAdminOrderService, AdminOrderService>();
-    builder.Services.AddScoped<IAdminOrderStatusService, AdminOrderStatusService>();
-    builder.Services.AddScoped<IAdminReviewService, AdminReviewService>();
-    builder.Services.AddScoped<IAdminUserService, AdminUserService>();
-    builder.Services.AddScoped<IAdminShippingMethodService, AdminShippingMethodService>();
-    builder.Services.AddScoped<IPaymentService, Application.Services.PaymentService>();
+    builder.Services.AddApplicationServices(builder.Configuration);
     #endregion
 
     #region Infrastructure Services Registration
-    builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-    builder.Services.AddScoped<IShippingMethodRepository, ShippingMethodRepository>();
-    builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-    builder.Services.AddScoped<ICategoryGroupRepository, CategoryGroupRepository>();
-    builder.Services.AddScoped<IProductRepository, ProductRepository>();
-    builder.Services.AddScoped<IUserRepository, UserRepository>();
-    builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
-    builder.Services.AddScoped<ICartRepository, CartRepository>();
-    builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
-    builder.Services.AddScoped<IMediaRepository, MediaRepository>();
-    builder.Services.AddScoped<IAuditRepository, AuditRepository>();
-    builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
-    builder.Services.AddScoped<IOrderItemRepository, OrderItemRepository>();
-    builder.Services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
+    builder.Services.AddInfrastructureServices(builder.Configuration);
 
     builder.Services.AddHostedService<Infrastructure.BackgroundJobs.PaymentCleanupService>();
+    builder.Services.AddHostedService<Infrastructure.BackgroundJobs.PaymentVerificationJob>();
+    builder.Services.AddHostedService<Infrastructure.BackgroundJobs.OrphanedFileCleanupService>();
+
     builder.Services.AddScoped<INotificationService, NotificationService>();
     builder.Services.AddScoped<IEmailService, EmailService>();
     builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
     builder.Services.AddSingleton<IStorageService, LiaraStorageService>();
     builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
     builder.Services.AddScoped<ITokenService, TokenService>();
+    builder.Services.AddScoped<IMediaService, MediaService>();
+    builder.Services.AddScoped<IPaymentService, Application.Services.PaymentService>();
     #endregion
 
     #region Current User Service
@@ -218,7 +191,7 @@ try
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ClockSkew = TimeSpan.FromMinutes(15),
+            ClockSkew = TimeSpan.Zero,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
@@ -234,7 +207,7 @@ try
                     var authHeader = context.Request.Headers["Authorization"].ToString();
                     if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                     {
-                        context.Token = authHeader.Substring("Bearer".Length).Trim();
+                        context.Token = authHeader.Substring("Bearer ".Length).Trim();
                         return Task.CompletedTask;
                     }
                 }
@@ -305,15 +278,7 @@ try
     #endregion
 
     #region CORS Configuration
-    var allowedOrigins = new[]
-    {
-    "https://ledka-co.ir",
-    "https://www.ledka-co.ir",
-    "http://localhost:4200",
-    "https://localhost:4200",
-    "http://localhost:44318",
-    "https://localhost:44318"
-};
+    var allowedOrigins = builder.Configuration.GetSection("Security:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 
     builder.Services.AddCors(options =>
     {
@@ -379,19 +344,19 @@ try
             Scheme = "Bearer"
         });
         c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
         {
-            new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
+                new OpenApiSecurityScheme
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
     });
     #endregion
 
@@ -485,7 +450,7 @@ try
 
             var errorResponse = new
             {
-                error = "An unexpected error occurred.   Please try again later.",
+                error = "An unexpected error occurred.  Please try again later.",
                 traceId = System.Diagnostics.Activity.Current?.Id ?? context.TraceIdentifier
             };
 
@@ -511,50 +476,6 @@ try
             {
                 ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
             }
-            else if (path.EndsWith(".js") || path.EndsWith(".mjs"))
-            {
-                ctx.Context.Response.ContentType = "application/javascript";
-                ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
-            }
-            else if (path.EndsWith(". css"))
-            {
-                ctx.Context.Response.ContentType = "text/css";
-                ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
-            }
-            else if (path.EndsWith(".json"))
-            {
-                ctx.Context.Response.ContentType = "application/json";
-            }
-            else if (path.EndsWith(".woff2"))
-            {
-                ctx.Context.Response.ContentType = "font/woff2";
-                ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
-            }
-            else if (path.EndsWith(".woff"))
-            {
-                ctx.Context.Response.ContentType = "font/woff";
-                ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
-            }
-            else if (path.EndsWith(".svg"))
-            {
-                ctx.Context.Response.ContentType = "image/svg+xml";
-            }
-            else if (path.EndsWith(".png"))
-            {
-                ctx.Context.Response.ContentType = "image/png";
-            }
-            else if (path.EndsWith(".jpg") || path.EndsWith(".jpeg"))
-            {
-                ctx.Context.Response.ContentType = "image/jpeg";
-            }
-            else if (path.EndsWith(".ico"))
-            {
-                ctx.Context.Response.ContentType = "image/x-icon";
-            }
-            else if (path.EndsWith(".webp"))
-            {
-                ctx.Context.Response.ContentType = "image/webp";
-            }
         }
     };
 
@@ -570,9 +491,9 @@ try
     provider.Mappings[".svg"] = "image/svg+xml";
     provider.Mappings[".png"] = "image/png";
     provider.Mappings[".jpg"] = "image/jpeg";
-    provider.Mappings[". jpeg"] = "image/jpeg";
+    provider.Mappings[".jpeg"] = "image/jpeg";
     provider.Mappings[".gif"] = "image/gif";
-    provider.Mappings[".webp"] = "image/webp";
+    provider.Mappings[". webp"] = "image/webp";
     provider.Mappings[".ico"] = "image/x-icon";
     provider.Mappings[".webmanifest"] = "application/manifest+json";
 
@@ -614,93 +535,54 @@ try
 
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(result);
-        },
-        AllowCachingResponses = false
-    });
-    app.MapHealthChecks("/health/ready", new HealthCheckOptions
-    {
-        Predicate = check => check.Tags.Contains("ready"),
-        AllowCachingResponses = false
-    });
-    app.MapHealthChecks("/health/live", new HealthCheckOptions
-    {
-        Predicate = _ => false,
-        AllowCachingResponses = false
-    });
-
-    app.MapFallback(async context =>
-    {
-        var path = context.Request.Path.Value ?? "";
-
-        if (path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
-        {
-            context.Response.StatusCode = 404;
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync("{\"error\":\"API endpoint not found\"}");
-            return;
         }
-
-        if (Path.HasExtension(path))
-        {
-            context.Response.StatusCode = 404;
-            await context.Response.WriteAsync("File not found");
-            return;
-        }
-
-        context.Request.Path = "/index.html";
-        context.Response.StatusCode = 200;
-        await context.Response.SendFileAsync(
-            Path.Combine(app.Environment.WebRootPath ?? "wwwroot", "index.html"));
     });
 
-    Log.Information("Endpoints mapped successfully");
+    app.MapFallbackToFile("index.html");
+
+    Log.Information("Endpoints mapped");
     #endregion
 
-    #region Application Lifetime Events
-    var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-    lifetime.ApplicationStarted.Register(() =>
-        Log.Information("API started successfully in {Environment} mode.",
-            app.Environment.EnvironmentName));
-    lifetime.ApplicationStopping.Register(() =>
-        Log.Information("Application is shutting down gracefully...  "));
-    lifetime.ApplicationStopped.Register(() =>
-    {
-        var redis = app.Services.GetService<IConnectionMultiplexer>();
-        redis?.Dispose();
-        Log.Information("Application stopped.");
-    });
-    #endregion
-
-    Log.Information("Starting web server.. .");
+    #region Run Application
+    Log.Information("Application starting on {Urls}", string.Join(", ", app.Urls));
     await app.RunAsync();
+    #endregion
 }
-
-catch (Exception ex) { Log.Fatal(ex, "Application terminated unexpectedly"); Environment.ExitCode = 1; }
-finally { Log.Information("Flushing logs..."); await Log.CloseAndFlushAsync(); }
-
-#region Helper Methods
-
-static string MaskConnectionString(string connectionString) { var parts = connectionString.Split(';'); for (int i = 0; i < parts.Length; i++) { var part = parts[i].Trim(); if (part.StartsWith("Password=", StringComparison.OrdinalIgnoreCase) || part.StartsWith("Pwd=", StringComparison.OrdinalIgnoreCase)) { var keyValue = part.Split('='); if (keyValue.Length == 2) { parts[i] = $"{keyValue[0]}=HIDDEN"; } } } return string.Join(";", parts); }
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 static void RegisterInMemoryServices(IServiceCollection services)
 {
-    services.AddSingleton<IMemoryCache, MemoryCache>();
+    services.AddMemoryCache();
     services.AddSingleton<ICacheService, InMemoryCacheService>();
-    services.AddOutputCache();
-    var dataProtectionBuilder = services.AddDataProtection().SetApplicationName("Ledka").SetDefaultKeyLifetime(TimeSpan.FromDays(90));
-    var keysPath = "/tmp/dataprotection-keys";
-    try
-    {
-        if (!Directory.Exists(keysPath))
-        {
-            Directory.CreateDirectory(keysPath);
-        }
-        dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(keysPath)); Log.Information("Data Protection using file system at: {Path}", keysPath);
-    }
-    catch (Exception ex)
-    {
-        Log.Warning(ex, "Failed to create keys directory at {Path}, using ephemeral keys", keysPath);
-    }
+    services.AddDataProtection()
+        .SetApplicationName("Ledka")
+        .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "DataProtection-Keys")));
 }
 
-#endregion
+static string MaskConnectionString(string connectionString)
+{
+    try
+    {
+        var builder = new NpgsqlConnectionStringBuilder(connectionString);
+        if (!string.IsNullOrEmpty(builder.Password))
+        {
+            builder.Password = "****";
+        }
+        if (!string.IsNullOrEmpty(builder.Username))
+        {
+            builder.Username = "****";
+        }
+        return builder.ToString();
+    }
+    catch
+    {
+        return "******";
+    }
+}

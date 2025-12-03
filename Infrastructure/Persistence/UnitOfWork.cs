@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace Infrastructure.Persistence;
+﻿namespace Infrastructure.Persistence;
 
 public class UnitOfWork : IUnitOfWork
 {
@@ -24,11 +22,12 @@ public class UnitOfWork : IUnitOfWork
     public Task<TResult> ExecuteStrategyAsync<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken = default)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
-        return strategy.ExecuteAsync(
-            state: _context,
-            operation: async (db, state, ct) => await operation(),
-            verifySucceeded: null,
-            cancellationToken: cancellationToken
-        );
+        return strategy.ExecuteAsync(async ct => await operation(), cancellationToken);
+    }
+
+    public Task ExecuteStrategyAsync(Func<Task> operation, CancellationToken cancellationToken = default)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return strategy.ExecuteAsync(async ct => await operation(), cancellationToken);
     }
 }

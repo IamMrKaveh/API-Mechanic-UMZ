@@ -1,4 +1,6 @@
-﻿namespace MainApi.Controllers.Admin;
+﻿using Application.Common.Interfaces.Admin;
+
+namespace MainApi.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/orders")]

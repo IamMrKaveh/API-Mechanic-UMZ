@@ -8,10 +8,10 @@ public class ZarinpalRequestDto
     public decimal Amount { get; set; }
 
     [JsonPropertyName("description")]
-    public string Description { get; set; }
+    public required string Description { get; set; }
 
     [JsonPropertyName("callback_url")]
-    public string CallbackURL { get; set; }
+    public required string CallbackURL { get; set; }
 
     [JsonPropertyName("metadata")]
     public ZarinpalMetadataDto? Metadata { get; set; }
@@ -58,7 +58,7 @@ public class ZarinpalVerificationRequestDto
     public decimal Amount { get; set; }
 
     [JsonPropertyName("authority")]
-    public string Authority { get; set; }
+    public required string Authority { get; set; }
 }
 
 public class ZarinpalVerificationResponseDto
@@ -95,5 +95,5 @@ public class ZarinpalVerificationResponseDataDto
 public class ZarinpalSettingsDto
 {
     public bool IsSandbox { get; init; }
-    public string MerchantId { get; init; }
+    public required string MerchantId { get; init; }
 }

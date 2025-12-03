@@ -97,11 +97,13 @@ public class OrderRepository : IOrderRepository
     {
         if (!variantIds.Any()) return new List<ProductVariant>();
         var idsString = string.Join(",", variantIds);
+#pragma warning disable EF1002
         return await _context.ProductVariants
             .FromSqlRaw($"SELECT * FROM \"ProductVariants\" WHERE \"Id\" IN ({idsString}) FOR UPDATE")
             .Include(v => v.Product)
             .Include(v => v.InventoryTransactions)
             .ToListAsync();
+#pragma warning restore EF1002
     }
 
     public async Task<ShippingMethod?> GetShippingMethodByIdAsync(int shippingMethodId)

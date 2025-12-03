@@ -12,5 +12,11 @@ public class CartItem
     public int VariantId { get; set; }
     public Product.ProductVariant Variant { get; set; } = null!;
 
+    public decimal SellingPrice { get; set; }
+
     public byte[]? RowVersion { get; set; }
+
+    public DateTime AddedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime? UpdatedAt { get; set; }
 }
