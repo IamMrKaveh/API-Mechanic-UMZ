@@ -21,14 +21,15 @@ public class SecurityHeadersMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var path = context.Request.Path.Value?.ToLower() ?? "";
+        var path = context.Request.Path.Value?.ToLower() ?? string.Empty;
 
-        var isPaymentCallback = path.Contains("/payment") ||
-                                path.Contains("/checkout") ||
-                                path.Contains("/callback") ||
-                                path.Contains("/verify") ||
-                                context.Request.Query.Keys.Any(k => k.ToLower() == "authority") ||
-                                context.Request.Query.Keys.Any(k => k.ToLower() == "status");
+        var isPaymentCallback =
+            path.Contains("/payment") ||
+            path.Contains("/checkout") ||
+            path.Contains("/callback") ||
+            path.Contains("/verify") ||
+            context.Request.Query.Keys.Any(k => k.Equals("authority", StringComparison.OrdinalIgnoreCase)) ||
+            context.Request.Query.Keys.Any(k => k.Equals("status", StringComparison.OrdinalIgnoreCase));
 
         if (isPaymentCallback)
         {
@@ -52,7 +53,8 @@ public class SecurityHeadersMiddleware
         context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
         context.Response.Headers["Referrer-Policy"] = _options.ReferrerPolicy ?? "strict-origin-when-cross-origin";
 
-        var permissionsPolicy = _options.PermissionsPolicy ?? "camera=(), microphone=(), geolocation=(), payment=*";
+        var permissionsPolicy = _options.PermissionsPolicy ??
+                                "camera=(), microphone=(), geolocation=(), payment=*";
         context.Response.Headers["Permissions-Policy"] = permissionsPolicy;
 
         if (context.Request.IsHttps && !_environment.IsDevelopment())
@@ -66,24 +68,16 @@ public class SecurityHeadersMiddleware
 
         var csp = BuildContentSecurityPolicy();
         if (!string.IsNullOrEmpty(csp))
-        {
             context.Response.Headers["Content-Security-Policy"] = csp;
-        }
 
         if (_options.EnableCoep)
-        {
             context.Response.Headers["Cross-Origin-Embedder-Policy"] = "require-corp";
-        }
 
         if (_options.EnableCoop)
-        {
             context.Response.Headers["Cross-Origin-Opener-Policy"] = "same-origin";
-        }
 
         if (_options.EnableCorp)
-        {
             context.Response.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
-        }
 
         await _next(context);
     }
@@ -93,33 +87,37 @@ public class SecurityHeadersMiddleware
         if (_options.DisableCsp)
             return string.Empty;
 
-        var cspDirectives = new List<string>();
-        var paymentGateways = "https://*.zarinpal. com https://*.shaparak.ir https://api.zarinpal.com https://www.zarinpal. com https://sandbox.zarinpal. com https://payment.zarinpal. com";
+        var paymentGateways =
+            "https://*.zarinpal.com https://*.shaparak.ir https://api.zarinpal.com https://www.zarinpal.com https://sandbox.zarinpal.com https://payment.zarinpal.com";
 
-        cspDirectives.Add($"default-src {_options.CspDefaultSrc ?? "'self'"}");
+        var csp = new List<string>
+        {
+            $"default-src {_options.CspDefaultSrc ?? "'self'"}"
+        };
 
         var scriptSrc = _environment.IsDevelopment()
             ? "'self' 'unsafe-inline' 'unsafe-eval'"
             : "'self' 'unsafe-inline' 'unsafe-eval'";
 
-        cspDirectives.Add($"script-src {scriptSrc} {paymentGateways} https://ledka-co.ir https://www.ledka-co.ir https://*.cloudflare.com https://challenges.cloudflare. com");
+        csp.Add($"script-src {scriptSrc} {paymentGateways} https://ledka-co.ir https://www.ledka-co.ir https://*.cloudflare.com https://challenges.cloudflare.com");
 
-        var styleSrc = "'self' 'unsafe-inline' https://fonts.googleapis. com";
-        cspDirectives.Add($"style-src {_options.CspStyleSrc ?? styleSrc}");
+        var styleSrc = _options.CspStyleSrc ?? "'self' 'unsafe-inline' https://fonts.googleapis.com";
+        csp.Add($"style-src {styleSrc}");
 
-        cspDirectives.Add($"img-src {_options.CspImgSrc ?? "'self' data: https: blob:"} {paymentGateways}");
-        cspDirectives.Add($"font-src {_options.CspFontSrc ?? "'self' https://fonts.gstatic.com data:"}");
+        csp.Add($"img-src {_options.CspImgSrc ?? "'self' data: https: blob:"} {paymentGateways}");
+        csp.Add($"font-src {_options.CspFontSrc ?? "'self' https://fonts.gstatic.com data:"}");
 
-        var connectSrc = _options.CspConnectSrc
-            ?? "'self' https://mechanic-umz.liara.run https://ledka-co.ir https://www.ledka-co.ir";
+        var connectSrc = _options.CspConnectSrc ??
+            "'self' https://mechanic-umz.liara.run https://ledka-co.ir https://www.ledka-co.ir";
 
-        cspDirectives.Add($"connect-src {connectSrc} {paymentGateways} https://*.cloudflare. com wss://*.cloudflare.com");
+        csp.Add($"connect-src {connectSrc} {paymentGateways} https://*.cloudflare.com wss://*.cloudflare.com");
 
-        cspDirectives.Add($"frame-ancestors {_options.CspFrameAncestors ?? "'self'"} {paymentGateways}");
-        cspDirectives.Add($"frame-src 'self' {paymentGateways} https://*.cloudflare. com https://challenges. cloudflare.com");
-        cspDirectives.Add("base-uri 'self'");
-        cspDirectives.Add($"form-action 'self' {paymentGateways}");
+        csp.Add($"frame-ancestors {_options.CspFrameAncestors ?? "'self'"} {paymentGateways}");
+        csp.Add($"frame-src 'self' {paymentGateways} https://*.cloudflare.com https://challenges.cloudflare.com");
 
-        return string.Join("; ", cspDirectives);
+        csp.Add("base-uri 'self'");
+        csp.Add($"form-action 'self' {paymentGateways}");
+
+        return string.Join("; ", csp);
     }
 }
