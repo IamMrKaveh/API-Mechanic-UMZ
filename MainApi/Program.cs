@@ -272,25 +272,7 @@ try
             onReset: () =>
                 Log.Information("External API circuit breaker reset"));
 
-    var zarinPalRetryPolicy = HttpPolicyExtensions
-        .HandleTransientHttpError()
-        .OrResult(msg => msg.StatusCode == HttpStatusCode.TooManyRequests || msg.StatusCode == HttpStatusCode.RequestTimeout || msg.StatusCode == HttpStatusCode.GatewayTimeout)
-        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-            onRetry: (outcome, timespan, retryCount, context) =>
-            {
-                Log.Warning("ZarinPal API retry {RetryCount} after {Timespan}s due to: {Result}",
-                    retryCount, timespan.TotalSeconds, outcome.Result?.StatusCode);
-            });
-
-    builder.Services.AddHttpClient<Infrastructure.Payment.ZarinPal.ZarinPalPaymentGateway>(client =>
-    {
-        client.Timeout = TimeSpan.FromSeconds(30);
-        client.DefaultRequestHeaders.Add("User-Agent", "Ledka/1.0");
-    })
-    .AddPolicyHandler(zarinPalRetryPolicy)
-    .AddPolicyHandler(circuitBreakerPolicy);
-
-    builder.Services.AddScoped<IPaymentGateway, Infrastructure.Payment.ZarinPal.ZarinPalPaymentGateway>();
+    builder.Services.AddScoped<IPaymentGateway, MockPaymentGateway>();
 
     builder.Services.AddHttpClient<ILocationService, LocationService>()
         .AddPolicyHandler(retryPolicy)
