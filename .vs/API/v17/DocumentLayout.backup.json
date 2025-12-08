@@ -3,12 +3,24 @@
   "WorkspaceRootPath": "C:\\ME\\Mechanic\\API\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251208011211_1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Application\\Migrations\\20251208011211_1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\migration.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\migration.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\ledkacontextfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\ledkacontextfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\admin\\adminproductservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -43,10 +55,6 @@
       "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\dtos\\orderdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251203075914_1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Application\\Migrations\\20251203075914_1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
@@ -55,16 +63,8 @@
       "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\ledkacontextfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\ledkacontextfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\context\\ledkacontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\context\\ledkacontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\migration.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\migration.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\mediaservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -606,7 +606,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
@@ -622,20 +622,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "AdminAuditLogsController.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminAuditLogsController.cs",
-              "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminAuditLogsController.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminAuditLogsController.cs",
-              "RelativeToolTip": "MainApi\\Controllers\\Admin\\AdminAuditLogsController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAlAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "20251208011211_1.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251208011211_1.cs",
+              "RelativeDocumentMoniker": "Application\\Migrations\\20251208011211_1.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251208011211_1.cs",
+              "RelativeToolTip": "Application\\Migrations\\20251208011211_1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-29T18:56:52.788Z",
+              "WhenOpened": "2025-12-08T01:12:11.827Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 6,
               "Title": "AnalyticsService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Analytics\\AnalyticsService.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Analytics\\AnalyticsService.cs",
@@ -643,25 +643,24 @@
               "RelativeToolTip": "Infrastructure\\Analytics\\AnalyticsService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAACgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-02T09:08:39.742Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-02T09:08:39.742Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "UserService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\UserService.cs",
               "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs",
               "RelativeToolTip": "Application\\Services\\UserService.cs",
-              "ViewState": "AgIAALAAAAAAAAAAAAAIwLsAAAAcAAAAAAAAAA==",
+              "ViewState": "AgIAAK0AAAAAAAAAAAA0wLQAAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-11-25T12:40:29.459Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 5,
               "Title": "AdminProductService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\Admin\\AdminProductService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\Admin\\AdminProductService.cs",
@@ -669,12 +668,11 @@
               "RelativeToolTip": "Application\\Services\\Admin\\AdminProductService.cs",
               "ViewState": "AgIAAKACAAAAAAAAAAA9wKgCAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-02T16:11:17.724Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-02T16:11:17.724Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 7,
               "Title": "AdminShippingMethodService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\Admin\\AdminShippingMethodService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\Admin\\AdminShippingMethodService.cs",
@@ -682,155 +680,23 @@
               "RelativeToolTip": "Application\\Services\\Admin\\AdminShippingMethodService.cs",
               "ViewState": "AgIAAC8AAAAAAAAAAAA3wDcAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-02T16:11:21.049Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-02T16:11:21.049Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 4,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
               "RelativeDocumentMoniker": "MainApi\\Program.cs",
               "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
               "RelativeToolTip": "MainApi\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAUAAAAAAAAAA==",
+              "ViewState": "AgIAAEsCAAAAAAAAAAAAAAoAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T16:19:31.621Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-25T16:19:31.621Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "AdminAnalyticsController.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminAnalyticsController.cs",
-              "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminAnalyticsController.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminAnalyticsController.cs",
-              "RelativeToolTip": "MainApi\\Controllers\\Admin\\AdminAnalyticsController.cs",
-              "ViewState": "AgIAAB0AAAAAAAAAAAAswDIAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-02T15:40:10.928Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "CartService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\CartService.cs",
-              "RelativeDocumentMoniker": "Application\\Services\\CartService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\CartService.cs",
-              "RelativeToolTip": "Application\\Services\\CartService.cs",
-              "ViewState": "AgIAAB4AAAAAAAAAAIBDwEMAAAAIAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T16:15:26.281Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 17,
-              "Title": "MediaController.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\MediaController.cs",
-              "RelativeDocumentMoniker": "MainApi\\Controllers\\MediaController.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\MediaController.cs",
-              "RelativeToolTip": "MainApi\\Controllers\\MediaController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-03T07:42:25.693Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "MappingProfile.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Mapping\\MappingProfile.cs",
-              "RelativeDocumentMoniker": "Application\\Mapping\\MappingProfile.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Mapping\\MappingProfile.cs",
-              "RelativeToolTip": "Application\\Mapping\\MappingProfile.cs",
-              "ViewState": "AgIAAAIBAAAAAAAAAAAIwBABAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-02T14:19:25.586Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "OrderDtos.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\OrderDtos.cs",
-              "RelativeDocumentMoniker": "Application\\DTOs\\OrderDtos.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\OrderDtos.cs",
-              "RelativeToolTip": "Application\\DTOs\\OrderDtos.cs",
-              "ViewState": "AgIAAJoAAAAAAAAAAAAqwKcAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-29T19:21:07.46Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 20,
-              "Title": "OrderService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
-              "RelativeDocumentMoniker": "Application\\Services\\OrderService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
-              "RelativeToolTip": "Application\\Services\\OrderService.cs",
-              "ViewState": "AgIAAF4BAAAAAAAAAAAAAH0BAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T12:40:22.853Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 21,
-              "Title": "CartsController.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\CartsController.cs",
-              "RelativeDocumentMoniker": "MainApi\\Controllers\\CartsController.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\CartsController.cs",
-              "RelativeToolTip": "MainApi\\Controllers\\CartsController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAZAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T15:40:01.703Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
-              "RelativeDocumentMoniker": "MainApi\\appsettings.json",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
-              "RelativeToolTip": "MainApi\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGoAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-11-29T17:27:27.127Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "20251203075914_1.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251203075914_1.cs",
-              "RelativeDocumentMoniker": "Application\\Migrations\\20251203075914_1.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Migrations\\20251203075914_1.cs",
-              "RelativeToolTip": "Application\\Migrations\\20251203075914_1.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAnAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-03T07:59:14.974Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "LedkaContext.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Context\\LedkaContext.cs",
-              "RelativeDocumentMoniker": "Application\\Context\\LedkaContext.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Context\\LedkaContext.cs",
-              "RelativeToolTip": "Application\\Context\\LedkaContext.cs",
-              "ViewState": "AgIAAJoBAAAAAAAAAAAswKABAABBAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-03T07:44:56.534Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 3,
               "Title": "LedkaContextFactory.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\LedkaContextFactory.cs",
               "RelativeDocumentMoniker": "MainApi\\LedkaContextFactory.cs",
@@ -843,7 +709,140 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "migration.txt",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\migration.txt",
+              "RelativeDocumentMoniker": "MainApi\\migration.txt",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\migration.txt",
+              "RelativeToolTip": "MainApi\\migration.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-11-30T09:50:31.936Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "AdminAuditLogsController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminAuditLogsController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminAuditLogsController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminAuditLogsController.cs",
+              "RelativeToolTip": "MainApi\\Controllers\\Admin\\AdminAuditLogsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-29T18:56:52.788Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "AdminAnalyticsController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminAnalyticsController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminAnalyticsController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminAnalyticsController.cs",
+              "RelativeToolTip": "MainApi\\Controllers\\Admin\\AdminAnalyticsController.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAswDIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-02T15:40:10.928Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "CartService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\CartService.cs",
+              "RelativeDocumentMoniker": "Application\\Services\\CartService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\CartService.cs",
+              "RelativeToolTip": "Application\\Services\\CartService.cs",
+              "ViewState": "AgIAAB4AAAAAAAAAAIBDwEMAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T16:15:26.281Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "MediaController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\MediaController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Controllers\\MediaController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\MediaController.cs",
+              "RelativeToolTip": "MainApi\\Controllers\\MediaController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-03T07:42:25.693Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "MappingProfile.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Mapping\\MappingProfile.cs",
+              "RelativeDocumentMoniker": "Application\\Mapping\\MappingProfile.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Mapping\\MappingProfile.cs",
+              "RelativeToolTip": "Application\\Mapping\\MappingProfile.cs",
+              "ViewState": "AgIAAAIBAAAAAAAAAAAIwBABAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-02T14:19:25.586Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 12,
+              "Title": "OrderDtos.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\OrderDtos.cs",
+              "RelativeDocumentMoniker": "Application\\DTOs\\OrderDtos.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\OrderDtos.cs",
+              "RelativeToolTip": "Application\\DTOs\\OrderDtos.cs",
+              "ViewState": "AgIAAJoAAAAAAAAAAAAqwKcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-29T19:21:07.46Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "OrderService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
+              "RelativeDocumentMoniker": "Application\\Services\\OrderService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
+              "RelativeToolTip": "Application\\Services\\OrderService.cs",
+              "ViewState": "AgIAAF4BAAAAAAAAAAAAAH0BAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T12:40:22.853Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "CartsController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\CartsController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Controllers\\CartsController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\CartsController.cs",
+              "RelativeToolTip": "MainApi\\Controllers\\CartsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T15:40:01.703Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
+              "RelativeDocumentMoniker": "MainApi\\appsettings.json",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
+              "RelativeToolTip": "MainApi\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-11-29T17:27:27.127Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "LedkaContext.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Context\\LedkaContext.cs",
+              "RelativeDocumentMoniker": "Application\\Context\\LedkaContext.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Context\\LedkaContext.cs",
+              "RelativeToolTip": "Application\\Context\\LedkaContext.cs",
+              "ViewState": "AgIAAJoBAAAAAAAAAAAswKABAABBAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-03T07:44:56.534Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
               "Title": "Imports.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Imports.cs",
               "RelativeDocumentMoniker": "MainApi\\Imports.cs",
@@ -851,8 +850,7 @@
               "RelativeToolTip": "MainApi\\Imports.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-01T15:42:06.736Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-01T15:42:06.736Z"
             },
             {
               "$type": "Document",
@@ -864,8 +862,7 @@
               "RelativeToolTip": "MainApi\\MainApi.csproj",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-12-02T15:33:08.78Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-02T15:33:08.78Z"
             },
             {
               "$type": "Document",
@@ -877,21 +874,7 @@
               "RelativeToolTip": "Application\\Services\\MediaService.cs",
               "ViewState": "AgIAAKMAAAAAAAAAAAAuwLgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-02T17:59:11.843Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "migration.txt",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\migration.txt",
-              "RelativeDocumentMoniker": "MainApi\\migration.txt",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\migration.txt",
-              "RelativeToolTip": "MainApi\\migration.txt",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAmAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
-              "WhenOpened": "2025-11-30T09:50:31.936Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-02T17:59:11.843Z"
             },
             {
               "$type": "Document",
@@ -927,8 +910,7 @@
               "RelativeToolTip": "MainApi\\Controllers\\OrdersController.cs",
               "ViewState": "AgIAAPEAAAAAAAAAAAAswAYBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-29T18:48:40.758Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-29T18:48:40.758Z"
             },
             {
               "$type": "Document",
