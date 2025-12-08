@@ -188,7 +188,7 @@ public class UserService : IUserService
             AttemptCount = 0
         };
 
-        await SendOtpViaKavenegar(user.PhoneNumber, otp);
+        //await SendOtpViaKavenegar(user.PhoneNumber, otp);
 
         await _repository.AddOtpAsync(userOtp);
         await _unitOfWork.SaveChangesAsync();
@@ -411,7 +411,22 @@ public class UserService : IUserService
 
     private string GenerateSecureOtp()
     {
-        return RandomNumberGenerator.GetInt32(100000, 999999).ToString();
+        Span<char> buffer = stackalloc char[6];
+        Span<char> digits = stackalloc char[10] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+        int available = 10;
+
+        Span<byte> rnd = stackalloc byte[1];
+
+        for (int i = 0; i < 6; i++)
+        {
+            RandomNumberGenerator.Fill(rnd);
+            int index = rnd[0] % available;
+            buffer[i] = digits[index];
+            digits[index] = digits[available - 1];
+            available--;
+        }
+
+        return new string(buffer);
     }
 
     private async Task<bool> SendOtpViaKavenegar(string phoneNumber, string otp)
