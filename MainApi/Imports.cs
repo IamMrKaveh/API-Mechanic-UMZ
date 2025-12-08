@@ -16,6 +16,7 @@ global using Infrastructure.Communication;
 global using Infrastructure.DataProtection;
 global using Infrastructure.Location;
 global using Infrastructure.Notification;
+global using Infrastructure.Payment.Mock;
 global using Infrastructure.Payment.ZarinPal;
 global using Infrastructure.RateLimit;
 global using Infrastructure.Security;

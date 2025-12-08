@@ -167,7 +167,7 @@ public class OrderService : IOrderService
 
                     if (expectedItem.Price != variant.SellingPrice)
                     {
-                        throw new DbUpdateConcurrencyException($"Price changed for {variant.Product.Name}.  Expected: {expectedItem.Price}, Current: {variant.SellingPrice}.  Please refresh cart.");
+                        throw new DbUpdateConcurrencyException($"Price changed for {variant.Product.Name}. Expected: {expectedItem.Price}, Current: {variant.SellingPrice}. Please refresh cart.");
                     }
 
                     var amount = variant.SellingPrice * cartItem.Quantity;
@@ -232,6 +232,10 @@ public class OrderService : IOrderService
                 await _orderRepository.AddAsync(order);
                 await _unitOfWork.SaveChangesAsync();
 
+                // Clear cart immediately after order creation as requested
+                await _cartRepository.ClearCartAsync(userId);
+                await _unitOfWork.SaveChangesAsync();
+
                 foreach (var item in orderItems)
                 {
                     await _inventoryService.LogTransactionAsync(
@@ -248,7 +252,7 @@ public class OrderService : IOrderService
                 }
                 await _unitOfWork.SaveChangesAsync();
 
-                var callbackUrl = $"{_frontendUrls.Value.BaseUrl}/payment/verify";
+                var callbackUrl = dto.CallbackUrl ?? $"{_frontendUrls.Value.BaseUrl}/payment/verify";
                 var user = await _userRepository.GetUserByIdAsync(userId);
 
                 var paymentRequest = new PaymentInitiationDto
@@ -301,7 +305,7 @@ public class OrderService : IOrderService
 
                 if (order.IsPaid)
                 {
-                    return new PaymentVerificationResultDto { IsVerified = true, Message = "Order already paid.", RefId = 0, RedirectUrl = $"/payment/success?  orderId={orderId}" };
+                    return new PaymentVerificationResultDto { IsVerified = true, Message = "Order already paid.", RefId = 0, RedirectUrl = $"/payment/success?orderId={orderId}" };
                 }
 
                 var verificationResult = await _paymentService.VerifyPaymentAsync(authority, status);
@@ -319,7 +323,10 @@ public class OrderService : IOrderService
                     _orderRepository.Update(order);
 
                     await _unitOfWork.SaveChangesAsync();
+
+                    // Cart is already cleared in CheckoutFromCartAsync, but ensuring it's clean doesn't hurt
                     await _cartRepository.ClearCartAsync(order.UserId);
+
                     await transaction.CommitAsync();
 
                     await _notificationService.CreateNotificationAsync(order.UserId, "ثبت سفارش موفق", $"سفارش #{order.Id} با موفقیت ثبت شد.", "Order", $"/dashboard/order/{order.Id}", order.Id, "Order");
@@ -329,7 +336,7 @@ public class OrderService : IOrderService
                         IsVerified = true,
                         RefId = verificationResult.RefId,
                         Message = "Payment verified successfully.",
-                        RedirectUrl = $"/payment/success? orderId={orderId}&refId={verificationResult.RefId}"
+                        RedirectUrl = $"/payment/success?orderId={orderId}&refId={verificationResult.RefId}"
                     };
                 }
                 else
