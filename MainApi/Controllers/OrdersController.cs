@@ -108,7 +108,8 @@ public class OrdersController : ControllerBase
         {
             var result = await _orderService.CheckoutFromCartAsync(orderDto, userId.Value, idempotencyKey);
 
-            if (!string.IsNullOrEmpty(result.Error)) return BadRequest(new { message = result.Error });
+            if (!string.IsNullOrEmpty(result.Error)) 
+                return BadRequest(new { message = result.Error });
 
             return Ok(new
             {
