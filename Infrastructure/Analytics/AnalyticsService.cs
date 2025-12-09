@@ -22,7 +22,8 @@ public class AnalyticsService : IAnalyticsService
         var cached = await _cacheService.GetAsync<object>(cacheKey);
         if (cached != null) return cached;
 
-        var ordersQuery = _context.Orders.Where(o => o.IsPaid);
+        // Removing IsPaid filter to include all orders
+        var ordersQuery = _context.Orders.AsQueryable();
         if (fromDate.HasValue) ordersQuery = ordersQuery.Where(o => o.CreatedAt >= fromDate.Value);
         if (toDate.HasValue) ordersQuery = ordersQuery.Where(o => o.CreatedAt <= toDate.Value);
 
@@ -71,8 +72,9 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<IEnumerable<object>> GetSalesChartDataAsync(DateTime fromDate, DateTime toDate, string groupBy = "day")
     {
+        // Removing IsPaid filter to include all orders
         var orders = await _context.Orders
-            .Where(o => o.IsPaid && o.CreatedAt >= fromDate && o.CreatedAt <= toDate)
+            .Where(o => o.CreatedAt >= fromDate && o.CreatedAt <= toDate)
             .Select(o => new { o.CreatedAt, o.FinalAmount, o.TotalProfit })
             .ToListAsync();
 
@@ -112,7 +114,8 @@ public class AnalyticsService : IAnalyticsService
         var query = _context.OrderItems
             .Include(oi => oi.Variant)
             .ThenInclude(v => v.Product)
-            .Where(oi => oi.Order.IsPaid);
+            // Removing IsPaid filter
+            .AsQueryable();
 
         if (fromDate.HasValue) query = query.Where(oi => oi.Order.CreatedAt >= fromDate.Value);
         if (toDate.HasValue) query = query.Where(oi => oi.Order.CreatedAt <= toDate.Value);
@@ -141,7 +144,8 @@ public class AnalyticsService : IAnalyticsService
             .ThenInclude(v => v.Product)
             .ThenInclude(p => p.CategoryGroup)
             .ThenInclude(cg => cg.Category)
-            .Where(oi => oi.Order.IsPaid);
+            // Removing IsPaid filter
+            .AsQueryable();
 
         if (fromDate.HasValue) query = query.Where(oi => oi.Order.CreatedAt >= fromDate.Value);
         if (toDate.HasValue) query = query.Where(oi => oi.Order.CreatedAt <= toDate.Value);
