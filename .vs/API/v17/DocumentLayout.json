@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\ME\\Mechanic\\API\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\dtos\\orderdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\dtos\\orderdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -77,10 +81,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\extensions\\securityextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\extensions\\securityextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\migration.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
@@ -654,19 +654,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
-              "RelativeDocumentMoniker": "MainApi\\Program.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
-              "RelativeToolTip": "MainApi\\Program.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAIwA4AAAAUAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T16:19:31.621Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 18,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
               "RelativeDocumentMoniker": "MainApi\\appsettings.json",
@@ -678,7 +666,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 9,
               "Title": "OrdersController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\OrdersController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\OrdersController.cs",
@@ -686,12 +674,11 @@
               "RelativeToolTip": "MainApi\\Controllers\\OrdersController.cs",
               "ViewState": "AgIAAGQAAAAAAAAAAAAmwGwAAAA0AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-29T18:48:40.758Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-29T18:48:40.758Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "AnalyticsService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Analytics\\AnalyticsService.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Analytics\\AnalyticsService.cs",
@@ -699,12 +686,11 @@
               "RelativeToolTip": "Infrastructure\\Analytics\\AnalyticsService.cs",
               "ViewState": "AgIAAJ4AAAAAAAAAAAAIwKwAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-02T09:08:39.742Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-02T09:08:39.742Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "AdminOrdersController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminOrdersController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminOrdersController.cs",
@@ -712,12 +698,11 @@
               "RelativeToolTip": "MainApi\\Controllers\\Admin\\AdminOrdersController.cs",
               "ViewState": "AgIAABEAAAAAAAAAAAAAAC8AAABcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-29T18:54:14.44Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-29T18:54:14.44Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "AdminOrderStatusController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\Admin\\AdminOrderStatusController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\Admin\\AdminOrderStatusController.cs",
@@ -725,38 +710,48 @@
               "RelativeToolTip": "MainApi\\Controllers\\Admin\\AdminOrderStatusController.cs",
               "ViewState": "AgIAACoAAAAAAAAAAAAywA4AAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-09T11:58:16.706Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-09T11:58:16.706Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "OrderDtos.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\OrderDtos.cs",
               "RelativeDocumentMoniker": "Application\\DTOs\\OrderDtos.cs",
               "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\DTOs\\OrderDtos.cs",
               "RelativeToolTip": "Application\\DTOs\\OrderDtos.cs",
-              "ViewState": "AgIAAHIAAAAAAAAAAADwv3sAAAAzAAAAAAAAAA==",
+              "ViewState": "AgIAAHIAAAAAAAAAAAAwwH0AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-29T19:21:07.46Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-29T19:21:07.46Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 0,
               "Title": "UserService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\UserService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs",
-              "RelativeToolTip": "Application\\Services\\UserService.cs",
-              "ViewState": "AgIAALAAAAAAAAAAAAAIwLsAAAAcAAAAAAAAAA==",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs*",
+              "RelativeToolTip": "Application\\Services\\UserService.cs*",
+              "ViewState": "AgIAALAAAAAAAAAAAAAIwL4AAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-11-25T12:40:29.459Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 13,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
+              "RelativeDocumentMoniker": "MainApi\\Program.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
+              "RelativeToolTip": "MainApi\\Program.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAIwA4AAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-25T16:19:31.621Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
               "Title": "ZarinPalValidator.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Payment\\ZarinPal\\ZarinPalValidator.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Payment\\ZarinPal\\ZarinPalValidator.cs",
@@ -764,12 +759,11 @@
               "RelativeToolTip": "Infrastructure\\Payment\\ZarinPal\\ZarinPalValidator.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAA2AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-08T19:47:27.724Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-08T19:47:27.724Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "OrderStatusController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\OrderStatusController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\OrderStatusController.cs",
@@ -777,12 +771,11 @@
               "RelativeToolTip": "MainApi\\Controllers\\OrderStatusController.cs",
               "ViewState": "AgIAABYAAAAAAAAAAAAcwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-09T11:57:56.324Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-09T11:57:56.324Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 8,
               "Title": "IOrderService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\IOrderService.cs",
               "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\IOrderService.cs",
@@ -790,12 +783,11 @@
               "RelativeToolTip": "Application\\Common\\Interfaces\\IOrderService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-29T19:20:44.436Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-29T19:20:44.436Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "OrderService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\OrderService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\OrderService.cs",
@@ -803,12 +795,11 @@
               "RelativeToolTip": "Application\\Services\\OrderService.cs",
               "ViewState": "AgIAABUBAAAAAAAAAAAAAB0BAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T12:40:22.853Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-25T12:40:22.853Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "PaymentService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\PaymentService.cs",
               "RelativeDocumentMoniker": "Application\\Services\\PaymentService.cs",
@@ -816,8 +807,7 @@
               "RelativeToolTip": "Application\\Services\\PaymentService.cs",
               "ViewState": "AgIAAAwAAAAAAAAAAAAmwD0BAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-01T15:37:30.5Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-01T15:37:30.5Z"
             },
             {
               "$type": "Document",
@@ -833,7 +823,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 12,
               "Title": "ZarinPalErrorMapper.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Payment\\ZarinPal\\ZarinPalErrorMapper.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Payment\\ZarinPal\\ZarinPalErrorMapper.cs",
@@ -845,7 +835,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 11,
               "Title": "ZarinPalPaymentGateway.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Payment\\ZarinPal\\ZarinPalPaymentGateway.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Payment\\ZarinPal\\ZarinPalPaymentGateway.cs",
@@ -857,7 +847,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 16,
               "Title": "MockPaymentGateway.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Payment\\Mock\\MockPaymentGateway.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Payment\\Mock\\MockPaymentGateway.cs",
@@ -869,7 +859,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 15,
               "Title": "MockGatewayController.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\MockGatewayController.cs",
               "RelativeDocumentMoniker": "MainApi\\Controllers\\MockGatewayController.cs",
@@ -881,7 +871,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 14,
               "Title": "Imports.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Imports.cs",
               "RelativeDocumentMoniker": "MainApi\\Imports.cs",
@@ -905,7 +895,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 19,
               "Title": "SecurityExtensions.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Extensions\\SecurityExtensions.cs",
               "RelativeDocumentMoniker": "MainApi\\Extensions\\SecurityExtensions.cs",
@@ -917,7 +907,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 17,
               "Title": "SecurityHeadersMiddleware.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Middleware\\SecurityHeadersMiddleware.cs",
               "RelativeDocumentMoniker": "MainApi\\Middleware\\SecurityHeadersMiddleware.cs",
@@ -2113,8 +2103,7 @@
               "RelativeToolTip": "Infrastructure\\ZarinPal\\ZarinpalService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-25T17:46:14.833Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-25T17:46:14.833Z"
             },
             {
               "$type": "Document",
