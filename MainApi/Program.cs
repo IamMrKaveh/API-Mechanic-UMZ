@@ -1,4 +1,5 @@
-﻿#region Serilog Configuration 
+﻿#region Serilog Configuration
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -18,6 +19,7 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     Log.Information("Starting API");
+
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
 
@@ -121,19 +123,6 @@ try
 
     #region Infrastructure Services Registration
     builder.Services.AddInfrastructureServices(builder.Configuration);
-
-    builder.Services.AddHostedService<Infrastructure.BackgroundJobs.PaymentCleanupService>();
-    builder.Services.AddHostedService<Infrastructure.BackgroundJobs.PaymentVerificationJob>();
-    builder.Services.AddHostedService<Infrastructure.BackgroundJobs.OrphanedFileCleanupService>();
-
-    builder.Services.AddScoped<INotificationService, NotificationService>();
-    builder.Services.AddScoped<IEmailService, EmailService>();
-    builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
-    builder.Services.AddSingleton<IStorageService, LiaraStorageService>();
-    builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
-    builder.Services.AddScoped<ITokenService, TokenService>();
-    builder.Services.AddScoped<IMediaService, MediaService>();
-    builder.Services.AddScoped<IPaymentService, Application.Services.PaymentService>();
     #endregion
 
     #region Current User Service
@@ -368,7 +357,24 @@ try
         .AddNpgSql(connectionString,
             name: "postgresql",
             timeout: TimeSpan.FromSeconds(5),
-            tags: new[] { "db", "ready" });
+            tags: new[] { "db", "ready" })
+        .AddCheck<ElasticsearchHealthCheck>(
+            "elasticsearch",
+            failureStatus: HealthStatus.Unhealthy,
+            tags: new[] { "elasticsearch", "ready" })
+        .AddCheck<ElasticsearchIndexHealthCheck>(
+            "elasticsearch_indices",
+            failureStatus: HealthStatus.Degraded,
+            tags: new[] { "elasticsearch", "indices" });
+
+    if (redis != null)
+    {
+        healthChecksBuilder.AddRedis(redisConnectionString!,
+            name: "redis",
+            timeout: TimeSpan.FromSeconds(5),
+            tags: new[] { "redis", "ready" });
+    }
+
     Log.Information("Health checks configured");
     #endregion
 
@@ -460,6 +466,7 @@ try
             await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
         });
     });
+
     app.UseDefaultFiles();
 
     var staticFileOptions = new StaticFileOptions
@@ -514,36 +521,72 @@ try
     #endregion
 
     #region Endpoint Mapping
+
     app.MapControllers();
+
     app.MapHealthChecks("/health", new HealthCheckOptions
     {
+        Predicate = _ => true,
         ResponseWriter = async (context, report) =>
         {
-            var result = JsonSerializer.Serialize(new
+            context.Response.ContentType = "application/json";
+
+            var response = new
+            {
+                status = report.Status.ToString(),
+                timestamp = DateTime.UtcNow,
+                durationMs = report.TotalDuration.TotalMilliseconds,
+                checks = report.Entries.Select(e => new
+                {
+                    name = e.Key,
+                    status = e.Value.Status.ToString(),
+                    description = e.Value.Description,
+                    durationMs = e.Value.Duration.TotalMilliseconds
+                })
+            };
+
+            await context.Response.WriteAsync(
+                JsonSerializer.Serialize(response, new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                })
+            );
+        }
+    });
+
+    app.MapHealthChecks("/health/ready", new HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("ready"),
+        ResponseWriter = async (context, report) =>
+        {
+            context.Response.ContentType = "application/json";
+
+            var response = new
             {
                 status = report.Status.ToString(),
                 checks = report.Entries.Select(e => new
                 {
                     name = e.Key,
-                    status = e.Value.Status.ToString(),
-                    duration = e.Value.Duration.TotalMilliseconds,
-                    description = e.Value.Description
-                }),
-                totalDuration = report.TotalDuration.TotalMilliseconds
-            }, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            });
+                    status = e.Value.Status.ToString()
+                })
+            };
 
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(result);
+            await context.Response.WriteAsync(
+                JsonSerializer.Serialize(response)
+            );
         }
+    });
+
+    app.MapHealthChecks("/health/live", new HealthCheckOptions
+    {
+        Predicate = _ => false
     });
 
     app.MapFallbackToFile("index.html");
 
     Log.Information("Endpoints mapped");
+
     #endregion
 
     #region Run Application

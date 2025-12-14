@@ -2,7 +2,9 @@
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructureServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IShippingMethodRepository, ShippingMethodRepository>();
@@ -23,8 +25,35 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
 
+        services.AddHostedService<PaymentCleanupService>();
+        services.AddHostedService<PaymentVerificationJob>();
+        services.AddHostedService<OrphanedFileCleanupService>();
+
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddSingleton<IStorageService, LiaraStorageService>();
+        services.AddSingleton<IRateLimitService, RateLimitService>();
+        services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        services.AddSingleton(sp =>
+        {
+            var config = sp.GetRequiredService<IConfiguration>();
+            var logger = sp.GetRequiredService<ILogger<ElasticsearchClient>>();
+            return ElasticClientFactory.Create(config, logger);
+        });
+
+        services.AddScoped<ElasticSearchService>();
+        services.AddScoped<ISearchService, ResilientElasticSearchService>();
+        services.AddScoped<IElasticBulkService, ElasticBulkService>();
+        services.AddScoped<IElasticIndexManager, ElasticIndexManager>();
+        services.AddScoped<IElasticDeadLetterQueue, ElasticDeadLetterQueue>();
+        services.AddSingleton<ElasticsearchCircuitBreaker>();
+        services.AddHostedService<ElasticsearchStartupTask>();
+        services.AddHostedService<ElasticsearchSyncBackgroundService>();
+        services.AddHostedService<DeadLetterQueueProcessor>();
+        services.AddSingleton<ElasticsearchMetrics>();
         return services;
     }
 }

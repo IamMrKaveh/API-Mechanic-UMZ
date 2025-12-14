@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Persistence.Repositories;
+﻿using Application.Common.Utilities;
+
+namespace Infrastructure.Persistence.Repositories;
 
 public class CategoryGroupRepository : ICategoryGroupRepository
 {
@@ -11,28 +13,29 @@ public class CategoryGroupRepository : ICategoryGroupRepository
 
     public async Task<(IEnumerable<Domain.Category.CategoryGroup> Groups, int Total)> GetPagedAsync(int? categoryId, string? search, int page, int pageSize)
     {
-        var query = _context.Set<Domain.Category.CategoryGroup>()
-            .Include(cg => cg.Category)
-            .AsNoTracking();
+        var query = _context.CategoryGroups
+            .Include(g => g.Category)
+            .Include(g => g.Products)
+            .AsQueryable();
 
         if (categoryId.HasValue)
         {
-            query = query.Where(cg => cg.CategoryId == categoryId.Value);
+            query = query.Where(g => g.CategoryId == categoryId);
         }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(cg => cg.Name.ToLower().Contains(search.ToLower()));
+            var term = PersianTextHelper.Normalize(search);
+            query = query.Where(g =>
+                EF.Functions.ILike(g.Name, $"%{term}%") ||
+                EF.Functions.ILike(g.Category.Name, $"%{term}%"));
         }
 
         var total = await query.CountAsync();
         var groups = await query
-            .OrderBy(cg => cg.Name)
+            .OrderBy(g => g.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Include(cg => cg.Products)
-                .ThenInclude(p => p.Variants)
-                    .ThenInclude(v => v.InventoryTransactions)
             .ToListAsync();
 
         return (groups, total);
@@ -40,53 +43,46 @@ public class CategoryGroupRepository : ICategoryGroupRepository
 
     public async Task<Domain.Category.CategoryGroup?> GetByIdAsync(int id)
     {
-        return await _context.Set<Domain.Category.CategoryGroup>()
-            .AsNoTracking()
-            .Include(cg => cg.Category)
-            .Include(cg => cg.Products)
-                .ThenInclude(p => p.Variants)
-                    .ThenInclude(v => v.InventoryTransactions)
-            .FirstOrDefaultAsync(cg => cg.Id == id);
+        return await _context.CategoryGroups
+            .Include(g => g.Category)
+            .Include(g => g.Products)
+            .FirstOrDefaultAsync(g => g.Id == id);
     }
 
     public async Task<Domain.Category.CategoryGroup?> GetByIdWithProductsAsync(int id)
     {
-        return await _context.Set<Domain.Category.CategoryGroup>()
+        return await _context.CategoryGroups
             .Include(g => g.Products)
-            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(g => g.Id == id);
     }
 
     public async Task AddAsync(Domain.Category.CategoryGroup group)
     {
-        await _context.Set<Domain.Category.CategoryGroup>().AddAsync(group);
-    }
-
-    public async Task<bool> ExistsAsync(string name, int categoryId, int? excludeId = null)
-    {
-        var query = _context.Set<Domain.Category.CategoryGroup>()
-            .Where(cg => cg.Name == name && cg.CategoryId == categoryId);
-
-        if (excludeId.HasValue)
-        {
-            query = query.Where(cg => cg.Id != excludeId.Value);
-        }
-
-        return await query.AnyAsync();
-    }
-
-    public void Delete(Domain.Category.CategoryGroup group)
-    {
-        _context.Set<Domain.Category.CategoryGroup>().Remove(group);
+        await _context.CategoryGroups.AddAsync(group);
     }
 
     public void Update(Domain.Category.CategoryGroup group)
     {
-        _context.Set<Domain.Category.CategoryGroup>().Update(group);
+        _context.CategoryGroups.Update(group);
+    }
+
+    public async Task<bool> ExistsAsync(string name, int categoryId, int? excludeId = null)
+    {
+        var query = _context.CategoryGroups.Where(g => g.CategoryId == categoryId);
+        if (excludeId.HasValue)
+        {
+            query = query.Where(g => g.Id != excludeId.Value);
+        }
+        return await query.AnyAsync(g => g.Name == name);
+    }
+
+    public void Delete(Domain.Category.CategoryGroup group)
+    {
+        _context.CategoryGroups.Remove(group);
     }
 
     public void SetOriginalRowVersion(Domain.Category.CategoryGroup group, byte[] rowVersion)
     {
-        _context.Entry(group).Property("RowVersion").OriginalValue = rowVersion;
+        _context.Entry(group).Property(x => x.RowVersion).OriginalValue = rowVersion;
     }
 }

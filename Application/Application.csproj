@@ -13,6 +13,7 @@
 		<PackageReference Include="AutoMapper" Version="12.0.1" />
 		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
 		<PackageReference Include="AWSSDK.S3" Version="4.0.7.10" />
+		<PackageReference Include="Elastic.Clients.Elasticsearch" Version="9.1.4" />
 		<PackageReference Include="HtmlSanitizer" Version="9.0.886" />
 		<PackageReference Include="Kavenegar" Version="1.2.5" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.10" />

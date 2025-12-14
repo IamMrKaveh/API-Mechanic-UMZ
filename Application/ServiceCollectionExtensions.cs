@@ -25,12 +25,22 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICategoryGroupService, CategoryGroupService>();
         services.AddScoped<IDiscountService, DiscountService>();
         services.AddScoped<IInventoryService, InventoryService>();
+        services.AddScoped<IMediaService, MediaService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IOrderItemService, OrderItemService>();
         services.AddScoped<IOrderStatusService, OrderStatusService>();
+        services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddSingleton<ElasticsearchClient>(sp =>
+        {
+            var config = sp.GetRequiredService<IConfiguration>();
+            var url = config["Elasticsearch:Url"] ?? "http://localhost:4200";
+            var settings = new ElasticsearchClientSettings(new Uri(url))
+                .DefaultIndex("products_v1");
+            return new ElasticsearchClient(settings);
+        });
 
         services.AddSingleton<IHtmlSanitizer>(new HtmlSanitizer(new HtmlSanitizerOptions
         {
