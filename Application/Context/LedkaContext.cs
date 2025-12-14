@@ -46,23 +46,28 @@ public class LedkaContext : DbContext
 
     public DbSet<RateLimit> RateLimits { get; set; } = null!;
 
+    public DbSet<FailedElasticOperation> FailedElasticOperations { get; set; } = null!;
+
+    public DbSet<ElasticsearchOutboxMessage> ElasticsearchOutboxMessages { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
-        ConfigureUser(builder);
-        ConfigureProduct(builder);
-        ConfigureOrder(builder);
-        ConfigureCategory(builder);
-        ConfigureCart(builder);
-        ConfigureDiscount(builder);
-        ConfigureMedia(builder);
-        ConfigureInventory(builder);
-        ConfigureNotification(builder);
-        ConfigureLog(builder);
-        ConfigurePayment(builder);
         ConfigureAuth(builder);
+        ConfigureCart(builder);
+        ConfigureCategory(builder);
+        ConfigureDiscount(builder);
+        ConfigureElasticSearch(builder);
+        ConfigureInventory(builder);
+        ConfigureLog(builder);
+        ConfigureMedia(builder);
+        ConfigureNotification(builder);
+        ConfigureOrder(builder);
+        ConfigurePayment(builder);
+        ConfigureProduct(builder);
         ConfigureSecurity(builder);
+        ConfigureUser(builder);
 
         foreach (var entityType in builder.Model.GetEntityTypes())
         {
@@ -80,6 +85,31 @@ public class LedkaContext : DbContext
     where TEntity : class, ISoftDeletable
     {
         builder.Entity<TEntity>().HasQueryFilter(e => !e.IsDeleted);
+    }
+
+    private void ConfigureElasticSearch(ModelBuilder builder)
+    {
+        builder.Entity<FailedElasticOperation>(entity =>
+        {
+            entity.ToTable("FailedElasticOperations");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.EntityType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.EntityId).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Document).IsRequired();
+            entity.Property(e => e.Error).IsRequired();
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.HasIndex(e => new { e.Status, e.CreatedAt });
+            entity.HasIndex(e => new { e.EntityType, e.EntityId });
+        });
+
+        builder.Entity<ElasticsearchOutboxMessage>(entity =>
+        {
+            entity.ToTable("ElasticsearchOutboxMessages");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.EntityType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.EntityId).IsRequired().HasMaxLength(50);
+        });
     }
 
     private void ConfigureUser(ModelBuilder builder)

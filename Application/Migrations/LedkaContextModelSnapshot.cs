@@ -1314,6 +1314,55 @@ namespace Application.Migrations
                     b.ToTable("ProductVariants");
                 });
 
+            modelBuilder.Entity("Domain.Search.FailedElasticOperation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Document")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Error")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastRetryAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityType", "EntityId");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("FailedElasticOperations", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Security.RateLimit", b =>
                 {
                     b.Property<int>("Id")
