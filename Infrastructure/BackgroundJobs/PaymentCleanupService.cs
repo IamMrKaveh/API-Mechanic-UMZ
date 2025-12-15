@@ -40,6 +40,8 @@ public class PaymentCleanupService : BackgroundService
 
                     foreach (var tx in stuckTransactions)
                     {
+                        if (stoppingToken.IsCancellationRequested) break;
+
                         tx.Status = "Expired";
 
                         if (tx.Order != null && !tx.Order.IsPaid && tx.Order.OrderStatusId != cancelledStatus?.Id)
@@ -80,6 +82,11 @@ public class PaymentCleanupService : BackgroundService
                 _errorCount = 0;
                 await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
             }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("Payment Cleanup Service stopping.");
+                break;
+            }
             catch (Exception ex)
             {
                 _errorCount++;
@@ -88,27 +95,17 @@ public class PaymentCleanupService : BackgroundService
                 if (_errorCount >= MaxErrorThreshold)
                 {
                     _logger.LogCritical("PaymentCleanupService has failed {Count} times consecutively. Immediate attention required.", _errorCount);
-
-                    try
-                    {
-                        using var alertScope = _serviceProvider.CreateScope();
-                        var notificationService = alertScope.ServiceProvider.GetRequiredService<INotificationService>();
-                        var userRepo = alertScope.ServiceProvider.GetRequiredService<IUserRepository>();
-
-                        var admins = (await userRepo.GetUsersAsync(false, 1, 10)).Users.Where(u => u.IsAdmin).ToList();
-                        foreach (var admin in admins)
-                        {
-                            await notificationService.CreateNotificationAsync(admin.Id, "System Alert", "Payment Cleanup Service is failing repeatedly.", "SystemError");
-                        }
-                    }
-                    catch (Exception alertEx)
-                    {
-                        _logger.LogError(alertEx, "Failed to send error threshold notification.");
-                    }
                 }
 
                 var delaySeconds = Math.Min(300, Math.Pow(2, _errorCount));
-                await Task.Delay(TimeSpan.FromSeconds(delaySeconds), stoppingToken);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(delaySeconds), stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
             }
         }
     }

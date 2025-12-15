@@ -15,6 +15,7 @@ global using Domain.Product.Attribute;
 global using Domain.Search;
 global using Domain.User;
 global using Elastic.Clients.Elasticsearch;
+global using Elastic.Clients.Elasticsearch.Analysis;
 global using Elastic.Clients.Elasticsearch.Core.Search;
 global using Elastic.Clients.Elasticsearch.QueryDsl;
 global using Ganss.Xss;

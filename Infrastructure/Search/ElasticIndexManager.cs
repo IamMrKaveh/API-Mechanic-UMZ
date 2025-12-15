@@ -18,27 +18,29 @@ public class ElasticIndexManager : IElasticIndexManager
 
     public async Task<bool> CreateAllIndicesAsync(CancellationToken ct = default)
     {
-        try
-        {
-            var productTask = CreateProductIndexAsync(ct);
-            var categoryTask = CreateCategoryIndexAsync(ct);
-            var categoryGroupTask = CreateCategoryGroupIndexAsync(ct);
+        var productTask = CreateProductIndexAsync(ct);
+        var categoryTask = CreateCategoryIndexAsync(ct);
+        var categoryGroupTask = CreateCategoryGroupIndexAsync(ct);
 
-            var results = await Task.WhenAll(productTask, categoryTask, categoryGroupTask);
+        var results = await Task.WhenAll(productTask, categoryTask, categoryGroupTask);
 
-            return results.All(r => r);
-        }
-        catch (Exception ex)
+        var allSuccess = results.All(r => r);
+
+        if (allSuccess)
         {
-            _logger.LogError(ex, "Failed to create all indices");
-            return false;
+            _logger.LogInformation("Successfully created all indices");
         }
+        else
+        {
+            _logger.LogWarning("Some indices failed to create");
+        }
+
+        return allSuccess;
     }
 
     public async Task<bool> CreateProductIndexAsync(CancellationToken ct = default)
     {
         const string indexName = "products_v1";
-
         try
         {
             if (await IndexExistsAsync(indexName, ct))
@@ -46,18 +48,10 @@ public class ElasticIndexManager : IElasticIndexManager
                 _logger.LogInformation("Index {IndexName} already exists", indexName);
                 return true;
             }
-
             var environment = _configuration["ASPNETCORE_ENVIRONMENT"];
             var isProduction = environment == "Production";
-
-            var numberOfShards = isProduction
-                ? _configuration.GetValue<int>("Elasticsearch:NumberOfShards", 3)
-                : 1;
-
-            var numberOfReplicas = isProduction
-                ? _configuration.GetValue<int>("Elasticsearch:NumberOfReplicas", 1)
-                : 0;
-
+            var numberOfShards = isProduction ? _configuration.GetValue<int>("Elasticsearch:NumberOfShards", 3) : 1;
+            var numberOfReplicas = isProduction ? _configuration.GetValue<int>("Elasticsearch:NumberOfReplicas", 1) : 0;
             var refreshInterval = isProduction ? "30s" : "1s";
             var maxResultWindow = _configuration.GetValue<int>("Elasticsearch:MaxResultWindow", 10000);
 
@@ -65,20 +59,55 @@ public class ElasticIndexManager : IElasticIndexManager
                 .Settings(s => s
                     .NumberOfShards(numberOfShards)
                     .NumberOfReplicas(numberOfReplicas)
-                    .MaxResultWindow(maxResultWindow)
                     .RefreshInterval(refreshInterval)
+                    .MaxResultWindow(maxResultWindow)
+                    .MaxNgramDiff(20)
                     .Analysis(a => a
+                        .CharFilters(cf => cf
+                            .Mapping("persian_char_mapping", m => m
+                                .Mappings([
+                                    "ك => ک",
+                                "ي => ی",
+                                "ؤ => و",
+                                "إ => ا",
+                                "أ => ا",
+                                "ـ => ",
+                                "ۀ => ه",
+                                "ة => ه"
+                                ])
+                            )
+                        )
                         .Analyzers(an => an
-                            .Custom("autocomplete", ca => ca
+                            .Custom("persian_text", ca => ca
                                 .Tokenizer("standard")
-                                .Filter(["lowercase", "autocomplete_filter"])
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit", "persian_stop", "persian_stemmer"])
+                            )
+                            .Custom("persian_search", ca => ca
+                                .Tokenizer("standard")
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit"])
+                            )
+                            .Custom("persian_autocomplete", ca => ca
+                                .Tokenizer("standard")
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit", "autocomplete_filter"])
+                            )
+                            .Custom("persian_ngram", ca => ca
+                                .Tokenizer("standard")
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit", "ngram_filter"])
                             )
                         )
                         .TokenFilters(tf => tf
-                            .EdgeNGram("autocomplete_filter", eg => eg
-                                .MinGram(2)
-                                .MaxGram(20)
+                            .Stop("persian_stop", st => st
+                                .Stopwords(StopWordLanguage.Persian)
                             )
+                            .Stemmer("persian_stemmer", sm => sm
+                                .Language("persian")
+                            )
+                            .EdgeNGram("autocomplete_filter", eg => eg.MinGram(2).MaxGram(20))
+                            .NGram("ngram_filter", ng => ng.MinGram(2).MaxGram(10))
                         )
                     )
                 )
@@ -86,18 +115,39 @@ public class ElasticIndexManager : IElasticIndexManager
                     .Properties(p => p
                         .IntegerNumber(prop => prop.Id)
                         .Text(prop => prop.Name, td => td
+                            .Analyzer("persian_text")
+                            .SearchAnalyzer("persian_search")
                             .Fields(f => f
                                 .Text("autocomplete", txt => txt
-                                    .Analyzer("autocomplete")
-                                    .SearchAnalyzer("standard")
+                                    .Analyzer("persian_autocomplete")
+                                    .SearchAnalyzer("persian_search")
                                 )
-                                .Completion("completion")
+                                .Text("ngram", txt => txt
+                                    .Analyzer("persian_ngram")
+                                    .SearchAnalyzer("persian_search")
+                                )
+                                .Keyword("keyword")
                             )
                         )
-                        .Text(prop => prop.Description)
-                        .Keyword(prop => prop.CategoryName)
+                        .Text(prop => prop.Description, td => td
+                            .Analyzer("persian_text")
+                            .SearchAnalyzer("persian_search")
+                        )
+                        .Text(prop => prop.CategoryName, td => td
+                            .Analyzer("persian_text")
+                            .SearchAnalyzer("persian_search")
+                            .Fields(f => f
+                                .Keyword("keyword")
+                            )
+                        )
                         .IntegerNumber(prop => prop.CategoryId)
-                        .Keyword(prop => prop.CategoryGroupName)
+                        .Text(prop => prop.CategoryGroupName, td => td
+                            .Analyzer("persian_text")
+                            .SearchAnalyzer("persian_search")
+                            .Fields(f => f
+                                .Keyword("keyword")
+                            )
+                        )
                         .IntegerNumber(prop => prop.CategoryGroupId)
                         .ScaledFloatNumber(prop => prop.MinPrice, nd => nd.ScalingFactor(100))
                         .ScaledFloatNumber(prop => prop.MaxPrice, nd => nd.ScalingFactor(100))
@@ -114,7 +164,6 @@ public class ElasticIndexManager : IElasticIndexManager
                     indexName, createResponse.DebugInformation);
                 return false;
             }
-
             _logger.LogInformation("Successfully created index {IndexName} with {Shards} shards and {Replicas} replicas",
                 indexName, numberOfShards, numberOfReplicas);
             return true;
@@ -129,7 +178,6 @@ public class ElasticIndexManager : IElasticIndexManager
     public async Task<bool> CreateCategoryIndexAsync(CancellationToken ct = default)
     {
         const string indexName = "categories_v1";
-
         try
         {
             if (await IndexExistsAsync(indexName, ct))
@@ -137,34 +185,66 @@ public class ElasticIndexManager : IElasticIndexManager
                 _logger.LogInformation("Index {IndexName} already exists", indexName);
                 return true;
             }
-
             var environment = _configuration["ASPNETCORE_ENVIRONMENT"];
             var isProduction = environment == "Production";
-
-            var numberOfShards = isProduction
-                ? _configuration.GetValue<int>("Elasticsearch:NumberOfShards", 3)
-                : 1;
-
-            var numberOfReplicas = isProduction
-                ? _configuration.GetValue<int>("Elasticsearch:NumberOfReplicas", 1)
-                : 0;
+            var numberOfShards = isProduction ? _configuration.GetValue<int>("Elasticsearch:NumberOfShards", 3) : 1;
+            var numberOfReplicas = isProduction ? _configuration.GetValue<int>("Elasticsearch:NumberOfReplicas", 1) : 0;
+            var refreshInterval = isProduction ? "30s" : "1s";
+            var maxResultWindow = _configuration.GetValue<int>("Elasticsearch:MaxResultWindow", 10000);
 
             var createResponse = await _client.Indices.CreateAsync<CategorySearchDocument>(indexName, c => c
                 .Settings(s => s
                     .NumberOfShards(numberOfShards)
                     .NumberOfReplicas(numberOfReplicas)
+                    .RefreshInterval(refreshInterval)
+                    .MaxResultWindow(maxResultWindow)
+                    .MaxNgramDiff(20)
                     .Analysis(a => a
+                        .CharFilters(cf => cf
+                            .Mapping("persian_char_mapping", m => m
+                                .Mappings([
+                                    "ك => ک",
+                                "ي => ی",
+                                "ؤ => و",
+                                "إ => ا",
+                                "أ => ا",
+                                "ـ => ",
+                                "ۀ => ه",
+                                "ة => ه"
+                                ])
+                            )
+                        )
                         .Analyzers(an => an
-                            .Custom("autocomplete", ca => ca
+                            .Custom("persian_text", ca => ca
                                 .Tokenizer("standard")
-                                .Filter(["lowercase", "autocomplete_filter"])
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit", "persian_stop", "persian_stemmer"])
+                            )
+                            .Custom("persian_search", ca => ca
+                                .Tokenizer("standard")
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit"])
+                            )
+                            .Custom("persian_autocomplete", ca => ca
+                                .Tokenizer("standard")
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit", "autocomplete_filter"])
+                            )
+                            .Custom("persian_ngram", ca => ca
+                                .Tokenizer("standard")
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit", "ngram_filter"])
                             )
                         )
                         .TokenFilters(tf => tf
-                            .EdgeNGram("autocomplete_filter", eg => eg
-                                .MinGram(2)
-                                .MaxGram(20)
+                            .Stop("persian_stop", st => st
+                                .Stopwords(StopWordLanguage.Persian)
                             )
+                            .Stemmer("persian_stemmer", sm => sm
+                                .Language("persian")
+                            )
+                            .EdgeNGram("autocomplete_filter", eg => eg.MinGram(2).MaxGram(20))
+                            .NGram("ngram_filter", ng => ng.MinGram(2).MaxGram(10))
                         )
                     )
                 )
@@ -172,11 +252,18 @@ public class ElasticIndexManager : IElasticIndexManager
                     .Properties(p => p
                         .IntegerNumber(prop => prop.Id)
                         .Text(prop => prop.Name, td => td
+                            .Analyzer("persian_text")
+                            .SearchAnalyzer("persian_search")
                             .Fields(f => f
                                 .Text("autocomplete", txt => txt
-                                    .Analyzer("autocomplete")
-                                    .SearchAnalyzer("standard")
+                                    .Analyzer("persian_autocomplete")
+                                    .SearchAnalyzer("persian_search")
                                 )
+                                .Text("ngram", txt => txt
+                                    .Analyzer("persian_ngram")
+                                    .SearchAnalyzer("persian_search")
+                                )
+                                .Keyword("keyword")
                             )
                         )
                         .Keyword(prop => prop.IconUrl)
@@ -189,8 +276,8 @@ public class ElasticIndexManager : IElasticIndexManager
                     indexName, createResponse.DebugInformation);
                 return false;
             }
-
-            _logger.LogInformation("Successfully created index {IndexName}", indexName);
+            _logger.LogInformation("Successfully created index {IndexName} with {Shards} shards and {Replicas} replicas",
+                indexName, numberOfShards, numberOfReplicas);
             return true;
         }
         catch (Exception ex)
@@ -203,7 +290,6 @@ public class ElasticIndexManager : IElasticIndexManager
     public async Task<bool> CreateCategoryGroupIndexAsync(CancellationToken ct = default)
     {
         const string indexName = "categorygroups_v1";
-
         try
         {
             if (await IndexExistsAsync(indexName, ct))
@@ -211,34 +297,66 @@ public class ElasticIndexManager : IElasticIndexManager
                 _logger.LogInformation("Index {IndexName} already exists", indexName);
                 return true;
             }
-
             var environment = _configuration["ASPNETCORE_ENVIRONMENT"];
             var isProduction = environment == "Production";
-
-            var numberOfShards = isProduction
-                ? _configuration.GetValue<int>("Elasticsearch:NumberOfShards", 3)
-                : 1;
-
-            var numberOfReplicas = isProduction
-                ? _configuration.GetValue<int>("Elasticsearch:NumberOfReplicas", 1)
-                : 0;
+            var numberOfShards = isProduction ? _configuration.GetValue<int>("Elasticsearch:NumberOfShards", 3) : 1;
+            var numberOfReplicas = isProduction ? _configuration.GetValue<int>("Elasticsearch:NumberOfReplicas", 1) : 0;
+            var refreshInterval = isProduction ? "30s" : "1s";
+            var maxResultWindow = _configuration.GetValue<int>("Elasticsearch:MaxResultWindow", 10000);
 
             var createResponse = await _client.Indices.CreateAsync<CategoryGroupSearchDocument>(indexName, c => c
                 .Settings(s => s
                     .NumberOfShards(numberOfShards)
                     .NumberOfReplicas(numberOfReplicas)
+                    .RefreshInterval(refreshInterval)
+                    .MaxResultWindow(maxResultWindow)
+                    .MaxNgramDiff(20)
                     .Analysis(a => a
+                        .CharFilters(cf => cf
+                            .Mapping("persian_char_mapping", m => m
+                                .Mappings([
+                                    "ك => ک",
+                                "ي => ی",
+                                "ؤ => و",
+                                "إ => ا",
+                                "أ => ا",
+                                "ـ => ",
+                                "ۀ => ه",
+                                "ة => ه"
+                                ])
+                            )
+                        )
                         .Analyzers(an => an
-                            .Custom("autocomplete", ca => ca
+                            .Custom("persian_text", ca => ca
                                 .Tokenizer("standard")
-                                .Filter(["lowercase", "autocomplete_filter"])
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit", "persian_stop", "persian_stemmer"])
+                            )
+                            .Custom("persian_search", ca => ca
+                                .Tokenizer("standard")
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit"])
+                            )
+                            .Custom("persian_autocomplete", ca => ca
+                                .Tokenizer("standard")
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit", "autocomplete_filter"])
+                            )
+                            .Custom("persian_ngram", ca => ca
+                                .Tokenizer("standard")
+                                .CharFilter(["persian_char_mapping"])
+                                .Filter(["lowercase", "arabic_normalization", "persian_normalization", "decimal_digit", "ngram_filter"])
                             )
                         )
                         .TokenFilters(tf => tf
-                            .EdgeNGram("autocomplete_filter", eg => eg
-                                .MinGram(2)
-                                .MaxGram(20)
+                            .Stop("persian_stop", st => st
+                                .Stopwords(StopWordLanguage.Persian)
                             )
+                            .Stemmer("persian_stemmer", sm => sm
+                                .Language("persian")
+                            )
+                            .EdgeNGram("autocomplete_filter", eg => eg.MinGram(2).MaxGram(20))
+                            .NGram("ngram_filter", ng => ng.MinGram(2).MaxGram(10))
                         )
                     )
                 )
@@ -246,15 +364,20 @@ public class ElasticIndexManager : IElasticIndexManager
                     .Properties(p => p
                         .IntegerNumber(prop => prop.Id)
                         .Text(prop => prop.Name, td => td
+                            .Analyzer("persian_text")
+                            .SearchAnalyzer("persian_search")
                             .Fields(f => f
                                 .Text("autocomplete", txt => txt
-                                    .Analyzer("autocomplete")
-                                    .SearchAnalyzer("standard")
+                                    .Analyzer("persian_autocomplete")
+                                    .SearchAnalyzer("persian_search")
                                 )
+                                .Text("ngram", txt => txt
+                                    .Analyzer("persian_ngram")
+                                    .SearchAnalyzer("persian_search")
+                                )
+                                .Keyword("keyword")
                             )
                         )
-                        .Keyword(prop => prop.CategoryName)
-                        .IntegerNumber(prop => prop.CategoryId)
                         .Keyword(prop => prop.IconUrl)
                     )
                 ), ct);
@@ -265,8 +388,8 @@ public class ElasticIndexManager : IElasticIndexManager
                     indexName, createResponse.DebugInformation);
                 return false;
             }
-
-            _logger.LogInformation("Successfully created index {IndexName}", indexName);
+            _logger.LogInformation("Successfully created index {IndexName} with {Shards} shards and {Replicas} replicas",
+                indexName, numberOfShards, numberOfReplicas);
             return true;
         }
         catch (Exception ex)
@@ -280,12 +403,18 @@ public class ElasticIndexManager : IElasticIndexManager
     {
         try
         {
-            var deleteResponse = await _client.Indices.DeleteAsync(indexName, cancellationToken: ct);
+            if (!await IndexExistsAsync(indexName, ct))
+            {
+                _logger.LogInformation("Index {IndexName} does not exist", indexName);
+                return true;
+            }
 
-            if (!deleteResponse.IsValidResponse)
+            var response = await _client.Indices.DeleteAsync(indexName, ct);
+
+            if (!response.IsValidResponse)
             {
                 _logger.LogError("Failed to delete index {IndexName}: {Error}",
-                    indexName, deleteResponse.DebugInformation);
+                    indexName, response.DebugInformation);
                 return false;
             }
 
@@ -303,8 +432,8 @@ public class ElasticIndexManager : IElasticIndexManager
     {
         try
         {
-            var existsResponse = await _client.Indices.ExistsAsync(indexName, cancellationToken: ct);
-            return existsResponse.Exists;
+            var response = await _client.Indices.ExistsAsync(indexName, ct);
+            return response.Exists;
         }
         catch (Exception ex)
         {
@@ -317,18 +446,19 @@ public class ElasticIndexManager : IElasticIndexManager
     {
         try
         {
-            var reindexResponse = await _client.ReindexAsync(r => r
+            var response = await _client.ReindexAsync(r => r
                 .Source(s => s.Indices(sourceIndex))
-                .Dest(d => d.Index(destinationIndex)), ct);
+                .Dest(d => d.Index(destinationIndex))
+                .WaitForCompletion(false), ct);
 
-            if (!reindexResponse.IsValidResponse)
+            if (!response.IsValidResponse)
             {
                 _logger.LogError("Failed to reindex from {SourceIndex} to {DestinationIndex}: {Error}",
-                    sourceIndex, destinationIndex, reindexResponse.DebugInformation);
+                    sourceIndex, destinationIndex, response.DebugInformation);
                 return false;
             }
 
-            _logger.LogInformation("Successfully reindexed from {SourceIndex} to {DestinationIndex}",
+            _logger.LogInformation("Successfully started reindex from {SourceIndex} to {DestinationIndex}",
                 sourceIndex, destinationIndex);
             return true;
         }

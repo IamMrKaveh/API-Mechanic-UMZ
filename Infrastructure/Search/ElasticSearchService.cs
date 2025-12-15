@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace Infrastructure.Search;
+﻿namespace Infrastructure.Search;
 
 public class ElasticSearchService : ISearchService
 {
@@ -25,7 +23,6 @@ public class ElasticSearchService : ISearchService
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-
             var searchRequest = new SearchRequest("products_v1")
             {
                 From = (query.Page - 1) * query.PageSize,
@@ -39,25 +36,6 @@ public class ElasticSearchService : ISearchService
                         { "name", new HighlightField { PreTags = ["<em>"], PostTags = ["</em>"] } },
                         { "description", new HighlightField { PreTags = ["<em>"], PostTags = ["</em>"] } }
                     }
-                },
-                Suggest = new Suggester
-                {
-                    Suggesters = new Dictionary<string, FieldSuggester>
-                    {
-                        {
-                            "product_suggestions",
-                            new FieldSuggester
-                            {
-                                Prefix = query.Q ?? string.Empty,
-                                Completion = new CompletionSuggester
-                                {
-                                    Field = "name.completion",
-                                    Size = 5,
-                                    SkipDuplicates = true
-                                }
-                            }
-                        }
-                    }
                 }
             };
 
@@ -65,7 +43,7 @@ public class ElasticSearchService : ISearchService
             stopwatch.Stop();
 
             var success = response.IsValidResponse;
-            _metrics.RecordSearchRequest(stopwatch.Elapsed.TotalMilliseconds, success, "products"); // ✅
+            _metrics.RecordSearchRequest(stopwatch.Elapsed.TotalMilliseconds, success, "products");
 
             if (!success)
             {
@@ -90,7 +68,7 @@ public class ElasticSearchService : ISearchService
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _metrics.RecordSearchRequest(stopwatch.Elapsed.TotalMilliseconds, false, "products"); // ✅
+            _metrics.RecordSearchRequest(stopwatch.Elapsed.TotalMilliseconds, false, "products");
             _logger.LogError(ex, "Error occurred while searching products with query: {Query}", query.Q);
             throw;
         }
@@ -189,23 +167,73 @@ public class ElasticSearchService : ISearchService
 
         if (!string.IsNullOrWhiteSpace(query.Q))
         {
+            var searchQuery = query.Q.Trim();
+
             mustClauses.Add(new BoolQuery
             {
                 Should = new Query[]
                 {
-                new MultiMatchQuery
-                {
-                    Query = query.Q,
-                    Fields = new Field[] { "name^5", "categoryName^3", "categoryGroupName^2", "description" },
-                    Type = TextQueryType.BestFields,
-                    Fuzziness = new Fuzziness("AUTO"),
-                    Operator = Operator.Or
-                },
-                new MatchPhrasePrefixQuery
-                {
-                    Field = "name.autocomplete",
-                    Query = query.Q
-                }
+                    new MatchPhraseQuery
+                    {
+                        Field = "name",
+                        Query = searchQuery,
+                        Boost = 25
+                    },
+                    new MatchQuery
+                    {
+                        Field = "name",
+                        Query = searchQuery,
+                        Boost = 20,
+                        Fuzziness = new Fuzziness("AUTO")
+                    },
+                    new MatchQuery
+                    {
+                        Field = "name.autocomplete",
+                        Query = searchQuery,
+                        Boost = 10
+                    },
+                    new MatchQuery
+                    {
+                        Field = "name.ngram",
+                        Query = searchQuery,
+                        Boost = 8
+                    },
+                    new MatchPhraseQuery
+                    {
+                        Field = "name.ngram",
+                        Query = searchQuery,
+                        Boost = 12
+                    },
+                    new MatchQuery
+                    {
+                        Field = "categoryName.autocomplete",
+                        Query = searchQuery,
+                        Boost = 4
+                    },
+                    new MatchQuery
+                    {
+                        Field = "categoryName.ngram",
+                        Query = searchQuery,
+                        Boost = 3
+                    },
+                    new MatchQuery
+                    {
+                        Field = "categoryGroupName.autocomplete",
+                        Query = searchQuery,
+                        Boost = 2
+                    },
+                    new MatchQuery
+                    {
+                        Field = "categoryGroupName.ngram",
+                        Query = searchQuery,
+                        Boost = 1
+                    },
+                    new MatchQuery
+                    {
+                        Field = "description",
+                        Query = searchQuery,
+                        Boost = 1
+                    }
                 },
                 MinimumShouldMatch = 1
             });
@@ -249,106 +277,97 @@ public class ElasticSearchService : ISearchService
 
         if (query.MinPrice.HasValue || query.MaxPrice.HasValue)
         {
-            var rangeQuery = new NumberRangeQuery
+            filterClauses.Add(new NumberRangeQuery
             {
-                Field = "minPrice"
-            };
+                Field = "minPrice",
+                Gte = query.MinPrice.HasValue ? (double)query.MinPrice.Value : null,
+                Lte = query.MaxPrice.HasValue ? (double)query.MaxPrice.Value : null
+            });
+        }
 
-            if (query.MinPrice.HasValue)
-                rangeQuery.Gte = (double)query.MinPrice.Value;
-
-            if (query.MaxPrice.HasValue)
-                rangeQuery.Lte = (double)query.MaxPrice.Value;
-
-            filterClauses.Add(rangeQuery);
+        if (mustClauses.Count == 0 && filterClauses.Count == 0)
+        {
+            return new MatchAllQuery();
         }
 
         return new BoolQuery
         {
-            Must = mustClauses.Count > 0 ? mustClauses : null,
-            Filter = filterClauses.Count > 0 ? filterClauses : null
+            Must = mustClauses.Count > 0 ? mustClauses.ToArray() : null,
+            Filter = filterClauses.Count > 0 ? filterClauses.ToArray() : null
         };
     }
 
-    private ICollection<SortOptions>? BuildSortOptions(string? sort)
-    {
-        if (string.IsNullOrEmpty(sort))
-        {
-            return new[]
-            {
-            new SortOptions
-            {
-                Field = new FieldSort
-                {
-                    Field = "createdAt",
-                    Order = SortOrder.Desc
-                }
-            }
-        };
-        }
-
-        return sort.ToLower() switch
+    private SortOptions[] BuildSortOptions(string? sort) =>
+        sort?.ToLowerInvariant() switch
         {
             "price_asc" => new[]
             {
-            new SortOptions
-            {
-                Field = new FieldSort
+                new SortOptions
                 {
-                    Field = "minPrice",
-                    Order = SortOrder.Asc
+                    Field = new FieldSort
+                    {
+                        Field = "minPrice",
+                        Order = SortOrder.Asc
+                    }
                 }
-            }
-        },
+            },
             "price_desc" => new[]
             {
-            new SortOptions
-            {
-                Field = new FieldSort
+                new SortOptions
                 {
-                    Field = "minPrice",
-                    Order = SortOrder.Desc
+                    Field = new FieldSort
+                    {
+                        Field = "minPrice",
+                        Order = SortOrder.Desc
+                    }
                 }
-            }
-        },
+            },
             "created_desc" => new[]
             {
-            new SortOptions
-            {
-                Field = new FieldSort
+                new SortOptions
                 {
-                    Field = "createdAt",
-                    Order = SortOrder.Desc
+                    Field = new FieldSort
+                    {
+                        Field = "createdAt",
+                        Order = SortOrder.Desc
+                    }
                 }
-            }
-        },
+            },
             "created_asc" => new[]
             {
-            new SortOptions
-            {
-                Field = new FieldSort
+                new SortOptions
                 {
-                    Field = "createdAt",
-                    Order = SortOrder.Asc
+                    Field = new FieldSort
+                    {
+                        Field = "createdAt",
+                        Order = SortOrder.Asc
+                    }
                 }
-            }
-        },
+            },
             _ => new[]
             {
-            new SortOptions
-            {
-                Field = new FieldSort
+                new SortOptions
                 {
-                    Field = "createdAt",
-                    Order = SortOrder.Desc
+                    Score = new ScoreSort
+                    {
+                        Order = SortOrder.Desc
+                    }
+                },
+                new SortOptions
+                {
+                    Field = new FieldSort
+                    {
+                        Field = "createdAt",
+                        Order = SortOrder.Desc
+                    }
                 }
             }
-        }
         };
-    }
 
     private async Task<IEnumerable<CategorySearchDocument>> SearchCategoriesAsync(string query, CancellationToken ct)
     {
+        var searchQuery = query.Trim();
+
         var searchRequest = new SearchRequest("categories_v1")
         {
             Size = 5,
@@ -356,17 +375,36 @@ public class ElasticSearchService : ISearchService
             {
                 Should = new Query[]
                 {
-                    new MultiMatchQuery
+                    new MatchPhraseQuery
                     {
-                        Query = query,
-                        Fields = new Field[] { "name^5", "name.autocomplete^8" },
-                        Type = TextQueryType.BestFields,
+                        Field = "name",
+                        Query = searchQuery,
+                        Boost = 25
+                    },
+                    new MatchQuery
+                    {
+                        Field = "name",
+                        Query = searchQuery,
+                        Boost = 20,
                         Fuzziness = new Fuzziness("AUTO")
                     },
-                    new MatchPhrasePrefixQuery
+                    new MatchQuery
                     {
                         Field = "name.autocomplete",
-                        Query = query
+                        Query = searchQuery,
+                        Boost = 10
+                    },
+                    new MatchQuery
+                    {
+                        Field = "name.ngram",
+                        Query = searchQuery,
+                        Boost = 8
+                    },
+                    new MatchPhraseQuery
+                    {
+                        Field = "name.ngram",
+                        Query = searchQuery,
+                        Boost = 12
                     }
                 },
                 MinimumShouldMatch = 1
@@ -386,6 +424,8 @@ public class ElasticSearchService : ISearchService
 
     private async Task<IEnumerable<CategoryGroupSearchDocument>> SearchCategoryGroupsAsync(string query, CancellationToken ct)
     {
+        var searchQuery = query.Trim();
+
         var searchRequest = new SearchRequest("categorygroups_v1")
         {
             Size = 5,
@@ -393,17 +433,36 @@ public class ElasticSearchService : ISearchService
             {
                 Should = new Query[]
                 {
-                    new MultiMatchQuery
+                    new MatchPhraseQuery
                     {
-                        Query = query,
-                        Fields = new Field[] { "name^5", "name.autocomplete^8" },
-                        Type = TextQueryType.BestFields,
+                        Field = "name",
+                        Query = searchQuery,
+                        Boost = 25
+                    },
+                    new MatchQuery
+                    {
+                        Field = "name",
+                        Query = searchQuery,
+                        Boost = 20,
                         Fuzziness = new Fuzziness("AUTO")
                     },
-                    new MatchPhrasePrefixQuery
+                    new MatchQuery
                     {
                         Field = "name.autocomplete",
-                        Query = query
+                        Query = searchQuery,
+                        Boost = 10
+                    },
+                    new MatchQuery
+                    {
+                        Field = "name.ngram",
+                        Query = searchQuery,
+                        Boost = 8
+                    },
+                    new MatchPhraseQuery
+                    {
+                        Field = "name.ngram",
+                        Query = searchQuery,
+                        Boost = 12
                     }
                 },
                 MinimumShouldMatch = 1
@@ -423,6 +482,8 @@ public class ElasticSearchService : ISearchService
 
     private async Task<IEnumerable<ProductSearchDocument>> SearchProductsGlobalAsync(string query, CancellationToken ct)
     {
+       var searchQuery = query.Trim();
+
         var searchRequest = new SearchRequest("products_v1")
         {
             Size = 5,
@@ -430,17 +491,36 @@ public class ElasticSearchService : ISearchService
             {
                 Should = new Query[]
                 {
-                    new MultiMatchQuery
+                    new MatchPhraseQuery
                     {
-                        Query = query,
-                        Fields = new Field[] { "name^5", "name.autocomplete^8" },
-                        Type = TextQueryType.BestFields,
+                        Field = "name",
+                        Query = searchQuery,
+                        Boost = 25
+                    },
+                    new MatchQuery
+                    {
+                        Field = "name",
+                        Query = searchQuery,
+                        Boost = 20,
                         Fuzziness = new Fuzziness("AUTO")
                     },
-                    new MatchPhrasePrefixQuery
+                    new MatchQuery
                     {
                         Field = "name.autocomplete",
-                        Query = query
+                        Query = searchQuery,
+                        Boost = 10
+                    },
+                    new MatchQuery
+                    {
+                        Field = "name.ngram",
+                        Query = searchQuery,
+                        Boost = 8
+                    },
+                    new MatchPhraseQuery
+                    {
+                        Field = "name.ngram",
+                        Query = searchQuery,
+                        Boost = 12
                     }
                 },
                 MinimumShouldMatch = 1
