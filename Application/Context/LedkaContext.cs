@@ -7,6 +7,10 @@ public class LedkaContext : DbContext
     {
     }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+    }
+
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<UserAddress> UserAddresses { get; set; } = null!;
     public DbSet<UserOtp> UserOtps { get; set; } = null!;

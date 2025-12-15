@@ -3,16 +3,60 @@
   "WorkspaceRootPath": "C:\\ME\\Mechanic\\API\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\infrastructureservicecollectionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\infrastructureservicecollectionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\elasticsearchservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\elasticsearchservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\elasticindexmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\elasticindexmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\elasticclientfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\elasticclientfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\configuration\\elasticsearchconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\configuration\\elasticsearchconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\elasticsearchmetrics.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\elasticsearchmetrics.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\resilientelasticsearchservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\resilientelasticsearchservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\controllers\\searchcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\controllers\\searchcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\context\\ledkacontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\context\\ledkacontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\controllers\\searchcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\controllers\\searchcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\backgroundjobs\\paymentcleanupservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\backgroundjobs\\paymentcleanupservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\backgroundjobs\\orphanedfilecleanupservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\backgroundjobs\\orphanedfilecleanupservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\infrastructureservicecollectionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\infrastructureservicecollectionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -23,22 +67,6 @@
       "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\eventhandlers\\elasticsearcheventhandlers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\elasticsearchservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\elasticsearchservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\elasticsearchmetrics.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\elasticsearchmetrics.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\servicecollectionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\servicecollectionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -47,16 +75,8 @@
       "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\elasticsearchdlqhealthcheck.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\elasticclientfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\elasticclientfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\backgroundjobs\\elasticsearchoutboxprocessor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\backgroundjobs\\elasticsearchoutboxprocessor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\context\\ledkacontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\context\\ledkacontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\search\\elasticsearchoutboxmessage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -65,14 +85,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\elasticbulkservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\elasticbulkservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\elasticindexmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\elasticindexmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\resilientelasticsearchservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\search\\resilientelasticsearchservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\search\\elasticsearchcircuitbreaker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -86,7 +98,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -103,27 +115,40 @@
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "UserService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs",
-              "RelativeDocumentMoniker": "Application\\Services\\UserService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs",
-              "RelativeToolTip": "Application\\Services\\UserService.cs",
-              "ViewState": "AgIAALMAAAAAAAAAAAAAwL4AAAA5AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-14T23:20:58.448Z",
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
+              "RelativeDocumentMoniker": "MainApi\\appsettings.json",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
+              "RelativeToolTip": "MainApi\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAIwA4AAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-12-14T20:51:00.908Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 0,
               "Title": "ElasticSearchService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticSearchService.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Search\\ElasticSearchService.cs",
               "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticSearchService.cs",
               "RelativeToolTip": "Infrastructure\\Search\\ElasticSearchService.cs",
-              "ViewState": "AgIAAAwAAAAAAAAAAAAIwBgAAAAIAAAAAAAAAA==",
+              "ViewState": "AgIAAAoCAAAAAAAAAAAAABMCAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-14T21:04:56.876Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ElasticIndexManager.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticIndexManager.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Search\\ElasticIndexManager.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticIndexManager.cs",
+              "RelativeToolTip": "Infrastructure\\Search\\ElasticIndexManager.cs",
+              "ViewState": "AgIAADABAAAAAAAAAAAkwDgBAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-14T20:42:06.074Z",
               "EditorCaption": ""
             },
             {
@@ -141,7 +166,137 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Imports.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Imports.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Imports.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Imports.cs",
+              "RelativeToolTip": "Infrastructure\\Imports.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-14T20:40:11.041Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ElasticClientFactory.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticClientFactory.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Search\\ElasticClientFactory.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticClientFactory.cs",
+              "RelativeToolTip": "Infrastructure\\Search\\ElasticClientFactory.cs",
+              "ViewState": "AgIAAGMAAAAAAAAAAAA0wG4AAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-14T21:00:28.813Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Elasticsearchconfiguration.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\Configuration\\Elasticsearchconfiguration.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Search\\Configuration\\Elasticsearchconfiguration.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\Configuration\\Elasticsearchconfiguration.cs",
+              "RelativeToolTip": "Infrastructure\\Search\\Configuration\\Elasticsearchconfiguration.cs",
+              "ViewState": "AgIAAKkAAAAAAAAAAAA2wK8AAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-15T01:30:12.359Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ResilientElasticSearchService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ResilientElasticSearchService.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Search\\ResilientElasticSearchService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ResilientElasticSearchService.cs",
+              "RelativeToolTip": "Infrastructure\\Search\\ResilientElasticSearchService.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAA5wCQAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-14T20:38:46.425Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 9,
+              "Title": "LedkaContext.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Context\\LedkaContext.cs",
+              "RelativeDocumentMoniker": "Application\\Context\\LedkaContext.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Context\\LedkaContext.cs",
+              "RelativeToolTip": "Application\\Context\\LedkaContext.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-14T20:58:06.571Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "SearchController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\SearchController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Controllers\\SearchController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\SearchController.cs",
+              "RelativeToolTip": "MainApi\\Controllers\\SearchController.cs",
+              "ViewState": "AgIAABwAAAAAAAAAAAAcwCEAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-14T23:24:25.278Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "InfrastructureServiceCollectionExtensions.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\InfrastructureServiceCollectionExtensions.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\InfrastructureServiceCollectionExtensions.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\InfrastructureServiceCollectionExtensions.cs",
+              "RelativeToolTip": "Infrastructure\\InfrastructureServiceCollectionExtensions.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAswDcAAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-14T20:41:38.859Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
+              "RelativeDocumentMoniker": "MainApi\\Program.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
+              "RelativeToolTip": "MainApi\\Program.cs",
+              "ViewState": "AgIAACQAAAAAAAAAAAA0wDIAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-14T21:03:02.129Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "OrphanedFileCleanupService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\BackgroundJobs\\OrphanedFileCleanupService.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\BackgroundJobs\\OrphanedFileCleanupService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\BackgroundJobs\\OrphanedFileCleanupService.cs",
+              "RelativeToolTip": "Infrastructure\\BackgroundJobs\\OrphanedFileCleanupService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-14T23:50:07.438Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "PaymentCleanupService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\BackgroundJobs\\PaymentCleanupService.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\BackgroundJobs\\PaymentCleanupService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\BackgroundJobs\\PaymentCleanupService.cs",
+              "RelativeToolTip": "Infrastructure\\BackgroundJobs\\PaymentCleanupService.cs",
+              "ViewState": "AgIAAFIAAAAAAAAAAAAcwGEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-14T23:50:27.847Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
               "Title": "ServiceCollectionExtensions.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\ServiceCollectionExtensions.cs",
               "RelativeDocumentMoniker": "Application\\ServiceCollectionExtensions.cs",
@@ -154,46 +309,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
-              "RelativeDocumentMoniker": "MainApi\\Program.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
-              "RelativeToolTip": "MainApi\\Program.cs",
-              "ViewState": "AgIAAGICAAAAAAAAAAAIwHYCAAABAAAAAAAAAA==",
+              "DocumentIndex": 14,
+              "Title": "UserService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs",
+              "RelativeDocumentMoniker": "Application\\Services\\UserService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Services\\UserService.cs",
+              "RelativeToolTip": "Application\\Services\\UserService.cs",
+              "ViewState": "AgIAALMAAAAAAAAAAAAAwL4AAAA5AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-14T21:03:02.129Z",
+              "WhenOpened": "2025-12-14T23:20:58.448Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "InfrastructureServiceCollectionExtensions.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\InfrastructureServiceCollectionExtensions.cs",
-              "RelativeDocumentMoniker": "Infrastructure\\InfrastructureServiceCollectionExtensions.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\InfrastructureServiceCollectionExtensions.cs*",
-              "RelativeToolTip": "Infrastructure\\InfrastructureServiceCollectionExtensions.cs*",
-              "ViewState": "AgIAACoAAAAAAAAAAAAswDcAAAA2AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-14T20:41:38.859Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "SearchController.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\SearchController.cs",
-              "RelativeDocumentMoniker": "MainApi\\Controllers\\SearchController.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Controllers\\SearchController.cs",
-              "RelativeToolTip": "MainApi\\Controllers\\SearchController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB0AAAAEAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-14T23:24:25.278Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 15,
               "Title": "Elasticsearcheventhandlers.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\EventHandlers\\Elasticsearcheventhandlers.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Search\\EventHandlers\\Elasticsearcheventhandlers.cs",
@@ -206,7 +335,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 17,
               "Title": "ElasticsearchDLQHealthCheck.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticsearchDLQHealthCheck.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Search\\ElasticsearchDLQHealthCheck.cs",
@@ -219,46 +348,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "Imports.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Imports.cs",
-              "RelativeDocumentMoniker": "Infrastructure\\Imports.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Imports.cs",
-              "RelativeToolTip": "Infrastructure\\Imports.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAHAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-14T20:40:11.041Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "ElasticClientFactory.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticClientFactory.cs",
-              "RelativeDocumentMoniker": "Infrastructure\\Search\\ElasticClientFactory.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticClientFactory.cs",
-              "RelativeToolTip": "Infrastructure\\Search\\ElasticClientFactory.cs",
-              "ViewState": "AgIAAFwAAAAAAAAAAAAswFsAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-14T21:00:28.813Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
-              "RelativeDocumentMoniker": "MainApi\\appsettings.json",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\appsettings.json",
-              "RelativeToolTip": "MainApi\\appsettings.json",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAABEAAAAgAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-12-14T20:51:00.908Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 18,
               "Title": "ElasticsearchOutboxProcessor.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\BackgroundJobs\\ElasticsearchOutboxProcessor.cs",
               "RelativeDocumentMoniker": "Infrastructure\\BackgroundJobs\\ElasticsearchOutboxProcessor.cs",
@@ -271,20 +361,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "LedkaContext.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Context\\LedkaContext.cs",
-              "RelativeDocumentMoniker": "Application\\Context\\LedkaContext.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Context\\LedkaContext.cs",
-              "RelativeToolTip": "Application\\Context\\LedkaContext.cs",
-              "ViewState": "AgIAAFkAAAAAAAAAAAA3wHAAAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-14T20:58:06.571Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 19,
               "Title": "ElasticsearchOutboxMessage.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Search\\ElasticsearchOutboxMessage.cs",
               "RelativeDocumentMoniker": "Domain\\Search\\ElasticsearchOutboxMessage.cs",
@@ -297,7 +374,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 20,
               "Title": "ElasticBulkService.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticBulkService.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Search\\ElasticBulkService.cs",
@@ -310,20 +387,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
-              "Title": "ElasticIndexManager.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticIndexManager.cs",
-              "RelativeDocumentMoniker": "Infrastructure\\Search\\ElasticIndexManager.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticIndexManager.cs",
-              "RelativeToolTip": "Infrastructure\\Search\\ElasticIndexManager.cs",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAQwCcAAAAvAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-14T20:42:06.074Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 21,
               "Title": "ElasticsearchCircuitBreaker.cs",
               "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ElasticsearchCircuitBreaker.cs",
               "RelativeDocumentMoniker": "Infrastructure\\Search\\ElasticsearchCircuitBreaker.cs",
@@ -332,19 +396,6 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-14T20:39:52.125Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 17,
-              "Title": "ResilientElasticSearchService.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ResilientElasticSearchService.cs",
-              "RelativeDocumentMoniker": "Infrastructure\\Search\\ResilientElasticSearchService.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Search\\ResilientElasticSearchService.cs",
-              "RelativeToolTip": "Infrastructure\\Search\\ResilientElasticSearchService.cs",
-              "ViewState": "AgIAAAsAAAAAAAAAAAD4vxkAAAAIAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-14T20:38:46.425Z",
               "EditorCaption": ""
             }
           ]

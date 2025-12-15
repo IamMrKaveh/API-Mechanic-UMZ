@@ -38,18 +38,17 @@ try
     {
         options.UseNpgsql(connectionString, npgsqlOptions =>
         {
-            npgsqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 3,
-                maxRetryDelay: TimeSpan.FromSeconds(10),
-                errorCodesToAdd: null);
-
+            npgsqlOptions.EnableRetryOnFailure(3, TimeSpan.FromSeconds(10), null);
             npgsqlOptions.CommandTimeout(300);
             npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "public");
             npgsqlOptions.SetPostgresVersion(new Version(15, 0));
         });
 
-        options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
-    }, poolSize: 15);
+        options.ConfigureWarnings(warnings =>
+            warnings.Ignore(
+                Microsoft.EntityFrameworkCore.Diagnostics.CoreEventId
+                .PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning));
+    });
 
     builder.Services.AddScoped<IUnitOfWork, Infrastructure.Persistence.UnitOfWork>();
     Log.Information("Database context registered successfully");
