@@ -4,21 +4,19 @@ public class ElasticBulkService : IElasticBulkService
 {
     private readonly ElasticsearchClient _client;
     private readonly ILogger<ElasticBulkService> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly ElasticsearchMetrics _metrics;
 
     public ElasticBulkService(
         ElasticsearchClient client,
         ILogger<ElasticBulkService> logger,
-        IConfiguration configuration)
+        ElasticsearchMetrics metrics)
     {
         _client = client;
         _logger = logger;
-        _configuration = configuration;
+        _metrics = metrics;
     }
 
-    public async Task<bool> BulkIndexProductsAsync(
-    IEnumerable<ProductSearchDocument> products,
-    CancellationToken ct = default)
+    public async Task<bool> BulkIndexProductsAsync(IEnumerable<ProductSearchDocument> products, CancellationToken ct = default)
     {
         try
         {
@@ -29,58 +27,46 @@ public class ElasticBulkService : IElasticBulkService
                 return true;
             }
 
-            _logger.LogInformation("Starting bulk indexing of {Count} products", productList.Count);
+            var response = await _client.BulkAsync(b => b
+                .Index("products_v1")
+                .IndexMany(productList, (op, doc) => op
+                    .Index("products_v1")
+                    .Id(doc.ProductId)
+                ), ct);
 
-            var batchSize = _configuration.GetValue<int>("Elasticsearch:BulkBatchSize", 1000);
-            var bulkTimeout = _configuration.GetValue<int>("Elasticsearch:BulkTimeoutSeconds", 120);
-            var batches = productList.Chunk(batchSize);
-
-            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(bulkTimeout));
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
-
-            var successCount = 0;
-            var failureCount = 0;
-
-            foreach (var batch in batches)
+            if (!response.IsValidResponse)
             {
-                try
-                {
-                    var bulkResponse = await _client.BulkAsync(b => b
-                        .Index("products")
-                        .IndexMany(batch)
-                        .Refresh(Elastic.Clients.Elasticsearch.Refresh.False), linkedCts.Token);
-
-                    if (!bulkResponse.IsValidResponse || bulkResponse.Errors)
-                    {
-                        failureCount += batch.Length;
-                        _logger.LogError("Bulk indexing failed for batch. Errors: {Errors}",
-                            string.Join(", ", bulkResponse.ItemsWithErrors.Select(i => i.Error?.Reason ?? "Unknown")));
-                    }
-                    else
-                    {
-                        successCount += batch.Length;
-                    }
-                }
-                catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
-                {
-                    _logger.LogError(
-                        "Bulk indexing timeout after {Timeout} seconds. Processed {Success}/{Total}",
-                        bulkTimeout, successCount, productList.Count);
-                    failureCount += batch.Length;
-                    break;
-                }
+                _logger.LogError("Bulk index products failed: {Error}", response.DebugInformation);
+                _metrics.RecordBulkOperationFailure("products_v1");
+                return false;
             }
 
-            _logger.LogInformation(
-                "Bulk indexing completed. Success: {Success}, Failures: {Failures}",
-                successCount, failureCount);
+            if (response.Errors)
+            {
+                var failedItems = response.Items
+                    .Where(i => i.Error != null)
+                    .Select(i => new { i.Id, i?.Error?.Reason })
+                    .ToList();
 
-            return failureCount == 0;
+                _logger.LogWarning("Bulk index completed with {Count} errors: {Errors}",
+                    failedItems.Count,
+                    System.Text.Json.JsonSerializer.Serialize(failedItems));
+
+                _metrics.RecordBulkOperationPartialFailure(failedItems.Count, "products_v1");
+            }
+            else
+            {
+                _metrics.RecordBulkOperationSuccess(productList.Count, "products_v1");
+            }
+
+            _logger.LogInformation("Successfully bulk indexed {Count} products", productList.Count);
+            return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during bulk indexing of products");
-            return false;
+            _logger.LogError(ex, "Exception during bulk index products");
+            _metrics.RecordBulkOperationFailure("products_v1");
+            throw;
         }
     }
 
@@ -95,27 +81,46 @@ public class ElasticBulkService : IElasticBulkService
                 return true;
             }
 
-            _logger.LogInformation("Starting bulk indexing of {Count} categories", categoryList.Count);
-
-            var bulkResponse = await _client.BulkAsync(b => b
+            var response = await _client.BulkAsync(b => b
                 .Index("categories_v1")
-                .IndexMany(categoryList)
-                .Refresh(Elastic.Clients.Elasticsearch.Refresh.False), ct);
+                .IndexMany(categoryList, (op, doc) => op
+                    .Index("categories_v1")
+                    .Id(doc.CategoryId)
+                ), ct);
 
-            if (!bulkResponse.IsValidResponse || bulkResponse.Errors)
+            if (!response.IsValidResponse)
             {
-                _logger.LogError("Bulk indexing of categories failed. Errors: {Errors}",
-                    string.Join(", ", bulkResponse.ItemsWithErrors.Select(i => i.Error?.Reason ?? "Unknown")));
+                _logger.LogError("Bulk index categories failed: {Error}", response.DebugInformation);
+                _metrics.RecordBulkOperationFailure("categories_v1");
                 return false;
             }
 
-            _logger.LogInformation("Successfully indexed {Count} categories", categoryList.Count);
+            if (response.Errors)
+            {
+                var failedItems = response.Items
+                    .Where(i => i.Error != null)
+                    .Select(i => new { i.Id, i?.Error?.Reason })
+                    .ToList();
+
+                _logger.LogWarning("Bulk index categories completed with {Count} errors: {Errors}",
+                    failedItems.Count,
+                    System.Text.Json.JsonSerializer.Serialize(failedItems));
+
+                _metrics.RecordBulkOperationPartialFailure(failedItems.Count, "categories_v1");
+            }
+            else
+            {
+                _metrics.RecordBulkOperationSuccess(categoryList.Count, "categories_v1");
+            }
+
+            _logger.LogInformation("Successfully bulk indexed {Count} categories", categoryList.Count);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during bulk indexing of categories");
-            return false;
+            _logger.LogError(ex, "Exception during bulk index categories");
+            _metrics.RecordBulkOperationFailure("categories_v1");
+            throw;
         }
     }
 
@@ -123,34 +128,53 @@ public class ElasticBulkService : IElasticBulkService
     {
         try
         {
-            var groupList = categoryGroups.ToList();
-            if (!groupList.Any())
+            var categoryGroupList = categoryGroups.ToList();
+            if (!categoryGroupList.Any())
             {
                 _logger.LogWarning("No category groups to index");
                 return true;
             }
 
-            _logger.LogInformation("Starting bulk indexing of {Count} category groups", groupList.Count);
-
-            var bulkResponse = await _client.BulkAsync(b => b
+            var response = await _client.BulkAsync(b => b
                 .Index("categorygroups_v1")
-                .IndexMany(groupList)
-                .Refresh(Elastic.Clients.Elasticsearch.Refresh.False), ct);
+                .IndexMany(categoryGroupList, (op, doc) => op
+                    .Index("categorygroups_v1")
+                    .Id(doc.CategoryGroupId)
+                ), ct);
 
-            if (!bulkResponse.IsValidResponse || bulkResponse.Errors)
+            if (!response.IsValidResponse)
             {
-                _logger.LogError("Bulk indexing of category groups failed. Errors: {Errors}",
-                    string.Join(", ", bulkResponse.ItemsWithErrors.Select(i => i.Error?.Reason ?? "Unknown")));
+                _logger.LogError("Bulk index category groups failed: {Error}", response.DebugInformation);
+                _metrics.RecordBulkOperationFailure("categorygroups_v1");
                 return false;
             }
 
-            _logger.LogInformation("Successfully indexed {Count} category groups", groupList.Count);
+            if (response.Errors)
+            {
+                var failedItems = response.Items
+                    .Where(i => i.Error != null)
+                    .Select(i => new { i.Id, i?.Error?.Reason })
+                    .ToList();
+
+                _logger.LogWarning("Bulk index category groups completed with {Count} errors: {Errors}",
+                    failedItems.Count,
+                    System.Text.Json.JsonSerializer.Serialize(failedItems));
+
+                _metrics.RecordBulkOperationPartialFailure(failedItems.Count, "categorygroups_v1");
+            }
+            else
+            {
+                _metrics.RecordBulkOperationSuccess(categoryGroupList.Count, "categorygroups_v1");
+            }
+
+            _logger.LogInformation("Successfully bulk indexed {Count} category groups", categoryGroupList.Count);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during bulk indexing of category groups");
-            return false;
+            _logger.LogError(ex, "Exception during bulk index category groups");
+            _metrics.RecordBulkOperationFailure("categorygroups_v1");
+            throw;
         }
     }
 
@@ -158,39 +182,53 @@ public class ElasticBulkService : IElasticBulkService
     {
         try
         {
-            var idList = productIds.ToList();
-            if (!idList.Any())
+            var productIdList = productIds.ToList();
+            if (!productIdList.Any())
             {
                 _logger.LogWarning("No products to delete");
                 return true;
             }
 
-            _logger.LogInformation("Starting bulk deletion of {Count} products", idList.Count);
+            var response = await _client.BulkAsync(b => b
+                .Index("products_v1")
+                .DeleteMany(productIdList, (op, id) => op
+                    .Index("products_v1")
+                    .Id(id)
+                ), ct);
 
-            var bulkResponse = await _client.BulkAsync(b =>
+            if (!response.IsValidResponse)
             {
-                b.Index("products_v1");
-                foreach (var id in idList)
-                {
-                    b.Delete<ProductSearchDocument>(d => d.Id(id));
-                }
-                b.Refresh(Elastic.Clients.Elasticsearch.Refresh.False);
-            }, ct);
-
-            if (!bulkResponse.IsValidResponse || bulkResponse.Errors)
-            {
-                _logger.LogError("Bulk deletion failed. Errors: {Errors}",
-                    string.Join(", ", bulkResponse.ItemsWithErrors.Select(i => i.Error?.Reason ?? "Unknown")));
+                _logger.LogError("Bulk delete products failed: {Error}", response.DebugInformation);
+                _metrics.RecordBulkOperationFailure("products_v1");
                 return false;
             }
 
-            _logger.LogInformation("Successfully deleted {Count} products", idList.Count);
+            if (response.Errors)
+            {
+                var failedItems = response.Items
+                    .Where(i => i.Error != null)
+                    .Select(i => new { i.Id, i?.Error?.Reason })
+                    .ToList();
+
+                _logger.LogWarning("Bulk delete completed with {Count} errors: {Errors}",
+                    failedItems.Count,
+                    System.Text.Json.JsonSerializer.Serialize(failedItems));
+
+                _metrics.RecordBulkOperationPartialFailure(failedItems.Count, "products_v1");
+            }
+            else
+            {
+                _metrics.RecordBulkOperationSuccess(productIdList.Count, "products_v1");
+            }
+
+            _logger.LogInformation("Successfully bulk deleted {Count} products", productIdList.Count);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during bulk deletion of products");
-            return false;
+            _logger.LogError(ex, "Exception during bulk delete products");
+            _metrics.RecordBulkOperationFailure("products_v1");
+            throw;
         }
     }
 
@@ -205,50 +243,47 @@ public class ElasticBulkService : IElasticBulkService
                 return true;
             }
 
-            _logger.LogInformation("Starting bulk update of {Count} products", productList.Count);
+            var response = await _client.BulkAsync(b => b
+                .Index("products_v1")
+                .UpdateMany(productList, (op, doc) => op
+                    .Index("products_v1")
+                    .Id(doc.ProductId)
+                    .Doc(doc)
+                ), ct);
 
-            var batchSize = _configuration.GetValue<int>("Elasticsearch:BulkBatchSize", 1000);
-            var batches = productList.Chunk(batchSize);
-
-            var successCount = 0;
-            var failureCount = 0;
-
-            foreach (var batch in batches)
+            if (!response.IsValidResponse)
             {
-                var bulkResponse = await _client.BulkAsync(b =>
-                {
-                    b.Index("products_v1");
-                    foreach (var product in batch)
-                    {
-                        b.Update<ProductSearchDocument, ProductSearchDocument>(u => u
-                            .Id(product.Id)
-                            .Doc(product)
-                            .DocAsUpsert(true));
-                    }
-                    b.Refresh(Elastic.Clients.Elasticsearch.Refresh.False);
-                }, ct);
-
-                if (!bulkResponse.IsValidResponse || bulkResponse.Errors)
-                {
-                    failureCount += batch.Length;
-                    _logger.LogError("Bulk update failed for batch. Errors: {Errors}",
-                        string.Join(", ", bulkResponse.ItemsWithErrors.Select(i => i.Error?.Reason ?? "Unknown")));
-                }
-                else
-                {
-                    successCount += batch.Length;
-                }
+                _logger.LogError("Bulk update products failed: {Error}", response.DebugInformation);
+                _metrics.RecordBulkOperationFailure("products_v1");
+                return false;
             }
 
-            _logger.LogInformation("Bulk update completed. Success: {Success}, Failures: {Failures}",
-                successCount, failureCount);
+            if (response.Errors)
+            {
+                var failedItems = response.Items
+                    .Where(i => i.Error != null)
+                    .Select(i => new { i.Id, i?.Error?.Reason })
+                    .ToList();
 
-            return failureCount == 0;
+                _logger.LogWarning("Bulk update completed with {Count} errors: {Errors}",
+                    failedItems.Count,
+                    System.Text.Json.JsonSerializer.Serialize(failedItems));
+
+                _metrics.RecordBulkOperationPartialFailure(failedItems.Count, "products_v1");
+            }
+            else
+            {
+                _metrics.RecordBulkOperationSuccess(productList.Count, "products_v1");
+            }
+
+            _logger.LogInformation("Successfully bulk updated {Count} products", productList.Count);
+            return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during bulk update of products");
-            return false;
+            _logger.LogError(ex, "Exception during bulk update products");
+            _metrics.RecordBulkOperationFailure("products_v1");
+            throw;
         }
     }
 }

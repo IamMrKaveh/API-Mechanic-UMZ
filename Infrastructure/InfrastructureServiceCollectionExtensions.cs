@@ -50,10 +50,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IElasticIndexManager, ElasticIndexManager>();
         services.AddScoped<IElasticDeadLetterQueue, ElasticDeadLetterQueue>();
         services.AddSingleton<ElasticsearchCircuitBreaker>();
-        services.AddHostedService<ElasticsearchStartupTask>();
         services.AddHostedService<ElasticsearchSyncBackgroundService>();
         services.AddHostedService<DeadLetterQueueProcessor>();
         services.AddSingleton<ElasticsearchMetrics>();
+
+        services.AddScoped<ElasticsearchInitialSyncService>();
+        services.AddScoped<ElasticsearchDatabaseSyncService>();
+
         return services;
     }
 }

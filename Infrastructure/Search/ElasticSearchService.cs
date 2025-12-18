@@ -4,539 +4,613 @@ public class ElasticSearchService : ISearchService
 {
     private readonly ElasticsearchClient _client;
     private readonly ILogger<ElasticSearchService> _logger;
-    private readonly ElasticsearchMetrics _metrics;
+    private readonly IConfiguration _configuration;
+    private readonly Dictionary<string, float> _fieldBoosts;
 
     public ElasticSearchService(
         ElasticsearchClient client,
         ILogger<ElasticSearchService> logger,
-        ElasticsearchMetrics metrics)
+        IConfiguration configuration)
     {
         _client = client;
         _logger = logger;
-        _metrics = metrics;
+        _configuration = configuration;
+
+        _fieldBoosts = configuration
+            .GetSection("Search:FieldBoosts")
+            .Get<Dictionary<string, float>>() ?? new Dictionary<string, float>
+            {
+                { "name", 5 },
+                { "categoryName", 3 },
+                { "categoryGroupName", 2 },
+                { "description", 1 },
+                { "brand", 2.5f },
+                { "tags", 2 }
+            };
     }
 
     public async Task<SearchResultDto<ProductSearchDocument>> SearchProductsAsync(
         SearchProductsQuery query,
-        CancellationToken ct)
+        CancellationToken ct = default)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        try
-        {
-            var searchRequest = new SearchRequest("products_v1")
-            {
-                From = (query.Page - 1) * query.PageSize,
-                Size = query.PageSize,
-                Query = BuildProductQuery(query),
-                Sort = BuildSortOptions(query.Sort),
-                Highlight = new Highlight
-                {
-                    Fields = new Dictionary<Field, HighlightField>
-                    {
-                        { "name", new HighlightField { PreTags = ["<em>"], PostTags = ["</em>"] } },
-                        { "description", new HighlightField { PreTags = ["<em>"], PostTags = ["</em>"] } }
-                    }
-                }
-            };
-
-            var response = await _client.SearchAsync<ProductSearchDocument>(searchRequest, ct);
-            stopwatch.Stop();
-
-            var success = response.IsValidResponse;
-            _metrics.RecordSearchRequest(stopwatch.Elapsed.TotalMilliseconds, success, "products");
-
-            if (!success)
-            {
-                _logger.LogError("Elasticsearch search failed: {Error}", response.DebugInformation);
-                return new SearchResultDto<ProductSearchDocument>
-                {
-                    Items = [],
-                    Total = 0,
-                    Page = query.Page,
-                    PageSize = query.PageSize
-                };
-            }
-
-            return new SearchResultDto<ProductSearchDocument>
-            {
-                Items = response.Documents ?? [],
-                Total = response.Total,
-                Page = query.Page,
-                PageSize = query.PageSize
-            };
-        }
-        catch (Exception ex)
-        {
-            stopwatch.Stop();
-            _metrics.RecordSearchRequest(stopwatch.Elapsed.TotalMilliseconds, false, "products");
-            _logger.LogError(ex, "Error occurred while searching products with query: {Query}", query.Q);
-            throw;
-        }
-    }
-
-    public async Task<GlobalSearchResultDto> SearchGlobalAsync(string query, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(query))
-            return new GlobalSearchResultDto();
-
-        try
-        {
-            var categoryTask = SearchCategoriesAsync(query, ct);
-            var categoryGroupTask = SearchCategoryGroupsAsync(query, ct);
-            var productTask = SearchProductsGlobalAsync(query, ct);
-
-            await Task.WhenAll(categoryTask, categoryGroupTask, productTask);
-
-            return new GlobalSearchResultDto
-            {
-                Categories = categoryTask.Result,
-                CategoryGroups = categoryGroupTask.Result,
-                Products = productTask.Result
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred during global search with query: {Query}", query);
-            throw;
-        }
-    }
-
-    public async Task IndexProductAsync(ProductSearchDocument document, CancellationToken ct)
-    {
-        try
-        {
-            var response = await _client.IndexAsync(document, idx => idx.Index("products_v1"), ct);
-
-            if (!response.IsValidResponse)
-            {
-                _logger.LogError("Failed to index product {ProductId}: {Error}",
-                    document.Id, response.DebugInformation);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error indexing product {ProductId}", document.Id);
-            throw;
-        }
-    }
-
-    public async Task IndexCategoryAsync(CategorySearchDocument document, CancellationToken ct)
-    {
-        try
-        {
-            var response = await _client.IndexAsync(document, idx => idx.Index("categories_v1"), ct);
-
-            if (!response.IsValidResponse)
-            {
-                _logger.LogError("Failed to index category {CategoryId}: {Error}",
-                    document.Id, response.DebugInformation);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error indexing category {CategoryId}", document.Id);
-            throw;
-        }
-    }
-
-    public async Task IndexCategoryGroupAsync(CategoryGroupSearchDocument document, CancellationToken ct)
-    {
-        try
-        {
-            var response = await _client.IndexAsync(document, idx => idx.Index("categorygroups_v1"), ct);
-
-            if (!response.IsValidResponse)
-            {
-                _logger.LogError("Failed to index category group {CategoryGroupId}: {Error}",
-                    document.Id, response.DebugInformation);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error indexing category group {CategoryGroupId}", document.Id);
-            throw;
-        }
-    }
-
-    #region Private Helper Methods
-
-    private Query BuildProductQuery(SearchProductsQuery query)
-    {
-        var mustClauses = new List<Query>();
-        var filterClauses = new List<Query>();
+        var shouldQueries = new List<Query>();
+        var filterQueries = new List<Query>();
 
         if (!string.IsNullOrWhiteSpace(query.Q))
         {
-            var searchQuery = query.Q.Trim();
-
-            mustClauses.Add(new BoolQuery
+            shouldQueries.Add(new MatchQuery
             {
-                Should = new Query[]
+                Field = "name.keyword",
+                Query = query.Q,
+                Boost = 10
+            });
+
+            shouldQueries.Add(new MatchPhraseQuery
+            {
+                Field = "name",
+                Query = query.Q,
+                Boost = 7,
+                Slop = 2
+            });
+
+            shouldQueries.Add(new MultiMatchQuery
+            {
+                Query = query.Q,
+                Fields = new[]
                 {
-                    new MatchPhraseQuery
-                    {
-                        Field = "name",
-                        Query = searchQuery,
-                        Boost = 25
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name",
-                        Query = searchQuery,
-                        Boost = 20,
-                        Fuzziness = new Fuzziness("AUTO")
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name.autocomplete",
-                        Query = searchQuery,
-                        Boost = 10
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name.ngram",
-                        Query = searchQuery,
-                        Boost = 8
-                    },
-                    new MatchPhraseQuery
-                    {
-                        Field = "name.ngram",
-                        Query = searchQuery,
-                        Boost = 12
-                    },
-                    new MatchQuery
-                    {
-                        Field = "categoryName.autocomplete",
-                        Query = searchQuery,
-                        Boost = 4
-                    },
-                    new MatchQuery
-                    {
-                        Field = "categoryName.ngram",
-                        Query = searchQuery,
-                        Boost = 3
-                    },
-                    new MatchQuery
-                    {
-                        Field = "categoryGroupName.autocomplete",
-                        Query = searchQuery,
-                        Boost = 2
-                    },
-                    new MatchQuery
-                    {
-                        Field = "categoryGroupName.ngram",
-                        Query = searchQuery,
-                        Boost = 1
-                    },
-                    new MatchQuery
-                    {
-                        Field = "description",
-                        Query = searchQuery,
-                        Boost = 1
-                    }
-                },
-                MinimumShouldMatch = 1
+                $"name^{_fieldBoosts["name"]}",
+                $"categoryName^{_fieldBoosts["categoryName"]}",
+                $"categoryGroupName^{_fieldBoosts["categoryGroupName"]}",
+                $"description^{_fieldBoosts["description"]}",
+                $"brand^{_fieldBoosts["brand"]}",
+                $"tags^{_fieldBoosts["tags"]}"
+            },
+                Type = TextQueryType.BestFields,
+                Fuzziness = "AUTO",
+                PrefixLength = 2,
+                MaxExpansions = 50
+            });
+
+            if (query.Q.Length >= 3)
+            {
+                shouldQueries.Add(new WildcardQuery
+                {
+                    Field = "name",
+                    Value = $"*{query.Q}*",
+                    CaseInsensitive = true,
+                    Boost = 2
+                });
+            }
+
+            shouldQueries.Add(new MultiMatchQuery
+            {
+                Query = query.Q,
+                Fields = new[] { "name", "categoryName", "brand" },
+                Type = TextQueryType.CrossFields,
+                Operator = Operator.And,
+                Boost = 3
             });
         }
 
+        filterQueries.Add(new TermQuery
+        {
+            Field = "isActive",
+            Value = true
+        });
+
         if (query.CategoryId.HasValue)
         {
-            filterClauses.Add(new TermQuery
+            filterQueries.Add(new TermQuery
             {
                 Field = "categoryId",
-                Value = FieldValue.Long(query.CategoryId.Value)
+                Value = query.CategoryId.Value
             });
         }
 
         if (query.CategoryGroupId.HasValue)
         {
-            filterClauses.Add(new TermQuery
+            filterQueries.Add(new TermQuery
             {
                 Field = "categoryGroupId",
-                Value = FieldValue.Long(query.CategoryGroupId.Value)
+                Value = query.CategoryGroupId.Value
             });
         }
 
-        if (query.IsInStock == true)
+        if (query.MinPrice.HasValue)
         {
-            filterClauses.Add(new TermQuery
+            filterQueries.Add(new NumberRangeQuery
             {
-                Field = "isInStock",
-                Value = FieldValue.Boolean(true)
+                Field = "price",
+                Gte = (double)query.MinPrice.Value
             });
         }
 
-        if (query.HasDiscount == true)
+        if (query.MaxPrice.HasValue)
         {
-            filterClauses.Add(new TermQuery
+            filterQueries.Add(new NumberRangeQuery
             {
-                Field = "hasDiscount",
-                Value = FieldValue.Boolean(true)
+                Field = "price",
+                Lte = (double)query.MaxPrice.Value
             });
         }
 
-        if (query.MinPrice.HasValue || query.MaxPrice.HasValue)
+        if (query.InStockOnly)
         {
-            filterClauses.Add(new NumberRangeQuery
+            filterQueries.Add(new TermQuery
             {
-                Field = "minPrice",
-                Gte = query.MinPrice.HasValue ? (double)query.MinPrice.Value : null,
-                Lte = query.MaxPrice.HasValue ? (double)query.MaxPrice.Value : null
+                Field = "inStock",
+                Value = true
             });
         }
 
-        if (mustClauses.Count == 0 && filterClauses.Count == 0)
+        if (!string.IsNullOrWhiteSpace(query.Brand))
         {
-            return new MatchAllQuery();
+            filterQueries.Add(new TermQuery
+            {
+                Field = "brand.keyword",
+                Value = query.Brand
+            });
         }
 
-        return new BoolQuery
+        if (query.Tags?.Any() == true)
         {
-            Must = mustClauses.Count > 0 ? mustClauses.ToArray() : null,
-            Filter = filterClauses.Count > 0 ? filterClauses.ToArray() : null
-        };
-    }
+            filterQueries.Add(new TermsQuery
+            {
+                Field = "tags",
+                Terms = new TermsQueryField(
+                    query.Tags.Select(t => (FieldValue)t).ToArray()
+                )
+            });
+        }
 
-    private SortOptions[] BuildSortOptions(string? sort) =>
-        sort?.ToLowerInvariant() switch
+        var request = new SearchRequest("products_v1")
         {
-            "price_asc" => new[]
-            {
-                new SortOptions
-                {
-                    Field = new FieldSort
-                    {
-                        Field = "minPrice",
-                        Order = SortOrder.Asc
-                    }
-                }
-            },
-            "price_desc" => new[]
-            {
-                new SortOptions
-                {
-                    Field = new FieldSort
-                    {
-                        Field = "minPrice",
-                        Order = SortOrder.Desc
-                    }
-                }
-            },
-            "created_desc" => new[]
-            {
-                new SortOptions
-                {
-                    Field = new FieldSort
-                    {
-                        Field = "createdAt",
-                        Order = SortOrder.Desc
-                    }
-                }
-            },
-            "created_asc" => new[]
-            {
-                new SortOptions
-                {
-                    Field = new FieldSort
-                    {
-                        Field = "createdAt",
-                        Order = SortOrder.Asc
-                    }
-                }
-            },
-            _ => new[]
-            {
-                new SortOptions
-                {
-                    Score = new ScoreSort
-                    {
-                        Order = SortOrder.Desc
-                    }
-                },
-                new SortOptions
-                {
-                    Field = new FieldSort
-                    {
-                        Field = "createdAt",
-                        Order = SortOrder.Desc
-                    }
-                }
-            }
-        };
-
-    private async Task<IEnumerable<CategorySearchDocument>> SearchCategoriesAsync(string query, CancellationToken ct)
-    {
-        var searchQuery = query.Trim();
-
-        var searchRequest = new SearchRequest("categories_v1")
-        {
-            Size = 5,
+            From = (query.Page - 1) * query.PageSize,
+            Size = query.PageSize,
+            MinScore = _configuration.GetValue<double>("Search:MinScore", 0.3),
             Query = new BoolQuery
             {
-                Should = new Query[]
-                {
-                    new MatchPhraseQuery
-                    {
-                        Field = "name",
-                        Query = searchQuery,
-                        Boost = 25
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name",
-                        Query = searchQuery,
-                        Boost = 20,
-                        Fuzziness = new Fuzziness("AUTO")
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name.autocomplete",
-                        Query = searchQuery,
-                        Boost = 10
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name.ngram",
-                        Query = searchQuery,
-                        Boost = 8
-                    },
-                    new MatchPhraseQuery
-                    {
-                        Field = "name.ngram",
-                        Query = searchQuery,
-                        Boost = 12
-                    }
-                },
-                MinimumShouldMatch = 1
-            }
+                Should = shouldQueries,
+                Filter = filterQueries,
+                MinimumShouldMatch = shouldQueries.Any() ? 1 : null
+            },
+            Sort = new List<SortOptions> { BuildSortOptions(query.SortBy) },
+            Aggregations = BuildAggregations()
         };
 
-        var response = await _client.SearchAsync<CategorySearchDocument>(searchRequest, ct);
+        var response = await _client.SearchAsync<ProductSearchDocument>(request, ct);
 
         if (!response.IsValidResponse)
-        {
-            _logger.LogWarning("Category search failed: {Error}", response.DebugInformation);
-            return [];
-        }
+            throw new InvalidOperationException(response.DebugInformation);
 
-        return response.Documents ?? [];
+        return new SearchResultDto<ProductSearchDocument>
+        {
+            Items = response.Documents.ToList(),
+            Total = response.Total,
+            Page = query.Page,
+            PageSize = query.PageSize
+        };
     }
 
-    private async Task<IEnumerable<CategoryGroupSearchDocument>> SearchCategoryGroupsAsync(string query, CancellationToken ct)
+    public async Task<SearchResultDto<ProductSearchDocument>> SearchWithFuzzyAsync(
+        string searchQuery,
+        int page = 1,
+        int pageSize = 20,
+        CancellationToken ct = default)
     {
-        var searchQuery = query.Trim();
-
-        var searchRequest = new SearchRequest("categorygroups_v1")
+        try
         {
-            Size = 5,
-            Query = new BoolQuery
+            var response = await _client.SearchAsync<ProductSearchDocument>(s => s
+                .Indices("products_v1")
+                .From((page - 1) * pageSize)
+                .Size(pageSize)
+                .Query(q => q
+                    .Bool(b => b
+                        .Should(
+                            sh => sh.MultiMatch(m => m
+                                .Query(searchQuery)
+                                .Fields(new[]
+                                {
+                                    $"name^{_fieldBoosts["name"]}",
+                                    $"categoryName^{_fieldBoosts["categoryName"]}",
+                                    $"categoryGroupName^{_fieldBoosts["categoryGroupName"]}",
+                                    $"description^{_fieldBoosts["description"]}",
+                                    $"brand^{_fieldBoosts["brand"]}"
+                                })
+                                .Fuzziness(new Fuzziness("AUTO"))
+                                .PrefixLength(1)
+                                .MaxExpansions(50)
+                            ),
+                            sh => sh.Wildcard(w => w
+                                .Field(new Field("name"))
+                                .Value($"*{searchQuery}*")
+                                .CaseInsensitive(true)
+                            )
+                        )
+                        .Filter(f => f.Term(t => t.Field(new Field("isActive")).Value(FieldValue.Boolean(true))))
+                        .MinimumShouldMatch(1)
+                    )
+                ), ct);
+
+            if (!response.IsValidResponse)
             {
-                Should = new Query[]
-                {
-                    new MatchPhraseQuery
-                    {
-                        Field = "name",
-                        Query = searchQuery,
-                        Boost = 25
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name",
-                        Query = searchQuery,
-                        Boost = 20,
-                        Fuzziness = new Fuzziness("AUTO")
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name.autocomplete",
-                        Query = searchQuery,
-                        Boost = 10
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name.ngram",
-                        Query = searchQuery,
-                        Boost = 8
-                    },
-                    new MatchPhraseQuery
-                    {
-                        Field = "name.ngram",
-                        Query = searchQuery,
-                        Boost = 12
-                    }
-                },
-                MinimumShouldMatch = 1
+                _logger.LogError("Fuzzy search failed: {Error}", response.DebugInformation);
+                throw new InvalidOperationException("Fuzzy search operation failed");
             }
-        };
 
-        var response = await _client.SearchAsync<CategoryGroupSearchDocument>(searchRequest, ct);
-
-        if (!response.IsValidResponse)
-        {
-            _logger.LogWarning("Category group search failed: {Error}", response.DebugInformation);
-            return [];
+            return new SearchResultDto<ProductSearchDocument>
+            {
+                Items = response.Documents.ToList(),
+                Total = response.Total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
-
-        return response.Documents ?? [];
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception during fuzzy search");
+            throw;
+        }
     }
 
-    private async Task<IEnumerable<ProductSearchDocument>> SearchProductsGlobalAsync(string query, CancellationToken ct)
+    public async Task<GlobalSearchResultDto> SearchGlobalAsync(string query, CancellationToken ct = default)
     {
-       var searchQuery = query.Trim();
-
-        var searchRequest = new SearchRequest("products_v1")
+        try
         {
-            Size = 5,
-            Query = new BoolQuery
+            var products = await SearchProductsInternalAsync(query, 10, ct);
+            var categories = await SearchCategoriesAsync(query, 5, ct);
+            var categoryGroups = await SearchCategoryGroupsAsync(query, 5, ct);
+
+            return new GlobalSearchResultDto
             {
-                Should = new Query[]
-                {
-                    new MatchPhraseQuery
-                    {
-                        Field = "name",
-                        Query = searchQuery,
-                        Boost = 25
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name",
-                        Query = searchQuery,
-                        Boost = 20,
-                        Fuzziness = new Fuzziness("AUTO")
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name.autocomplete",
-                        Query = searchQuery,
-                        Boost = 10
-                    },
-                    new MatchQuery
-                    {
-                        Field = "name.ngram",
-                        Query = searchQuery,
-                        Boost = 8
-                    },
-                    new MatchPhraseQuery
-                    {
-                        Field = "name.ngram",
-                        Query = searchQuery,
-                        Boost = 12
-                    }
-                },
-                MinimumShouldMatch = 1
-            }
-        };
-
-        var response = await _client.SearchAsync<ProductSearchDocument>(searchRequest, ct);
-
-        if (!response.IsValidResponse)
-        {
-            _logger.LogWarning("Product search failed: {Error}", response.DebugInformation);
-            return [];
+                Products = products,
+                Categories = categories,
+                CategoryGroups = categoryGroups
+            };
         }
-
-        return response.Documents ?? [];
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception during global search");
+            throw;
+        }
     }
 
-    #endregion
+    public async Task IndexProductAsync(ProductSearchDocument document, CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await _client.IndexAsync(document, i => i
+                .Index("products_v1")
+                .Id(document.ProductId)
+                .Refresh(Refresh.WaitFor), ct);
+
+            if (!response.IsValidResponse)
+            {
+                _logger.LogError("Failed to index product {ProductId}: {Error}", document.ProductId, response.DebugInformation);
+                throw new InvalidOperationException($"Failed to index product {document.ProductId}");
+            }
+
+            _logger.LogInformation("Successfully indexed product {ProductId}", document.ProductId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception while indexing product {ProductId}", document.ProductId);
+            throw;
+        }
+    }
+
+    public async Task IndexCategoryAsync(CategorySearchDocument document, CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await _client.IndexAsync(document, i => i
+                .Index("categories_v1")
+                .Id(document.CategoryId)
+                .Refresh(Refresh.WaitFor), ct);
+
+            if (!response.IsValidResponse)
+            {
+                _logger.LogError("Failed to index category {CategoryId}: {Error}", document.CategoryId, response.DebugInformation);
+                throw new InvalidOperationException($"Failed to index category {document.CategoryId}");
+            }
+
+            _logger.LogInformation("Successfully indexed category {CategoryId}", document.CategoryId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception while indexing category {CategoryId}", document.CategoryId);
+            throw;
+        }
+    }
+
+    public async Task IndexCategoryGroupAsync(CategoryGroupSearchDocument document, CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await _client.IndexAsync(document, i => i
+                .Index("categorygroups_v1")
+                .Id(document.CategoryGroupId)
+                .Refresh(Refresh.WaitFor), ct);
+
+            if (!response.IsValidResponse)
+            {
+                _logger.LogError("Failed to index category group {CategoryGroupId}: {Error}", document.CategoryGroupId, response.DebugInformation);
+                throw new InvalidOperationException($"Failed to index category group {document.CategoryGroupId}");
+            }
+
+            _logger.LogInformation("Successfully indexed category group {CategoryGroupId}", document.CategoryGroupId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception while indexing category group {CategoryGroupId}", document.CategoryGroupId);
+            throw;
+        }
+    }
+
+    public async Task<List<string>> GetSuggestionsAsync(
+    string query,
+    int maxSuggestions = 10,
+    CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+            return new List<string>();
+
+        try
+        {
+            var searchRequest = new SearchRequest("products_v1")
+            {
+                Size = 0,
+                Suggest = new Suggester
+                {
+                    Suggesters = new Dictionary<string, FieldSuggester>
+                    {
+                        ["product_suggest"] = new FieldSuggester
+                        {
+                            Completion = new CompletionSuggester
+                            {
+                                Field = "name.suggest",
+                                Size = maxSuggestions,
+                                SkipDuplicates = true
+                            },
+                            Prefix = query
+                        }
+                    }
+                }
+            };
+
+            var response = await _client.SearchAsync<ProductSearchDocument>(searchRequest, ct);
+
+            if (!response.IsValidResponse || response.Suggest == null)
+            {
+                _logger.LogWarning("Suggest query failed or returned null");
+                return new List<string>();
+            }
+
+            if (response.Suggest.TryGetValue("product_suggest", out var suggestions))
+            {
+                var results = new List<string>();
+
+                foreach (var suggestion in suggestions)
+                {
+                    if (suggestion is CompletionSuggest<ProductSearchDocument> completionSuggest)
+                    {
+                        foreach (var option in completionSuggest.Options)
+                        {
+                            if (!string.IsNullOrWhiteSpace(option.Text))
+                            {
+                                results.Add(option.Text);
+                            }
+                        }
+                    }
+                }
+
+                return results.Distinct().ToList();
+            }
+
+            return new List<string>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception during get suggestions for query: {Query}", query);
+            return new List<string>();
+        }
+    }
+
+    private async Task<List<ProductSearchDocument>> SearchProductsInternalAsync(string query, int maxResults, CancellationToken ct)
+    {
+        var response = await _client.SearchAsync<ProductSearchDocument>(s => s
+            .Indices("products_v1")
+            .Size(maxResults)
+            .Query(q => q
+                .MultiMatch(m => m
+                    .Query(query)
+                    .Fields(new[] { "name^5", "categoryName^3", "description" })
+                    .Fuzziness(new Fuzziness("AUTO"))
+                )
+            ), ct);
+
+        return response.IsValidResponse ? response.Documents.ToList() : new List<ProductSearchDocument>();
+    }
+
+    private async Task<List<CategorySearchDocument>> SearchCategoriesAsync(string query, int maxResults, CancellationToken ct)
+    {
+        var response = await _client.SearchAsync<CategorySearchDocument>(s => s
+            .Indices("categories_v1")
+            .Size(maxResults)
+            .Query(q => q
+                .Match(m => m
+                    .Field(f => f.Name)
+                    .Query(query)
+                    .Fuzziness(new Fuzziness("AUTO"))
+                )
+            ), ct);
+
+        return response.IsValidResponse ? response.Documents.ToList() : new List<CategorySearchDocument>();
+    }
+
+    private async Task<List<CategoryGroupSearchDocument>> SearchCategoryGroupsAsync(string query, int maxResults, CancellationToken ct)
+    {
+        var response = await _client.SearchAsync<CategoryGroupSearchDocument>(s => s
+            .Indices("categorygroups_v1")
+            .Size(maxResults)
+            .Query(q => q
+                .Match(m => m
+                    .Field(f => f.Name)
+                    .Query(query)
+                    .Fuzziness(new Fuzziness("AUTO"))
+                )
+            ), ct);
+
+        return response.IsValidResponse ? response.Documents.ToList() : new List<CategoryGroupSearchDocument>();
+    }
+
+    private static Dictionary<string, Aggregation> BuildAggregations()
+    {
+        return new()
+        {
+            ["categories"] = new TermsAggregation { Field = "categoryId", Size = 50 },
+            ["brands"] = new TermsAggregation { Field = "brand.keyword", Size = 50 },
+            ["tags"] = new TermsAggregation { Field = "tags", Size = 30 },
+            ["priceRanges"] = new RangeAggregation
+            {
+                Field = "price",
+                Ranges = new List<AggregationRange>
+                {
+                    new() { To = 100000 },
+                    new() { From = 100000, To = 500000 },
+                    new() { From = 500000, To = 1000000 },
+                    new() { From = 1000000 }
+                }
+            }
+        };
+    }
+
+    private static SortOptions BuildSortOptions(string? sortBy)
+    {
+        return sortBy?.ToLowerInvariant() switch
+        {
+            "price_asc" => new SortOptions
+            {
+                Field = new FieldSort
+                {
+                    Field = "price",
+                    Order = SortOrder.Asc
+                }
+            },
+
+            "price_desc" => new SortOptions
+            {
+                Field = new FieldSort
+                {
+                    Field = "price",
+                    Order = SortOrder.Desc
+                }
+            },
+
+            "name_asc" => new SortOptions
+            {
+                Field = new FieldSort
+                {
+                    Field = "name.keyword",
+                    Order = SortOrder.Asc
+                }
+            },
+
+            "name_desc" => new SortOptions
+            {
+                Field = new FieldSort
+                {
+                    Field = "name.keyword",
+                    Order = SortOrder.Desc
+                }
+            },
+
+            "newest" => new SortOptions
+            {
+                Field = new FieldSort
+                {
+                    Field = "createdAt",
+                    Order = SortOrder.Desc
+                }
+            },
+
+            "rating" => new SortOptions
+            {
+                Field = new FieldSort
+                {
+                    Field = "averageRating",
+                    Order = SortOrder.Desc
+                }
+            },
+
+            "popular" => new SortOptions
+            {
+                Field = new FieldSort
+                {
+                    Field = "salesCount",
+                    Order = SortOrder.Desc
+                }
+            },
+
+            _ => new SortOptions
+            {
+                Score = new ScoreSort
+                {
+                    Order = SortOrder.Desc
+                }
+            }
+        };
+    }
+
+    private Dictionary<string, List<string>> ExtractHighlights(SearchResponse<ProductSearchDocument> response)
+    {
+        var highlights = new Dictionary<string, List<string>>();
+
+        foreach (var hit in response.Hits)
+        {
+            if (hit.Highlight != null)
+            {
+                foreach (var highlight in hit.Highlight)
+                {
+                    if (!highlights.ContainsKey(highlight.Key))
+                    {
+                        highlights[highlight.Key] = new List<string>();
+                    }
+                    highlights[highlight.Key].AddRange(highlight.Value);
+                }
+            }
+        }
+
+        return highlights;
+    }
+
+    private Dictionary<string, object> ExtractAggregations(SearchResponse<ProductSearchDocument> response)
+    {
+        var aggregations = new Dictionary<string, object>();
+
+        if (response.Aggregations == null) return aggregations;
+
+        foreach (var agg in response.Aggregations)
+        {
+            if (agg.Value is StringTermsAggregate termsAgg)
+            {
+                aggregations[agg.Key] = termsAgg.Buckets.Select(b => new
+                {
+                    Key = b.Key.ToString(),
+                    Count = b.DocCount
+                }).ToList();
+            }
+            else if (agg.Value is RangeAggregate rangeAgg)
+            {
+                aggregations[agg.Key] = rangeAgg.Buckets.Select(b => new
+                {
+                    From = b.From,
+                    To = b.To,
+                    Count = b.DocCount
+                }).ToList();
+            }
+        }
+
+        return aggregations;
+    }
 }

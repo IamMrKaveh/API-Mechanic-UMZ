@@ -2,112 +2,143 @@
 
 public static class ElasticClientFactory
 {
-    public static ElasticsearchClient Create(IConfiguration config, ILogger<ElasticsearchClient> logger)
+    public static ElasticsearchClient Create(IConfiguration configuration, ILogger logger)
     {
-        var url = config["Elasticsearch:Url"] ?? Environment.GetEnvironmentVariable("ELASTIC_URL");
+        var url = configuration["Elasticsearch:Url"] ?? "http://localhost:9200";
+        var username = configuration["Elasticsearch:Username"];
+        var password = configuration["Elasticsearch:Password"];
+        var cloudId = configuration["Elasticsearch:CloudId"];
+        var certificateFingerprint = configuration["Elasticsearch:CertificateFingerprint"];
+        var enableCloudId = configuration.GetValue<bool>("Elasticsearch:EnableCloudId", false);
+        var timeout = configuration.GetValue<int>("Elasticsearch:Timeout", 60);
+        var requestTimeout = configuration.GetValue<int>("Elasticsearch:RequestTimeout", 30);
+        var pingTimeout = configuration.GetValue<int>("Elasticsearch:PingTimeout", 5);
+        var enableDebugMode = configuration.GetValue<bool>("Elasticsearch:EnableDebugMode", false);
+        var maxRetries = configuration.GetValue<int>("Elasticsearch:MaxRetries", 3);
 
-        if (string.IsNullOrEmpty(url))
-            throw new ArgumentNullException(nameof(url), "Elasticsearch Url is not configured");
+        ElasticsearchClientSettings settings;
 
-        var uri = new Uri(url);
-        var defaultIndex = config["Elasticsearch:Index"];
-
-        var settings = new ElasticsearchClientSettings(uri)
-            .DefaultIndex(defaultIndex ?? "products_v1")
-            .RequestTimeout(TimeSpan.FromSeconds(config.GetValue<int>("Elasticsearch:TimeoutSeconds", 60)))
-            .MaximumRetries(config.GetValue<int>("Elasticsearch:MaxRetries", 5))
-            .ThrowExceptions(false)
-            .EnableHttpCompression();
-
-        if (!string.IsNullOrEmpty(uri.UserInfo))
+        if (enableCloudId && !string.IsNullOrEmpty(cloudId))
         {
-            var parts = uri.UserInfo.Split(':');
-            if (parts.Length == 2)
+            settings = new ElasticsearchClientSettings(new Uri("http://localhost:9200"));
+
+            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
             {
-                settings.Authentication(new Elastic.Transport.BasicAuthentication(parts[0], parts[1]));
-                logger.LogInformation("Elasticsearch configured with Basic authentication from URI");
+                settings = settings.Authentication(new BasicAuthentication(username, password));
+            }
+
+            if (!string.IsNullOrEmpty(certificateFingerprint))
+            {
+                settings = settings.CertificateFingerprint(certificateFingerprint);
             }
         }
         else
         {
-            var username = config["Elasticsearch:Username"] ?? Environment.GetEnvironmentVariable("ELASTIC_USERNAME");
-            var password = config["Elasticsearch:Password"] ?? Environment.GetEnvironmentVariable("ELASTIC_PASSWORD");
-            var apiKey = config["Elasticsearch:ApiKey"] ?? Environment.GetEnvironmentVariable("ELASTIC_APIKEY");
+            var uri = new Uri(url);
+            settings = new ElasticsearchClientSettings(uri);
 
-            if (!string.IsNullOrEmpty(apiKey))
+            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
             {
-                settings.Authentication(new Elastic.Transport.ApiKey(apiKey));
-                logger.LogInformation("Elasticsearch configured with API Key authentication");
-            }
-            else if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
-            {
-                settings.Authentication(new Elastic.Transport.BasicAuthentication(username, password));
-                logger.LogInformation("Elasticsearch configured with Basic authentication");
-            }
-            else
-            {
-                logger.LogWarning("Elasticsearch authentication not configured");
+                settings = settings.Authentication(new BasicAuthentication(username, password));
             }
         }
 
-        settings.OnRequestCompleted(details =>
-        {
-            if (details.HttpStatusCode != null && details.HttpStatusCode >= 400)
-            {
-                var duration = details.ResponseContentType != null ?
-                    (DateTime.UtcNow - (details.AuditTrail?.FirstOrDefault()?.Started ?? DateTime.UtcNow)).TotalMilliseconds : 0;
+        settings = settings
+            .DefaultIndex("products_v1")
+            .RequestTimeout(TimeSpan.FromSeconds(requestTimeout))
+            .PingTimeout(TimeSpan.FromSeconds(pingTimeout))
+            .MaximumRetries(maxRetries)
+            .MaxRetryTimeout(TimeSpan.FromSeconds(timeout))
+            .EnableHttpCompression(true)
+            .ThrowExceptions(false);
 
-                logger.LogWarning(
-                    "Elasticsearch request failed: {Method} {Path} - Status: {Status}, Duration: {Duration}ms",
-                    details.HttpMethod,
-                    details.Uri?.AbsolutePath ?? "unknown",
-                    details.HttpStatusCode,
-                    duration);
-            }
-            else if (details.ResponseContentType != null)
+        if (enableDebugMode)
+        {
+            settings = settings
+                .DisableDirectStreaming()
+                .EnableDebugMode()
+                .PrettyJson();
+        }
+
+        settings = settings.OnRequestCompleted(details =>
+        {
+            if (details.HttpStatusCode >= 400)
             {
-                var duration = (DateTime.UtcNow - (details.AuditTrail?.FirstOrDefault()?.Started ?? DateTime.UtcNow)).TotalMilliseconds;
-                if (duration > 1000)
-                {
-                    logger.LogWarning(
-                        "Slow Elasticsearch query: {Method} {Path} - Duration: {Duration}ms",
-                        details.HttpMethod,
-                        details.Uri?.AbsolutePath ?? "unknown",
-                        duration);
-                }
+                logger.LogWarning(
+                    "Elasticsearch request failed: {Method} {Uri} - Status: {Status}, Debug: {Debug}",
+                    details.HttpMethod,
+                    details.Uri,
+                    details.HttpStatusCode,
+                    details.DebugInformation);
+            }
+            else if (enableDebugMode)
+            {
+                logger.LogDebug(
+                    "Elasticsearch request completed: {Method} {Uri} - Status: {Status}, ContentType: {ContentType}",
+                    details.HttpMethod,
+                    details.Uri,
+                    details.HttpStatusCode,
+                    details.ResponseContentType);
             }
         });
 
-        var environment = config["ASPNETCORE_ENVIRONMENT"];
-        if (environment == "Development")
-        {
-            settings.EnableDebugMode().PrettyJson();
-        }
+        var client = new ElasticsearchClient(settings);
 
-        var validateCertificate = config.GetValue<bool>("Elasticsearch:ValidateCertificate", true);
+        ValidateConnection(client, logger);
 
-        if (uri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase))
-        {
-            logger.LogInformation("Elasticsearch connection is HTTP. SSL certificate validation skipped.");
-        }
-        else if (!validateCertificate)
-        {
-            logger.LogWarning(
-                "SECURITY WARNING: SSL certificate validation is being disabled. Environment: {Environment}",
-                environment);
+        return client;
+    }
 
-            if (environment == "Production")
+    private static void ValidateConnection(ElasticsearchClient client, ILogger logger)
+    {
+        try
+        {
+            var pingResponse = client.Ping();
+
+            if (pingResponse.IsValidResponse)
             {
-                logger.LogCritical("SECURITY VIOLATION: SSL certificate validation disabled in Production via configuration.");
+                logger.LogInformation("Successfully connected to Elasticsearch");
             }
-
-            settings.ServerCertificateValidationCallback((sender, certificate, chain, sslPolicyErrors) => true);
+            else
+            {
+                logger.LogError(
+                    "Failed to connect to Elasticsearch: {Error}",
+                    pingResponse.DebugInformation);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            logger.LogInformation("SSL certificate validation is ENABLED");
+            logger.LogError(ex, "Exception while validating Elasticsearch connection");
+        }
+    }
+
+    public static async Task<ElasticsearchClient> CreateAsync(
+        IConfiguration configuration,
+        ILogger logger,
+        CancellationToken ct = default)
+    {
+        var client = Create(configuration, logger);
+
+        try
+        {
+            var pingResponse = await client.PingAsync(ct);
+
+            if (pingResponse.IsValidResponse)
+            {
+                logger.LogInformation("Successfully connected to Elasticsearch (async)");
+            }
+            else
+            {
+                logger.LogError(
+                    "Failed to connect to Elasticsearch (async): {Error}",
+                    pingResponse.DebugInformation);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Exception while validating Elasticsearch connection (async)");
         }
 
-        return new ElasticsearchClient(settings);
+        return client;
     }
 }

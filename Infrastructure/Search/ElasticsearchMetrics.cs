@@ -6,6 +6,9 @@ public class ElasticsearchMetrics
     private readonly Counter<long> _searchRequestCounter;
     private readonly Counter<long> _indexRequestCounter;
     private readonly Counter<long> _bulkRequestCounter;
+    private readonly Counter<long> _bulkSuccessCounter;
+    private readonly Counter<long> _bulkFailureCounter;
+    private readonly Counter<long> _bulkPartialFailureCounter;
     private readonly Counter<long> _errorCounter;
     private readonly Histogram<double> _searchDuration;
     private readonly Histogram<double> _indexDuration;
@@ -26,6 +29,18 @@ public class ElasticsearchMetrics
         _bulkRequestCounter = _meter.CreateCounter<long>(
             "elasticsearch.bulk.requests",
             description: "Number of bulk requests");
+
+        _bulkSuccessCounter = _meter.CreateCounter<long>(
+            "elasticsearch.bulk.success",
+            description: "Number of successful bulk operations");
+
+        _bulkFailureCounter = _meter.CreateCounter<long>(
+            "elasticsearch.bulk.failures",
+            description: "Number of failed bulk operations");
+
+        _bulkPartialFailureCounter = _meter.CreateCounter<long>(
+            "elasticsearch.bulk.partial_failures",
+            description: "Number of partial bulk operation failures");
 
         _errorCounter = _meter.CreateCounter<long>(
             "elasticsearch.errors",
@@ -101,5 +116,29 @@ public class ElasticsearchMetrics
                 new KeyValuePair<string, object?>("operation", "bulk"),
                 new KeyValuePair<string, object?>("index", indexName ?? "unknown"));
         }
+    }
+
+    public void RecordBulkOperationSuccess(int itemCount, string? indexName = null)
+    {
+        _bulkSuccessCounter.Add(1,
+            new KeyValuePair<string, object?>("index", indexName ?? "unknown"),
+            new KeyValuePair<string, object?>("item_count", itemCount));
+    }
+
+    public void RecordBulkOperationFailure(string? indexName = null)
+    {
+        _bulkFailureCounter.Add(1,
+            new KeyValuePair<string, object?>("index", indexName ?? "unknown"));
+
+        _errorCounter.Add(1,
+            new KeyValuePair<string, object?>("operation", "bulk_operation"),
+            new KeyValuePair<string, object?>("index", indexName ?? "unknown"));
+    }
+
+    public void RecordBulkOperationPartialFailure(int failedCount, string? indexName = null)
+    {
+        _bulkPartialFailureCounter.Add(1,
+            new KeyValuePair<string, object?>("index", indexName ?? "unknown"),
+            new KeyValuePair<string, object?>("failed_count", failedCount));
     }
 }
