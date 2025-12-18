@@ -17,6 +17,7 @@ global using Infrastructure.Payment.ZarinPal;
 global using Infrastructure.Search;
 global using Infrastructure.Security;
 global using Infrastructure.Storage;
+global using Infrastructure.Search.Interfaces;
 global using MainApi.Extensions;
 global using MainApi.Filters;
 global using MainApi.Middleware;

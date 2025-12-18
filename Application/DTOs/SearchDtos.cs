@@ -1,67 +1,90 @@
 namespace Application.DTOs;
 
+/// <summary>
+/// Document Models
+/// </summary>
 public class ProductSearchDocument
 {
-    public int Id { get; init; }
-    public string Name { get; init; } = default!;
-    public string? Description { get; init; }
-    public string CategoryName { get; init; } = default!;
-    public int CategoryId { get; init; }
-    public string CategoryGroupName { get; init; } = default!;
-    public int CategoryGroupId { get; init; }
-    public decimal MinPrice { get; init; }
-    public decimal MaxPrice { get; init; }
-    public bool HasDiscount { get; init; }
-    public bool IsInStock { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public string? ImageUrl { get; init; }
+    public int ProductId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public string Sku { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public int CategoryId { get; set; }
+    public string CategoryGroupName { get; set; } = string.Empty;
+    public int CategoryGroupId { get; set; }
+    public float Price { get; set; }
+    public float? DiscountedPrice { get; set; }
+    public float? DiscountPercentage { get; set; }
+    public List<string> Images { get; set; } = new();
+    public string ImageUrl { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public bool InStock { get; set; }
+    public int StockQuantity { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public float? AverageRating { get; set; }
+    public int ReviewCount { get; set; }
+    public int SalesCount { get; set; }
+    public List<string> Tags { get; set; } = new();
+    public string Brand { get; set; } = string.Empty;
 }
 
 public class CategorySearchDocument
 {
-    public int Id { get; init; }
-    public string Name { get; init; } = default!;
-    public string? IconUrl { get; init; }
+    public int CategoryId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public int ProductCount { get; set; }
 }
 
 public class CategoryGroupSearchDocument
 {
-    public int Id { get; init; }
-    public string Name { get; init; } = default!;
-    public string CategoryName { get; init; } = default!;
-    public int CategoryId { get; init; }
-    public string? IconUrl { get; init; }
+    public int CategoryGroupId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public int CategoryId { get; set; }
+    public string CategoryName { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public int ProductCount { get; set; }
 }
 
-public sealed record SearchProductsQuery(
-    string? Q,
-    int? CategoryId,
-    int? CategoryGroupId,
-    decimal? MinPrice,
-    decimal? MaxPrice,
-    bool? IsInStock,
-    bool? HasDiscount,
-    int Page = 1,
-    int PageSize = 20,
-    string? Sort = null
-);
-
-public sealed record GlobalSearchQuery(
-    string Q
-);
+/// <summary>
+/// DTOs
+/// </summary>
+public class SearchProductsQuery
+{
+    public string Q { get; set; } = string.Empty;
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public int? CategoryId { get; set; }
+    public int? CategoryGroupId { get; set; }
+    public decimal? MinPrice { get; set; }
+    public decimal? MaxPrice { get; set; }
+    public bool InStockOnly { get; set; }
+    public string? Brand { get; set; }
+    public List<string>? Tags { get; set; }
+    public string? SortBy { get; set; }
+}
 
 public class SearchResultDto<T>
 {
-    public IEnumerable<T> Items { get; set; } = [];
+    public List<T> Items { get; set; } = new();
     public long Total { get; set; }
     public int Page { get; set; }
     public int PageSize { get; set; }
-    public IDictionary<int, IDictionary<string, string[]>> Highlights { get; set; } = new Dictionary<int, IDictionary<string, string[]>>();
+    public Dictionary<string, List<string>> Highlights { get; set; } = new();
+    public Dictionary<string, object> Aggregations { get; set; } = new();
+    public int Took { get; set; }
+    public double? MaxScore { get; set; }
 }
 
 public class GlobalSearchResultDto
 {
-    public IEnumerable<CategorySearchDocument> Categories { get; set; } = [];
-    public IEnumerable<CategoryGroupSearchDocument> CategoryGroups { get; set; } = [];
-    public IEnumerable<ProductSearchDocument> Products { get; set; } = [];
+    public List<ProductSearchDocument> Products { get; set; } = new();
+    public List<CategorySearchDocument> Categories { get; set; } = new();
+    public List<CategoryGroupSearchDocument> CategoryGroups { get; set; } = new();
+    public string Query { get; set; } = string.Empty;
 }
