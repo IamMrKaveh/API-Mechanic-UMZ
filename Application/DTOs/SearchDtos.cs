@@ -19,6 +19,7 @@ public class ProductSearchDocument
     public float? DiscountPercentage { get; set; }
     public List<string> Images { get; set; } = new();
     public string ImageUrl { get; set; } = string.Empty;
+    public string? Icon { get; set; }
     public bool IsActive { get; set; }
     public bool InStock { get; set; }
     public int StockQuantity { get; set; }
@@ -38,6 +39,7 @@ public class CategorySearchDocument
     public string Slug { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public int ProductCount { get; set; }
+    public string? Icon { get; set; }
 }
 
 public class CategoryGroupSearchDocument
@@ -49,6 +51,7 @@ public class CategoryGroupSearchDocument
     public string CategoryName { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public int ProductCount { get; set; }
+    public string? Icon { get; set; }
 }
 
 /// <summary>

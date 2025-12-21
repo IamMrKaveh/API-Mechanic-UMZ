@@ -80,6 +80,7 @@ public class ElasticsearchDatabaseSyncService
     public async Task SyncCategoryAsync(int categoryId, CancellationToken ct = default)
     {
         var category = await _context.Categories
+            .Include(c => c.Images)
             .Include(c => c.CategoryGroups)
                 .ThenInclude(cg => cg.Products)
             .FirstOrDefaultAsync(c => c.Id == categoryId, ct);
@@ -98,7 +99,8 @@ public class ElasticsearchDatabaseSyncService
             IsActive = category.IsActive,
             ProductCount = category.CategoryGroups
                 .SelectMany(cg => cg.Products)
-                .Count(p => p.IsActive && !p.IsDeleted)
+                .Count(p => p.IsActive && !p.IsDeleted),
+            Icon = category.Images?.FirstOrDefault()?.FilePath
         };
 
         await _searchService.IndexCategoryAsync(document, ct);
@@ -109,6 +111,7 @@ public class ElasticsearchDatabaseSyncService
     public async Task SyncAllCategoriesAsync(CancellationToken ct = default)
     {
         var categories = await _context.Categories
+            .Include(c => c.Images)
             .Include(c => c.CategoryGroups)
                 .ThenInclude(cg => cg.Products)
             .Where(c => c.IsActive && !c.IsDeleted)
@@ -122,7 +125,8 @@ public class ElasticsearchDatabaseSyncService
             IsActive = c.IsActive,
             ProductCount = c.CategoryGroups
                 .SelectMany(cg => cg.Products)
-                .Count(p => p.IsActive && !p.IsDeleted)
+                .Count(p => p.IsActive && !p.IsDeleted),
+            Icon = c.Images?.FirstOrDefault()?.FilePath
         }).ToList();
 
         await _bulkService.BulkIndexCategoriesAsync(documents, ct);
@@ -133,6 +137,7 @@ public class ElasticsearchDatabaseSyncService
     public async Task SyncCategoryGroupAsync(int categoryGroupId, CancellationToken ct = default)
     {
         var group = await _context.CategoryGroups
+            .Include(cg => cg.Images)
             .Include(cg => cg.Category)
             .Include(cg => cg.Products)
             .FirstOrDefaultAsync(cg => cg.Id == categoryGroupId, ct);
@@ -151,7 +156,8 @@ public class ElasticsearchDatabaseSyncService
             CategoryId = group.CategoryId,
             CategoryName = group.Category.Name,
             IsActive = group.IsActive,
-            ProductCount = group.Products.Count(p => p.IsActive && !p.IsDeleted)
+            ProductCount = group.Products.Count(p => p.IsActive && !p.IsDeleted),
+            Icon = group.Images?.FirstOrDefault()?.FilePath
         };
 
         await _searchService.IndexCategoryGroupAsync(document, ct);
@@ -162,6 +168,7 @@ public class ElasticsearchDatabaseSyncService
     public async Task SyncAllCategoryGroupsAsync(CancellationToken ct = default)
     {
         var groups = await _context.CategoryGroups
+            .Include(cg => cg.Images)
             .Include(cg => cg.Category)
             .Include(cg => cg.Products)
             .Where(cg => cg.IsActive && !cg.IsDeleted)
@@ -175,7 +182,8 @@ public class ElasticsearchDatabaseSyncService
             CategoryId = cg.CategoryId,
             CategoryName = cg.Category.Name,
             IsActive = cg.IsActive,
-            ProductCount = cg.Products.Count(p => p.IsActive && !p.IsDeleted)
+            ProductCount = cg.Products.Count(p => p.IsActive && !p.IsDeleted),
+            Icon = cg.Images?.FirstOrDefault()?.FilePath
         }).ToList();
 
         await _bulkService.BulkIndexCategoryGroupsAsync(documents, ct);
@@ -218,6 +226,7 @@ public class ElasticsearchDatabaseSyncService
                 : null,
             Images = product.Images?.Select(i => i.FilePath).ToList() ?? new List<string>(),
             ImageUrl = product.Images?.FirstOrDefault()?.FilePath ?? string.Empty,
+            Icon = product.Images?.FirstOrDefault()?.FilePath,
             IsActive = product.IsActive,
             InStock = product.TotalStock > 0 || product.Variants.Any(v => v.IsUnlimited),
             StockQuantity = product.TotalStock,

@@ -2,7 +2,6 @@
 
 [ApiController]
 [Route("api/admin/[controller]")]
-[AllowAnonymous]
 public class AdminSearchController : ControllerBase
 {
     private readonly ElasticsearchInitialSyncService _syncService;

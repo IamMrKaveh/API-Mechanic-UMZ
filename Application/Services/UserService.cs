@@ -188,7 +188,7 @@ public class UserService : IUserService
             AttemptCount = 0
         };
 
-        await SendOtpViaKavenegar(user.PhoneNumber, otp);
+        //await SendOtpViaKavenegar(user.PhoneNumber, otp);
 
         await _repository.AddOtpAsync(userOtp);
         await _unitOfWork.SaveChangesAsync();
