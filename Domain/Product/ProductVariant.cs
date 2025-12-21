@@ -28,8 +28,8 @@ public class ProductVariant : BaseEntity
 
     public ICollection<ProductVariantAttribute> VariantAttributes { get; set; } = new List<ProductVariantAttribute>();
     public ICollection<Media.Media> Images { get; set; } = new List<Media.Media>();
-    public ICollection<Inventory.InventoryTransaction> InventoryTransactions { get; set; } = new List<Inventory.InventoryTransaction>();
-    public ICollection<Cart.CartItem> CartItems { get; set; } = new List<Cart.CartItem>();
+    public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<Inventory.InventoryTransaction>();
+    public ICollection<CartItem> CartItems { get; set; } = new List<Cart.CartItem>();
 
     public void AdjustStock(int quantityChange)
     {
