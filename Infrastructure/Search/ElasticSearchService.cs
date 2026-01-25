@@ -265,7 +265,8 @@ public class ElasticSearchService : ISearchService
             {
                 Products = products,
                 Categories = categories,
-                CategoryGroups = categoryGroups
+                CategoryGroups = categoryGroups,
+                Query = query,
             };
         }
         catch (Exception ex)

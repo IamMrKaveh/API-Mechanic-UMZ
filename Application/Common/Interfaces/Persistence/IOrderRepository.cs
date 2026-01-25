@@ -24,4 +24,6 @@ public interface IOrderRepository
     Task<object> GetOrderStatisticsAsync(DateTime? fromDate, DateTime? toDate);
     Task<IEnumerable<object>> GetOrderStatusStatisticsAsync(DateTime? fromDate, DateTime? toDate);
     Task<bool> ExistsByIdempotencyKeyAsync(string idempotencyKey);
+    Task<List<ShippingMethod>> GetShippingMethodsByIdsAsync(List<int> shippingMethodIds);
+    Task<List<ProductVariant>> GetVariantsWithShippingMethodsAsync(List<int> variantIds);
 }

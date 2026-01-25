@@ -146,8 +146,8 @@ public class OrderService : IOrderService
 
                 foreach (var cartItem in cart.CartItems)
                 {
-                    var variant = variants.FirstOrDefault(v => v.Id == cartItem.VariantId);
-                    if (variant == null) throw new InvalidOperationException($"Product variant {cartItem.VariantId} not found.");
+                    var variant = variants.FirstOrDefault(v => v.Id == cartItem.VariantId)
+                    ?? throw new InvalidOperationException($"Product variant {cartItem.VariantId} not found.");
 
                     if (!variant.IsActive || variant.IsDeleted || !variant.Product.IsActive || variant.Product.IsDeleted)
                     {
@@ -155,20 +155,13 @@ public class OrderService : IOrderService
                     }
 
                     if (!variant.IsUnlimited && variant.Stock < cartItem.Quantity)
-                    {
                         throw new DbUpdateConcurrencyException($"Insufficient stock for {variant.Product.Name}.");
-                    }
 
-                    var expectedItem = dto.ExpectedItems.FirstOrDefault(e => e.VariantId == variant.Id);
-                    if (expectedItem == null)
-                    {
-                        throw new ArgumentException($"Expected price not provided for variant {variant.Id}.");
-                    }
+                    var expectedItem = dto.ExpectedItems.FirstOrDefault(e => e.VariantId == variant.Id)
+                    ?? throw new ArgumentException($"Expected price not provided for variant {variant.Id}.");
 
                     if (expectedItem.Price != variant.SellingPrice)
-                    {
                         throw new DbUpdateConcurrencyException($"Price changed for {variant.Product.Name}. Expected: {expectedItem.Price}, Current: {variant.SellingPrice}. Please refresh cart.");
-                    }
 
                     var amount = variant.SellingPrice * cartItem.Quantity;
                     var profit = (variant.SellingPrice - variant.PurchasePrice) * cartItem.Quantity;
@@ -199,15 +192,15 @@ public class OrderService : IOrderService
                     }
                 }
 
-                var shippingMethod = await _orderRepository.GetShippingMethodByIdAsync(dto.ShippingMethodId);
-                if (shippingMethod == null) throw new ArgumentException("Invalid shipping method.");
+                var shippingMethod = await _orderRepository.GetShippingMethodByIdAsync(dto.ShippingMethodId) 
+                ?? throw new ArgumentException("Invalid shipping method.");
+
                 var shippingCost = shippingMethod.Cost;
 
-                var initialStatus = await _orderStatusRepository.GetStatusByNameAsync("Pending Payment")
+                var initialStatus = (await _orderStatusRepository.GetStatusByNameAsync("Pending Payment")
                                     ?? await _orderStatusRepository.GetStatusByNameAsync("در انتظار پرداخت")
-                                    ?? (await _orderStatusRepository.GetOrderStatusesAsync()).FirstOrDefault();
-
-                if (initialStatus == null) throw new InvalidOperationException("No order status found.");
+                                    ?? (await _orderStatusRepository.GetOrderStatusesAsync()).FirstOrDefault())
+                                    ?? throw new InvalidOperationException("No order status found.");
 
                 var order = new Order
                 {
@@ -221,6 +214,7 @@ public class OrderService : IOrderService
                     DiscountAmount = discountAmount,
                     FinalAmount = totalAmount + shippingCost - discountAmount,
                     OrderStatusId = initialStatus.Id,
+                    PaymentTransactions = new List<PaymentTransaction>(),
                     ShippingMethodId = shippingMethod.Id,
                     DiscountCodeId = discountCodeId,
                     IdempotencyKey = idempotencyKey,
@@ -385,5 +379,87 @@ public class OrderService : IOrderService
                 return new PaymentVerificationResultDto { IsVerified = false, Message = "An internal error occurred." };
             }
         });
+    }
+
+    public async Task<ServiceResult<IEnumerable<AvailableShippingMethodDto>>> GetAvailableShippingMethodsForCartAsync(int userId)
+    {
+        try
+        {
+            var cart = await _cartRepository.GetByUserIdAsync(userId);
+            if (cart == null || !cart.CartItems.Any())
+            {
+                return ServiceResult<IEnumerable<AvailableShippingMethodDto>>.Fail("سبد خرید خالی است.");
+            }
+
+            var variantIds = cart.CartItems.Select(ci => ci.VariantId).ToList();
+
+            var variantsWithShipping = await _orderRepository.GetVariantsWithShippingMethodsAsync(variantIds);
+
+            if (!variantsWithShipping.Any())
+            {
+                return ServiceResult<IEnumerable<AvailableShippingMethodDto>>.Fail("محصولات یافت نشدند.");
+            }
+
+            var variantsWithoutShipping = variantsWithShipping
+                .Where(v => !v.ProductVariantShippingMethods.Any(s => s.IsActive))
+                .ToList();
+
+            if (variantsWithoutShipping.Any())
+            {
+                var productNames = string.Join(", ", variantsWithoutShipping.Select(v => v.Product.Name));
+                return ServiceResult<IEnumerable<AvailableShippingMethodDto>>.Fail(
+                    $"برای محصولات زیر هیچ روش ارسالی تعریف نشده است: {productNames}");
+            }
+
+            var commonShippingMethods = variantsWithShipping
+                .First()
+                .ProductVariantShippingMethods
+                .Where(s => s.IsActive)
+                .Select(s => s.ShippingMethodId)
+                .ToHashSet();
+
+            foreach (var variant in variantsWithShipping.Skip(1))
+            {
+                var variantShippingMethodIds = variant.ProductVariantShippingMethods
+                    .Where(s => s.IsActive)
+                    .Select(s => s.ShippingMethodId)
+                    .ToHashSet();
+
+                commonShippingMethods.IntersectWith(variantShippingMethodIds);
+            }
+
+            if (!commonShippingMethods.Any())
+            {
+                return ServiceResult<IEnumerable<AvailableShippingMethodDto>>.Fail(
+                    "هیچ روش ارسال مشترکی بین محصولات سبد خرید شما وجود ندارد. لطفاً با پشتیبانی تماس بگیرید.");
+            }
+
+            var totalMultiplier = variantsWithShipping.Sum(v => v.ShippingMultiplier);
+
+            var shippingMethods = await _orderRepository.GetShippingMethodsByIdsAsync(commonShippingMethods.ToList());
+
+            var result = shippingMethods
+                .Where(sm => sm.IsActive && !sm.IsDeleted)
+                .Select(sm => new AvailableShippingMethodDto
+                {
+                    Id = sm.Id,
+                    Name = sm.Name,
+                    BaseCost = sm.Cost,
+                    TotalMultiplier = totalMultiplier,
+                    FinalCost = sm.Cost * totalMultiplier,
+                    Description = sm.Description,
+                    EstimatedDeliveryTime = sm.EstimatedDeliveryTime
+                })
+                .OrderBy(sm => sm.FinalCost)
+                .ToList();
+
+            return ServiceResult<IEnumerable<AvailableShippingMethodDto>>.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "خطا در دریافت روش‌های ارسال قابل انتخاب برای کاربر {UserId}", userId);
+            return ServiceResult<IEnumerable<AvailableShippingMethodDto>>.Fail(
+                "خطایی در دریافت روش‌های ارسال رخ داد. لطفاً دوباره تلاش کنید.");
+        }
     }
 }

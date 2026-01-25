@@ -2,6 +2,7 @@
 
 public interface IAdminOrderStatusService
 {
+    Task<IEnumerable<OrderStatus>> GetOrderStatusesAsync();
     Task<OrderStatus?> GetOrderStatusByIdAsync(int id);
     Task<OrderStatus> CreateOrderStatusAsync(CreateOrderStatusDto statusDto);
     Task<bool> UpdateOrderStatusAsync(int id, UpdateOrderStatusDto statusDto);

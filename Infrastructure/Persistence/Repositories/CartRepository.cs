@@ -38,6 +38,15 @@ public class CartRepository : ICartRepository
            .FirstOrDefaultAsync(c => c.UserId == userId);
     }
 
+    public async Task<List<Domain.Cart.CartItem>> GetCartItemsByUserIdAsync(int userId)
+    {
+        return await _context.Set<Domain.Cart.Cart>()
+            .AsNoTracking()
+            .Where(c => c.UserId == userId)
+            .SelectMany(c => c.CartItems)
+            .ToListAsync();
+    }
+
     public async Task<Domain.Cart.Cart?> GetCartEntityAsync(int? userId, string? guestId)
     {
         return await _context.Set<Domain.Cart.Cart>()

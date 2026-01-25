@@ -6,4 +6,5 @@ public interface IOrderService
     Task<OrderDto?> GetOrderByIdAsync(int orderId, int? currentUserId, bool isAdmin);
     Task<CheckoutFromCartResultDto> CheckoutFromCartAsync(CreateOrderFromCartDto orderDto, int userId, string idempotencyKey);
     Task<PaymentVerificationResultDto> VerifyAndProcessPaymentAsync(int orderId, string authority, string status);
+    Task<ServiceResult<IEnumerable<AvailableShippingMethodDto>>> GetAvailableShippingMethodsForCartAsync(int userId);
 }

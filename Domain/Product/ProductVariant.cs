@@ -9,6 +9,8 @@ public class ProductVariant : BaseEntity
     public decimal OriginalPrice { get; set; }
     public decimal SellingPrice { get; set; }
 
+    public decimal ShippingMultiplier { get; set; } = 1;
+
     public int StockQuantity { get; set; }
 
     [NotMapped]
@@ -29,7 +31,9 @@ public class ProductVariant : BaseEntity
     public ICollection<ProductVariantAttribute> VariantAttributes { get; set; } = new List<ProductVariantAttribute>();
     public ICollection<Media.Media> Images { get; set; } = new List<Media.Media>();
     public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<Inventory.InventoryTransaction>();
-    public ICollection<CartItem> CartItems { get; set; } = new List<Cart.CartItem>();
+    public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+    public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    public ICollection<ProductVariantShippingMethod> ProductVariantShippingMethods { get; set; } = new List<ProductVariantShippingMethod>();
 
     public void AdjustStock(int quantityChange)
     {
@@ -47,11 +51,5 @@ public class ProductVariant : BaseEntity
     public int CalculateStockFromTransactions()
     {
         return InventoryTransactions.Sum(t => t.QuantityChange);
-    }
-
-    public bool ValidateStockConsistency()
-    {
-        var calculatedStock = CalculateStockFromTransactions();
-        return StockQuantity == calculatedStock;
     }
 }

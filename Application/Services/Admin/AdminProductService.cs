@@ -1,4 +1,6 @@
-﻿namespace Application.Services.Admin;
+﻿using Application.Common.Utilities;
+
+namespace Application.Services.Admin;
 
 public class AdminProductService : IAdminProductService
 {
@@ -44,6 +46,88 @@ public class AdminProductService : IAdminProductService
         _context = context;
     }
 
+    public async Task<ServiceResult<PagedResultDto<AdminProductListDto>>> GetProductsAsync(
+        string? searchTerm,
+        int? categoryId,
+        bool? isActive,
+        bool includeDeleted,
+        int page,
+        int pageSize)
+    {
+        var query = _context.Products.AsQueryable();
+
+        if (includeDeleted)
+        {
+            query = query.IgnoreQueryFilters();
+        }
+        else
+        {
+            query = query.Where(p => !p.IsDeleted);
+        }
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(p => p.IsActive == isActive.Value);
+        }
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(p => p.CategoryGroup.CategoryId == categoryId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = PersianTextHelper.Normalize(searchTerm);
+            query = query.Where(p => EF.Functions.ILike(p.Name, $"%{term}%") || EF.Functions.ILike(p.Sku ?? "", $"%{term}%"));
+        }
+
+        var totalItems = await query.CountAsync();
+
+        var products = await query
+            .Include(p => p.CategoryGroup)
+                .ThenInclude(cg => cg.Category)
+            .Include(p => p.Variants)
+            .Include(p => p.Images)
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => new AdminProductListDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Sku = p.Sku,
+                IsActive = p.IsActive,
+                IsDeleted = p.IsDeleted,
+                CategoryName = p.CategoryGroup.Category.Name,
+                CategoryGroupName = p.CategoryGroup.Name,
+                IconUrl = p.Images.FirstOrDefault(i => i.IsPrimary) != null ? p.Images.FirstOrDefault(i => i.IsPrimary)!.FilePath : null,
+                TotalStock = p.Variants.Sum(v => v.StockQuantity),
+                VariantCount = p.Variants.Count,
+                MinPrice = p.Variants.Any() ? p.Variants.Min(v => v.SellingPrice) : 0,
+                MaxPrice = p.Variants.Any() ? p.Variants.Max(v => v.SellingPrice) : 0,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt
+            })
+            .ToListAsync();
+
+        // Fix image URLs
+        foreach (var p in products)
+        {
+            if (!string.IsNullOrEmpty(p.IconUrl))
+            {
+                p.IconUrl = _mediaService.GetUrl(p.IconUrl);
+            }
+        }
+
+        return ServiceResult<PagedResultDto<AdminProductListDto>>.Ok(new PagedResultDto<AdminProductListDto>
+        {
+            Items = products,
+            TotalItems = totalItems,
+            Page = page,
+            PageSize = pageSize
+        });
+    }
+
     public async Task<ServiceResult<AdminProductViewDto?>> GetAdminProductByIdAsync(int productId)
     {
         var product = await _productRepository.GetByIdWithVariantsAndAttributesAsync(productId, true);
@@ -62,7 +146,6 @@ public class AdminProductService : IAdminProductService
             return ServiceResult<AdminProductViewDto>.Fail("Product SKU already exists.");
         }
 
-        // Fixed: Added JsonNumberHandling.AllowReadingFromString to handle number/string mismatches in attributeValueIds
         var variants = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(
                productDto.VariantsJson,
                new JsonSerializerOptions
@@ -88,7 +171,7 @@ public class AdminProductService : IAdminProductService
 
         if (variantAttributeSets.Count != new HashSet<HashSet<int>>(variantAttributeSets, HashSet<int>.CreateSetComparer()).Count)
         {
-            return ServiceResult<AdminProductViewDto>.Fail("Duplicate variant combinations detected.   Each variant must have a unique set of attributes.");
+            return ServiceResult<AdminProductViewDto>.Fail("Duplicate variant combinations detected. Each variant must have a unique set of attributes.");
         }
 
         return await _unitOfWork.ExecuteStrategyAsync(async () =>
@@ -106,11 +189,21 @@ public class AdminProductService : IAdminProductService
                     var variant = _mapper.Map<ProductVariant>(variantDto);
                     variant.Product = product;
                     variant.StockQuantity = variantDto.Stock;
+                    variant.ShippingMultiplier = variantDto.ShippingMultiplier;
 
                     var attributeValues = await _productRepository.GetAttributeValuesByIdsAsync(variantDto.AttributeValueIds);
                     foreach (var attrValue in attributeValues)
                     {
                         variant.VariantAttributes.Add(new ProductVariantAttribute { AttributeValue = attrValue });
+                    }
+
+                    foreach (var methodId in variantDto.EnabledShippingMethodIds)
+                    {
+                        variant.ProductVariantShippingMethods.Add(new ProductVariantShippingMethod
+                        {
+                            ShippingMethodId = methodId,
+                            IsActive = true
+                        });
                     }
 
                     if (variantDto.Stock > 0)
@@ -234,7 +327,6 @@ public class AdminProductService : IAdminProductService
                 _mapper.Map(productDto, product);
                 product.Description = _htmlSanitizer.Sanitize(productDto.Description ?? string.Empty);
 
-                // Fixed: Added JsonNumberHandling.AllowReadingFromString to handle number/string mismatches
                 var variantDtos = JsonSerializer.Deserialize<List<CreateProductVariantDto>>(
                     productDto.VariantsJson,
                     new JsonSerializerOptions
@@ -291,7 +383,7 @@ public class AdminProductService : IAdminProductService
             catch (DbUpdateConcurrencyException)
             {
                 await transaction.RollbackAsync();
-                return ServiceResult<AdminProductViewDto>.Fail("The record was modified by another user.   Please refresh and try again.");
+                return ServiceResult<AdminProductViewDto>.Fail("The record was modified by another user. Please refresh and try again.");
             }
             catch (Exception ex)
             {
@@ -340,7 +432,7 @@ public class AdminProductService : IAdminProductService
                 var duplicateTypeNames = duplicateTypes
                     .Select(g => g.First().AttributeType.DisplayName)
                     .ToList();
-                return (false, $"Each variant can only have one value per attribute type.  Duplicate types found: {string.Join(", ", duplicateTypeNames)}");
+                return (false, $"Each variant can only have one value per attribute type. Duplicate types found: {string.Join(", ", duplicateTypeNames)}");
             }
         }
 
@@ -372,6 +464,25 @@ public class AdminProductService : IAdminProductService
                 int diff = newStock - currentStock;
 
                 _mapper.Map(dto, variant);
+                variant.ShippingMultiplier = dto.ShippingMultiplier;
+
+                var existingMethods = variant.ProductVariantShippingMethods.ToList();
+
+                var toRemove = existingMethods.Where(x => !dto.EnabledShippingMethodIds.Contains(x.ShippingMethodId)).ToList();
+                foreach (var item in toRemove)
+                    _context.ProductVariantShippingMethods.Remove(item);
+
+                var existingIds = existingMethods.Select(x => x.ShippingMethodId).ToList();
+                var toAdd = dto.EnabledShippingMethodIds.Where(id => !existingIds.Contains(id)).ToList();
+
+                foreach (var methodId in toAdd)
+                {
+                    variant.ProductVariantShippingMethods.Add(new ProductVariantShippingMethod
+                    {
+                        ShippingMethodId = methodId,
+                        IsActive = true
+                    });
+                }
 
                 if (diff != 0 && !variant.IsUnlimited)
                 {
@@ -392,6 +503,16 @@ public class AdminProductService : IAdminProductService
             {
                 variant = _mapper.Map<ProductVariant>(dto);
                 variant.StockQuantity = dto.Stock;
+                variant.ShippingMultiplier = dto.ShippingMultiplier;
+
+                foreach (var methodId in dto.EnabledShippingMethodIds)
+                {
+                    variant.ProductVariantShippingMethods.Add(new ProductVariantShippingMethod
+                    {
+                        ShippingMethodId = methodId,
+                        IsActive = true
+                    });
+                }
 
                 if (dto.Stock > 0)
                 {
@@ -572,12 +693,12 @@ public class AdminProductService : IAdminProductService
 
                 if (failedIds.Any())
                 {
-                    _logger.LogWarning("Bulk update partial failure.   Variants not found: {Ids}", string.Join(",", failedIds));
+                    _logger.LogWarning("Bulk update partial failure. Variants not found: {Ids}", string.Join(",", failedIds));
                 }
 
                 await _unitOfWork.SaveChangesAsync();
 
-                await _auditService.LogSystemEventAsync("BulkPriceUpdate", $"User {userId} updated prices.   Changes: {string.Join("; ", changesLog)}", userId);
+                await _auditService.LogSystemEventAsync("BulkPriceUpdate", $"User {userId} updated prices. Changes: {string.Join("; ", changesLog)}", userId);
 
                 await transaction.CommitAsync();
 
@@ -625,6 +746,25 @@ public class AdminProductService : IAdminProductService
         return ServiceResult.Ok();
     }
 
+    public async Task<ServiceResult> RestoreProductAsync(int productId, int userId)
+    {
+        var product = await _context.Products.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == productId);
+        if (product == null)
+        {
+            return ServiceResult.Fail("Product not found.");
+        }
+
+        product.IsDeleted = false;
+        product.DeletedAt = null;
+        _productRepository.Update(product);
+        await _unitOfWork.SaveChangesAsync();
+
+        await _auditService.LogProductEventAsync(productId, "RestoreProduct", $"Product '{product.Name}' restored.", userId);
+        await InvalidateProductCachesAsync(productId, product.CategoryGroupId);
+
+        return ServiceResult.Ok();
+    }
+
     public async Task<ServiceResult<List<AttributeTypeWithValuesDto>>> GetAllAttributesWithValuesAsync()
     {
         var attributes = await _productRepository.GetAllAttributeTypesWithValuesAsync();
@@ -660,11 +800,27 @@ public class AdminProductService : IAdminProductService
         {
             var dto = _mapper.Map<ProductVariantResponseDto>(v);
             dto.Images = await _mediaService.GetEntityMediaAsync("ProductVariant", v.Id);
-            if (!dto.Images.Any())
-            {
-                var productImages = await _mediaService.GetEntityMediaAsync("Product", productId);
-                dto.Images = _mapper.Map<IEnumerable<MediaDto>>(productImages);
-            }
+
+            dto.ShippingMultiplier = v.ShippingMultiplier;
+            dto.EnabledShippingMethodIds = v.ProductVariantShippingMethods
+                .Where(sm => sm.IsActive)
+                .Select(sm => sm.ShippingMethodId)
+                .ToList();
+
+            dto.Attributes = v.VariantAttributes
+                .Where(va => va.AttributeValue?.AttributeType != null)
+                .ToDictionary(
+                    va => va.AttributeValue!.AttributeType.Name.ToLowerInvariant(),
+                    va => new AttributeValueDto(
+                        va.AttributeValue!.Id,
+                        va.AttributeValue.AttributeType.Name,
+                        va.AttributeValue.AttributeType.DisplayName,
+                        va.AttributeValue.Value,
+                        va.AttributeValue.DisplayValue ?? va.AttributeValue.Value,
+                        va.AttributeValue.HexCode
+                    )
+                );
+
             dtos.Add(dto);
         }
         return dtos;
@@ -673,9 +829,7 @@ public class AdminProductService : IAdminProductService
     private async Task InvalidateProductCachesAsync(int productId, int? categoryGroupId = null)
     {
         await _cacheService.ClearAsync($"{ProductCachePrefix}{productId}");
-
         await _cacheService.ClearByTagAsync($"{ProductTagPrefix}{productId}");
-
         await _cacheService.ClearByPrefixAsync(ProductListCachePrefix);
 
         if (categoryGroupId.HasValue)

@@ -771,6 +771,9 @@ namespace Application.Migrations
                     b.Property<int?>("ProductId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("ProductVariantId")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Profit")
                         .HasColumnType("decimal(18,2)");
 
@@ -796,6 +799,8 @@ namespace Application.Migrations
                     b.HasIndex("OrderId");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductVariantId");
 
                     b.HasIndex("VariantId");
 
@@ -1297,6 +1302,12 @@ namespace Application.Migrations
                     b.Property<decimal>("SellingPrice")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("ShippingMultiplier")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(1m);
+
                     b.Property<string>("Sku")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -1312,6 +1323,47 @@ namespace Application.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("ProductVariants");
+                });
+
+            modelBuilder.Entity("Domain.Product.Variant.ProductVariantShippingMethod", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now() at time zone 'utc'");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("ProductVariantId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ShippingMethodId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("ProductVariantId");
+
+                    b.HasIndex("ShippingMethodId");
+
+                    b.HasIndex("ProductVariantId", "ShippingMethodId")
+                        .IsUnique();
+
+                    b.ToTable("ProductVariantShippingMethods");
                 });
 
             modelBuilder.Entity("Domain.Search.ElasticsearchOutboxMessage", b =>
@@ -1812,6 +1864,10 @@ namespace Application.Migrations
                         .WithMany("OrderItems")
                         .HasForeignKey("ProductId");
 
+                    b.HasOne("Domain.Product.ProductVariant", null)
+                        .WithMany("OrderItems")
+                        .HasForeignKey("ProductVariantId");
+
                     b.HasOne("Domain.Product.ProductVariant", "Variant")
                         .WithMany()
                         .HasForeignKey("VariantId")
@@ -1909,6 +1965,25 @@ namespace Application.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Domain.Product.Variant.ProductVariantShippingMethod", b =>
+                {
+                    b.HasOne("Domain.Product.ProductVariant", "ProductVariant")
+                        .WithMany("ProductVariantShippingMethods")
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Order.ShippingMethod", "ShippingMethod")
+                        .WithMany()
+                        .HasForeignKey("ShippingMethodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProductVariant");
+
+                    b.Navigation("ShippingMethod");
                 });
 
             modelBuilder.Entity("Domain.User.UserAddress", b =>
@@ -2013,6 +2088,10 @@ namespace Application.Migrations
                     b.Navigation("Images");
 
                     b.Navigation("InventoryTransactions");
+
+                    b.Navigation("OrderItems");
+
+                    b.Navigation("ProductVariantShippingMethods");
 
                     b.Navigation("VariantAttributes");
                 });

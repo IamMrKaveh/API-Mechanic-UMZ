@@ -24,6 +24,11 @@ public class AdminOrderStatusService : IAdminOrderStatusService
         _htmlSanitizer = htmlSanitizer;
     }
 
+    public async Task<IEnumerable<Domain.Order.OrderStatus>> GetOrderStatusesAsync()
+    {
+        return await _orderStatusRepository.GetOrderStatusesAsync();
+    }
+
     public async Task<OrderStatus?> GetOrderStatusByIdAsync(int id)
     {
         return await _orderStatusRepository.GetOrderStatusByIdAsync(id);

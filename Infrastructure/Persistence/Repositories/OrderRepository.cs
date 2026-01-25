@@ -220,4 +220,26 @@ public class OrderRepository : IOrderRepository
     {
         return await _context.Orders.AnyAsync(o => o.IdempotencyKey == idempotencyKey);
     }
+
+    public async Task<List<ProductVariant>> GetVariantsWithShippingMethodsAsync(List<int> variantIds)
+    {
+        return await _context.ProductVariants
+            .AsNoTracking()
+            .Where(v => variantIds
+                .Contains(v.Id) && !v.IsDeleted && v.IsActive)
+            .Include(v => v.Product)
+            .Include(v => v.ProductVariantShippingMethods
+                .Where(pvsm => pvsm.IsActive))
+            .ThenInclude(pvsm => pvsm.ShippingMethod)
+            .ToListAsync();
+    }
+
+    public async Task<List<ShippingMethod>> GetShippingMethodsByIdsAsync(List<int> shippingMethodIds)
+    {
+        return await _context.ShippingMethods
+            .AsNoTracking()
+            .Where(sm => shippingMethodIds
+                .Contains(sm.Id) && sm.IsActive && !sm.IsDeleted)
+            .ToListAsync();
+    }
 }
