@@ -1,4 +1,7 @@
-﻿namespace Application.Context;
+﻿using Domain.Product.Variant;
+using Microsoft.EntityFrameworkCore;
+
+namespace Application.Context;
 
 public class LedkaContext : DbContext
 {
@@ -22,6 +25,7 @@ public class LedkaContext : DbContext
     public DbSet<AttributeType> AttributeTypes { get; set; } = null!;
     public DbSet<AttributeValue> AttributeValues { get; set; } = null!;
     public DbSet<ProductVariantAttribute> ProductVariantAttributes { get; set; } = null!;
+    public DbSet<ProductVariantShippingMethod> ProductVariantShippingMethods { get; set; } = null!;
 
     public DbSet<Order> Orders { get; set; } = null!;
     public DbSet<OrderItem> OrderItems { get; set; } = null!;
@@ -174,12 +178,17 @@ public class LedkaContext : DbContext
         builder.Entity<ProductVariant>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Sku).HasMaxLength(100);
+
+            entity.Property(e => e.Sku)
+            .HasMaxLength(100);
             entity.Property(e => e.PurchasePrice).HasColumnType("decimal(18,2)");
             entity.Property(e => e.OriginalPrice).HasColumnType("decimal(18,2)");
             entity.Property(e => e.SellingPrice).HasColumnType("decimal(18,2)");
             entity.Property(e => e.RowVersion).IsRowVersion();
             entity.HasOne(d => d.Product).WithMany(p => p.Variants).HasForeignKey(d => d.ProductId).OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.ShippingMultiplier)
+            .HasPrecision(18, 2)
+            .HasDefaultValue(1);
             entity.Ignore(e => e.DisplayName);
             entity.Ignore(e => e.IsInStock);
             entity.Ignore(e => e.HasDiscount);
@@ -224,6 +233,34 @@ public class LedkaContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Reviews).HasForeignKey(d => d.UserId);
             entity.HasOne(d => d.Order).WithMany().HasForeignKey(d => d.OrderId).IsRequired(false);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("now() at time zone 'utc'");
+        });
+
+        builder.Entity<ProductVariantShippingMethod>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.ProductVariant)
+                .WithMany(v => v.ProductVariantShippingMethods)
+                .HasForeignKey(e => e.ProductVariantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ShippingMethod)
+                .WithMany()
+                .HasForeignKey(e => e.ShippingMethodId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.ProductVariantId, e.ShippingMethodId })
+                .IsUnique();
+
+            entity.HasIndex(e => e.ProductVariantId);
+            entity.HasIndex(e => e.ShippingMethodId);
+            entity.HasIndex(e => e.IsActive);
+
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now() at time zone 'utc'");
         });
     }
 

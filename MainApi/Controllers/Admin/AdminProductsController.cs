@@ -1,6 +1,4 @@
-﻿using Application.Common.Interfaces.Admin;
-
-namespace MainApi.Controllers.Admin;
+﻿namespace MainApi.Controllers.Admin;
 
 [Route("api/admin/products")]
 [Authorize(Roles = "Admin")]
@@ -11,6 +9,19 @@ public class AdminProductsController : BaseApiController
     public AdminProductsController(IAdminProductService adminProductService, ICurrentUserService currentUserService) : base(currentUserService)
     {
         _adminProductService = adminProductService;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetProducts(
+        [FromQuery] string? searchTerm,
+        [FromQuery] int? categoryId,
+        [FromQuery] bool? isActive,
+        [FromQuery] bool includeDeleted = false,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var result = await _adminProductService.GetProductsAsync(searchTerm, categoryId, isActive, includeDeleted, page, pageSize);
+        return ToActionResult(result);
     }
 
     [HttpGet("{id:int}")]
@@ -37,6 +48,26 @@ public class AdminProductsController : BaseApiController
     {
         if (CurrentUser.UserId == null) return Unauthorized();
         var result = await _adminProductService.UpdateProductAsync(id, productDto, CurrentUser.UserId.Value);
+        return ToActionResult(result);
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteProduct(int id)
+    {
+        if (CurrentUser.UserId == null) return Unauthorized();
+        var result = await _adminProductService.DeleteProductAsync(id, CurrentUser.UserId.Value);
+        if (result.Success)
+        {
+            return Ok(new { message = "محصول با موفقیت حذف شد" });
+        }
+        return ToActionResult(result);
+    }
+
+    [HttpPost("{id:int}/restore")]
+    public async Task<IActionResult> RestoreProduct(int id)
+    {
+        if (CurrentUser.UserId == null) return Unauthorized();
+        var result = await _adminProductService.RestoreProductAsync(id, CurrentUser.UserId.Value);
         return ToActionResult(result);
     }
 
@@ -91,6 +122,13 @@ public class AdminProductsController : BaseApiController
     public async Task<IActionResult> GetLowStockProducts([FromQuery] int threshold = 5)
     {
         var result = await _adminProductService.GetLowStockProductsAsync(threshold);
+        return ToActionResult(result);
+    }
+
+    [HttpGet("attributes/with-values")]
+    public async Task<IActionResult> GetAttributesWithValues()
+    {
+        var result = await _adminProductService.GetAllAttributesWithValuesAsync();
         return ToActionResult(result);
     }
 }

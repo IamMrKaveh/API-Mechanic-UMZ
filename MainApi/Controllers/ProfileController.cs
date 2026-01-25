@@ -67,6 +67,19 @@ public class ProfileController : ControllerBase
         return Ok(result.Data);
     }
 
+    [HttpGet("addresses")]
+    public async Task<IActionResult> GetUserAddresses()
+    {
+        var userId = _currentUserService.UserId;
+        if (userId == null) return Unauthorized();
+
+        var result = await _userService.GetUserAddressesAsync(userId.Value);
+        if (!result.Success) return StatusCode(500, new { message = result.Error });
+
+        return Ok(result.Data);
+    }
+
+
     [HttpPost("addresses")]
     public async Task<IActionResult> AddAddress([FromBody] CreateUserAddressDto addressDto)
     {

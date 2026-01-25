@@ -8,6 +8,7 @@ public class AdminInventoryService : IAdminInventoryService
     private readonly IAuditService _auditService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AdminInventoryService> _logger;
+    private readonly IMediaService _mediaService;
 
     public AdminInventoryService(
         LedkaContext context,
@@ -15,7 +16,8 @@ public class AdminInventoryService : IAdminInventoryService
         ICurrentUserService currentUserService,
         IAuditService auditService,
         IUnitOfWork unitOfWork,
-        ILogger<AdminInventoryService> logger)
+        ILogger<AdminInventoryService> logger,
+        IMediaService mediaService)
     {
         _context = context;
         _inventoryService = inventoryService;
@@ -23,6 +25,7 @@ public class AdminInventoryService : IAdminInventoryService
         _auditService = auditService;
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _mediaService = mediaService;
     }
 
     public async Task<ServiceResult<PagedResultDto<InventoryTransactionDto>>> GetTransactionsAsync(
@@ -36,6 +39,9 @@ public class AdminInventoryService : IAdminInventoryService
         var query = _context.InventoryTransactions
             .Include(t => t.Variant)
                 .ThenInclude(v => v.Product)
+            .Include(t => t.Variant)
+                .ThenInclude(v => v.VariantAttributes)
+                    .ThenInclude(va => va.AttributeValue)
             .Include(t => t.User)
             .AsQueryable();
 
@@ -57,12 +63,24 @@ public class AdminInventoryService : IAdminInventoryService
             .OrderByDescending(t => t.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(t => new InventoryTransactionDto
+            .ToListAsync();
+
+        var transactionDtos = new List<InventoryTransactionDto>();
+
+        foreach (var t in transactions)
+        {
+            var variantName = string.Join(" / ", t.Variant.VariantAttributes.Select(va => va.AttributeValue.DisplayValue));
+            var productImage = await _mediaService.GetPrimaryImageUrlAsync("Product", t.Variant.ProductId);
+
+            transactionDtos.Add(new InventoryTransactionDto
             {
                 Id = t.Id,
                 VariantId = t.VariantId,
+                ProductId = t.Variant.ProductId,
                 ProductName = t.Variant.Product.Name,
+                ProductImage = productImage,
                 VariantSku = t.Variant.Sku,
+                VariantName = variantName,
                 TransactionType = t.TransactionType,
                 QuantityChange = t.QuantityChange,
                 StockBefore = t.StockBefore,
@@ -71,12 +89,12 @@ public class AdminInventoryService : IAdminInventoryService
                 ReferenceNumber = t.ReferenceNumber,
                 OrderItemId = t.OrderItemId,
                 UserId = t.UserId,
-                UserName = t.User != null ? t.User.FirstName + " " + t.User.LastName : null,
+                UserName = t.User != null ? $"{t.User.FirstName} {t.User.LastName}" : "سیستم",
                 CreatedAt = t.CreatedAt
-            })
-            .ToListAsync();
+            });
+        }
 
-        var result = PagedResultDto<InventoryTransactionDto>.Create(transactions, totalItems, page, pageSize);
+        var result = PagedResultDto<InventoryTransactionDto>.Create(transactionDtos, totalItems, page, pageSize);
         return ServiceResult<PagedResultDto<InventoryTransactionDto>>.Ok(result);
     }
 
@@ -165,7 +183,7 @@ public class AdminInventoryService : IAdminInventoryService
             await _auditService.LogInventoryEventAsync(
                 dto.VariantId,
                 "StockAdjustment",
-                $"Stock adjusted by {dto.QuantityChange} for variant {dto.VariantId}.  Type: {dto.TransactionType}",
+                $"Stock adjusted by {dto.QuantityChange} for variant {dto.VariantId}. Type: {dto.TransactionType}",
                 userId);
 
             return ServiceResult.Ok();

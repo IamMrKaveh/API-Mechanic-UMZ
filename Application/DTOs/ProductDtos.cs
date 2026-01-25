@@ -1,4 +1,7 @@
-﻿namespace Application.DTOs;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
+
+namespace Application.DTOs;
 
 public enum ProductSortOptions
 {
@@ -51,7 +54,6 @@ public class ProductDto
     public List<int>? DeletedMediaIds { get; set; }
 }
 
-
 public class CreateProductVariantDto
 {
     public int? Id { get; set; }
@@ -63,6 +65,8 @@ public class CreateProductVariantDto
     public bool IsUnlimited { get; set; }
     public bool IsActive { get; set; } = true;
     public List<int> AttributeValueIds { get; set; } = [];
+    public decimal ShippingMultiplier { get; set; } = 1;
+    public List<int> EnabledShippingMethodIds { get; set; } = [];
 }
 
 public record AttributeValueDto(
@@ -90,6 +94,8 @@ public class ProductVariantResponseDto
     public Dictionary<string, AttributeValueDto> Attributes { get; set; } = [];
     public IEnumerable<MediaDto> Images { get; set; } = [];
     public string? RowVersion { get; set; }
+    public decimal ShippingMultiplier { get; set; }
+    public List<int> EnabledShippingMethodIds { get; set; } = [];
 }
 
 public class PublicProductViewDto
@@ -116,6 +122,24 @@ public class AdminProductViewDto : PublicProductViewDto
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
     public required string RowVersion { get; set; }
+}
+
+public class AdminProductListDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Sku { get; set; }
+    public bool IsActive { get; set; }
+    public bool IsDeleted { get; set; }
+    public string CategoryName { get; set; } = string.Empty;
+    public string CategoryGroupName { get; set; } = string.Empty;
+    public string? IconUrl { get; set; }
+    public int TotalStock { get; set; }
+    public int VariantCount { get; set; }
+    public decimal MinPrice { get; set; }
+    public decimal MaxPrice { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }
 
 public class ProductStockDto
@@ -174,6 +198,5 @@ public class StockAdjustmentDto
     public int QuantityChange { get; set; }
 
     public string? Notes { get; set; }
-
     public string? ReferenceNumber { get; set; }
 }

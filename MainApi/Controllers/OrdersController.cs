@@ -75,6 +75,40 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
+    [HttpGet("available-shipping-methods")]
+    [ProducesResponseType(typeof(ServiceResult<IEnumerable<AvailableShippingMethodDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ServiceResult), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetAvailableShippingMethods()
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return Unauthorized(new { message = "کاربر احراز هویت نشده است." });
+            }
+
+            var result = await _orderService.GetAvailableShippingMethodsForCartAsync(userId);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "خطا در دریافت روش‌های ارسال قابل انتخاب");
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "خطایی در سرور رخ داد. لطفاً بعداً تلاش کنید."
+            });
+        }
+    }
+
     [HttpPost("checkout-from-cart")]
     [Authorize]
     public async Task<ActionResult<object>> CheckoutFromCart([FromBody] CreateOrderFromCartDto orderDto)

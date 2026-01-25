@@ -1,6 +1,4 @@
-﻿using Application.Common.Interfaces.Admin;
-
-namespace MainApi.Controllers.Admin;
+﻿namespace MainApi.Controllers.Admin;
 
 [Route("api/admin/reviews")]
 [ApiController]

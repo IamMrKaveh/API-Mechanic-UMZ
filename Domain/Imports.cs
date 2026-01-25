@@ -1,16 +1,12 @@
 ﻿global using Domain.Auth;
 global using Domain.Base;
 global using Domain.Cart;
-global using Domain.Category;
 global using Domain.Discount;
 global using Domain.Inventory;
-global using Domain.Media;
-global using Domain.Notification;
 global using Domain.Order;
-global using Domain.Payment;
 global using Domain.Product;
 global using Domain.Product.Attribute;
-global using Domain.User;
+global using Domain.Product.Variant;
 global using Microsoft.EntityFrameworkCore;
 global using System.ComponentModel.DataAnnotations;
 global using System.ComponentModel.DataAnnotations.Schema;

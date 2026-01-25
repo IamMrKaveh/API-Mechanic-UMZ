@@ -11,6 +11,7 @@ public interface IUserService
     Task<ServiceResult> UpdateUserAsync(int id, UpdateProfileDto updateRequest, int currentUserId, bool isAdmin);
     Task<ServiceResult> UpdateProfileAsync(int userId, UpdateProfileDto updateRequest);
     Task<ServiceResult> DeleteAccountAsync(int userId);
+    Task<ServiceResult<List<UserAddressDto>>> GetUserAddressesAsync(int userId);
     Task<ServiceResult<UserAddressDto?>> AddUserAddressAsync(int userId, CreateUserAddressDto addressDto);
     Task<ServiceResult<UserAddressDto?>> UpdateUserAddressAsync(int userId, int addressId, UpdateUserAddressDto addressDto);
     Task<ServiceResult> DeleteUserAddressAsync(int userId, int addressId);

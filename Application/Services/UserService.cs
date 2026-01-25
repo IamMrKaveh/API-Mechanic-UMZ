@@ -188,7 +188,7 @@ public class UserService : IUserService
             AttemptCount = 0
         };
 
-        //await SendOtpViaKavenegar(user.PhoneNumber, otp);
+        await SendOtpViaKavenegar(user.PhoneNumber, otp);
 
         await _repository.AddOtpAsync(userOtp);
         await _unitOfWork.SaveChangesAsync();
@@ -350,6 +350,16 @@ public class UserService : IUserService
         await _unitOfWork.SaveChangesAsync();
 
         return ServiceResult.Ok();
+    }
+
+    public async Task<ServiceResult<List<UserAddressDto>>> GetUserAddressesAsync(int userId)
+    {
+        var user = await _repository.GetUserByIdAsync(userId, true);
+        if (user == null)
+            return ServiceResult<List<UserAddressDto>>.Fail("User not found");
+
+        var addresses = _mapper.Map<List<UserAddressDto>>(user.UserAddresses);
+        return ServiceResult<List<UserAddressDto>>.Ok(addresses);
     }
 
     public async Task<ServiceResult<UserAddressDto?>> AddUserAddressAsync(int userId, CreateUserAddressDto addressDto)

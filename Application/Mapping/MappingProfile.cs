@@ -4,6 +4,35 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
+        CreateMap<CreateProductVariantDto, ProductVariant>()
+            .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src => src.Stock))
+            .ForMember(dest => dest.ShippingMultiplier, opt => opt.MapFrom(src => src.ShippingMultiplier))
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Product, opt => opt.Ignore())
+            .ForMember(dest => dest.VariantAttributes, opt => opt.Ignore())
+            .ForMember(dest => dest.InventoryTransactions, opt => opt.Ignore())
+            .ForMember(dest => dest.ProductVariantShippingMethods, opt => opt.Ignore())
+            .ForMember(dest => dest.CartItems, opt => opt.Ignore())
+            .ForMember(dest => dest.OrderItems, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForMember(dest => dest.RowVersion, opt => opt.Ignore());
+
+        CreateMap<ProductVariant, ProductVariantResponseDto>()
+            .ForMember(dest => dest.Stock, opt => opt.MapFrom(src => src.StockQuantity))
+            .ForMember(dest => dest.IsInStock, opt => opt.MapFrom(src => src.IsUnlimited || src.StockQuantity > 0))
+            .ForMember(dest => dest.HasDiscount, opt => opt.MapFrom(src => src.OriginalPrice > src.SellingPrice))
+            .ForMember(dest => dest.DiscountPercentage, opt => opt.MapFrom(src =>
+                src.OriginalPrice > 0 ? Math.Round(((src.OriginalPrice - src.SellingPrice) / src.OriginalPrice) * 100, 2) : 0))
+            .ForMember(dest => dest.Attributes, opt => opt.Ignore())
+            .ForMember(dest => dest.Images, opt => opt.Ignore())
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => Convert.ToBase64String(src.RowVersion)))
+            .ForMember(dest => dest.ShippingMultiplier, opt => opt.MapFrom(src => src.ShippingMultiplier))
+            .ForMember(dest => dest.EnabledShippingMethodIds, opt => opt.MapFrom(src =>
+                src.ProductVariantShippingMethods.Where(sm => sm.IsActive).Select(sm => sm.ShippingMethodId).ToList()));
+
 
         CreateMap<ProductDto, Product>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
@@ -46,8 +75,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CategoryGroup,
                 opt => opt.MapFrom(src => src.CategoryGroup != null ? new
                 {
-                    Id = src.CategoryGroup.Id,
-                    Name = src.CategoryGroup.Name,
+                    src.CategoryGroup.Id,
+                    src.CategoryGroup.Name,
                     CategoryName = src.CategoryGroup.Category != null ? src.CategoryGroup.Category.Name : "N/A"
                 } : null));
 
@@ -58,8 +87,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CategoryGroup,
                 opt => opt.MapFrom(src => src.CategoryGroup != null ? new
                 {
-                    Id = src.CategoryGroup.Id,
-                    Name = src.CategoryGroup.Name,
+                    src.CategoryGroup.Id,
+                    src.CategoryGroup.Name,
                     CategoryName = src.CategoryGroup.Category != null ? src.CategoryGroup.Category.Name : "N/A"
                 } : null));
 

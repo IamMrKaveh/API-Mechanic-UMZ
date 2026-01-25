@@ -1,6 +1,4 @@
-﻿using Application.Common.Interfaces.Admin;
-
-namespace MainApi.Controllers.Admin;
+﻿namespace MainApi.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/inventory")]
@@ -30,6 +28,10 @@ public class AdminInventoryController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
+        // Validation for pagination params
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
         var result = await _adminInventoryService.GetTransactionsAsync(variantId, transactionType, fromDate, toDate, page, pageSize);
         if (!result.Success)
         {
@@ -65,7 +67,6 @@ public class AdminInventoryController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         var userId = _currentUserService.UserId;
         if (!userId.HasValue)
             return Unauthorized();

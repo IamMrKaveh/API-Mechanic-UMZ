@@ -17,8 +17,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminInventoryService, AdminInventoryService>();
         services.AddScoped<IAdminDiscountService, AdminDiscountService>();
         services.AddScoped<IAdminAttributeService, AdminAttributeService>();
+        services.AddScoped<IAdminProductVariantShippingService, AdminProductVariantShippingService>();
 
         services.AddScoped<IShippingMethodService, ShippingMethodService>();
+        services.AddScoped<ICheckoutShippingService, CheckoutShippingService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<ICategoryService, CategoryService>();

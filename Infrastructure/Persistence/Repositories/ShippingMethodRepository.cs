@@ -13,50 +13,51 @@ public class ShippingMethodRepository : IShippingMethodRepository
     {
         var query = _context.ShippingMethods.AsQueryable();
 
-        if (includeDeleted)
+        if (!includeDeleted)
         {
-            query = query.IgnoreQueryFilters();
+            query = query.Where(sm => !sm.IsDeleted);
         }
 
-        return await query.OrderBy(s => s.Name).ToListAsync();
+        return await query.OrderBy(sm => sm.Name).ToListAsync();
     }
 
     public async Task<ShippingMethod?> GetByIdAsync(int id)
     {
-        return await _context.ShippingMethods.FindAsync(id);
+        return await _context.ShippingMethods
+            .FirstOrDefaultAsync(sm => sm.Id == id && !sm.IsDeleted);
     }
 
     public async Task<ShippingMethod?> GetByIdIncludingDeletedAsync(int id)
     {
         return await _context.ShippingMethods
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(s => s.Id == id);
+            .FirstOrDefaultAsync(sm => sm.Id == id);
     }
 
-    public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
+    public async Task AddAsync(ShippingMethod shippingMethod)
     {
-        var query = _context.ShippingMethods.Where(s => s.Name == name);
-
-        if (excludeId.HasValue)
-        {
-            query = query.Where(s => s.Id != excludeId.Value);
-        }
-
-        return await query.AnyAsync();
+        await _context.ShippingMethods.AddAsync(shippingMethod);
     }
 
-    public async Task AddAsync(ShippingMethod method)
+    public void Update(ShippingMethod shippingMethod)
     {
-        await _context.ShippingMethods.AddAsync(method);
-    }
-
-    public void Update(ShippingMethod method)
-    {
-        _context.ShippingMethods.Update(method);
+        _context.ShippingMethods.Update(shippingMethod);
     }
 
     public void SetOriginalRowVersion(ShippingMethod method, byte[] rowVersion)
     {
-        _context.Entry(method).Property(s => s.RowVersion).OriginalValue = rowVersion;
+        _context.Entry(method).Property(e => e.RowVersion).OriginalValue = rowVersion;
+    }
+
+    public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
+    {
+        var query = _context.ShippingMethods
+            .Where(sm => sm.Name == name && !sm.IsDeleted);
+
+        if (excludeId.HasValue)
+        {
+            query = query.Where(sm => sm.Id != excludeId.Value);
+        }
+
+        return await query.AnyAsync();
     }
 }

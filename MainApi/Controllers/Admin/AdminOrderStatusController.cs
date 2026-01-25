@@ -14,6 +14,13 @@ public class AdminOrderStatusController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetOrderStatuses()
+    {
+        var statuses = await _adminOrderStatusService.GetOrderStatusesAsync();
+        return Ok(statuses);
+    }
+
     [HttpPost]
     public async Task<ActionResult<Domain.Order.OrderStatus>> PostOrderStatus(CreateOrderStatusDto statusDto)
     {

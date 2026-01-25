@@ -1,4 +1,6 @@
-﻿namespace Application.Services;
+﻿using Application.Common.Interfaces.Persistence;
+
+namespace Application.Services;
 
 public class PaymentService : IPaymentService
 {
@@ -7,19 +9,22 @@ public class PaymentService : IPaymentService
     private readonly ILogger<PaymentService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IOptions<FrontendUrlsDto> _frontendUrls;
+    private readonly IUnitOfWork _unitOfWork;
 
     public PaymentService(
         IPaymentGateway paymentGateway,
         LedkaContext context,
         ILogger<PaymentService> logger,
         IHttpContextAccessor httpContextAccessor,
-        IOptions<FrontendUrlsDto> frontendUrls)
+        IOptions<FrontendUrlsDto> frontendUrls,
+        IUnitOfWork unitOfWork)
     {
         _paymentGateway = paymentGateway;
         _context = context;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
         _frontendUrls = frontendUrls;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<PaymentRequestResultDto> InitiatePaymentAsync(PaymentInitiationDto initiationDto)
@@ -73,142 +78,100 @@ public class PaymentService : IPaymentService
 
     public async Task<PaymentVerificationResultDto> VerifyPaymentAsync(string authority, string status)
     {
-        using (_logger.BeginScope(new Dictionary<string, object>
+        return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
-            ["CorrelationId"] = _httpContextAccessor.HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString(),
-            ["PaymentAuthority"] = authority,
-            ["PaymentStatus"] = status
-        }))
-        {
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var transaction = await _context.PaymentTransactions
+                var paymentTx = await _context.PaymentTransactions
                     .Include(t => t.Order)
                     .FirstOrDefaultAsync(t => t.Authority == authority);
 
-                if (transaction == null)
+                if (paymentTx == null)
                 {
-                    _logger.LogWarning("Payment transaction not found for authority: {Authority}", authority);
+                    return new PaymentVerificationResultDto { IsVerified = false, Message = "تراکنش یافت نشد." };
+                }
+
+                if (paymentTx.Status == PaymentTransaction.PaymentStatuses.Success)
+                {
                     return new PaymentVerificationResultDto
                     {
-                        IsVerified = false,
-                        Message = "Transaction not found.",
-                        RedirectUrl = $"{_frontendUrls.Value.BaseUrl}/payment/failure?reason=transaction_not_found"
+                        IsVerified = true,
+                        RefId = paymentTx.RefId ?? 0,
+                        Message = "تراکنش قبلاً تایید شده است.",
+                        RedirectUrl = $"{_frontendUrls.Value.BaseUrl}/payment/result?status=success&refId={paymentTx.RefId}&orderId={paymentTx.OrderId}"
                     };
                 }
 
-                using (_logger.BeginScope(new Dictionary<string, object>
+                if (status.ToUpper() != "OK")
                 {
-                    ["OrderId"] = transaction.OrderId,
-                    ["UserId"] = transaction.UserId
-                }))
-                {
-                    if (transaction.Status == PaymentTransaction.PaymentStatuses.Success)
-                    {
-                        return new PaymentVerificationResultDto
-                        {
-                            IsVerified = true,
-                            RefId = transaction.RefId,
-                            Message = "Payment already verified.",
-                            RedirectUrl = $"{_frontendUrls.Value.BaseUrl}/payment/success?orderId={transaction.OrderId}&refId={transaction.RefId}"
-                        };
-                    }
-
-                    if (status != "OK")
-                    {
-                        transaction.Status = PaymentTransaction.PaymentStatuses.Failed;
-                        transaction.ErrorMessage = "Payment was cancelled or failed by user.";
-                        transaction.UpdatedAt = DateTime.UtcNow;
-                        await _context.SaveChangesAsync();
-
-                        return new PaymentVerificationResultDto
-                        {
-                            IsVerified = false,
-                            Message = "Payment was cancelled.",
-                            RedirectUrl = $"{_frontendUrls.Value.BaseUrl}/payment/failure?orderId={transaction.OrderId}&reason=cancelled"
-                        };
-                    }
-
-                    transaction.Status = PaymentTransaction.PaymentStatuses.VerificationInProgress;
-                    transaction.VerificationAttemptedAt = DateTime.UtcNow;
-                    transaction.VerificationCount++;
+                    paymentTx.Status = PaymentTransaction.PaymentStatuses.Failed;
+                    paymentTx.ErrorMessage = "تراکنش توسط کاربر لغو شد یا ناموفق بود.";
+                    paymentTx.UpdatedAt = DateTime.UtcNow;
                     await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
 
-                    var retryPolicy = Policy
-                        .Handle<HttpRequestException>()
-                        .Or<TimeoutException>()
-                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                            (exception, timeSpan, retryCount, context) =>
-                            {
-                                _logger.LogWarning("Payment verification retry {RetryCount} for Authority {Authority} due to {Exception}",
-                                    retryCount, authority, exception.Message);
-                            });
-
-                    GatewayVerificationResultDto verification;
-                    try
+                    return new PaymentVerificationResultDto
                     {
-                        verification = await retryPolicy.ExecuteAsync(() =>
-                            _paymentGateway.VerifyPaymentAsync(authority, (int)transaction.Amount));
-                    }
-                    catch (Exception ex)
+                        IsVerified = false,
+                        Message = "پرداخت ناموفق بود.",
+                        RedirectUrl = $"{_frontendUrls.Value.BaseUrl}/payment/result?status=failure&reason=cancelled"
+                    };
+                }
+
+                var verification = await _paymentGateway.VerifyPaymentAsync(authority, (int)paymentTx.Amount);
+
+                paymentTx.UpdatedAt = DateTime.UtcNow;
+                paymentTx.GatewayRawResponse = verification.RawResponse;
+
+                if (verification.IsVerified)
+                {
+                    paymentTx.Status = PaymentTransaction.PaymentStatuses.Success;
+                    paymentTx.RefId = verification.RefId;
+                    paymentTx.CardPan = verification.CardPan;
+                    paymentTx.VerifiedAt = DateTime.UtcNow;
+
+                    if (paymentTx.Order != null)
                     {
-                        _logger.LogError(ex, "All retry attempts failed for verification of Authority {Authority}", authority);
-                        verification = new GatewayVerificationResultDto
-                        {
-                            IsVerified = false,
-                            Message = "Gateway verification failed after retries."
-                        };
+                        paymentTx.Order.IsPaid = true;
+                        paymentTx.Order.PaymentDate = DateTime.UtcNow;
+                        // Change status to Processing (Id: 2)
+                        paymentTx.Order.OrderStatusId = 2;
                     }
 
-                    transaction.UpdatedAt = DateTime.UtcNow;
-                    transaction.GatewayRawResponse = verification.RawResponse;
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
 
-                    if (verification.IsVerified)
+                    return new PaymentVerificationResultDto
                     {
-                        transaction.Status = PaymentTransaction.PaymentStatuses.Success;
-                        transaction.RefId = verification.RefId;
-                        transaction.CardPan = verification.CardPan;
-                        transaction.CardHash = verification.CardHash;
-                        transaction.Fee = verification.Fee;
-                        transaction.VerifiedAt = DateTime.UtcNow;
+                        IsVerified = true,
+                        RefId = verification.RefId,
+                        Message = "پرداخت با موفقیت انجام شد.",
+                        RedirectUrl = $"{_frontendUrls.Value.BaseUrl}/payment/result?status=success&refId={verification.RefId}&orderId={paymentTx.OrderId}"
+                    };
+                }
+                else
+                {
+                    paymentTx.Status = PaymentTransaction.PaymentStatuses.Failed;
+                    paymentTx.ErrorMessage = verification.Message;
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
 
-                        await _context.SaveChangesAsync();
-
-                        return new PaymentVerificationResultDto
-                        {
-                            IsVerified = true,
-                            RefId = verification.RefId,
-                            Message = "Payment verified successfully.",
-                            RedirectUrl = $"{_frontendUrls.Value.BaseUrl}/payment/success?orderId={transaction.OrderId}&refId={verification.RefId}"
-                        };
-                    }
-                    else
+                    return new PaymentVerificationResultDto
                     {
-                        transaction.Status = PaymentTransaction.PaymentStatuses.Failed;
-                        transaction.ErrorMessage = verification.Message;
-
-                        await _context.SaveChangesAsync();
-
-                        return new PaymentVerificationResultDto
-                        {
-                            IsVerified = false,
-                            Message = verification.Message ?? "Verification failed.",
-                            RedirectUrl = $"{_frontendUrls.Value.BaseUrl}/payment/failure?orderId={transaction.OrderId}&reason={Uri.EscapeDataString(verification.Message ?? "verification_failed")}"
-                        };
-                    }
+                        IsVerified = false,
+                        Message = verification.Message,
+                        RedirectUrl = $"{_frontendUrls.Value.BaseUrl}/payment/result?status=failure&reason={Uri.EscapeDataString(verification.Message ?? "Error")}"
+                    };
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Payment verification failed for Authority {Authority}", authority);
-                return new PaymentVerificationResultDto
-                {
-                    IsVerified = false,
-                    Message = "Verification exception.",
-                    RedirectUrl = $"{_frontendUrls.Value.BaseUrl}/payment/failure?reason=internal_error"
-                };
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error verifying payment authority: {Authority}", authority);
+                return new PaymentVerificationResultDto { IsVerified = false, Message = "خطای سیستمی رخ داده است." };
             }
-        }
+        });
     }
 
     public async Task ProcessGatewayWebhookAsync(string gatewayName, string authority, string status, long? refId)
