@@ -1,4 +1,7 @@
-﻿namespace Infrastructure.Payment.Mock;
+﻿using Application.Common.Interfaces.Payment;
+using Application.DTOs.Payment;
+
+namespace Infrastructure.Payment.Mock;
 
 public class MockPaymentGateway : IPaymentGateway
 {

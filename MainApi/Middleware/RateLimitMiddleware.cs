@@ -1,4 +1,7 @@
-﻿namespace MainApi.Middleware;
+﻿using Application.Common.Interfaces.Security;
+using Application.Common.Interfaces.User;
+
+namespace MainApi.Middleware;
 
 public class RateLimitMiddleware
 {

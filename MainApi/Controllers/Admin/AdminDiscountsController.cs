@@ -1,4 +1,7 @@
-﻿namespace MainApi.Controllers.Admin;
+﻿using Application.Common.Interfaces.Admin.Discount;
+using Application.DTOs.Discount;
+
+namespace MainApi.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/discounts")]

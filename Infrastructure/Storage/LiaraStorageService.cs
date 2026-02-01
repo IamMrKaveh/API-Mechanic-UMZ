@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Storage;
+﻿using Application.Common.Interfaces.Media;
+
+namespace Infrastructure.Storage;
 
 public class LiaraStorageService : IStorageService
 {

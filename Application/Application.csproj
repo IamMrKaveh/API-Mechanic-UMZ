@@ -14,8 +14,10 @@
 		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
 		<PackageReference Include="AWSSDK.S3" Version="4.0.7.10" />
 		<PackageReference Include="Elastic.Clients.Elasticsearch" Version="9.1.4" />
+		<PackageReference Include="FluentValidation" Version="12.1.1" />
 		<PackageReference Include="HtmlSanitizer" Version="9.0.886" />
 		<PackageReference Include="Kavenegar" Version="1.2.5" />
+		<PackageReference Include="MediatR" Version="14.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.10" />
 		<PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="9.0.10" />
 		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.0" />
@@ -53,6 +55,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Domain\Domain.csproj" />
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Common\Interfaces\Cart\" />
+    <Folder Include="Services\Cart\" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,6 @@
-﻿namespace MainApi.Controllers.Admin;
+﻿using Application.Common.Interfaces.Log;
+
+namespace MainApi.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/AuditLogs")]

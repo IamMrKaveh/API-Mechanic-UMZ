@@ -13,31 +13,19 @@ public class OrphanedFileCleanupService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Orphaned File Cleanup Service started.");
+        _logger.LogInformation("Media Cleanup Service started.");
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 await ProcessCleanupAsync(stoppingToken);
-                await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogInformation("Orphaned File Cleanup Service stopping.");
-                break;
+                await Task.Delay(TimeSpan.FromHours(12), stoppingToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in Orphaned File Cleanup Service");
-                try
-                {
-                    await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
+                _logger.LogError(ex, "Error in Media Cleanup Service");
+                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
             }
         }
     }
@@ -48,40 +36,34 @@ public class OrphanedFileCleanupService : BackgroundService
         var storageService = scope.ServiceProvider.GetRequiredService<IStorageService>();
         var context = scope.ServiceProvider.GetRequiredService<LedkaContext>();
 
-        string? continuationToken = null;
+        var cutoffDate = DateTime.UtcNow.AddHours(-24);
 
-        do
+        var deletedMedias = await context.Medias
+            .IgnoreQueryFilters()
+            .Where(m => m.IsDeleted && m.DeletedAt < cutoffDate)
+            .Take(100)
+            .ToListAsync(stoppingToken);
+
+        foreach (var media in deletedMedias)
         {
-            var files = (await storageService.ListFilesAsync("uploads/", 1000, continuationToken)).ToList();
-            if (!files.Any()) break;
+            if (stoppingToken.IsCancellationRequested) break;
 
-            var fileKeys = files.ToHashSet();
-
-            var existingFilesInDb = await context.Medias
-                .Where(m => fileKeys.Contains(m.FilePath))
-                .Select(m => m.FilePath)
-                .ToListAsync(stoppingToken);
-
-            var existingSet = existingFilesInDb.ToHashSet();
-            var orphans = fileKeys.Where(k => !existingSet.Contains(k)).ToList();
-
-            foreach (var orphan in orphans)
+            try
             {
-                if (stoppingToken.IsCancellationRequested) break;
+                _logger.LogInformation("Deleting physical file for media: {Id}", media.Id);
+                await storageService.DeleteFileAsync(media.FilePath);
 
-                try
-                {
-                    _logger.LogInformation("Deleting orphaned file: {File}", orphan);
-                    await storageService.DeleteFileAsync(orphan);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to delete orphaned file {File}", orphan);
-                }
+                context.Medias.Remove(media);
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete file {FilePath}", media.FilePath);
+            }
+        }
 
-            break;
-
-        } while (!stoppingToken.IsCancellationRequested);
+        if (deletedMedias.Any())
+        {
+            await context.SaveChangesAsync(stoppingToken);
+        }
     }
 }

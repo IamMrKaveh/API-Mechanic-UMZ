@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Search.EventHandlers;
+﻿using Application.Common.Interfaces.Search;
+
+namespace Infrastructure.Search.EventHandlers;
 
 /// <summary>
 /// Interface for entity change events

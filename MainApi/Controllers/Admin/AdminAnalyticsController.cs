@@ -1,12 +1,14 @@
-﻿namespace MainApi.Controllers.Admin;
+﻿using Application.Common.Interfaces.Admin.Analytics;
+
+namespace MainApi.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/analytics")]
 [Authorize(Roles = "Admin")]
 public class AdminAnalyticsController : ControllerBase
 {
-    private readonly IAnalyticsService _analyticsService;
-    public AdminAnalyticsController(IAnalyticsService analyticsService)
+    private readonly IAdminAnalyticsService _analyticsService;
+    public AdminAnalyticsController(IAdminAnalyticsService analyticsService)
     {
         _analyticsService = analyticsService;
     }

@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.BackgroundJobs;
+﻿using Application.Common.Interfaces.Payment;
+
+namespace Infrastructure.BackgroundJobs;
 
 public class PaymentVerificationJob : BackgroundService
 {

@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Security;
+﻿using Application.Common.Interfaces.Auth;
+
+namespace Infrastructure.Security;
 
 public class TokenService : ITokenService
 {

@@ -1,4 +1,7 @@
-﻿namespace MainApi.Filters;
+﻿using Application.Common.Interfaces.Security;
+using Application.Common.Interfaces.User;
+
+namespace MainApi.Filters;
 
 [AttributeUsage(AttributeTargets.Method)]
 public class PaymentRateLimitAttribute : ActionFilterAttribute

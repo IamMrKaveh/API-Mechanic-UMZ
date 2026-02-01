@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-
-namespace Infrastructure.Audit;
+﻿namespace Infrastructure.Audit;
 
 public class AuditService : IAuditService
 {

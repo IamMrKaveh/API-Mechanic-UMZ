@@ -1,4 +1,7 @@
-﻿namespace Infrastructure.Search;
+﻿using Application.Common.Interfaces.Search;
+using Application.DTOs.Search;
+
+namespace Infrastructure.Search;
 
 public class ResilientElasticSearchService : ISearchService
 {

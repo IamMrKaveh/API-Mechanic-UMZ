@@ -1,8 +1,0 @@
-﻿namespace Application.Common.Interfaces;
-
-public interface IPaymentGateway
-{
-    string GatewayName { get; }
-    Task<PaymentRequestResultDto> RequestPaymentAsync(decimal amount, string description, string callbackUrl, string? mobile, string? email);
-    Task<GatewayVerificationResultDto> VerifyPaymentAsync(string authority, int amount);
-}

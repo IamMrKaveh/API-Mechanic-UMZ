@@ -1,4 +1,7 @@
-﻿namespace MainApi.Controllers.Admin;
+﻿using Application.Common.Interfaces.User;
+using MainApi.Controllers.Base;
+
+namespace MainApi.Controllers.Admin;
 
 [Route("api/admin/products/variants/shipping")]
 [Authorize(Roles = "Admin")]

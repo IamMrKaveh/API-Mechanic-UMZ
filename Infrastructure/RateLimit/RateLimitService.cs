@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.RateLimit;
+﻿using Application.Common.Interfaces.Security;
+
+namespace Infrastructure.RateLimit;
 
 public class RateLimitService : IRateLimitService
 {
