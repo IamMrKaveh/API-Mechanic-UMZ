@@ -1,4 +1,8 @@
-﻿namespace MainApi.Controllers.Admin;
+﻿using Application.Common.Interfaces.Admin.Inventory;
+using Application.Common.Interfaces.User;
+using Application.DTOs.Product;
+
+namespace MainApi.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/inventory")]
@@ -28,7 +32,6 @@ public class AdminInventoryController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        // Validation for pagination params
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
@@ -67,6 +70,7 @@ public class AdminInventoryController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
+
         var userId = _currentUserService.UserId;
         if (!userId.HasValue)
             return Unauthorized();
@@ -77,6 +81,17 @@ public class AdminInventoryController : ControllerBase
             return BadRequest(new { message = result.Error });
         }
         return Ok(new { message = "Stock adjusted successfully" });
+    }
+
+    [HttpPost("reconcile/{variantId}")]
+    public async Task<IActionResult> ReconcileStock(int variantId)
+    {
+        var result = await _adminInventoryService.ReconcileStockAsync(variantId);
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.Error });
+        }
+        return Ok(new { message = "Stock reconciled successfully" });
     }
 
     [HttpGet("statistics")]

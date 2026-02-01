@@ -1,4 +1,6 @@
-﻿namespace Infrastructure;
+﻿using Infrastructure.Audit;
+
+namespace Infrastructure;
 
 public static class ServiceCollectionExtensions
 {
@@ -13,6 +15,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IProductVariantRepository, ProductVariantRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IWishlistRepository, WishlistRepository>();
+        services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IDiscountRepository, DiscountRepository>();
@@ -31,7 +35,8 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IEmailService, EmailService>();
-        services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IAdminAnalyticsService, AnalyticsService>();
         services.AddSingleton<IStorageService, LiaraStorageService>();
         services.AddSingleton<IRateLimitService, RateLimitService>();
         services.AddScoped<ITokenService, TokenService>();

@@ -1,4 +1,8 @@
-﻿namespace Infrastructure.Notification;
+﻿using Application.Common.Interfaces.Notification;
+using Application.DTOs.Notification;
+using Infrastructure.Persistence.Interface.Common;
+
+namespace Infrastructure.Notification;
 
 public class NotificationService : INotificationService
 {

@@ -1,6 +1,6 @@
 ﻿namespace Infrastructure.Analytics;
 
-public class AnalyticsService : IAnalyticsService
+public class AnalyticsService : IAdminAnalyticsService
 {
     private readonly LedkaContext _context;
     private readonly ILogger<AnalyticsService> _logger;

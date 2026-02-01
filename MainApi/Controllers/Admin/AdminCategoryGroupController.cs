@@ -1,4 +1,7 @@
-﻿namespace MainApi.Controllers.Admin;
+﻿using Application.Common.Interfaces.Admin.Category;
+using Application.DTOs.Category;
+
+namespace MainApi.Controllers.Admin;
 
 [Route("api/admin/category-groups")]
 [ApiController]

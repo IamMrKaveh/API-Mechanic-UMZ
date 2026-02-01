@@ -2,15 +2,27 @@
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        services.AddAutoMapper(typeof(MappingProfile).Assembly);
+        services.AddAutoMapper(Assembly.GetExecutingAssembly());
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
+        });
 
+        // Domain Services
+        services.AddScoped<PriceCalculatorService>();
+        services.AddScoped<InventoryDomainService>();
+
+        // Legacy Services (To be removed after full CQRS migration)
         services.AddScoped<IAdminCategoryService, AdminCategoryService>();
         services.AddScoped<IAdminCategoryGroupService, AdminCategoryGroupService>();
         services.AddScoped<IAdminOrderService, AdminOrderService>();
         services.AddScoped<IAdminOrderStatusService, AdminOrderStatusService>();
-        services.AddScoped<IAdminProductService, AdminProductService>();
+        // IAdminProductService removed as it is replaced by CQRS
         services.AddScoped<IAdminReviewService, AdminReviewService>();
         services.AddScoped<IAdminShippingMethodService, AdminShippingMethodService>();
         services.AddScoped<IAdminUserService, AdminUserService>();
@@ -18,10 +30,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminDiscountService, AdminDiscountService>();
         services.AddScoped<IAdminAttributeService, AdminAttributeService>();
         services.AddScoped<IAdminProductVariantShippingService, AdminProductVariantShippingService>();
+        services.AddScoped<IAdminMediaService, AdminMediaService>();
 
         services.AddScoped<IShippingMethodService, ShippingMethodService>();
         services.AddScoped<ICheckoutShippingService, CheckoutShippingService>();
-        services.AddScoped<IAuditService, AuditService>();
+
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ICategoryGroupService, CategoryGroupService>();
@@ -35,21 +48,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IUserService, UserService>();
-        services.AddSingleton<ElasticsearchClient>(sp =>
-        {
-            var config = sp.GetRequiredService<IConfiguration>();
-            var url = config["Elasticsearch:Url"] ?? "http://localhost:4200";
-            var settings = new ElasticsearchClientSettings(new Uri(url))
-                .DefaultIndex("products_v1");
-            return new ElasticsearchClient(settings);
-        });
-
-        services.AddSingleton<IHtmlSanitizer>(new HtmlSanitizer(new HtmlSanitizerOptions
-        {
-            AllowedTags = { "b", "i", "em", "strong", "p", "br", "ul", "ol", "li" },
-            AllowedAttributes = { "class" },
-            AllowedSchemes = { "http", "https" }
-        }));
+        services.AddScoped<IWishlistService, WishlistService>();
+        services.AddScoped<ITicketService, TicketService>();
 
         return services;
     }

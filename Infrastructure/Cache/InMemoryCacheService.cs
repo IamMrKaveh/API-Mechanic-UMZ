@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Cache;
+﻿using Application.Common.Interfaces.Cache;
+
+namespace Infrastructure.Cache;
 
 public class InMemoryCacheService : ICacheService
 {

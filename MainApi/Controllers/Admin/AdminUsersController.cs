@@ -1,4 +1,8 @@
-﻿namespace MainApi.Controllers.Admin;
+﻿using Application.Common.Interfaces.Admin.User;
+using Application.Common.Interfaces.User;
+using Application.DTOs.User;
+
+namespace MainApi.Controllers.Admin;
 
 [Route("api/admin/users")]
 [ApiController]

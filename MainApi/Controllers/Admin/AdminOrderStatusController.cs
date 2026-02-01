@@ -1,4 +1,7 @@
-﻿namespace MainApi.Controllers.Admin;
+﻿using Application.Common.Interfaces.Admin.Order;
+using Application.DTOs.Order;
+
+namespace MainApi.Controllers.Admin;
 
 [Route("api/admin/order-statuses")]
 [ApiController]

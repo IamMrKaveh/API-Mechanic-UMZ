@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Search;
+﻿using Application.Common.Interfaces.Search;
+
+namespace Infrastructure.Search;
 
 public class ElasticsearchDatabaseSyncService
 {
