@@ -73,7 +73,9 @@ public class LiaraStorageService : IStorageService
         }
     }
 
-    public async Task DeleteFileAsync(string relativePath)
+    public async Task DeleteFileAsync(
+        string relativePath,
+        CancellationToken ct)
     {
         if (string.IsNullOrEmpty(relativePath))
             return;
@@ -88,7 +90,7 @@ public class LiaraStorageService : IStorageService
                 Key = key
             };
 
-            await _s3Client.DeleteObjectAsync(deleteRequest);
+            await _s3Client.DeleteObjectAsync(deleteRequest, ct);
         }
         catch (Exception ex)
         {
@@ -210,10 +212,5 @@ public class LiaraStorageService : IStorageService
     {
         var (path, _) = await SaveFileAsync(fileStream, fileName, directory.Trim('/'), ""); // Assuming generic entitytype handling inside Save
         return path;
-    }
-
-    public Task DeleteFileAsync(string filePath, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
     }
 }

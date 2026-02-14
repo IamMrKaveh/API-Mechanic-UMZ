@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.User.QueryService;
+﻿using Application.User.Features.Queries.GetUserWishlist;
+
+namespace Infrastructure.User.QueryService;
 
 /// <summary>
 /// سرویس کوئری کاربران - مستقیماً DTO برمی‌گرداند
@@ -204,6 +206,76 @@ public class UserQueryService : IUserQueryService
             OpenTicketsCount = openTicketsCount,
             UnreadNotifications = unreadNotifications
         };
+    }
+
+    public async Task<PaginatedResult<ProductReviewDto>> GetUserReviewsPagedAsync(
+    int userId,
+    int page,
+    int pageSize,
+    CancellationToken ct = default)
+    {
+        var query = _context.ProductReviews
+            .AsNoTracking()
+            .Where(r => r.UserId == userId && !r.IsDeleted);
+
+        var totalCount = await query.CountAsync(ct);
+
+        var reviews = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(r => new ProductReviewDto
+            {
+                Id = r.Id,
+                ProductId = r.ProductId,
+                Rating = r.Rating,
+                Title = r.Title,
+                Comment = r.Comment,
+                Status = r.Status,
+                AdminReply = r.AdminReply,
+                CreatedAt = r.CreatedAt,
+                UserName = r.User != null
+                    ? (r.User.FirstName + " " + r.User.LastName).Trim()
+                    : "کاربر ناشناس"
+            })
+            .ToListAsync(ct);
+
+        return PaginatedResult<ProductReviewDto>.Create(
+            reviews, totalCount, page, pageSize);
+    }
+
+    public async Task<PaginatedResult<WishlistItemDto>> GetUserWishlistPagedAsync(
+        int userId,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
+    {
+        var query = _context.Wishlists
+            .AsNoTracking()
+            .Where(w => w.UserId == userId);
+
+        var totalCount = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderByDescending(w => w.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(w => new WishlistItemDto
+            {
+                Id = w.Id,
+                ProductId = w.ProductId,
+                ProductName = w.Product.Name,
+                MinPrice = w.Product.MinPrice,
+                IsInStock =
+                    w.Product.TotalStock > 0 ||
+                    w.Product.Variants.Any(v => v.IsUnlimited),
+                IconUrl = null,
+                AddedAt = w.CreatedAt
+            })
+            .ToListAsync(ct);
+
+        return PaginatedResult<WishlistItemDto>.Create(
+            items, totalCount, page, pageSize);
     }
 
     private static string GetDeviceInfo(string? userAgent)

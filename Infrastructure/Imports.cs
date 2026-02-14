@@ -39,6 +39,7 @@ global using Application.Storage.Features.Shared;
 global using Application.Support.Contracts;
 global using Application.Support.Features.Shared;
 global using Application.User.Contracts;
+global using Application.User.Features.Queries.GetUserWishlist;
 global using Application.User.Features.Shared;
 global using AutoMapper;
 global using Domain.Cart;

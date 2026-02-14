@@ -9,7 +9,9 @@ public class ShippingMethodRepository : IShippingMethodRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<ShippingMethod>> GetAllAsync(bool includeDeleted = false, CancellationToken ct = default)
+    public async Task<IEnumerable<ShippingMethod>> GetAllAsync(
+        bool includeDeleted = false,
+        CancellationToken ct = default)
     {
         var query = includeDeleted
             ? _context.ShippingMethods.IgnoreQueryFilters()

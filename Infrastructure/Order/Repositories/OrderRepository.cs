@@ -63,18 +63,39 @@ public class OrderRepository : IOrderRepository
         _context.Entry(entity).Property(e => e.RowVersion).OriginalValue = rowVersion;
     }
 
-    public Task<Domain.Order.Order?> GetByIdempotencyKeyAsync(string key, CancellationToken ct = default)
+    public async Task<Domain.Order.Order?> GetByIdempotencyKeyAsync(
+        string key,
+        CancellationToken ct)
     {
-        throw new NotImplementedException();
+        return await _context.Orders
+            .Include(o => o.OrderItems)
+            .Include(o => o.PaymentTransactions)
+            .FirstOrDefaultAsync(
+                o => o.IdempotencyKey == key,
+                ct);
     }
 
-    public Task<Domain.Order.Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken ct = default)
+    public async Task<Domain.Order.Order?> GetByOrderNumberAsync(
+        string orderNumber,
+        CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return await _context.Orders
+            .Include(o => o.OrderItems)
+            .Include(o => o.PaymentTransactions)
+            .FirstOrDefaultAsync(
+                o => o.OrderNumber == orderNumber,
+                cancellationToken);
     }
 
-    public Task<bool> HasActiveOrdersAsync(int userId, CancellationToken ct = default)
+    public async Task<bool> HasActiveOrdersAsync(
+        int userId,
+        CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return await _context.Orders
+            .AnyAsync(
+                o => o.UserId == userId &&
+                     o.Status != OrderStatus.Statuses.Delivered &&
+                     o.Status != OrderStatus.Statuses.Cancelled,
+                cancellationToken);
     }
 }
