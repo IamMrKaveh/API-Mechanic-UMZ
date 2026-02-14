@@ -156,8 +156,12 @@ public class InventoryRepository : IInventoryRepository
         _context.InventoryTransactions.Update(transaction);
     }
 
-    Task<InventoryStatistics> IInventoryRepository.GetStatisticsAsync(CancellationToken ct)
+    public async Task AddAsync(
+        InventoryTransaction transaction,
+        CancellationToken ct)
     {
-        throw new NotImplementedException();
+        await _context.InventoryTransactions.AddAsync(
+            transaction,
+            ct);
     }
 }

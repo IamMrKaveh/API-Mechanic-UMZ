@@ -37,6 +37,18 @@ public interface IUserQueryService
     /// دریافت داشبورد کاربر
     /// </summary>
     Task<UserDashboardDto?> GetUserDashboardAsync(int userId, CancellationToken ct = default);
+
+    Task<PaginatedResult<ProductReviewDto>> GetUserReviewsPagedAsync(
+    int userId,
+    int page,
+    int pageSize,
+    CancellationToken ct = default);
+
+    Task<PaginatedResult<WishlistItemDto>> GetUserWishlistPagedAsync(
+    int userId,
+    int page,
+    int pageSize,
+    CancellationToken ct = default);
 }
 
 /// <summary>

@@ -70,4 +70,8 @@ public interface IInventoryRepository
     /// به‌روزرسانی تراکنش
     /// </summary>
     void Update(InventoryTransaction transaction);
+
+    Task AddAsync(
+    InventoryTransaction transaction,
+    CancellationToken ct);
 }

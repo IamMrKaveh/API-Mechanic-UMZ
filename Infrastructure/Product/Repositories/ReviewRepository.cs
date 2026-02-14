@@ -45,13 +45,43 @@ public class ReviewRepository : IReviewRepository
         _context.ProductReviews.Update(review);
     }
 
-    public Task<(IEnumerable<ProductReview> Reviews, int TotalCount)> GetByProductIdAsync(int productId, string? status, int page, int pageSize, CancellationToken ct = default)
+    public async Task<(IEnumerable<ProductReview> Reviews, int TotalCount)> GetByProductIdAsync(
+        int productId, string? status, int page, int pageSize, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var query = _context.ProductReviews
+            .Where(r => r.ProductId == productId && !r.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(r => r.Status == status);
+
+        var totalCount = await query.CountAsync(ct);
+
+        var reviews = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Include(r => r.User)
+            .ToListAsync(ct);
+
+        return (reviews, totalCount);
     }
 
-    public Task<(IEnumerable<ProductReview> Reviews, int TotalCount)> GetPendingReviewsAsync(int page, int pageSize, CancellationToken ct = default)
+    public async Task<(IEnumerable<ProductReview> Reviews, int TotalCount)> GetPendingReviewsAsync(
+        int page, int pageSize, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var query = _context.ProductReviews
+            .Where(r => r.Status == "Pending" && !r.IsDeleted);
+
+        var totalCount = await query.CountAsync(ct);
+
+        var reviews = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Include(r => r.User)
+            .Include(r => r.Product)
+            .ToListAsync(ct);
+
+        return (reviews, totalCount);
     }
 }
