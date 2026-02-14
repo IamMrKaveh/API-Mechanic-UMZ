@@ -8,14 +8,22 @@ public class ZarinPalPaymentGateway : IPaymentGateway
 
     public string GatewayName => "ZarinPal";
 
-    public ZarinPalPaymentGateway(HttpClient httpClient, IOptions<ZarinpalSettingsDto> settings, ILogger<ZarinPalPaymentGateway> logger)
+    public ZarinPalPaymentGateway(
+        HttpClient httpClient,
+        IOptions<ZarinpalSettingsDto> settings,
+        ILogger<ZarinPalPaymentGateway> logger)
     {
         _httpClient = httpClient;
         _settings = settings.Value;
         _logger = logger;
     }
 
-    public async Task<PaymentRequestResultDto> RequestPaymentAsync(decimal amount, string description, string callbackUrl, string? mobile, string? email)
+    public async Task<PaymentRequestResultDto> RequestPaymentAsync(
+        decimal amount,
+        string description,
+        string callbackUrl,
+        string? mobile = null,
+        string? email = null)
     {
         var requestUrl = _settings.IsSandbox
             ? "https://sandbox.zarinpal.com/pg/v4/payment/request.json"
@@ -27,7 +35,7 @@ public class ZarinPalPaymentGateway : IPaymentGateway
             amount = amount,
             description = description,
             callback_url = callbackUrl,
-            metadata = new { mobile = mobile, email = email }
+            metadata = new { mobile, email }
         };
 
         try
@@ -51,18 +59,28 @@ public class ZarinPalPaymentGateway : IPaymentGateway
                 };
             }
 
-            _logger.LogError("ZarinPal Request Failed. Content: {Content}", content);
+            var errorMessage = result?.Data != null
+                ? ZarinPalErrorMapper.GetMessage(result.Data.Code)
+                : "خطا در برقراری ارتباط با درگاه";
+
+            _logger.LogError("ZarinPal Request Failed. Code: {Code}, Content: {Content}",
+                result?.Data?.Code, content);
+
             return new PaymentRequestResultDto
             {
                 IsSuccess = false,
-                Message = result?.Errors?.ToString() ?? "خطا در برقراری ارتباط با درگاه",
+                Message = errorMessage,
                 RawResponse = content
             };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Exception in ZarinPal RequestPayment");
-            return new PaymentRequestResultDto { IsSuccess = false, Message = "خطای داخلی سرور" };
+            return new PaymentRequestResultDto
+            {
+                IsSuccess = false,
+                Message = "خطای داخلی سرور در ارتباط با درگاه پرداخت"
+            };
         }
     }
 
@@ -94,7 +112,9 @@ public class ZarinPalPaymentGateway : IPaymentGateway
                     CardPan = result.Data.CardPan,
                     CardHash = result.Data.CardHash,
                     Fee = result.Data.Fee,
-                    Message = result.Data.Code == 101 ? "تراکنش قبلاً تایید شده است" : "تراکنش با موفقیت تایید شد",
+                    Message = result.Data.Code == 101
+                        ? "تراکنش قبلاً تایید شده است"
+                        : "تراکنش با موفقیت تایید شد",
                     RawResponse = content
                 };
             }
@@ -108,8 +128,12 @@ public class ZarinPalPaymentGateway : IPaymentGateway
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception in ZarinPal VerifyPayment");
-            return new GatewayVerificationResultDto { IsVerified = false, Message = "خطای داخلی در تایید پرداخت" };
+            _logger.LogError(ex, "Exception in ZarinPal VerifyPayment for authority {Authority}", authority);
+            return new GatewayVerificationResultDto
+            {
+                IsVerified = false,
+                Message = "خطای داخلی در تایید پرداخت"
+            };
         }
     }
 }

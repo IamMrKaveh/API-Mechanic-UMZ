@@ -1,5 +1,4 @@
-﻿using Application.Common.Interfaces.Security;
-using Application.Common.Interfaces.User;
+﻿using Application.Security.Contracts;
 
 namespace MainApi.Middleware;
 
@@ -49,7 +48,6 @@ public class RateLimitMiddleware
             await context.Response.WriteAsync("Rate limit exceeded. Try again later.");
             return;
         }
-
 
         await _next(context);
     }

@@ -1,0 +1,228 @@
+﻿namespace Infrastructure.User.QueryService;
+
+/// <summary>
+/// سرویس کوئری کاربران - مستقیماً DTO برمی‌گرداند
+/// بدون بارگذاری Aggregate - بهینه برای خواندن
+/// </summary>
+public class UserQueryService : IUserQueryService
+{
+    private readonly LedkaContext _context;
+
+    public UserQueryService(LedkaContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<UserProfileDto?> GetUserProfileAsync(int userId, CancellationToken ct = default)
+    {
+        return await _context.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId && !u.IsDeleted)
+            .Select(u => new UserProfileDto
+            {
+                Id = u.Id,
+                PhoneNumber = u.PhoneNumber,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                IsActive = u.IsActive,
+                IsAdmin = u.IsAdmin,
+                CreatedAt = u.CreatedAt,
+                UserAddresses = u.UserAddresses
+                    .Where(a => !a.IsDeleted)
+                    .Select(a => new UserAddressDto
+                    {
+                        Id = a.Id,
+                        Title = a.Title,
+                        ReceiverName = a.ReceiverName,
+                        PhoneNumber = a.PhoneNumber,
+                        Province = a.Province,
+                        City = a.City,
+                        Address = a.Address,
+                        PostalCode = a.PostalCode,
+                        IsDefault = a.IsDefault
+                    }).ToList()
+            })
+            .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<PaginatedResult<UserProfileDto>> GetUsersPagedAsync(
+        string? search,
+        bool? isActive,
+        bool? isAdmin,
+        bool includeDeleted,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
+    {
+        var query = _context.Users.AsNoTracking().AsQueryable();
+
+        if (!includeDeleted)
+            query = query.Where(u => !u.IsDeleted);
+
+        if (isActive.HasValue)
+            query = query.Where(u => u.IsActive == isActive.Value);
+
+        if (isAdmin.HasValue)
+            query = query.Where(u => u.IsAdmin == isAdmin.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchTerm = search.Trim().ToLower();
+            query = query.Where(u =>
+                u.PhoneNumber.Contains(searchTerm) ||
+                u.FirstName != null && u.FirstName.ToLower().Contains(searchTerm) ||
+                u.LastName != null && u.LastName.ToLower().Contains(searchTerm));
+        }
+
+        var totalCount = await query.CountAsync(ct);
+
+        var users = await query
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(u => new UserProfileDto
+            {
+                Id = u.Id,
+                PhoneNumber = u.PhoneNumber,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                IsActive = u.IsActive,
+                IsAdmin = u.IsAdmin,
+                CreatedAt = u.CreatedAt,
+                UserAddresses = u.UserAddresses
+                    .Where(a => !a.IsDeleted)
+                    .Select(a => new UserAddressDto
+                    {
+                        Id = a.Id,
+                        Title = a.Title,
+                        ReceiverName = a.ReceiverName,
+                        PhoneNumber = a.PhoneNumber,
+                        Province = a.Province,
+                        City = a.City,
+                        Address = a.Address,
+                        PostalCode = a.PostalCode,
+                        IsDefault = a.IsDefault
+                    }).ToList()
+            })
+            .ToListAsync(ct);
+
+        return PaginatedResult<UserProfileDto>.Create(users, totalCount, page, pageSize);
+    }
+
+    public async Task<IEnumerable<UserAddressDto>> GetUserAddressesAsync(
+        int userId, CancellationToken ct = default)
+    {
+        return await _context.UserAddresses
+            .AsNoTracking()
+            .Where(a => a.UserId == userId && !a.IsDeleted)
+            .OrderByDescending(a => a.IsDefault)
+            .ThenByDescending(a => a.CreatedAt)
+            .Select(a => new UserAddressDto
+            {
+                Id = a.Id,
+                Title = a.Title,
+                ReceiverName = a.ReceiverName,
+                PhoneNumber = a.PhoneNumber,
+                Province = a.Province,
+                City = a.City,
+                Address = a.Address,
+                PostalCode = a.PostalCode,
+                IsDefault = a.IsDefault
+            })
+            .ToListAsync(ct);
+    }
+
+    public async Task<IEnumerable<UserSessionDto>> GetActiveSessionsAsync(
+        int userId, CancellationToken ct = default)
+    {
+        return await _context.UserSessions
+            .AsNoTracking()
+            .Where(s =>
+                s.UserId == userId &&
+                s.RevokedAt == null &&
+                s.ExpiresAt > DateTime.UtcNow)
+            .OrderByDescending(s => s.LastActivityAt ?? s.CreatedAt)
+            .Select(s => new UserSessionDto
+            {
+                Id = s.Id,
+                SessionType = s.SessionType ?? "Web",
+                CreatedByIp = s.CreatedByIp,
+                DeviceInfo = GetDeviceInfo(s.UserAgent),
+                BrowserInfo = GetBrowserInfo(s.UserAgent),
+                CreatedAt = s.CreatedAt,
+                LastActivityAt = s.LastActivityAt,
+                ExpiresAt = s.ExpiresAt,
+                IsCurrent = false // باید در Controller تنظیم شود
+            })
+            .ToListAsync(ct);
+    }
+
+    public async Task<UserDashboardDto?> GetUserDashboardAsync(
+        int userId, CancellationToken ct = default)
+    {
+        var user = await GetUserProfileAsync(userId, ct);
+        if (user == null) return null;
+
+        var totalOrders = await _context.Orders
+            .CountAsync(o => o.UserId == userId && !o.IsDeleted, ct);
+
+        var totalSpent = await _context.Orders
+            .Where(o => o.UserId == userId && o.IsPaid && !o.IsDeleted)
+            .SumAsync(o => o.FinalAmount, ct);
+
+        var recentOrders = await _context.Orders
+            .AsNoTracking()
+            .Where(o => o.UserId == userId && !o.IsDeleted)
+            .OrderByDescending(o => o.CreatedAt)
+            .Take(5)
+            .Select(o => new OrderDto
+            {
+                Id = o.Id,
+                TotalAmount = o.TotalAmount,
+                FinalAmount = o.FinalAmount,
+                CreatedAt = o.CreatedAt,
+                IsPaid = o.IsPaid,
+            })
+            .ToListAsync(ct);
+
+        var wishlistCount = await _context.Wishlists
+            .CountAsync(w => w.UserId == userId, ct);
+
+        var openTicketsCount = await _context.Tickets
+            .CountAsync(t => t.UserId == userId && t.Status != "Closed", ct);
+
+        var unreadNotifications = await _context.Notifications
+            .CountAsync(n => n.UserId == userId && !n.IsRead, ct);
+
+        return new UserDashboardDto
+        {
+            UserProfile = user,
+            RecentOrders = recentOrders.ToList(),
+            TotalOrders = totalOrders,
+            TotalSpent = totalSpent,
+            WishlistCount = wishlistCount,
+            OpenTicketsCount = openTicketsCount,
+            UnreadNotifications = unreadNotifications
+        };
+    }
+
+    private static string GetDeviceInfo(string? userAgent)
+    {
+        if (string.IsNullOrEmpty(userAgent)) return "دستگاه نامشخص";
+        var ua = userAgent.ToLowerInvariant();
+        if (ua.Contains("mobile") || ua.Contains("android") || ua.Contains("iphone")) return "موبایل";
+        if (ua.Contains("tablet") || ua.Contains("ipad")) return "تبلت";
+        return "کامپیوتر";
+    }
+
+    private static string GetBrowserInfo(string? userAgent)
+    {
+        if (string.IsNullOrEmpty(userAgent)) return "نامشخص";
+        var ua = userAgent.ToLowerInvariant();
+        if (ua.Contains("chrome") && !ua.Contains("edge")) return "Chrome";
+        if (ua.Contains("firefox")) return "Firefox";
+        if (ua.Contains("safari") && !ua.Contains("chrome")) return "Safari";
+        if (ua.Contains("edge")) return "Edge";
+        return "نامشخص";
+    }
+}

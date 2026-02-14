@@ -2,9 +2,23 @@
 
 public class Wishlist : BaseEntity
 {
-    public int UserId { get; set; }
-    public User User { get; set; } = null!;
+    public int UserId { get; private set; }
+    public int ProductId { get; private set; }
+    public DateTime CreatedAt { get; private set; }
 
-    public int ProductId { get; set; }
-    public Product.Product Product { get; set; } = null!;
+    public User User { get; private set; } = null!;
+    public Product.Product Product { get; private set; } = null!;
+
+    private Wishlist()
+    { }
+
+    public static Wishlist Create(int userId, int productId)
+    {
+        return new Wishlist
+        {
+            UserId = userId,
+            ProductId = productId,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
 }

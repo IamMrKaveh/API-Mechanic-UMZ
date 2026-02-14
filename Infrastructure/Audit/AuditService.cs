@@ -28,7 +28,7 @@ public class AuditService : IAuditService
         {
             var httpContext = _httpContextAccessor.HttpContext;
 
-            var auditLog = new Domain.Log.AuditLog
+            var auditLog = new AuditLog
             {
                 UserId = userId,
                 EventType = SanitizeInput(eventType),
@@ -51,12 +51,12 @@ public class AuditService : IAuditService
         }
     }
 
-    public async Task<(IEnumerable<AuditLogDto> Logs, int TotalItems)> GetAuditLogsAsync(
+    public async Task<(IEnumerable<AuditDtos> Logs, int TotalItems)> GetAuditLogsAsync(
         int? userId, string? eventType, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
     {
         var (logs, totalCount) = await _auditRepository.GetAuditLogsAsync(fromDate, toDate, userId, eventType, page, pageSize);
 
-        var dtos = logs.Select(l => new AuditLogDto
+        var dtos = logs.Select(l => new AuditDtos
         {
             Id = l.Id,
             UserId = l.UserId,

@@ -1,5 +1,4 @@
-﻿using Application.Common.Interfaces.Security;
-using Application.Common.Interfaces.User;
+﻿using Application.Security.Contracts;
 
 namespace MainApi.Filters;
 

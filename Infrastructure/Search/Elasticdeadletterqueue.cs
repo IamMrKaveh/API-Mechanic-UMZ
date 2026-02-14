@@ -1,22 +1,4 @@
-﻿using Domain.Search;
-
-namespace Infrastructure.Search;
-
-public class FailedIndexOperation
-{
-    public string EntityType { get; set; } = default!;
-    public string EntityId { get; set; } = default!;
-    public string Document { get; set; } = default!;
-    public string Error { get; set; } = default!;
-    public DateTime Timestamp { get; set; }
-    public int RetryCount { get; set; }
-}
-
-public interface IElasticDeadLetterQueue
-{
-    Task EnqueueAsync(FailedIndexOperation operation, CancellationToken ct);
-    Task<IEnumerable<FailedIndexOperation>> DequeueAsync(int count, CancellationToken ct);
-}
+﻿namespace Infrastructure.Search;
 
 public class ElasticDeadLetterQueue : IElasticDeadLetterQueue
 {

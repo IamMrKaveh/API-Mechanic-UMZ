@@ -1,6 +1,6 @@
-﻿namespace Domain.Common.Interfaces;
+﻿namespace Domain.Common.Events;
 
-public interface IDomainEvent : INotification
+public interface IDomainEvent
 {
     DateTime OccurredOn { get; }
 }

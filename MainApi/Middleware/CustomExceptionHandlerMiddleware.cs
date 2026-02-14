@@ -2,7 +2,8 @@
 
 public class CustomExceptionHandlerMiddleware
 {
-    private readonly RequestDelegate _next; private readonly ILogger<CustomExceptionHandlerMiddleware> _logger;
+    private readonly RequestDelegate _next;
+    private readonly ILogger<CustomExceptionHandlerMiddleware> _logger;
 
     public CustomExceptionHandlerMiddleware(RequestDelegate next, ILogger<CustomExceptionHandlerMiddleware> logger)
     {
@@ -25,7 +26,7 @@ public class CustomExceptionHandlerMiddleware
     private Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var code = HttpStatusCode.InternalServerError;
-        var result = string.Empty;
+        object errorResponse;
 
         switch (exception)
         {
@@ -35,52 +36,60 @@ public class CustomExceptionHandlerMiddleware
                     .GroupBy(e => e.PropertyName)
                     .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
 
-                result = JsonSerializer.Serialize(new
+                errorResponse = new
                 {
                     StatusCode = (int)code,
                     Message = "Validation Failed",
                     Errors = errors
-                });
+                };
+                break;
+
+            case Domain.Common.Exceptions.DomainException domainException:
+                code = HttpStatusCode.BadRequest;
+                errorResponse = new
+                {
+                    StatusCode = (int)code,
+                    Message = domainException.Message
+                };
                 break;
 
             case KeyNotFoundException:
                 code = HttpStatusCode.NotFound;
-                result = JsonSerializer.Serialize(new
+                errorResponse = new
                 {
                     StatusCode = (int)code,
                     Message = exception.Message
-                });
+                };
                 break;
 
             case UnauthorizedAccessException:
                 code = HttpStatusCode.Unauthorized;
-                result = JsonSerializer.Serialize(new
+                errorResponse = new
                 {
                     StatusCode = (int)code,
                     Message = "Unauthorized"
-                });
+                };
                 break;
 
             default:
                 _logger.LogError(exception, "An unhandled exception has occurred.");
                 code = HttpStatusCode.InternalServerError;
                 // In production, do not expose stack trace
-                result = JsonSerializer.Serialize(new
+                errorResponse = new
                 {
                     StatusCode = (int)code,
                     Message = "An unexpected error occurred."
-                });
+                };
                 break;
         }
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)code;
 
-        return context.Response.WriteAsync(result);
+        return context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
     }
 }
 
-// Extension method to add middleware easily in Program.cs
 public static class CustomExceptionHandlerMiddlewareExtensions
 {
     public static IApplicationBuilder UseCustomExceptionHandler(this IApplicationBuilder builder)
