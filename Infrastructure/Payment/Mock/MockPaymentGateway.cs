@@ -1,18 +1,18 @@
-﻿using Application.Common.Interfaces.Payment;
-using Application.DTOs.Payment;
-
-namespace Infrastructure.Payment.Mock;
+﻿namespace Infrastructure.Payment.Mock;
 
 public class MockPaymentGateway : IPaymentGateway
 {
     public string GatewayName => "MockGateway";
 
-    public Task<PaymentRequestResultDto> RequestPaymentAsync(decimal amount, string description, string callbackUrl, string? mobile, string? email)
+    public Task<PaymentRequestResultDto> RequestPaymentAsync(
+        decimal amount,
+        string description,
+        string callbackUrl,
+        string? mobile = null,
+        string? email = null)
     {
         var authority = Guid.NewGuid().ToString();
 
-        // We use a relative URL here which the browser will resolve against the API domain.
-        // This assumes the API hosts the mock page at this route.
         var paymentUrl = $"/api/mock-gateway/pay?amount={amount}&authority={authority}&callback={System.Net.WebUtility.UrlEncode(callbackUrl)}";
 
         return Task.FromResult(new PaymentRequestResultDto
@@ -27,8 +27,6 @@ public class MockPaymentGateway : IPaymentGateway
 
     public Task<GatewayVerificationResultDto> VerifyPaymentAsync(string authority, int amount)
     {
-        // In a real mock, we might check if 'authority' exists in a dictionary,
-        // but for a simple start, we assume all verifies are successful if they reach this stage.
         return Task.FromResult(new GatewayVerificationResultDto
         {
             IsVerified = true,

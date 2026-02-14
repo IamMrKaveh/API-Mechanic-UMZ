@@ -1,4 +1,6 @@
-﻿namespace Microsoft.Extensions.DependencyInjection;
+﻿using Infrastructure.DataProtection.Repositories;
+
+namespace Microsoft.Extensions.DependencyInjection;
 
 public static class DataProtectionExtensions
 {
@@ -10,7 +12,7 @@ public static class DataProtectionExtensions
         builder.Services.AddSingleton<IXmlRepository>(provider =>
         new ResilientRedisXmlRepository(
         redis,
-        provider.GetRequiredService<ILogger<Infrastructure.DataProtection.ResilientRedisXmlRepository>>(),
+        provider.GetRequiredService<ILogger<ResilientRedisXmlRepository>>(),
         keyPrefix,
         TimeSpan.FromDays(90)));
         return builder;

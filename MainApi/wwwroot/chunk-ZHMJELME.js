@@ -1,1 +1,1 @@
-import{a as i}from"./chunk-MX7VZAVK.js";import{A as e}from"./chunk-H5ECWNVP.js";import{$ as t}from"./chunk-C5CPS5UB.js";var s=(u,n)=>{let r=t(i),o=t(e);return r.isAuthenticated()&&r.currentUserValue?.isAdmin?!0:(o.navigate(["/"]),!1)};export{s as a};
+import { a as i } from "./chunk-MX7VZAVK.js"; import { A as e } from "./chunk-H5ECWNVP.js"; import { $ as t } from "./chunk-C5CPS5UB.js"; var s = (u, n) => { let r = t(i), o = t(e); return r.isAuthenticated() && r.currentUserValue?.isAdmin ? !0 : (o.navigate(["/"]), !1) }; export { s as a };

@@ -3,12 +3,252 @@
   "WorkspaceRootPath": "C:\\ME\\Mechanic\\API\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\common\\interfaces\\log\\iapplogger.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\common\\interfaces\\log\\iapplogger.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\imports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\location\\services\\locationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\location\\services\\locationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\location\\controllers\\locationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\location\\controllers\\locationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\user\\controllers\\wishlistcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\user\\controllers\\wishlistcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\user\\controllers\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\user\\controllers\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\order\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\order\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\discount\\controllers\\discountscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\discount\\controllers\\discountscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\middleware\\customexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\middleware\\customexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\user\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\user\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\user\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\user\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\user\\controllers\\adminuserscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\user\\controllers\\adminuserscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\support\\controllers\\ticketscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\support\\controllers\\ticketscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\search\\controllers\\adminsearchcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\search\\controllers\\adminsearchcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\product\\controllers\\adminproductvariantshippingcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\product\\controllers\\adminproductvariantshippingcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\order\\controllers\\shippingmethodscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\order\\controllers\\shippingmethodscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\order\\controllers\\orderstatuscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\order\\controllers\\orderstatuscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\order\\controllers\\orderitemscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\order\\controllers\\orderitemscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\order\\controllers\\checkoutshippingcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\order\\controllers\\checkoutshippingcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\order\\controllers\\adminshippingmethodcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\order\\controllers\\adminshippingmethodcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\order\\controllers\\adminorderstatuscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\order\\controllers\\adminorderstatuscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\order\\features\\shared\\orderdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\order\\features\\shared\\orderdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\order\\controllers\\adminorderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\order\\controllers\\adminorderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\notification\\controllers\\notificationscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\notification\\controllers\\notificationscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\media\\controllers\\mediacontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\media\\controllers\\mediacontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\media\\controllers\\adminmediacontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\media\\controllers\\adminmediacontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\inventory\\controllers\\admininventorycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\inventory\\controllers\\admininventorycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\categories\\controllers\\categorygroupcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\categories\\controllers\\categorygroupcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\categories\\controllers\\categorycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\categories\\controllers\\categorycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\categories\\controllers\\admincategorygroupcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\categories\\controllers\\admincategorygroupcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\categories\\controllers\\admincategorycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\categories\\controllers\\admincategorycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\base\\controllers\\baseapicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\base\\controllers\\baseapicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\product\\controllers\\adminattributescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\product\\controllers\\adminattributescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\common\\features\\shared\\result.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\common\\features\\shared\\result.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|c:\\me\\mechanic\\api\\mainapi\\product\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{238ABA87-6BBA-49CC-AC63-800837B8F0B9}|MainApi\\MainApi.csproj|solutionrelative:mainapi\\product\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\domain.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\domain.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\product\\queryservices\\reviewqueryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\product\\queryservices\\reviewqueryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\product\\repositories\\productrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\product\\repositories\\productrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\analytics\\queryservices\\analyticsqueryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\analytics\\queryservices\\analyticsqueryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|c:\\me\\mechanic\\api\\infrastructure\\persistence\\context\\ledkacontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7BD7D62D-A3F1-4DF7-A803-A6E805C7B717}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\persistence\\context\\ledkacontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\product\\features\\commands\\updatereviewstatus\\updatereviewstatushandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\product\\features\\commands\\updatereviewstatus\\updatereviewstatushandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\product\\features\\commands\\updatereviewstatus\\updatereviewstatuscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\product\\features\\commands\\updatereviewstatus\\updatereviewstatuscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\product\\features\\queries\\getreviewsbystatus\\getreviewsbystatushandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\product\\features\\queries\\getreviewsbystatus\\getreviewsbystatushandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\product\\features\\commands\\updateproductvariantshippingmethods\\updateproductvariantshippingmethodshandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\product\\features\\commands\\updateproductvariantshippingmethods\\updateproductvariantshippingmethodshandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\product\\features\\commands\\updateproductvariantshippingmethods\\updateproductvariantshippingmethodscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\product\\features\\commands\\updateproductvariantshippingmethods\\updateproductvariantshippingmethodscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\product\\contracts\\iproductrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\product\\contracts\\iproductrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\order\\features\\commands\\checkoutfromcart\\checkoutfromcarthandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\order\\features\\commands\\checkoutfromcart\\checkoutfromcarthandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\order\\features\\commands\\checkoutfromcart\\checkoutfromcartcommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\order\\features\\commands\\checkoutfromcart\\checkoutfromcartcommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|c:\\me\\mechanic\\api\\application\\categories\\features\\shared\\categorydtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BA029E82-D483-47B3-93B3-560743B5FC25}|Application\\Application.csproj|solutionrelative:application\\categories\\features\\shared\\categorydtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\product\\specifications\\productincategoryspecification.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\product\\specifications\\productincategoryspecification.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\order\\rules\\ordermustbeinpendingstaterule.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\order\\rules\\ordermustbeinpendingstaterule.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\order\\services\\orderdomainservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\order\\services\\orderdomainservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\notification\\notification.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\notification\\notification.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\order\\orderitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\order\\orderitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\order\\order.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\order\\order.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\cart\\cart.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\cart\\cart.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\common\\interfaces\\iauditable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\common\\interfaces\\iauditable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\common\\interfaces\\ibusinessrule.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\common\\interfaces\\ibusinessrule.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\product\\productvariant.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\product\\productvariant.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\product\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\product\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\inventory\\services\\inventorydomainservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\inventory\\services\\inventorydomainservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|c:\\me\\mechanic\\api\\domain\\product\\services\\productdomainservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E892F826-E3B2-4F4A-AE12-F500034A63CD}|Domain\\Domain.csproj|solutionrelative:domain\\product\\services\\productdomainservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,8 +258,450 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 6,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "LocationService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Location\\Services\\LocationService.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Location\\Services\\LocationService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Location\\Services\\LocationService.cs",
+              "RelativeToolTip": "Infrastructure\\Location\\Services\\LocationService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:58:12.354Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "WishlistController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\User\\Controllers\\WishlistController.cs",
+              "RelativeDocumentMoniker": "MainApi\\User\\Controllers\\WishlistController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\User\\Controllers\\WishlistController.cs",
+              "RelativeToolTip": "MainApi\\User\\Controllers\\WishlistController.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAA6wAgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:47:08.756Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "OrdersController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\OrdersController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Order\\Controllers\\OrdersController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\OrdersController.cs",
+              "RelativeToolTip": "MainApi\\Order\\Controllers\\OrdersController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:45:25.885Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Imports.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Imports.cs",
+              "RelativeDocumentMoniker": "MainApi\\Imports.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Imports.cs",
+              "RelativeToolTip": "MainApi\\Imports.cs",
+              "ViewState": "AgIAAAIBAAAAAAAAAAAAAPoAAAA+AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:25:23.155Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "DashboardController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\User\\Controllers\\DashboardController.cs",
+              "RelativeDocumentMoniker": "MainApi\\User\\Controllers\\DashboardController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\User\\Controllers\\DashboardController.cs",
+              "RelativeToolTip": "MainApi\\User\\Controllers\\DashboardController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:46:42.319Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "LocationController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Location\\Controllers\\LocationController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Location\\Controllers\\LocationController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Location\\Controllers\\LocationController.cs",
+              "RelativeToolTip": "MainApi\\Location\\Controllers\\LocationController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:43:14.904Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
+              "RelativeDocumentMoniker": "MainApi\\Program.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Program.cs",
+              "RelativeToolTip": "MainApi\\Program.cs",
+              "ViewState": "AgIAAC0AAAAAAAAAAAAAABAAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:25:22.032Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "DiscountsController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Discount\\Controllers\\DiscountsController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Discount\\Controllers\\DiscountsController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Discount\\Controllers\\DiscountsController.cs",
+              "RelativeToolTip": "MainApi\\Discount\\Controllers\\DiscountsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:55:15.985Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "CustomExceptionHandlerMiddleware.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Middleware\\CustomExceptionHandlerMiddleware.cs",
+              "RelativeDocumentMoniker": "MainApi\\Middleware\\CustomExceptionHandlerMiddleware.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Middleware\\CustomExceptionHandlerMiddleware.cs",
+              "RelativeToolTip": "MainApi\\Middleware\\CustomExceptionHandlerMiddleware.cs",
+              "ViewState": "AgIAAFYAAAAAAAAAAAAswGIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:49:39.12Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "UsersController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\User\\Controllers\\UsersController.cs",
+              "RelativeDocumentMoniker": "MainApi\\User\\Controllers\\UsersController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\User\\Controllers\\UsersController.cs",
+              "RelativeToolTip": "MainApi\\User\\Controllers\\UsersController.cs",
+              "ViewState": "AgIAAFcAAAAAAAAAAAAswGwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:46:23.588Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "ProfileController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\User\\Controllers\\ProfileController.cs",
+              "RelativeDocumentMoniker": "MainApi\\User\\Controllers\\ProfileController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\User\\Controllers\\ProfileController.cs",
+              "RelativeToolTip": "MainApi\\User\\Controllers\\ProfileController.cs",
+              "ViewState": "AgIAAFIAAAAAAAAAAAAswGcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:46:47.71Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "AdminUsersController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\User\\Controllers\\AdminUsersController.cs",
+              "RelativeDocumentMoniker": "MainApi\\User\\Controllers\\AdminUsersController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\User\\Controllers\\AdminUsersController.cs",
+              "RelativeToolTip": "MainApi\\User\\Controllers\\AdminUsersController.cs",
+              "ViewState": "AgIAAEAAAAAAAAAAAAAswFUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:46:35.009Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "TicketsController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Support\\Controllers\\TicketsController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Support\\Controllers\\TicketsController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Support\\Controllers\\TicketsController.cs",
+              "RelativeToolTip": "MainApi\\Support\\Controllers\\TicketsController.cs",
+              "ViewState": "AgIAADAAAAAAAAAAAAAswEUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:46:14.485Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "AdminSearchController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Search\\Controllers\\AdminSearchController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Search\\Controllers\\AdminSearchController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Search\\Controllers\\AdminSearchController.cs",
+              "RelativeToolTip": "MainApi\\Search\\Controllers\\AdminSearchController.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAAswCcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:46:04.579Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "AdminProductVariantShippingController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Product\\Controllers\\AdminProductVariantShippingController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Product\\Controllers\\AdminProductVariantShippingController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Product\\Controllers\\AdminProductVariantShippingController.cs",
+              "RelativeToolTip": "MainApi\\Product\\Controllers\\AdminProductVariantShippingController.cs",
+              "ViewState": "AgIAABwAAAAAAAAAAAAswDEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:45:53.908Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "ShippingMethodsController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\ShippingMethodsController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Order\\Controllers\\ShippingMethodsController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\ShippingMethodsController.cs",
+              "RelativeToolTip": "MainApi\\Order\\Controllers\\ShippingMethodsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAswBUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:45:41.622Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "OrderStatusController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\OrderStatusController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Order\\Controllers\\OrderStatusController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\OrderStatusController.cs",
+              "RelativeToolTip": "MainApi\\Order\\Controllers\\OrderStatusController.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAswB4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:45:27.318Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "OrderItemsController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\OrderItemsController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Order\\Controllers\\OrderItemsController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\OrderItemsController.cs",
+              "RelativeToolTip": "MainApi\\Order\\Controllers\\OrderItemsController.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAAAswC0AAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:45:20.535Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "CheckoutShippingController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\CheckoutShippingController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Order\\Controllers\\CheckoutShippingController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\CheckoutShippingController.cs",
+              "RelativeToolTip": "MainApi\\Order\\Controllers\\CheckoutShippingController.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAAswCsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:45:13.537Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "AdminShippingMethodController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\AdminShippingMethodController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Order\\Controllers\\AdminShippingMethodController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\AdminShippingMethodController.cs",
+              "RelativeToolTip": "MainApi\\Order\\Controllers\\AdminShippingMethodController.cs",
+              "ViewState": "AgIAADYAAAAAAAAAAAAswEsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:45:05.668Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "OrderDtos.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Order\\Features\\Shared\\OrderDtos.cs",
+              "RelativeDocumentMoniker": "Application\\Order\\Features\\Shared\\OrderDtos.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Order\\Features\\Shared\\OrderDtos.cs",
+              "RelativeToolTip": "Application\\Order\\Features\\Shared\\OrderDtos.cs",
+              "ViewState": "AgIAAJwAAAAAAAAAAAAAAJ8AAAA6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:44:47.902Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "AdminOrderStatusController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\AdminOrderStatusController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Order\\Controllers\\AdminOrderStatusController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\AdminOrderStatusController.cs",
+              "RelativeToolTip": "MainApi\\Order\\Controllers\\AdminOrderStatusController.cs",
+              "ViewState": "AgIAADsAAAAAAAAAAAAAAD8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:44:03.075Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "NotificationsController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Notification\\Controllers\\NotificationsController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Notification\\Controllers\\NotificationsController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Notification\\Controllers\\NotificationsController.cs",
+              "RelativeToolTip": "MainApi\\Notification\\Controllers\\NotificationsController.cs",
+              "ViewState": "AgIAAC8AAAAAAAAAAAAswEQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:43:44.869Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "MediaController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Media\\Controllers\\MediaController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Media\\Controllers\\MediaController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Media\\Controllers\\MediaController.cs",
+              "RelativeToolTip": "MainApi\\Media\\Controllers\\MediaController.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAswB8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:43:37.166Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "AdminMediaController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Media\\Controllers\\AdminMediaController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Media\\Controllers\\AdminMediaController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Media\\Controllers\\AdminMediaController.cs",
+              "RelativeToolTip": "MainApi\\Media\\Controllers\\AdminMediaController.cs",
+              "ViewState": "AgIAAD4AAAAAAAAAAAA9wFMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:43:29.639Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "AdminInventoryController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Inventory\\Controllers\\AdminInventoryController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Inventory\\Controllers\\AdminInventoryController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Inventory\\Controllers\\AdminInventoryController.cs",
+              "RelativeToolTip": "MainApi\\Inventory\\Controllers\\AdminInventoryController.cs",
+              "ViewState": "AgIAAF4AAAAAAAAAAAAswHMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:42:59.277Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "AdminOrdersController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\AdminOrdersController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Order\\Controllers\\AdminOrdersController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Order\\Controllers\\AdminOrdersController.cs",
+              "RelativeToolTip": "MainApi\\Order\\Controllers\\AdminOrdersController.cs",
+              "ViewState": "AgIAACkAAAAAAAAAAAAcwDEAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:38:22.474Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "CategoryGroupController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Categories\\Controllers\\CategoryGroupController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Categories\\Controllers\\CategoryGroupController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Categories\\Controllers\\CategoryGroupController.cs",
+              "RelativeToolTip": "MainApi\\Categories\\Controllers\\CategoryGroupController.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAswCQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:42:51.373Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "CategoryController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Categories\\Controllers\\CategoryController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Categories\\Controllers\\CategoryController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Categories\\Controllers\\CategoryController.cs",
+              "RelativeToolTip": "MainApi\\Categories\\Controllers\\CategoryController.cs",
+              "ViewState": "AgIAABsAAAAAAAAAAAAswDAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:42:46.679Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "AdminCategoryGroupController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Categories\\Controllers\\AdminCategoryGroupController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Categories\\Controllers\\AdminCategoryGroupController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Categories\\Controllers\\AdminCategoryGroupController.cs",
+              "RelativeToolTip": "MainApi\\Categories\\Controllers\\AdminCategoryGroupController.cs",
+              "ViewState": "AgIAADIAAAAAAAAAAAAswEcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:42:39.759Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "AdminCategoryController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Categories\\Controllers\\AdminCategoryController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Categories\\Controllers\\AdminCategoryController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Categories\\Controllers\\AdminCategoryController.cs",
+              "RelativeToolTip": "MainApi\\Categories\\Controllers\\AdminCategoryController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:42:27.339Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "BaseApiController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Base\\Controllers\\BaseApiController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Base\\Controllers\\BaseApiController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Base\\Controllers\\BaseApiController.cs",
+              "RelativeToolTip": "MainApi\\Base\\Controllers\\BaseApiController.cs",
+              "ViewState": "AgIAAAcAAAAAAAAAAIBCwAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:33:02.216Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "AdminAttributesController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Product\\Controllers\\AdminAttributesController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Product\\Controllers\\AdminAttributesController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Product\\Controllers\\AdminAttributesController.cs",
+              "RelativeToolTip": "MainApi\\Product\\Controllers\\AdminAttributesController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAD8AAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:20:45.664Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "Result.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Features\\Shared\\Result.cs",
+              "RelativeDocumentMoniker": "Application\\Common\\Features\\Shared\\Result.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Common\\Features\\Shared\\Result.cs",
+              "RelativeToolTip": "Application\\Common\\Features\\Shared\\Result.cs",
+              "ViewState": "AgIAAFcAAAAAAAAAAAAgwGAAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-10T09:07:38.466Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
@@ -34,28 +716,366 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "IAppLogger.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Log\\IAppLogger.cs",
-              "RelativeDocumentMoniker": "Application\\Common\\Interfaces\\Log\\IAppLogger.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Common\\Interfaces\\Log\\IAppLogger.cs",
-              "RelativeToolTip": "Application\\Common\\Interfaces\\Log\\IAppLogger.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAkAAAAAAAAAA==",
+              "DocumentIndex": 34,
+              "Title": "ProductsController.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\MainApi\\Product\\Controllers\\ProductsController.cs",
+              "RelativeDocumentMoniker": "MainApi\\Product\\Controllers\\ProductsController.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\MainApi\\Product\\Controllers\\ProductsController.cs",
+              "RelativeToolTip": "MainApi\\Product\\Controllers\\ProductsController.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAA4wBIAAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-01T11:30:18.801Z",
+              "WhenOpened": "2026-02-10T09:06:07.981Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Imports.cs",
-              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Imports.cs",
-              "RelativeDocumentMoniker": "Application\\Imports.cs",
-              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Imports.cs",
-              "RelativeToolTip": "Application\\Imports.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAwAAAAAAAAAA==",
+              "DocumentIndex": 35,
+              "Title": "Domain",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Domain.csproj",
+              "RelativeDocumentMoniker": "Domain\\Domain.csproj",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Domain.csproj",
+              "RelativeToolTip": "Domain\\Domain.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-02-10T09:04:02.204Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "ReviewQueryService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Product\\QueryServices\\ReviewQueryService.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Product\\QueryServices\\ReviewQueryService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Product\\QueryServices\\ReviewQueryService.cs",
+              "RelativeToolTip": "Infrastructure\\Product\\QueryServices\\ReviewQueryService.cs",
+              "ViewState": "AgIAACgAAAAAAAAAAAAUwDIAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-01T11:28:34.963Z",
+              "WhenOpened": "2026-02-08T15:51:13.064Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "ProductRepository.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Product\\Repositories\\ProductRepository.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Product\\Repositories\\ProductRepository.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Product\\Repositories\\ProductRepository.cs",
+              "RelativeToolTip": "Infrastructure\\Product\\Repositories\\ProductRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAF4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:49:53.549Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
+              "Title": "AnalyticsQueryService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Analytics\\QueryServices\\AnalyticsQueryService.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Analytics\\QueryServices\\AnalyticsQueryService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Analytics\\QueryServices\\AnalyticsQueryService.cs",
+              "RelativeToolTip": "Infrastructure\\Analytics\\QueryServices\\AnalyticsQueryService.cs",
+              "ViewState": "AgIAAL4BAAAAAAAAAIBTwNABAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:47:38.029Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 39,
+              "Title": "LedkaContext.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Context\\LedkaContext.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Persistence\\Context\\LedkaContext.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Infrastructure\\Persistence\\Context\\LedkaContext.cs",
+              "RelativeToolTip": "Infrastructure\\Persistence\\Context\\LedkaContext.cs",
+              "ViewState": "AgIAALYCAAAAAAAAAAA4wNgCAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:45:58.563Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 40,
+              "Title": "UpdateReviewStatusHandler.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Product\\Features\\Commands\\UpdateReviewStatus\\UpdateReviewStatusHandler.cs",
+              "RelativeDocumentMoniker": "Application\\Product\\Features\\Commands\\UpdateReviewStatus\\UpdateReviewStatusHandler.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Product\\Features\\Commands\\UpdateReviewStatus\\UpdateReviewStatusHandler.cs",
+              "RelativeToolTip": "Application\\Product\\Features\\Commands\\UpdateReviewStatus\\UpdateReviewStatusHandler.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAAcwB4AAAA+AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:44:36.187Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 41,
+              "Title": "UpdateReviewStatusCommand.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Product\\Features\\Commands\\UpdateReviewStatus\\UpdateReviewStatusCommand.cs",
+              "RelativeDocumentMoniker": "Application\\Product\\Features\\Commands\\UpdateReviewStatus\\UpdateReviewStatusCommand.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Product\\Features\\Commands\\UpdateReviewStatus\\UpdateReviewStatusCommand.cs",
+              "RelativeToolTip": "Application\\Product\\Features\\Commands\\UpdateReviewStatus\\UpdateReviewStatusCommand.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:44:35.139Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 42,
+              "Title": "GetReviewsByStatusHandler.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Product\\Features\\Queries\\GetReviewsByStatus\\GetReviewsByStatusHandler.cs",
+              "RelativeDocumentMoniker": "Application\\Product\\Features\\Queries\\GetReviewsByStatus\\GetReviewsByStatusHandler.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Product\\Features\\Queries\\GetReviewsByStatus\\GetReviewsByStatusHandler.cs",
+              "RelativeToolTip": "Application\\Product\\Features\\Queries\\GetReviewsByStatus\\GetReviewsByStatusHandler.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAcwBAAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:42:06.051Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 43,
+              "Title": "UpdateProductVariantShippingMethodsHandler.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Product\\Features\\Commands\\UpdateProductVariantShippingMethods\\UpdateProductVariantShippingMethodsHandler.cs",
+              "RelativeDocumentMoniker": "Application\\Product\\Features\\Commands\\UpdateProductVariantShippingMethods\\UpdateProductVariantShippingMethodsHandler.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Product\\Features\\Commands\\UpdateProductVariantShippingMethods\\UpdateProductVariantShippingMethodsHandler.cs",
+              "RelativeToolTip": "Application\\Product\\Features\\Commands\\UpdateProductVariantShippingMethods\\UpdateProductVariantShippingMethodsHandler.cs",
+              "ViewState": "AgIAACgAAAAAAAAAAAAcwBoAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:40:52.088Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 44,
+              "Title": "UpdateProductVariantShippingMethodsCommand.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Product\\Features\\Commands\\UpdateProductVariantShippingMethods\\UpdateProductVariantShippingMethodsCommand.cs",
+              "RelativeDocumentMoniker": "Application\\Product\\Features\\Commands\\UpdateProductVariantShippingMethods\\UpdateProductVariantShippingMethodsCommand.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Product\\Features\\Commands\\UpdateProductVariantShippingMethods\\UpdateProductVariantShippingMethodsCommand.cs",
+              "RelativeToolTip": "Application\\Product\\Features\\Commands\\UpdateProductVariantShippingMethods\\UpdateProductVariantShippingMethodsCommand.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:40:50.381Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 45,
+              "Title": "IProductRepository.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Product\\Contracts\\IProductRepository.cs",
+              "RelativeDocumentMoniker": "Application\\Product\\Contracts\\IProductRepository.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Product\\Contracts\\IProductRepository.cs",
+              "RelativeToolTip": "Application\\Product\\Contracts\\IProductRepository.cs",
+              "ViewState": "AgIAADMAAAAAAAAAAAA1wEIAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:39:30.133Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 46,
+              "Title": "CheckoutFromCartHandler.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Order\\Features\\Commands\\CheckoutFromCart\\CheckoutFromCartHandler.cs",
+              "RelativeDocumentMoniker": "Application\\Order\\Features\\Commands\\CheckoutFromCart\\CheckoutFromCartHandler.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Order\\Features\\Commands\\CheckoutFromCart\\CheckoutFromCartHandler.cs",
+              "RelativeToolTip": "Application\\Order\\Features\\Commands\\CheckoutFromCart\\CheckoutFromCartHandler.cs",
+              "ViewState": "AgIAAHMAAAAAAAAAAAA0wFMAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:36:04.644Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 47,
+              "Title": "CheckoutFromCartCommand.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Order\\Features\\Commands\\CheckoutFromCart\\CheckoutFromCartCommand.cs",
+              "RelativeDocumentMoniker": "Application\\Order\\Features\\Commands\\CheckoutFromCart\\CheckoutFromCartCommand.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Order\\Features\\Commands\\CheckoutFromCart\\CheckoutFromCartCommand.cs",
+              "RelativeToolTip": "Application\\Order\\Features\\Commands\\CheckoutFromCart\\CheckoutFromCartCommand.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:36:03.211Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 48,
+              "Title": "CategoryDtos.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Application\\Categories\\Features\\Shared\\CategoryDtos.cs",
+              "RelativeDocumentMoniker": "Application\\Categories\\Features\\Shared\\CategoryDtos.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Application\\Categories\\Features\\Shared\\CategoryDtos.cs",
+              "RelativeToolTip": "Application\\Categories\\Features\\Shared\\CategoryDtos.cs",
+              "ViewState": "AgIAABkAAAAAAAAAAAA1wCIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:34:52.009Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 49,
+              "Title": "ProductInCategorySpecification.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Product\\Specifications\\ProductInCategorySpecification.cs",
+              "RelativeDocumentMoniker": "Domain\\Product\\Specifications\\ProductInCategorySpecification.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Product\\Specifications\\ProductInCategorySpecification.cs",
+              "RelativeToolTip": "Domain\\Product\\Specifications\\ProductInCategorySpecification.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:34:11.667Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 50,
+              "Title": "OrderMustBeInPendingStateRule.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Order\\Rules\\OrderMustBeInPendingStateRule.cs",
+              "RelativeDocumentMoniker": "Domain\\Order\\Rules\\OrderMustBeInPendingStateRule.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Order\\Rules\\OrderMustBeInPendingStateRule.cs",
+              "RelativeToolTip": "Domain\\Order\\Rules\\OrderMustBeInPendingStateRule.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAA5AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:33:13.886Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 51,
+              "Title": "OrderDomainService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Order\\Services\\OrderDomainService.cs",
+              "RelativeDocumentMoniker": "Domain\\Order\\Services\\OrderDomainService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Order\\Services\\OrderDomainService.cs",
+              "RelativeToolTip": "Domain\\Order\\Services\\OrderDomainService.cs",
+              "ViewState": "AgIAAHYAAAAAAAAAAAAUwIAAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:31:50.392Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 52,
+              "Title": "Notification.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Notification\\Notification.cs",
+              "RelativeDocumentMoniker": "Domain\\Notification\\Notification.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Notification\\Notification.cs",
+              "RelativeToolTip": "Domain\\Notification\\Notification.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAA1wBoAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:31:21.037Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 53,
+              "Title": "OrderItem.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Order\\OrderItem.cs",
+              "RelativeDocumentMoniker": "Domain\\Order\\OrderItem.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Order\\OrderItem.cs",
+              "RelativeToolTip": "Domain\\Order\\OrderItem.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAABAwBUAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:30:37.719Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 54,
+              "Title": "Order.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Order\\Order.cs",
+              "RelativeDocumentMoniker": "Domain\\Order\\Order.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Order\\Order.cs",
+              "RelativeToolTip": "Domain\\Order\\Order.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:30:34.684Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 56,
+              "Title": "IAuditable.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Common\\Interfaces\\IAuditable.cs",
+              "RelativeDocumentMoniker": "Domain\\Common\\Interfaces\\IAuditable.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Common\\Interfaces\\IAuditable.cs",
+              "RelativeToolTip": "Domain\\Common\\Interfaces\\IAuditable.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:29:44.311Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 57,
+              "Title": "IBusinessRule.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Common\\Interfaces\\IBusinessRule.cs",
+              "RelativeDocumentMoniker": "Domain\\Common\\Interfaces\\IBusinessRule.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Common\\Interfaces\\IBusinessRule.cs",
+              "RelativeToolTip": "Domain\\Common\\Interfaces\\IBusinessRule.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:29:34.933Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 55,
+              "Title": "Cart.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Cart\\Cart.cs",
+              "RelativeDocumentMoniker": "Domain\\Cart\\Cart.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Cart\\Cart.cs",
+              "RelativeToolTip": "Domain\\Cart\\Cart.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAmwAkAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:29:17.596Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 59,
+              "Title": "Product.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Product\\Product.cs",
+              "RelativeDocumentMoniker": "Domain\\Product\\Product.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Product\\Product.cs",
+              "RelativeToolTip": "Domain\\Product\\Product.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEkBAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:28:24.629Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 61,
+              "Title": "ProductDomainService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Product\\Services\\ProductDomainService.cs",
+              "RelativeDocumentMoniker": "Domain\\Product\\Services\\ProductDomainService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Product\\Services\\ProductDomainService.cs",
+              "RelativeToolTip": "Domain\\Product\\Services\\ProductDomainService.cs",
+              "ViewState": "AgIAAJwAAAAAAAAAAIBTwC8AAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:27:15.43Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 58,
+              "Title": "ProductVariant.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Product\\ProductVariant.cs",
+              "RelativeDocumentMoniker": "Domain\\Product\\ProductVariant.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Product\\ProductVariant.cs",
+              "RelativeToolTip": "Domain\\Product\\ProductVariant.cs",
+              "ViewState": "AgIAALYAAAAAAAAAAAAuwMkAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:26:16.432Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 60,
+              "Title": "InventoryDomainService.cs",
+              "DocumentMoniker": "C:\\ME\\Mechanic\\API\\Domain\\Inventory\\Services\\InventoryDomainService.cs",
+              "RelativeDocumentMoniker": "Domain\\Inventory\\Services\\InventoryDomainService.cs",
+              "ToolTip": "C:\\ME\\Mechanic\\API\\Domain\\Inventory\\Services\\InventoryDomainService.cs",
+              "RelativeToolTip": "Domain\\Inventory\\Services\\InventoryDomainService.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAA2wHsAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-08T15:25:28.031Z",
               "EditorCaption": ""
             }
           ]
