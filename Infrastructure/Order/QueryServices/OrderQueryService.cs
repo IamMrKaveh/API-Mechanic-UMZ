@@ -331,24 +331,16 @@ public class OrderQueryService : IOrderQueryService
         };
     }
 
-    public Task<OrderDto?> GetOrderByIdAsync(int orderId, CancellationToken ct = default)
+    public async Task<OrderDto?> GetOrderByIdAsync(int orderId, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var order = await _context.Orders.AsNoTracking().Include(o => o.OrderItems).Include(o => o.ShippingMethod)
+            .FirstOrDefaultAsync(o => o.Id == orderId, ct);
+        return order == null ? null : await MapToOrderDtoAsync(order, ct);
     }
 
-    public Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(int userId, int page, int pageSize, CancellationToken ct = default)
+    public async Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(int userId, int page, int pageSize, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
-    }
-
-    public Task<PaginatedResult<OrderDto>> GetAdminOrdersAsync(string? status, string? searchTerm, DateTime? fromDate, DateTime? toDate, int page, int pageSize, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<OrderStatistics> GetOrderStatisticsAsync(CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
+        return await GetUserOrdersAsync(userId, null, page, pageSize, ct);
     }
 
     #endregion Private Mapping Helpers

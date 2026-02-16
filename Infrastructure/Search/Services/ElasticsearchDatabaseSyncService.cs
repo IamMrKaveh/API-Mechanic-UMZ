@@ -1,6 +1,6 @@
 ﻿namespace Infrastructure.Search.Services;
 
-public class ElasticsearchDatabaseSyncService
+public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
 {
     private readonly LedkaContext _context;
     private readonly ISearchService _searchService;
@@ -17,6 +17,12 @@ public class ElasticsearchDatabaseSyncService
         _searchService = searchService;
         _bulkService = bulkService;
         _logger = logger;
+    }
+
+    public async Task SyncAsync(CancellationToken ct = default)
+    {
+        await FullSyncAsync(ct);
+        _logger.LogInformation("Sync Completed");
     }
 
     public async Task SyncProductAsync(int productId, CancellationToken ct = default)

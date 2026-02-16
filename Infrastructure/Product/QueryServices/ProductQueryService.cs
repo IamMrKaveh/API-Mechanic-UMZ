@@ -309,13 +309,15 @@ public class ProductQueryService : IProductQueryService
         return dtos;
     }
 
-    public Task<AdminProductViewDto?> GetProductForAdminAsync(int productId, CancellationToken ct = default)
+    public async Task<AdminProductViewDto?> GetProductForAdminAsync(int productId, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var detail = await GetAdminProductDetailAsync(productId, ct);
+        return detail == null ? null : new AdminProductViewDto { Id = detail.Id, Name = detail.Name, Description = detail.Description, Sku = detail.Sku, IsActive = detail.IsActive, IsDeleted = detail.IsDeleted, CategoryGroupId = detail.CategoryGroupId };
     }
 
-    public Task<PublicProductViewDto?> GetProductForPublicAsync(int productId, CancellationToken ct = default)
+    public async Task<PublicProductViewDto?> GetProductForPublicAsync(int productId, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var detail = await GetPublicProductDetailAsync(productId, ct);
+        return detail == null ? null : new PublicProductViewDto { Id = detail.Id, Name = detail.Name, Description = detail.Description, Sku = detail.Sku, CategoryGroupId = detail.CategoryGroupId, MinPrice = detail.MinPrice, MaxPrice = detail.MaxPrice, TotalStock = detail.TotalStock };
     }
 }

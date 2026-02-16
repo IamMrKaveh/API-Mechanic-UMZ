@@ -219,13 +219,16 @@ public class ShippingQueryService : IShippingQueryService
             : 1m;
     }
 
-    public Task<IEnumerable<ShippingMethodDto>> GetActiveShippingMethodsAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<ShippingMethodDto>> GetActiveShippingMethodsAsync(CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var methods = await _context.Set<ShippingMethod>().Where(m => m.IsActive && !m.IsDeleted).OrderBy(m => m.SortOrder).ToListAsync(ct);
+        return methods.Select(m => new ShippingMethodDto { Id = m.Id, Name = m.Name, Cost = m.Cost.Amount, Description = m.Description, EstimatedDeliveryTime = m.EstimatedDeliveryTime, IsActive = m.IsActive });
     }
 
-    public Task<ShippingMethodDto?> GetShippingMethodByIdAsync(int id, CancellationToken ct = default)
+    public async Task<ShippingMethodDto?> GetShippingMethodByIdAsync(int id, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var m = await _context.Set<ShippingMethod>().FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (m == null) return null;
+        return new ShippingMethodDto { Id = m.Id, Name = m.Name, Cost = m.Cost.Amount, Description = m.Description, EstimatedDeliveryTime = m.EstimatedDeliveryTime, IsActive = m.IsActive };
     }
 }

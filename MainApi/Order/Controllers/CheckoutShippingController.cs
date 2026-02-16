@@ -6,8 +6,7 @@ public class CheckoutShippingController : BaseApiController
 {
     private readonly IMediator _mediator;
 
-    public CheckoutShippingController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
+    public CheckoutShippingController(IMediator mediator, ICurrentUserService currentUserService) : base(currentUserService)
     {
         _mediator = mediator;
     }
@@ -17,7 +16,6 @@ public class CheckoutShippingController : BaseApiController
     public async Task<IActionResult> GetAvailableShippingMethods()
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var query = new GetAvailableShippingMethodsQuery(CurrentUser.UserId.Value);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
@@ -27,8 +25,8 @@ public class CheckoutShippingController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetAvailableShippingMethodsForVariants([FromBody] List<int> variantIds)
     {
-        // این نیاز به یک Query جدید دارد: GetAvailableShippingMethodsForVariantsQuery
-        return StatusCode(501, "Implement GetAvailableShippingMethodsForVariantsQuery");
+        var result = await _mediator.Send(new GetAvailableShippingMethodsForVariantsQuery(variantIds));
+        return ToActionResult(result);
     }
 
     [HttpGet("calculate")]
@@ -36,7 +34,6 @@ public class CheckoutShippingController : BaseApiController
     public async Task<IActionResult> CalculateShippingCost([FromQuery] int shippingMethodId)
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var query = new CalculateShippingCostQuery(CurrentUser.UserId.Value, shippingMethodId);
         var result = await _mediator.Send(query);
         return ToActionResult(result);

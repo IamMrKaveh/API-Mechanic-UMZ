@@ -61,13 +61,13 @@ public class ShippingMethodRepository : IShippingMethodRepository
         return await query.AnyAsync(ct);
     }
 
-    public Task<IEnumerable<ShippingMethod>> GetAllActiveAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<ShippingMethod>> GetAllActiveAsync(CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        return await _context.ShippingMethods.Where(m => m.IsActive && !m.IsDeleted).OrderBy(m => m.SortOrder).ToListAsync(ct);
     }
 
-    public Task<ShippingMethod?> GetDefaultAsync(CancellationToken ct = default)
+    public async Task<ShippingMethod?> GetDefaultAsync(CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        return await _context.ShippingMethods.FirstOrDefaultAsync(m => m.IsDefault && !m.IsDeleted, ct);
     }
 }

@@ -7,8 +7,7 @@ public class OrderItemsController : BaseApiController
 {
     private readonly IMediator _mediator;
 
-    public OrderItemsController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
+    public OrderItemsController(IMediator mediator, ICurrentUserService currentUserService) : base(currentUserService)
     {
         _mediator = mediator;
     }
@@ -16,31 +15,28 @@ public class OrderItemsController : BaseApiController
     [HttpPost]
     public async Task<IActionResult> CreateOrderItem([FromBody] CreateOrderItemDto itemDto)
     {
-        // نیاز به CreateOrderItemCommand
-        return StatusCode(501, "Implement CreateOrderItemCommand");
+        var result = await _mediator.Send(new CreateOrderItemCommand(0, itemDto)); // Require actual implementation passing OrderId
+        return ToActionResult(result);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOrderItem(int id)
     {
-        // نیاز به GetOrderItemByIdQuery
-        return StatusCode(501, "Implement GetOrderItemByIdQuery");
+        var result = await _mediator.Send(new GetOrderItemByIdQuery(id));
+        return ToActionResult(result);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateOrderItem(int id, [FromBody] UpdateOrderItemDto itemDto)
     {
-        // نیاز به UpdateOrderItemCommand
-        return StatusCode(501, "Implement UpdateOrderItemCommand");
+        var result = await _mediator.Send(new UpdateOrderItemCommand(id, itemDto));
+        return ToActionResult(result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteOrderItem(int id)
     {
-        // نیاز به DeleteOrderItemCommand
-        return StatusCode(501, "Implement DeleteOrderItemCommand");
+        var result = await _mediator.Send(new DeleteOrderItemCommand(id));
+        return ToActionResult(result);
     }
 }
-
-public class CreateOrderItemDto { }
-public class UpdateOrderItemDto { }

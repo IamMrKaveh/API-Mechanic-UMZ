@@ -1,4 +1,9 @@
-﻿namespace MainApi.User.Controllers;
+﻿using Application.User.Features.Commands.ChangePassword;
+using Application.User.Features.Commands.CreateUserAddress;
+using Application.User.Features.Commands.DeleteUserAddress;
+using Application.User.Features.Commands.UpdateUserAddress;
+
+namespace MainApi.User.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -72,33 +77,31 @@ public class ProfileController : BaseApiController
     public async Task<IActionResult> AddAddress([FromBody] CreateUserAddressDto addressDto)
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        // نیاز به CreateUserAddressCommand
-        return StatusCode(501, "Implement CreateUserAddressCommand");
+        var result = await _mediator.Send(new CreateUserAddressCommand(CurrentUser.UserId.Value, addressDto));
+        return ToActionResult(result);
     }
 
     [HttpPut("addresses/{id}")]
     public async Task<IActionResult> UpdateAddress(int id, [FromBody] UpdateUserAddressDto addressDto)
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        // نیاز به UpdateUserAddressCommand
-        return StatusCode(501, "Implement UpdateUserAddressCommand");
+        var result = await _mediator.Send(new UpdateUserAddressCommand(CurrentUser.UserId.Value, id, addressDto));
+        return ToActionResult(result);
     }
 
     [HttpDelete("addresses/{id}")]
     public async Task<IActionResult> DeleteAddress(int id)
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        // نیاز به DeleteUserAddressCommand
-        return StatusCode(501, "Implement DeleteUserAddressCommand");
+        var result = await _mediator.Send(new DeleteUserAddressCommand(CurrentUser.UserId.Value, id));
+        return ToActionResult(result);
     }
 
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
     {
-        // نیاز به ChangePasswordCommand
-        return StatusCode(501, "Implement ChangePasswordCommand");
+        if (!CurrentUser.UserId.HasValue) return Unauthorized();
+        var result = await _mediator.Send(new ChangePasswordCommand(CurrentUser.UserId.Value, dto));
+        return ToActionResult(result);
     }
 }

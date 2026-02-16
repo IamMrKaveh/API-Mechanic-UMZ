@@ -1,5 +1,4 @@
-﻿using Application.Inventory.Features.Queries.GetStatistics;
-using Application.Inventory.Features.Queries.GetTransactions;
+﻿using Application.Inventory.Features.Queries.GetOutOfStockProducts;
 
 namespace MainApi.Inventory.Controllers;
 
@@ -41,20 +40,14 @@ public class AdminInventoryController : BaseApiController
     [HttpGet("out-of-stock")]
     public async Task<IActionResult> GetOutOfStockItems()
     {
-        // نیاز به Query جداگانه یا استفاده از فیلتر در Query اصلی دارد.
-        // با فرض وجود GetOutOfStockProductsQuery:
-        // var query = new GetOutOfStockProductsQuery(); 
-        // var result = await _mediator.Send(query);
-        // return ToActionResult(result);
-
-        // موقتا:
-        return StatusCode(501, "Implement GetOutOfStockProductsQuery");
+        var query = new GetOutOfStockProductsQuery();
+        var result = await _mediator.Send(query);
+        return ToActionResult(result);
     }
 
     [HttpPost("adjust")]
     public async Task<IActionResult> AdjustStock([FromBody] AdjustStockCommand command)
     {
-        // UserId را از توکن می‌گیریم، اگر در بدنه نیامده باشد
         if (command.UserId <= 0 && CurrentUser.UserId.HasValue)
         {
             command = command with { UserId = CurrentUser.UserId.Value };
