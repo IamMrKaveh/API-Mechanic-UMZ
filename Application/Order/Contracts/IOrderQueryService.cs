@@ -64,10 +64,4 @@ public interface IOrderQueryService
     Task<OrderDto?> GetOrderByIdAsync(int orderId, CancellationToken ct = default);
 
     Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(int userId, int page, int pageSize, CancellationToken ct = default);
-
-    Task<PaginatedResult<OrderDto>> GetAdminOrdersAsync(
-        string? status, string? searchTerm, DateTime? fromDate, DateTime? toDate,
-        int page, int pageSize, CancellationToken ct = default);
-
-    Task<OrderStatistics> GetOrderStatisticsAsync(CancellationToken ct = default);
 }

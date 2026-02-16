@@ -1,4 +1,6 @@
-﻿namespace MainApi.Notification.Controllers;
+﻿using Application.Notification.Features.Commands.DeleteNotification;
+
+namespace MainApi.Notification.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -57,13 +59,12 @@ public class NotificationsController : BaseApiController
         return ToActionResult(result);
     }
 
-    // DeleteNotificationCommand needs to be implemented
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteNotification(int id)
     {
-        // var command = new DeleteNotificationCommand(id, CurrentUser.UserId.Value);
-        // var result = await _mediator.Send(command);
-        // return ToActionResult(result);
-        return StatusCode(501, "Implement DeleteNotificationCommand");
+        if (!CurrentUser.UserId.HasValue) return Unauthorized();
+        var command = new DeleteNotificationCommand(id, CurrentUser.UserId.Value);
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
     }
 }

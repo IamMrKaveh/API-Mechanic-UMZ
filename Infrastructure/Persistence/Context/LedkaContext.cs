@@ -1,6 +1,4 @@
-﻿using Domain.Payment.ValueObjects;
-
-namespace Infrastructure.Persistence.Context;
+﻿namespace Infrastructure.Persistence.Context;
 
 public class LedkaContext : DbContext
 {
@@ -59,6 +57,8 @@ public class LedkaContext : DbContext
 
     public DbSet<ElasticsearchOutboxMessage> ElasticsearchOutboxMessages { get; set; } = null!;
 
+    public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -77,6 +77,7 @@ public class LedkaContext : DbContext
         ConfigureProduct(builder);
         ConfigureSecurity(builder);
         ConfigureSupport(builder);
+        ConfigureCommon(builder);
         ConfigureUser(builder);
 
         foreach (var entityType in builder.Model.GetEntityTypes())
@@ -166,6 +167,17 @@ public class LedkaContext : DbContext
             entity.HasIndex(e => new { e.UserId, e.ProductId }).IsUnique();
             entity.HasOne(d => d.User).WithMany().HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(d => d.Product).WithMany().HasForeignKey(d => d.ProductId).OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private void ConfigureCommon(ModelBuilder builder)
+    {
+        builder.Entity<OutboxMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Type).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Content).IsRequired().HasColumnType("jsonb"); // or text for SQL Server
+            entity.HasIndex(e => new { e.ProcessedOn, e.OccurredOn });
         });
     }
 

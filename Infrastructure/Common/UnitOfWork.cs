@@ -3,93 +3,85 @@
 public class UnitOfWork : IUnitOfWork
 {
     private readonly LedkaContext _context;
-    private readonly IDomainEventDispatcher _domainEventDispatcher;
     private readonly ILogger<UnitOfWork> _logger;
     private IDbContextTransaction? _currentTransaction;
 
-    public UnitOfWork(
-        LedkaContext context,
-        IDomainEventDispatcher domainEventDispatcher,
-        ILogger<UnitOfWork> logger)
+    public UnitOfWork(LedkaContext context, ILogger<UnitOfWork> logger)
     {
         _context = context;
-        _domainEventDispatcher = domainEventDispatcher;
         _logger = logger;
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // ابتدا ذخیره تغییرات
-        var result = await _context.SaveChangesAsync(cancellationToken);
+        ConvertDomainEventsToOutboxMessages();
+        return await _context.SaveChangesAsync(cancellationToken);
+    }
 
-        // سپس dispatch رویدادها
-        await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
+    private void ConvertDomainEventsToOutboxMessages()
+    {
+        var domainEntities = _context.ChangeTracker
+            .Entries<AggregateRoot>()
+            .Where(x => x.Entity.DomainEvents != null && x.Entity.DomainEvents.Any())
+            .ToList();
 
-        return result;
+        var domainEvents = domainEntities
+            .SelectMany(x => x.Entity.DomainEvents)
+            .ToList();
+
+        foreach (var entity in domainEntities)
+        {
+            entity.Entity.ClearDomainEvents();
+        }
+
+        var outboxMessages = domainEvents.Select(domainEvent => new OutboxMessage
+        {
+            Id = Guid.NewGuid(),
+            OccurredOn = DateTime.UtcNow,
+            Type = domainEvent.GetType().Name,
+            Content = JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), new JsonSerializerOptions { ReferenceHandler = ReferenceHandler.IgnoreCycles })
+        }).ToList();
+
+        _context.OutboxMessages.AddRange(outboxMessages);
     }
 
     public async Task<IDisposable> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
-        if (_currentTransaction != null)
-        {
-            _logger.LogWarning("Transaction already started. Returning existing transaction.");
-            return _currentTransaction;
-        }
-
+        if (_currentTransaction != null) return _currentTransaction;
         _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         return _currentTransaction;
     }
 
     public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
     {
-        if (_currentTransaction == null)
-            throw new InvalidOperationException("No transaction has been started.");
-
+        if (_currentTransaction == null) throw new InvalidOperationException("No transaction started.");
         try
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
             await _currentTransaction.CommitAsync(cancellationToken);
-
-            // Domain Events بعد از commit
-            await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
         }
         catch
         {
             await RollbackTransactionAsync(cancellationToken);
             throw;
         }
-        finally
-        {
-            await DisposeTransactionAsync();
-        }
+        finally { await DisposeTransactionAsync(); }
     }
 
     public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
     {
-        if (_currentTransaction == null)
-            return;
-
-        try
-        {
-            await _currentTransaction.RollbackAsync(cancellationToken);
-        }
-        finally
-        {
-            await DisposeTransactionAsync();
-        }
+        if (_currentTransaction == null) return;
+        try { await _currentTransaction.RollbackAsync(cancellationToken); }
+        finally { await DisposeTransactionAsync(); }
     }
 
-    public async Task<T> ExecuteStrategyAsync<T>(
-        Func<Task<T>> operation,
-        CancellationToken cancellationToken = default)
+    public async Task<T> ExecuteStrategyAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync(operation);
     }
 
-    public async Task ExecuteStrategyAsync(
-        Func<Task> operation,
-        CancellationToken cancellationToken = default)
+    public async Task ExecuteStrategyAsync(Func<Task> operation, CancellationToken cancellationToken = default)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(operation);

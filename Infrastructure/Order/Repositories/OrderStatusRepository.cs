@@ -56,13 +56,13 @@ public class OrderStatusRepository : IOrderStatusRepository
             .AnyAsync(o => o.Status == OrderStatusValue.FromString(status.Name), ct);
     }
 
-    public Task<IEnumerable<OrderStatus>> GetAllActiveAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<OrderStatus>> GetAllActiveAsync(CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        return await _context.Set<OrderStatus>().Where(s => s.IsActive && !s.IsDeleted).OrderBy(s => s.SortOrder).ToListAsync(ct);
     }
 
-    public Task<OrderStatus?> GetDefaultAsync(CancellationToken ct = default)
+    public async Task<OrderStatus?> GetDefaultAsync(CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        return await _context.Set<OrderStatus>().FirstOrDefaultAsync(s => s.IsDefault && !s.IsDeleted, ct);
     }
 }

@@ -138,6 +138,12 @@ public record UpdateOrderDto
     public string RowVersion { get; init; } = string.Empty;
 }
 
+public sealed class UpdateOrderItemDto
+{
+    public int OrderItemId { get; set; }
+    public int Quantity { get; set; }
+}
+
 public record CheckoutResultDto
 {
     public int OrderId { get; init; }

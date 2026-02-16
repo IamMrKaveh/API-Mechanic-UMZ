@@ -71,8 +71,16 @@ public static class InfrastructureServiceCollection
         services.AddScoped<INotificationService, NotificationService>();
 
         // -----------------------------
+        // Background Services
+        // -----------------------------
+        services.AddHostedService<ElasticsearchOutboxProcessor>();
+        services.AddHostedService<PaymentCleanupService>();
+
+        // -----------------------------
         // Infrastructure
         // -----------------------------
+        services.AddScoped<ISearchDatabaseSyncService, ElasticsearchDatabaseSyncService>();
+
         services.AddMemoryCache();
 
         var redisConn = configuration.GetConnectionString("Redis");

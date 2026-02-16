@@ -24,8 +24,8 @@ public class AdminShippingMethodsController : BaseApiController
     [HttpGet("{id}")]
     public async Task<IActionResult> GetShippingMethodById(int id)
     {
-        // نیاز به Query اختصاصی GetShippingMethodByIdQuery
-        return StatusCode(501, "Implement GetShippingMethodByIdQuery");
+        var result = await _mediator.Send(new GetShippingMethodByIdQuery(id));
+        return ToActionResult(result);
     }
 
     [HttpPost]

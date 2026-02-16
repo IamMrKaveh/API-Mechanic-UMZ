@@ -456,9 +456,29 @@ public class InventoryService : IInventoryService
             .FirstOrDefaultAsync(v => v.Id == variantId, ct);
     }
 
-    public Task<ServiceResult> RollbackReservationsAsync(string referenceNumber, CancellationToken ct = default)
+    public async Task<ServiceResult> RollbackReservationsAsync(string referenceNumber, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var transactions = await _context.InventoryTransactions
+            .Where(t => t.ReferenceNumber == referenceNumber && t.TransactionType == "Reservation" && !t.IsReversed)
+            .ToListAsync(ct);
+
+        foreach (var tx in transactions)
+        {
+            var variant = await _context.ProductVariants.FindAsync(new object[] { tx.VariantId }, ct);
+            if (variant != null && !variant.IsUnlimited)
+            {
+                variant.Release(Math.Abs(tx.QuantityChange));
+                tx.MarkAsReversed();
+
+                var rollbackTx = InventoryTransaction.Create(
+                    variant.Id, TransactionType.ReservationRollback, Math.Abs(tx.QuantityChange), variant.StockQuantity,
+                    null, "System rollback", tx.ReferenceNumber);
+
+                _context.InventoryTransactions.Add(rollbackTx);
+            }
+        }
+        await _context.SaveChangesAsync(ct);
+        return ServiceResult.Success();
     }
 
     #endregion Private Helpers
