@@ -2,6 +2,35 @@
 
 public class UpdateOrderItemHandler : IRequestHandler<UpdateOrderItemCommand, ServiceResult>
 {
-    public Task<ServiceResult> Handle(UpdateOrderItemCommand request, CancellationToken ct)
-        => Task.FromResult(ServiceResult.Failure("Modifying placed order items is not allowed."));
+    private readonly LedkaContext _context;
+    private readonly IOrderRepository _orderRepository;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public UpdateOrderItemHandler(LedkaContext context, IOrderRepository orderRepository, IUnitOfWork unitOfWork)
+    {
+        _context = context;
+        _orderRepository = orderRepository;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<ServiceResult> Handle(UpdateOrderItemCommand request, CancellationToken ct)
+    {
+        var orderItem = await _context.OrderItems.FirstOrDefaultAsync(oi => oi.Id == request.Id, ct);
+        if (orderItem == null) return ServiceResult.Failure("آیتم یافت نشد.", 404);
+
+        var order = await _orderRepository.GetByIdWithItemsAsync(orderItem.OrderId, ct);
+        if (order == null) return ServiceResult.Failure("سفارش یافت نشد.", 404);
+
+        try
+        {
+            order.UpdateItemQuantity(request.Id, request.Dto.Quantity);
+            _orderRepository.Update(order);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return ServiceResult.Success();
+        }
+        catch (DomainException ex)
+        {
+            return ServiceResult.Failure(ex.Message, 400);
+        }
+    }
 }

@@ -1,9 +1,10 @@
-﻿namespace Domain.Product;
+﻿namespace Domain.Variant.Entities;
 
-public class ProductVariantShippingMethod
+/// <summary>
+/// موجودیت واسط برای فعال/غیرفعال کردن روش‌های ارسال خاص برای یک واریانت
+/// </summary>
+public class ProductVariantShippingMethod : BaseEntity
 {
-    public int Id { get; set; }
-
     public int ProductVariantId { get; set; }
     public ProductVariant ProductVariant { get; set; } = null!;
 
@@ -11,8 +12,6 @@ public class ProductVariantShippingMethod
     public ShippingMethod ShippingMethod { get; set; } = null!;
 
     public bool IsActive { get; set; } = true;
-
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
     public DateTime? UpdatedAt { get; set; }
 }

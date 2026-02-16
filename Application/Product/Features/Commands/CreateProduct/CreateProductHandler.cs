@@ -1,4 +1,6 @@
-﻿namespace Application.Product.Features.Commands.CreateProduct;
+﻿using Domain.Attribute.Entities;
+
+namespace Application.Product.Features.Commands.CreateProduct;
 
 public class CreateProductHandler
     : IRequestHandler<CreateProductCommand, ServiceResult<AdminProductDetailDto>>

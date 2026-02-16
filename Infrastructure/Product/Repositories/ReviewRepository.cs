@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Product.Repositories;
+﻿using Domain.Review;
+
+namespace Infrastructure.Product.Repositories;
 
 public class ReviewRepository : IReviewRepository
 {

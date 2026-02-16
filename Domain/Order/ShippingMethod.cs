@@ -1,4 +1,6 @@
-﻿namespace Domain.Order;
+﻿using Domain.Variant.Entities;
+
+namespace Domain.Order;
 
 public class ShippingMethod : BaseEntity, ISoftDeletable, IActivatable, IAuditable
 {

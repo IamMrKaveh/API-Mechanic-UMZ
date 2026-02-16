@@ -1,4 +1,8 @@
-﻿namespace Infrastructure.Persistence.Context;
+﻿using Domain.Attribute.Entities;
+using Domain.Review;
+using Domain.Variant.Entities;
+
+namespace Infrastructure.Persistence.Context;
 
 public class LedkaContext : DbContext
 {

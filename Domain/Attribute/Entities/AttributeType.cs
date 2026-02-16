@@ -1,5 +1,12 @@
-﻿namespace Domain.Product;
+﻿using Domain.Common.Base;
+using Domain.Common.Interfaces;
+using Domain.Common.Exceptions;
 
+namespace Domain.Attribute.Entities;
+
+/// <summary>
+/// Aggregate Root برای ویژگی‌ها (مثل رنگ، سایز، جنس)
+/// </summary>
 public class AttributeType : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
 {
     public string Name { get; private set; } = null!;
@@ -15,20 +22,23 @@ public class AttributeType : AggregateRoot, IAuditable, ISoftDeletable, IActivat
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
+    // Navigation (Child Entities)
     private readonly List<AttributeValue> _values = new();
-    public IReadOnlyCollection<AttributeValue> Values => _values.AsReadOnly();
 
-    /// <summary>
-    /// Navigation alias برای EF Core — معادل Values
-    /// </summary>
     public IReadOnlyCollection<AttributeValue> AttributeValues => _values.AsReadOnly();
+
+    // Alias for compatibility
+    public IReadOnlyCollection<AttributeValue> Values => _values.AsReadOnly();
 
     private AttributeType()
     { }
 
+    // ============================================================
+    // Factory
+    // ============================================================
     public static AttributeType Create(string name, string displayName, int sortOrder, bool isActive)
     {
-        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Attribute name is required.");
+        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("نام ویژگی الزامی است.");
 
         return new AttributeType
         {
@@ -40,10 +50,13 @@ public class AttributeType : AggregateRoot, IAuditable, ISoftDeletable, IActivat
         };
     }
 
+    // ============================================================
+    // Behavior
+    // ============================================================
     public void Update(string name, string displayName, int sortOrder, bool isActive)
     {
-        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Attribute name is required.");
-        if (string.IsNullOrWhiteSpace(displayName)) throw new DomainException("Attribute display name is required.");
+        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("نام ویژگی الزامی است.");
+        if (string.IsNullOrWhiteSpace(displayName)) throw new DomainException("نام نمایشی الزامی است.");
 
         Name = name.Trim();
         DisplayName = displayName.Trim();
@@ -55,7 +68,7 @@ public class AttributeType : AggregateRoot, IAuditable, ISoftDeletable, IActivat
     public AttributeValue AddValue(string value, string displayValue, string? hexCode = null, int sortOrder = 0)
     {
         if (_values.Any(v => v.Value.Equals(value, StringComparison.OrdinalIgnoreCase) && !v.IsDeleted))
-            throw new DomainException($"Attribute value '{value}' already exists.");
+            throw new DomainException($"مقدار '{value}' قبلاً برای این ویژگی وجود دارد.");
 
         var attributeValue = AttributeValue.Create(this, value, displayValue, hexCode, sortOrder);
         _values.Add(attributeValue);
@@ -66,18 +79,18 @@ public class AttributeType : AggregateRoot, IAuditable, ISoftDeletable, IActivat
     public void UpdateValue(int valueId, string value, string displayValue, string? hexCode, int sortOrder, bool isActive)
     {
         var attrValue = _values.FirstOrDefault(v => v.Id == valueId);
-        if (attrValue == null) throw new DomainException("Attribute value not found.");
+        if (attrValue == null) throw new DomainException("مقدار ویژگی یافت نشد.");
 
         attrValue.Update(value, displayValue, hexCode, sortOrder, isActive);
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void RemoveValue(int valueId)
+    public void RemoveValue(int valueId, int? deletedBy = null)
     {
         var attrValue = _values.FirstOrDefault(v => v.Id == valueId);
-        if (attrValue == null) throw new DomainException("Attribute value not found.");
+        if (attrValue == null) throw new DomainException("مقدار ویژگی یافت نشد.");
 
-        attrValue.Delete();
+        attrValue.Delete(deletedBy);
         UpdatedAt = DateTime.UtcNow;
     }
 

@@ -210,12 +210,25 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
 
     private ProductSearchDocument MapToSearchDocument(Domain.Product.Product product)
     {
+        var brand = product.Variants
+            .SelectMany(v => v.VariantAttributes)
+            .Where(va => va.AttributeValue?.AttributeType?.Name.Equals("Brand", StringComparison.OrdinalIgnoreCase) == true)
+            .Select(va => va.AttributeValue!.DisplayValue)
+            .FirstOrDefault() ?? string.Empty;
+
+        var tags = product.Variants
+            .SelectMany(v => v.VariantAttributes)
+            .Select(va => va.AttributeValue?.DisplayValue)
+            .Where(v => !string.IsNullOrEmpty(v))
+            .Distinct()
+            .ToList();
+
         return new ProductSearchDocument
         {
             ProductId = product.Id,
             Name = product.Name,
             Description = product.Description ?? string.Empty,
-            Slug = string.Empty,
+            Slug = product.Name.Replace(" ", "-"),
             Sku = product.Sku ?? string.Empty,
             CategoryName = product.CategoryGroup?.Category?.Name ?? string.Empty,
             CategoryId = product.CategoryGroup?.Category?.Id ?? 0,
@@ -238,8 +251,8 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
             StockQuantity = product.TotalStock,
             CreatedAt = product.CreatedAt,
             UpdatedAt = product.UpdatedAt ?? product.CreatedAt,
-            Tags = new List<string>(),
-            Brand = string.Empty
+            Tags = tags!,
+            Brand = brand
         };
     }
 }

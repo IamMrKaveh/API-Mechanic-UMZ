@@ -1,4 +1,4 @@
-﻿namespace Domain.Product.Rules;
+﻿namespace Domain.Variant.Rules;
 
 public sealed class VariantSkuMustBeUniqueRule : IBusinessRule
 {

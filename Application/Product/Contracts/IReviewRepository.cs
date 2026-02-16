@@ -1,4 +1,6 @@
-﻿namespace Application.Product.Contracts;
+﻿using Domain.Review;
+
+namespace Application.Product.Contracts;
 
 public interface IReviewRepository
 {

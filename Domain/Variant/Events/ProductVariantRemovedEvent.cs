@@ -1,4 +1,4 @@
-﻿namespace Domain.Product.Events;
+﻿namespace Domain.Variant.Events;
 
 public sealed class ProductVariantRemovedEvent : DomainEvent
 {

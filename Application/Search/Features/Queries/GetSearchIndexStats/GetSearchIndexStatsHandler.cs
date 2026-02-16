@@ -2,9 +2,35 @@
 
 public class GetSearchIndexStatsHandler : IRequestHandler<GetSearchIndexStatsQuery, ServiceResult<object>>
 {
-    public Task<ServiceResult<object>> Handle(GetSearchIndexStatsQuery request, CancellationToken ct)
+    private readonly ElasticsearchClient _client;
+
+    public GetSearchIndexStatsHandler(ElasticsearchClient client)
     {
-        // Dummy implementation, map to actual Elastic client cluster stats in real life
-        return Task.FromResult(ServiceResult<object>.Success(new { Status = "Green", TotalDocuments = 1500 }));
+        _client = client;
+    }
+
+    public async Task<ServiceResult<object>> Handle(GetSearchIndexStatsQuery request, CancellationToken ct)
+    {
+        try
+        {
+            var healthResponse = await _client.Cluster.HealthAsync(cancellationToken: ct);
+            var statsResponse = await _client.Indices.StatsAsync(Indices.All, cancellationToken: ct);
+
+            if (!healthResponse.IsValidResponse || !statsResponse.IsValidResponse)
+                return ServiceResult<object>.Failure("خطا در دریافت وضعیت کلاستر الاستیک‌سرچ.");
+
+            return ServiceResult<object>.Success(new
+            {
+                Status = healthResponse.Status.ToString(),
+                TotalDocuments = statsResponse.All?.Total?.Docs?.Count ?? 0,
+                ClusterName = healthResponse.ClusterName,
+                NumberOfNodes = healthResponse.NumberOfNodes,
+                ActivePrimaryShards = healthResponse.ActivePrimaryShards
+            });
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult<object>.Failure($"خطا در ارتباط با سرور جستجو: {ex.Message}");
+        }
     }
 }

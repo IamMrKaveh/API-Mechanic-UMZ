@@ -75,6 +75,12 @@ public class OrderItem : BaseEntity
 
     public bool HasDiscount() => DiscountAtOrder.Amount > 0;
 
+    internal void UpdateQuantity(int quantity)
+    {
+        Quantity = quantity;
+        Recalculate();
+    }
+
     #endregion Query Methods
 
     #region Private Methods

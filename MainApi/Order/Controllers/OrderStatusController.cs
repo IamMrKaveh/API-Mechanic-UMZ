@@ -25,7 +25,8 @@ public class OrderStatusController : BaseApiController
     [AllowAnonymous]
     public async Task<IActionResult> GetOrderStatus(int id)
     {
-        // نیاز به GetOrderStatusByIdQuery
-        return StatusCode(501, "Implement GetOrderStatusByIdQuery");
+        var query = new GetOrderStatusByIdQuery(id);
+        var result = await _mediator.Send(query);
+        return ToActionResult(result);
     }
 }

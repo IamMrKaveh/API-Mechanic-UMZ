@@ -15,15 +15,48 @@ public class SmsService : ISmsService
     {
         try
         {
-            // TODO: اتصال به سرویس پیامک واقعی (Kavenegar, Ghasedak, etc.)
-            _logger.LogInformation(
-                "SMS sent to {PhoneNumber}: {Message}",
-                MaskPhoneNumber(phoneNumber),
-                message);
+            var apiKey = _configuration["Kavenegar:ApiKey"] ?? "6C43574D53556774665763527167557A75376D39687A7935666A78353777783238704A302F7053303367383D";
 
-            await Task.CompletedTask;
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                _logger.LogWarning("Kavenegar ApiKey is not configured.");
+                return SmsResult.Failed("تنظیمات سرویس پیامک ناقص است.");
+            }
 
-            return SmsResult.Success("mock-message-id");
+            var isVerifyTemplate = message.All(char.IsDigit) && message.Length >= 4 && message.Length <= 6;
+            var url = isVerifyTemplate
+                ? $"https://api.kavenegar.com/v1/{apiKey}/verify/lookup.json"
+                : $"https://api.kavenegar.com/v1/{apiKey}/sms/send.json";
+
+            using var http = new HttpClient();
+
+            var data = new Dictionary<string, string>();
+            if (isVerifyTemplate)
+            {
+                data.Add("receptor", phoneNumber);
+                data.Add("token", message);
+                data.Add("template", "verify");
+            }
+            else
+            {
+                data.Add("receptor", phoneNumber);
+                data.Add("message", message);
+                data.Add("sender", _configuration["Kavenegar:SenderNumber"] ?? "10008663");
+            }
+
+            var response = await http.PostAsync(url, new FormUrlEncodedContent(data), ct);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("SMS sent to {PhoneNumber} via Kavenegar.", MaskPhoneNumber(phoneNumber));
+                return SmsResult.Success(Guid.NewGuid().ToString());
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(ct);
+                _logger.LogError("Kavenegar failed. Status: {Status}, Content: {Content}", response.StatusCode, errorContent);
+                return SmsResult.Failed($"خطا در ارسال پیامک: {response.StatusCode}");
+            }
         }
         catch (Exception ex)
         {

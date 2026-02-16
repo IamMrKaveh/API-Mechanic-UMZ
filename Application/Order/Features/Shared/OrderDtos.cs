@@ -144,6 +144,16 @@ public sealed class UpdateOrderItemDto
     public int Quantity { get; set; }
 }
 
+public class UpdateOrderStatusDto
+{
+    public string? DisplayName { get; set; }
+    public string? Icon { get; set; }
+    public string? Color { get; set; }
+    public int? SortOrder { get; set; }
+    public bool? AllowCancel { get; set; }
+    public bool? AllowEdit { get; set; }
+}
+
 public record CheckoutResultDto
 {
     public int OrderId { get; init; }

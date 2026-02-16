@@ -1,4 +1,6 @@
-﻿namespace Application.Product.Features.Commands.SubmitReview;
+﻿using Domain.Review;
+
+namespace Application.Product.Features.Commands.SubmitReview;
 
 public class SubmitReviewHandler : IRequestHandler<SubmitReviewCommand, ServiceResult<ProductReviewDto>>
 {

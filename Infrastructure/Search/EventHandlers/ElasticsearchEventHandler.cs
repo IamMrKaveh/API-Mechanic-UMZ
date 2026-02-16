@@ -6,17 +6,20 @@ public class ElasticsearchEventHandler : IElasticsearchEventHandler
     private readonly IElasticBulkService _bulkService;
     private readonly ILogger<ElasticsearchEventHandler> _logger;
     private readonly LedkaContext _context;
+    private readonly ElasticsearchClient _elasticClient;
 
     public ElasticsearchEventHandler(
         ISearchService searchService,
         IElasticBulkService bulkService,
         ILogger<ElasticsearchEventHandler> logger,
-        LedkaContext context)
+        LedkaContext context,
+        ElasticsearchClient elasticClient)
     {
         _searchService = searchService;
         _bulkService = bulkService;
         _logger = logger;
         _context = context;
+        _elasticClient = elasticClient;
     }
 
     public void HandleProductChangedAsync(ProductChangedEvent @event, CancellationToken ct = default)
@@ -66,8 +69,11 @@ public class ElasticsearchEventHandler : IElasticsearchEventHandler
                     break;
 
                 case EntityChangeType.Deleted:
-                    // Note: Category deletion requires custom implementation based on your business logic
-                    _logger.LogInformation("Category {CategoryId} deletion event received", @event.EntityId);
+                    var deleteResponse = await _elasticClient.DeleteAsync<CategorySearchDocument>(@event.EntityId.ToString(), d => d.Index("categories_v1"), ct);
+                    if (!deleteResponse.IsValidResponse)
+                        _logger.LogWarning("Failed to delete Category {CategoryId} from index: {Error}", @event.EntityId, deleteResponse.DebugInformation);
+                    else
+                        _logger.LogInformation("Category {CategoryId} deleted from index", @event.EntityId);
                     break;
             }
         }
@@ -98,8 +104,11 @@ public class ElasticsearchEventHandler : IElasticsearchEventHandler
                     break;
 
                 case EntityChangeType.Deleted:
-                    // Note: CategoryGroup deletion requires custom implementation based on your business logic
-                    _logger.LogInformation("CategoryGroup {GroupId} deletion event received", @event.EntityId);
+                    var deleteResponse = await _elasticClient.DeleteAsync<CategoryGroupSearchDocument>(@event.EntityId.ToString(), d => d.Index("categorygroups_v1"), ct);
+                    if (!deleteResponse.IsValidResponse)
+                        _logger.LogWarning("Failed to delete CategoryGroup {GroupId} from index: {Error}", @event.EntityId, deleteResponse.DebugInformation);
+                    else
+                        _logger.LogInformation("CategoryGroup {GroupId} deleted from index", @event.EntityId);
                     break;
             }
         }
@@ -109,69 +118,4 @@ public class ElasticsearchEventHandler : IElasticsearchEventHandler
             throw;
         }
     }
-}
-
-/// <summary>
-/// Queue-based event processor for batching Elasticsearch updates
-/// </summary>
-public class ElasticsearchEventQueue
-{
-    private readonly ConcurrentQueue<IEntityChangeEvent> _eventQueue = new();
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
-    private readonly ILogger<ElasticsearchEventQueue> _logger;
-    private readonly int _maxQueueSize;
-    private int _currentSize = 0;
-
-    public ElasticsearchEventQueue(
-        ILogger<ElasticsearchEventQueue> logger,
-        IConfiguration configuration)
-    {
-        _logger = logger;
-        _maxQueueSize = configuration.GetValue("Elasticsearch:MaxEventQueueSize", 10000);
-    }
-
-    public bool EnqueueAsync(IEntityChangeEvent @event)
-    {
-        if (Interlocked.CompareExchange(ref _currentSize, 0, 0) >= _maxQueueSize)
-        {
-            _logger.LogWarning(
-                "Event queue is full ({CurrentSize}/{MaxSize}). Dropping event: {EntityType} {EntityId}",
-                _currentSize, _maxQueueSize, @event.EntityType, @event.EntityId);
-            return false;
-        }
-
-        _eventQueue.Enqueue(@event);
-        Interlocked.Increment(ref _currentSize);
-
-        _logger.LogDebug(
-            "Event enqueued: {EntityType} {EntityId} {ChangeType}. Queue size: {QueueSize}",
-            @event.EntityType, @event.EntityId, @event.ChangeType, _currentSize);
-
-        return true;
-    }
-
-    public async Task<List<IEntityChangeEvent>> DequeueAllAsync()
-    {
-        await _semaphore.WaitAsync();
-        try
-        {
-            var events = new List<IEntityChangeEvent>();
-            while (_eventQueue.TryDequeue(out var @event))
-            {
-                events.Add(@event);
-                Interlocked.Decrement(ref _currentSize);
-            }
-
-            _logger.LogInformation("Dequeued {Count} events from queue", events.Count);
-            return events;
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
-
-    public int Count => _currentSize;
-
-    public int MaxQueueSize => _maxQueueSize;
 }

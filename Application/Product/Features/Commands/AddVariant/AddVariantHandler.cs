@@ -1,4 +1,6 @@
-﻿namespace Application.Product.Features.Commands.AddVariant;
+﻿using Domain.Attribute.Entities;
+
+namespace Application.Product.Features.Commands.AddVariant;
 
 public class AddVariantHandler : IRequestHandler<AddVariantCommand, ServiceResult<ProductVariantViewDto>>
 {

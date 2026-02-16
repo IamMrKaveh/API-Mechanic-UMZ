@@ -1,4 +1,4 @@
-﻿namespace Domain.Product.Specifications;
+﻿namespace Domain.Variant.Specifications;
 
 public class ActiveVariantSpecification : Specification<ProductVariant>
 {

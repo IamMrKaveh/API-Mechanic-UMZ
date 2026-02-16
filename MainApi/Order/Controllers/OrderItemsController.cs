@@ -12,10 +12,10 @@ public class OrderItemsController : BaseApiController
         _mediator = mediator;
     }
 
-    [HttpPost]
-    public async Task<IActionResult> CreateOrderItem([FromBody] CreateOrderItemDto itemDto)
+    [HttpPost("{orderId}")]
+    public async Task<IActionResult> CreateOrderItem(int orderId, [FromBody] CreateOrderItemDto itemDto)
     {
-        var result = await _mediator.Send(new CreateOrderItemCommand(0, itemDto)); // Require actual implementation passing OrderId
+        var result = await _mediator.Send(new CreateOrderItemCommand(orderId, itemDto));
         return ToActionResult(result);
     }
 
