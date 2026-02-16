@@ -1,4 +1,7 @@
-﻿namespace Infrastructure.Persistence.Mapping;
+﻿using Domain.Attribute.Entities;
+using Domain.Review;
+
+namespace Infrastructure.Persistence.Mapping;
 
 public class MappingProfile : AutoMapper.Profile
 {

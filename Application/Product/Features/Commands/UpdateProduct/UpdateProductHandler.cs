@@ -1,4 +1,6 @@
-﻿namespace Application.Product.Features.Commands.UpdateProduct;
+﻿using Domain.Attribute.Entities;
+
+namespace Application.Product.Features.Commands.UpdateProduct;
 
 public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, ServiceResult<AdminProductViewDto>>
 {

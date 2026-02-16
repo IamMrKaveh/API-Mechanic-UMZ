@@ -1,8 +1,4 @@
-﻿using Application.Common.Features.Shared;
-using Application.Product.Features.Queries.GetProductById;
-using Application.Product.Features.Shared;
-
-namespace MainApi.Product.Controllers;
+﻿namespace MainApi.Product.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -13,6 +9,18 @@ public class ProductsController : ControllerBase
     public ProductsController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetProducts([FromQuery] ProductCatalogSearchParams searchParams)
+    {
+        var query = new Application.Product.Features.Queries.GetProductCatalog.GetProductCatalogQuery(searchParams);
+        var result = await _mediator.Send(query);
+
+        if (!result.IsSucceed)
+            return StatusCode(result.StatusCode, result);
+
+        return Ok(result.Data);
     }
 
     [HttpGet("{id}")]
@@ -26,6 +34,4 @@ public class ProductsController : ControllerBase
 
         return Ok(result);
     }
-
-    // Add search endpoint here using GetProductsQuery (Public)
 }

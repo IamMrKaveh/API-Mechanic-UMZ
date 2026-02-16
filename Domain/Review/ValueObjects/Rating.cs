@@ -1,4 +1,4 @@
-﻿namespace Domain.Product.ValueObjects;
+﻿namespace Domain.Review.ValueObjects;
 
 public sealed class Rating : ValueObject, IComparable<Rating>
 {

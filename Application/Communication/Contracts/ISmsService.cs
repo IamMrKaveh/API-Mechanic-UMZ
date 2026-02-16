@@ -8,7 +8,22 @@ public interface ISmsService
     /// <summary>
     /// ارسال پیامک ساده
     /// </summary>
-    Task<SmsResult> SendSmsAsync(string phoneNumber, string message, CancellationToken ct = default);
+    Task<SmsResult> SendSmsAsync(
+        string phoneNumber,
+        string message,
+        CancellationToken ct = default);
+
+    Task SendOrderConfirmationSmsAsync(
+        string phoneNumber,
+        string orderNumber,
+        decimal totalAmount,
+        CancellationToken ct = default);
+
+    Task SendPaymentSuccessSmsAsync(
+        string phoneNumber,
+        string orderNumber,
+        string refId,
+        CancellationToken ct = default);
 }
 
 public class SmsResult

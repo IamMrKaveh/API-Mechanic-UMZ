@@ -1,5 +1,6 @@
 ﻿using Application.Audit.Contracts;
 using Application.Security.Contracts;
+using Domain.Attribute.Entities;
 
 namespace Application.Product.Features.Commands.UpdateVariant;
 

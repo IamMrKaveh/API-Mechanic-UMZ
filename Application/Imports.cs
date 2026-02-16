@@ -68,6 +68,7 @@ global using Domain.User;
 global using Domain.User.Events;
 global using Domain.User.Services;
 global using Domain.User.ValueObjects;
+global using Elastic.Clients.Elasticsearch;
 global using FluentValidation;
 global using Ganss.Xss;
 global using MediatR;

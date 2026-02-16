@@ -1,4 +1,6 @@
-﻿namespace Application.Product.Contracts;
+﻿using Domain.Attribute.Entities;
+
+namespace Application.Product.Contracts;
 
 public interface IAttributeRepository
 {

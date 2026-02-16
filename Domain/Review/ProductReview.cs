@@ -1,4 +1,4 @@
-﻿namespace Domain.Product;
+﻿namespace Domain.Review;
 
 public class ProductReview : BaseEntity, IAuditable, ISoftDeletable
 {
@@ -19,13 +19,15 @@ public class ProductReview : BaseEntity, IAuditable, ISoftDeletable
 
     // Audit & Soft Delete
     public DateTime CreatedAt { get; private set; }
+
     public DateTime? UpdatedAt { get; private set; }
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
     // Navigation
-    public Product? Product { get; private set; }
+    public Product.Product? Product { get; private set; }
+
     public User.User? User { get; private set; }
     public Order.Order? Order { get; private set; }
 
@@ -161,5 +163,47 @@ public class ProductReview : BaseEntity, IAuditable, ISoftDeletable
         public const string Pending = "Pending";
         public const string Approved = "Approved";
         public const string Rejected = "Rejected";
+    }
+
+    public ProductReview AddReview(
+        int userId, int rating, string? title, string? comment,
+        bool isVerifiedPurchase, int? orderId = null)
+    {
+        EnsureNotDeleted();
+
+        if (_reviews.Any(r => !r.IsDeleted && r.UserId == userId && r.OrderId == orderId))
+            throw new DomainException("شما قبلاً برای این محصول نظر ثبت کرده‌اید.");
+
+        var review = ProductReview.Create(Id, userId, rating, title, comment, isVerifiedPurchase, orderId);
+        _reviews.Add(review);
+        RecalculateRating();
+
+        return review;
+    }
+
+    public void ApproveReview(int reviewId)
+    {
+        EnsureNotDeleted();
+        GetReviewOrThrow(reviewId).Approve();
+        RecalculateRating();
+    }
+
+    public void RejectReview(int reviewId)
+    {
+        EnsureNotDeleted();
+        GetReviewOrThrow(reviewId).Reject();
+        RecalculateRating();
+    }
+
+    public void ReplyToReview(int reviewId, string reply)
+    {
+        EnsureNotDeleted();
+        GetReviewOrThrow(reviewId).AddAdminReply(reply);
+    }
+
+    public void DeleteReview(int reviewId, int? deletedBy = null)
+    {
+        GetReviewOrThrow(reviewId).Delete(deletedBy);
+        RecalculateRating();
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Product.Repositories;
+﻿using Domain.Attribute.Entities;
+
+namespace Infrastructure.Product.Repositories;
 
 public class AttributeRepository : IAttributeRepository
 {

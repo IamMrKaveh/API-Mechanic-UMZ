@@ -346,6 +346,27 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
         return Status.CanTransitionTo(newStatus);
     }
 
+    public void UpdateItemQuantity(int orderItemId, int newQuantity)
+    {
+        EnsureCanModify();
+        var item = _orderItems.FirstOrDefault(i => i.Id == orderItemId);
+        if (item == null) throw new DomainException("آیتم یافت نشد.");
+        if (newQuantity <= 0) throw new DomainException("تعداد نامعتبر است.");
+
+        item.UpdateQuantity(newQuantity);
+        RecalculateTotals();
+    }
+
+    public void RemoveItem(int orderItemId)
+    {
+        EnsureCanModify();
+        var item = _orderItems.FirstOrDefault(i => i.Id == orderItemId);
+        if (item == null) throw new DomainException("آیتم یافت نشد.");
+
+        _orderItems.Remove(item);
+        RecalculateTotals();
+    }
+
     #endregion Query Methods
 
     #region Private Methods

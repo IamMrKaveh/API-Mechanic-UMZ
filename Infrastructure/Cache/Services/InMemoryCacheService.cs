@@ -4,6 +4,7 @@ public class InMemoryCacheService : ICacheService
 {
     private readonly IMemoryCache _cache;
     private readonly ConcurrentDictionary<string, object> _locks = new();
+    private readonly ConcurrentDictionary<string, bool> _allKeys = new();
     private readonly ILogger<InMemoryCacheService> _logger;
 
     public InMemoryCacheService(IMemoryCache cache, ILogger<InMemoryCacheService> logger)
@@ -27,23 +28,33 @@ public class InMemoryCacheService : ICacheService
         }
         else
         {
-            options.SetAbsoluteExpiration(TimeSpan.FromMinutes(30)); // default
+            options.SetAbsoluteExpiration(TimeSpan.FromMinutes(30));
         }
+
         _cache.Set(key, value, options);
+        _allKeys.TryAdd(key, true);
+
         return Task.FromResult(true);
     }
 
     public Task ClearAsync(string key)
     {
         _cache.Remove(key);
+        _allKeys.TryRemove(key, out _);
         return Task.CompletedTask;
     }
 
     public Task ClearByPrefixAsync(string prefix)
     {
-        // IMemoryCache does not support prefix-based removal natively.
-        // For production, use a tracking mechanism or Redis.
-        _logger.LogWarning("ClearByPrefixAsync is not fully supported with InMemoryCache. Prefix: {Prefix}", prefix);
+        var keysToRemove = _allKeys.Keys
+            .Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var key in keysToRemove)
+        {
+            _cache.Remove(key);
+            _allKeys.TryRemove(key, out _);
+        }
         return Task.CompletedTask;
     }
 
@@ -53,16 +64,17 @@ public class InMemoryCacheService : ICacheService
         if (_locks.TryAdd(lockKey, new object()))
         {
             _cache.Set(lockKey + "_expiry", true, expiry);
+            _allKeys.TryAdd(lockKey + "_expiry", true);
             return Task.FromResult(true);
         }
 
-        // Check if the lock expired
         if (!_cache.TryGetValue(lockKey + "_expiry", out _))
         {
             _locks.TryRemove(lockKey, out _);
             if (_locks.TryAdd(lockKey, new object()))
             {
                 _cache.Set(lockKey + "_expiry", true, expiry);
+                _allKeys.TryAdd(lockKey + "_expiry", true);
                 return Task.FromResult(true);
             }
         }
@@ -75,6 +87,7 @@ public class InMemoryCacheService : ICacheService
         var lockKey = $"lock:{key}";
         _locks.TryRemove(lockKey, out _);
         _cache.Remove(lockKey + "_expiry");
+        _allKeys.TryRemove(lockKey + "_expiry", out _);
         return Task.CompletedTask;
     }
 

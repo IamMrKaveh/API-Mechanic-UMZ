@@ -91,23 +91,18 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
             var otpCode = _otpService.GenerateSecureOtp();
             var otpHash = _otpService.HashOtp(otpCode);
 
-            // 8. ذخیره OTP از طریق User Aggregate (باطل کردن قبلی‌ها + افزودن جدید)
-            // نیاز به بارگذاری OTPها
+            // 8. ذخیره OTP از طریق User Aggregate
             var userWithOtps = await _userRepository.GetWithOtpsAsync(user.Id, cancellationToken);
             if (userWithOtps == null)
                 return ServiceResult.Failure("خطای داخلی.");
 
-            userWithOtps.InvalidateAllOtps();
-            var otp = UserOtp.Create(userWithOtps.Id, otpHash, 2);
-            // افزودن OTP به Aggregate از طریق متد internal
-            // چون GenerateOtp خودش کد تولید می‌کند و ما می‌خواهیم هش IOtpService را استفاده کنیم،
-            // مستقیماً OTP را اضافه می‌کنیم
+            userWithOtps.GenerateOtp(otpHash, 2);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // 9. ارسال OTP از طریق پیامک
             var smsResult = await _smsService.SendSmsAsync(normalizedPhone, otpCode, cancellationToken);
-            if (!smsResult.IsSuccess)
+            if (smsResult.IsFailed)
             {
                 _logger.LogError("ارسال OTP به {PhoneNumber} ناموفق بود: {Error}",
                     normalizedPhone, smsResult.ErrorMessage);

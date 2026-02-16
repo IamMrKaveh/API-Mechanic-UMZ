@@ -1,4 +1,6 @@
-﻿namespace Domain.User;
+﻿using System.Security.Cryptography;
+
+namespace Domain.User;
 
 public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
 {
@@ -12,6 +14,7 @@ public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
     private DateTime? _lockoutEnd;
     private DateTime? _lastLoginAt;
     private int _loginCount;
+    private string? _passwordHash;
 
     private readonly List<UserAddress> _userAddresses = new();
     private readonly List<UserOtp> _userOtps = new();
@@ -29,6 +32,7 @@ public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
     public DateTime? LockoutEnd => _lockoutEnd;
     public DateTime? LastLoginAt => _lastLoginAt;
     public int LoginCount => _loginCount;
+    public string? PasswordHash => _passwordHash;
 
     // Computed Properties
     public bool IsLockedOut => _lockoutEnd.HasValue && _lockoutEnd.Value > DateTime.UtcNow;
@@ -290,15 +294,12 @@ public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
 
     #region OTP Management
 
-    public UserOtp GenerateOtp(int expiryMinutes = 2)
+    public UserOtp GenerateOtp(string otpHash, int expiryMinutes = 2)
     {
         EnsureCanModify();
         EnsureNotLockedOut();
 
         InvalidateAllOtps();
-
-        var otpCode = GenerateOtpCode();
-        var otpHash = HashOtp(otpCode);
 
         var otp = UserOtp.Create(Id, otpHash, expiryMinutes);
         _userOtps.Add(otp);
@@ -725,6 +726,17 @@ public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
         }
     }
 
+    public void ChangePassword(string currentPasswordHash, string newPasswordHash)
+    {
+        EnsureCanModify();
+
+        if (!string.IsNullOrEmpty(_passwordHash) && _passwordHash != currentPasswordHash)
+            throw new DomainException("رمز عبور فعلی نادرست است.");
+
+        _passwordHash = newPasswordHash;
+        TouchUpdatedAt();
+    }
+
     private void TouchUpdatedAt()
     {
         UpdatedAt = DateTime.UtcNow;
@@ -821,15 +833,22 @@ public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
 
     private static string GenerateOtpCode(int length = 6)
     {
-        var random = new Random();
-        var otp = string.Empty;
+        Span<char> buffer = stackalloc char[6];
+        Span<char> digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        int available = 10;
+
+        Span<byte> rnd = stackalloc byte[1];
 
         for (int i = 0; i < length; i++)
         {
-            otp += random.Next(0, 10).ToString();
+            RandomNumberGenerator.Fill(rnd);
+            int index = rnd[0] % available;
+            buffer[i] = digits[index];
+            digits[index] = digits[available - 1];
+            available--;
         }
 
-        return otp;
+        return new string(buffer);
     }
 
     private static string HashOtp(string otp)
