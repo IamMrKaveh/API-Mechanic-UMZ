@@ -38,7 +38,7 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
     // Navigation for EF Core
     public User.User? User { get; private set; }
 
-    public ShippingMethod? ShippingMethod { get; private set; }
+    public Shipping.Shipping? ShippingMethod { get; private set; }
     public ICollection<Payment.PaymentTransaction> PaymentTransactions { get; private set; } = new List<Payment.PaymentTransaction>();
     public ICollection<DiscountUsage> DiscountUsages { get; private set; } = new List<DiscountUsage>();
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
@@ -222,6 +222,35 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
             Id, UserId,
             Convert.ToInt32(oldStatus.Value), Convert.ToInt32(OrderStatusValue.Returned.Value),
             oldStatus.DisplayName, OrderStatusValue.Returned.DisplayName));
+    }
+
+    /// <summary>
+    /// انقضای خودکار سفارش پرداخت‌نشده (Order Timeout).
+    /// </summary>
+    public void Expire()
+    {
+        EnsureNotDeleted();
+
+        if (IsPaid)
+            throw new DomainException("سفارش پرداخت شده نمی‌تواند منقضی شود.");
+
+        if (IsCancelled)
+            throw new DomainException("سفارش لغو شده است.");
+
+        if (Status == OrderStatusValue.Expired)
+            return; // idempotent
+
+        var oldStatus = Status;
+        Status = OrderStatusValue.Expired;
+        UpdatedAt = DateTime.UtcNow;
+
+        AddDomainEvent(new Events.OrderExpiredEvent(Id, UserId, OrderNumber.Value));
+        AddDomainEvent(new Events.OrderStatusChangedEvent(
+            Id, UserId,
+            Convert.ToInt32(oldStatus.Value),
+            Convert.ToInt32(OrderStatusValue.Expired.Value),
+            oldStatus.DisplayName,
+            OrderStatusValue.Expired.DisplayName));
     }
 
     #endregion State Transitions - Order Lifecycle

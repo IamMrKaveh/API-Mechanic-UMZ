@@ -38,12 +38,12 @@ public class TicketMessageDto
 
 public class CreateTicketDto
 {
-    public string Subject { get; set; }
-    public string Priority { get; set; }
-    public string Message { get; set; }
+    public string Subject { get; set; } = string.Empty;
+    public string Priority { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
 }
 
 public class AddTicketMessageDto
 {
-    public string Message { get; set; }
+    public string Message { get; set; } = string.Empty;
 }

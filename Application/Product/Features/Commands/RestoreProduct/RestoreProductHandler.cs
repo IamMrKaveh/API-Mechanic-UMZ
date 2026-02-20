@@ -35,7 +35,7 @@ public class RestoreProductHandler : IRequestHandler<RestoreProductCommand, Serv
         await _auditService.LogProductEventAsync(request.Id, "RestoreProduct", $"Product '{product.Name}' restored.", request.UserId);
 
         await _cacheService.ClearAsync($"product:{request.Id}");
-        await _cacheService.ClearAsync($"categorygroup:{product.CategoryGroupId}");
+        await _cacheService.ClearAsync($"categorygroup:{product.BrandId}");
 
         return ServiceResult.Success();
     }

@@ -53,9 +53,22 @@ public class OrderRepository : IOrderRepository
         await _context.Orders.AddAsync(order, ct);
     }
 
-    public void Update(Domain.Order.Order order)
+    public async Task UpdateAsync(
+        Domain.Order.Order order,
+        CancellationToken ct = default)
     {
-        _context.Orders.Update(order);
+        try
+        {
+            ct.ThrowIfCancellationRequested();
+
+            _context.Orders.Update(order);
+
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (Exception)
+        {
+            throw;
+        }
     }
 
     public void SetOriginalRowVersion(Domain.Order.Order entity, byte[] rowVersion)
@@ -97,5 +110,21 @@ public class OrderRepository : IOrderRepository
                      o.Status != OrderStatus.Statuses.Delivered &&
                      o.Status != OrderStatus.Statuses.Cancelled,
                 cancellationToken);
+    }
+
+    public async Task<Domain.Order.Order?> GetByOrderItemIdAsync(
+    int orderItemId,
+    CancellationToken ct = default)
+    {
+        return await _context.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(
+                o => o.OrderItems.Any(oi => oi.Id == orderItemId),
+                ct);
+    }
+
+    public Task<IEnumerable<Domain.Order.Order>> GetExpirableOrdersAsync(DateTime expiryThreshold, IEnumerable<string> statuses, CancellationToken ct)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Application.Order.Features.Shared;
+﻿using Application.Shipping.Features.Shared;
+
+namespace Application.Order.Features.Shared;
 
 // === View DTOs ===
 public class OrderDto
@@ -181,9 +183,6 @@ public record AdminCreateOrderItemDto
     public int Quantity { get; init; }
     public decimal SellingPrice { get; init; }
 }
-
-public class UpdateOrderStatusDto
-{ /* ... fields ... */ }
 
 public record CreateOrderDto
 {

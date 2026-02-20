@@ -1,4 +1,6 @@
-﻿namespace Domain.Order.Results;
+﻿using Domain.Common.Shared.ValueObjects;
+
+namespace Domain.Order.Results;
 
 /// <summary>
 /// نتیجه محاسبه مجموع سفارش

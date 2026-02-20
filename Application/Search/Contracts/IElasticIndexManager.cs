@@ -6,7 +6,7 @@ public interface IElasticIndexManager
 
     Task<bool> CreateCategoryIndexAsync(CancellationToken ct = default);
 
-    Task<bool> CreateCategoryGroupIndexAsync(CancellationToken ct = default);
+    Task<bool> CreateBrandIndexAsync(CancellationToken ct = default);
 
     Task<bool> DeleteIndexAsync(string indexName, CancellationToken ct = default);
 

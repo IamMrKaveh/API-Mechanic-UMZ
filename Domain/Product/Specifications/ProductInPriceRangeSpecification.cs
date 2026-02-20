@@ -15,7 +15,7 @@ public class ProductInPriceRangeSpecification : Specification<Product>
     {
         return p => p.IsActive &&
                     !p.IsDeleted &&
-                    p.MinPrice.Amount >= _minPrice &&
-                    p.MaxPrice.Amount <= _maxPrice;
+                    p.Stats.MinPrice.Amount >= _minPrice &&
+                    p.Stats.MaxPrice.Amount <= _maxPrice;
     }
 }

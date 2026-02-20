@@ -1,4 +1,4 @@
-﻿namespace Application.Features.Orders.Shared;
+﻿namespace Application.Order.Features.Shared;
 
 public class OrderMappingProfile : Profile
 {
@@ -34,7 +34,7 @@ public class OrderMappingProfile : Profile
         CreateMap<OrderStatus, OrderStatusDto>();
 
         // ShippingMethod -> ShippingMethodDto
-        CreateMap<ShippingMethod, ShippingMethodDto>()
+        CreateMap<Domain.Shipping.Shipping, ShippingMethodDto>()
             .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src =>
                 src.RowVersion != null ? Convert.ToBase64String(src.RowVersion) : null));
 

@@ -28,5 +28,5 @@ public interface ISearchService
 
     Task IndexCategoryAsync(CategorySearchDocument document, CancellationToken ct = default);
 
-    Task IndexCategoryGroupAsync(CategoryGroupSearchDocument document, CancellationToken ct = default);
+    Task IndexBrandAsync(BrandSearchDocument document, CancellationToken ct = default);
 }

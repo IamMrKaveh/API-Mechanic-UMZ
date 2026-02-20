@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Search.Services;
+﻿using SortOrder = Elastic.Clients.Elasticsearch.SortOrder;
+
+namespace Infrastructure.Search.Services;
 
 public class ElasticSearchService : ISearchService
 {
@@ -22,7 +24,7 @@ public class ElasticSearchService : ISearchService
             {
                 { "name", 5 },
                 { "categoryName", 3 },
-                { "categoryGroupName", 2 },
+                { "BrandName", 2 },
                 { "description", 1 },
                 { "brand", 2.5f },
                 { "tags", 2 }
@@ -60,7 +62,7 @@ public class ElasticSearchService : ISearchService
                 {
                     $"name^{_fieldBoosts["name"]}",
                     $"categoryName^{_fieldBoosts["categoryName"]}",
-                    $"categoryGroupName^{_fieldBoosts["categoryGroupName"]}",
+                    $"BrandName^{_fieldBoosts["BrandName"]}",
                     $"description^{_fieldBoosts["description"]}",
                     $"brand^{_fieldBoosts["brand"]}",
                     $"tags^{_fieldBoosts["tags"]}"
@@ -97,8 +99,8 @@ public class ElasticSearchService : ISearchService
         if (searchParams.CategoryId.HasValue)
             filterQueries.Add(new TermQuery { Field = "categoryId", Value = searchParams.CategoryId.Value });
 
-        if (searchParams.CategoryGroupId.HasValue)
-            filterQueries.Add(new TermQuery { Field = "categoryGroupId", Value = searchParams.CategoryGroupId.Value });
+        if (searchParams.BrandId.HasValue)
+            filterQueries.Add(new TermQuery { Field = "BrandId", Value = searchParams.BrandId.Value });
 
         if (searchParams.MinPrice.HasValue)
             filterQueries.Add(new NumberRangeQuery { Field = "price", Gte = (double)searchParams.MinPrice.Value });
@@ -169,7 +171,7 @@ public class ElasticSearchService : ISearchService
                             {
                                 $"name^{_fieldBoosts["name"]}",
                                 $"categoryName^{_fieldBoosts["categoryName"]}",
-                                $"categoryGroupName^{_fieldBoosts["categoryGroupName"]}",
+                                $"BrandName^{_fieldBoosts["BrandName"]}",
                                 $"description^{_fieldBoosts["description"]}",
                                 $"brand^{_fieldBoosts["brand"]}"
                             })
@@ -207,13 +209,13 @@ public class ElasticSearchService : ISearchService
     {
         var products = await SearchProductsInternalAsync(query, 10, ct);
         var categories = await SearchCategoriesInternalAsync(query, 5, ct);
-        var categoryGroups = await SearchCategoryGroupsInternalAsync(query, 5, ct);
+        var Brands = await SearchBrandsInternalAsync(query, 5, ct);
 
         return new GlobalSearchResultDto
         {
             Products = products,
             Categories = categories,
-            CategoryGroups = categoryGroups,
+            Brands = Brands,
             Query = query
         };
     }
@@ -317,20 +319,20 @@ public class ElasticSearchService : ISearchService
         _logger.LogInformation("Successfully indexed category {CategoryId}", document.CategoryId);
     }
 
-    public async Task IndexCategoryGroupAsync(CategoryGroupSearchDocument document, CancellationToken ct = default)
+    public async Task IndexBrandAsync(BrandSearchDocument document, CancellationToken ct = default)
     {
         var response = await _client.IndexAsync(document, i => i
-            .Index("categorygroups_v1")
-            .Id(document.CategoryGroupId)
+            .Index("Brands_v1")
+            .Id(document.BrandId)
             .Refresh(Refresh.WaitFor), ct);
 
         if (!response.IsValidResponse)
         {
-            _logger.LogError("Failed to index category group {CategoryGroupId}: {Error}", document.CategoryGroupId, response.DebugInformation);
-            throw new InvalidOperationException($"Failed to index category group {document.CategoryGroupId}");
+            _logger.LogError("Failed to index category group {BrandId}: {Error}", document.BrandId, response.DebugInformation);
+            throw new InvalidOperationException($"Failed to index category group {document.BrandId}");
         }
 
-        _logger.LogInformation("Successfully indexed category group {CategoryGroupId}", document.CategoryGroupId);
+        _logger.LogInformation("Successfully indexed category group {BrandId}", document.BrandId);
     }
 
     // ========== Private Helpers ==========
@@ -381,11 +383,11 @@ public class ElasticSearchService : ISearchService
         }).ToList();
     }
 
-    private async Task<List<CategoryGroupSearchSummaryDto>> SearchCategoryGroupsInternalAsync(
+    private async Task<List<BrandSearchSummaryDto>> SearchBrandsInternalAsync(
         string query, int maxResults, CancellationToken ct)
     {
-        var response = await _client.SearchAsync<CategoryGroupSearchDocument>(s => s
-            .Indices("categorygroups_v1")
+        var response = await _client.SearchAsync<BrandSearchDocument>(s => s
+            .Indices("Brands_v1")
             .Size(maxResults)
             .Query(q => q
                 .Match(m => m
@@ -396,11 +398,11 @@ public class ElasticSearchService : ISearchService
             ), ct);
 
         if (!response.IsValidResponse)
-            return new List<CategoryGroupSearchSummaryDto>();
+            return new List<BrandSearchSummaryDto>();
 
-        return response.Documents.Select(d => new CategoryGroupSearchSummaryDto
+        return response.Documents.Select(d => new BrandSearchSummaryDto
         {
-            Id = d.CategoryGroupId,
+            Id = d.BrandId,
             Name = d.Name,
             Slug = d.Slug,
             CategoryId = d.CategoryId,
@@ -421,8 +423,8 @@ public class ElasticSearchService : ISearchService
             Sku = doc.Sku,
             CategoryName = doc.CategoryName,
             CategoryId = doc.CategoryId,
-            CategoryGroupName = doc.CategoryGroupName,
-            CategoryGroupId = doc.CategoryGroupId,
+            BrandName = doc.BrandName,
+            BrandId = doc.BrandId,
             Price = doc.Price,
             DiscountedPrice = doc.DiscountedPrice.HasValue ? (decimal)doc.DiscountedPrice.Value : null,
             DiscountPercentage = doc.DiscountPercentage.HasValue ? (decimal)doc.DiscountPercentage.Value : null,

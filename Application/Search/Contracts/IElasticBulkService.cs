@@ -6,7 +6,7 @@ public interface IElasticBulkService
 
     Task<bool> BulkIndexCategoriesAsync(IEnumerable<CategorySearchDocument> categories, CancellationToken ct = default);
 
-    Task<bool> BulkIndexCategoryGroupsAsync(IEnumerable<CategoryGroupSearchDocument> categoryGroups, CancellationToken ct = default);
+    Task<bool> BulkIndexBrandsAsync(IEnumerable<BrandSearchDocument> Brands, CancellationToken ct = default);
 
     Task<bool> BulkDeleteProductsAsync(IEnumerable<int> productIds, CancellationToken ct = default);
 

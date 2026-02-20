@@ -1,11 +1,8 @@
-﻿using Application.Audit.Contracts;
-using Application.Security.Contracts;
-
-namespace Application.Product.Features.Commands.BulkUpdatePrices;
+﻿namespace Application.Product.Features.Commands.BulkUpdatePrices;
 
 public class BulkUpdatePricesHandler : IRequestHandler<BulkUpdatePricesCommand, ServiceResult>
 {
-    private readonly IProductRepository _productRepository;
+    private readonly IVariantRepository _variantRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditService _auditService;
     private readonly ICurrentUserService _currentUserService;
@@ -13,14 +10,14 @@ public class BulkUpdatePricesHandler : IRequestHandler<BulkUpdatePricesCommand, 
     private readonly ILogger<BulkUpdatePricesHandler> _logger;
 
     public BulkUpdatePricesHandler(
-        IProductRepository productRepository,
+        IVariantRepository variantRepository,
         IUnitOfWork unitOfWork,
         IAuditService auditService,
         ICurrentUserService currentUserService,
         ICacheService cacheService,
         ILogger<BulkUpdatePricesHandler> logger)
     {
-        _productRepository = productRepository;
+        _variantRepository = variantRepository;
         _unitOfWork = unitOfWork;
         _auditService = auditService;
         _currentUserService = currentUserService;
@@ -30,46 +27,34 @@ public class BulkUpdatePricesHandler : IRequestHandler<BulkUpdatePricesCommand, 
 
     public async Task<ServiceResult> Handle(BulkUpdatePricesCommand request, CancellationToken ct)
     {
-        // Group updates by product to load each aggregate once
-        var grouped = request.Updates.GroupBy(u => u.ProductId);
+        var updatesDict = request.Updates.ToDictionary(u => u.VariantId);
+        var variants = await _variantRepository.GetByIdsAsync(updatesDict.Keys, ct);
+
         var errors = new List<string>();
         var affectedProductIds = new HashSet<int>();
         var changesLog = new List<string>();
 
-        foreach (var group in grouped)
+        foreach (var variant in variants)
         {
-            var product = await _productRepository.GetByIdWithVariantsAsync(group.Key, ct);
-            if (product == null)
-            {
-                errors.Add($"Product {group.Key} not found.");
-                continue;
-            }
-
-            foreach (var update in group)
+            if (updatesDict.TryGetValue(variant.Id, out var update))
             {
                 try
                 {
-                    product.ChangeVariantPrices(
-                        update.VariantId,
-                        update.PurchasePrice,
-                        update.SellingPrice,
-                        update.OriginalPrice);
+                    variant.SetPricing(update.PurchasePrice, update.SellingPrice, update.OriginalPrice);
+                    _variantRepository.Update(variant);
 
-                    changesLog.Add($"Variant {update.VariantId}: Selling={update.SellingPrice}");
-                    affectedProductIds.Add(product.Id);
+                    changesLog.Add($"Variant {variant.Id}: Selling={update.SellingPrice}");
+                    affectedProductIds.Add(variant.ProductId);
                 }
                 catch (DomainException ex)
                 {
-                    errors.Add($"Variant {update.VariantId}: {ex.Message}");
+                    errors.Add($"Variant {variant.Id}: {ex.Message}");
                 }
             }
-
-            _productRepository.Update(product);
         }
 
         await _unitOfWork.SaveChangesAsync(ct);
 
-        // Clear cache for affected products
         foreach (var productId in affectedProductIds)
         {
             await _cacheService.ClearAsync($"product:{productId}");

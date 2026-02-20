@@ -38,7 +38,9 @@ public interface IOrderRepository
     /// <summary>
     /// به‌روزرسانی سفارش
     /// </summary>
-    void Update(Domain.Order.Order order);
+    Task UpdateAsync(
+        Domain.Order.Order order,
+        CancellationToken ct = default);
 
     /// <summary>
     /// تنظیم RowVersion اصلی برای Concurrency Control
@@ -50,4 +52,13 @@ public interface IOrderRepository
     Task<Domain.Order.Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken ct = default);
 
     Task<bool> HasActiveOrdersAsync(int userId, CancellationToken ct = default);
+
+    Task<Domain.Order.Order?> GetByOrderItemIdAsync(
+    int orderItemId,
+    CancellationToken ct = default);
+
+    Task<IEnumerable<Domain.Order.Order>> GetExpirableOrdersAsync(
+       DateTime expiryThreshold,
+       IEnumerable<string> statuses,
+       CancellationToken ct);
 }

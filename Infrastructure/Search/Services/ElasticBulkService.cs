@@ -124,28 +124,28 @@ public class ElasticBulkService : IElasticBulkService
         }
     }
 
-    public async Task<bool> BulkIndexCategoryGroupsAsync(IEnumerable<CategoryGroupSearchDocument> categoryGroups, CancellationToken ct = default)
+    public async Task<bool> BulkIndexBrandsAsync(IEnumerable<BrandSearchDocument> Brands, CancellationToken ct = default)
     {
         try
         {
-            var categoryGroupList = categoryGroups.ToList();
-            if (!categoryGroupList.Any())
+            var BrandList = Brands.ToList();
+            if (!BrandList.Any())
             {
                 _logger.LogWarning("No category groups to index");
                 return true;
             }
 
             var response = await _client.BulkAsync(b => b
-                .Index("categorygroups_v1")
-                .IndexMany(categoryGroupList, (op, doc) => op
-                    .Index("categorygroups_v1")
-                    .Id(doc.CategoryGroupId)
+                .Index("Brands_v1")
+                .IndexMany(BrandList, (op, doc) => op
+                    .Index("Brands_v1")
+                    .Id(doc.BrandId)
                 ), ct);
 
             if (!response.IsValidResponse)
             {
                 _logger.LogError("Bulk index category groups failed: {Error}", response.DebugInformation);
-                _metrics.RecordBulkOperationFailure("categorygroups_v1");
+                _metrics.RecordBulkOperationFailure("Brands_v1");
                 return false;
             }
 
@@ -160,20 +160,20 @@ public class ElasticBulkService : IElasticBulkService
                     failedItems.Count,
                     JsonSerializer.Serialize(failedItems));
 
-                _metrics.RecordBulkOperationPartialFailure(failedItems.Count, "categorygroups_v1");
+                _metrics.RecordBulkOperationPartialFailure(failedItems.Count, "Brands_v1");
             }
             else
             {
-                _metrics.RecordBulkOperationSuccess(categoryGroupList.Count, "categorygroups_v1");
+                _metrics.RecordBulkOperationSuccess(BrandList.Count, "Brands_v1");
             }
 
-            _logger.LogInformation("Successfully bulk indexed {Count} category groups", categoryGroupList.Count);
+            _logger.LogInformation("Successfully bulk indexed {Count} category groups", BrandList.Count);
             return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Exception during bulk index category groups");
-            _metrics.RecordBulkOperationFailure("categorygroups_v1");
+            _metrics.RecordBulkOperationFailure("Brands_v1");
             throw;
         }
     }

@@ -1,5 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Application.Features.Orders.Commands.DeleteOrder;
+﻿using Application.Features.Orders.Commands.DeleteOrder;
 
 namespace Application.Order.Features.Commands.DeleteOrder;
 
@@ -19,9 +18,9 @@ public class DeleteOrderHandler : IRequestHandler<DeleteOrderCommand, ServiceRes
         _auditService = auditService;
     }
 
-    public async Task<ServiceResult> Handle(DeleteOrderCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(DeleteOrderCommand request, CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+        var order = await _orderRepository.GetByIdAsync(request.OrderId, ct);
         if (order == null)
             return ServiceResult.Failure("سفارش یافت نشد.", 404);
 
@@ -35,8 +34,8 @@ public class DeleteOrderHandler : IRequestHandler<DeleteOrderCommand, ServiceRes
             return ServiceResult.Failure(ex.Message, 400);
         }
 
-        _orderRepository.Update(order);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _orderRepository.UpdateAsync(order, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         await _auditService.LogOrderEventAsync(
             order.Id,

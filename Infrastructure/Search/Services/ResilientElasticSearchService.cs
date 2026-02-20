@@ -49,6 +49,6 @@ public class ResilientElasticSearchService : ISearchService
     public Task IndexCategoryAsync(CategorySearchDocument doc, CancellationToken ct = default)
         => _innerService.IndexCategoryAsync(doc, ct);
 
-    public Task IndexCategoryGroupAsync(CategoryGroupSearchDocument doc, CancellationToken ct = default)
-        => _innerService.IndexCategoryGroupAsync(doc, ct);
+    public Task IndexBrandAsync(BrandSearchDocument doc, CancellationToken ct = default)
+        => _innerService.IndexBrandAsync(doc, ct);
 }

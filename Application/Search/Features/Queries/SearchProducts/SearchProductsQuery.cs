@@ -4,7 +4,7 @@ public record SearchProductsQuery : IRequest<ServiceResult<SearchResultDto<Produ
 {
     public string? Q { get; init; }
     public int? CategoryId { get; init; }
-    public int? CategoryGroupId { get; init; }
+    public int? BrandId { get; init; }
     public decimal? MinPrice { get; init; }
     public decimal? MaxPrice { get; init; }
     public string? Brand { get; init; }

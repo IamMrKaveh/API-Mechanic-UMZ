@@ -1,4 +1,6 @@
-﻿namespace Domain.Payment.ValueObjects;
+﻿using Domain.Common.Shared.ValueObjects;
+
+namespace Domain.Payment.ValueObjects;
 
 public sealed class PaymentStatistics : ValueObject
 {

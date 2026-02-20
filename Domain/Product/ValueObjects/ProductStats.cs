@@ -1,4 +1,6 @@
-﻿namespace Domain.Product.ValueObjects;
+﻿using Domain.Common.Shared.ValueObjects;
+
+namespace Domain.Product.ValueObjects;
 
 public sealed class ProductStats : ValueObject
 {
@@ -47,7 +49,7 @@ public sealed class ProductStats : ValueObject
         };
     }
 
-    internal ProductStats UpdateReviews(int count, decimal average)
+    public ProductStats UpdateReviews(int count, decimal average)
     {
         return new ProductStats
         {

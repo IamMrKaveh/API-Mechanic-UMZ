@@ -9,5 +9,5 @@ public interface IElasticsearchEventHandler
 
     Task HandleCategoryChangedAsync(CategoryChangedEvent @event, CancellationToken ct = default);
 
-    Task HandleCategoryGroupChangedAsync(CategoryGroupChangedEvent @event, CancellationToken ct = default);
+    Task HandleBrandChangedAsync(BrandChangedEvent @event, CancellationToken ct = default);
 }

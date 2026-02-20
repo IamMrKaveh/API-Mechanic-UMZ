@@ -11,7 +11,7 @@ public class OrderPricingService
     /// </summary>
     public OrderPricingSummary CalculateOrderPricing(
         IEnumerable<(ProductVariant Variant, int Quantity)> items,
-        ShippingMethod shippingMethod,
+        Shipping.Shipping shippingMethod,
         DiscountCode? discount = null)
     {
         var itemsList = items.ToList();

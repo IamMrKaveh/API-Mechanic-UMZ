@@ -3,7 +3,7 @@
 public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, ServiceResult<CheckoutResultDto>>
 {
     private readonly IOrderRepository _orderRepository;
-    private readonly IShippingMethodRepository _shippingMethodRepository;
+    private readonly IShippingRepository _shippingMethodRepository;
     private readonly ICartRepository _cartRepository;
     private readonly IUserRepository _userRepository;
     private readonly IDiscountService _discountService;
@@ -15,7 +15,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
 
     public CheckoutFromCartHandler(
         IOrderRepository orderRepository,
-        IShippingMethodRepository shippingMethodRepository,
+        IShippingRepository shippingMethodRepository,
         ICartRepository cartRepository,
         IUserRepository userRepository,
         IDiscountService discountService,

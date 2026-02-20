@@ -28,10 +28,12 @@ public class ExpireStalePaymentsHandler : IRequestHandler<ExpireStalePaymentsCom
         _logger = logger;
     }
 
-    public async Task<ServiceResult<int>> Handle(ExpireStalePaymentsCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<int>> Handle(
+        ExpireStalePaymentsCommand request,
+        CancellationToken ct)
     {
         var staleTransactions = await _paymentRepository.GetPendingExpiredTransactionsAsync(
-            request.CutoffTime, cancellationToken);
+            request.CutoffTime, ct);
 
         var transactionList = staleTransactions.ToList();
         if (!transactionList.Any())
@@ -53,7 +55,7 @@ public class ExpireStalePaymentsHandler : IRequestHandler<ExpireStalePaymentsCom
                     cancelledBy: 0,
                     reason: $"لغو خودکار - پرداخت {tx.Authority} منقضی شد.");
 
-                _orderRepository.Update(tx.Order);
+                await _orderRepository.UpdateAsync(tx.Order, ct);
 
                 // بازگشت رزرو موجودی
                 foreach (var item in tx.Order.OrderItems)
@@ -63,7 +65,7 @@ public class ExpireStalePaymentsHandler : IRequestHandler<ExpireStalePaymentsCom
                         item.Quantity,
                         userId: null,
                         reason: $"System rollback for expired payment {tx.Authority}",
-                        ct: cancellationToken);
+                        ct: ct);
                 }
             }
 
@@ -74,7 +76,7 @@ public class ExpireStalePaymentsHandler : IRequestHandler<ExpireStalePaymentsCom
 
         if (expiredCount > 0)
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
         }
 
         _logger.LogInformation("Expired {Count} stale payment transactions", expiredCount);

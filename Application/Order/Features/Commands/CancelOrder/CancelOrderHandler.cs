@@ -30,9 +30,9 @@ public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, ServiceRes
 
     public async Task<ServiceResult> Handle(
         CancelOrderCommand request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, cancellationToken);
+        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
 
         if (order == null)
             return ServiceResult.Failure("سفارش یافت نشد.", 404);
@@ -60,9 +60,9 @@ public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, ServiceRes
                     await _discountService.CancelDiscountUsageAsync(order.Id);
                 }
 
-                _orderRepository.Update(order);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-                await _unitOfWork.CommitTransactionAsync(cancellationToken);
+                await _orderRepository.UpdateAsync(order, ct);
+                await _unitOfWork.SaveChangesAsync(ct);
+                await _unitOfWork.CommitTransactionAsync(ct);
 
                 await _auditService.LogOrderEventAsync(
                     order.Id,
@@ -78,10 +78,10 @@ public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, ServiceRes
             }
             catch (Exception ex)
             {
-                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                await _unitOfWork.RollbackTransactionAsync(ct);
                 _logger.LogError(ex, "Error cancelling order {OrderId}", request.OrderId);
                 return ServiceResult.Failure("خطایی در لغو سفارش رخ داد.");
             }
-        }, cancellationToken);
+        }, ct);
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Domain.Cart;
+﻿using Domain.Variant;
+
+namespace Domain.Cart;
 
 /// <summary>
 /// آیتم سبد خرید - فقط از طریق Cart قابل تغییر

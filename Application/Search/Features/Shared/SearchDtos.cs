@@ -8,7 +8,7 @@ public class SearchProductsParams
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
     public int? CategoryId { get; set; }
-    public int? CategoryGroupId { get; set; }
+    public int? BrandId { get; set; }
     public decimal? MinPrice { get; set; }
     public decimal? MaxPrice { get; set; }
     public bool InStockOnly { get; set; }
@@ -42,8 +42,8 @@ public class ProductSearchResultItemDto
     public string? Sku { get; set; }
     public string? CategoryName { get; set; }
     public int CategoryId { get; set; }
-    public string? CategoryGroupName { get; set; }
-    public int CategoryGroupId { get; set; }
+    public string? BrandName { get; set; }
+    public int BrandId { get; set; }
     public decimal Price { get; set; }
     public decimal? DiscountedPrice { get; set; }
     public decimal? DiscountPercentage { get; set; }
@@ -62,7 +62,7 @@ public class GlobalSearchResultDto
 {
     public List<ProductSearchResultItemDto> Products { get; set; } = new();
     public List<CategorySearchSummaryDto> Categories { get; set; } = new();
-    public List<CategoryGroupSearchSummaryDto> CategoryGroups { get; set; } = new();
+    public List<BrandSearchSummaryDto> Brands { get; set; } = new();
     public string Query { get; set; } = string.Empty;
 }
 
@@ -75,7 +75,7 @@ public class CategorySearchSummaryDto
     public int ProductCount { get; set; }
 }
 
-public class CategoryGroupSearchSummaryDto
+public class BrandSearchSummaryDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -97,11 +97,11 @@ public class ProductSearchDocument
     public string Sku { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
     public int CategoryId { get; set; }
-    public string CategoryGroupName { get; set; } = string.Empty;
-    public int CategoryGroupId { get; set; }
+    public string BrandName { get; set; } = string.Empty;
+    public int BrandId { get; set; }
     public decimal Price { get; set; }
-    public float? DiscountedPrice { get; set; }
-    public float? DiscountPercentage { get; set; }
+    public double? DiscountedPrice { get; set; }
+    public double? DiscountPercentage { get; set; }
     public List<string> Images { get; set; } = new();
     public string ImageUrl { get; set; } = string.Empty;
     public string? Icon { get; set; }
@@ -110,11 +110,11 @@ public class ProductSearchDocument
     public int StockQuantity { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    public float AverageRating { get; set; }
+    public double AverageRating { get; set; }
     public int ReviewCount { get; set; }
     public int SalesCount { get; set; }
     public List<string> Tags { get; set; } = new();
-    public string Brand { get; set; } = string.Empty;
+    public Domain.Brand.Brand Brand { get; set; }
 }
 
 public class CategorySearchDocument
@@ -127,9 +127,9 @@ public class CategorySearchDocument
     public string? Icon { get; set; }
 }
 
-public class CategoryGroupSearchDocument
+public class BrandSearchDocument
 {
-    public int CategoryGroupId { get; set; }
+    public int BrandId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public int CategoryId { get; set; }

@@ -1,4 +1,6 @@
-﻿namespace Domain.Order.ValueObjects;
+﻿using Domain.Common.Shared.ValueObjects;
+
+namespace Domain.Order.ValueObjects;
 
 public sealed class OrderStatistics : ValueObject
 {

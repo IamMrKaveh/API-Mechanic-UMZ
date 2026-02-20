@@ -1,4 +1,6 @@
-﻿namespace Domain.Product.Rules;
+﻿using Domain.Variant;
+
+namespace Domain.Product.Rules;
 
 public sealed class ProductMustHaveAtLeastOneVariantRule : IBusinessRule
 {

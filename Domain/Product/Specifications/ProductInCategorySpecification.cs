@@ -11,7 +11,7 @@ public class ProductInCategorySpecification : Specification<Product>
 
     public override Expression<Func<Product, bool>> ToExpression()
     {
-        return p => p.CategoryGroup != null 
-        && p.CategoryGroup.CategoryId == _categoryId;
+        return p => p.Brand != null
+        && p.Brand.CategoryId == _categoryId;
     }
 }

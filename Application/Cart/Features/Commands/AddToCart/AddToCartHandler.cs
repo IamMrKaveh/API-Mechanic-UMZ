@@ -33,9 +33,10 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
         if (variant == null || !variant.IsActive || variant.IsDeleted)
             return ServiceResult<CartDetailDto>.Failure("محصول یافت نشد یا غیرفعال است.", 404);
 
-        if (!variant.IsUnlimited && variant.StockQuantity < request.Quantity)
+        // FIX #9: استفاده از AvailableStock (OnHand - Reserved) به‌جای StockQuantity
+        if (!variant.IsUnlimited && variant.AvailableStock < request.Quantity)
             return ServiceResult<CartDetailDto>.Failure(
-                $"موجودی کافی نیست. موجودی فعلی: {variant.StockQuantity}", 400);
+                $"موجودی کافی نیست. موجودی قابل دسترس: {variant.AvailableStock}", 400);
 
         // ۲. دریافت یا ایجاد سبد
         var cart = await _cartRepository.GetCartAsync(_currentUser.UserId, _currentUser.GuestId, cancellationToken);
@@ -46,17 +47,18 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
             await _cartRepository.AddAsync(cart, cancellationToken);
         }
 
-        // ۳. بررسی مجموع تعداد (آیتم موجود + جدید) با موجودی
+        // ۳. بررسی مجموع تعداد (آیتم موجود + جدید) با AvailableStock
         var existingItem = cart.FindItemByVariant(request.VariantId);
         if (existingItem != null && !variant.IsUnlimited)
         {
             var totalQuantity = existingItem.Quantity + request.Quantity;
-            if (totalQuantity > variant.StockQuantity)
+            // FIX #9: مقایسه با AvailableStock نه StockQuantity
+            if (totalQuantity > variant.AvailableStock)
                 return ServiceResult<CartDetailDto>.Failure(
-                    $"موجودی کافی نیست. موجودی فعلی: {variant.StockQuantity}، تعداد در سبد: {existingItem.Quantity}", 400);
+                    $"موجودی کافی نیست. موجودی قابل دسترس: {variant.AvailableStock}، تعداد در سبد: {existingItem.Quantity}", 400);
         }
 
-        // ۴. افزودن به سبد (Domain فقط ساختار را مدیریت می‌کند)
+        // ۴. افزودن به سبد
         cart.AddItem(request.VariantId, request.Quantity, variant.SellingPrice);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

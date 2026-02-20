@@ -5,13 +5,13 @@ namespace Application.Order.Features.Commands.UpdateOrder;
 public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, ServiceResult>
 {
     private readonly IOrderRepository _orderRepository;
-    private readonly IShippingMethodRepository _shippingMethodRepository;
+    private readonly IShippingRepository _shippingMethodRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdateOrderHandler> _logger;
 
     public UpdateOrderHandler(
         IOrderRepository orderRepository,
-        IShippingMethodRepository shippingMethodRepository,
+        IShippingRepository shippingMethodRepository,
         IUnitOfWork unitOfWork,
         ILogger<UpdateOrderHandler> logger)
     {
@@ -21,9 +21,9 @@ public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, ServiceRes
         _logger = logger;
     }
 
-    public async Task<ServiceResult> Handle(UpdateOrderCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(UpdateOrderCommand request, CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, cancellationToken);
+        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
         if (order == null)
             return ServiceResult.Failure("سفارش یافت نشد.", 404);
 
@@ -40,7 +40,7 @@ public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, ServiceRes
             if (request.Dto.ShippingMethodId.HasValue)
             {
                 var shippingMethod = await _shippingMethodRepository.GetByIdAsync(
-                    request.Dto.ShippingMethodId.Value, cancellationToken);
+                    request.Dto.ShippingMethodId.Value, ct);
 
                 if (shippingMethod == null || !shippingMethod.IsActive)
                     return ServiceResult.Failure("روش ارسال نامعتبر است.", 400);
@@ -49,8 +49,8 @@ public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, ServiceRes
                 order.UpdateShippingMethod(shippingMethod.Id, shippingCost);
             }
 
-            _orderRepository.Update(order);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _orderRepository.UpdateAsync(order, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult.Success();
         }

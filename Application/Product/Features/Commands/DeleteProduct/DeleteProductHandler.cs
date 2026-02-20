@@ -1,7 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Application.Security.Contracts;
-
-namespace Application.Product.Features.Commands.DeleteProduct;
+﻿namespace Application.Product.Features.Commands.DeleteProduct;
 
 public class DeleteProductHandler : IRequestHandler<DeleteProductCommand, ServiceResult>
 {
@@ -28,7 +25,7 @@ public class DeleteProductHandler : IRequestHandler<DeleteProductCommand, Servic
         if (product == null)
             return ServiceResult.Failure("Product not found.");
 
-        product.MarkAsDeleted(_currentUserService.UserId);
+        product.Delete(_currentUserService.UserId ?? 0);
         _productRepository.Update(product);
         await _unitOfWork.SaveChangesAsync(ct);
 

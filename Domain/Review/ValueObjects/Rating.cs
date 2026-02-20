@@ -1,11 +1,8 @@
 ﻿namespace Domain.Review.ValueObjects;
 
-public sealed class Rating : ValueObject, IComparable<Rating>
+public sealed class Rating : ValueObject
 {
     public int Value { get; }
-
-    private const int MinRating = 1;
-    private const int MaxRating = 5;
 
     private Rating(int value)
     {
@@ -14,44 +11,20 @@ public sealed class Rating : ValueObject, IComparable<Rating>
 
     public static Rating Create(int value)
     {
-        if (value < MinRating || value > MaxRating)
-            throw new DomainException($"امتیاز باید بین {MinRating} و {MaxRating} باشد.");
+        if (value < 1 || value > 5)
+            throw new DomainException("امتیاز باید بین ۱ تا ۵ باشد.");
 
         return new Rating(value);
     }
 
-    public static Rating One => new(1);
-    public static Rating Two => new(2);
-    public static Rating Three => new(3);
-    public static Rating Four => new(4);
-    public static Rating Five => new(5);
+    public static implicit operator int(Rating rating) => rating.Value;
 
-    public bool IsExcellent() => Value >= 4;
-
-    public bool IsGood() => Value >= 3;
-
-    public bool IsPoor() => Value <= 2;
-
-    public int CompareTo(Rating? other)
-    {
-        if (other == null) return 1;
-        return Value.CompareTo(other.Value);
-    }
+    public static implicit operator Rating(int value) => Create(value);
 
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;
     }
 
-    public override string ToString() => $"{Value} از {MaxRating}";
-
-    public static implicit operator int(Rating rating) => rating.Value;
-
-    public static bool operator >(Rating left, Rating right) => left.Value > right.Value;
-
-    public static bool operator <(Rating left, Rating right) => left.Value < right.Value;
-
-    public static bool operator >=(Rating left, Rating right) => left.Value >= right.Value;
-
-    public static bool operator <=(Rating left, Rating right) => left.Value <= right.Value;
+    public override string ToString() => Value.ToString();
 }

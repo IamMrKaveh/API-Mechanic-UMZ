@@ -1,6 +1,4 @@
-﻿using Application.Audit.Contracts;
-
-namespace Application.Order.Features.Commands.MarkOrderAsShipped;
+﻿namespace Application.Order.Features.Commands.MarkOrderAsShipped;
 
 public class MarkOrderAsShippedHandler : IRequestHandler<MarkOrderAsShippedCommand, ServiceResult>
 {
@@ -26,9 +24,9 @@ public class MarkOrderAsShippedHandler : IRequestHandler<MarkOrderAsShippedComma
 
     public async Task<ServiceResult> Handle(
         MarkOrderAsShippedCommand request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, cancellationToken);
+        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
         if (order == null)
             return ServiceResult.Failure("سفارش یافت نشد.", 404);
 
@@ -46,11 +44,11 @@ public class MarkOrderAsShippedHandler : IRequestHandler<MarkOrderAsShippedComma
             return ServiceResult.Failure(ex.Message, 400);
         }
 
-        _orderRepository.Update(order);
+        await _orderRepository.UpdateAsync(order, ct);
 
         try
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             await _notificationService.SendOrderStatusNotificationAsync(
                 order.UserId,

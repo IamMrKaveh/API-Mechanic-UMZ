@@ -12,9 +12,9 @@ public interface ISearchDatabaseSyncService
 
     Task SyncAllCategoriesAsync(CancellationToken ct = default);
 
-    Task SyncCategoryGroupAsync(int categoryGroupId, CancellationToken ct = default);
+    Task SyncBrandAsync(int BrandId, CancellationToken ct = default);
 
-    Task SyncAllCategoryGroupsAsync(CancellationToken ct = default);
+    Task SyncAllBrandsAsync(CancellationToken ct = default);
 
     Task FullSyncAsync(CancellationToken ct = default);
 }

@@ -1,6 +1,4 @@
-﻿using Application.User.Features.Queries.GetUsers;
-
-namespace MainApi.User.Controllers;
+﻿namespace MainApi.User.Controllers;
 
 [Route("api/admin/users")]
 [ApiController]
