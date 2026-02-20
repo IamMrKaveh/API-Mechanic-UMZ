@@ -4,6 +4,6 @@ public class InStockProductSpecification : Specification<Product>
 {
     public override Expression<Func<Product, bool>> ToExpression()
     {
-        return p => p.TotalStock > 0 || p.Variants.Any(v => v.IsUnlimited);
+        return p => p.Stats.TotalStock > 0 || p.Variants.Any(v => v.IsUnlimited);
     }
 }

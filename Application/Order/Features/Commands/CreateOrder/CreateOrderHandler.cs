@@ -4,7 +4,7 @@ public class AdminCreateOrderHandler : IRequestHandler<CreateOrderCommand, Servi
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IShippingMethodRepository _shippingMethodRepository;
+    private readonly IShippingRepository _shippingMethodRepository;
     private readonly IDiscountService _discountService;
     private readonly IInventoryService _inventoryService;
     private readonly IUnitOfWork _unitOfWork;
@@ -15,7 +15,7 @@ public class AdminCreateOrderHandler : IRequestHandler<CreateOrderCommand, Servi
     public AdminCreateOrderHandler(
         IOrderRepository orderRepository,
         IUserRepository userRepository,
-        IShippingMethodRepository shippingMethodRepository,
+        IShippingRepository shippingMethodRepository,
         IDiscountService discountService,
         IInventoryService inventoryService,
         IUnitOfWork unitOfWork,

@@ -115,11 +115,11 @@ public class ElasticIndexManager : IElasticIndexManager
                             .Fields(f => f.Keyword("keyword", k => k.Normalizer("persian_normalizer")))
                         )
                         .IntegerNumber(n => n.CategoryId)
-                        .Text(t => t.CategoryGroupName, td => td
+                        .Text(t => t.BrandName, td => td
                             .Analyzer("persian_advanced")
                             .Fields(f => f.Keyword("keyword", k => k.Normalizer("persian_normalizer")))
                         )
-                        .IntegerNumber(n => n.CategoryGroupId)
+                        .IntegerNumber(n => n.BrandId)
                         .FloatNumber(n => n.Price, nd => nd.GetType())
                         .FloatNumber(n => n.DiscountedPrice, nd => nd.GetType())
                         .FloatNumber(n => n.DiscountPercentage, nd => nd.GetType())
@@ -213,11 +213,11 @@ public class ElasticIndexManager : IElasticIndexManager
         }
     }
 
-    public async Task<bool> CreateCategoryGroupIndexAsync(CancellationToken ct = default)
+    public async Task<bool> CreateBrandIndexAsync(CancellationToken ct = default)
     {
         try
         {
-            var indexName = "categorygroups_v1";
+            var indexName = "Brands_v1";
 
             var response = await _client.Indices.CreateAsync(indexName, c => c
                 .Settings(s => s
@@ -243,8 +243,8 @@ public class ElasticIndexManager : IElasticIndexManager
                     )
                 )
                 .Mappings(m => m
-                    .Properties<CategoryGroupSearchDocument>(p => p
-                        .IntegerNumber(n => n.CategoryGroupId)
+                    .Properties<BrandSearchDocument>(p => p
+                        .IntegerNumber(n => n.BrandId)
                         .Text(t => t.Name, td => td
                             .Analyzer("persian_advanced")
                             .Fields(f => f.Keyword("keyword", k => k.Normalizer("persian_normalizer")))
@@ -272,9 +272,9 @@ public class ElasticIndexManager : IElasticIndexManager
 
         var productResult = await CreateProductIndexAsync(ct);
         var categoryResult = await CreateCategoryIndexAsync(ct);
-        var categoryGroupResult = await CreateCategoryGroupIndexAsync(ct);
+        var BrandResult = await CreateBrandIndexAsync(ct);
 
-        var success = productResult && categoryResult && categoryGroupResult;
+        var success = productResult && categoryResult && BrandResult;
 
         if (success)
         {

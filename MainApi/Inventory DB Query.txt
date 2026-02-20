@@ -1,0 +1,34 @@
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Migration: Add CorrelationId, CartId, ExpiresAt to InventoryTransactions
+-- Add Commit to TransactionType (no schema change needed - stored as string)
+-- FIX #13
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- 1. اضافه کردن ستون‌های جدید
+ALTER TABLE "InventoryTransactions"
+    ADD COLUMN IF NOT EXISTS "CorrelationId"  VARCHAR(200)  NULL,
+    ADD COLUMN IF NOT EXISTS "CartId"          VARCHAR(200)  NULL,
+    ADD COLUMN IF NOT EXISTS "ExpiresAt"       TIMESTAMPTZ   NULL;
+
+-- 2. Unique Index برای Idempotency (CorrelationId + VariantId + TransactionType)
+CREATE UNIQUE INDEX IF NOT EXISTS "IX_InventoryTransactions_Idempotency"
+    ON "InventoryTransactions" ("VariantId", "TransactionType", "CorrelationId")
+    WHERE "CorrelationId" IS NOT NULL;
+
+-- 3. Index برای BackgroundService جستجوی رزروهای منقضی
+CREATE INDEX IF NOT EXISTS "IX_InventoryTransactions_ExpiredReservations"
+    ON "InventoryTransactions" ("TransactionType", "ExpiresAt", "IsReversed")
+    WHERE "ExpiresAt" IS NOT NULL AND "IsReversed" = false;
+
+-- 4. Index برای ReferenceNumber
+CREATE INDEX IF NOT EXISTS "IX_InventoryTransactions_Reference"
+    ON "InventoryTransactions" ("ReferenceNumber", "TransactionType", "IsReversed");
+
+-- 5. Index روی VariantId (اگر وجود ندارد)
+CREATE INDEX IF NOT EXISTS "IX_InventoryTransactions_VariantId"
+    ON "InventoryTransactions" ("VariantId");
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- NOTE: مقدار "Commit" برای TransactionType.Commit به‌عنوان string ذخیره می‌شود
+-- نیازی به تغییر schema نیست - TransactionType فیلد VARCHAR(50) است
+-- ─────────────────────────────────────────────────────────────────────────────

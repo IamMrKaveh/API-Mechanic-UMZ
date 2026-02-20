@@ -17,7 +17,7 @@ public class SearchProductsHandler
         {
             Q = request.Q ?? string.Empty,
             CategoryId = request.CategoryId,
-            CategoryGroupId = request.CategoryGroupId,
+            BrandId = request.BrandId,
             MinPrice = request.MinPrice,
             MaxPrice = request.MaxPrice,
             Brand = request.Brand,

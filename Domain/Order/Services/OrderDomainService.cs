@@ -13,7 +13,7 @@ public sealed class OrderDomainService
         int userId,
         UserAddress userAddress,
         string receiverName,
-        ShippingMethod shippingMethod,
+        Shipping.Shipping shippingMethod,
         string idempotencyKey,
         IEnumerable<OrderItemSnapshot> items,
         DiscountApplicationResult? discountResult = null)
@@ -114,7 +114,7 @@ public sealed class OrderDomainService
     /// </summary>
     public OrderTotals CalculateOrderTotals(
         IEnumerable<OrderItemSnapshot> items,
-        ShippingMethod shippingMethod,
+        Shipping.Shipping shippingMethod,
         Money? discountAmount = null)
     {
         Guard.Against.Null(items, nameof(items));
@@ -199,5 +199,5 @@ public sealed class OrderDomainService
         return 1m;
     }
 
-    #endregion
+    #endregion Private Methods
 }

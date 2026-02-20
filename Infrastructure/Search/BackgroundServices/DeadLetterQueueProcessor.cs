@@ -66,10 +66,10 @@ public class DeadLetterQueueProcessor : BackgroundService
                             await searchService.IndexCategoryAsync(category, ct);
                         break;
 
-                    case "CategoryGroup":
-                        var group = JsonSerializer.Deserialize<CategoryGroupSearchDocument>(operation.Document);
+                    case "Brand":
+                        var group = JsonSerializer.Deserialize<BrandSearchDocument>(operation.Document);
                         if (group != null)
-                            await searchService.IndexCategoryGroupAsync(group, ct);
+                            await searchService.IndexBrandAsync(group, ct);
                         break;
                 }
 

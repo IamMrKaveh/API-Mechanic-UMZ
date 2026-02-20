@@ -184,14 +184,14 @@ public sealed class OrderItemSnapshot
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
 
         return new OrderItemSnapshot(
-            variant.Id,
-            variant.ProductId,
-            variant.Product?.Name ?? "محصول",
-            variant.Sku,
-            variant.GetAttributesSummary(),
-            quantity,
-            Money.FromDecimal(variant.PurchasePrice),
-            Money.FromDecimal(variant.SellingPrice),
-            Money.FromDecimal(variant.OriginalPrice));
+                    variant.Id,
+                    variant.ProductId,
+                    variant.Product?.Name.Value ?? "محصول",
+                    variant.Sku?.Value,
+                    variant.DisplayName,
+                    quantity,
+                    Money.FromDecimal(variant.PurchasePrice),
+                    Money.FromDecimal(variant.SellingPrice),
+                    Money.FromDecimal(variant.OriginalPrice));
     }
 }

@@ -11,6 +11,6 @@ public class ProductWithMinRatingSpecification : Specification<Product>
 
     public override Expression<Func<Product, bool>> ToExpression()
     {
-        return p => p.IsActive && !p.IsDeleted && p.AverageRating >= _minRating;
+        return p => p.IsActive && !p.IsDeleted && p.Stats.AverageRating >= _minRating;
     }
 }

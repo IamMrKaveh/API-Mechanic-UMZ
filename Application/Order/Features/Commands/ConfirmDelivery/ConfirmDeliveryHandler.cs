@@ -1,6 +1,4 @@
-﻿using Application.Audit.Contracts;
-
-namespace Application.Order.Features.Commands.ConfirmDelivery;
+﻿namespace Application.Order.Features.Commands.ConfirmDelivery;
 
 public class ConfirmDeliveryHandler : IRequestHandler<ConfirmDeliveryCommand, ServiceResult>
 {
@@ -26,9 +24,9 @@ public class ConfirmDeliveryHandler : IRequestHandler<ConfirmDeliveryCommand, Se
 
     public async Task<ServiceResult> Handle(
         ConfirmDeliveryCommand request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+        var order = await _orderRepository.GetByIdAsync(request.OrderId, ct);
         if (order == null)
             return ServiceResult.Failure("سفارش یافت نشد.", 404);
 
@@ -50,11 +48,11 @@ public class ConfirmDeliveryHandler : IRequestHandler<ConfirmDeliveryCommand, Se
             return ServiceResult.Failure(ex.Message, 400);
         }
 
-        _orderRepository.Update(order);
+        await _orderRepository.UpdateAsync(order, ct);
 
         try
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             await _notificationService.SendOrderStatusNotificationAsync(
                 order.UserId,

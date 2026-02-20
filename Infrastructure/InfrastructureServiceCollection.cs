@@ -1,4 +1,11 @@
-﻿using IConfigurationProvider = AutoMapper.IConfigurationProvider;
+﻿using Infrastructure.Audit.BackgroundServices;
+using Infrastructure.Audit.Services;
+using Infrastructure.Cache.Redis.Lock;
+using Infrastructure.Cache.Services;
+using Infrastructure.Order.BackgroundServices;
+using Infrastructure.Payment.Factory;
+using Infrastructure.Payment.Services;
+using IConfigurationProvider = AutoMapper.IConfigurationProvider;
 
 namespace Infrastructure;
 
@@ -70,6 +77,28 @@ public static class InfrastructureServiceCollection
         services.AddScoped<IReviewQueryService, ReviewQueryService>();
         services.AddScoped<INotificationService, NotificationService>();
 
+        // ─── Core Inventory Services ─────────────────────────────────────────
+        services.AddScoped<IInventoryService, InventoryService>();
+        services.AddScoped<IInventoryQueryService, InventoryQueryService>();
+        services.AddScoped<InventoryDomainService>();
+
+        // ─── FIX #1: BackgroundService برای آزادسازی رزروهای منقضی ──────────
+        services.AddHostedService<InventoryReservationExpiryService>();
+
+        // ─── FIX #7: Cache Invalidation Handler ──────────────────────────────
+        // VariantStockCacheInvalidationHandler از طریق MediatR Pipeline register می‌شود
+        // (چون INotificationHandler است - اگر از MediatR DI scan استفاده می‌کنید خودکار register می‌شود)
+        // در غیر این صورت:
+        services.AddScoped<INotificationHandler<VariantStockChangedEvent>, VariantStockCacheInvalidationHandler>();
+
+        // ─── FIX #8: Search Sync Handler ─────────────────────────────────────
+        services.AddScoped<INotificationHandler<VariantStockChangedEvent>, InventoryStockSearchSyncHandler>();
+        services.AddScoped<INotificationHandler<StockCommittedEvent>, InventoryStockSearchSyncHandler>();
+        services.AddScoped<INotificationHandler<StockReturnedEvent>, InventoryStockSearchSyncHandler>();
+
+        // ─── FIX #2: Payment Succeeded Event Handler ─────────────────────────
+        services.AddScoped<INotificationHandler<PaymentSucceededEvent>, PaymentSucceededInventoryCommitEventHandler>();
+
         // -----------------------------
         // Background Services
         // -----------------------------
@@ -80,6 +109,43 @@ public static class InfrastructureServiceCollection
         // Infrastructure
         // -----------------------------
         services.AddScoped<ISearchDatabaseSyncService, ElasticsearchDatabaseSyncService>();
+
+        // Saga
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<
+            Application.Order.Sagas.OrderProcessManagerSaga>());
+
+        // Background Services
+        services.AddHostedService<OrderExpiryBackgroundService>();
+
+        // تنظیمات درگاه پرداخت
+        services.Configure<PaymentGatewayOptions>(
+            configuration.GetSection(PaymentGatewayOptions.SectionName));
+
+        // Factory - تمام IPaymentGateway‌ها به صورت خودکار تزریق می‌شوند
+        services.AddSingleton<IPaymentGatewayFactory, PaymentGatewayFactory>();
+
+        // Idempotent Payment Service جایگزین سرویس قبلی
+        services.AddScoped<IPaymentService, IdempotentPaymentService>();
+
+        // Background Services
+        services.AddHostedService<PaymentReconciliationService>();
+
+        services.AddScoped<IStockLedgerService, StockLedgerService>();
+
+        // Cache Invalidation Service
+        services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
+
+        // Distributed Lock
+        services.AddSingleton<IDistributedLock, RedisDistributedLock>();
+
+        // Masking Service
+        services.AddSingleton<IAuditMaskingService, AuditMaskingService>();
+
+        // Enhanced Audit Service (جایگزین AuditService قبلی)
+        services.AddScoped<IAuditService, EnhancedAuditService>();
+
+        // Retention Background Service
+        services.AddHostedService<AuditRetentionService>();
 
         services.AddMemoryCache();
 

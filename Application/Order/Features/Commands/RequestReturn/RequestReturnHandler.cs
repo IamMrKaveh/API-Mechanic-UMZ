@@ -1,6 +1,4 @@
-﻿using Application.Audit.Contracts;
-
-namespace Application.Order.Features.Commands.RequestReturn;
+﻿namespace Application.Order.Features.Commands.RequestReturn;
 
 public class RequestReturnHandler : IRequestHandler<RequestReturnCommand, ServiceResult>
 {
@@ -26,9 +24,9 @@ public class RequestReturnHandler : IRequestHandler<RequestReturnCommand, Servic
 
     public async Task<ServiceResult> Handle(
         RequestReturnCommand request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, cancellationToken);
+        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
         if (order == null)
             return ServiceResult.Failure("سفارش یافت نشد.", 404);
 
@@ -49,11 +47,11 @@ public class RequestReturnHandler : IRequestHandler<RequestReturnCommand, Servic
             return ServiceResult.Failure(ex.Message, 400);
         }
 
-        _orderRepository.Update(order);
+        await _orderRepository.UpdateAsync(order, ct);
 
         try
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             await _notificationService.SendOrderStatusNotificationAsync(
                 order.UserId,

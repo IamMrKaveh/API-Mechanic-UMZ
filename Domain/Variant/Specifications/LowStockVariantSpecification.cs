@@ -11,9 +11,9 @@ public class LowStockVariantSpecification : Specification<ProductVariant>
 
     public override Expression<Func<ProductVariant, bool>> ToExpression()
     {
-        return v => !v.IsUnlimited &&
-                    !v.IsDeleted &&
-                    (v.StockQuantity - v.ReservedQuantity) > 0 &&
-                    (v.StockQuantity - v.ReservedQuantity) <= _threshold;
+        return v => !v.IsUnlimited
+                    && !v.IsDeleted
+                    && v.IsActive
+                    && (v.StockQuantity - v.ReservedQuantity) <= _threshold;
     }
 }

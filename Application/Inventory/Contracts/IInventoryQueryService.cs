@@ -1,6 +1,4 @@
-﻿using Application.Inventory.Features.Shared;
-
-namespace Application.Inventory.Contracts;
+﻿namespace Application.Inventory.Contracts;
 
 /// <summary>
 /// Read-side Query Service برای Inventory
@@ -12,6 +10,11 @@ public interface IInventoryQueryService
     /// وضعیت موجودی یک واریانت
     /// </summary>
     Task<InventoryStatusDto?> GetInventoryStatusAsync(int variantId, CancellationToken ct = default);
+
+    /// <summary>
+    /// وضعیت real-time واریانت برای Availability endpoint
+    /// </summary>
+    Task<VariantStockStatusDto?> GetVariantStatusAsync(int variantId, CancellationToken ct = default);
 
     /// <summary>
     /// محصولات با موجودی کم
@@ -39,4 +42,17 @@ public interface IInventoryQueryService
     /// آمار انبار
     /// </summary>
     Task<InventoryStatisticsDto> GetStatisticsAsync(CancellationToken ct = default);
+}
+
+/// <summary>
+/// DTO برای وضعیت موجودی real-time
+/// </summary>
+public class VariantStockStatusDto
+{
+    public int VariantId { get; set; }
+    public int StockQuantity { get; set; }
+    public int ReservedQuantity { get; set; }
+    public int AvailableStock { get; set; }
+    public bool IsInStock { get; set; }
+    public bool IsUnlimited { get; set; }
 }

@@ -31,22 +31,21 @@ public class AdminProductsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ServiceResult<AdminProductViewDto>>> Create([FromForm] CreateProductCommand command)
+    public async Task<IActionResult> Create([FromBody] CreateProductInput input)
     {
-        var result = await _mediator.Send(command);
-        if (result.IsFailed)
-            return StatusCode(result.StatusCode, result);
-        return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result);
+        var command = new CreateProductCommand(input);
+        var productId = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetById), new { id = productId }, productId);
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<ServiceResult<AdminProductViewDto>>> Update(int id, [FromForm] UpdateProductCommand command)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductInput input)
     {
-        if (id != command.Id) return BadRequest();
-        var result = await _mediator.Send(command);
-        if (result.IsFailed)
-            return StatusCode(result.StatusCode, result);
-        return Ok(result);
+        if (id != input.Id) return BadRequest();
+
+        var command = new UpdateProductCommand(input);
+        await _mediator.Send(command);
+        return NoContent();
     }
 
     [HttpDelete("{id}")]

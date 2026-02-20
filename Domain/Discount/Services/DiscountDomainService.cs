@@ -1,4 +1,6 @@
-﻿namespace Domain.Discount.Services;
+﻿using Domain.Common.Shared.ValueObjects;
+
+namespace Domain.Discount.Services;
 
 /// <summary>
 /// Domain Service برای عملیات‌های پیچیده بین چند Aggregate

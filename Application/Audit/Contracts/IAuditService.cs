@@ -26,4 +26,6 @@ public interface IAuditService
     /// </summary>
     Task<(IEnumerable<AuditDtos> Logs, int TotalItems)> GetAuditLogsAsync(
         int? userId, string? eventType, DateTime? fromDate, DateTime? toDate, int page, int pageSize);
+
+    Task<byte[]> ExportToCsvAsync(AuditExportRequest request, CancellationToken ct = default);
 }

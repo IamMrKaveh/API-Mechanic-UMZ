@@ -107,25 +107,18 @@ public class ElasticsearchOutboxProcessor : BackgroundService
         switch (message.EntityType)
         {
             case "Product":
-                var productDoc = JsonSerializer.Deserialize<ProductSearchDocument>(message.Document);
-                if (productDoc != null)
-                    await searchService.IndexProductAsync(productDoc, ct);
+                var productDoc = System.Text.Json.JsonSerializer.Deserialize<ProductSearchDocument>(message.Document!);
+                if (productDoc != null) await searchService.IndexProductAsync(productDoc, ct);
                 break;
 
             case "Category":
-                var categoryDoc = JsonSerializer.Deserialize<CategorySearchDocument>(message.Document);
-                if (categoryDoc != null)
-                    await searchService.IndexCategoryAsync(categoryDoc, ct);
+                var categoryDoc = System.Text.Json.JsonSerializer.Deserialize<CategorySearchDocument>(message.Document!);
+                if (categoryDoc != null) await searchService.IndexCategoryAsync(categoryDoc, ct);
                 break;
 
-            case "CategoryGroup":
-                var groupDoc = JsonSerializer.Deserialize<CategoryGroupSearchDocument>(message.Document);
-                if (groupDoc != null)
-                    await searchService.IndexCategoryGroupAsync(groupDoc, ct);
-                break;
-
-            default:
-                _logger.LogWarning("Unknown entity type in outbox: {EntityType}", message.EntityType);
+            case "Brand":
+                var groupDoc = System.Text.Json.JsonSerializer.Deserialize<BrandSearchDocument>(message.Document!);
+                if (groupDoc != null) await searchService.IndexBrandAsync(groupDoc, ct);
                 break;
         }
     }

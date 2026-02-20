@@ -10,6 +10,18 @@ public sealed class OrderStatusValue : ValueObject
     public int SortOrder { get; }
     public bool IsFinal { get; }
 
+    public static readonly OrderStatusValue Created
+    = new("Created", "ایجاد شده", -1, false);
+
+    public static readonly OrderStatusValue Reserved
+        = new("Reserved", "رزرو شده", 0, false);
+
+    public static readonly OrderStatusValue Failed
+        = new("Failed", "ناموفق", 8, true);
+
+    public static readonly OrderStatusValue Expired
+        = new("Expired", "منقضی شده", 9, true);
+
     private OrderStatusValue(string value, string displayName, int sortOrder, bool isFinal)
     {
         Value = value;
@@ -35,14 +47,20 @@ public sealed class OrderStatusValue : ValueObject
 
     private static readonly Dictionary<string, HashSet<string>> AllowedTransitions = new()
     {
-        { "Pending", new HashSet<string> { "Paid", "Cancelled" } },
+        { "Created", new HashSet<string> { "Reserved", "Cancelled", "Expired" } },
+        { "Reserved", new HashSet<string> { "Pending", "Cancelled", "Expired" } },
+
+        { "Pending", new HashSet<string> { "Paid", "Failed", "Cancelled", "Expired" } },
         { "Paid", new HashSet<string> { "Processing", "Cancelled", "Refunded" } },
         { "Processing", new HashSet<string> { "Shipped", "Cancelled" } },
         { "Shipped", new HashSet<string> { "Delivered", "Returned" } },
         { "Delivered", new HashSet<string> { "Returned", "Refunded" } },
-        { "Returned", new HashSet<string> { "Refunded" } },
+
+        { "Failed", new HashSet<string>() },
+        { "Expired", new HashSet<string>() },
         { "Cancelled", new HashSet<string>() },
-        { "Refunded", new HashSet<string>() }
+        { "Refunded", new HashSet<string>() },
+        { "Returned", new HashSet<string> { "Refunded" } }
     };
 
     public bool CanTransitionTo(OrderStatusValue newStatus)
@@ -103,6 +121,11 @@ public sealed class OrderStatusValue : ValueObject
 
         return value.ToLowerInvariant() switch
         {
+            "created" => Created,
+            "reserved" => Reserved,
+            "failed" => Failed,
+            "expired" => Expired,
+
             "pending" => Pending,
             "paid" => Paid,
             "processing" => Processing,
@@ -117,14 +140,20 @@ public sealed class OrderStatusValue : ValueObject
 
     public static IEnumerable<OrderStatusValue> GetAll()
     {
+        yield return Created;
+        yield return Reserved;
+
         yield return Pending;
         yield return Paid;
         yield return Processing;
         yield return Shipped;
         yield return Delivered;
+
         yield return Cancelled;
         yield return Returned;
         yield return Refunded;
+        yield return Failed;
+        yield return Expired;
     }
 
     public static IEnumerable<OrderStatusValue> GetActiveStatuses()
@@ -136,6 +165,14 @@ public sealed class OrderStatusValue : ValueObject
     {
         return GetAll().Where(s => s.IsFinal);
     }
+
+    public bool IsCreated() => Value == Created.Value;
+
+    public bool IsReserved() => Value == Reserved.Value;
+
+    public bool IsFailed() => Value == Failed.Value;
+
+    public bool IsExpired() => Value == Expired.Value;
 
     #endregion Factory Methods
 

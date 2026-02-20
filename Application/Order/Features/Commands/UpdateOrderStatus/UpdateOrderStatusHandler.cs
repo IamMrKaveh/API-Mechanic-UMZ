@@ -27,9 +27,9 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
 
     public async Task<ServiceResult> Handle(
         UpdateOrderStatusCommand request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, cancellationToken);
+        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
         if (order == null)
             return ServiceResult.Failure("سفارش یافت نشد.", 404);
 
@@ -61,21 +61,24 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
             case "Processing":
                 order.StartProcessing();
                 break;
+
             case "Shipped":
                 order.Ship();
                 break;
+
             case "Delivered":
                 order.MarkAsDelivered();
                 break;
+
             default:
                 return ServiceResult.Failure($"تغییر مستقیم به وضعیت '{newStatus.DisplayName}' از این مسیر مجاز نیست.", 400);
         }
 
-        _orderRepository.Update(order);
+        await _orderRepository.UpdateAsync(order, ct);
 
         try
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             await _notificationService.SendOrderStatusNotificationAsync(
                 order.UserId,

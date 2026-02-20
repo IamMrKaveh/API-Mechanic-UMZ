@@ -13,13 +13,7 @@ public sealed class VariantMustBeActiveForPurchaseRule : IBusinessRule
 
     public bool IsBroken()
     {
-        if (_product.IsDeleted || !_product.IsActive)
-            return true;
-
-        if (_variant.IsDeleted || !_variant.IsActive)
-            return true;
-
-        return false;
+        return _product.IsDeleted || !_product.IsActive || _variant.IsDeleted || !_variant.IsActive;
     }
 
     public string Message => "محصول یا واریانت غیرفعال است و قابل خرید نیست.";

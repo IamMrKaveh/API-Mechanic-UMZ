@@ -3,13 +3,10 @@
 public sealed class VariantSkuMustBeUniqueRule : IBusinessRule
 {
     private readonly string _sku;
-    private readonly IReadOnlyCollection<ProductVariant> _existingVariants;
+    private readonly IEnumerable<ProductVariant> _existingVariants;
     private readonly int? _excludeVariantId;
 
-    public VariantSkuMustBeUniqueRule(
-        string sku,
-        IReadOnlyCollection<ProductVariant> existingVariants,
-        int? excludeVariantId = null)
+    public VariantSkuMustBeUniqueRule(string sku, IEnumerable<ProductVariant> existingVariants, int? excludeVariantId = null)
     {
         _sku = sku?.Trim().ToUpperInvariant() ?? string.Empty;
         _existingVariants = existingVariants;
@@ -18,14 +15,13 @@ public sealed class VariantSkuMustBeUniqueRule : IBusinessRule
 
     public bool IsBroken()
     {
-        if (string.IsNullOrEmpty(_sku))
-            return false;
+        if (string.IsNullOrEmpty(_sku)) return false;
 
         return _existingVariants.Any(v =>
             !v.IsDeleted &&
             (_excludeVariantId == null || v.Id != _excludeVariantId) &&
-            v.Sku == _sku);
+            string.Equals(v.Sku.Value, _sku, StringComparison.OrdinalIgnoreCase));
     }
 
-    public string Message => $"SKU '{_sku}' قبلاً در این محصول استفاده شده است.";
+    public string Message => $"کد SKU '{_sku}' قبلاً در این محصول استفاده شده است.";
 }

@@ -6,7 +6,7 @@ public record AdminProductSearchParams
 {
     public string? Name { get; init; }
     public int? CategoryId { get; init; }
-    public int? CategoryGroupId { get; init; }
+    public int? BrandId { get; init; }
     public bool? IsActive { get; init; }
     public bool IncludeDeleted { get; init; }
     public int Page { get; init; } = 1;
@@ -21,7 +21,7 @@ public record AdminProductListItemDto
     public bool IsActive { get; init; }
     public bool IsDeleted { get; init; }
     public string CategoryName { get; init; } = string.Empty;
-    public string CategoryGroupName { get; init; } = string.Empty;
+    public string BrandName { get; init; } = string.Empty;
     public string? IconUrl { get; init; }
     public int TotalStock { get; init; }
     public int VariantCount { get; init; }
@@ -39,7 +39,7 @@ public record AdminProductDetailDto
     public string? Sku { get; init; }
     public bool IsActive { get; init; }
     public bool IsDeleted { get; init; }
-    public int CategoryGroupId { get; init; }
+    public int BrandId { get; init; }
     public string? IconUrl { get; init; }
     public IEnumerable<MediaDto> Images { get; init; } = [];
     public IEnumerable<ProductVariantViewDto> Variants { get; init; } = [];
@@ -54,7 +54,7 @@ public record ProductCatalogSearchParams
 {
     public string? Search { get; init; }
     public int? CategoryId { get; init; }
-    public int? CategoryGroupId { get; init; }
+    public int? BrandId { get; init; }
     public decimal? MinPrice { get; init; }
     public decimal? MaxPrice { get; init; }
     public bool InStockOnly { get; init; }
@@ -99,8 +99,8 @@ public record PublicProductDetailDto
     public string Name { get; init; } = string.Empty;
     public string? Description { get; init; }
     public string? Sku { get; init; }
-    public int CategoryGroupId { get; init; }
-    public CategoryGroupInfoDto? CategoryGroup { get; init; }
+    public int BrandId { get; init; }
+    public BrandInfoDto? Brand { get; init; }
     public string? IconUrl { get; init; }
     public IEnumerable<MediaDto> Images { get; init; } = [];
     public IEnumerable<ProductVariantViewDto> Variants { get; init; } = [];
@@ -112,7 +112,7 @@ public record PublicProductDetailDto
     public int ReviewCount { get; init; }
 }
 
-public record CategoryGroupInfoDto
+public record BrandInfoDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -192,7 +192,7 @@ public class AdminProductViewDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Sku { get; set; }
-    public int CategoryGroupId { get; set; }
+    public int BrandId { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
     public string? IconUrl { get; set; }
@@ -201,7 +201,7 @@ public class AdminProductViewDto
     public string? RowVersion { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-    public object CategoryGroup { get; set; }
+    public object Brand { get; set; }
 }
 
 /// <summary>
@@ -214,14 +214,14 @@ public class PublicProductViewDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Sku { get; set; }
-    public int CategoryGroupId { get; set; }
+    public int BrandId { get; set; }
     public string? IconUrl { get; set; }
     public IEnumerable<MediaDto> Images { get; set; } = [];
     public List<ProductVariantResponseDto> Variants { get; set; } = [];
     public decimal MinPrice { get; set; }
     public decimal MaxPrice { get; set; }
     public int TotalStock { get; set; }
-    public object CategoryGroup { get; set; }
+    public Domain.Brand.Brand Brand { get; set; }
 }
 
 public class ProductVariantResponseDto
@@ -239,10 +239,9 @@ public class ProductVariantResponseDto
     public Dictionary<string, AttributeValueDto> Attributes { get; set; } = new();
     public IEnumerable<MediaDto> Images { get; set; } = [];
     public string? RowVersion { get; set; }
-    public object IsInStock { get; set; }
-    public object HasDiscount { get; set; }
-    public object DiscountPercentage { get; set; }
-    public object ProductVariantShippingMethods { get; internal set; }
+    public bool IsInStock { get; set; }
+    public bool HasDiscount { get; set; }
+    public int DiscountPercentage { get; set; }
 
     internal void UpdateDetails(string? sku, decimal shippingMultiplier)
     {
@@ -274,7 +273,7 @@ public class ProductDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Sku { get; set; }
-    public int CategoryGroupId { get; set; }
+    public int BrandId { get; set; }
     public bool IsActive { get; set; }
     public bool IsFeatured { get; set; }
     public string? RowVersion { get; set; }
@@ -285,8 +284,8 @@ public class AdminProductListDto
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Sku { get; set; }
-    public int CategoryGroupId { get; set; }
-    public string? CategoryGroupName { get; set; }
+    public int BrandId { get; set; }
+    public string? BrandName { get; set; }
     public string? CategoryName { get; set; }
     public bool IsActive { get; set; }
     public bool IsFeatured { get; set; }
@@ -306,7 +305,7 @@ public class ProductSearchParams
 {
     public string? SearchTerm { get; set; }
     public int? CategoryId { get; set; }
-    public int? CategoryGroupId { get; set; }
+    public int? BrandId { get; set; }
     public decimal? MinPrice { get; set; }
     public decimal? MaxPrice { get; set; }
     public bool? IsActive { get; set; }
@@ -317,3 +316,24 @@ public class ProductSearchParams
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
 }
+
+public record CreateProductInput(
+    string Name,
+    string Slug,
+    int CategoryId,
+    int BrandId,
+    string? Description
+);
+
+public record UpdateProductInput(
+    int Id,
+    string Name,
+    string Slug,
+    int CategoryId,
+    int BrandId,
+    string? Description,
+    bool IsActive,
+    string? Sku,
+    string RowVersion,
+    List<Domain.Media.Media> Images
+);

@@ -1,9 +1,4 @@
-﻿using Application.User.Features.Commands.ChangePassword;
-using Application.User.Features.Commands.CreateUserAddress;
-using Application.User.Features.Commands.DeleteUserAddress;
-using Application.User.Features.Commands.UpdateUserAddress;
-
-namespace MainApi.User.Controllers;
+﻿namespace MainApi.User.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

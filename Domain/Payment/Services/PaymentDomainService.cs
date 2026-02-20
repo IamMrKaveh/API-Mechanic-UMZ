@@ -1,4 +1,6 @@
-﻿namespace Domain.Payment.Services;
+﻿using Domain.Common.Shared.ValueObjects;
+
+namespace Domain.Payment.Services;
 
 /// <summary>
 /// Domain Service برای عملیات‌های پرداخت که بین چند Aggregate هستند

@@ -1,4 +1,6 @@
-﻿namespace Domain.Discount;
+﻿using Domain.Common.Shared.ValueObjects;
+
+namespace Domain.Discount;
 
 public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
 {

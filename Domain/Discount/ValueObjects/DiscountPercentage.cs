@@ -1,4 +1,6 @@
-﻿namespace Domain.Discount.ValueObjects;
+﻿using Domain.Common.Shared.ValueObjects;
+
+namespace Domain.Discount.ValueObjects;
 
 public sealed class DiscountPercentage : ValueObject
 {

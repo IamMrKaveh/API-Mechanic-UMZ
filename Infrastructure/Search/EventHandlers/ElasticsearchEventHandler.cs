@@ -84,7 +84,7 @@ public class ElasticsearchEventHandler : IElasticsearchEventHandler
         }
     }
 
-    public async Task HandleCategoryGroupChangedAsync(CategoryGroupChangedEvent @event, CancellationToken ct = default)
+    public async Task HandleBrandChangedAsync(BrandChangedEvent @event, CancellationToken ct = default)
     {
         try
         {
@@ -94,21 +94,21 @@ public class ElasticsearchEventHandler : IElasticsearchEventHandler
                 case EntityChangeType.Updated:
                     if (@event.Document == null)
                     {
-                        _logger.LogWarning("CategoryGroup document is null for {ChangeType} event of group {GroupId}",
+                        _logger.LogWarning("Brand document is null for {ChangeType} event of group {GroupId}",
                             @event.ChangeType, @event.EntityId);
                         return;
                     }
-                    await _searchService.IndexCategoryGroupAsync(@event.Document, ct);
-                    _logger.LogInformation("CategoryGroup {GroupId} indexed successfully after {ChangeType}",
+                    await _searchService.IndexBrandAsync(@event.Document, ct);
+                    _logger.LogInformation("Brand {GroupId} indexed successfully after {ChangeType}",
                         @event.EntityId, @event.ChangeType);
                     break;
 
                 case EntityChangeType.Deleted:
-                    var deleteResponse = await _elasticClient.DeleteAsync<CategoryGroupSearchDocument>(@event.EntityId.ToString(), d => d.Index("categorygroups_v1"), ct);
+                    var deleteResponse = await _elasticClient.DeleteAsync<BrandSearchDocument>(@event.EntityId.ToString(), d => d.Index("Brands_v1"), ct);
                     if (!deleteResponse.IsValidResponse)
-                        _logger.LogWarning("Failed to delete CategoryGroup {GroupId} from index: {Error}", @event.EntityId, deleteResponse.DebugInformation);
+                        _logger.LogWarning("Failed to delete Brand {GroupId} from index: {Error}", @event.EntityId, deleteResponse.DebugInformation);
                     else
-                        _logger.LogInformation("CategoryGroup {GroupId} deleted from index", @event.EntityId);
+                        _logger.LogInformation("Brand {GroupId} deleted from index", @event.EntityId);
                     break;
             }
         }

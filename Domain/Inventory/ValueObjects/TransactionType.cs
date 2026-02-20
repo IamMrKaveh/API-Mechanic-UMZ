@@ -25,6 +25,12 @@ public sealed class TransactionType : ValueObject
     public static TransactionType Damage => new("Damage", "ضایعات", false);
     public static TransactionType Correction => new("Correction", "اصلاح", true);
 
+    /// <summary>
+    /// تأیید رزرو پس از پرداخت موفق - کسر Reserved و OnHand به‌صورت توأم
+    /// تفکیک از Sale برای ردیابی دقیق‌تر جریان مالی انبار
+    /// </summary>
+    public static TransactionType Commit => new("Commit", "تأیید رزرو (پرداخت موفق)", false);
+
     public static TransactionType FromString(string value)
     {
         return value?.ToUpperInvariant() switch
@@ -40,6 +46,7 @@ public sealed class TransactionType : ValueObject
             "TRANSFER" => Transfer,
             "DAMAGE" => Damage,
             "CORRECTION" => Correction,
+            "COMMIT" => Commit,
             _ => throw new DomainException($"نوع تراکنش '{value}' نامعتبر است.")
         };
     }
@@ -57,6 +64,7 @@ public sealed class TransactionType : ValueObject
         yield return Transfer;
         yield return Damage;
         yield return Correction;
+        yield return Commit;
     }
 
     public static IEnumerable<TransactionType> GetIncreaseTypes()
@@ -71,7 +79,7 @@ public sealed class TransactionType : ValueObject
 
     public bool RequiresOrderItem()
     {
-        return this == Sale || this == Reservation || this == Return;
+        return this == Sale || this == Reservation || this == Return || this == Commit;
     }
 
     public bool RequiresUserApproval()

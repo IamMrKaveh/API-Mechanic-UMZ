@@ -1,4 +1,6 @@
-﻿namespace Domain.Discount.Results;
+﻿using Domain.Common.Shared.ValueObjects;
+
+namespace Domain.Discount.Results;
 
 public sealed class DiscountApplicationResult
 {

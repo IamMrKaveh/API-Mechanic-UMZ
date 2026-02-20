@@ -1,6 +1,4 @@
-﻿using Domain.Attribute.Entities;
-
-namespace Application.Product.Features.Shared;
+﻿namespace Application.Product.Features.Shared;
 
 public class ProductMappingProfile : Profile
 {

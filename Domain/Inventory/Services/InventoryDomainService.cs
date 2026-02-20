@@ -1,4 +1,6 @@
-﻿namespace Domain.Inventory.Services;
+﻿using Domain.Variant;
+
+namespace Domain.Inventory.Services;
 
 /// <summary>
 /// Domain Service برای عملیات‌های موجودی که بین چند Aggregate هستند
@@ -14,7 +16,10 @@ public class InventoryDomainService
         int quantity,
         int orderItemId,
         int? userId = null,
-        string? referenceNumber = null)
+        string? referenceNumber = null,
+        string? correlationId = null,
+        string? cartId = null,
+        DateTime? expiresAt = null)
     {
         Guard.Against.Null(variant, nameof(variant));
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
@@ -27,16 +32,12 @@ public class InventoryDomainService
         }
 
         if (variant.IsUnlimited)
-        {
             return InventoryReservationResult.SuccessUnlimited(variant.Id, quantity);
-        }
 
         if (variant.AvailableStock < quantity)
         {
             return InventoryReservationResult.InsufficientStock(
-                variant.Id,
-                variant.AvailableStock,
-                quantity);
+                variant.Id, variant.AvailableStock, quantity);
         }
 
         var transaction = InventoryTransaction.CreateReservation(
@@ -45,7 +46,10 @@ public class InventoryDomainService
             variant.StockQuantity,
             orderItemId,
             userId,
-            referenceNumber);
+            referenceNumber,
+            correlationId: correlationId,
+            cartId: cartId,
+            expiresAt: expiresAt);
 
         variant.Reserve(quantity);
 
@@ -53,32 +57,32 @@ public class InventoryDomainService
     }
 
     /// <summary>
-    /// تأیید رزرو پس از پرداخت موفق - کسر نهایی از موجودی
+    /// تأیید رزرو پس از پرداخت موفق - کسر نهایی Reserved و OnHand
     /// </summary>
     public InventorySaleResult ConfirmReservation(
         ProductVariant variant,
         int quantity,
         int orderItemId,
         int? userId = null,
-        string? referenceNumber = null)
+        string? referenceNumber = null,
+        string? correlationId = null)
     {
         Guard.Against.Null(variant, nameof(variant));
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
 
         if (variant.IsUnlimited)
-        {
             return InventorySaleResult.SuccessUnlimited(variant.Id, quantity);
-        }
 
         variant.ConfirmReservation(quantity);
 
-        var transaction = InventoryTransaction.CreateSale(
+        var transaction = InventoryTransaction.CreateCommit(
             variant.Id,
             quantity,
-            variant.StockQuantity + quantity,
+            variant.StockQuantity + quantity, // stock قبل از ConfirmReservation
             orderItemId,
             userId,
-            referenceNumber);
+            referenceNumber,
+            correlationId: correlationId);
 
         return InventorySaleResult.Success(variant.Id, quantity, transaction);
     }
@@ -96,15 +100,11 @@ public class InventoryDomainService
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
 
         if (variant.IsUnlimited)
-        {
             return InventoryReleaseResult.SuccessUnlimited(variant.Id);
-        }
 
         var actualRelease = Math.Min(quantity, variant.ReservedQuantity);
         if (actualRelease == 0)
-        {
             return InventoryReleaseResult.NothingToRelease(variant.Id);
-        }
 
         variant.Release(actualRelease);
 
@@ -117,6 +117,43 @@ public class InventoryDomainService
             reason ?? "آزادسازی موجودی رزرو شده");
 
         return InventoryReleaseResult.Success(variant.Id, actualRelease, transaction);
+    }
+
+    /// <summary>
+    /// مرجوعی و بازگشت موجودی به انبار پس از تأیید ادمین
+    /// </summary>
+    public StockAdjustmentResult ReturnStock(
+        ProductVariant variant,
+        int quantity,
+        int orderId,
+        int orderItemId,
+        int userId,
+        string reason)
+    {
+        Guard.Against.Null(variant, nameof(variant));
+        Guard.Against.NegativeOrZero(quantity, nameof(quantity));
+        Guard.Against.NegativeOrZero(userId, nameof(userId));
+        Guard.Against.NullOrWhiteSpace(reason, nameof(reason));
+
+        if (variant.IsUnlimited)
+            return StockAdjustmentResult.NotApplicable(variant.Id, "واریانت نامحدود - مرجوعی تأثیری بر موجودی ندارد.");
+
+        // AddStock روی واریانت (OnHand افزایش می‌یابد)
+        variant.AddStock(quantity);
+
+        var transaction = InventoryTransaction.CreateReturn(
+            variant.Id,
+            quantity,
+            variant.StockQuantity - quantity, // stock قبل از AddStock
+            orderItemId,
+            userId,
+            reason,
+            correlationId: $"RETURN-ORDER-{orderId}-ITEM-{orderItemId}");
+
+        // رویداد StockReturnedEvent
+        transaction.AddDomainEvent(new StockReturnedEvent(variant.Id, orderId, quantity));
+
+        return StockAdjustmentResult.Success(variant.Id, variant.StockQuantity, transaction);
     }
 
     /// <summary>
@@ -133,9 +170,7 @@ public class InventoryDomainService
         Guard.Against.NullOrWhiteSpace(notes, nameof(notes));
 
         if (variant.IsUnlimited)
-        {
             return StockAdjustmentResult.NotApplicable(variant.Id, "واریانت نامحدود قابل تنظیم دستی نیست.");
-        }
 
         var newStock = variant.StockQuantity + quantityChange;
         if (newStock < 0)
@@ -146,11 +181,7 @@ public class InventoryDomainService
         }
 
         var transaction = InventoryTransaction.CreateAdjustment(
-            variant.Id,
-            quantityChange,
-            variant.StockQuantity,
-            userId,
-            notes);
+            variant.Id, quantityChange, variant.StockQuantity, userId, notes);
 
         variant.AdjustStock(quantityChange);
 
@@ -172,9 +203,7 @@ public class InventoryDomainService
         Guard.Against.NullOrWhiteSpace(notes, nameof(notes));
 
         if (variant.IsUnlimited)
-        {
             return StockAdjustmentResult.NotApplicable(variant.Id, "واریانت نامحدود قابل ثبت خسارت نیست.");
-        }
 
         if (variant.StockQuantity < quantity)
         {
@@ -184,11 +213,7 @@ public class InventoryDomainService
         }
 
         var transaction = InventoryTransaction.CreateDamage(
-            variant.Id,
-            quantity,
-            variant.StockQuantity,
-            userId,
-            notes);
+            variant.Id, quantity, variant.StockQuantity, userId, notes);
 
         variant.AdjustStock(-quantity);
 
@@ -198,30 +223,20 @@ public class InventoryDomainService
     /// <summary>
     /// اعتبارسنجی امکان کسر موجودی
     /// </summary>
-    public StockValidationResult ValidateStockDeduction(
-        ProductVariant variant,
-        int quantity)
+    public StockValidationResult ValidateStockDeduction(ProductVariant variant, int quantity)
     {
         Guard.Against.Null(variant, nameof(variant));
 
-        if (variant.IsUnlimited)
-            return StockValidationResult.Valid();
-
-        if (!variant.IsActive || variant.IsDeleted)
-            return StockValidationResult.Invalid("محصول غیرفعال است.");
-
+        if (variant.IsUnlimited) return StockValidationResult.Valid();
+        if (!variant.IsActive || variant.IsDeleted) return StockValidationResult.Invalid("محصول غیرفعال است.");
         if (variant.AvailableStock < quantity)
-        {
-            return StockValidationResult.InsufficientStock(
-                variant.AvailableStock,
-                quantity);
-        }
+            return StockValidationResult.InsufficientStock(variant.AvailableStock, quantity);
 
         return StockValidationResult.Valid();
     }
 
     /// <summary>
-    /// محاسبه وضعیت موجودی چند واریانت (برای سفارش‌های دسته‌ای)
+    /// محاسبه وضعیت موجودی چند واریانت
     /// </summary>
     public BatchStockStatus CalculateBatchStockStatus(
         IEnumerable<(ProductVariant Variant, int RequestedQuantity)> items)
@@ -233,18 +248,10 @@ public class InventoryDomainService
         foreach (var (variant, quantity) in itemsList)
         {
             var validation = ValidateStockDeduction(variant, quantity);
-
             var status = new VariantStockStatus(
-                variant.Id,
-                variant.AvailableStock,
-                quantity,
-                variant.IsUnlimited,
-                validation.IsValid);
-
+                variant.Id, variant.AvailableStock, quantity, variant.IsUnlimited, validation.IsValid);
             results.Add(status);
-
-            if (!validation.IsValid)
-                allAvailable = false;
+            if (!validation.IsValid) allAvailable = false;
         }
 
         return new BatchStockStatus(results, allAvailable);
@@ -253,14 +260,11 @@ public class InventoryDomainService
     /// <summary>
     /// بررسی نیاز به هشدار کم‌موجودی
     /// </summary>
-    public LowStockCheckResult CheckLowStock(
-        ProductVariant variant,
-        int? customThreshold = null)
+    public LowStockCheckResult CheckLowStock(ProductVariant variant, int? customThreshold = null)
     {
         Guard.Against.Null(variant, nameof(variant));
 
-        if (variant.IsUnlimited)
-            return LowStockCheckResult.NotApplicable();
+        if (variant.IsUnlimited) return LowStockCheckResult.NotApplicable();
 
         var threshold = customThreshold ?? variant.LowStockThreshold;
 
@@ -284,13 +288,11 @@ public class InventoryDomainService
         Guard.Against.Null(variant, nameof(variant));
         Guard.Against.NegativeOrZero(userId, nameof(userId));
 
-        if (variant.IsUnlimited)
-            return ReconcileResult.NotApplicable(variant.Id);
+        if (variant.IsUnlimited) return ReconcileResult.NotApplicable(variant.Id);
 
         var difference = calculatedStockFromTransactions - variant.StockQuantity;
 
-        if (difference == 0)
-            return ReconcileResult.NoDiscrepancy(variant.Id, variant.StockQuantity);
+        if (difference == 0) return ReconcileResult.NoDiscrepancy(variant.Id, variant.StockQuantity);
 
         var transaction = InventoryTransaction.CreateAdjustment(
             variant.Id,
@@ -318,7 +320,8 @@ public sealed class InventoryReservationResult
     public int? RequestedQuantity { get; private set; }
     public InventoryTransaction? Transaction { get; private set; }
 
-    private InventoryReservationResult() { }
+    private InventoryReservationResult()
+    { }
 
     public static InventoryReservationResult Success(int variantId, int quantity, InventoryTransaction transaction)
         => new() { IsSuccess = true, VariantId = variantId, ReservedQuantity = quantity, Transaction = transaction };
@@ -340,8 +343,7 @@ public sealed class InventoryReservationResult
         => new() { IsSuccess = false, VariantId = variantId, Error = error };
 
     public int GetShortage() => RequestedQuantity.HasValue && AvailableStock.HasValue
-        ? RequestedQuantity.Value - AvailableStock.Value
-        : 0;
+        ? RequestedQuantity.Value - AvailableStock.Value : 0;
 }
 
 public sealed class InventoryReleaseResult
@@ -352,7 +354,8 @@ public sealed class InventoryReleaseResult
     public InventoryTransaction? Transaction { get; private set; }
     public string? Message { get; private set; }
 
-    private InventoryReleaseResult() { }
+    private InventoryReleaseResult()
+    { }
 
     public static InventoryReleaseResult Success(int variantId, int quantity, InventoryTransaction transaction)
         => new() { IsSuccess = true, VariantId = variantId, ReleasedQuantity = quantity, Transaction = transaction };
@@ -372,7 +375,8 @@ public sealed class InventorySaleResult
     public InventoryTransaction? Transaction { get; private set; }
     public string? Error { get; private set; }
 
-    private InventorySaleResult() { }
+    private InventorySaleResult()
+    { }
 
     public static InventorySaleResult Success(int variantId, int quantity, InventoryTransaction transaction)
         => new() { IsSuccess = true, VariantId = variantId, SoldQuantity = quantity, Transaction = transaction };
@@ -389,10 +393,12 @@ public sealed class StockAdjustmentResult
     public bool IsSuccess { get; private set; }
     public int VariantId { get; private set; }
     public int NewStock { get; private set; }
-    public string? Error { get; private set; }
     public InventoryTransaction? Transaction { get; private set; }
+    public string? Error { get; private set; }
+    public string? Message { get; private set; }
 
-    private StockAdjustmentResult() { }
+    private StockAdjustmentResult()
+    { }
 
     public static StockAdjustmentResult Success(int variantId, int newStock, InventoryTransaction transaction)
         => new() { IsSuccess = true, VariantId = variantId, NewStock = newStock, Transaction = transaction };
@@ -400,8 +406,8 @@ public sealed class StockAdjustmentResult
     public static StockAdjustmentResult Failed(int variantId, string error)
         => new() { IsSuccess = false, VariantId = variantId, Error = error };
 
-    public static StockAdjustmentResult NotApplicable(int variantId, string reason)
-        => new() { IsSuccess = false, VariantId = variantId, Error = reason };
+    public static StockAdjustmentResult NotApplicable(int variantId, string message)
+        => new() { IsSuccess = true, VariantId = variantId, Message = message };
 }
 
 public sealed class StockValidationResult
@@ -411,13 +417,12 @@ public sealed class StockValidationResult
     public int? AvailableStock { get; private set; }
     public int? RequestedQuantity { get; private set; }
 
-    private StockValidationResult() { }
+    private StockValidationResult()
+    { }
 
-    public static StockValidationResult Valid()
-        => new() { IsValid = true };
+    public static StockValidationResult Valid() => new() { IsValid = true };
 
-    public static StockValidationResult Invalid(string error)
-        => new() { IsValid = false, Error = error };
+    public static StockValidationResult Invalid(string error) => new() { IsValid = false, Error = error };
 
     public static StockValidationResult InsufficientStock(int available, int requested)
         => new()
@@ -429,99 +434,89 @@ public sealed class StockValidationResult
         };
 }
 
-public sealed record VariantStockStatus(
-    int VariantId,
-    int AvailableStock,
-    int RequestedQuantity,
-    bool IsUnlimited,
-    bool CanFulfill)
-{
-    public int Shortage => CanFulfill ? 0 : RequestedQuantity - AvailableStock;
-}
-
 public sealed class BatchStockStatus
 {
     public IReadOnlyList<VariantStockStatus> Items { get; }
     public bool AllAvailable { get; }
-    public int TotalShortage { get; }
 
-    public BatchStockStatus(IReadOnlyList<VariantStockStatus> items, bool allAvailable)
+    public BatchStockStatus(List<VariantStockStatus> items, bool allAvailable)
     {
-        Items = items;
+        Items = items.AsReadOnly();
         AllAvailable = allAvailable;
-        TotalShortage = items.Sum(i => i.Shortage);
     }
+}
 
-    public IEnumerable<VariantStockStatus> GetUnavailableItems()
-        => Items.Where(i => !i.CanFulfill);
+public sealed class VariantStockStatus
+{
+    public int VariantId { get; }
+    public int AvailableStock { get; }
+    public int RequestedQuantity { get; }
+    public bool IsUnlimited { get; }
+    public bool IsAvailable { get; }
+
+    public VariantStockStatus(int variantId, int availableStock, int requestedQuantity, bool isUnlimited, bool isAvailable)
+    {
+        VariantId = variantId;
+        AvailableStock = availableStock;
+        RequestedQuantity = requestedQuantity;
+        IsUnlimited = isUnlimited;
+        IsAvailable = isAvailable;
+    }
 }
 
 public sealed class LowStockCheckResult
 {
     public bool IsLowStock { get; private set; }
     public bool IsOutOfStock { get; private set; }
-    public int VariantId { get; private set; }
-    public int CurrentStock { get; private set; }
+    public bool IsNotApplicable { get; private set; }
+    public int? VariantId { get; private set; }
+    public int? CurrentStock { get; private set; }
     public int? Threshold { get; private set; }
-    public bool IsApplicable { get; private set; } = true;
 
-    private LowStockCheckResult() { }
+    private LowStockCheckResult()
+    { }
 
-    public static LowStockCheckResult Healthy(int currentStock)
-        => new() { IsLowStock = false, IsOutOfStock = false, CurrentStock = currentStock };
+    public static LowStockCheckResult NotApplicable() => new() { IsNotApplicable = true };
 
-    public static LowStockCheckResult LowStock(int variantId, int currentStock, int threshold)
-        => new() { IsLowStock = true, IsOutOfStock = false, VariantId = variantId, CurrentStock = currentStock, Threshold = threshold };
+    public static LowStockCheckResult Healthy(int currentStock) => new() { CurrentStock = currentStock };
 
-    public static LowStockCheckResult OutOfStock(int variantId, int currentStock)
-        => new() { IsLowStock = true, IsOutOfStock = true, VariantId = variantId, CurrentStock = currentStock };
+    public static LowStockCheckResult OutOfStock(int variantId, int stock)
+        => new() { IsOutOfStock = true, VariantId = variantId, CurrentStock = stock };
 
-    public static LowStockCheckResult NotApplicable()
-        => new() { IsApplicable = false };
+    public static LowStockCheckResult LowStock(int variantId, int stock, int threshold)
+        => new() { IsLowStock = true, VariantId = variantId, CurrentStock = stock, Threshold = threshold };
 }
 
 public sealed class ReconcileResult
 {
     public bool IsSuccess { get; private set; }
+    public bool HasDiscrepancy { get; private set; }
     public int VariantId { get; private set; }
     public int FinalStock { get; private set; }
     public int Difference { get; private set; }
-    public bool HasDiscrepancy { get; private set; }
     public string? Message { get; private set; }
     public InventoryTransaction? Transaction { get; private set; }
 
-    private ReconcileResult() { }
+    private ReconcileResult()
+    { }
+
+    public static ReconcileResult NotApplicable(int variantId)
+        => new() { IsSuccess = true, VariantId = variantId, Message = "واریانت نامحدود - انبارگردانی قابل اجرا نیست" };
+
+    public static ReconcileResult NoDiscrepancy(int variantId, int stock)
+        => new() { IsSuccess = true, VariantId = variantId, FinalStock = stock, Message = "موجودی صحیح است - اختلافی وجود ندارد" };
 
     public static ReconcileResult Corrected(int variantId, int finalStock, int difference, InventoryTransaction transaction)
         => new()
         {
             IsSuccess = true,
+            HasDiscrepancy = true,
             VariantId = variantId,
             FinalStock = finalStock,
             Difference = difference,
-            HasDiscrepancy = true,
             Transaction = transaction,
-            Message = $"اختلاف {difference} واحد اصلاح شد."
-        };
-
-    public static ReconcileResult NoDiscrepancy(int variantId, int currentStock)
-        => new()
-        {
-            IsSuccess = true,
-            VariantId = variantId,
-            FinalStock = currentStock,
-            Difference = 0,
-            HasDiscrepancy = false,
-            Message = "اختلافی یافت نشد."
-        };
-
-    public static ReconcileResult NotApplicable(int variantId)
-        => new()
-        {
-            IsSuccess = false,
-            VariantId = variantId,
-            Message = "واریانت نامحدود قابل انبارگردانی نیست."
+            Message = $"موجودی اصلاح شد. اختلاف: {difference:+#;-#;0}"
         };
 }
 
-#endregion
+#endregion Result Types

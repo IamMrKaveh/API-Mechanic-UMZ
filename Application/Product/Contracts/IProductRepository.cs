@@ -4,8 +4,6 @@ public interface IProductRepository
 {
     Task<Domain.Product.Product?> GetByIdAsync(int id, CancellationToken ct = default);
 
-    Task<Domain.Product.Product?> GetByIdWithVariantsAsync(int id, CancellationToken ct = default);
-
     Task<Domain.Product.Product?> GetByIdWithAllDetailsAsync(int id, CancellationToken ct = default);
 
     Task<Domain.Product.Product?> GetByIdIncludingDeletedAsync(int id, CancellationToken ct = default);
@@ -16,19 +14,11 @@ public interface IProductRepository
 
     void Update(Domain.Product.Product product);
 
-    Task<ProductVariant?> GetVariantByIdAsync(int variantId, CancellationToken ct = default);
-
-    Task<ProductVariant?> GetVariantWithProductAsync(int variantId, CancellationToken ct = default);
-
     void SetOriginalRowVersion(Domain.Product.Product entity, byte[] rowVersion);
 
-    void SetVariantOriginalRowVersion(ProductVariant entity, byte[] rowVersion);
+    Task<Domain.Product.Product?> GetByIdWithVariantsAsync(int id, CancellationToken ct = default);
 
-    void UpdateVariant(object variant);
+    Task<ProductVariant?> GetVariantByIdAsync(int variantId, CancellationToken ct = default);
 
-    Task<ProductVariant> GetVariantByIdForUpdateAsync(int variantId);
-
-    Task<IReadOnlyList<ProductVariant>> GetVariantsByIdsAsync(
-        IEnumerable<int> variantIds,
-        CancellationToken cancellationToken);
+    Task<IEnumerable<ProductVariant>> GetVariantsByIdsAsync(IEnumerable<int> variantIds, CancellationToken ct = default);
 }

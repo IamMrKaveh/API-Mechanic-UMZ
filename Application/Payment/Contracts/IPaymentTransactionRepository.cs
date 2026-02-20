@@ -92,4 +92,8 @@ public interface IPaymentTransactionRepository
     /// تنظیم RowVersion برای کنترل همزمانی
     /// </summary>
     void SetOriginalRowVersion(PaymentTransaction entity, byte[] rowVersion);
+
+    Task<PaymentTransaction?> GetVerifiedByOrderIdAsync(int orderId, CancellationToken ct = default);
+
+    Task<PaymentTransaction?> GetActiveByOrderIdAsync(int orderId, CancellationToken ct = default);
 }

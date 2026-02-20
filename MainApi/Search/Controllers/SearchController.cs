@@ -15,7 +15,7 @@ public class SearchController : ControllerBase
     public async Task<IActionResult> SearchProducts(
         [FromQuery] string? q,
         [FromQuery] int? categoryId,
-        [FromQuery] int? categoryGroupId,
+        [FromQuery] int? BrandId,
         [FromQuery] decimal? minPrice,
         [FromQuery] decimal? maxPrice,
         [FromQuery] string? brand,
@@ -30,7 +30,7 @@ public class SearchController : ControllerBase
         {
             Q = q,
             CategoryId = categoryId,
-            CategoryGroupId = categoryGroupId,
+            BrandId = BrandId,
             MinPrice = minPrice,
             MaxPrice = maxPrice,
             Brand = brand,

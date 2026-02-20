@@ -1,4 +1,6 @@
-﻿namespace Domain.Inventory.ValueObjects;
+﻿using Domain.Common.Shared.ValueObjects;
+
+namespace Domain.Inventory.ValueObjects;
 
 public sealed class InventoryStatistics : ValueObject
 {

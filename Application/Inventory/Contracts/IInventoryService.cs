@@ -8,7 +8,7 @@
 public interface IInventoryService
 {
     /// <summary>
-    /// رزرو موجودی برای سفارش (با Pessimistic Locking)
+    /// رزرو موجودی برای سفارش (با Pessimistic Locking + Idempotency)
     /// </summary>
     Task<ServiceResult> ReserveStockAsync(
         int variantId,
@@ -16,10 +16,13 @@ public interface IInventoryService
         int orderItemId,
         int? userId = null,
         string? referenceNumber = null,
+        string? correlationId = null,
+        string? cartId = null,
+        DateTime? expiresAt = null,
         CancellationToken ct = default);
 
     /// <summary>
-    /// تأیید رزرو پس از پرداخت موفق
+    /// تأیید رزرو پس از پرداخت موفق (Commit: کاهش Reserved و OnHand)
     /// </summary>
     Task<ServiceResult> ConfirmReservationAsync(
         int variantId,
@@ -27,6 +30,14 @@ public interface IInventoryService
         int orderItemId,
         int? userId = null,
         string? referenceNumber = null,
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// تأیید و Commit تمام آیتم‌های یک سفارش به‌صورت atomic
+    /// </summary>
+    Task<ServiceResult> CommitStockForOrderAsync(
+        int orderId,
         CancellationToken ct = default);
 
     /// <summary>
@@ -37,6 +48,34 @@ public interface IInventoryService
         int quantity,
         int? userId = null,
         string? reason = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// برگشت تمام رزروهای مرتبط با یک شماره مرجع (مثلاً ORDER-123)
+    /// </summary>
+    Task<ServiceResult> RollbackReservationsAsync(
+        string referenceNumber,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// بازگشت موجودی پس از تأیید مرجوعی توسط ادمین
+    /// </summary>
+    Task<ServiceResult> ReturnStockAsync(
+        int variantId,
+        int quantity,
+        int orderId,
+        int orderItemId,
+        int userId,
+        string reason,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// بازگشت تمام آیتم‌های یک سفارش به انبار پس از تأیید مرجوعی
+    /// </summary>
+    Task<ServiceResult> ReturnStockForOrderAsync(
+        int orderId,
+        int userId,
+        string reason,
         CancellationToken ct = default);
 
     /// <summary>
@@ -76,7 +115,16 @@ public interface IInventoryService
         CancellationToken ct = default);
 
     /// <summary>
-    /// ثبت تراکنش موجودی (برای استفاده از سرویس‌های دیگر مثل PaymentCleanup)
+    /// Import دسته‌ای ورود موجودی (StockIn bulk برای تأمین‌کنندگان)
+    /// </summary>
+    Task<ServiceResult<BulkStockInResultDto>> BulkStockInAsync(
+        IEnumerable<BulkStockInItemDto> items,
+        int userId,
+        string? supplierReference = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// ثبت تراکنش موجودی (برای استفاده از سرویس‌های دیگر)
     /// </summary>
     Task LogTransactionAsync(
         int variantId,
@@ -90,15 +138,17 @@ public interface IInventoryService
         bool saveChanges = true,
         CancellationToken ct = default);
 
-    /// <summary>
-    /// برگشت تمام رزروهای مرتبط با یک شماره مرجع (مثلاً ORDER-123)
-    /// </summary>
-    Task<ServiceResult> RollbackReservationsAsync(
-        string referenceNumber,
-        CancellationToken ct = default);
+    Task ReconcileAsync(
+    int variantId,
+    int physicalCount,
+    string reason,
+    int userId,
+    int? warehouseId = null,
+    CancellationToken ct = default);
 }
 
-// DTOs مورد استفاده در Interface
+// ─── DTOs ──────────────────────────────────────────────────────────────────
+
 public class ReconcileResultDto
 {
     public int VariantId { get; set; }
@@ -124,6 +174,29 @@ public class BulkAdjustResultDto
 }
 
 public class BulkAdjustItemResultDto
+{
+    public int VariantId { get; set; }
+    public bool IsSuccess { get; set; }
+    public string? Error { get; set; }
+    public int? NewStock { get; set; }
+}
+
+public class BulkStockInItemDto
+{
+    public int VariantId { get; set; }
+    public int Quantity { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class BulkStockInResultDto
+{
+    public int TotalRequested { get; set; }
+    public int SuccessCount { get; set; }
+    public int FailedCount { get; set; }
+    public List<BulkStockInItemResultDto> Results { get; set; } = [];
+}
+
+public class BulkStockInItemResultDto
 {
     public int VariantId { get; set; }
     public bool IsSuccess { get; set; }

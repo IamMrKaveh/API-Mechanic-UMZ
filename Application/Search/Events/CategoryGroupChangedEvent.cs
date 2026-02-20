@@ -1,10 +1,10 @@
 ﻿namespace Application.Search.Events;
 
 /// <summary>
-/// CategoryGroup change event
+/// Brand change event
 /// </summary>
-public record CategoryGroupChangedEvent(int EntityId, EntityChangeType ChangeType, CategoryGroupSearchDocument? Document = null)
+public record BrandChangedEvent(int EntityId, EntityChangeType ChangeType, BrandSearchDocument? Document = null)
     : IEntityChangeEvent
 {
-    public string EntityType => "CategoryGroup";
+    public string EntityType => "Brand";
 }

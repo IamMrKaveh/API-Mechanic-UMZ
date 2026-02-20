@@ -28,7 +28,7 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
     public async Task SyncProductAsync(int productId, CancellationToken ct = default)
     {
         var product = await _context.Products
-            .Include(p => p.CategoryGroup)
+            .Include(p => p.Brand)
                 .ThenInclude(cg => cg.Category)
             .Include(p => p.Variants)
             .Include(p => p.Images)
@@ -55,7 +55,7 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
         while (hasMore && !ct.IsCancellationRequested)
         {
             var products = await _context.Products
-                .Include(p => p.CategoryGroup)
+                .Include(p => p.Brand)
                     .ThenInclude(cg => cg.Category)
                 .Include(p => p.Variants)
                 .Include(p => p.Images)
@@ -87,7 +87,7 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
     {
         var category = await _context.Categories
             .Include(c => c.Images)
-            .Include(c => c.CategoryGroups)
+            .Include(c => c.Brands)
                 .ThenInclude(cg => cg.Products)
             .FirstOrDefaultAsync(c => c.Id == categoryId, ct);
 
@@ -103,7 +103,7 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
             Name = category.Name,
             Slug = string.Empty,
             IsActive = category.IsActive,
-            ProductCount = category.CategoryGroups
+            ProductCount = category.Brands
                 .SelectMany(cg => cg.Products)
                 .Count(p => p.IsActive && !p.IsDeleted),
             Icon = category.Images?.FirstOrDefault()?.FilePath
@@ -118,7 +118,7 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
     {
         var categories = await _context.Categories
             .Include(c => c.Images)
-            .Include(c => c.CategoryGroups)
+            .Include(c => c.Brands)
                 .ThenInclude(cg => cg.Products)
             .Where(c => c.IsActive && !c.IsDeleted)
             .ToListAsync(ct);
@@ -129,7 +129,7 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
             Name = c.Name,
             Slug = string.Empty,
             IsActive = c.IsActive,
-            ProductCount = c.CategoryGroups
+            ProductCount = c.Brands
                 .SelectMany(cg => cg.Products)
                 .Count(p => p.IsActive && !p.IsDeleted),
             Icon = c.Images?.FirstOrDefault()?.FilePath
@@ -140,23 +140,23 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
         _logger.LogInformation("Synced {Count} categories to Elasticsearch", documents.Count);
     }
 
-    public async Task SyncCategoryGroupAsync(int categoryGroupId, CancellationToken ct = default)
+    public async Task SyncBrandAsync(int BrandId, CancellationToken ct = default)
     {
-        var group = await _context.CategoryGroups
+        var group = await _context.Brands
             .Include(cg => cg.Images)
             .Include(cg => cg.Category)
             .Include(cg => cg.Products)
-            .FirstOrDefaultAsync(cg => cg.Id == categoryGroupId, ct);
+            .FirstOrDefaultAsync(cg => cg.Id == BrandId, ct);
 
         if (group == null)
         {
-            _logger.LogWarning("CategoryGroup {CategoryGroupId} not found for sync", categoryGroupId);
+            _logger.LogWarning("Brand {BrandId} not found for sync", BrandId);
             return;
         }
 
-        var document = new CategoryGroupSearchDocument
+        var document = new BrandSearchDocument
         {
-            CategoryGroupId = group.Id,
+            BrandId = group.Id,
             Name = group.Name,
             Slug = string.Empty,
             CategoryId = group.CategoryId,
@@ -166,23 +166,23 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
             Icon = group.Images?.FirstOrDefault()?.FilePath
         };
 
-        await _searchService.IndexCategoryGroupAsync(document, ct);
+        await _searchService.IndexBrandAsync(document, ct);
 
-        _logger.LogInformation("CategoryGroup {CategoryGroupId} synced to Elasticsearch", categoryGroupId);
+        _logger.LogInformation("Brand {BrandId} synced to Elasticsearch", BrandId);
     }
 
-    public async Task SyncAllCategoryGroupsAsync(CancellationToken ct = default)
+    public async Task SyncAllBrandsAsync(CancellationToken ct = default)
     {
-        var groups = await _context.CategoryGroups
+        var groups = await _context.Brands
             .Include(cg => cg.Images)
             .Include(cg => cg.Category)
             .Include(cg => cg.Products)
             .Where(cg => cg.IsActive && !cg.IsDeleted)
             .ToListAsync(ct);
 
-        var documents = groups.Select(cg => new CategoryGroupSearchDocument
+        var documents = groups.Select(cg => new BrandSearchDocument
         {
-            CategoryGroupId = cg.Id,
+            BrandId = cg.Id,
             Name = cg.Name,
             Slug = string.Empty,
             CategoryId = cg.CategoryId,
@@ -192,7 +192,7 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
             Icon = cg.Images?.FirstOrDefault()?.FilePath
         }).ToList();
 
-        await _bulkService.BulkIndexCategoryGroupsAsync(documents, ct);
+        await _bulkService.BulkIndexBrandsAsync(documents, ct);
 
         _logger.LogInformation("Synced {Count} category groups to Elasticsearch", documents.Count);
     }
@@ -202,7 +202,7 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
         _logger.LogInformation("Starting full sync from Supabase database to Elasticsearch");
 
         await SyncAllCategoriesAsync(ct);
-        await SyncAllCategoryGroupsAsync(ct);
+        await SyncAllBrandsAsync(ct);
         await SyncAllProductsAsync(ct);
 
         _logger.LogInformation("Full sync completed");
@@ -226,33 +226,34 @@ public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
         return new ProductSearchDocument
         {
             ProductId = product.Id,
-            Name = product.Name,
+            Name = product.Name.Value,
             Description = product.Description ?? string.Empty,
-            Slug = product.Name.Replace(" ", "-"),
-            Sku = product.Sku ?? string.Empty,
-            CategoryName = product.CategoryGroup?.Category?.Name ?? string.Empty,
-            CategoryId = product.CategoryGroup?.Category?.Id ?? 0,
-            CategoryGroupName = product.CategoryGroup?.Name ?? string.Empty,
-            CategoryGroupId = product.CategoryGroupId,
-            Price = product.MinPrice.Amount,
-            DiscountedPrice = product.Variants.Any(v => v.SellingPrice < v.OriginalPrice)
-                ? (float?)product.Variants.Min(v => v.SellingPrice)
+            Slug = product.Name.Value.Replace(" ", "-"),
+            CategoryName = product.Brand?.Category?.Name.Value ?? string.Empty,
+            CategoryId = product.Brand?.Category?.Id ?? 0,
+            BrandName = product.Brand?.Name.Value ?? string.Empty,
+            BrandId = product.BrandId,
+            Brand = product.Brand!,
+            Price = product.Stats.MinPrice.Amount,
+            DiscountedPrice = product.Variants.Any(v => v.SellingPrice.Amount < v.OriginalPrice.Amount)
+                ? product.Variants.Min(v => Convert.ToDouble(v.SellingPrice.Amount))
                 : null,
-            DiscountPercentage = product.Variants.Any(v => v.SellingPrice < v.OriginalPrice && v.OriginalPrice > 0)
-                ? (float?)((product.Variants.First(v => v.SellingPrice < v.OriginalPrice).OriginalPrice -
-                           product.Variants.First(v => v.SellingPrice < v.OriginalPrice).SellingPrice) /
-                          product.Variants.First(v => v.SellingPrice < v.OriginalPrice).OriginalPrice * 100)
+            DiscountPercentage = product.Variants.Any(v => v.SellingPrice.Amount < v.OriginalPrice.Amount && v.OriginalPrice.Amount > 0)
+                ? Convert.ToDouble(
+                    ((product.Variants.First(v => v.SellingPrice.Amount < v.OriginalPrice.Amount).OriginalPrice.Amount -
+                          product.Variants.First(v => v.SellingPrice.Amount < v.OriginalPrice.Amount).SellingPrice.Amount) /
+                          product.Variants.First(v => v.SellingPrice.Amount < v.OriginalPrice.Amount).OriginalPrice.Amount * 100)
+                    )
                 : null,
             Images = product.Images?.Select(i => i.FilePath).ToList() ?? new List<string>(),
             ImageUrl = product.Images?.FirstOrDefault()?.FilePath ?? string.Empty,
             Icon = product.Images?.FirstOrDefault()?.FilePath,
             IsActive = product.IsActive,
-            InStock = product.TotalStock > 0 || product.Variants.Any(v => v.IsUnlimited),
-            StockQuantity = product.TotalStock,
+            InStock = product.Stats.TotalStock > 0 || product.Variants.Any(v => v.IsUnlimited),
+            StockQuantity = product.Stats.TotalStock,
             CreatedAt = product.CreatedAt,
             UpdatedAt = product.UpdatedAt ?? product.CreatedAt,
             Tags = tags!,
-            Brand = brand
         };
     }
 }

@@ -1,4 +1,5 @@
-﻿using Domain.Payment.ValueObjects;
+﻿using Domain.Payment.Events;
+using Domain.Payment.ValueObjects;
 
 namespace Domain.Payment;
 
@@ -44,10 +45,12 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
 
     // Audit
     public DateTime CreatedAt { get; private set; }
+
     public DateTime? UpdatedAt { get; private set; }
 
     // Soft Delete
     public bool IsDeleted { get; private set; }
+
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
@@ -56,6 +59,7 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
 
     // Business Constants
     private const int DefaultExpiryMinutes = 20;
+
     private const int MaxAuthorityLength = 100;
     private const int MaxGatewayLength = 50;
     private const int MaxCardPanLength = 20;
@@ -205,7 +209,7 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
         _errorMessage = reason ?? "بازگشت وجه";
         UpdatedAt = DateTime.UtcNow;
 
-        AddDomainEvent(new Events.PaymentRefundedEvent(Id, _orderId, _amount.Amount));
+        AddDomainEvent(new PaymentRefundedEvent(Id, _orderId, _amount.Amount, reason));
     }
 
     #endregion State Transitions

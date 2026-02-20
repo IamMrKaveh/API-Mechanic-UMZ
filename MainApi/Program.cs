@@ -1,6 +1,4 @@
-﻿using Infrastructure.Search.HealthChecks;
-
-var builder = WebApplication.CreateBuilder(args);
+﻿var builder = WebApplication.CreateBuilder(args);
 
 // 1. Logging
 builder.Host.UseSerilog((context, configuration) =>
@@ -96,6 +94,15 @@ builder.Services.Configure<SecurityHeadersOptions>(
 
 // 5. CORS
 builder.Services.AddCustomCors(builder.Configuration);
+
+// Health Checks
+builder.Services.AddHealthChecks()
+    .AddCheck<ElasticsearchDLQHealthCheck>("elasticsearch_dlq")
+    .AddNpgSql(dbConn, name: "postgresql")
+    .AddCheck<RedisCacheHealthCheck>(
+        "redis-cache",
+        failureStatus: HealthStatus.Degraded,
+        tags: ["cache", "redis", "infrastructure"]);
 
 var app = builder.Build();
 
