@@ -1,7 +1,7 @@
 ﻿namespace MainApi.Search.Controllers;
 
 [ApiController]
-[Route("api/admin/[controller]")]
+[Route("api/admin/search")]
 public class AdminSearchController : BaseApiController
 {
     private readonly IMediator _mediator;

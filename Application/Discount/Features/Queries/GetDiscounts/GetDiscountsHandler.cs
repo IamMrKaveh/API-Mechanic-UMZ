@@ -1,6 +1,4 @@
-﻿using Application.Discount.Features.Shared;
-
-namespace Application.Discount.Features.Queries.GetDiscounts;
+﻿namespace Application.Discount.Features.Queries.GetDiscounts;
 
 public class GetDiscountsHandler : IRequestHandler<GetDiscountsQuery, ServiceResult<PaginatedResult<DiscountCodeDto>>>
 {

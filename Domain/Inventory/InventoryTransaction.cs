@@ -1,6 +1,4 @@
-﻿using Domain.Variant;
-
-namespace Domain.Inventory;
+﻿namespace Domain.Inventory;
 
 public class InventoryTransaction : AggregateRoot, IAuditable
 {

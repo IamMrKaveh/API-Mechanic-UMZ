@@ -1,6 +1,4 @@
-﻿using Application.Review.Contracts;
-
-namespace Application.Review.Features.Commands.UpdateReviewStatus;
+﻿namespace Application.Review.Features.Commands.UpdateReviewStatus;
 
 public class UpdateReviewStatusHandler : IRequestHandler<UpdateReviewStatusCommand, ServiceResult>
 {
@@ -25,8 +23,7 @@ public class UpdateReviewStatusHandler : IRequestHandler<UpdateReviewStatusComma
 
         if (request.Status == "Approved")
             review.Approve();
-
-        else if (request.Status == "Rejected") 
+        else if (request.Status == "Rejected")
             review.Reject();
 
         _reviewRepository.Update(review);

@@ -10,7 +10,8 @@ public sealed class GetDashboardStatisticsHandler
     public GetDashboardStatisticsHandler(
         IAnalyticsQueryService analyticsQuery,
         ICacheService cache,
-        ILogger<GetDashboardStatisticsHandler> logger)
+        ILogger<GetDashboardStatisticsHandler> logger
+        )
     {
         _analyticsQuery = analyticsQuery;
         _cache = cache;
@@ -18,7 +19,9 @@ public sealed class GetDashboardStatisticsHandler
     }
 
     public async Task<ServiceResult<DashboardStatisticsDto>> Handle(
-        GetDashboardStatisticsQuery request, CancellationToken cancellationToken)
+        GetDashboardStatisticsQuery request,
+        CancellationToken cancellationToken
+        )
     {
         var cacheKey = $"analytics:dashboard:{request.FromDate?.ToString("yyyyMMdd")}:{request.ToDate?.ToString("yyyyMMdd")}";
 
@@ -29,7 +32,7 @@ public sealed class GetDashboardStatisticsHandler
         var result = await _analyticsQuery.GetDashboardStatisticsAsync(
             request.FromDate, request.ToDate, cancellationToken);
 
-        //await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(10));
+        await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(10));
 
         return ServiceResult<DashboardStatisticsDto>.Success(result);
     }

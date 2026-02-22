@@ -1,6 +1,4 @@
-﻿using Application.Category.Contracts;
-
-namespace Application.Brand.Features.Commands.MoveBrand;
+﻿namespace Application.Brand.Features.Commands.MoveBrand;
 
 public class MoveBrandHandler : IRequestHandler<MoveBrandCommand, ServiceResult>
 {
@@ -11,7 +9,8 @@ public class MoveBrandHandler : IRequestHandler<MoveBrandCommand, ServiceResult>
     public MoveBrandHandler(
         ICategoryRepository categoryRepository,
         CategoryDomainService categoryDomainService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork
+        )
     {
         _categoryRepository = categoryRepository;
         _categoryDomainService = categoryDomainService;
@@ -19,30 +18,30 @@ public class MoveBrandHandler : IRequestHandler<MoveBrandCommand, ServiceResult>
     }
 
     public async Task<ServiceResult> Handle(
-        MoveBrandCommand request, CancellationToken cancellationToken)
+        MoveBrandCommand request,
+        CancellationToken ct
+        )
     {
-        // بارگذاری هر دو Aggregate
         var sourceCategory = await _categoryRepository.GetByIdWithGroupsAsync(
-            request.SourceCategoryId, cancellationToken);
+            request.SourceCategoryId, ct);
 
         if (sourceCategory == null)
             return ServiceResult.Failure("دسته‌بندی مبدأ یافت نشد.", 404);
 
         var targetCategory = await _categoryRepository.GetByIdWithGroupsAsync(
-            request.TargetCategoryId, cancellationToken);
+            request.TargetCategoryId, ct);
 
         if (targetCategory == null)
             return ServiceResult.Failure("دسته‌بندی مقصد یافت نشد.", 404);
 
         try
         {
-            // انتقال از طریق Domain Service
-            _categoryDomainService.MoveGroup(sourceCategory, targetCategory, request.GroupId);
+            _categoryDomainService.MoveGroup(sourceCategory, targetCategory, request.BrandId);
 
             _categoryRepository.Update(sourceCategory);
             _categoryRepository.Update(targetCategory);
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }
         catch (BrandNotFoundException)

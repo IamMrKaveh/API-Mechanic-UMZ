@@ -16,25 +16,22 @@ public class ShippingQueryService : IShippingQueryService
         _logger = logger;
     }
 
-    public async Task<IEnumerable<AvailableShippingMethodDto>> GetAvailableShippingMethodsForCartAsync(
+    public async Task<IEnumerable<AvailableShippingDto>> GetAvailableShippingsForCartAsync(
         int userId, CancellationToken ct = default)
     {
-        // 1. Load cart with variant details
-        var cart = await _cartRepository.GetByUserIdAsync(userId);
+        var cart = await _cartRepository.GetByUserIdAsync(userId, ct);
         if (cart == null || !cart.CartItems.Any())
-            return Enumerable.Empty<AvailableShippingMethodDto>();
+            return Enumerable.Empty<AvailableShippingDto>();
 
         var variantIds = cart.CartItems.Select(ci => ci.VariantId).ToList();
 
-        // 2. Load variants with shipping method associations
         var variants = await _context.ProductVariants
             .Where(v => variantIds.Contains(v.Id) && !v.IsDeleted)
             .Include(v => v.Product)
-            .Include(v => v.ProductVariantShippingMethods)
+            .Include(v => v.ProductVariantShippings)
             .AsNoTracking()
             .ToListAsync(ct);
 
-        // 3. Calculate order subtotal
         var orderSubtotal = 0m;
         var cartItemDetails = new List<(int VariantId, decimal ShippingMultiplier, int Quantity)>();
 
@@ -43,47 +40,43 @@ public class ShippingQueryService : IShippingQueryService
             var variant = variants.FirstOrDefault(v => v.Id == cartItem.VariantId);
             if (variant == null) continue;
 
-            orderSubtotal += variant.SellingPrice * cartItem.Quantity;
+            orderSubtotal += variant.SellingPrice.Amount * cartItem.Quantity;
             cartItemDetails.Add((variant.Id, variant.ShippingMultiplier, cartItem.Quantity));
         }
 
         var orderTotal = Money.FromDecimal(orderSubtotal);
 
-        // 4. Load all active shipping methods
-        var allShippingMethods = await _context.Set<Domain.Shipping.Shipping>()
+        var allShippings = await _context.Shippings
             .Where(sm => sm.IsActive && !sm.IsDeleted)
             .OrderBy(sm => sm.SortOrder)
             .AsNoTracking()
             .ToListAsync(ct);
 
-        // 5. Filter: only shipping methods that ALL cart variants support
-        var enabledMethodIdSets = variants
-            .Select(v => v.ProductVariantShippingMethods
+        var enabledIdSets = variants
+            .Select(v => v.ProductVariantShippings
                 .Where(pvsm => pvsm.IsActive)
                 .Select(pvsm => pvsm.ShippingId)
                 .ToHashSet())
             .ToList();
 
-        // If any variant has no shipping methods configured, allow all methods (fallback)
-        HashSet<int>? commonMethodIds = null;
-        foreach (var methodIdSet in enabledMethodIdSets)
+        HashSet<int>? commonIds = null;
+        foreach (var IdSet in enabledIdSets)
         {
-            if (!methodIdSet.Any()) continue; // Skip variants with no specific shipping config
+            if (!IdSet.Any()) continue;
 
-            if (commonMethodIds == null)
-                commonMethodIds = new HashSet<int>(methodIdSet);
+            if (commonIds == null)
+                commonIds = new HashSet<int>(IdSet);
             else
-                commonMethodIds.IntersectWith(methodIdSet);
+                commonIds.IntersectWith(IdSet);
         }
 
-        var availableMethods = commonMethodIds != null
-            ? allShippingMethods.Where(sm => commonMethodIds.Contains(sm.Id)).ToList()
-            : allShippingMethods;
+        var availables = commonIds != null
+            ? allShippings.Where(sm => commonIds.Contains(sm.Id)).ToList()
+            : allShippings;
 
-        // 6. Filter by order amount limits and calculate costs
-        var result = new List<AvailableShippingMethodDto>();
+        var result = new List<AvailableShippingDto>();
 
-        foreach (var method in availableMethods)
+        foreach (var method in availables)
         {
             if (!method.IsAvailableForOrder(orderTotal))
                 continue;
@@ -94,7 +87,7 @@ public class ShippingQueryService : IShippingQueryService
 
             var totalMultiplier = CalculateTotalMultiplier(cartItemDetails);
 
-            result.Add(new AvailableShippingMethodDto
+            result.Add(new AvailableShippingDto
             {
                 Id = method.Id,
                 Name = method.Name,
@@ -113,34 +106,30 @@ public class ShippingQueryService : IShippingQueryService
     }
 
     public async Task<ShippingCostResultDto> CalculateShippingCostAsync(
-        int userId, int shippingMethodId, CancellationToken ct = default)
+        int userId, int shippingId, CancellationToken ct = default)
     {
-        // 1. Load shipping method
-        var shippingMethod = await _context.Set<Domain.Shipping.Shipping>()
+        var shipping = await _context.Shippings
             .AsNoTracking()
-            .FirstOrDefaultAsync(sm => sm.Id == shippingMethodId && !sm.IsDeleted, ct);
+            .FirstOrDefaultAsync(sm => sm.Id == shippingId && !sm.IsDeleted, ct);
 
-        if (shippingMethod == null)
+        if (shipping == null)
             throw new DomainException("روش ارسال یافت نشد.");
 
-        if (!shippingMethod.IsActive)
+        if (!shipping.IsActive)
             throw new DomainException("روش ارسال غیرفعال است.");
 
-        // 2. Load cart
-        var cart = await _cartRepository.GetByUserIdAsync(userId);
+        var cart = await _cartRepository.GetByUserIdAsync(userId, ct);
         if (cart == null || !cart.CartItems.Any())
             throw new DomainException("سبد خرید خالی است.");
 
         var variantIds = cart.CartItems.Select(ci => ci.VariantId).ToList();
 
-        // 3. Load variants
         var variants = await _context.ProductVariants
             .Where(v => variantIds.Contains(v.Id) && !v.IsDeleted)
             .Include(v => v.Product)
             .AsNoTracking()
             .ToListAsync(ct);
 
-        // 4. Build item details and calculate subtotal
         var orderSubtotal = 0m;
         var cartItemDetails = new List<(int VariantId, decimal ShippingMultiplier, int Quantity)>();
         var itemDetailDtos = new List<ShippingCostItemDetailDto>();
@@ -150,13 +139,13 @@ public class ShippingQueryService : IShippingQueryService
             var variant = variants.FirstOrDefault(v => v.Id == cartItem.VariantId);
             if (variant == null) continue;
 
-            orderSubtotal += variant.SellingPrice * cartItem.Quantity;
+            orderSubtotal += variant.SellingPrice.Amount * cartItem.Quantity;
             cartItemDetails.Add((variant.Id, variant.ShippingMultiplier, cartItem.Quantity));
 
             itemDetailDtos.Add(new ShippingCostItemDetailDto
             {
                 VariantId = variant.Id,
-                ProductName = variant.Product?.Name ?? "محصول",
+                ProductName = variant.Product?.Name.Value ?? "محصول",
                 Quantity = cartItem.Quantity,
                 ShippingMultiplier = variant.ShippingMultiplier
             });
@@ -164,13 +153,11 @@ public class ShippingQueryService : IShippingQueryService
 
         var orderTotal = Money.FromDecimal(orderSubtotal);
 
-        // 5. Validate availability
-        var (isValid, error) = shippingMethod.ValidateForOrder(orderTotal);
+        var (isValid, error) = shipping.ValidateForOrder(orderTotal);
         if (!isValid)
             throw new DomainException(error!);
 
-        // 6. Calculate cost
-        var cost = shippingMethod.CalculateCostForCart(
+        var cost = shipping.CalculateCostForCart(
             orderTotal,
             cartItemDetails.Select(ci => (ci.VariantId, ci.ShippingMultiplier, ci.Quantity)));
 
@@ -178,24 +165,24 @@ public class ShippingQueryService : IShippingQueryService
         var isFree = cost.Amount == 0;
 
         decimal? remainingForFree = null;
-        if (shippingMethod.IsFreeAboveAmount && shippingMethod.FreeShippingThreshold.HasValue && !isFree)
+        if (shipping.IsFreeAboveAmount && shipping.FreeShippingThreshold.HasValue && !isFree)
         {
-            remainingForFree = shippingMethod.FreeShippingThreshold.Value - orderSubtotal;
+            remainingForFree = shipping.FreeShippingThreshold.Value - orderSubtotal;
             if (remainingForFree < 0) remainingForFree = 0;
         }
 
         return new ShippingCostResultDto
         {
-            ShippingMethodId = shippingMethod.Id,
-            ShippingMethodName = shippingMethod.Name,
-            BaseCost = shippingMethod.BaseCost.Amount,
+            ShippingId = shipping.Id,
+            ShippingName = shipping.Name,
+            BaseCost = shipping.BaseCost.Amount,
             TotalMultiplier = totalMultiplier,
             FinalCost = cost.Amount,
             IsFreeShipping = isFree,
             OrderSubtotal = orderSubtotal,
-            FreeShippingThreshold = shippingMethod.FreeShippingThreshold,
+            FreeShippingThreshold = shipping.FreeShippingThreshold,
             RemainingForFreeShipping = remainingForFree,
-            EstimatedDeliveryTime = shippingMethod.GetDeliveryTimeDisplay(),
+            EstimatedDeliveryTime = shipping.GetDeliveryTimeDisplay(),
             ItemDetails = itemDetailDtos
         };
     }
@@ -219,77 +206,101 @@ public class ShippingQueryService : IShippingQueryService
             : 1m;
     }
 
-    public async Task<IEnumerable<ShippingMethodDto>> GetActiveShippingMethodsAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<ShippingDto>> GetActiveShippingsAsync(CancellationToken ct = default)
     {
-        var methods = await _context.Set<Domain.Shipping.Shipping>().Where(m => m.IsActive && !m.IsDeleted).OrderBy(m => m.SortOrder).ToListAsync(ct);
-        return methods.Select(m => new ShippingMethodDto { Id = m.Id, Name = m.Name, Cost = m.Cost.Amount, Description = m.Description, EstimatedDeliveryTime = m.EstimatedDeliveryTime, IsActive = m.IsActive });
+        var s = await _context.Shippings
+            .Where(m => m.IsActive && !m.IsDeleted)
+            .OrderBy(m => m.SortOrder)
+            .ToListAsync(ct);
+
+        return s.Select(m => new ShippingDto
+        {
+            Id = m.Id,
+            Name = m.Name,
+            Cost = m.BaseCost.Amount,
+            Description = m.Description,
+            EstimatedDeliveryTime = m.EstimatedDeliveryTime,
+            IsActive = m.IsActive
+        });
     }
 
-    public async Task<ShippingMethodDto?> GetShippingMethodByIdAsync(int id, CancellationToken ct = default)
+    public async Task<ShippingDto?> GetShippingByIdAsync(int id, CancellationToken ct = default)
     {
-        var m = await _context.Set<Domain.Shipping.Shipping>().FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (m == null) return null;
-        return new ShippingMethodDto { Id = m.Id, Name = m.Name, Cost = m.Cost.Amount, Description = m.Description, EstimatedDeliveryTime = m.EstimatedDeliveryTime, IsActive = m.IsActive };
+        var m = await _context.Shippings
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
+
+        if (m == null)
+            return null;
+
+        return new ShippingDto
+        {
+            Id = m.Id,
+            Name = m.Name,
+            Cost = m.BaseCost.Amount,
+            Description = m.Description,
+            EstimatedDeliveryTime = m.EstimatedDeliveryTime,
+            IsActive = m.IsActive
+        };
     }
 
-    public async Task<IEnumerable<AvailableShippingMethodDto>> GetAvailableShippingMethodsForVariantsAsync(
-    IReadOnlyCollection<int> variantIds,
-    CancellationToken ct = default)
+    public async Task<IEnumerable<AvailableShippingDto>> GetAvailableShippingsForVariantsAsync(
+        IReadOnlyCollection<int> variantIds,
+        CancellationToken ct = default)
     {
         if (variantIds == null || variantIds.Count == 0)
-            return Enumerable.Empty<AvailableShippingMethodDto>();
+            return Enumerable.Empty<AvailableShippingDto>();
 
         var variants = await _context.ProductVariants
             .Where(v => variantIds.Contains(v.Id) && !v.IsDeleted)
-            .Include(v => v.ProductVariantShippingMethods)
+            .Include(v => v.ProductVariantShippings)
             .AsNoTracking()
             .ToListAsync(ct);
 
         if (!variants.Any())
-            return Enumerable.Empty<AvailableShippingMethodDto>();
+            return Enumerable.Empty<AvailableShippingDto>();
 
-        var allShippingMethods = await _context.Set<Domain.Shipping.Shipping>()
+        var allShippings = await _context.Shippings
             .Where(sm => sm.IsActive && !sm.IsDeleted)
             .OrderBy(sm => sm.SortOrder)
             .AsNoTracking()
             .ToListAsync(ct);
 
-        var enabledMethodIdSets = variants
-            .Select(v => v.ProductVariantShippingMethods
+        var enabledIdSets = variants
+            .Select(v => v.ProductVariantShippings
                 .Where(pvsm => pvsm.IsActive)
                 .Select(pvsm => pvsm.ShippingId)
                 .ToHashSet())
             .ToList();
 
-        HashSet<int>? commonMethodIds = null;
+        HashSet<int>? commonIds = null;
 
-        foreach (var methodIdSet in enabledMethodIdSets)
+        foreach (var IdSet in enabledIdSets)
         {
-            if (!methodIdSet.Any())
+            if (!IdSet.Any())
                 continue;
 
-            if (commonMethodIds == null)
-                commonMethodIds = new HashSet<int>(methodIdSet);
+            if (commonIds == null)
+                commonIds = new HashSet<int>(IdSet);
             else
-                commonMethodIds.IntersectWith(methodIdSet);
+                commonIds.IntersectWith(IdSet);
         }
 
-        var availableMethods = commonMethodIds != null
-            ? allShippingMethods.Where(sm => commonMethodIds.Contains(sm.Id))
-            : allShippingMethods;
+        var availables = commonIds != null
+            ? allShippings.Where(sm => commonIds.Contains(sm.Id))
+            : allShippings;
 
-        return availableMethods.Select(method => new AvailableShippingMethodDto
+        return availables.Select(m => new AvailableShippingDto
         {
-            Id = method.Id,
-            Name = method.Name,
-            BaseCost = method.BaseCost.Amount,
+            Id = m.Id,
+            Name = m.Name,
+            BaseCost = m.BaseCost.Amount,
             TotalMultiplier = 1m,
-            FinalCost = method.BaseCost.Amount,
-            IsFreeShipping = method.BaseCost.Amount == 0,
-            Description = method.Description,
-            EstimatedDeliveryTime = method.GetDeliveryTimeDisplay(),
-            MinDeliveryDays = method.MinDeliveryDays,
-            MaxDeliveryDays = method.MaxDeliveryDays
+            FinalCost = m.BaseCost.Amount,
+            IsFreeShipping = m.BaseCost.Amount == 0,
+            Description = m.Description,
+            EstimatedDeliveryTime = m.GetDeliveryTimeDisplay(),
+            MinDeliveryDays = m.MinDeliveryDays,
+            MaxDeliveryDays = m.MaxDeliveryDays
         }).ToList();
     }
 }

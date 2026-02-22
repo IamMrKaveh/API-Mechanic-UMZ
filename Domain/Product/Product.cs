@@ -89,7 +89,7 @@ public class Product : AggregateRoot, IAuditable, ISoftDeletable
         var variant = FindVariant(variantId);
         if (variant != null)
         {
-            var current = variant.ProductVariantShippingMethods.ToList();
+            var current = variant.ProductVariantShippings.ToList();
             foreach (var item in current) variant.RemoveShipping(item.ShippingId);
             foreach (var method in shippingMethods) variant.AddShipping(method);
         }

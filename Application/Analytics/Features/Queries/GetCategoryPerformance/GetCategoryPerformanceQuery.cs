@@ -2,4 +2,5 @@
 
 public sealed record GetCategoryPerformanceQuery(
     DateTime? FromDate,
-    DateTime? ToDate) : IRequest<ServiceResult<IReadOnlyList<CategoryPerformanceDto>>>;
+    DateTime? ToDate
+    ) : IRequest<ServiceResult<IReadOnlyList<CategoryPerformanceDto>>>;

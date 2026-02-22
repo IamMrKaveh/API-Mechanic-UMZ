@@ -1,7 +1,4 @@
-﻿using Application.Category.Contracts;
-using Application.Category.Features.Shared;
-
-namespace Application.Category.Features.Queries.GetCategoryTree;
+﻿namespace Application.Category.Features.Queries.GetCategoryTree;
 
 public class GetCategoryTreeHandler
     : IRequestHandler<GetCategoryTreeQuery, ServiceResult<IReadOnlyList<CategoryTreeDto>>>

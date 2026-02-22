@@ -1,6 +1,4 @@
-﻿using Application.Shipping.Contracts;
-
-namespace Application.Variant.Features.Commands.AddVariant;
+﻿namespace Application.Variant.Features.Commands.AddVariant;
 
 public class AddVariantHandler : IRequestHandler<AddVariantCommand, ServiceResult<ProductVariantViewDto>>
 {

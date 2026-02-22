@@ -1,6 +1,6 @@
 ﻿namespace MainApi.Brand.Controllers;
 
-[Route("api/admin/brands")]
+[Route("api/admin/brand")]
 [ApiController]
 [Authorize(Roles = "Admin")]
 public class AdminBrandController : BaseApiController
@@ -49,7 +49,7 @@ public class AdminBrandController : BaseApiController
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateBrand(int id, [FromForm] UpdateBrandCommand command)
     {
-        if (id != command.GroupId) return BadRequest("Mismatched Group ID"); // Note: Command uses GroupId
+        if (id != command.BrandId) return BadRequest("Mismatched Group ID"); // Note: Command uses GroupId
 
         var result = await _mediator.Send(command);
         return ToActionResult(result);

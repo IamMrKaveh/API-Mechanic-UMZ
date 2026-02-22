@@ -49,7 +49,7 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, Servic
             await _auditService.LogProductEventAsync(request.UpdateProductInput.Id, "UpdateProduct", "Product details updated", _currentUserService.UserId);
             return ServiceResult.Success();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
             return ServiceResult.Failure("Concurrency Conflict: The record was modified by another user.");
         }

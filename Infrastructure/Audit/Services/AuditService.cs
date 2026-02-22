@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Audit.Services;
+﻿using Application.Audit.Features.Shared;
+
+namespace Infrastructure.Audit.Services;
 
 public class AuditService : IAuditService
 {
@@ -22,7 +24,14 @@ public class AuditService : IAuditService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task LogAsync(int? userId, string eventType, string action, string details, string? ipAddress = null, string? userAgent = null)
+    public async Task LogAsync(
+        int? userId,
+        string eventType,
+        string action,
+        string details,
+        string? ipAddress = null,
+        string? userAgent = null
+        )
     {
         try
         {
@@ -50,7 +59,13 @@ public class AuditService : IAuditService
     }
 
     public async Task<(IEnumerable<AuditDtos> Logs, int TotalItems)> GetAuditLogsAsync(
-        int? userId, string? eventType, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
+        int? userId,
+        string? eventType,
+        DateTime? fromDate,
+        DateTime? toDate,
+        int page,
+        int pageSize
+        )
     {
         var (logs, totalCount) = await _auditRepository.GetAuditLogsAsync(fromDate, toDate, userId, eventType, page, pageSize);
 

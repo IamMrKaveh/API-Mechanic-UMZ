@@ -1,7 +1,4 @@
-﻿using Application.Review.Contracts;
-using Application.Review.Features.Shared;
-
-namespace Application.Review.Features.Queries.GetPendingReviews;
+﻿namespace Application.Review.Features.Queries.GetPendingReviews;
 
 public class GetPendingReviewsHandler
     : IRequestHandler<GetPendingReviewsQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>

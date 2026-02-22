@@ -1,22 +1,21 @@
-﻿using Application.Category.Contracts;
-using Application.Category.Features.Shared;
-
-namespace Application.Category.Features.Queries.GetAdminCategories;
+﻿namespace Application.Category.Features.Queries.GetAdminCategories;
 
 public class GetAdminCategoriesHandler
     : IRequestHandler<GetAdminCategoriesQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>
 {
-    private readonly ICategoryQueryService _queryService;
+    private readonly ICategoryRepository _repository;
+    private readonly IMapper _mapper;
 
-    public GetAdminCategoriesHandler(ICategoryQueryService queryService)
+    public GetAdminCategoriesHandler(ICategoryRepository repository, IMapper mapper)
     {
-        _queryService = queryService;
+        _repository = repository;
+        _mapper = mapper;
     }
 
     public async Task<ServiceResult<PaginatedResult<CategoryListItemDto>>> Handle(
         GetAdminCategoriesQuery request, CancellationToken cancellationToken)
     {
-        var result = await _queryService.GetCategoriesPagedAsync(
+        var (categories, totalCount) = await _repository.GetPagedAsync(
             request.Search,
             request.IsActive,
             request.IncludeDeleted,
@@ -24,6 +23,9 @@ public class GetAdminCategoriesHandler
             request.PageSize,
             cancellationToken);
 
+        var dtos = _mapper.Map<List<CategoryListItemDto>>(categories);
+
+        var result = PaginatedResult<CategoryListItemDto>.Create(dtos, totalCount, request.Page, request.PageSize);
         return ServiceResult<PaginatedResult<CategoryListItemDto>>.Success(result);
     }
 }

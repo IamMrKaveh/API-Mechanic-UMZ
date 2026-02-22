@@ -30,13 +30,11 @@ public class UpdateShippingHandler : IRequestHandler<UpdateShippingCommand, Serv
         if (request.RowVersion != null)
             _shippingMethodRepository.SetOriginalRowVersion(method, Convert.FromBase64String(request.RowVersion));
 
-        // Check duplicate name excluding current
         if (await _shippingMethodRepository.ExistsByNameAsync(request.Name, request.Id, cancellationToken))
             return ServiceResult.Failure("روش ارسال با این نام قبلاً وجود دارد.");
 
         try
         {
-            // Use domain method
             method.Update(
                 request.Name,
                 Money.FromDecimal(request.Cost),
@@ -65,7 +63,7 @@ public class UpdateShippingHandler : IRequestHandler<UpdateShippingCommand, Serv
         {
             return ServiceResult.Failure(ex.Message, 400);
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
             return ServiceResult.Failure("رکورد توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.");
         }

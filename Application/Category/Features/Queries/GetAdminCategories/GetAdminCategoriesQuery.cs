@@ -1,6 +1,4 @@
-﻿using Application.Category.Features.Shared;
-
-namespace Application.Category.Features.Queries.GetAdminCategories;
+﻿namespace Application.Category.Features.Queries.GetAdminCategories;
 
 public record GetAdminCategoriesQuery(
     string? Search,

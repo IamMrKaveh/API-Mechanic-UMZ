@@ -1,7 +1,4 @@
-﻿using Application.Review.Contracts;
-using Application.Review.Features.Shared;
-
-namespace Application.Review.Features.Queries.GetProductReviews;
+﻿namespace Application.Review.Features.Queries.GetProductReviews;
 
 public class GetProductReviewsHandler
     : IRequestHandler<GetProductReviewsQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>

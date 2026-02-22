@@ -1,6 +1,4 @@
-﻿using Application.Shipping.Features.Shared;
-
-namespace MainApi.Variant.Controllers;
+﻿namespace MainApi.Variant.Controllers;
 
 [Route("api/admin/products/variants/shipping")]
 [Authorize(Roles = "Admin")]
@@ -15,17 +13,17 @@ public class AdminProductVariantShippingController : BaseApiController
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetShippingMethods()
+    public async Task<IActionResult> GetShippings()
     {
-        var query = new GetAllShippingQuery();
+        var query = new GetShippingsQuery();
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpPut]
-    public async Task<IActionResult> UpdateShippingMethods(
+    public async Task<IActionResult> UpdateShippings(
         int variantId,
-        [FromBody] UpdateProductVariantShippingMethodsDto dto)
+        [FromBody] UpdateProductVariantShippingsDto dto)
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
@@ -33,20 +31,11 @@ public class AdminProductVariantShippingController : BaseApiController
         {
             VariantId = variantId,
             ShippingMultiplier = dto.ShippingMultiplier,
-            EnabledShippingMethodIds = dto.EnabledShippingMethodIds,
+            EnabledShippingIds = dto.EnabledShippingIds,
             UserId = CurrentUser.UserId.Value
         };
 
         var result = await _mediator.Send(command);
-        return ToActionResult(result);
-    }
-
-    [HttpGet("all-methods")]
-    public async Task<IActionResult> GetAllShippingMethods()
-    {
-        // استفاده مجدد از Shipping Query
-        var query = new GetAllShippingQuery();
-        var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
 }

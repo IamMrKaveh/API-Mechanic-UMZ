@@ -1,101 +1,99 @@
 ﻿namespace Application.Brand.Features.Shared;
 
-public class BrandCreateDto
+public record BrandCreateDto
 {
-    public int CategoryId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
+    public int CategoryId { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string Slug { get; init; } = string.Empty;
+    public int SortOrder { get; init; }
+    public string? Description { get; init; }
 }
 
-public class BrandUpdateDto
+public record BrandUpdateDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public int CategoryId { get; set; }
-    public string? RowVersion { get; set; }
+    public string Name { get; init; } = string.Empty;
+    public string Slug { get; init; } = string.Empty;
+    public int SortOrder { get; init; }
+    public string? Description { get; init; }
+    public int CategoryId { get; init; }
+    public string? RowVersion { get; init; }
 }
 
-public class BrandViewDto
+public record BrandViewDto
 {
-    public int Id { get; set; }
-    public int CategoryId { get; set; }
-    public string CategoryName { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string? Slug { get; set; }
-    public string? Description { get; set; }
-    public int SortOrder { get; set; }
-    public bool IsActive { get; set; }
-    public string? IconUrl { get; set; }
-    public int ActiveProductsCount { get; set; }
-    public int TotalProductsCount { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public string? RowVersion { get; set; }
+    public int Id { get; init; }
+    public int CategoryId { get; init; }
+    public string CategoryName { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? Description { get; init; }
+    public int SortOrder { get; init; }
+    public bool IsActive { get; init; }
+    public string? IconUrl { get; init; }
+    public int ActiveProductsCount { get; init; }
+    public int TotalProductsCount { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public string? RowVersion { get; init; }
 }
 
-public class BrandHierarchyDto
+public record BrandHierarchyDto
 {
-    public int Id { get; set; }
-    public string Title { get; set; } = string.Empty;
+    public int Id { get; init; }
+    public string Title { get; init; } = string.Empty;
 }
 
-/// <summary>
-/// جزئیات یک Brand (Admin)
-/// </summary>
-public class BrandDetailDto
+public record BrandDetailDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Slug { get; set; }
-    public string? Description { get; set; }
-    public string? IconUrl { get; set; }
-    public int CategoryId { get; set; }
-    public string CategoryName { get; set; } = string.Empty;
-    public bool IsActive { get; set; }
-    public bool IsDeleted { get; set; }
-    public int SortOrder { get; set; }
-    public int ProductCount { get; set; }
-    public int ActiveProductCount { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-    public string? RowVersion { get; set; }
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? Description { get; init; }
+    public string? IconUrl { get; init; }
+    public int CategoryId { get; init; }
+    public string CategoryName { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
+    public bool IsDeleted { get; init; }
+    public int SortOrder { get; init; }
+    public int ProductCount { get; init; }
+    public int ActiveProductCount { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+    public string? RowVersion { get; init; }
 }
 
-/// <summary>
-/// آیتم لیست گروه‌ها (Admin)
-/// </summary>
-public class BrandListItemDto
+public record BrandListItemDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Slug { get; set; }
-    public string? IconUrl { get; set; }
-    public int CategoryId { get; set; }
-    public string CategoryName { get; set; } = string.Empty;
-    public bool IsActive { get; set; }
-    public bool IsDeleted { get; set; }
-    public int SortOrder { get; set; }
-    public int ProductCount { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public string? RowVersion { get; set; }
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? IconUrl { get; init; }
+    public int CategoryId { get; init; }
+    public string CategoryName { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
+    public bool IsDeleted { get; init; }
+    public int SortOrder { get; init; }
+    public int ProductCount { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public string? RowVersion { get; init; }
 }
 
-public class BrandTreeDto
+public record BrandTreeDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Slug { get; set; }
-    public int SortOrder { get; set; }
-    public int ProductCount { get; set; }
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public int SortOrder { get; init; }
+    public int ProductCount { get; init; }
 }
 
-public class BrandSummaryDto
+public record BrandSummaryDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Slug { get; set; }
-    public string? IconUrl { get; set; }
-    public bool IsActive { get; set; }
-    public int SortOrder { get; set; }
-    public int ProductCount { get; set; }
-    public int ActiveProductCount { get; set; }
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? IconUrl { get; init; }
+    public bool IsActive { get; init; }
+    public int SortOrder { get; init; }
+    public int ProductCount { get; init; }
+    public int ActiveProductCount { get; init; }
 }

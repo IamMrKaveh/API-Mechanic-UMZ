@@ -11,7 +11,8 @@ public static class ApplicationServiceCollection
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
         });
 
-        // Domain Services
+        services.AddAutoMapper(Assembly.GetExecutingAssembly());
+
         services.AddScoped<PriceCalculatorService>();
         services.AddScoped<InventoryDomainService>();
         services.AddScoped<UserDomainService>();

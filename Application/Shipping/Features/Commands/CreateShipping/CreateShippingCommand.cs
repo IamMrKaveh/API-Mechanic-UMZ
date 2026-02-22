@@ -8,4 +8,5 @@ public record CreateShippingCommand(
     int MinDeliveryDays,
     int MaxDeliveryDays,
     bool IsActive,
-    int CurrentUserId) : IRequest<ServiceResult<ShippingMethodDto>>;
+    int CurrentUserId
+    ) : IRequest<ServiceResult<ShippingDto>>;

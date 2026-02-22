@@ -1,9 +1,5 @@
 ﻿namespace Application.Variant.Features.Commands.AddStock;
 
-/// <summary>
-/// به‌جای دستکاری مستقیم variant، از IInventoryService.AdjustStockAsync عبور می‌کند
-/// تا تراکنش موجودی همیشه در لجر ثبت شود و لجر انبار کامل بماند.
-/// </summary>
 public class AddStockHandler : IRequestHandler<AddStockCommand, ServiceResult>
 {
     private readonly IInventoryService _inventoryService;
@@ -17,27 +13,26 @@ public class AddStockHandler : IRequestHandler<AddStockCommand, ServiceResult>
         _auditService = auditService;
     }
 
-    public async Task<ServiceResult> Handle(AddStockCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        AddStockCommand request,
+        CancellationToken ct
+        )
     {
         var result = await _inventoryService.BulkStockInAsync(
-            new[]
-            {
-                new BulkStockInItemDto
-                {
-                    VariantId = request.VariantId,
-                    Quantity = request.Quantity,
-                    Notes = request.Notes ?? "افزایش موجودی"
-                }
-            },
+            [(
+            request.VariantId,
+            request.Quantity,
+            Notes: (string?)(request.Notes ?? "افزایش موجودی"))],
             request.UserId,
-            ct: cancellationToken);
+            ct: ct);
 
         if (result.IsFailed)
             return ServiceResult.Failure(result.Error!);
 
-        var itemResult = result.Data!.Results.FirstOrDefault();
-        if (itemResult?.IsSuccess == false)
-            return ServiceResult.Failure(itemResult.Error ?? "خطا در افزایش موجودی.");
+        var (_, IsSuccess, Error, NewStock) = result.Data!.Results.FirstOrDefault();
+
+        if (!IsSuccess)
+            return ServiceResult.Failure(Error ?? "خطا در افزایش موجودی.");
 
         await _auditService.LogInventoryEventAsync(
             request.VariantId,

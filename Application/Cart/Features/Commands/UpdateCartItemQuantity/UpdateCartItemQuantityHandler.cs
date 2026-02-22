@@ -1,6 +1,4 @@
-﻿using Application.Security.Contracts;
-
-namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
+﻿namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
 
 public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuantityCommand, ServiceResult<CartDetailDto>>
 {

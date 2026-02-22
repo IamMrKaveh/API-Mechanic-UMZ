@@ -4,12 +4,15 @@ public sealed class ExportAuditLogsHandler : IRequestHandler<ExportAuditLogsQuer
 {
     private readonly IAuditService _auditService;
 
-    public ExportAuditLogsHandler(IAuditService auditService)
+    public ExportAuditLogsHandler(
+        IAuditService auditService
+        )
         => _auditService = auditService;
 
     public async Task<ExportAuditLogsResult> Handle(
         ExportAuditLogsQuery request,
-        CancellationToken ct)
+        CancellationToken ct
+        )
     {
         var exportRequest = new AuditExportRequest
         {

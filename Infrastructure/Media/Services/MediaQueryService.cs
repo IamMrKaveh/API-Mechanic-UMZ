@@ -1,9 +1,5 @@
 ﻿namespace Infrastructure.Media.Services;
 
-/// <summary>
-/// سرویس کوئری رسانه‌ها - مستقیماً DTO برمی‌گرداند.
-/// بدون بارگذاری Aggregate - بهینه برای خواندن.
-/// </summary>
 public class MediaQueryService : IMediaQueryService
 {
     private readonly LedkaContext _context;
@@ -15,8 +11,7 @@ public class MediaQueryService : IMediaQueryService
         _storageService = storageService;
     }
 
-    public async Task<IReadOnlyList<MediaDto>> GetEntityMediaAsync(
-        string entityType, int entityId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<MediaDto>> GetEntityMediaAsync(string entityType, int entityId, CancellationToken ct = default)
     {
         var medias = await _context.Medias
             .AsNoTracking()
@@ -46,8 +41,7 @@ public class MediaQueryService : IMediaQueryService
         }).ToList();
     }
 
-    public async Task<string?> GetPrimaryImageUrlAsync(
-        string entityType, int entityId, CancellationToken ct = default)
+    public async Task<string?> GetPrimaryImageUrlAsync(string entityType, int entityId, CancellationToken ct = default)
     {
         var filePath = await _context.Medias
             .AsNoTracking()
@@ -62,8 +56,7 @@ public class MediaQueryService : IMediaQueryService
         return filePath != null ? _storageService.GetUrl(filePath) : null;
     }
 
-    public async Task<MediaDetailDto?> GetMediaByIdAsync(
-        int mediaId, CancellationToken ct = default)
+    public async Task<MediaDetailDto?> GetMediaByIdAsync(int mediaId, CancellationToken ct = default)
     {
         var media = await _context.Medias
             .AsNoTracking()
@@ -95,7 +88,7 @@ public class MediaQueryService : IMediaQueryService
             FileName = media.FileName,
             FileType = media.FileType,
             FileSize = media.FileSize,
-            FileSizeDisplay = FormatFileSize(media.FileSize),
+            FileSizeDisplay = FileSizeFormatter.Format(media.FileSize),
             EntityType = media.EntityType,
             EntityId = media.EntityId,
             AltText = media.AltText,
@@ -107,8 +100,7 @@ public class MediaQueryService : IMediaQueryService
         };
     }
 
-    public async Task<PaginatedResult<MediaListItemDto>> GetAllMediaPagedAsync(
-        string? entityType, int page, int pageSize, CancellationToken ct = default)
+    public async Task<PaginatedResult<MediaListItemDto>> GetAllMediaPagedAsync(string? entityType, int page, int pageSize, CancellationToken ct = default)
     {
         var query = _context.Medias
             .AsNoTracking()
@@ -146,7 +138,7 @@ public class MediaQueryService : IMediaQueryService
             Url = _storageService.GetUrl(m.FilePath),
             FileName = m.FileName,
             FileType = m.FileType,
-            FileSizeDisplay = FormatFileSize(m.FileSize),
+            FileSizeDisplay = FileSizeFormatter.Format(m.FileSize),
             EntityType = m.EntityType,
             EntityId = m.EntityId,
             IsPrimary = m.IsPrimary,
@@ -155,20 +147,5 @@ public class MediaQueryService : IMediaQueryService
         }).ToList();
 
         return PaginatedResult<MediaListItemDto>.Create(dtos, totalItems, page, pageSize);
-    }
-
-    private static string FormatFileSize(long bytes)
-    {
-        string[] sizes = { "بایت", "کیلوبایت", "مگابایت", "گیگابایت" };
-        double len = bytes;
-        int order = 0;
-
-        while (len >= 1024 && order < sizes.Length - 1)
-        {
-            order++;
-            len /= 1024;
-        }
-
-        return $"{len:0.##} {sizes[order]}";
     }
 }

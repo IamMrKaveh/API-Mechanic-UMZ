@@ -1,6 +1,4 @@
-﻿using Application.Audit.Contracts;
-
-namespace Application.User.Features.Commands.UpdateProfile;
+﻿namespace Application.User.Features.Commands.UpdateProfile;
 
 public class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand, ServiceResult<UserProfileDto>>
 {

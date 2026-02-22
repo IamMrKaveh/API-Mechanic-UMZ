@@ -14,7 +14,7 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
     public Money DiscountAmount { get; private set; } = null!;
     public Money FinalAmount { get; private set; } = null!;
     public OrderStatusValue Status { get; private set; }
-    public int ShippingMethodId { get; private set; }
+    public int ShippingId { get; private set; }
     public int? DiscountCodeId { get; private set; }
     public DateTime? PaymentDate { get; private set; }
     public DateTime? ShippedDate { get; private set; }
@@ -38,7 +38,7 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
     // Navigation for EF Core
     public User.User? User { get; private set; }
 
-    public Shipping.Shipping? ShippingMethod { get; private set; }
+    public Shipping.Shipping? Shipping { get; private set; }
     public ICollection<Payment.PaymentTransaction> PaymentTransactions { get; private set; } = new List<Payment.PaymentTransaction>();
     public ICollection<DiscountUsage> DiscountUsages { get; private set; } = new List<DiscountUsage>();
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
@@ -57,14 +57,14 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
         Status = OrderStatusValue.Pending;
     }
 
-    #region Factory Methods
+    #region Factory s
 
     public static Order Place(
         int userId,
         int? userAddressId,
         string receiverName,
         AddressSnapshot addressSnapshot,
-        int shippingMethodId,
+        int shippingId,
         string idempotencyKey,
         Money shippingCost,
         IEnumerable<OrderItemSnapshot> items)
@@ -85,7 +85,7 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
             UserAddressId = userAddressId,
             ReceiverName = receiverName.Trim(),
             AddressSnapshot = addressSnapshot,
-            ShippingMethodId = shippingMethodId,
+            ShippingId = shippingId,
             IdempotencyKey = idempotencyKey,
             ShippingCost = shippingCost,
             OrderNumber = OrderNumber.Generate(),
@@ -108,7 +108,7 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
         return order;
     }
 
-    #endregion Factory Methods
+    #endregion Factory s
 
     #region State Transitions - Order Lifecycle
 
@@ -286,12 +286,12 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
 
     #region Shipping Management
 
-    public void UpdateShippingMethod(int shippingMethodId, Money newShippingCost)
+    public void UpdateShipping(int shippingId, Money newShippingCost)
     {
         EnsureCanModify();
         Guard.Against.Null(newShippingCost, nameof(newShippingCost));
 
-        ShippingMethodId = shippingMethodId;
+        ShippingId = shippingId;
         ShippingCost = newShippingCost;
         RecalculateFinalAmount();
     }
@@ -341,7 +341,7 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
 
     #endregion Soft Delete
 
-    #region Query Methods
+    #region Query s
 
     public bool HasItems() => _orderItems.Any();
 
@@ -396,9 +396,9 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
         RecalculateTotals();
     }
 
-    #endregion Query Methods
+    #endregion Query s
 
-    #region Private Methods
+    #region Private s
 
     private void AddItemInternal(OrderItemSnapshot snapshot)
     {
@@ -478,5 +478,5 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
         UpdatedAt = DateTime.UtcNow;
     }
 
-    #endregion Private Methods
+    #endregion Private s
 }

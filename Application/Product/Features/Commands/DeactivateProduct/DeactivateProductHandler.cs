@@ -1,7 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Application.Security.Contracts;
-
-namespace Application.Product.Features.Commands.DeactivateProduct;
+﻿namespace Application.Product.Features.Commands.DeactivateProduct;
 
 public class DeactivateProductHandler : IRequestHandler<DeactivateProductCommand, ServiceResult>
 {

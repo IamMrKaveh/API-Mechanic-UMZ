@@ -4,7 +4,7 @@ public class AdminCreateOrderHandler : IRequestHandler<CreateOrderCommand, Servi
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IShippingRepository _shippingMethodRepository;
+    private readonly IShippingRepository _shippingRepository;
     private readonly IDiscountService _discountService;
     private readonly IInventoryService _inventoryService;
     private readonly IUnitOfWork _unitOfWork;
@@ -15,7 +15,7 @@ public class AdminCreateOrderHandler : IRequestHandler<CreateOrderCommand, Servi
     public AdminCreateOrderHandler(
         IOrderRepository orderRepository,
         IUserRepository userRepository,
-        IShippingRepository shippingMethodRepository,
+        IShippingRepository shippingRepository,
         IDiscountService discountService,
         IInventoryService inventoryService,
         IUnitOfWork unitOfWork,
@@ -25,7 +25,7 @@ public class AdminCreateOrderHandler : IRequestHandler<CreateOrderCommand, Servi
     {
         _orderRepository = orderRepository;
         _userRepository = userRepository;
-        _shippingMethodRepository = shippingMethodRepository;
+        _shippingRepository = shippingRepository;
         _discountService = discountService;
         _inventoryService = inventoryService;
         _unitOfWork = unitOfWork;
@@ -50,10 +50,10 @@ public class AdminCreateOrderHandler : IRequestHandler<CreateOrderCommand, Servi
                 if (userAddress == null || userAddress.UserId != request.Dto.UserId)
                     return ServiceResult<int>.Failure("آدرس کاربر نامعتبر است.");
 
-                // 2. Validate Shipping Method
-                var shippingMethod = await _shippingMethodRepository.GetByIdAsync(
-                    request.Dto.ShippingMethodId, cancellationToken);
-                if (shippingMethod == null || !shippingMethod.IsActive)
+                // 2. Validate Shipping
+                var shipping = await _shippingRepository.GetByIdAsync(
+                    request.Dto.ShippingId, cancellationToken);
+                if (shipping == null || !shipping.IsActive)
                     return ServiceResult<int>.Failure("روش ارسال انتخاب شده معتبر نیست.");
 
                 // 3. Build OrderItemSnapshots
@@ -93,7 +93,7 @@ public class AdminCreateOrderHandler : IRequestHandler<CreateOrderCommand, Servi
                     request.Dto.UserId,
                     userAddress,
                     request.Dto.ReceiverName,
-                    shippingMethod,
+                    shipping,
                     request.IdempotencyKey,
                     orderItemSnapshots,
                     discountResult);

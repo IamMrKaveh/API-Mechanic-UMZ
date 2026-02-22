@@ -1,6 +1,4 @@
-﻿using Application.Audit.Contracts;
-
-namespace Application.Auth.Features.EventHandlers;
+﻿namespace Application.Auth.Features.EventHandlers;
 
 public class UserPhoneChangedEventHandler : INotificationHandler<UserPhoneChangedEvent>
 {
@@ -11,21 +9,24 @@ public class UserPhoneChangedEventHandler : INotificationHandler<UserPhoneChange
     public UserPhoneChangedEventHandler(
         ISessionService sessionManager,
         IAuditService auditService,
-        ILogger<UserPhoneChangedEventHandler> logger)
+        ILogger<UserPhoneChangedEventHandler> logger
+        )
     {
         _sessionManager = sessionManager;
         _auditService = auditService;
         _logger = logger;
     }
 
-    public async Task Handle(UserPhoneChangedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(
+        UserPhoneChangedEvent notification,
+        CancellationToken ct
+        )
     {
         _logger.LogInformation(
             "Domain Event: User {UserId} phone changed from {OldPhone} to {NewPhone}.",
             notification.UserId, notification.OldPhoneNumber, notification.NewPhoneNumber);
 
-        // ابطال تمام سشن‌ها پس از تغییر شماره تلفن (امنیتی)
-        await _sessionManager.RevokeAllUserSessionsAsync(notification.UserId, cancellationToken);
+        await _sessionManager.RevokeAllUserSessionsAsync(notification.UserId, ct);
 
         await _auditService.LogSecurityEventAsync(
             "PhoneNumberChanged",

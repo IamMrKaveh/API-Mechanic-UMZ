@@ -1,4 +1,4 @@
 ﻿namespace Application.Shipping.Features.Queries.GetAvailableShippings;
 
 public record GetAvailableShippingsQuery(int UserId)
-    : IRequest<ServiceResult<IEnumerable<AvailableShippingMethodDto>>>;
+    : IRequest<ServiceResult<IEnumerable<AvailableShippingDto>>>;

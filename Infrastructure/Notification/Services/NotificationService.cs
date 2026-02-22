@@ -1,6 +1,4 @@
-﻿using Application.Common.Contracts;
-
-namespace Infrastructure.Notification;
+﻿namespace Infrastructure.Notification.Services;
 
 public class NotificationService : INotificationService
 {

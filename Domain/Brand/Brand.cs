@@ -1,15 +1,10 @@
 ﻿namespace Domain.Brand;
 
-/// <summary>
-/// موجودیت فرزند Category - دسترسی مستقیم از بیرون Aggregate ممنوع است.
-/// مدیریت فقط از طریق Category انجام می‌شود.
-/// ارتباط با Product یک‌طرفه است (Product به CategoryGroup رجوع می‌کند).
-/// </summary>
 public class Brand : BaseEntity, IAuditable, ISoftDeletable, IActivatable
 {
     private readonly List<Product.Product> _products = new();
 
-    public CategoryName Name { get; private set; } = null!;
+    public BrandName Name { get; private set; } = null!;
     public Slug? Slug { get; private set; }
     public string? Description { get; private set; }
     public int CategoryId { get; private set; }
@@ -24,38 +19,26 @@ public class Brand : BaseEntity, IAuditable, ISoftDeletable, IActivatable
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Concurrency
-    public new byte[]? RowVersion { get; private set; }
-
     // Navigation for EF Core
     public ICollection<Media.Media> Images { get; private set; } = [];
 
     public Category.Category Category { get; private set; } = null!;
     public IReadOnlyCollection<Product.Product> Products => _products.AsReadOnly();
 
-    // Computed
     public int ActiveProductsCount => _products.Count(p => !p.IsDeleted && p.IsActive);
-
     public int TotalProductsCount => _products.Count(p => !p.IsDeleted);
 
     public Brand()
     { }
 
-    // ============================================================
-    // Factory Method - فقط internal (از طریق Category.AddGroup)
-    // ============================================================
-
     internal static Brand Create(Category.Category category, string name, string? description = null)
     {
         Guard.Against.Null(category, nameof(category));
 
-        var groupName = CategoryName.Create(name);
-        var slug = Slug.Create(name);
-
         return new Brand
         {
-            Name = groupName,
-            Slug = slug,
+            Name = BrandName.Create(name),
+            Slug = Domain.Category.ValueObjects.Slug.Create(name),
             Description = description?.Trim(),
             CategoryId = category.Id,
             Category = category,
@@ -65,17 +48,12 @@ public class Brand : BaseEntity, IAuditable, ISoftDeletable, IActivatable
         };
     }
 
-    // ============================================================
-    // Update Methods - internal (فقط از طریق Category)
-    // ============================================================
-
     internal void Update(string name, int categoryId, string? description = null)
     {
         EnsureNotDeleted();
 
-        var newName = CategoryName.Create(name);
-        Name = newName;
-        Slug = Slug.Create(name);
+        Name = BrandName.Create(name);
+        Slug = Domain.Category.ValueObjects.Slug.Create(name);
         Description = description?.Trim();
 
         if (CategoryId != categoryId)
@@ -86,9 +64,7 @@ public class Brand : BaseEntity, IAuditable, ISoftDeletable, IActivatable
 
     internal void UpdateSortOrder(int sortOrder)
     {
-        if (sortOrder < 0)
-            throw new DomainException("ترتیب نمایش نمی‌تواند منفی باشد.");
-
+        if (sortOrder < 0) throw new DomainException("ترتیب نمایش نمی‌تواند منفی باشد.");
         SortOrder = sortOrder;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -98,17 +74,12 @@ public class Brand : BaseEntity, IAuditable, ISoftDeletable, IActivatable
         Guard.Against.Null(targetCategory, nameof(targetCategory));
         EnsureNotDeleted();
 
-        if (targetCategory.IsDeleted)
-            throw new DomainException("امکان انتقال به دسته‌بندی حذف‌شده وجود ندارد.");
+        if (targetCategory.IsDeleted) throw new DomainException("امکان انتقال به دسته‌بندی حذف‌شده وجود ندارد.");
 
         CategoryId = targetCategory.Id;
         Category = targetCategory;
         UpdatedAt = DateTime.UtcNow;
     }
-
-    // ============================================================
-    // Activation & Deletion - internal
-    // ============================================================
 
     internal void Activate()
     {
@@ -125,7 +96,6 @@ public class Brand : BaseEntity, IAuditable, ISoftDeletable, IActivatable
     internal void Deactivate()
     {
         if (!IsActive) return;
-
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -146,9 +116,7 @@ public class Brand : BaseEntity, IAuditable, ISoftDeletable, IActivatable
     internal void Restore(Category.Category parentCategory)
     {
         if (!IsDeleted) return;
-
-        if (parentCategory.IsDeleted)
-            throw new DomainException("امکان بازگردانی گروه در دسته‌بندی حذف‌شده وجود ندارد.");
+        if (parentCategory.IsDeleted) throw new DomainException("امکان بازگردانی گروه در دسته‌بندی حذف‌شده وجود ندارد.");
 
         IsDeleted = false;
         DeletedAt = null;
@@ -157,32 +125,14 @@ public class Brand : BaseEntity, IAuditable, ISoftDeletable, IActivatable
         UpdatedAt = DateTime.UtcNow;
     }
 
-    // ============================================================
-    // Query Methods
-    // ============================================================
+    public bool HasActiveProducts() => _products.Any(p => !p.IsDeleted && p.IsActive);
 
-    public bool HasActiveProducts()
-    {
-        return _products.Any(p => !p.IsDeleted && p.IsActive);
-    }
+    public bool HasProducts() => _products.Any(p => !p.IsDeleted);
 
-    public bool HasProducts()
-    {
-        return _products.Any(p => !p.IsDeleted);
-    }
-
-    public IEnumerable<Product.Product> GetActiveProducts()
-    {
-        return _products.Where(p => !p.IsDeleted && p.IsActive);
-    }
-
-    // ============================================================
-    // Private Methods
-    // ============================================================
+    public IEnumerable<Product.Product> GetActiveProducts() => _products.Where(p => !p.IsDeleted && p.IsActive);
 
     private void EnsureNotDeleted()
     {
-        if (IsDeleted)
-            throw new DomainException("گروه حذف شده است.");
+        if (IsDeleted) throw new DomainException("گروه حذف شده است.");
     }
 }

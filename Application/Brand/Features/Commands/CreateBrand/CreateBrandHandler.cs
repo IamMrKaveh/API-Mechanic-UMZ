@@ -11,7 +11,8 @@ public class CreateBrandHandler : IRequestHandler<CreateBrandCommand, ServiceRes
         ICategoryRepository categoryRepository,
         IUnitOfWork unitOfWork,
         IMediaService mediaService,
-        ILogger<CreateBrandHandler> logger)
+        ILogger<CreateBrandHandler> logger
+        )
     {
         _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
@@ -20,22 +21,21 @@ public class CreateBrandHandler : IRequestHandler<CreateBrandCommand, ServiceRes
     }
 
     public async Task<ServiceResult<int>> Handle(
-        CreateBrandCommand request, CancellationToken cancellationToken)
+        CreateBrandCommand request,
+        CancellationToken ct
+        )
     {
-        // بارگذاری Aggregate Root
-        var category = await _categoryRepository.GetByIdWithGroupsAsync(request.CategoryId, cancellationToken);
+        var category = await _categoryRepository.GetByIdWithGroupsAsync(request.CategoryId, ct);
         if (category == null)
             return ServiceResult<int>.Failure("دسته‌بندی یافت نشد.", 404);
 
         try
         {
-            // افزودن گروه از طریق Aggregate - یکتایی نام در Domain بررسی می‌شود
             var group = category.AddBrand(request.Name, request.Description);
 
             _categoryRepository.Update(category);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
-            // آپلود آیکون (اختیاری)
             if (request.IconFile != null)
             {
                 try
@@ -49,7 +49,7 @@ public class CreateBrandHandler : IRequestHandler<CreateBrandCommand, ServiceRes
                         group.Id,
                         isPrimary: true);
 
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(ct);
                 }
                 catch (Exception ex)
                 {

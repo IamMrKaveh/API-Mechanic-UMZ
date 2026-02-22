@@ -1,6 +1,4 @@
-﻿using Application.Media.Contracts;
-
-namespace Application.Media.Features.Queries.GetAllMedia;
+﻿namespace Application.Media.Features.Queries.GetAllMedia;
 
 public class GetAllMediaHandler
     : IRequestHandler<GetAllMediaQuery, ServiceResult<PaginatedResult<MediaListItemDto>>>

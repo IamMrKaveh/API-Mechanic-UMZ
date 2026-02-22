@@ -1,6 +1,4 @@
-﻿using Domain.Common.Shared.ValueObjects;
-
-namespace Domain.Variant.Services;
+﻿namespace Domain.Variant.Services;
 
 public sealed class VariantDomainService
 {

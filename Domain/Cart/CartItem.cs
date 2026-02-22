@@ -1,6 +1,4 @@
-﻿using Domain.Variant;
-
-namespace Domain.Cart;
+﻿namespace Domain.Cart;
 
 /// <summary>
 /// آیتم سبد خرید - فقط از طریق Cart قابل تغییر
@@ -14,14 +12,11 @@ public class CartItem : BaseEntity
     public DateTime AddedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    // Navigation - فقط خواندنی
     public Cart? Cart { get; private set; }
     public ProductVariant? Variant { get; private set; }
 
-    // Computed Property
     public decimal TotalPrice => Quantity * SellingPrice;
 
-    // Business Rules
     private const int MinQuantity = 1;
     private const int MaxQuantity = 1000;
 
@@ -37,8 +32,6 @@ public class CartItem : BaseEntity
     {
         Guard.Against.Null(cart, nameof(cart));
         Guard.Against.NegativeOrZero(variantId, nameof(variantId));
-        ValidateQuantity(quantity);
-        ValidatePrice(sellingPrice);
 
         return new CartItem
         {
@@ -57,19 +50,17 @@ public class CartItem : BaseEntity
 
     internal void UpdateQuantity(int newQuantity)
     {
-        ValidateQuantity(newQuantity);
         Quantity = newQuantity;
         UpdatedAt = DateTime.UtcNow;
     }
 
     internal void UpdatePrice(decimal newPrice)
     {
-        ValidatePrice(newPrice);
         SellingPrice = newPrice;
         UpdatedAt = DateTime.UtcNow;
     }
 
-    #endregion Internal Update Methods
+    #endregion Internal Update Methods - فقط Cart می‌تواند صدا بزند
 
     #region Query Methods
 
@@ -84,23 +75,4 @@ public class CartItem : BaseEntity
     }
 
     #endregion Query Methods
-
-    #region Validation - Domain Invariants
-
-    private static void ValidateQuantity(int quantity)
-    {
-        if (quantity < MinQuantity)
-            throw new DomainException($"تعداد باید حداقل {MinQuantity} باشد.");
-
-        if (quantity > MaxQuantity)
-            throw new DomainException($"حداکثر تعداد مجاز {MaxQuantity} عدد است.");
-    }
-
-    private static void ValidatePrice(decimal price)
-    {
-        if (price < 0)
-            throw new DomainException("قیمت نمی‌تواند منفی باشد.");
-    }
-
-    #endregion Validation
 }

@@ -1,6 +1,4 @@
-﻿using Domain.Common.Shared.ValueObjects;
-
-namespace Domain.Product.ValueObjects;
+﻿namespace Domain.Product.ValueObjects;
 
 public sealed class ProductStats : ValueObject
 {

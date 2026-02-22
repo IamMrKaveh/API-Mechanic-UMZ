@@ -11,5 +11,5 @@ public record UpdateDiscountCommand : IRequest<ServiceResult>
     public bool IsActive { get; init; }
     public DateTime? ExpiresAt { get; init; }
     public DateTime? StartsAt { get; init; }
-    public required string RowVersion { get; init; }
+    public required string ConcurrencyToken { get; init; }
 }

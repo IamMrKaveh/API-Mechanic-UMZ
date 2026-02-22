@@ -1,6 +1,4 @@
-﻿using Application.Audit.Contracts;
-
-namespace Application.Inventory.Features.Commands.ReconcileStock;
+﻿namespace Application.Inventory.Features.Commands.ReconcileStock;
 
 public class ReconcileStockHandler : IRequestHandler<ReconcileStockCommand, ServiceResult<ReconcileResultDto>>
 {
@@ -24,15 +22,31 @@ public class ReconcileStockHandler : IRequestHandler<ReconcileStockCommand, Serv
             request.UserId,
             cancellationToken);
 
-        if (result.IsSucceed && result.Data!.HasDiscrepancy)
+        if (result.IsSucceed && result.Data != default)
         {
-            await _auditService.LogInventoryEventAsync(
-                request.VariantId,
-                "StockReconciled",
-                $"انبارگردانی: اختلاف {result.Data.Difference} واحد اصلاح شد. موجودی نهایی: {result.Data.FinalStock}",
-                request.UserId);
+            var data = result.Data;
+
+            if (data.HasDiscrepancy)
+            {
+                await _auditService.LogInventoryEventAsync(
+                    request.VariantId,
+                    "StockReconciled",
+                    $"انبارگردانی: اختلاف {data.Difference} واحد اصلاح شد. موجودی نهایی: {data.FinalStock}",
+                    request.UserId);
+            }
+
+            var dto = new ReconcileResultDto
+            {
+                VariantId = data.VariantId,
+                FinalStock = data.FinalStock,
+                Difference = data.Difference,
+                HasDiscrepancy = data.HasDiscrepancy,
+                Message = data.Message
+            };
+
+            return ServiceResult<ReconcileResultDto>.Success(dto);
         }
 
-        return result;
+        return ServiceResult<ReconcileResultDto>.Failure(result.Error ?? "Failed", result.StatusCode);
     }
 }

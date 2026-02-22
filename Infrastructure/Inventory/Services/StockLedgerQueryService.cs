@@ -3,18 +3,15 @@
 public class StockLedgerQueryService : IStockLedgerQueryService
 {
     private readonly LedkaContext _context;
-    private readonly ILogger<StockLedgerService> _logger;
+    private readonly ILogger<StockLedgerQueryService> _logger;
 
-    public StockLedgerQueryService(LedkaContext context, ILogger<StockLedgerService> logger)
+    public StockLedgerQueryService(LedkaContext context, ILogger<StockLedgerQueryService> logger)
     {
         _context = context;
         _logger = logger;
     }
 
-    public async Task<int> GetCurrentBalanceAsync(
-        int variantId,
-        int? warehouseId = null,
-        CancellationToken ct = default)
+    public async Task<int> GetCurrentBalanceAsync(int variantId, int? warehouseId = null, CancellationToken ct = default)
     {
         var query = _context.StockLedgerEntries.Where(e => e.VariantId == variantId);
         if (warehouseId.HasValue)
@@ -28,12 +25,7 @@ public class StockLedgerQueryService : IStockLedgerQueryService
     }
 
     public async Task<IEnumerable<StockLedgerEntry>> GetLedgerAsync(
-        int variantId,
-        DateTime? from = null,
-        DateTime? to = null,
-        int page = 1,
-        int pageSize = 50,
-        CancellationToken ct = default)
+        int variantId, DateTime? from = null, DateTime? to = null, int page = 1, int pageSize = 50, CancellationToken ct = default)
     {
         var query = _context.StockLedgerEntries
             .Where(e => e.VariantId == variantId);

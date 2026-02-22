@@ -15,7 +15,14 @@ public class UnitOfWork : IUnitOfWork
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         ConvertDomainEventsToOutboxMessages();
-        return await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            return await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new ConcurrencyException("این رکورد توسط کاربر دیگری تغییر یافته است.", ex);
+        }
     }
 
     private void ConvertDomainEventsToOutboxMessages()

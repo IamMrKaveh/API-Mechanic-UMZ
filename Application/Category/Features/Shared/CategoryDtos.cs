@@ -1,113 +1,106 @@
 ﻿namespace Application.Category.Features.Shared;
 
-public class CategoryHierarchyDto
+public record CategoryHierarchyDto
 {
-    public int Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public IEnumerable<BrandHierarchyDto> Groups { get; set; } = [];
+    public int Id { get; init; }
+    public string Title { get; init; } = string.Empty;
+    public IEnumerable<BrandHierarchyDto> Brands { get; init; } = [];
 }
 
-public class CategoryCreateDto
+public record CategoryCreateDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public int SortOrder { get; set; }
+    public string Name { get; init; } = string.Empty;
+    public string Slug { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public int SortOrder { get; init; }
 }
 
-public class CategoryUpdateDto
+public record CategoryUpdateDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public int SortOrder { get; set; }
-    public string? RowVersion { get; set; }
+    public string Name { get; init; } = string.Empty;
+    public string Slug { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public int SortOrder { get; init; }
+    public string? RowVersion { get; init; }
 }
 
-public class CategoryViewDto
+public record CategoryViewDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Slug { get; set; }
-    public string? Description { get; set; }
-    public int SortOrder { get; set; }
-    public bool IsActive { get; set; }
-    public string? IconUrl { get; set; }
-    public int ActiveGroupsCount { get; set; }
-    public int TotalProductsCount { get; set; }
-    public List<BrandSummaryDto> Brands { get; set; } = new();
-    public DateTime CreatedAt { get; set; }
-    public string? RowVersion { get; set; }
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? Description { get; init; }
+    public int SortOrder { get; init; }
+    public bool IsActive { get; init; }
+    public string? IconUrl { get; init; }
+    public int ActiveGroupsCount { get; init; }
+    public int TotalProductsCount { get; init; }
+    public List<BrandSummaryDto> Brands { get; init; } = new();
+    public DateTime CreatedAt { get; init; }
+    public string? RowVersion { get; init; }
 }
 
-public class CategoryDetailViewDto : CategoryViewDto
+public record CategoryDetailViewDto : CategoryViewDto
 {
-    public List<ProductSummaryDto> Products { get; set; } = new();
+    public List<ProductSummaryDto> Products { get; init; } = new();
 }
 
-/// <summary>
-/// آیتم لیست دسته‌بندی‌ها (Admin)
-/// </summary>
-public class CategoryListItemDto
+public record CategoryListItemDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Slug { get; set; }
-    public string? IconUrl { get; set; }
-    public bool IsActive { get; set; }
-    public bool IsDeleted { get; set; }
-    public int SortOrder { get; set; }
-    public int GroupCount { get; set; }
-    public int ActiveGroupCount { get; set; }
-    public int TotalProductCount { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-    public string? RowVersion { get; set; }
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? IconUrl { get; init; }
+    public bool IsActive { get; init; }
+    public bool IsDeleted { get; init; }
+    public int SortOrder { get; init; }
+    public int GroupCount { get; init; }
+    public int ActiveGroupCount { get; init; }
+    public int TotalProductCount { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+    public string? RowVersion { get; init; }
+    public int? brandCount { get; init; }
+    public int? ActivebrandCount { get; init; }
 }
 
-/// <summary>
-/// ساختار درختی برای منو - حداقل داده مورد نیاز
-/// </summary>
-public class CategoryTreeDto
+public record CategoryTreeDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Slug { get; set; }
-    public string? IconUrl { get; set; }
-    public int SortOrder { get; set; }
-    public IReadOnlyList<BrandTreeDto> Groups { get; set; } = [];
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? IconUrl { get; init; }
+    public int SortOrder { get; init; }
+    public IReadOnlyList<BrandTreeDto> Brands { get; init; } = [];
 }
 
-/// <summary>
-/// محصول در لیست محصولات دسته‌بندی
-/// </summary>
-public class CategoryProductItemDto
+public record CategoryProductItemDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Sku { get; set; }
-    public string? IconUrl { get; set; }
-    public string GroupName { get; set; } = string.Empty;
-    public decimal MinPrice { get; set; }
-    public decimal MaxPrice { get; set; }
-    public int TotalStock { get; set; }
-    public bool IsActive { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Sku { get; init; }
+    public string? IconUrl { get; init; }
+    public string GroupName { get; init; } = string.Empty;
+    public decimal MinPrice { get; init; }
+    public decimal MaxPrice { get; init; }
+    public int TotalStock { get; init; }
+    public bool IsActive { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public string? brandName { get; init; }
 }
 
-/// <summary>
-/// جزئیات دسته‌بندی به همراه گروه‌ها (Admin)
-/// </summary>
-public class CategoryWithGroupsDto
+public record CategoryWithBrandsDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Slug { get; set; }
-    public string? Description { get; set; }
-    public string? IconUrl { get; set; }
-    public bool IsActive { get; set; }
-    public bool IsDeleted { get; set; }
-    public int SortOrder { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-    public string? RowVersion { get; set; }
-    public IReadOnlyList<BrandSummaryDto> Groups { get; set; } = [];
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? Description { get; init; }
+    public string? IconUrl { get; init; }
+    public bool IsActive { get; init; }
+    public bool IsDeleted { get; init; }
+    public int SortOrder { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+    public string? RowVersion { get; init; }
+    public IReadOnlyList<BrandSummaryDto> Brands { get; init; } = [];
 }

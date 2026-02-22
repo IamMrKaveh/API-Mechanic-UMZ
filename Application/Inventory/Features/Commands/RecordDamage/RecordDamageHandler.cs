@@ -1,6 +1,4 @@
-﻿using Application.Audit.Contracts;
-
-namespace Application.Inventory.Features.Commands.RecordDamage;
+﻿namespace Application.Inventory.Features.Commands.RecordDamage;
 
 public class RecordDamageHandler : IRequestHandler<RecordDamageCommand, ServiceResult>
 {

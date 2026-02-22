@@ -13,7 +13,7 @@ public class PaymentsController : ControllerBase
 
     [HttpPost("initiate")]
     [Authorize]
-    public async Task<IActionResult> InitiatePayment([FromBody] InitiatePaymentDto dto)
+    public async Task<IActionResult> InitiatePayment([FromBody] PaymentInitiationDto dto)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
         // Assuming UserId extracted from Claims via a helper or base class, typically:

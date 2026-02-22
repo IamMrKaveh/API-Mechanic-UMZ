@@ -1,4 +1,4 @@
-﻿namespace Application.Features.Orders.Commands.CheckoutFromCart;
+﻿namespace Application.Order.Features.Commands.CheckoutFromCart;
 
 public class CheckoutFromCartValidator : AbstractValidator<CheckoutFromCartCommand>
 {
@@ -13,9 +13,9 @@ public class CheckoutFromCartValidator : AbstractValidator<CheckoutFromCartComma
             .WithMessage("IdempotencyKey is required.")
             .MaximumLength(256);
 
-        RuleFor(x => x.ShippingMethodId)
+        RuleFor(x => x.ShippingId)
             .GreaterThan(0)
-            .WithMessage("Shipping method is required.");
+            .WithMessage("Shipping is required.");
 
         When(x => !x.UserAddressId.HasValue, () =>
         {

@@ -1,6 +1,4 @@
-﻿using Application.Security.Contracts;
-
-namespace Application.Cart.Features.Queries.GetCartSummary;
+﻿namespace Application.Cart.Features.Queries.GetCartSummary;
 
 public class GetCartSummaryHandler : IRequestHandler<GetCartSummaryQuery, ServiceResult<CartSummaryDto>>
 {

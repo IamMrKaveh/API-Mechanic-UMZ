@@ -71,7 +71,7 @@ public class RequestReturnHandler : IRequestHandler<RequestReturnCommand, Servic
 
             return ServiceResult.Success();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
             return ServiceResult.Failure(
                 "این سفارش توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.", 409);

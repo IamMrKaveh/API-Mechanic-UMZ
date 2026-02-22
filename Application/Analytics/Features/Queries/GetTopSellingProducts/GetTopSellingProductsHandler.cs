@@ -8,14 +8,17 @@ public sealed class GetTopSellingProductsHandler
 
     public GetTopSellingProductsHandler(
         IAnalyticsQueryService analyticsQuery,
-        ICacheService cache)
+        ICacheService cache
+        )
     {
         _analyticsQuery = analyticsQuery;
         _cache = cache;
     }
 
     public async Task<ServiceResult<IReadOnlyList<TopSellingProductDto>>> Handle(
-        GetTopSellingProductsQuery request, CancellationToken cancellationToken)
+        GetTopSellingProductsQuery request,
+        CancellationToken cancellationToken
+        )
     {
         var cacheKey = $"analytics:top-products:{request.Count}:{request.FromDate?.ToString("yyyyMMdd")}:{request.ToDate?.ToString("yyyyMMdd")}";
 
@@ -26,7 +29,7 @@ public sealed class GetTopSellingProductsHandler
         var result = await _analyticsQuery.GetTopSellingProductsAsync(
             request.Count, request.FromDate, request.ToDate, cancellationToken);
 
-        //await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(15));
+        await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(15));
 
         return ServiceResult<IReadOnlyList<TopSellingProductDto>>.Success(result);
     }

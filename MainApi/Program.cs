@@ -4,16 +4,6 @@
 builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
-// -----------------------------
-// DB Context
-// -----------------------------
-string dbConn = builder.Configuration.GetConnectionString("PoolerConnection")
-    ?? throw new InvalidOperationException("Database connection string is not configured.");
-builder.Services.AddDbContext<LedkaContext>(options =>
-    options.UseNpgsql(dbConn,
-        npgsql => npgsql.EnableRetryOnFailure())
-);
-
 var jwtKey = builder.Configuration["Jwt:Key"];
 var issuer = builder.Configuration["Jwt:Issuer"];
 var audience = builder.Configuration["Jwt:Audience"];
@@ -58,11 +48,6 @@ builder.Services.AddHttpClient<ILocationService, LocationService>(client =>
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
-builder.Services.AddHttpClient<IPaymentGateway, ZarinPalPaymentGateway>(client =>
-{
-    client.Timeout = TimeSpan.FromSeconds(15);
-});
-
 string redisConn = builder.Configuration.GetConnectionString("Redis")
     ?? "";
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -76,12 +61,8 @@ builder.Services.AddDataProtection()
 
 // 3. Clean Architecture Layers
 builder.Services.AddApplicationServices();
-builder.Services.AddApplicationPipelines(); // Validation, Transaction Behaviors
+builder.Services.AddApplicationPipelines();
 builder.Services.AddInfrastructureServices(builder.Configuration);
-
-builder.Services.AddHealthChecks()
-    .AddCheck<ElasticsearchDLQHealthCheck>("elasticsearch_dlq")
-    .AddNpgSql(dbConn, name: "postgresql");
 
 // 4. Configuration Options
 builder.Services.Configure<FormOptions>(options =>
@@ -94,15 +75,6 @@ builder.Services.Configure<SecurityHeadersOptions>(
 
 // 5. CORS
 builder.Services.AddCustomCors(builder.Configuration);
-
-// Health Checks
-builder.Services.AddHealthChecks()
-    .AddCheck<ElasticsearchDLQHealthCheck>("elasticsearch_dlq")
-    .AddNpgSql(dbConn, name: "postgresql")
-    .AddCheck<RedisCacheHealthCheck>(
-        "redis-cache",
-        failureStatus: HealthStatus.Degraded,
-        tags: ["cache", "redis", "infrastructure"]);
 
 var app = builder.Build();
 

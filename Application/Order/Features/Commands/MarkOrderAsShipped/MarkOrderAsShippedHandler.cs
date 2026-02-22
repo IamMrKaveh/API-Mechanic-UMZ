@@ -60,13 +60,13 @@ public class MarkOrderAsShippedHandler : IRequestHandler<MarkOrderAsShippedComma
                 order.Id,
                 "ShipOrder",
                 request.UpdatedByUserId,
-                $"سفارش ارسال شد.");
+                "سفارش ارسال شد.");
 
             _logger.LogInformation("Order {OrderId} shipped", order.Id);
 
             return ServiceResult.Success();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
             return ServiceResult.Failure(
                 "این سفارش توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.", 409);

@@ -2,5 +2,5 @@
 
 public record DeleteBrandCommand(
     int CategoryId,
-    int GroupId,
+    int BrandId,
     int? DeletedBy = null) : IRequest<ServiceResult>;

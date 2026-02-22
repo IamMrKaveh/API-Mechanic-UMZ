@@ -1,6 +1,4 @@
-﻿using Application.Audit.Contracts;
-
-namespace Application.User.Features.Commands.DeactivateAccount;
+﻿namespace Application.User.Features.Commands.DeactivateAccount;
 
 public class DeactivateAccountHandler : IRequestHandler<DeactivateAccountCommand, ServiceResult>
 {

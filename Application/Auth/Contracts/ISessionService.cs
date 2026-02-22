@@ -17,37 +17,56 @@ public interface ISessionService
         string? userAgent,
         string sessionType = "Web",
         int expiryDays = 30,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+        );
 
     /// <summary>
     /// دریافت نشست با TokenSelector
     /// </summary>
-    Task<UserSessionInfo?> GetSessionBySelectorAsync(string tokenSelector, CancellationToken ct = default);
+    Task<UserSessionInfo?> GetSessionBySelectorAsync(
+        string tokenSelector,
+        CancellationToken ct = default
+        );
 
     /// <summary>
     /// اعتبارسنجی نشست
     /// </summary>
-    Task<bool> ValidateSessionAsync(string tokenSelector, string tokenVerifierHash, CancellationToken ct = default);
+    Task<bool> ValidateSessionAsync(
+        string tokenSelector,
+        string tokenVerifierHash,
+        CancellationToken ct = default
+        );
 
     /// <summary>
     /// ابطال یک نشست
     /// </summary>
-    Task RevokeSessionAsync(int sessionId, CancellationToken ct = default);
+    Task RevokeSessionAsync(
+        int sessionId,
+        CancellationToken ct = default
+        );
 
     /// <summary>
     /// ابطال تمام نشست‌های کاربر
     /// </summary>
-    Task RevokeAllUserSessionsAsync(int userId, CancellationToken ct = default);
+    Task RevokeAllUserSessionsAsync(
+        int userId,
+        CancellationToken ct = default
+        );
 
     /// <summary>
     /// دریافت نشست‌های فعال کاربر
     /// </summary>
-    Task<IEnumerable<UserSessionInfo>> GetActiveSessionsAsync(int userId, CancellationToken ct = default);
+    Task<IEnumerable<UserSessionInfo>> GetActiveSessionsAsync(
+        int userId,
+        CancellationToken ct = default
+        );
 
     /// <summary>
     /// پاکسازی نشست‌های منقضی
     /// </summary>
-    Task CleanupExpiredSessionsAsync(CancellationToken ct = default);
+    Task CleanupExpiredSessionsAsync(
+        CancellationToken ct = default
+        );
 }
 
 /// <summary>

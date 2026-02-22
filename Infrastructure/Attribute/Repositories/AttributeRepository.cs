@@ -1,6 +1,4 @@
-﻿using Domain.Attribute;
-
-namespace Infrastructure.Attribute.Repositories;
+﻿namespace Infrastructure.Attribute.Repositories;
 
 public class AttributeRepository : IAttributeRepository
 {

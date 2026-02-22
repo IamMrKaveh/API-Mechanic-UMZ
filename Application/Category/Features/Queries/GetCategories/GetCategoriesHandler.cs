@@ -1,7 +1,4 @@
-﻿using Application.Category.Contracts;
-using Application.Category.Features.Shared;
-
-namespace Application.Category.Features.Queries.GetCategories;
+﻿namespace Application.Category.Features.Queries.GetCategories;
 
 public class GetAdminCategoriesLegacyQueryHandler
     : IRequestHandler<GetAdminCategoriesLegacyQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>

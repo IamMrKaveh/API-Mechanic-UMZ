@@ -13,16 +13,49 @@ public class CategoryRepository : ICategoryRepository
         _context = context;
     }
 
-    public async Task<Domain.Category.Category?> GetByIdWithGroupsAsync(
-        int id, CancellationToken ct = default)
+    public async Task<(IEnumerable<Domain.Category.Category> Items, int TotalCount)> GetPagedAsync(
+        string? search, bool? isActive, bool includeDeleted, int page, int pageSize, CancellationToken ct = default)
+    {
+        var query = _context.Categories
+            .AsNoTracking()
+            .Include(c => c.Brands.Where(g => !g.IsDeleted))
+                .ThenInclude(b => b.Products.Where(p => !p.IsDeleted))
+            .AsQueryable();
+
+        if (!includeDeleted)
+            query = query.Where(c => !c.IsDeleted);
+        else
+            query = query.IgnoreQueryFilters();
+
+        if (isActive.HasValue)
+            query = query.Where(c => c.IsActive == isActive.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchTerm = search.Trim().ToLower();
+            query = query.Where(c => c.Name.Value.ToLower().Contains(searchTerm));
+        }
+
+        var totalItems = await query.CountAsync(ct);
+
+        var categories = await query
+            .OrderBy(c => c.SortOrder)
+            .ThenByDescending(c => c.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (categories, totalItems);
+    }
+
+    public async Task<Domain.Category.Category?> GetByIdWithGroupsAsync(int id, CancellationToken ct = default)
     {
         return await _context.Categories
             .Include(c => c.Brands.Where(g => !g.IsDeleted))
             .FirstOrDefaultAsync(c => c.Id == id, ct);
     }
 
-    public async Task<Domain.Category.Category?> GetByIdWithGroupsAndProductsAsync(
-        int id, CancellationToken ct = default)
+    public async Task<Domain.Category.Category?> GetByIdWithGroupsAndProductsAsync(int id, CancellationToken ct = default)
     {
         return await _context.Categories
             .Include(c => c.Brands.Where(g => !g.IsDeleted))
@@ -31,8 +64,7 @@ public class CategoryRepository : ICategoryRepository
             .FirstOrDefaultAsync(c => c.Id == id, ct);
     }
 
-    public async Task<IReadOnlyList<Domain.Category.Category>> GetByIdsAsync(
-        IEnumerable<int> ids, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Domain.Category.Category>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default)
     {
         return await _context.Categories
             .Where(c => ids.Contains(c.Id) && !c.IsDeleted)
@@ -40,8 +72,7 @@ public class CategoryRepository : ICategoryRepository
             .ToListAsync(ct);
     }
 
-    public async Task<IReadOnlyList<Domain.Category.Category>> GetAllActiveAsync(
-        CancellationToken ct = default)
+    public async Task<IReadOnlyList<Domain.Category.Category>> GetAllActiveAsync(CancellationToken ct = default)
     {
         return await _context.Categories
             .Where(c => !c.IsDeleted)
@@ -49,8 +80,7 @@ public class CategoryRepository : ICategoryRepository
             .ToListAsync(ct);
     }
 
-    public async Task<bool> ExistsByNameAsync(
-        string name, int? excludeId = null, CancellationToken ct = default)
+    public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null, CancellationToken ct = default)
     {
         var normalizedName = name.Trim().ToLowerInvariant();
 
@@ -63,8 +93,7 @@ public class CategoryRepository : ICategoryRepository
         return await query.AnyAsync(ct);
     }
 
-    public async Task<bool> ExistsBySlugAsync(
-        string slug, int? excludeId = null, CancellationToken ct = default)
+    public async Task<bool> ExistsBySlugAsync(string slug, int? excludeId = null, CancellationToken ct = default)
     {
         var normalizedSlug = slug.Trim().ToLowerInvariant();
 

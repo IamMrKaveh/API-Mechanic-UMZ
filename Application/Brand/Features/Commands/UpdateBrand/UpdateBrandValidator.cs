@@ -5,7 +5,7 @@ public class UpdateBrandValidator : AbstractValidator<UpdateBrandCommand>
     public UpdateBrandValidator()
     {
         RuleFor(x => x.CategoryId).GreaterThan(0).WithMessage("شناسه دسته‌بندی الزامی است.");
-        RuleFor(x => x.GroupId).GreaterThan(0).WithMessage("شناسه گروه الزامی است.");
+        RuleFor(x => x.BrandId).GreaterThan(0).WithMessage("شناسه گروه الزامی است.");
 
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("نام گروه الزامی است.")

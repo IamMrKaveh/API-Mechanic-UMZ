@@ -1,117 +1,117 @@
 ﻿namespace Application.Shipping.Features.Shared;
 
-public class ShippingMethodDto
+public record ShippingDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public decimal Cost { get; set; }
-    public string? EstimatedDeliveryTime { get; set; }
-    public int MinDeliveryDays { get; set; }
-    public int MaxDeliveryDays { get; set; }
-    public bool IsActive { get; set; }
-    public bool IsDeleted { get; set; }
-    public bool IsDefault { get; set; }
-    public int SortOrder { get; set; }
-    public decimal? MinOrderAmount { get; set; }
-    public decimal? MaxOrderAmount { get; set; }
-    public bool IsFreeAboveAmount { get; set; }
-    public decimal? FreeShippingThreshold { get; set; }
-    public string? RowVersion { get; set; }
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public decimal Cost { get; init; }
+    public string? EstimatedDeliveryTime { get; init; }
+    public int MinDeliveryDays { get; init; }
+    public int MaxDeliveryDays { get; init; }
+    public bool IsActive { get; init; }
+    public bool IsDeleted { get; init; }
+    public bool IsDefault { get; init; }
+    public int SortOrder { get; init; }
+    public decimal? MinOrderAmount { get; init; }
+    public decimal? MaxOrderAmount { get; init; }
+    public bool IsFreeAboveAmount { get; init; }
+    public decimal? FreeShippingThreshold { get; init; }
+    public string? RowVersion { get; init; }
 }
 
-public class ShippingMethodCreateDto
+public record ShippingCreateDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public decimal BaseCost { get; set; }
-    public string? EstimatedDeliveryTime { get; set; }
-    public int MinDeliveryDays { get; set; } = 1;
-    public int MaxDeliveryDays { get; set; } = 7;
-    public bool IsActive { get; set; } = true;
-    public int SortOrder { get; set; }
+    public string Name { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public decimal BaseCost { get; init; }
+    public string? EstimatedDeliveryTime { get; init; }
+    public int MinDeliveryDays { get; init; } = 1;
+    public int MaxDeliveryDays { get; init; } = 7;
+    public bool IsActive { get; init; } = true;
+    public int SortOrder { get; init; }
 }
 
-public class ShippingMethodUpdateDto
+public record ShippingUpdateDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public decimal BaseCost { get; set; }
-    public string? EstimatedDeliveryTime { get; set; }
-    public int MinDeliveryDays { get; set; }
-    public int MaxDeliveryDays { get; set; }
-    public bool IsActive { get; set; }
-    public int SortOrder { get; set; }
-    public string? RowVersion { get; set; }
+    public string Name { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public decimal BaseCost { get; init; }
+    public string? EstimatedDeliveryTime { get; init; }
+    public int MinDeliveryDays { get; init; }
+    public int MaxDeliveryDays { get; init; }
+    public bool IsActive { get; init; }
+    public int SortOrder { get; init; }
+    public string? RowVersion { get; init; }
 }
 
-public class AvailableShippingMethodDto
+public record AvailableShippingDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public decimal BaseCost { get; set; }
-    public decimal TotalMultiplier { get; set; }
-    public decimal FinalCost { get; set; }
-    public bool IsFreeShipping { get; set; }
-    public string? Description { get; set; }
-    public string? EstimatedDeliveryTime { get; set; }
-    public int MinDeliveryDays { get; set; }
-    public int MaxDeliveryDays { get; set; }
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public decimal BaseCost { get; init; }
+    public decimal TotalMultiplier { get; init; }
+    public decimal FinalCost { get; init; }
+    public bool IsFreeShipping { get; init; }
+    public string? Description { get; init; }
+    public string? EstimatedDeliveryTime { get; init; }
+    public int MinDeliveryDays { get; init; }
+    public int MaxDeliveryDays { get; init; }
 }
 
-public class ShippingCostResultDto
+public record ShippingCostResultDto
 {
-    public int ShippingMethodId { get; set; }
-    public string ShippingMethodName { get; set; } = string.Empty;
-    public decimal BaseCost { get; set; }
-    public decimal TotalMultiplier { get; set; }
-    public decimal FinalCost { get; set; }
-    public bool IsFreeShipping { get; set; }
-    public decimal OrderSubtotal { get; set; }
-    public decimal? FreeShippingThreshold { get; set; }
-    public decimal? RemainingForFreeShipping { get; set; }
-    public string? EstimatedDeliveryTime { get; set; }
-    public List<ShippingCostItemDetailDto> ItemDetails { get; set; } = new();
+    public int ShippingId { get; init; }
+    public string ShippingName { get; init; } = string.Empty;
+    public decimal BaseCost { get; init; }
+    public decimal TotalMultiplier { get; init; }
+    public decimal FinalCost { get; init; }
+    public bool IsFreeShipping { get; init; }
+    public decimal OrderSubtotal { get; init; }
+    public decimal? FreeShippingThreshold { get; init; }
+    public decimal? RemainingForFreeShipping { get; init; }
+    public string? EstimatedDeliveryTime { get; init; }
+    public List<ShippingCostItemDetailDto> ItemDetails { get; init; } = new();
 }
 
-public class ShippingCostItemDetailDto
+public record ShippingCostItemDetailDto
 {
-    public int VariantId { get; set; }
-    public string ProductName { get; set; } = string.Empty;
-    public int Quantity { get; set; }
-    public decimal ShippingMultiplier { get; set; }
+    public int VariantId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
+    public int Quantity { get; init; }
+    public decimal ShippingMultiplier { get; init; }
 }
 
-public class ProductVariantShippingMethodDto
+public record ProductVariantShippingDto
 {
-    public int Id { get; set; }
-    public int ProductVariantId { get; set; }
-    public int ShippingMethodId { get; set; }
-    public string ShippingMethodName { get; set; } = string.Empty;
-    public bool IsActive { get; set; }
+    public int Id { get; init; }
+    public int ProductVariantId { get; init; }
+    public int ShippingId { get; init; }
+    public string ShippingName { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
 }
 
-public class UpdateProductVariantShippingMethodsDto
+public record UpdateProductVariantShippingsDto
 {
-    public int ProductVariantId { get; set; }
-    public decimal ShippingMultiplier { get; set; } = 1;
-    public List<int> EnabledShippingMethodIds { get; set; } = new();
+    public int ProductVariantId { get; init; }
+    public decimal ShippingMultiplier { get; init; } = 1;
+    public List<int> EnabledShippingIds { get; init; } = new();
 }
 
-public class ProductVariantShippingInfoDto
+public record ProductVariantShippingInfoDto
 {
-    public int VariantId { get; set; }
-    public string? ProductName { get; set; }
-    public string? VariantDisplayName { get; set; }
-    public decimal ShippingMultiplier { get; set; }
-    public List<ShippingMethodSelectionDto> AvailableShippingMethods { get; set; } = new();
+    public int VariantId { get; init; }
+    public string? ProductName { get; init; }
+    public string? VariantDisplayName { get; init; }
+    public decimal ShippingMultiplier { get; init; }
+    public List<ShippingSelectionDto> AvailableShippings { get; init; } = new();
 }
 
-public class ShippingMethodSelectionDto
+public record ShippingSelectionDto
 {
-    public int ShippingMethodId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public decimal BaseCost { get; set; }
-    public string? Description { get; set; }
-    public bool IsEnabled { get; set; }
+    public int ShippingId { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public decimal BaseCost { get; init; }
+    public string? Description { get; init; }
+    public bool IsEnabled { get; init; }
 }

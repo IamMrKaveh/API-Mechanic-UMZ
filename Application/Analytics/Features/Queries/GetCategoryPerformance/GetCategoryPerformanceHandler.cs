@@ -8,14 +8,17 @@ public sealed class GetCategoryPerformanceHandler
 
     public GetCategoryPerformanceHandler(
         IAnalyticsQueryService analyticsQuery,
-        ICacheService cache)
+        ICacheService cache
+        )
     {
         _analyticsQuery = analyticsQuery;
         _cache = cache;
     }
 
     public async Task<ServiceResult<IReadOnlyList<CategoryPerformanceDto>>> Handle(
-        GetCategoryPerformanceQuery request, CancellationToken cancellationToken)
+        GetCategoryPerformanceQuery request,
+        CancellationToken cancellationToken
+        )
     {
         var cacheKey = $"analytics:category-perf:{request.FromDate?.ToString("yyyyMMdd")}:{request.ToDate?.ToString("yyyyMMdd")}";
 
@@ -26,7 +29,7 @@ public sealed class GetCategoryPerformanceHandler
         var result = await _analyticsQuery.GetCategoryPerformanceAsync(
             request.FromDate, request.ToDate, cancellationToken);
 
-        //await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(15));
+        await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(15));
 
         return ServiceResult<IReadOnlyList<CategoryPerformanceDto>>.Success(result);
     }

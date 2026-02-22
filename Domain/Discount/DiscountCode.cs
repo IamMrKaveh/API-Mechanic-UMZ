@@ -1,6 +1,4 @@
-﻿using Domain.Common.Shared.ValueObjects;
-
-namespace Domain.Discount;
+﻿namespace Domain.Discount;
 
 public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
 {
@@ -31,28 +29,29 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
 
     // Audit
     public DateTime CreatedAt { get; private set; }
+
     public DateTime? UpdatedAt { get; private set; }
 
     // Soft Delete
     public bool IsDeleted { get; private set; }
+
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Concurrency
-    public new byte[]? RowVersion { get; private set; }
-
     // Navigation
     public IReadOnlyCollection<DiscountRestriction> Restrictions => _restrictions.AsReadOnly();
+
     public IReadOnlyCollection<DiscountUsage> Usages => _usages.AsReadOnly();
-    public ICollection<Order.Order> Orders { get; private set; } = new List<Order.Order>();
 
     // Business Constants
     private const int MinCodeLength = 3;
+
     private const int MaxCodeLength = 20;
     private const decimal MinPercentage = 0.01m;
     private const decimal MaxPercentage = 100m;
 
-    private DiscountCode() { }
+    private DiscountCode()
+    { }
 
     #region Factory Methods
 
@@ -84,7 +83,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
         return discount;
     }
 
-    #endregion
+    #endregion Factory Methods
 
     #region Domain Behaviors
 
@@ -124,7 +123,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
         UpdatedAt = DateTime.UtcNow;
     }
 
-    #endregion
+    #endregion Domain Behaviors
 
     #region Validation (Backward-compatible Tuple + Rich Result)
 
@@ -166,7 +165,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
         return DiscountValidation.Valid();
     }
 
-    #endregion
+    #endregion Validation (Backward-compatible Tuple + Rich Result)
 
     #region Discount Calculation & Application
 
@@ -182,7 +181,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
     }
 
     /// <summary>
-    /// محاسبه مبلغ تخفیف بر اساس مبلغ سفا��ش
+    /// محاسبه مبلغ تخفیف بر اساس مبلغ سفارش
     /// </summary>
     public decimal CalculateDiscountAmount(decimal orderTotal)
     {
@@ -205,7 +204,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
         return Money.FromDecimal(amount);
     }
 
-    #endregion
+    #endregion Discount Calculation & Application
 
     #region Usage Management
 
@@ -216,7 +215,8 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
     {
         EnsureNotDeleted();
         EnsureCanBeUsed();
-        IncrementUsageCount();
+        _usedCount++;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -279,7 +279,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
         }
     }
 
-    #endregion
+    #endregion Usage Management
 
     #region Restriction Management
 
@@ -355,8 +355,11 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
     }
 
     public bool IsRestrictedToCategory(int categoryId) => HasRestriction(DiscountRestrictionType.Category, categoryId);
+
     public bool IsRestrictedToProduct(int productId) => HasRestriction(DiscountRestrictionType.Product, productId);
+
     public bool IsRestrictedToUser(int userId) => HasRestriction(DiscountRestrictionType.User, userId);
+
     public bool IsRestrictedToBrand(int brandId) => HasRestriction(DiscountRestrictionType.Brand, brandId);
 
     public bool HasAnyRestrictions() => _restrictions.Any();
@@ -367,7 +370,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
     public IEnumerable<int> GetRestrictedProductIds() =>
         _restrictions.Where(r => r.Type == DiscountRestrictionType.Product).Select(r => r.EntityId!.Value);
 
-    #endregion
+    #endregion Restriction Management
 
     #region Activation & Lifecycle
 
@@ -420,7 +423,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
         AddDomainEvent(new Events.DiscountExpiredEvent(Id));
     }
 
-    #endregion
+    #endregion Activation & Lifecycle
 
     #region Query Methods
 
@@ -459,7 +462,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
         return Math.Round((discountAmount / orderTotal) * 100, 2);
     }
 
-    #endregion
+    #endregion Query Methods
 
     #region Private Domain Invariants
 
@@ -553,5 +556,5 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
         _expiresAt = expiresAt;
     }
 
-    #endregion
+    #endregion Private Domain Invariants
 }

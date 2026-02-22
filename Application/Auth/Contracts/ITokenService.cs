@@ -8,7 +8,9 @@ public interface ITokenService
     /// <summary>
     /// تولید JWT Token
     /// </summary>
-    string GenerateJwtToken(Domain.User.User user);
+    string GenerateJwtToken(
+        Domain.User.User user
+        );
 
     /// <summary>
     /// تولید Refresh Token
@@ -18,17 +20,23 @@ public interface ITokenService
     /// <summary>
     /// هش کردن Refresh Token
     /// </summary>
-    string HashToken(string token);
+    string HashToken(
+        string token
+        );
 
     /// <summary>
     /// استخراج اطلاعات از JWT (بدون اعتبارسنجی امضا)
     /// </summary>
-    System.Security.Claims.ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
+    ClaimsPrincipal? GetPrincipalFromExpiredToken(
+        string token
+        );
 
     /// <summary>
     /// تجزیه Refresh Token به Selector و Verifier
     /// </summary>
-    (string? Selector, string? Verifier) ParseRefreshToken(string refreshToken);
+    (string? Selector, string? Verifier) ParseRefreshToken(
+        string refreshToken
+        );
 
     /// <summary>
     /// دریافت زمان انقضای Access Token

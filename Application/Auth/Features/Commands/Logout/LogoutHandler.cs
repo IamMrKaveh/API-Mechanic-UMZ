@@ -9,14 +9,18 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, ServiceResult>
     public LogoutHandler(
         ITokenService tokenService,
         ISessionService sessionManager,
-        ILogger<LogoutHandler> logger)
+        ILogger<LogoutHandler> logger
+        )
     {
         _tokenService = tokenService;
         _sessionManager = sessionManager;
         _logger = logger;
     }
 
-    public async Task<ServiceResult> Handle(LogoutCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        LogoutCommand request,
+        CancellationToken ct
+        )
     {
         try
         {
@@ -27,10 +31,10 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, ServiceResult>
             if (selector == null)
                 return ServiceResult.Success();
 
-            var session = await _sessionManager.GetSessionBySelectorAsync(selector, cancellationToken);
+            var session = await _sessionManager.GetSessionBySelectorAsync(selector, ct);
             if (session != null && session.UserId == request.UserId)
             {
-                await _sessionManager.RevokeSessionAsync(session.Id, cancellationToken);
+                await _sessionManager.RevokeSessionAsync(session.Id, ct);
                 _logger.LogInformation("کاربر {UserId} از سیستم خارج شد.", request.UserId);
             }
 

@@ -9,19 +9,23 @@ public class UserDeactivatedEventHandler : INotificationHandler<UserDeactivatedE
     public UserDeactivatedEventHandler(
         ISessionService sessionManager,
         IAuditService auditService,
-        ILogger<UserDeactivatedEventHandler> logger)
+        ILogger<UserDeactivatedEventHandler> logger
+        )
     {
         _sessionManager = sessionManager;
         _auditService = auditService;
         _logger = logger;
     }
 
-    public async Task Handle(UserDeactivatedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(
+        UserDeactivatedEvent notification,
+        CancellationToken ct
+        )
     {
         _logger.LogInformation("Domain Event: User {UserId} deactivated.", notification.UserId);
 
         // ابطال تمام سشن‌ها در Infrastructure
-        await _sessionManager.RevokeAllUserSessionsAsync(notification.UserId, cancellationToken);
+        await _sessionManager.RevokeAllUserSessionsAsync(notification.UserId, ct);
 
         await _auditService.LogSecurityEventAsync(
             "AccountDeactivated",

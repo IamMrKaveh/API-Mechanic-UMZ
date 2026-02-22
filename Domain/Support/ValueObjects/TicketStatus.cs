@@ -49,7 +49,9 @@ public sealed class TicketStatus : ValueObject
     }
 
     public bool CanAddMessage() => !IsClosed;
+
     public bool CanClose() => !IsClosed;
+
     public bool CanReopen() => IsClosed;
 
     protected override IEnumerable<object> GetEqualityComponents()

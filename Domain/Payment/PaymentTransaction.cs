@@ -102,7 +102,7 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
             _isVerificationInProgress = false
         };
 
-        transaction.AddDomainEvent(new Events.PaymentInitiatedEvent(
+        transaction.AddDomainEvent(new PaymentInitiatedEvent(
             transaction.Id,
             orderId,
             amount));
@@ -151,7 +151,7 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
         UpdatedAt = DateTime.UtcNow;
         _isVerificationInProgress = false;
 
-        AddDomainEvent(new Events.PaymentSucceededEvent(Id, _orderId, refId, _userId));
+        AddDomainEvent(new PaymentSucceededEvent(Id, _orderId, refId, _userId));
     }
 
     /// <summary>
@@ -162,12 +162,12 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
         EnsureCanFail();
 
         _status = PaymentStatus.Failed;
-        _errorMessage = errorMessage;
+        _errorMessage = errorMessage ?? "خطای نامشخص";
         _rawResponse = rawResponse;
         UpdatedAt = DateTime.UtcNow;
         _isVerificationInProgress = false;
 
-        AddDomainEvent(new Events.PaymentFailedEvent(Id, _orderId, errorMessage ?? "خطای نامشخص"));
+        AddDomainEvent(new PaymentFailedEvent(Id, _orderId, _errorMessage));
     }
 
     /// <summary>
@@ -182,7 +182,7 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
         UpdatedAt = DateTime.UtcNow;
         _isVerificationInProgress = false;
 
-        AddDomainEvent(new Events.PaymentExpiredEvent(Id, _orderId, _amount.Amount, _authority));
+        AddDomainEvent(new PaymentExpiredEvent(Id, _orderId, _amount.Amount, _authority));
     }
 
     /// <summary>
@@ -209,7 +209,7 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
         _errorMessage = reason ?? "بازگشت وجه";
         UpdatedAt = DateTime.UtcNow;
 
-        AddDomainEvent(new PaymentRefundedEvent(Id, _orderId, _amount.Amount, reason));
+        AddDomainEvent(new PaymentRefundedEvent(Id, _orderId, _amount.Amount, _errorMessage));
     }
 
     #endregion State Transitions

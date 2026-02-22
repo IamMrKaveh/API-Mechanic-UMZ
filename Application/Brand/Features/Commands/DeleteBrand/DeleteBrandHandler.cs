@@ -5,50 +5,53 @@ public class DeleteBrandHandler : IRequestHandler<DeleteBrandCommand, ServiceRes
     private readonly ICategoryRepository _categoryRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediaService _mediaService;
+    private readonly IMediaQueryService _mediaQueryService;
     private readonly ILogger<DeleteBrandHandler> _logger;
 
     public DeleteBrandHandler(
         ICategoryRepository categoryRepository,
         IUnitOfWork unitOfWork,
         IMediaService mediaService,
-        ILogger<DeleteBrandHandler> logger)
+        IMediaQueryService mediaQueryService,
+        ILogger<DeleteBrandHandler> logger
+        )
     {
         _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
         _mediaService = mediaService;
+        _mediaQueryService = mediaQueryService;
         _logger = logger;
     }
 
     public async Task<ServiceResult> Handle(
-        DeleteBrandCommand request, CancellationToken cancellationToken)
+        DeleteBrandCommand request,
+        CancellationToken ct
+        )
     {
-        // بارگذاری Aggregate با محصولات (برای بررسی امکان حذف)
         var category = await _categoryRepository.GetByIdWithGroupsAndProductsAsync(
-            request.CategoryId, cancellationToken);
+            request.CategoryId, ct);
 
         if (category == null)
             return ServiceResult.Failure("دسته‌بندی یافت نشد.", 404);
 
         try
         {
-            // حذف از طریق Aggregate - بررسی محصولات فعال در Domain
-            category.RemoveBrand(request.GroupId, request.DeletedBy);
+            category.RemoveBrand(request.BrandId, request.DeletedBy);
 
             _categoryRepository.Update(category);
 
-            // حذف مدیا
             try
             {
-                var mediaList = await _mediaService.GetEntityMediaAsync("CategoryGroup", request.GroupId);
+                var mediaList = await _mediaQueryService.GetEntityMediaAsync("CategoryGroup", request.BrandId);
                 foreach (var media in mediaList)
                     await _mediaService.DeleteMediaAsync(media.Id);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "خطا در حذف مدیای گروه {GroupId}", request.GroupId);
+                _logger.LogError(ex, "خطا در حذف مدیای گروه {GroupId}", request.BrandId);
             }
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }
         catch (BrandNotFoundException)

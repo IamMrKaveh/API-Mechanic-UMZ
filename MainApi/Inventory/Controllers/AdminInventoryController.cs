@@ -105,7 +105,7 @@ public class AdminInventoryController : BaseApiController
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
         var command = new BulkStockInCommand(
-            request.Items.Select(i => new Application.Inventory.Contracts.BulkStockInItemDto
+            request.Items.Select(i => new BulkStockInItemDto
             {
                 VariantId = i.VariantId,
                 Quantity = i.Quantity,
@@ -149,24 +149,4 @@ public class AdminInventoryController : BaseApiController
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
-}
-
-// ─── Request DTOs ────────────────────────────────────────────────────────────
-
-public class BulkStockInRequest
-{
-    public List<BulkStockInItemRequest> Items { get; set; } = [];
-    public string? SupplierReference { get; set; }
-}
-
-public class BulkStockInItemRequest
-{
-    public int VariantId { get; set; }
-    public int Quantity { get; set; }
-    public string? Notes { get; set; }
-}
-
-public class ApproveReturnRequest
-{
-    public string? Reason { get; set; }
 }

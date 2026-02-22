@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Audit.Services;
+﻿using Application.Audit.Features.Shared;
+
+namespace Infrastructure.Audit.Services;
 
 /// <summary>
 /// سرویس حسابرسی تقویت‌شده با:
@@ -21,7 +23,8 @@ public sealed class EnhancedAuditService : IAuditService
         IAuditMaskingService masking,
         IUnitOfWork unitOfWork,
         IHttpContextAccessor httpContextAccessor,
-        ILogger<EnhancedAuditService> logger)
+        ILogger<EnhancedAuditService> logger
+        )
     {
         _auditRepository = auditRepository;
         _masking = masking;
@@ -38,7 +41,8 @@ public sealed class EnhancedAuditService : IAuditService
         string action,
         string details,
         string? ipAddress = null,
-        string? userAgent = null)
+        string? userAgent = null
+        )
     {
         try
         {
@@ -82,12 +86,24 @@ public sealed class EnhancedAuditService : IAuditService
         DateTime? fromDate,
         DateTime? toDate,
         int page,
-        int pageSize)
+        int pageSize
+        )
     {
         var (logs, totalCount) = await _auditRepository.GetAuditLogsAsync(
             fromDate, toDate, userId, eventType, page, pageSize);
 
-        var dtos = logs.Select(MapToDto);
+        var dtos = logs.Select(l => new AuditDtos
+        {
+            Id = l.Id,
+            UserId = l.UserId,
+            EventType = l.EventType,
+            Action = l.Action,
+            Details = l.Details,
+            IpAddress = l.IpAddress,
+            UserAgent = l.UserAgent,
+            Timestamp = l.Timestamp
+        });
+
         return (dtos, totalCount);
     }
 
@@ -95,8 +111,9 @@ public sealed class EnhancedAuditService : IAuditService
     /// جستجوی پیشرفته با فیلترهای متعدد.
     /// </summary>
     public async Task<(IEnumerable<AuditDtos> Logs, int Total)> SearchAuditLogsAsync(
-        AuditSearchRequest request,
-        CancellationToken ct = default)
+       AuditSearchRequest request,
+       CancellationToken ct = default
+       )
     {
         return await _auditRepository.SearchAsync(request, ct);
     }
@@ -106,7 +123,8 @@ public sealed class EnhancedAuditService : IAuditService
     /// </summary>
     public async Task<byte[]> ExportToCsvAsync(
         AuditExportRequest request,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+        )
     {
         var (logs, total) = await _auditRepository.GetAuditLogsAsync(
             request.From,
@@ -121,16 +139,10 @@ public sealed class EnhancedAuditService : IAuditService
 
         foreach (var log in logs)
         {
-            sb.AppendLine(
-                $"{log.Id}," +
-                $"{log.UserId?.ToString() ?? ""}," +
-                $"\"{EscapeCsv(log.EventType)}\"," +
-                $"\"{EscapeCsv(log.Action)}\"," +
-                $"{log.IpAddress}," +
-                $"{log.Timestamp:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"{log.Id},{log.UserId},{log.EventType},{log.Action},{log.IpAddress},{log.Timestamp:O}");
         }
 
-        return Encoding.UTF8.GetBytes(sb.ToString());
+        return System.Text.Encoding.UTF8.GetBytes(sb.ToString());
     }
 
     // ─── Shorthand Methods ───────────────────────────────────────────────────
@@ -167,19 +179,6 @@ public sealed class EnhancedAuditService : IAuditService
 
     // ─── Private Helpers ─────────────────────────────────────────────────────
 
-    private static AuditDtos MapToDto(AuditLog log) => new()
-    {
-        Id = log.Id,
-        UserId = log.UserId,
-        EventType = log.EventType,
-        Action = log.Action,
-        Details = log.Details,
-        IpAddress = log.IpAddress,
-        UserAgent = log.UserAgent,
-        Timestamp = log.Timestamp,
-        IsArchived = log.IsArchived
-    };
-
     private static string SanitizeInput(string input)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
@@ -197,7 +196,4 @@ public sealed class EnhancedAuditService : IAuditService
         if (string.IsNullOrEmpty(userAgent)) return null;
         return userAgent.Length > 500 ? userAgent[..500] : userAgent;
     }
-
-    private static string EscapeCsv(string? value) =>
-        (value ?? "").Replace("\"", "\"\"");
 }

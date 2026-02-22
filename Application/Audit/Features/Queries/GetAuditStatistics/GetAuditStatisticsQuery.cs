@@ -11,7 +11,15 @@ public sealed record AuditStatisticsDto(
     int SecurityLogs,
     int AdminLogs,
     IEnumerable<EventTypeCountDto> ByEventType,
-    IEnumerable<HourlyCountDto> ByHour);
+    IEnumerable<HourlyCountDto> ByHour
+    );
 
-public sealed record EventTypeCountDto(string EventType, int Count);
-public sealed record HourlyCountDto(int Hour, int Count);
+public sealed record EventTypeCountDto(
+    string EventType,
+    int Count
+    );
+
+public sealed record HourlyCountDto(
+    int Hour,
+    int Count
+    );

@@ -1,6 +1,4 @@
-﻿using Domain.Common.Shared.ValueObjects;
-
-namespace Domain.Discount.Results;
+﻿namespace Domain.Discount.Results;
 
 public sealed class DiscountApplicationResult
 {
@@ -10,7 +8,8 @@ public sealed class DiscountApplicationResult
     public Money? DiscountMoney { get; private set; }
     public string? Error { get; private set; }
 
-    private DiscountApplicationResult() { }
+    private DiscountApplicationResult()
+    { }
 
     public static DiscountApplicationResult Success(decimal amount) =>
         new() { IsSuccess = true, DiscountAmount = amount };

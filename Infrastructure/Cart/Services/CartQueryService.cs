@@ -1,18 +1,14 @@
 ﻿namespace Infrastructure.Cart.Services;
 
-/// <summary>
-/// سرویس کوئری سبد خرید - مستقیماً DTO برمی‌گرداند.
-/// بدون بارگذاری Aggregate - بهینه برای خواندن.
-/// </summary>
 public class CartQueryService : ICartQueryService
 {
     private readonly LedkaContext _context;
-    private readonly IMediaService _mediaService;
+    private readonly IMediaQueryService _mediaService;
     private readonly ILogger<CartQueryService> _logger;
 
     public CartQueryService(
         LedkaContext context,
-        IMediaService mediaService,
+        IMediaQueryService mediaService,
         ILogger<CartQueryService> logger)
     {
         _context = context;
@@ -36,14 +32,14 @@ public class CartQueryService : ICartQueryService
                     ci.VariantId,
                     ci.Quantity,
                     ci.SellingPrice,
-                    VariantSku = ci.Variant!.Sku,
+                    VariantSku = ci.Variant!.Sku != null ? ci.Variant.Sku.Value : null,
                     VariantIsActive = ci.Variant.IsActive,
                     VariantIsDeleted = ci.Variant.IsDeleted,
-                    VariantSellingPrice = ci.Variant.SellingPrice,
+                    VariantSellingPrice = ci.Variant.SellingPrice.Amount,
                     VariantStock = ci.Variant.StockQuantity,
                     VariantIsUnlimited = ci.Variant.IsUnlimited,
                     ci.Variant.ProductId,
-                    ProductName = ci.Variant.Product!.Name,
+                    ProductName = ci.Variant.Product!.Name.Value,
                     ProductIsActive = ci.Variant.Product.IsActive,
                     ProductIsDeleted = ci.Variant.Product.IsDeleted,
                     Attributes = ci.Variant.VariantAttributes
@@ -68,7 +64,6 @@ public class CartQueryService : ICartQueryService
             var isAvailable = item.VariantIsActive && !item.VariantIsDeleted
                 && item.ProductIsActive && !item.ProductIsDeleted;
 
-            // شناسایی تغییر قیمت
             if (item.SellingPrice != item.VariantSellingPrice && isAvailable)
             {
                 priceChanges.Add(new CartPriceChangeDto(
@@ -78,7 +73,7 @@ public class CartQueryService : ICartQueryService
                     item.VariantSellingPrice));
             }
 
-            var productImage = await _mediaService.GetPrimaryImageUrlAsync("Product", item.ProductId);
+            var productImage = await _mediaService.GetPrimaryImageUrlAsync("Product", item.ProductId, ct);
 
             items.Add(new CartItemDetailDto
             {
@@ -147,12 +142,12 @@ public class CartQueryService : ICartQueryService
                     ci.VariantId,
                     ci.Quantity,
                     ci.SellingPrice,
-                    VariantSellingPrice = ci.Variant!.SellingPrice,
+                    VariantSellingPrice = ci.Variant!.SellingPrice.Amount,
                     VariantIsActive = ci.Variant.IsActive,
                     VariantIsDeleted = ci.Variant.IsDeleted,
                     VariantStock = ci.Variant.StockQuantity,
                     VariantIsUnlimited = ci.Variant.IsUnlimited,
-                    ProductName = ci.Variant.Product!.Name,
+                    ProductName = ci.Variant.Product!.Name.Value,
                     ProductIsActive = ci.Variant.Product.IsActive,
                     ProductIsDeleted = ci.Variant.Product.IsDeleted
                 }).ToList()
@@ -213,7 +208,6 @@ public class CartQueryService : ICartQueryService
 
         var isValid = errors.Count == 0 && stockIssues.Count == 0;
 
-        // اگر فقط تغییر قیمت داریم، سبد هنوز معتبر است ولی کاربر باید مطلع شود
         return new CartCheckoutValidationDto
         {
             IsValid = isValid,
@@ -233,7 +227,6 @@ public class CartQueryService : ICartQueryService
         if (!string.IsNullOrWhiteSpace(guestToken))
             return query.Where(c => c.GuestToken == guestToken && !c.IsDeleted);
 
-        // هیچ‌کدام - سبد خالی
         return query.Where(c => false);
     }
 }

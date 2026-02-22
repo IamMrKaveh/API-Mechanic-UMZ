@@ -3,16 +3,16 @@
 public class ProductQueryService : IProductQueryService
 {
     private readonly LedkaContext _context;
-    private readonly IMediaService _mediaService;
+    private readonly IUrlResolverService _urlResolver;
     private readonly ISearchService _searchService;
 
     public ProductQueryService(
         LedkaContext context,
-        IMediaService mediaService,
+        IUrlResolverService urlResolver,
         ISearchService searchService)
     {
         _context = context;
-        _mediaService = mediaService;
+        _urlResolver = urlResolver;
         _searchService = searchService;
     }
 
@@ -20,11 +20,11 @@ public class ProductQueryService : IProductQueryService
     {
         var query = _context.ProductVariants
             .AsNoTracking()
-            .AsSplitQuery() // Optimization: Load related collections in separate queries
+            .AsSplitQuery()
             .Include(v => v.VariantAttributes)
                 .ThenInclude(va => va.AttributeValue)
                     .ThenInclude(av => av.AttributeType)
-            .Include(v => v.ProductVariantShippingMethods)
+            .Include(v => v.ProductVariantShippings)
             .Where(v => v.ProductId == productId && !v.IsDeleted);
 
         if (activeOnly)
@@ -68,7 +68,7 @@ public class ProductQueryService : IProductQueryService
                 Attributes = attributesDict,
                 RowVersion = v.RowVersion != null ? Convert.ToBase64String(v.RowVersion) : null,
                 ShippingMultiplier = v.ShippingMultiplier,
-                EnabledShippingMethodIds = v.ProductVariantShippingMethods.Where(sm => sm.IsActive).Select(sm => sm.ShippingId).ToList()
+                EnabledShippingIds = v.ProductVariantShippings.Where(sm => sm.IsActive).Select(sm => sm.ShippingId).ToList()
             });
         }
 
@@ -97,8 +97,27 @@ public class ProductQueryService : IProductQueryService
         if (product == null) return null;
 
         var variants = await GetProductVariantsAsync(productId, false, ct);
-        var medias = await _mediaService.GetEntityMediaAsync("Product", productId, ct);
-        var primaryMedia = medias.FirstOrDefault(m => m.IsPrimary);
+
+        var medias = await _context.Medias
+            .Where(m => m.EntityType == "Product" && m.EntityId == productId && !m.IsDeleted)
+            .OrderBy(m => m.SortOrder)
+            .Select(m => new MediaDto
+            {
+                Id = m.Id,
+                FilePath = m.FilePath,
+                FileName = m.FileName,
+                FileType = m.FileType,
+                EntityType = m.EntityType,
+                EntityId = m.EntityId,
+                AltText = m.AltText,
+                SortOrder = m.SortOrder,
+                IsPrimary = m.IsPrimary,
+                Url = _urlResolver.ResolveUrl(m.FilePath),
+                CreatedAt = m.CreatedAt
+            })
+            .ToListAsync(ct);
+
+        var primaryMediaUrl = medias.FirstOrDefault(m => m.IsPrimary)?.Url;
 
         return new AdminProductDetailDto
         {
@@ -108,7 +127,7 @@ public class ProductQueryService : IProductQueryService
             IsActive = product.IsActive,
             IsDeleted = product.IsDeleted,
             BrandId = product.BrandId,
-            IconUrl = primaryMedia?.Url,
+            IconUrl = primaryMediaUrl,
             Images = medias,
             Variants = variants,
             CreatedAt = product.CreatedAt,
@@ -128,12 +147,29 @@ public class ProductQueryService : IProductQueryService
 
         if (product == null) return null;
 
-        // Fetch variants separately
         var variants = await GetProductVariantsAsync(productId, true, ct);
         if (!variants.Any()) return null;
 
-        var medias = await _mediaService.GetEntityMediaAsync("Product", productId, ct);
-        var primaryMedia = medias.FirstOrDefault(m => m.IsPrimary);
+        var medias = await _context.Medias
+            .Where(m => m.EntityType == "Product" && m.EntityId == productId && !m.IsDeleted)
+            .OrderBy(m => m.SortOrder)
+            .Select(m => new MediaDto
+            {
+                Id = m.Id,
+                FilePath = m.FilePath,
+                FileName = m.FileName,
+                FileType = m.FileType,
+                EntityType = m.EntityType,
+                EntityId = m.EntityId,
+                AltText = m.AltText,
+                SortOrder = m.SortOrder,
+                IsPrimary = m.IsPrimary,
+                Url = _urlResolver.ResolveUrl(m.FilePath),
+                CreatedAt = m.CreatedAt
+            })
+            .ToListAsync(ct);
+
+        var primaryMediaUrl = medias.FirstOrDefault(m => m.IsPrimary)?.Url;
 
         BrandInfoDto? cgInfo = null;
         if (product.Brand != null)
@@ -157,7 +193,7 @@ public class ProductQueryService : IProductQueryService
             Description = product.Description,
             BrandId = product.BrandId,
             Brand = cgInfo,
-            IconUrl = primaryMedia?.Url,
+            IconUrl = primaryMediaUrl,
             Images = medias,
             Variants = variants,
             MinPrice = minPrice,
@@ -167,6 +203,84 @@ public class ProductQueryService : IProductQueryService
             AverageRating = product.Stats.AverageRating,
             ReviewCount = product.Stats.ReviewCount
         };
+    }
+
+    public async Task<PaginatedResult<AdminProductListItemDto>> GetAdminProductsAsync(
+            AdminProductSearchParams searchParams, CancellationToken ct = default)
+    {
+        var query = _context.Products
+            .AsNoTracking()
+            .Include(p => p.Brand)
+                .ThenInclude(cg => cg!.Category)
+            .AsQueryable();
+
+        if (!searchParams.IncludeDeleted)
+            query = query.Where(p => !p.IsDeleted);
+
+        if (searchParams.IsActive.HasValue)
+            query = query.Where(p => p.IsActive == searchParams.IsActive.Value);
+
+        if (searchParams.CategoryId.HasValue)
+            query = query.Where(p => p.Brand != null && p.Brand.CategoryId == searchParams.CategoryId);
+
+        if (searchParams.BrandId.HasValue)
+            query = query.Where(p => p.BrandId == searchParams.BrandId);
+
+        if (!string.IsNullOrWhiteSpace(searchParams.Name))
+        {
+            var term = searchParams.Name.ToLower();
+            query = query.Where(p => p.Name.Value.ToLower().Contains(term));
+        }
+
+        var totalCount = await query.CountAsync(ct);
+
+        var products = await query
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((searchParams.Page - 1) * searchParams.PageSize)
+            .Take(searchParams.PageSize)
+            .Select(p => new
+            {
+                p.Id,
+                Name = p.Name.Value,
+                p.IsActive,
+                p.IsDeleted,
+                CategoryName = p.Brand != null && p.Brand.Category != null ? p.Brand.Category.Name.Value : "N/A",
+                BrandName = p.Brand != null ? p.Brand.Name.Value : "N/A",
+                p.Stats.TotalStock,
+                VariantCount = p.Variants.Count(v => !v.IsDeleted),
+                Sku = p.Variants.Where(v => !v.IsDeleted).Select(v => v.Sku.Value).FirstOrDefault() ?? string.Empty,
+                MinPrice = p.Stats.MinPrice.Amount,
+                MaxPrice = p.Stats.MaxPrice.Amount,
+                p.CreatedAt,
+                p.UpdatedAt
+            })
+            .ToListAsync(ct);
+
+        var productIds = products.Select(p => p.Id).ToList();
+        var mediaMap = await _context.Medias
+            .Where(m => m.EntityType == "Product" && productIds.Contains(m.EntityId) && m.IsPrimary && !m.IsDeleted)
+            .Select(m => new { m.EntityId, m.FilePath })
+            .ToDictionaryAsync(m => m.EntityId, m => m.FilePath, ct);
+
+        var dtos = products.Select(p => new AdminProductListItemDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            IsActive = p.IsActive,
+            IsDeleted = p.IsDeleted,
+            CategoryName = p.CategoryName,
+            BrandName = p.BrandName,
+            IconUrl = _urlResolver.ResolveUrl(mediaMap.GetValueOrDefault(p.Id)),
+            TotalStock = p.TotalStock,
+            VariantCount = p.VariantCount,
+            Sku = p.Sku,
+            MinPrice = p.MinPrice,
+            MaxPrice = p.MaxPrice,
+            CreatedAt = p.CreatedAt,
+            UpdatedAt = p.UpdatedAt
+        }).ToList();
+
+        return PaginatedResult<AdminProductListItemDto>.Create(dtos, totalCount, searchParams.Page, searchParams.PageSize);
     }
 
     public async Task<PaginatedResult<ProductCatalogItemDto>> GetProductCatalogAsync(ProductCatalogSearchParams searchParams, CancellationToken ct = default)
@@ -201,87 +315,39 @@ public class ProductQueryService : IProductQueryService
         return PaginatedResult<ProductCatalogItemDto>.Create(items, (int)searchResult.Total, searchParams.Page, searchParams.PageSize);
     }
 
-    public async Task<PaginatedResult<AdminProductListItemDto>> GetAdminProductsAsync(AdminProductSearchParams searchParams, CancellationToken ct = default)
+    public async Task<ProductDto?> GetByIdAsync(int id)
     {
-        var query = _context.Products
-            .AsNoTracking()
-            .Include(p => p.Brand)
-                .ThenInclude(cg => cg!.Category)
-            .AsQueryable();
+        var product = await _context.Products.AsNoTracking()
+            .Include(p => p.Variants)
+            .FirstOrDefaultAsync(p => p.Id == id);
 
-        if (!searchParams.IncludeDeleted)
-            query = query.Where(p => !p.IsDeleted);
+        if (product == null) return null;
 
-        if (searchParams.IsActive.HasValue)
-            query = query.Where(p => p.IsActive == searchParams.IsActive.Value);
-
-        if (searchParams.CategoryId.HasValue)
-            query = query.Where(p => p.Brand != null && p.Brand.CategoryId == searchParams.CategoryId);
-
-        if (searchParams.BrandId.HasValue)
-            query = query.Where(p => p.BrandId == searchParams.BrandId);
-
-        if (!string.IsNullOrWhiteSpace(searchParams.Name))
+        return new ProductDto
         {
-            var term = searchParams.Name.ToLower();
-            query = query.Where(p => p.Name.Value.Contains(term, StringComparison.CurrentCultureIgnoreCase));
-        }
-
-        var totalCount = await query.CountAsync(ct);
-
-        var products = await query
-            .OrderByDescending(p => p.CreatedAt)
-            .Skip((searchParams.Page - 1) * searchParams.PageSize)
-            .Take(searchParams.PageSize)
-            .Select(p => new
-            {
-                p.Id,
-                Name = p.Name.Value,
-                p.IsActive,
-                p.IsDeleted,
-                CategoryName = p.Brand != null && p.Brand.Category != null ? p.Brand.Category.Name.Value : "N/A",
-                BrandName = p.Brand != null ? p.Brand.Name.Value : "N/A",
-                p.Stats.TotalStock,
-                VariantCount = _context.ProductVariants.Count(v => v.ProductId == p.Id && !v.IsDeleted),
-                MinPrice = p.Stats.MinPrice.Amount,
-                MaxPrice = p.Stats.MaxPrice.Amount,
-                p.CreatedAt,
-                p.UpdatedAt
-            })
-            .ToListAsync(ct);
-
-        var dtos = new List<AdminProductListItemDto>();
-        foreach (var p in products)
-        {
-            var iconUrl = await _mediaService.GetPrimaryImageUrlAsync("Product", p.Id, ct);
-            dtos.Add(new AdminProductListItemDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                IsActive = p.IsActive,
-                IsDeleted = p.IsDeleted,
-                CategoryName = p.CategoryName,
-                BrandName = p.BrandName,
-                IconUrl = iconUrl,
-                TotalStock = p.TotalStock,
-                VariantCount = p.VariantCount,
-                MinPrice = p.MinPrice,
-                MaxPrice = p.MaxPrice,
-                CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt
-            });
-        }
-
-        return PaginatedResult<AdminProductListItemDto>.Create(dtos, totalCount, searchParams.Page, searchParams.PageSize);
+            Id = product.Id,
+            Name = product.Name.Value,
+            Description = product.Description,
+            BrandId = product.BrandId,
+            IsActive = product.IsActive,
+            RowVersion = product.RowVersion != null ? Convert.ToBase64String(product.RowVersion) : null
+        };
     }
 
-    public Task<ProductDto?> GetByIdAsync(int id)
+    public async Task<IEnumerable<ProductDto>> GetAllAsync()
     {
-        throw new NotImplementedException();
-    }
+        var products = await _context.Products.AsNoTracking()
+            .Include(p => p.Variants)
+            .ToListAsync();
 
-    public Task<IEnumerable<ProductDto>> GetAllAsync()
-    {
-        throw new NotImplementedException();
+        return products.Select(product => new ProductDto
+        {
+            Id = product.Id,
+            Name = product.Name.Value,
+            Description = product.Description,
+            BrandId = product.BrandId,
+            IsActive = product.IsActive,
+            RowVersion = product.RowVersion != null ? Convert.ToBase64String(product.RowVersion) : null
+        });
     }
 }

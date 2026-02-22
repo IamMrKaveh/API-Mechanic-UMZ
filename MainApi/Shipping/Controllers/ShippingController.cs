@@ -15,7 +15,7 @@ public class ShippingController : BaseApiController
     [HttpGet]
     public async Task<IActionResult> GetActiveShippings()
     {
-        var query = new GetShippingsQuery(false); // includeDeleted = false
+        var query = new GetShippingsQuery(false);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

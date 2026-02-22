@@ -19,12 +19,6 @@ public interface IStockLedgerService
     Task RecordAdjustmentAsync(int variantId, int delta, string reason,
         int? userId = null, int? warehouseId = null, CancellationToken ct = default);
 
-    Task<int> GetCurrentBalanceAsync(int variantId, int? warehouseId = null, CancellationToken ct = default);
-
-    Task<IEnumerable<Domain.Inventory.StockLedgerEntry>> GetLedgerAsync(
-        int variantId, DateTime? from = null, DateTime? to = null,
-        int page = 1, int pageSize = 50, CancellationToken ct = default);
-
     Task ReconcileAsync(int variantId, int physicalCount, string reason,
         int userId, int? warehouseId = null, CancellationToken ct = default);
 }

@@ -1,19 +1,23 @@
-﻿using Application.Attribute.Contracts;
-
-namespace Application.Attribute.Features.Commands.UpdateAttributeType;
+﻿namespace Application.Attribute.Features.Commands.UpdateAttributeType;
 
 public class UpdateAttributeTypeHandler : IRequestHandler<UpdateAttributeTypeCommand, ServiceResult>
 {
     private readonly IAttributeRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateAttributeTypeHandler(IAttributeRepository repository, IUnitOfWork unitOfWork)
+    public UpdateAttributeTypeHandler(
+        IAttributeRepository repository,
+        IUnitOfWork unitOfWork
+        )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ServiceResult> Handle(UpdateAttributeTypeCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        UpdateAttributeTypeCommand request,
+        CancellationToken cancellationToken
+        )
     {
         var attributeType = await _repository.GetAttributeTypeByIdAsync(request.Id);
         if (attributeType == null)

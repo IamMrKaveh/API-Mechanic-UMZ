@@ -2,79 +2,33 @@
 
 public class InitiatePaymentHandler : IRequestHandler<InitiatePaymentCommand, ServiceResult<PaymentResultDto>>
 {
-    private readonly IPaymentGateway _paymentGateway;
-    private readonly IPaymentTransactionRepository _repository;
-    private readonly IOrderRepository _orderRepository;
-    private readonly PaymentDomainService _paymentDomainService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<InitiatePaymentHandler> _logger;
+    private readonly IPaymentService _paymentService;
 
-    public InitiatePaymentHandler(
-        IPaymentGateway paymentGateway,
-        IPaymentTransactionRepository repository,
-        IOrderRepository orderRepository,
-        PaymentDomainService paymentDomainService,
-        IUnitOfWork unitOfWork,
-        ILogger<InitiatePaymentHandler> logger)
+    public InitiatePaymentHandler(IPaymentService paymentService)
     {
-        _paymentGateway = paymentGateway;
-        _repository = repository;
-        _orderRepository = orderRepository;
-        _paymentDomainService = paymentDomainService;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
+        _paymentService = paymentService;
     }
 
-    public async Task<ServiceResult<PaymentResultDto>> Handle(InitiatePaymentCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<PaymentResultDto>> Handle(
+        InitiatePaymentCommand request,
+        CancellationToken ct
+        )
     {
-        // 1. بررسی وجود پرداخت در انتظار برای سفارش
-        var hasPending = await _repository.HasPendingPaymentAsync(request.Dto.OrderId, cancellationToken);
-        if (hasPending)
+        var result = await _paymentService.InitiatePaymentAsync(
+            request.Dto,
+            ct);
+
+        if (result.IsSucceed && result.Data != default)
         {
-            return ServiceResult<PaymentResultDto>.Failure("یک پرداخت در انتظار برای این سفارش وجود دارد.");
+            return ServiceResult<PaymentResultDto>.Success(new PaymentResultDto
+            {
+                IsSuccess = result.Data.IsSuccess,
+                Authority = result.Data.Authority,
+                PaymentUrl = result.Data.PaymentUrl,
+                Message = result.Data.Message
+            });
         }
 
-        // 2. بررسی پرداخت قبلی موفق
-        var hasSuccessful = await _repository.HasSuccessfulPaymentAsync(request.Dto.OrderId, cancellationToken);
-        if (hasSuccessful)
-        {
-            return ServiceResult<PaymentResultDto>.Failure("این سفارش قبلاً پرداخت شده است.");
-        }
-
-        // 3. درخواست پرداخت از درگاه
-        var result = await _paymentGateway.RequestPaymentAsync(
-            request.Dto.Amount,
-            request.Dto.Description,
-            request.Dto.CallbackUrl,
-            request.Dto.Mobile,
-            request.Dto.Email);
-
-        if (!result.IsSuccess || string.IsNullOrEmpty(result.Authority))
-        {
-            _logger.LogError("Payment gateway request failed: {Message}", result.Message);
-            return ServiceResult<PaymentResultDto>.Failure(result.Message ?? "خطا در برقراری ارتباط با درگاه پرداخت.");
-        }
-
-        // 4. ایجاد تراکنش از طریق Factory Method دامین
-        var transaction = PaymentTransaction.Initiate(
-            request.Dto.OrderId,
-            request.UserId,
-            result.Authority,
-            request.Dto.Amount,
-            _paymentGateway.GatewayName,
-            request.Dto.Description,
-            request.IpAddress,
-            result.RawResponse
-        );
-
-        await _repository.AddAsync(transaction, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return ServiceResult<PaymentResultDto>.Success(new PaymentResultDto
-        {
-            IsSuccess = true,
-            PaymentUrl = result.PaymentUrl,
-            Authority = result.Authority
-        });
+        return ServiceResult<PaymentResultDto>.Failure(result.Error ?? "Failed to initiate payment", result.StatusCode);
     }
 }

@@ -2,4 +2,5 @@
 
 public sealed record GetDashboardStatisticsQuery(
     DateTime? FromDate,
-    DateTime? ToDate) : IRequest<ServiceResult<DashboardStatisticsDto>>;
+    DateTime? ToDate
+    ) : IRequest<ServiceResult<DashboardStatisticsDto>>;

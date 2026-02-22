@@ -1,7 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Application.Security.Contracts;
-
-namespace Application.Discount.Features.Commands.UpdateDiscount;
+﻿namespace Application.Discount.Features.Commands.UpdateDiscount;
 
 public class UpdateDiscountHandler : IRequestHandler<UpdateDiscountCommand, ServiceResult>
 {
@@ -27,10 +24,8 @@ public class UpdateDiscountHandler : IRequestHandler<UpdateDiscountCommand, Serv
         var discount = await _discountRepository.GetByIdAsync(request.Id, cancellationToken);
         if (discount == null) return ServiceResult.Failure("کد تخفیف یافت نشد.");
 
-        // Optimistic Concurrency: تنظیم RowVersion اصلی
-        _discountRepository.SetOriginalRowVersion(discount, Convert.FromBase64String(request.RowVersion));
+        _discountRepository.SetOriginalRowVersion(discount, Convert.FromBase64String(request.ConcurrencyToken));
 
-        // به‌روزرسانی از طریق متد Domain
         discount.Update(
             request.Percentage,
             request.MaxDiscountAmount,
@@ -50,7 +45,7 @@ public class UpdateDiscountHandler : IRequestHandler<UpdateDiscountCommand, Serv
             await _auditService.LogAdminEventAsync("UpdateDiscount", _currentUserService.UserId ?? 0, $"Updated discount {discount.Code}");
             return ServiceResult.Success();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
             return ServiceResult.Failure("این رکورد توسط کاربر دیگری تغییر کرده است.");
         }

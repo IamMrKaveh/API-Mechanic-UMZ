@@ -5,38 +5,41 @@ public class UpdateBrandHandler : IRequestHandler<UpdateBrandCommand, ServiceRes
     private readonly ICategoryRepository _categoryRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediaService _mediaService;
+    private readonly IMediaQueryService _mediaQueryService;
     private readonly ILogger<UpdateBrandHandler> _logger;
 
     public UpdateBrandHandler(
         ICategoryRepository categoryRepository,
         IUnitOfWork unitOfWork,
         IMediaService mediaService,
-        ILogger<UpdateBrandHandler> logger)
+        IMediaQueryService mediaQueryService,
+        ILogger<UpdateBrandHandler> logger
+        )
     {
         _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
         _mediaService = mediaService;
+        _mediaQueryService = mediaQueryService;
         _logger = logger;
     }
 
     public async Task<ServiceResult> Handle(
-        UpdateBrandCommand request, CancellationToken cancellationToken)
+        UpdateBrandCommand request,
+        CancellationToken ct
+        )
     {
-        // بارگذاری Aggregate Root
-        var category = await _categoryRepository.GetByIdWithGroupsAsync(request.CategoryId, cancellationToken);
+        var category = await _categoryRepository.GetByIdWithGroupsAsync(request.CategoryId, ct);
         if (category == null)
             return ServiceResult.Failure("دسته‌بندی یافت نشد.", 404);
 
         try
         {
-            // تغییر نام از طریق Aggregate - یکتایی نام بررسی می‌شود
-            category.RenameBrand(request.GroupId, request.Name, request.Description);
+            category.RenameBrand(request.BrandId, request.Name, request.Description);
 
-            // مدیریت آیکون
             Domain.Media.Media? newMedia = null;
             if (request.IconFile != null)
             {
-                var existingMedia = (await _mediaService.GetEntityMediaAsync("CategoryGroup", request.GroupId))
+                var existingMedia = (await _mediaQueryService.GetEntityMediaAsync("CategoryGroup", request.BrandId))
                     .FirstOrDefault(m => m.IsPrimary);
 
                 if (existingMedia != null)
@@ -48,7 +51,7 @@ public class UpdateBrandHandler : IRequestHandler<UpdateBrandCommand, ServiceRes
                     request.IconFile.ContentType,
                     request.IconFile.Length,
                     "CategoryGroup",
-                    request.GroupId,
+                    request.BrandId,
                     isPrimary: true);
             }
 
@@ -56,10 +59,10 @@ public class UpdateBrandHandler : IRequestHandler<UpdateBrandCommand, ServiceRes
 
             try
             {
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.SaveChangesAsync(ct);
                 return ServiceResult.Success();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (ConcurrencyException)
             {
                 if (newMedia != null)
                     await _mediaService.DeleteMediaAsync(newMedia.Id);

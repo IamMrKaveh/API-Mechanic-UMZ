@@ -1,37 +1,39 @@
-﻿using Application.Category.Contracts;
-using Domain.Category.Exceptions;
-
-namespace Application.Category.Features.Commands.DeleteCategory;
+﻿namespace Application.Category.Features.Commands.DeleteCategory;
 
 public class DeleteCategoryHandler : IRequestHandler<DeleteCategoryCommand, ServiceResult>
 {
     private readonly ICategoryRepository _categoryRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediaService _mediaService;
+    private readonly IMediaQueryService _mediaQueryService;
     private readonly ILogger<DeleteCategoryHandler> _logger;
 
     public DeleteCategoryHandler(
         ICategoryRepository categoryRepository,
         IUnitOfWork unitOfWork,
         IMediaService mediaService,
-        ILogger<DeleteCategoryHandler> logger)
+        IMediaQueryService mediaQueryService,
+        ILogger<DeleteCategoryHandler> logger
+        )
     {
         _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
         _mediaService = mediaService;
+        _mediaQueryService = mediaQueryService;
         _logger = logger;
     }
 
     public async Task<ServiceResult> Handle(
-        DeleteCategoryCommand request, CancellationToken cancellationToken)
+        DeleteCategoryCommand request,
+        CancellationToken ct
+        )
     {
-        var category = await _categoryRepository.GetByIdWithGroupsAndProductsAsync(request.Id, cancellationToken);
+        var category = await _categoryRepository.GetByIdWithGroupsAndProductsAsync(request.Id, ct);
         if (category == null)
             return ServiceResult.Failure("دسته‌بندی یافت نشد.", 404);
 
         try
         {
-            // حذف از طریق Aggregate - بررسی محصولات فعال در Domain انجام می‌شود
             category.Delete(request.DeletedBy);
         }
         catch (CategoryHasActiveProductsException ex)
@@ -41,10 +43,9 @@ public class DeleteCategoryHandler : IRequestHandler<DeleteCategoryCommand, Serv
 
         _categoryRepository.Update(category);
 
-        // حذف مدیا
         try
         {
-            var mediaList = await _mediaService.GetEntityMediaAsync("Category", request.Id);
+            var mediaList = await _mediaQueryService.GetEntityMediaAsync("Category", request.Id);
             foreach (var media in mediaList)
                 await _mediaService.DeleteMediaAsync(media.Id);
         }
@@ -53,7 +54,7 @@ public class DeleteCategoryHandler : IRequestHandler<DeleteCategoryCommand, Serv
             _logger.LogError(ex, "خطا در حذف مدیای دسته‌بندی {CategoryId}", request.Id);
         }
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
     }
 }

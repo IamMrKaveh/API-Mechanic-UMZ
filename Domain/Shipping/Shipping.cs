@@ -25,8 +25,7 @@ public class Shipping : BaseEntity, ISoftDeletable, IActivatable, IAuditable
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    public ICollection<Order.Order> Orders { get; private set; } = new List<Order.Order>();
-    public ICollection<ProductVariantShipping> ProductVariantShippingMethods { get; private set; } = new List<ProductVariantShipping>();
+    public ICollection<ProductVariantShipping> ProductVariantShippings { get; private set; } = new List<ProductVariantShipping>();
 
     /// <summary>
     /// Alias برای BaseCost — سازگاری با کدهایی که از Cost استفاده می‌کنند

@@ -207,10 +207,9 @@ public class LiaraStorageService : IStorageService
         }
     }
 
-    // ... (UploadFileAsync mapping to SaveFileAsync logic) ...
     public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, string directory, CancellationToken ct = default)
     {
-        var (path, _) = await SaveFileAsync(fileStream, fileName, directory.Trim('/'), ""); // Assuming generic entitytype handling inside Save
+        var (path, _) = await SaveFileAsync(fileStream, fileName, directory.Trim('/'), "");
         return path;
     }
 }

@@ -5,7 +5,8 @@ public sealed class OrderStatusTransitionValidation
     public bool IsValid { get; private set; }
     public string? Error { get; private set; }
 
-    private OrderStatusTransitionValidation() { }
+    private OrderStatusTransitionValidation()
+    { }
 
     public static OrderStatusTransitionValidation Success()
     {

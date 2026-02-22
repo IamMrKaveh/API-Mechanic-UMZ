@@ -2,6 +2,8 @@
 global using Domain.Attribute;
 global using Domain.Brand.Events;
 global using Domain.Brand.Exceptions;
+global using Domain.Brand.ValueObjects;
+global using Domain.Cart;
 global using Domain.Cart.Enum;
 global using Domain.Cart.Events;
 global using Domain.Cart.Exceptions;
@@ -42,5 +44,7 @@ global using Domain.Variant.Events;
 global using Domain.Variant.ValueObjects;
 global using System;
 global using System.Collections.Generic;
+global using System.ComponentModel.DataAnnotations.Schema;
 global using System.Linq;
 global using System.Linq.Expressions;
+global using System.Security.Cryptography;

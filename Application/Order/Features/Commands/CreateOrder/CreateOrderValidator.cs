@@ -8,7 +8,7 @@ public class CreateOrderValidator : AbstractValidator<CreateOrderCommand>
         RuleFor(x => x.AdminUserId).GreaterThan(0);
         RuleFor(x => x.Dto.UserId).GreaterThan(0);
         RuleFor(x => x.Dto.UserAddressId).GreaterThan(0);
-        RuleFor(x => x.Dto.ShippingMethodId).GreaterThan(0);
+        RuleFor(x => x.Dto.ShippingId).GreaterThan(0);
         RuleFor(x => x.Dto.ReceiverName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Dto.OrderItems).NotEmpty().WithMessage("سفارش باید حداقل یک آیتم داشته باشد.");
     }

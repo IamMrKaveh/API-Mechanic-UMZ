@@ -17,7 +17,8 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
         IRateLimitService rateLimitService,
         IAuditService auditService,
         IUnitOfWork unitOfWork,
-        ILogger<RequestOtpHandler> logger)
+        ILogger<RequestOtpHandler> logger
+        )
     {
         _userRepository = userRepository;
         _otpService = otpService;
@@ -28,18 +29,19 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
         _logger = logger;
     }
 
-    public async Task<ServiceResult> Handle(RequestOtpCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        RequestOtpCommand request,
+        CancellationToken ct
+        )
     {
         try
         {
-            // 1. اعتبارسنجی شماره تلفن با Value Object
             var (phoneSuccess, phoneNumber, phoneError) = PhoneNumber.TryCreate(request.PhoneNumber);
             if (!phoneSuccess)
                 return ServiceResult.Failure(phoneError!);
 
             var normalizedPhone = phoneNumber!.Value;
 
-            // 2. بررسی Rate Limit بر اساس IP
             var (isIpLimited, ipRetryAfter) = await _rateLimitService.IsLimitedAsync(
                 $"otp_request:ip:{request.IpAddress}", 10, 60);
             if (isIpLimited)
@@ -49,7 +51,6 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
                     $"تعداد درخواست‌ها بیش از حد مجاز است. لطفاً {ipRetryAfter} ثانیه صبر کنید.", 429);
             }
 
-            // 3. بررسی Rate Limit بر اساس شماره تلفن
             var (isPhoneLimited, phoneRetryAfter) = await _rateLimitService.IsLimitedAsync(
                 $"otp_request:phone:{normalizedPhone}", 3, 2);
             if (isPhoneLimited)
@@ -59,19 +60,17 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
                     $"درخواست‌های متعدد. لطفاً {phoneRetryAfter} ثانیه صبر کنید.", 429);
             }
 
-            // 4. دریافت یا ایجاد کاربر (User Aggregate)
-            var user = await _userRepository.GetByPhoneNumberAsync(normalizedPhone, cancellationToken);
+            var user = await _userRepository.GetByPhoneNumberAsync(normalizedPhone, ct);
             var isNewUser = user == null;
 
             if (isNewUser)
             {
                 user = Domain.User.User.Create(normalizedPhone);
-                await _userRepository.AddAsync(user, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _userRepository.AddAsync(user, ct);
+                await _unitOfWork.SaveChangesAsync(ct);
                 _logger.LogInformation("کاربر جدید با شماره {PhoneNumber} ایجاد شد.", normalizedPhone);
             }
 
-            // 5. بررسی قابلیت لاگین (Domain Logic)
             if (user!.IsLockedOut)
             {
                 var remaining = user.GetRemainingLockoutTime();
@@ -82,26 +81,22 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
                 }
             }
 
-            // 6. بررسی محدودیت ارسال OTP (Domain Logic)
             var (canSend, rateLimitError, waitTime) = user.CheckOtpRateLimit();
             if (!canSend)
                 return ServiceResult.Failure(rateLimitError!);
 
-            // 7. تولید OTP امن
             var otpCode = _otpService.GenerateSecureOtp();
             var otpHash = _otpService.HashOtp(otpCode);
 
-            // 8. ذخیره OTP از طریق User Aggregate
-            var userWithOtps = await _userRepository.GetWithOtpsAsync(user.Id, cancellationToken);
+            var userWithOtps = await _userRepository.GetWithOtpsAsync(user.Id, ct);
             if (userWithOtps == null)
                 return ServiceResult.Failure("خطای داخلی.");
 
             userWithOtps.GenerateOtp(otpHash, 2);
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
-            // 9. ارسال OTP از طریق پیامک
-            var smsResult = await _smsService.SendSmsAsync(normalizedPhone, otpCode, cancellationToken);
+            var smsResult = await _smsService.SendSmsAsync(normalizedPhone, otpCode, ct);
             if (smsResult.IsFailed)
             {
                 _logger.LogError("ارسال OTP به {PhoneNumber} ناموفق بود: {Error}",
@@ -109,7 +104,6 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
                 return ServiceResult.Failure("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
             }
 
-            // 10. ثبت لاگ
             await _auditService.LogSecurityEventAsync(
                 "OtpRequested",
                 $"کد OTP برای شماره {normalizedPhone} ارسال شد.",

@@ -7,26 +7,30 @@ public class RevokeSessionHandler : IRequestHandler<RevokeSessionCommand, Servic
 
     public RevokeSessionHandler(
         ISessionService sessionService,
-        ILogger<RevokeSessionHandler> logger)
+        ILogger<RevokeSessionHandler> logger
+        )
     {
         _sessionService = sessionService;
         _logger = logger;
     }
 
-    public async Task<ServiceResult> Handle(RevokeSessionCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        RevokeSessionCommand request,
+        CancellationToken ct
+        )
     {
         try
         {
-            var session = await _sessionService.GetSessionBySelectorAsync(string.Empty, cancellationToken);
+            var session = await _sessionService.GetSessionBySelectorAsync(string.Empty, ct);
 
             // دریافت نشست‌های فعال کاربر و بررسی مالکیت
-            var activeSessions = await _sessionService.GetActiveSessionsAsync(request.UserId, cancellationToken);
+            var activeSessions = await _sessionService.GetActiveSessionsAsync(request.UserId, ct);
             var targetSession = activeSessions.FirstOrDefault(s => s.Id == request.SessionId);
 
             if (targetSession == null)
                 return ServiceResult.Failure("نشست یافت نشد یا متعلق به شما نیست.", 404);
 
-            await _sessionService.RevokeSessionAsync(request.SessionId, cancellationToken);
+            await _sessionService.RevokeSessionAsync(request.SessionId, ct);
 
             _logger.LogInformation(
                 "نشست {SessionId} برای کاربر {UserId} ابطال شد.",

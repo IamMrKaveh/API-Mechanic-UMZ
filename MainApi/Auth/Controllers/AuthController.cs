@@ -14,7 +14,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// درخواست ارسال کد OTP به شماره موبا��ل
+    /// درخواست ارسال کد OTP به شماره موبایل
     /// </summary>
     [HttpPost("request-otp")]
     [AllowAnonymous]

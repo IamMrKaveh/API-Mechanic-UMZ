@@ -1,6 +1,4 @@
-﻿using Application.Review.Contracts;
-
-namespace Application.Review.Features.Commands.ApproveReview;
+﻿namespace Application.Review.Features.Commands.ApproveReview;
 
 public class ApproveReviewHandler : IRequestHandler<ApproveReviewCommand, ServiceResult>
 {

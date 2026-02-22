@@ -1,9 +1,5 @@
 ﻿namespace Infrastructure.Review.Services;
 
-/// <summary>
-/// Read-side query service for reviews.
-/// Directly returns DTOs without loading domain aggregates.
-/// </summary>
 public class ReviewQueryService : IReviewQueryService
 {
     private readonly LedkaContext _context;
