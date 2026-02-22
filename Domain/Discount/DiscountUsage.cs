@@ -1,8 +1,6 @@
-﻿using Domain.Common.Shared.ValueObjects;
+﻿namespace Domain.Discount;
 
-namespace Domain.Discount;
-
-public class DiscountUsage : AggregateRoot
+public class DiscountUsage : BaseEntity
 {
     public int UserId { get; private set; }
     public int DiscountCodeId { get; private set; }
@@ -61,8 +59,6 @@ public class DiscountUsage : AggregateRoot
 
         IsConfirmed = true;
         ConfirmedAt = DateTime.UtcNow;
-
-        AddDomainEvent(new DiscountUsageConfirmedEvent(Id, OrderId, DiscountCodeId));
     }
 
     internal void Cancel()
@@ -72,8 +68,6 @@ public class DiscountUsage : AggregateRoot
 
         IsCancelled = true;
         CancelledAt = DateTime.UtcNow;
-
-        AddDomainEvent(new DiscountUsageCancelledEvent(DiscountCodeId, OrderId));
     }
 
     #endregion State Management

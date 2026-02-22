@@ -1,6 +1,4 @@
-﻿using Application.Audit.Contracts;
-
-namespace Application.Auth.Features.EventHandlers;
+﻿namespace Application.Auth.Features.EventHandlers;
 
 public class UserLockedOutEventHandler : INotificationHandler<UserLockedOutEvent>
 {
@@ -9,13 +7,17 @@ public class UserLockedOutEventHandler : INotificationHandler<UserLockedOutEvent
 
     public UserLockedOutEventHandler(
         IAuditService auditService,
-        ILogger<UserLockedOutEventHandler> logger)
+        ILogger<UserLockedOutEventHandler> logger
+        )
     {
         _auditService = auditService;
         _logger = logger;
     }
 
-    public async Task Handle(UserLockedOutEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(
+        UserLockedOutEvent notification,
+        CancellationToken ct
+        )
     {
         _logger.LogWarning(
             "Domain Event: User {UserId} locked out until {LockoutEnd}.",

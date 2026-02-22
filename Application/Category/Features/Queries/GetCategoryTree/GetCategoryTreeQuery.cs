@@ -1,6 +1,4 @@
-﻿using Application.Category.Features.Shared;
-
-namespace Application.Category.Features.Queries.GetCategoryTree;
+﻿namespace Application.Category.Features.Queries.GetCategoryTree;
 
 /// <summary>
 /// ساختار درختی کامل دسته‌بندی‌ها برای منو

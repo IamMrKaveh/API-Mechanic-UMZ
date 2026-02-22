@@ -27,7 +27,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? userId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context, _logger)
+        var balance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var entry = StockLedgerEntry.StockIn(
             variantId, quantity, balance + quantity,
@@ -50,7 +50,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? orderItemId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context, _logger)
+        var balance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
 
         if (balance < quantity)
@@ -71,7 +71,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context, _logger)
+        var balance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var entry = StockLedgerEntry.ReleaseReservation(
             variantId, quantity, balance + quantity,
@@ -88,7 +88,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context, _logger)
+        var balance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var entry = StockLedgerEntry.CommitReservation(
             variantId, quantity, balance, referenceNumber, orderItemId, warehouseId);
@@ -104,7 +104,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context, _logger)
+        var balance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var newBalance = balance + delta;
 
@@ -126,7 +126,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var systemBalance = await new StockLedgerQueryService(_context, _logger)
+        var systemBalance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var delta = physicalCount - systemBalance;
 
@@ -152,15 +152,5 @@ public sealed class StockLedgerService : IStockLedgerService
     {
         await _context.StockLedgerEntries.AddAsync(entry, ct);
         await _context.SaveChangesAsync(ct);
-    }
-
-    public Task<int> GetCurrentBalanceAsync(int variantId, int? warehouseId = null, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<StockLedgerEntry>> GetLedgerAsync(int variantId, DateTime? from = null, DateTime? to = null, int page = 1, int pageSize = 50, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
     }
 }

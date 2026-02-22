@@ -7,12 +7,12 @@
 /// </summary>
 public class AuthResult
 {
-    public string AccessToken { get; set; } = null!;
-    public string RefreshToken { get; set; } = null!;
-    public DateTime AccessTokenExpiresAt { get; set; }
-    public DateTime RefreshTokenExpiresAt { get; set; }
-    public UserProfileDto User { get; set; } = null!;
-    public bool IsNewUser { get; set; }
+    public string AccessToken { get; init; } = null!;
+    public string RefreshToken { get; init; } = null!;
+    public DateTime AccessTokenExpiresAt { get; init; }
+    public DateTime RefreshTokenExpiresAt { get; init; }
+    public UserProfileDto User { get; init; } = null!;
+    public bool IsNewUser { get; init; }
 }
 
 public record LoginRequestDto(string PhoneNumber);

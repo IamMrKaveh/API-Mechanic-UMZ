@@ -1,6 +1,4 @@
-﻿using Application.Security.Contracts;
-
-namespace MainApi.Middleware;
+﻿namespace MainApi.Middleware;
 
 public class RateLimitMiddleware
 {

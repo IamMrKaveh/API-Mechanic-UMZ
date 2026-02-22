@@ -1,6 +1,4 @@
-﻿using Application.Review.Contracts;
-
-namespace Application.Review.Features.Commands.DeleteReview;
+﻿namespace Application.Review.Features.Commands.DeleteReview;
 
 public class DeleteReviewHandler : IRequestHandler<DeleteReviewCommand, ServiceResult>
 {

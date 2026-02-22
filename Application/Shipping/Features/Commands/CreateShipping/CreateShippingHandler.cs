@@ -1,39 +1,41 @@
 ﻿namespace Application.Shipping.Features.Commands.CreateShipping;
 
-public class CreateShippingHandler : IRequestHandler<CreateShippingCommand, ServiceResult<ShippingMethodDto>>
+public class CreateShippingHandler : IRequestHandler<CreateShippingCommand, ServiceResult<ShippingDto>>
 {
-    private readonly IShippingRepository _shippingMethodRepository;
+    private readonly IShippingRepository _shippingRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IAuditService _auditService;
     private readonly ICurrentUserService _currentUserService;
 
     public CreateShippingHandler(
-        IShippingRepository shippingMethodRepository,
+        IShippingRepository shippingRepository,
         IUnitOfWork unitOfWork,
         IMapper mapper,
         IAuditService auditService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService
+        )
     {
-        _shippingMethodRepository = shippingMethodRepository;
+        _shippingRepository = shippingRepository;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _auditService = auditService;
         _currentUserService = currentUserService;
     }
 
-    public async Task<ServiceResult<ShippingMethodDto>> Handle(
+    public async Task<ServiceResult<ShippingDto>> Handle(
         CreateShippingCommand request,
-        CancellationToken ct)
+        CancellationToken ct
+        )
     {
         // Check duplicate name
-        if (await _shippingMethodRepository.ExistsByNameAsync(request.Name, ct: ct))
-            return ServiceResult<ShippingMethodDto>.Failure("روش ارسال با این نام قبلاً وجود دارد.");
+        if (await _shippingRepository.ExistsByNameAsync(request.Name, ct: ct))
+            return ServiceResult<ShippingDto>.Failure("روش ارسال با این نام قبلاً وجود دارد.");
 
         try
         {
-            // Use domain factory method
-            var method = Domain.Shipping.Shipping.Create(
+            // Use domain factory
+            var shipping = Domain.Shipping.Shipping.Create(
                 request.Name,
                 Money.FromDecimal(request.Cost),
                 request.Description,
@@ -42,23 +44,23 @@ public class CreateShippingHandler : IRequestHandler<CreateShippingCommand, Serv
                 request.MaxDeliveryDays);
 
             if (!request.IsActive)
-                method.Deactivate();
+                shipping.Deactivate();
 
-            await _shippingMethodRepository.AddAsync(method, ct);
+            await _shippingRepository.AddAsync(shipping, ct);
             await _unitOfWork.SaveChangesAsync(ct);
 
             await _auditService.LogAdminEventAsync(
-                "CreateShippingMethod",
+                "CreateShipping",
                 request.CurrentUserId,
-                $"Created shipping method: {method.Name}",
+                $"Created shipping : {shipping.Name}",
                 _currentUserService.IpAddress);
 
-            var resultDto = _mapper.Map<ShippingMethodDto>(method);
-            return ServiceResult<ShippingMethodDto>.Success(resultDto);
+            var resultDto = _mapper.Map<ShippingDto>(shipping);
+            return ServiceResult<ShippingDto>.Success(resultDto);
         }
         catch (DomainException ex)
         {
-            return ServiceResult<ShippingMethodDto>.Failure(ex.Message);
+            return ServiceResult<ShippingDto>.Failure(ex.Message);
         }
     }
 }

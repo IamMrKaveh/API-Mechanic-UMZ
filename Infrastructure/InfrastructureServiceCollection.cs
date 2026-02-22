@@ -1,11 +1,4 @@
-﻿using Infrastructure.Audit.BackgroundServices;
-using Infrastructure.Audit.Services;
-using Infrastructure.Cache.Redis.Lock;
-using Infrastructure.Cache.Services;
-using Infrastructure.Order.BackgroundServices;
-using Infrastructure.Payment.Factory;
-using Infrastructure.Payment.Services;
-using IConfigurationProvider = AutoMapper.IConfigurationProvider;
+﻿using HealthStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus;
 
 namespace Infrastructure;
 
@@ -15,32 +8,28 @@ public static class InfrastructureServiceCollection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // LoggerFactory required by AutoMapper 16
-        var loggerFactory = new NullLoggerFactory();
+        // -----------------------------
+        // DB Context
+        // -----------------------------
+        string connectionString = configuration.GetConnectionString("PoolerConnection")
+            ?? throw new InvalidOperationException("Database connection string is not configured.");
 
-        var mapperConfig = new MapperConfiguration(
-            cfg =>
-            {
-                cfg.AllowNullCollections = true;
-                cfg.AllowNullDestinationValues = true;
+        services.AddDbContext<LedkaContext>((sp, options) =>
+        {
+            var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
+            options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure())
+                   .AddInterceptors(interceptor);
+        });
 
-                // Register mapping profiles
-                cfg.AddMaps(typeof(MappingProfile).Assembly);
-            },
-            loggerFactory
-        );
-
-        mapperConfig.AssertConfigurationIsValid();
-
-        services.AddSingleton<IConfigurationProvider>(mapperConfig);
-        services.AddSingleton<IMapper>(sp =>
-            mapperConfig.CreateMapper(sp.GetService));
+        services.AddHealthChecks()
+            .AddNpgSql(connectionString, name: "postgresql");
 
         // -----------------------------
         // Unit of Work & Domain Events
         // -----------------------------
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddSingleton<IUrlResolverService, UrlResolverService>();
 
         // -----------------------------
         // Auth & Session
@@ -49,6 +38,7 @@ public static class InfrastructureServiceCollection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         // -----------------------------
         // Repositories
@@ -64,51 +54,39 @@ public static class InfrastructureServiceCollection
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
 
-        // -----------------------------
-        // Query Services
-        // -----------------------------
-        services.AddScoped<IUserQueryService, UserQueryService>();
-        services.AddScoped<ICategoryQueryService, CategoryQueryService>();
-        services.AddScoped<ICartQueryService, CartQueryService>();
-        services.AddScoped<IProductQueryService, ProductQueryService>();
-        services.AddScoped<IInventoryQueryService, InventoryQueryService>();
-        services.AddScoped<IOrderQueryService, OrderQueryService>();
-        services.AddScoped<IMediaQueryService, MediaQueryService>();
-        services.AddScoped<IReviewQueryService, ReviewQueryService>();
-        services.AddScoped<INotificationService, NotificationService>();
-
         // ─── Core Inventory Services ─────────────────────────────────────────
         services.AddScoped<IInventoryService, InventoryService>();
-        services.AddScoped<IInventoryQueryService, InventoryQueryService>();
         services.AddScoped<InventoryDomainService>();
 
-        // ─── FIX #1: BackgroundService برای آزادسازی رزروهای منقضی ──────────
+        // ─── BackgroundService برای آزادسازی رزروهای منقضی ──────────
         services.AddHostedService<InventoryReservationExpiryService>();
 
-        // ─── FIX #7: Cache Invalidation Handler ──────────────────────────────
-        // VariantStockCacheInvalidationHandler از طریق MediatR Pipeline register می‌شود
-        // (چون INotificationHandler است - اگر از MediatR DI scan استفاده می‌کنید خودکار register می‌شود)
-        // در غیر این صورت:
+        // ─── Cache Invalidation Handler ──────────────────────────────
         services.AddScoped<INotificationHandler<VariantStockChangedEvent>, VariantStockCacheInvalidationHandler>();
 
-        // ─── FIX #8: Search Sync Handler ─────────────────────────────────────
+        // ─── Search Sync Handler ─────────────────────────────────────
         services.AddScoped<INotificationHandler<VariantStockChangedEvent>, InventoryStockSearchSyncHandler>();
         services.AddScoped<INotificationHandler<StockCommittedEvent>, InventoryStockSearchSyncHandler>();
         services.AddScoped<INotificationHandler<StockReturnedEvent>, InventoryStockSearchSyncHandler>();
 
-        // ─── FIX #2: Payment Succeeded Event Handler ─────────────────────────
+        // ─── Payment Succeeded Event Handler ─────────────────────────
         services.AddScoped<INotificationHandler<PaymentSucceededEvent>, PaymentSucceededInventoryCommitEventHandler>();
 
         // -----------------------------
         // Background Services
         // -----------------------------
         services.AddHostedService<ElasticsearchOutboxProcessor>();
+
+        services.AddHealthChecks()
+            .AddCheck<ElasticsearchDLQHealthCheck>("elasticsearch_dlq");
+
         services.AddHostedService<PaymentCleanupService>();
 
         // -----------------------------
         // Infrastructure
         // -----------------------------
         services.AddScoped<ISearchDatabaseSyncService, ElasticsearchDatabaseSyncService>();
+        services.AddSingleton<AuditableEntityInterceptor>();
 
         // Saga
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<
@@ -121,30 +99,23 @@ public static class InfrastructureServiceCollection
         services.Configure<PaymentGatewayOptions>(
             configuration.GetSection(PaymentGatewayOptions.SectionName));
 
-        // Factory - تمام IPaymentGateway‌ها به صورت خودکار تزریق می‌شوند
         services.AddSingleton<IPaymentGatewayFactory, PaymentGatewayFactory>();
-
-        // Idempotent Payment Service جایگزین سرویس قبلی
         services.AddScoped<IPaymentService, IdempotentPaymentService>();
+        services.AddScoped<IMediaService, MediaService>();
+
+        services.AddHttpClient<IPaymentGateway, ZarinPalPaymentGateway>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
 
         // Background Services
         services.AddHostedService<PaymentReconciliationService>();
 
         services.AddScoped<IStockLedgerService, StockLedgerService>();
-
-        // Cache Invalidation Service
         services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
-
-        // Distributed Lock
         services.AddSingleton<IDistributedLock, RedisDistributedLock>();
-
-        // Masking Service
         services.AddSingleton<IAuditMaskingService, AuditMaskingService>();
-
-        // Enhanced Audit Service (جایگزین AuditService قبلی)
         services.AddScoped<IAuditService, EnhancedAuditService>();
-
-        // Retention Background Service
         services.AddHostedService<AuditRetentionService>();
 
         services.AddMemoryCache();
@@ -154,10 +125,14 @@ public static class InfrastructureServiceCollection
         {
             services.AddSingleton<IConnectionMultiplexer>(_ =>
                 ConnectionMultiplexer.Connect(redisConn));
+
+            // Health Checks
+            services.AddHealthChecks()
+                .AddCheck<RedisCacheHealthCheck>(
+                    "redis-cache",
+                    failureStatus: HealthStatus.Degraded,
+                    tags: ["cache", "redis", "infrastructure"]);
         }
-
-        services.AddHealthChecks();
-
         return services;
     }
 }

@@ -1,7 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Application.Security.Contracts;
-
-namespace Application.Discount.Features.Commands.DeleteDiscount;
+﻿namespace Application.Discount.Features.Commands.DeleteDiscount;
 
 public class DeleteDiscountHandler : IRequestHandler<DeleteDiscountCommand, ServiceResult>
 {

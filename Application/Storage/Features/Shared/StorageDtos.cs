@@ -2,9 +2,9 @@
 
 public class LiaraStorageSettings
 {
-    public string? AccessKey { get; set; }
-    public string? SecretKey { get; set; }
-    public string? BucketName { get; set; }
-    public string? BaseUrl { get; set; }
-    public string? ApiEndpoint { get; set; }
+    public string? AccessKey { get; init; }
+    public string? SecretKey { get; init; }
+    public string? BucketName { get; init; }
+    public string? BaseUrl { get; init; }
+    public string? ApiEndpoint { get; init; }
 }

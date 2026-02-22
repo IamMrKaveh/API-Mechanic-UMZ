@@ -6,14 +6,21 @@ public class CreateAttributeTypeHandler : IRequestHandler<CreateAttributeTypeCom
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
 
-    public CreateAttributeTypeHandler(IAttributeRepository repository, IMapper mapper, IUnitOfWork unitOfWork)
+    public CreateAttributeTypeHandler(
+        IAttributeRepository repository,
+        IMapper mapper,
+        IUnitOfWork unitOfWork
+        )
     {
         _repository = repository;
         _mapper = mapper;
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ServiceResult<AttributeTypeDto>> Handle(CreateAttributeTypeCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<AttributeTypeDto>> Handle(
+        CreateAttributeTypeCommand request,
+        CancellationToken cancellationToken
+        )
     {
         if (await _repository.AttributeTypeExistsAsync(request.Name))
         {

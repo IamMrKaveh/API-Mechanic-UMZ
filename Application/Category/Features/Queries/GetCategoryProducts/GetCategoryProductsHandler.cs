@@ -1,7 +1,4 @@
-﻿using Application.Category.Contracts;
-using Application.Category.Features.Shared;
-
-namespace Application.Category.Features.Queries.GetCategoryProducts;
+﻿namespace Application.Category.Features.Queries.GetCategoryProducts;
 
 public class GetCategoryProductsHandler
     : IRequestHandler<GetCategoryProductsQuery, ServiceResult<PaginatedResult<CategoryProductItemDto>>>

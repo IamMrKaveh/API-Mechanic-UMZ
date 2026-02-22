@@ -1,7 +1,4 @@
-﻿using Application.Common.Contracts;
-using Application.Discount.Features.Shared;
-
-namespace Infrastructure.Discount.Services;
+﻿namespace Infrastructure.Discount.Services;
 
 public class DiscountService : IDiscountService
 {

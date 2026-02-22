@@ -4,22 +4,33 @@ public class InventoryRepository : IInventoryRepository
 {
     private readonly LedkaContext _context;
 
-    public InventoryRepository(LedkaContext context)
+    public InventoryRepository(
+        LedkaContext context
+        )
     {
         _context = context;
     }
 
-    public async Task AddTransactionAsync(InventoryTransaction transaction, CancellationToken ct = default)
+    public async Task AddTransactionAsync(
+        InventoryTransaction transaction,
+        CancellationToken ct = default
+        )
     {
         await _context.InventoryTransactions.AddAsync(transaction, ct);
     }
 
-    public async Task AddTransactionsAsync(IEnumerable<InventoryTransaction> transactions, CancellationToken ct = default)
+    public async Task AddTransactionsAsync(
+        IEnumerable<InventoryTransaction> transactions,
+        CancellationToken ct = default
+        )
     {
         await _context.InventoryTransactions.AddRangeAsync(transactions, ct);
     }
 
-    public async Task<InventoryTransaction?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<InventoryTransaction?> GetByIdAsync(
+        int id,
+        CancellationToken ct = default
+        )
     {
         return await _context.InventoryTransactions
             .Include(t => t.Variant)
@@ -35,7 +46,8 @@ public class InventoryRepository : IInventoryRepository
         DateTime? toDate,
         int page,
         int pageSize,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+        )
     {
         var query = _context.InventoryTransactions
             .Include(t => t.Variant)
@@ -69,7 +81,8 @@ public class InventoryRepository : IInventoryRepository
 
     public async Task<IEnumerable<InventoryTransaction>> GetByVariantIdAsync(
         int variantId,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+        )
     {
         return await _context.InventoryTransactions
             .Where(t => t.VariantId == variantId)
@@ -80,7 +93,8 @@ public class InventoryRepository : IInventoryRepository
 
     public async Task<int> CalculateStockFromTransactionsAsync(
         int variantId,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+        )
     {
         return await _context.InventoryTransactions
             .Where(t => t.VariantId == variantId && !t.IsReversed)
@@ -89,7 +103,8 @@ public class InventoryRepository : IInventoryRepository
 
     public async Task<InventoryTransaction?> GetLastTransactionAsync(
         int variantId,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+        )
     {
         return await _context.InventoryTransactions
             .Where(t => t.VariantId == variantId)
@@ -98,7 +113,9 @@ public class InventoryRepository : IInventoryRepository
             .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<InventoryStatistics> GetStatisticsAsync(CancellationToken ct = default)
+    public async Task<InventoryStatistics> GetStatisticsAsync(
+        CancellationToken ct = default
+        )
     {
         var variants = await _context.Set<ProductVariant>()
             .Where(v => v.IsActive && !v.IsDeleted)
@@ -142,7 +159,8 @@ public class InventoryRepository : IInventoryRepository
 
     public async Task<IEnumerable<InventoryTransaction>> GetByOrderItemIdAsync(
         int orderItemId,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+        )
     {
         return await _context.InventoryTransactions
             .Where(t => t.OrderItemId == orderItemId)
@@ -151,17 +169,31 @@ public class InventoryRepository : IInventoryRepository
             .ToListAsync(ct);
     }
 
-    public void Update(InventoryTransaction transaction)
+    public void Update(
+        InventoryTransaction transaction
+        )
     {
         _context.InventoryTransactions.Update(transaction);
     }
 
     public async Task AddAsync(
         InventoryTransaction transaction,
-        CancellationToken ct)
+        CancellationToken ct
+        )
     {
         await _context.InventoryTransactions.AddAsync(
             transaction,
             ct);
+    }
+
+    public async Task<ProductVariant?> GetVariantWithLockAsync(
+        int variantId,
+        CancellationToken ct = default
+        )
+    {
+        return await _context.Set<ProductVariant>()
+            .FromSqlRaw("SELECT * FROM \"ProductVariants\" WHERE \"Id\" = {0} FOR UPDATE", variantId)
+            .Include(v => v.Product)
+            .FirstOrDefaultAsync(ct);
     }
 }

@@ -21,7 +21,7 @@ public class VariantRepository : IVariantRepository
     {
         return await _context.ProductVariants
             .Include(v => v.VariantAttributes)
-            .Include(v => v.ProductVariantShippingMethods)
+            .Include(v => v.ProductVariantShippings)
             .FirstOrDefaultAsync(v => v.Id == id, ct);
     }
 

@@ -1,6 +1,4 @@
-﻿using Application.Review.Contracts;
-
-namespace Application.Review.Features.Commands.ReplyToReview;
+﻿namespace Application.Review.Features.Commands.ReplyToReview;
 
 public class ReplyToReviewHandler : IRequestHandler<ReplyToReviewCommand, ServiceResult>
 {

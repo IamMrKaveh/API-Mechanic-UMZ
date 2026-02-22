@@ -1,69 +1,66 @@
 ﻿namespace Application.Discount.Features.Shared;
 
-public class DiscountCodeDto
+public record DiscountCodeDto
 {
-    public int Id { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public decimal Percentage { get; set; }
-    public decimal? MaxDiscountAmount { get; set; }
-    public decimal? MinOrderAmount { get; set; }
-    public int? UsageLimit { get; set; }
-    public int? MaxUsagePerUser { get; set; }
-    public int UsedCount { get; set; }
-    public bool IsActive { get; set; }
-    public DateTime? ExpiresAt { get; set; }
-    public DateTime? StartsAt { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public string? RowVersion { get; set; }
+    public int Id { get; init; }
+    public string Code { get; init; } = string.Empty;
+    public decimal Percentage { get; init; }
+    public decimal? MaxDiscountAmount { get; init; }
+    public decimal? MinOrderAmount { get; init; }
+    public int? UsageLimit { get; init; }
+    public int? MaxUsagePerUser { get; init; }
+    public int UsedCount { get; init; }
+    public bool IsActive { get; init; }
+    public DateTime? ExpiresAt { get; init; }
+    public DateTime? StartsAt { get; init; }
+    public string? ConcurrencyToken { get; init; }
 }
 
-public class DiscountApplyResultDto
+public record DiscountCodeDetailDto
 {
-    public int DiscountCodeId { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public decimal DiscountAmount { get; set; }
+    public int Id { get; init; }
+    public string Code { get; init; } = string.Empty;
+    public decimal Percentage { get; init; }
+    public decimal? MaxDiscountAmount { get; init; }
+    public decimal? MinOrderAmount { get; init; }
+    public int? UsageLimit { get; init; }
+    public int? MaxUsagePerUser { get; init; }
+    public int UsedCount { get; init; }
+    public bool IsActive { get; init; }
+    public DateTime? ExpiresAt { get; init; }
+    public DateTime? StartsAt { get; init; }
+    public string? ConcurrencyToken { get; init; }
+    public IEnumerable<DiscountRestrictionDto> Restrictions { get; init; } = Enumerable.Empty<DiscountRestrictionDto>();
+    public IEnumerable<DiscountUsageDto> RecentUsages { get; init; } = Enumerable.Empty<DiscountUsageDto>();
 }
 
-public class CreateDiscountRestrictionDto
+public record DiscountApplyResultDto
 {
-    public string RestrictionType { get; set; } = string.Empty;
-    public int? EntityId { get; set; }
+    public int DiscountCodeId { get; init; }
+    public string Code { get; init; } = string.Empty;
+    public decimal DiscountAmount { get; init; }
 }
 
-public class DiscountCodeDetailDto
+public record CreateDiscountRestrictionDto
 {
-    public int Id { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public decimal Percentage { get; set; }
-    public decimal? MaxDiscountAmount { get; set; }
-    public decimal? MinOrderAmount { get; set; }
-    public int? UsageLimit { get; set; }
-    public int? MaxUsagePerUser { get; set; }
-    public int UsedCount { get; set; }
-    public bool IsActive { get; set; }
-    public DateTime? ExpiresAt { get; set; }
-    public DateTime? StartsAt { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public string? RowVersion { get; set; }
-    public IEnumerable<DiscountRestrictionDto> Restrictions { get; set; } = Enumerable.Empty<DiscountRestrictionDto>();
-    public IEnumerable<DiscountUsageDto> RecentUsages { get; set; } = Enumerable.Empty<DiscountUsageDto>();
+    public string RestrictionType { get; init; } = string.Empty;
+    public int? EntityId { get; init; }
 }
 
-public class DiscountRestrictionDto
+public record DiscountRestrictionDto
 {
-    public int Id { get; set; }
-    public string RestrictionType { get; set; } = string.Empty;
-    public int? EntityId { get; set; }
+    public int Id { get; init; }
+    public string RestrictionType { get; init; } = string.Empty;
+    public int? EntityId { get; init; }
 }
 
-public class DiscountUsageDto
+public record DiscountUsageDto
 {
-    public int Id { get; set; }
-    public int UserId { get; set; }
-    public string? UserName { get; set; }
-    public DateTime UsedAt { get; set; }
+    public int Id { get; init; }
+    public int UserId { get; init; }
+    public string? UserName { get; init; }
+    public DateTime UsedAt { get; init; }
 }
 
 public record ValidateDiscountRequest(string Code, decimal OrderTotal);
-
 public record ApplyDiscountRequest(string Code, decimal OrderTotal);

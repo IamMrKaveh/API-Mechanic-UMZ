@@ -6,7 +6,7 @@
 public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
 {
     public CategoryName Name { get; private set; } = null!;
-    public Slug? Slug { get; private set; }
+    public Slug? Slug { get; private set; } = null!;
     public string? Description { get; private set; }
     public int SortOrder { get; private set; }
     public bool IsActive { get; private set; }

@@ -1,91 +1,118 @@
 ﻿namespace Application.User.Features.Shared;
 
-public class UserProfileDto
+public record UserProfileDto
 {
-    public int Id { get; set; }
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public string? Email { get; set; }
-    public bool IsActive { get; set; }
-    public bool IsAdmin { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime? LastLoginAt { get; set; }
-    public int LoginCount { get; set; }
-    public List<UserAddressDto> UserAddresses { get; set; } = new();
+    public int Id { get; init; }
+    public string PhoneNumber { get; init; } = string.Empty;
+    public string? FirstName { get; init; }
+    public string? LastName { get; init; }
+    public string? Email { get; init; }
+    public bool IsActive { get; init; }
+    public bool IsAdmin { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime? LastLoginAt { get; init; }
+    public int LoginCount { get; init; }
+    public List<UserAddressDto> UserAddresses { get; init; } = new();
 }
 
-public class UserAddressDto
+public record UserAddressDto
 {
-    public int Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string ReceiverName { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string Province { get; set; } = string.Empty;
-    public string City { get; set; } = string.Empty;
-    public string Address { get; set; } = string.Empty;
-    public string PostalCode { get; set; } = string.Empty;
-    public decimal? Latitude { get; set; }
-    public decimal? Longitude { get; set; }
-    public bool IsDefault { get; set; }
-    public bool IsActive { get; set; }
+    public int Id { get; init; }
+    public string Title { get; init; } = string.Empty;
+    public string ReceiverName { get; init; } = string.Empty;
+    public string PhoneNumber { get; init; } = string.Empty;
+    public string Province { get; init; } = string.Empty;
+    public string City { get; init; } = string.Empty;
+    public string Address { get; init; } = string.Empty;
+    public string PostalCode { get; init; } = string.Empty;
+    public decimal? Latitude { get; init; }
+    public decimal? Longitude { get; init; }
+    public bool IsDefault { get; init; }
+    public bool IsActive { get; init; }
 }
 
-public class UserActivityDto
+public record UserSessionDto
 {
-    public int Id { get; set; }
-    public string Action { get; set; } = string.Empty; public string Details { get; set; } = string.Empty; public DateTime Timestamp { get; set; }
-    public string IpAddress { get; set; } = string.Empty;
+    public int Id { get; init; }
+    public string SessionType { get; init; } = string.Empty;
+    public string CreatedByIp { get; init; } = string.Empty;
+    public string? DeviceInfo { get; init; }
+    public string? BrowserInfo { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime? LastActivityAt { get; init; }
+    public DateTime ExpiresAt { get; init; }
+    public bool IsCurrent { get; init; }
 }
 
-public class UserDashboardDto
+public record UserActivityDto
 {
-    public UserProfileDto UserProfile { get; set; } = null!; public List<OrderDto> RecentOrders { get; set; } = []; public List<UserActivityDto> RecentActivities { get; set; } = []; public int WishlistCount { get; set; }
-    public int OpenTicketsCount { get; set; }
-    public int UnreadNotifications { get; set; }
-    public int TotalOrders { get; set; }
-    public decimal TotalSpent { get; set; }
+    public int Id { get; init; }
+    public string Action { get; init; } = string.Empty;
+    public string Details { get; init; } = string.Empty;
+    public DateTime Timestamp { get; init; }
+    public string IpAddress { get; init; } = string.Empty;
 }
 
-public class CreateUserAddressDto
+public record UserDashboardDto
 {
-    public string Title { get; set; } = string.Empty;
-    public string ReceiverName { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string Province { get; set; } = string.Empty;
-    public string City { get; set; } = string.Empty;
-    public string Address { get; set; } = string.Empty;
-    public string PostalCode { get; set; } = string.Empty;
-    public bool IsDefault { get; set; }
+    public UserProfileDto UserProfile { get; init; } = null!;
+    public List<OrderDto> RecentOrders { get; init; } = [];
+    public List<UserActivityDto> RecentActivities { get; init; } = [];
+    public int WishlistCount { get; init; }
+    public int OpenTicketsCount { get; init; }
+    public int UnreadNotifications { get; init; }
+    public int TotalOrders { get; init; }
+    public decimal TotalSpent { get; init; }
 }
 
-public class UpdateUserAddressDto
+public record CreateUserAddressDto
 {
-    public string Title { get; set; } = string.Empty;
-    public string ReceiverName { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string Province { get; set; } = string.Empty;
-    public string City { get; set; } = string.Empty;
-    public string Address { get; set; } = string.Empty;
-    public string PostalCode { get; set; } = string.Empty;
-    public bool IsDefault { get; set; }
+    public string Title { get; init; } = string.Empty;
+    public string ReceiverName { get; init; } = string.Empty;
+    public string PhoneNumber { get; init; } = string.Empty;
+    public string Province { get; init; } = string.Empty;
+    public string City { get; init; } = string.Empty;
+    public string Address { get; init; } = string.Empty;
+    public string PostalCode { get; init; } = string.Empty;
+    public bool IsDefault { get; init; }
 }
 
-public class UpdateProfileDto
+public record UpdateUserAddressDto
 {
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public string? Email { get; set; }
+    public string Title { get; init; } = string.Empty;
+    public string ReceiverName { get; init; } = string.Empty;
+    public string PhoneNumber { get; init; } = string.Empty;
+    public string Province { get; init; } = string.Empty;
+    public string City { get; init; } = string.Empty;
+    public string Address { get; init; } = string.Empty;
+    public string PostalCode { get; init; } = string.Empty;
+    public bool IsDefault { get; init; }
 }
 
-public class ChangeUserStatusDto
+public record UpdateProfileDto
 {
-    public bool IsActive { get; set; }
+    public string? FirstName { get; init; }
+    public string? LastName { get; init; }
+    public string? Email { get; init; }
 }
 
-public class ChangePasswordDto
+public record ChangeUserStatusDto
 {
-    public string CurrentPassword { get; set; } = string.Empty;
-    public string NewPassword { get; set; } = string.Empty;
-    public string ConfirmNewPassword { get; set; } = string.Empty;
+    public bool IsActive { get; init; }
+}
+
+public record ChangePasswordDto
+{
+    public string CurrentPassword { get; init; } = string.Empty;
+    public string NewPassword { get; init; } = string.Empty;
+    public string ConfirmNewPassword { get; init; } = string.Empty;
+}
+
+public record AdminCreateUserDto
+{
+    public string PhoneNumber { get; init; } = string.Empty;
+    public string? FirstName { get; init; }
+    public string? LastName { get; init; }
+    public string? Email { get; init; }
+    public bool IsAdmin { get; init; }
 }

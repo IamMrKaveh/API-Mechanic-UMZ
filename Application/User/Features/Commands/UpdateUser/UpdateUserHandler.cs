@@ -41,7 +41,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, ServiceResul
             await _auditService.LogAdminEventAsync("UpdateUser", request.CurrentUserId, $"Updated profile for user {request.Id}");
             return ServiceResult.Success();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
             return ServiceResult.Failure("User was modified by another process");
         }

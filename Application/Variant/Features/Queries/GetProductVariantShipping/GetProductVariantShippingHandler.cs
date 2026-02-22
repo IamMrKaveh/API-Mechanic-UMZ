@@ -1,21 +1,18 @@
-﻿using Application.Shipping.Contracts;
-using Application.Shipping.Features.Shared;
-
-namespace Application.Variant.Features.Queries.GetProductVariantShipping;
+﻿namespace Application.Variant.Features.Queries.GetProductVariantShipping;
 
 public class GetProductVariantShippingHandler : IRequestHandler<GetProductVariantShippingQuery, ServiceResult<ProductVariantShippingInfoDto>>
 {
     private readonly IProductRepository _productRepository;
-    private readonly IShippingRepository _shippingMethodRepository;
+    private readonly IShippingRepository _shippingRepository;
     private readonly ILogger<GetProductVariantShippingHandler> _logger;
 
     public GetProductVariantShippingHandler(
         IProductRepository productRepository,
-        IShippingRepository shippingMethodRepository,
+        IShippingRepository shippingRepository,
         ILogger<GetProductVariantShippingHandler> logger)
     {
         _productRepository = productRepository;
-        _shippingMethodRepository = shippingMethodRepository;
+        _shippingRepository = shippingRepository;
         _logger = logger;
     }
 
@@ -23,16 +20,16 @@ public class GetProductVariantShippingHandler : IRequestHandler<GetProductVarian
     {
         try
         {
-            var variant = await _productRepository.GetVariantByIdAsync(request.VariantId); // Assuming extension/repo method exists for details
+            var variant = await _productRepository.GetVariantByIdAsync(request.VariantId);
 
             if (variant == null)
             {
                 return ServiceResult<ProductVariantShippingInfoDto>.Failure("محصول یافت نشد.");
             }
 
-            var allShippingMethods = await _shippingMethodRepository.GetAllAsync(false);
+            var allShippings = await _shippingRepository.GetAllAsync(false);
 
-            var enabledMethodIds = variant.ProductVariantShippingMethods
+            var enabledIds = variant.ProductVariantShippings
                             .Where(pvsm => pvsm.IsActive)
                             .Select(pvsm => pvsm.ShippingId)
                             .ToHashSet();
@@ -43,13 +40,13 @@ public class GetProductVariantShippingHandler : IRequestHandler<GetProductVarian
                 ProductName = variant.Product?.Name,
                 VariantDisplayName = variant.Sku ?? "N/A", // Simplified for example
                 ShippingMultiplier = variant.ShippingMultiplier,
-                AvailableShippingMethods = allShippingMethods.Select(sm => new ShippingMethodSelectionDto
+                AvailableShippings = allShippings.Select(sm => new ShippingSelectionDto
                 {
-                    ShippingMethodId = sm.Id,
+                    ShippingId = sm.Id,
                     Name = sm.Name,
                     BaseCost = sm.Cost,
                     Description = sm.Description,
-                    IsEnabled = enabledMethodIds.Contains(sm.Id)
+                    IsEnabled = enabledIds.Contains(sm.Id)
                 }).ToList()
             };
 

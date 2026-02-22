@@ -1,6 +1,4 @@
-﻿using Domain.Common.Shared.ValueObjects;
-
-namespace Domain.Discount.ValueObjects;
+﻿namespace Domain.Discount.ValueObjects;
 
 public sealed class DiscountAmount : ValueObject
 {

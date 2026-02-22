@@ -4,6 +4,9 @@ public sealed class Slug : ValueObject
 {
     public string Value { get; }
 
+    protected Slug()
+    { }
+
     private Slug(string value)
     {
         Value = value;

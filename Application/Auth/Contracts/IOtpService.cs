@@ -14,10 +14,15 @@ public interface IOtpService
     /// <summary>
     /// هش کردن کد OTP
     /// </summary>
-    string HashOtp(string otp);
+    string HashOtp(
+        string otp
+        );
 
     /// <summary>
     /// تأیید کد OTP
     /// </summary>
-    bool VerifyOtp(string otp, string hash);
+    bool VerifyOtp(
+        string otp,
+        string hash
+        );
 }

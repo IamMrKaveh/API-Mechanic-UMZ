@@ -30,7 +30,6 @@ public class ConfirmDeliveryHandler : IRequestHandler<ConfirmDeliveryCommand, Se
         if (order == null)
             return ServiceResult.Failure("سفارش یافت نشد.", 404);
 
-        // Only the order owner or admin can confirm delivery
         if (order.UserId != request.UserId)
             return ServiceResult.Failure("شما مجاز به تأیید تحویل این سفارش نیستید.", 403);
 
@@ -70,10 +69,10 @@ public class ConfirmDeliveryHandler : IRequestHandler<ConfirmDeliveryCommand, Se
 
             return ServiceResult.Success();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
             return ServiceResult.Failure(
-                "این سفار�� توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.", 409);
+                "این سفارش توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.", 409);
         }
     }
 }

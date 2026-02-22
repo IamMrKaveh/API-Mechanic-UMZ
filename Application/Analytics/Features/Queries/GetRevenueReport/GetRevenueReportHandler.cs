@@ -8,14 +8,17 @@ public sealed class GetRevenueReportHandler
 
     public GetRevenueReportHandler(
         IAnalyticsQueryService analyticsQuery,
-        ICacheService cache)
+        ICacheService cache
+        )
     {
         _analyticsQuery = analyticsQuery;
         _cache = cache;
     }
 
     public async Task<ServiceResult<RevenueReportDto>> Handle(
-        GetRevenueReportQuery request, CancellationToken cancellationToken)
+        GetRevenueReportQuery request,
+        CancellationToken cancellationToken
+        )
     {
         var cacheKey = $"analytics:revenue:{request.FromDate:yyyyMMdd}:{request.ToDate:yyyyMMdd}";
 
@@ -26,7 +29,7 @@ public sealed class GetRevenueReportHandler
         var result = await _analyticsQuery.GetRevenueReportAsync(
             request.FromDate, request.ToDate, cancellationToken);
 
-        //await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(10));
+        await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(10));
 
         return ServiceResult<RevenueReportDto>.Success(result);
     }

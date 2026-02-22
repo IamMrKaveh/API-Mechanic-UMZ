@@ -1,6 +1,4 @@
-﻿using Application.Audit.Contracts;
-
-namespace Application.Auth.Features.Commands.LogoutAll;
+﻿namespace Application.Auth.Features.Commands.LogoutAll;
 
 public class LogoutAllHandler : IRequestHandler<LogoutAllCommand, ServiceResult>
 {
@@ -11,18 +9,22 @@ public class LogoutAllHandler : IRequestHandler<LogoutAllCommand, ServiceResult>
     public LogoutAllHandler(
         ISessionService sessionManager,
         IAuditService auditService,
-        ILogger<LogoutAllHandler> logger)
+        ILogger<LogoutAllHandler> logger
+        )
     {
         _sessionManager = sessionManager;
         _auditService = auditService;
         _logger = logger;
     }
 
-    public async Task<ServiceResult> Handle(LogoutAllCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        LogoutAllCommand request,
+        CancellationToken ct
+        )
     {
         try
         {
-            await _sessionManager.RevokeAllUserSessionsAsync(request.UserId, cancellationToken);
+            await _sessionManager.RevokeAllUserSessionsAsync(request.UserId, ct);
 
             await _auditService.LogSecurityEventAsync(
                 "LogoutAll",

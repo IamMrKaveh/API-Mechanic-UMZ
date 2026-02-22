@@ -19,7 +19,7 @@ public class OrderRepository : IOrderRepository
     {
         return await _context.Orders
             .Include(o => o.OrderItems)
-            .Include(o => o.ShippingMethod)
+            .Include(o => o.Shipping)
             .FirstOrDefaultAsync(o => o.Id == id, ct);
     }
 

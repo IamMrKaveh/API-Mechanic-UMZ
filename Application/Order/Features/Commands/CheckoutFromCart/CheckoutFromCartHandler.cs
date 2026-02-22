@@ -23,7 +23,8 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
         IPaymentService paymentService,
         IUnitOfWork unitOfWork,
         OrderDomainService orderDomainService,
-        ILogger<CheckoutFromCartHandler> logger)
+        ILogger<CheckoutFromCartHandler> logger
+        )
     {
         _orderRepository = orderRepository;
         _shippingMethodRepository = shippingMethodRepository;
@@ -39,13 +40,14 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
 
     public async Task<ServiceResult<CheckoutResultDto>> Handle(
         CheckoutFromCartCommand request,
-        CancellationToken cancellationToken)
+        CancellationToken ct
+        )
     {
         // 1. Check Idempotency
-        if (await _orderRepository.ExistsByIdempotencyKeyAsync(request.IdempotencyKey, cancellationToken))
+        if (await _orderRepository.ExistsByIdempotencyKeyAsync(request.IdempotencyKey, ct))
         {
             var existingOrder = await _orderRepository.GetByIdempotencyKeyAsync(
-                request.IdempotencyKey, request.UserId, cancellationToken);
+                request.IdempotencyKey, request.UserId, ct);
 
             if (existingOrder != null)
             {
@@ -65,7 +67,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
             try
             {
                 // 2. Validate Cart
-                var cart = await _cartRepository.GetByUserIdAsync(request.UserId, cancellationToken);
+                var cart = await _cartRepository.GetByUserIdAsync(request.UserId, ct);
                 if (cart == null || !cart.CartItems.Any())
                     return ServiceResult<CheckoutResultDto>.Failure("سبد خرید خالی است.");
 
@@ -74,7 +76,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                 if (request.UserAddressId.HasValue)
                 {
                     userAddress = await _userRepository.GetUserAddressAsync(
-                        request.UserAddressId.Value, cancellationToken);
+                        request.UserAddressId.Value, ct);
                     if (userAddress == null || userAddress.UserId != request.UserId)
                         return ServiceResult<CheckoutResultDto>.Failure("آدرس انتخاب شده معتبر نیست.");
                 }
@@ -93,8 +95,8 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
 
                     if (request.SaveNewAddress)
                     {
-                        await _userRepository.AddAddressAsync(userAddress, cancellationToken);
-                        await _unitOfWork.SaveChangesAsync(cancellationToken);
+                        await _userRepository.AddAddressAsync(userAddress, ct);
+                        await _unitOfWork.SaveChangesAsync(ct);
                     }
                 }
                 else
@@ -104,7 +106,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
 
                 // 4. Validate Shipping Method
                 var shippingMethod = await _shippingMethodRepository.GetByIdAsync(
-                    request.ShippingMethodId, cancellationToken);
+                    request.ShippingId, ct);
                 if (shippingMethod == null || !shippingMethod.IsActive)
                     return ServiceResult<CheckoutResultDto>.Failure("روش ارسال انتخاب شده معتبر نیست.");
 
@@ -113,7 +115,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
 
                 foreach (var cartItem in cart.CartItems)
                 {
-                    var variant = await _cartRepository.GetVariantByIdAsync(cartItem.VariantId, cancellationToken);
+                    var variant = await _cartRepository.GetVariantByIdAsync(cartItem.VariantId, ct);
                     if (variant == null || !variant.IsActive)
                         return ServiceResult<CheckoutResultDto>.Failure(
                             $"محصول {cartItem.Variant?.Product?.Name ?? "ناشناخته"} موجود نیست.");
@@ -162,8 +164,8 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     orderItemSnapshots,
                     discountResult);
 
-                await _orderRepository.AddAsync(order, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _orderRepository.AddAsync(order, ct);
+                await _unitOfWork.SaveChangesAsync(ct);
 
                 // 9. Reserve Inventory
                 foreach (var orderItem in order.OrderItems)
@@ -179,10 +181,10 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                         null,
                         false);
                 }
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.SaveChangesAsync(ct);
 
                 // 10. Initiate Payment
-                var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
+                var user = await _userRepository.GetByIdAsync(request.UserId, ct);
                 var paymentResult = await _paymentService.InitiatePaymentAsync(new PaymentInitiationDto
                 {
                     OrderId = order.Id,
@@ -193,20 +195,20 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     Mobile = user?.PhoneNumber
                 });
 
-                if (!paymentResult.IsSuccess)
+                if (paymentResult.IsFailed)
                 {
                     await _inventoryService.RollbackReservationsAsync($"ORDER-{order.Id}");
-                    await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                    await _unitOfWork.RollbackTransactionAsync(ct);
 
                     return ServiceResult<CheckoutResultDto>.Failure(
-                        paymentResult.Message ?? "خطا در ایجاد درخواست پرداخت");
+                        paymentResult.Error ?? "خطا در ایجاد درخواست پرداخت");
                 }
 
                 // 11. Clear Cart
-                await _cartRepository.ClearCartAsync(request.UserId, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _cartRepository.ClearCartAsync(request.UserId, ct);
+                await _unitOfWork.SaveChangesAsync(ct);
 
-                await _unitOfWork.CommitTransactionAsync(cancellationToken);
+                await _unitOfWork.CommitTransactionAsync(ct);
 
                 _logger.LogInformation(
                     "Order {OrderId} created successfully for user {UserId}. OrderNumber: {OrderNumber}",
@@ -215,16 +217,16 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                 return ServiceResult<CheckoutResultDto>.Success(new CheckoutResultDto
                 {
                     OrderId = order.Id,
-                    PaymentUrl = paymentResult.PaymentUrl,
-                    Authority = paymentResult.Authority
+                    PaymentUrl = paymentResult.Data.PaymentUrl,
+                    Authority = paymentResult.Data.Authority,
                 });
             }
             catch (Exception ex)
             {
-                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                await _unitOfWork.RollbackTransactionAsync(ct);
                 _logger.LogError(ex, "Error during checkout for user {UserId}", request.UserId);
                 return ServiceResult<CheckoutResultDto>.Failure("خطایی در فرآیند سفارش رخ داد.");
             }
-        }, cancellationToken);
+        }, ct);
     }
 }

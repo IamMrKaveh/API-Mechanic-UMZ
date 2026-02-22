@@ -8,14 +8,17 @@ public sealed class GetSalesChartDataHandler
 
     public GetSalesChartDataHandler(
         IAnalyticsQueryService analyticsQuery,
-        ICacheService cache)
+        ICacheService cache
+        )
     {
         _analyticsQuery = analyticsQuery;
         _cache = cache;
     }
 
     public async Task<ServiceResult<IReadOnlyList<SalesChartDataPointDto>>> Handle(
-        GetSalesChartDataQuery request, CancellationToken cancellationToken)
+        GetSalesChartDataQuery request,
+        CancellationToken cancellationToken
+        )
     {
         var cacheKey = $"analytics:sales-chart:{request.FromDate:yyyyMMdd}:{request.ToDate:yyyyMMdd}:{request.GroupBy}";
 
@@ -26,7 +29,7 @@ public sealed class GetSalesChartDataHandler
         var result = await _analyticsQuery.GetSalesChartDataAsync(
             request.FromDate, request.ToDate, request.GroupBy, cancellationToken);
 
-        //await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(15));
+        await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(15));
 
         return ServiceResult<IReadOnlyList<SalesChartDataPointDto>>.Success(result);
     }

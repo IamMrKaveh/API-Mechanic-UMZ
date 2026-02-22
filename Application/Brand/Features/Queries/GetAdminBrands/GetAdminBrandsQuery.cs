@@ -6,4 +6,5 @@ public record GetAdminBrandsQuery(
     bool? IsActive,
     bool IncludeDeleted,
     int Page,
-    int PageSize) : IRequest<ServiceResult<PaginatedResult<BrandListItemDto>>>;
+    int PageSize
+    ) : IRequest<ServiceResult<PaginatedResult<BrandListItemDto>>>;

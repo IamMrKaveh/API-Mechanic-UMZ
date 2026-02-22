@@ -2,4 +2,5 @@
 
 public sealed record GetRevenueReportQuery(
     DateTime FromDate,
-    DateTime ToDate) : IRequest<ServiceResult<RevenueReportDto>>;
+    DateTime ToDate
+    ) : IRequest<ServiceResult<RevenueReportDto>>;

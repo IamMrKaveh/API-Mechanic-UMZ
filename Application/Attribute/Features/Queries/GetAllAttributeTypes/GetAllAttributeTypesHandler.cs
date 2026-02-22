@@ -6,14 +6,21 @@ public class GetAllAttributeTypesHandler : IRequestHandler<GetAllAttributeTypesQ
     private readonly IMapper _mapper;
     private readonly ICacheService _cacheService;
 
-    public GetAllAttributeTypesHandler(IAttributeRepository repository, IMapper mapper, ICacheService cacheService)
+    public GetAllAttributeTypesHandler(
+        IAttributeRepository repository,
+        IMapper mapper,
+        ICacheService cacheService
+        )
     {
         _repository = repository;
         _mapper = mapper;
         _cacheService = cacheService;
     }
 
-    public async Task<ServiceResult<IEnumerable<AttributeTypeDto>>> Handle(GetAllAttributeTypesQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<IEnumerable<AttributeTypeDto>>> Handle(
+        GetAllAttributeTypesQuery request,
+        CancellationToken cancellationToken
+        )
     {
         const string cacheKey = "attributes:all_types";
 
@@ -26,7 +33,7 @@ public class GetAllAttributeTypesHandler : IRequestHandler<GetAllAttributeTypesQ
         var types = await _repository.GetAllAttributeTypesAsync();
         var dtos = _mapper.Map<IEnumerable<AttributeTypeDto>>(types);
 
-        await _cacheService.SetAsync(cacheKey, dtos, TimeSpan.FromHours(1)); // Long cache for static attributes
+        await _cacheService.SetAsync(cacheKey, dtos, TimeSpan.FromHours(1));
 
         return ServiceResult<IEnumerable<AttributeTypeDto>>.Success(dtos);
     }

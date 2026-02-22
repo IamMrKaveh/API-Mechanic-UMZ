@@ -1,7 +1,7 @@
 ﻿namespace Application.Shipping.Features.Queries.GetAvailableShippings;
 
 public class GetAvailableShippingsHandler
-    : IRequestHandler<GetAvailableShippingsQuery, ServiceResult<IEnumerable<AvailableShippingMethodDto>>>
+    : IRequestHandler<GetAvailableShippingsQuery, ServiceResult<IEnumerable<AvailableShippingDto>>>
 {
     private readonly IShippingQueryService _shippingQueryService;
 
@@ -10,13 +10,13 @@ public class GetAvailableShippingsHandler
         _shippingQueryService = shippingQueryService;
     }
 
-    public async Task<ServiceResult<IEnumerable<AvailableShippingMethodDto>>> Handle(
+    public async Task<ServiceResult<IEnumerable<AvailableShippingDto>>> Handle(
         GetAvailableShippingsQuery request,
         CancellationToken cancellationToken)
     {
-        var result = await _shippingQueryService.GetAvailableShippingMethodsForCartAsync(
+        var result = await _shippingQueryService.GetAvailableShippingsForCartAsync(
             request.UserId, cancellationToken);
 
-        return ServiceResult<IEnumerable<AvailableShippingMethodDto>>.Success(result);
+        return ServiceResult<IEnumerable<AvailableShippingDto>>.Success(result);
     }
 }

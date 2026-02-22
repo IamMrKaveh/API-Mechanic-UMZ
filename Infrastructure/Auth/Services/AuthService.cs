@@ -9,7 +9,6 @@ public class AuthService : IAuthService
     private readonly IRateLimitService _rateLimitService;
     private readonly IAuditService _auditService;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
     private readonly ILogger<AuthService> _logger;
     private readonly IConfiguration _configuration;
 
@@ -26,7 +25,6 @@ public class AuthService : IAuthService
         IRateLimitService rateLimitService,
         IAuditService auditService,
         IUnitOfWork unitOfWork,
-        IMapper mapper,
         ILogger<AuthService> logger,
         IConfiguration configuration)
     {
@@ -37,7 +35,6 @@ public class AuthService : IAuthService
         _rateLimitService = rateLimitService;
         _auditService = auditService;
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
         _logger = logger;
         _configuration = configuration;
 
@@ -46,9 +43,6 @@ public class AuthService : IAuthService
         _lockoutDurationMinutes = configuration.GetValue("Auth:LockoutDurationMinutes", 15);
     }
 
-    /// <summary>
-    /// درخواست ارسال OTP
-    /// </summary>
     public async Task<ServiceResult> RequestOtpAsync(
         string phoneNumber,
         string ipAddress,
@@ -63,7 +57,6 @@ public class AuthService : IAuthService
                 return ServiceResult.Failure("شماره تلفن نامعتبر است.");
             }
 
-            // بررسی Rate Limit بر اساس IP
             var ipRateLimitKey = $"otp_request:ip:{ipAddress}";
             var (isIpLimited, ipRetryAfter) = await _rateLimitService.IsLimitedAsync(ipRateLimitKey, 10, 60);
             if (isIpLimited)
@@ -72,7 +65,6 @@ public class AuthService : IAuthService
                 return ServiceResult.Failure($"تعداد درخواست‌ها بیش از حد مجاز است. لطفاً {ipRetryAfter} ثانیه صبر کنید.", 429);
             }
 
-            // بررسی Rate Limit بر اساس شماره تلفن
             var phoneRateLimitKey = $"otp_request:phone:{normalizedPhone}";
             var (isPhoneLimited, phoneRetryAfter) = await _rateLimitService.IsLimitedAsync(phoneRateLimitKey, 3, 2);
             if (isPhoneLimited)
@@ -81,7 +73,6 @@ public class AuthService : IAuthService
                 return ServiceResult.Failure($"درخواست‌های متعدد. لطفاً {phoneRetryAfter} ثانیه صبر کنید.", 429);
             }
 
-            // دریافت یا ایجاد کاربر
             var user = await _userRepository.GetByPhoneNumberAsync(normalizedPhone);
             var isNewUser = user == null;
 
@@ -94,7 +85,6 @@ public class AuthService : IAuthService
                 _logger.LogInformation("کاربر جدید با شماره {PhoneNumber} ایجاد شد.", normalizedPhone);
             }
 
-            // بررسی قفل بودن حساب
             if (user!.IsLockedOut)
             {
                 var remainingLockout = user.LockoutEnd!.Value - DateTime.UtcNow;
@@ -105,10 +95,8 @@ public class AuthService : IAuthService
                 }
             }
 
-            // حذف OTPهای قبلی
             await _userRepository.DeleteUserOtpsAsync(user.Id);
 
-            // تولید و ذخیره OTP جدید
             var otpCode = _otpService.GenerateSecureOtp();
             var otpHash = _otpService.HashOtp(otpCode);
 
@@ -117,7 +105,6 @@ public class AuthService : IAuthService
             await _userRepository.AddUserOtpAsync(userOtp);
             await _unitOfWork.SaveChangesAsync(ct);
 
-            // ارسال OTP از طریق پیامک
             var smsResult = await _smsService.SendSmsAsync(normalizedPhone, otpCode, ct);
 
             if (smsResult.IsFailed)
@@ -126,7 +113,6 @@ public class AuthService : IAuthService
                 return ServiceResult.Failure("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
             }
 
-            // ثبت لاگ
             await _auditService.LogSecurityEventAsync(
                 "OtpRequested",
                 $"کد OTP برای شماره {normalizedPhone} ارسال شد.",
@@ -144,10 +130,8 @@ public class AuthService : IAuthService
         }
     }
 
-    /// <summary>
-    /// تأیید OTP و ورود
-    /// </summary>
-    public async Task<ServiceResult<AuthResult>> VerifyOtpAsync(
+    public async Task<ServiceResult<(string AccessToken, RefreshTokenResult RefreshToken, Domain.User.User User, bool IsNewUser)>>
+        VerifyOtpAsync(
         string phoneNumber,
         string code,
         string ipAddress,
@@ -160,64 +144,55 @@ public class AuthService : IAuthService
 
             if (!IsValidPhoneNumber(normalizedPhone))
             {
-                return ServiceResult<AuthResult>.Failure("شماره تلفن نامعتبر است.");
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("شماره تلفن نامعتبر است.");
             }
 
             if (string.IsNullOrWhiteSpace(code) || code.Length != 6)
             {
-                return ServiceResult<AuthResult>.Failure("کد تأیید نامعتبر است.");
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("کد تأیید نامعتبر است.");
             }
 
-            // بررسی Rate Limit برای تأیید
             var rateLimitKey = $"otp_verify:{normalizedPhone}";
             var (isLimited, retryAfter) = await _rateLimitService.IsLimitedAsync(rateLimitKey, _maxOtpAttempts, _lockoutDurationMinutes);
             if (isLimited)
             {
-                return ServiceResult<AuthResult>.Failure(
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure(
                     $"تعداد تلاش‌های ناموفق بیش از حد مجاز است. لطفاً {retryAfter / 60} دقیقه صبر کنید.", 429);
             }
 
-            // دریافت کاربر
             var user = await _userRepository.GetByPhoneNumberAsync(normalizedPhone);
             if (user == null)
             {
-                return ServiceResult<AuthResult>.Failure("کاربر یافت نشد.", 404);
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("کاربر یافت نشد.", 404);
             }
 
-            // بررسی قفل بودن حساب
             if (user.IsLockedOut)
             {
                 var remainingLockout = user.LockoutEnd!.Value - DateTime.UtcNow;
                 if (remainingLockout > TimeSpan.Zero)
                 {
-                    return ServiceResult<AuthResult>.Failure(
+                    return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure(
                         $"حساب شما قفل شده است. لطفاً {(int)remainingLockout.TotalMinutes} دقیقه دیگر تلاش کنید.");
                 }
-                // رفع قفل
                 user.ResetLockout();
             }
 
-            // دریافت OTP فعال
             var userOtp = await _userRepository.GetActiveOtpAsync(user.Id);
             if (userOtp == null)
             {
-                return ServiceResult<AuthResult>.Failure("کد تأیید منقضی شده یا وجود ندارد. لطفاً کد جدید درخواست کنید.");
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("کد تأیید منقضی شده یا وجود ندارد. لطفاً کد جدید درخواست کنید.");
             }
 
-            // بررسی انقضا
             if (userOtp.ExpiresAt < DateTime.UtcNow)
             {
                 await _userRepository.DeleteUserOtpsAsync(user.Id);
                 await _unitOfWork.SaveChangesAsync(ct);
-                return ServiceResult<AuthResult>.Failure("کد تأیید منقضی شده است. لطفاً کد جدید درخواست کنید.");
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("کد تأیید منقضی شده است. لطفاً کد جدید درخواست کنید.");
             }
 
-            // افزایش تعداد تلاش
             userOtp.IncrementAttempts();
-
             await _unitOfWork.SaveChangesAsync(ct);
 
-            // بررسی تعداد تلاش‌ها
             if (userOtp.AttemptCount > _maxOtpAttempts)
             {
                 user.LockAccount(TimeSpan.FromMinutes(_lockoutDurationMinutes));
@@ -230,10 +205,9 @@ public class AuthService : IAuthService
                     ipAddress,
                     user.Id);
 
-                return ServiceResult<AuthResult>.Failure("تعداد تلاش‌های ناموفق بیش از حد مجاز. حساب شما موقتاً قفل شد.");
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("تعداد تلاش‌های ناموفق بیش از حد مجاز. حساب شما موقتاً قفل شد.");
             }
 
-            // تأیید OTP
             if (!_otpService.VerifyOtp(code, userOtp.OtpHash))
             {
                 await _auditService.LogSecurityEventAsync(
@@ -242,15 +216,13 @@ public class AuthService : IAuthService
                     ipAddress,
                     user.Id);
 
-                return ServiceResult<AuthResult>.Failure($"کد تأیید نادرست است. {_maxOtpAttempts - userOtp.AttemptCount} تلاش باقی مانده.");
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure($"کد تأیید نادرست است. {_maxOtpAttempts - userOtp.AttemptCount} تلاش باقی مانده.");
             }
 
-            // OTP صحیح - حذف OTPها و رفع قفل
             await _userRepository.DeleteUserOtpsAsync(user.Id);
             user.ResetLockout();
             user.RecordSuccessfulLogin();
 
-            // ایجاد Session
             var refreshTokenResult = _tokenService.GenerateRefreshToken();
 
             var session = UserSession.Create(
@@ -266,10 +238,8 @@ public class AuthService : IAuthService
             await _userRepository.AddSessionAsync(session);
             await _unitOfWork.SaveChangesAsync(ct);
 
-            // تولید Access Token
             var accessToken = _tokenService.GenerateJwtToken(user);
 
-            // ثبت لاگ
             await _auditService.LogSecurityEventAsync(
                 "UserLoggedIn",
                 $"ورود موفق کاربر {normalizedPhone}",
@@ -281,27 +251,22 @@ public class AuthService : IAuthService
 
             var isNewUser = user.CreatedAt > DateTime.UtcNow.AddMinutes(-5);
 
-            return ServiceResult<AuthResult>.Success(new AuthResult
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshTokenResult.FullToken,
-                AccessTokenExpiresAt = _tokenService.GetAccessTokenExpiration(),
-                RefreshTokenExpiresAt = session.ExpiresAt,
-                User = _mapper.Map<UserProfileDto>(user),
-                IsNewUser = isNewUser
-            });
+            return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Success((
+                accessToken,
+                refreshTokenResult,
+                user,
+                isNewUser
+            ));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در تأیید OTP برای شماره {PhoneNumber}", phoneNumber);
-            return ServiceResult<AuthResult>.Failure("خطای داخلی سرور.");
+            return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("خطای داخلی سرور.");
         }
     }
 
-    /// <summary>
-    /// تمدید توکن
-    /// </summary>
-    public async Task<ServiceResult<AuthResult>> RefreshTokenAsync(
+    public async Task<ServiceResult<(string AccessToken, RefreshTokenResult RefreshToken, Domain.User.User User, bool IsNewUser)>>
+        RefreshTokenAsync(
         string refreshToken,
         string ipAddress,
         string? userAgent,
@@ -311,35 +276,31 @@ public class AuthService : IAuthService
         {
             if (string.IsNullOrWhiteSpace(refreshToken))
             {
-                return ServiceResult<AuthResult>.Failure("توکن نامعتبر است.");
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("توکن نامعتبر است.");
             }
 
-            // تجزیه Refresh Token
             var parts = refreshToken.Split('.');
             if (parts.Length != 2)
             {
-                return ServiceResult<AuthResult>.Failure("فرمت توکن نامعتبر است.");
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("فرمت توکن نامعتبر است.");
             }
 
             var selector = parts[0];
             var verifier = parts[1];
 
-            // یافتن Session
             var session = await _userRepository.GetSessionBySelectorAsync(selector);
             if (session == null)
             {
-                return ServiceResult<AuthResult>.Failure("نشست یافت نشد. لطفاً ��وباره وارد شوید.", 401);
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("نشست یافت نشد. لطفاً دوباره وارد شوید.", 401);
             }
 
-            // بررسی انقضا
             if (session.ExpiresAt < DateTime.UtcNow)
             {
                 await _userRepository.RevokeSessionAsync(session.Id);
                 await _unitOfWork.SaveChangesAsync(ct);
-                return ServiceResult<AuthResult>.Failure("نشست منقضی شده است. لطفاً دوباره وارد شوید.", 401);
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("نشست منقضی شده است. لطفاً دوباره وارد شوید.", 401);
             }
 
-            // بررسی ابطال
             if (session.RevokedAt.HasValue)
             {
                 await _auditService.LogSecurityEventAsync(
@@ -348,32 +309,28 @@ public class AuthService : IAuthService
                     ipAddress,
                     session.UserId);
 
-                // ابطال تمام Sessionهای کاربر (امنیتی)
                 await _userRepository.RevokeAllUserSessionsAsync(session.UserId);
                 await _unitOfWork.SaveChangesAsync(ct);
 
-                return ServiceResult<AuthResult>.Failure("توکن نامعتبر است. لطفاً دوباره وارد شوید.", 401);
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("توکن نامعتبر است. لطفاً دوباره وارد شوید.", 401);
             }
 
-            // تأیید Verifier
             var verifierHash = _tokenService.HashToken(verifier);
             if (!CryptographicOperations.FixedTimeEquals(
                 Encoding.UTF8.GetBytes(session.TokenVerifierHash),
                 Encoding.UTF8.GetBytes(verifierHash)))
             {
-                return ServiceResult<AuthResult>.Failure("توکن نامعتبر است.", 401);
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("توکن نامعتبر است.", 401);
             }
 
-            // دریافت کاربر
             var user = await _userRepository.GetByIdAsync(session.UserId);
             if (user == null || !user.IsActive || user.IsDeleted)
             {
                 await _userRepository.RevokeSessionAsync(session.Id);
                 await _unitOfWork.SaveChangesAsync(ct);
-                return ServiceResult<AuthResult>.Failure("حساب کاربری غیرفعال است.", 401);
+                return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("حساب کاربری غیرفعال است.", 401);
             }
 
-            // Token Rotation: ابطال Session قدیمی و ایجاد جدید
             await _userRepository.RevokeSessionAsync(session.Id);
 
             var newRefreshTokenResult = _tokenService.GenerateRefreshToken();
@@ -388,37 +345,30 @@ public class AuthService : IAuthService
                  _refreshTokenExpirationDays
              );
 
-            // به‌روزرسانی Session قدیمی با ارجاع به جدید
             session.MarkAsReplaced(newRefreshTokenResult.Selector);
 
             await _userRepository.AddSessionAsync(newSession);
             await _unitOfWork.SaveChangesAsync(ct);
 
-            // تولید Access Token جدید
             var accessToken = _tokenService.GenerateJwtToken(user);
+            var isNewUser = false;
 
             _logger.LogInformation("توکن کاربر {UserId} تمدید شد.", user.Id);
 
-            return ServiceResult<AuthResult>.Success(new AuthResult
-            {
-                AccessToken = accessToken,
-                RefreshToken = newRefreshTokenResult.FullToken,
-                AccessTokenExpiresAt = _tokenService.GetAccessTokenExpiration(),
-                RefreshTokenExpiresAt = newSession.ExpiresAt,
-                User = _mapper.Map<UserProfileDto>(user),
-                IsNewUser = false
-            });
+            return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Success((
+             accessToken,
+             newRefreshTokenResult,
+             user,
+             isNewUser
+         ));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در تمدید توکن");
-            return ServiceResult<AuthResult>.Failure("خطای داخلی سرور.");
+            return ServiceResult<(string, RefreshTokenResult, Domain.User.User, bool)>.Failure("خطای داخلی سرور.");
         }
     }
 
-    /// <summary>
-    /// خروج از سیستم
-    /// </summary>
     public async Task<ServiceResult> LogoutAsync(
         int userId,
         string refreshToken,
@@ -428,7 +378,7 @@ public class AuthService : IAuthService
         {
             if (string.IsNullOrWhiteSpace(refreshToken))
             {
-                return ServiceResult.Success(); // بدون توکن، فقط برگردان موفق
+                return ServiceResult.Success();
             }
 
             var parts = refreshToken.Split('.');
@@ -457,9 +407,6 @@ public class AuthService : IAuthService
         }
     }
 
-    /// <summary>
-    /// خروج از تمام دستگاه‌ها
-    /// </summary>
     public async Task<ServiceResult> LogoutAllAsync(
         int userId,
         CancellationToken ct = default)
@@ -485,8 +432,6 @@ public class AuthService : IAuthService
             return ServiceResult.Failure("خطای داخلی سرور.");
         }
     }
-
-    #region Private Methods
 
     private static string NormalizePhoneNumber(string phoneNumber)
     {
@@ -520,6 +465,4 @@ public class AuthService : IAuthService
 
         return phoneNumber.All(char.IsDigit);
     }
-
-    #endregion Private Methods
 }

@@ -1,22 +1,17 @@
 ﻿namespace Infrastructure.Category.Services;
 
-/// <summary>
-/// سرویس کوئری دسته‌بندی‌ها - مستقیماً DTO برمی‌گرداند.
-/// بدون بارگذاری Aggregate - بهینه برای خواندن.
-/// </summary>
 public class CategoryQueryService : ICategoryQueryService
 {
     private readonly LedkaContext _context;
-    private readonly IMediaService _mediaService;
+    private readonly IUrlResolverService _urlResolver;
 
-    public CategoryQueryService(LedkaContext context, IMediaService mediaService)
+    public CategoryQueryService(LedkaContext context, IUrlResolverService urlResolver)
     {
         _context = context;
-        _mediaService = mediaService;
+        _urlResolver = urlResolver;
     }
 
-    public async Task<IReadOnlyList<CategoryTreeDto>> GetCategoryTreeAsync(
-        CancellationToken ct = default)
+    public async Task<IReadOnlyList<CategoryTreeDto>> GetCategoryTreeAsync(CancellationToken ct = default)
     {
         var categories = await _context.Categories
             .AsNoTracking()
@@ -25,17 +20,17 @@ public class CategoryQueryService : ICategoryQueryService
             .Select(c => new
             {
                 c.Id,
-                c.Name,
-                c.Slug,
+                Name = c.Name.Value,
+                Slug = c.Slug != null ? c.Slug.Value : null,
                 c.SortOrder,
-                Groups = c.Brands
+                brands = c.Brands
                     .Where(g => !g.IsDeleted && g.IsActive)
                     .OrderBy(g => g.SortOrder)
                     .Select(g => new
                     {
                         g.Id,
-                        g.Name,
-                        g.Slug,
+                        Name = g.Name.Value,
+                        Slug = g.Slug != null ? g.Slug.Value : null,
                         g.SortOrder,
                         ProductCount = g.Products.Count(p => !p.IsDeleted && p.IsActive)
                     })
@@ -43,35 +38,38 @@ public class CategoryQueryService : ICategoryQueryService
             })
             .ToListAsync(ct);
 
-        var result = new List<CategoryTreeDto>();
+        var categoryIds = categories.Select(c => c.Id).ToList();
+        var brandIds = categories.SelectMany(c => c.brands).Select(g => g.Id).ToList();
 
-        foreach (var c in categories)
+        var categoryMedias = await _context.Medias
+            .Where(m => m.EntityType == "Category" && categoryIds.Contains(m.EntityId) && m.IsPrimary && !m.IsDeleted)
+            .Select(m => new { m.EntityId, m.FilePath })
+            .ToDictionaryAsync(m => m.EntityId, m => m.FilePath, ct);
+
+        var brandMedias = await _context.Medias
+            .Where(m => m.EntityType == "Brand" && brandIds.Contains(m.EntityId) && m.IsPrimary && !m.IsDeleted)
+            .Select(m => new { m.EntityId, m.FilePath })
+            .ToDictionaryAsync(m => m.EntityId, m => m.FilePath, ct);
+
+        return categories.Select(c => new CategoryTreeDto
         {
-            var iconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", c.Id);
-
-            result.Add(new CategoryTreeDto
+            Id = c.Id,
+            Name = c.Name,
+            Slug = c.Slug,
+            IconUrl = _urlResolver.ResolveUrl(categoryMedias.GetValueOrDefault(c.Id)),
+            SortOrder = c.SortOrder,
+            Brands = c.brands.Select(g => new BrandTreeDto
             {
-                Id = c.Id,
-                Name = c.Name,
-                Slug = c.Slug,
-                IconUrl = iconUrl,
-                SortOrder = c.SortOrder,
-                Groups = c.Groups.Select(g => new BrandTreeDto
-                {
-                    Id = g.Id,
-                    Name = g.Name,
-                    Slug = g.Slug,
-                    SortOrder = g.SortOrder,
-                    ProductCount = g.ProductCount
-                }).ToList()
-            });
-        }
-
-        return result;
+                Id = g.Id,
+                Name = g.Name,
+                Slug = g.Slug,
+                SortOrder = g.SortOrder,
+                ProductCount = g.ProductCount
+            }).ToList()
+        }).ToList();
     }
 
-    public async Task<CategoryWithGroupsDto?> GetCategoryWithGroupsAsync(
-        int categoryId, CancellationToken ct = default)
+    public async Task<CategoryWithBrandsDto?> GetCategoryWithBrandsAsync(int categoryId, CancellationToken ct = default)
     {
         var category = await _context.Categories
             .AsNoTracking()
@@ -79,8 +77,8 @@ public class CategoryQueryService : ICategoryQueryService
             .Select(c => new
             {
                 c.Id,
-                c.Name,
-                c.Slug,
+                Name = c.Name.Value,
+                Slug = c.Slug != null ? c.Slug.Value : null,
                 c.Description,
                 c.IsActive,
                 c.IsDeleted,
@@ -88,14 +86,14 @@ public class CategoryQueryService : ICategoryQueryService
                 c.CreatedAt,
                 c.UpdatedAt,
                 c.RowVersion,
-                Groups = c.Brands
+                brands = c.Brands
                     .Where(g => !g.IsDeleted)
                     .OrderBy(g => g.SortOrder)
                     .Select(g => new
                     {
                         g.Id,
-                        g.Name,
-                        g.Slug,
+                        Name = g.Name.Value,
+                        Slug = g.Slug != null ? g.Slug.Value : null,
                         g.IsActive,
                         g.SortOrder,
                         ProductCount = g.Products.Count(p => !p.IsDeleted),
@@ -107,51 +105,50 @@ public class CategoryQueryService : ICategoryQueryService
 
         if (category == null) return null;
 
-        var iconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", category.Id);
+        var brandIds = category.brands.Select(g => g.Id).ToList();
 
-        var groupDtos = new List<BrandSummaryDto>();
-        foreach (var g in category.Groups)
+        var categoryMedia = await _context.Medias
+            .Where(m => m.EntityType == "Category" && m.EntityId == category.Id && m.IsPrimary && !m.IsDeleted)
+            .Select(m => m.FilePath)
+            .FirstOrDefaultAsync(ct);
+
+        var brandMedias = await _context.Medias
+            .Where(m => m.EntityType == "Brand" && brandIds.Contains(m.EntityId) && m.IsPrimary && !m.IsDeleted)
+            .Select(m => new { m.EntityId, m.FilePath })
+            .ToDictionaryAsync(m => m.EntityId, m => m.FilePath, ct);
+
+        var brandDtos = category.brands.Select(g => new BrandSummaryDto
         {
-            var groupIconUrl = await _mediaService.GetPrimaryImageUrlAsync("Brand", g.Id);
-            groupDtos.Add(new BrandSummaryDto
-            {
-                Id = g.Id,
-                Name = g.Name,
-                Slug = g.Slug,
-                IconUrl = groupIconUrl,
-                IsActive = g.IsActive,
-                SortOrder = g.SortOrder,
-                ProductCount = g.ProductCount,
-                ActiveProductCount = g.ActiveProductCount
-            });
-        }
+            Id = g.Id,
+            Name = g.Name,
+            Slug = g.Slug,
+            IconUrl = _urlResolver.ResolveUrl(brandMedias.GetValueOrDefault(g.Id)),
+            IsActive = g.IsActive,
+            SortOrder = g.SortOrder,
+            ProductCount = g.ProductCount,
+            ActiveProductCount = g.ActiveProductCount
+        }).ToList();
 
-        return new CategoryWithGroupsDto
+        return new CategoryWithBrandsDto
         {
             Id = category.Id,
             Name = category.Name,
             Slug = category.Slug,
             Description = category.Description,
-            IconUrl = iconUrl,
+            IconUrl = _urlResolver.ResolveUrl(categoryMedia),
             IsActive = category.IsActive,
             IsDeleted = category.IsDeleted,
             SortOrder = category.SortOrder,
             CreatedAt = category.CreatedAt,
             UpdatedAt = category.UpdatedAt,
-            RowVersion = category.RowVersion != null
-                ? Convert.ToBase64String(category.RowVersion)
-                : null,
-            Groups = groupDtos
+            RowVersion = category.RowVersion.ToBase64(),
+            Brands = brandDtos
         };
     }
 
     public async Task<PaginatedResult<CategoryListItemDto>> GetCategoriesPagedAsync(
-        string? search,
-        bool? isActive,
-        bool includeDeleted,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+        string? search, bool? isActive, bool includeDeleted,
+        int page, int pageSize, CancellationToken ct = default)
     {
         var query = _context.Categories.AsNoTracking().AsQueryable();
 
@@ -179,57 +176,48 @@ public class CategoryQueryService : ICategoryQueryService
             .Select(c => new
             {
                 c.Id,
-                c.Name,
-                c.Slug,
+                Name = c.Name.Value,
+                Slug = c.Slug != null ? c.Slug.Value : null,
                 c.IsActive,
                 c.IsDeleted,
                 c.SortOrder,
-                GroupCount = c.Brands.Count(g => !g.IsDeleted),
-                ActiveGroupCount = c.Brands.Count(g => !g.IsDeleted && g.IsActive),
-                TotalProductCount = c.Brands
-                    .Where(g => !g.IsDeleted)
-                    .SelectMany(g => g.Products)
-                    .Count(p => !p.IsDeleted),
+                brandCount = c.Brands.Count(g => !g.IsDeleted),
+                ActivebrandCount = c.Brands.Count(g => !g.IsDeleted && g.IsActive),
+                TotalProductCount = c.Brands.Where(g => !g.IsDeleted).SelectMany(g => g.Products).Count(p => !p.IsDeleted),
                 c.CreatedAt,
                 c.UpdatedAt,
                 c.RowVersion
             })
             .ToListAsync(ct);
 
-        var dtos = new List<CategoryListItemDto>();
-        foreach (var c in categories)
-        {
-            var iconUrl = await _mediaService.GetPrimaryImageUrlAsync("Category", c.Id);
+        var categoryIds = categories.Select(c => c.Id).ToList();
+        var mediaMap = await _context.Medias
+            .Where(m => m.EntityType == "Category" && categoryIds.Contains(m.EntityId) && m.IsPrimary && !m.IsDeleted)
+            .Select(m => new { m.EntityId, m.FilePath })
+            .ToDictionaryAsync(m => m.EntityId, m => m.FilePath, ct);
 
-            dtos.Add(new CategoryListItemDto
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Slug = c.Slug,
-                IconUrl = iconUrl,
-                IsActive = c.IsActive,
-                IsDeleted = c.IsDeleted,
-                SortOrder = c.SortOrder,
-                GroupCount = c.GroupCount,
-                ActiveGroupCount = c.ActiveGroupCount,
-                TotalProductCount = c.TotalProductCount,
-                CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt,
-                RowVersion = c.RowVersion != null
-                    ? Convert.ToBase64String(c.RowVersion)
-                    : null
-            });
-        }
+        var dtos = categories.Select(c => new CategoryListItemDto
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Slug = c.Slug,
+            IconUrl = _urlResolver.ResolveUrl(mediaMap.GetValueOrDefault(c.Id)),
+            IsActive = c.IsActive,
+            IsDeleted = c.IsDeleted,
+            SortOrder = c.SortOrder,
+            brandCount = c.brandCount,
+            ActivebrandCount = c.ActivebrandCount,
+            TotalProductCount = c.TotalProductCount,
+            CreatedAt = c.CreatedAt,
+            UpdatedAt = c.UpdatedAt,
+            RowVersion = c.RowVersion.ToBase64()
+        }).ToList();
 
         return PaginatedResult<CategoryListItemDto>.Create(dtos, totalItems, page, pageSize);
     }
 
     public async Task<PaginatedResult<CategoryProductItemDto>> GetCategoryProductsAsync(
-        int categoryId,
-        bool activeOnly,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+        int categoryId, bool activeOnly, int page, int pageSize, CancellationToken ct = default)
     {
         var query = _context.Products
             .AsNoTracking()
@@ -247,13 +235,13 @@ public class CategoryQueryService : ICategoryQueryService
             .Select(p => new
             {
                 p.Id,
-                p.Name,
-                GroupName = p.Brand != null ? p.Brand.Name : "N/A",
+                Name = p.Name.Value,
+                brandName = p.Brand != null ? p.Brand.Name.Value : "N/A",
                 MinPrice = p.Variants.Where(v => !v.IsDeleted && v.IsActive).Any()
-                    ? p.Variants.Where(v => !v.IsDeleted && v.IsActive).Min(v => v.SellingPrice)
+                    ? p.Variants.Where(v => !v.IsDeleted && v.IsActive).Min(v => v.SellingPrice.Amount)
                     : 0m,
                 MaxPrice = p.Variants.Where(v => !v.IsDeleted && v.IsActive).Any()
-                    ? p.Variants.Where(v => !v.IsDeleted && v.IsActive).Max(v => v.SellingPrice)
+                    ? p.Variants.Where(v => !v.IsDeleted && v.IsActive).Max(v => v.SellingPrice.Amount)
                     : 0m,
                 TotalStock = p.Variants.Where(v => !v.IsDeleted && !v.IsUnlimited).Sum(v => v.StockQuantity),
                 p.IsActive,
@@ -261,42 +249,41 @@ public class CategoryQueryService : ICategoryQueryService
             })
             .ToListAsync(ct);
 
-        var dtos = new List<CategoryProductItemDto>();
-        foreach (var p in products)
-        {
-            var iconUrl = await _mediaService.GetPrimaryImageUrlAsync("Product", p.Id);
+        var productIds = products.Select(p => p.Id).ToList();
+        var mediaMap = await _context.Medias
+            .Where(m => m.EntityType == "Product" && productIds.Contains(m.EntityId) && m.IsPrimary && !m.IsDeleted)
+            .Select(m => new { m.EntityId, m.FilePath })
+            .ToDictionaryAsync(m => m.EntityId, m => m.FilePath, ct);
 
-            dtos.Add(new CategoryProductItemDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                IconUrl = iconUrl,
-                GroupName = p.GroupName,
-                MinPrice = p.MinPrice,
-                MaxPrice = p.MaxPrice,
-                TotalStock = p.TotalStock,
-                IsActive = p.IsActive,
-                CreatedAt = p.CreatedAt
-            });
-        }
+        var dtos = products.Select(p => new CategoryProductItemDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            IconUrl = _urlResolver.ResolveUrl(mediaMap.GetValueOrDefault(p.Id)),
+            brandName = p.brandName,
+            MinPrice = p.MinPrice,
+            MaxPrice = p.MaxPrice,
+            TotalStock = p.TotalStock,
+            IsActive = p.IsActive,
+            CreatedAt = p.CreatedAt
+        }).ToList();
 
         return PaginatedResult<CategoryProductItemDto>.Create(dtos, totalItems, page, pageSize);
     }
 
-    public async Task<BrandDetailDto?> GetBrandDetailAsync(
-        int groupId, CancellationToken ct = default)
+    public async Task<BrandDetailDto?> GetBrandDetailAsync(int brandId, CancellationToken ct = default)
     {
-        var group = await _context.Brands
+        var brand = await _context.Brands
             .AsNoTracking()
-            .Where(g => g.Id == groupId && !g.IsDeleted)
+            .Where(g => g.Id == brandId && !g.IsDeleted)
             .Select(g => new
             {
                 g.Id,
-                g.Name,
-                g.Slug,
+                Name = g.Name.Value,
+                Slug = g.Slug != null ? g.Slug.Value : null,
                 g.Description,
                 g.CategoryId,
-                CategoryName = g.Category.Name,
+                CategoryName = g.Category.Name.Value,
                 g.IsActive,
                 g.IsDeleted,
                 g.SortOrder,
@@ -308,45 +295,38 @@ public class CategoryQueryService : ICategoryQueryService
             })
             .FirstOrDefaultAsync(ct);
 
-        if (group == null) return null;
+        if (brand == null) return null;
 
-        var iconUrl = await _mediaService.GetPrimaryImageUrlAsync("Brand", group.Id);
+        var brandMedia = await _context.Medias
+            .Where(m => m.EntityType == "Brand" && m.EntityId == brand.Id && m.IsPrimary && !m.IsDeleted)
+            .Select(m => m.FilePath)
+            .FirstOrDefaultAsync(ct);
 
         return new BrandDetailDto
         {
-            Id = group.Id,
-            Name = group.Name,
-            Slug = group.Slug,
-            Description = group.Description,
-            IconUrl = iconUrl,
-            CategoryId = group.CategoryId,
-            CategoryName = group.CategoryName,
-            IsActive = group.IsActive,
-            IsDeleted = group.IsDeleted,
-            SortOrder = group.SortOrder,
-            ProductCount = group.ProductCount,
-            ActiveProductCount = group.ActiveProductCount,
-            CreatedAt = group.CreatedAt,
-            UpdatedAt = group.UpdatedAt,
-            RowVersion = group.RowVersion != null
-                ? Convert.ToBase64String(group.RowVersion)
-                : null
+            Id = brand.Id,
+            Name = brand.Name,
+            Slug = brand.Slug,
+            Description = brand.Description,
+            IconUrl = _urlResolver.ResolveUrl(brandMedia),
+            CategoryId = brand.CategoryId,
+            CategoryName = brand.CategoryName,
+            IsActive = brand.IsActive,
+            IsDeleted = brand.IsDeleted,
+            SortOrder = brand.SortOrder,
+            ProductCount = brand.ProductCount,
+            ActiveProductCount = brand.ActiveProductCount,
+            CreatedAt = brand.CreatedAt,
+            UpdatedAt = brand.UpdatedAt,
+            RowVersion = brand.RowVersion.ToBase64()
         };
     }
 
     public async Task<PaginatedResult<BrandListItemDto>> GetBrandsPagedAsync(
-        int? categoryId,
-        string? search,
-        bool? isActive,
-        bool includeDeleted,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+        int? categoryId, string? search, bool? isActive, bool includeDeleted,
+        int page, int pageSize, CancellationToken ct = default)
     {
-        var query = _context.Brands
-            .AsNoTracking()
-            .Include(g => g.Category)
-            .AsQueryable();
+        var query = _context.Brands.AsNoTracking().AsQueryable();
 
         if (!includeDeleted)
             query = query.Where(g => !g.IsDeleted);
@@ -367,7 +347,7 @@ public class CategoryQueryService : ICategoryQueryService
 
         var totalItems = await query.CountAsync(ct);
 
-        var groups = await query
+        var brands = await query
             .OrderBy(g => g.SortOrder)
             .ThenByDescending(g => g.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -375,10 +355,10 @@ public class CategoryQueryService : ICategoryQueryService
             .Select(g => new
             {
                 g.Id,
-                g.Name,
-                g.Slug,
+                Name = g.Name.Value,
+                Slug = g.Slug != null ? g.Slug.Value : null,
                 g.CategoryId,
-                CategoryName = g.Category.Name,
+                CategoryName = g.Category.Name.Value,
                 g.IsActive,
                 g.IsDeleted,
                 g.SortOrder,
@@ -388,29 +368,27 @@ public class CategoryQueryService : ICategoryQueryService
             })
             .ToListAsync(ct);
 
-        var dtos = new List<BrandListItemDto>();
-        foreach (var g in groups)
-        {
-            var iconUrl = await _mediaService.GetPrimaryImageUrlAsync("Brand", g.Id);
+        var brandIds = brands.Select(g => g.Id).ToList();
+        var mediaMap = await _context.Medias
+            .Where(m => m.EntityType == "Brand" && brandIds.Contains(m.EntityId) && m.IsPrimary && !m.IsDeleted)
+            .Select(m => new { m.EntityId, m.FilePath })
+            .ToDictionaryAsync(m => m.EntityId, m => m.FilePath, ct);
 
-            dtos.Add(new BrandListItemDto
-            {
-                Id = g.Id,
-                Name = g.Name,
-                Slug = g.Slug,
-                IconUrl = iconUrl,
-                CategoryId = g.CategoryId,
-                CategoryName = g.CategoryName,
-                IsActive = g.IsActive,
-                IsDeleted = g.IsDeleted,
-                SortOrder = g.SortOrder,
-                ProductCount = g.ProductCount,
-                CreatedAt = g.CreatedAt,
-                RowVersion = g.RowVersion != null
-                    ? Convert.ToBase64String(g.RowVersion)
-                    : null
-            });
-        }
+        var dtos = brands.Select(g => new BrandListItemDto
+        {
+            Id = g.Id,
+            Name = g.Name,
+            Slug = g.Slug,
+            IconUrl = _urlResolver.ResolveUrl(mediaMap.GetValueOrDefault(g.Id)),
+            CategoryId = g.CategoryId,
+            CategoryName = g.CategoryName,
+            IsActive = g.IsActive,
+            IsDeleted = g.IsDeleted,
+            SortOrder = g.SortOrder,
+            ProductCount = g.ProductCount,
+            CreatedAt = g.CreatedAt,
+            RowVersion = g.RowVersion.ToBase64()
+        }).ToList();
 
         return PaginatedResult<BrandListItemDto>.Create(dtos, totalItems, page, pageSize);
     }

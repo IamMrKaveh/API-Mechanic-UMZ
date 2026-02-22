@@ -33,11 +33,9 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
         if (order == null)
             return ServiceResult.Failure("سفارش یافت نشد.", 404);
 
-        // Set optimistic concurrency
         if (!string.IsNullOrEmpty(request.RowVersion))
             _orderRepository.SetOriginalRowVersion(order, Convert.FromBase64String(request.RowVersion));
 
-        // Parse new status using Value Object
         OrderStatusValue newStatus;
         try
         {
@@ -48,14 +46,12 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
             return ServiceResult.Failure("وضعیت سفارش نامعتبر است.", 400);
         }
 
-        // Validate transition using Domain Service
         var validation = _orderDomainService.ValidateStatusTransition(order, newStatus);
         if (!validation.IsValid)
             return ServiceResult.Failure(validation.Error!, 400);
 
         var oldStatusName = order.Status.DisplayName;
 
-        // Apply state transition through domain methods
         switch (newStatus.Value)
         {
             case "Processing":
@@ -98,7 +94,7 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
 
             return ServiceResult.Success();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
             _logger.LogWarning(
                 "Concurrency conflict updating order {OrderId} status",

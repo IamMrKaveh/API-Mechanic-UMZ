@@ -1,7 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Application.Security.Contracts;
-
-namespace Application.Product.Features.Commands.ActivateProduct;
+﻿namespace Application.Product.Features.Commands.ActivateProduct;
 
 public class ActivateProductHandler : IRequestHandler<ActivateProductCommand, ServiceResult>
 {

@@ -6,7 +6,8 @@ public sealed class OrderCancellationValidation
     public string? Error { get; private set; }
     public bool RequiresRefund { get; private set; }
 
-    private OrderCancellationValidation() { }
+    private OrderCancellationValidation()
+    { }
 
     public static OrderCancellationValidation Success(bool requiresRefund)
     {

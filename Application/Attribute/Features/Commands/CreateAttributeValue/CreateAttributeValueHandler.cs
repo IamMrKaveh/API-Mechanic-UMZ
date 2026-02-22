@@ -1,6 +1,4 @@
-﻿using Application.Attribute.Contracts;
-
-namespace Application.Attribute.Features.Commands.CreateAttributeValue;
+﻿namespace Application.Attribute.Features.Commands.CreateAttributeValue;
 
 public class CreateAttributeValueHandler : IRequestHandler<CreateAttributeValueCommand, ServiceResult<AttributeValueDto>>
 {
@@ -8,16 +6,23 @@ public class CreateAttributeValueHandler : IRequestHandler<CreateAttributeValueC
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
 
-    public CreateAttributeValueHandler(IAttributeRepository repository, IMapper mapper, IUnitOfWork unitOfWork)
+    public CreateAttributeValueHandler(
+        IAttributeRepository repository,
+        IMapper mapper,
+        IUnitOfWork unitOfWork
+        )
     {
         _repository = repository;
         _mapper = mapper;
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ServiceResult<AttributeValueDto>> Handle(CreateAttributeValueCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<AttributeValueDto>> Handle(
+        CreateAttributeValueCommand request,
+        CancellationToken cancellationToken
+        )
     {
-        var type = await _repository.GetAttributeTypeWithValuesAsync(request.TypeId, cancellationToken); // Ensure this repo method exists or use GetAttributeTypeByIdAsync
+        var type = await _repository.GetAttributeTypeWithValuesAsync(request.TypeId, cancellationToken);
         if (type == null)
             return ServiceResult<AttributeValueDto>.Failure("Attribute type not found.");
         if (await _repository.AttributeValueExistsAsync(request.TypeId, request.Value))

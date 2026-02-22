@@ -1,6 +1,4 @@
-﻿using Application.Category.Contracts;
-
-namespace Application.Category.Features.Commands.CreateCategory;
+﻿namespace Application.Category.Features.Commands.CreateCategory;
 
 public class CreateCategoryHandler : IRequestHandler<CreateCategoryCommand, ServiceResult<int>>
 {

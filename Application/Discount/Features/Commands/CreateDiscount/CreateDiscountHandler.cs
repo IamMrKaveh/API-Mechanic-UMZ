@@ -1,7 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Application.Security.Contracts;
-
-namespace Application.Discount.Features.Commands.CreateDiscount;
+﻿namespace Application.Discount.Features.Commands.CreateDiscount;
 
 public class CreateDiscountHandler : IRequestHandler<CreateDiscountCommand, ServiceResult<DiscountCodeDto>>
 {

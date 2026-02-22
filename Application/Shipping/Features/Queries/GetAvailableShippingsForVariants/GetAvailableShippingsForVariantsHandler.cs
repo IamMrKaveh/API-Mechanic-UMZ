@@ -3,7 +3,7 @@
 public class GetAvailableShippingsForVariantsHandler
     : IRequestHandler<
         GetAvailableShippingsForVariantsQuery,
-        ServiceResult<IEnumerable<AvailableShippingMethodDto>>>
+        ServiceResult<IEnumerable<AvailableShippingDto>>>
 {
     private readonly IShippingQueryService _shippingQueryService;
 
@@ -13,20 +13,20 @@ public class GetAvailableShippingsForVariantsHandler
         _shippingQueryService = shippingQueryService;
     }
 
-    public async Task<ServiceResult<IEnumerable<AvailableShippingMethodDto>>> Handle(
+    public async Task<ServiceResult<IEnumerable<AvailableShippingDto>>> Handle(
         GetAvailableShippingsForVariantsQuery request,
         CancellationToken ct)
     {
         if (request.VariantIds == null || !request.VariantIds.Any())
-            return ServiceResult<IEnumerable<AvailableShippingMethodDto>>
-                .Success(Array.Empty<AvailableShippingMethodDto>());
+            return ServiceResult<IEnumerable<AvailableShippingDto>>
+                .Success(Array.Empty<AvailableShippingDto>());
 
         var result = await _shippingQueryService
-            .GetAvailableShippingMethodsForVariantsAsync(
+            .GetAvailableShippingsForVariantsAsync(
                 request.VariantIds,
                 ct);
 
-        return ServiceResult<IEnumerable<AvailableShippingMethodDto>>
+        return ServiceResult<IEnumerable<AvailableShippingDto>>
             .Success(result);
     }
 }

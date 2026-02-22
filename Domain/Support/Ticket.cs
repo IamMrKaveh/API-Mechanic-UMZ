@@ -23,6 +23,7 @@ public class Ticket : AggregateRoot, IAuditable
 
     // Computed Properties
     public bool IsClosed => _status == TicketStatuses.Closed;
+
     public bool IsOpen => _status == TicketStatuses.Open;
     public bool IsAwaitingReply => _status == TicketStatuses.AwaitingReply;
     public bool IsAnswered => _status == TicketStatuses.Answered;
@@ -31,6 +32,7 @@ public class Ticket : AggregateRoot, IAuditable
 
     // Business Constants
     private const int MaxSubjectLength = 200;
+
     private const int MinSubjectLength = 5;
 
     public static class TicketStatuses
@@ -162,7 +164,9 @@ public class Ticket : AggregateRoot, IAuditable
     #region Query Methods
 
     public bool CanAddMessage() => !IsClosed;
+
     public bool CanClose() => !IsClosed;
+
     public bool CanReopen() => IsClosed;
 
     public bool IsHighPriority() =>

@@ -3,4 +3,4 @@
 public record MoveBrandCommand(
     int SourceCategoryId,
     int TargetCategoryId,
-    int GroupId) : IRequest<ServiceResult>;
+    int BrandId) : IRequest<ServiceResult>;

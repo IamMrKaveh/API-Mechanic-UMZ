@@ -1,19 +1,23 @@
-﻿using Application.Attribute.Contracts;
-
-namespace Application.Attribute.Features.Commands.UpdateAttributeValue;
+﻿namespace Application.Attribute.Features.Commands.UpdateAttributeValue;
 
 public class UpdateAttributeValueHandler : IRequestHandler<UpdateAttributeValueCommand, ServiceResult>
 {
     private readonly IAttributeRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateAttributeValueHandler(IAttributeRepository repository, IUnitOfWork unitOfWork)
+    public UpdateAttributeValueHandler(
+        IAttributeRepository repository,
+        IUnitOfWork unitOfWork
+        )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ServiceResult> Handle(UpdateAttributeValueCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        UpdateAttributeValueCommand request,
+        CancellationToken cancellationToken
+        )
     {
         var attributeValue = await _repository.GetAttributeValueByIdAsync(request.Id);
         if (attributeValue == null) return ServiceResult.Failure("Attribute value not found.");

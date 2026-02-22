@@ -5,18 +5,18 @@ namespace Application.Order.Features.Commands.UpdateOrder;
 public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, ServiceResult>
 {
     private readonly IOrderRepository _orderRepository;
-    private readonly IShippingRepository _shippingMethodRepository;
+    private readonly IShippingRepository _shippingRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdateOrderHandler> _logger;
 
     public UpdateOrderHandler(
         IOrderRepository orderRepository,
-        IShippingRepository shippingMethodRepository,
+        IShippingRepository shippingRepository,
         IUnitOfWork unitOfWork,
         ILogger<UpdateOrderHandler> logger)
     {
         _orderRepository = orderRepository;
-        _shippingMethodRepository = shippingMethodRepository;
+        _shippingRepository = shippingRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -30,23 +30,21 @@ public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, ServiceRes
         if (!string.IsNullOrEmpty(request.Dto.RowVersion))
             _orderRepository.SetOriginalRowVersion(order, Convert.FromBase64String(request.Dto.RowVersion));
 
-        // Only modifiable orders (not paid, not cancelled, not deleted)
         if (!order.CanBeModified())
             return ServiceResult.Failure("این سفارش قابل ویرایش نیست.", 400);
 
         try
         {
-            // Update shipping method through domain method
-            if (request.Dto.ShippingMethodId.HasValue)
+            if (request.Dto.ShippingId.HasValue)
             {
-                var shippingMethod = await _shippingMethodRepository.GetByIdAsync(
-                    request.Dto.ShippingMethodId.Value, ct);
+                var shipping = await _shippingRepository.GetByIdAsync(
+                    request.Dto.ShippingId.Value, ct);
 
-                if (shippingMethod == null || !shippingMethod.IsActive)
+                if (shipping == null || !shipping.IsActive)
                     return ServiceResult.Failure("روش ارسال نامعتبر است.", 400);
 
-                var shippingCost = shippingMethod.CalculateCost(order.TotalAmount);
-                order.UpdateShippingMethod(shippingMethod.Id, shippingCost);
+                var shippingCost = shipping.CalculateCost(order.TotalAmount);
+                order.UpdateShipping(shipping.Id, shippingCost);
             }
 
             await _orderRepository.UpdateAsync(order, ct);
@@ -58,7 +56,7 @@ public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, ServiceRes
         {
             return ServiceResult.Failure(ex.Message, 400);
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
             return ServiceResult.Failure("این سفارش توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.");
         }

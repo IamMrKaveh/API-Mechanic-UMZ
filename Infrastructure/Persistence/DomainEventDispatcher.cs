@@ -1,6 +1,4 @@
-﻿using Application.Common.Contracts;
-
-namespace Infrastructure.Persistence;
+﻿namespace Infrastructure.Persistence;
 
 public class DomainEventDispatcher : IDomainEventDispatcher
 {

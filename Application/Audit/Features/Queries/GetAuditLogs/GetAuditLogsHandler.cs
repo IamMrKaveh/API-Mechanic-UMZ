@@ -7,7 +7,8 @@ public sealed class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Get
 
     public GetAuditLogsHandler(
         IAuditRepository auditRepository,
-        ILogger<GetAuditLogsHandler> logger)
+        ILogger<GetAuditLogsHandler> logger
+        )
     {
         _auditRepository = auditRepository;
         _logger = logger;
@@ -15,7 +16,8 @@ public sealed class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, Get
 
     public async Task<GetAuditLogsResult> Handle(
         GetAuditLogsQuery request,
-        CancellationToken ct)
+        CancellationToken ct
+        )
     {
         var (logs, total) = await _auditRepository.GetAuditLogsAsync(
             request.From,

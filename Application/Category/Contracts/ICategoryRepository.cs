@@ -10,6 +10,14 @@ public interface ICategoryRepository
     // بازیابی Aggregate
     // ==========================================
 
+    Task<(IEnumerable<Domain.Category.Category> Items, int TotalCount)> GetPagedAsync(
+        string? search,
+        bool? isActive,
+        bool includeDeleted,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
+
     /// <summary>
     /// دریافت Category به همراه گروه‌ها (برای عملیات Command)
     /// </summary>

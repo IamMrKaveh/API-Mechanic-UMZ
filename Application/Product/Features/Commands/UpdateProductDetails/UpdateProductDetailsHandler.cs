@@ -1,7 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Application.Security.Contracts;
-
-namespace Application.Product.Features.Commands.UpdateProductDetails;
+﻿namespace Application.Product.Features.Commands.UpdateProductDetails;
 
 public class UpdateProductDetailsHandler : IRequestHandler<UpdateProductDetailsCommand, ServiceResult>
 {
@@ -52,7 +49,7 @@ public class UpdateProductDetailsHandler : IRequestHandler<UpdateProductDetailsC
                 request.Id, "UpdateProductDetails", "Product details updated.", _currentUserService.UserId);
             return ServiceResult.Success();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
             return ServiceResult.Failure("This product was modified by another user. Please refresh and try again.");
         }

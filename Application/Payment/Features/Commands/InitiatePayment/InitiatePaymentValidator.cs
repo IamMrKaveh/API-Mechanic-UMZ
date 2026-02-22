@@ -7,7 +7,7 @@ public class InitiatePaymentValidator : AbstractValidator<InitiatePaymentCommand
         RuleFor(x => x.Dto.OrderId)
             .GreaterThan(0).WithMessage("شناسه سفارش الزامی است.");
 
-        RuleFor(x => x.Dto.Amount)
+        RuleFor(x => x.Dto.Amount.Amount)
             .GreaterThan(0).WithMessage("مبلغ پرداخت باید بزرگتر از صفر باشد.");
 
         RuleFor(x => x.Dto.Description)

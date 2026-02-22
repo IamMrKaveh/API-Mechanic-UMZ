@@ -1,9 +1,7 @@
-﻿using Application.Category.Features.Shared;
-
-namespace Application.Category.Features.Queries.GetCategoryWithGroups;
+﻿namespace Application.Category.Features.Queries.GetCategoryWithGroups;
 
 /// <summary>
 /// جزئیات یک Category به همراه گروه‌ها (Admin)
 /// </summary>
 public record GetCategoryWithGroupsQuery(int CategoryId)
-    : IRequest<ServiceResult<CategoryWithGroupsDto?>>;
+    : IRequest<ServiceResult<CategoryWithBrandsDto?>>;

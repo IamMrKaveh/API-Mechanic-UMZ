@@ -1,50 +1,50 @@
-﻿using Application.Category.Contracts;
-
-namespace Application.Category.Features.Commands.UpdateCategory;
+﻿namespace Application.Category.Features.Commands.UpdateCategory;
 
 public class UpdateCategoryHandler : IRequestHandler<UpdateCategoryCommand, ServiceResult>
 {
     private readonly ICategoryRepository _categoryRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediaService _mediaService;
+    private readonly IMediaQueryService _mediaQueryService;
     private readonly ILogger<UpdateCategoryHandler> _logger;
 
     public UpdateCategoryHandler(
         ICategoryRepository categoryRepository,
         IUnitOfWork unitOfWork,
         IMediaService mediaService,
-        ILogger<UpdateCategoryHandler> logger)
+        IMediaQueryService mediaQueryService,
+        ILogger<UpdateCategoryHandler> logger
+        )
     {
         _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
         _mediaService = mediaService;
+        _mediaQueryService = mediaQueryService;
         _logger = logger;
     }
 
     public async Task<ServiceResult> Handle(
-        UpdateCategoryCommand request, CancellationToken cancellationToken)
+        UpdateCategoryCommand request,
+        CancellationToken ct
+        )
     {
-        var category = await _categoryRepository.GetByIdWithGroupsAsync(request.Id, cancellationToken);
+        var category = await _categoryRepository.GetByIdWithGroupsAsync(request.Id, ct);
         if (category == null)
-            return ServiceResult.Failure("دسته‌بن��ی یافت نشد.", 404);
+            return ServiceResult.Failure("دسته‌بندی یافت نشد.", 404);
 
-        // تنظیم RowVersion برای Concurrency Control
         _categoryRepository.SetOriginalRowVersion(category, Convert.FromBase64String(request.RowVersion));
 
-        // بررسی یکتایی نام
-        if (await _categoryRepository.ExistsByNameAsync(request.Name.Trim(), request.Id, cancellationToken))
+        if (await _categoryRepository.ExistsByNameAsync(request.Name.Trim(), request.Id, ct))
         {
             return ServiceResult.Failure("دسته‌بندی با این نام قبلاً وجود دارد.");
         }
 
-        // بروزرسانی از طریق Aggregate (اعتبارسنجی‌ها در Domain)
         category.Update(request.Name, request.Description, request.SortOrder);
 
-        // مدیریت آیکون
         Domain.Media.Media? newMedia = null;
         if (request.IconFile != null)
         {
-            var existingMedia = (await _mediaService.GetEntityMediaAsync("Category", request.Id))
+            var existingMedia = (await _mediaQueryService.GetEntityMediaAsync("Category", request.Id))
                 .FirstOrDefault(m => m.IsPrimary);
 
             if (existingMedia != null)
@@ -64,12 +64,11 @@ public class UpdateCategoryHandler : IRequestHandler<UpdateCategoryCommand, Serv
 
         try
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
-            // Rollback media upload if concurrency conflict
             if (newMedia != null)
                 await _mediaService.DeleteMediaAsync(newMedia.Id);
 

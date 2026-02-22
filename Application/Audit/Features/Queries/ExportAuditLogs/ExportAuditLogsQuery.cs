@@ -5,7 +5,7 @@ public sealed record ExportAuditLogsQuery(
     string? EventType,
     DateTime? From,
     DateTime? To,
-    string Format = "csv",    // csv | json
+    string Format = "csv",
     int MaxRows = 10_000
 ) : IRequest<ExportAuditLogsResult>;
 

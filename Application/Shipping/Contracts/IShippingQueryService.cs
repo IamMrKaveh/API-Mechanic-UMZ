@@ -1,37 +1,29 @@
-﻿using Application.Shipping.Features.Shared;
+﻿namespace Application.Shipping.Contracts;
 
-namespace Application.Shipping.Contracts;
-
-/// <summary>
-/// Read-side query service for shipping methods.
-/// Returns DTOs directly — no domain entities.
-/// </summary>
 public interface IShippingQueryService
 {
-    /// <summary>
-    /// دریافت روش‌های ارسال مجاز برای یک سبد خرید
-    /// </summary>
-    Task<IEnumerable<AvailableShippingMethodDto>> GetAvailableShippingMethodsForCartAsync(
+    Task<IEnumerable<AvailableShippingDto>> GetAvailableShippingsForCartAsync(
         int userId,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+        );
 
-    /// <summary>
-    /// محاسبه هزینه ارسال برای یک سبد خرید با روش ارسال مشخص
-    /// </summary>
     Task<ShippingCostResultDto> CalculateShippingCostAsync(
         int userId,
-        int shippingMethodId,
-        CancellationToken ct = default);
+        int shippingId,
+        CancellationToken ct = default
+        );
 
-    Task<IEnumerable<ShippingMethodDto>> GetActiveShippingMethodsAsync(CancellationToken ct = default);
+    Task<IEnumerable<ShippingDto>> GetActiveShippingsAsync(
+        CancellationToken ct = default
+        );
 
-    Task<ShippingMethodDto?> GetShippingMethodByIdAsync(int id, CancellationToken ct = default);
+    Task<ShippingDto?> GetShippingByIdAsync(
+        int id,
+        CancellationToken ct = default
+        );
 
-    /// <summary>
-    /// دریافت روش‌های ارسال مجاز برای مجموعه‌ای از Variantها
-    /// (بدون Cart)
-    /// </summary>
-    Task<IEnumerable<AvailableShippingMethodDto>> GetAvailableShippingMethodsForVariantsAsync(
+    Task<IEnumerable<AvailableShippingDto>> GetAvailableShippingsForVariantsAsync(
         IReadOnlyCollection<int> variantIds,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+        );
 }

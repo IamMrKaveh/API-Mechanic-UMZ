@@ -1,17 +1,5 @@
 ﻿namespace Application.Payment.Features.Shared;
 
-// ── Command Inputs ──
-
-public record InitiatePaymentDto
-{
-    public int OrderId { get; init; }
-    public decimal Amount { get; init; }
-    public string Description { get; init; } = string.Empty;
-    public string CallbackUrl { get; init; } = string.Empty;
-    public string? Mobile { get; init; }
-    public string? Email { get; init; }
-}
-
 // ── View Models ──
 
 public record PaymentTransactionDto
@@ -29,6 +17,17 @@ public record PaymentTransactionDto
     public string? ErrorMessage { get; init; }
     public string? CardPan { get; init; }
     public decimal Fee { get; init; }
+}
+
+public class PaymentInitiationDto
+{
+    public int OrderId { get; set; }
+    public int UserId { get; set; }
+    public Domain.Common.Shared.ValueObjects.Money Amount { get; set; } = null!;
+    public string Description { get; set; } = string.Empty;
+    public string CallbackUrl { get; set; } = string.Empty;
+    public string? Mobile { get; set; }
+    public string? Email { get; set; }
 }
 
 public record PaymentResultDto
@@ -65,3 +64,18 @@ public record PaymentSearchParams
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 20;
 }
+
+public sealed record SettlementReportDto(
+    DateTime Date,
+    int VerifiedCount,
+    decimal TotalAmount,
+    int DiscrepancyCount,
+    IEnumerable<DiscrepancyDto> Discrepancies);
+
+public sealed record DiscrepancyDto(
+    int TransactionId,
+    int OrderId,
+    string GatewayName,
+    decimal Amount,
+    string SystemStatus,
+    string GatewayStatus);

@@ -52,7 +52,7 @@ public class OrdersController : BaseApiController
             UserAddressId = dto.UserAddressId,
             NewAddress = dto.NewAddress,
             SaveNewAddress = dto.SaveNewAddress,
-            ShippingMethodId = dto.ShippingMethodId,
+            ShippingId = dto.ShippingId,
             DiscountCode = dto.DiscountCode,
             ExpectedItems = dto.ExpectedItems,
             CallbackUrl = dto.CallbackUrl,

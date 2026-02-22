@@ -1,6 +1,4 @@
-﻿using System.Security.Cryptography;
-
-namespace Domain.User;
+﻿namespace Domain.User;
 
 public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
 {
@@ -57,7 +55,7 @@ public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
     // Navigation for EF Core — تغییر به public برای دسترسی EF Core Configuration
     public ICollection<ProductReview> Reviews { get; private set; } = new List<ProductReview>();
 
-    public ICollection<DiscountUsage> DiscountUsages { get; private set; } = new List<DiscountUsage>();
+    public ICollection<Wishlist> Wishlists { get; private set; } = new List<Wishlist>();
     public ICollection<InventoryTransaction> InventoryTransactions { get; private set; } = new List<InventoryTransaction>();
     public ICollection<Notification.Notification> Notifications { get; private set; } = new List<Notification.Notification>();
     public ICollection<Cart.Cart> UserCarts { get; private set; } = new List<Cart.Cart>();

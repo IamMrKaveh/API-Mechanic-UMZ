@@ -1,9 +1,5 @@
 ﻿namespace Infrastructure.User.Services;
 
-/// <summary>
-/// سرویس کوئری کاربران - مستقیماً DTO برمی‌گرداند
-/// بدون بارگذاری Aggregate - بهینه برای خواندن
-/// </summary>
 public class UserQueryService : IUserQueryService
 {
     private readonly LedkaContext _context;
@@ -46,13 +42,7 @@ public class UserQueryService : IUserQueryService
     }
 
     public async Task<PaginatedResult<UserProfileDto>> GetUsersPagedAsync(
-        string? search,
-        bool? isActive,
-        bool? isAdmin,
-        bool includeDeleted,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+        string? search, bool? isActive, bool? isAdmin, bool includeDeleted, int page, int pageSize, CancellationToken ct = default)
     {
         var query = _context.Users.AsNoTracking().AsQueryable();
 
@@ -70,8 +60,8 @@ public class UserQueryService : IUserQueryService
             var searchTerm = search.Trim().ToLower();
             query = query.Where(u =>
                 u.PhoneNumber.Contains(searchTerm) ||
-                u.FirstName != null && u.FirstName.ToLower().Contains(searchTerm) ||
-                u.LastName != null && u.LastName.ToLower().Contains(searchTerm));
+                (u.FirstName != null && u.FirstName.ToLower().Contains(searchTerm)) ||
+                (u.LastName != null && u.LastName.ToLower().Contains(searchTerm)));
         }
 
         var totalCount = await query.CountAsync(ct);
@@ -147,12 +137,12 @@ public class UserQueryService : IUserQueryService
                 Id = s.Id,
                 SessionType = s.SessionType ?? "Web",
                 CreatedByIp = s.CreatedByIp,
-                DeviceInfo = GetDeviceInfo(s.UserAgent),
-                BrowserInfo = GetBrowserInfo(s.UserAgent),
+                DeviceInfo = UserAgentHelper.GetDeviceInfo(s.UserAgent),
+                BrowserInfo = UserAgentHelper.GetBrowserInfo(s.UserAgent),
                 CreatedAt = s.CreatedAt,
                 LastActivityAt = s.LastActivityAt,
                 ExpiresAt = s.ExpiresAt,
-                IsCurrent = false // باید در Controller تنظیم شود
+                IsCurrent = false
             })
             .ToListAsync(ct);
     }
@@ -167,8 +157,8 @@ public class UserQueryService : IUserQueryService
             .CountAsync(o => o.UserId == userId && !o.IsDeleted, ct);
 
         var totalSpent = await _context.Orders
-            .Where(o => o.UserId == userId && o.IsPaid && !o.IsDeleted)
-            .SumAsync(o => o.FinalAmount, ct);
+            .Where(o => o.UserId == userId && o.PaymentDate != null && !o.IsDeleted)
+            .SumAsync(o => o.FinalAmount.Amount, ct);
 
         var recentOrders = await _context.Orders
             .AsNoTracking()
@@ -178,10 +168,10 @@ public class UserQueryService : IUserQueryService
             .Select(o => new OrderDto
             {
                 Id = o.Id,
-                TotalAmount = o.TotalAmount,
-                FinalAmount = o.FinalAmount,
+                TotalAmount = o.TotalAmount.Amount,
+                FinalAmount = o.FinalAmount.Amount,
                 CreatedAt = o.CreatedAt,
-                IsPaid = o.IsPaid,
+                IsPaid = o.PaymentDate != null
             })
             .ToListAsync(ct);
 
@@ -197,7 +187,7 @@ public class UserQueryService : IUserQueryService
         return new UserDashboardDto
         {
             UserProfile = user,
-            RecentOrders = recentOrders.ToList(),
+            RecentOrders = recentOrders,
             TotalOrders = totalOrders,
             TotalSpent = totalSpent,
             WishlistCount = wishlistCount,
@@ -207,10 +197,7 @@ public class UserQueryService : IUserQueryService
     }
 
     public async Task<PaginatedResult<ProductReviewDto>> GetUserReviewsPagedAsync(
-    int userId,
-    int page,
-    int pageSize,
-    CancellationToken ct = default)
+        int userId, int page, int pageSize, CancellationToken ct = default)
     {
         var query = _context.ProductReviews
             .AsNoTracking()
@@ -238,15 +225,11 @@ public class UserQueryService : IUserQueryService
             })
             .ToListAsync(ct);
 
-        return PaginatedResult<ProductReviewDto>.Create(
-            reviews, totalCount, page, pageSize);
+        return PaginatedResult<ProductReviewDto>.Create(reviews, totalCount, page, pageSize);
     }
 
     public async Task<PaginatedResult<WishlistItemDto>> GetUserWishlistPagedAsync(
-        int userId,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+        int userId, int page, int pageSize, CancellationToken ct = default)
     {
         var query = _context.Wishlists
             .AsNoTracking()
@@ -264,35 +247,12 @@ public class UserQueryService : IUserQueryService
                 ProductId = w.ProductId,
                 ProductName = w.Product.Name.Value,
                 MinPrice = w.Product.Stats.MinPrice.Amount,
-                IsInStock =
-                                w.Product.Stats.TotalStock > 0 ||
-                                w.Product.Variants.Any(v => v.IsUnlimited),
+                IsInStock = w.Product.Stats.TotalStock > 0 || w.Product.Variants.Any(v => v.IsUnlimited),
                 IconUrl = null,
                 AddedAt = w.CreatedAt
             })
             .ToListAsync(ct);
 
-        return PaginatedResult<WishlistItemDto>.Create(
-            items, totalCount, page, pageSize);
-    }
-
-    private static string GetDeviceInfo(string? userAgent)
-    {
-        if (string.IsNullOrEmpty(userAgent)) return "دستگاه نامشخص";
-        var ua = userAgent.ToLowerInvariant();
-        if (ua.Contains("mobile") || ua.Contains("android") || ua.Contains("iphone")) return "موبایل";
-        if (ua.Contains("tablet") || ua.Contains("ipad")) return "تبلت";
-        return "کامپیوتر";
-    }
-
-    private static string GetBrowserInfo(string? userAgent)
-    {
-        if (string.IsNullOrEmpty(userAgent)) return "نامشخص";
-        var ua = userAgent.ToLowerInvariant();
-        if (ua.Contains("chrome") && !ua.Contains("edge")) return "Chrome";
-        if (ua.Contains("firefox")) return "Firefox";
-        if (ua.Contains("safari") && !ua.Contains("chrome")) return "Safari";
-        if (ua.Contains("edge")) return "Edge";
-        return "نامشخص";
+        return PaginatedResult<WishlistItemDto>.Create(items, totalCount, page, pageSize);
     }
 }

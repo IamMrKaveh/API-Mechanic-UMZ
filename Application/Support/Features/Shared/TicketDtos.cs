@@ -2,48 +2,48 @@
 
 public class TicketDto
 {
-    public int Id { get; set; }
-    public int UserId { get; set; }
-    public string Subject { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
-    public string Priority { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-    public DateTime? ClosedAt { get; set; }
+    public int Id { get; init; }
+    public int UserId { get; init; }
+    public string Subject { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
+    public string Priority { get; init; } = string.Empty;
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+    public DateTime? ClosedAt { get; init; }
 }
 
 public class TicketDetailDto
 {
-    public int Id { get; set; }
-    public int UserId { get; set; }
-    public string Subject { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
-    public string Priority { get; set; } = string.Empty;
-    public List<TicketMessageDto> Messages { get; set; } = new();
-    public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-    public DateTime? ClosedAt { get; set; }
+    public int Id { get; init; }
+    public int UserId { get; init; }
+    public string Subject { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
+    public string Priority { get; init; } = string.Empty;
+    public List<TicketMessageDto> Messages { get; init; } = new();
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+    public DateTime? ClosedAt { get; init; }
 }
 
 public class TicketMessageDto
 {
-    public int Id { get; set; }
-    public int TicketId { get; set; }
-    public string Message { get; set; } = string.Empty;
-    public int? UserId { get; set; }
-    public string? UserName { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public bool IsAdminResponse { get; internal set; }
+    public int Id { get; init; }
+    public int TicketId { get; init; }
+    public string Message { get; init; } = string.Empty;
+    public int? UserId { get; init; }
+    public string? UserName { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public bool IsAdminResponse { get; internal init; }
 }
 
 public class CreateTicketDto
 {
-    public string Subject { get; set; } = string.Empty;
-    public string Priority { get; set; } = string.Empty;
-    public string Message { get; set; } = string.Empty;
+    public string Subject { get; init; } = string.Empty;
+    public string Priority { get; init; } = string.Empty;
+    public string Message { get; init; } = string.Empty;
 }
 
 public class AddTicketMessageDto
 {
-    public string Message { get; set; } = string.Empty;
+    public string Message { get; init; } = string.Empty;
 }

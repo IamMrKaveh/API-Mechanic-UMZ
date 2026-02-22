@@ -1,6 +1,4 @@
-﻿using Application.Review.Contracts;
-
-namespace Application.Review.Features.Commands.RejectReview;
+﻿namespace Application.Review.Features.Commands.RejectReview;
 
 public class RejectReviewHandler : IRequestHandler<RejectReviewCommand, ServiceResult>
 {

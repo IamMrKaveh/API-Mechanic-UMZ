@@ -1,43 +1,43 @@
 ﻿namespace Application.Attribute.Features.Shared;
 
-public class AttributeTypeDto
+public record AttributeTypeDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string DisplayName { get; set; } = string.Empty;
-    public int SortOrder { get; set; }
-    public bool IsActive { get; set; }
-    public IEnumerable<AttributeValueSimpleDto> Values { get; set; } = [];
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string DisplayName { get; init; } = string.Empty;
+    public int SortOrder { get; init; }
+    public bool IsActive { get; init; }
+    public IEnumerable<AttributeValueSimpleDto> Values { get; init; } = [];
 }
 
-public class CreateAttributeTypeDto
+public record CreateAttributeTypeDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string DisplayName { get; set; } = string.Empty;
-    public int SortOrder { get; set; }
+    public string Name { get; init; } = string.Empty;
+    public string DisplayName { get; init; } = string.Empty;
+    public int SortOrder { get; init; }
 }
 
-public class UpdateAttributeTypeDto
+public record UpdateAttributeTypeDto
 {
-    public string? Name { get; set; }
-    public string? DisplayName { get; set; }
-    public int? SortOrder { get; set; }
-    public bool? IsActive { get; set; }
+    public string? Name { get; init; }
+    public string? DisplayName { get; init; }
+    public int? SortOrder { get; init; }
+    public bool? IsActive { get; init; }
 }
 
-public class CreateAttributeValueDto
+public record CreateAttributeValueDto
 {
-    public string Value { get; set; } = string.Empty;
-    public string DisplayValue { get; set; } = string.Empty;
-    public string? HexCode { get; set; } = string.Empty;
-    public int SortOrder { get; set; }
+    public string Value { get; init; } = string.Empty;
+    public string DisplayValue { get; init; } = string.Empty;
+    public string? HexCode { get; init; } = string.Empty;
+    public int SortOrder { get; init; }
 }
 
-public class UpdateAttributeValueDto
+public record UpdateAttributeValueDto
 {
-    public string? Value { get; set; }
-    public string? DisplayValue { get; set; }
-    public string? HexCode { get; set; }
-    public int? SortOrder { get; set; }
-    public bool? IsActive { get; set; }
+    public string? Value { get; init; }
+    public string? DisplayValue { get; init; }
+    public string? HexCode { get; init; }
+    public int? SortOrder { get; init; }
+    public bool? IsActive { get; init; }
 }

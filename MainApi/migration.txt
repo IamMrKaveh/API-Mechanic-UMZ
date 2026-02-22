@@ -1,1 +1,1 @@
-Add-Migration 1 -Project "Application" -StartupProject "MainApi"
+Add-Migration 1 -Project "Infrastructure" -StartupProject "MainApi"

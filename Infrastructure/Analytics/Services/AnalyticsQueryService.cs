@@ -1,9 +1,5 @@
 ﻿namespace Infrastructure.Analytics.Services;
 
-/// <summary>
-/// Read-side analytics query service.
-/// Queries the database directly for reporting (Fast Path - no domain model loading).
-/// </summary>
 public sealed class AnalyticsQueryService : IAnalyticsQueryService
 {
     private readonly LedkaContext _context;
@@ -21,7 +17,6 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
         var from = fromDate ?? DateTime.UtcNow.AddDays(-30);
         var to = toDate ?? DateTime.UtcNow;
 
-        // Orders query (ignoring soft-delete filter via status-based logic)
         var ordersQuery = _context.Orders
             .IgnoreQueryFilters()
             .Where(o => !o.IsDeleted && o.CreatedAt >= from && o.CreatedAt <= to);
@@ -33,12 +28,11 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
-        // Paid/Delivered orders for revenue
         var paidStatuses = new[] { "Paid", "Processing", "Shipped", "Delivered" };
         var revenueQuery = _context.Orders
             .IgnoreQueryFilters()
             .Where(o => !o.IsDeleted && o.CreatedAt >= from && o.CreatedAt <= to
-                && paidStatuses.Contains(o.Status));
+                && paidStatuses.Contains(o.Status.Value));
 
         var revenueData = await revenueQuery
             .Select(o => new { o.FinalAmount, o.TotalProfit })
@@ -48,7 +42,6 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
         var totalProfit = revenueData.Sum(o => o.TotalProfit.Amount);
         var paidOrderCount = revenueData.Count;
 
-        // Users
         var totalUsers = await _context.Users
             .IgnoreQueryFilters()
             .CountAsync(u => !u.IsDeleted, cancellationToken);
@@ -57,7 +50,6 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
             .IgnoreQueryFilters()
             .CountAsync(u => !u.IsDeleted && u.CreatedAt >= from && u.CreatedAt <= to, cancellationToken);
 
-        // Products
         var totalProducts = await _context.Products
             .IgnoreQueryFilters()
             .CountAsync(p => !p.IsDeleted, cancellationToken);
@@ -66,7 +58,6 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
             .IgnoreQueryFilters()
             .CountAsync(p => !p.IsDeleted && p.IsActive, cancellationToken);
 
-        // Stock
         var outOfStockVariants = await _context.ProductVariants
             .IgnoreQueryFilters()
             .CountAsync(v => !v.IsDeleted && v.IsActive && !v.IsUnlimited
@@ -79,16 +70,16 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
                 && (v.StockQuantity - v.ReservedQuantity) <= v.LowStockThreshold, cancellationToken);
 
         var cancelledCount = statusCounts
-            .Where(s => s.Status == Domain.Order.ValueObjects.OrderStatusValue.Cancelled)
+            .Where(s => s.Status.Value == Domain.Order.ValueObjects.OrderStatusValue.Cancelled.Value)
             .Sum(s => s.Count);
 
         return new DashboardStatisticsDto
         {
             TotalOrders = totalOrders,
-            PendingOrders = statusCounts.Where(s => s.Status == Domain.Order.ValueObjects.OrderStatusValue.Pending).Sum(s => s.Count),
-            ProcessingOrders = statusCounts.Where(s => s.Status == Domain.Order.ValueObjects.OrderStatusValue.Processing).Sum(s => s.Count),
-            ShippedOrders = statusCounts.Where(s => s.Status == Domain.Order.ValueObjects.OrderStatusValue.Shipped).Sum(s => s.Count),
-            DeliveredOrders = statusCounts.Where(s => s.Status == Domain.Order.ValueObjects.OrderStatusValue.Delivered).Sum(s => s.Count),
+            PendingOrders = statusCounts.Where(s => s.Status.Value == Domain.Order.ValueObjects.OrderStatusValue.Pending.Value).Sum(s => s.Count),
+            ProcessingOrders = statusCounts.Where(s => s.Status.Value == Domain.Order.ValueObjects.OrderStatusValue.Processing.Value).Sum(s => s.Count),
+            ShippedOrders = statusCounts.Where(s => s.Status.Value == Domain.Order.ValueObjects.OrderStatusValue.Shipped.Value).Sum(s => s.Count),
+            DeliveredOrders = statusCounts.Where(s => s.Status.Value == Domain.Order.ValueObjects.OrderStatusValue.Delivered.Value).Sum(s => s.Count),
             CancelledOrders = cancelledCount,
             TotalRevenue = totalRevenue,
             TotalProfit = totalProfit,
@@ -112,7 +103,7 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
         var orders = await _context.Orders
             .IgnoreQueryFilters()
             .Where(o => !o.IsDeleted
-                && paidStatuses.Contains(o.Status)
+                && paidStatuses.Contains(o.Status.Value)
                 && o.CreatedAt >= fromDate && o.CreatedAt <= toDate)
             .Select(o => new
             {
@@ -154,7 +145,7 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
                 ItemsSold = g.Sum(o => o.ItemCount)
             }),
 
-            _ => orders.GroupBy(o => o.CreatedAt.Date) // day
+            _ => orders.GroupBy(o => o.CreatedAt.Date)
             .OrderBy(g => g.Key)
             .Select(g => new SalesChartDataPointDto
             {
@@ -178,12 +169,12 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
 
         var paidStatuses = new[] { "Paid", "Processing", "Shipped", "Delivered" };
 
-        var result = await _context.OrderItems
-            .Include(oi => oi.Order)
-            .Where(oi => oi.Order != null
-                && !oi.Order.IsDeleted
-                && paidStatuses.Contains(oi.Order.Status)
-                && oi.Order.CreatedAt >= from && oi.Order.CreatedAt <= to)
+        var result = await _context.Orders
+            .IgnoreQueryFilters()
+            .Where(o => !o.IsDeleted
+                && paidStatuses.Contains(o.Status.Value)
+                && o.CreatedAt >= from && o.CreatedAt <= to)
+            .SelectMany(o => o.OrderItems)
             .GroupBy(oi => new { oi.ProductId, oi.ProductName })
             .Select(g => new TopSellingProductDto
             {
@@ -211,13 +202,12 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
 
         var paidStatuses = new[] { "Paid", "Processing", "Shipped", "Delivered" };
 
-        // Get category data through product -> Brand -> category chain
-        var salesData = await _context.OrderItems
-            .Include(oi => oi.Order)
-            .Where(oi => oi.Order != null
-                && !oi.Order.IsDeleted
-                && paidStatuses.Contains(oi.Order.Status)
-                && oi.Order.CreatedAt >= from && oi.Order.CreatedAt <= to)
+        var salesData = await _context.Orders
+            .IgnoreQueryFilters()
+            .Where(o => !o.IsDeleted
+                && paidStatuses.Contains(o.Status.Value)
+                && o.CreatedAt >= from && o.CreatedAt <= to)
+            .SelectMany(o => o.OrderItems)
             .Join(_context.Products.IgnoreQueryFilters().Where(p => !p.IsDeleted),
                 oi => oi.ProductId,
                 p => p.Id,
@@ -230,7 +220,7 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
                 x => x.CategoryId,
                 c => c.Id,
                 (x, c) => new { x.oi, CategoryId = c.Id, CategoryName = c.Name })
-            .GroupBy(x => new { x.CategoryId, x.CategoryName })
+            .GroupBy(x => new { x.CategoryId, CategoryName = x.CategoryName.Value })
             .Select(g => new
             {
                 g.Key.CategoryId,
@@ -242,14 +232,13 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
             })
             .ToListAsync(cancellationToken);
 
-        // Category metadata
         var categoryInfo = await _context.Categories
             .IgnoreQueryFilters()
             .Where(c => !c.IsDeleted)
             .Select(c => new
             {
                 c.Id,
-                Name = c.Name,
+                Name = c.Name.Value,
                 TotalGroups = c.Brands.Count(cg => !cg.IsDeleted),
                 TotalProducts = c.Brands
                     .Where(cg => !cg.IsDeleted)
@@ -355,15 +344,15 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
             {
                 v.Id,
                 v.ProductId,
-                ProductName = v.Product != null ? v.Product.Name : "",
-                v.Sku,
+                ProductName = v.Product != null ? v.Product.Name.Value : "",
+                Sku = v.Sku != null ? v.Sku.Value : "",
                 v.StockQuantity,
                 v.ReservedQuantity,
                 v.IsUnlimited,
                 v.IsActive,
                 v.LowStockThreshold,
-                v.PurchasePrice,
-                v.SellingPrice,
+                PurchasePrice = v.PurchasePrice.Amount,
+                SellingPrice = v.SellingPrice.Amount,
                 v.UpdatedAt,
                 BrandId = v.Product != null ? v.Product.BrandId : 0
             })
@@ -398,14 +387,13 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
             .Where(v => (v.StockQuantity - v.ReservedQuantity) > 0)
             .Sum(v => v.SellingPrice * (v.StockQuantity - v.ReservedQuantity));
 
-        // Category breakdown
         var BrandIds = variants.Select(v => v.BrandId).Distinct().ToList();
         var categoryMapping = await _context.Brands
             .IgnoreQueryFilters()
             .Where(cg => !cg.IsDeleted && BrandIds.Contains(cg.Id))
             .Join(_context.Categories.IgnoreQueryFilters().Where(c => !c.IsDeleted),
                 cg => cg.CategoryId, c => c.Id,
-                (cg, c) => new { cg.Id, CategoryId = c.Id, CategoryName = c.Name })
+                (cg, c) => new { cg.Id, CategoryId = c.Id, CategoryName = c.Name.Value })
             .ToListAsync(cancellationToken);
 
         var categoryLookup = categoryMapping.ToDictionary(x => x.Id, x => (x.CategoryId, x.CategoryName));
@@ -430,6 +418,7 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
             ProductName = x.ProductName,
             Sku = x.Sku,
             LowStockThreshold = x.LowStockThreshold,
+            AvailableStock = x.StockQuantity - x.ReservedQuantity
         }).ToList();
 
         var outOfStockItems = outOfStock.Select(x => new AnalyticsOutOfStockItemDto

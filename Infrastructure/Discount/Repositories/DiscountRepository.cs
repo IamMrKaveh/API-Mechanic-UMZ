@@ -94,8 +94,10 @@ public class DiscountRepository : IDiscountRepository
 
     public async Task<int> CountUserUsageAsync(int discountId, int userId, CancellationToken ct = default)
     {
-        return await _context.DiscountUsages
-            .Where(u => u.DiscountCodeId == discountId && u.UserId == userId && !u.IsCancelled)
+        return await _context.DiscountCodes
+            .Where(d => d.Id == discountId)
+            .SelectMany(d => d.Usages)
+            .Where(u => u.UserId == userId && !u.IsCancelled)
             .CountAsync(ct);
     }
 
@@ -108,18 +110,24 @@ public class DiscountRepository : IDiscountRepository
             .ToListAsync(ct);
     }
 
-    public async Task<IEnumerable<DiscountCode>> GetExpiringDiscountsAsync(DateTime beforeDate, CancellationToken ct = default)
+    public async Task<IEnumerable<DiscountCode>> GetExpiringDiscountsAsync(
+        DateTime beforeDate,
+        CancellationToken ct = default)
     {
         return await _context.DiscountCodes
             .Where(d => d.IsActive && d.ExpiresAt.HasValue && d.ExpiresAt <= beforeDate)
             .ToListAsync(ct);
     }
 
-    public async Task<DiscountUsage?> GetUsageByOrderIdAsync(int orderId, CancellationToken ct = default)
+    public async Task<DiscountUsage?> GetUsageByOrderIdAsync(
+    int orderId,
+    CancellationToken ct = default)
     {
-        return await _context.DiscountUsages
-            .Include(u => u.DiscountCode)
-            .FirstOrDefaultAsync(u => u.OrderId == orderId, ct);
+        var discountCode = await _context.DiscountCodes
+            .Include(d => d.Usages)
+            .FirstOrDefaultAsync(d => d.Usages.Any(u => u.OrderId == orderId), ct);
+
+        return discountCode?.Usages.FirstOrDefault(u => u.OrderId == orderId);
     }
 
     public async Task AddAsync(DiscountCode discount, CancellationToken ct = default)

@@ -1,11 +1,5 @@
 ﻿namespace Infrastructure.Payment.Services;
 
-/// <summary>
-/// سرویس پرداخت Idempotent با پشتیبانی از:
-/// - Idempotency Key (جلوگیری از درخواست‌های تکراری)
-/// - Retry مدیریت‌شده
-/// - Payment Gateway Abstraction
-/// </summary>
 public sealed class IdempotentPaymentService : IPaymentService
 {
     private static readonly TimeSpan IdempotencyWindow = TimeSpan.FromHours(24);
@@ -22,7 +16,8 @@ public sealed class IdempotentPaymentService : IPaymentService
         IPaymentTransactionRepository transactionRepo,
         ICacheService cache,
         IUnitOfWork unitOfWork,
-        ILogger<IdempotentPaymentService> logger)
+        ILogger<IdempotentPaymentService> logger
+        )
     {
         _gatewayFactory = gatewayFactory;
         _transactionRepo = transactionRepo;
@@ -31,42 +26,41 @@ public sealed class IdempotentPaymentService : IPaymentService
         _logger = logger;
     }
 
-    // ─── Initiate Payment ────────────────────────────────────────────────────
+    // Internal caching DTO to prevent leaking Application layer DTOs
+    private record CachedPaymentInitiation(bool IsSuccess, string? Authority, string? PaymentUrl, string? Message);
+    private record CachedPaymentVerification(bool IsVerified, long? RefId, string? CardPan, string? Message);
 
-    public async Task<PaymentInitiationResultDto> InitiatePaymentAsync(
+    public async Task<ServiceResult<(bool IsSuccess, string? Authority, string? PaymentUrl, string? Message)>> InitiatePaymentAsync(
         PaymentInitiationDto dto,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+        )
     {
         var idempotencyKey = BuildIdempotencyKey(dto.OrderId, dto.Amount.Amount);
 
-        // بررسی وجود درخواست تکراری در Cache
-        var cachedResult = await _cache.GetAsync<PaymentInitiationResultDto>(idempotencyKey);
+        var cachedResult = await _cache.GetAsync<CachedPaymentInitiation>(idempotencyKey);
         if (cachedResult is not null)
         {
             _logger.LogInformation(
                 "Idempotent payment request hit for Order {OrderId}. Returning cached result.",
                 dto.OrderId);
-            return cachedResult;
+            return ServiceResult<(bool, string?, string?, string?)>.Success((cachedResult.IsSuccess, cachedResult.Authority, cachedResult.PaymentUrl, cachedResult.Message));
         }
 
-        // بررسی وجود تراکنش فعال در DB
         var existingTransaction = await _transactionRepo
             .GetActiveByOrderIdAsync(dto.OrderId, ct);
 
         if (existingTransaction is not null)
         {
-            var cached = new PaymentInitiationResultDto
-            {
-                IsSuccess = true,
-                Authority = existingTransaction.Authority,
-                PaymentUrl = BuildPaymentUrl(existingTransaction.Authority),
-                Message = "تراکنش فعال موجود است"
-            };
+            var cached = new CachedPaymentInitiation(
+                true,
+                existingTransaction.Authority,
+                BuildPaymentUrl(existingTransaction.Authority),
+                "تراکنش فعال موجود است"
+            );
             await _cache.SetAsync(idempotencyKey, cached, IdempotencyWindow);
-            return cached;
+            return ServiceResult<(bool, string?, string?, string?)>.Success((cached.IsSuccess, cached.Authority, cached.PaymentUrl, cached.Message));
         }
 
-        // انتخاب درگاه و ارسال درخواست
         var gateway = _gatewayFactory.GetDefaultGateway();
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -86,32 +80,19 @@ public sealed class IdempotentPaymentService : IPaymentService
         {
             _logger.LogError("Payment gateway {Gateway} timed out for Order {OrderId}",
                 gateway.GatewayName, dto.OrderId);
-            return new PaymentInitiationResultDto
-            {
-                IsSuccess = false,
-                Message = "درگاه پرداخت پاسخ نداد. لطفاً دوباره تلاش کنید."
-            };
+            return ServiceResult<(bool, string?, string?, string?)>.Success((false, null, null, "درگاه پرداخت پاسخ نداد. لطفاً دوباره تلاش کنید."));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Payment gateway error for Order {OrderId}", dto.OrderId);
-            return new PaymentInitiationResultDto
-            {
-                IsSuccess = false,
-                Message = "خطا در ارتباط با درگاه پرداخت."
-            };
+            return ServiceResult<(bool, string?, string?, string?)>.Success((false, null, null, "خطا در ارتباط با درگاه پرداخت."));
         }
 
         if (!gatewayResult.IsSuccess)
         {
-            return new PaymentInitiationResultDto
-            {
-                IsSuccess = false,
-                Message = gatewayResult.Message ?? "خطا در درگاه پرداخت."
-            };
+            return ServiceResult<(bool, string?, string?, string?)>.Success((false, null, null, gatewayResult.Message ?? "خطا در درگاه پرداخت."));
         }
 
-        // ذخیره تراکنش در DB
         var transaction = PaymentTransaction.Initiate(
                     dto.OrderId,
                     dto.UserId,
@@ -125,58 +106,50 @@ public sealed class IdempotentPaymentService : IPaymentService
         await _transactionRepo.AddAsync(transaction, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        var result = new PaymentInitiationResultDto
-        {
-            IsSuccess = true,
-            Authority = gatewayResult.Authority,
-            PaymentUrl = gatewayResult.PaymentUrl ?? gatewayResult.RedirectUrl,
-            Message = "موفق"
-        };
+        var result = new CachedPaymentInitiation(
+            true,
+            gatewayResult.Authority,
+            gatewayResult.PaymentUrl ?? gatewayResult.RedirectUrl,
+            "موفق"
+        );
 
-        // Cache کردن نتیجه برای Idempotency
         await _cache.SetAsync(idempotencyKey, result, IdempotencyWindow);
 
-        return result;
+        return ServiceResult<(bool, string?, string?, string?)>.Success((result.IsSuccess, result.Authority, result.PaymentUrl, result.Message));
     }
 
-    // ─── Verify Payment ──────────────────────────────────────────────────────
-
-    public async Task<ServiceResult<PaymentVerificationResultDto>> VerifyPaymentAsync(
+    public async Task<ServiceResult<(bool IsVerified, long? RefId, string? CardPan, string? Message)>> VerifyPaymentAsync(
         string authority,
         int amount,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+        )
     {
         var verifyIdempotencyKey = $"payment:verify:{authority}";
 
-        // جلوگیری از double-verification
-        var cached = await _cache.GetAsync<PaymentVerificationResultDto>(verifyIdempotencyKey);
+        var cached = await _cache.GetAsync<CachedPaymentVerification>(verifyIdempotencyKey);
         if (cached is not null)
         {
             _logger.LogWarning(
                 "Duplicate verify attempt for authority {Authority}. Returning cached result.",
                 authority);
-            return ServiceResult<PaymentVerificationResultDto>.Success(cached);
+            return ServiceResult<(bool, long?, string?, string?)>.Success((cached.IsVerified, cached.RefId, cached.CardPan, cached.Message));
         }
 
-        // بررسی وضعیت تراکنش در DB
         var transaction = await _transactionRepo.GetByAuthorityAsync(authority, ct);
         if (transaction is null)
-            return ServiceResult<PaymentVerificationResultDto>.Failure("تراکنش یافت نشد.");
+            return ServiceResult<(bool, long?, string?, string?)>.Failure("تراکنش یافت نشد.");
 
         if (transaction.IsSuccessful())
         {
-            // قبلاً تأیید شده - ایمن برای Retry
-            var existing = new PaymentVerificationResultDto
-            {
-                IsVerified = true,
-                RefId = transaction.RefId,
-                CardPan = transaction.CardPan,
-                Message = "قبلاً تأیید شده"
-            };
-            return ServiceResult<PaymentVerificationResultDto>.Success(existing);
+            var existing = new CachedPaymentVerification(
+                true,
+                transaction.RefId,
+                transaction.CardPan,
+                "قبلاً تأیید شده"
+            );
+            return ServiceResult<(bool, long?, string?, string?)>.Success((existing.IsVerified, existing.RefId, existing.CardPan, existing.Message));
         }
 
-        // ارسال درخواست تأیید به درگاه
         var gateway = _gatewayFactory.GetGateway(transaction.Gateway);
         var gatewayResult = await gateway.VerifyPaymentAsync(authority, amount);
 
@@ -186,29 +159,24 @@ public sealed class IdempotentPaymentService : IPaymentService
             _transactionRepo.Update(transaction);
             await _unitOfWork.SaveChangesAsync(ct);
 
-            return ServiceResult<PaymentVerificationResultDto>.Failure(
-                gatewayResult.Message ?? "پرداخت تأیید نشد.");
+            return ServiceResult<(bool, long?, string?, string?)>.Failure(gatewayResult.Message ?? "پرداخت تأیید نشد.");
         }
 
         transaction.MarkAsSuccess(gatewayResult.RefId!.Value, gatewayResult.CardPan);
         _transactionRepo.Update(transaction);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        var verifyResult = new PaymentVerificationResultDto
-        {
-            IsVerified = true,
-            RefId = gatewayResult.RefId,
-            CardPan = gatewayResult.CardPan,
-            Message = "پرداخت موفق"
-        };
+        var verifyResult = new CachedPaymentVerification(
+            true,
+            gatewayResult.RefId,
+            gatewayResult.CardPan,
+            "پرداخت موفق"
+        );
 
-        // Cache کردن نتیجه تأیید برای 24 ساعت (Idempotency)
         await _cache.SetAsync(verifyIdempotencyKey, verifyResult, IdempotencyWindow);
 
-        return ServiceResult<PaymentVerificationResultDto>.Success(verifyResult);
+        return ServiceResult<(bool, long?, string?, string?)>.Success((verifyResult.IsVerified, verifyResult.RefId, verifyResult.CardPan, verifyResult.Message));
     }
-
-    // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private static string BuildIdempotencyKey(int orderId, decimal amount) =>
         $"payment:initiate:{orderId}:{amount:F0}";

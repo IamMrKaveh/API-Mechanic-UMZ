@@ -1,33 +1,33 @@
 ﻿namespace Application.Review.Features.Shared;
 
-public class ProductReviewDto
+public record ProductReviewDto
 {
-    public int Id { get; set; }
-    public int ProductId { get; set; }
-    public int UserId { get; set; }
-    public string? UserName { get; set; }
-    public int? OrderId { get; set; }
-    public int Rating { get; set; }
-    public string? Title { get; set; }
-    public string? Comment { get; set; }
-    public string Status { get; set; } = "Pending";
-    public bool IsVerifiedPurchase { get; set; }
-    public int LikeCount { get; set; }
-    public int DislikeCount { get; set; }
-    public string? AdminReply { get; set; }
-    public DateTime? RepliedAt { get; set; }
-    public string? RejectionReason { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public int Id { get; init; }
+    public int ProductId { get; init; }
+    public int UserId { get; init; }
+    public string? UserName { get; init; }
+    public int? OrderId { get; init; }
+    public int Rating { get; init; }
+    public string? Title { get; init; }
+    public string? Comment { get; init; }
+    public string Status { get; init; } = "Pending";
+    public bool IsVerifiedPurchase { get; init; }
+    public int LikeCount { get; init; }
+    public int DislikeCount { get; init; }
+    public string? AdminReply { get; init; }
+    public DateTime? RepliedAt { get; init; }
+    public string? RejectionReason { get; init; }
+    public DateTime CreatedAt { get; init; }
 }
 
-public class ReviewSummaryDto
+public record ReviewSummaryDto
 {
-    public int ProductId { get; set; }
-    public decimal AverageRating { get; set; }
-    public int TotalCount { get; set; }
-    public int FiveStarCount { get; set; }
-    public int FourStarCount { get; set; }
-    public int ThreeStarCount { get; set; }
-    public int TwoStarCount { get; set; }
-    public int OneStarCount { get; set; }
+    public int ProductId { get; init; }
+    public decimal AverageRating { get; init; }
+    public int TotalCount { get; init; }
+    public int FiveStarCount { get; init; }
+    public int FourStarCount { get; init; }
+    public int ThreeStarCount { get; init; }
+    public int TwoStarCount { get; init; }
+    public int OneStarCount { get; init; }
 }

@@ -1,6 +1,4 @@
-﻿using Application.Audit.Contracts;
-
-namespace Application.User.Features.Commands.ChangePhoneNumber;
+﻿namespace Application.User.Features.Commands.ChangePhoneNumber;
 
 public class ChangePhoneNumberHandler : IRequestHandler<ChangePhoneNumberCommand, ServiceResult>
 {

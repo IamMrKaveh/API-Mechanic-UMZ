@@ -20,20 +20,29 @@ public class ProductVariant : AggregateRoot, IAuditable, ISoftDeletable, IActiva
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    public Domain.Product.Product Product { get; private set; } = null!;
+    public Product.Product Product { get; private set; } = null!;
     public ICollection<ProductVariantAttribute> VariantAttributes { get; private set; } = new List<ProductVariantAttribute>();
-    public ICollection<ProductVariantShipping> ProductVariantShippingMethods { get; private set; } = new List<ProductVariantShipping>();
+    public ICollection<ProductVariantShipping> ProductVariantShippings { get; private set; } = new List<ProductVariantShipping>();
     public ICollection<InventoryTransaction> InventoryTransactions { get; private set; } = new List<InventoryTransaction>();
+    public ICollection<CartItem> CartItems { get; private set; } = new List<CartItem>();
+    public ICollection<OrderItem> OrderItems { get; private set; } = new List<OrderItem>();
 
+    [NotMapped]
     public int AvailableStock => IsUnlimited ? int.MaxValue : Math.Max(0, StockQuantity - ReservedQuantity);
+
+    [NotMapped]
     public bool IsInStock => IsUnlimited || AvailableStock > 0;
+
+    [NotMapped]
     public bool HasDiscount => OriginalPrice.Amount > SellingPrice.Amount;
 
+    [NotMapped]
     public decimal DiscountPercentage =>
         HasDiscount
             ? Math.Round((OriginalPrice.Amount - SellingPrice.Amount) / OriginalPrice.Amount * 100, 2)
             : 0;
 
+    [NotMapped]
     public string DisplayName
     {
         get
@@ -46,25 +55,13 @@ public class ProductVariant : AggregateRoot, IAuditable, ISoftDeletable, IActiva
         }
     }
 
-    public ICollection<Cart.CartItem> CartItems { get; private set; } = new List<Cart.CartItem>();
-    public ICollection<Order.OrderItem> OrderItems { get; private set; } = new List<Order.OrderItem>();
-
+    [NotMapped]
     public bool IsLowStock => !IsUnlimited && AvailableStock > 0 && AvailableStock <= LowStockThreshold;
+
+    [NotMapped]
     public bool IsOutOfStock => !IsUnlimited && AvailableStock <= 0;
 
     public bool CanFulfill(int quantity) => IsUnlimited || AvailableStock >= quantity;
-
-    public void AddShipping(Domain.Shipping.Shipping sm)
-    {
-        if (!ProductVariantShippingMethods.Any(x => x.ShippingId == sm.Id))
-            ProductVariantShippingMethods.Add(new ProductVariantShipping { ShippingId = sm.Id, ProductVariantId = Id, Shipping = sm });
-    }
-
-    public void RemoveShipping(int shippingId)
-    {
-        var sm = ProductVariantShippingMethods.FirstOrDefault(x => x.ShippingId == shippingId);
-        if (sm != null) ProductVariantShippingMethods.Remove(sm);
-    }
 
     private ProductVariant()
     { }
@@ -127,7 +124,7 @@ public class ProductVariant : AggregateRoot, IAuditable, ISoftDeletable, IActiva
     }
 
     /// <summary>
-    /// FIX #10: رویداد self-contained با مقادیر جدید (بدون نیاز به DB query در handler)
+    /// رویداد self-contained با مقادیر جدید (بدون نیاز به DB query در handler)
     /// </summary>
     public void AdjustStock(int quantity)
     {
@@ -167,7 +164,7 @@ public class ProductVariant : AggregateRoot, IAuditable, ISoftDeletable, IActiva
         ReservedQuantity = Math.Max(0, ReservedQuantity - quantity);
         UpdatedAt = DateTime.UtcNow;
 
-        // FIX #10: emit رویداد با مقادیر جدید پس از release
+        // emit رویداد با مقادیر جدید پس از release
         AddDomainEvent(new VariantStockChangedEvent(
             Id, ProductId, quantity,
             newOnHand: StockQuantity,
@@ -177,7 +174,7 @@ public class ProductVariant : AggregateRoot, IAuditable, ISoftDeletable, IActiva
     }
 
     /// <summary>
-    /// FIX #10: Commit رزرو - کاهش هر دو Reserved و OnHand
+    /// Commit رزرو - کاهش هر دو Reserved و OnHand
     /// </summary>
     public void ConfirmReservation(int quantity)
     {
@@ -243,5 +240,17 @@ public class ProductVariant : AggregateRoot, IAuditable, ISoftDeletable, IActiva
         DeletedBy = deletedBy;
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void AddShipping(Shipping.Shipping sm)
+    {
+        if (!ProductVariantShippings.Any(x => x.ShippingId == sm.Id))
+            ProductVariantShippings.Add(new ProductVariantShipping { ShippingId = sm.Id, ProductVariantId = Id, Shipping = sm });
+    }
+
+    public void RemoveShipping(int shippingId)
+    {
+        var sm = ProductVariantShippings.FirstOrDefault(x => x.ShippingId == shippingId);
+        if (sm != null) ProductVariantShippings.Remove(sm);
     }
 }

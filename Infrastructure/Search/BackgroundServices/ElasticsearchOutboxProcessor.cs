@@ -1,8 +1,5 @@
 ﻿namespace Infrastructure.Search.BackgroundServices;
 
-/// <summary>
-/// پردازش تغییرات با Outbox Pattern - پیام‌های Outbox را پردازش و به Elasticsearch ارسال می‌کند
-/// </summary>
 public class ElasticsearchOutboxProcessor : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
@@ -12,27 +9,26 @@ public class ElasticsearchOutboxProcessor : BackgroundService
     public ElasticsearchOutboxProcessor(
         IServiceScopeFactory scopeFactory,
         ILogger<ElasticsearchOutboxProcessor> logger,
-        IConfiguration configuration)
+        IConfiguration configuration
+        )
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _configuration = configuration;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(
+        CancellationToken stoppingToken
+        )
     {
-        var intervalSeconds = _configuration.GetValue(
-            "Elasticsearch:DeadLetterQueue:ProcessIntervalSeconds", 60);
-        var maxRetries = _configuration.GetValue(
-            "Elasticsearch:DeadLetterQueue:MaxRetries", 5);
-        var batchSize = _configuration.GetValue(
-            "Elasticsearch:Sync:BatchSize", 100);
+        var intervalSeconds = _configuration.GetValue("Elasticsearch:DeadLetterQueue:ProcessIntervalSeconds", 60);
+        var maxRetries = _configuration.GetValue("Elasticsearch:DeadLetterQueue:MaxRetries", 5);
+        var batchSize = _configuration.GetValue("Elasticsearch:Sync:BatchSize", 100);
 
         _logger.LogInformation(
             "Elasticsearch outbox processor started. Interval: {Interval}s, MaxRetries: {MaxRetries}",
             intervalSeconds, maxRetries);
 
-        // Initial delay
         await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
@@ -57,20 +53,23 @@ public class ElasticsearchOutboxProcessor : BackgroundService
     }
 
     private async Task ProcessOutboxMessagesAsync(
-        int batchSize, int maxRetries, CancellationToken ct)
+        int batchSize,
+        int maxRetries,
+        CancellationToken ct
+        )
     {
         using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LedkaContext>();
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
         var searchService = scope.ServiceProvider.GetRequiredService<ISearchService>();
 
-        var messages = await context.ElasticsearchOutboxMessages
+        var messages = await dbContext.ElasticsearchOutboxMessages
             .Where(m => m.ProcessedAt == null && m.RetryCount < maxRetries)
             .OrderBy(m => m.CreatedAt)
             .Take(batchSize)
             .ToListAsync(ct);
 
-        if (!messages.Any())
-            return;
+        if (!messages.Any()) return;
 
         _logger.LogInformation("Processing {Count} outbox messages", messages.Count);
 
@@ -79,30 +78,27 @@ public class ElasticsearchOutboxProcessor : BackgroundService
             try
             {
                 await ProcessSingleMessageAsync(message, searchService, ct);
-
                 message.ProcessedAt = DateTime.UtcNow;
-                _logger.LogDebug(
-                    "Outbox message processed: {EntityType} {EntityId}",
-                    message.EntityType, message.EntityId);
+                _logger.LogDebug("Outbox message processed: {EntityType} {EntityId}", message.EntityType, message.EntityId);
             }
             catch (Exception ex)
             {
                 message.RetryCount++;
                 message.Error = ex.Message;
-
                 _logger.LogWarning(ex,
                     "Failed to process outbox message: {EntityType} {EntityId}. Retry: {RetryCount}",
                     message.EntityType, message.EntityId, message.RetryCount);
             }
         }
 
-        await context.SaveChangesAsync(ct);
+        await dbContext.SaveChangesAsync(ct);
     }
 
-    private async Task ProcessSingleMessageAsync(
+    private static async Task ProcessSingleMessageAsync(
         ElasticsearchOutboxMessage message,
         ISearchService searchService,
-        CancellationToken ct)
+        CancellationToken ct
+        )
     {
         switch (message.EntityType)
         {
@@ -124,80 +120,72 @@ public class ElasticsearchOutboxProcessor : BackgroundService
     }
 
     private async Task ProcessDeadLetterQueueAsync(
-        int batchSize, int maxRetries, CancellationToken ct)
+        int batchSize,
+        int maxRetries,
+        CancellationToken ct
+        )
     {
         using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LedkaContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
         var searchService = scope.ServiceProvider.GetRequiredService<ISearchService>();
 
-        var retryBackoffMultiplier = _configuration.GetValue(
-            "Elasticsearch:DeadLetterQueue:RetryBackoffMultiplier", 2);
+        var retryBackoffMultiplier = _configuration.GetValue("Elasticsearch:DeadLetterQueue:RetryBackoffMultiplier", 2);
 
-        var failedOps = await context.FailedElasticOperations
+        var failedOps = await dbContext.FailedElasticOperations
             .Where(o => o.Status == "Pending" && o.RetryCount < maxRetries)
             .OrderBy(o => o.CreatedAt)
             .Take(batchSize)
             .ToListAsync(ct);
 
-        if (!failedOps.Any())
-            return;
+        if (!failedOps.Any()) return;
 
         _logger.LogInformation("Processing {Count} dead letter queue items", failedOps.Count);
 
         foreach (var op in failedOps)
         {
-            // Exponential backoff check
-            if (Convert.ToString(op?.LastRetryAt) != string.Empty)
+            if (op.LastRetryAt.HasValue)
             {
                 var backoffSeconds = Math.Pow(retryBackoffMultiplier, op.RetryCount);
-                var nextRetryAt = op?.LastRetryAt.Value.AddSeconds(backoffSeconds);
-
-                if (DateTime.UtcNow < nextRetryAt)
-                    continue;
+                var nextRetryAt = op.LastRetryAt.Value.AddSeconds(backoffSeconds);
+                if (DateTime.UtcNow < nextRetryAt) continue;
             }
 
             try
             {
                 var outboxMessage = new ElasticsearchOutboxMessage
                 {
-                    EntityType = op?.EntityType,
-                    EntityId = op?.EntityId,
-                    Document = op?.Document,
+                    EntityType = op.EntityType,
+                    EntityId = op.EntityId,
+                    Document = op.Document,
                     ChangeType = "Retry",
                     CreatedAt = DateTime.UtcNow
                 };
 
                 await ProcessSingleMessageAsync(outboxMessage, searchService, ct);
 
-                op?.Status = "Processed";
-                op?.LastRetryAt = DateTime.UtcNow;
+                op.Status = "Processed";
+                op.LastRetryAt = DateTime.UtcNow;
 
-                _logger.LogInformation(
-                    "DLQ item processed successfully: {EntityType} {EntityId}",
-                    op?.EntityType, op?.EntityId);
+                _logger.LogInformation("DLQ item processed successfully: {EntityType} {EntityId}", op.EntityType, op.EntityId);
             }
             catch (Exception ex)
             {
                 op.RetryCount++;
-                op?.LastRetryAt = DateTime.UtcNow;
-                op?.Error = ex.Message;
+                op.LastRetryAt = DateTime.UtcNow;
+                op.Error = ex.Message;
 
-                if (op?.RetryCount >= maxRetries)
+                if (op.RetryCount >= maxRetries)
                 {
-                    op?.Status = "Failed";
-                    _logger.LogError(
-                        "DLQ item permanently failed after {MaxRetries} retries: {EntityType} {EntityId}",
-                        maxRetries, op?.EntityType, op?.EntityId);
+                    op.Status = "Failed";
+                    _logger.LogError("DLQ item permanently failed after {MaxRetries} retries: {EntityType} {EntityId}", maxRetries, op.EntityType, op.EntityId);
                 }
                 else
                 {
-                    _logger.LogWarning(ex,
-                        "DLQ item retry failed: {EntityType} {EntityId}. Retry: {RetryCount}/{MaxRetries}",
-                        op?.EntityType, op?.EntityId, op?.RetryCount, maxRetries);
+                    _logger.LogWarning(ex, "DLQ item retry failed: {EntityType} {EntityId}. Retry: {RetryCount}/{MaxRetries}", op.EntityType, op.EntityId, op.RetryCount, maxRetries);
                 }
             }
         }
 
-        await context.SaveChangesAsync(ct);
+        await dbContext.SaveChangesAsync(ct);
     }
 }

@@ -4,33 +4,38 @@ public class InventoryQueryService : IInventoryQueryService
 {
     private readonly LedkaContext _context;
 
-    public InventoryQueryService(LedkaContext context)
+    public InventoryQueryService(
+        LedkaContext context
+        )
     {
         _context = context;
     }
 
-    public async Task<InventoryStatusDto?> GetInventoryStatusAsync(int variantId, CancellationToken ct = default)
+    public async Task<InventoryStatusDto?> GetInventoryStatusAsync(
+        int variantId,
+        CancellationToken ct = default
+        )
     {
         var status = await GetVariantStatusAsync(variantId, ct);
-        if (status == null) return null;
-
-        return new InventoryStatusDto
-        {
-            VariantId = status.VariantId,
-            StockQuantity = status.StockQuantity,
-            ReservedQuantity = status.ReservedQuantity,
-            AvailableStock = status.AvailableStock,
-            IsInStock = status.IsInStock,
-            IsUnlimited = status.IsUnlimited
-        };
+        return status == null
+            ? null
+            : new InventoryStatusDto
+            {
+                VariantId = status.VariantId,
+                StockQuantity = status.StockQuantity,
+                ReservedQuantity = status.ReservedQuantity,
+                AvailableStock = status.AvailableStock,
+                IsInStock = status.IsInStock,
+                IsUnlimited = status.IsUnlimited
+            };
     }
 
-    /// <summary>
-    /// FIX #5 و #7: وضعیت real-time موجودی واریانت برای Cache و Availability endpoint
-    /// </summary>
-    public async Task<VariantStockStatusDto?> GetVariantStatusAsync(int variantId, CancellationToken ct = default)
+    public async Task<VariantStockStatusDto?> GetVariantStatusAsync(
+        int variantId,
+        CancellationToken ct = default
+        )
     {
-        var variant = await _context.Set<ProductVariant>()
+        var variant = await _context.ProductVariants
             .Where(v => v.Id == variantId && !v.IsDeleted)
             .Select(v => new
             {
@@ -60,19 +65,21 @@ public class InventoryQueryService : IInventoryQueryService
         };
     }
 
-    public async Task<IEnumerable<LowStockItemDto>> GetLowStockProductsAsync(int threshold, CancellationToken ct = default)
+    public async Task<IEnumerable<LowStockItemDto>> GetLowStockProductsAsync(
+        int threshold,
+        CancellationToken ct = default
+        )
     {
-        return await _context.Set<ProductVariant>()
+        return await _context.ProductVariants
             .Where(v => v.IsActive && !v.IsDeleted && !v.IsUnlimited &&
                         (v.StockQuantity - v.ReservedQuantity) > 0 &&
                         (v.StockQuantity - v.ReservedQuantity) <= threshold)
-            .Include(v => v.Product)
             .Select(v => new LowStockItemDto
             {
                 VariantId = v.Id,
                 ProductId = v.ProductId,
-                ProductName = v.Product.Name,
-                Sku = v.Sku.Value,
+                ProductName = v.Product.Name.Value,
+                Sku = v.Sku != null ? v.Sku.Value : null,
                 StockQuantity = v.StockQuantity,
                 ReservedQuantity = v.ReservedQuantity,
                 AvailableStock = v.StockQuantity - v.ReservedQuantity,
@@ -83,18 +90,19 @@ public class InventoryQueryService : IInventoryQueryService
             .ToListAsync(ct);
     }
 
-    public async Task<IEnumerable<OutOfStockItemDto>> GetOutOfStockProductsAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<OutOfStockItemDto>> GetOutOfStockProductsAsync(
+        CancellationToken ct = default
+        )
     {
-        return await _context.Set<ProductVariant>()
+        return await _context.ProductVariants
             .Where(v => v.IsActive && !v.IsDeleted && !v.IsUnlimited &&
                         (v.StockQuantity - v.ReservedQuantity) <= 0)
-            .Include(v => v.Product)
             .Select(v => new OutOfStockItemDto
             {
                 VariantId = v.Id,
                 ProductId = v.ProductId,
-                ProductName = v.Product.Name,
-                Sku = v.Sku.Value,
+                ProductName = v.Product.Name.Value,
+                Sku = v.Sku != null ? v.Sku.Value : null,
                 StockQuantity = v.StockQuantity,
                 ReservedQuantity = v.ReservedQuantity
             })
@@ -104,13 +112,16 @@ public class InventoryQueryService : IInventoryQueryService
     }
 
     public async Task<PaginatedResult<InventoryTransactionDto>> GetTransactionsAsync(
-        int? variantId, string? transactionType,
-        DateTime? fromDate, DateTime? toDate,
-        int page, int pageSize, CancellationToken ct = default)
+        int? variantId,
+        string? transactionType,
+        DateTime? fromDate,
+        DateTime? toDate,
+        int page,
+        int pageSize,
+        CancellationToken ct = default
+        )
     {
         var query = _context.InventoryTransactions
-            .Include(t => t.Variant).ThenInclude(v => v!.Product)
-            .Include(t => t.User)
             .AsQueryable();
 
         if (variantId.HasValue) query = query.Where(t => t.VariantId == variantId.Value);
@@ -136,7 +147,10 @@ public class InventoryQueryService : IInventoryQueryService
                 CorrelationId = t.CorrelationId,
                 ExpiresAt = t.ExpiresAt,
                 IsReversed = t.IsReversed,
-                CreatedAt = t.CreatedAt
+                CreatedAt = t.CreatedAt,
+                ProductName = t.Variant != null && t.Variant.Product != null ? t.Variant.Product.Name.Value : string.Empty,
+                VariantSku = t.Variant != null && t.Variant.Sku != null ? t.Variant.Sku.Value : string.Empty,
+                UserName = t.User != null ? t.User.FirstName + " " + t.User.LastName : string.Empty
             })
             .AsNoTracking()
             .ToListAsync(ct);
@@ -144,9 +158,11 @@ public class InventoryQueryService : IInventoryQueryService
         return PaginatedResult<InventoryTransactionDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<InventoryStatisticsDto> GetStatisticsAsync(CancellationToken ct = default)
+    public async Task<InventoryStatisticsDto> GetStatisticsAsync(
+        CancellationToken ct = default
+        )
     {
-        var variants = await _context.Set<ProductVariant>()
+        var variants = await _context.ProductVariants
             .Where(v => v.IsActive && !v.IsDeleted)
             .Select(v => new
             {

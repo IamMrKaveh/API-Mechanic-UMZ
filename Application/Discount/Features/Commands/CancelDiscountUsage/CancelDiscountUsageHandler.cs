@@ -1,7 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Application.Security.Contracts;
-
-namespace Application.Discount.Features.Commands.CancelDiscountUsage;
+﻿namespace Application.Discount.Features.Commands.CancelDiscountUsage;
 
 public class CancelDiscountUsageHandler : IRequestHandler<CancelDiscountUsageCommand, ServiceResult>
 {

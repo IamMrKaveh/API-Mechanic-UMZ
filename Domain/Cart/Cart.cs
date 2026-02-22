@@ -20,6 +20,7 @@ public class Cart : AggregateRoot, ISoftDeletable, IAuditable
 
     // Computed Properties
     public decimal TotalPrice => _cartItems.Sum(x => x.TotalPrice);
+
     public int TotalItems => _cartItems.Sum(x => x.Quantity);
     public bool IsEmpty => _cartItems.Count == 0;
     public bool IsGuestCart => !UserId.HasValue && !string.IsNullOrEmpty(GuestToken);
@@ -28,6 +29,7 @@ public class Cart : AggregateRoot, ISoftDeletable, IAuditable
 
     // Business Rules
     private const int MaxCartItems = 50;
+
     private const int MaxQuantityPerItem = 1000;
 
     private Cart()

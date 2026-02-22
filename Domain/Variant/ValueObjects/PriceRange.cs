@@ -1,6 +1,4 @@
-﻿using Domain.Common.Shared.ValueObjects;
-
-namespace Domain.Variant.ValueObjects;
+﻿namespace Domain.Variant.ValueObjects;
 
 public sealed class PriceRange : ValueObject
 {

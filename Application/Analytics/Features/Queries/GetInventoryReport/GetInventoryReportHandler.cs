@@ -8,14 +8,17 @@ public sealed class GetInventoryReportHandler
 
     public GetInventoryReportHandler(
         IAnalyticsQueryService analyticsQuery,
-        ICacheService cache)
+        ICacheService cache
+        )
     {
         _analyticsQuery = analyticsQuery;
         _cache = cache;
     }
 
     public async Task<ServiceResult<InventoryReportDto>> Handle(
-        GetInventoryReportQuery request, CancellationToken cancellationToken)
+        GetInventoryReportQuery request,
+        CancellationToken cancellationToken
+        )
     {
         const string cacheKey = "analytics:inventory-report";
 
@@ -25,7 +28,7 @@ public sealed class GetInventoryReportHandler
 
         var result = await _analyticsQuery.GetInventoryReportAsync(cancellationToken);
 
-        //await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(5));
+        await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(5));
 
         return ServiceResult<InventoryReportDto>.Success(result);
     }
