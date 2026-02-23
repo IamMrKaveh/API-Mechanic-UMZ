@@ -20,7 +20,7 @@ public class ApplyDiscountHandler : IRequestHandler<ApplyDiscountCommand, Servic
             try
             {
                 // قفل کردن رکورد برای آپدیت امن شمارنده (SELECT FOR UPDATE)
-                var discount = await _discountRepository.GetByCodeForUpdateAsync(request.Code, cancellationToken);
+                var discount = await _discountRepository.GetByCodeAsync(request.Code, cancellationToken);
 
                 if (discount == null)
                     return ServiceResult<DiscountApplyResultDto>.Failure("کد تخفیف نامعتبر است.");
@@ -49,7 +49,7 @@ public class ApplyDiscountHandler : IRequestHandler<ApplyDiscountCommand, Servic
                 {
                     DiscountCodeId = discount.Id,
                     DiscountAmount = discountAmount,
-                    Code = discount.Code
+                    Code = discount.Code.Value
                 });
             }
             catch (Exception)

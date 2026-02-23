@@ -29,11 +29,15 @@ public class ApproveReturnHandler : IRequestHandler<ApproveReturnCommand, Servic
         if (order == null)
             return ServiceResult.Failure("سفارش یافت نشد.", 404);
 
-        // اطمینان از اینکه سفارش در وضعیت Returned است
-        if (order.Status.Value != "Returned")
-            return ServiceResult.Failure("سفارش باید ابتدا توسط کاربر درخواست مرجوعی داده شده باشد.", 400);
+        try
+        {
+            order.ValidateCanApproveReturn();
+        }
+        catch (DomainException ex)
+        {
+            return ServiceResult.Failure(ex.Message, 400);
+        }
 
-        // بازگشت موجودی برای تمام آیتم‌ها
         var result = await _inventoryService.ReturnStockForOrderAsync(
             request.OrderId,
             request.AdminUserId,
@@ -47,6 +51,8 @@ public class ApproveReturnHandler : IRequestHandler<ApproveReturnCommand, Servic
                 request.OrderId, result.Error);
             return ServiceResult.Failure($"خطا در بازگشت موجودی: {result.Error}");
         }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await _auditService.LogOrderEventAsync(
             order.Id,

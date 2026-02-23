@@ -17,7 +17,7 @@ public class GetDiscountInfoHandler : IRequestHandler<GetDiscountInfoQuery, Serv
 
         return ServiceResult<DiscountInfoDto>.Success(new DiscountInfoDto
         {
-            Code = discount.Code,
+            Code = discount.Code.Value,
             Percentage = discount.Percentage,
             MaxDiscountAmount = discount.MaxDiscountAmount,
             MinOrderAmount = discount.MinOrderAmount,

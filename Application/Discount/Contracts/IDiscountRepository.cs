@@ -17,12 +17,6 @@ public interface IDiscountRepository
     Task<DiscountCode?> GetByCodeAsync(string code, CancellationToken ct = default);
 
     /// <summary>
-    /// دریافت کد تخفیف برای به‌روزرسانی (با قفل - SELECT FOR UPDATE)
-    /// برای مدیریت Race Condition در افزایش شمارنده
-    /// </summary>
-    Task<DiscountCode?> GetByCodeForUpdateAsync(string code, CancellationToken ct = default);
-
-    /// <summary>
     /// دریافت کد تخفیف به همراه Restrictions و Usages
     /// </summary>
     Task<DiscountCode?> GetByIdWithDetailsAsync(int id, CancellationToken ct = default);

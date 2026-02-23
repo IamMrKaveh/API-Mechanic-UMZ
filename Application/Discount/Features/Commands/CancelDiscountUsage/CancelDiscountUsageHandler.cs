@@ -35,7 +35,7 @@ public class CancelDiscountUsageHandler : IRequestHandler<CancelDiscountUsageCom
             request.OrderId,
             "CancelDiscountUsage",
             _currentUserService.UserId ?? 0,
-            $"Cancelled discount usage for DiscountCode {discount.Code}");
+            $"Cancelled discount usage for DiscountCode {discount.Code.Value}");
 
         return ServiceResult.Success();
     }

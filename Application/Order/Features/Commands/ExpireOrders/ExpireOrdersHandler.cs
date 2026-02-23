@@ -6,18 +6,15 @@ public sealed class ExpireOrdersHandler : IRequestHandler<ExpireOrdersCommand, E
 
     private readonly IOrderRepository _orderRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IPublisher _publisher;
     private readonly ILogger<ExpireOrdersHandler> _logger;
 
     public ExpireOrdersHandler(
         IOrderRepository orderRepository,
         IUnitOfWork unitOfWork,
-        IPublisher publisher,
         ILogger<ExpireOrdersHandler> logger)
     {
         _orderRepository = orderRepository;
         _unitOfWork = unitOfWork;
-        _publisher = publisher;
         _logger = logger;
     }
 
@@ -25,8 +22,6 @@ public sealed class ExpireOrdersHandler : IRequestHandler<ExpireOrdersCommand, E
     {
         var expiryThreshold = DateTime.UtcNow.Subtract(OrderExpiryWindow);
 
-        // سفارش‌هایی که هنوز در وضعیت Pending یا Created هستند
-        // و از زمان ایجاد آن‌ها بیش از ExpiryWindow گذشته است
         var expirableStatuses = new[]
         {
             OrderStatusValue.Pending.Value,
@@ -60,15 +55,6 @@ public sealed class ExpireOrdersHandler : IRequestHandler<ExpireOrdersCommand, E
         }
 
         await _unitOfWork.SaveChangesAsync(ct);
-
-        // انتشار رویدادهای انقضا (Saga آن‌ها را دریافت می‌کند)
-        foreach (var orderId in expiredIds)
-        {
-            var order = ordersToExpire.First(o => o.Id == orderId);
-            await _publisher.Publish(
-                new OrderExpiredEvent(order.Id, order.UserId, order.OrderNumber.Value),
-                ct);
-        }
 
         _logger.LogInformation("Expired {Count} orders.", expiredIds.Count);
         return new ExpireOrdersResult(expiredIds.Count, expiredIds);

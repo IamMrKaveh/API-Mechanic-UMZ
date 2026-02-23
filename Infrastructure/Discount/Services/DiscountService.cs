@@ -24,7 +24,7 @@ public class DiscountService : IDiscountService
             using var transaction = await _unitOfWork.BeginTransactionAsync(ct);
             try
             {
-                var discount = await _discountRepository.GetByCodeForUpdateAsync(code, ct);
+                var discount = await _discountRepository.GetByCodeAsync(code, ct);
                 if (discount == null)
                     return ServiceResult<DiscountApplyResultDto>.Failure("کد تخفیف نامعتبر است.");
 
@@ -46,7 +46,7 @@ public class DiscountService : IDiscountService
                 {
                     DiscountCodeId = discount.Id,
                     DiscountAmount = discountAmount,
-                    Code = discount.Code
+                    Code = discount.Code.Value
                 });
             }
             catch (Exception)
