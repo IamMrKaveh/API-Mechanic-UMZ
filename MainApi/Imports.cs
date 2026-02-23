@@ -98,7 +98,6 @@ global using Application.Order.Features.Commands.CancelOrder;
 global using Application.Order.Features.Commands.CheckoutFromCart;
 global using Application.Order.Features.Commands.ConfirmDelivery;
 global using Application.Order.Features.Commands.CreateOrder;
-global using Application.Order.Features.Commands.CreateOrderItem;
 global using Application.Order.Features.Commands.CreateOrderStatus;
 global using Application.Order.Features.Commands.DeleteOrderItem;
 global using Application.Order.Features.Commands.DeleteOrderStatus;

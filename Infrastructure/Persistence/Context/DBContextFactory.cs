@@ -1,8 +1,8 @@
 ﻿namespace Infrastructure.Persistence.Context;
 
-public class DesignTimeFactoryLedkaContext : IDesignTimeDbContextFactory<LedkaContext>
+public class DBContextFactory : IDesignTimeDbContextFactory<DBContext>
 {
-    public LedkaContext CreateDbContext(string[] args)
+    public DBContext CreateDbContext(string[] args)
     {
         var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
 
@@ -22,9 +22,9 @@ public class DesignTimeFactoryLedkaContext : IDesignTimeDbContextFactory<LedkaCo
                 "Check your appsettings.json or environment variables.");
         }
 
-        var optionsBuilder = new DbContextOptionsBuilder<LedkaContext>();
+        var optionsBuilder = new DbContextOptionsBuilder<DBContext>();
         optionsBuilder.UseNpgsql(connectionString);
 
-        return new LedkaContext(optionsBuilder.Options);
+        return new DBContext(optionsBuilder.Options);
     }
 }

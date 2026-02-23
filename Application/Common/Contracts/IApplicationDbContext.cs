@@ -7,5 +7,7 @@ public interface IApplicationDbContext
     DbSet<FailedElasticOperation> FailedElasticOperations { get; }
     DbSet<InventoryTransaction> InventoryTransactions { get; }
 
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task<int> SaveChangesAsync(
+        CancellationToken ct = default
+        );
 }

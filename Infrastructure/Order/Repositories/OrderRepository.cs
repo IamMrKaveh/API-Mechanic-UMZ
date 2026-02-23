@@ -2,9 +2,9 @@
 
 public class OrderRepository : IOrderRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public OrderRepository(LedkaContext context)
+    public OrderRepository(Persistence.Context.DBContext context)
     {
         _context = context;
     }

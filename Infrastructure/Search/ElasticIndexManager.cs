@@ -134,10 +134,6 @@ public class ElasticIndexManager : IElasticIndexManager
                         .IntegerNumber(n => n.ReviewCount)
                         .IntegerNumber(n => n.SalesCount)
                         .Keyword(k => k.Tags)
-                        .Text(t => t.Brand, td => td
-                            .Analyzer("persian_advanced")
-                            .Fields(f => f.Keyword("keyword", k => k.Normalizer("persian_normalizer")))
-                        )
                     )
                 ), ct);
 

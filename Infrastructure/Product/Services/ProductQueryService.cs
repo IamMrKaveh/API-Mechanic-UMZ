@@ -2,12 +2,12 @@
 
 public class ProductQueryService : IProductQueryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly IUrlResolverService _urlResolver;
     private readonly ISearchService _searchService;
 
     public ProductQueryService(
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         IUrlResolverService urlResolver,
         ISearchService searchService)
     {

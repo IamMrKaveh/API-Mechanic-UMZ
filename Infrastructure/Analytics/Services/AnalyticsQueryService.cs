@@ -2,10 +2,10 @@
 
 public sealed class AnalyticsQueryService : IAnalyticsQueryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly ILogger<AnalyticsQueryService> _logger;
 
-    public AnalyticsQueryService(LedkaContext context, ILogger<AnalyticsQueryService> logger)
+    public AnalyticsQueryService(Persistence.Context.DBContext context, ILogger<AnalyticsQueryService> logger)
     {
         _context = context;
         _logger = logger;

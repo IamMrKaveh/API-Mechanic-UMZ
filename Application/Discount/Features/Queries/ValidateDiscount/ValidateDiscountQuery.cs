@@ -2,9 +2,9 @@
 
 public record ValidateDiscountQuery(string Code, decimal OrderTotal, int UserId) : IRequest<ServiceResult<DiscountValidationDto>>;
 
-public class DiscountValidationDto
+public record DiscountValidationDto
 {
-    public bool IsValid { get; set; }
-    public decimal EstimatedDiscount { get; set; }
-    public string? Message { get; set; }
+    public bool IsValid { get; init; }
+    public decimal EstimatedDiscount { get; init; }
+    public string? Message { get; init; }
 }

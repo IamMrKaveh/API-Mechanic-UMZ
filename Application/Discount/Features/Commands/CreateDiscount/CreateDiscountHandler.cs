@@ -15,7 +15,8 @@ public class CreateDiscountHandler : IRequestHandler<CreateDiscountCommand, Serv
         IHtmlSanitizer htmlSanitizer,
         IAuditService auditService,
         ICurrentUserService currentUserService,
-        IMapper mapper)
+        IMapper mapper
+        )
     {
         _discountRepository = discountRepository;
         _unitOfWork = unitOfWork;
@@ -25,11 +26,14 @@ public class CreateDiscountHandler : IRequestHandler<CreateDiscountCommand, Serv
         _mapper = mapper;
     }
 
-    public async Task<ServiceResult<DiscountCodeDto>> Handle(CreateDiscountCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<DiscountCodeDto>> Handle(
+        CreateDiscountCommand request,
+        CancellationToken ct
+        )
     {
         var sanitizedCode = _htmlSanitizer.Sanitize(request.Code).ToUpper().Trim();
 
-        if (await _discountRepository.ExistsByCodeAsync(sanitizedCode, ct: cancellationToken))
+        if (await _discountRepository.ExistsByCodeAsync(sanitizedCode, ct: ct))
         {
             return ServiceResult<DiscountCodeDto>.Failure("کد تخفیف تکراری است.");
         }
@@ -54,8 +58,8 @@ public class CreateDiscountHandler : IRequestHandler<CreateDiscountCommand, Serv
             }
         }
 
-        await _discountRepository.AddAsync(discount, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _discountRepository.AddAsync(discount, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         await _auditService.LogAdminEventAsync("CreateDiscount", _currentUserService.UserId ?? 0, $"Code created: {discount.Code.Value}");
 

@@ -12,13 +12,6 @@ public class OrderItemsController : BaseApiController
         _mediator = mediator;
     }
 
-    [HttpPost("{orderId}")]
-    public async Task<IActionResult> CreateOrderItem(int orderId, [FromBody] CreateOrderItemDto itemDto)
-    {
-        var result = await _mediator.Send(new CreateOrderItemCommand(orderId, itemDto));
-        return ToActionResult(result);
-    }
-
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOrderItem(int id)
     {

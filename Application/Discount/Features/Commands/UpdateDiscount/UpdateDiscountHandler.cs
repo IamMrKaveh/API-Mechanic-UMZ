@@ -11,7 +11,8 @@ public class UpdateDiscountHandler : IRequestHandler<UpdateDiscountCommand, Serv
         IDiscountRepository discountRepository,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IAuditService auditService)
+        IAuditService auditService
+        )
     {
         _discountRepository = discountRepository;
         _unitOfWork = unitOfWork;
@@ -19,9 +20,12 @@ public class UpdateDiscountHandler : IRequestHandler<UpdateDiscountCommand, Serv
         _auditService = auditService;
     }
 
-    public async Task<ServiceResult> Handle(UpdateDiscountCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        UpdateDiscountCommand request,
+        CancellationToken ct
+        )
     {
-        var discount = await _discountRepository.GetByIdAsync(request.Id, cancellationToken);
+        var discount = await _discountRepository.GetByIdAsync(request.Id, ct);
         if (discount == null) return ServiceResult.Failure("کد تخفیف یافت نشد.");
 
         _discountRepository.SetOriginalRowVersion(discount, Convert.FromBase64String(request.ConcurrencyToken));
@@ -41,7 +45,7 @@ public class UpdateDiscountHandler : IRequestHandler<UpdateDiscountCommand, Serv
 
         try
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
             await _auditService.LogAdminEventAsync("UpdateDiscount", _currentUserService.UserId ?? 0, $"Updated discount {discount.Code.Value}");
             return ServiceResult.Success();
         }

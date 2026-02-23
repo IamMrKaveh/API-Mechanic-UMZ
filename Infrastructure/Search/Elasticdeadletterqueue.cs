@@ -2,11 +2,11 @@
 
 public class ElasticDeadLetterQueue : IElasticDeadLetterQueue
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly ILogger<ElasticDeadLetterQueue> _logger;
 
     public ElasticDeadLetterQueue(
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         ILogger<ElasticDeadLetterQueue> logger)
     {
         _context = context;

@@ -2,9 +2,9 @@
 
 public class AttributeRepository : IAttributeRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public AttributeRepository(LedkaContext context)
+    public AttributeRepository(Persistence.Context.DBContext context)
     {
         _context = context;
     }

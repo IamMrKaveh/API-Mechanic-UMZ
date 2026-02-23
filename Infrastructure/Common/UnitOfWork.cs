@@ -2,11 +2,11 @@
 
 public class UnitOfWork : IUnitOfWork
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly ILogger<UnitOfWork> _logger;
     private IDbContextTransaction? _currentTransaction;
 
-    public UnitOfWork(LedkaContext context, ILogger<UnitOfWork> logger)
+    public UnitOfWork(Persistence.Context.DBContext context, ILogger<UnitOfWork> logger)
     {
         _context = context;
         _logger = logger;

@@ -2,9 +2,9 @@
 
 public class ShippingMethodRepository : IShippingRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public ShippingMethodRepository(LedkaContext context)
+    public ShippingMethodRepository(Persistence.Context.DBContext context)
     {
         _context = context;
     }

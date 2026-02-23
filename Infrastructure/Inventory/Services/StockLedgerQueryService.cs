@@ -2,10 +2,10 @@
 
 public class StockLedgerQueryService : IStockLedgerQueryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly ILogger<StockLedgerQueryService> _logger;
 
-    public StockLedgerQueryService(LedkaContext context, ILogger<StockLedgerQueryService> logger)
+    public StockLedgerQueryService(Persistence.Context.DBContext context, ILogger<StockLedgerQueryService> logger)
     {
         _context = context;
         _logger = logger;

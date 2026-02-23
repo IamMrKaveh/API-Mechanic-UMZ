@@ -42,7 +42,7 @@ public class InventoryReservationExpiryService : BackgroundService
     private async Task ProcessExpiredReservationsAsync(CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LedkaContext>();
+        var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
         var inventoryService = scope.ServiceProvider.GetRequiredService<IInventoryService>();
 
         var now = DateTime.UtcNow;

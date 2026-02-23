@@ -2,10 +2,10 @@
 
 public class InventoryQueryService : IInventoryQueryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
     public InventoryQueryService(
-        LedkaContext context
+        Persistence.Context.DBContext context
         )
     {
         _context = context;

@@ -2,9 +2,9 @@
 
 public class ReviewRepository : IReviewRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public ReviewRepository(LedkaContext context)
+    public ReviewRepository(Persistence.Context.DBContext context)
     {
         _context = context;
     }

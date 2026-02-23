@@ -2,12 +2,12 @@
 
 public class ElasticsearchDLQHealthCheck : IHealthCheck
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly ILogger<ElasticsearchDLQHealthCheck> _logger;
     private readonly IConfiguration _configuration;
 
     public ElasticsearchDLQHealthCheck(
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         ILogger<ElasticsearchDLQHealthCheck> logger,
         IConfiguration configuration)
     {

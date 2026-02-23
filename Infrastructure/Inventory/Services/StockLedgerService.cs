@@ -6,10 +6,10 @@
 /// </summary>
 public sealed class StockLedgerService : IStockLedgerService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly ILogger<StockLedgerService> _logger;
 
-    public StockLedgerService(LedkaContext context, ILogger<StockLedgerService> logger)
+    public StockLedgerService(Persistence.Context.DBContext context, ILogger<StockLedgerService> logger)
     {
         _context = context;
         _logger = logger;

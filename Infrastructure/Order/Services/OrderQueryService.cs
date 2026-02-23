@@ -2,11 +2,11 @@
 
 public class OrderQueryService : IOrderQueryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly IMediaService _mediaService;
 
     public OrderQueryService(
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         IMediaService mediaService
         )
     {

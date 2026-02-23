@@ -18,7 +18,7 @@ public class OutboxProcessorBackgroundService : BackgroundService
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var dbContext = scope.ServiceProvider.GetRequiredService<LedkaContext>();
+                var dbContext = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
                 var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
                 var messages = await dbContext.OutboxMessages

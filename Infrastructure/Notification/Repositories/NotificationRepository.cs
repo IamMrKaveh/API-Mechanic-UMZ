@@ -2,9 +2,9 @@
 
 public class NotificationRepository : INotificationRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public NotificationRepository(LedkaContext context)
+    public NotificationRepository(Persistence.Context.DBContext context)
     {
         _context = context;
     }

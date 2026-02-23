@@ -2,12 +2,12 @@
 
 public class NotificationService : INotificationService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly ILogger<NotificationService> _logger;
     private readonly IUnitOfWork _unitOfWork;
 
     public NotificationService(
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         ILogger<NotificationService> logger,
         IUnitOfWork unitOfWork)
     {

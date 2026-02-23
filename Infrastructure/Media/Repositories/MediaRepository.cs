@@ -2,9 +2,9 @@
 
 public class MediaRepository : IMediaRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public MediaRepository(LedkaContext context)
+    public MediaRepository(Persistence.Context.DBContext context)
     {
         _context = context;
     }

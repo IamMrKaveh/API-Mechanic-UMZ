@@ -2,10 +2,10 @@
 
 public class CategoryQueryService : ICategoryQueryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly IUrlResolverService _urlResolver;
 
-    public CategoryQueryService(LedkaContext context, IUrlResolverService urlResolver)
+    public CategoryQueryService(Persistence.Context.DBContext context, IUrlResolverService urlResolver)
     {
         _context = context;
         _urlResolver = urlResolver;

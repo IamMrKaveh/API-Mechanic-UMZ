@@ -1,5 +1,9 @@
 ﻿namespace Infrastructure.Search.BackgroundServices;
 
+/// <summary>
+/// هر batch پردازش در scope جداگانه انجام می‌شود
+/// این از memory leak ناشی از Change Tracker بلوت جلوگیری می‌کند
+/// </summary>
 public class ElasticsearchOutboxProcessor : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;

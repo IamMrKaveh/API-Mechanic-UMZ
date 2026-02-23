@@ -5,14 +5,14 @@ public class ElasticsearchEventHandler : IElasticsearchEventHandler
     private readonly ISearchService _searchService;
     private readonly IElasticBulkService _bulkService;
     private readonly ILogger<ElasticsearchEventHandler> _logger;
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly ElasticsearchClient _elasticClient;
 
     public ElasticsearchEventHandler(
         ISearchService searchService,
         IElasticBulkService bulkService,
         ILogger<ElasticsearchEventHandler> logger,
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         ElasticsearchClient elasticClient)
     {
         _searchService = searchService;

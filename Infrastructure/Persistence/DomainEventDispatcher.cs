@@ -2,12 +2,12 @@
 
 public class DomainEventDispatcher : IDomainEventDispatcher
 {
-    private readonly LedkaContext _context;
+    private readonly Context.DBContext _context;
     private readonly IMediator _mediator;
     private readonly ILogger<DomainEventDispatcher> _logger;
 
     public DomainEventDispatcher(
-        LedkaContext context,
+        Context.DBContext context,
         IMediator mediator,
         ILogger<DomainEventDispatcher> logger)
     {

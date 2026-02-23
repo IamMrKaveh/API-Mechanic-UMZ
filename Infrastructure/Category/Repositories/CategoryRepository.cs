@@ -6,9 +6,9 @@
 /// </summary>
 public class CategoryRepository : ICategoryRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public CategoryRepository(LedkaContext context)
+    public CategoryRepository(Persistence.Context.DBContext context)
     {
         _context = context;
     }

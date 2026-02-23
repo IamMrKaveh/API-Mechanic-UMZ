@@ -1,6 +1,4 @@
-﻿using Application.Audit.Features.Shared;
-
-namespace Infrastructure.Audit.Services;
+﻿namespace Infrastructure.Audit.Services;
 
 /// <summary>
 /// سرویس حسابرسی تقویت‌شده با:
@@ -15,21 +13,18 @@ public sealed class EnhancedAuditService : IAuditService
     private readonly IAuditRepository _auditRepository;
     private readonly IAuditMaskingService _masking;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<EnhancedAuditService> _logger;
 
     public EnhancedAuditService(
         IAuditRepository auditRepository,
         IAuditMaskingService masking,
         IUnitOfWork unitOfWork,
-        IHttpContextAccessor httpContextAccessor,
         ILogger<EnhancedAuditService> logger
         )
     {
         _auditRepository = auditRepository;
         _masking = masking;
         _unitOfWork = unitOfWork;
-        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
@@ -46,8 +41,6 @@ public sealed class EnhancedAuditService : IAuditService
     {
         try
         {
-            var httpContext = _httpContextAccessor.HttpContext;
-
             // Mask کردن اطلاعات حساس قبل از ثبت
             var maskedDetails = _masking.MaskDetails(details);
             var maskedAction = _masking.MaskSensitiveData(action);
@@ -57,10 +50,8 @@ public sealed class EnhancedAuditService : IAuditService
                 eventType: SanitizeInput(eventType),
                 action: SanitizeInput(maskedAction),
                 details: maskedDetails,
-                ipAddress: SanitizeIpAddress(
-                    ipAddress ?? httpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown"),
-                userAgent: SanitizeUserAgent(
-                    userAgent ?? httpContext?.Request?.Headers["User-Agent"].ToString()));
+                ipAddress: SanitizeIpAddress(ipAddress ?? "Unknown"),
+                userAgent: SanitizeUserAgent(userAgent));
 
             await _auditRepository.AddAuditLogAsync(auditLog);
             // نکته: از UnitOfWork جداگانه استفاده می‌کنیم تا لاگ‌ها
