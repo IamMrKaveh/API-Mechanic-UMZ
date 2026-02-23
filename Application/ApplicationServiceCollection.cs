@@ -23,6 +23,9 @@ public static class ApplicationServiceCollection
         services.AddScoped<MediaDomainService>();
         services.AddScoped<TicketDomainService>();
         services.AddScoped<NotificationDomainService>();
+        services.AddScoped<InventoryReservationService>();
+        services.AddScoped<DiscountApplicationService>();
+        services.AddScoped<PaymentSettlementService>();
 
         return services;
     }

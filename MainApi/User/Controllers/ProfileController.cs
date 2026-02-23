@@ -99,4 +99,22 @@ public class ProfileController : BaseApiController
         var result = await _mediator.Send(new ChangePasswordCommand(CurrentUser.UserId.Value, dto));
         return ToActionResult(result);
     }
+
+    [HttpPost("change-phone")]
+    public async Task<IActionResult> ChangePhoneNumber([FromBody] ChangePhoneNumberDto dto)
+    {
+        if (!CurrentUser.UserId.HasValue) return Unauthorized();
+
+        var command = new ChangePhoneNumberCommand
+        {
+            UserId = CurrentUser.UserId.Value,
+            NewPhoneNumber = dto.NewPhoneNumber,
+            OtpCode = dto.OtpCode
+        };
+
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
+    }
 }
+
+public record ChangePhoneNumberDto(string NewPhoneNumber, string OtpCode);

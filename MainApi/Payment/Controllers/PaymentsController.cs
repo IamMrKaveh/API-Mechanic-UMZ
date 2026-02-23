@@ -16,7 +16,6 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> InitiatePayment([FromBody] PaymentInitiationDto dto)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
-        // Assuming UserId extracted from Claims via a helper or base class, typically:
         var userId = int.Parse(User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value);
 
         var command = new InitiatePaymentCommand(dto, userId, ip);
@@ -28,7 +27,6 @@ public class PaymentsController : ControllerBase
     [HttpGet("verify")]
     public async Task<IActionResult> VerifyPayment([FromQuery] string authority, [FromQuery] string status)
     {
-        // This endpoint typically handles the callback from the bank
         var command = new VerifyPaymentCommand(authority, status);
         var result = await _mediator.Send(command);
 
@@ -37,7 +35,6 @@ public class PaymentsController : ControllerBase
             return Redirect(result.Data.RedirectUrl);
         }
 
-        // Fallback if redirect fails
         return Ok(result);
     }
 
@@ -49,17 +46,30 @@ public class PaymentsController : ControllerBase
         return result.IsSucceed ? Ok(result.Data) : NotFound(result.Error);
     }
 
-    // Webhook example (if supported by gateway)
+    [HttpGet("by-order/{orderId}")]
+    [Authorize]
+    public async Task<IActionResult> GetPaymentsByOrder(int orderId)
+    {
+        var result = await _mediator.Send(new GetPaymentsByOrderQuery(orderId));
+        return result.IsSucceed ? Ok(result.Data) : NotFound(result.Error);
+    }
+
+    [HttpGet("status/{authority}")]
+    [Authorize]
+    public async Task<IActionResult> GetPaymentStatus(string authority)
+    {
+        var result = await _mediator.Send(new GetPaymentStatusQuery(authority));
+        return result.IsSucceed ? Ok(result.Data) : NotFound(result.Error);
+    }
+
     [HttpPost("webhook/{gateway}")]
     public async Task<IActionResult> Webhook(string gateway, [FromBody] WebhookPayload payload)
     {
-        // Payload mapping would depend on gateway
         var command = new ProcessWebhookCommand(gateway, payload.Authority, payload.Status, payload.RefId);
         await _mediator.Send(command);
         return Ok();
     }
 
-    // DTO for webhook binding
     public class WebhookPayload
     {
         public string Authority { get; set; } = string.Empty;

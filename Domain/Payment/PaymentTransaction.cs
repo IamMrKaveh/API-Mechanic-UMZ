@@ -7,9 +7,9 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
 {
     private int _orderId;
     private int _userId;
-    private string _authority = null!;
+    private PaymentAuthority _authority = null!;
+    private PaymentGateway _gateway = null!;
     private Money _amount = null!;
-    private string _gateway = null!;
     private PaymentStatus _status = null!;
     private long? _refId;
     private string? _cardPan;
@@ -26,9 +26,9 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
 
     public int OrderId => _orderId;
     public int UserId => _userId;
-    public string Authority => _authority;
+    public PaymentAuthority Authority => _authority;
+    public PaymentGateway Gateway => _gateway;
     public Money Amount => _amount;
-    public string Gateway => _gateway;
     public PaymentStatus Status => _status;
     public long? RefId => _refId;
     public string? CardPan => _cardPan;
@@ -68,31 +68,32 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
     #region Factory Methods
 
     public static PaymentTransaction Initiate(
-        int orderId,
-        int userId,
-        string authority,
-        decimal amount,
-        string gateway,
-        string? description = null,
-        string? ipAddress = null,
-        string? rawRequest = null,
-        int expiryMinutes = DefaultExpiryMinutes)
+    int orderId,
+    int userId,
+    string authority,
+    decimal amount,
+    string gateway,
+    string? description = null,
+    string? ipAddress = null,
+    string? rawRequest = null,
+    int expiryMinutes = DefaultExpiryMinutes)
     {
         Guard.Against.NegativeOrZero(orderId, nameof(orderId));
         Guard.Against.NegativeOrZero(userId, nameof(userId));
-        ValidateAuthority(authority);
         ValidateAmount(amount);
-        ValidateGateway(gateway);
         ValidateDescription(description);
         ValidateExpiryMinutes(expiryMinutes);
+
+        var authorityVo = PaymentAuthority.Create(authority);
+        var gatewayVo = PaymentGateway.FromString(gateway);
 
         var transaction = new PaymentTransaction
         {
             _orderId = orderId,
             _userId = userId,
-            _authority = authority.Trim(),
+            _authority = authorityVo,
             _amount = Money.FromDecimal(amount),
-            _gateway = gateway.Trim(),
+            _gateway = gatewayVo,
             _status = PaymentStatus.Pending,
             _description = description?.Trim(),
             _ipAddress = ipAddress,
@@ -196,6 +197,8 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
         _errorMessage = reason ?? "لغو شده توسط کاربر";
         UpdatedAt = DateTime.UtcNow;
         _isVerificationInProgress = false;
+
+        AddDomainEvent(new PaymentCancelledEvent(Id, _orderId, _errorMessage));
     }
 
     /// <summary>
@@ -304,28 +307,10 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
             throw new DomainException("فقط تراکنش‌های موفق قابل بازگشت هستند.");
     }
 
-    private static void ValidateAuthority(string authority)
-    {
-        if (string.IsNullOrWhiteSpace(authority))
-            throw new DomainException("شناسه پرداخت الزامی است.");
-
-        if (authority.Trim().Length > MaxAuthorityLength)
-            throw new DomainException($"شناسه پرداخت نمی‌تواند بیش از {MaxAuthorityLength} کاراکتر باشد.");
-    }
-
     private static void ValidateAmount(decimal amount)
     {
         if (amount <= 0)
             throw new Exceptions.InvalidPaymentAmountException(0, amount);
-    }
-
-    private static void ValidateGateway(string gateway)
-    {
-        if (string.IsNullOrWhiteSpace(gateway))
-            throw new DomainException("درگاه پرداخت الزامی است.");
-
-        if (gateway.Trim().Length > MaxGatewayLength)
-            throw new DomainException($"نام درگاه نمی‌تواند بیش از {MaxGatewayLength} کاراکتر باشد.");
     }
 
     private static void ValidateDescription(string? description)

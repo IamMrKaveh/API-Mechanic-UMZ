@@ -6,12 +6,13 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
     private readonly IShippingRepository _shippingMethodRepository;
     private readonly ICartRepository _cartRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IDiscountService _discountService;
+    private readonly IDiscountRepository _discountRepository;
     private readonly IInventoryService _inventoryService;
     private readonly IPaymentService _paymentService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly OrderDomainService _orderDomainService;
     private readonly InventoryReservationService _inventoryReservationService;
+    private readonly DiscountApplicationService _discountApplicationService;
     private readonly ILogger<CheckoutFromCartHandler> _logger;
 
     public CheckoutFromCartHandler(
@@ -19,24 +20,26 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
         IShippingRepository shippingMethodRepository,
         ICartRepository cartRepository,
         IUserRepository userRepository,
-        IDiscountService discountService,
+        IDiscountRepository discountRepository,
         IInventoryService inventoryService,
         IPaymentService paymentService,
         IUnitOfWork unitOfWork,
         OrderDomainService orderDomainService,
         InventoryReservationService inventoryReservationService,
+        DiscountApplicationService discountApplicationService,
         ILogger<CheckoutFromCartHandler> logger)
     {
         _orderRepository = orderRepository;
         _shippingMethodRepository = shippingMethodRepository;
         _cartRepository = cartRepository;
         _userRepository = userRepository;
-        _discountService = discountService;
+        _discountRepository = discountRepository;
         _inventoryService = inventoryService;
         _paymentService = paymentService;
         _unitOfWork = unitOfWork;
         _orderDomainService = orderDomainService;
         _inventoryReservationService = inventoryReservationService;
+        _discountApplicationService = discountApplicationService;
         _logger = logger;
     }
 
@@ -109,7 +112,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                 if (shippingMethod == null || !shippingMethod.IsActive)
                     return ServiceResult<CheckoutResultDto>.Failure("روش ارسال انتخاب شده معتبر نیست.");
 
-                // 5. Build OrderItemSnapshots + بارگذاری Variantها
+                // 5. Build OrderItemSnapshots + load Variants (no decision-making here)
                 var orderItemSnapshots = new List<OrderItemSnapshot>();
                 var variantItems = new List<(ProductVariant Variant, int Quantity)>();
 
@@ -118,46 +121,36 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     var variant = await _cartRepository.GetVariantByIdAsync(cartItem.VariantId, ct);
                     if (variant == null || !variant.IsActive)
                         return ServiceResult<CheckoutResultDto>.Failure(
-                            $"محصول {cartItem.Variant?.Product?.Name ?? "ناشناخته"} موجود نیست.");
-
-                    // Validate expected price
-                    var expectedItem = request.ExpectedItems.FirstOrDefault(e => e.VariantId == variant.Id);
-                    if (expectedItem != null && expectedItem.ExpectedPrice != variant.SellingPrice)
-                        return ServiceResult<CheckoutResultDto>.Failure(
-                            $"قیمت محصول {variant.Product?.Name ?? "ناشناخته"} تغییر کرده است. لطفاً سبد خرید را بررسی کنید.");
+                            $"محصول ناشناخته یا غیرفعال در سبد خرید وجود دارد.");
 
                     variantItems.Add((variant, cartItem.Quantity));
                     orderItemSnapshots.Add(OrderItemSnapshot.FromVariant(variant, cartItem.Quantity));
                 }
 
-                // 6. اعتبارسنجی موجودی از طریق Domain Service - Business Rule از Handler حذف شد
+                // 6. Validate price integrity via Domain Service (replaces handler-level if/else)
+                var priceExpectations = variantItems
+                    .Select(vi => (
+                        vi.Variant,
+                        ExpectedPrice: request.ExpectedItems
+                            .FirstOrDefault(e => e.VariantId == vi.Variant.Id)?.ExpectedPrice
+                            ?? vi.Variant.SellingPrice.Amount))
+                    .ToList();
+
+                var priceValidation = _orderDomainService.ValidatePriceIntegrity(priceExpectations);
+                if (!priceValidation.IsValid)
+                    return ServiceResult<CheckoutResultDto>.Failure(priceValidation.GetErrorsSummary());
+
+                // 7. Validate stock availability via Domain Service (unchanged)
                 var stockValidation = _inventoryReservationService.ValidateBatchAvailability(variantItems);
                 if (!stockValidation.IsValid)
                     return ServiceResult<CheckoutResultDto>.Failure(stockValidation.GetErrorsSummary());
 
-                // 7. Validate items using Domain Service
+                // 8. Validate items using Domain Service
                 var itemsValidation = _orderDomainService.ValidateOrderItems(orderItemSnapshots);
                 if (!itemsValidation.IsValid)
                     return ServiceResult<CheckoutResultDto>.Failure(itemsValidation.GetErrorsSummary());
 
-                // 8. Apply Discount
-                DiscountApplicationResult? discountResult = null;
-
-                if (!string.IsNullOrWhiteSpace(request.DiscountCode))
-                {
-                    var totalAmount = orderItemSnapshots.Sum(x => x.SellingPrice.Amount * x.Quantity);
-                    var discountServiceResult = await _discountService.ValidateAndApplyDiscountAsync(
-                        request.DiscountCode, totalAmount, request.UserId);
-
-                    if (discountServiceResult.IsSucceed && discountServiceResult.Data != null)
-                    {
-                        discountResult = DiscountApplicationResult.Success(
-                            discountServiceResult.Data.DiscountCodeId,
-                            Money.FromDecimal(discountServiceResult.Data.DiscountAmount));
-                    }
-                }
-
-                // 9. Create Order using Domain Service
+                // 9. Create Order via Domain Service
                 var order = _orderDomainService.PlaceOrder(
                     request.UserId,
                     userAddress,
@@ -165,28 +158,56 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     shippingMethod,
                     request.IdempotencyKey,
                     orderItemSnapshots,
-                    discountResult);
+                    discountResult: null);
 
                 await _orderRepository.AddAsync(order, ct);
                 await _unitOfWork.SaveChangesAsync(ct);
 
-                // 10. Reserve Inventory
+                // 10. Apply Discount via Domain Service
+                if (!string.IsNullOrWhiteSpace(request.DiscountCode))
+                {
+                    var discountCode = await _discountRepository.GetByCodeAsync(request.DiscountCode, ct);
+                    if (discountCode == null)
+                        return ServiceResult<CheckoutResultDto>.Failure("کد تخفیف نامعتبر است.");
+
+                    var userUsageCount = await _discountRepository.CountUserUsageAsync(
+                        discountCode.Id, request.UserId, ct);
+
+                    var discountResult = _discountApplicationService.ApplyToOrder(
+                        discountCode, order, request.UserId, userUsageCount);
+
+                    if (!discountResult.IsSuccess)
+                        return ServiceResult<CheckoutResultDto>.Failure(discountResult.Error!);
+
+                    _discountRepository.Update(discountCode);
+                    await _orderRepository.UpdateAsync(order, ct);
+                    await _unitOfWork.SaveChangesAsync(ct);
+                }
+
+                // 11. Reserve Inventory via Application Service
+                var correlationPrefix = $"CHECKOUT-{order.Id}";
                 foreach (var orderItem in order.OrderItems)
                 {
-                    await _inventoryService.LogTransactionAsync(
+                    var reserveResult = await _inventoryService.ReserveStockAsync(
                         orderItem.VariantId,
-                        "Reservation",
-                        -orderItem.Quantity,
+                        orderItem.Quantity,
                         orderItem.Id,
                         request.UserId,
-                        $"Reserved for order {order.Id}",
                         $"ORDER-{order.Id}",
-                        null,
-                        false);
+                        $"{correlationPrefix}-{orderItem.VariantId}",
+                        ct: ct);
+
+                    if (reserveResult.IsFailed)
+                    {
+                        await _inventoryService.RollbackReservationsAsync($"ORDER-{order.Id}");
+                        await _unitOfWork.RollbackTransactionAsync(ct);
+                        return ServiceResult<CheckoutResultDto>.Failure(
+                            $"خطا در رزرو موجودی: {reserveResult.Error}");
+                    }
                 }
                 await _unitOfWork.SaveChangesAsync(ct);
 
-                // 11. Initiate Payment
+                // 12. Initiate Payment
                 var user = await _userRepository.GetByIdAsync(request.UserId, ct);
                 var paymentResult = await _paymentService.InitiatePaymentAsync(new PaymentInitiationDto
                 {
@@ -207,7 +228,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                         paymentResult.Error ?? "خطا در ایجاد درخواست پرداخت");
                 }
 
-                // 12. Clear Cart
+                // 13. Clear Cart
                 await _cartRepository.ClearCartAsync(request.UserId, ct);
                 await _unitOfWork.SaveChangesAsync(ct);
 

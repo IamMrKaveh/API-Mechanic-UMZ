@@ -1,4 +1,7 @@
 ﻿namespace Application.Category.Features.Queries.GetCategoryById;
 
-public record GetCategoryByIdQuery(int Id, int Page, int PageSize)
-    : IRequest<ServiceResult<CategoryWithBrandsDto?>>;
+public record GetCategoryByIdQuery(
+    int Id,
+    int Page,
+    int PageSize
+    ) : IRequest<ServiceResult<CategoryWithBrandsDto?>>;

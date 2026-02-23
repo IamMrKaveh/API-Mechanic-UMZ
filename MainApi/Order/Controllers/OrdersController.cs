@@ -106,6 +106,41 @@ public class OrdersController : BaseApiController
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
+
+    [HttpPost("{id}/confirm-delivery")]
+    public async Task<IActionResult> ConfirmDelivery(int id, [FromBody] ConfirmDeliveryRequest request)
+    {
+        if (!CurrentUser.UserId.HasValue) return Unauthorized();
+
+        var command = new ConfirmDeliveryCommand
+        {
+            OrderId = id,
+            UserId = CurrentUser.UserId.Value,
+            RowVersion = request.RowVersion
+        };
+
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
+    }
+
+    [HttpPost("{id}/request-return")]
+    public async Task<IActionResult> RequestReturn(int id, [FromBody] RequestReturnRequest request)
+    {
+        if (!CurrentUser.UserId.HasValue) return Unauthorized();
+
+        var command = new RequestReturnCommand
+        {
+            OrderId = id,
+            UserId = CurrentUser.UserId.Value,
+            Reason = request.Reason,
+            RowVersion = request.RowVersion
+        };
+
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
+    }
 }
 
 public record CancelOrderRequest(string Reason);
+public record ConfirmDeliveryRequest(string RowVersion);
+public record RequestReturnRequest(string Reason, string RowVersion);

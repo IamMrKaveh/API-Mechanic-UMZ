@@ -21,6 +21,7 @@ global using Application.Discount.Contracts;
 global using Application.Discount.Features.Shared;
 global using Application.Inventory.Contracts;
 global using Application.Inventory.Features.Shared;
+global using Domain.Discount.Services;
 global using Application.Media.Contracts;
 global using Application.Media.Features.Shared;
 global using Application.Notification.Contracts;

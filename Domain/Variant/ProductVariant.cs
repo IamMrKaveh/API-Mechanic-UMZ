@@ -194,8 +194,12 @@ public class ProductVariant : AggregateRoot, IAuditable, ISoftDeletable, IActiva
 
     public void SetUnlimited(bool isUnlimited)
     {
+        if (IsUnlimited == isUnlimited) return;
+
         IsUnlimited = isUnlimited;
         UpdatedAt = DateTime.UtcNow;
+
+        AddDomainEvent(new VariantUnlimitedChangedEvent(Id, ProductId, isUnlimited));
     }
 
     public void Activate()

@@ -14,10 +14,13 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        ConvertDomainEventsToOutboxMessages();
+        var aggregatesToClear = PrepareOutboxMessages();
         try
         {
-            return await _context.SaveChangesAsync(cancellationToken);
+            var result = await _context.SaveChangesAsync(cancellationToken);
+            foreach (var aggregate in aggregatesToClear)
+                aggregate.ClearDomainEvents();
+            return result;
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -25,7 +28,12 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
-    private void ConvertDomainEventsToOutboxMessages()
+    /// <summary>
+    /// Collects domain events, serialises them to Outbox rows, and returns the
+    /// aggregate roots whose events will be cleared once the save succeeds.
+    /// Events are NOT cleared here so that a failed save can be retried safely.
+    /// </summary>
+    private IReadOnlyList<AggregateRoot> PrepareOutboxMessages()
     {
         var domainEntities = _context.ChangeTracker
             .Entries<AggregateRoot>()
@@ -36,20 +44,20 @@ public class UnitOfWork : IUnitOfWork
             .SelectMany(x => x.Entity.DomainEvents)
             .ToList();
 
-        foreach (var entity in domainEntities)
-        {
-            entity.Entity.ClearDomainEvents();
-        }
-
         var outboxMessages = domainEvents.Select(domainEvent => new OutboxMessage
         {
             Id = Guid.NewGuid(),
             OccurredOn = DateTime.UtcNow,
             Type = domainEvent.GetType().Name,
-            Content = JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), new JsonSerializerOptions { ReferenceHandler = ReferenceHandler.IgnoreCycles })
+            Content = JsonSerializer.Serialize(
+                domainEvent,
+                domainEvent.GetType(),
+                new JsonSerializerOptions { ReferenceHandler = ReferenceHandler.IgnoreCycles })
         }).ToList();
 
         _context.OutboxMessages.AddRange(outboxMessages);
+
+        return domainEntities.Select(e => e.Entity).ToList();
     }
 
     public async Task<IDisposable> BeginTransactionAsync(CancellationToken cancellationToken = default)

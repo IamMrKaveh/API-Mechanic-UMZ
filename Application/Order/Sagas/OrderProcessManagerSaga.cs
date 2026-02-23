@@ -1,20 +1,5 @@
 ﻿namespace Application.Order.Sagas;
 
-/// <summary>
-/// Saga / Process Manager برای هماهنگی چرخه حیات سفارش.
-///
-/// جریان موفق:
-///   OrderCreated → [ReserveInventory] → OrderReserved
-///   → [InitiatePayment] → OrderPending
-///   → PaymentSucceeded → [ConfirmInventory] → [MarkOrderPaid]
-///
-/// جریان جبران (Compensation):
-///   PaymentFailed → [RollbackInventory] → OrderFailed
-///   OrderCancelled → [ReleaseInventory] → [RefundPayment]
-///   OrderExpired → [ReleaseInventory] → OrderExpired
-///
-/// این کلاس به عنوان EventHandler ثبت می‌شود.
-/// </summary>
 public sealed class OrderProcessManagerSaga :
     INotificationHandler<OrderCreatedEvent>,
     INotificationHandler<PaymentSucceededEvent>,
@@ -26,6 +11,7 @@ public sealed class OrderProcessManagerSaga :
     private readonly IInventoryService _inventoryService;
     private readonly IPaymentTransactionRepository _paymentRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly PaymentSettlementService _paymentSettlementService;
     private readonly ILogger<OrderProcessManagerSaga> _logger;
 
     public OrderProcessManagerSaga(
@@ -33,16 +19,18 @@ public sealed class OrderProcessManagerSaga :
         IInventoryService inventoryService,
         IPaymentTransactionRepository paymentRepository,
         IUnitOfWork unitOfWork,
+        PaymentSettlementService paymentSettlementService,
         ILogger<OrderProcessManagerSaga> logger)
     {
         _orderRepository = orderRepository;
         _inventoryService = inventoryService;
         _paymentRepository = paymentRepository;
         _unitOfWork = unitOfWork;
+        _paymentSettlementService = paymentSettlementService;
         _logger = logger;
     }
 
-    // ─── Step 1: رزرو موجودی پس از ایجاد سفارش ─────────────────
+    // ─── Step 1: رزرو موجودی پس از ایجاد سفارش
 
     public async Task Handle(OrderCreatedEvent notification, CancellationToken ct)
     {
@@ -77,7 +65,6 @@ public sealed class OrderProcessManagerSaga :
                     "[Saga] Inventory reservation failed for Variant {VariantId}: {Error}",
                     item.VariantId, result.Error);
 
-                // اگر یک آیتم رزرو نشد، سفارش را لغو می‌کنیم
                 await CompensateOrderAsync(order, $"موجودی کافی نیست: {result.Error}", ct);
                 return;
             }
@@ -87,7 +74,7 @@ public sealed class OrderProcessManagerSaga :
             "[Saga] Inventory reserved successfully for Order {OrderId}", order.Id);
     }
 
-    // ─── Step 2: تأیید موجودی و علامت‌گذاری پرداخت پس از PaymentSucceeded ──
+    // ─── Step 2: تأیید موجودی و تسویه پرداخت از طریق Domain Service
 
     public async Task Handle(PaymentSucceededEvent notification, CancellationToken ct)
     {
@@ -102,31 +89,40 @@ public sealed class OrderProcessManagerSaga :
             return;
         }
 
-        // تأیید نهایی موجودی (Reserved → Committed)
-        var referenceNumber = $"ORDER-{order.Id}";
-        var commitResult = await _inventoryService.CommitStockForOrderAsync(
-                    order.Id,
-                    ct);
-
+        var commitResult = await _inventoryService.CommitStockForOrderAsync(order.Id, ct);
         if (!commitResult.IsSucceed)
         {
             _logger.LogError(
                 "[Saga] CRITICAL: Inventory commit failed for Order {OrderId} after payment: {Error}",
                 order.Id, commitResult.Error);
-            // این حالت نیاز به دخالت دستی دارد - ایجاد alert
         }
 
-        // علامت‌گذاری سفارش به عنوان پرداخت شده
-        order.MarkAsPaid(notification.RefId, notification.CardPan);
-        order.StartProcessing();
+        var settlementResult = _paymentSettlementService.ProcessPaymentSuccess(
+            order,
+            notification.RefId,
+            notification.CardPan);
+
+        if (!settlementResult.IsSuccess)
+        {
+            _logger.LogError(
+                "[Saga] Settlement failed for Order {OrderId}: {Error}",
+                order.Id, settlementResult.Error);
+            return;
+        }
+
+        if (settlementResult.IsIdempotent)
+        {
+            _logger.LogInformation("[Saga] Order {OrderId} already processed (idempotent).", order.Id);
+            return;
+        }
 
         await _orderRepository.UpdateAsync(order, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        _logger.LogInformation("[Saga] Order {OrderId} marked as Paid+Processing", order.Id);
+        _logger.LogInformation("[Saga] Order {OrderId} settled: Paid + Processing", order.Id);
     }
 
-    // ─── Compensation: برگشت موجودی در صورت شکست پرداخت ─────────
+    // ─── Compensation: شکست پرداخت
 
     public async Task Handle(PaymentFailedEvent notification, CancellationToken ct)
     {
@@ -137,16 +133,12 @@ public sealed class OrderProcessManagerSaga :
         var order = await _orderRepository.GetByIdAsync(notification.OrderId, ct);
         if (order is null) return;
 
-        // اگر پرداخت‌های retry هنوز باقی است، موجودی را آزاد نمی‌کنیم
-        // منطق retry توسط Payment Idempotency Service مدیریت می‌شود
-        // اینجا فقط وضعیت سفارش را به Failed تغییر می‌دهیم
-
         _logger.LogInformation(
             "[Saga] Order {OrderId} payment failed. Inventory stays reserved for retry window.",
             order.Id);
     }
 
-    // ─── Compensation: آزادسازی موجودی در صورت لغو سفارش ───────
+    // ─── Compensation: لغو سفارش
 
     public async Task Handle(OrderCancelledEvent notification, CancellationToken ct)
     {
@@ -155,12 +147,9 @@ public sealed class OrderProcessManagerSaga :
             notification.OrderId, notification.Reason);
 
         await ReleaseInventoryForOrderAsync(notification.OrderId, "لغو سفارش", ct);
-
-        // اگر سفارش پرداخت شده بود، Refund آغاز می‌شود
-        // این بخش توسط RefundPayment Command مدیریت می‌شود
     }
 
-    // ─── Compensation: آزادسازی موجودی در صورت انقضای سفارش ─────
+    // ─── Compensation: انقضای سفارش
 
     public async Task Handle(OrderExpiredEvent notification, CancellationToken ct)
     {
@@ -170,18 +159,16 @@ public sealed class OrderProcessManagerSaga :
         await ReleaseInventoryForOrderAsync(notification.OrderId, "انقضای سفارش", ct);
     }
 
-    // ─── Private Helpers ──────────────────────────────────────────
+    // ─── Private Helpers
 
     private async Task CompensateOrderAsync(Domain.Order.Order order, string reason, CancellationToken ct)
     {
         try
         {
-            // آزادسازی موجودی‌های رزرو شده
             var referenceNumber = $"ORDER-{order.Id}";
             await _inventoryService.RollbackReservationsAsync(referenceNumber, ct);
 
-            // لغو سفارش
-            order.Cancel(0, reason); // 0 = سیستم
+            order.Cancel(0, reason);
             await _orderRepository.UpdateAsync(order, ct);
             await _unitOfWork.SaveChangesAsync(ct);
 

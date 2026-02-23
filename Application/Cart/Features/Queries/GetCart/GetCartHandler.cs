@@ -7,17 +7,20 @@ public class GetCartHandler : IRequestHandler<GetCartQuery, ServiceResult<CartDe
 
     public GetCartHandler(
         ICartQueryService cartQueryService,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser
+        )
     {
         _cartQueryService = cartQueryService;
         _currentUser = currentUser;
     }
 
     public async Task<ServiceResult<CartDetailDto>> Handle(
-        GetCartQuery request, CancellationToken cancellationToken)
+        GetCartQuery request,
+        CancellationToken ct
+        )
     {
         var cart = await _cartQueryService.GetCartDetailAsync(
-            _currentUser.UserId, _currentUser.GuestId, cancellationToken);
+            _currentUser.UserId, _currentUser.GuestId, ct);
 
         if (cart == null)
         {

@@ -5,15 +5,19 @@ public class GetCategoryByIdQueryHandler
 {
     private readonly ICategoryQueryService _queryService;
 
-    public GetCategoryByIdQueryHandler(ICategoryQueryService queryService)
+    public GetCategoryByIdQueryHandler(
+        ICategoryQueryService queryService
+        )
     {
         _queryService = queryService;
     }
 
     public async Task<ServiceResult<CategoryWithBrandsDto?>> Handle(
-        GetCategoryByIdQuery request, CancellationToken cancellationToken)
+        GetCategoryByIdQuery request,
+        CancellationToken ct
+        )
     {
-        var result = await _queryService.GetCategoryWithBrandsAsync(request.Id, cancellationToken);
+        var result = await _queryService.GetCategoryWithBrandsAsync(request.Id, ct);
 
         if (result == null)
             return ServiceResult<CategoryWithBrandsDto?>.Failure("دسته‌بندی یافت نشد.", 404);

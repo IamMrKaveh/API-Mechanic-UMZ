@@ -9,7 +9,8 @@ public class ReorderCategoriesHandler : IRequestHandler<ReorderCategoriesCommand
     public ReorderCategoriesHandler(
         ICategoryRepository categoryRepository,
         CategoryDomainService categoryDomainService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork
+        )
     {
         _categoryRepository = categoryRepository;
         _categoryDomainService = categoryDomainService;
@@ -17,9 +18,11 @@ public class ReorderCategoriesHandler : IRequestHandler<ReorderCategoriesCommand
     }
 
     public async Task<ServiceResult> Handle(
-        ReorderCategoriesCommand request, CancellationToken cancellationToken)
+        ReorderCategoriesCommand request,
+        CancellationToken ct
+        )
     {
-        var categories = await _categoryRepository.GetAllActiveAsync(cancellationToken);
+        var categories = await _categoryRepository.GetAllActiveAsync(ct);
 
         try
         {
@@ -31,7 +34,7 @@ public class ReorderCategoriesHandler : IRequestHandler<ReorderCategoriesCommand
                 _categoryRepository.Update(category);
             }
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }
         catch (DomainException ex)

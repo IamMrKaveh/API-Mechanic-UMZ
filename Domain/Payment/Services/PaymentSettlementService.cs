@@ -83,9 +83,54 @@ public sealed class PaymentSettlementService
 
         return SettlementRefundResult.Success(payment.Amount.Amount);
     }
+
+    /// <summary>
+    /// چرخه کامل تسویه پرداخت موفق را مدیریت می‌کند.
+    /// Domain Service تصمیم می‌گیرد که order.MarkAsPaid و order.StartProcessing
+    /// فراخوانی شوند — Saga فقط موجودیت‌ها را ذخیره می‌کند.
+    /// </summary>
+    public PaymentSuccessSettlementResult ProcessPaymentSuccess(
+        Order.Order order,
+        long refId,
+        string? cardPan)
+    {
+        Guard.Against.Null(order, nameof(order));
+
+        if (order.IsDeleted)
+            return PaymentSuccessSettlementResult.Failed("سفارش حذف شده است.");
+
+        // Idempotency: اگر قبلاً پرداخت شده، موفق برمی‌گردیم بدون تغییر مجدد
+        if (order.IsPaid)
+            return PaymentSuccessSettlementResult.Idempotent();
+
+        order.MarkAsPaid(refId, cardPan);
+        order.StartProcessing();
+
+        return PaymentSuccessSettlementResult.Success();
+    }
 }
 
 #region Result Types
+
+public sealed class PaymentSuccessSettlementResult
+{
+    public bool IsSuccess { get; private set; }
+    public bool IsIdempotent { get; private set; }
+    public string? Error { get; private set; }
+
+    private PaymentSuccessSettlementResult()
+    { }
+
+    public static PaymentSuccessSettlementResult Success() =>
+        new() { IsSuccess = true };
+
+    /// <summary>تراکنش قبلاً پردازش شده - بدون تغییر مجدد، موفق برمی‌گردد</summary>
+    public static PaymentSuccessSettlementResult Idempotent() =>
+        new() { IsSuccess = true, IsIdempotent = true };
+
+    public static PaymentSuccessSettlementResult Failed(string error) =>
+        new() { IsSuccess = false, Error = error };
+}
 
 public sealed class RefundEligibilityResult
 {

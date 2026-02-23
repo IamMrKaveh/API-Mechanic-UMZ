@@ -259,6 +259,8 @@ public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
         ClearDefaultAddresses();
         targetAddress.SetAsDefault();
         TouchUpdatedAt();
+
+        AddDomainEvent(new UserDefaultAddressChangedEvent(Id, addressId));
     }
 
     public void RemoveAddress(int addressId, int? deletedBy = null)

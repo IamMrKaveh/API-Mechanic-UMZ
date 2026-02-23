@@ -13,6 +13,13 @@ public class AdminProductVariantController : BaseApiController
         _mediator = mediator;
     }
 
+    [HttpGet("by-product/{productId}")]
+    public async Task<IActionResult> GetVariantsByProduct(int productId, [FromQuery] bool activeOnly = true)
+    {
+        var result = await _mediator.Send(new GetProductVariantsQuery(productId, activeOnly));
+        return ToActionResult(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] AddVariantCommand command)
     {

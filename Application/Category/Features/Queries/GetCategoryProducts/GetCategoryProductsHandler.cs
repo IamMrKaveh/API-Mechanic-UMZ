@@ -5,20 +5,24 @@ public class GetCategoryProductsHandler
 {
     private readonly ICategoryQueryService _queryService;
 
-    public GetCategoryProductsHandler(ICategoryQueryService queryService)
+    public GetCategoryProductsHandler(
+        ICategoryQueryService queryService
+        )
     {
         _queryService = queryService;
     }
 
     public async Task<ServiceResult<PaginatedResult<CategoryProductItemDto>>> Handle(
-        GetCategoryProductsQuery request, CancellationToken cancellationToken)
+        GetCategoryProductsQuery request,
+        CancellationToken ct
+        )
     {
         var result = await _queryService.GetCategoryProductsAsync(
             request.CategoryId,
             request.ActiveOnly,
             request.Page,
             request.PageSize,
-            cancellationToken);
+            ct);
 
         return ServiceResult<PaginatedResult<CategoryProductItemDto>>.Success(result);
     }

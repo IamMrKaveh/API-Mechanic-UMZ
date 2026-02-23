@@ -11,7 +11,8 @@ public class RemoveFromCartHandler : IRequestHandler<RemoveFromCartCommand, Serv
         ICartRepository cartRepository,
         ICartQueryService cartQueryService,
         ICurrentUserService currentUser,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork
+        )
     {
         _cartRepository = cartRepository;
         _cartQueryService = cartQueryService;
@@ -20,18 +21,20 @@ public class RemoveFromCartHandler : IRequestHandler<RemoveFromCartCommand, Serv
     }
 
     public async Task<ServiceResult<CartDetailDto>> Handle(
-        RemoveFromCartCommand request, CancellationToken cancellationToken)
+        RemoveFromCartCommand request,
+        CancellationToken ct
+        )
     {
         var cart = await _cartRepository.GetCartAsync(
-            _currentUser.UserId, _currentUser.GuestId, cancellationToken);
+            _currentUser.UserId, _currentUser.GuestId, ct);
         if (cart == null)
             return ServiceResult<CartDetailDto>.Failure("سبد خرید یافت نشد.", 404);
 
         cart.RemoveItem(request.VariantId);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         var cartDetail = await _cartQueryService.GetCartDetailAsync(
-            _currentUser.UserId, _currentUser.GuestId, cancellationToken);
+            _currentUser.UserId, _currentUser.GuestId, ct);
 
         return ServiceResult<CartDetailDto>.Success(cartDetail!);
     }

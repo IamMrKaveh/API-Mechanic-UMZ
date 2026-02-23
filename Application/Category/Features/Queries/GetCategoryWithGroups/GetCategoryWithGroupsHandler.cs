@@ -5,16 +5,20 @@ public class GetCategoryWithGroupsHandler
 {
     private readonly ICategoryQueryService _queryService;
 
-    public GetCategoryWithGroupsHandler(ICategoryQueryService queryService)
+    public GetCategoryWithGroupsHandler(
+        ICategoryQueryService queryService
+        )
     {
         _queryService = queryService;
     }
 
     public async Task<ServiceResult<CategoryWithBrandsDto?>> Handle(
-        GetCategoryWithGroupsQuery request, CancellationToken cancellationToken)
+        GetCategoryWithGroupsQuery request,
+        CancellationToken ct
+        )
     {
         var result = await _queryService.GetCategoryWithBrandsAsync(
-            request.CategoryId, cancellationToken);
+            request.CategoryId, ct);
 
         if (result == null)
             return ServiceResult<CategoryWithBrandsDto?>.Failure("دسته‌بندی یافت نشد.", 404);

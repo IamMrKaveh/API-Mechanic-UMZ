@@ -81,7 +81,31 @@ public class AdminOrdersController : BaseApiController
         var command = new CreateOrderCommand(dto, idempotencyKey, userId);
         var result = await _mediator.Send(command);
 
-        // فرض بر این است که نتیجه Command شامل ID سفارش جدید است
         return CreatedAtAction(nameof(GetOrderById), new { id = result.Data }, new { orderId = result.Data });
     }
+
+    [HttpPatch("{id}/ship")]
+    public async Task<IActionResult> MarkAsShipped(int id, [FromBody] MarkAsShippedRequest request)
+    {
+        if (!CurrentUser.UserId.HasValue) return Unauthorized();
+
+        var command = new MarkOrderAsShippedCommand
+        {
+            OrderId = id,
+            RowVersion = request.RowVersion,
+            UpdatedByUserId = CurrentUser.UserId.Value
+        };
+
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
+    }
+
+    [HttpPost("expire")]
+    public async Task<IActionResult> ExpireOrders()
+    {
+        var result = await _mediator.Send(new ExpireOrdersCommand());
+        return Ok(result);
+    }
 }
+
+public record MarkAsShippedRequest(string RowVersion);

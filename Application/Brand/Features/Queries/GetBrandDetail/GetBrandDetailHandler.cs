@@ -5,16 +5,20 @@ public class GetBrandDetailHandler
 {
     private readonly ICategoryQueryService _queryService;
 
-    public GetBrandDetailHandler(ICategoryQueryService queryService)
+    public GetBrandDetailHandler(
+        ICategoryQueryService queryService
+        )
     {
         _queryService = queryService;
     }
 
     public async Task<ServiceResult<BrandDetailDto?>> Handle(
-        GetBrandDetailQuery request, CancellationToken cancellationToken)
+        GetBrandDetailQuery request,
+        CancellationToken ct
+        )
     {
         var result = await _queryService.GetBrandDetailAsync(
-            request.GroupId, cancellationToken);
+            request.GroupId, ct);
 
         if (result == null)
             return ServiceResult<BrandDetailDto?>.Failure("گروه یافت نشد.", 404);

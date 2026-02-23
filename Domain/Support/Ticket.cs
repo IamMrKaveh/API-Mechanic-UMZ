@@ -1,4 +1,6 @@
-﻿namespace Domain.Support;
+﻿using Domain.Support.ValueObjects;
+
+namespace Domain.Support;
 
 public class Ticket : AggregateRoot, IAuditable
 {
@@ -157,6 +159,8 @@ public class Ticket : AggregateRoot, IAuditable
 
         _subject = newSubject.Trim();
         UpdatedAt = DateTime.UtcNow;
+
+        AddDomainEvent(new Events.TicketSubjectUpdatedEvent(Id, _subject));
     }
 
     #endregion Domain Behaviors
@@ -227,16 +231,7 @@ public class Ticket : AggregateRoot, IAuditable
 
     private static void ValidatePriority(string priority)
     {
-        var validPriorities = new[]
-        {
-            TicketPriorities.Low,
-            TicketPriorities.Normal,
-            TicketPriorities.High,
-            TicketPriorities.Urgent
-        };
-
-        if (!validPriorities.Contains(priority))
-            throw new DomainException($"اولویت '{priority}' نامعتبر است.");
+        TicketPriority.Parse(priority);
     }
 
     private static void ValidateMessage(string message)

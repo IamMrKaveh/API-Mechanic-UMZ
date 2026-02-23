@@ -181,6 +181,34 @@ public sealed class OrderDomainService
         return new OrderItemsValidation(errors.Count == 0, errors);
     }
 
+    /// <summary>
+    /// اعتبارسنجی یکپارچگی قیمت‌ها - بررسی تطابق قیمت‌های انتظاری کاربر با قیمت‌های فعلی واریانت‌ها
+    /// Handler این قیمت‌ها را ارسال می‌کند؛ تصمیم‌گیری توسط Domain Service انجام می‌شود.
+    /// </summary>
+    public PriceMismatchValidation ValidatePriceIntegrity(
+        IEnumerable<(ProductVariant Variant, decimal ExpectedPrice)> priceExpectations)
+    {
+        Guard.Against.Null(priceExpectations, nameof(priceExpectations));
+
+        var errors = new List<string>();
+
+        foreach (var (variant, expectedPrice) in priceExpectations)
+        {
+            if (variant == null) continue;
+
+            if (variant.SellingPrice.Amount != expectedPrice)
+            {
+                errors.Add(
+                    $"قیمت محصول '{variant.Product?.Name ?? variant.Id.ToString()}' تغییر کرده است. " +
+                    $"لطفاً سبد خرید را بررسی کنید.");
+            }
+        }
+
+        return errors.Any()
+            ? PriceMismatchValidation.Failed(errors)
+            : PriceMismatchValidation.Valid();
+    }
+
     #region Private Methods
 
     private decimal CalculateTotalAmount(List<OrderItemSnapshot> items)
@@ -201,3 +229,23 @@ public sealed class OrderDomainService
 
     #endregion Private Methods
 }
+
+#region Result Types
+
+public sealed class PriceMismatchValidation
+{
+    public bool IsValid { get; private set; }
+    public IReadOnlyList<string> Errors { get; private set; } = new List<string>();
+
+    private PriceMismatchValidation()
+    { }
+
+    public static PriceMismatchValidation Valid() => new() { IsValid = true };
+
+    public static PriceMismatchValidation Failed(IEnumerable<string> errors) =>
+        new() { IsValid = false, Errors = errors.ToList().AsReadOnly() };
+
+    public string GetErrorsSummary() => string.Join(" | ", Errors);
+}
+
+#endregion Result Types

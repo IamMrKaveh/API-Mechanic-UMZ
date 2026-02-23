@@ -15,7 +15,8 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
         ICartQueryService cartQueryService,
         ICurrentUserService currentUser,
         IUnitOfWork unitOfWork,
-        ILogger<AddToCartHandler> logger)
+        ILogger<AddToCartHandler> logger
+        )
     {
         _cartRepository = cartRepository;
         _productRepository = productRepository;
@@ -26,10 +27,12 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
     }
 
     public async Task<ServiceResult<CartDetailDto>> Handle(
-        AddToCartCommand request, CancellationToken cancellationToken)
+        AddToCartCommand request,
+        CancellationToken ct
+        )
     {
         // ۱. بررسی موجودی در Application Layer
-        var variant = await _productRepository.GetVariantByIdAsync(request.VariantId, cancellationToken);
+        var variant = await _productRepository.GetVariantByIdAsync(request.VariantId, ct);
         if (variant == null || !variant.IsActive || variant.IsDeleted)
             return ServiceResult<CartDetailDto>.Failure("محصول یافت نشد یا غیرفعال است.", 404);
 
@@ -39,12 +42,12 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
                 $"موجودی کافی نیست. موجودی قابل دسترس: {variant.AvailableStock}", 400);
 
         // ۲. دریافت یا ایجاد سبد
-        var cart = await _cartRepository.GetCartAsync(_currentUser.UserId, _currentUser.GuestId, cancellationToken);
+        var cart = await _cartRepository.GetCartAsync(_currentUser.UserId, _currentUser.GuestId, ct);
 
         if (cart == null)
         {
             cart = Domain.Cart.Cart.Create(_currentUser.UserId, _currentUser.GuestId);
-            await _cartRepository.AddAsync(cart, cancellationToken);
+            await _cartRepository.AddAsync(cart, ct);
         }
 
         // ۳. بررسی مجموع تعداد (آیتم موجود + جدید) با AvailableStock
@@ -61,7 +64,7 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
         // ۴. افزودن به سبد
         cart.AddItem(request.VariantId, request.Quantity, variant.SellingPrice);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         _logger.LogInformation(
             "آیتم {VariantId} با تعداد {Quantity} به سبد {CartId} اضافه شد.",
@@ -69,7 +72,7 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
 
         // ۵. بازگرداندن DTO کامل از QueryService
         var cartDetail = await _cartQueryService.GetCartDetailAsync(
-            _currentUser.UserId, _currentUser.GuestId, cancellationToken);
+            _currentUser.UserId, _currentUser.GuestId, ct);
 
         return ServiceResult<CartDetailDto>.Success(cartDetail!);
     }

@@ -7,12 +7,14 @@ public interface IDistributedLock
         TimeSpan? ttl = null,
         TimeSpan? retryDelay = null,
         int retryCount = 5,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+        );
 
     Task<ILockHandle> AcquireAsync(
         string resource,
         TimeSpan? ttl = null,
         TimeSpan? retryDelay = null,
         int retryCount = 5,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+        );
 }

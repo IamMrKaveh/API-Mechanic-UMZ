@@ -11,7 +11,8 @@ public class CreateCategoryHandler : IRequestHandler<CreateCategoryCommand, Serv
         ICategoryRepository categoryRepository,
         IUnitOfWork unitOfWork,
         IMediaService mediaService,
-        ILogger<CreateCategoryHandler> logger)
+        ILogger<CreateCategoryHandler> logger
+        )
     {
         _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
@@ -20,10 +21,12 @@ public class CreateCategoryHandler : IRequestHandler<CreateCategoryCommand, Serv
     }
 
     public async Task<ServiceResult<int>> Handle(
-        CreateCategoryCommand request, CancellationToken cancellationToken)
+        CreateCategoryCommand request,
+        CancellationToken ct
+        )
     {
         // بررسی یکتایی نام
-        if (await _categoryRepository.ExistsByNameAsync(request.Name.Trim(), ct: cancellationToken))
+        if (await _categoryRepository.ExistsByNameAsync(request.Name.Trim(), ct: ct))
         {
             return ServiceResult<int>.Failure("دسته‌بندی با این نام قبلاً وجود دارد.");
         }
@@ -31,8 +34,8 @@ public class CreateCategoryHandler : IRequestHandler<CreateCategoryCommand, Serv
         // ایجاد Aggregate (تمام اعتبارسنجی‌ها در Domain)
         var category = Domain.Category.Category.Create(request.Name, request.Description);
 
-        await _categoryRepository.AddAsync(category, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _categoryRepository.AddAsync(category, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         // آپلود آیکون (اختیاری)
         if (request.IconFile != null)
@@ -48,7 +51,7 @@ public class CreateCategoryHandler : IRequestHandler<CreateCategoryCommand, Serv
                     category.Id,
                     isPrimary: true);
 
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.SaveChangesAsync(ct);
             }
             catch (Exception ex)
             {

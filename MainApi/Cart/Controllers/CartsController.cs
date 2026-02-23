@@ -18,6 +18,21 @@ public class CartController : ControllerBase
         return result.IsSucceed ? Ok(result.Data) : NotFound(result.Error);
     }
 
+    [HttpGet("summary")]
+    public async Task<IActionResult> GetCartSummary()
+    {
+        var result = await _mediator.Send(new GetCartSummaryQuery());
+        return result.IsSucceed ? Ok(result.Data) : BadRequest(result.Error);
+    }
+
+    [HttpGet("validate-checkout")]
+    [Authorize]
+    public async Task<IActionResult> ValidateCartForCheckout()
+    {
+        var result = await _mediator.Send(new ValidateCartForCheckoutQuery());
+        return result.IsSucceed ? Ok(result.Data) : BadRequest(result.Error);
+    }
+
     [HttpPost("items")]
     public async Task<IActionResult> AddItem([FromBody] AddToCartCommand command)
     {
@@ -54,5 +69,13 @@ public class CartController : ControllerBase
     {
         var result = await _mediator.Send(command);
         return result.IsSucceed ? Ok() : BadRequest(result.Error);
+    }
+
+    [HttpPost("sync-prices")]
+    [Authorize]
+    public async Task<IActionResult> SyncCartPrices()
+    {
+        var result = await _mediator.Send(new SyncCartPricesCommand());
+        return result.IsSucceed ? Ok(result.Data) : BadRequest(result.Error);
     }
 }
