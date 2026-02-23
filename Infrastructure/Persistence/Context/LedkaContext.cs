@@ -34,12 +34,11 @@ public class LedkaContext : DbContext, IApplicationDbContext
     public DbSet<StockLedgerEntry> StockLedgerEntries => Set<StockLedgerEntry>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
 
-    // Child entities - internal access only (navigate via Aggregate Root)
-    internal DbSet<UserAddress> UserAddresses => Set<UserAddress>();
+    // Child entities requiring direct DbSet access for Query Services
+    public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
 
-    internal DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
-    internal DbSet<AttributeValue> AttributeValues => Set<AttributeValue>();
-    internal DbSet<WarehouseStock> WarehouseStocks => Set<WarehouseStock>();
+    public DbSet<AttributeValue> AttributeValues => Set<AttributeValue>();
+    public DbSet<UserAddress> UserAddresses => Set<UserAddress>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -20,7 +20,7 @@ public sealed class BrandMappingProfile : Profile
             .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.Slug))
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name.Value : string.Empty))
             .ForMember(dest => dest.ProductCount, opt => opt.MapFrom(src => src.TotalProductsCount))
-            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion.ToBase64()));
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion));
 
         CreateMap<Domain.Brand.Brand, BrandDetailDto>()
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
@@ -28,7 +28,7 @@ public sealed class BrandMappingProfile : Profile
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name.Value : string.Empty))
             .ForMember(dest => dest.ProductCount, opt => opt.MapFrom(src => src.TotalProductsCount))
             .ForMember(dest => dest.ActiveProductCount, opt => opt.MapFrom(src => src.ActiveProductsCount))
-            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion.ToBase64()));
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion));
 
         CreateMap<Domain.Brand.Brand, BrandHierarchyDto>()
             .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Name));
@@ -37,6 +37,6 @@ public sealed class BrandMappingProfile : Profile
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
             .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.Slug))
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name.Value : string.Empty))
-            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion.ToBase64()));
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion));
     }
 }

@@ -147,4 +147,8 @@ public interface IUserRepository
         UserAddress userAddress,
         CancellationToken ct
         );
+
+    IQueryable<Domain.User.User> GetUsersQuery(
+        bool includeDeleted
+        );
 }

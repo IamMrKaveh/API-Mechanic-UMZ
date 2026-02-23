@@ -3,6 +3,7 @@
 public sealed class Slug : ValueObject
 {
     public string Value { get; }
+    public const int MaxLength = 200;
 
     protected Slug()
     { }
@@ -47,8 +48,8 @@ public sealed class Slug : ValueObject
 
     private static void Validate(string slug)
     {
-        if (slug.Length > 200)
-            throw new DomainException("Slug نمی‌تواند بیش از ۲۰۰ کاراکتر باشد.");
+        if (slug.Length > MaxLength)
+            throw new DomainException($"Slug نمی‌تواند بیش از {MaxLength} کاراکتر باشد.");
 
         if (slug.StartsWith("-") || slug.EndsWith("-"))
             throw new DomainException("Slug نمی‌تواند با خط تیره شروع یا پایان یابد.");

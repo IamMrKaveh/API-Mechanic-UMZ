@@ -5,7 +5,7 @@ public sealed class CategoryName : ValueObject
     public string Value { get; }
 
     private const int MinLength = 2;
-    private const int MaxLength = 100;
+    public const int MaxLength = 100;
 
     private CategoryName(string value)
     {

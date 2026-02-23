@@ -24,7 +24,7 @@ public record CategoryUpdateDto
     public string? RowVersion { get; init; }
 }
 
-public record CategoryViewDto
+public record CategoryDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -40,7 +40,7 @@ public record CategoryViewDto
     public string? RowVersion { get; init; }
 }
 
-public record CategoryDetailViewDto : CategoryViewDto
+public record CategoryDetailDto : CategoryDto
 {
     public List<ProductSummaryDto> Products { get; init; } = new();
 }
@@ -57,11 +57,11 @@ public record CategoryListItemDto
     public int GroupCount { get; init; }
     public int ActiveGroupCount { get; init; }
     public int TotalProductCount { get; init; }
+    public int BrandCount { get; init; }
+    public int ActiveBrandCount { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
     public string? RowVersion { get; init; }
-    public int? brandCount { get; init; }
-    public int? ActivebrandCount { get; init; }
 }
 
 public record CategoryTreeDto
@@ -86,7 +86,7 @@ public record CategoryProductItemDto
     public int TotalStock { get; init; }
     public bool IsActive { get; init; }
     public DateTime CreatedAt { get; init; }
-    public string? brandName { get; init; }
+    public string? BrandName { get; init; }
 }
 
 public record CategoryWithBrandsDto
