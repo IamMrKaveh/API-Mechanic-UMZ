@@ -9,22 +9,26 @@ public class ClearCartHandler : IRequestHandler<ClearCartCommand, ServiceResult>
     public ClearCartHandler(
         ICartRepository cartRepository,
         ICurrentUserService currentUser,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork
+        )
     {
         _cartRepository = cartRepository;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ServiceResult> Handle(ClearCartCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        ClearCartCommand request,
+        CancellationToken ct
+        )
     {
         var cart = await _cartRepository.GetCartAsync(
-            _currentUser.UserId, _currentUser.GuestId, cancellationToken);
+            _currentUser.UserId, _currentUser.GuestId, ct);
 
         if (cart != null)
         {
             cart.Clear();
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
         }
 
         return ServiceResult.Success();

@@ -21,7 +21,6 @@ public class CategoryController : BaseApiController
         return ToActionResult(result);
     }
 
-    // استفاده از Legacy Query برای لیست ساده
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetCategories(
@@ -34,7 +33,18 @@ public class CategoryController : BaseApiController
         return ToActionResult(result);
     }
 
-    // محصولات یک دسته‌بندی
+    [HttpGet("{id}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetCategoryById(
+        int id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var query = new GetCategoryByIdQuery(id, page, pageSize);
+        var result = await _mediator.Send(query);
+        return ToActionResult(result);
+    }
+
     [HttpGet("{id}/products")]
     [AllowAnonymous]
     public async Task<IActionResult> GetCategoryProducts(

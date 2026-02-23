@@ -5,4 +5,5 @@ public record GetAdminCategoriesQuery(
     bool? IsActive,
     bool IncludeDeleted,
     int Page,
-    int PageSize) : IRequest<ServiceResult<PaginatedResult<CategoryListItemDto>>>;
+    int PageSize
+    ) : IRequest<ServiceResult<PaginatedResult<CategoryListItemDto>>>;

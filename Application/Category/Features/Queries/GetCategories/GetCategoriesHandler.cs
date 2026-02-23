@@ -5,13 +5,17 @@ public class GetAdminCategoriesLegacyQueryHandler
 {
     private readonly ICategoryQueryService _queryService;
 
-    public GetAdminCategoriesLegacyQueryHandler(ICategoryQueryService queryService)
+    public GetAdminCategoriesLegacyQueryHandler(
+        ICategoryQueryService queryService
+        )
     {
         _queryService = queryService;
     }
 
     public async Task<ServiceResult<PaginatedResult<CategoryListItemDto>>> Handle(
-        GetAdminCategoriesLegacyQuery request, CancellationToken cancellationToken)
+        GetAdminCategoriesLegacyQuery request,
+        CancellationToken ct
+        )
     {
         var result = await _queryService.GetCategoriesPagedAsync(
             request.Search,
@@ -19,7 +23,7 @@ public class GetAdminCategoriesLegacyQueryHandler
             includeDeleted: false,
             request.Page,
             request.PageSize,
-            cancellationToken);
+            ct);
 
         return ServiceResult<PaginatedResult<CategoryListItemDto>>.Success(result);
     }

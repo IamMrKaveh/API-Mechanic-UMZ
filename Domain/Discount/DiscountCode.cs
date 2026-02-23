@@ -254,6 +254,8 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
             throw new DomainException("استفاده‌ای برای تأیید یافت نشد.");
 
         usage.Confirm();
+
+        AddDomainEvent(new Events.DiscountUsageConfirmedEvent(usage.Id, orderId, Id));
     }
 
     private void IncrementUsageCount()
@@ -381,6 +383,8 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
 
         _isActive = true;
         UpdatedAt = DateTime.UtcNow;
+
+        AddDomainEvent(new Events.DiscountActivatedEvent(Id));
     }
 
     public void Deactivate()
@@ -389,6 +393,8 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
 
         _isActive = false;
         UpdatedAt = DateTime.UtcNow;
+
+        AddDomainEvent(new Events.DiscountDeactivatedEvent(Id));
     }
 
     public void Delete(int? deletedBy = null)
@@ -487,32 +493,13 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
 
     private void SetCode(string code)
     {
-        if (string.IsNullOrWhiteSpace(code))
-            throw new DomainException("کد تخفیف الزامی است.");
-
-        var normalized = code.Trim().ToUpperInvariant();
-
-        if (normalized.Length < MinCodeLength)
-            throw new DomainException($"کد تخفیف باید حداقل {MinCodeLength} کاراکتر باشد.");
-
-        if (normalized.Length > MaxCodeLength)
-            throw new DomainException($"کد تخفیف نمی‌تواند بیش از {MaxCodeLength} کاراکتر باشد.");
-
-        if (!System.Text.RegularExpressions.Regex.IsMatch(normalized, @"^[A-Z0-9\-_]+$"))
-            throw new DomainException("کد تخفیف فقط می‌تواند شامل حروف، اعداد، خط تیره و زیرخط باشد.");
-
         _code = DiscountCodeValue.Create(code);
     }
 
     private void SetPercentage(decimal percentage)
     {
-        if (percentage < MinPercentage)
-            throw new DomainException("درصد تخفیف باید بزرگتر از صفر باشد.");
-
-        if (percentage > MaxPercentage)
-            throw new DomainException("درصد تخفیف نمی‌تواند بیش از ۱۰۰ باشد.");
-
-        _percentage = percentage;
+        var vo = DiscountPercentage.Create(percentage);
+        _percentage = vo.Value;
     }
 
     private void SetMaxDiscountAmount(decimal? maxDiscountAmount)

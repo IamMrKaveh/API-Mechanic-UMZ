@@ -5,13 +5,17 @@ public class GetAdminBrandsLegacyQueryHandler
 {
     private readonly ICategoryQueryService _queryService;
 
-    public GetAdminBrandsLegacyQueryHandler(ICategoryQueryService queryService)
+    public GetAdminBrandsLegacyQueryHandler(
+        ICategoryQueryService queryService
+        )
     {
         _queryService = queryService;
     }
 
     public async Task<ServiceResult<PaginatedResult<BrandListItemDto>>> Handle(
-        GetAdminBrandsLegacyQuery request, CancellationToken cancellationToken)
+        GetAdminBrandsLegacyQuery request,
+        CancellationToken ct
+        )
     {
         var result = await _queryService.GetBrandsPagedAsync(
             request.CategoryId,
@@ -20,7 +24,7 @@ public class GetAdminBrandsLegacyQueryHandler
             includeDeleted: false,
             request.Page,
             request.PageSize,
-            cancellationToken);
+            ct);
 
         return ServiceResult<PaginatedResult<BrandListItemDto>>.Success(result);
     }

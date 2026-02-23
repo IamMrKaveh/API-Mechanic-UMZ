@@ -15,7 +15,8 @@ public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuant
         ICartQueryService cartQueryService,
         ICurrentUserService currentUser,
         IUnitOfWork unitOfWork,
-        ILogger<UpdateCartItemQuantityHandler> logger)
+        ILogger<UpdateCartItemQuantityHandler> logger
+        )
     {
         _cartRepository = cartRepository;
         _productRepository = productRepository;
@@ -26,10 +27,12 @@ public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuant
     }
 
     public async Task<ServiceResult<CartDetailDto>> Handle(
-        UpdateCartItemQuantityCommand request, CancellationToken cancellationToken)
+        UpdateCartItemQuantityCommand request,
+        CancellationToken ct
+        )
     {
         var cart = await _cartRepository.GetCartAsync(
-            _currentUser.UserId, _currentUser.GuestId, cancellationToken);
+            _currentUser.UserId, _currentUser.GuestId, ct);
         if (cart == null)
             return ServiceResult<CartDetailDto>.Failure("سبد خرید یافت نشد.", 404);
 
@@ -37,15 +40,15 @@ public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuant
         if (request.Quantity == 0)
         {
             cart.RemoveItem(request.VariantId);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             var updatedCart = await _cartQueryService.GetCartDetailAsync(
-                _currentUser.UserId, _currentUser.GuestId, cancellationToken);
+                _currentUser.UserId, _currentUser.GuestId, ct);
             return ServiceResult<CartDetailDto>.Success(updatedCart!);
         }
 
         // بررسی موجودی
-        var variant = await _productRepository.GetVariantByIdAsync(request.VariantId, cancellationToken);
+        var variant = await _productRepository.GetVariantByIdAsync(request.VariantId, ct);
         if (variant == null || !variant.IsActive || variant.IsDeleted)
             return ServiceResult<CartDetailDto>.Failure("محصول یافت نشد یا غیرفعال است.", 404);
 
@@ -56,14 +59,14 @@ public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuant
         // به‌روزرسانی تعداد در Domain
         cart.UpdateItemQuantity(request.VariantId, request.Quantity);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         _logger.LogInformation(
             "تعداد آیتم {VariantId} در سبد {CartId} به {Quantity} تغییر یافت.",
             request.VariantId, cart.Id, request.Quantity);
 
         var cartDetail = await _cartQueryService.GetCartDetailAsync(
-            _currentUser.UserId, _currentUser.GuestId, cancellationToken);
+            _currentUser.UserId, _currentUser.GuestId, ct);
 
         return ServiceResult<CartDetailDto>.Success(cartDetail!);
     }

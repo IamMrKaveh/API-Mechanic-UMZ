@@ -8,14 +8,14 @@ public sealed class Warehouse : AggregateRoot, ISoftDeletable, IActivatable, IAu
 {
     private readonly List<WarehouseStock> _stocks = new();
 
-    public string Code { get; private set; } = null!;
+    public WarehouseCode Code { get; private set; } = null!;
     public string Name { get; private set; } = null!;
     public string City { get; private set; } = null!;
     public string? Address { get; private set; }
     public string? Phone { get; private set; }
     public bool IsActive { get; private set; }
     public bool IsDefault { get; private set; }
-    public int Priority { get; private set; }  // انبار با اولویت بالاتر اول انتخاب می‌شود
+    public int Priority { get; private set; }
 
     // Soft Delete
     public bool IsDeleted { get; private set; }
@@ -34,24 +34,25 @@ public sealed class Warehouse : AggregateRoot, ISoftDeletable, IActivatable, IAu
     private Warehouse()
     { }
 
-    // ─── Factory ─────────────────────────────────────────────────────────────
+    // ─── Factory
 
     public static Warehouse Create(
-        string code,
-        string name,
-        string city,
-        string? address = null,
-        string? phone = null,
-        int priority = 0,
-        bool isDefault = false)
+    string code,
+    string name,
+    string city,
+    string? address = null,
+    string? phone = null,
+    int priority = 0,
+    bool isDefault = false)
     {
-        Guard.Against.NullOrWhiteSpace(code, nameof(code));
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
         Guard.Against.NullOrWhiteSpace(city, nameof(city));
 
+        var codeVo = WarehouseCode.Create(code);
+
         var warehouse = new Warehouse
         {
-            Code = code.Trim().ToUpperInvariant(),
+            Code = codeVo,
             Name = name.Trim(),
             City = city.Trim(),
             Address = address?.Trim(),
@@ -62,11 +63,11 @@ public sealed class Warehouse : AggregateRoot, ISoftDeletable, IActivatable, IAu
             CreatedAt = DateTime.UtcNow
         };
 
-        warehouse.AddDomainEvent(new WarehouseCreatedEvent(warehouse.Id, warehouse.Code, warehouse.Name));
+        warehouse.AddDomainEvent(new WarehouseCreatedEvent(warehouse.Id, warehouse.Code.Value, warehouse.Name));
         return warehouse;
     }
 
-    // ─── موجودی Variant در این انبار ─────────────────────────────────────────
+    // ─── موجودی Variant در این انبار
 
     public WarehouseStock GetOrCreateStock(int variantId)
     {
@@ -88,7 +89,7 @@ public sealed class Warehouse : AggregateRoot, ISoftDeletable, IActivatable, IAu
     public bool CanFulfill(int variantId, int quantity) =>
         GetAvailableStock(variantId) >= quantity;
 
-    // ─── مدیریت انبار ────────────────────────────────────────────────────────
+    // ─── مدیریت انبار
 
     public void Update(string name, string city, string? address, string? phone, int priority)
     {
@@ -106,15 +107,23 @@ public sealed class Warehouse : AggregateRoot, ISoftDeletable, IActivatable, IAu
     public void Activate()
     {
         EnsureNotDeleted();
+        if (IsActive) return;
+
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
+
+        AddDomainEvent(new WarehouseActivatedEvent(Id, Code.Value));
     }
 
     public void Deactivate()
     {
         EnsureNotDeleted();
+        if (!IsActive) return;
+
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
+
+        AddDomainEvent(new WarehouseDeactivatedEvent(Id, Code.Value));
     }
 
     public void SetAsDefault()
@@ -122,6 +131,8 @@ public sealed class Warehouse : AggregateRoot, ISoftDeletable, IActivatable, IAu
         EnsureNotDeleted();
         IsDefault = true;
         UpdatedAt = DateTime.UtcNow;
+
+        AddDomainEvent(new WarehouseSetAsDefaultEvent(Id, Code.Value));
     }
 
     public void Delete(int? deletedBy = null)

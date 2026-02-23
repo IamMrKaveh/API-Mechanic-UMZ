@@ -15,7 +15,8 @@ public class SyncCartPricesHandler : IRequestHandler<SyncCartPricesCommand, Serv
         IProductRepository productRepository,
         ICurrentUserService currentUser,
         IUnitOfWork unitOfWork,
-        ILogger<SyncCartPricesHandler> logger)
+        ILogger<SyncCartPricesHandler> logger
+        )
     {
         _cartRepository = cartRepository;
         _productRepository = productRepository;
@@ -25,16 +26,18 @@ public class SyncCartPricesHandler : IRequestHandler<SyncCartPricesCommand, Serv
     }
 
     public async Task<ServiceResult<SyncCartPricesResult>> Handle(
-        SyncCartPricesCommand request, CancellationToken cancellationToken)
+        SyncCartPricesCommand request,
+        CancellationToken ct
+        )
     {
         var cart = await _cartRepository.GetCartAsync(
-            _currentUser.UserId, _currentUser.GuestId, cancellationToken);
+            _currentUser.UserId, _currentUser.GuestId, ct);
 
         if (cart == null || cart.IsEmpty)
             return ServiceResult<SyncCartPricesResult>.Success(new SyncCartPricesResult { HasChanges = false });
 
         var variantIds = cart.GetVariantIds().ToList();
-        var variants = await _productRepository.GetVariantsByIdsAsync(variantIds, cancellationToken);
+        var variants = await _productRepository.GetVariantsByIdsAsync(variantIds, ct);
         var variantLookup = variants.ToDictionary(v => v.Id);
         var priceChanges = new List<CartPriceChangeDto>();
         var removedVariantIds = new List<int>();
@@ -66,7 +69,7 @@ public class SyncCartPricesHandler : IRequestHandler<SyncCartPricesCommand, Serv
 
         if (hasChanges)
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             _logger.LogInformation(
                 "قیمت‌های سبد {CartId} همگام‌سازی شد. تغییر قیمت: {PriceChangeCount}، حذف شده: {RemovedCount}",

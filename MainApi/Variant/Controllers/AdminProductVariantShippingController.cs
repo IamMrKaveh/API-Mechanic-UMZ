@@ -20,6 +20,13 @@ public class AdminProductVariantShippingController : BaseApiController
         return ToActionResult(result);
     }
 
+    [HttpGet("{variantId}")]
+    public async Task<IActionResult> GetVariantShipping(int variantId)
+    {
+        var result = await _mediator.Send(new GetProductVariantShippingQuery(variantId));
+        return ToActionResult(result);
+    }
+
     [HttpPut]
     public async Task<IActionResult> UpdateShippings(
         int variantId,

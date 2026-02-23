@@ -18,11 +18,12 @@ public sealed class TicketPriority : ValueObject
     public static TicketPriority High => new("High", "زیاد", 3);
     public static TicketPriority Urgent => new("Urgent", "فوری", 4);
 
+    /// <summary>
+    /// Lenient factory — returns Normal for unknown values (backward-compat).
+    /// </summary>
     public static TicketPriority FromString(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            return Normal;
-
+        if (string.IsNullOrWhiteSpace(value)) return Normal;
         return value.ToLowerInvariant() switch
         {
             "low" => Low,
@@ -30,6 +31,25 @@ public sealed class TicketPriority : ValueObject
             "high" => High,
             "urgent" => Urgent,
             _ => Normal
+        };
+    }
+
+    /// <summary>
+    /// Strict factory — throws DomainException for unknown values.
+    /// Use this inside Aggregate Roots to enforce the invariant.
+    /// </summary>
+    public static TicketPriority Parse(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new DomainException("اولویت تیکت نمی‌تواند خالی باشد.");
+
+        return value.ToLowerInvariant() switch
+        {
+            "low" => Low,
+            "normal" => Normal,
+            "high" => High,
+            "urgent" => Urgent,
+            _ => throw new DomainException($"اولویت '{value}' نامعتبر است.")
         };
     }
 
@@ -54,15 +74,11 @@ public sealed class TicketPriority : ValueObject
 
     public static implicit operator string(TicketPriority priority) => priority.Value;
 
-    public static bool operator >(TicketPriority left, TicketPriority right) =>
-        left.SortOrder > right.SortOrder;
+    public static bool operator >(TicketPriority left, TicketPriority right) => left.SortOrder > right.SortOrder;
 
-    public static bool operator <(TicketPriority left, TicketPriority right) =>
-        left.SortOrder < right.SortOrder;
+    public static bool operator <(TicketPriority left, TicketPriority right) => left.SortOrder < right.SortOrder;
 
-    public static bool operator >=(TicketPriority left, TicketPriority right) =>
-        left.SortOrder >= right.SortOrder;
+    public static bool operator >=(TicketPriority left, TicketPriority right) => left.SortOrder >= right.SortOrder;
 
-    public static bool operator <=(TicketPriority left, TicketPriority right) =>
-        left.SortOrder <= right.SortOrder;
+    public static bool operator <=(TicketPriority left, TicketPriority right) => left.SortOrder <= right.SortOrder;
 }

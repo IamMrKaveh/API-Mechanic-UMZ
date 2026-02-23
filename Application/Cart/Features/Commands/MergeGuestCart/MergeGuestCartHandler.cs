@@ -13,7 +13,8 @@ public class MergeGuestCartHandler : IRequestHandler<MergeGuestCartCommand, Serv
         ICurrentUserService currentUser,
         IUnitOfWork unitOfWork,
         CartDomainService cartDomainService,
-        ILogger<MergeGuestCartHandler> logger)
+        ILogger<MergeGuestCartHandler> logger
+        )
     {
         _cartRepository = cartRepository;
         _currentUser = currentUser;
@@ -23,16 +24,18 @@ public class MergeGuestCartHandler : IRequestHandler<MergeGuestCartCommand, Serv
     }
 
     public async Task<ServiceResult> Handle(
-        MergeGuestCartCommand request, CancellationToken cancellationToken)
+        MergeGuestCartCommand request,
+        CancellationToken ct
+        )
     {
         if (!_currentUser.UserId.HasValue)
             return ServiceResult.Failure("کاربر باید وارد شده باشد.", 401);
 
-        var guestCart = await _cartRepository.GetByGuestTokenAsync(request.GuestToken, cancellationToken);
+        var guestCart = await _cartRepository.GetByGuestTokenAsync(request.GuestToken, ct);
         if (guestCart == null || guestCart.IsEmpty)
             return ServiceResult.Success(); // سبد مهمان خالی یا وجود ندارد
 
-        var userCart = await _cartRepository.GetByUserIdAsync(_currentUser.UserId.Value, cancellationToken);
+        var userCart = await _cartRepository.GetByUserIdAsync(_currentUser.UserId.Value, ct);
 
         if (userCart == null)
         {
@@ -47,7 +50,7 @@ public class MergeGuestCartHandler : IRequestHandler<MergeGuestCartCommand, Serv
             _cartRepository.Delete(guestCart);
         }
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         _logger.LogInformation(
             "سبد مهمان {GuestToken} با سبد کاربر {UserId} ادغام شد.",

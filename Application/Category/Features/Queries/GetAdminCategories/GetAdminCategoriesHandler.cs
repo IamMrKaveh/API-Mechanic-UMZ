@@ -6,14 +6,19 @@ public class GetAdminCategoriesHandler
     private readonly ICategoryRepository _repository;
     private readonly IMapper _mapper;
 
-    public GetAdminCategoriesHandler(ICategoryRepository repository, IMapper mapper)
+    public GetAdminCategoriesHandler(
+        ICategoryRepository repository,
+        IMapper mapper
+        )
     {
         _repository = repository;
         _mapper = mapper;
     }
 
     public async Task<ServiceResult<PaginatedResult<CategoryListItemDto>>> Handle(
-        GetAdminCategoriesQuery request, CancellationToken cancellationToken)
+        GetAdminCategoriesQuery request,
+        CancellationToken ct
+        )
     {
         var (categories, totalCount) = await _repository.GetPagedAsync(
             request.Search,
@@ -21,7 +26,7 @@ public class GetAdminCategoriesHandler
             request.IncludeDeleted,
             request.Page,
             request.PageSize,
-            cancellationToken);
+            ct);
 
         var dtos = _mapper.Map<List<CategoryListItemDto>>(categories);
 

@@ -7,17 +7,20 @@ public class GetCartSummaryHandler : IRequestHandler<GetCartSummaryQuery, Servic
 
     public GetCartSummaryHandler(
         ICartQueryService cartQueryService,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser
+        )
     {
         _cartQueryService = cartQueryService;
         _currentUser = currentUser;
     }
 
     public async Task<ServiceResult<CartSummaryDto>> Handle(
-        GetCartSummaryQuery request, CancellationToken cancellationToken)
+        GetCartSummaryQuery request,
+        CancellationToken ct
+        )
     {
         var summary = await _cartQueryService.GetCartSummaryAsync(
-            _currentUser.UserId, _currentUser.GuestId, cancellationToken);
+            _currentUser.UserId, _currentUser.GuestId, ct);
 
         return ServiceResult<CartSummaryDto>.Success(summary);
     }

@@ -71,6 +71,7 @@ global using Domain.Order.Events;
 global using Domain.Order.ValueObjects;
 global using Domain.Payment;
 global using Domain.Payment.Events;
+global using Domain.Payment.ValueObjects;
 global using Domain.Product.Events;
 global using Domain.Review;
 global using Domain.Search;

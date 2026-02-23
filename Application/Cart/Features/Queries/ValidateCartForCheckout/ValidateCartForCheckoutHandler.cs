@@ -8,17 +8,20 @@ public class ValidateCartForCheckoutHandler
 
     public ValidateCartForCheckoutHandler(
         ICartQueryService cartQueryService,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser
+        )
     {
         _cartQueryService = cartQueryService;
         _currentUser = currentUser;
     }
 
     public async Task<ServiceResult<CartCheckoutValidationDto>> Handle(
-        ValidateCartForCheckoutQuery request, CancellationToken cancellationToken)
+        ValidateCartForCheckoutQuery request,
+        CancellationToken ct
+        )
     {
         var validation = await _cartQueryService.ValidateCartForCheckoutAsync(
-            _currentUser.UserId, _currentUser.GuestId, cancellationToken);
+            _currentUser.UserId, _currentUser.GuestId, ct);
 
         return ServiceResult<CartCheckoutValidationDto>.Success(validation);
     }
