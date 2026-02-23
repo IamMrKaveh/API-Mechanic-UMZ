@@ -14,7 +14,7 @@ public sealed class OrderMappingProfile : Profile
             .ForMember(dest => dest.DiscountAmount, opt => opt.MapFrom(src => src.DiscountAmount.Amount))
             .ForMember(dest => dest.FinalAmount, opt => opt.MapFrom(src => src.FinalAmount.Amount))
             .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.AddressSnapshot))
-            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion.ToBase64()));
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion));
 
         CreateMap<Domain.Order.Order, AdminOrderDto>()
             .IncludeBase<Domain.Order.Order, OrderDto>()

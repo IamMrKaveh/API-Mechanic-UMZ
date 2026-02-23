@@ -181,8 +181,8 @@ public class CategoryQueryService : ICategoryQueryService
                 c.IsActive,
                 c.IsDeleted,
                 c.SortOrder,
-                brandCount = c.Brands.Count(g => !g.IsDeleted),
-                ActivebrandCount = c.Brands.Count(g => !g.IsDeleted && g.IsActive),
+                BrandCount = c.Brands.Count(g => !g.IsDeleted),
+                ActiveBrandCount = c.Brands.Count(g => !g.IsDeleted && g.IsActive),
                 TotalProductCount = c.Brands.Where(g => !g.IsDeleted).SelectMany(g => g.Products).Count(p => !p.IsDeleted),
                 c.CreatedAt,
                 c.UpdatedAt,
@@ -196,22 +196,24 @@ public class CategoryQueryService : ICategoryQueryService
             .Select(m => new { m.EntityId, m.FilePath })
             .ToDictionaryAsync(m => m.EntityId, m => m.FilePath, ct);
 
-        var dtos = categories.Select(c => new CategoryListItemDto
-        {
-            Id = c.Id,
-            Name = c.Name,
-            Slug = c.Slug,
-            IconUrl = _urlResolver.ResolveUrl(mediaMap.GetValueOrDefault(c.Id)),
-            IsActive = c.IsActive,
-            IsDeleted = c.IsDeleted,
-            SortOrder = c.SortOrder,
-            brandCount = c.brandCount,
-            ActivebrandCount = c.ActivebrandCount,
-            TotalProductCount = c.TotalProductCount,
-            CreatedAt = c.CreatedAt,
-            UpdatedAt = c.UpdatedAt,
-            RowVersion = c.RowVersion.ToBase64()
-        }).ToList();
+        var dtos = categories
+            .Select(c => new CategoryListItemDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Slug = c.Slug,
+                IconUrl = _urlResolver.ResolveUrl(mediaMap.GetValueOrDefault(c.Id)),
+                IsActive = c.IsActive,
+                IsDeleted = c.IsDeleted,
+                SortOrder = c.SortOrder,
+                BrandCount = c.BrandCount,
+                ActiveBrandCount = c.ActiveBrandCount,
+                TotalProductCount = c.TotalProductCount,
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt,
+                RowVersion = c.RowVersion.ToBase64()
+            })
+            .ToList();
 
         return PaginatedResult<CategoryListItemDto>.Create(dtos, totalItems, page, pageSize);
     }
@@ -236,7 +238,7 @@ public class CategoryQueryService : ICategoryQueryService
             {
                 p.Id,
                 Name = p.Name.Value,
-                brandName = p.Brand != null ? p.Brand.Name.Value : "N/A",
+                BrandName = p.Brand != null ? p.Brand.Name.Value : "N/A",
                 MinPrice = p.Variants.Where(v => !v.IsDeleted && v.IsActive).Any()
                     ? p.Variants.Where(v => !v.IsDeleted && v.IsActive).Min(v => v.SellingPrice.Amount)
                     : 0m,
@@ -255,18 +257,19 @@ public class CategoryQueryService : ICategoryQueryService
             .Select(m => new { m.EntityId, m.FilePath })
             .ToDictionaryAsync(m => m.EntityId, m => m.FilePath, ct);
 
-        var dtos = products.Select(p => new CategoryProductItemDto
-        {
-            Id = p.Id,
-            Name = p.Name,
-            IconUrl = _urlResolver.ResolveUrl(mediaMap.GetValueOrDefault(p.Id)),
-            brandName = p.brandName,
-            MinPrice = p.MinPrice,
-            MaxPrice = p.MaxPrice,
-            TotalStock = p.TotalStock,
-            IsActive = p.IsActive,
-            CreatedAt = p.CreatedAt
-        }).ToList();
+        var dtos = products
+            .Select(p => new CategoryProductItemDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                IconUrl = _urlResolver.ResolveUrl(mediaMap.GetValueOrDefault(p.Id)),
+                BrandName = p.BrandName,
+                MinPrice = p.MinPrice,
+                MaxPrice = p.MaxPrice,
+                TotalStock = p.TotalStock,
+                IsActive = p.IsActive,
+                CreatedAt = p.CreatedAt
+            }).ToList();
 
         return PaginatedResult<CategoryProductItemDto>.Create(dtos, totalItems, page, pageSize);
     }

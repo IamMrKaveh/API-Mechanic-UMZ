@@ -19,7 +19,7 @@ public class AdminUserController : BaseApiController
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var query = new GetAdminUsersQuery(includeDeleted, page, pageSize);
+        var query = new GetUsersQuery(includeDeleted, page, pageSize);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

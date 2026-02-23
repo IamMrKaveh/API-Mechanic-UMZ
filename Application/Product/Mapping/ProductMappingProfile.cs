@@ -17,7 +17,7 @@ public sealed class ProductMappingProfile : Profile
 
         CreateMap<Domain.Product.Product, AdminProductDetailDto>()
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion.ToBase64()))
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion))
             .ForMember(dest => dest.Variants, opt => opt.Ignore())
             .ForMember(dest => dest.Sku, opt => opt.Ignore())
             .ForMember(dest => dest.IconUrl, opt => opt.Ignore())
@@ -25,18 +25,21 @@ public sealed class ProductMappingProfile : Profile
 
         CreateMap<ProductVariant, ProductVariantViewDto>()
             .ForMember(dest => dest.Sku, opt => opt.MapFrom(src => src.Sku))
-            .ForMember(dest => dest.PurchasePrice, opt => opt.MapFrom(src => src.PurchasePrice))
-            .ForMember(dest => dest.SellingPrice, opt => opt.MapFrom(src => src.SellingPrice))
-            .ForMember(dest => dest.OriginalPrice, opt => opt.MapFrom(src => src.OriginalPrice))
+            .ForMember(dest => dest.PurchasePrice, opt => opt.MapFrom(src => src.PurchasePrice.Amount))
+            .ForMember(dest => dest.SellingPrice, opt => opt.MapFrom(src => src.SellingPrice.Amount))
+            .ForMember(dest => dest.OriginalPrice, opt => opt.MapFrom(src => src.OriginalPrice.Amount))
             .ForMember(dest => dest.Stock, opt => opt.MapFrom(src => src.StockQuantity))
-            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion.ToBase64()))
+            .ForMember(dest => dest.IsInStock, opt => opt.MapFrom(src => src.IsInStock))
+            .ForMember(dest => dest.HasDiscount, opt => opt.MapFrom(src => src.HasDiscount))
+            .ForMember(dest => dest.DiscountPercentage, opt => opt.MapFrom(src => src.DiscountPercentage))
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion))
             .ForMember(dest => dest.EnabledShippingIds, opt => opt.MapFrom(src => src.ProductVariantShippings.Where(sm => sm.IsActive).Select(sm => sm.ShippingId).ToList()))
             .ForMember(dest => dest.Attributes, opt => opt.Ignore())
             .ForMember(dest => dest.Images, opt => opt.Ignore());
 
         CreateMap<Domain.Product.Product, ProductDto>()
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion.ToBase64()))
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion))
             .ForMember(dest => dest.Sku, opt => opt.Ignore());
     }
 }

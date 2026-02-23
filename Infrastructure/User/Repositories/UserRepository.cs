@@ -321,4 +321,14 @@ public class UserRepository : IUserRepository
         if (wishlist != null)
             _context.Wishlists.Remove(wishlist);
     }
+
+    public IQueryable<Domain.User.User> GetUsersQuery(bool includeDeleted)
+    {
+        var query = _context.Users.AsNoTracking().AsQueryable();
+
+        if (!includeDeleted)
+            query = query.Where(u => !u.IsDeleted);
+
+        return query;
+    }
 }

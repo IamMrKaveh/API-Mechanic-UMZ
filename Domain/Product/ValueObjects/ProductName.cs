@@ -5,7 +5,7 @@ public sealed class ProductName : ValueObject
     public string Value { get; }
 
     private const int MinLength = 2;
-    private const int MaxLength = 200;
+    public const int MaxLength = 100;
 
     private ProductName(string value)
     {

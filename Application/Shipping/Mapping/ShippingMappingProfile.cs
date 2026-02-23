@@ -6,6 +6,6 @@ public class ShippingMappingProfile : Profile
     {
         CreateMap<Domain.Shipping.Shipping, ShippingDto>()
             .ForMember(dest => dest.Cost, opt => opt.MapFrom(src => src.BaseCost.Amount))
-            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion.ToBase64()));
+            .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion));
     }
 }

@@ -9,11 +9,11 @@ public sealed class BrandConfiguration : IEntityTypeConfiguration<Brand>
         builder.Property(e => e.Name)
             .HasConversion(v => v.Value, v => Domain.Brand.ValueObjects.BrandName.Create(v))
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(Domain.Brand.ValueObjects.BrandName.MaxLength);
 
         builder.Property(e => e.Slug)
             .HasColumnName("Slug")
-            .HasMaxLength(200)
+            .HasMaxLength(Domain.Category.ValueObjects.Slug.MaxLength)
             .IsRequired()
             .HasConversion(v => v.Value, v => Domain.Category.ValueObjects.Slug.FromString(v));
 
@@ -27,8 +27,8 @@ public sealed class BrandConfiguration : IEntityTypeConfiguration<Brand>
                .HasForeignKey(d => d.CategoryId)
                .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(e => e.Slug).IsUnique().HasFilter("\"Slug\" IS NOT NULL AND \"IsDeleted\" = false");
-        builder.HasIndex(e => new { e.CategoryId, e.Name }).IsUnique().HasFilter("\"IsDeleted\" = false");
+        builder.HasIndex(e => e.Slug).IsUnique();
+        builder.HasIndex(e => new { e.CategoryId, e.Name }).IsUnique();
 
         builder.HasQueryFilter(e => !e.IsDeleted);
     }

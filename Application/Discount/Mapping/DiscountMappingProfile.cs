@@ -5,10 +5,10 @@ public class DiscountMappingProfile : Profile
     public DiscountMappingProfile()
     {
         CreateMap<DiscountCode, DiscountCodeDto>()
-            .ForMember(dest => dest.ConcurrencyToken, opt => opt.MapFrom(src => src.RowVersion.ToBase64()));
+            .ForMember(dest => dest.ConcurrencyToken, opt => opt.MapFrom(src => src.RowVersion));
 
         CreateMap<DiscountCode, DiscountCodeDetailDto>()
-            .ForMember(dest => dest.ConcurrencyToken, opt => opt.MapFrom(src => src.RowVersion.ToBase64()))
+            .ForMember(dest => dest.ConcurrencyToken, opt => opt.MapFrom(src => src.RowVersion))
             .ForMember(dest => dest.Restrictions, opt => opt.MapFrom(src => src.Restrictions))
             .ForMember(dest => dest.RecentUsages, opt => opt.MapFrom(src => src.Usages));
 

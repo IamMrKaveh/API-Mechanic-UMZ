@@ -18,7 +18,7 @@ public class ProductQueryService : IProductQueryService
 
     public async Task<IEnumerable<ProductVariantViewDto>> GetProductVariantsAsync(int productId, bool activeOnly, CancellationToken ct = default)
     {
-        var query = _context.ProductVariants
+        var query = _context.Set<ProductVariant>()
             .AsNoTracking()
             .AsSplitQuery()
             .Include(v => v.VariantAttributes)
@@ -48,8 +48,6 @@ public class ProductQueryService : IProductQueryService
                         va.AttributeValue.HexCode)
                 );
 
-            var availableStock = v.IsUnlimited ? int.MaxValue : v.StockQuantity - v.ReservedQuantity;
-
             result.Add(new ProductVariantViewDto
             {
                 Id = v.Id,
@@ -60,11 +58,9 @@ public class ProductQueryService : IProductQueryService
                 Stock = v.StockQuantity,
                 IsUnlimited = v.IsUnlimited,
                 IsActive = v.IsActive,
-                IsInStock = v.IsUnlimited || availableStock > 0,
-                HasDiscount = v.OriginalPrice.Amount > v.SellingPrice.Amount,
-                DiscountPercentage = v.OriginalPrice.Amount > 0
-                    ? Math.Round((v.OriginalPrice.Amount - v.SellingPrice.Amount) / v.OriginalPrice.Amount * 100, 2)
-                    : 0,
+                IsInStock = v.IsInStock,
+                HasDiscount = v.HasDiscount,
+                DiscountPercentage = v.DiscountPercentage,
                 Attributes = attributesDict,
                 RowVersion = v.RowVersion != null ? Convert.ToBase64String(v.RowVersion) : null,
                 ShippingMultiplier = v.ShippingMultiplier,

@@ -4,12 +4,13 @@ public class DesignTimeFactoryLedkaContext : IDesignTimeDbContextFactory<LedkaCo
 {
     public LedkaContext CreateDbContext(string[] args)
     {
-        var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+        var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
 
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddJsonFile($"appsettings.{environmentName}.json", optional: true)
+            .AddEnvironmentVariables()
             .Build();
 
         var connectionString = configuration.GetConnectionString("PoolerConnection");
@@ -18,7 +19,7 @@ public class DesignTimeFactoryLedkaContext : IDesignTimeDbContextFactory<LedkaCo
         {
             throw new InvalidOperationException(
                 "Could not find a connection string named 'PoolerConnection'. " +
-                "Check your appsettings.json file.");
+                "Check your appsettings.json or environment variables.");
         }
 
         var optionsBuilder = new DbContextOptionsBuilder<LedkaContext>();
