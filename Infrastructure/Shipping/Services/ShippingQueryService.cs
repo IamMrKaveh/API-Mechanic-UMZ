@@ -2,12 +2,12 @@
 
 public class ShippingQueryService : IShippingQueryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly ICartRepository _cartRepository;
     private readonly ILogger<ShippingQueryService> _logger;
 
     public ShippingQueryService(
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         ICartRepository cartRepository,
         ILogger<ShippingQueryService> logger)
     {

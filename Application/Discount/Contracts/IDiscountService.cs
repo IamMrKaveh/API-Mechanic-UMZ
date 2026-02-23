@@ -12,19 +12,22 @@ public interface IDiscountService
         string code,
         decimal orderTotal,
         int userId,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+        );
 
     /// <summary>
     /// لغو استفاده تخفیف برای یک سفارش
     /// </summary>
     Task<ServiceResult> CancelDiscountUsageAsync(
         int orderId,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+        );
 
     /// <summary>
     /// تأیید استفاده تخفیف پس از پرداخت موفق
     /// </summary>
     Task<ServiceResult> ConfirmDiscountUsageAsync(
         int orderId,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+        );
 }

@@ -2,9 +2,9 @@
 
 public class UserRepository : IUserRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public UserRepository(LedkaContext context)
+    public UserRepository(Persistence.Context.DBContext context)
     {
         _context = context;
     }

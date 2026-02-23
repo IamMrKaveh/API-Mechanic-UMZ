@@ -4,14 +4,19 @@ public class GetDiscountInfoHandler : IRequestHandler<GetDiscountInfoQuery, Serv
 {
     private readonly IDiscountRepository _discountRepository;
 
-    public GetDiscountInfoHandler(IDiscountRepository discountRepository)
+    public GetDiscountInfoHandler(
+        IDiscountRepository discountRepository
+        )
     {
         _discountRepository = discountRepository;
     }
 
-    public async Task<ServiceResult<DiscountInfoDto>> Handle(GetDiscountInfoQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<DiscountInfoDto>> Handle(
+        GetDiscountInfoQuery request,
+        CancellationToken ct
+        )
     {
-        var discount = await _discountRepository.GetByCodeAsync(request.Code, cancellationToken);
+        var discount = await _discountRepository.GetByCodeAsync(request.Code, ct);
         if (discount == null)
             return ServiceResult<DiscountInfoDto>.Failure("کد تخفیف یافت نشد.");
 

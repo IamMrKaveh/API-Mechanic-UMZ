@@ -4,23 +4,23 @@ public record GetDiscountUsageReportQuery(int DiscountCodeId) : IRequest<Service
 
 public class DiscountUsageReportDto
 {
-    public int DiscountCodeId { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public int TotalUsageCount { get; set; }
-    public int? UsageLimit { get; set; }
-    public int RemainingUsage { get; set; }
-    public bool IsCurrentlyValid { get; set; }
-    public IEnumerable<DiscountUsageItemDto> Usages { get; set; } = Enumerable.Empty<DiscountUsageItemDto>();
+    public int DiscountCodeId { get; init; }
+    public string Code { get; init; } = string.Empty;
+    public int TotalUsageCount { get; init; }
+    public int? UsageLimit { get; init; }
+    public int RemainingUsage { get; init; }
+    public bool IsCurrentlyValid { get; init; }
+    public IEnumerable<DiscountUsageItemDto> Usages { get; init; } = Enumerable.Empty<DiscountUsageItemDto>();
 }
 
-public class DiscountUsageItemDto
+public record DiscountUsageItemDto
 {
-    public int Id { get; set; }
-    public int UserId { get; set; }
-    public string? UserName { get; set; }
-    public int OrderId { get; set; }
-    public decimal DiscountAmount { get; set; }
-    public DateTime UsedAt { get; set; }
-    public bool IsConfirmed { get; set; }
-    public bool IsCancelled { get; set; }
+    public int Id { get; init; }
+    public int UserId { get; init; }
+    public string? UserName { get; init; }
+    public int OrderId { get; init; }
+    public decimal DiscountAmount { get; init; }
+    public DateTime UsedAt { get; init; }
+    public bool IsConfirmed { get; init; }
+    public bool IsCancelled { get; init; }
 }

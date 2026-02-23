@@ -1,5 +1,8 @@
 ﻿namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
 
+/// <summary>
+/// آپدیت موجودی یک آیتم در سبد خرید با استفاده از Domain Service برای اعتبارسنجی و اعمال قوانین تجاری
+/// </summary>
 public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuantityCommand, ServiceResult<CartDetailDto>>
 {
     private readonly ICartRepository _cartRepository;
@@ -7,6 +10,7 @@ public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuant
     private readonly ICartQueryService _cartQueryService;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly CartItemValidationService _cartItemValidationService;
     private readonly ILogger<UpdateCartItemQuantityHandler> _logger;
 
     public UpdateCartItemQuantityHandler(
@@ -15,6 +19,7 @@ public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuant
         ICartQueryService cartQueryService,
         ICurrentUserService currentUser,
         IUnitOfWork unitOfWork,
+        CartItemValidationService cartItemValidationService,
         ILogger<UpdateCartItemQuantityHandler> logger
         )
     {
@@ -23,6 +28,7 @@ public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuant
         _cartQueryService = cartQueryService;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
+        _cartItemValidationService = cartItemValidationService;
         _logger = logger;
     }
 
@@ -47,16 +53,21 @@ public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuant
             return ServiceResult<CartDetailDto>.Success(updatedCart!);
         }
 
-        // بررسی موجودی
+        // بارگذاری واریانت برای بررسی موجودی
         var variant = await _productRepository.GetVariantByIdAsync(request.VariantId, ct);
         if (variant == null || !variant.IsActive || variant.IsDeleted)
             return ServiceResult<CartDetailDto>.Failure("محصول یافت نشد یا غیرفعال است.", 404);
 
-        if (!variant.IsUnlimited && variant.StockQuantity < request.Quantity)
-            return ServiceResult<CartDetailDto>.Failure(
-                $"موجودی کافی نیست. موجودی فعلی: {variant.StockQuantity}", 400);
+        // اعتبارسنجی از طریق Domain Service با استفاده از AvailableStock
+        var (isValid, error) = _cartItemValidationService.ValidateUpdateQuantity(
+            request.Quantity,
+            variant.AvailableStock,
+            variant.IsUnlimited);
 
-        // به‌روزرسانی تعداد در Domain
+        if (!isValid)
+            return ServiceResult<CartDetailDto>.Failure(error!, 400);
+
+        // به‌روزرسانی تعداد در Domain Aggregate
         cart.UpdateItemQuantity(request.VariantId, request.Quantity);
 
         await _unitOfWork.SaveChangesAsync(ct);

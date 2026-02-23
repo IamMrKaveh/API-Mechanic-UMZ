@@ -2,12 +2,12 @@
 
 public class CartQueryService : ICartQueryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly IMediaQueryService _mediaService;
     private readonly ILogger<CartQueryService> _logger;
 
     public CartQueryService(
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         IMediaQueryService mediaService,
         ILogger<CartQueryService> logger)
     {

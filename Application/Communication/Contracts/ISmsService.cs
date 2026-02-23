@@ -11,19 +11,22 @@ public interface ISmsService
     Task<SmsResult> SendSmsAsync(
         string phoneNumber,
         string message,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+        );
 
     Task SendOrderConfirmationSmsAsync(
         string phoneNumber,
         string orderNumber,
         decimal totalAmount,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+        );
 
     Task SendPaymentSuccessSmsAsync(
         string phoneNumber,
         string orderNumber,
         string refId,
-        CancellationToken ct = default);
+        CancellationToken ct = default
+        );
 }
 
 public class SmsResult
@@ -36,7 +39,9 @@ public class SmsResult
     private SmsResult()
     { }
 
-    public static SmsResult Success(string? messageId = null)
+    public static SmsResult Success(
+        string? messageId = null
+        )
         => new()
         {
             IsSuccess = true,
@@ -44,7 +49,9 @@ public class SmsResult
             MessageId = messageId
         };
 
-    public static SmsResult Failed(string errorMessage)
+    public static SmsResult Failed(
+        string errorMessage
+        )
         => new()
         {
             IsFailed = true,

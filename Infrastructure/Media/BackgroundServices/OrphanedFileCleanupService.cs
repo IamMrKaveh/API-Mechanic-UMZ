@@ -1,5 +1,9 @@
 ﻿namespace Infrastructure.Media.BackgroundServices;
 
+/// <summary>
+/// scope در داخل حلقه while ایجاد می‌شود
+/// این از بلوت‌شدن EF Core Change Tracker در طول اجرای طولانی جلوگیری می‌کند
+/// </summary>
 public class OrphanedFileCleanupService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
@@ -34,7 +38,7 @@ public class OrphanedFileCleanupService : BackgroundService
     {
         using var scope = _serviceProvider.CreateScope();
         var storageService = scope.ServiceProvider.GetRequiredService<IStorageService>();
-        var context = scope.ServiceProvider.GetRequiredService<LedkaContext>();
+        var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
 
         var cutoffDate = DateTime.UtcNow.AddHours(-24);
 

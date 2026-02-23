@@ -1,5 +1,9 @@
 ﻿namespace Application.Cart.Features.Commands.AddToCart;
 
+/// <summary>
+/// اعتبارسنجی موجودی به Domain Service منتقل شده
+/// Handler فقط orchestrate می‌کند و قوانین تجاری را به دامنه delegate می‌کند
+/// </summary>
 public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<CartDetailDto>>
 {
     private readonly ICartRepository _cartRepository;
@@ -7,6 +11,7 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
     private readonly ICartQueryService _cartQueryService;
     private readonly ICurrentUserService _currentUser;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly CartItemValidationService _cartItemValidationService;
     private readonly ILogger<AddToCartHandler> _logger;
 
     public AddToCartHandler(
@@ -15,6 +20,7 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
         ICartQueryService cartQueryService,
         ICurrentUserService currentUser,
         IUnitOfWork unitOfWork,
+        CartItemValidationService cartItemValidationService,
         ILogger<AddToCartHandler> logger
         )
     {
@@ -23,6 +29,7 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
         _cartQueryService = cartQueryService;
         _currentUser = currentUser;
         _unitOfWork = unitOfWork;
+        _cartItemValidationService = cartItemValidationService;
         _logger = logger;
     }
 
@@ -31,17 +38,12 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
         CancellationToken ct
         )
     {
-        // ۱. بررسی موجودی در Application Layer
+        // 1. بارگذاری واریانت
         var variant = await _productRepository.GetVariantByIdAsync(request.VariantId, ct);
         if (variant == null || !variant.IsActive || variant.IsDeleted)
             return ServiceResult<CartDetailDto>.Failure("محصول یافت نشد یا غیرفعال است.", 404);
 
-        // FIX #9: استفاده از AvailableStock (OnHand - Reserved) به‌جای StockQuantity
-        if (!variant.IsUnlimited && variant.AvailableStock < request.Quantity)
-            return ServiceResult<CartDetailDto>.Failure(
-                $"موجودی کافی نیست. موجودی قابل دسترس: {variant.AvailableStock}", 400);
-
-        // ۲. دریافت یا ایجاد سبد
+        // 2. دریافت یا ایجاد سبد
         var cart = await _cartRepository.GetCartAsync(_currentUser.UserId, _currentUser.GuestId, ct);
 
         if (cart == null)
@@ -50,18 +52,20 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
             await _cartRepository.AddAsync(cart, ct);
         }
 
-        // ۳. بررسی مجموع تعداد (آیتم موجود + جدید) با AvailableStock
+        // 3. محاسبه تعداد موجود در سبد
         var existingItem = cart.FindItemByVariant(request.VariantId);
-        if (existingItem != null && !variant.IsUnlimited)
-        {
-            var totalQuantity = existingItem.Quantity + request.Quantity;
-            // FIX #9: مقایسه با AvailableStock نه StockQuantity
-            if (totalQuantity > variant.AvailableStock)
-                return ServiceResult<CartDetailDto>.Failure(
-                    $"موجودی کافی نیست. موجودی قابل دسترس: {variant.AvailableStock}، تعداد در سبد: {existingItem.Quantity}", 400);
-        }
+        var currentCartQuantity = existingItem?.Quantity ?? 0;
 
-        // ۴. افزودن به سبد
+        var (isValid, error) = _cartItemValidationService.ValidateAddToCart(
+            request.Quantity,
+            variant.AvailableStock,
+            variant.IsUnlimited,
+            currentCartQuantity);
+
+        if (!isValid)
+            return ServiceResult<CartDetailDto>.Failure(error!, 400);
+
+        // 4. افزودن به سبد (Domain Aggregate)
         cart.AddItem(request.VariantId, request.Quantity, variant.SellingPrice);
 
         await _unitOfWork.SaveChangesAsync(ct);
@@ -70,7 +74,7 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
             "آیتم {VariantId} با تعداد {Quantity} به سبد {CartId} اضافه شد.",
             request.VariantId, request.Quantity, cart.Id);
 
-        // ۵. بازگرداندن DTO کامل از QueryService
+        // 5. بازگرداندن DTO کامل از QueryService
         var cartDetail = await _cartQueryService.GetCartDetailAsync(
             _currentUser.UserId, _currentUser.GuestId, ct);
 

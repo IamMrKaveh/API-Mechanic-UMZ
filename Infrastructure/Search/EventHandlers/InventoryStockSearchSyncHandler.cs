@@ -10,11 +10,11 @@ public class InventoryStockSearchSyncHandler :
     INotificationHandler<StockCommittedEvent>,
     INotificationHandler<StockReturnedEvent>
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly ILogger<InventoryStockSearchSyncHandler> _logger;
 
     public InventoryStockSearchSyncHandler(
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         ILogger<InventoryStockSearchSyncHandler> logger)
     {
         _context = context;

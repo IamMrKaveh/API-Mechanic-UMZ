@@ -2,14 +2,14 @@
 
 public class InventoryService : IInventoryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly IInventoryRepository _inventoryRepository;
     private readonly InventoryDomainService _domainService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<InventoryService> _logger;
 
     public InventoryService(
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         IInventoryRepository inventoryRepository,
         InventoryDomainService domainService,
         IUnitOfWork unitOfWork,

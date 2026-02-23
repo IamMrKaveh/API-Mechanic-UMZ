@@ -1,27 +1,42 @@
 ﻿namespace Infrastructure.Communication.Services;
 
+/// <summary>
+/// تنظیمات سرویس Kavenegar
+/// </summary>
+public class KavenegarOptions
+{
+    public const string SectionName = "Kavenegar";
+
+    public string ApiKey { get; } = "6C43574D53556774665763527167557A75376D39687A7935666A78353777783238704A302F7053303367383D";
+    public string SenderNumber { get; } = "2000660110";
+}
+
+/// <summary>
+/// سرویس اکنون فقط از IOptions<KavenegarOptions> استفاده می‌کند
+/// اگر ApiKey خالی باشد، InvalidOperationException پرتاب می‌شود
+/// </summary>
 public class SmsService : ISmsService
 {
     private readonly ILogger<SmsService> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly KavenegarOptions _options;
 
-    public SmsService(ILogger<SmsService> logger, IConfiguration configuration)
+    public SmsService(ILogger<SmsService> logger, IOptions<KavenegarOptions> options)
     {
         _logger = logger;
-        _configuration = configuration;
+        _options = options.Value;
+
+        // در صورت خالی بودن ApiKey، فوری شکست بخور
+        if (string.IsNullOrWhiteSpace(_options.ApiKey))
+            throw new InvalidOperationException(
+                "Kavenegar ApiKey is not configured. " +
+                "Please set the 'Kavenegar:ApiKey' configuration value via environment variables or secrets manager.");
     }
 
     public async Task<SmsResult> SendSmsAsync(string phoneNumber, string message, CancellationToken ct = default)
     {
         try
         {
-            var apiKey = _configuration["Kavenegar:ApiKey"] ?? "6C43574D53556774665763527167557A75376D39687A7935666A78353777783238704A302F7053303367383D";
-
-            if (string.IsNullOrEmpty(apiKey))
-            {
-                _logger.LogWarning("Kavenegar ApiKey is not configured.");
-                return SmsResult.Failed("تنظیمات سرویس پیامک ناقص است.");
-            }
+            var apiKey = _options.ApiKey;
 
             var isVerifyTemplate = message.All(char.IsDigit) && message.Length >= 4 && message.Length <= 6;
             var url = isVerifyTemplate
@@ -41,7 +56,7 @@ public class SmsService : ISmsService
             {
                 data.Add("receptor", phoneNumber);
                 data.Add("message", message);
-                data.Add("sender", _configuration["Kavenegar:SenderNumber"] ?? "10008663");
+                data.Add("sender", _options.SenderNumber);
             }
 
             var response = await http.PostAsync(url, new FormUrlEncodedContent(data), ct);

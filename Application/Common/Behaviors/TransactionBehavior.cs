@@ -4,15 +4,19 @@ public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public TransactionBehavior(IUnitOfWork unitOfWork)
+    public TransactionBehavior(
+        IUnitOfWork unitOfWork
+        )
     {
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken ct
+        )
     {
-        // Only transactional for Commands (requests that do not end with 'Query')
-        // Or check if it implements a specific marker interface like ICommand
         var isCommand = request.GetType().Name.EndsWith("Command");
 
         if (!isCommand)

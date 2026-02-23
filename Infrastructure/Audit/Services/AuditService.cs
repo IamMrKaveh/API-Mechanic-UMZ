@@ -1,27 +1,25 @@
-﻿using Application.Audit.Features.Shared;
+﻿namespace Infrastructure.Audit.Services;
 
-namespace Infrastructure.Audit.Services;
-
+/// <summary>
+/// سرویس Audit برای ثبت و مدیریت لاگ‌های مربوط به رویدادهای مختلف در سیستم
+/// </summary>
 public class AuditService : IAuditService
 {
     private readonly ILogger<AuditService> _logger;
     private readonly IAuditRepository _auditRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHtmlSanitizer _htmlSanitizer;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AuditService(
         ILogger<AuditService> logger,
         IAuditRepository auditRepository,
         IUnitOfWork unitOfWork,
-        IHtmlSanitizer htmlSanitizer,
-        IHttpContextAccessor httpContextAccessor)
+        IHtmlSanitizer htmlSanitizer)
     {
         _logger = logger;
         _auditRepository = auditRepository;
         _unitOfWork = unitOfWork;
         _htmlSanitizer = htmlSanitizer;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task LogAsync(
@@ -35,15 +33,13 @@ public class AuditService : IAuditService
     {
         try
         {
-            var httpContext = _httpContextAccessor.HttpContext;
-
             var auditLog = AuditLog.Create(
                             userId,
                             SanitizeInput(eventType),
                             SanitizeInput(action),
                             SanitizeInput(details),
-                            SanitizeIpAddress(ipAddress ?? httpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown"),
-                            SanitizeUserAgent(userAgent ?? httpContext?.Request?.Headers["User-Agent"].ToString())
+                            SanitizeIpAddress(ipAddress ?? "Unknown"),
+                            SanitizeUserAgent(userAgent)
                         );
 
             await _auditRepository.AddAuditLogAsync(auditLog);

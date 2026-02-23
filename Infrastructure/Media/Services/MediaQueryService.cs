@@ -2,10 +2,10 @@
 
 public class MediaQueryService : IMediaQueryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly IStorageService _storageService;
 
-    public MediaQueryService(LedkaContext context, IStorageService storageService)
+    public MediaQueryService(Persistence.Context.DBContext context, IStorageService storageService)
     {
         _context = context;
         _storageService = storageService;

@@ -2,9 +2,9 @@
 
 public class ProductRepository : IProductRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public ProductRepository(LedkaContext context)
+    public ProductRepository(Persistence.Context.DBContext context)
     {
         _context = context;
     }

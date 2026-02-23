@@ -2,9 +2,9 @@
 
 public class TicketRepository : ITicketRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public TicketRepository(LedkaContext context)
+    public TicketRepository(Persistence.Context.DBContext context)
     {
         _context = context;
     }

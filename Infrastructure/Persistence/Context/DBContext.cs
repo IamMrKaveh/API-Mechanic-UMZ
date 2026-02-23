@@ -1,8 +1,8 @@
 ﻿namespace Infrastructure.Persistence.Context;
 
-public class LedkaContext : DbContext, IApplicationDbContext
+public class DBContext : DbContext, IApplicationDbContext
 {
-    public LedkaContext(DbContextOptions<LedkaContext> options) : base(options)
+    public DBContext(DbContextOptions<DBContext> options) : base(options)
     {
     }
 

@@ -2,7 +2,7 @@
 
 // ========== Search Parameters ==========
 
-public class SearchProductsParams
+public record SearchProductsParams
 {
     public string Q { get; init; } = string.Empty;
     public int Page { get; init; } = 1;
@@ -19,7 +19,7 @@ public class SearchProductsParams
 
 // ========== Search Result DTOs ==========
 
-public class SearchResultDto<T>
+public record SearchResultDto<T>
 {
     public List<T> Items { get; init; } = new();
     public long Total { get; init; }
@@ -33,7 +33,7 @@ public class SearchResultDto<T>
 /// <summary>
 /// آیتم نتیجه جستجوی محصول - DTO خالص بدون وابستگی به Elasticsearch
 /// </summary>
-public class ProductSearchResultItemDto
+public record ProductSearchResultItemDto
 {
     public int ProductId { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -58,7 +58,7 @@ public class ProductSearchResultItemDto
     public DateTime CreatedAt { get; init; }
 }
 
-public class GlobalSearchResultDto
+public record GlobalSearchResultDto
 {
     public List<ProductSearchResultItemDto> Products { get; init; } = new();
     public List<CategorySearchSummaryDto> Categories { get; init; } = new();
@@ -66,7 +66,7 @@ public class GlobalSearchResultDto
     public string Query { get; init; } = string.Empty;
 }
 
-public class CategorySearchSummaryDto
+public record CategorySearchSummaryDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -75,7 +75,7 @@ public class CategorySearchSummaryDto
     public int ProductCount { get; init; }
 }
 
-public class BrandSearchSummaryDto
+public record BrandSearchSummaryDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -88,7 +88,11 @@ public class BrandSearchSummaryDto
 
 // ========== Elasticsearch Documents (used by Infrastructure) ==========
 
-public class ProductSearchDocument
+/// <summary>
+/// سند جستجوی محصول - یک DTO خالص بدون وابستگی به هیچ موجودیت دامنه
+/// حذف Domain.Brand.Brand و استفاده از primitive types
+/// </summary>
+public record ProductSearchDocument
 {
     public int ProductId { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -99,6 +103,7 @@ public class ProductSearchDocument
     public int CategoryId { get; init; }
     public string BrandName { get; init; } = string.Empty;
     public int BrandId { get; init; }
+    public string BrandSlug { get; init; } = string.Empty;
     public decimal Price { get; init; }
     public double? DiscountedPrice { get; init; }
     public double? DiscountPercentage { get; init; }
@@ -114,10 +119,9 @@ public class ProductSearchDocument
     public int ReviewCount { get; init; }
     public int SalesCount { get; init; }
     public List<string> Tags { get; init; } = new();
-    public Domain.Brand.Brand Brand { get; init; }
 }
 
-public class CategorySearchDocument
+public record CategorySearchDocument
 {
     public int CategoryId { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -127,7 +131,7 @@ public class CategorySearchDocument
     public string? Icon { get; init; }
 }
 
-public class BrandSearchDocument
+public record BrandSearchDocument
 {
     public int BrandId { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -141,7 +145,7 @@ public class BrandSearchDocument
 
 // ========== Outbox & DLQ Entities ==========
 
-public class FailedElasticOperation
+public record FailedElasticOperation
 {
     public int Id { get; set; }
     public string EntityType { get; set; } = string.Empty;

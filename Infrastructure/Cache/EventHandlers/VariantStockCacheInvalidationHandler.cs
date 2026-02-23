@@ -1,11 +1,11 @@
 ﻿namespace Infrastructure.Cache.EventHandlers;
 
 /// <summary>
-/// FIX #7: Invalidate و بروزرسانی Cache موجودی واریانت پس از تغییر stock
-/// بدون نیاز به رفت DB - از payload کامل رویداد استفاده می‌کند (FIX #10)
+/// Invalidate و بروزرسانی Cache موجودی واریانت پس از تغییر stock
+/// بدون نیاز به رفت DB - از payload کامل رویداد استفاده می‌کند
 /// </summary>
 public class VariantStockCacheInvalidationHandler
-    : INotificationHandler<VariantStockChangedEvent>
+    : INotificationHandler<VariantStockChangedApplicationNotification>
 {
     private readonly ICacheService _cacheService;
     private readonly ILogger<VariantStockCacheInvalidationHandler> _logger;
@@ -24,7 +24,7 @@ public class VariantStockCacheInvalidationHandler
         _logger = logger;
     }
 
-    public async Task Handle(VariantStockChangedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(VariantStockChangedApplicationNotification notification, CancellationToken cancellationToken)
     {
         try
         {
@@ -34,7 +34,7 @@ public class VariantStockCacheInvalidationHandler
             // Invalidate product-level availability cache
             await _cacheService.ClearAsync(ProductAvailabilityCacheKey(notification.ProductId));
 
-            // FIX #10: اگر رویداد اطلاعات کامل داشته باشد، Cache را Populate کن (بدون DB round-trip)
+            // اگر رویداد اطلاعات کامل داشته باشد، Cache را Populate کن (بدون DB round-trip)
             if (notification.NewOnHand > 0 || notification.NewAvailable >= 0)
             {
                 var cacheDto = new VariantAvailabilityCacheDto
@@ -62,21 +62,6 @@ public class VariantStockCacheInvalidationHandler
             _logger.LogError(ex,
                 "Failed to invalidate cache for Variant {VariantId}",
                 notification.VariantId);
-            // Cache failure نباید عملیات را fail کند
         }
     }
-}
-
-/// <summary>
-/// Read Model برای Cache موجودی واریانت - FIX #7
-/// </summary>
-public class VariantAvailabilityCacheDto
-{
-    public int VariantId { get; set; }
-    public int OnHand { get; set; }
-    public int Reserved { get; set; }
-    public int Available { get; set; }
-    public bool IsInStock { get; set; }
-    public bool IsUnlimited { get; set; }
-    public DateTime LastUpdated { get; set; }
 }

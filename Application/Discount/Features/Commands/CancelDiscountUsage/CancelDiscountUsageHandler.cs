@@ -11,7 +11,8 @@ public class CancelDiscountUsageHandler : IRequestHandler<CancelDiscountUsageCom
         IDiscountRepository discountRepository,
         IUnitOfWork unitOfWork,
         IAuditService auditService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService
+        )
     {
         _discountRepository = discountRepository;
         _unitOfWork = unitOfWork;
@@ -19,9 +20,12 @@ public class CancelDiscountUsageHandler : IRequestHandler<CancelDiscountUsageCom
         _currentUserService = currentUserService;
     }
 
-    public async Task<ServiceResult> Handle(CancelDiscountUsageCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        CancelDiscountUsageCommand request,
+        CancellationToken ct
+        )
     {
-        var discount = await _discountRepository.GetByIdWithUsagesAsync(request.DiscountCodeId, cancellationToken);
+        var discount = await _discountRepository.GetByIdWithUsagesAsync(request.DiscountCodeId, ct);
         if (discount == null)
             return ServiceResult.Failure("کد تخفیف یافت نشد.");
 
@@ -29,7 +33,7 @@ public class CancelDiscountUsageHandler : IRequestHandler<CancelDiscountUsageCom
         discount.CancelUsage(request.OrderId);
         _discountRepository.Update(discount);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         await _auditService.LogOrderEventAsync(
             request.OrderId,

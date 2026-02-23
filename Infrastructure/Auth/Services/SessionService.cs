@@ -6,10 +6,10 @@
 /// </summary>
 public class SessionService : ISessionService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
     private readonly ILogger<SessionService> _logger;
 
-    public SessionService(LedkaContext context, ILogger<SessionService> logger)
+    public SessionService(Persistence.Context.DBContext context, ILogger<SessionService> logger)
     {
         _context = context;
         _logger = logger;

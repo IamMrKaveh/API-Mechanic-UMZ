@@ -134,13 +134,11 @@ public class ProductVariant : AggregateRoot, IAuditable, ISoftDeletable, IActiva
         StockQuantity += quantity;
         UpdatedAt = DateTime.UtcNow;
 
-        // FIX #10: payload کامل با مقادیر جدید
         AddDomainEvent(new VariantStockChangedEvent(
-            Id, ProductId, quantity,
-            newOnHand: StockQuantity,
-            newReserved: ReservedQuantity,
-            newAvailable: AvailableStock,
-            isInStock: IsInStock));
+            Id,
+            ProductId,
+            quantity
+            ));
     }
 
     public void AddStock(int quantity)
@@ -164,13 +162,11 @@ public class ProductVariant : AggregateRoot, IAuditable, ISoftDeletable, IActiva
         ReservedQuantity = Math.Max(0, ReservedQuantity - quantity);
         UpdatedAt = DateTime.UtcNow;
 
-        // emit رویداد با مقادیر جدید پس از release
         AddDomainEvent(new VariantStockChangedEvent(
-            Id, ProductId, quantity,
-            newOnHand: StockQuantity,
-            newReserved: ReservedQuantity,
-            newAvailable: AvailableStock,
-            isInStock: IsInStock));
+            Id,
+            ProductId,
+            quantity
+            ));
     }
 
     /// <summary>
@@ -183,13 +179,11 @@ public class ProductVariant : AggregateRoot, IAuditable, ISoftDeletable, IActiva
         StockQuantity = Math.Max(0, StockQuantity - quantity);
         UpdatedAt = DateTime.UtcNow;
 
-        // FIX #10: payload کامل
         AddDomainEvent(new VariantStockChangedEvent(
-            Id, ProductId, -quantity,
-            newOnHand: StockQuantity,
-            newReserved: ReservedQuantity,
-            newAvailable: AvailableStock,
-            isInStock: IsInStock));
+            Id,
+            ProductId,
+            -quantity
+            ));
     }
 
     public void SetUnlimited(bool isUnlimited)

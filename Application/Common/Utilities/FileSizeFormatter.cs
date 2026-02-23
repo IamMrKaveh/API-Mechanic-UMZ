@@ -2,7 +2,9 @@
 
 public static class FileSizeFormatter
 {
-    public static string Format(long bytes)
+    public static string Format(
+        long bytes
+        )
     {
         string[] sizes = { "بایت", "کیلوبایت", "مگابایت", "گیگابایت" };
         double len = bytes;

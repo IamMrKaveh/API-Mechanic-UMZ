@@ -9,7 +9,8 @@ public class CreateOrderStatusHandler : IRequestHandler<CreateOrderStatusCommand
     public CreateOrderStatusHandler(
         IOrderStatusRepository orderStatusRepository,
         IUnitOfWork unitOfWork,
-        ILogger<CreateOrderStatusHandler> logger)
+        ILogger<CreateOrderStatusHandler> logger
+        )
     {
         _orderStatusRepository = orderStatusRepository;
         _unitOfWork = unitOfWork;
@@ -18,10 +19,11 @@ public class CreateOrderStatusHandler : IRequestHandler<CreateOrderStatusCommand
 
     public async Task<ServiceResult<OrderStatusDto>> Handle(
         CreateOrderStatusCommand request,
-        CancellationToken cancellationToken)
+        CancellationToken ct
+        )
     {
         // Check for duplicate name
-        var existing = await _orderStatusRepository.GetByNameAsync(request.Name, cancellationToken);
+        var existing = await _orderStatusRepository.GetByNameAsync(request.Name, ct);
         if (existing != null)
             return ServiceResult<OrderStatusDto>.Failure("وضعیت سفارش با این نام قبلاً وجود دارد.");
 
@@ -35,8 +37,8 @@ public class CreateOrderStatusHandler : IRequestHandler<CreateOrderStatusCommand
             request.AllowCancel,
             request.AllowEdit);
 
-        await _orderStatusRepository.AddAsync(status, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _orderStatusRepository.AddAsync(status, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         _logger.LogInformation(
             "New order status created: {StatusName} (ID: {StatusId})",

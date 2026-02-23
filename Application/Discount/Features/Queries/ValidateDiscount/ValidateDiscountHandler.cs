@@ -4,12 +4,17 @@ public class ValidateDiscountHandler : IRequestHandler<ValidateDiscountQuery, Se
 {
     private readonly IDiscountRepository _discountRepository;
 
-    public ValidateDiscountHandler(IDiscountRepository discountRepository)
+    public ValidateDiscountHandler(
+        IDiscountRepository discountRepository
+        )
     {
         _discountRepository = discountRepository;
     }
 
-    public async Task<ServiceResult<DiscountValidationDto>> Handle(ValidateDiscountQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<DiscountValidationDto>> Handle(
+        ValidateDiscountQuery request,
+        CancellationToken ct
+        )
     {
         var discount = await _discountRepository.GetByCodeAsync(request.Code);
         if (discount == null)

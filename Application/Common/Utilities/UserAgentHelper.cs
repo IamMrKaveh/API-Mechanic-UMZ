@@ -2,7 +2,9 @@
 
 public static class UserAgentHelper
 {
-    public static string GetDeviceInfo(string? userAgent)
+    public static string GetDeviceInfo(
+        string? userAgent
+        )
     {
         if (string.IsNullOrEmpty(userAgent)) return "دستگاه نامشخص";
         var ua = userAgent.ToLowerInvariant();
@@ -11,7 +13,9 @@ public static class UserAgentHelper
         return "کامپیوتر";
     }
 
-    public static string GetBrowserInfo(string? userAgent)
+    public static string GetBrowserInfo(
+        string? userAgent
+        )
     {
         if (string.IsNullOrEmpty(userAgent)) return "نامشخص";
         var ua = userAgent.ToLowerInvariant();

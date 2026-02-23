@@ -14,7 +14,7 @@ public static class InfrastructureServiceCollection
         string connectionString = configuration.GetConnectionString("PoolerConnection")
             ?? throw new InvalidOperationException("Database connection string is not configured.");
 
-        services.AddDbContext<LedkaContext>((sp, options) =>
+        services.AddDbContext<DbContext>((sp, options) =>
         {
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
             options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure())
@@ -30,6 +30,7 @@ public static class InfrastructureServiceCollection
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IUrlResolverService, UrlResolverService>();
+        services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
 
         // -----------------------------
         // Auth & Session
@@ -62,7 +63,7 @@ public static class InfrastructureServiceCollection
         services.AddHostedService<InventoryReservationExpiryService>();
 
         // ─── Cache Invalidation Handler ──────────────────────────────
-        services.AddScoped<INotificationHandler<VariantStockChangedEvent>, VariantStockCacheInvalidationHandler>();
+        services.AddScoped<INotificationHandler<VariantStockChangedApplicationNotification>, VariantStockCacheInvalidationHandler>();
 
         // ─── Search Sync Handler ─────────────────────────────────────
         services.AddScoped<INotificationHandler<VariantStockChangedEvent>, InventoryStockSearchSyncHandler>();

@@ -2,9 +2,9 @@
 
 public class UserQueryService : IUserQueryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public UserQueryService(LedkaContext context)
+    public UserQueryService(Persistence.Context.DBContext context)
     {
         _context = context;
     }

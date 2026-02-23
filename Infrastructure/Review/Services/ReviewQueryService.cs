@@ -2,9 +2,9 @@
 
 public class ReviewQueryService : IReviewQueryService
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public ReviewQueryService(LedkaContext context)
+    public ReviewQueryService(Persistence.Context.DBContext context)
     {
         _context = context;
     }

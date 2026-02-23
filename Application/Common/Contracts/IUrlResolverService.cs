@@ -2,5 +2,7 @@
 
 public interface IUrlResolverService
 {
-    string? ResolveUrl(string? relativePath);
+    string? ResolveUrl(
+        string? relativePath
+        );
 }

@@ -80,7 +80,7 @@ public sealed class AuditRetentionService : BackgroundService
     private async Task RunRetentionAsync(CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LedkaContext>();
+        var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
         var archiveFolder = GetArchiveFolder();
 
         var now = DateTime.UtcNow;
@@ -118,7 +118,7 @@ public sealed class AuditRetentionService : BackgroundService
     }
 
     private async Task ArchiveAndDeleteAsync(
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         string archiveFolder,
         DateTime cutoff,
         HashSet<string>? includeEventTypes = null,
@@ -155,7 +155,7 @@ public sealed class AuditRetentionService : BackgroundService
     }
 
     private async Task ArchiveOnlyAsync(
-        LedkaContext context,
+        Persistence.Context.DBContext context,
         string archiveFolder,
         DateTime cutoff,
         HashSet<string>? includeEventTypes = null,

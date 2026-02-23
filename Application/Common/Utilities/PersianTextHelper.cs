@@ -2,7 +2,9 @@
 
 public static class PersianTextHelper
 {
-    public static string Normalize(string? text)
+    public static string Normalize(
+        string? text
+        )
     {
         if (string.IsNullOrWhiteSpace(text)) return string.Empty;
 

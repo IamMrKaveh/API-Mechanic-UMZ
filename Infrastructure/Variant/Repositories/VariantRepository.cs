@@ -2,9 +2,9 @@
 
 public class VariantRepository : IVariantRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
-    public VariantRepository(LedkaContext context)
+    public VariantRepository(Persistence.Context.DBContext context)
     {
         _context = context;
     }

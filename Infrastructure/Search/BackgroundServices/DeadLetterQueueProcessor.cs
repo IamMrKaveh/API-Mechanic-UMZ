@@ -1,5 +1,9 @@
 ﻿namespace Infrastructure.Search.BackgroundServices;
 
+/// <summary>
+/// هر batch پردازش در scope جداگانه انجام می‌شود
+/// این از بلوت‌شدن EF Core Change Tracker جلوگیری می‌کند
+/// </summary>
 public class DeadLetterQueueProcessor : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
@@ -39,7 +43,7 @@ public class DeadLetterQueueProcessor : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var dlq = scope.ServiceProvider.GetRequiredService<IElasticDeadLetterQueue>();
         var searchService = scope.ServiceProvider.GetRequiredService<ElasticSearchService>();
-        var context = scope.ServiceProvider.GetRequiredService<LedkaContext>();
+        var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
 
         var operations = await dlq.DequeueAsync(10, ct);
 

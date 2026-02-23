@@ -2,10 +2,10 @@
 
 public class InventoryRepository : IInventoryRepository
 {
-    private readonly LedkaContext _context;
+    private readonly Persistence.Context.DBContext _context;
 
     public InventoryRepository(
-        LedkaContext context
+        Persistence.Context.DBContext context
         )
     {
         _context = context;
