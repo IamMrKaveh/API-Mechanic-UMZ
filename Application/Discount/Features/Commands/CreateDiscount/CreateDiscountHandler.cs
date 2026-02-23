@@ -57,7 +57,7 @@ public class CreateDiscountHandler : IRequestHandler<CreateDiscountCommand, Serv
         await _discountRepository.AddAsync(discount, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await _auditService.LogAdminEventAsync("CreateDiscount", _currentUserService.UserId ?? 0, $"Code created: {discount.Code}");
+        await _auditService.LogAdminEventAsync("CreateDiscount", _currentUserService.UserId ?? 0, $"Code created: {discount.Code.Value}");
 
         return ServiceResult<DiscountCodeDto>.Success(_mapper.Map<DiscountCodeDto>(discount));
     }

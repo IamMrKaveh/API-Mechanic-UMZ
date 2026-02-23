@@ -4,40 +4,37 @@ public class DiscountRepository : IDiscountRepository
 {
     private readonly LedkaContext _context;
 
-    public DiscountRepository(LedkaContext context)
+    public DiscountRepository(
+        LedkaContext context
+        )
     {
         _context = context;
     }
 
-    public async Task<DiscountCode?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<DiscountCode?> GetByIdAsync(
+        int id,
+        CancellationToken ct = default
+        )
     {
         return await _context.DiscountCodes
             .FirstOrDefaultAsync(d => d.Id == id, ct);
     }
 
-    public async Task<DiscountCode?> GetByCodeAsync(string code, CancellationToken ct = default)
+    public async Task<DiscountCode?> GetByCodeAsync(
+        string code,
+        CancellationToken ct = default
+        )
     {
+        var normalizedCode = code.Trim().ToUpperInvariant();
         return await _context.DiscountCodes
             .Include(d => d.Restrictions)
-            .FirstOrDefaultAsync(d => d.Code == code, ct);
+            .FirstOrDefaultAsync(d => d.Code.Value == normalizedCode, ct);
     }
 
-    /// <summary>
-    /// SELECT FOR UPDATE - قفل‌گذاری سطری برای جلوگیری از Race Condition
-    /// در PostgreSQL از Raw SQL استفاده می‌شود
-    /// </summary>
-    public async Task<DiscountCode?> GetByCodeForUpdateAsync(string code, CancellationToken ct = default)
-    {
-        // PostgreSQL: SELECT ... FOR UPDATE
-        var discount = await _context.DiscountCodes
-            .FromSqlInterpolated(
-                $"SELECT * FROM \"DiscountCodes\" WHERE \"Code\" = {code} AND \"IsDeleted\" = false FOR UPDATE")
-            .FirstOrDefaultAsync(ct);
-
-        return discount;
-    }
-
-    public async Task<DiscountCode?> GetByIdWithDetailsAsync(int id, CancellationToken ct = default)
+    public async Task<DiscountCode?> GetByIdWithDetailsAsync(
+        int id,
+        CancellationToken ct = default
+        )
     {
         return await _context.DiscountCodes
             .Include(d => d.Restrictions)
@@ -47,14 +44,21 @@ public class DiscountRepository : IDiscountRepository
             .FirstOrDefaultAsync(d => d.Id == id, ct);
     }
 
-    public async Task<DiscountCode?> GetByIdWithUsagesAsync(int id, CancellationToken ct = default)
+    public async Task<DiscountCode?> GetByIdWithUsagesAsync(
+        int id,
+        CancellationToken ct = default
+        )
     {
         return await _context.DiscountCodes
             .Include(d => d.Usages)
             .FirstOrDefaultAsync(d => d.Id == id, ct);
     }
 
-    public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null, CancellationToken ct = default)
+    public async Task<bool> ExistsByCodeAsync(
+        string code,
+        int? excludeId = null,
+        CancellationToken ct = default
+        )
     {
         var query = _context.DiscountCodes.Where(d => d.Code == code);
 
@@ -69,7 +73,8 @@ public class DiscountRepository : IDiscountRepository
         bool includeDeleted,
         int page,
         int pageSize,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+        )
     {
         var query = includeDeleted
             ? _context.DiscountCodes.IgnoreQueryFilters()
@@ -92,7 +97,11 @@ public class DiscountRepository : IDiscountRepository
         return (discounts, total);
     }
 
-    public async Task<int> CountUserUsageAsync(int discountId, int userId, CancellationToken ct = default)
+    public async Task<int> CountUserUsageAsync(
+        int discountId,
+        int userId,
+        CancellationToken ct = default
+        )
     {
         return await _context.DiscountCodes
             .Where(d => d.Id == discountId)
@@ -101,7 +110,9 @@ public class DiscountRepository : IDiscountRepository
             .CountAsync(ct);
     }
 
-    public async Task<IEnumerable<DiscountCode>> GetActiveDiscountsAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<DiscountCode>> GetActiveDiscountsAsync(
+        CancellationToken ct = default
+        )
     {
         return await _context.DiscountCodes
             .Where(d => d.IsActive &&
@@ -112,7 +123,8 @@ public class DiscountRepository : IDiscountRepository
 
     public async Task<IEnumerable<DiscountCode>> GetExpiringDiscountsAsync(
         DateTime beforeDate,
-        CancellationToken ct = default)
+        CancellationToken ct = default
+        )
     {
         return await _context.DiscountCodes
             .Where(d => d.IsActive && d.ExpiresAt.HasValue && d.ExpiresAt <= beforeDate)
@@ -121,7 +133,8 @@ public class DiscountRepository : IDiscountRepository
 
     public async Task<DiscountUsage?> GetUsageByOrderIdAsync(
     int orderId,
-    CancellationToken ct = default)
+    CancellationToken ct = default
+        )
     {
         var discountCode = await _context.DiscountCodes
             .Include(d => d.Usages)
@@ -130,17 +143,25 @@ public class DiscountRepository : IDiscountRepository
         return discountCode?.Usages.FirstOrDefault(u => u.OrderId == orderId);
     }
 
-    public async Task AddAsync(DiscountCode discount, CancellationToken ct = default)
+    public async Task AddAsync(
+        DiscountCode discount,
+        CancellationToken ct = default
+        )
     {
         await _context.DiscountCodes.AddAsync(discount, ct);
     }
 
-    public void Update(DiscountCode discount)
+    public void Update(
+        DiscountCode discount
+        )
     {
         _context.DiscountCodes.Update(discount);
     }
 
-    public void SetOriginalRowVersion(DiscountCode entity, byte[] rowVersion)
+    public void SetOriginalRowVersion(
+        DiscountCode entity,
+        byte[] rowVersion
+        )
     {
         _context.Entry(entity).Property(e => e.RowVersion).OriginalValue = rowVersion;
     }

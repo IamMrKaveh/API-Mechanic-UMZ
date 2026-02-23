@@ -5,7 +5,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
     private readonly List<DiscountRestriction> _restrictions = new();
     private readonly List<DiscountUsage> _usages = new();
 
-    private string _code = null!;
+    private DiscountCodeValue _code = null!;
     private decimal _percentage;
     private decimal? _maxDiscountAmount;
     private decimal? _minOrderAmount;
@@ -16,7 +16,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
     private DateTime? _expiresAt;
     private DateTime? _startsAt;
 
-    public string Code => _code;
+    public DiscountCodeValue Code => _code;
     public decimal Percentage => _percentage;
     public decimal? MaxDiscountAmount => _maxDiscountAmount;
     public decimal? MinOrderAmount => _minOrderAmount;
@@ -501,7 +501,7 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
         if (!System.Text.RegularExpressions.Regex.IsMatch(normalized, @"^[A-Z0-9\-_]+$"))
             throw new DomainException("کد تخفیف فقط می‌تواند شامل حروف، اعداد، خط تیره و زیرخط باشد.");
 
-        _code = normalized;
+        _code = DiscountCodeValue.Create(code);
     }
 
     private void SetPercentage(decimal percentage)

@@ -203,7 +203,9 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
         Status = OrderStatusValue.Refunded;
         UpdatedAt = DateTime.UtcNow;
 
-        AddDomainEvent(new OrderStatusChangedEvent(
+        AddDomainEvent(new Events.OrderRefundedEvent(Id, UserId, FinalAmount.Amount));
+
+        AddDomainEvent(new Events.OrderStatusChangedEvent(
             Id, UserId,
             Convert.ToInt32(oldStatus.Value), Convert.ToInt32(OrderStatusValue.Refunded.Value),
             oldStatus.DisplayName, OrderStatusValue.Refunded.DisplayName));
@@ -251,6 +253,19 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
             Convert.ToInt32(OrderStatusValue.Expired.Value),
             oldStatus.DisplayName,
             OrderStatusValue.Expired.DisplayName));
+    }
+
+    /// <summary>
+    /// اعتبارسنجی امکان تأیید مرجوعی - Business Rule از Handler منتقل شده
+    /// </summary>
+    public void ValidateCanApproveReturn()
+    {
+        EnsureNotDeleted();
+
+        if (Status != OrderStatusValue.Returned)
+            throw new DomainException(
+                "سفارش باید ابتدا توسط کاربر درخواست مرجوعی داده شده باشد. " +
+                $"وضعیت فعلی: {Status.DisplayName}");
     }
 
     #endregion State Transitions - Order Lifecycle

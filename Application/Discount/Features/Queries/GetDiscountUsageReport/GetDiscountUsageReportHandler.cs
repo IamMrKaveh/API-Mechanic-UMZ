@@ -18,7 +18,7 @@ public class GetDiscountUsageReportHandler : IRequestHandler<GetDiscountUsageRep
         var report = new DiscountUsageReportDto
         {
             DiscountCodeId = discount.Id,
-            Code = discount.Code,
+            Code = discount.Code.Value,
             TotalUsageCount = discount.UsedCount,
             UsageLimit = discount.UsageLimit,
             RemainingUsage = discount.RemainingUsage(),

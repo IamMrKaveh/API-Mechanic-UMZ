@@ -60,6 +60,7 @@ global using Domain.Common.Events;
 global using Domain.Common.Exceptions;
 global using Domain.Common.Shared.ValueObjects;
 global using Domain.Discount;
+global using Domain.Discount.ValueObjects;
 global using Domain.Inventory;
 global using Domain.Inventory.Events;
 global using Domain.Inventory.Services;

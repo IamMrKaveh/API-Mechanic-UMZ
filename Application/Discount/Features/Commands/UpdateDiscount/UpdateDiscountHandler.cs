@@ -42,7 +42,7 @@ public class UpdateDiscountHandler : IRequestHandler<UpdateDiscountCommand, Serv
         try
         {
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _auditService.LogAdminEventAsync("UpdateDiscount", _currentUserService.UserId ?? 0, $"Updated discount {discount.Code}");
+            await _auditService.LogAdminEventAsync("UpdateDiscount", _currentUserService.UserId ?? 0, $"Updated discount {discount.Code.Value}");
             return ServiceResult.Success();
         }
         catch (ConcurrencyException)
