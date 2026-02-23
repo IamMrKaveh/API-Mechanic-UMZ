@@ -13,7 +13,7 @@ public sealed class OrderCreatedEvent : DomainEvent
     {
         OrderId = order.Id;
         UserId = order.UserId;
-        FinalAmount = order.FinalAmount;
+        FinalAmount = order.FinalAmount.Amount;
         IdempotencyKey = order.IdempotencyKey;
         OrderNumber = order.OrderNumber;
         ItemsCount = order.OrderItems.Count;

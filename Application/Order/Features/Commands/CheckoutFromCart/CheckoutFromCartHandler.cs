@@ -184,30 +184,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     await _unitOfWork.SaveChangesAsync(ct);
                 }
 
-                // 11. Reserve Inventory via Application Service
-                var correlationPrefix = $"CHECKOUT-{order.Id}";
-                foreach (var orderItem in order.OrderItems)
-                {
-                    var reserveResult = await _inventoryService.ReserveStockAsync(
-                        orderItem.VariantId,
-                        orderItem.Quantity,
-                        orderItem.Id,
-                        request.UserId,
-                        $"ORDER-{order.Id}",
-                        $"{correlationPrefix}-{orderItem.VariantId}",
-                        ct: ct);
-
-                    if (reserveResult.IsFailed)
-                    {
-                        await _inventoryService.RollbackReservationsAsync($"ORDER-{order.Id}");
-                        await _unitOfWork.RollbackTransactionAsync(ct);
-                        return ServiceResult<CheckoutResultDto>.Failure(
-                            $"خطا در رزرو موجودی: {reserveResult.Error}");
-                    }
-                }
-                await _unitOfWork.SaveChangesAsync(ct);
-
-                // 12. Initiate Payment
+                // 11. Initiate Payment
                 var user = await _userRepository.GetByIdAsync(request.UserId, ct);
                 var paymentResult = await _paymentService.InitiatePaymentAsync(new PaymentInitiationDto
                 {
@@ -228,7 +205,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                         paymentResult.Error ?? "خطا در ایجاد درخواست پرداخت");
                 }
 
-                // 13. Clear Cart
+                // 12. Clear Cart
                 await _cartRepository.ClearCartAsync(request.UserId, ct);
                 await _unitOfWork.SaveChangesAsync(ct);
 
