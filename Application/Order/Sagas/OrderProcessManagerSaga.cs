@@ -89,14 +89,6 @@ public sealed class OrderProcessManagerSaga :
             return;
         }
 
-        var commitResult = await _inventoryService.CommitStockForOrderAsync(order.Id, ct);
-        if (!commitResult.IsSucceed)
-        {
-            _logger.LogError(
-                "[Saga] CRITICAL: Inventory commit failed for Order {OrderId} after payment: {Error}",
-                order.Id, commitResult.Error);
-        }
-
         var settlementResult = _paymentSettlementService.ProcessPaymentSuccess(
             order,
             notification.RefId,
