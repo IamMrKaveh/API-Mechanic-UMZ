@@ -1,4 +1,4 @@
-﻿namespace Application.Support.Features.Shared;
+namespace Application.Support.Features.Shared;
 
 public class TicketDto
 {

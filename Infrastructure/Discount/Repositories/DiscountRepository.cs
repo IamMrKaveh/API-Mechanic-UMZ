@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Discount.Repositories;
+namespace Infrastructure.Discount.Repositories;
 
 public class DiscountRepository : IDiscountRepository
 {
@@ -40,7 +40,7 @@ public class DiscountRepository : IDiscountRepository
             .Include(d => d.Restrictions)
             .Include(d => d.Usages)
                 .ThenInclude(u => u.User)
-            .IgnoreQueryFilters() // برای نمایش در پنل ادمین حتی اگر حذف نرم شده باشد
+            .IgnoreQueryFilters() 
             .FirstOrDefaultAsync(d => d.Id == id, ct);
     }
 

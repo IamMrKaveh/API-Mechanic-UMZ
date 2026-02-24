@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Media.Repositories;
+namespace Infrastructure.Media.Repositories;
 
 public class MediaRepository : IMediaRepository
 {

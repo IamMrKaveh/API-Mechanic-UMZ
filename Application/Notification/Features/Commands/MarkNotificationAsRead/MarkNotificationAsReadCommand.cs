@@ -1,4 +1,4 @@
-﻿namespace Application.Notification.Features.Commands.MarkNotificationAsRead;
+namespace Application.Notification.Features.Commands.MarkNotificationAsRead;
 
 public sealed record MarkNotificationAsReadCommand(
     int NotificationId,

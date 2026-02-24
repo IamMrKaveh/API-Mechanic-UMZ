@@ -1,4 +1,4 @@
-﻿namespace Application.Search.Features.Queries.GetSearchSuggestions;
+namespace Application.Search.Features.Queries.GetSearchSuggestions;
 
 public class GetSearchSuggestionsHandler
     : IRequestHandler<GetSearchSuggestionsQuery, ServiceResult<List<string>>>

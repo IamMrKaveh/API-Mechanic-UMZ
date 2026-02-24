@@ -1,4 +1,4 @@
-﻿namespace Domain.Attribute.Exceptions;
+namespace Domain.Attribute.Exceptions;
 
 public sealed class DuplicateAttributeValueException : DomainException
 {

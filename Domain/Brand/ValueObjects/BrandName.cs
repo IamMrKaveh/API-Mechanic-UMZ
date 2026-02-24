@@ -1,4 +1,4 @@
-﻿namespace Domain.Brand.ValueObjects;
+namespace Domain.Brand.ValueObjects;
 
 public sealed class BrandName : ValueObject
 {

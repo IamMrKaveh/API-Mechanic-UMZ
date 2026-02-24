@@ -1,4 +1,4 @@
-﻿namespace Domain.Notification.ValueObjects;
+namespace Domain.Notification.ValueObjects;
 
 public sealed class NotificationPriority : ValueObject
 {

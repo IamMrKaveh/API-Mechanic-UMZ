@@ -1,4 +1,4 @@
-﻿namespace Application.Search.Features.Queries.FuzzySearch;
+namespace Application.Search.Features.Queries.FuzzySearch;
 
 public class FuzzySearchHandler
     : IRequestHandler<FuzzySearchQuery, ServiceResult<SearchResultDto<ProductSearchResultItemDto>>>

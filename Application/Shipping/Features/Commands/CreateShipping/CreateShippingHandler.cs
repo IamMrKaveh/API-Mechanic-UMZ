@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Features.Commands.CreateShipping;
+namespace Application.Shipping.Features.Commands.CreateShipping;
 
 public class CreateShippingHandler : IRequestHandler<CreateShippingCommand, ServiceResult<ShippingDto>>
 {
@@ -28,13 +28,13 @@ public class CreateShippingHandler : IRequestHandler<CreateShippingCommand, Serv
         CancellationToken ct
         )
     {
-        // Check duplicate name
+        
         if (await _shippingRepository.ExistsByNameAsync(request.Name, ct: ct))
             return ServiceResult<ShippingDto>.Failure("روش ارسال با این نام قبلاً وجود دارد.");
 
         try
         {
-            // Use domain factory
+            
             var shipping = Domain.Shipping.Shipping.Create(
                 request.Name,
                 Money.FromDecimal(request.Cost),

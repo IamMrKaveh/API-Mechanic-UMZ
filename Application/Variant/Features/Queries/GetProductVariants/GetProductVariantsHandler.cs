@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Features.Queries.GetProductVariants;
+namespace Application.Variant.Features.Queries.GetProductVariants;
 
 public class GetProductVariantsHandler
     : IRequestHandler<GetProductVariantsQuery, ServiceResult<IEnumerable<ProductVariantViewDto>>>

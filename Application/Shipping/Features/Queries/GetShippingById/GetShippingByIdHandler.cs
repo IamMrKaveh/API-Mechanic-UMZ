@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Features.Queries.GetShippingById;
+namespace Application.Shipping.Features.Queries.GetShippingById;
 
 public class GetShippingByIdHandler : IRequestHandler<GetShippingByIdQuery, ServiceResult<ShippingDto>>
 {

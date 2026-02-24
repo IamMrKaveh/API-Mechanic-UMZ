@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Features.Commands.AddVariant;
+namespace Application.Variant.Features.Commands.AddVariant;
 
 public class AddVariantValidator : AbstractValidator<AddVariantCommand>
 {

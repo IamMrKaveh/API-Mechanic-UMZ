@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Features.Queries.GetPaymentByAuthority;
+namespace Application.Payment.Features.Queries.GetPaymentByAuthority;
 
 public class GetPaymentByAuthorityHandler : IRequestHandler<GetPaymentByAuthorityQuery, ServiceResult<PaymentTransactionDto?>>
 {

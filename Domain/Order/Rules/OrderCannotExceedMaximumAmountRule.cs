@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.Rules;
+namespace Domain.Order.Rules;
 
 public class OrderCannotExceedMaximumAmountRule : IBusinessRule
 {

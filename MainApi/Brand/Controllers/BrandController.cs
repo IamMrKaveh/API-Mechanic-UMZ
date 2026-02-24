@@ -1,4 +1,4 @@
-﻿namespace MainApi.Brand.Controllers;
+namespace MainApi.Brand.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -31,7 +31,7 @@ public class BrandController : BaseApiController
     [AllowAnonymous]
     public async Task<IActionResult> GetBrand(int id)
     {
-        // برای کاربر عادی ممکن است DTO متفاوتی نیاز باشد، فعلا از همان Detail استفاده می‌کنیم
+        
         var query = new GetBrandByIdQuery(id);
         var result = await _mediator.Send(query);
         return ToActionResult(result);

@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Contracts;
+namespace Application.Category.Contracts;
 
 /// <summary>
 /// Repository فقط برای Aggregate Root (Category).
@@ -6,9 +6,9 @@
 /// </summary>
 public interface ICategoryRepository
 {
-    // ==========================================
-    // بازیابی Aggregate
-    // ==========================================
+    
+    
+    
 
     Task<(IEnumerable<Domain.Category.Category> Items, int TotalCount)> GetPagedAsync(
         string? search,
@@ -50,9 +50,9 @@ public interface ICategoryRepository
         CancellationToken ct = default
         );
 
-    // ==========================================
-    // اعتبارسنجی یکتایی
-    // ==========================================
+    
+    
+    
 
     Task<bool> ExistsByNameAsync(
         string name,
@@ -65,9 +65,9 @@ public interface ICategoryRepository
         int? excludeId = null,
         CancellationToken ct = default);
 
-    // ==========================================
-    // ذخیره‌سازی
-    // ==========================================
+    
+    
+    
 
     Task AddAsync(
         Domain.Category.Category category,

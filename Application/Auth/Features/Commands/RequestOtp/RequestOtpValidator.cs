@@ -1,4 +1,4 @@
-﻿namespace Application.Auth.Features.Commands.RequestOtp;
+namespace Application.Auth.Features.Commands.RequestOtp;
 
 public class RequestOtpValidator : AbstractValidator<RequestOtpCommand>
 {

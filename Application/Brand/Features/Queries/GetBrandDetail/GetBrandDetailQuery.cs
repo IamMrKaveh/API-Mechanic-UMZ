@@ -1,4 +1,4 @@
-﻿namespace Application.Brand.Features.Queries.GetBrandDetail;
+namespace Application.Brand.Features.Queries.GetBrandDetail;
 
 public record GetBrandDetailQuery(
     int GroupId

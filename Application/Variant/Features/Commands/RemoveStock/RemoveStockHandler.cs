@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Features.Commands.RemoveStock;
+namespace Application.Variant.Features.Commands.RemoveStock;
 
 public class RemoveStockHandler : IRequestHandler<RemoveStockCommand, ServiceResult>
 {

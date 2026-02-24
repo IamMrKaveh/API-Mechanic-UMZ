@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Support.Repositories;
+namespace Infrastructure.Support.Repositories;
 
 public class TicketRepository : ITicketRepository
 {

@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Order.BackgroundServices;
+namespace Infrastructure.Order.BackgroundServices;
 
 /// <summary>
 /// سرویس پس‌زمینه برای انقضای خودکار سفارش‌های پرداخت‌نشده.

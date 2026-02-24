@@ -1,6 +1,6 @@
-﻿namespace Application.Analytics.Features.Shared;
+namespace Application.Analytics.Features.Shared;
 
-// ─── Dashboard ───
+
 
 public sealed class DashboardStatisticsDto
 {
@@ -23,7 +23,7 @@ public sealed class DashboardStatisticsDto
     public decimal ProfitMargin { get; init; }
 }
 
-// ─── Sales Chart ───
+
 
 public sealed class SalesChartDataPointDto
 {
@@ -35,7 +35,7 @@ public sealed class SalesChartDataPointDto
     public int ItemsSold { get; init; }
 }
 
-// ─── Top Selling Products ───
+
 
 public sealed class TopSellingProductDto
 {
@@ -49,7 +49,7 @@ public sealed class TopSellingProductDto
     public decimal AverageSellingPrice { get; init; }
 }
 
-// ─── Category Performance ───
+
 
 public sealed class CategoryPerformanceDto
 {
@@ -64,7 +64,7 @@ public sealed class CategoryPerformanceDto
     public int OrderCount { get; init; }
 }
 
-// ─── Revenue Report ───
+
 
 public sealed class RevenueReportDto
 {
@@ -90,7 +90,7 @@ public sealed class RevenueByStatusDto
     public decimal Amount { get; init; }
 }
 
-// ─── Inventory Report ───
+
 
 public sealed class InventoryReportDto
 {

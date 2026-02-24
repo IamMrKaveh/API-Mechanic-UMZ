@@ -1,4 +1,4 @@
-﻿using Domain.Common.Shared.ValueObjects;
+using Domain.Common.Shared.ValueObjects;
 
 namespace Domain.Discount.Services;
 
@@ -54,7 +54,7 @@ public sealed class DiscountDomainService
         var restrictedProductIds = discount.GetRestrictedProductIds().ToList();
         var restrictedCategoryIds = discount.GetRestrictedCategoryIds().ToList();
 
-        // اگر محدودیت محصول دارد، بررسی کن
+        
         if (restrictedProductIds.Any())
         {
             var matchingProducts = productIds.Intersect(restrictedProductIds).ToList();
@@ -64,7 +64,7 @@ public sealed class DiscountDomainService
             }
         }
 
-        // اگر محدودیت دسته‌بندی دارد، بررسی کن
+        
         if (restrictedCategoryIds.Any())
         {
             var matchingCategories = categoryIds.Intersect(restrictedCategoryIds).ToList();
@@ -138,7 +138,7 @@ public sealed class DiscountDomainService
             if (restrictedCategoryIds.Any() && restrictedCategoryIds.Contains(item.CategoryId))
                 isEligible = true;
 
-            // اگر هیچ محدودیتی نیست، همه واجد شرایطند
+            
             if (!restrictedProductIds.Any() && !restrictedCategoryIds.Any())
                 isEligible = true;
 

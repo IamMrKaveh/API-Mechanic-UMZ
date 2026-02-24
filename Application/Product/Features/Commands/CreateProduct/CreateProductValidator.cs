@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Commands.CreateProduct;
+namespace Application.Product.Features.Commands.CreateProduct;
 
 public class CreateProductValidator : AbstractValidator<CreateProductCommand>
 {

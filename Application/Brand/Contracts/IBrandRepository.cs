@@ -1,4 +1,4 @@
-﻿namespace Application.Brand.Contracts;
+namespace Application.Brand.Contracts;
 
 public interface IBrandRepository
 {

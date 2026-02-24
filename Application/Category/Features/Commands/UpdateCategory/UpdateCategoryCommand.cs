@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Features.Commands.UpdateCategory;
+namespace Application.Category.Features.Commands.UpdateCategory;
 
 public record UpdateCategoryCommand : IRequest<ServiceResult>
 {

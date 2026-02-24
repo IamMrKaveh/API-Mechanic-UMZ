@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Order.Repositories;
+namespace Infrastructure.Order.Repositories;
 
 public class OrderStatusRepository : IOrderStatusRepository
 {
@@ -47,8 +47,8 @@ public class OrderStatusRepository : IOrderStatusRepository
 
     public async Task<bool> IsInUseAsync(int id, CancellationToken ct = default)
     {
-        // Since Order uses OrderStatusValue (value object stored as string),
-        // we check by matching the status name
+        
+        
         var status = await GetByIdAsync(id, ct);
         if (status == null) return false;
 

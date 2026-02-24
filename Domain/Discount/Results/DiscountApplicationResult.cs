@@ -1,4 +1,4 @@
-﻿namespace Domain.Discount.Results;
+namespace Domain.Discount.Results;
 
 public sealed class DiscountApplicationResult
 {

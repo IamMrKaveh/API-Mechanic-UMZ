@@ -1,4 +1,4 @@
-﻿using IDatabase = StackExchange.Redis.IDatabase;
+using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace Infrastructure.Cache.Redis.Lock;
 
@@ -6,7 +6,7 @@ public sealed class RedisLockHandle : ILockHandle
 {
     private readonly IDatabase _db;
     private readonly string _key;
-    private readonly string _value;    // Fencing Token
+    private readonly string _value;    
     private readonly ILogger _logger;
     private bool _released;
 
@@ -40,8 +40,8 @@ public sealed class RedisLockHandle : ILockHandle
 
         try
         {
-            // از Lua Script برای atomic check+delete استفاده می‌کنیم
-            // این تضمین می‌کند فقط owner می‌تواند قفل را آزاد کند
+            
+            
             await _db.ScriptEvaluateAsync(
                 LuaRelease,
                 new RedisKey[] { _key },

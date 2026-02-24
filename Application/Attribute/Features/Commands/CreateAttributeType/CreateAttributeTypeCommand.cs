@@ -1,4 +1,4 @@
-﻿namespace Application.Attribute.Features.Commands.CreateAttributeType;
+namespace Application.Attribute.Features.Commands.CreateAttributeType;
 
 public record CreateAttributeTypeCommand(
     string Name,

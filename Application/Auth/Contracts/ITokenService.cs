@@ -1,4 +1,4 @@
-﻿namespace Application.Auth.Contracts;
+namespace Application.Auth.Contracts;
 
 /// <summary>
 /// سرویس تولید و مدیریت توکن

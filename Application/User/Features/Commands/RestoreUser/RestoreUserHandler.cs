@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.RestoreUser;
+namespace Application.User.Features.Commands.RestoreUser;
 
 public class RestoreUserHandler : IRequestHandler<RestoreUserCommand, ServiceResult>
 {
@@ -13,7 +13,7 @@ public class RestoreUserHandler : IRequestHandler<RestoreUserCommand, ServiceRes
 
     public async Task<ServiceResult> Handle(RestoreUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByIdAsync(request.Id); // Assuming param for includeDeleted exists
+        var user = await _userRepository.GetByIdAsync(request.Id); 
         if (user == null)
             return ServiceResult.Failure("NotFound");
 

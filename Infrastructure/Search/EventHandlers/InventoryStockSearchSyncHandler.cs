@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Search.EventHandlers;
+namespace Infrastructure.Search.EventHandlers;
 
 /// <summary>
 /// FIX #8: همگام‌سازی IsInStock در Elasticsearch پس از تغییر موجودی
@@ -28,7 +28,7 @@ public class InventoryStockSearchSyncHandler :
 
     public async Task Handle(StockCommittedEvent notification, CancellationToken cancellationToken)
     {
-        // ProductId از VariantId resolve می‌شود
+        
         var productId = await GetProductIdAsync(notification.VariantId, cancellationToken);
         if (productId.HasValue)
             await SyncProductAvailabilityAsync(productId.Value, cancellationToken);
@@ -45,18 +45,18 @@ public class InventoryStockSearchSyncHandler :
     {
         try
         {
-            // محاسبه IsInStock: آیا حداقل یک واریانت فعال موجودی دارد؟
+            
             var hasStock = await _context.Set<Domain.Variant.ProductVariant>()
                 .Where(v => v.ProductId == productId && v.IsActive && !v.IsDeleted)
                 .AnyAsync(v => v.IsUnlimited || (v.StockQuantity - v.ReservedQuantity) > 0, ct);
 
-            // ذخیره در Outbox برای sync async به Elasticsearch
+            
             var outboxMessage = new ElasticsearchOutboxMessage
             {
                 EntityType = "Product",
                 EntityId = productId.ToString(),
                 ChangeType = EntityChangeType.Updated.ToString(),
-                // فقط فیلد IsInStock را به‌روز می‌کنیم - partial update
+                
                 Document = System.Text.Json.JsonSerializer.Serialize(new
                 {
                     productId,
@@ -78,7 +78,7 @@ public class InventoryStockSearchSyncHandler :
         {
             _logger.LogError(ex,
                 "Failed to queue Elasticsearch stock sync for Product {ProductId}", productId);
-            // اجازه می‌دهیم خطا به بالا propagate نشود تا موجودی rollback نشود
+            
         }
     }
 

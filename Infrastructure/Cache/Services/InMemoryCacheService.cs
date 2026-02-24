@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Cache.Services;
+namespace Infrastructure.Cache.Services;
 
 public class InMemoryCacheService : ICacheService
 {

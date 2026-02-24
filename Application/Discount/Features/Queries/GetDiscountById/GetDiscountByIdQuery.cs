@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Queries.GetDiscountById;
+namespace Application.Discount.Features.Queries.GetDiscountById;
 
 public record GetDiscountByIdQuery(
     int Id

@@ -1,4 +1,4 @@
-﻿namespace Application.Analytics.Features.Queries.GetInventoryReport;
+namespace Application.Analytics.Features.Queries.GetInventoryReport;
 
 public sealed class GetInventoryReportHandler
     : IRequestHandler<GetInventoryReportQuery, ServiceResult<InventoryReportDto>>

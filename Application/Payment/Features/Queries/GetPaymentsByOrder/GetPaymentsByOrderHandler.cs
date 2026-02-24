@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Features.Queries.GetPaymentsByOrder;
+namespace Application.Payment.Features.Queries.GetPaymentsByOrder;
 
 public class GetPaymentsByOrderHandler : IRequestHandler<GetPaymentsByOrderQuery, ServiceResult<IEnumerable<PaymentTransactionDto>>>
 {

@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Security.Services;
+namespace Infrastructure.Security.Services;
 
 public class CurrentUserService : ICurrentUserService
 {

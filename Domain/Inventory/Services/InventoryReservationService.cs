@@ -1,4 +1,4 @@
-﻿namespace Domain.Inventory.Services;
+namespace Domain.Inventory.Services;
 
 /// <summary>
 /// Domain Service برای هماهنگی رزرو موجودی در سناریوی Inventory + Order

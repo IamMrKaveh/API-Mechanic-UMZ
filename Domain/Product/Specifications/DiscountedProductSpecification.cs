@@ -1,4 +1,4 @@
-﻿namespace Domain.Product.Specifications;
+namespace Domain.Product.Specifications;
 
 public class DiscountedProductSpecification : Specification<Product>
 {

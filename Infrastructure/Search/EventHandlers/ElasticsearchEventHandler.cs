@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Search.EventHandlers;
+namespace Infrastructure.Search.EventHandlers;
 
 public class ElasticsearchEventHandler : IElasticsearchEventHandler
 {

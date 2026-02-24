@@ -1,4 +1,4 @@
-﻿namespace Application.Attribute.Features.Commands.CreateAttributeType;
+namespace Application.Attribute.Features.Commands.CreateAttributeType;
 
 public class CreateAttributeTypeHandler : IRequestHandler<CreateAttributeTypeCommand, ServiceResult<AttributeTypeDto>>
 {

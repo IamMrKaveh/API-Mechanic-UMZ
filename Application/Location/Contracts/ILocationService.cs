@@ -1,4 +1,4 @@
-﻿namespace Application.Location.Contracts;
+namespace Application.Location.Contracts;
 
 public interface ILocationService
 {

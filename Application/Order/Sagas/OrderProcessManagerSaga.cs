@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Sagas;
+namespace Application.Order.Sagas;
 
 /// <summary>
 /// Saga با وضعیت پایا (Persistent State)
@@ -38,7 +38,7 @@ public sealed class OrderProcessManagerSaga :
         _logger = logger;
     }
 
-    // ─── Step 1: رزرو موجودی پس از ایجاد سفارش
+    
 
     public async Task Handle(OrderCreatedEvent notification, CancellationToken ct)
     {
@@ -46,7 +46,7 @@ public sealed class OrderProcessManagerSaga :
             "[Saga] OrderCreated: OrderId={OrderId} → Starting inventory reservation",
             notification.OrderId);
 
-        // FIX #4: ایجاد و ذخیره وضعیت Saga در دیتابیس
+        
         var processState = OrderProcessState.Create(
             notification.OrderId,
             correlationId: notification.OrderId.ToString());
@@ -99,7 +99,7 @@ public sealed class OrderProcessManagerSaga :
             "[Saga] Inventory reserved successfully for Order {OrderId}", order.Id);
     }
 
-    // ─── Step 2: تأیید موجودی و تسویه پرداخت از طریق Domain Service
+    
 
     public async Task Handle(PaymentSucceededEvent notification, CancellationToken ct)
     {
@@ -107,7 +107,7 @@ public sealed class OrderProcessManagerSaga :
             "[Saga] PaymentSucceeded: OrderId={OrderId}, RefId={RefId}",
             notification.OrderId, notification.RefId);
 
-        // FIX #4: بارگذاری وضعیت Saga از دیتابیس
+        
         var processState = await _processStateRepository.GetByOrderIdAsync(notification.OrderId, ct);
         if (processState is null)
         {
@@ -156,7 +156,7 @@ public sealed class OrderProcessManagerSaga :
         _logger.LogInformation("[Saga] Order {OrderId} settled: Paid + Processing", order.Id);
     }
 
-    // ─── Compensation: شکست پرداخت
+    
 
     public async Task Handle(PaymentFailedEvent notification, CancellationToken ct)
     {
@@ -177,7 +177,7 @@ public sealed class OrderProcessManagerSaga :
             notification.OrderId);
     }
 
-    // ─── Compensation: لغو سفارش
+    
 
     public async Task Handle(OrderCancelledEvent notification, CancellationToken ct)
     {
@@ -195,7 +195,7 @@ public sealed class OrderProcessManagerSaga :
         await ReleaseInventoryForOrderAsync(notification.OrderId, "لغو سفارش", processState, ct);
     }
 
-    // ─── Compensation: انقضای سفارش
+    
 
     public async Task Handle(OrderExpiredEvent notification, CancellationToken ct)
     {
@@ -212,7 +212,7 @@ public sealed class OrderProcessManagerSaga :
         await ReleaseInventoryForOrderAsync(notification.OrderId, "انقضای سفارش", processState, ct);
     }
 
-    // ─── Private Helpers
+    
 
     private async Task CompensateOrderAsync(
         Domain.Order.Order order,

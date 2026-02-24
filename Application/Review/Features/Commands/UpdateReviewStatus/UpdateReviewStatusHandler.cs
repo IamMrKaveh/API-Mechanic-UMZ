@@ -1,4 +1,4 @@
-﻿namespace Application.Review.Features.Commands.UpdateReviewStatus;
+namespace Application.Review.Features.Commands.UpdateReviewStatus;
 
 public class UpdateReviewStatusHandler : IRequestHandler<UpdateReviewStatusCommand, ServiceResult>
 {

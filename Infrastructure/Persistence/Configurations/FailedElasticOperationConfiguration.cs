@@ -1,4 +1,4 @@
-﻿using Application.Search.Features.Shared;
+using Application.Search.Features.Shared;
 
 namespace Infrastructure.Persistence.Configurations;
 

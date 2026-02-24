@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Queries.ValidateCartForCheckout;
+namespace Application.Cart.Features.Queries.ValidateCartForCheckout;
 
 public class ValidateCartForCheckoutHandler
     : IRequestHandler<ValidateCartForCheckoutQuery, ServiceResult<CartCheckoutValidationDto>>

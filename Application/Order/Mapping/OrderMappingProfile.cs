@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Mapping;
+namespace Application.Order.Mapping;
 
 public sealed class OrderMappingProfile : Profile
 {

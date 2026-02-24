@@ -1,4 +1,4 @@
-﻿namespace MainApi.Category.Controllers;
+namespace MainApi.Category.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

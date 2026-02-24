@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Features.Commands.ReorderCategories;
+namespace Application.Category.Features.Commands.ReorderCategories;
 
 public class ReorderCategoriesHandler : IRequestHandler<ReorderCategoriesCommand, ServiceResult>
 {
@@ -26,7 +26,7 @@ public class ReorderCategoriesHandler : IRequestHandler<ReorderCategoriesCommand
 
         try
         {
-            // تغییر ترتیب از طریق Domain Service
+            
             _categoryDomainService.ReorderCategories(categories, request.OrderedCategoryIds);
 
             foreach (var category in categories)

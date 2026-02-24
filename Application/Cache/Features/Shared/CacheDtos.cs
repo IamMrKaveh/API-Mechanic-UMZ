@@ -1,4 +1,4 @@
-﻿namespace Application.Cache.Features.Shared;
+namespace Application.Cache.Features.Shared;
 
 /// <summary>
 /// Read Model برای Cache موجودی واریانت

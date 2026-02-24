@@ -1,4 +1,4 @@
-﻿namespace Domain.Cart;
+namespace Domain.Cart;
 
 /// <summary>
 /// آیتم سبد خرید - فقط از طریق Cart قابل تغییر

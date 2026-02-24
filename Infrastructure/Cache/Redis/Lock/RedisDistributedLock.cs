@@ -1,4 +1,4 @@
-﻿using IDatabase = StackExchange.Redis.IDatabase;
+using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace Infrastructure.Cache.Redis.Lock;
 
@@ -39,7 +39,7 @@ public sealed class RedisDistributedLock : IDistributedLock
         CancellationToken ct = default)
     {
         var lockKey = $"lock:{resource}";
-        var lockValue = Guid.NewGuid().ToString("N"); // Fencing Token
+        var lockValue = Guid.NewGuid().ToString("N"); 
         var expiry = ttl ?? DefaultLockTtl;
         var delay = retryDelay ?? DefaultRetryDelay;
 
@@ -61,7 +61,7 @@ public sealed class RedisDistributedLock : IDistributedLock
 
             if (attempt < retryCount)
             {
-                // Exponential Backoff
+                
                 var waitTime = TimeSpan.FromMilliseconds(
                     delay.TotalMilliseconds * Math.Pow(1.5, attempt));
 

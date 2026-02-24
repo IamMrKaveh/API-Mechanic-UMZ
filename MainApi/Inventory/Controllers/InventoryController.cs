@@ -1,4 +1,4 @@
-﻿namespace MainApi.Inventory.Controllers;
+namespace MainApi.Inventory.Controllers;
 
 /// <summary>
 /// FIX #12: Public endpoint برای بررسی real-time موجودی واریانت

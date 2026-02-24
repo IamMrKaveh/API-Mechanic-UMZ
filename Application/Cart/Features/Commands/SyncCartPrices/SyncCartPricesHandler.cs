@@ -1,4 +1,4 @@
-﻿using AngleSharp.Common;
+using AngleSharp.Common;
 
 namespace Application.Cart.Features.Commands.SyncCartPrices;
 
@@ -47,7 +47,7 @@ public class SyncCartPricesHandler : IRequestHandler<SyncCartPricesCommand, Serv
             if (!variantLookup.TryGetValue(item.VariantId, out var variant)
                 || !variant.IsActive || variant.IsDeleted)
             {
-                // واریانت دیگر موجود نیست، حذف از سبد
+                
                 cart.RemoveItem(item.VariantId);
                 removedVariantIds.Add(item.VariantId);
                 continue;

@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Persistence.Configurations;
+namespace Infrastructure.Persistence.Configurations;
 
 public sealed class StockLedgerEntryConfiguration : IEntityTypeConfiguration<StockLedgerEntry>
 {

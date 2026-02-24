@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Payment.ZarinPal;
+namespace Infrastructure.Payment.ZarinPal;
 
 internal class ZarinpalRequestResponseDto
 {

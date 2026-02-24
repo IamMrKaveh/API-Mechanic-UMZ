@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Features.Queries.GetEntityMedia;
+namespace Application.Media.Features.Queries.GetEntityMedia;
 
 public class GetEntityMediaValidator : AbstractValidator<GetEntityMediaQuery>
 {

@@ -1,4 +1,4 @@
-﻿namespace Domain.Brand.Exceptions;
+namespace Domain.Brand.Exceptions;
 
 public class DuplicateBrandNameException : DomainException
 {

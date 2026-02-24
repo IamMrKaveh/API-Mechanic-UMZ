@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Queries.GetOrderDetails;
+namespace Application.Order.Features.Queries.GetOrderDetails;
 
 public class GetOrderDetailsHandler : IRequestHandler<GetOrderDetailsQuery, ServiceResult<OrderDto>>
 {

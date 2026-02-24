@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.DataProtection.Repositories;
+namespace Infrastructure.DataProtection.Repositories;
 
 public class ResilientRedisXmlRepository : IXmlRepository
 {
@@ -33,7 +33,7 @@ public class ResilientRedisXmlRepository : IXmlRepository
             var db = _redis.GetDatabase();
             var server = _redis.GetServer(_redis.GetEndPoints().First());
 
-            // Use SCAN instead of KEYS to avoid blocking the server
+            
             var keys = server.Keys(pattern: $"{_keyPrefix}:*");
 
             var keyStrings = new List<string>();

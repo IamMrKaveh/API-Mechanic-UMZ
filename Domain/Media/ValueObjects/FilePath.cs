@@ -1,4 +1,4 @@
-﻿namespace Domain.Media.ValueObjects;
+namespace Domain.Media.ValueObjects;
 
 public sealed class FilePath : ValueObject
 {

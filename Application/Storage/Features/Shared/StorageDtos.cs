@@ -1,4 +1,4 @@
-﻿namespace Application.Storage.Features.Shared;
+namespace Application.Storage.Features.Shared;
 
 public class LiaraStorageSettings
 {

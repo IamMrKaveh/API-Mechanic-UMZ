@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Commands.MergeGuestCart;
+namespace Application.Cart.Features.Commands.MergeGuestCart;
 
 public class MergeGuestCartValidator : AbstractValidator<MergeGuestCartCommand>
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Cache.Contracts;
+namespace Application.Cache.Contracts;
 
 public interface ILockHandle : IAsyncDisposable
 {

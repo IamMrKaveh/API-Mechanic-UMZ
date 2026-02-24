@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.ChangePhoneNumber;
+namespace Application.User.Features.Commands.ChangePhoneNumber;
 
 public record ChangePhoneNumberCommand : IRequest<ServiceResult>
 {

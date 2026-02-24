@@ -1,4 +1,4 @@
-﻿using IDatabase = StackExchange.Redis.IDatabase;
+using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace Infrastructure.Cache.Redis.Services;
 

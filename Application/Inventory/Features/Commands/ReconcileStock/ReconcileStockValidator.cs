@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Commands.ReconcileStock;
+namespace Application.Inventory.Features.Commands.ReconcileStock;
 
 public class ReconcileStockValidator : AbstractValidator<ReconcileStockCommand>
 {

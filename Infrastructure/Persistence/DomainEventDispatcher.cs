@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Persistence;
+namespace Infrastructure.Persistence;
 
 public class DomainEventDispatcher : IDomainEventDispatcher
 {
@@ -27,7 +27,7 @@ public class DomainEventDispatcher : IDomainEventDispatcher
             .SelectMany(x => x.Entity.DomainEvents)
             .ToList();
 
-        // پاکسازی رویدادها قبل از dispatch (جلوگیری از حلقه بی‌نهایت)
+        
         foreach (var entity in domainEntities)
         {
             entity.Entity.ClearDomainEvents();
@@ -49,7 +49,7 @@ public class DomainEventDispatcher : IDomainEventDispatcher
                     ex,
                     "Error dispatching domain event: {EventType}",
                     domainEvent.GetType().Name);
-                // در صورت نیاز می‌توان throw کرد یا به Dead Letter Queue اضافه کرد
+                
             }
         }
     }

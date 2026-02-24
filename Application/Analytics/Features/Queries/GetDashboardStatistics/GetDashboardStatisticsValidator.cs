@@ -1,4 +1,4 @@
-﻿namespace Application.Analytics.Features.Queries.GetDashboardStatistics;
+namespace Application.Analytics.Features.Queries.GetDashboardStatistics;
 
 public sealed class GetDashboardStatisticsValidator : AbstractValidator<GetDashboardStatisticsQuery>
 {

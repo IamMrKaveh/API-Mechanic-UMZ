@@ -1,4 +1,4 @@
-﻿namespace MainApi.User.Controllers;
+namespace MainApi.User.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -20,7 +20,7 @@ public class UserController : BaseApiController
         if (currentUserId == null) return Unauthorized();
         if (currentUserId != id && !CurrentUser.IsAdmin) return Forbid();
 
-        var query = new GetAdminUserByIdQuery(id); // Using Admin query for detail if own user
+        var query = new GetAdminUserByIdQuery(id); 
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

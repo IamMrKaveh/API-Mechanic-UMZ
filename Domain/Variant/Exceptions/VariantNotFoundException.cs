@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant.Exceptions;
+namespace Domain.Variant.Exceptions;
 
 public sealed class VariantNotFoundException : DomainException
 {

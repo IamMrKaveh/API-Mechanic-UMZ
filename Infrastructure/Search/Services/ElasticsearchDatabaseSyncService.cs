@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Search.Services;
+namespace Infrastructure.Search.Services;
 
 /// <summary>
 /// استفاده از Dapper به‌جای EF Core Include برای sync عملکردی

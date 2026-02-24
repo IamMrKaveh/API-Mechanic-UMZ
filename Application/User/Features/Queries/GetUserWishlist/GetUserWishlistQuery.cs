@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Queries.GetUserWishlist;
+namespace Application.User.Features.Queries.GetUserWishlist;
 
 public record GetUserWishlistQuery(int UserId, int Page = 1, int PageSize = 20)
     : IRequest<ServiceResult<PaginatedResult<WishlistItemDto>>>;

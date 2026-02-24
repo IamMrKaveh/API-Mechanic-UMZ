@@ -1,4 +1,4 @@
-﻿namespace Application.Cache.Contracts;
+namespace Application.Cache.Contracts;
 
 /// <summary>
 /// سرویس Invalidation کش مبتنی بر رویداد.

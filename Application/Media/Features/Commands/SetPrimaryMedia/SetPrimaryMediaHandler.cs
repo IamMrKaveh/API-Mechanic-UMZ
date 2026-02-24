@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Features.Commands.SetPrimaryMedia;
+namespace Application.Media.Features.Commands.SetPrimaryMedia;
 
 public class SetPrimaryMediaHandler : IRequestHandler<SetPrimaryMediaCommand, ServiceResult>
 {
@@ -26,14 +26,14 @@ public class SetPrimaryMediaHandler : IRequestHandler<SetPrimaryMediaCommand, Se
         if (!media.CanBeSetAsPrimary())
             return ServiceResult.Failure("این رسانه قابل تنظیم به عنوان اصلی نیست.");
 
-        // دریافت تمام رسانه‌های همین موجودیت
+        
         var allMedias = await _mediaRepository.GetByEntityAsync(
             media.EntityType, media.EntityId, cancellationToken);
 
-        // تنظیم Primary از طریق Domain Service
+        
         _mediaDomainService.SetPrimaryMedia(media, allMedias);
 
-        // ذخیره تغییرات تمام رسانه‌ها
+        
         foreach (var m in allMedias)
         {
             _mediaRepository.Update(m);

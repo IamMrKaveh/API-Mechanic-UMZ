@@ -1,4 +1,4 @@
-﻿namespace Domain.Cart.Enum;
+namespace Domain.Cart.Enum;
 
 public enum CartMergeStrategy
 {

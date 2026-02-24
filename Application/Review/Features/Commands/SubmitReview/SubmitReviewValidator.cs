@@ -1,4 +1,4 @@
-﻿namespace Application.Review.Features.Commands.SubmitReview;
+namespace Application.Review.Features.Commands.SubmitReview;
 
 public class SubmitReviewValidator : AbstractValidator<SubmitReviewCommand>
 {

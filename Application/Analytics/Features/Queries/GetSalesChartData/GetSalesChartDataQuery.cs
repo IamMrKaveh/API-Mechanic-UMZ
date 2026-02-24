@@ -1,4 +1,4 @@
-﻿namespace Application.Analytics.Features.Queries.GetSalesChartData;
+namespace Application.Analytics.Features.Queries.GetSalesChartData;
 
 public sealed record GetSalesChartDataQuery(
     DateTime FromDate,

@@ -1,4 +1,4 @@
-﻿namespace Application.Notification.Features.Queries.GetUnreadNotificationCount;
+namespace Application.Notification.Features.Queries.GetUnreadNotificationCount;
 
 public sealed class GetUnreadNotificationCountHandler
     : IRequestHandler<GetUnreadNotificationCountQuery, ServiceResult<int>>

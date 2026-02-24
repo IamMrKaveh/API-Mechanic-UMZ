@@ -1,4 +1,4 @@
-﻿namespace Domain.Common.Base;
+namespace Domain.Common.Base;
 
 /// <summary>
 /// کلاس پایه برای Value Object‌ها

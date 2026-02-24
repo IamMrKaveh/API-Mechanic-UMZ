@@ -1,4 +1,4 @@
-﻿namespace Application.Support.Features.Commands.ReplyToTicket;
+namespace Application.Support.Features.Commands.ReplyToTicket;
 
 public sealed class ReplyToTicketHandler : IRequestHandler<ReplyToTicketCommand, ServiceResult<bool>>
 {
@@ -25,12 +25,12 @@ public sealed class ReplyToTicketHandler : IRequestHandler<ReplyToTicketCommand,
         if (ticket is null)
             throw new TicketNotFoundException(request.TicketId);
 
-        // اعتبارسنجی دسترسی
+        
         var accessResult = _ticketDomainService.ValidateUserAccess(ticket, request.SenderId, request.IsAdminReply);
         if (!accessResult.HasAccess)
             throw new TicketAccessDeniedException(request.TicketId, request.SenderId);
 
-        // اعتبارسنجی امکان ارسال پیام
+        
         var canSendResult = _ticketDomainService.ValidateCanSendMessage(ticket);
         if (!canSendResult.CanSend)
             return ServiceResult<bool>.Failure(canSendResult.Error!);

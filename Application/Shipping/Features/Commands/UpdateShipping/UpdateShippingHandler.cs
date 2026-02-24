@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Features.Commands.UpdateShipping;
+namespace Application.Shipping.Features.Commands.UpdateShipping;
 
 public class UpdateShippingHandler : IRequestHandler<UpdateShippingCommand, ServiceResult>
 {

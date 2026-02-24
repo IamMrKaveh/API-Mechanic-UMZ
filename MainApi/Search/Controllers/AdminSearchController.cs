@@ -1,4 +1,4 @@
-﻿namespace MainApi.Search.Controllers;
+namespace MainApi.Search.Controllers;
 
 [ApiController]
 [Route("api/admin/search")]

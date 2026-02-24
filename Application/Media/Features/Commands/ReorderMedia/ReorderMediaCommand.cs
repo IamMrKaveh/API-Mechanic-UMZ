@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Features.Commands.ReorderMedia;
+namespace Application.Media.Features.Commands.ReorderMedia;
 
 public record ReorderMediaCommand : IRequest<ServiceResult>
 {

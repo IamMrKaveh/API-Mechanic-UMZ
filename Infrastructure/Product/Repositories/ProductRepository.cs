@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Product.Repositories;
+namespace Infrastructure.Product.Repositories;
 
 public class ProductRepository : IProductRepository
 {
@@ -17,7 +17,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<Domain.Product.Product?> GetByIdWithAllDetailsAsync(int id, CancellationToken ct = default)
     {
-        // Optimized to use SplitQuery
+        
         return await _context.Products
             .AsSplitQuery()
             .Include(p => p.Variants)

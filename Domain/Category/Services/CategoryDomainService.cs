@@ -1,4 +1,4 @@
-﻿namespace Domain.Category.Services;
+namespace Domain.Category.Services;
 
 /// <summary>
 /// Domain Service - منطق‌هایی که بین چند Aggregate هستند.
@@ -26,13 +26,13 @@ public class CategoryDomainService
 
         var oldCategoryId = sourceCategory.Id;
 
-        // جدا کردن از مبدأ
+        
         var group = sourceCategory.DetachBrand(groupId);
 
-        // پذیرش در مقصد (یکتایی نام در مقصد بررسی می‌شود)
+        
         targetCategory.AcceptBrand(group);
 
-        // رویداد روی Aggregate مبدأ ثبت می‌شود
+        
         sourceCategory.AddDomainEvent(
             new BrandMovedEvent(groupId, oldCategoryId, targetCategory.Id));
     }

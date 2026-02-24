@@ -1,4 +1,4 @@
-﻿namespace Domain.Product.ValueObjects;
+namespace Domain.Product.ValueObjects;
 
 public sealed class ProductName : ValueObject
 {

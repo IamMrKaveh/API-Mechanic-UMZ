@@ -1,4 +1,4 @@
-﻿namespace Application.Brand.Features.Commands.UpdateBrand;
+namespace Application.Brand.Features.Commands.UpdateBrand;
 
 public class UpdateBrandHandler : IRequestHandler<UpdateBrandCommand, ServiceResult>
 {

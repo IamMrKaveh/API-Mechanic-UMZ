@@ -1,4 +1,4 @@
-﻿namespace Application.Auth.Features.Commands.LogoutAll;
+namespace Application.Auth.Features.Commands.LogoutAll;
 
 public class LogoutAllHandler : IRequestHandler<LogoutAllCommand, ServiceResult>
 {

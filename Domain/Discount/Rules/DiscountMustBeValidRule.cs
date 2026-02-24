@@ -1,4 +1,4 @@
-﻿namespace Domain.Discount.Rules;
+namespace Domain.Discount.Rules;
 
 public sealed class DiscountMustBeValidRule : IBusinessRule
 {

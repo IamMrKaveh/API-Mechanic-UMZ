@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Shared;
+namespace Application.Discount.Features.Shared;
 
 public record DiscountCodeDto
 {

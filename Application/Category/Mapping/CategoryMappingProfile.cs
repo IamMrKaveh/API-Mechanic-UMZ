@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Mapping;
+namespace Application.Category.Mapping;
 
 public sealed class CategoryMappingProfile : Profile
 {

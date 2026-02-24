@@ -1,4 +1,4 @@
-﻿namespace Application.Review.Mapping;
+namespace Application.Review.Mapping;
 
 public class ReviewMappingProfile : Profile
 {

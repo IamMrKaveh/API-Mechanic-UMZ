@@ -1,4 +1,4 @@
-﻿namespace Domain.Cart;
+namespace Domain.Cart;
 
 public class Cart : AggregateRoot, ISoftDeletable, IAuditable
 {
@@ -13,12 +13,12 @@ public class Cart : AggregateRoot, ISoftDeletable, IAuditable
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Navigation
+    
     public User.User? User { get; private set; }
 
     public IReadOnlyCollection<CartItem> CartItems => _cartItems.AsReadOnly();
 
-    // Computed Properties
+    
     public decimal TotalPrice => _cartItems.Sum(x => x.TotalPrice);
 
     public int TotalItems => _cartItems.Sum(x => x.Quantity);
@@ -27,7 +27,7 @@ public class Cart : AggregateRoot, ISoftDeletable, IAuditable
     public bool IsUserCart => UserId.HasValue;
     public bool HasItems => _cartItems.Count > 0;
 
-    // Business Rules
+    
     private const int MaxCartItems = 50;
 
     private const int MaxQuantityPerItem = 1000;
@@ -237,7 +237,7 @@ public class Cart : AggregateRoot, ISoftDeletable, IAuditable
 
                 existingItem.UpdateQuantity(Math.Min(mergedQuantity, MaxQuantityPerItem));
 
-                // به‌روزرسانی قیمت با جدیدترین
+                
                 if (sourceItem.UpdatedAt > existingItem.UpdatedAt)
                 {
                     existingItem.UpdatePrice(sourceItem.SellingPrice);

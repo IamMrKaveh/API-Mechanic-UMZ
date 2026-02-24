@@ -1,4 +1,4 @@
-﻿namespace MainApi.Shipping.Controllers;
+namespace MainApi.Shipping.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

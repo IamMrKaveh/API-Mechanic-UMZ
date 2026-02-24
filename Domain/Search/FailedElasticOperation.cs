@@ -1,4 +1,4 @@
-﻿namespace Domain.Search;
+namespace Domain.Search;
 
 public class FailedIndexOperation
 {

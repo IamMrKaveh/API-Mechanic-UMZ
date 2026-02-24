@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.User.Services;
+namespace Infrastructure.User.Services;
 
 public class UserQueryService : IUserQueryService
 {

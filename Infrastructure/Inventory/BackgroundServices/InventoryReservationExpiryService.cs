@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Inventory.BackgroundServices;
+namespace Infrastructure.Inventory.BackgroundServices;
 
 /// <summary>
 /// سرویس پس‌زمینه برای آزادسازی خودکار رزروهای منقضی‌شده سبد خرید
@@ -47,7 +47,7 @@ public class InventoryReservationExpiryService : BackgroundService
 
         var now = DateTime.UtcNow;
 
-        // پیدا کردن رزروهای منقضی‌شده که هنوز release نشده‌اند
+        
         var expiredReservations = await context.InventoryTransactions
             .Where(t =>
                 t.TransactionType == TransactionType.Reservation.Value &&
@@ -77,7 +77,7 @@ public class InventoryReservationExpiryService : BackgroundService
 
                 if (!string.IsNullOrEmpty(reservation.ReferenceNumber))
                 {
-                    // آزادسازی بر اساس referenceNumber (ORDER-xxx یا CART-xxx)
+                    
                     result = await inventoryService.RollbackReservationsAsync(
                         reservation.ReferenceNumber, ct);
                 }

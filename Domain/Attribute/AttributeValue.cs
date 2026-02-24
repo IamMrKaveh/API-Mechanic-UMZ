@@ -1,4 +1,4 @@
-﻿namespace Domain.Attribute;
+namespace Domain.Attribute;
 
 /// <summary>
 /// مقادیر ویژگی (مثل قرمز، آبی، ایکس لارج) - فرزند AttributeType
@@ -8,11 +8,11 @@ public class AttributeValue : BaseEntity, IAuditable, ISoftDeletable, IActivatab
     public int AttributeTypeId { get; private set; }
     public string Value { get; private set; } = null!;
     public string DisplayValue { get; private set; } = null!;
-    public string? HexCode { get; private set; } // برای رنگ‌ها
+    public string? HexCode { get; private set; } 
     public int SortOrder { get; private set; }
     public bool IsActive { get; private set; } = true;
 
-    // Audit & Soft Delete
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
@@ -20,7 +20,7 @@ public class AttributeValue : BaseEntity, IAuditable, ISoftDeletable, IActivatab
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Navigation
+    
     public AttributeType AttributeType { get; private set; } = null!;
 
     public ICollection<ProductVariantAttribute> VariantAttributes { get; private set; } = new List<ProductVariantAttribute>();

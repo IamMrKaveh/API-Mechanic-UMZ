@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Commands.SyncCartPrices;
+namespace Application.Cart.Features.Commands.SyncCartPrices;
 
 public record SyncCartPricesResult
 {

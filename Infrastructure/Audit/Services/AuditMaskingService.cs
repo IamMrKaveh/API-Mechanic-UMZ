@@ -1,4 +1,4 @@
-﻿using RegexOptions = System.Text.RegularExpressions.RegexOptions;
+using RegexOptions = System.Text.RegularExpressions.RegexOptions;
 
 namespace Infrastructure.Audit.Services;
 
@@ -16,44 +16,44 @@ namespace Infrastructure.Audit.Services;
 
 public sealed class AuditMaskingService : IAuditMaskingService
 {
-    // ─── الگوهای Regex ───────────────────────────────────────────────────────
+    
 
-    // شماره کارت: 16 رقم با/بدون خط تیره
+    
     private static readonly Regex CardNumberRegex = new(
         @"\b(\d{4})[\s\-]?(\d{4})[\s\-]?(\d{4})[\s\-]?(\d{4})\b",
         RegexOptions.Compiled);
 
-    // شماره موبایل ایرانی
+    
     private static readonly Regex PhoneRegex = new(
         @"\b(0?9[0-9]{2})[\s\-]?(\d{3})[\s\-]?(\d{4})\b",
         RegexOptions.Compiled);
 
-    // ایمیل
+    
     private static readonly Regex EmailRegex = new(
         @"\b([a-zA-Z0-9._%+\-]+)@([a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b",
         RegexOptions.Compiled);
 
-    // کد ملی ایرانی (10 رقم)
+    
     private static readonly Regex NationalCodeRegex = new(
         @"\b(\d{3})(\d{4})(\d{3})\b",
         RegexOptions.Compiled);
 
-    // Bearer Token و JWT
+    
     private static readonly Regex BearerTokenRegex = new(
         @"(Bearer\s+)[A-Za-z0-9\-._~+/]+=*",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    // رمز عبور در JSON
+    
     private static readonly Regex PasswordFieldRegex = new(
         @"""(password|passwd|secret|token|apikey|api_key)""\s*:\s*""([^""]*)""",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    // IBAN / شبا
+    
     private static readonly Regex IbanRegex = new(
         @"\bIR\d{24}\b",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    // ─── Implementation ──────────────────────────────────────────────────────
+    
 
     public string MaskSensitiveData(string input)
     {
@@ -61,32 +61,32 @@ public sealed class AuditMaskingService : IAuditMaskingService
 
         var result = input;
 
-        // ترتیب مهم است - ابتدا الگوهای دقیق‌تر اعمال می‌شوند
+        
 
-        // 1. Bearer Token
+        
         result = BearerTokenRegex.Replace(result, "$1[MASKED-TOKEN]");
 
-        // 2. رمز عبور در JSON
+        
         result = PasswordFieldRegex.Replace(result, "\"$1\":\"[MASKED]\"");
 
-        // 3. شماره کارت
+        
         result = CardNumberRegex.Replace(result, m =>
             $"{m.Groups[1].Value}-****-****-{m.Groups[4].Value}");
 
-        // 4. IBAN
+        
         result = IbanRegex.Replace(result, ir =>
             $"IR{ir.Value[2..6]}****{ir.Value[^4..]}");
 
-        // 5. شماره موبایل
+        
         result = PhoneRegex.Replace(result, m =>
             $"{m.Groups[1].Value}-***-{m.Groups[3].Value}");
 
-        // 6. ایمیل - فقط بخش username را Mask می‌کند
+        
         result = EmailRegex.Replace(result, m =>
             $"{MaskEmail(m.Groups[1].Value)}@{m.Groups[2].Value}");
 
-        // 7. کد ملی (محتاطانه - چون ممکن است با اعداد دیگر تداخل داشته باشد)
-        // فقط در context مشخص Mask می‌شود
+        
+        
         result = MaskNationalCodeInContext(result);
 
         return result;
@@ -97,7 +97,7 @@ public sealed class AuditMaskingService : IAuditMaskingService
         return MaskSensitiveData(details);
     }
 
-    // ─── Private Helpers ─────────────────────────────────────────────────────
+    
 
     private static string MaskEmail(string username)
     {
@@ -107,7 +107,7 @@ public sealed class AuditMaskingService : IAuditMaskingService
 
     private static string MaskNationalCodeInContext(string input)
     {
-        // فقط زمانی که با کلمه کلیدی مشخص همراه باشد
+        
         var contextPattern = new Regex(
             @"(ملی|national.?code|nationalcode|national_id)\s*[=:]\s*(\d{10})",
             RegexOptions.IgnoreCase);
@@ -117,7 +117,7 @@ public sealed class AuditMaskingService : IAuditMaskingService
     }
 }
 
-// ─── Masking Extensions ───────────────────────────────────────────────────────
+
 
 public static class MaskingExtensions
 {

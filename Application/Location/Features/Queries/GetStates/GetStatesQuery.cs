@@ -1,4 +1,4 @@
-﻿namespace Application.Location.Features.Queries.GetCities;
+namespace Application.Location.Features.Queries.GetCities;
 
 public record GetStatesQuery : IRequest<ServiceResult<IEnumerable<StateDto>>>;
 

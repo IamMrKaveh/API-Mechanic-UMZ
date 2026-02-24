@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Communication.Services;
+namespace Infrastructure.Communication.Services;
 
 /// <summary>
 /// تنظیمات سرویس Kavenegar
@@ -25,7 +25,7 @@ public class SmsService : ISmsService
         _logger = logger;
         _options = options.Value;
 
-        // در صورت خالی بودن ApiKey، فوری شکست بخور
+        
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
             throw new InvalidOperationException(
                 "Kavenegar ApiKey is not configured. " +

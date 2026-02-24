@@ -1,4 +1,4 @@
-﻿namespace Application.Search.Features.Queries.GlobalSearch;
+namespace Application.Search.Features.Queries.GlobalSearch;
 
 public class GlobalSearchValidator : AbstractValidator<GlobalSearchQuery>
 {

@@ -1,4 +1,4 @@
-﻿namespace Domain.User.Events;
+namespace Domain.User.Events;
 
 /// <summary>
 /// رویداد تغییر آدرس پیش‌فرض کاربر

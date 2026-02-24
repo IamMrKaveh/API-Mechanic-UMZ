@@ -1,4 +1,4 @@
-﻿namespace Domain.Discount.ValueObjects;
+namespace Domain.Discount.ValueObjects;
 
 public sealed class DiscountAmount : ValueObject
 {
@@ -45,13 +45,13 @@ public sealed class DiscountAmount : ValueObject
             discount = Value;
         }
 
-        // محدود کردن به مبلغ کل سفارش
+        
         if (discount.Amount > orderTotal.Amount)
         {
             discount = orderTotal;
         }
 
-        // اعمال سقف تخفیف
+        
         if (maxDiscount != null && discount.Amount > maxDiscount.Amount)
         {
             discount = maxDiscount;

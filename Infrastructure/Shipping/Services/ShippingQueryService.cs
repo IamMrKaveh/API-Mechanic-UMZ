@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Shipping.Services;
+namespace Infrastructure.Shipping.Services;
 
 public class ShippingQueryService : IShippingQueryService
 {

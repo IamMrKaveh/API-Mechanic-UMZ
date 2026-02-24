@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Features.Queries.GetCategories;
+namespace Application.Category.Features.Queries.GetCategories;
 
 public class GetAdminCategoriesLegacyQueryHandler
     : IRequestHandler<GetAdminCategoriesLegacyQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>

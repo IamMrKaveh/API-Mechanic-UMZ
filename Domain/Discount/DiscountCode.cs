@@ -1,4 +1,4 @@
-﻿namespace Domain.Discount;
+namespace Domain.Discount;
 
 public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
 {
@@ -27,23 +27,23 @@ public class DiscountCode : AggregateRoot, ISoftDeletable, IActivatable, IAudita
     public DateTime? ExpiresAt => _expiresAt;
     public DateTime? StartsAt => _startsAt;
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Soft Delete
+    
     public bool IsDeleted { get; private set; }
 
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Navigation
+    
     public IReadOnlyCollection<DiscountRestriction> Restrictions => _restrictions.AsReadOnly();
 
     public IReadOnlyCollection<DiscountUsage> Usages => _usages.AsReadOnly();
 
-    // Business Constants
+    
     private const int MinCodeLength = 3;
 
     private const int MaxCodeLength = 20;

@@ -1,4 +1,4 @@
-﻿namespace Domain.Audit;
+namespace Domain.Audit;
 
 /// <summary>
 /// لاگ حسابرسی Immutable - هیچ‌گاه ویرایش یا حذف نمی‌شود.
@@ -19,11 +19,11 @@ public sealed class AuditLog : BaseEntity
     public string? UserAgent { get; private set; }
     public DateTime Timestamp { get; private set; }
 
-    // ─── Integrity ───────────────────────────────────────────
+    
     /// <summary>Hash برای تشخیص دستکاری</summary>
     public string IntegrityHash { get; private set; } = null!;
 
-    // ─── Retention & Archival ─────────────────────────────────
+    
     public bool IsArchived { get; private set; }
 
     public DateTime? ArchivedAt { get; private set; }
@@ -31,7 +31,7 @@ public sealed class AuditLog : BaseEntity
     private AuditLog()
     { }
 
-    // ─── Factory ─────────────────────────────────────────────────────────────
+    
 
     public static AuditLog Create(
         int? userId,
@@ -59,7 +59,7 @@ public sealed class AuditLog : BaseEntity
         return log;
     }
 
-    // ─── Archival ─────────────────────────────────────────────────────────────
+    
 
     /// <summary>
     /// علامت‌گذاری به عنوان Archived (برای لاگ‌های مالی که باید در DB بمانند).
@@ -71,7 +71,7 @@ public sealed class AuditLog : BaseEntity
         ArchivedAt = DateTime.UtcNow;
     }
 
-    // ─── Integrity ────────────────────────────────────────────────────────────
+    
 
     /// <summary>
     /// بررسی Integrity لاگ (آیا دستکاری شده؟).
@@ -90,7 +90,7 @@ public sealed class AuditLog : BaseEntity
         return Convert.ToBase64String(hash);
     }
 
-    // ─── Helper Properties ────────────────────────────────────────────────────
+    
 
     public bool IsFinancialEvent => EventType is
         "PaymentEvent" or "OrderEvent" or "RefundEvent" or "FinancialEvent";

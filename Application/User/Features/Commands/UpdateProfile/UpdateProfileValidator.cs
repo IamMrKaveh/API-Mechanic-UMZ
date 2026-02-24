@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.UpdateProfile;
+namespace Application.User.Features.Commands.UpdateProfile;
 
 public class UpdateProfileValidator : AbstractValidator<UpdateProfileCommand>
 {

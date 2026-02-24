@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Contracts;
+namespace Application.Media.Contracts;
 
 public interface IMediaService
 {

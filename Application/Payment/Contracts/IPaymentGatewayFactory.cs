@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Contracts;
+namespace Application.Payment.Contracts;
 
 /// <summary>
 /// Factory برای انتخاب درگاه پرداخت مناسب.
@@ -22,7 +22,7 @@ public interface IPaymentGatewayFactory
     IEnumerable<string> GetAvailableGateways();
 }
 
-// ─── تنظیمات درگاه پرداخت ────────────────────────────────────────────────────
+
 
 public sealed class PaymentGatewayOptions
 {

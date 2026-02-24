@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Features.Queries.GetProductVariantShipping;
+namespace Application.Variant.Features.Queries.GetProductVariantShipping;
 
 public class GetProductVariantShippingHandler : IRequestHandler<GetProductVariantShippingQuery, ServiceResult<ProductVariantShippingInfoDto>>
 {
@@ -36,9 +36,9 @@ public class GetProductVariantShippingHandler : IRequestHandler<GetProductVarian
 
             var result = new ProductVariantShippingInfoDto
             {
-                VariantId = variant.Id, // Assuming ID is directly accessible or via DTO mapping logic
+                VariantId = variant.Id, 
                 ProductName = variant.Product?.Name,
-                VariantDisplayName = variant.Sku ?? "N/A", // Simplified for example
+                VariantDisplayName = variant.Sku ?? "N/A", 
                 ShippingMultiplier = variant.ShippingMultiplier,
                 AvailableShippings = allShippings.Select(sm => new ShippingSelectionDto
                 {

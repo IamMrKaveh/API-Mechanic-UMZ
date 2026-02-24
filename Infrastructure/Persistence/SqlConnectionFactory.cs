@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Persistence;
+namespace Infrastructure.Persistence;
 
 public class SqlConnectionFactory : ISqlConnectionFactory
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Support.Features.Commands.ReplyToTicket;
+namespace Application.Support.Features.Commands.ReplyToTicket;
 
 public sealed class ReplyToTicketValidator : AbstractValidator<ReplyToTicketCommand>
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.ChangePhoneNumber;
+namespace Application.User.Features.Commands.ChangePhoneNumber;
 
 public class ChangePhoneNumberHandler : IRequestHandler<ChangePhoneNumberCommand, ServiceResult>
 {
@@ -25,7 +25,7 @@ public class ChangePhoneNumberHandler : IRequestHandler<ChangePhoneNumberCommand
     public async Task<ServiceResult> Handle(
         ChangePhoneNumberCommand request, CancellationToken cancellationToken)
     {
-        // 1. اعتبارسنجی شماره تلفن جدید
+        
         var (phoneSuccess, phoneNumber, phoneError) =
             PhoneNumber.TryCreate(request.NewPhoneNumber);
         if (!phoneSuccess)
@@ -33,16 +33,16 @@ public class ChangePhoneNumberHandler : IRequestHandler<ChangePhoneNumberCommand
 
         var normalizedPhone = phoneNumber!.Value;
 
-        // 2. بررسی یکتایی (بین Aggregate‌ها - نیاز به Repository)
+        
         if (await _userRepository.PhoneNumberExistsAsync(normalizedPhone, request.UserId, cancellationToken))
             return ServiceResult.Failure("این شماره تلفن قبلاً ثبت شده است.");
 
-        // 3. دریافت کاربر با OTPها
+        
         var user = await _userRepository.GetWithOtpsAsync(request.UserId, cancellationToken);
         if (user == null)
             return ServiceResult.Failure("کاربر یافت نشد.", 404);
 
-        // 4. تأیید OTP
+        
         var otpHash = _otpService.HashOtp(request.OtpCode);
         if (!user.VerifyOtp(request.OtpCode))
         {
@@ -53,7 +53,7 @@ public class ChangePhoneNumberHandler : IRequestHandler<ChangePhoneNumberCommand
 
         try
         {
-            // 5. تغییر شماره تلفن (Domain Logic)
+            
             user.ChangePhoneNumber(normalizedPhone);
 
             _userRepository.Update(user);

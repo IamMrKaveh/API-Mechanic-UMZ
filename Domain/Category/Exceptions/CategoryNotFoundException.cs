@@ -1,4 +1,4 @@
-﻿namespace Domain.Category.Exceptions;
+namespace Domain.Category.Exceptions;
 
 public class CategoryNotFoundException : DomainException
 {

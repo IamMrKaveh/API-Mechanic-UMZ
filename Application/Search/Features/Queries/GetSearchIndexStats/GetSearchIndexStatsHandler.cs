@@ -1,4 +1,4 @@
-﻿namespace Application.Search.Features.Queries.GetSearchIndexStats;
+namespace Application.Search.Features.Queries.GetSearchIndexStats;
 
 public class GetSearchIndexStatsHandler : IRequestHandler<GetSearchIndexStatsQuery, ServiceResult<object>>
 {

@@ -1,4 +1,4 @@
-﻿namespace Domain.Common.Events;
+namespace Domain.Common.Events;
 
 /// <summary>
 /// کلاس پایه برای Domain Event‌ها

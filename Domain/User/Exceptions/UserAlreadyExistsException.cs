@@ -1,4 +1,4 @@
-﻿namespace Domain.User.Exceptions;
+namespace Domain.User.Exceptions;
 
 public class UserAlreadyExistsException : DomainException
 {

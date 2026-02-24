@@ -1,4 +1,4 @@
-﻿using Domain.Support.ValueObjects;
+using Domain.Support.ValueObjects;
 
 namespace Domain.Support;
 
@@ -20,10 +20,10 @@ public class Ticket : AggregateRoot, IAuditable
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    // Navigation
+    
     public Domain.User.User User { get; private set; } = null!;
 
-    // Computed Properties
+    
     public bool IsClosed => _status == TicketStatuses.Closed;
 
     public bool IsOpen => _status == TicketStatuses.Open;
@@ -32,7 +32,7 @@ public class Ticket : AggregateRoot, IAuditable
     public int MessageCount => _messages.Count;
     public DateTime? LastMessageAt => _messages.OrderByDescending(m => m.CreatedAt).FirstOrDefault()?.CreatedAt;
 
-    // Business Constants
+    
     private const int MaxSubjectLength = 200;
 
     private const int MinSubjectLength = 5;

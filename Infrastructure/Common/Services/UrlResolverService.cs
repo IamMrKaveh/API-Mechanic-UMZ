@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Common.Services;
+namespace Infrastructure.Common.Services;
 
 public sealed class UrlResolverService : IUrlResolverService
 {

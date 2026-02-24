@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Inventory.Services;
+namespace Infrastructure.Inventory.Services;
 
 /// <summary>
 /// سرویس دفتر کل موجودی (Stock Ledger).
@@ -15,7 +15,7 @@ public sealed class StockLedgerService : IStockLedgerService
         _logger = logger;
     }
 
-    // ─── ثبت رویدادهای موجودی ─────────────────────────────────────────────
+    
 
     public async Task RecordStockInAsync(
         int variantId,
@@ -146,7 +146,7 @@ public sealed class StockLedgerService : IStockLedgerService
             userId, warehouseId, ct);
     }
 
-    // ─── Private Helpers ─────────────────────────────────────────────────────
+    
 
     private async Task AppendEntryAsync(StockLedgerEntry entry, CancellationToken ct)
     {

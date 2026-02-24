@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Commands.RestoreProduct;
+namespace Application.Product.Features.Commands.RestoreProduct;
 
 public class RestoreProductHandler : IRequestHandler<RestoreProductCommand, ServiceResult>
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Contracts;
+namespace Application.Media.Contracts;
 
 /// <summary>
 /// سرویس ذخیره‌سازی فایل - پیاده‌سازی با S3/Liara در Infrastructure

@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Commands.AddToCart;
+namespace Application.Cart.Features.Commands.AddToCart;
 
 public record AddToCartCommand(
     int VariantId,

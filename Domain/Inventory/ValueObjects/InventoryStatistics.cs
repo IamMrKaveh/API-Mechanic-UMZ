@@ -1,4 +1,4 @@
-﻿namespace Domain.Inventory.ValueObjects;
+namespace Domain.Inventory.ValueObjects;
 
 public sealed class InventoryStatistics : ValueObject
 {
@@ -58,7 +58,7 @@ public sealed class InventoryStatistics : ValueObject
     public static InventoryStatistics Empty() =>
         Create(0, 0, 0, 0, 0, 0, 0);
 
-    // Computed Properties - Domain Logic
+    
     public Money PotentialProfit => TotalSellingValue.Subtract(TotalInventoryValue);
 
     public decimal InStockPercentage =>

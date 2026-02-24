@@ -1,4 +1,4 @@
-﻿namespace Domain.Support.ValueObjects;
+namespace Domain.Support.ValueObjects;
 
 public sealed class TicketPriority : ValueObject
 {

@@ -1,4 +1,4 @@
-﻿namespace Domain.Cart.ValueObjects;
+namespace Domain.Cart.ValueObjects;
 
 public sealed class GuestToken : ValueObject
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Analytics.Features.Queries.GetTopSellingProducts;
+namespace Application.Analytics.Features.Queries.GetTopSellingProducts;
 
 public sealed record GetTopSellingProductsQuery(
     int Count = 10,

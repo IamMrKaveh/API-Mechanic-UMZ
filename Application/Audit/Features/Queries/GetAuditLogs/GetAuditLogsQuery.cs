@@ -1,4 +1,4 @@
-﻿namespace Application.Audit.Features.Queries.GetAuditLogs;
+namespace Application.Audit.Features.Queries.GetAuditLogs;
 
 public sealed record GetAuditLogsQuery(
     int? UserId,

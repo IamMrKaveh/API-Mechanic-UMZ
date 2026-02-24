@@ -1,4 +1,4 @@
-﻿namespace Domain.Inventory;
+namespace Domain.Inventory;
 
 /// <summary>
 /// Aggregate انبار (Warehouse).
@@ -17,24 +17,24 @@ public sealed class Warehouse : AggregateRoot, ISoftDeletable, IActivatable, IAu
     public bool IsDefault { get; private set; }
     public int Priority { get; private set; }
 
-    // Soft Delete
+    
     public bool IsDeleted { get; private set; }
 
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Navigation
+    
     public IReadOnlyCollection<WarehouseStock> Stocks => _stocks.AsReadOnly();
 
     private Warehouse()
     { }
 
-    // ─── Factory
+    
 
     public static Warehouse Create(
     string code,
@@ -67,7 +67,7 @@ public sealed class Warehouse : AggregateRoot, ISoftDeletable, IActivatable, IAu
         return warehouse;
     }
 
-    // ─── موجودی Variant در این انبار
+    
 
     public WarehouseStock GetOrCreateStock(int variantId)
     {
@@ -89,7 +89,7 @@ public sealed class Warehouse : AggregateRoot, ISoftDeletable, IActivatable, IAu
     public bool CanFulfill(int variantId, int quantity) =>
         GetAvailableStock(variantId) >= quantity;
 
-    // ─── مدیریت انبار
+    
 
     public void Update(string name, string city, string? address, string? phone, int priority)
     {

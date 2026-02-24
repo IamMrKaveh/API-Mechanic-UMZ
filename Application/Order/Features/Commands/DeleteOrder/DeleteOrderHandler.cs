@@ -1,4 +1,4 @@
-﻿using Application.Features.Orders.Commands.DeleteOrder;
+using Application.Features.Orders.Commands.DeleteOrder;
 
 namespace Application.Order.Features.Commands.DeleteOrder;
 
@@ -26,7 +26,7 @@ public class DeleteOrderHandler : IRequestHandler<DeleteOrderCommand, ServiceRes
 
         try
         {
-            // Use domain method which enforces business rules
+            
             order.Delete(request.UserId);
         }
         catch (DomainException ex)

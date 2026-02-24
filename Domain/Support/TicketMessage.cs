@@ -1,4 +1,4 @@
-﻿namespace Domain.Support;
+namespace Domain.Support;
 
 public class TicketMessage : BaseEntity, IAuditable
 {
@@ -11,16 +11,11 @@ public class TicketMessage : BaseEntity, IAuditable
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    //Navigation
-    public Ticket Ticket { get; private set; }
+    public Ticket? Ticket { get; private set; }
 
-    // Business Constants
     private const int MaxMessageLength = 5000;
 
     private const int MinMessageLength = 1;
-
-    private TicketMessage()
-    { }
 
     #region Factory Method
 
@@ -31,7 +26,6 @@ public class TicketMessage : BaseEntity, IAuditable
 
         if (isAdmin && !senderId.HasValue)
         {
-            // برای پیام‌های ادمین، senderId توصیه می‌شود اما اجباری نیست
         }
 
         return new TicketMessage

@@ -1,4 +1,4 @@
-﻿namespace Domain.User;
+namespace Domain.User;
 
 public class UserAddress : BaseEntity, IAuditable, ISoftDeletable, IActivatable
 {
@@ -27,21 +27,21 @@ public class UserAddress : BaseEntity, IAuditable, ISoftDeletable, IActivatable
     public bool IsDefault => _isDefault;
     public bool IsActive => _isActive;
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Soft Delete
+    
     public bool IsDeleted { get; private set; }
 
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Navigation
+    
     public User? User { get; private set; }
 
-    // Business Constants
+    
     private const int MaxTitleLength = 100;
 
     private const int MaxReceiverNameLength = 100;

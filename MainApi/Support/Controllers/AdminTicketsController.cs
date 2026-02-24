@@ -1,4 +1,4 @@
-﻿namespace MainApi.Support.Controllers;
+namespace MainApi.Support.Controllers;
 
 [Route("api/admin/tickets")]
 [ApiController]

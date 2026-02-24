@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Payment.Factory;
+namespace Infrastructure.Payment.Factory;
 
 /// <summary>
 /// پیاده‌سازی Factory برای مدیریت چند درگاه پرداخت.

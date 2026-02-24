@@ -1,4 +1,4 @@
-﻿namespace Application.Brand.Features.Commands.DeleteBrand;
+namespace Application.Brand.Features.Commands.DeleteBrand;
 
 public record DeleteBrandCommand(
     int CategoryId,

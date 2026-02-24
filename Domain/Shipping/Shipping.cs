@@ -1,4 +1,4 @@
-﻿namespace Domain.Shipping;
+namespace Domain.Shipping;
 
 public class Shipping : BaseEntity, ISoftDeletable, IActivatable, IAuditable
 {

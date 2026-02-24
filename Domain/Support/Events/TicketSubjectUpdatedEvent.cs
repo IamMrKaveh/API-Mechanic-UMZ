@@ -1,4 +1,4 @@
-﻿namespace Domain.Support.Events;
+namespace Domain.Support.Events;
 
 public sealed class TicketSubjectUpdatedEvent : DomainEvent
 {

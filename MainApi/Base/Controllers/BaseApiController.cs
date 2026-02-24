@@ -1,4 +1,4 @@
-﻿namespace MainApi.Base.Controllers;
+namespace MainApi.Base.Controllers;
 
 [ApiController]
 public abstract class BaseApiController : ControllerBase

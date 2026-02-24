@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Commands.DeleteDiscount;
+namespace Application.Discount.Features.Commands.DeleteDiscount;
 
 public class DeleteDiscountHandler : IRequestHandler<DeleteDiscountCommand, ServiceResult>
 {
@@ -28,7 +28,7 @@ public class DeleteDiscountHandler : IRequestHandler<DeleteDiscountCommand, Serv
         var discount = await _discountRepository.GetByIdAsync(request.Id, ct);
         if (discount == null) return ServiceResult.Failure("یافت نشد.");
 
-        // Soft Delete از طریق متد Domain (نه تنظیم مستقیم property ها)
+        
         discount.Delete(_currentUserService.UserId);
 
         _discountRepository.Update(discount);

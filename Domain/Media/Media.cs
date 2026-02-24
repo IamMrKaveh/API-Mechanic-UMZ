@@ -1,4 +1,4 @@
-﻿namespace Domain.Media;
+namespace Domain.Media;
 
 public class Media : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
 {
@@ -6,7 +6,7 @@ public class Media : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
     private readonly List<string> _allowedDocumentExtensions = new() { "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt" };
     private readonly List<string> _allowedVideoExtensions = new() { "mp4", "avi", "mkv", "mov", "wmv", "flv" };
 
-    private const long MaxFileSizeBytes = 50 * 1024 * 1024; // 50MB
+    private const long MaxFileSizeBytes = 50 * 1024 * 1024; 
     private const int MaxFileNameLength = 255;
     private const int MaxAltTextLength = 500;
 
@@ -20,21 +20,21 @@ public class Media : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
     public bool IsPrimary { get; private set; }
     public string? AltText { get; private set; }
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Soft Delete
+    
     public bool IsDeleted { get; private set; }
 
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Activation
+    
     public bool IsActive { get; private set; }
 
-    // Computed Properties
+    
     public string Extension => GetExtension();
 
     public bool IsImage => _allowedImageExtensions.Contains(Extension);
@@ -181,7 +181,7 @@ public class Media : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
 
         EntityType = entityType.Trim();
         EntityId = entityId;
-        IsPrimary = false; // Reset primary when moving
+        IsPrimary = false; 
         UpdatedAt = DateTime.UtcNow;
 
         AddDomainEvent(new MediaMovedEvent(Id, oldEntityType, oldEntityId, EntityType, EntityId));
@@ -205,7 +205,7 @@ public class Media : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         if (!IsActive) return;
 
         IsActive = false;
-        IsPrimary = false; // Cannot be primary if inactive
+        IsPrimary = false; 
         UpdatedAt = DateTime.UtcNow;
     }
 

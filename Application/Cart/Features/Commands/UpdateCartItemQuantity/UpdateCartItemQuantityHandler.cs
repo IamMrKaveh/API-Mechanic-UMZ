@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
+namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
 
 /// <summary>
 /// آپدیت موجودی یک آیتم در سبد خرید با استفاده از Domain Service برای اعتبارسنجی و اعمال قوانین تجاری
@@ -42,7 +42,7 @@ public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuant
         if (cart == null)
             return ServiceResult<CartDetailDto>.Failure("سبد خرید یافت نشد.", 404);
 
-        // اگر تعداد صفر باشد، حذف آیتم
+        
         if (request.Quantity == 0)
         {
             cart.RemoveItem(request.VariantId);
@@ -53,12 +53,12 @@ public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuant
             return ServiceResult<CartDetailDto>.Success(updatedCart!);
         }
 
-        // بارگذاری واریانت برای بررسی موجودی
+        
         var variant = await _productRepository.GetVariantByIdAsync(request.VariantId, ct);
         if (variant == null || !variant.IsActive || variant.IsDeleted)
             return ServiceResult<CartDetailDto>.Failure("محصول یافت نشد یا غیرفعال است.", 404);
 
-        // اعتبارسنجی از طریق Domain Service با استفاده از AvailableStock
+        
         var (isValid, error) = _cartItemValidationService.ValidateUpdateQuantity(
             request.Quantity,
             variant.AvailableStock,
@@ -67,7 +67,7 @@ public class UpdateCartItemQuantityHandler : IRequestHandler<UpdateCartItemQuant
         if (!isValid)
             return ServiceResult<CartDetailDto>.Failure(error!, 400);
 
-        // به‌روزرسانی تعداد در Domain Aggregate
+        
         cart.UpdateItemQuantity(request.VariantId, request.Quantity);
 
         await _unitOfWork.SaveChangesAsync(ct);

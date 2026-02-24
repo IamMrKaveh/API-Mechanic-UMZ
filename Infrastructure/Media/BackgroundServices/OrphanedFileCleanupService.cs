@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Media.BackgroundServices;
+namespace Infrastructure.Media.BackgroundServices;
 
 /// <summary>
 /// scope در داخل حلقه while ایجاد می‌شود

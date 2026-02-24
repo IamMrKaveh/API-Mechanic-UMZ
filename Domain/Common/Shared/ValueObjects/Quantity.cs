@@ -1,4 +1,4 @@
-﻿namespace Domain.Common.Shared.ValueObjects;
+namespace Domain.Common.Shared.ValueObjects;
 
 public class Quantity : ValueObject
 {

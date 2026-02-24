@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant;
+namespace Domain.Variant;
 
 public class ProductVariant : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
 {

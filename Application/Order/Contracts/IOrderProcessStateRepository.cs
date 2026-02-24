@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Contracts;
+namespace Application.Order.Contracts;
 
 /// <summary>
 /// Repository interface برای ذخیره وضعیت Saga در دیتابیس

@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Cache.EventHandlers;
+namespace Infrastructure.Cache.EventHandlers;
 
 public sealed class ProductCacheInvalidationHandler :
     INotificationHandler<ProductUpdatedEvent>,

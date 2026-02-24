@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Contracts;
+namespace Application.Product.Contracts;
 
 public interface IProductRepository
 {

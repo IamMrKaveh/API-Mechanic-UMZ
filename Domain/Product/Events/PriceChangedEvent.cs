@@ -1,4 +1,4 @@
-﻿namespace Domain.Product.Events;
+namespace Domain.Product.Events;
 
 public sealed class PriceChangedEvent : DomainEvent
 {

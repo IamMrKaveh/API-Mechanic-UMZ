@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Variant.Repositories;
+namespace Infrastructure.Variant.Repositories;
 
 public class VariantRepository : IVariantRepository
 {

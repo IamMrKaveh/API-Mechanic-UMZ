@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Commands.RecordDamage;
+namespace Application.Inventory.Features.Commands.RecordDamage;
 
 public class RecordDamageValidator : AbstractValidator<RecordDamageCommand>
 {

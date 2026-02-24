@@ -1,4 +1,4 @@
-﻿namespace Application.Analytics.Features.Queries.GetCategoryPerformance;
+namespace Application.Analytics.Features.Queries.GetCategoryPerformance;
 
 public sealed class GetCategoryPerformanceValidator : AbstractValidator<GetCategoryPerformanceQuery>
 {

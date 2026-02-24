@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.Rules;
+namespace Domain.Order.Rules;
 
 public sealed class OrderMustHaveItemsRule : IBusinessRule
 {

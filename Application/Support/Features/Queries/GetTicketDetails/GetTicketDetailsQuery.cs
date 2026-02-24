@@ -1,4 +1,4 @@
-﻿namespace Application.Support.Features.Queries.GetTicketDetails;
+namespace Application.Support.Features.Queries.GetTicketDetails;
 
 public sealed record GetTicketDetailsQuery(
     int TicketId,

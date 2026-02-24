@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Search.BackgroundServices;
+namespace Infrastructure.Search.BackgroundServices;
 
 /// <summary>
 /// هر batch پردازش در scope جداگانه انجام می‌شود

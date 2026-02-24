@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant.Events;
+namespace Domain.Variant.Events;
 
 /// <summary>
 /// رویداد تغییر وضعیت موجودی نامحدود واریانت

@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Inventory.Services;
+namespace Infrastructure.Inventory.Services;
 
 public class InventoryQueryService : IInventoryQueryService
 {

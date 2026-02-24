@@ -1,4 +1,4 @@
-﻿namespace Domain.Inventory.ValueObjects;
+namespace Domain.Inventory.ValueObjects;
 
 public sealed class WarehouseCode : ValueObject
 {

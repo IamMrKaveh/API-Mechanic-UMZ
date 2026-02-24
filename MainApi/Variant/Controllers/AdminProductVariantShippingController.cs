@@ -1,4 +1,4 @@
-﻿namespace MainApi.Variant.Controllers;
+namespace MainApi.Variant.Controllers;
 
 [Route("api/admin/products/variants/shipping")]
 [Authorize(Roles = "Admin")]

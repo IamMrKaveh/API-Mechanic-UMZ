@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Contracts;
+namespace Application.Category.Contracts;
 
 public interface ICategoryQueryService
 {

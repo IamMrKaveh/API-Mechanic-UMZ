@@ -1,4 +1,4 @@
-﻿using Domain.Payment.Events;
+using Domain.Payment.Events;
 using Domain.Payment.ValueObjects;
 
 namespace Domain.Payment;
@@ -43,21 +43,21 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
     public bool IsVerificationInProgress => _isVerificationInProgress;
     public DateTime ExpiresAt => _expiresAt;
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Soft Delete
+    
     public bool IsDeleted { get; private set; }
 
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Navigation
+    
     public Order.Order? Order { get; private set; }
 
-    // Business Constants
+    
     private const int DefaultExpiryMinutes = 20;
 
     private const int MaxAuthorityLength = 100;

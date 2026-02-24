@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Features.Commands.UploadMedia;
+namespace Application.Media.Features.Commands.UploadMedia;
 
 public record UploadMediaCommand : IRequest<ServiceResult<MediaDto>>
 {

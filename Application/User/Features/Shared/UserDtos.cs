@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Shared;
+namespace Application.User.Features.Shared;
 
 public record UserProfileDto
 {

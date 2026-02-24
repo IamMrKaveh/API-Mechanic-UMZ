@@ -1,4 +1,4 @@
-﻿namespace MainApi.Product.Controllers;
+namespace MainApi.Product.Controllers;
 
 [ApiController]
 [Route("api/admin/products")]

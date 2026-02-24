@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Audit.Services;
+namespace Infrastructure.Audit.Services;
 
 /// <summary>
 /// سرویس حسابرسی تقویت‌شده با:
@@ -28,7 +28,7 @@ public sealed class EnhancedAuditService : IAuditService
         _logger = logger;
     }
 
-    // ─── ثبت لاگ (Immutable - فقط اضافه) ───────────────────────────────────
+    
 
     public async Task LogAsync(
         int? userId,
@@ -41,7 +41,7 @@ public sealed class EnhancedAuditService : IAuditService
     {
         try
         {
-            // Mask کردن اطلاعات حساس قبل از ثبت
+            
             var maskedDetails = _masking.MaskDetails(details);
             var maskedAction = _masking.MaskSensitiveData(action);
 
@@ -54,8 +54,8 @@ public sealed class EnhancedAuditService : IAuditService
                 userAgent: SanitizeUserAgent(userAgent));
 
             await _auditRepository.AddAuditLogAsync(auditLog);
-            // نکته: از UnitOfWork جداگانه استفاده می‌کنیم تا لاگ‌ها
-            // مستقل از سایر تراکنش‌ها ذخیره شوند
+            
+            
             await _unitOfWork.SaveChangesAsync(CancellationToken.None);
 
             _logger.LogDebug(
@@ -64,12 +64,12 @@ public sealed class EnhancedAuditService : IAuditService
         }
         catch (Exception ex)
         {
-            // لاگ حسابرسی نباید عملیات اصلی را خراب کند
+            
             _logger.LogError(ex, "Failed to write audit log: {Action}", action);
         }
     }
 
-    // ─── Query لاگ‌ها (Admin) ────────────────────────────────────────────────
+    
 
     public async Task<(IEnumerable<AuditDtos> Logs, int TotalItems)> GetAuditLogsAsync(
         int? userId,
@@ -136,7 +136,7 @@ public sealed class EnhancedAuditService : IAuditService
         return System.Text.Encoding.UTF8.GetBytes(sb.ToString());
     }
 
-    // ─── Shorthand Methods ───────────────────────────────────────────────────
+    
 
     public Task LogUserActionAsync(int userId, string action, string details, string ipAddress, string? userAgent = null)
         => LogAsync(userId, "UserAction", action, details, ipAddress, userAgent);
@@ -168,7 +168,7 @@ public sealed class EnhancedAuditService : IAuditService
     public Task LogPaymentEventAsync(int orderId, string action, int userId, string details)
         => LogAsync(userId, "PaymentEvent", action, $"OrderId={orderId}, {details}");
 
-    // ─── Private Helpers ─────────────────────────────────────────────────────
+    
 
     private static string SanitizeInput(string input)
     {

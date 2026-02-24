@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Search.EventHandlers;
+namespace Infrastructure.Search.EventHandlers;
 
 /// <summary>
 /// Queue-based event processor for batching Elasticsearch updates

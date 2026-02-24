@@ -1,4 +1,4 @@
-﻿namespace Domain.Review;
+namespace Domain.Review;
 
 public class ProductReview : AggregateRoot, IAuditable, ISoftDeletable
 {

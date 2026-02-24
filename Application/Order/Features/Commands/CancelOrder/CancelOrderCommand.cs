@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.CancelOrder;
+namespace Application.Order.Features.Commands.CancelOrder;
 
 public record CancelOrderCommand : IRequest<ServiceResult>
 {

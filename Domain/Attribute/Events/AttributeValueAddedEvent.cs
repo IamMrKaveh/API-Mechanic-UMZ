@@ -1,4 +1,4 @@
-﻿namespace Domain.Attribute.Events;
+namespace Domain.Attribute.Events;
 
 public sealed class AttributeValueAddedEvent : DomainEvent
 {

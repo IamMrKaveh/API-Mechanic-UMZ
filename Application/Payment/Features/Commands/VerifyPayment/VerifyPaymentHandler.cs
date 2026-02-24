@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Features.Commands.VerifyPayment;
+namespace Application.Payment.Features.Commands.VerifyPayment;
 
 public class VerifyPaymentHandler : IRequestHandler<VerifyPaymentCommand, ServiceResult<PaymentResultDto>>
 {
@@ -20,11 +20,11 @@ public class VerifyPaymentHandler : IRequestHandler<VerifyPaymentCommand, Servic
     {
         var baseUrl = _frontendUrls.Value.BaseUrl;
 
-        // Note: For full accuracy of Redirection logic, this handler logic previously contained specific checks
-        // to return the right redirect URL even on failure. The updated logic delegates to IPaymentService
-        // but can safely extract results into the proper DTO.
+        
+        
+        
 
-        var result = await _paymentService.VerifyPaymentAsync(request.Authority, 0, cancellationToken); // amount 0 assumes logic internally checks transaction
+        var result = await _paymentService.VerifyPaymentAsync(request.Authority, 0, cancellationToken); 
 
         if (result.IsSucceed && result.Data != default)
         {

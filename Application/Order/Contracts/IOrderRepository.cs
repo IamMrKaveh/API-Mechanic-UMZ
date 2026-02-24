@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Contracts;
+namespace Application.Order.Contracts;
 
 public interface IOrderRepository
 {

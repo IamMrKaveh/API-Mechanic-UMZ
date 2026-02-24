@@ -1,4 +1,4 @@
-﻿namespace Application.Brand.Features.Queries.GetAdminBrands;
+namespace Application.Brand.Features.Queries.GetAdminBrands;
 
 public class GetAdminBrandsHandler
     : IRequestHandler<GetAdminBrandsQuery, ServiceResult<PaginatedResult<BrandListItemDto>>>

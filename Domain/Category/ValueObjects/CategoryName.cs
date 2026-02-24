@@ -1,4 +1,4 @@
-﻿namespace Domain.Category.ValueObjects;
+namespace Domain.Category.ValueObjects;
 
 public sealed class CategoryName : ValueObject
 {

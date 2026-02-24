@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Mapping;
+namespace Application.Cart.Mapping;
 
 public class CartMappingProfile : Profile
 {

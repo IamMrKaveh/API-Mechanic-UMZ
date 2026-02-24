@@ -1,4 +1,4 @@
-﻿namespace Domain.Order;
+namespace Domain.Order;
 
 public class OrderItem : BaseEntity
 {
@@ -16,7 +16,7 @@ public class OrderItem : BaseEntity
     public Money Amount { get; private set; } = null!;
     public Money Profit { get; private set; } = null!;
 
-    // Navigation
+    
     public Order? Order { get; private set; }
 
     public ProductVariant? Variant { get; private set; }

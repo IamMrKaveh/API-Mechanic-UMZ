@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Features.Commands.AtomicRefundPayment;
+namespace Application.Payment.Features.Commands.AtomicRefundPayment;
 
 public class AtomicRefundPaymentValidator : AbstractValidator<AtomicRefundPaymentCommand>
 {

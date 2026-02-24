@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Commands.UpdateDiscount;
+namespace Application.Discount.Features.Commands.UpdateDiscount;
 
 public record UpdateDiscountCommand : IRequest<ServiceResult>
 {

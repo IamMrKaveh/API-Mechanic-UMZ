@@ -1,4 +1,4 @@
-﻿namespace Domain.Media.Events;
+namespace Domain.Media.Events;
 
 public sealed class MediaDeletedEvent : DomainEvent
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Auth.Features.Shared;
+namespace Application.Auth.Features.Shared;
 
 /// <summary>
 /// اینترفیس سرویس احراز هویت - حذف شد

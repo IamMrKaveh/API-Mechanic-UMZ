@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Commands.SyncCartPrices;
+namespace Application.Cart.Features.Commands.SyncCartPrices;
 
 /// <summary>
 /// همگام‌سازی قیمت‌های سبد خرید با قیمت‌های فعلی محصولات.

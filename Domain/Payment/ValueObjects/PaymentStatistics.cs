@@ -1,4 +1,4 @@
-﻿namespace Domain.Payment.ValueObjects;
+namespace Domain.Payment.ValueObjects;
 
 public sealed class PaymentStatistics : ValueObject
 {
@@ -60,7 +60,7 @@ public sealed class PaymentStatistics : ValueObject
     public static PaymentStatistics Empty() =>
         Create(0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-    // Computed Properties
+    
     public decimal SuccessRate =>
         TotalTransactions > 0
             ? Math.Round((decimal)SuccessfulTransactions / TotalTransactions * 100, 2)

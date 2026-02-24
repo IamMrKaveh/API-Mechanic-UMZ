@@ -1,4 +1,4 @@
-﻿namespace Domain.Common.Gaurd;
+namespace Domain.Common.Gaurd;
 
 /// <summary>
 /// Guard Clauses ساده

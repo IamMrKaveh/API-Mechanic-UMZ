@@ -1,4 +1,4 @@
-﻿namespace Domain.Cart.Events;
+namespace Domain.Cart.Events;
 
 public class CartClearedEvent : DomainEvent
 {

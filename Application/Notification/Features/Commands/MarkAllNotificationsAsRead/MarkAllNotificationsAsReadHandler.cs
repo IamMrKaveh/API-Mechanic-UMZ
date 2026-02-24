@@ -1,4 +1,4 @@
-﻿namespace Application.Notification.Features.Commands.MarkAllNotificationsAsRead;
+namespace Application.Notification.Features.Commands.MarkAllNotificationsAsRead;
 
 public sealed class MarkAllNotificationsAsReadHandler
     : IRequestHandler<MarkAllNotificationsAsReadCommand, ServiceResult<int>>

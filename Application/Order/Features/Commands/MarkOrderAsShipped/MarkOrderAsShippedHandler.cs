@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.MarkOrderAsShipped;
+namespace Application.Order.Features.Commands.MarkOrderAsShipped;
 
 public class MarkOrderAsShippedHandler : IRequestHandler<MarkOrderAsShippedCommand, ServiceResult>
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.User.Mapping;
+namespace Application.User.Mapping;
 
 public sealed class UserMappingProfile : Profile
 {

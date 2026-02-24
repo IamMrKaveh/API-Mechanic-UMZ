@@ -1,4 +1,4 @@
-﻿namespace Domain.Product;
+namespace Domain.Product;
 
 public class Product : AggregateRoot, IAuditable, ISoftDeletable
 {
@@ -94,9 +94,6 @@ public class Product : AggregateRoot, IAuditable, ISoftDeletable
             foreach (var method in shippingMethods) variant.AddShipping(method);
         }
     }
-
-    private Product()
-    { }
 
     public static Product Create(ProductName name, Slug slug, int categoryId, int brandId, string? description)
     {

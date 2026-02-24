@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Auth.Services;
+namespace Infrastructure.Auth.Services;
 
 public class TokenService : ITokenService
 {
@@ -70,7 +70,7 @@ public class TokenService : ITokenService
     /// </summary>
     public RefreshTokenResult GenerateRefreshToken()
     {
-        // تولید Selector (برای جستجو در دیتابیس)
+        
         var selectorBytes = new byte[32];
         RandomNumberGenerator.Fill(selectorBytes);
         var selector = Convert.ToBase64String(selectorBytes)
@@ -78,7 +78,7 @@ public class TokenService : ITokenService
             .Replace("/", "_")
             .TrimEnd('=');
 
-        // تولید Verifier (برای اعتبارسنجی)
+        
         var verifierBytes = new byte[32];
         RandomNumberGenerator.Fill(verifierBytes);
         var verifier = Convert.ToBase64String(verifierBytes)
@@ -86,7 +86,7 @@ public class TokenService : ITokenService
             .Replace("/", "_")
             .TrimEnd('=');
 
-        // توکن کامل = Selector.Verifier
+        
         var fullToken = $"{selector}.{verifier}";
 
         return new RefreshTokenResult
@@ -128,7 +128,7 @@ public class TokenService : ITokenService
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)),
-                ValidateLifetime = false // توکن منقضی را قبول می‌کنیم
+                ValidateLifetime = false 
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

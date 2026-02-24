@@ -1,4 +1,4 @@
-﻿namespace Application.Notification.Features.Shared;
+namespace Application.Notification.Features.Shared;
 
 public record NotificationDto
 {

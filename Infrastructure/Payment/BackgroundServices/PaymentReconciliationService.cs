@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Payment.BackgroundServices;
+namespace Infrastructure.Payment.BackgroundServices;
 
 public sealed class PaymentReconciliationService : BackgroundService
 {

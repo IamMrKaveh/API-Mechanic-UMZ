@@ -1,6 +1,6 @@
-﻿namespace Application.Product.Features.Shared;
+namespace Application.Product.Features.Shared;
 
-// ========== Admin DTOs ==========
+
 
 public record AdminProductSearchParams
 {
@@ -48,7 +48,7 @@ public record AdminProductDetailDto
     public string? RowVersion { get; init; }
 }
 
-// ========== Public DTOs ==========
+
 
 public record ProductCatalogSearchParams
 {
@@ -58,7 +58,7 @@ public record ProductCatalogSearchParams
     public decimal? MinPrice { get; init; }
     public decimal? MaxPrice { get; init; }
     public bool InStockOnly { get; init; }
-    public string? SortBy { get; init; } // price_asc, price_desc, newest, bestselling
+    public string? SortBy { get; init; } 
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 20;
 }
@@ -119,7 +119,7 @@ public record BrandInfoDto
     public string CategoryName { get; init; } = string.Empty;
 }
 
-// ========== Variant DTOs ==========
+
 
 public record ProductVariantViewDto
 {
@@ -165,7 +165,7 @@ public record AttributeValueSimpleDto(
     int SortOrder,
     bool IsActive);
 
-// ========== Command Input DTOs ==========
+
 
 public record CreateProductVariantInput
 {

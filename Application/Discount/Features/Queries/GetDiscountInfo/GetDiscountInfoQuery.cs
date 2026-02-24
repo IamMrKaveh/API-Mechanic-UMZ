@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Queries.GetDiscountInfo;
+namespace Application.Discount.Features.Queries.GetDiscountInfo;
 
 /// <summary>
 /// اطلاعات تخفیف برای نمایش به کاربر (بدون اطلاعات حساس ادمین)

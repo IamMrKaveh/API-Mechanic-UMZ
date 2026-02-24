@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Commands.ChangePrice;
+namespace Application.Product.Features.Commands.ChangePrice;
 
 public record ChangePriceCommand : IRequest<ServiceResult>
 {

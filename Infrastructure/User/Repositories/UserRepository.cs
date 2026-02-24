@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.User.Repositories;
+namespace Infrastructure.User.Repositories;
 
 public class UserRepository : IUserRepository
 {
@@ -128,7 +128,7 @@ public class UserRepository : IUserRepository
         _context.Entry(user).Property(u => u.RowVersion).OriginalValue = rowVersion;
     }
 
-    // --- Address ---
+    
 
     public async Task<UserAddress?> GetUserAddressAsync(int addressId, CancellationToken ct = default)
     {
@@ -141,7 +141,7 @@ public class UserRepository : IUserRepository
         await _context.UserAddresses.AddAsync(address, ct);
     }
 
-    // --- OTP ---
+    
 
     public async Task DeleteUserOtpsAsync(int userId)
     {
@@ -181,7 +181,7 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(ct);
     }
 
-    // --- Session ---
+    
 
     public async Task AddSessionAsync(UserSession session)
     {
@@ -246,7 +246,7 @@ public class UserRepository : IUserRepository
             .ToListAsync(ct);
     }
 
-    // --- Paged Users ---
+    
 
     public async Task<(IEnumerable<Domain.User.User> Users, int TotalCount)> GetPagedAsync(
         string? search, bool? isActive, bool? isAdmin, int page, int pageSize, CancellationToken ct = default)
@@ -299,7 +299,7 @@ public class UserRepository : IUserRepository
         return (users, totalItems);
     }
 
-    // --- Wishlist ---
+    
 
     public async Task<bool> IsInWishlistAsync(int userId, int productId, CancellationToken ct = default)
     {

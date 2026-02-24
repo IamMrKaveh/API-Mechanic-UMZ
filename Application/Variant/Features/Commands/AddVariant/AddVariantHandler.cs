@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Features.Commands.AddVariant;
+namespace Application.Variant.Features.Commands.AddVariant;
 
 public class AddVariantHandler : IRequestHandler<AddVariantCommand, ServiceResult<ProductVariantViewDto>>
 {
@@ -42,7 +42,7 @@ public class AddVariantHandler : IRequestHandler<AddVariantCommand, ServiceResul
                 if (product == null)
                     return ServiceResult<ProductVariantViewDto>.Failure("Product not found.", 404);
 
-                // Batch load attributes to prevent N+1
+                
                 var attributeValues = request.AttributeValueIds.Any()
                     ? await _attributeRepository.GetValuesByIdsAsync(request.AttributeValueIds, ct)
                     : new List<AttributeValue>();
@@ -54,7 +54,7 @@ public class AddVariantHandler : IRequestHandler<AddVariantCommand, ServiceResul
                         return ServiceResult<ProductVariantViewDto>.Failure($"Invalid attribute values: {string.Join(", ", missingIds)}");
                 }
 
-                // Domain Rule Executions inside Aggregate
+                
                 var variant = product.AddVariant(
                     request.Sku,
                     request.PurchasePrice,
@@ -81,7 +81,7 @@ public class AddVariantHandler : IRequestHandler<AddVariantCommand, ServiceResul
                 await _auditService.LogProductEventAsync(
                     product.Id, "AddVariant", $"Variant added to product '{product.Name}'. SKU: {variant.Sku}", _currentUserService.UserId);
 
-                // Query Side Return
+                
                 var variants = await _productQueryService.GetProductVariantsAsync(product.Id, false, ct);
                 var result = variants.FirstOrDefault(v => v.Id == variant.Id);
 

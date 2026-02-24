@@ -1,8 +1,8 @@
-﻿namespace Application.Attribute.Contracts;
+namespace Application.Attribute.Contracts;
 
 public interface IAttributeRepository
 {
-    // AttributeType
+    
     Task<AttributeType?> GetAttributeTypeByIdAsync(
         int id,
         CancellationToken ct = default
@@ -39,7 +39,7 @@ public interface IAttributeRepository
         CancellationToken ct = default
         );
 
-    // AttributeValue
+    
     Task<AttributeValue?> GetAttributeValueByIdAsync(
         int id,
         CancellationToken ct = default

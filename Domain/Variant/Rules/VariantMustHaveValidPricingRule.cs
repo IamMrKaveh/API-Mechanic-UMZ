@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant.Rules;
+namespace Domain.Variant.Rules;
 
 public class VariantMustHaveValidPricingRule : IBusinessRule
 {
@@ -15,8 +15,8 @@ public class VariantMustHaveValidPricingRule : IBusinessRule
 
     public bool IsBroken()
     {
-        if (_sellingPrice < _purchasePrice) return true; // فروش زیر قیمت خرید (Loss violation)
-        if (_originalPrice > 0 && _sellingPrice > _originalPrice) return true; // قیمت فروش بیشتر از قیمت اصلی
+        if (_sellingPrice < _purchasePrice) return true; 
+        if (_originalPrice > 0 && _sellingPrice > _originalPrice) return true; 
         return false;
     }
 

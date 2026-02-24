@@ -1,4 +1,4 @@
-﻿namespace Domain.Payment.Services;
+namespace Domain.Payment.Services;
 
 /// <summary>
 /// Domain Service برای هماهنگی تسویه پرداخت در سناریوی Payment + Order
@@ -75,10 +75,10 @@ public sealed class PaymentSettlementService
         if (!eligibility.IsValid)
             return SettlementRefundResult.Failed(eligibility.Error!);
 
-        // اعمال استرداد روی تراکنش پرداخت → PaymentRefundedEvent منتشر می‌شود
+        
         payment.Refund(reason);
 
-        // تغییر وضعیت سفارش → OrderStatusChangedEvent + OrderRefundedEvent منتشر می‌شوند
+        
         order.RequestRefund(reason);
 
         return SettlementRefundResult.Success(payment.Amount.Amount);
@@ -99,7 +99,7 @@ public sealed class PaymentSettlementService
         if (order.IsDeleted)
             return PaymentSuccessSettlementResult.Failed("سفارش حذف شده است.");
 
-        // Idempotency: اگر قبلاً پرداخت شده، موفق برمی‌گردیم بدون تغییر مجدد
+        
         if (order.IsPaid)
             return PaymentSuccessSettlementResult.Idempotent();
 

@@ -1,4 +1,4 @@
-﻿namespace Domain.Media.Exceptions;
+namespace Domain.Media.Exceptions;
 
 public class MediaNotFoundException : DomainException
 {

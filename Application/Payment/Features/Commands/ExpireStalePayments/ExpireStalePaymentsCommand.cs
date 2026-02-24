@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Features.Commands.ExpireStalePayments;
+namespace Application.Payment.Features.Commands.ExpireStalePayments;
 
 /// <summary>
 /// انقضای پرداخت‌های معلق - فراخوانی از Background Job

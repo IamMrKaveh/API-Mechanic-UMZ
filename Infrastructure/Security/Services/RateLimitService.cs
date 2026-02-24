@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Security.Services;
+namespace Infrastructure.Security.Services;
 
 public class RateLimitService : IRateLimitService
 {
@@ -33,7 +33,7 @@ public class RateLimitService : IRateLimitService
             _ = transaction.SortedSetRemoveRangeByScoreAsync(key, 0, windowStart);
             var countTask = transaction.SortedSetLengthAsync(key);
             _ = transaction.SortedSetAddAsync(key, now.ToUnixTimeSeconds().ToString(), now.ToUnixTimeSeconds());
-            _ = transaction.KeyExpireAsync(key, window.Add(TimeSpan.FromSeconds(10)), ExpireWhen.Always); // Add a buffer
+            _ = transaction.KeyExpireAsync(key, window.Add(TimeSpan.FromSeconds(10)), ExpireWhen.Always); 
 
             if (await transaction.ExecuteAsync())
             {

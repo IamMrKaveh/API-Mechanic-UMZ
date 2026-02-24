@@ -1,4 +1,4 @@
-﻿namespace Domain.Notification.Events;
+namespace Domain.Notification.Events;
 
 public sealed class NotificationsBulkReadEvent : DomainEvent
 {

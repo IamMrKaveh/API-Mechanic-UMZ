@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Commands.AdjustStock;
+namespace Application.Inventory.Features.Commands.AdjustStock;
 
 public class AdjustStockValidator : AbstractValidator<AdjustStockCommand>
 {

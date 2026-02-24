@@ -1,4 +1,4 @@
-﻿namespace Application.Support.Mapping;
+namespace Application.Support.Mapping;
 
 public class SupportMappingProfile : Profile
 {

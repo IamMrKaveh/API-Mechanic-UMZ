@@ -1,4 +1,4 @@
-﻿namespace Application.Attribute.Features.Commands.UpdateAttributeType;
+namespace Application.Attribute.Features.Commands.UpdateAttributeType;
 
 public class UpdateAttributeTypeHandler : IRequestHandler<UpdateAttributeTypeCommand, ServiceResult>
 {

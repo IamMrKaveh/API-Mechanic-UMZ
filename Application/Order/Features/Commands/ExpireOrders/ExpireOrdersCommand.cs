@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.ExpireOrders;
+namespace Application.Order.Features.Commands.ExpireOrders;
 
 /// <summary>
 /// دستور انقضای خودکار سفارش‌های پرداخت‌نشده.

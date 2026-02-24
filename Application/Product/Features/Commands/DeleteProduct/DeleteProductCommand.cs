@@ -1,3 +1,3 @@
-﻿namespace Application.Product.Features.Commands.DeleteProduct;
+namespace Application.Product.Features.Commands.DeleteProduct;
 
 public record DeleteProductCommand(int Id) : IRequest<ServiceResult>;

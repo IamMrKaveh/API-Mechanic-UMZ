@@ -1,4 +1,4 @@
-﻿namespace Application.Attribute.Features.Commands.UpdateAttributeValue;
+namespace Application.Attribute.Features.Commands.UpdateAttributeValue;
 
 public record UpdateAttributeValueCommand(
     int Id,

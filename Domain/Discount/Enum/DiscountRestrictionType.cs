@@ -1,4 +1,4 @@
-﻿namespace Domain.Discount.Enum;
+namespace Domain.Discount.Enum;
 
 public enum DiscountRestrictionType
 {

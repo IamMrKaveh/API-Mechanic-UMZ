@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Commands.ClearCart;
+namespace Application.Cart.Features.Commands.ClearCart;
 
 public class ClearCartHandler : IRequestHandler<ClearCartCommand, ServiceResult>
 {

@@ -1,4 +1,4 @@
-﻿namespace Domain.Product.Services;
+namespace Domain.Product.Services;
 
 public class PriceCalculatorService
 {

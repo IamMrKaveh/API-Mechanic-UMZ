@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.CreateOrderStatus;
+namespace Application.Order.Features.Commands.CreateOrderStatus;
 
 public class CreateOrderStatusHandler : IRequestHandler<CreateOrderStatusCommand, ServiceResult<OrderStatusDto>>
 {
@@ -22,12 +22,12 @@ public class CreateOrderStatusHandler : IRequestHandler<CreateOrderStatusCommand
         CancellationToken ct
         )
     {
-        // Check for duplicate name
+        
         var existing = await _orderStatusRepository.GetByNameAsync(request.Name, ct);
         if (existing != null)
             return ServiceResult<OrderStatusDto>.Failure("وضعیت سفارش با این نام قبلاً وجود دارد.");
 
-        // Use domain factory method
+        
         var status = OrderStatus.Create(
             request.Name,
             request.DisplayName,

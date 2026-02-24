@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Features.Queries.GetAdminCategories;
+namespace Application.Category.Features.Queries.GetAdminCategories;
 
 public class GetAdminCategoriesHandler
     : IRequestHandler<GetAdminCategoriesQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>

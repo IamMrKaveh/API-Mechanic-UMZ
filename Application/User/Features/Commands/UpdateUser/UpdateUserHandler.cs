@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.UpdateUser;
+namespace Application.User.Features.Commands.UpdateUser;
 
 public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, ServiceResult>
 {

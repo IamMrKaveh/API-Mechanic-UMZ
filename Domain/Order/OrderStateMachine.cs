@@ -1,4 +1,4 @@
-﻿using Domain.Order.Exceptions;
+using Domain.Order.Exceptions;
 
 namespace Domain.Order;
 
@@ -9,24 +9,24 @@ namespace Domain.Order;
 /// </summary>
 public static class OrderStateMachine
 {
-    // ─── تعریف وضعیت‌ها ──────────────────────────────────────────
+    
     public static class States
     {
-        public const string Created = "Created";    // ایجاد شده - قبل از رزرو موجودی
-        public const string Reserved = "Reserved";   // موجودی رزرو شده
-        public const string Pending = "Pending";    // در انتظار پرداخت
-        public const string Paid = "Paid";       // پرداخت انجام شده
-        public const string Processing = "Processing"; // در حال پردازش/آماده‌سازی
-        public const string Shipped = "Shipped";    // ارسال شده
-        public const string Delivered = "Delivered";  // تحویل داده شده
-        public const string Cancelled = "Cancelled";  // لغو شده
-        public const string Failed = "Failed";     // شکست خورده (پرداخت ناموفق)
-        public const string Expired = "Expired";    // منقضی شده (timeout)
-        public const string Refunded = "Refunded";   // مسترد شده
-        public const string Returned = "Returned";   // برگشت خورده
+        public const string Created = "Created";    
+        public const string Reserved = "Reserved";   
+        public const string Pending = "Pending";    
+        public const string Paid = "Paid";       
+        public const string Processing = "Processing"; 
+        public const string Shipped = "Shipped";    
+        public const string Delivered = "Delivered";  
+        public const string Cancelled = "Cancelled";  
+        public const string Failed = "Failed";     
+        public const string Expired = "Expired";    
+        public const string Refunded = "Refunded";   
+        public const string Returned = "Returned";   
     }
 
-    // ─── تعریف Trigger‌ها (رویدادها) ──────────────────────────────
+    
     public static class Triggers
     {
         public const string ReserveStock = "ReserveStock";
@@ -42,7 +42,7 @@ public static class OrderStateMachine
         public const string MarkReturned = "MarkReturned";
     }
 
-    // ─── تعریف انتقال‌های مجاز ────────────────────────────────────
+    
     private static readonly Dictionary<string, List<TransitionRule>> _transitions =
         new(StringComparer.OrdinalIgnoreCase)
         {
@@ -97,7 +97,7 @@ public static class OrderStateMachine
             ],
         };
 
-    // ─── API عمومی ──────────────────────────────────────────────
+    
 
     /// <summary>
     /// بررسی امکان انتقال از وضعیت فعلی به وضعیت مقصد.
@@ -148,7 +148,7 @@ public static class OrderStateMachine
         state is States.Delivered or States.Cancelled or
                  States.Expired or States.Refunded;
 
-    // ─── Guard Functions ──────────────────────────────────────────
+    
     private static class Guards
     {
         public static readonly Func<Order, bool> AlwaysAllow = _ => true;
@@ -169,7 +169,7 @@ public static class OrderStateMachine
             !order.IsDeleted && !order.IsShipped && !order.IsDelivered;
 
         public static readonly Func<Order, bool> CanCancelAfterPaid = order =>
-            !order.IsDeleted; // ادمین می‌تواند لغو کند
+            !order.IsDeleted; 
 
         public static readonly Func<Order, bool> CanRefund = order =>
             !order.IsDeleted && (order.IsPaid || order.IsDelivered);
@@ -178,7 +178,7 @@ public static class OrderStateMachine
             !order.IsDeleted && !order.IsPaid;
     }
 
-    // ─── TransitionRule Record ────────────────────────────────────
+    
     private record TransitionRule(
         string Trigger,
         string TargetState,

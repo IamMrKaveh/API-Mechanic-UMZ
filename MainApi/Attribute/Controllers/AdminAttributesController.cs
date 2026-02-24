@@ -1,4 +1,4 @@
-﻿namespace MainApi.Attribute.Controllers;
+namespace MainApi.Attribute.Controllers;
 
 [ApiController]
 [Route("api/admin/attributes")]

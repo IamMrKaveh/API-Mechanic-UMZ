@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.DeactivateAccount;
+namespace Application.User.Features.Commands.DeactivateAccount;
 
 public class DeactivateAccountHandler : IRequestHandler<DeactivateAccountCommand, ServiceResult>
 {
@@ -31,13 +31,13 @@ public class DeactivateAccountHandler : IRequestHandler<DeactivateAccountCommand
 
         try
         {
-            // Domain Logic: غیرفعال‌سازی (شامل ابطال سشن‌ها در Domain)
+            
             user.Deactivate();
 
             _userRepository.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // ابطال سشن‌ها در Infrastructure
+            
             await _sessionManager.RevokeAllUserSessionsAsync(request.UserId, cancellationToken);
 
             await _auditService.LogSecurityEventAsync(

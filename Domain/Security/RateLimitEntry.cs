@@ -1,4 +1,4 @@
-﻿namespace Domain.Security;
+namespace Domain.Security;
 
 public class RateLimitEntry : BaseEntity
 {

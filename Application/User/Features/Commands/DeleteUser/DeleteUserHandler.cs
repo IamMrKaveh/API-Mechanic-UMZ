@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.DeleteUser;
+namespace Application.User.Features.Commands.DeleteUser;
 
 public class DeleteUserHandler : IRequestHandler<DeleteUserCommand, ServiceResult>
 {

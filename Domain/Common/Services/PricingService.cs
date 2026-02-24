@@ -1,4 +1,4 @@
-﻿namespace Domain.Common.Services;
+namespace Domain.Common.Services;
 
 public class PricingService : IPricingService
 {

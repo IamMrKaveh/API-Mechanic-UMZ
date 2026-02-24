@@ -1,4 +1,4 @@
-﻿namespace Domain.Review.Events;
+namespace Domain.Review.Events;
 
 public sealed class ReviewApprovedEvent : Domain.Common.Events.DomainEvent
 {

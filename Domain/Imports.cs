@@ -1,4 +1,4 @@
-﻿global using AutoMapper;
+global using AutoMapper;
 global using Domain.Attribute;
 global using Domain.Brand.Events;
 global using Domain.Brand.Exceptions;

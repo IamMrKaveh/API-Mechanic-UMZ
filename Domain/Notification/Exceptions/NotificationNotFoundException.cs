@@ -1,4 +1,4 @@
-﻿namespace Domain.Notification.Exceptions;
+namespace Domain.Notification.Exceptions;
 
 public sealed class NotificationNotFoundException : DomainException
 {

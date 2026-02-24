@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Commands.BulkUpdatePrices;
+namespace Application.Product.Features.Commands.BulkUpdatePrices;
 
 public class BulkUpdatePricesValidator : AbstractValidator<BulkUpdatePricesCommand>
 {

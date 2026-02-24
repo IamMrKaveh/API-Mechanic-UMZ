@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.Services;
+namespace Domain.Order.Services;
 
 /// <summary>
 /// Domain Service برای عملیات‌های پیچیده Order که بین چند Aggregate هستند
@@ -223,7 +223,7 @@ public sealed class OrderDomainService
 
     private decimal CalculateAverageShippingMultiplier(List<OrderItemSnapshot> items)
     {
-        // در صورت نیاز به محاسبه ضریب ارسال از اطلاعات snapshot
+        
         return 1m;
     }
 

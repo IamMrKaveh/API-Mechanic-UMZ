@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Commands.UpdateProduct;
+namespace Application.Product.Features.Commands.UpdateProduct;
 
 public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, ServiceResult>
 {

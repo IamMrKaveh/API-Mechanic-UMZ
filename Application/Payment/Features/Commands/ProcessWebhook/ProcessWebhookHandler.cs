@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Features.Commands.ProcessWebhook;
+namespace Application.Payment.Features.Commands.ProcessWebhook;
 
 public class ProcessWebhookHandler : IRequestHandler<ProcessWebhookCommand, ServiceResult>
 {
@@ -28,7 +28,7 @@ public class ProcessWebhookHandler : IRequestHandler<ProcessWebhookCommand, Serv
             return ServiceResult.Failure("تراکنش یافت نشد.");
         }
 
-        // بررسی تکراری بودن
+        
         if (tx.IsSuccessful())
         {
             _logger.LogInformation("Webhook: Transaction {Authority} already succeeded", request.Authority);
@@ -37,7 +37,7 @@ public class ProcessWebhookHandler : IRequestHandler<ProcessWebhookCommand, Serv
 
         if (request.Status.Equals("OK", StringComparison.OrdinalIgnoreCase) && request.RefId.HasValue)
         {
-            // استفاده از Domain Service برای پردازش نتیجه موفق
+            
             if (tx.Order != null)
             {
                 var processResult = _paymentDomainService.ProcessSuccessfulPayment(
@@ -53,7 +53,7 @@ public class ProcessWebhookHandler : IRequestHandler<ProcessWebhookCommand, Serv
             }
             else
             {
-                // اگر Order لود نشده فقط تراکنش ر�� موفق علامت بزن
+                
                 tx.MarkAsSuccess(request.RefId.Value, rawResponse: $"Webhook: {request.Status}");
             }
         }

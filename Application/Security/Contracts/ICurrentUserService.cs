@@ -1,4 +1,4 @@
-﻿namespace Application.Security.Contracts;
+namespace Application.Security.Contracts;
 
 /// <summary>
 /// سرویس دسترسی به اطلاعات کاربر جاری

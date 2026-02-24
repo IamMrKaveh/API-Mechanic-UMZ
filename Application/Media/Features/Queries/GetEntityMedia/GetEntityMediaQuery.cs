@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Features.Queries.GetEntityMedia;
+namespace Application.Media.Features.Queries.GetEntityMedia;
 
 public record GetEntityMediaQuery(
     string EntityType,

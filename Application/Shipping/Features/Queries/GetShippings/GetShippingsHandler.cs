@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Features.Queries.GetShippings;
+namespace Application.Shipping.Features.Queries.GetShippings;
 
 public class GetShippingsHandler : IRequestHandler<GetShippingsQuery, ServiceResult<IEnumerable<ShippingDto>>>
 {

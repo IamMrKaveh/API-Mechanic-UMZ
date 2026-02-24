@@ -1,4 +1,4 @@
-﻿namespace Domain.Cart.Services;
+namespace Domain.Cart.Services;
 
 /// <summary>
 /// Domain Service برای عملیات‌هایی که بین چند Aggregate هستند.
@@ -15,15 +15,15 @@ public class CartDomainService
         Guard.Against.Null(userCart, nameof(userCart));
         Guard.Against.Null(guestCart, nameof(guestCart));
 
-        // اگر سبد کاربر خالی است، سبد مهمان را نگه دار
+        
         if (userCart.IsEmpty && !guestCart.IsEmpty)
             return CartMergeStrategy.KeepGuestCart;
 
-        // اگر سبد مهمان خالی است، سبد کاربر را نگه دار
+        
         if (!userCart.IsEmpty && guestCart.IsEmpty)
             return CartMergeStrategy.KeepUserCart;
 
-        // در غیر این صورت، تعداد بیشتر را نگه دار
+        
         return CartMergeStrategy.KeepHigherQuantity;
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Cart.Services;
+namespace Infrastructure.Cart.Services;
 
 public class CartQueryService : ICartQueryService
 {

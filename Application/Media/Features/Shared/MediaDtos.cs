@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Features.Shared;
+namespace Application.Media.Features.Shared;
 
 public record MediaDto
 {

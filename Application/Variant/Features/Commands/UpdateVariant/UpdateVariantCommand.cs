@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Features.Commands.UpdateVariant;
+namespace Application.Variant.Features.Commands.UpdateVariant;
 
 public record UpdateVariantCommand : IRequest<ServiceResult>
 {

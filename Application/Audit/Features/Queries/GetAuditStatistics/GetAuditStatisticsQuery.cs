@@ -1,4 +1,4 @@
-﻿namespace Application.Audit.Features.Queries.GetAuditStatistics;
+namespace Application.Audit.Features.Queries.GetAuditStatistics;
 
 public sealed record GetAuditStatisticsQuery(
     DateTime? From,

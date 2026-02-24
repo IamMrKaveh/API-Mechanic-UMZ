@@ -1,4 +1,4 @@
-﻿namespace Application.Product.EventHandlers;
+namespace Application.Product.EventHandlers;
 
 public class UpdateProductStatsOnReviewApprovedHandler : INotificationHandler<ReviewApprovedEvent>
 {
@@ -23,16 +23,16 @@ public class UpdateProductStatsOnReviewApprovedHandler : INotificationHandler<Re
     {
         try
         {
-            // Fetch product (lightweight)
+            
             var product = await _productRepository.GetByIdAsync(notification.ProductId, cancellationToken);
             if (product == null) return;
 
-            // Recalculate stats
+            
             var (reviews, totalCount) = await _reviewRepository.GetByProductIdAsync(
                 notification.ProductId,
                 "Approved",
                 1,
-                int.MaxValue, // Ideally, use an aggregation query on repo instead of fetching all
+                int.MaxValue, 
                 cancellationToken);
 
             decimal avgRating = 0;

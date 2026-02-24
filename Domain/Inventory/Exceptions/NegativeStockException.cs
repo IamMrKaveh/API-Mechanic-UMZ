@@ -1,4 +1,4 @@
-﻿namespace Domain.Inventory.Exceptions;
+namespace Domain.Inventory.Exceptions;
 
 public class NegativeStockException : DomainException
 {

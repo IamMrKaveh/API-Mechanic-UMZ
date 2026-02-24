@@ -1,4 +1,4 @@
-﻿namespace Domain.Brand.Services;
+namespace Domain.Brand.Services;
 
 internal class BrandDomainService
 {

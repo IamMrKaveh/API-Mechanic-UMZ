@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Features.Commands.DeleteCategory;
+namespace Application.Category.Features.Commands.DeleteCategory;
 
 public record DeleteCategoryCommand(
     int Id,

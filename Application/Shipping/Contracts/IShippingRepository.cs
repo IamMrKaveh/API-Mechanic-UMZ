@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Contracts;
+namespace Application.Shipping.Contracts;
 
 public interface IShippingRepository
 {

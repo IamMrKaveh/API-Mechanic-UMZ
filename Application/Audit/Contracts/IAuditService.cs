@@ -1,4 +1,4 @@
-﻿namespace Application.Audit.Contracts;
+namespace Application.Audit.Contracts;
 
 /// <summary>
 /// سرویس ثبت لاگ‌های حسابرسی

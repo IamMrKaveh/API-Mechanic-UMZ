@@ -1,4 +1,4 @@
-﻿namespace Domain.Review.Specifications;
+namespace Domain.Review.Specifications;
 
 public class PendingReviewsSpecification : Specification<ProductReview>
 {

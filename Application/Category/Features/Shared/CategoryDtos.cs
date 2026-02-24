@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Features.Shared;
+namespace Application.Category.Features.Shared;
 
 public record CategoryHierarchyDto
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Search.Features.Commands.SyncSearchData;
+namespace Application.Search.Features.Commands.SyncSearchData;
 
 public class SyncSearchDataHandler : IRequestHandler<SyncSearchDataCommand, ServiceResult>
 {

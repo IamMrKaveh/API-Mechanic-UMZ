@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.UpdateUserAddress;
+namespace Application.User.Features.Commands.UpdateUserAddress;
 
 public class UpdateUserAddressHandler : IRequestHandler<UpdateUserAddressCommand, ServiceResult>
 {

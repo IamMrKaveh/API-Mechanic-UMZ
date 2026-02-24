@@ -1,4 +1,4 @@
-﻿namespace MainApi.Analytic.Controllers;
+namespace MainApi.Analytic.Controllers;
 
 [ApiController]
 [Route("api/admin/analytics")]

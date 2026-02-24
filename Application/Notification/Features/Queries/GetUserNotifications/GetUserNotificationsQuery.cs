@@ -1,4 +1,4 @@
-﻿namespace Application.Notification.Features.Queries.GetUserNotifications;
+namespace Application.Notification.Features.Queries.GetUserNotifications;
 
 public sealed record GetUserNotificationsQuery(
     int UserId,

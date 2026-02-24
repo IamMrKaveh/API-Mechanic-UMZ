@@ -1,4 +1,4 @@
-﻿using SortOrder = Elastic.Clients.Elasticsearch.SortOrder;
+using SortOrder = Elastic.Clients.Elasticsearch.SortOrder;
 
 namespace Infrastructure.Search.Services;
 
@@ -335,7 +335,7 @@ public class ElasticSearchService : ISearchService
         _logger.LogInformation("Successfully indexed category group {BrandId}", document.BrandId);
     }
 
-    // ========== Private Helpers ==========
+    
 
     private async Task<List<ProductSearchResultItemDto>> SearchProductsInternalAsync(
         string query, int maxResults, CancellationToken ct)

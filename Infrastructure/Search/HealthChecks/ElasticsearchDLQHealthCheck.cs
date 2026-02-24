@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Search.HealthChecks;
+namespace Infrastructure.Search.HealthChecks;
 
 public class ElasticsearchDLQHealthCheck : IHealthCheck
 {

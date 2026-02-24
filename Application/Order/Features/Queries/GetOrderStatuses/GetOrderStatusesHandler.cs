@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Queries.GetOrderStatuses;
+namespace Application.Order.Features.Queries.GetOrderStatuses;
 
 public class GetOrderStatusesHandler : IRequestHandler<GetOrderStatusesQuery, ServiceResult<IEnumerable<OrderStatusDto>>>
 {

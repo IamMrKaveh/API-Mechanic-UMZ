@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.ChangeUserStatus;
+namespace Application.User.Features.Commands.ChangeUserStatus;
 
 public class ChangeUserStatusHandler : IRequestHandler<ChangeUserStatusCommand, ServiceResult>
 {

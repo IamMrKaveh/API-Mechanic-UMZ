@@ -1,4 +1,4 @@
-﻿namespace MainApi.Media.Controllers;
+namespace MainApi.Media.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

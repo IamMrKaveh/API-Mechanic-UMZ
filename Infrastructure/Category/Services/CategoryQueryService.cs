@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Category.Services;
+namespace Infrastructure.Category.Services;
 
 public class CategoryQueryService : ICategoryQueryService
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.CheckoutFromCart;
+namespace Application.Order.Features.Commands.CheckoutFromCart;
 
 public record CheckoutFromCartCommand : IRequest<ServiceResult<CheckoutResultDto>>
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Commands.AddToCart;
+namespace Application.Cart.Features.Commands.AddToCart;
 
 /// <summary>
 /// اعتبارسنجی موجودی به Domain Service منتقل شده
@@ -38,12 +38,12 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
         CancellationToken ct
         )
     {
-        // 1. بارگذاری واریانت
+        
         var variant = await _productRepository.GetVariantByIdAsync(request.VariantId, ct);
         if (variant == null || !variant.IsActive || variant.IsDeleted)
             return ServiceResult<CartDetailDto>.Failure("محصول یافت نشد یا غیرفعال است.", 404);
 
-        // 2. دریافت یا ایجاد سبد
+        
         var cart = await _cartRepository.GetCartAsync(_currentUser.UserId, _currentUser.GuestId, ct);
 
         if (cart == null)
@@ -52,7 +52,7 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
             await _cartRepository.AddAsync(cart, ct);
         }
 
-        // 3. محاسبه تعداد موجود در سبد
+        
         var existingItem = cart.FindItemByVariant(request.VariantId);
         var currentCartQuantity = existingItem?.Quantity ?? 0;
 
@@ -65,7 +65,7 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
         if (!isValid)
             return ServiceResult<CartDetailDto>.Failure(error!, 400);
 
-        // 4. افزودن به سبد (Domain Aggregate)
+        
         cart.AddItem(request.VariantId, request.Quantity, variant.SellingPrice);
 
         await _unitOfWork.SaveChangesAsync(ct);
@@ -74,7 +74,7 @@ public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<
             "آیتم {VariantId} با تعداد {Quantity} به سبد {CartId} اضافه شد.",
             request.VariantId, request.Quantity, cart.Id);
 
-        // 5. بازگرداندن DTO کامل از QueryService
+        
         var cartDetail = await _cartQueryService.GetCartDetailAsync(
             _currentUser.UserId, _currentUser.GuestId, ct);
 
