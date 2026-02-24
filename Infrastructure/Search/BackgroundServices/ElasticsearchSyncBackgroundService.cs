@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Search.BackgroundServices;
+namespace Infrastructure.Search.BackgroundServices;
 
 /// <summary>
 /// همگام‌سازی دوره‌ای دیتابیس با Elasticsearch
@@ -34,7 +34,7 @@ public class ElasticsearchSyncBackgroundService : BackgroundService
             "Elasticsearch sync background service started. Interval: {Interval} minutes",
             intervalMinutes);
 
-        // Initial delay to allow application startup
+        
         await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)

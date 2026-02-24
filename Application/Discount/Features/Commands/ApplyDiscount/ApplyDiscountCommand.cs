@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Commands.ApplyDiscount;
+namespace Application.Discount.Features.Commands.ApplyDiscount;
 
 public record ApplyDiscountCommand(
     string Code,

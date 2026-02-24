@@ -1,4 +1,4 @@
-﻿namespace Application.Common.Features.Shared;
+namespace Application.Common.Features.Shared;
 
 public class ServiceResult
 {

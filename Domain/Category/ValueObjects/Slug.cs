@@ -1,16 +1,13 @@
-﻿namespace Domain.Category.ValueObjects;
+namespace Domain.Category.ValueObjects;
 
 public sealed class Slug : ValueObject
 {
     public string Value { get; }
     public const int MaxLength = 200;
 
-    protected Slug()
-    { }
-
     private Slug(string value)
     {
-        Value = value;
+        Value = value ?? throw new ArgumentNullException(nameof(value));
     }
 
     public static Slug Create(string name)

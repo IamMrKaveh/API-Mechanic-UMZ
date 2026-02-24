@@ -1,4 +1,4 @@
-﻿namespace Application.Auth.Features.Commands.Logout;
+namespace Application.Auth.Features.Commands.Logout;
 
 public record LogoutCommand : IRequest<ServiceResult>
 {

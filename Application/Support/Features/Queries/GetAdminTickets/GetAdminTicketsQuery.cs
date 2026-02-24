@@ -1,4 +1,4 @@
-﻿namespace Application.Support.Features.Queries.GetAdminTickets;
+namespace Application.Support.Features.Queries.GetAdminTickets;
 
 public sealed record GetAdminTicketsQuery(
     string? Status,

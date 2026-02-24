@@ -1,4 +1,4 @@
-﻿namespace Application.Analytics.Contracts;
+namespace Application.Analytics.Contracts;
 
 public interface IAnalyticsQueryService
 {

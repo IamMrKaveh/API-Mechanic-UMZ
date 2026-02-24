@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Queries.GetCart;
+namespace Application.Cart.Features.Queries.GetCart;
 
 public class GetCartHandler : IRequestHandler<GetCartQuery, ServiceResult<CartDetailDto>>
 {

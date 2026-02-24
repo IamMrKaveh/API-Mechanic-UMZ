@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Queries.GetProductCatalog;
+namespace Application.Product.Features.Queries.GetProductCatalog;
 
 public class GetProductCatalogHandler
     : IRequestHandler<GetProductCatalogQuery, ServiceResult<PaginatedResult<ProductCatalogItemDto>>>

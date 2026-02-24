@@ -1,4 +1,4 @@
-﻿namespace Application.Audit.Features.Shared;
+namespace Application.Audit.Features.Shared;
 
 public class AuditDtos
 {

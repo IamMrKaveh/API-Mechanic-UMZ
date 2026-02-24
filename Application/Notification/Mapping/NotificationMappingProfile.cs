@@ -1,4 +1,4 @@
-﻿namespace Application.Notification.Mapping;
+namespace Application.Notification.Mapping;
 
 public class NotificationMappingProfile : Profile
 {

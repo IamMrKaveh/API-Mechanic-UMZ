@@ -1,4 +1,4 @@
-﻿namespace Domain.Discount.Services;
+namespace Domain.Discount.Services;
 
 /// <summary>
 /// Domain Service برای هماهنگی اعمال تخفیف در سناریوی Discount + Order
@@ -20,7 +20,7 @@ public sealed class DiscountApplicationService
         Guard.Against.Null(discount, nameof(discount));
         Guard.Against.Null(order, nameof(order));
 
-        // اعتبارسنجی از طریق Aggregate خود Discount
+        
         var validation = discount.ValidateForApplication(
             order.TotalAmount.Amount,
             userId,
@@ -29,13 +29,13 @@ public sealed class DiscountApplicationService
         if (!validation.IsValid)
             return CrossAggregateDiscountResult.Failed(validation.Error!);
 
-        // محاسبه مبلغ تخفیف
+        
         var discountMoney = discount.CalculateDiscountMoney(order.TotalAmount);
 
-        // ثبت استفاده روی DiscountCode → DiscountAppliedEvent منتشر می‌شود
+        
         var usage = discount.RecordUsage(userId, order.Id, discountMoney);
 
-        // اعمال تخفیف روی سفارش → FinalAmount محاسبه مجدد می‌شود
+        
         order.ApplyDiscount(discount.Id, discountMoney);
 
         return CrossAggregateDiscountResult.Success(discountMoney, usage);
@@ -54,10 +54,10 @@ public sealed class DiscountApplicationService
         if (!order.DiscountCodeId.HasValue || order.DiscountCodeId.Value != discount.Id)
             return CrossAggregateDiscountCancelResult.NotApplicable();
 
-        // لغو استفاده روی DiscountCode → DiscountUsageCancelledEvent منتشر می‌شود
+        
         discount.CancelUsage(order.Id);
 
-        // حذف تخفیف از سفارش
+        
         order.RemoveDiscount();
 
         return CrossAggregateDiscountCancelResult.Success();

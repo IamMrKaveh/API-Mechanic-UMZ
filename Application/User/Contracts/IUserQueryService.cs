@@ -1,4 +1,4 @@
-﻿namespace Application.User.Contracts;
+namespace Application.User.Contracts;
 
 public interface IUserQueryService
 {

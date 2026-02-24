@@ -1,4 +1,4 @@
-﻿namespace Application.Review.Features.Commands.ReplyToReview;
+namespace Application.Review.Features.Commands.ReplyToReview;
 
 public class ReplyToReviewValidator : AbstractValidator<ReplyToReviewCommand>
 {

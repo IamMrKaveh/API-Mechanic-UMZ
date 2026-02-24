@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Queries.GetVariantAvailability;
+namespace Application.Inventory.Features.Queries.GetVariantAvailability;
 
 public class GetVariantAvailabilityHandler
     : IRequestHandler<GetVariantAvailabilityQuery, ServiceResult<VariantAvailabilityDto>>
@@ -26,7 +26,7 @@ public class GetVariantAvailabilityHandler
     {
         var key = CacheKey(request.VariantId);
 
-        // ابتدا از Cache بخوان
+        
         try
         {
             var cached = await _cacheService.GetAsync<VariantAvailabilityDto>(key);
@@ -38,7 +38,7 @@ public class GetVariantAvailabilityHandler
             _logger.LogWarning(ex, "Cache read failed for variant {VariantId}, falling back to DB", request.VariantId);
         }
 
-        // Cache miss: از DB بخوان
+        
         var status = await _inventoryQueryService.GetVariantStatusAsync(request.VariantId, cancellationToken);
         if (status == null)
             return ServiceResult<VariantAvailabilityDto>.Failure("واریانت یافت نشد.", 404);
@@ -54,7 +54,7 @@ public class GetVariantAvailabilityHandler
             LastUpdated = DateTime.UtcNow
         };
 
-        // Cache نتیجه را ذخیره کن
+        
         try
         {
             await _cacheService.SetAsync(key, dto, CacheTtl);

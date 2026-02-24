@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.CreateOrder;
+namespace Application.Order.Features.Commands.CreateOrder;
 
 public class CreateOrderValidator : AbstractValidator<CreateOrderCommand>
 {

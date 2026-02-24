@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Features.Queries.GetAvailableShippingsForVariants;
+namespace Application.Shipping.Features.Queries.GetAvailableShippingsForVariants;
 
 public class GetAvailableShippingsForVariantsHandler
     : IRequestHandler<

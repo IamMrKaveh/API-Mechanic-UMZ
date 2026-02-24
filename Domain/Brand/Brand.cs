@@ -1,4 +1,4 @@
-﻿namespace Domain.Brand;
+namespace Domain.Brand;
 
 public class Brand : BaseEntity, IAuditable, ISoftDeletable, IActivatable
 {
@@ -11,7 +11,7 @@ public class Brand : BaseEntity, IAuditable, ISoftDeletable, IActivatable
     public int SortOrder { get; private set; }
     public bool IsActive { get; private set; }
 
-    // Audit & Soft Delete
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
@@ -19,7 +19,7 @@ public class Brand : BaseEntity, IAuditable, ISoftDeletable, IActivatable
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Navigation for EF Core
+    
     public ICollection<Media.Media> Images { get; private set; } = [];
 
     public Category.Category Category { get; private set; } = null!;

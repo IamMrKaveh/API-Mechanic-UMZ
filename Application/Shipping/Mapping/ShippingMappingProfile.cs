@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Mapping;
+namespace Application.Shipping.Mapping;
 
 public class ShippingMappingProfile : Profile
 {

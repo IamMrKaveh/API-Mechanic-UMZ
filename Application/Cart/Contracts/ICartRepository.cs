@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Contracts;
+namespace Application.Cart.Contracts;
 
 /// <summary>
 /// Repository Interface برای Cart Aggregate.

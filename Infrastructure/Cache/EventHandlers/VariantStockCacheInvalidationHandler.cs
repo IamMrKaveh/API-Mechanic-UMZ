@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Cache.EventHandlers;
+namespace Infrastructure.Cache.EventHandlers;
 
 /// <summary>
 /// Invalidate و بروزرسانی Cache موجودی واریانت پس از تغییر stock
@@ -28,13 +28,13 @@ public class VariantStockCacheInvalidationHandler
     {
         try
         {
-            // Invalidate variant availability cache
+            
             await _cacheService.ClearAsync(VariantAvailabilityCacheKey(notification.VariantId));
 
-            // Invalidate product-level availability cache
+            
             await _cacheService.ClearAsync(ProductAvailabilityCacheKey(notification.ProductId));
 
-            // اگر رویداد اطلاعات کامل داشته باشد، Cache را Populate کن (بدون DB round-trip)
+            
             if (notification.NewOnHand > 0 || notification.NewAvailable >= 0)
             {
                 var cacheDto = new VariantAvailabilityCacheDto

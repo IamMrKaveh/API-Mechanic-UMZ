@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant.Rules;
+namespace Domain.Variant.Rules;
 
 public sealed class StockCannotBeNegativeRule : IBusinessRule
 {

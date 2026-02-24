@@ -1,4 +1,4 @@
-﻿namespace Domain.Order;
+namespace Domain.Order;
 
 /// <summary>
 /// موجودیت پایا برای ثبت وضعیت Saga/Process Manager
@@ -17,7 +17,7 @@ public class OrderProcessState
     public DateTime UpdatedAt { get; private set; }
     public string? CorrelationId { get; private set; }
 
-    // ─── مراحل Saga
+    
     public static class Steps
     {
         public const string Created = "Created";

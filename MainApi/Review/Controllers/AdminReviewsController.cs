@@ -1,4 +1,4 @@
-﻿namespace MainApi.Review.Controllers;
+namespace MainApi.Review.Controllers;
 
 [Route("api/admin/reviews")]
 [ApiController]

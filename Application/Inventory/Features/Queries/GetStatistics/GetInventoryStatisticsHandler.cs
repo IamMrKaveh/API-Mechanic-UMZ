@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Queries.GetStatistics;
+namespace Application.Inventory.Features.Queries.GetStatistics;
 
 public class GetInventoryStatisticsHandler
     : IRequestHandler<GetInventoryStatisticsQuery, ServiceResult<InventoryStatisticsDto>>

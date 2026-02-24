@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Category.Repositories;
+namespace Infrastructure.Category.Repositories;
 
 /// <summary>
 /// Repository فقط برای Aggregate Root (Category).

@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.CreateUser;
+namespace Application.User.Features.Commands.CreateUser;
 
 public class CreateUserHandler : IRequestHandler<CreateUserCommand, ServiceResult<UserProfileDto>>
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Queries.CheckWishlistStatus;
+namespace Application.User.Features.Queries.CheckWishlistStatus;
 
 public class CheckWishlistStatusHandler : IRequestHandler<CheckWishlistStatusQuery, ServiceResult<bool>>
 {

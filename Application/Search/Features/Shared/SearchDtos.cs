@@ -1,6 +1,6 @@
-﻿namespace Application.Search.Features.Shared;
+namespace Application.Search.Features.Shared;
 
-// ========== Search Parameters ==========
+
 
 public record SearchProductsParams
 {
@@ -17,7 +17,7 @@ public record SearchProductsParams
     public string? SortBy { get; init; }
 }
 
-// ========== Search Result DTOs ==========
+
 
 public record SearchResultDto<T>
 {
@@ -86,7 +86,7 @@ public record BrandSearchSummaryDto
     public int ProductCount { get; init; }
 }
 
-// ========== Elasticsearch Documents (used by Infrastructure) ==========
+
 
 /// <summary>
 /// سند جستجوی محصول - یک DTO خالص بدون وابستگی به هیچ موجودیت دامنه
@@ -143,7 +143,7 @@ public record BrandSearchDocument
     public string? Icon { get; init; }
 }
 
-// ========== Outbox & DLQ Entities ==========
+
 
 public record FailedElasticOperation
 {

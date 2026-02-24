@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant.Services;
+namespace Domain.Variant.Services;
 
 public class VariantPricingService
 {

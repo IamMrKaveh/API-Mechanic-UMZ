@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Cache.EventHandlers;
+namespace Infrastructure.Cache.EventHandlers;
 
 /// <summary>
 /// هنگام تغییر موجودی، کش Variant مربوطه را Invalidate می‌کند.

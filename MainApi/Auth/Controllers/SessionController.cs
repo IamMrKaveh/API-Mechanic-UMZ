@@ -1,4 +1,4 @@
-﻿namespace MainApi.Auth.Controllers;
+namespace MainApi.Auth.Controllers;
 
 [Route("api/sessions")]
 [ApiController]

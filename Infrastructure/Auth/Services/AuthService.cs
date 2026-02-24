@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Auth.Services;
+namespace Infrastructure.Auth.Services;
 
 public class AuthService : IAuthService
 {

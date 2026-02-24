@@ -1,4 +1,4 @@
-﻿namespace Application.Brand.Mapping;
+namespace Application.Brand.Mapping;
 
 public sealed class BrandMappingProfile : Profile
 {

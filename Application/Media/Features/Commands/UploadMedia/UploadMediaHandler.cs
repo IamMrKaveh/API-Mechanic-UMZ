@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Features.Commands.UploadMedia;
+namespace Application.Media.Features.Commands.UploadMedia;
 
 public class UploadMediaHandler : IRequestHandler<UploadMediaCommand, ServiceResult<MediaDto>>
 {
@@ -28,7 +28,7 @@ public class UploadMediaHandler : IRequestHandler<UploadMediaCommand, ServiceRes
     public async Task<ServiceResult<MediaDto>> Handle(
         UploadMediaCommand request, CancellationToken cancellationToken)
     {
-        // 1. اعتبارسنجی نوع فایل برای موجودیت
+        
         var extension = Path.GetExtension(request.FileName).TrimStart('.');
         var (isValidType, typeError) = _mediaDomainService.ValidateFileTypeForEntity(
             request.EntityType, extension);
@@ -36,7 +36,7 @@ public class UploadMediaHandler : IRequestHandler<UploadMediaCommand, ServiceRes
         if (!isValidType)
             return ServiceResult<MediaDto>.Failure(typeError!);
 
-        // 2. بررسی محدودیت تعداد رسانه
+        
         var existingMedias = await _mediaRepository.GetByEntityAsync(
             request.EntityType, request.EntityId, cancellationToken);
 
@@ -46,7 +46,7 @@ public class UploadMediaHandler : IRequestHandler<UploadMediaCommand, ServiceRes
         if (!canAdd)
             return ServiceResult<MediaDto>.Failure(addError!);
 
-        // 3. آپلود فایل فیزیکی
+        
         string filePath;
         try
         {
@@ -66,7 +66,7 @@ public class UploadMediaHandler : IRequestHandler<UploadMediaCommand, ServiceRes
 
         try
         {
-            // 4. ایجاد Media Aggregate از طریق Factory Method
+            
             var media = Domain.Media.Media.Create(
                 filePath,
                 request.FileName,
@@ -78,7 +78,7 @@ public class UploadMediaHandler : IRequestHandler<UploadMediaCommand, ServiceRes
                 isPrimary: request.IsPrimary || !existingMedias.Any(),
                 altText: request.AltText);
 
-            // 5. اگر Primary است، سایر رسانه‌ها را غیر-Primary کن
+            
             if (media.IsPrimary)
             {
                 foreach (var existing in existingMedias.Where(m => m.IsPrimary))
@@ -91,7 +91,7 @@ public class UploadMediaHandler : IRequestHandler<UploadMediaCommand, ServiceRes
             await _mediaRepository.AddAsync(media, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // 6. بازگرداندن DTO از طریق Query Service
+            
             var result = await _mediaQueryService.GetMediaByIdAsync(media.Id, cancellationToken);
 
             return ServiceResult<MediaDto>.Success(new MediaDto
@@ -105,7 +105,7 @@ public class UploadMediaHandler : IRequestHandler<UploadMediaCommand, ServiceRes
         }
         catch (Exception ex)
         {
-            // Rollback: حذف فایل آ��لود شده
+            
             _logger.LogError(ex, "خطا در ذخیره رسانه. حذف فایل آپلود شده.");
             try
             {

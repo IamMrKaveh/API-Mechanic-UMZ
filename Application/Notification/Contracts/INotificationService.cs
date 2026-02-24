@@ -1,4 +1,4 @@
-﻿namespace Application.Notification.Contracts;
+namespace Application.Notification.Contracts;
 
 /// <summary>
 /// سرویس ایجاد و مدیریت نوتیفیکیشن‌ها

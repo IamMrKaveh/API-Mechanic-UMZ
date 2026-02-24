@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.ConfirmDelivery;
+namespace Application.Order.Features.Commands.ConfirmDelivery;
 
 public class ConfirmDeliveryValidator : AbstractValidator<ConfirmDeliveryCommand>
 {

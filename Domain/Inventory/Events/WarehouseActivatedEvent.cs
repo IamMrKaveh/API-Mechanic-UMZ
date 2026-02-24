@@ -1,4 +1,4 @@
-﻿namespace Domain.Inventory.Events;
+namespace Domain.Inventory.Events;
 
 public sealed class WarehouseActivatedEvent : DomainEvent
 {

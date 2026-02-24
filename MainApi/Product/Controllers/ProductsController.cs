@@ -1,4 +1,4 @@
-﻿namespace MainApi.Product.Controllers;
+namespace MainApi.Product.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -17,7 +17,7 @@ public class ProductsController : BaseApiController
     [HttpGet]
     public async Task<IActionResult> GetProducts([FromQuery] ProductCatalogSearchParams searchParams, CancellationToken ct)
     {
-        // Redirecting catalog queries to Search Service directly for performance
+        
         var searchParamsObj = new SearchProductsParams
         {
             Q = searchParams.Search ?? string.Empty,
@@ -33,7 +33,7 @@ public class ProductsController : BaseApiController
 
         var result = await _searchService.SearchProductsAsync(searchParamsObj, ct);
 
-        // Mapping Search Result to API Response format if necessary, or returning direct DTO
+        
         return Ok(result);
     }
 

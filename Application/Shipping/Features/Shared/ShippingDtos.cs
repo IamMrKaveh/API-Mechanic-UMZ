@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Features.Shared;
+namespace Application.Shipping.Features.Shared;
 
 public record ShippingDto
 {

@@ -1,4 +1,4 @@
-﻿namespace MainApi.Payment.Controllers;
+namespace MainApi.Payment.Controllers;
 
 [Route("api/admin/payments")]
 [ApiController]

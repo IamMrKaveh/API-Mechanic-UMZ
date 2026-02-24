@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Commands.ActivateProduct;
+namespace Application.Product.Features.Commands.ActivateProduct;
 
 public class ActivateProductHandler : IRequestHandler<ActivateProductCommand, ServiceResult>
 {

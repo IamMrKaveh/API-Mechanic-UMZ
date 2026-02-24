@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Features.Commands.DeleteMedia;
+namespace Application.Media.Features.Commands.DeleteMedia;
 
 public class DeleteMediaHandler : IRequestHandler<DeleteMediaCommand, ServiceResult>
 {
@@ -30,11 +30,11 @@ public class DeleteMediaHandler : IRequestHandler<DeleteMediaCommand, ServiceRes
         var entityType = media.EntityType;
         var entityId = media.EntityId;
 
-        // حذف نرم از طریق Aggregate (Domain Event ثبت می‌شود)
+        
         media.Delete(request.DeletedBy);
         _mediaRepository.Update(media);
 
-        // اگر Primary بود، رسانه بعدی را Primary کن
+        
         if (wasPrimary)
         {
             var remainingMedias = await _mediaRepository.GetByEntityAsync(

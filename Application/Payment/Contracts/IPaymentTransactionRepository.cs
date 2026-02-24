@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Contracts;
+namespace Application.Payment.Contracts;
 
 /// <summary>
 /// Repository Interface برای PaymentTransaction Aggregate

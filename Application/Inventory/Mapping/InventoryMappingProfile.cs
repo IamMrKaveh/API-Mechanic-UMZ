@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Mapping;
+namespace Application.Inventory.Mapping;
 
 public class InventoryMappingProfile : Profile
 {

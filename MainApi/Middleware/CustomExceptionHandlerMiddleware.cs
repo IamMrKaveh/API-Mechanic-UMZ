@@ -1,4 +1,4 @@
-﻿namespace MainApi.Middleware;
+namespace MainApi.Middleware;
 
 public class CustomExceptionHandlerMiddleware
 {
@@ -74,7 +74,7 @@ public class CustomExceptionHandlerMiddleware
             default:
                 _logger.LogError(exception, "An unhandled exception has occurred.");
                 code = HttpStatusCode.InternalServerError;
-                // In production, do not expose stack trace
+                
                 errorResponse = new
                 {
                     StatusCode = (int)code,

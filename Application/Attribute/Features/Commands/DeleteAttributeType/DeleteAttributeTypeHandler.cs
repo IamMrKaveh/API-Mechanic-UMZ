@@ -1,4 +1,4 @@
-﻿namespace Application.Attribute.Features.Commands.DeleteAttributeType;
+namespace Application.Attribute.Features.Commands.DeleteAttributeType;
 
 public class DeleteAttributeTypeHandler : IRequestHandler<DeleteAttributeTypeCommand, ServiceResult>
 {

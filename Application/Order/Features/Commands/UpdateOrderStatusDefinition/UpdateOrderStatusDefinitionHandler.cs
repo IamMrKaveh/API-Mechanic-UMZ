@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
+namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
 public class UpdateOrderStatusDefinitionHandler : IRequestHandler<UpdateOrderStatusDefinitionCommand, ServiceResult>
 {

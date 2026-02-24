@@ -1,4 +1,4 @@
-﻿namespace Domain.Discount.ValueObjects;
+namespace Domain.Discount.ValueObjects;
 
 /// <summary>
 /// Value Object برای کد تخفیف - جلوگیری از Primitive Obsession

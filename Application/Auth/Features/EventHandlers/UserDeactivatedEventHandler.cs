@@ -1,4 +1,4 @@
-﻿namespace Application.Auth.Features.EventHandlers;
+namespace Application.Auth.Features.EventHandlers;
 
 public class UserDeactivatedEventHandler : INotificationHandler<UserDeactivatedEvent>
 {
@@ -24,7 +24,7 @@ public class UserDeactivatedEventHandler : INotificationHandler<UserDeactivatedE
     {
         _logger.LogInformation("Domain Event: User {UserId} deactivated.", notification.UserId);
 
-        // ابطال تمام سشن‌ها در Infrastructure
+        
         await _sessionManager.RevokeAllUserSessionsAsync(notification.UserId, ct);
 
         await _auditService.LogSecurityEventAsync(

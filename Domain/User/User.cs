@@ -1,4 +1,4 @@
-﻿namespace Domain.User;
+namespace Domain.User;
 
 public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
 {
@@ -18,7 +18,7 @@ public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
     private readonly List<UserOtp> _userOtps = new();
     private readonly List<UserSession> _userSessions = new();
 
-    // Public Read-Only Properties
+    
     public string PhoneNumber => _phoneNumber;
 
     public string? FirstName => _firstName;
@@ -32,27 +32,27 @@ public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
     public int LoginCount => _loginCount;
     public string? PasswordHash => _passwordHash;
 
-    // Computed Properties
+    
     public bool IsLockedOut => _lockoutEnd.HasValue && _lockoutEnd.Value > DateTime.UtcNow;
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Soft Delete
+    
     public bool IsDeleted { get; private set; }
 
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Collections - Read-Only
+    
     public IReadOnlyCollection<UserAddress> UserAddresses => _userAddresses.AsReadOnly();
 
     public IReadOnlyCollection<UserOtp> UserOtps => _userOtps.AsReadOnly();
     public IReadOnlyCollection<UserSession> UserSessions => _userSessions.AsReadOnly();
 
-    // Navigation for EF Core — تغییر به public برای دسترسی EF Core Configuration
+    
     public ICollection<ProductReview> Reviews { get; private set; } = new List<ProductReview>();
 
     public ICollection<Wishlist> Wishlists { get; private set; } = new List<Wishlist>();
@@ -61,7 +61,7 @@ public class User : AggregateRoot, ISoftDeletable, IActivatable, IAuditable
     public ICollection<Cart.Cart> UserCarts { get; private set; } = new List<Cart.Cart>();
     public ICollection<Order.Order> UserOrders { get; private set; } = new List<Order.Order>();
 
-    // Business Constants
+    
     private const int MaxFailedLoginAttempts = 5;
 
     private const int LockoutDurationMinutes = 15;

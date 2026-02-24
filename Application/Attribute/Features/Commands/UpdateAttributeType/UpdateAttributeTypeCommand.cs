@@ -1,4 +1,4 @@
-﻿namespace Application.Attribute.Features.Commands.UpdateAttributeType;
+namespace Application.Attribute.Features.Commands.UpdateAttributeType;
 
 public record UpdateAttributeTypeCommand(
     int Id,

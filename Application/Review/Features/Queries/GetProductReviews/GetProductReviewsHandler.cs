@@ -1,4 +1,4 @@
-﻿namespace Application.Review.Features.Queries.GetProductReviews;
+namespace Application.Review.Features.Queries.GetProductReviews;
 
 public class GetProductReviewsHandler
     : IRequestHandler<GetProductReviewsQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>

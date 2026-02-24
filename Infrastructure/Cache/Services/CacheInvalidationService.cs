@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Cache.Services;
+namespace Infrastructure.Cache.Services;
 
 /// <summary>
 /// پیاده‌سازی سرویس Invalidation کش با Redis.
@@ -22,13 +22,13 @@ public sealed class CacheInvalidationService : ICacheInvalidationService
         var keysToInvalidate = new[]
         {
             CacheKeys.Product(productId),
-            CacheKeys.CategoryProducts(productId), // احتمالی
+            CacheKeys.CategoryProducts(productId), 
         };
 
         foreach (var key in keysToInvalidate)
             await _cache.ClearAsync(key);
 
-        // Pattern-based برای کلیدهای مرتبط
+        
         await _cache.ClearByPrefixAsync($"product:{productId}:");
 
         _logger.LogDebug("[CacheInvalidation] Product {ProductId} invalidated.", productId);

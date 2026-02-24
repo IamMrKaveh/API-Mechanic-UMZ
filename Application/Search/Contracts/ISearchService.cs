@@ -1,4 +1,4 @@
-﻿namespace Application.Search.Contracts;
+namespace Application.Search.Contracts;
 
 /// <summary>
 /// قرارداد سرویس جستجو - بدون وابستگی به Elasticsearch

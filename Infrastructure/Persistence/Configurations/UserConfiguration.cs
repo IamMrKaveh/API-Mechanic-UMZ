@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Persistence.Configurations;
+namespace Infrastructure.Persistence.Configurations;
 
 internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.User>
 {

@@ -1,4 +1,4 @@
-﻿namespace Domain.Cart.Exceptions;
+namespace Domain.Cart.Exceptions;
 
 public class CartItemNotFoundException : DomainException
 {

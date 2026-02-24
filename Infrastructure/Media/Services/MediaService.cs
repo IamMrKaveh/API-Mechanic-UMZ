@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Media.Services;
+namespace Infrastructure.Media.Services;
 
 public class MediaService : IMediaService
 {

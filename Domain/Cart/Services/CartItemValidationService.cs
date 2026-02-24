@@ -1,4 +1,4 @@
-﻿namespace Domain.Cart.Services;
+namespace Domain.Cart.Services;
 
 /// <summary>
 /// سرویس دامنه برای اعتبارسنجی موجودی در Domain Layer

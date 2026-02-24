@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Common.Converters;
+namespace Infrastructure.Common.Converters;
 
 public class MoneyConverter : ValueConverter<Money, decimal>
 {

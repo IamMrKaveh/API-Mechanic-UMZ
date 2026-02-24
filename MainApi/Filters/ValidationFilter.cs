@@ -1,4 +1,4 @@
-﻿namespace MainApi.Filters;
+namespace MainApi.Filters;
 
 public class ValidationFilter : IActionFilter
 {

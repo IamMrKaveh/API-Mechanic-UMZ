@@ -1,4 +1,4 @@
-﻿namespace Domain.Order;
+namespace Domain.Order;
 
 public class OrderStatus : BaseEntity, ISoftDeletable, IActivatable
 {
@@ -12,16 +12,16 @@ public class OrderStatus : BaseEntity, ISoftDeletable, IActivatable
     public bool AllowCancel { get; private set; }
     public bool AllowEdit { get; private set; }
 
-    // Soft Delete
+    
     public bool IsDeleted { get; private set; }
 
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Navigation
+    
     public ICollection<Order> Orders { get; private set; } = new List<Order>();
 
-    // وضعیت‌های از پیش تعریف شده
+    
     public static class Statuses
     {
         public const string Pending = "Pending";
@@ -178,7 +178,7 @@ public class OrderStatus : BaseEntity, ISoftDeletable, IActivatable
     {
         if (newStatus == null) return false;
 
-        // قوانین انتقال وضعیت
+        
         return Name switch
         {
             Statuses.Pending => newStatus.Name is Statuses.Processing or Statuses.Cancelled,

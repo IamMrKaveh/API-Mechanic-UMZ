@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Mapping;
+namespace Application.Media.Mapping;
 
 public class MediaMappingProfile : Profile
 {

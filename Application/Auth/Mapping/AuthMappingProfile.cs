@@ -1,4 +1,4 @@
-﻿namespace Application.Auth.Mapping;
+namespace Application.Auth.Mapping;
 
 public class AuthMappingProfile : Profile
 {

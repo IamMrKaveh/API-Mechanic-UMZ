@@ -1,4 +1,4 @@
-﻿namespace Application.Common.Utilities;
+namespace Application.Common.Utilities;
 
 public static class FileSizeFormatter
 {

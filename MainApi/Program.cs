@@ -1,10 +1,9 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
-// 1. Logging
 builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
-var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "";
 var issuer = builder.Configuration["Jwt:Issuer"];
 var audience = builder.Configuration["Jwt:Audience"];
 
@@ -30,7 +29,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// 2. Services
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ValidationFilter>();
@@ -59,21 +57,18 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
 builder.Services.AddDataProtection()
     .PersistKeysToStackExchangeRedis(redis, "DataProtection-Keys-");
 
-// 3. Clean Architecture Layers
 builder.Services.AddApplicationServices();
 builder.Services.AddApplicationPipelines();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// 4. Configuration Options
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 10485760; // 10MB
+    options.MultipartBodyLengthLimit = 10485760;
 });
 
 builder.Services.Configure<SecurityHeadersOptions>(
     builder.Configuration.GetSection("SecurityHeaders"));
 
-// 5. CORS
 builder.Services.AddCustomCors(builder.Configuration);
 
 var app = builder.Build();
@@ -83,7 +78,6 @@ app.Services
    .ConfigurationProvider
    .AssertConfigurationIsValid();
 
-// 6. Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -91,11 +85,9 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    // Production Security Headers
     app.UseSecurityMiddleware();
 }
 
-// Global Exception Handler (Must be early)
 app.UseCustomExceptionHandler();
 
 app.UseHttpsRedirection();
@@ -103,19 +95,15 @@ app.UseStaticFiles();
 
 app.UseCustomCors();
 
-// Rate Limiting (Global)
 app.UseMiddleware<RateLimitMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Correlation ID for logging
 app.UseMiddleware<CorrelationIdMiddleware>();
 
-// Admin Security
 app.UseAdminIpWhitelist();
 
-// Webhook Security
 app.UseMiddleware<WebhookIpWhitelistMiddleware>();
 
 app.MapControllers();

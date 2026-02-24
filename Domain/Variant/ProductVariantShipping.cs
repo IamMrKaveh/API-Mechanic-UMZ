@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant;
+namespace Domain.Variant;
 
 /// <summary>
 /// موجودیت واسط برای فعال/غیرفعال کردن روش‌های ارسال خاص برای یک واریانت

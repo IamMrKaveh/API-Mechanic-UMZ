@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.ChangePassword;
+namespace Application.User.Features.Commands.ChangePassword;
 
 public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, ServiceResult>
 {

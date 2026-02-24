@@ -1,4 +1,4 @@
-﻿namespace Application.Support.Features.Commands.CloseTicket;
+namespace Application.Support.Features.Commands.CloseTicket;
 
 public sealed record CloseTicketCommand(
     int TicketId,

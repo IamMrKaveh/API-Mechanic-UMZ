@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Queries.GetTransactions;
+namespace Application.Inventory.Features.Queries.GetTransactions;
 
 public class GetInventoryTransactionsHandler
     : IRequestHandler<GetInventoryTransactionsQuery, ServiceResult<PaginatedResult<InventoryTransactionDto>>>

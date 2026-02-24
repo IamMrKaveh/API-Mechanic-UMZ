@@ -1,4 +1,4 @@
-﻿namespace Application.Common.Mapping;
+namespace Application.Common.Mapping;
 
 public static class RowVersionExtensions
 {

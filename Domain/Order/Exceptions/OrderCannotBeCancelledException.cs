@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.Exceptions;
+namespace Domain.Order.Exceptions;
 
 public sealed class OrderCannotBeCancelledException : DomainException
 {

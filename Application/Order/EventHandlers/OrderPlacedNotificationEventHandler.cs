@@ -1,4 +1,4 @@
-﻿namespace Application.Order.EventHandlers;
+namespace Application.Order.EventHandlers;
 
 /// <summary>
 /// وقتی سفارش ثبت شد، نوتیفیکیشن ارسال می‌شود

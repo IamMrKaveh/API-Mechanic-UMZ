@@ -1,4 +1,4 @@
-﻿namespace Application.Review.Contracts;
+namespace Application.Review.Contracts;
 
 public interface IReviewQueryService
 {

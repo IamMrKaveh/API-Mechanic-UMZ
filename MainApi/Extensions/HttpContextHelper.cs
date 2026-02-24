@@ -1,4 +1,4 @@
-﻿namespace MainApi.Extensions;
+namespace MainApi.Extensions;
 
 public static class HttpContextHelper
 {
@@ -9,7 +9,7 @@ public static class HttpContextHelper
             return "unknown";
         }
 
-        // Check for X-Forwarded-For header
+        
         if (httpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
         {
             var ip = forwardedFor.FirstOrDefault()?.Split(',').FirstOrDefault()?.Trim();
@@ -19,7 +19,7 @@ public static class HttpContextHelper
             }
         }
 
-        // Fallback to connection's remote IP
+        
         return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
 }

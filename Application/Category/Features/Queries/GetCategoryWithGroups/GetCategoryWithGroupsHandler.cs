@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Features.Queries.GetCategoryWithGroups;
+namespace Application.Category.Features.Queries.GetCategoryWithGroups;
 
 public class GetCategoryWithGroupsHandler
     : IRequestHandler<GetCategoryWithGroupsQuery, ServiceResult<CategoryWithBrandsDto?>>

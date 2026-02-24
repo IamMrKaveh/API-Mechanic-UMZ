@@ -1,4 +1,4 @@
-﻿namespace Domain.Support.Exceptions;
+namespace Domain.Support.Exceptions;
 
 public sealed class TicketAccessDeniedException : DomainException
 {

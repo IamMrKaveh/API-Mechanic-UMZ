@@ -1,4 +1,4 @@
-﻿using Application.Auth.Features.Shared;
+using Application.Auth.Features.Shared;
 
 namespace Application.Auth.Features.Commands.RefreshToken;
 

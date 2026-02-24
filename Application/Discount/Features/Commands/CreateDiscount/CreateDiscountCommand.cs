@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Commands.CreateDiscount;
+namespace Application.Discount.Features.Commands.CreateDiscount;
 
 public record CreateDiscountCommand : IRequest<ServiceResult<DiscountCodeDto>>
 {

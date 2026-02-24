@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
+namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
 
 public class UpdateCartItemQuantityValidator : AbstractValidator<UpdateCartItemQuantityCommand>
 {

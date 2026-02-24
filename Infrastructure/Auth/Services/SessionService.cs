@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Auth.Services;
+namespace Infrastructure.Auth.Services;
 
 /// <summary>
 /// پیاده‌سازی مدیریت نشست‌ها با Database
@@ -25,7 +25,7 @@ public class SessionService : ISessionService
         int expiryDays = 30,
         CancellationToken ct = default)
     {
-        // محدود کردن تعداد سشن‌های فعال (حداکثر ۵)
+        
         await EnforceMaxActiveSessionsAsync(userId, 5, ct);
 
         var session = UserSession.Create(
@@ -73,7 +73,7 @@ public class SessionService : ISessionService
         if (session.TokenVerifierHash != tokenVerifierHash)
             return false;
 
-        // ثبت فعالیت
+        
         session.RecordActivity();
         await _context.SaveChangesAsync(ct);
 

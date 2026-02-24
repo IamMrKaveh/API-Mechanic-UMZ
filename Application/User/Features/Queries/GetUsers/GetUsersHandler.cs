@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Queries.GetUsers;
+namespace Application.User.Features.Queries.GetUsers;
 
 public class GetUsersHandler : IRequestHandler<GetUsersQuery, ServiceResult<PaginatedResult<UserProfileDto>>>
 {

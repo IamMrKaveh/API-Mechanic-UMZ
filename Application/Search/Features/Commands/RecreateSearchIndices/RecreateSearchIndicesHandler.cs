@@ -1,4 +1,4 @@
-﻿namespace Application.Search.Features.Commands.RecreateSearchIndices;
+namespace Application.Search.Features.Commands.RecreateSearchIndices;
 
 public class RecreateSearchIndicesHandler : IRequestHandler<RecreateSearchIndicesCommand, ServiceResult>
 {

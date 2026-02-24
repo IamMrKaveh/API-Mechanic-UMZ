@@ -1,4 +1,4 @@
-﻿namespace Application.Auth.Features.Commands.VerifyOtp;
+namespace Application.Auth.Features.Commands.VerifyOtp;
 
 public class VerifyOtpValidator : AbstractValidator<VerifyOtpCommand>
 {

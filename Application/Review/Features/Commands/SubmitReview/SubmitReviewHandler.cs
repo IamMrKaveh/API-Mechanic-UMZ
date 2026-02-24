@@ -1,4 +1,4 @@
-﻿namespace Application.Review.Features.Commands.SubmitReview;
+namespace Application.Review.Features.Commands.SubmitReview;
 
 public class SubmitReviewHandler : IRequestHandler<SubmitReviewCommand, ServiceResult<ProductReviewDto>>
 {
@@ -29,7 +29,7 @@ public class SubmitReviewHandler : IRequestHandler<SubmitReviewCommand, ServiceR
         if (await _reviewRepository.UserHasReviewedProductAsync(request.UserId, request.ProductId, request.OrderId, ct))
             return ServiceResult<ProductReviewDto>.Failure("شما قبلاً برای این محصول نظر ثبت کرده‌اید.", 400);
 
-        // Security / Trust Check
+        
         var isVerifiedPurchase = await _reviewRepository.UserHasPurchasedProductAsync(request.UserId, request.ProductId, ct);
 
         try

@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Features.Queries.GetCategoryProducts;
+namespace Application.Category.Features.Queries.GetCategoryProducts;
 
 public class GetCategoryProductsValidator : AbstractValidator<GetCategoryProductsQuery>
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Shared;
+namespace Application.Cart.Features.Shared;
 
 public record CartDetailDto
 {

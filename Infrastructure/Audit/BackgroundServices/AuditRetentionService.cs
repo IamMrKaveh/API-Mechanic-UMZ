@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Audit.BackgroundServices;
+namespace Infrastructure.Audit.BackgroundServices;
 
 /// <summary>
 /// سرویس Retention لاگ‌های حسابرسی.
@@ -15,24 +15,24 @@
 /// </summary>
 public sealed class AuditRetentionService : BackgroundService
 {
-    // هر روز یک بار در ساعت 2 بامداد اجرا می‌شود
+    
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
 
     private static readonly TimeSpan InitialDelay = TimeSpan.FromMinutes(5);
 
-    // سیاست‌های Retention
-    private static readonly int FinancialRetentionDays = 7 * 365; // 7 سال
+    
+    private static readonly int FinancialRetentionDays = 7 * 365; 
 
-    private static readonly int SecurityRetentionDays = 2 * 365; // 2 سال
-    private static readonly int DefaultRetentionDays = 90;       // 90 روز
+    private static readonly int SecurityRetentionDays = 2 * 365; 
+    private static readonly int DefaultRetentionDays = 90;       
 
-    // انواع رویداد مالی
+    
     private static readonly HashSet<string> FinancialEventTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "PaymentEvent", "OrderEvent", "RefundEvent", "FinancialEvent", "TransactionEvent"
     };
 
-    // انواع رویداد امنیتی
+    
     private static readonly HashSet<string> SecurityEventTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "SecurityEvent", "UserAction", "AdminEvent", "AuthEvent", "LoginEvent"
@@ -53,7 +53,7 @@ public sealed class AuditRetentionService : BackgroundService
     {
         _logger.LogInformation("Audit Retention Service started.");
 
-        // تأخیر اولیه تا سیستم کاملاً بالا بیاید
+        
         await Task.Delay(InitialDelay, stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
@@ -85,7 +85,7 @@ public sealed class AuditRetentionService : BackgroundService
 
         var now = DateTime.UtcNow;
 
-        // ─── 1. بررسی لاگ‌های عادی (90 روز) ────────────────────
+        
         var defaultCutoff = now.AddDays(-DefaultRetentionDays);
 
         await ArchiveAndDeleteAsync(
@@ -96,7 +96,7 @@ public sealed class AuditRetentionService : BackgroundService
             batchLabel: "default",
             ct: ct);
 
-        // ─── 2. بررسی لاگ‌های امنیتی (2 سال) ───────────────────
+        
         var securityCutoff = now.AddDays(-SecurityRetentionDays);
         await ArchiveAndDeleteAsync(context, archiveFolder,
             securityCutoff,
@@ -105,8 +105,8 @@ public sealed class AuditRetentionService : BackgroundService
             batchLabel: "security",
             ct);
 
-        // ─── 3. لاگ‌های مالی هرگز حذف نمی‌شوند - فقط Archive ──
-        // پس از 7 سال به Archive File منتقل می‌شوند
+        
+        
         var financialCutoff = now.AddDays(-FinancialRetentionDays);
         await ArchiveOnlyAsync(context, archiveFolder,
             financialCutoff,
@@ -137,15 +137,15 @@ public sealed class AuditRetentionService : BackgroundService
 
         var logsToArchive = await query
             .OrderBy(a => a.Timestamp)
-            .Take(1000) // در هر اجرا حداکثر 1000 رکورد
+            .Take(1000) 
             .ToListAsync(ct);
 
         if (!logsToArchive.Any()) return;
 
-        // Export به فایل JSON
+        
         await ExportToArchiveFileAsync(archiveFolder, logsToArchive, batchLabel, ct);
 
-        // حذف از جدول اصلی
+        
         context.AuditLogs.RemoveRange(logsToArchive);
         await context.SaveChangesAsync(ct);
 
@@ -177,7 +177,7 @@ public sealed class AuditRetentionService : BackgroundService
 
         await ExportToArchiveFileAsync(archiveFolder, logsToArchive, batchLabel, ct);
 
-        // علامت‌گذاری به جای حذف (قانونی)
+        
         foreach (var log in logsToArchive)
             log.MarkAsArchived();
 

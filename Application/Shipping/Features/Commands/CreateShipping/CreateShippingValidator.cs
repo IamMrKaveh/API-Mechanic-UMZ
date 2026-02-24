@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Features.Commands.CreateShipping;
+namespace Application.Shipping.Features.Commands.CreateShipping;
 
 public class CreateShippingValidator : AbstractValidator<CreateShippingCommand>
 {

@@ -1,4 +1,4 @@
-﻿namespace Domain.User.Events;
+namespace Domain.User.Events;
 
 public class UserDeactivatedEvent : DomainEvent
 {

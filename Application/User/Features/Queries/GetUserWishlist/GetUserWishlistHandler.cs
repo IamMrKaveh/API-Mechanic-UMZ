@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Queries.GetUserWishlist;
+namespace Application.User.Features.Queries.GetUserWishlist;
 
 public class GetUserWishlistHandler
     : IRequestHandler<GetUserWishlistQuery, ServiceResult<PaginatedResult<WishlistItemDto>>>

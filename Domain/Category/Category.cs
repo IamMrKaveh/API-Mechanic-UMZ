@@ -1,4 +1,4 @@
-﻿namespace Domain.Category;
+namespace Domain.Category;
 
 /// <summary>
 /// Aggregate Root - تمام دسترسی به CategoryGroup فقط از طریق این موجودیت انجام می‌شود.
@@ -11,27 +11,27 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
     public int SortOrder { get; private set; }
     public bool IsActive { get; private set; }
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Soft Delete
+    
     public bool IsDeleted { get; private set; }
 
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Concurrency
+    
     public new byte[]? RowVersion { get; private set; }
 
-    //Navigation for EF Core
+    
     public ICollection<Media.Media> Images { get; private set; } = [];
 
     private readonly List<Brand.Brand> _brands = [];
     public IReadOnlyCollection<Brand.Brand> Brands => _brands.AsReadOnly();
 
-    // Computed
+    
     public int ActiveBrandsCount => _brands.Count(g => !g.IsDeleted && g.IsActive);
 
     public int TotalProductsCount => _brands
@@ -42,9 +42,9 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
     private Category()
     { }
 
-    // ============================================================
-    // Factory Method
-    // ============================================================
+    
+    
+    
 
     public static Category Create(string name, string? description = null, int sortOrder = 0)
     {
@@ -65,9 +65,9 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         return category;
     }
 
-    // ============================================================
-    // Update Methods
-    // ============================================================
+    
+    
+    
 
     public void Update(string name, string? description, int sortOrder)
     {
@@ -111,9 +111,9 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         UpdatedAt = DateTime.UtcNow;
     }
 
-    // ============================================================
-    // Brand Management - تنها نقطه دسترسی به Brand
-    // ============================================================
+    
+    
+    
 
     /// <summary>
     /// افزودن گروه جدید - یکتایی نام در محدوده این Category بررسی می‌شود
@@ -184,7 +184,7 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         EnsureNotDeleted();
         EnsureActive();
 
-        // بررسی یکتایی نام در Category مقصد
+        
         if (ContainsGroupWithName(group.Name))
             throw new DuplicateBrandNameException(group.Name, Id);
 
@@ -202,7 +202,7 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
 
         var activeGroups = _brands.Where(g => !g.IsDeleted).ToList();
 
-        // بررسی اینکه تمام شناسه‌ها معتبر هستند
+        
         var activeGroupIds = activeGroups.Select(g => g.Id).ToHashSet();
         var providedIds = orderedGroupIds.ToHashSet();
 
@@ -235,9 +235,9 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         UpdatedAt = DateTime.UtcNow;
     }
 
-    // ============================================================
-    // Activation & Deletion
-    // ============================================================
+    
+    
+    
 
     public void Activate()
     {
@@ -257,7 +257,7 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
 
-        // غیرفعال کردن تمام گروه‌ها
+        
         foreach (var group in _brands.Where(g => !g.IsDeleted && g.IsActive))
         {
             group.Deactivate();
@@ -295,9 +295,9 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         UpdatedAt = DateTime.UtcNow;
     }
 
-    // ============================================================
-    // Query Methods
-    // ============================================================
+    
+    
+    
 
     public Brand.Brand? GetGroup(int groupId)
     {
@@ -329,9 +329,9 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
             g.Name.IsSameAs(name));
     }
 
-    // ============================================================
-    // Private Methods
-    // ============================================================
+    
+    
+    
 
     private void EnsureNotDeleted()
     {

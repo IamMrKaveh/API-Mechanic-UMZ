@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Queries.ValidateDiscount;
+namespace Application.Discount.Features.Queries.ValidateDiscount;
 
 public class ValidateDiscountHandler : IRequestHandler<ValidateDiscountQuery, ServiceResult<DiscountValidationDto>>
 {

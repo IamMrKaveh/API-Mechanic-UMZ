@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.ValueObjects;
+namespace Domain.Order.ValueObjects;
 
 public sealed class OrderNumber : ValueObject
 {

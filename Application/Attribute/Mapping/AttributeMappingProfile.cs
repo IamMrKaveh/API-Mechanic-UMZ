@@ -1,4 +1,4 @@
-﻿namespace Application.Attribute.Mapping;
+namespace Application.Attribute.Mapping;
 
 public sealed class AttributeMappingProfile : Profile
 {

@@ -1,4 +1,4 @@
-﻿namespace Domain.User.ValueObjects;
+namespace Domain.User.ValueObjects;
 
 public sealed class FullName : ValueObject
 {

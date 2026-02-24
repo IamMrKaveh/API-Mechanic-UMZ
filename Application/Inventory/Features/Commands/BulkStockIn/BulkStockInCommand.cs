@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Commands.BulkStockIn;
+namespace Application.Inventory.Features.Commands.BulkStockIn;
 
 public record BulkStockInCommand(
     List<BulkStockInItemDto> Items,

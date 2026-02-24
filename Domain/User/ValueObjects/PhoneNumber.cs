@@ -1,4 +1,4 @@
-﻿namespace Domain.User.ValueObjects;
+namespace Domain.User.ValueObjects;
 
 public sealed class PhoneNumber : ValueObject
 {
@@ -72,21 +72,21 @@ public sealed class PhoneNumber : ValueObject
     {
         var digits = new string(value.Where(char.IsDigit).ToArray());
 
-        // تبدیل اعداد فارسی به انگلیسی
+        
         digits = digits
             .Replace("۰", "0").Replace("۱", "1").Replace("۲", "2")
             .Replace("۳", "3").Replace("۴", "4").Replace("۵", "5")
             .Replace("۶", "6").Replace("۷", "7").Replace("۸", "8")
             .Replace("۹", "9");
 
-        // تبدیل فرمت بین‌المللی
+        
         if (digits.StartsWith("98") && digits.Length == 12)
             digits = "0" + digits.Substring(2);
 
         if (digits.StartsWith("0098") && digits.Length == 14)
             digits = "0" + digits.Substring(4);
 
-        // اضافه کردن صفر اول
+        
         if (!digits.StartsWith("0") && digits.Length == 10)
             digits = "0" + digits;
 

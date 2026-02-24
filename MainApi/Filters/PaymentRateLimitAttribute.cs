@@ -1,4 +1,4 @@
-﻿namespace MainApi.Filters;
+namespace MainApi.Filters;
 
 [AttributeUsage(AttributeTargets.Method)]
 public class PaymentRateLimitAttribute : ActionFilterAttribute
@@ -13,7 +13,7 @@ public class PaymentRateLimitAttribute : ActionFilterAttribute
             ? $"payment_limit_user_{user.UserId}"
             : $"payment_limit_ip_{httpContext.Connection.RemoteIpAddress}";
 
-        // Limit: 3 attempts per 10 minutes
+        
         var (isLimited, retryAfter) = await rateLimitService.IsLimitedAsync(key, 3, 10);
 
         if (isLimited)

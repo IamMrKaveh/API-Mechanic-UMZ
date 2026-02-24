@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Commands.CancelDiscountUsage;
+namespace Application.Discount.Features.Commands.CancelDiscountUsage;
 
 public record CancelDiscountUsageCommand(
     int OrderId,

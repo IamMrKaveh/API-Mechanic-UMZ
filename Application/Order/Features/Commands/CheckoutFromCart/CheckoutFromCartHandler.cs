@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.CheckoutFromCart;
+namespace Application.Order.Features.Commands.CheckoutFromCart;
 
 public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, ServiceResult<CheckoutResultDto>>
 {
@@ -47,7 +47,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
         CheckoutFromCartCommand request,
         CancellationToken ct)
     {
-        // 1. Check Idempotency
+        
         if (await _orderRepository.ExistsByIdempotencyKeyAsync(request.IdempotencyKey, ct))
         {
             var existingOrder = await _orderRepository.GetByIdempotencyKeyAsync(
@@ -70,12 +70,12 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
 
             try
             {
-                // 2. Validate Cart
+                
                 var cart = await _cartRepository.GetByUserIdAsync(request.UserId, ct);
                 if (cart == null || !cart.CartItems.Any())
                     return ServiceResult<CheckoutResultDto>.Failure("سبد خرید خالی است.");
 
-                // 3. Validate Address
+                
                 UserAddress? userAddress;
                 if (request.UserAddressId.HasValue)
                 {
@@ -107,12 +107,12 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     return ServiceResult<CheckoutResultDto>.Failure("آدرس تحویل الزامی است.");
                 }
 
-                // 4. Validate Shipping Method
+                
                 var shippingMethod = await _shippingMethodRepository.GetByIdAsync(request.ShippingId, ct);
                 if (shippingMethod == null || !shippingMethod.IsActive)
                     return ServiceResult<CheckoutResultDto>.Failure("روش ارسال انتخاب شده معتبر نیست.");
 
-                // 5. Build OrderItemSnapshots + load Variants (no decision-making here)
+                
                 var orderItemSnapshots = new List<OrderItemSnapshot>();
                 var variantItems = new List<(ProductVariant Variant, int Quantity)>();
 
@@ -127,7 +127,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     orderItemSnapshots.Add(OrderItemSnapshot.FromVariant(variant, cartItem.Quantity));
                 }
 
-                // 6. Validate price integrity via Domain Service (replaces handler-level if/else)
+                
                 var priceExpectations = variantItems
                     .Select(vi => (
                         vi.Variant,
@@ -140,17 +140,17 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                 if (!priceValidation.IsValid)
                     return ServiceResult<CheckoutResultDto>.Failure(priceValidation.GetErrorsSummary());
 
-                // 7. Validate stock availability via Domain Service (unchanged)
+                
                 var stockValidation = _inventoryReservationService.ValidateBatchAvailability(variantItems);
                 if (!stockValidation.IsValid)
                     return ServiceResult<CheckoutResultDto>.Failure(stockValidation.GetErrorsSummary());
 
-                // 8. Validate items using Domain Service
+                
                 var itemsValidation = _orderDomainService.ValidateOrderItems(orderItemSnapshots);
                 if (!itemsValidation.IsValid)
                     return ServiceResult<CheckoutResultDto>.Failure(itemsValidation.GetErrorsSummary());
 
-                // 9. Create Order via Domain Service
+                
                 var order = _orderDomainService.PlaceOrder(
                     request.UserId,
                     userAddress,
@@ -163,7 +163,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                 await _orderRepository.AddAsync(order, ct);
                 await _unitOfWork.SaveChangesAsync(ct);
 
-                // 10. Apply Discount via Domain Service
+                
                 if (!string.IsNullOrWhiteSpace(request.DiscountCode))
                 {
                     var discountCode = await _discountRepository.GetByCodeAsync(request.DiscountCode, ct);
@@ -184,7 +184,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     await _unitOfWork.SaveChangesAsync(ct);
                 }
 
-                // 11. Initiate Payment
+                
                 var user = await _userRepository.GetByIdAsync(request.UserId, ct);
                 var paymentResult = await _paymentService.InitiatePaymentAsync(new PaymentInitiationDto
                 {
@@ -205,7 +205,7 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                         paymentResult.Error ?? "خطا در ایجاد درخواست پرداخت");
                 }
 
-                // 12. Clear Cart
+                
                 await _cartRepository.ClearCartAsync(request.UserId, ct);
                 await _unitOfWork.SaveChangesAsync(ct);
 

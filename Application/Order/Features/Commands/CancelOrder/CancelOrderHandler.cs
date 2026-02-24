@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.CancelOrder;
+namespace Application.Order.Features.Commands.CancelOrder;
 
 public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, ServiceResult>
 {
@@ -37,7 +37,7 @@ public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, ServiceRes
         if (order == null)
             return ServiceResult.Failure("سفارش یافت نشد.", 404);
 
-        // Validate cancellation using Domain Service
+        
         var validation = _orderDomainService.ValidateCancellation(order, request.UserId, request.IsAdmin);
         if (!validation.CanCancel)
             return ServiceResult.Failure(validation.Error!, 400);
@@ -48,13 +48,13 @@ public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, ServiceRes
 
             try
             {
-                // 1. Cancel the order (domain method handles state transition + events)
+                
                 order.Cancel(request.UserId, request.Reason);
 
-                // 2. Rollback inventory reservations
+                
                 await _inventoryService.RollbackReservationsAsync($"ORDER-{order.Id}");
 
-                // 3. Cancel discount usage if any
+                
                 if (order.DiscountCodeId.HasValue)
                 {
                     await _discountService.CancelDiscountUsageAsync(order.Id);

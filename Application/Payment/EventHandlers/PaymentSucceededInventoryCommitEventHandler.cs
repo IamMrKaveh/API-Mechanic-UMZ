@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.EventHandlers;
+namespace Application.Payment.EventHandlers;
 
 /// <summary>
 /// پس از پرداخت موفق، رزرو موجودی سفارش را Commit می‌کند.
@@ -29,13 +29,13 @@ public class PaymentSucceededInventoryCommitEventHandler
 
         if (result.IsFailed)
         {
-            // لاگ کردن خطا - در صورت fail شدن، Outbox/Retry policy باید مجدداً تلاش کند
+            
             _logger.LogError(
                 "Failed to commit inventory for Order {OrderId}. Error: {Error}. Manual reconciliation may be required.",
                 notification.OrderId, result.Error);
 
-            // TODO: در صورت نیاز Outbox pattern یا Dead Letter Queue اضافه شود
-            // در حال حاضر فقط لاگ می‌کنیم تا پرداخت fail نشود
+            
+            
         }
         else
         {

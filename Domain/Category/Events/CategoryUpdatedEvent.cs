@@ -1,4 +1,4 @@
-﻿namespace Domain.Category.Events;
+namespace Domain.Category.Events;
 
 public class CategoryUpdatedEvent : DomainEvent
 {

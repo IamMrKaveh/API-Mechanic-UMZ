@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Payment.Mock;
+namespace Infrastructure.Payment.Mock;
 
 public class MockPaymentGateway : IPaymentGateway
 {

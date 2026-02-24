@@ -1,4 +1,4 @@
-﻿namespace Domain.Product.ValueObjects;
+namespace Domain.Product.ValueObjects;
 
 public sealed class ProductStats : ValueObject
 {
@@ -33,13 +33,13 @@ public sealed class ProductStats : ValueObject
         var variants = activeVariants.ToList();
         if (!variants.Any())
         {
-            return CreateEmpty(); // Preserve SalesCount if needed, or allow reset logic
+            return CreateEmpty();
         }
 
         return new ProductStats
         {
-            MinPrice = Money.FromDecimal(variants.Min(v => v.SellingPrice)),
-            MaxPrice = Money.FromDecimal(variants.Max(v => v.SellingPrice)),
+            MinPrice = Money.FromDecimal(variants.Min(v => v.SellingPrice.Amount)),
+            MaxPrice = Money.FromDecimal(variants.Max(v => v.SellingPrice.Amount)),
             TotalStock = variants.Where(v => !v.IsUnlimited).Sum(v => v.StockQuantity),
             AverageRating = AverageRating,
             ReviewCount = ReviewCount,

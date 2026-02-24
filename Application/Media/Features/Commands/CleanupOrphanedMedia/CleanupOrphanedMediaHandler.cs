@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Features.Commands.CleanupOrphanedMedia;
+namespace Application.Media.Features.Commands.CleanupOrphanedMedia;
 
 public class CleanupOrphanedMediaHandler
     : IRequestHandler<CleanupOrphanedMediaCommand, ServiceResult<CleanupResultDto>>
@@ -22,17 +22,17 @@ public class CleanupOrphanedMediaHandler
     {
         try
         {
-            // 1. لیست تمام فایل‌های فیزیکی
+            
             var allFiles = await _storageService.GetFilesAsync(
                 "uploads/", 1000, null, cancellationToken);
 
             if (!allFiles.Any())
                 return ServiceResult<CleanupResultDto>.Success(new CleanupResultDto { DeletedFileCount = 0 });
 
-            // 2. لیست تمام مسیرهای ثبت شده در دیتابیس
+            
             var dbFilePaths = await _mediaRepository.GetAllFilePathsAsync(cancellationToken);
 
-            // 3. شناسایی فایل‌های بدون رکورد
+            
             var orphans = allFiles.Where(f => !dbFilePaths.Contains(f)).ToList();
 
             int deletedCount = 0;

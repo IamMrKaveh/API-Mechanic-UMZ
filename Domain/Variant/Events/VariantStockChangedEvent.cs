@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant.Events;
+namespace Domain.Variant.Events;
 
 /// <summary>
 /// رویداد تغییر موجودی واریانت - self-contained برای Cache و Search update بدون نیاز به DB query

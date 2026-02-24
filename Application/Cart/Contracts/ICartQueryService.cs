@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Contracts;
+namespace Application.Cart.Contracts;
 
 public interface ICartQueryService
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Attribute.Features.Shared;
+namespace Application.Attribute.Features.Shared;
 
 public record AttributeTypeDto
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Features.Commands.RemoveVariant;
+namespace Application.Variant.Features.Commands.RemoveVariant;
 
 public class RemoveVariantValidator : AbstractValidator<RemoveVariantCommand>
 {

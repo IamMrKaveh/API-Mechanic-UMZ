@@ -1,4 +1,4 @@
-﻿namespace Domain.Common.Interfaces;
+namespace Domain.Common.Interfaces;
 
 public interface IActivatable
 {

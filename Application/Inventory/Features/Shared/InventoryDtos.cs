@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Shared;
+namespace Application.Inventory.Features.Shared;
 
 public record InventoryTransactionDto
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Communication.Contracts;
+namespace Application.Communication.Contracts;
 
 /// <summary>
 /// سرویس ارسال پیامک

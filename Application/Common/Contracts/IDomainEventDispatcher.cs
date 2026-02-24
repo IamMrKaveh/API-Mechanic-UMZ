@@ -1,4 +1,4 @@
-﻿namespace Application.Common.Contracts;
+namespace Application.Common.Contracts;
 
 /// <summary>
 /// انتشار Domain Events پس از SaveChangesAsync

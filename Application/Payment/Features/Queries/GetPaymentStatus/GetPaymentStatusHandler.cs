@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Features.Queries.GetPaymentStatus;
+namespace Application.Payment.Features.Queries.GetPaymentStatus;
 
 public class GetPaymentStatusHandler : IRequestHandler<GetPaymentStatusQuery, ServiceResult<PaymentStatusDto>>
 {

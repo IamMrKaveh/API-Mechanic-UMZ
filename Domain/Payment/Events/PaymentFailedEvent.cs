@@ -1,4 +1,4 @@
-﻿namespace Domain.Payment.Events;
+namespace Domain.Payment.Events;
 
 public class PaymentFailedEvent : DomainEvent
 {

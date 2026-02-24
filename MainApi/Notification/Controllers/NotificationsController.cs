@@ -1,4 +1,4 @@
-﻿using Application.Notification.Features.Commands.DeleteNotification;
+using Application.Notification.Features.Commands.DeleteNotification;
 
 namespace MainApi.Notification.Controllers;
 

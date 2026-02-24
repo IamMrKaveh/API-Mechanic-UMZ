@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Queries.GetUserAddresses;
+namespace Application.User.Features.Queries.GetUserAddresses;
 
 public class GetUserAddressesHandler
     : IRequestHandler<GetUserAddressesQuery, ServiceResult<IEnumerable<UserAddressDto>>>

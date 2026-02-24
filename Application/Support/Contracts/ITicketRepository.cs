@@ -1,4 +1,4 @@
-﻿namespace Application.Support.Contracts;
+namespace Application.Support.Contracts;
 
 /// <summary>
 /// Repository Interface برای Ticket Aggregate

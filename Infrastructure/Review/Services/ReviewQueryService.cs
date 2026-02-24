@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Review.Services;
+namespace Infrastructure.Review.Services;
 
 public class ReviewQueryService : IReviewQueryService
 {

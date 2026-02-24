@@ -1,4 +1,4 @@
-﻿namespace MainApi.Media.Controllers;
+namespace MainApi.Media.Controllers;
 
 [Route("api/admin/media")]
 [ApiController]
@@ -33,7 +33,7 @@ public class AdminMediaController : BaseApiController
     }
 
     [HttpPost]
-    [RequestSizeLimit(10_485_760)] // 10 MB
+    [RequestSizeLimit(10_485_760)] 
     public async Task<IActionResult> UploadMedia(
         [FromForm] IFormFile file,
         [FromForm] string entityType,

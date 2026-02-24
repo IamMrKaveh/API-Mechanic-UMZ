@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Contracts;
+namespace Application.Payment.Contracts;
 
 /// <summary>
 /// اینترفیس اختیاری برای درگاه‌هایی که Refund API دارند.

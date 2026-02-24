@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Features.Commands.ReorderMedia;
+namespace Application.Media.Features.Commands.ReorderMedia;
 
 public class ReorderMediaHandler : IRequestHandler<ReorderMediaCommand, ServiceResult>
 {
@@ -27,7 +27,7 @@ public class ReorderMediaHandler : IRequestHandler<ReorderMediaCommand, ServiceR
 
         try
         {
-            // تغییر ترتیب از طریق Domain Service
+            
             _mediaDomainService.ReorderMedias(medias, request.OrderedMediaIds);
 
             foreach (var media in medias)

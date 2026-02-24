@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Features.Commands.VerifyPayment;
+namespace Application.Payment.Features.Commands.VerifyPayment;
 
 public class VerifyPaymentValidator : AbstractValidator<VerifyPaymentCommand>
 {

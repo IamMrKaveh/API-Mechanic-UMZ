@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Commands.UpdateProductDetails;
+namespace Application.Product.Features.Commands.UpdateProductDetails;
 
 public record UpdateProductDetailsCommand : IRequest<ServiceResult>
 {

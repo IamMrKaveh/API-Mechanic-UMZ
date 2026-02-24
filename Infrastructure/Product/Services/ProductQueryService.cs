@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Product.Services;
+namespace Infrastructure.Product.Services;
 
 public class ProductQueryService : IProductQueryService
 {

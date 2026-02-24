@@ -1,4 +1,4 @@
-﻿namespace MainApi.Extensions;
+namespace MainApi.Extensions;
 
 public static class SecurityExtensions
 {

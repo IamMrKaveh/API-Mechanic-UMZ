@@ -1,4 +1,4 @@
-﻿namespace Application.Support.Features.Queries.GetUserTickets;
+namespace Application.Support.Features.Queries.GetUserTickets;
 
 public sealed class GetUserTicketsHandler
     : IRequestHandler<GetUserTicketsQuery, ServiceResult<PaginatedResult<TicketDto>>>

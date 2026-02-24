@@ -1,4 +1,4 @@
-﻿namespace Domain.Support.Services;
+namespace Domain.Support.Services;
 
 /// <summary>
 /// Domain Service برای عملیات‌های پیچیده تیکت

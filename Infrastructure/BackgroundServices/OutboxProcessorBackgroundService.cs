@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.BackgroundServices;
+namespace Infrastructure.BackgroundServices;
 
 public class OutboxProcessorBackgroundService : BackgroundService
 {

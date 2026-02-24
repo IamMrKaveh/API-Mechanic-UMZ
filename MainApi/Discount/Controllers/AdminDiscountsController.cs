@@ -1,4 +1,4 @@
-﻿namespace MainApi.Discount.Controllers;
+namespace MainApi.Discount.Controllers;
 
 [ApiController]
 [Route("api/admin/discounts")]

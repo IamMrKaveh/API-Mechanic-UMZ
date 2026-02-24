@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.UpdateProfile;
+namespace Application.User.Features.Commands.UpdateProfile;
 
 public record UpdateProfileCommand : IRequest<ServiceResult<UserProfileDto>>
 {

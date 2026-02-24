@@ -1,4 +1,4 @@
-﻿namespace Application.Analytics.Features.Queries.GetRevenueReport;
+namespace Application.Analytics.Features.Queries.GetRevenueReport;
 
 public sealed record GetRevenueReportQuery(
     DateTime FromDate,

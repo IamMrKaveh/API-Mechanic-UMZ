@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Queries.GetUserOrders;
+namespace Application.Order.Features.Queries.GetUserOrders;
 
 public class GetUserOrdersHandler : IRequestHandler<GetUserOrdersQuery, ServiceResult<PaginatedResult<OrderDto>>>
 {

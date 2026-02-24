@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Order.Repositories;
+namespace Infrastructure.Order.Repositories;
 
 public class OrderRepository : IOrderRepository
 {

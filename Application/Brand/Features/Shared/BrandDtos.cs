@@ -1,4 +1,4 @@
-﻿namespace Application.Brand.Features.Shared;
+namespace Application.Brand.Features.Shared;
 
 public record BrandCreateDto
 {

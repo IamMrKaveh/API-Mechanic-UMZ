@@ -1,4 +1,4 @@
-﻿namespace MainApi.Inventory.Controllers;
+namespace MainApi.Inventory.Controllers;
 
 [ApiController]
 [Route("api/admin/inventory")]

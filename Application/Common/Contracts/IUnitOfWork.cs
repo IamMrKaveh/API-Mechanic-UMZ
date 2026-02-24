@@ -1,4 +1,4 @@
-﻿namespace Application.Common.Contracts;
+namespace Application.Common.Contracts;
 
 /// <summary>
 /// Unit of Work - تعریف شده در Application

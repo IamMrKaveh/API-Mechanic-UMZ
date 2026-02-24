@@ -1,4 +1,4 @@
-﻿namespace Domain.User;
+namespace Domain.User;
 
 public class UserOtp : BaseEntity, IAuditable
 {
@@ -15,15 +15,15 @@ public class UserOtp : BaseEntity, IAuditable
     public DateTime? UsedAt => _usedAt;
     public int AttemptCount => _attemptCount;
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Navigation
+    
     public User? User { get; private set; }
 
-    // Business Constants
+    
     private const int MaxAttempts = 3;
 
     private const int DefaultExpiryMinutes = 2;
@@ -73,7 +73,7 @@ public class UserOtp : BaseEntity, IAuditable
         _attemptCount++;
         UpdatedAt = DateTime.UtcNow;
 
-        // حداکثر تعداد تلاش
+        
         if (_attemptCount > MaxAttempts)
         {
             Invalidate();
@@ -83,7 +83,7 @@ public class UserOtp : BaseEntity, IAuditable
         if (_otpHash != otpHash)
             return false;
 
-        // موفقیت
+        
         MarkAsUsed();
         return true;
     }

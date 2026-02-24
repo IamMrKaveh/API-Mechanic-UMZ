@@ -1,4 +1,4 @@
-﻿namespace Domain.Product.Services;
+namespace Domain.Product.Services;
 
 public sealed class ProductDomainService
 {
@@ -32,7 +32,7 @@ public sealed class ProductDomainService
             LowStockVariants: lowStockCount,
             OutOfStockVariants: outOfStockCount,
             UnlimitedVariants: unlimitedCount,
-            AveragePrice: System.Math.Round(avgPrice, 0),
+            AveragePrice: Math.Round(avgPrice, 0),
             MaxDiscountPercentage: maxDiscount,
             AverageRating: product.Stats.AverageRating,
             ReviewCount: product.Stats.ReviewCount,
@@ -50,7 +50,7 @@ public sealed class ProductDomainService
             throw new DomainException("درصد سود باید بین ۰ تا ۲۰۰ باشد.");
 
         var suggestedSellingPrice = purchasePrice * (1 + desiredProfitMargin / 100);
-        suggestedSellingPrice = System.Math.Ceiling(suggestedSellingPrice / 1000) * 1000;
+        suggestedSellingPrice = Math.Ceiling(suggestedSellingPrice / 1000) * 1000;
 
         var actualProfitMargin = ((suggestedSellingPrice - purchasePrice) / purchasePrice) * 100;
 
@@ -58,7 +58,7 @@ public sealed class ProductDomainService
             PurchasePrice: purchasePrice,
             SuggestedSellingPrice: suggestedSellingPrice,
             SuggestedOriginalPrice: suggestedSellingPrice,
-            ActualProfitMargin: System.Math.Round(actualProfitMargin, 2),
+            ActualProfitMargin: Math.Round(actualProfitMargin, 2),
             ProfitAmount: suggestedSellingPrice - purchasePrice);
     }
 }
@@ -77,7 +77,7 @@ public sealed record ProductStatistics(
     int SalesCount)
 {
     public decimal ActiveVariantsPercentage =>
-        TotalVariants > 0 ? System.Math.Round((decimal)ActiveVariants / TotalVariants * 100, 2) : 0;
+        TotalVariants > 0 ? Math.Round((decimal)ActiveVariants / TotalVariants * 100, 2) : 0;
 
     public bool HasStockIssues => LowStockVariants > 0 || OutOfStockVariants > 0;
 

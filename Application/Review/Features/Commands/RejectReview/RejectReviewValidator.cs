@@ -1,4 +1,4 @@
-﻿namespace Application.Review.Features.Commands.RejectReview;
+namespace Application.Review.Features.Commands.RejectReview;
 
 public class RejectReviewValidator : AbstractValidator<RejectReviewCommand>
 {

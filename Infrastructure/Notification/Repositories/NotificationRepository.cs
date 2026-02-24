@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Notification.Repositories;
+namespace Infrastructure.Notification.Repositories;
 
 public class NotificationRepository : INotificationRepository
 {

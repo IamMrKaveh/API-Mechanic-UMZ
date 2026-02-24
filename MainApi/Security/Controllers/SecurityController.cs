@@ -1,4 +1,4 @@
-﻿namespace MainApi.Security.Controllers;
+namespace MainApi.Security.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

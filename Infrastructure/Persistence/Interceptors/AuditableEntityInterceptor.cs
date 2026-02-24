@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Persistence.Interceptors;
+namespace Infrastructure.Persistence.Interceptors;
 
 public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
 {

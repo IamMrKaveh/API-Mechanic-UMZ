@@ -1,4 +1,4 @@
-﻿namespace Application.Analytics.Features.Queries.GetTopSellingProducts;
+namespace Application.Analytics.Features.Queries.GetTopSellingProducts;
 
 public sealed class GetTopSellingProductsValidator : AbstractValidator<GetTopSellingProductsQuery>
 {

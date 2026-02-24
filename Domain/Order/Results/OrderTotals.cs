@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.Results;
+namespace Domain.Order.Results;
 
 /// <summary>
 /// نتیجه محاسبه مجموع سفارش

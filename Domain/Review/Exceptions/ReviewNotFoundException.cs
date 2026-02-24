@@ -1,4 +1,4 @@
-﻿namespace Domain.Review.Exceptions;
+namespace Domain.Review.Exceptions;
 
 public sealed class ReviewNotFoundException : DomainException
 {

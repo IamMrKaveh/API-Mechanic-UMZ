@@ -1,4 +1,4 @@
-﻿namespace Domain.Payment.Exceptions;
+namespace Domain.Payment.Exceptions;
 
 public sealed class PaymentNotFoundException : DomainException
 {

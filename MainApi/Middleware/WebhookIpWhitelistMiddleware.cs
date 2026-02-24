@@ -1,4 +1,4 @@
-﻿namespace MainApi.Middleware;
+namespace MainApi.Middleware;
 
 public class WebhookIpWhitelistMiddleware
 {

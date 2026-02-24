@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Persistence.Context;
+namespace Infrastructure.Persistence.Context;
 
 public class DBContext : DbContext, IApplicationDbContext
 {
@@ -6,7 +6,7 @@ public class DBContext : DbContext, IApplicationDbContext
     {
     }
 
-    // Aggregate Roots
+    
     public DbSet<Domain.User.User> Users => Set<Domain.User.User>();
 
     public DbSet<UserOtp> UserOtps => Set<UserOtp>();
@@ -34,7 +34,7 @@ public class DBContext : DbContext, IApplicationDbContext
     public DbSet<StockLedgerEntry> StockLedgerEntries => Set<StockLedgerEntry>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
 
-    // Child entities requiring direct DbSet access for Query Services
+    
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
 
     public DbSet<AttributeValue> AttributeValues => Set<AttributeValue>();

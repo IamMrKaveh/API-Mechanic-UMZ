@@ -1,8 +1,8 @@
-﻿namespace Application.User.Contracts;
+namespace Application.User.Contracts;
 
 public interface IUserRepository
 {
-    // User CRUD
+    
     Task<Domain.User.User?> GetByIdAsync(
         int id,
         CancellationToken ct = default
@@ -57,7 +57,7 @@ public interface IUserRepository
         CancellationToken ct = default
         );
 
-    // OTP Management
+    
     Task<UserOtp?> GetActiveOtpAsync(
         int userId,
         CancellationToken ct = default
@@ -73,7 +73,7 @@ public interface IUserRepository
         CancellationToken ct = default
         );
 
-    // Session Management
+    
     Task<UserSession?> GetSessionBySelectorAsync(
         string tokenSelector,
         CancellationToken ct = default
@@ -99,7 +99,7 @@ public interface IUserRepository
         CancellationToken ct = default
         );
 
-    // Wishlist
+    
     Task<bool> IsInWishlistAsync(
         int userId,
         int productId,

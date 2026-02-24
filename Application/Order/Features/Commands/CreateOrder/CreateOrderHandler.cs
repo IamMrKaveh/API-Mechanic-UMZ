@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.CreateOrder;
+namespace Application.Order.Features.Commands.CreateOrder;
 
 public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, ServiceResult<int>>
 {
@@ -47,19 +47,19 @@ public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, ServiceRes
         {
             try
             {
-                // 1. Validate Address
+                
                 var userAddress = await _userRepository.GetUserAddressAsync(
                     request.Dto.UserAddressId, ct);
                 if (userAddress == null || userAddress.UserId != request.Dto.UserId)
                     return ServiceResult<int>.Failure("آدرس کاربر نامعتبر است.");
 
-                // 2. Validate Shipping
+                
                 var shipping = await _shippingRepository.GetByIdAsync(
                     request.Dto.ShippingId, ct);
                 if (shipping == null || !shipping.IsActive)
                     return ServiceResult<int>.Failure("روش ارسال انتخاب شده معتبر نیست.");
 
-                // 3. Build OrderItemSnapshots
+                
                 var orderItemSnapshots = new List<OrderItemSnapshot>();
 
                 foreach (var itemDto in request.Dto.OrderItems)
@@ -75,7 +75,7 @@ public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, ServiceRes
                         sellingPrice: itemDto.SellingPrice));
                 }
 
-                // 4. Apply Discount
+                
                 DiscountApplicationResult? discountResult = null;
                 if (!string.IsNullOrEmpty(request.Dto.DiscountCode))
                 {
@@ -91,7 +91,7 @@ public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, ServiceRes
                     }
                 }
 
-                // 5. Create Order using Domain Service
+                
                 var order = _orderDomainService.PlaceOrder(
                     request.Dto.UserId,
                     userAddress,
@@ -104,7 +104,7 @@ public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, ServiceRes
                 await _orderRepository.AddAsync(order, ct);
                 await _unitOfWork.SaveChangesAsync(ct);
 
-                // 6. Reserve Inventory
+                
                 foreach (var oi in order.OrderItems)
                 {
                     await _inventoryService.LogTransactionAsync(

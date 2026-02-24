@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Features.Queries.GetMediaById;
+namespace Application.Media.Features.Queries.GetMediaById;
 
 public class GetMediaByIdHandler
     : IRequestHandler<GetMediaByIdQuery, ServiceResult<MediaDetailDto?>>

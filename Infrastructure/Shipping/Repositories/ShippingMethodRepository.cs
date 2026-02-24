@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Shipping.Repositories;
+namespace Infrastructure.Shipping.Repositories;
 
 public class ShippingMethodRepository : IShippingRepository
 {

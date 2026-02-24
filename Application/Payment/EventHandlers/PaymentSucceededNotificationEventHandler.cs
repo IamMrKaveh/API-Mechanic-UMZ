@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.EventHandlers;
+namespace Application.Payment.EventHandlers;
 
 /// <summary>
 /// وقتی پرداخت موفق شد، پیامک و نوتیفیکیشن ارسال می‌شود
@@ -23,7 +23,7 @@ public sealed class PaymentSucceededNotificationEventHandler : INotificationHand
     {
         try
         {
-            // نوتیفیکیشن درون‌برنامه‌ای
+            
             await _notificationService.SendPaymentNotificationAsync(
                 notification.UserId,
                 notification.OrderId,

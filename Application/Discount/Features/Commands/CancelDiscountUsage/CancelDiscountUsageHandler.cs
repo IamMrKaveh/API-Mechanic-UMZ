@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Commands.CancelDiscountUsage;
+namespace Application.Discount.Features.Commands.CancelDiscountUsage;
 
 public class CancelDiscountUsageHandler : IRequestHandler<CancelDiscountUsageCommand, ServiceResult>
 {
@@ -29,7 +29,7 @@ public class CancelDiscountUsageHandler : IRequestHandler<CancelDiscountUsageCom
         if (discount == null)
             return ServiceResult.Failure("کد تخفیف یافت نشد.");
 
-        // لغو استفاده توسط متد Domain (کاهش شمارنده + علامت‌گذاری Usage)
+        
         discount.CancelUsage(request.OrderId);
         _discountRepository.Update(discount);
 

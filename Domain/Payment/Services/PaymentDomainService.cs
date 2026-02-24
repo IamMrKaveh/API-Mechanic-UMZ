@@ -1,4 +1,4 @@
-﻿using Domain.Common.Shared.ValueObjects;
+using Domain.Common.Shared.ValueObjects;
 
 namespace Domain.Payment.Services;
 
@@ -80,10 +80,10 @@ public sealed class PaymentDomainService
         if (transaction.OrderId != order.Id)
             return PaymentProcessResult.Failed("تراکنش متعلق به این سفارش نیست.");
 
-        // اعمال موفقیت روی تراکنش
+        
         transaction.MarkAsSuccess(refId, cardPan, cardHash, fee, rawResponse);
 
-        // اعمال پرداخت روی سفارش
+        
         if (!order.IsPaid)
         {
             order.MarkAsPaid(refId, cardPan);

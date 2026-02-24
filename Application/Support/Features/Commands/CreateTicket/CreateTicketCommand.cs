@@ -1,4 +1,4 @@
-﻿namespace Application.Support.Features.Commands.CreateTicket;
+namespace Application.Support.Features.Commands.CreateTicket;
 
 public sealed record CreateTicketCommand(
     int UserId,

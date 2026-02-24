@@ -1,4 +1,4 @@
-﻿namespace Application.Auth.Features.Commands.RefreshToken;
+namespace Application.Auth.Features.Commands.RefreshToken;
 
 public class RefreshTokenValidator : AbstractValidator<RefreshTokenCommand>
 {

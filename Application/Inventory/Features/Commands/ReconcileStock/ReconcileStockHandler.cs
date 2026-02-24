@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Commands.ReconcileStock;
+namespace Application.Inventory.Features.Commands.ReconcileStock;
 
 public class ReconcileStockHandler : IRequestHandler<ReconcileStockCommand, ServiceResult<ReconcileResultDto>>
 {

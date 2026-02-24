@@ -1,4 +1,4 @@
-﻿namespace Application.Notification.Features.Commands.DeleteNotification;
+namespace Application.Notification.Features.Commands.DeleteNotification;
 
 public class DeleteNotificationHandler : IRequestHandler<DeleteNotificationCommand, ServiceResult>
 {
@@ -12,7 +12,7 @@ public class DeleteNotificationHandler : IRequestHandler<DeleteNotificationComma
     {
         var notif = await _repo.GetByIdAsync(request.NotificationId, ct);
         if (notif == null || notif.UserId != request.UserId) return ServiceResult.Failure("Not found or unauthorized");
-        // Soft or hard delete depending on domain, let's assume hard delete via context or EF
+        
         return ServiceResult.Success();
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Application.Support.EventHandlers;
+namespace Application.Support.EventHandlers;
 
 /// <summary>
 /// وقتی تیکت پاسخ داده شد، ایمیل و نوتیفیکیشن ارسال می‌شود
@@ -29,7 +29,7 @@ public sealed class TicketAnsweredEventHandler : INotificationHandler<Domain.Sup
             var ticket = await _ticketRepository.GetByIdWithMessagesAsync(notification.TicketId, cancellationToken);
             if (ticket is null) return;
 
-            // ارسال نوتیفیکیشن درون‌برنامه‌ای
+            
             await _notificationService.CreateNotificationAsync(
                 ticket.UserId,
                 "پاسخ جدید به تیکت",

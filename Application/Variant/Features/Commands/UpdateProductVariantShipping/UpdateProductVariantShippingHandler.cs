@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Features.Commands.UpdateProductVariantShipping;
+namespace Application.Variant.Features.Commands.UpdateProductVariantShipping;
 
 public class UpdateProductVariantShippingHandler : IRequestHandler<UpdateProductVariantShippingCommand, ServiceResult>
 {

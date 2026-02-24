@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Queries.GetProductById;
+namespace Application.Product.Features.Queries.GetProductById;
 
 public class GetProductByIdHandler
     : IRequestHandler<GetProductByIdQuery, ServiceResult<PublicProductDetailDto?>>

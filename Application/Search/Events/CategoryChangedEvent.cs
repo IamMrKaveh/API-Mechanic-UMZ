@@ -1,4 +1,4 @@
-﻿namespace Application.Search.Events;
+namespace Application.Search.Events;
 
 /// <summary>
 /// Category change event

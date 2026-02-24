@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.ExpireOrders;
+namespace Application.Order.Features.Commands.ExpireOrders;
 
 public sealed class ExpireOrdersHandler : IRequestHandler<ExpireOrdersCommand, ExpireOrdersResult>
 {

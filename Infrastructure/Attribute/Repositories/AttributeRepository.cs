@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Attribute.Repositories;
+namespace Infrastructure.Attribute.Repositories;
 
 public class AttributeRepository : IAttributeRepository
 {
@@ -126,7 +126,7 @@ public class AttributeRepository : IAttributeRepository
         }
     }
 
-    // Batch loading optimized method
+    
     public async Task<List<AttributeValue>> GetValuesByIdsAsync(List<int> allAttrValueIds, CancellationToken ct)
     {
         return await _context.AttributeValues

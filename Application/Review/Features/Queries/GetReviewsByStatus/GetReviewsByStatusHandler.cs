@@ -1,4 +1,4 @@
-﻿namespace Application.Review.Features.Queries.GetReviewsByStatus;
+namespace Application.Review.Features.Queries.GetReviewsByStatus;
 
 public class GetReviewsByStatusHandler : IRequestHandler<GetReviewsByStatusQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>
 {

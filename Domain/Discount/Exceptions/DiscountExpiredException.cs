@@ -1,4 +1,4 @@
-﻿namespace Domain.Discount.Exceptions;
+namespace Domain.Discount.Exceptions;
 
 public sealed class DiscountExpiredException : DomainException
 {

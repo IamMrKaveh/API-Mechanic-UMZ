@@ -1,6 +1,6 @@
-﻿namespace Application.Payment.Features.Shared;
+namespace Application.Payment.Features.Shared;
 
-// ── View Models ──
+
 
 public record PaymentTransactionDto
 {
@@ -52,7 +52,7 @@ public record PaymentStatusDto
     public TimeSpan? TimeUntilExpiry { get; init; }
 }
 
-// ── Search Parameters ──
+
 
 public record PaymentSearchParams
 {

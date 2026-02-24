@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant.Events;
+namespace Domain.Variant.Events;
 
 public sealed class VariantPriceChangedEvent : DomainEvent
 {

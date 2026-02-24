@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Search;
+namespace Infrastructure.Search;
 
 public class ElasticsearchMetrics
 {

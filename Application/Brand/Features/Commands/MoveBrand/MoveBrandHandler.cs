@@ -1,4 +1,4 @@
-﻿namespace Application.Brand.Features.Commands.MoveBrand;
+namespace Application.Brand.Features.Commands.MoveBrand;
 
 public class MoveBrandHandler : IRequestHandler<MoveBrandCommand, ServiceResult>
 {

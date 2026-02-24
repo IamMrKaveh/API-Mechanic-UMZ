@@ -1,4 +1,4 @@
-﻿namespace Application.Media.Contracts;
+namespace Application.Media.Contracts;
 
 /// <summary>
 /// Repository Interface برای Media Aggregate

@@ -1,9 +1,9 @@
-﻿namespace Application.Media.Features.Commands.UploadMedia;
+namespace Application.Media.Features.Commands.UploadMedia;
 
 public class UploadMediaValidator : AbstractValidator<UploadMediaCommand>
 {
     private static readonly string[] AllowedImageTypes = { "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "image/svg+xml" };
-    private const long MaxFileSize = 50 * 1024 * 1024; // 50MB
+    private const long MaxFileSize = 50 * 1024 * 1024; 
 
     public UploadMediaValidator()
     {

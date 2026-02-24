@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Analytics.Services;
+namespace Infrastructure.Analytics.Services;
 
 public sealed class AnalyticsQueryService : IAnalyticsQueryService
 {

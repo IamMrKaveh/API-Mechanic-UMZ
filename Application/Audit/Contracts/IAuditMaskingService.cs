@@ -1,4 +1,4 @@
-﻿namespace Application.Audit.Contracts;
+namespace Application.Audit.Contracts;
 
 public interface IAuditMaskingService
 {

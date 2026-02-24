@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Search.Configuration;
+namespace Infrastructure.Search.Configuration;
 
 /// <summary>
 /// Elasticsearch configuration options

@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.MarkOrderAsShipped;
+namespace Application.Order.Features.Commands.MarkOrderAsShipped;
 
 public record MarkOrderAsShippedCommand : IRequest<ServiceResult>
 {

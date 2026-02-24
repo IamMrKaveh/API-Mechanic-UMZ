@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.ApproveReturn;
+namespace Application.Order.Features.Commands.ApproveReturn;
 
 public class ApproveReturnHandler : IRequestHandler<ApproveReturnCommand, ServiceResult>
 {

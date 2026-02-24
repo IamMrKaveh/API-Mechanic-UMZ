@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Features.Commands.CreateCategory;
+namespace Application.Category.Features.Commands.CreateCategory;
 
 public class CreateCategoryValidator : AbstractValidator<CreateCategoryCommand>
 {

@@ -1,4 +1,4 @@
-﻿namespace Domain.User.Services;
+namespace Domain.User.Services;
 
 /// <summary>
 /// Domain Service برای عملیات‌های پیچیده کاربر که بین چند Aggregate هستند
@@ -216,29 +216,29 @@ public sealed class UserDomainService
 
         var score = 0;
 
-        // ایمیل تأیید شده
+        
         if (!string.IsNullOrWhiteSpace(user.Email))
             score += 20;
 
-        // پروفایل کامل
+        
         if (!string.IsNullOrWhiteSpace(user.FirstName) && !string.IsNullOrWhiteSpace(user.LastName))
             score += 15;
 
-        // حداقل یک آدرس
+        
         if (user.GetActiveAddressCount() > 0)
             score += 15;
 
-        // تعداد لاگین موفق
+        
         if (user.LoginCount >= 10)
             score += 20;
         else if (user.LoginCount >= 5)
             score += 10;
 
-        // بدون تلاش ناموفق اخیر
+        
         if (user.FailedLoginAttempts == 0)
             score += 15;
 
-        // عضویت قدیمی
+        
         var accountAge = DateTime.UtcNow - user.CreatedAt;
         if (accountAge.TotalDays >= 365)
             score += 15;
@@ -262,18 +262,18 @@ public sealed class UserDomainService
 
         var digits = new string(phoneNumber.Where(char.IsDigit).ToArray());
 
-        // تبدیل اعداد فارسی به انگلیسی
+        
         digits = digits
             .Replace("۰", "0").Replace("۱", "1").Replace("۲", "2")
             .Replace("۳", "3").Replace("۴", "4").Replace("۵", "5")
             .Replace("۶", "6").Replace("۷", "7").Replace("۸", "8")
             .Replace("۹", "9");
 
-        // تبدیل فرمت بین‌المللی به فرمت ایران
+        
         if (digits.StartsWith("98") && digits.Length == 12)
             digits = "0" + digits.Substring(2);
 
-        // اضافه کردن صفر اول
+        
         if (!digits.StartsWith("0") && digits.Length == 10)
             digits = "0" + digits;
 

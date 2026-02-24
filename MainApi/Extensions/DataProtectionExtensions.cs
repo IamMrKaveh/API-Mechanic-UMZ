@@ -1,4 +1,4 @@
-﻿using Infrastructure.DataProtection.Repositories;
+using Infrastructure.DataProtection.Repositories;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

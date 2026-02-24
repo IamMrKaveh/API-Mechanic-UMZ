@@ -1,4 +1,4 @@
-﻿namespace Application.Review.Features.Shared;
+namespace Application.Review.Features.Shared;
 
 public record ProductReviewDto
 {

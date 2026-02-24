@@ -1,3 +1,3 @@
-﻿namespace Application.Variant.Features.Queries.GetProductVariantShipping;
+namespace Application.Variant.Features.Queries.GetProductVariantShipping;
 
 public record GetProductVariantShippingQuery(int VariantId) : IRequest<ServiceResult<ProductVariantShippingInfoDto>>;

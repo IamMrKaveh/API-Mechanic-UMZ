@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Queries.GetAdminProducts;
+namespace Application.Product.Features.Queries.GetAdminProducts;
 
 public class GetAdminProductsHandler
     : IRequestHandler<GetAdminProductsQuery, ServiceResult<PaginatedResult<AdminProductListItemDto>>>

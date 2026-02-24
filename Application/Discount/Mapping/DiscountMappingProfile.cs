@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Mapping;
+namespace Application.Discount.Mapping;
 
 public class DiscountMappingProfile : Profile
 {

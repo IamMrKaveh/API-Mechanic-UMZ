@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Contracts;
+namespace Application.Payment.Contracts;
 
 /// <summary>
 /// قرارداد برای درگاه‌های پرداخت - Adapter Pattern

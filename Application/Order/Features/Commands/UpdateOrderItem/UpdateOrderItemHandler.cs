@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.UpdateOrderItem;
+namespace Application.Order.Features.Commands.UpdateOrderItem;
 
 public class UpdateOrderItemHandler
     : IRequestHandler<UpdateOrderItemCommand, ServiceResult>

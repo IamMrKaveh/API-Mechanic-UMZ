@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Queries.GetUserDashboard;
+namespace Application.User.Features.Queries.GetUserDashboard;
 
 public class GetUserDashboardHandler
     : IRequestHandler<GetUserDashboardQuery, ServiceResult<UserDashboardDto>>
@@ -19,7 +19,7 @@ public class GetUserDashboardHandler
         if (dashboard == null)
             return ServiceResult<UserDashboardDto>.Failure("کاربر یافت نشد.", 404);
 
-        // نگاشت از UserDashboardDto (Shared) به UserDashboardDto (Query)
+        
         var result = new UserDashboardDto
         {
             TotalOrders = dashboard.TotalOrders,

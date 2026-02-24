@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Location.Services;
+namespace Infrastructure.Location.Services;
 
 public class LocationService : ILocationService
 {

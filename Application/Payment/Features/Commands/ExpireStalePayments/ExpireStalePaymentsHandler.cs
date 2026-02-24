@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Features.Commands.ExpireStalePayments;
+namespace Application.Payment.Features.Commands.ExpireStalePayments;
 
 public class ExpireStalePaymentsHandler : IRequestHandler<ExpireStalePaymentsCommand, ServiceResult<int>>
 {
@@ -41,10 +41,10 @@ public class ExpireStalePaymentsHandler : IRequestHandler<ExpireStalePaymentsCom
             return ServiceResult<int>.Success(0);
         }
 
-        // استفاده از Domain Service برای منقضی کردن تراکنش‌ها
+        
         var expiredCount = _paymentDomainService.ExpireStaleTransactions(transactionList);
 
-        // بازگشت رزرو موجودی و لغو سفارش‌های مرتبط
+        
         foreach (var tx in transactionList.Where(t => t.Status == PaymentStatus.Expired))
         {
             _paymentRepository.Update(tx);
@@ -57,7 +57,7 @@ public class ExpireStalePaymentsHandler : IRequestHandler<ExpireStalePaymentsCom
 
                 await _orderRepository.UpdateAsync(tx.Order, ct);
 
-                // بازگشت رزرو موجودی
+                
                 foreach (var item in tx.Order.OrderItems)
                 {
                     await _inventoryService.RollbackReservationAsync(

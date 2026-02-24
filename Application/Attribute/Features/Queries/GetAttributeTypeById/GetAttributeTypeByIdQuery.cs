@@ -1,4 +1,4 @@
-﻿namespace Application.Attribute.Features.Queries.GetAttributeTypeById;
+namespace Application.Attribute.Features.Queries.GetAttributeTypeById;
 
 public record GetAttributeTypeByIdQuery(
     int Id

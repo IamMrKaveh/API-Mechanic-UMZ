@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.Results;
+namespace Domain.Order.Results;
 
 public sealed class OrderCancellationValidation
 {

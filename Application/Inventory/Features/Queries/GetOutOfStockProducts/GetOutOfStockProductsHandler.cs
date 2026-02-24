@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Queries.GetOutOfStockProducts;
+namespace Application.Inventory.Features.Queries.GetOutOfStockProducts;
 
 public class GetOutOfStockProductsHandler : IRequestHandler<GetOutOfStockProductsQuery, ServiceResult<IEnumerable<OutOfStockItemDto>>>
 {

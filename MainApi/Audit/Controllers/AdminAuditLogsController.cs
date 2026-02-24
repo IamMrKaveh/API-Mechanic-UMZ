@@ -1,4 +1,4 @@
-﻿namespace MainApi.Audit.Controllers;
+namespace MainApi.Audit.Controllers;
 
 /// <summary>
 /// Admin Controller برای مدیریت و مشاهده لاگ‌های حسابرسی.
@@ -14,7 +14,7 @@ public sealed class AdminAuditLogsController : ControllerBase
 
     public AdminAuditLogsController(IMediator mediator) => _mediator = mediator;
 
-    // ─── GET: جستجو و فیلتر لاگ‌ها ──────────────────────────────────────────
+    
 
     /// <summary>دریافت لیست لاگ‌های حسابرسی با فیلتر و صفحه‌بندی</summary>
     [HttpGet]
@@ -33,7 +33,7 @@ public sealed class AdminAuditLogsController : ControllerBase
         [FromQuery] bool sortDesc = true,
         CancellationToken ct = default)
     {
-        // محدود کردن PageSize برای جلوگیری از بار زیاد
+        
         pageSize = Math.Min(pageSize, 200);
         page = Math.Max(page, 1);
 
@@ -54,7 +54,7 @@ public sealed class AdminAuditLogsController : ControllerBase
         return Ok(result);
     }
 
-    // ─── GET: آمار لاگ‌ها ─────────────────────────────────────────────────────
+    
 
     /// <summary>آمار کلی لاگ‌های حسابرسی</summary>
     [HttpGet("statistics")]
@@ -68,7 +68,7 @@ public sealed class AdminAuditLogsController : ControllerBase
         return Ok(result);
     }
 
-    // ─── GET: Export ──────────────────────────────────────────────────────────
+    
 
     /// <summary>Export لاگ‌ها به CSV</summary>
     [HttpGet("export/csv")]
@@ -120,7 +120,7 @@ public sealed class AdminAuditLogsController : ControllerBase
         return File(result.FileContent, result.ContentType, result.FileName);
     }
 
-    // ─── GET: Event Types (برای فیلتر Dropdown) ───────────────────────────────
+    
 
     /// <summary>لیست انواع رویداد قابل فیلتر</summary>
     [HttpGet("event-types")]

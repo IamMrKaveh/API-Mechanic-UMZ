@@ -1,4 +1,4 @@
-﻿namespace Domain.Brand.Events;
+namespace Domain.Brand.Events;
 
 public class BrandDeletedEvent : DomainEvent
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Commands.ApplyDiscount;
+namespace Application.Discount.Features.Commands.ApplyDiscount;
 
 public class ApplyDiscountHandler : IRequestHandler<ApplyDiscountCommand, ServiceResult<DiscountApplyResultDto>>
 {
@@ -19,32 +19,32 @@ public class ApplyDiscountHandler : IRequestHandler<ApplyDiscountCommand, Servic
         CancellationToken ct
         )
     {
-        // استفاده از Strategy برای جلوگیری از Race Condition در شمارش استفاده‌ها
+        
         return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
             using var transaction = await _unitOfWork.BeginTransactionAsync(ct);
             try
             {
-                // قفل کردن رکورد برای آپدیت امن شمارنده (SELECT FOR UPDATE)
+                
                 var discount = await _discountRepository.GetByCodeAsync(request.Code, ct);
 
                 if (discount == null)
                     return ServiceResult<DiscountApplyResultDto>.Failure("کد تخفیف نامعتبر است.");
 
-                // دریافت تعداد استفاده قبلی کاربر
+                
                 var userUsageCount = await _discountRepository.CountUserUsageAsync(discount.Id, request.UserId, ct);
 
-                // اعتبارسنجی توسط متد غنی Domain
+                
                 var (isValid, error) = discount.Validate(request.OrderTotal, request.UserId, userUsageCount);
                 if (!isValid)
                 {
                     return ServiceResult<DiscountApplyResultDto>.Failure(error!);
                 }
 
-                // محاسبه مبلغ تخفیف توسط Domain
+                
                 var discountAmount = discount.CalculateDiscountAmount(request.OrderTotal);
 
-                // افزایش شمارنده توسط متد Domain
+                
                 discount.IncrementUsage();
                 _discountRepository.Update(discount);
 

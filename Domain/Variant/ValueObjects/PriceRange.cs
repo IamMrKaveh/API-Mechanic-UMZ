@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant.ValueObjects;
+namespace Domain.Variant.ValueObjects;
 
 public sealed class PriceRange : ValueObject
 {
@@ -32,7 +32,9 @@ public sealed class PriceRange : ValueObject
         var min = activeVariants.Min(v => v.SellingPrice);
         var max = activeVariants.Max(v => v.SellingPrice);
 
-        return new PriceRange(Money.FromDecimal(min), Money.FromDecimal(max));
+        return new PriceRange(
+            Money.FromDecimal(min != null ? min.Amount : 0m),
+            Money.FromDecimal(max != null ? max.Amount : 0m));
     }
 
     public bool IsSinglePrice => MinPrice.Amount == MaxPrice.Amount;

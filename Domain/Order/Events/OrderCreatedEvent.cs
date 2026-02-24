@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.Events;
+namespace Domain.Order.Events;
 
 public sealed class OrderCreatedEvent : DomainEvent
 {

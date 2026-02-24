@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Contracts;
+namespace Application.Inventory.Contracts;
 
 /// <summary>
 /// Repository Interface برای InventoryTransaction

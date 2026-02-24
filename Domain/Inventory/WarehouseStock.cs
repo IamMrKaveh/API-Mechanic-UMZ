@@ -1,4 +1,4 @@
-﻿namespace Domain.Inventory;
+namespace Domain.Inventory;
 
 /// <summary>
 /// موجودی یک Variant در یک انبار مشخص.
@@ -7,12 +7,12 @@ public sealed class WarehouseStock : BaseEntity
 {
     public int WarehouseId { get; private set; }
     public int VariantId { get; private set; }
-    public int OnHand { get; private set; }  // موجودی فیزیکی
-    public int Reserved { get; private set; }  // رزرو شده
-    public int Damaged { get; private set; }  // معیوب
-    public int Available => OnHand - Reserved;  // موجودی قابل فروش
+    public int OnHand { get; private set; }  
+    public int Reserved { get; private set; }  
+    public int Damaged { get; private set; }  
+    public int Available => OnHand - Reserved;  
 
-    // Navigation
+    
     public Warehouse? Warehouse { get; private set; }
 
     public ProductVariant? Variant { get; private set; }

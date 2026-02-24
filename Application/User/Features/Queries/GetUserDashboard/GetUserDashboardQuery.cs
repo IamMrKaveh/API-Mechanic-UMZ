@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Queries.GetUserDashboard;
+namespace Application.User.Features.Queries.GetUserDashboard;
 
 public record GetUserDashboardQuery(int UserId) : IRequest<ServiceResult<UserDashboardDto>>;
 

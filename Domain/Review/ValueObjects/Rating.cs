@@ -1,4 +1,4 @@
-﻿namespace Domain.Review.ValueObjects;
+namespace Domain.Review.ValueObjects;
 
 public sealed class Rating : ValueObject
 {

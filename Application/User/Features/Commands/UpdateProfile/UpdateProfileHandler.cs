@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.UpdateProfile;
+namespace Application.User.Features.Commands.UpdateProfile;
 
 public class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand, ServiceResult<UserProfileDto>>
 {
@@ -31,7 +31,7 @@ public class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand, Servic
 
         try
         {
-            // Domain Logic: Update Profile (validation inside aggregate)
+            
             user.UpdateProfile(request.FirstName, request.LastName, request.Email);
 
             _userRepository.Update(user);

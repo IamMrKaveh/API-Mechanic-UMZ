@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Cache.Health;
+namespace Infrastructure.Cache.Health;
 
 /// <summary>
 /// Health Check برای Redis Cache.
@@ -31,7 +31,7 @@ public sealed class RedisCacheHealthCheck : IHealthCheck
         {
             var db = _redis.GetDatabase();
 
-            // ─── 1. Ping ─────────────────────────────────────────
+            
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var pong = await db.PingAsync();
             sw.Stop();
@@ -45,7 +45,7 @@ public sealed class RedisCacheHealthCheck : IHealthCheck
                 ["IsConnected"] = _redis.IsConnected,
             };
 
-            // ─── 2. Write/Read Test ───────────────────────────────
+            
             var testValue = $"ok-{DateTime.UtcNow:HHmmss}";
             await db.StringSetAsync(PingKey, testValue, TimeSpan.FromSeconds(5));
             var readBack = await db.StringGetAsync(PingKey);
@@ -57,7 +57,7 @@ public sealed class RedisCacheHealthCheck : IHealthCheck
                     data: data);
             }
 
-            // ─── 3. Latency Check ─────────────────────────────────
+            
             if (latency > MaxAcceptableLatency)
             {
                 _logger.LogWarning(
@@ -68,7 +68,7 @@ public sealed class RedisCacheHealthCheck : IHealthCheck
                     data: data);
             }
 
-            // ─── 4. Server Info ───────────────────────────────────
+            
             try
             {
                 var server = _redis.GetServer(_redis.GetEndPoints().First());
@@ -81,7 +81,7 @@ public sealed class RedisCacheHealthCheck : IHealthCheck
                 data["RedisVersion"] = version ?? "unknown";
                 data["UsedMemoryMb"] = GetMemoryUsage(server);
             }
-            catch { /* اطلاعات اضافی نبودنشان مشکل نیست */ }
+            catch {  }
 
             return HealthCheckResult.Healthy("Redis is healthy", data);
         }

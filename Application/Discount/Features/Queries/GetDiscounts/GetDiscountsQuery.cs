@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Queries.GetDiscounts;
+namespace Application.Discount.Features.Queries.GetDiscounts;
 
 public record GetDiscountsQuery(
     bool IncludeExpired,

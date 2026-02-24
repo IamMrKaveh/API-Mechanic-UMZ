@@ -1,4 +1,4 @@
-﻿namespace Application.Support.Features.Queries.GetTicketDetails;
+namespace Application.Support.Features.Queries.GetTicketDetails;
 
 public sealed class GetTicketDetailsHandler
     : IRequestHandler<GetTicketDetailsQuery, ServiceResult<TicketDetailDto>>

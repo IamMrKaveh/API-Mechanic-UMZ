@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Queries.GetLowStockProducts;
+namespace Application.Inventory.Features.Queries.GetLowStockProducts;
 
 public class GetLowStockProductsHandler
     : IRequestHandler<GetLowStockProductsQuery, ServiceResult<IEnumerable<LowStockItemDto>>>

@@ -1,4 +1,4 @@
-﻿namespace MainApi.Order.Controllers;
+namespace MainApi.Order.Controllers;
 
 [Route("api/admin/order-statuses")]
 [ApiController]

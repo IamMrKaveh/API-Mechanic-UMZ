@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Contracts;
+namespace Application.Variant.Contracts;
 
 public interface IVariantRepository
 {

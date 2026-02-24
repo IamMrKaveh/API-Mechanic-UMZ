@@ -1,4 +1,4 @@
-﻿global using Amazon.Runtime;
+global using Amazon.Runtime;
 global using Amazon.S3;
 global using Amazon.S3.Model;
 global using Application.Analytics.Contracts;
@@ -56,7 +56,9 @@ global using Dapper;
 global using Domain.Attribute;
 global using Domain.Audit;
 global using Domain.Brand;
+global using Domain.Brand.ValueObjects;
 global using Domain.Cart;
+global using Domain.Category.ValueObjects;
 global using Domain.Common.Base;
 global using Domain.Common.Events;
 global using Domain.Common.Exceptions;

@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Persistence.Context;
+namespace Infrastructure.Persistence.Context;
 
 public class DBContextFactory : IDesignTimeDbContextFactory<DBContext>
 {

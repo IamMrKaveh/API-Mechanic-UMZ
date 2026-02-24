@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Payment.Services;
+namespace Infrastructure.Payment.Services;
 
 public sealed class IdempotentPaymentService : IPaymentService
 {
@@ -26,7 +26,7 @@ public sealed class IdempotentPaymentService : IPaymentService
         _logger = logger;
     }
 
-    // Internal caching DTO to prevent leaking Application layer DTOs
+    
     private record CachedPaymentInitiation(bool IsSuccess, string? Authority, string? PaymentUrl, string? Message);
     private record CachedPaymentVerification(bool IsVerified, long? RefId, string? CardPan, string? Message);
 

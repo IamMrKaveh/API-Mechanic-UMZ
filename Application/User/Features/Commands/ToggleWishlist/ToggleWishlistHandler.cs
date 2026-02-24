@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.ToggleWishlist;
+namespace Application.User.Features.Commands.ToggleWishlist;
 
 public class ToggleWishlistHandler : IRequestHandler<ToggleWishlistCommand, ServiceResult<bool>>
 {

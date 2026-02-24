@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Features.Shared;
+namespace Application.Variant.Features.Shared;
 
 public record ProductVariantDto(
     int Id,

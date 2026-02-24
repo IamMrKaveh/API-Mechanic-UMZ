@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Commands.RemoveFromCart;
+namespace Application.Cart.Features.Commands.RemoveFromCart;
 
 public class RemoveFromCartHandler : IRequestHandler<RemoveFromCartCommand, ServiceResult<CartDetailDto>>
 {

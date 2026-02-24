@@ -1,3 +1,3 @@
-﻿namespace Application.Shipping.Features.Queries.GetShippingById;
+namespace Application.Shipping.Features.Queries.GetShippingById;
 
 public record GetShippingByIdQuery(int Id) : IRequest<ServiceResult<ShippingDto>>;

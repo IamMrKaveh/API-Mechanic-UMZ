@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Cache.Redis.Lock;
+namespace Infrastructure.Cache.Redis.Lock;
 
 public sealed class DistributedLockException : Exception
 {

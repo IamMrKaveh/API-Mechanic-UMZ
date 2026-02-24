@@ -1,4 +1,4 @@
-﻿namespace Domain.Inventory;
+namespace Domain.Inventory;
 
 public class InventoryTransaction : AggregateRoot, IAuditable
 {
@@ -13,7 +13,7 @@ public class InventoryTransaction : AggregateRoot, IAuditable
     private bool _isReversed;
     private int? _reversedByTransactionId;
 
-    // فیلدهای جدید برای Idempotency، TTL و Cart tracking
+    
     private string? _correlationId;
 
     private string? _cartId;
@@ -46,19 +46,19 @@ public class InventoryTransaction : AggregateRoot, IAuditable
     /// </summary>
     public DateTime? ExpiresAt => _expiresAt;
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Navigation
+    
     public ProductVariant? Variant { get; private set; }
 
     public OrderItem? OrderItem { get; private set; }
     public User.User? User { get; private set; }
     public ICollection<InventoryTransaction>? ReversalTransactions { get; private set; }
 
-    // Computed
+    
     public int StockAfter => _stockBefore + _quantityChange;
 
     private const int MaxNotesLength = 500;
@@ -204,7 +204,7 @@ public class InventoryTransaction : AggregateRoot, IAuditable
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
         Guard.Against.NegativeOrZero(orderItemId, nameof(orderItemId));
 
-        // orderId را از referenceNumber استخراج می‌کنیم برای رویداد
+        
         var orderId = 0;
         if (referenceNumber?.StartsWith("ORDER-") == true &&
             int.TryParse(referenceNumber.Substring(6), out var parsed))
@@ -289,7 +289,7 @@ public class InventoryTransaction : AggregateRoot, IAuditable
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
 
-        // orderId را از orderItemId ندانیم - رویداد با 0 صادر می‌شود و handler باید lookup کند
+        
         var transaction = Create(
             variantId,
             ValueObjects.TransactionType.Return,

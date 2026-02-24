@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Queries.GetDiscountById;
+namespace Application.Discount.Features.Queries.GetDiscountById;
 
 public class GetDiscountByIdHandler : IRequestHandler<GetDiscountByIdQuery, ServiceResult<DiscountCodeDetailDto?>>
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Cart.Features.Commands.MergeGuestCart;
+namespace Application.Cart.Features.Commands.MergeGuestCart;
 
 public class MergeGuestCartHandler : IRequestHandler<MergeGuestCartCommand, ServiceResult>
 {
@@ -33,18 +33,18 @@ public class MergeGuestCartHandler : IRequestHandler<MergeGuestCartCommand, Serv
 
         var guestCart = await _cartRepository.GetByGuestTokenAsync(request.GuestToken, ct);
         if (guestCart == null || guestCart.IsEmpty)
-            return ServiceResult.Success(); // سبد مهمان خالی یا وجود ندارد
+            return ServiceResult.Success(); 
 
         var userCart = await _cartRepository.GetByUserIdAsync(_currentUser.UserId.Value, ct);
 
         if (userCart == null)
         {
-            // سبد کاربری وجود ندارد، سبد مهمان را اختصاص بده
+            
             guestCart.AssignToUser(_currentUser.UserId.Value);
         }
         else
         {
-            // تعیین استراتژی ادغام توسط Domain Service
+            
             var strategy = _cartDomainService.DetermineMergeStrategy(userCart, guestCart);
             userCart.MergeWith(guestCart, strategy);
             _cartRepository.Delete(guestCart);

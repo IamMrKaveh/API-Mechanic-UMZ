@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Features.Commands.RestoreShipping;
+namespace Application.Shipping.Features.Commands.RestoreShipping;
 
 public class RestoreShippingHandler : IRequestHandler<RestoreShippingCommand, ServiceResult>
 {
@@ -25,7 +25,7 @@ public class RestoreShippingHandler : IRequestHandler<RestoreShippingCommand, Se
         if (method == null)
             return ServiceResult.Failure("روش ارسال یافت نشد.", 404);
 
-        // Use domain method
+        
         method.Restore();
 
         _shippingMethodRepository.Update(method);

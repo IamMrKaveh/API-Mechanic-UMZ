@@ -1,4 +1,4 @@
-﻿namespace Domain.Payment.ValueObjects;
+namespace Domain.Payment.ValueObjects;
 
 public sealed class PaymentGateway : ValueObject
 {

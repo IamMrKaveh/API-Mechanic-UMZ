@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.DeleteOrderStatus;
+namespace Application.Order.Features.Commands.DeleteOrderStatus;
 
 public class DeleteOrderStatusHandler : IRequestHandler<DeleteOrderStatusCommand, ServiceResult>
 {
@@ -28,7 +28,7 @@ public class DeleteOrderStatusHandler : IRequestHandler<DeleteOrderStatusCommand
 
         try
         {
-            // Use domain method which enforces business rules
+            
             status.Delete(request.DeletedByUserId);
         }
         catch (DomainException ex)

@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Communication.Services;
+namespace Infrastructure.Communication.Services;
 
 public class EmailService : IEmailService
 {

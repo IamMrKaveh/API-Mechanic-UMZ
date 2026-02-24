@@ -1,4 +1,4 @@
-﻿namespace MainApi.Category.Controllers;
+namespace MainApi.Category.Controllers;
 
 [Route("api/admin/categories")]
 [ApiController]
@@ -29,7 +29,7 @@ public class AdminCategoryController : BaseApiController
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCategory(int id)
     {
-        // استفاده از Query موجود که دیتیل را برمی‌گرداند (شامل گروه‌ها)
+        
         var query = new GetCategoryWithGroupsQuery(id);
         var result = await _mediator.Send(query);
         return ToActionResult(result);

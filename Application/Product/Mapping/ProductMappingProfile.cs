@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Mapping;
+namespace Application.Product.Mapping;
 
 public sealed class ProductMappingProfile : Profile
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Review.Features.Queries.GetProductReviewSummary;
+namespace Application.Review.Features.Queries.GetProductReviewSummary;
 
 public class GetProductReviewSummaryHandler : IRequestHandler<GetProductReviewSummaryQuery, ServiceResult<ReviewSummaryDto>>
 {
@@ -23,7 +23,7 @@ public class GetProductReviewSummaryHandler : IRequestHandler<GetProductReviewSu
 
         var summary = await _reviewQueryService.GetProductReviewSummaryAsync(request.ProductId, cancellationToken);
 
-        await _cacheService.SetAsync(cacheKey, summary, TimeSpan.FromMinutes(30)); // Aggressive caching for summary
+        await _cacheService.SetAsync(cacheKey, summary, TimeSpan.FromMinutes(30)); 
 
         return ServiceResult<ReviewSummaryDto>.Success(summary);
     }

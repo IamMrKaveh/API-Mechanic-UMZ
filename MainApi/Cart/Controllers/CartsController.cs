@@ -1,4 +1,4 @@
-﻿namespace MainApi.Cart.Controllers;
+namespace MainApi.Cart.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

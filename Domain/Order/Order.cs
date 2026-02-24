@@ -1,4 +1,4 @@
-﻿namespace Domain.Order;
+namespace Domain.Order;
 
 public class Order : AggregateRoot, ISoftDeletable, IAuditable
 {
@@ -24,18 +24,18 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
     public string? CancellationReason { get; private set; }
     public int? CancelledBy { get; private set; }
 
-    // Soft Delete
+    
     public bool IsDeleted { get; private set; }
 
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Navigation for EF Core
+    
     public User.User? User { get; private set; }
 
     public Shipping.Shipping? Shipping { get; private set; }
@@ -43,7 +43,7 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
     public ICollection<DiscountUsage> DiscountUsages { get; private set; } = new List<DiscountUsage>();
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
 
-    // Computed Properties
+    
     public bool IsPaid => Status.IsPaid();
 
     public bool IsShipped => Status.IsShipped();
@@ -240,7 +240,7 @@ public class Order : AggregateRoot, ISoftDeletable, IAuditable
             throw new DomainException("سفارش لغو شده است.");
 
         if (Status == OrderStatusValue.Expired)
-            return; // idempotent
+            return; 
 
         var oldStatus = Status;
         Status = OrderStatusValue.Expired;

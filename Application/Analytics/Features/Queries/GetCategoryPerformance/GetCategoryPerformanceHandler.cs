@@ -1,4 +1,4 @@
-﻿namespace Application.Analytics.Features.Queries.GetCategoryPerformance;
+namespace Application.Analytics.Features.Queries.GetCategoryPerformance;
 
 public sealed class GetCategoryPerformanceHandler
     : IRequestHandler<GetCategoryPerformanceQuery, ServiceResult<IReadOnlyList<CategoryPerformanceDto>>>

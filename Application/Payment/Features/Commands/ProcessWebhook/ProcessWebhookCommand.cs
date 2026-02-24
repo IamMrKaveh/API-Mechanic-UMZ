@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Features.Commands.ProcessWebhook;
+namespace Application.Payment.Features.Commands.ProcessWebhook;
 
 public record ProcessWebhookCommand(
     string GatewayName,

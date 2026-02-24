@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Review.Repositories;
+namespace Infrastructure.Review.Repositories;
 
 public class ReviewRepository : IReviewRepository
 {

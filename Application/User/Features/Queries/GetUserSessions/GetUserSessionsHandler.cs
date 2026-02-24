@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Queries.GetUserSessions;
+namespace Application.User.Features.Queries.GetUserSessions;
 
 public class GetUserSessionsHandler
     : IRequestHandler<GetUserSessionsQuery, ServiceResult<IEnumerable<UserSessionDto>>>

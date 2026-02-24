@@ -1,4 +1,4 @@
-﻿namespace Domain.Inventory;
+namespace Domain.Inventory;
 
 /// <summary>
 /// Stock Ledger Entry - دفتر کل موجودی (Append-Only).
@@ -13,40 +13,40 @@
 /// </summary>
 public sealed class StockLedgerEntry : BaseEntity, IAuditable
 {
-    // ─── شناسه‌ها ──────────────────────────────────────────────
+    
     public int VariantId { get; private set; }
 
     public int? WarehouseId { get; private set; }
     public int? OrderItemId { get; private set; }
     public int? UserId { get; private set; }
 
-    // ─── نوع رویداد ────────────────────────────────────────────
+    
     public StockEventType EventType { get; private set; }
 
     public string EventTypeName => EventType.ToString();
 
-    // ─── مقادیر ────────────────────────────────────────────────
-    public int QuantityDelta { get; private set; }   // مثبت = ورود، منفی = خروج
+    
+    public int QuantityDelta { get; private set; }   
 
-    public int BalanceAfter { get; private set; }   // موجودی پس از این رویداد
-    public decimal UnitCost { get; private set; }   // قیمت واحد در زمان رویداد
+    public int BalanceAfter { get; private set; }   
+    public decimal UnitCost { get; private set; }   
 
-    // ─── متادیتا ───────────────────────────────────────────────
-    public string? ReferenceNumber { get; private set; }  // ORDER-123، CART-456، ADJ-789
+    
+    public string? ReferenceNumber { get; private set; }  
 
-    public string? CorrelationId { get; private set; }  // برای ردیابی Saga
+    public string? CorrelationId { get; private set; }  
     public string? Note { get; private set; }
-    public string? Source { get; private set; }  // System, Manual, API, ...
+    public string? Source { get; private set; }  
 
-    // ─── Idempotency ───────────────────────────────────────────
+    
     public string IdempotencyKey { get; private set; } = null!;
 
-    // ─── Audit ─────────────────────────────────────────────────
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // ─── Navigation ────────────────────────────────────────────
+    
     public ProductVariant? Variant { get; private set; }
 
     public Warehouse? Warehouse { get; private set; }
@@ -54,7 +54,7 @@ public sealed class StockLedgerEntry : BaseEntity, IAuditable
     private StockLedgerEntry()
     { }
 
-    // ─── Factory Methods ──────────────────────────────────────
+    
 
     public static StockLedgerEntry StockIn(
         int variantId,
@@ -157,7 +157,7 @@ public sealed class StockLedgerEntry : BaseEntity, IAuditable
             0, referenceNumber, note, warehouseId);
     }
 
-    // ─── Private Factory ──────────────────────────────────────
+    
 
     private static StockLedgerEntry Create(
         int variantId,

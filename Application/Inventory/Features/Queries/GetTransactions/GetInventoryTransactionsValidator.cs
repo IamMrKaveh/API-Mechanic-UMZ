@@ -1,4 +1,4 @@
-﻿namespace Application.Inventory.Features.Queries.GetTransactions;
+namespace Application.Inventory.Features.Queries.GetTransactions;
 
 public class GetInventoryTransactionsValidator : AbstractValidator<GetInventoryTransactionsQuery>
 {

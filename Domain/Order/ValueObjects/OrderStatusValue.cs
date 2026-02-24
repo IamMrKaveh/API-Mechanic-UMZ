@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.ValueObjects;
+namespace Domain.Order.ValueObjects;
 
 /// <summary>
 /// Value Object برای وضعیت سفارش با State Machine داخلی

@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Features.Queries.GetCategoryById;
+namespace Application.Category.Features.Queries.GetCategoryById;
 
 public class GetCategoryByIdQueryHandler
     : IRequestHandler<GetCategoryByIdQuery, ServiceResult<CategoryWithBrandsDto?>>

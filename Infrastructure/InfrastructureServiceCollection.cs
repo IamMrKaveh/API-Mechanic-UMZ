@@ -1,4 +1,4 @@
-﻿using HealthStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus;
+using HealthStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus;
 
 namespace Infrastructure;
 
@@ -8,9 +8,9 @@ public static class InfrastructureServiceCollection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // -----------------------------
-        // DB Context
-        // -----------------------------
+        
+        
+        
         string connectionString = configuration.GetConnectionString("PoolerConnection")
             ?? throw new InvalidOperationException("Database connection string is not configured.");
 
@@ -24,26 +24,26 @@ public static class InfrastructureServiceCollection
         services.AddHealthChecks()
             .AddNpgSql(connectionString, name: "postgresql");
 
-        // -----------------------------
-        // Unit of Work & Domain Events
-        // -----------------------------
+        
+        
+        
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IUrlResolverService, UrlResolverService>();
         services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
 
-        // -----------------------------
-        // Auth & Session
-        // -----------------------------
+        
+        
+        
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAuthService, AuthService>();
 
-        // -----------------------------
-        // Repositories
-        // -----------------------------
+        
+        
+        
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
@@ -55,27 +55,27 @@ public static class InfrastructureServiceCollection
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
 
-        // ─── Core Inventory Services ─────────────────────────────────────────
+        
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<InventoryDomainService>();
 
-        // ─── BackgroundService برای آزادسازی رزروهای منقضی ──────────
+        
         services.AddHostedService<InventoryReservationExpiryService>();
 
-        // ─── Cache Invalidation Handler ──────────────────────────────
+        
         services.AddScoped<INotificationHandler<VariantStockChangedApplicationNotification>, VariantStockCacheInvalidationHandler>();
 
-        // ─── Search Sync Handler ─────────────────────────────────────
+        
         services.AddScoped<INotificationHandler<VariantStockChangedEvent>, InventoryStockSearchSyncHandler>();
         services.AddScoped<INotificationHandler<StockCommittedEvent>, InventoryStockSearchSyncHandler>();
         services.AddScoped<INotificationHandler<StockReturnedEvent>, InventoryStockSearchSyncHandler>();
 
-        // ─── Payment Succeeded Event Handler ─────────────────────────
+        
         services.AddScoped<INotificationHandler<PaymentSucceededEvent>, PaymentSucceededInventoryCommitEventHandler>();
 
-        // -----------------------------
-        // Background Services
-        // -----------------------------
+        
+        
+        
         services.AddHostedService<ElasticsearchOutboxProcessor>();
 
         services.AddHealthChecks()
@@ -83,20 +83,20 @@ public static class InfrastructureServiceCollection
 
         services.AddHostedService<PaymentCleanupService>();
 
-        // -----------------------------
-        // Infrastructure
-        // -----------------------------
+        
+        
+        
         services.AddScoped<ISearchDatabaseSyncService, ElasticsearchDatabaseSyncService>();
         services.AddSingleton<AuditableEntityInterceptor>();
 
-        // Saga
+        
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<
             Application.Order.Sagas.OrderProcessManagerSaga>());
 
-        // Background Services
+        
         services.AddHostedService<OrderExpiryBackgroundService>();
 
-        // تنظیمات درگاه پرداخت
+        
         services.Configure<PaymentGatewayOptions>(
             configuration.GetSection(PaymentGatewayOptions.SectionName));
 
@@ -109,7 +109,7 @@ public static class InfrastructureServiceCollection
             client.Timeout = TimeSpan.FromSeconds(15);
         });
 
-        // Background Services
+        
         services.AddHostedService<PaymentReconciliationService>();
 
         services.AddScoped<IStockLedgerService, StockLedgerService>();
@@ -127,7 +127,7 @@ public static class InfrastructureServiceCollection
             services.AddSingleton<IConnectionMultiplexer>(_ =>
                 ConnectionMultiplexer.Connect(redisConn));
 
-            // Health Checks
+            
             services.AddHealthChecks()
                 .AddCheck<RedisCacheHealthCheck>(
                     "redis-cache",

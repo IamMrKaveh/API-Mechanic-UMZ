@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Contracts;
+namespace Application.Discount.Contracts;
 
 /// <summary>
 /// Repository Interface برای DiscountCode Aggregate

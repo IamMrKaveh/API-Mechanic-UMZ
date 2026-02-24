@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Storage.Services;
+namespace Infrastructure.Storage.Services;
 
 public class LiaraStorageService : IStorageService
 {

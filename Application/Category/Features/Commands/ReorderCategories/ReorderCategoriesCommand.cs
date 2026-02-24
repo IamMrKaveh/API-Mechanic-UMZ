@@ -1,4 +1,4 @@
-﻿namespace Application.Category.Features.Commands.ReorderCategories;
+namespace Application.Category.Features.Commands.ReorderCategories;
 
 public record ReorderCategoriesCommand(
     IReadOnlyList<int> OrderedCategoryIds

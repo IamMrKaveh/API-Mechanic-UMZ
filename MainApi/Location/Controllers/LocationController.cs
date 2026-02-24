@@ -1,4 +1,4 @@
-﻿namespace MainApi.Location.Controllers;
+namespace MainApi.Location.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

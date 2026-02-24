@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Features.Queries.GetAdminPayments;
+namespace Application.Payment.Features.Queries.GetAdminPayments;
 
 public class GetAdminPaymentsHandler : IRequestHandler<GetAdminPaymentsQuery, ServiceResult<PaginatedResult<PaymentTransactionDto>>>
 {

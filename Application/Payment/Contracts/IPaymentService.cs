@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Contracts;
+namespace Application.Payment.Contracts;
 
 public interface IPaymentService
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Features.Commands.UpdateVariant;
+namespace Application.Variant.Features.Commands.UpdateVariant;
 
 public class UpdateVariantHandler : IRequestHandler<UpdateVariantCommand, ServiceResult>
 {
@@ -35,17 +35,17 @@ public class UpdateVariantHandler : IRequestHandler<UpdateVariantCommand, Servic
         if (variant == null)
             return ServiceResult.Failure("Variant not found.");
 
-        // 1. Update variant details (sku, shipping multiplier) via aggregate
+        
         product.UpdateVariantDetails(request.VariantId, request.Sku, request.ShippingMultiplier);
 
-        // 2. Update prices via aggregate
+        
         product.ChangeVariantPrices(
             request.VariantId,
             request.PurchasePrice,
             request.SellingPrice,
             request.OriginalPrice);
 
-        // 3. Update stock via aggregate
+        
         if (!request.IsUnlimited)
         {
             var stockDiff = request.Stock - variant.StockQuantity;
@@ -57,7 +57,7 @@ public class UpdateVariantHandler : IRequestHandler<UpdateVariantCommand, Servic
 
         product.SetVariantUnlimited(request.VariantId, request.IsUnlimited);
 
-        // 4. Update attributes via aggregate
+        
         var attributeValues = request.AttributeValueIds.Any()
             ? await _attributeRepository.GetValuesByIdsAsync(request.AttributeValueIds, ct)
             : new List<AttributeValue>();
@@ -71,7 +71,7 @@ public class UpdateVariantHandler : IRequestHandler<UpdateVariantCommand, Servic
 
         product.SetVariantAttributes(request.VariantId, attributeValues);
 
-        // 5. Update shipping methods via aggregate
+        
         if (request.EnabledShippingMethodIds != null)
         {
             var shippingMethods = request.EnabledShippingMethodIds.Any()

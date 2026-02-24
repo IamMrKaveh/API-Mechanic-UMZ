@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Search.Services;
+namespace Infrastructure.Search.Services;
 
 public class ResilientElasticSearchService : ISearchService
 {

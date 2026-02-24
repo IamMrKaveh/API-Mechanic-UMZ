@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.Services;
+namespace Domain.Order.Services;
 
 /// <summary>
 /// سرویس محاسبه قیمت سفارش
@@ -16,7 +16,7 @@ public class OrderPricingService
     {
         var itemsList = items.ToList();
 
-        // Calculate subtotal
+        
         var subtotal = Money.Zero();
         var totalProfit = Money.Zero();
 
@@ -29,11 +29,11 @@ public class OrderPricingService
             totalProfit = totalProfit.Add(itemProfit);
         }
 
-        // Calculate shipping cost with multipliers
+        
         var totalShippingMultiplier = itemsList.Sum(x => x.Variant.ShippingMultiplier);
         var shippingCost = Money.FromDecimal(shippingMethod.BaseCost.Amount * totalShippingMultiplier);
 
-        // Calculate discount
+        
         var discountAmount = Money.Zero();
         if (discount != null && discount.IsCurrentlyValid())
         {
@@ -41,7 +41,7 @@ public class OrderPricingService
             discountAmount = Money.FromDecimal(rawDiscount);
         }
 
-        // Calculate final amount
+        
         var finalAmount = subtotal.Add(shippingCost).Subtract(discountAmount);
 
         return new OrderPricingSummary(

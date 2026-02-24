@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Commands.CreateUserAddress;
+namespace Application.User.Features.Commands.CreateUserAddress;
 
 public class CreateUserAddressHandler : IRequestHandler<CreateUserAddressCommand, ServiceResult<int>>
 {

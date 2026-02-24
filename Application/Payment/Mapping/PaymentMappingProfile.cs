@@ -1,4 +1,4 @@
-﻿namespace Application.Payment.Mapping;
+namespace Application.Payment.Mapping;
 
 public class PaymentMappingProfile : Profile
 {

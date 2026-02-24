@@ -1,4 +1,4 @@
-﻿namespace Application.Auth.Features.Commands.RevokeSession;
+namespace Application.Auth.Features.Commands.RevokeSession;
 
 public class RevokeSessionHandler : IRequestHandler<RevokeSessionCommand, ServiceResult>
 {
@@ -23,7 +23,7 @@ public class RevokeSessionHandler : IRequestHandler<RevokeSessionCommand, Servic
         {
             var session = await _sessionService.GetSessionBySelectorAsync(string.Empty, ct);
 
-            // دریافت نشست‌های فعال کاربر و بررسی مالکیت
+            
             var activeSessions = await _sessionService.GetActiveSessionsAsync(request.UserId, ct);
             var targetSession = activeSessions.FirstOrDefault(s => s.Id == request.SessionId);
 

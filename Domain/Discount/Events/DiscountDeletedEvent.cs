@@ -1,4 +1,4 @@
-﻿namespace Domain.Discount.Events;
+namespace Domain.Discount.Events;
 
 public sealed class DiscountDeletedEvent : DomainEvent
 {

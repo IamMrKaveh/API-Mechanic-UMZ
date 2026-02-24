@@ -1,4 +1,4 @@
-﻿namespace Application.Audit.Features.Queries.ExportAuditLogs;
+namespace Application.Audit.Features.Queries.ExportAuditLogs;
 
 public sealed class ExportAuditLogsHandler : IRequestHandler<ExportAuditLogsQuery, ExportAuditLogsResult>
 {

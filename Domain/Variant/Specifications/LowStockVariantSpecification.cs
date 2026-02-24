@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant.Specifications;
+namespace Domain.Variant.Specifications;
 
 public class LowStockVariantSpecification : Specification<ProductVariant>
 {

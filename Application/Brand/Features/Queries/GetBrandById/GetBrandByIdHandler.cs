@@ -1,4 +1,4 @@
-﻿namespace Application.Brand.Features.Queries.GetBrandById;
+namespace Application.Brand.Features.Queries.GetBrandById;
 
 public class GetBrandByIdHandler
     : IRequestHandler<GetBrandByIdQuery, ServiceResult<BrandDetailDto?>>

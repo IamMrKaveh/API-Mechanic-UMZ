@@ -1,4 +1,4 @@
-﻿namespace Domain.Media.Services;
+namespace Domain.Media.Services;
 
 /// <summary>
 /// Domain Service برای عملیات‌هایی که بین چند Media هستند
@@ -37,7 +37,7 @@ public class MediaDomainService
             throw new DomainException("این رسانه قابل تنظیم به عنوان اصلی نیست.");
         }
 
-        // حذف اصلی بودن از سایر رسانه‌ها
+        
         foreach (var media in allMedias.Where(m => m.IsPrimary && m.Id != newPrimary.Id))
         {
             media.RemovePrimary();
@@ -78,7 +78,7 @@ public class MediaDomainService
 
         var extension = fileExtension.ToLowerInvariant().TrimStart('.');
 
-        // Product و CategoryGroup فقط تصویر
+        
         if (entityType.Equals("Product", StringComparison.OrdinalIgnoreCase) ||
             entityType.Equals("CategoryGroup", StringComparison.OrdinalIgnoreCase) ||
             entityType.Equals("Category", StringComparison.OrdinalIgnoreCase))
@@ -89,7 +89,7 @@ public class MediaDomainService
             }
         }
 
-        // بررسی کلی
+        
         var allAllowed = imageExtensions.Concat(documentExtensions).Concat(videoExtensions);
         if (!allAllowed.Contains(extension))
         {

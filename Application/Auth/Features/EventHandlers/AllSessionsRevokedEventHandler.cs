@@ -1,4 +1,4 @@
-﻿namespace Application.Auth.Features.EventHandlers;
+namespace Application.Auth.Features.EventHandlers;
 
 public class AllSessionsRevokedEventHandler : INotificationHandler<AllSessionsRevokedEvent>
 {

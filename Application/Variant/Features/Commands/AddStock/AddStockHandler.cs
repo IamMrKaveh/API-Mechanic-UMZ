@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.Features.Commands.AddStock;
+namespace Application.Variant.Features.Commands.AddStock;
 
 public class AddStockHandler : IRequestHandler<AddStockCommand, ServiceResult>
 {

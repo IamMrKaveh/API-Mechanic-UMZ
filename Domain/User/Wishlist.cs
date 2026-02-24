@@ -1,4 +1,4 @@
-﻿namespace Domain.User;
+namespace Domain.User;
 
 public class Wishlist : BaseEntity
 {

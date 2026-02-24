@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Order.Services;
+namespace Infrastructure.Order.Services;
 
 public class OrderQueryService : IOrderQueryService
 {

@@ -1,4 +1,4 @@
-﻿namespace Domain.Discount;
+namespace Domain.Discount;
 
 public class DiscountUsage : BaseEntity
 {
@@ -12,7 +12,7 @@ public class DiscountUsage : BaseEntity
     public bool IsCancelled { get; private set; }
     public DateTime? CancelledAt { get; private set; }
 
-    // Navigation
+    
     public User.User User { get; private set; } = null!;
 
     public DiscountCode DiscountCode { get; private set; } = null!;

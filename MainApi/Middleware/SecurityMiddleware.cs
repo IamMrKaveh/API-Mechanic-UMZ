@@ -1,4 +1,4 @@
-﻿namespace MainApi.Middlewares
+namespace MainApi.Middlewares
 {
     public class SecurityMiddleware
     {
@@ -20,7 +20,7 @@
                 var remoteIp = context.Connection.RemoteIpAddress;
                 var whitelisted = false;
 
-                // Check if the IP is whitelisted (if the list is not empty)
+                
                 if (_securitySettings.AdminIpWhitelist != null && _securitySettings.AdminIpWhitelist.Any())
                 {
                     if (remoteIp != null)
@@ -37,7 +37,7 @@
                 }
                 else
                 {
-                    // If the whitelist is empty, allow all IPs
+                    
                     whitelisted = true;
                 }
 

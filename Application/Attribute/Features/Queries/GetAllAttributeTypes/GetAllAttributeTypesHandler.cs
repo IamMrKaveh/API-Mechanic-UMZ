@@ -1,4 +1,4 @@
-﻿namespace Application.Attribute.Features.Queries.GetAllAttributeTypes;
+namespace Application.Attribute.Features.Queries.GetAllAttributeTypes;
 
 public class GetAllAttributeTypesHandler : IRequestHandler<GetAllAttributeTypesQuery, ServiceResult<IEnumerable<AttributeTypeDto>>>
 {

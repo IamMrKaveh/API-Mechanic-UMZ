@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Features.Commands.DeleteShipping;
+namespace Application.Shipping.Features.Commands.DeleteShipping;
 
 public class DeleteShippingHandler : IRequestHandler<DeleteShippingCommand, ServiceResult>
 {
@@ -27,7 +27,7 @@ public class DeleteShippingHandler : IRequestHandler<DeleteShippingCommand, Serv
 
         try
         {
-            // Use domain method which enforces business rules
+            
             method.Delete(request.CurrentUserId);
         }
         catch (DomainException ex)

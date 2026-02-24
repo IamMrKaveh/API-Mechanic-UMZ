@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Commands.DeleteProduct;
+namespace Application.Product.Features.Commands.DeleteProduct;
 
 public class DeleteProductHandler : IRequestHandler<DeleteProductCommand, ServiceResult>
 {

@@ -1,4 +1,4 @@
-﻿namespace Application.Shipping.Features.Queries.CalculateShippingCost;
+namespace Application.Shipping.Features.Queries.CalculateShippingCost;
 
 public class CalculateShippingCostHandler
     : IRequestHandler<CalculateShippingCostQuery, ServiceResult<ShippingCostResultDto>>

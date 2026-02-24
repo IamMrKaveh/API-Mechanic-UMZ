@@ -1,4 +1,4 @@
-﻿global using Application.Analytics.Contracts;
+global using Application.Analytics.Contracts;
 global using Application.Analytics.Features.Shared;
 global using Application.Attribute.Contracts;
 global using Application.Attribute.Features.Shared;

@@ -1,4 +1,4 @@
-﻿namespace Application.Discount.Features.Commands.CreateDiscount;
+namespace Application.Discount.Features.Commands.CreateDiscount;
 
 public class CreateDiscountHandler : IRequestHandler<CreateDiscountCommand, ServiceResult<DiscountCodeDto>>
 {
@@ -38,7 +38,7 @@ public class CreateDiscountHandler : IRequestHandler<CreateDiscountCommand, Serv
             return ServiceResult<DiscountCodeDto>.Failure("کد تخفیف تکراری است.");
         }
 
-        // ایجاد از طریق Factory Method دامین
+        
         var discount = DiscountCode.Create(
             sanitizedCode,
             request.Percentage,

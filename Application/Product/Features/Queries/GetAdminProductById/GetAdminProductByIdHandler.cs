@@ -1,4 +1,4 @@
-﻿namespace Application.Product.Features.Queries.GetAdminProductById;
+namespace Application.Product.Features.Queries.GetAdminProductById;
 
 public class GetAdminProductByIdHandler
     : IRequestHandler<GetAdminProductByIdQuery, ServiceResult<AdminProductDetailDto?>>

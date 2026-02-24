@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Discount.Services;
+namespace Infrastructure.Discount.Services;
 
 public class DiscountService : IDiscountService
 {
@@ -61,7 +61,7 @@ public class DiscountService : IDiscountService
     {
         var usage = await _discountRepository.GetUsageByOrderIdAsync(orderId, ct);
         if (usage == null)
-            return ServiceResult.Success(); // No discount was used
+            return ServiceResult.Success(); 
 
         var discount = await _discountRepository.GetByIdWithUsagesAsync(usage.DiscountCodeId, ct);
         if (discount == null)

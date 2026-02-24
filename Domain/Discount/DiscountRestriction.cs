@@ -1,4 +1,4 @@
-﻿namespace Domain.Discount;
+namespace Domain.Discount;
 
 public class DiscountRestriction : BaseEntity
 {
@@ -7,7 +7,7 @@ public class DiscountRestriction : BaseEntity
     public int? EntityId { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    // Navigation
+    
     public DiscountCode DiscountCode { get; private set; } = null!;
 
     private DiscountRestriction()

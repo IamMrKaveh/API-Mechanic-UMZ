@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant;
+namespace Domain.Variant;
 
 /// <summary>
 /// موجودیت واسط برای ارتباط چند-به-چند بین واریانت و مقادیر ویژگی

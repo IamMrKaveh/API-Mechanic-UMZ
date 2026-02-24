@@ -1,4 +1,4 @@
-﻿global using Application;
+global using Application;
 global using Application.Analytics.Features.Queries.GetCategoryPerformance;
 global using Application.Analytics.Features.Queries.GetDashboardStatistics;
 global using Application.Analytics.Features.Queries.GetInventoryReport;

@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.Events;
+namespace Domain.Order.Events;
 
 /// <summary>
 /// رویداد انقضای سفارش - زمانی که سفارش در مهلت مقرر پرداخت نشده است.

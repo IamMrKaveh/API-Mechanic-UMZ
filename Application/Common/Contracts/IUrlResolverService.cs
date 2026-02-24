@@ -1,4 +1,4 @@
-﻿namespace Application.Common.Contracts;
+namespace Application.Common.Contracts;
 
 public interface IUrlResolverService
 {

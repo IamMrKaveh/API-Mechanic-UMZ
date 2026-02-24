@@ -1,4 +1,4 @@
-﻿namespace Application.Variant.EventHandlers;
+namespace Application.Variant.EventHandlers;
 
 /// <summary>
 /// Handler رویداد دامنه که آن را به Application Notification تبدیل می‌کند

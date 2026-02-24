@@ -1,4 +1,4 @@
-﻿namespace Domain.User;
+namespace Domain.User;
 
 public class UserSession : BaseEntity, IAuditable
 {
@@ -25,20 +25,20 @@ public class UserSession : BaseEntity, IAuditable
     public string SessionType { get => _sessionType; internal set => _sessionType = value; }
     public DateTime? LastActivityAt { get => _lastActivityAt; internal set => _lastActivityAt = value; }
 
-    // Computed Properties
+    
     public bool IsActive => !_isRevoked && DateTime.UtcNow < _expiresAt;
 
     public bool IsExpired => DateTime.UtcNow >= _expiresAt;
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Navigation
+    
     public User? User { get; private set; }
 
-    // Business Constants
+    
     private const int DefaultExpiryDays = 30;
 
     private const int MaxExpiryDays = 90;

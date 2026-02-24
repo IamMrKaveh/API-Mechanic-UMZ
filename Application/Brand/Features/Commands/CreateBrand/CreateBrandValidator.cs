@@ -1,4 +1,4 @@
-﻿namespace Application.Brand.Features.Commands.CreateBrand;
+namespace Application.Brand.Features.Commands.CreateBrand;
 
 public class CreateBrandValidator : AbstractValidator<CreateBrandCommand>
 {

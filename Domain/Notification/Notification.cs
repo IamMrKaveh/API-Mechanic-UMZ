@@ -1,4 +1,4 @@
-﻿namespace Domain.Notification;
+namespace Domain.Notification;
 
 public class Notification : AggregateRoot, IAuditable
 {
@@ -12,19 +12,19 @@ public class Notification : AggregateRoot, IAuditable
     public string? RelatedEntityType { get; private set; }
     public DateTime? ReadAt { get; private set; }
 
-    // Audit
+    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    // Business Constants
+    
     private const int MaxTitleLength = 200;
 
     private const int MaxMessageLength = 1000;
     private const int MaxActionUrlLength = 500;
     private const int MaxEntityTypeLength = 100;
 
-    // Navigation
+    
     public User.User User { get; private set; } = null!;
 
     private Notification()
@@ -201,14 +201,14 @@ public class Notification : AggregateRoot, IAuditable
         if (string.IsNullOrWhiteSpace(type))
             throw new DomainException("نوع اعلان الزامی است.");
 
-        // اعتبارسنجی با استفاده از NotificationType
+        
         try
         {
             ValueObjects.NotificationType.FromString(type);
         }
         catch
         {
-            // اجازه انواع سفارشی
+            
         }
     }
 

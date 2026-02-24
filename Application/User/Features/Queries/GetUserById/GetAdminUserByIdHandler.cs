@@ -1,4 +1,4 @@
-﻿namespace Application.User.Features.Queries.GetUserById;
+namespace Application.User.Features.Queries.GetUserById;
 
 public class GetAdminUserByIdHandler : IRequestHandler<GetAdminUserByIdQuery, ServiceResult<UserProfileDto?>>
 {
@@ -13,7 +13,7 @@ public class GetAdminUserByIdHandler : IRequestHandler<GetAdminUserByIdQuery, Se
 
     public async Task<ServiceResult<UserProfileDto?>> Handle(GetAdminUserByIdQuery request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByIdAsync(request.Id); // Using GetUserByIdAsync as requested interface
+        var user = await _userRepository.GetByIdAsync(request.Id); 
         if (user == null)
         {
             return ServiceResult<UserProfileDto?>.Failure("User not found");

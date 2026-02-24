@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Inventory.Repositories;
+namespace Infrastructure.Inventory.Repositories;
 
 public class InventoryRepository : IInventoryRepository
 {
