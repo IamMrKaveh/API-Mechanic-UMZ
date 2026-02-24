@@ -9,8 +9,7 @@ public class CreditWalletHandler : IRequestHandler<CreditWalletCommand, ServiceR
     public CreditWalletHandler(
         IWalletRepository walletRepository,
         IUnitOfWork unitOfWork,
-        ILogger<CreditWalletHandler> logger
-        )
+        ILogger<CreditWalletHandler> logger)
     {
         _walletRepository = walletRepository;
         _unitOfWork = unitOfWork;
@@ -19,15 +18,16 @@ public class CreditWalletHandler : IRequestHandler<CreditWalletCommand, ServiceR
 
     public async Task<ServiceResult<Unit>> Handle(
         CreditWalletCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         try
         {
             var alreadyProcessed = await _walletRepository.HasIdempotencyKeyAsync(request.UserId, request.IdempotencyKey, ct);
             if (alreadyProcessed)
             {
-                _logger.LogInformation("Wallet credit idempotency key {Key} already processed for user {UserId}", request.IdempotencyKey, request.UserId);
+                _logger.LogInformation(
+                    "Wallet credit idempotency key {Key} already processed for user {UserId}",
+                    request.IdempotencyKey, request.UserId);
                 return ServiceResult<Unit>.Success(Unit.Value);
             }
 
@@ -48,21 +48,27 @@ public class CreditWalletHandler : IRequestHandler<CreditWalletCommand, ServiceR
                 request.Description);
 
             _walletRepository.Update(wallet);
+
             await _unitOfWork.SaveChangesAsync(ct);
 
-            _logger.LogInformation("Wallet credited {Amount} for user {UserId} via {RefType}/{RefId}",
+            _logger.LogInformation(
+                "Wallet credited {Amount} for user {UserId} via {RefType}/{RefId}",
                 request.Amount, request.UserId, request.ReferenceType, request.ReferenceId);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }
-        catch (Domain.Wallet.Exceptions.DuplicateWalletIdempotencyKeyException)
+        catch (DbUpdateException)
         {
-            _logger.LogWarning("Duplicate idempotency key: {Key}", request.IdempotencyKey);
+            _logger.LogWarning(
+                "Duplicate idempotency key (DB constraint) on credit: {Key} for user {UserId}",
+                request.IdempotencyKey, request.UserId);
             return ServiceResult<Unit>.Success(Unit.Value);
         }
         catch (ConcurrencyException)
         {
-            _logger.LogWarning("Concurrency conflict crediting wallet for user {UserId}. Retry recommended.", request.UserId);
+            _logger.LogWarning(
+                "Concurrency conflict crediting wallet for user {UserId}. Retry recommended.",
+                request.UserId);
             return ServiceResult<Unit>.Failure("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.", 409);
         }
         catch (DomainException ex)

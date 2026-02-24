@@ -1,3 +1,5 @@
+using Domain.Common;
+
 namespace Infrastructure.Common;
 
 public class UnitOfWork : IUnitOfWork
@@ -44,16 +46,7 @@ public class UnitOfWork : IUnitOfWork
             .SelectMany(x => x.Entity.DomainEvents)
             .ToList();
 
-        var outboxMessages = domainEvents.Select(domainEvent => new OutboxMessage
-        {
-            Id = Guid.NewGuid(),
-            OccurredOn = DateTime.UtcNow,
-            Type = domainEvent.GetType().Name,
-            Content = JsonSerializer.Serialize(
-                domainEvent,
-                domainEvent.GetType(),
-                new JsonSerializerOptions { ReferenceHandler = ReferenceHandler.IgnoreCycles })
-        }).ToList();
+        var outboxMessages = domainEvents.Select(de => OutboxMessage.From(de)).ToList();
 
         _context.OutboxMessages.AddRange(outboxMessages);
 

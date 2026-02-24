@@ -24,7 +24,7 @@ public class DebitWalletHandler : IRequestHandler<DebitWalletCommand, ServiceRes
             if (alreadyProcessed)
                 return ServiceResult<Unit>.Success(Unit.Value);
 
-            var wallet = await _walletRepository.GetByUserIdWithEntriesAsync(request.UserId, ct);
+            var wallet = await _walletRepository.GetByUserIdForUpdateAsync(request.UserId, ct);
             if (wallet == null)
                 return ServiceResult<Unit>.Failure("کیف پول یافت نشد.", 404);
 
@@ -38,17 +38,28 @@ public class DebitWalletHandler : IRequestHandler<DebitWalletCommand, ServiceRes
                 request.Description);
 
             _walletRepository.Update(wallet);
+
             await _unitOfWork.SaveChangesAsync(ct);
 
+            return ServiceResult<Unit>.Success(Unit.Value);
+        }
+        catch (DbUpdateException)
+        {
+            _logger.LogWarning(
+                "Duplicate idempotency key (DB constraint) on debit: {Key} for user {UserId}",
+                request.IdempotencyKey, request.UserId);
             return ServiceResult<Unit>.Success(Unit.Value);
         }
         catch (Domain.Wallet.Exceptions.InsufficientWalletBalanceException ex)
         {
             return ServiceResult<Unit>.Failure(ex.Message, 422);
         }
-        catch (Domain.Wallet.Exceptions.DuplicateWalletIdempotencyKeyException)
+        catch (ConcurrencyException)
         {
-            return ServiceResult<Unit>.Success(Unit.Value);
+            _logger.LogWarning(
+                "Concurrency conflict debiting wallet for user {UserId}. Retry recommended.",
+                request.UserId);
+            return ServiceResult<Unit>.Failure("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.", 409);
         }
         catch (DomainException ex)
         {

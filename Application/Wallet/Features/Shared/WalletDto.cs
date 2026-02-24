@@ -25,7 +25,12 @@ public record WalletBalanceResponse(
     decimal Available
 );
 
+/// <summary>
+/// DTO for admin wallet adjustments.
+/// <see cref="Reason"/> is mandatory and stored in the ledger description for full auditability.
+/// </summary>
 public record AdminWalletAdjustmentDto(
     decimal Amount,
+    string Reason,
     string? Description
 );

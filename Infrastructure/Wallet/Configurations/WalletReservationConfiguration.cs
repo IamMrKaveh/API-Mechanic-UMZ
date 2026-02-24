@@ -16,5 +16,7 @@ public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<Wa
 
         builder.HasIndex(r => new { r.WalletId, r.Status });
         builder.HasIndex(r => r.OrderId);
+
+        builder.HasIndex(r => new { r.Status, r.ExpiresAt });
     }
 }

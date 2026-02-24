@@ -2,8 +2,9 @@
 
 public class Wallet : AggregateRoot, IAuditable
 {
-    private readonly List<WalletLedgerEntry> _ledgerEntries = new();
-    private readonly List<WalletReservation> _reservations = new();
+    private readonly List<WalletReservation> _reservations = [];
+
+    private readonly List<WalletLedgerEntry> _pendingLedgerEntries = [];
 
     private int _userId;
     private decimal _currentBalance;
@@ -19,8 +20,9 @@ public class Wallet : AggregateRoot, IAuditable
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    public IReadOnlyCollection<WalletLedgerEntry> LedgerEntries => _ledgerEntries.AsReadOnly();
     public IReadOnlyCollection<WalletReservation> Reservations => _reservations.AsReadOnly();
+
+    public IReadOnlyCollection<WalletLedgerEntry> PendingLedgerEntries => _pendingLedgerEntries.AsReadOnly();
 
     private Wallet()
     { }
@@ -95,6 +97,11 @@ public class Wallet : AggregateRoot, IAuditable
 
     #region Credit / Debit
 
+    /// <summary>
+    /// Credits the wallet snapshot and produces a new ledger entry.
+    /// Idempotency is enforced at the database level via UNIQUE index on IdempotencyKey;
+    /// the application layer checks <see cref="IWalletRepository.HasIdempotencyKeyAsync"/> before calling this.
+    /// </summary>
     public WalletLedgerEntry Credit(
         Money amount,
         WalletTransactionType transactionType,
@@ -109,9 +116,6 @@ public class Wallet : AggregateRoot, IAuditable
         Guard.Against.Null(amount, nameof(amount));
         if (amount.Amount <= 0)
             throw new DomainException("مبلغ شارژ باید بزرگتر از صفر باشد.");
-
-        if (_ledgerEntries.Any(e => e.IdempotencyKey == idempotencyKey))
-            throw new Exceptions.DuplicateWalletIdempotencyKeyException(idempotencyKey);
 
         _currentBalance += amount.Amount;
         UpdatedAt = DateTime.UtcNow;
@@ -128,12 +132,17 @@ public class Wallet : AggregateRoot, IAuditable
             correlationId,
             description);
 
-        _ledgerEntries.Add(entry);
+        _pendingLedgerEntries.Add(entry);
 
         AddDomainEvent(new Events.WalletCreditedEvent(Id, _userId, amount.Amount, referenceType, referenceId));
         return entry;
     }
 
+    /// <summary>
+    /// Debits the wallet snapshot and produces a new ledger entry.
+    /// Idempotency is enforced at the database level via UNIQUE index on IdempotencyKey;
+    /// the application layer checks <see cref="IWalletRepository.HasIdempotencyKeyAsync"/> before calling this.
+    /// </summary>
     public WalletLedgerEntry Debit(
         Money amount,
         WalletTransactionType transactionType,
@@ -148,9 +157,6 @@ public class Wallet : AggregateRoot, IAuditable
         Guard.Against.Null(amount, nameof(amount));
         if (amount.Amount <= 0)
             throw new DomainException("مبلغ برداشت باید بزرگتر از صفر باشد.");
-
-        if (_ledgerEntries.Any(e => e.IdempotencyKey == idempotencyKey))
-            throw new Exceptions.DuplicateWalletIdempotencyKeyException(idempotencyKey);
 
         if (AvailableBalance < amount.Amount)
             throw new Exceptions.InsufficientWalletBalanceException(_userId, AvailableBalance, amount.Amount);
@@ -170,7 +176,7 @@ public class Wallet : AggregateRoot, IAuditable
             correlationId,
             description);
 
-        _ledgerEntries.Add(entry);
+        _pendingLedgerEntries.Add(entry);
 
         AddDomainEvent(new Events.WalletDebitedEvent(Id, _userId, amount.Amount, referenceType, referenceId));
         return entry;
@@ -227,7 +233,7 @@ public class Wallet : AggregateRoot, IAuditable
             null,
             "تسویه رزرو سفارش");
 
-        _ledgerEntries.Add(entry);
+        _pendingLedgerEntries.Add(entry);
 
         AddDomainEvent(new Events.WalletReservationCommittedEvent(Id, _userId, reservation.Amount, orderId));
     }
@@ -245,29 +251,11 @@ public class Wallet : AggregateRoot, IAuditable
         AddDomainEvent(new Events.WalletReservationReleasedEvent(Id, _userId, reservation.Amount, orderId));
     }
 
-    public void ExpireReservations()
-    {
-        var expiredReservations = _reservations
-            .Where(r => r.IsExpired())
-            .ToList();
-
-        foreach (var reservation in expiredReservations)
-        {
-            reservation.Expire();
-            _reservedBalance -= reservation.Amount;
-        }
-
-        if (expiredReservations.Any())
-            UpdatedAt = DateTime.UtcNow;
-    }
-
     #endregion Reservation
 
     #region Query Methods
 
     public bool HasSufficientBalance(decimal amount) => AvailableBalance >= amount;
-
-    public bool HasIdempotencyKey(string key) => _ledgerEntries.Any(e => e.IdempotencyKey == key);
 
     public bool IsActive => _status == WalletStatus.Active;
 

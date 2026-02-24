@@ -58,6 +58,8 @@ global using Domain.Cart.Services;
 global using Domain.Category.Exceptions;
 global using Domain.Category.Services;
 global using Domain.Category.ValueObjects;
+global using Domain.Common;
+global using Domain.Common.Base;
 global using Domain.Common.Exceptions;
 global using Domain.Common.Shared.ValueObjects;
 global using Domain.Discount;

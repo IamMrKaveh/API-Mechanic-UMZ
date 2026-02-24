@@ -40,6 +40,7 @@ public class DBContext : DbContext, IApplicationDbContext
     public DbSet<Domain.Wallet.Wallet> Wallets => Set<Domain.Wallet.Wallet>();
     public DbSet<WalletLedgerEntry> WalletLedgerEntries => Set<WalletLedgerEntry>();
     public DbSet<WalletReservation> WalletReservations => Set<WalletReservation>();
+    public DbSet<WalletReconciliationAudit> WalletReconciliationAudits => Set<WalletReconciliationAudit>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -22,8 +22,8 @@ public class OutboxProcessorBackgroundService : BackgroundService
                 var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
                 var messages = await dbContext.OutboxMessages
-                    .Where(m => m.ProcessedOn == null)
-                    .OrderBy(m => m.OccurredOn)
+                    .Where(m => m.ProcessedAt == null)
+                    .OrderBy(m => m.OccurredAt)
                     .Take(50)
                     .ToListAsync(stoppingToken);
 
@@ -34,18 +34,18 @@ public class OutboxProcessorBackgroundService : BackgroundService
                         var type = GetDomainEventType(message.Type);
                         if (type != null)
                         {
-                            var domainEvent = JsonSerializer.Deserialize(message.Content, type) as INotification;
+                            var domainEvent = JsonSerializer.Deserialize(message.Payload, type) as INotification;
                             if (domainEvent != null)
                             {
                                 await mediator.Publish(domainEvent, stoppingToken);
                             }
                         }
-                        message.ProcessedOn = DateTime.UtcNow;
+                        message.MarkProcessed();
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Failed to process outbox message {MessageId}", message.Id);
-                        message.Error = ex.Message;
+                        message.MarkFailed(ex.Message);
                     }
                 }
 
