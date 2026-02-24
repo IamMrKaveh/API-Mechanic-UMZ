@@ -53,6 +53,7 @@ global using Application.User.Features.Shared;
 global using Application.Variant.Contracts;
 global using Application.Variant.Features.Shared;
 global using Application.Wallet.Contracts;
+global using Application.Wallet.Features.Commands.ReleaseWalletReservation;
 global using Dapper;
 global using Domain.Attribute;
 global using Domain.Audit;

@@ -1,15 +1,18 @@
 ﻿namespace Application.Wallet.EventHandlers;
 
 /// <summary>
-/// When a real-money payment succeeds, top up the wallet.
-/// Only applies to payments made TO the wallet (gateway = Wallet top-up).
+/// هنگام موفقیت پرداخت (top-up)، مستقیماً کیف پول کاربر را شارژ می‌کند.
+/// فقط برای پرداخت‌هایی که OrderId آنها صفر است (شارژ کیف پول بدون سفارش) اجرا می‌شود.
+/// برای خریدهای عادی این هندلر کاری انجام نمی‌دهد.
 /// </summary>
 public class PaymentSucceededWalletCreditEventHandler : INotificationHandler<PaymentSucceededEvent>
 {
     private readonly IMediator _mediator;
     private readonly ILogger<PaymentSucceededWalletCreditEventHandler> _logger;
 
-    public PaymentSucceededWalletCreditEventHandler(IMediator mediator, ILogger<PaymentSucceededWalletCreditEventHandler> logger)
+    public PaymentSucceededWalletCreditEventHandler(
+        IMediator mediator,
+        ILogger<PaymentSucceededWalletCreditEventHandler> logger)
     {
         _mediator = mediator;
         _logger = logger;
@@ -17,22 +20,38 @@ public class PaymentSucceededWalletCreditEventHandler : INotificationHandler<Pay
 
     public async Task Handle(PaymentSucceededEvent notification, CancellationToken cancellationToken)
     {
+        if (notification.OrderId != 0)
+            return;
+
         try
         {
             _logger.LogInformation(
-                "[WalletCredit] PaymentSucceeded: TransactionId={TxId}, UserId={UserId}, OrderId={OrderId}",
-                notification.TransactionId, notification.UserId, notification.OrderId);
+                "[WalletCredit] PaymentSucceeded (top-up): TransactionId={TxId}, UserId={UserId}, Amount={Amount}",
+                notification.TransactionId, notification.UserId, notification.Amount);
 
-            await _mediator.Publish(
-                new WalletTopUpApplicationEvent(
-                    notification.UserId,
-                    notification.TransactionId,
-                    notification.OrderId),
-                cancellationToken);
+            var command = new Application.Wallet.Features.Commands.CreditWallet.CreditWalletCommand(
+                UserId: notification.UserId,
+                Amount: notification.Amount,
+                TransactionType: WalletTransactionType.TopUp,
+                ReferenceType: WalletReferenceType.Payment,
+                ReferenceId: notification.TransactionId,
+                IdempotencyKey: $"payment-topup-{notification.TransactionId}",
+                Description: "شارژ حساب از طریق درگاه پرداخت"
+            );
+
+            var result = await _mediator.Send(command, cancellationToken);
+            if (result.IsFailed)
+            {
+                _logger.LogError(
+                    "[WalletCredit] CreditWalletCommand failed for TransactionId={TxId}: {Error}",
+                    notification.TransactionId, result.Error);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling PaymentSucceededEvent for wallet credit, TransactionId={TxId}", notification.TransactionId);
+            _logger.LogError(ex,
+                "Error handling PaymentSucceededEvent for wallet credit, TransactionId={TxId}",
+                notification.TransactionId);
         }
     }
 }

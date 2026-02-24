@@ -11,4 +11,5 @@ public record CheckoutFromCartCommand : IRequest<ServiceResult<CheckoutResultDto
     public List<CheckoutItemPriceDto> ExpectedItems { get; init; } = new();
     public string? CallbackUrl { get; init; }
     public string IdempotencyKey { get; init; } = string.Empty;
+    public string GatewayName { get; init; } = "Zarinpal";
 }

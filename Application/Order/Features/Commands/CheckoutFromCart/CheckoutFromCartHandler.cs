@@ -9,6 +9,8 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
     private readonly IDiscountRepository _discountRepository;
     private readonly IInventoryService _inventoryService;
     private readonly IPaymentService _paymentService;
+    private readonly IWalletRepository _walletRepository;
+    private readonly IMediator _mediator;
     private readonly IUnitOfWork _unitOfWork;
     private readonly OrderDomainService _orderDomainService;
     private readonly InventoryReservationService _inventoryReservationService;
@@ -23,6 +25,8 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
         IDiscountRepository discountRepository,
         IInventoryService inventoryService,
         IPaymentService paymentService,
+        IWalletRepository walletRepository,
+        IMediator mediator,
         IUnitOfWork unitOfWork,
         OrderDomainService orderDomainService,
         InventoryReservationService inventoryReservationService,
@@ -36,6 +40,8 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
         _discountRepository = discountRepository;
         _inventoryService = inventoryService;
         _paymentService = paymentService;
+        _walletRepository = walletRepository;
+        _mediator = mediator;
         _unitOfWork = unitOfWork;
         _orderDomainService = orderDomainService;
         _inventoryReservationService = inventoryReservationService;
@@ -47,7 +53,6 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
         CheckoutFromCartCommand request,
         CancellationToken ct)
     {
-        
         if (await _orderRepository.ExistsByIdempotencyKeyAsync(request.IdempotencyKey, ct))
         {
             var existingOrder = await _orderRepository.GetByIdempotencyKeyAsync(
@@ -70,12 +75,10 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
 
             try
             {
-                
                 var cart = await _cartRepository.GetByUserIdAsync(request.UserId, ct);
                 if (cart == null || !cart.CartItems.Any())
                     return ServiceResult<CheckoutResultDto>.Failure("سبد خرید خالی است.");
 
-                
                 UserAddress? userAddress;
                 if (request.UserAddressId.HasValue)
                 {
@@ -107,12 +110,10 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     return ServiceResult<CheckoutResultDto>.Failure("آدرس تحویل الزامی است.");
                 }
 
-                
                 var shippingMethod = await _shippingMethodRepository.GetByIdAsync(request.ShippingId, ct);
                 if (shippingMethod == null || !shippingMethod.IsActive)
                     return ServiceResult<CheckoutResultDto>.Failure("روش ارسال انتخاب شده معتبر نیست.");
 
-                
                 var orderItemSnapshots = new List<OrderItemSnapshot>();
                 var variantItems = new List<(ProductVariant Variant, int Quantity)>();
 
@@ -127,7 +128,6 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     orderItemSnapshots.Add(OrderItemSnapshot.FromVariant(variant, cartItem.Quantity));
                 }
 
-                
                 var priceExpectations = variantItems
                     .Select(vi => (
                         vi.Variant,
@@ -140,17 +140,14 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                 if (!priceValidation.IsValid)
                     return ServiceResult<CheckoutResultDto>.Failure(priceValidation.GetErrorsSummary());
 
-                
                 var stockValidation = _inventoryReservationService.ValidateBatchAvailability(variantItems);
                 if (!stockValidation.IsValid)
                     return ServiceResult<CheckoutResultDto>.Failure(stockValidation.GetErrorsSummary());
 
-                
                 var itemsValidation = _orderDomainService.ValidateOrderItems(orderItemSnapshots);
                 if (!itemsValidation.IsValid)
                     return ServiceResult<CheckoutResultDto>.Failure(itemsValidation.GetErrorsSummary());
 
-                
                 var order = _orderDomainService.PlaceOrder(
                     request.UserId,
                     userAddress,
@@ -163,7 +160,6 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                 await _orderRepository.AddAsync(order, ct);
                 await _unitOfWork.SaveChangesAsync(ct);
 
-                
                 if (!string.IsNullOrWhiteSpace(request.DiscountCode))
                 {
                     var discountCode = await _discountRepository.GetByCodeAsync(request.DiscountCode, ct);
@@ -184,43 +180,87 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     await _unitOfWork.SaveChangesAsync(ct);
                 }
 
-                
-                var user = await _userRepository.GetByIdAsync(request.UserId, ct);
-                var paymentResult = await _paymentService.InitiatePaymentAsync(new PaymentInitiationDto
+                if (request.GatewayName.Equals("Wallet", StringComparison.OrdinalIgnoreCase))
                 {
-                    OrderId = order.Id,
-                    UserId = request.UserId,
-                    Amount = order.FinalAmount,
-                    Description = $"پرداخت سفارش #{order.Id}",
-                    CallbackUrl = request.CallbackUrl ?? "",
-                    Mobile = user?.PhoneNumber
-                });
+                    var wallet = await _walletRepository.GetByUserIdAsync(request.UserId, ct);
+                    if (wallet == null || wallet.AvailableBalance < order.FinalAmount.Amount)
+                    {
+                        await _unitOfWork.RollbackTransactionAsync(ct);
+                        return ServiceResult<CheckoutResultDto>.Failure("موجودی کیف پول شما کافی نیست.");
+                    }
 
-                if (paymentResult.IsFailed)
-                {
-                    await _inventoryService.RollbackReservationsAsync($"ORDER-{order.Id}");
-                    await _unitOfWork.RollbackTransactionAsync(ct);
+                    var debitCommand = new Application.Wallet.Features.Commands.DebitWallet.DebitWalletCommand(
+                        UserId: request.UserId,
+                        Amount: order.FinalAmount.Amount,
+                        TransactionType: WalletTransactionType.OrderPayment,
+                        ReferenceType: WalletReferenceType.Order,
+                        ReferenceId: order.Id,
+                        IdempotencyKey: $"order-pay-{order.Id}-{request.IdempotencyKey}"
+                    );
 
-                    return ServiceResult<CheckoutResultDto>.Failure(
-                        paymentResult.Error ?? "خطا در ایجاد درخواست پرداخت");
+                    var debitResult = await _mediator.Send(debitCommand, ct);
+                    if (debitResult.IsFailed)
+                    {
+                        await _unitOfWork.RollbackTransactionAsync(ct);
+                        return ServiceResult<CheckoutResultDto>.Failure(debitResult.Error ?? "خطا در کسر از کیف پول.");
+                    }
+
+                    order.MarkAsPaid(refId: 0, cardPan: "Wallet");
+                    order.StartProcessing();
+
+                    await _orderRepository.UpdateAsync(order, ct);
+                    await _cartRepository.ClearCartAsync(request.UserId, ct);
+                    await _unitOfWork.SaveChangesAsync(ct);
+                    await _unitOfWork.CommitTransactionAsync(ct);
+
+                    _logger.LogInformation(
+                        "Order {OrderId} paid via Wallet for user {UserId}.",
+                        order.Id, request.UserId);
+
+                    return ServiceResult<CheckoutResultDto>.Success(new CheckoutResultDto
+                    {
+                        OrderId = order.Id,
+                        Success = true,
+                    });
                 }
-
-                
-                await _cartRepository.ClearCartAsync(request.UserId, ct);
-                await _unitOfWork.SaveChangesAsync(ct);
-
-                await _unitOfWork.CommitTransactionAsync(ct);
-
-                _logger.LogInformation(
-                    "Order {OrderId} created successfully for user {UserId}. OrderNumber: {OrderNumber}",
-                    order.Id, request.UserId, order.OrderNumber.Value);
-
-                return ServiceResult<CheckoutResultDto>.Success(new CheckoutResultDto
+                else
                 {
-                    OrderId = order.Id,
-                    PaymentUrl = paymentResult.Data.PaymentUrl,
-                    Authority = paymentResult.Data.Authority,
-                });
+                    var user = await _userRepository.GetByIdAsync(request.UserId, ct);
+                    var paymentResult = await _paymentService.InitiatePaymentAsync(new PaymentInitiationDto
+                    {
+                        OrderId = order.Id,
+                        UserId = request.UserId,
+                        Amount = order.FinalAmount,
+                        Description = $"پرداخت سفارش #{order.Id}",
+                        CallbackUrl = request.CallbackUrl ?? "",
+                        Mobile = user?.PhoneNumber
+                    });
+
+                    if (paymentResult.IsFailed)
+                    {
+                        await _inventoryService.RollbackReservationsAsync($"ORDER-{order.Id}");
+                        await _unitOfWork.RollbackTransactionAsync(ct);
+
+                        return ServiceResult<CheckoutResultDto>.Failure(
+                            paymentResult.Error ?? "خطا در ایجاد درخواست پرداخت");
+                    }
+
+                    await _cartRepository.ClearCartAsync(request.UserId, ct);
+                    await _unitOfWork.SaveChangesAsync(ct);
+
+                    await _unitOfWork.CommitTransactionAsync(ct);
+
+                    _logger.LogInformation(
+                        "Order {OrderId} created successfully for user {UserId}. OrderNumber: {OrderNumber}",
+                        order.Id, request.UserId, order.OrderNumber.Value);
+
+                    return ServiceResult<CheckoutResultDto>.Success(new CheckoutResultDto
+                    {
+                        OrderId = order.Id,
+                        PaymentUrl = paymentResult.Data.PaymentUrl,
+                        Authority = paymentResult.Data.Authority,
+                    });
+                }
             }
             catch (Exception ex)
             {

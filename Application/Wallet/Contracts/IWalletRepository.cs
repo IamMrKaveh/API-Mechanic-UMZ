@@ -62,6 +62,14 @@ public interface IWalletRepository
         int walletId,
         decimal amount,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// بررسی می‌کند آیا برای یک سفارش مشخص، تراکنش کسر از کیف پول وجود دارد یا خیر.
+    /// </summary>
+    Task<WalletLedgerEntry?> GetOrderPaymentLedgerEntryAsync(
+        int userId,
+        int orderId,
+        CancellationToken ct = default);
 }
 
 /// <summary>Minimal projection used by the expiry background service.</summary>

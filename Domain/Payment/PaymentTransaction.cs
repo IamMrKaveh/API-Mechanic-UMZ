@@ -43,21 +43,17 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
     public bool IsVerificationInProgress => _isVerificationInProgress;
     public DateTime ExpiresAt => _expiresAt;
 
-    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    
     public bool IsDeleted { get; private set; }
 
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    
     public Order.Order? Order { get; private set; }
 
-    
     private const int DefaultExpiryMinutes = 20;
 
     private const int MaxAuthorityLength = 100;
@@ -152,7 +148,7 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
         UpdatedAt = DateTime.UtcNow;
         _isVerificationInProgress = false;
 
-        AddDomainEvent(new PaymentSucceededEvent(Id, _orderId, refId, _userId));
+        AddDomainEvent(new PaymentSucceededEvent(Id, _orderId, refId, _userId, cardPan, _amount.Amount));
     }
 
     /// <summary>
@@ -212,7 +208,7 @@ public class PaymentTransaction : AggregateRoot, ISoftDeletable, IAuditable
         _errorMessage = reason ?? "بازگشت وجه";
         UpdatedAt = DateTime.UtcNow;
 
-        AddDomainEvent(new PaymentRefundedEvent(Id, _orderId, _amount.Amount, _errorMessage));
+        AddDomainEvent(new PaymentRefundedEvent(Id, _orderId, _userId, _amount.Amount, _errorMessage));
     }
 
     #endregion State Transitions
