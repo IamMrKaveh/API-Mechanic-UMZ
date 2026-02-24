@@ -36,9 +36,9 @@ public class GetProductVariantShippingHandler : IRequestHandler<GetProductVarian
 
             var result = new ProductVariantShippingInfoDto
             {
-                VariantId = variant.Id, 
-                ProductName = variant.Product?.Name,
-                VariantDisplayName = variant.Sku ?? "N/A", 
+                VariantId = variant.Id,
+                ProductName = variant.Product.Name,
+                VariantDisplayName = variant.Sku ?? "N/A",
                 ShippingMultiplier = variant.ShippingMultiplier,
                 AvailableShippings = allShippings.Select(sm => new ShippingSelectionDto
                 {

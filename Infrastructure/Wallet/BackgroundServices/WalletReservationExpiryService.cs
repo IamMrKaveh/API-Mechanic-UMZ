@@ -1,23 +1,26 @@
 ﻿namespace Infrastructure.Wallet.BackgroundServices;
 
+/// <summary>
+/// Expires pending wallet reservations whose <c>ExpiresAt</c> has passed.
+/// Processes reservations in small batches directly against the WalletReservation table;
+/// never loads full Wallet aggregates, avoiding high memory usage and long-running locks.
+/// </summary>
 public class WalletReservationExpiryService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<WalletReservationExpiryService> _logger;
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
+    private const int BatchSize = 200;
 
     public WalletReservationExpiryService(
         IServiceScopeFactory scopeFactory,
-        ILogger<WalletReservationExpiryService> logger
-        )
+        ILogger<WalletReservationExpiryService> logger)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
-    protected override async Task ExecuteAsync(
-        CancellationToken st
-        )
+    protected override async Task ExecuteAsync(CancellationToken st)
     {
         _logger.LogInformation("WalletReservationExpiryService started.");
 
@@ -25,7 +28,7 @@ public class WalletReservationExpiryService : BackgroundService
         {
             try
             {
-                await ProcessExpiredReservationsAsync(st);
+                await ProcessBatchAsync(st);
             }
             catch (Exception ex)
             {
@@ -36,34 +39,45 @@ public class WalletReservationExpiryService : BackgroundService
         }
     }
 
-    private async Task ProcessExpiredReservationsAsync(
-        CancellationToken ct
-        )
+    private async Task ProcessBatchAsync(CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var repository = scope.ServiceProvider.GetRequiredService<IWalletRepository>();
 
-        var walletsWithExpiredReservations = await dbContext.Wallets
-            .Include(w => w.Reservations)
-            .Where(w => w.Reservations.Any(r =>
-                r.Status == WalletReservationStatus.Pending &&
-                r.ExpiresAt.HasValue &&
-                r.ExpiresAt.Value < DateTime.UtcNow))
-            .ToListAsync(ct);
+        var expired = await repository.GetExpiredReservationBatchAsync(BatchSize, ct);
 
-        if (!walletsWithExpiredReservations.Any())
+        if (expired.Count == 0)
             return;
 
-        foreach (var wallet in walletsWithExpiredReservations)
+        int successCount = 0;
+        int skipCount = 0;
+
+        foreach (var reservation in expired)
         {
-            wallet.ExpireReservations();
+            try
+            {
+                var processed = await repository.ExpireReservationAsync(
+                    reservation.ReservationId,
+                    reservation.WalletId,
+                    reservation.Amount,
+                    ct);
+
+                if (processed)
+                    successCount++;
+                else
+                    skipCount++;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to expire reservation {ReservationId} for wallet {WalletId}.",
+                    reservation.ReservationId, reservation.WalletId);
+            }
         }
 
-        await unitOfWork.SaveChangesAsync(ct);
-
         _logger.LogInformation(
-            "WalletReservationExpiryService: Expired reservations processed for {Count} wallets.",
-            walletsWithExpiredReservations.Count);
+            "WalletReservationExpiryService: batch complete – expired={Success}, skipped={Skip}.",
+            successCount, skipCount);
     }
 }

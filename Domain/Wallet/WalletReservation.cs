@@ -1,21 +1,15 @@
 ﻿namespace Domain.Wallet;
 
-public enum WalletReservationStatus
-{
-    Pending,
-    Committed,
-    Released,
-    Expired
-}
-
 public class WalletReservation : BaseEntity
 {
+    private Wallet _wallet;
     private int _walletId;
     private decimal _amount;
     private int _orderId;
     private WalletReservationStatus _status;
     private DateTime? _expiresAt;
 
+    public Wallet Wallet => _wallet;
     public int WalletId => _walletId;
     public decimal Amount => _amount;
     public int OrderId => _orderId;
@@ -23,9 +17,6 @@ public class WalletReservation : BaseEntity
     public DateTime? ExpiresAt => _expiresAt;
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
-
-    private WalletReservation()
-    { }
 
     internal static WalletReservation Create(int walletId, decimal amount, int orderId, DateTime? expiresAt = null)
     {

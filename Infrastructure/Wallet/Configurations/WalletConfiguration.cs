@@ -28,7 +28,7 @@ public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet
         builder.Ignore(w => w.AvailableBalance);
         builder.Ignore(w => w.IsActive);
 
-        builder.HasMany(w => w.LedgerEntries)
+        builder.HasMany(w => w.PendingLedgerEntries)
             .WithOne()
             .HasForeignKey(e => e.WalletId)
             .OnDelete(DeleteBehavior.Cascade);
