@@ -21,6 +21,8 @@ global using Application.Auth.Features.Commands.Logout;
 global using Application.Auth.Features.Commands.LogoutAll;
 global using Application.Auth.Features.Commands.RefreshToken;
 global using Application.Auth.Features.Commands.RequestOtp;
+global using Application.Wallet.Features.Shared;
+global using Domain.Wallet.ValueObjects;
 global using Application.Auth.Features.Commands.RevokeSession;
 global using Application.Auth.Features.Commands.VerifyOtp;
 global using Application.Auth.Features.Shared;

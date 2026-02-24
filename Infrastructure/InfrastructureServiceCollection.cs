@@ -8,9 +8,6 @@ public static class InfrastructureServiceCollection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        
-        
-        
         string connectionString = configuration.GetConnectionString("PoolerConnection")
             ?? throw new InvalidOperationException("Database connection string is not configured.");
 
@@ -24,26 +21,17 @@ public static class InfrastructureServiceCollection
         services.AddHealthChecks()
             .AddNpgSql(connectionString, name: "postgresql");
 
-        
-        
-        
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IUrlResolverService, UrlResolverService>();
         services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
 
-        
-        
-        
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAuthService, AuthService>();
 
-        
-        
-        
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
@@ -55,27 +43,19 @@ public static class InfrastructureServiceCollection
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
 
-        
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<InventoryDomainService>();
 
-        
         services.AddHostedService<InventoryReservationExpiryService>();
 
-        
         services.AddScoped<INotificationHandler<VariantStockChangedApplicationNotification>, VariantStockCacheInvalidationHandler>();
 
-        
         services.AddScoped<INotificationHandler<VariantStockChangedEvent>, InventoryStockSearchSyncHandler>();
         services.AddScoped<INotificationHandler<StockCommittedEvent>, InventoryStockSearchSyncHandler>();
         services.AddScoped<INotificationHandler<StockReturnedEvent>, InventoryStockSearchSyncHandler>();
 
-        
         services.AddScoped<INotificationHandler<PaymentSucceededEvent>, PaymentSucceededInventoryCommitEventHandler>();
 
-        
-        
-        
         services.AddHostedService<ElasticsearchOutboxProcessor>();
 
         services.AddHealthChecks()
@@ -83,20 +63,14 @@ public static class InfrastructureServiceCollection
 
         services.AddHostedService<PaymentCleanupService>();
 
-        
-        
-        
         services.AddScoped<ISearchDatabaseSyncService, ElasticsearchDatabaseSyncService>();
         services.AddSingleton<AuditableEntityInterceptor>();
 
-        
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<
             Application.Order.Sagas.OrderProcessManagerSaga>());
 
-        
         services.AddHostedService<OrderExpiryBackgroundService>();
 
-        
         services.Configure<PaymentGatewayOptions>(
             configuration.GetSection(PaymentGatewayOptions.SectionName));
 
@@ -109,8 +83,13 @@ public static class InfrastructureServiceCollection
             client.Timeout = TimeSpan.FromSeconds(15);
         });
 
-        
         services.AddHostedService<PaymentReconciliationService>();
+
+        services.AddScoped<IWalletRepository, Infrastructure.Wallet.Repositories.WalletRepository>();
+
+        services.AddScoped<INotificationHandler<PaymentSucceededEvent>, Application.Wallet.EventHandlers.PaymentSucceededWalletCreditEventHandler>();
+        services.AddScoped<INotificationHandler<PaymentRefundedEvent>, Application.Wallet.EventHandlers.PaymentRefundedWalletEventHandler>();
+        services.AddScoped<INotificationHandler<OrderCancelledEvent>, Application.Wallet.EventHandlers.OrderCancelledWalletReleaseEventHandler>();
 
         services.AddScoped<IStockLedgerService, StockLedgerService>();
         services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
@@ -127,7 +106,6 @@ public static class InfrastructureServiceCollection
             services.AddSingleton<IConnectionMultiplexer>(_ =>
                 ConnectionMultiplexer.Connect(redisConn));
 
-            
             services.AddHealthChecks()
                 .AddCheck<RedisCacheHealthCheck>(
                     "redis-cache",
