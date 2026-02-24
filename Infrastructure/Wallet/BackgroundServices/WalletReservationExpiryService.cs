@@ -43,6 +43,7 @@ public class WalletReservationExpiryService : BackgroundService
     {
         using var scope = _scopeFactory.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IWalletRepository>();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         var expired = await repository.GetExpiredReservationBatchAsync(BatchSize, ct);
 
@@ -63,9 +64,19 @@ public class WalletReservationExpiryService : BackgroundService
                     ct);
 
                 if (processed)
+                {
                     successCount++;
+                    if (reservation.OrderId > 0)
+                    {
+                        await mediator.Send(
+                            new ReleaseWalletReservationCommand(reservation.UserId, reservation.OrderId),
+                            ct);
+                    }
+                }
                 else
+                {
                     skipCount++;
+                }
             }
             catch (Exception ex)
             {

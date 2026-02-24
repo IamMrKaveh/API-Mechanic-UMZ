@@ -146,4 +146,18 @@ public class WalletRepository : IWalletRepository
 
         return affectedRows > 0;
     }
+
+    public async Task<WalletLedgerEntry?> GetOrderPaymentLedgerEntryAsync(
+        int userId,
+        int orderId,
+        CancellationToken ct = default)
+    {
+        return await _context.WalletLedgerEntries
+            .FirstOrDefaultAsync(e =>
+                e.UserId == userId &&
+                e.ReferenceId == orderId &&
+                e.ReferenceType == WalletReferenceType.Order &&
+                e.TransactionType == WalletTransactionType.OrderPayment,
+                ct);
+    }
 }
