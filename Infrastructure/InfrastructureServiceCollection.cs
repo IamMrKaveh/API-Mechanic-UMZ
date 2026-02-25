@@ -78,6 +78,8 @@ public static class InfrastructureServiceCollection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ISmsService, SmsService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IRateLimitService, RateLimitService>();
+        services.AddScoped<IEmailService, EmailService>();
     }
 
     private static void AddRepositories(IServiceCollection services)
@@ -99,6 +101,7 @@ public static class InfrastructureServiceCollection
         services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+        services.AddScoped<IOrderProcessStateRepository, OrderProcessStateRepository>();
     }
 
     private static void AddDomainAndApplicationServices(IServiceCollection services, IConfiguration configuration)
@@ -120,6 +123,8 @@ public static class InfrastructureServiceCollection
         services.AddScoped<IMediaQueryService, MediaQueryService>();
         services.AddScoped<ICartQueryService, CartQueryService>();
         services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
+        services.AddScoped<IDiscountService, DiscountService>();
+        services.AddScoped<CartItemValidationService>();
         services.AddMemoryCache();
 
         var redisConn = configuration.GetConnectionString("Redis");
@@ -200,20 +205,21 @@ public static class InfrastructureServiceCollection
             return ElasticClientFactory.Create(configuration, logger);
         });
 
+        services.AddSingleton<ElasticsearchMetrics>();
         services.AddSingleton<ElasticsearchCircuitBreaker>();
         services.AddScoped<ElasticSearchService>();
         services.AddScoped<ISearchService, ResilientElasticSearchService>();
         services.AddScoped<IElasticIndexManager, ElasticIndexManager>();
+        services.AddScoped<IElasticBulkService, ElasticBulkService>();
     }
 
     private static void AddHealthChecks(IServiceCollection services, string connectionString)
     {
         services.AddHealthChecks()
-            .AddNpgSql(connectionString, name: "postgresql")
-            .AddCheck<ElasticsearchDLQHealthCheck>("elasticsearch_dlq")
-            .AddCheck<RedisCacheHealthCheck>(
-                "redis-cache",
-                failureStatus: HealthStatus.Degraded,
-                tags: ["cache", "redis", "infrastructure"]);
+            .AddNpgSql(
+                connectionString,
+                name: "database",
+                failureStatus: HealthStatus.Unhealthy,
+                tags: new[] { "db", "sql", "postgresql" });
     }
 }
