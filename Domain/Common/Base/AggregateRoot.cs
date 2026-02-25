@@ -8,6 +8,7 @@ public abstract class AggregateRoot : BaseEntity
 {
     private readonly List<DomainEvent> _domainEvents = new();
 
+    [NotMapped]
     public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
     internal void AddDomainEvent(DomainEvent domainEvent)

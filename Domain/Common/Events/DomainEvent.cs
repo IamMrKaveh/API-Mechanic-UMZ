@@ -4,7 +4,8 @@ namespace Domain.Common.Events;
 /// کلاس پایه برای Domain Event‌ها
 /// باید INotification از MediatR را پیاده‌سازی کند
 /// </summary>
-public abstract class DomainEvent : MediatR.INotification
+[NotMapped]
+public abstract class DomainEvent : INotification
 {
     public DateTime OccurredOn { get; } = DateTime.UtcNow;
     public Guid EventId { get; } = Guid.NewGuid();

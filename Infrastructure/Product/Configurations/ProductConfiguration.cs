@@ -4,18 +4,33 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
 {
     public void Configure(EntityTypeBuilder<Domain.Product.Product> builder)
     {
-        builder.HasKey(e => e.Id);
-        builder.Property(e => e.Name)
+        builder
+            .HasKey(e => e.Id);
+
+        builder
+            .Property(e => e.Name)
             .HasConversion(v => v.Value, v => Domain.Product.ValueObjects.ProductName.Create(v))
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(e => e.Description).HasColumnType("text");
-        builder.Property(e => e.RowVersion).IsRowVersion();
+        builder
+            .Property(e => e.Description).HasColumnType("text");
+        builder
+            .Property(e => e.RowVersion)
+            .IsRowVersion();
 
-        builder.HasOne(d => d.Brand)
+        builder
+            .HasOne(d => d.Brand)
             .WithMany(p => p.Products)
             .HasForeignKey(d => d.BrandId);
+
+        builder
+            .Property(e => e.Slug)
+            .HasConversion(
+                v => v.Value,
+                v => Slug.Create(v))
+            .IsRequired()
+            .HasMaxLength(Slug.MaxLength);
 
         builder.OwnsOne(e => e.Stats, s =>
         {
