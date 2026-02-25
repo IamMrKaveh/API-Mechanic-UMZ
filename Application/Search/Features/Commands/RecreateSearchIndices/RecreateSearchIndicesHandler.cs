@@ -10,7 +10,7 @@ public class RecreateSearchIndicesHandler : IRequestHandler<RecreateSearchIndice
     {
         await _indexManager.DeleteIndexAsync("products_v1", ct);
         await _indexManager.DeleteIndexAsync("categories_v1", ct);
-        await _indexManager.DeleteIndexAsync("categorygroups_v1", ct);
+        await _indexManager.DeleteIndexAsync("brands_v1", ct);
         await _indexManager.CreateAllIndicesAsync(ct);
         return ServiceResult.Success();
     }

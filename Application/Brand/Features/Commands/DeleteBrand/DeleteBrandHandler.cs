@@ -42,7 +42,7 @@ public class DeleteBrandHandler : IRequestHandler<DeleteBrandCommand, ServiceRes
 
             try
             {
-                var mediaList = await _mediaQueryService.GetEntityMediaAsync("CategoryGroup", request.BrandId);
+                var mediaList = await _mediaQueryService.GetEntityMediaAsync("Brand", request.BrandId);
                 foreach (var media in mediaList)
                     await _mediaService.DeleteMediaAsync(media.Id);
             }

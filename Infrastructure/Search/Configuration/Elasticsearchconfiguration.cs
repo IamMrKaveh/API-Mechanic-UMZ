@@ -157,7 +157,7 @@ public class SearchConfiguration
     {
         { "name", 5.0 },
         { "categoryName", 3.0 },
-        { "categoryGroupName", 2.0 },
+        { "brandName", 2.0 },
         { "description", 1.0 }
     };
 }

@@ -81,7 +81,7 @@ public class ElasticsearchIndexHealthCheck : IHealthCheck
 {
     private readonly ElasticsearchClient _client;
     private readonly ILogger<ElasticsearchIndexHealthCheck> _logger;
-    private readonly string[] _requiredIndices = { "products_v1", "categories_v1", "categorygroups_v1" };
+    private readonly string[] _requiredIndices = { "products_v1", "categories_v1", "brands_v1" };
 
     public ElasticsearchIndexHealthCheck(
         ElasticsearchClient client,

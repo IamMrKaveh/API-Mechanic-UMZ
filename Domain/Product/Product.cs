@@ -113,11 +113,11 @@ public class Product : AggregateRoot, IAuditable, ISoftDeletable
         return product;
     }
 
-    public void UpdateDetails(string name, string? description, string? sku, int categoryGroupId, bool isActive)
+    public void UpdateDetails(string name, string? description, string? sku, int brandId, bool isActive)
     {
         Name = ProductName.Create(name);
         Description = description;
-        CategoryId = categoryGroupId;
+        CategoryId = brandId;
         IsActive = isActive;
         UpdatedAt = DateTime.UtcNow;
 
