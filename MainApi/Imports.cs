@@ -235,6 +235,7 @@ global using Microsoft.Extensions.Caching.Memory;
 global using Microsoft.Extensions.Options;
 global using Microsoft.IdentityModel.Tokens;
 global using Serilog;
+global using Serilog.Events;
 global using StackExchange.Redis;
 global using System.Data;
 global using System.Diagnostics;

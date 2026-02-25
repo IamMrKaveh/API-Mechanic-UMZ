@@ -16,13 +16,14 @@ public static class InfrastructureServiceCollection
         AddCoreInfrastructure(services);
         AddAuthServices(services);
         AddRepositories(services);
-        AddDomainAndApplicationServices(services);
+        AddDomainAndApplicationServices(services, configuration);
         AddPaymentServices(services, configuration);
         AddWalletServices(services);
         AddBackgroundServices(services);
         AddEventHandlers(services);
         AddCachingAndConcurrency(services);
         AddRedisServices(services, configuration);
+        AddElasticsearchServices(services, configuration);
         AddHealthChecks(services, connectionString);
 
         return services;
@@ -60,8 +61,10 @@ public static class InfrastructureServiceCollection
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddSingleton<IUrlResolverService, UrlResolverService>();
         services.AddSingleton<IAuditMaskingService, AuditMaskingService>();
+        services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<IAuditService, EnhancedAuditService>();
         services.AddScoped<ISearchDatabaseSyncService, ElasticsearchDatabaseSyncService>();
+        services.AddTransient<IHtmlSanitizer, HtmlSanitizer>();
 
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssemblyContaining<Application.Order.Sagas.OrderProcessManagerSaga>());
@@ -73,6 +76,7 @@ public static class InfrastructureServiceCollection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<ISmsService, SmsService>();
         services.AddScoped<IAuthService, AuthService>();
     }
 
@@ -89,16 +93,40 @@ public static class InfrastructureServiceCollection
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IWalletRepository, Infrastructure.Wallet.Repositories.WalletRepository>();
+        services.AddScoped<IShippingRepository, ShippingMethodRepository>();
+        services.AddScoped<IVariantRepository, VariantRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
+        services.AddScoped<ICartRepository, CartRepository>();
+        services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
     }
 
-    private static void AddDomainAndApplicationServices(IServiceCollection services)
+    private static void AddDomainAndApplicationServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<InventoryDomainService>();
         services.AddScoped<IStockLedgerService, StockLedgerService>();
+        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
         services.AddScoped<IMediaService, MediaService>();
+        services.AddScoped<IStorageService, LiaraStorageService>();
+        services.AddScoped<IProductQueryService, ProductQueryService>();
+        services.AddScoped<ICategoryQueryService, CategoryQueryService>();
+        services.AddScoped<IOrderQueryService, OrderQueryService>();
+        services.AddScoped<IInventoryQueryService, InventoryQueryService>();
+        services.AddScoped<IReviewQueryService, ReviewQueryService>();
+        services.AddScoped<IUserQueryService, UserQueryService>();
+        services.AddScoped<IShippingQueryService, ShippingQueryService>();
+        services.AddScoped<IMediaQueryService, MediaQueryService>();
+        services.AddScoped<ICartQueryService, CartQueryService>();
+        services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
         services.AddMemoryCache();
+
+        var redisConn = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConn))
+            services.AddScoped<ICacheService, RedisCacheService>();
+        else
+            services.AddScoped<ICacheService, InMemoryCacheService>();
     }
 
     private static void AddPaymentServices(IServiceCollection services, IConfiguration configuration)
@@ -162,6 +190,20 @@ public static class InfrastructureServiceCollection
 
         services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(redisConn));
+    }
+
+    private static void AddElasticsearchServices(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddSingleton<ElasticsearchClient>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<ElasticSearchService>>();
+            return ElasticClientFactory.Create(configuration, logger);
+        });
+
+        services.AddSingleton<ElasticsearchCircuitBreaker>();
+        services.AddScoped<ElasticSearchService>();
+        services.AddScoped<ISearchService, ResilientElasticSearchService>();
+        services.AddScoped<IElasticIndexManager, ElasticIndexManager>();
     }
 
     private static void AddHealthChecks(IServiceCollection services, string connectionString)

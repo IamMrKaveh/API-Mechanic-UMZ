@@ -20,19 +20,23 @@ public class SmsService : ISmsService
     private readonly ILogger<SmsService> _logger;
     private readonly KavenegarOptions _options;
 
-    public SmsService(ILogger<SmsService> logger, IOptions<KavenegarOptions> options)
+    public SmsService(
+        ILogger<SmsService> logger,
+        IOptions<KavenegarOptions> options)
     {
         _logger = logger;
         _options = options.Value;
 
-        
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
             throw new InvalidOperationException(
                 "Kavenegar ApiKey is not configured. " +
                 "Please set the 'Kavenegar:ApiKey' configuration value via environment variables or secrets manager.");
     }
 
-    public async Task<SmsResult> SendSmsAsync(string phoneNumber, string message, CancellationToken ct = default)
+    public async Task<SmsResult> SendSmsAsync(
+        string phoneNumber,
+        string message,
+        CancellationToken ct = default)
     {
         try
         {

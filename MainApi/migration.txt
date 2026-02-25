@@ -2,3 +2,8 @@ dotnet ef migrations add 1 --project Infrastructure --startup-project MainApi --
 
 
 dotnet ef database update --project Infrastructure --startup-project MainApi --context DBContext
+
+
+
+create sql query :
+dotnet ef migrations script --project Infrastructure --startup-project MainApi --context DBContext -o migrate.sql

@@ -8,6 +8,7 @@ public static class ApplicationServiceCollection
         RegisterAutoMapper(services);
         RegisterDomainServices(services);
         RegisterApplicationServices(services);
+        //RegisterValidation(services);
         return services;
     }
 
@@ -23,8 +24,13 @@ public static class ApplicationServiceCollection
 
     private static void RegisterAutoMapper(IServiceCollection services)
     {
-        //services.AddAutoMapper(Assembly.GetExecutingAssembly());
+        services.AddAutoMapper(Assembly.GetExecutingAssembly());
     }
+
+    //private static void RegisterValidation(IServiceCollection services)
+    //{
+    //    services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+    //}
 
     private static void RegisterDomainServices(IServiceCollection services)
     {

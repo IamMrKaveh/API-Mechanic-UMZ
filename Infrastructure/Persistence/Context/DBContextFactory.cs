@@ -18,13 +18,13 @@ public sealed class DBContextFactory : IDesignTimeDbContextFactory<DBContext>
             .Build();
 
         var connectionString =
-            configuration.GetConnectionString("PoolerConnection");
+            configuration.GetConnectionString("MigrationConnection");
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                "Connection string 'DirectConnection' was not found. " +
-                "EF Core migrations must NOT use Supabase Pooler."
+                @"Connection string 'MigrationConnection' was not found.
+                  EF Core migrations must NOT use Supabase Pooler."
             );
         }
 

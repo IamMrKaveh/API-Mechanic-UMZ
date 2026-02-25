@@ -1,0 +1,1 @@
+import{a as o}from"./chunk-5YBEPNTH.js";import"./chunk-INUD7PLR.js";import"./chunk-VFDSUV63.js";import"./chunk-WNMS36QR.js";import"./chunk-PMZJQWMM.js";import"./chunk-OU7FPMWK.js";import"./chunk-4CLCTAJ7.js";var n=[{path:":id",component:o}];export{n as BRAND_ROUTES};
