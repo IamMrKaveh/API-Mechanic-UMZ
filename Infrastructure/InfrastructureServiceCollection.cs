@@ -8,7 +8,8 @@ public static class InfrastructureServiceCollection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("PoolerConnection")
+        var connectionString =
+            configuration.GetConnectionString("PoolerConnection")
             ?? throw new InvalidOperationException("Database connection string is not configured.");
 
         AddDatabaseServices(services, connectionString);
@@ -27,15 +28,29 @@ public static class InfrastructureServiceCollection
         return services;
     }
 
-    private static void AddDatabaseServices(IServiceCollection services, string connectionString)
+    private static void AddDatabaseServices(
+        IServiceCollection services,
+        string connectionString)
     {
-        services.AddSingleton<AuditableEntityInterceptor>();
-        services.AddDbContext<DbContext>((sp, options) =>
+        services.AddScoped<AuditableEntityInterceptor>();
+
+        services.AddDbContext<DBContext>((sp, options) =>
         {
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
-            options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure())
-                   .AddInterceptors(interceptor);
+
+            options.UseNpgsql(
+                connectionString,
+                npgsql =>
+                {
+                    npgsql.EnableRetryOnFailure(0);
+                });
+
+            options.AddInterceptors(interceptor);
         });
+
+        services.AddScoped<IApplicationDbContext>(sp =>
+            sp.GetRequiredService<DBContext>());
+
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
     }

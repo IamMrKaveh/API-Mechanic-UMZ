@@ -1,1 +1,4 @@
-Add-Migration 1 -Project "Infrastructure" -StartupProject "MainApi"
+dotnet ef migrations add 1 --project Infrastructure --startup-project MainApi --context DBContext --output-dir Persistence/Migrations
+
+
+dotnet ef database update --project Infrastructure --startup-project MainApi --context DBContext

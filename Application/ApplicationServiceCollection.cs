@@ -23,7 +23,7 @@ public static class ApplicationServiceCollection
 
     private static void RegisterAutoMapper(IServiceCollection services)
     {
-        services.AddAutoMapper(Assembly.GetExecutingAssembly());
+        //services.AddAutoMapper(Assembly.GetExecutingAssembly());
     }
 
     private static void RegisterDomainServices(IServiceCollection services)

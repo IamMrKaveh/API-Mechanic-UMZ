@@ -10,6 +10,9 @@ public sealed class Slug : ValueObject
         Value = value ?? throw new ArgumentNullException(nameof(value));
     }
 
+    private Slug()
+    { }
+
     public static Slug Create(string name)
     {
         if (string.IsNullOrWhiteSpace(name))

@@ -10,7 +10,6 @@ public class AttributeType : AggregateRoot, IAuditable, ISoftDeletable, IActivat
     public int SortOrder { get; private set; }
     public bool IsActive { get; private set; } = true;
 
-    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
@@ -18,13 +17,9 @@ public class AttributeType : AggregateRoot, IAuditable, ISoftDeletable, IActivat
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    
     private readonly List<AttributeValue> _values = new();
 
     public IReadOnlyCollection<AttributeValue> Values => _values.AsReadOnly();
-
-    
-    public IReadOnlyCollection<AttributeValue> AttributeValues => _values.AsReadOnly();
 
     private AttributeType()
     { }
@@ -56,7 +51,6 @@ public class AttributeType : AggregateRoot, IAuditable, ISoftDeletable, IActivat
 
     public AttributeValue AddValue(string value, string displayValue, string? hexCode = null, int sortOrder = 0)
     {
-        
         if (_values.Any(v => v.Value.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase) && !v.IsDeleted))
             throw new DomainException($"مقدار '{value}' قبلاً برای این ویژگی وجود دارد.");
 
@@ -72,7 +66,6 @@ public class AttributeType : AggregateRoot, IAuditable, ISoftDeletable, IActivat
         var attrValue = _values.FirstOrDefault(v => v.Id == valueId);
         if (attrValue == null) throw new DomainException("مقدار ویژگی یافت نشد.");
 
-        
         if (!attrValue.Value.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
         {
             if (_values.Any(v => v.Id != valueId && v.Value.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase) && !v.IsDeleted))

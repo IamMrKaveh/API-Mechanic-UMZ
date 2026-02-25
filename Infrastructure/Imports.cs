@@ -155,6 +155,7 @@ global using Polly.CircuitBreaker;
 global using StackExchange.Redis;
 global using System.Collections.Concurrent;
 global using System.Data;
+global using System.Data.SqlClient;
 global using System.Diagnostics.Metrics;
 global using System.IdentityModel.Tokens.Jwt;
 global using System.Net.Http.Json;

@@ -1,13 +1,15 @@
 namespace Infrastructure.Persistence.Context;
 
-public class DBContext : DbContext, IApplicationDbContext
+public sealed class DBContext : DbContext, IApplicationDbContext
 {
-    public DBContext(DbContextOptions<DBContext> options) : base(options)
+    public DBContext(DbContextOptions<DBContext> options)
+        : base(options)
     {
+        ChangeTracker.AutoDetectChangesEnabled = false;
+        ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
     }
 
     public DbSet<Domain.User.User> Users => Set<Domain.User.User>();
-
     public DbSet<UserOtp> UserOtps => Set<UserOtp>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<Wishlist> Wishlists => Set<Wishlist>();
@@ -32,11 +34,9 @@ public class DBContext : DbContext, IApplicationDbContext
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<StockLedgerEntry> StockLedgerEntries => Set<StockLedgerEntry>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
-
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<AttributeValue> AttributeValues => Set<AttributeValue>();
     public DbSet<UserAddress> UserAddresses => Set<UserAddress>();
-
     public DbSet<Domain.Wallet.Wallet> Wallets => Set<Domain.Wallet.Wallet>();
     public DbSet<WalletLedgerEntry> WalletLedgerEntries => Set<WalletLedgerEntry>();
     public DbSet<WalletReservation> WalletReservations => Set<WalletReservation>();
@@ -45,10 +45,13 @@ public class DBContext : DbContext, IApplicationDbContext
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        builder.ApplyConfigurationsFromAssembly(
+            Assembly.GetExecutingAssembly());
     }
 
-    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    protected override void ConfigureConventions(
+        ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder
             .Properties<Money>()

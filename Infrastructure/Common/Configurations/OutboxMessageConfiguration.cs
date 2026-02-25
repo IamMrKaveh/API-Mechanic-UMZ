@@ -1,5 +1,3 @@
-using Domain.Common;
-
 namespace Infrastructure.Common.Configurations;
 
 public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage>
