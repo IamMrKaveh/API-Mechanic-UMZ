@@ -39,7 +39,7 @@ public class UpdateBrandHandler : IRequestHandler<UpdateBrandCommand, ServiceRes
             Domain.Media.Media? newMedia = null;
             if (request.IconFile != null)
             {
-                var existingMedia = (await _mediaQueryService.GetEntityMediaAsync("CategoryGroup", request.BrandId))
+                var existingMedia = (await _mediaQueryService.GetEntityMediaAsync("Brand", request.BrandId))
                     .FirstOrDefault(m => m.IsPrimary);
 
                 if (existingMedia != null)
@@ -50,7 +50,7 @@ public class UpdateBrandHandler : IRequestHandler<UpdateBrandCommand, ServiceRes
                     request.IconFile.FileName,
                     request.IconFile.ContentType,
                     request.IconFile.Length,
-                    "CategoryGroup",
+                    "Brand",
                     request.BrandId,
                     isPrimary: true);
             }

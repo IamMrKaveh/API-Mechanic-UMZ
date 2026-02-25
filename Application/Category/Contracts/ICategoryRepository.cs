@@ -2,14 +2,10 @@ namespace Application.Category.Contracts;
 
 /// <summary>
 /// Repository فقط برای Aggregate Root (Category).
-/// CategoryGroup ریپازیتوری مستقل ندارد - فقط از طریق Category بارگذاری می‌شود.
+/// Brand ریپازیتوری مستقل ندارد - فقط از طریق Category بارگذاری می‌شود.
 /// </summary>
 public interface ICategoryRepository
 {
-    
-    
-    
-
     Task<(IEnumerable<Domain.Category.Category> Items, int TotalCount)> GetPagedAsync(
         string? search,
         bool? isActive,
@@ -50,10 +46,6 @@ public interface ICategoryRepository
         CancellationToken ct = default
         );
 
-    
-    
-    
-
     Task<bool> ExistsByNameAsync(
         string name,
         int? excludeId = null,
@@ -64,10 +56,6 @@ public interface ICategoryRepository
         string slug,
         int? excludeId = null,
         CancellationToken ct = default);
-
-    
-    
-    
 
     Task AddAsync(
         Domain.Category.Category category,

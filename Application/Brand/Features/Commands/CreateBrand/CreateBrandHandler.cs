@@ -45,7 +45,7 @@ public class CreateBrandHandler : IRequestHandler<CreateBrandCommand, ServiceRes
                         request.IconFile.FileName,
                         request.IconFile.ContentType,
                         request.IconFile.Length,
-                        "CategoryGroup",
+                        "Brand",
                         group.Id,
                         isPrimary: true);
 

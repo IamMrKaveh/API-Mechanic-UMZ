@@ -4,12 +4,12 @@ public sealed class ProductCreatedEvent : DomainEvent
 {
     public int ProductId { get; }
     public string ProductName { get; }
-    public int CategoryGroupId { get; }
+    public int BrandId { get; }
 
-    public ProductCreatedEvent(int productId, string productName, int categoryGroupId)
+    public ProductCreatedEvent(int productId, string productName, int brandId)
     {
         ProductId = productId;
         ProductName = productName;
-        CategoryGroupId = categoryGroupId;
+        BrandId = brandId;
     }
 }

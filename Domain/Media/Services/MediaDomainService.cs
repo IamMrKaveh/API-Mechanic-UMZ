@@ -37,7 +37,6 @@ public class MediaDomainService
             throw new DomainException("این رسانه قابل تنظیم به عنوان اصلی نیست.");
         }
 
-        
         foreach (var media in allMedias.Where(m => m.IsPrimary && m.Id != newPrimary.Id))
         {
             media.RemovePrimary();
@@ -78,9 +77,8 @@ public class MediaDomainService
 
         var extension = fileExtension.ToLowerInvariant().TrimStart('.');
 
-        
         if (entityType.Equals("Product", StringComparison.OrdinalIgnoreCase) ||
-            entityType.Equals("CategoryGroup", StringComparison.OrdinalIgnoreCase) ||
+            entityType.Equals("Brand", StringComparison.OrdinalIgnoreCase) ||
             entityType.Equals("Category", StringComparison.OrdinalIgnoreCase))
         {
             if (!imageExtensions.Contains(extension))
@@ -89,7 +87,6 @@ public class MediaDomainService
             }
         }
 
-        
         var allAllowed = imageExtensions.Concat(documentExtensions).Concat(videoExtensions);
         if (!allAllowed.Contains(extension))
         {
