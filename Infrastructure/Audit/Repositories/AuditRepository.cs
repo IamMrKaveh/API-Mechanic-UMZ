@@ -2,9 +2,9 @@
 
 public class AuditRepository : IAuditRepository
 {
-    private readonly Persistence.Context.DBContext _context;
+    private readonly DBContext _context;
 
-    public AuditRepository(Persistence.Context.DBContext context)
+    public AuditRepository(DBContext context)
     {
         _context = context;
     }

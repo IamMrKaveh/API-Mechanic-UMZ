@@ -41,6 +41,7 @@ public sealed class DBContext : DbContext, IApplicationDbContext
     public DbSet<WalletLedgerEntry> WalletLedgerEntries => Set<WalletLedgerEntry>();
     public DbSet<WalletReservation> WalletReservations => Set<WalletReservation>();
     public DbSet<WalletReconciliationAudit> WalletReconciliationAudits => Set<WalletReconciliationAudit>();
+    public DbSet<OrderProcessState> OrderProcessStates => Set<OrderProcessState>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
