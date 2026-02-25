@@ -1,18 +1,53 @@
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Host.UseSerilog((context, configuration) =>
-    configuration.ReadFrom.Configuration(context.Configuration));
+try
+{
+    Log.Information("Starting Ledka");
 
-ConfigureAuthentication(builder);
-ConfigureServices(builder);
+    var builder = WebApplication.CreateBuilder(args);
 
-var app = builder.Build();
+    ConfigureSerilog(builder);
+    ConfigureAuthentication(builder);
+    ConfigureServices(builder);
 
-ValidateAutoMapperConfiguration(app);
+    var app = builder.Build();
 
-app.UseApplicationMiddleware();
-app.MapControllers();
-app.Run();
+    ValidateAutoMapperConfiguration(app);
+
+    app.UseApplicationMiddleware();
+    app.MapControllers();
+
+    Log.Information("Ledka started successfully.");
+    app.Run();
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Log.Fatal(ex, "Ledka terminated unexpectedly.");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
+
+static void ConfigureSerilog(WebApplicationBuilder builder)
+{
+    builder.Host.UseSerilog((context, services, configuration) =>
+        configuration
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .Enrich.WithMachineName()
+            .Enrich.WithEnvironmentName()
+            .Enrich.WithProcessId()
+            .Enrich.WithProcessName()
+            .Enrich.WithThreadId()
+            .Enrich.WithThreadName()
+            .Enrich.WithProperty("Application", "Ledka"));
+}
 
 static void ConfigureAuthentication(WebApplicationBuilder builder)
 {
@@ -48,6 +83,18 @@ static void ConfigureServices(WebApplicationBuilder builder)
 {
     var configuration = builder.Configuration;
 
+    ConfigureControllersAndApi(builder);
+    ConfigureOptions(builder, configuration);
+    ConfigureHttpClients(builder);
+    ConfigureRedisAndDataProtection(builder);
+
+    builder.Services.AddApplicationServices();
+    builder.Services.AddInfrastructureServices(configuration);
+    builder.Services.AddCustomCors(configuration);
+}
+
+static void ConfigureControllersAndApi(WebApplicationBuilder builder)
+{
     builder.Services.AddControllers(options =>
     {
         options.Filters.Add<ValidationFilter>();
@@ -58,7 +105,10 @@ static void ConfigureServices(WebApplicationBuilder builder)
     builder.Services.AddSwaggerGen();
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN");
+}
 
+static void ConfigureOptions(WebApplicationBuilder builder, IConfiguration configuration)
+{
     builder.Services.Configure<FormOptions>(options =>
     {
         options.MultipartBodyLengthLimit = 10485760;
@@ -69,18 +119,15 @@ static void ConfigureServices(WebApplicationBuilder builder)
 
     builder.Services.Configure<SecuritySettings>(
         configuration.GetSection(SecuritySettings.SectionName));
+}
 
+static void ConfigureHttpClients(WebApplicationBuilder builder)
+{
     builder.Services.AddHttpClient<ILocationService, LocationService>(client =>
     {
         client.BaseAddress = new Uri("https://iran-locations-api.ir/api/v1/fa/");
         client.Timeout = TimeSpan.FromSeconds(10);
     });
-
-    ConfigureRedisAndDataProtection(builder);
-
-    builder.Services.AddApplicationServices();
-    builder.Services.AddInfrastructureServices(configuration);
-    builder.Services.AddCustomCors(configuration);
 }
 
 static void ConfigureRedisAndDataProtection(WebApplicationBuilder builder)

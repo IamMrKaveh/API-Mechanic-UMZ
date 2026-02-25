@@ -1,5 +1,3 @@
-using Domain.Variant;
-
 namespace Domain.Inventory.Services;
 
 /// <summary>
@@ -78,7 +76,7 @@ public class InventoryDomainService
         var transaction = InventoryTransaction.CreateCommit(
             variant.Id,
             quantity,
-            variant.StockQuantity + quantity, 
+            variant.StockQuantity + quantity,
             orderItemId,
             userId,
             referenceNumber,
@@ -138,19 +136,17 @@ public class InventoryDomainService
         if (variant.IsUnlimited)
             return StockAdjustmentResult.NotApplicable(variant.Id, "واریانت نامحدود - مرجوعی تأثیری بر موجودی ندارد.");
 
-        
         variant.AddStock(quantity);
 
         var transaction = InventoryTransaction.CreateReturn(
             variant.Id,
             quantity,
-            variant.StockQuantity - quantity, 
+            variant.StockQuantity - quantity,
             orderItemId,
             userId,
             reason,
             correlationId: $"RETURN-ORDER-{orderId}-ITEM-{orderItemId}");
 
-        
         transaction.AddDomainEvent(new StockReturnedEvent(variant.Id, orderId, quantity));
 
         return StockAdjustmentResult.Success(variant.Id, variant.StockQuantity, transaction);
