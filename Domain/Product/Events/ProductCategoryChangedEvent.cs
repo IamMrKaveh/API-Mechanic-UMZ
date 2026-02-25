@@ -3,13 +3,13 @@ namespace Domain.Product.Events;
 public sealed class ProductCategoryChangedEvent : DomainEvent
 {
     public int ProductId { get; }
-    public int OldCategoryGroupId { get; }
-    public int NewCategoryGroupId { get; }
+    public int OldBrandId { get; }
+    public int NewBrandId { get; }
 
-    public ProductCategoryChangedEvent(int productId, int oldCategoryGroupId, int newCategoryGroupId)
+    public ProductCategoryChangedEvent(int productId, int oldBrandId, int newBrandId)
     {
         ProductId = productId;
-        OldCategoryGroupId = oldCategoryGroupId;
-        NewCategoryGroupId = newCategoryGroupId;
+        OldBrandId = oldBrandId;
+        NewBrandId = newBrandId;
     }
 }

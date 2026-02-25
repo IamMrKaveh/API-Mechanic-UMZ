@@ -37,7 +37,7 @@ public class UpdateProductDetailsHandler : IRequestHandler<UpdateProductDetailsC
             _htmlSanitizer.Sanitize(request.Name),
             request.Description != null ? _htmlSanitizer.Sanitize(request.Description) : null,
             request.Sku,
-            request.CategoryGroupId,
+            request.BrandId,
             request.IsActive);
 
         _productRepository.Update(product);

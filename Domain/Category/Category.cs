@@ -1,7 +1,7 @@
 namespace Domain.Category;
 
 /// <summary>
-/// Aggregate Root - تمام دسترسی به CategoryGroup فقط از طریق این موجودیت انجام می‌شود.
+/// Aggregate Root - تمام دسترسی به brand فقط از طریق این موجودیت انجام می‌شود.
 /// </summary>
 public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
 {
@@ -11,27 +11,22 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
     public int SortOrder { get; private set; }
     public bool IsActive { get; private set; }
 
-    
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
-    
     public bool IsDeleted { get; private set; }
 
     public DateTime? DeletedAt { get; private set; }
     public int? DeletedBy { get; private set; }
 
-    
     public new byte[]? RowVersion { get; private set; }
 
-    
     public ICollection<Media.Media> Images { get; private set; } = [];
 
     private readonly List<Brand.Brand> _brands = [];
     public IReadOnlyCollection<Brand.Brand> Brands => _brands.AsReadOnly();
 
-    
     public int ActiveBrandsCount => _brands.Count(g => !g.IsDeleted && g.IsActive);
 
     public int TotalProductsCount => _brands
@@ -41,10 +36,6 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
 
     private Category()
     { }
-
-    
-    
-    
 
     public static Category Create(string name, string? description = null, int sortOrder = 0)
     {
@@ -64,10 +55,6 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         category.AddDomainEvent(new CategoryCreatedEvent(category.Id, categoryName.Value));
         return category;
     }
-
-    
-    
-    
 
     public void Update(string name, string? description, int sortOrder)
     {
@@ -110,10 +97,6 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         SortOrder = sortOrder;
         UpdatedAt = DateTime.UtcNow;
     }
-
-    
-    
-    
 
     /// <summary>
     /// افزودن گروه جدید - یکتایی نام در محدوده این Category بررسی می‌شود
@@ -184,7 +167,6 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         EnsureNotDeleted();
         EnsureActive();
 
-        
         if (ContainsGroupWithName(group.Name))
             throw new DuplicateBrandNameException(group.Name, Id);
 
@@ -202,7 +184,6 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
 
         var activeGroups = _brands.Where(g => !g.IsDeleted).ToList();
 
-        
         var activeGroupIds = activeGroups.Select(g => g.Id).ToHashSet();
         var providedIds = orderedGroupIds.ToHashSet();
 
@@ -235,10 +216,6 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         UpdatedAt = DateTime.UtcNow;
     }
 
-    
-    
-    
-
     public void Activate()
     {
         if (IsActive) return;
@@ -257,7 +234,6 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
 
-        
         foreach (var group in _brands.Where(g => !g.IsDeleted && g.IsActive))
         {
             group.Deactivate();
@@ -295,10 +271,6 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
         UpdatedAt = DateTime.UtcNow;
     }
 
-    
-    
-    
-
     public Brand.Brand? GetGroup(int groupId)
     {
         return _brands.FirstOrDefault(g => g.Id == groupId && !g.IsDeleted);
@@ -328,10 +300,6 @@ public class Category : AggregateRoot, IAuditable, ISoftDeletable, IActivatable
             (excludeGroupId == null || g.Id != excludeGroupId) &&
             g.Name.IsSameAs(name));
     }
-
-    
-    
-    
 
     private void EnsureNotDeleted()
     {

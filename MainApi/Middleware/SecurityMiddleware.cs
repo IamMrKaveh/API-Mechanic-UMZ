@@ -1,69 +1,59 @@
-namespace MainApi.Middlewares
+using MainApi.Settings;
+
+namespace MainApi.Middleware;
+
+public class SecurityMiddleware
 {
-    public class SecurityMiddleware
+    private readonly RequestDelegate _next;
+    private readonly SecuritySettings _securitySettings;
+    private readonly ILogger<SecurityMiddleware> _logger;
+
+    public SecurityMiddleware(
+        RequestDelegate next,
+        IOptions<SecuritySettings> securitySettings,
+        ILogger<SecurityMiddleware> logger)
     {
-        private readonly RequestDelegate _next;
-        private readonly SecuritySettings _securitySettings;
-        private readonly ILogger<SecurityMiddleware> _logger;
+        _next = next;
+        _securitySettings = securitySettings.Value;
+        _logger = logger;
+    }
 
-        public SecurityMiddleware(RequestDelegate next, IOptions<SecuritySettings> securitySettings, ILogger<SecurityMiddleware> logger)
+    public async Task InvokeAsync(HttpContext context)
+    {
+        if (context.Request.Path.StartsWithSegments("/api/admin"))
         {
-            _next = next;
-            _securitySettings = securitySettings.Value;
-            _logger = logger;
-        }
-
-        public async Task InvokeAsync(HttpContext context)
-        {
-            if (context.Request.Path.StartsWithSegments("/api/admin"))
+            if (!IsWhitelisted(context))
             {
-                var remoteIp = context.Connection.RemoteIpAddress;
-                var whitelisted = false;
-
-                
-                if (_securitySettings.AdminIpWhitelist != null && _securitySettings.AdminIpWhitelist.Any())
-                {
-                    if (remoteIp != null)
-                    {
-                        if (IPAddress.IsLoopback(remoteIp))
-                        {
-                            whitelisted = true;
-                        }
-                        else
-                        {
-                            whitelisted = _securitySettings.AdminIpWhitelist.Contains(remoteIp.ToString());
-                        }
-                    }
-                }
-                else
-                {
-                    
-                    whitelisted = true;
-                }
-
-                if (!whitelisted)
-                {
-                    _logger.LogWarning("Forbidden request to admin area from IP: {RemoteIp}", remoteIp);
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    await context.Response.WriteAsync("Access denied.");
-                    return;
-                }
+                _logger.LogWarning(
+                    "Forbidden request to admin area from IP: {RemoteIp}",
+                    context.Connection.RemoteIpAddress);
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsync("Access denied.");
+                return;
             }
-
-            await _next(context);
         }
+
+        await _next(context);
     }
 
-    public static class SecurityMiddlewareExtensions
+    private bool IsWhitelisted(HttpContext context)
     {
-        public static IApplicationBuilder UseAdminIpWhitelist(this IApplicationBuilder builder)
-        {
-            return builder.UseMiddleware<SecurityMiddleware>();
-        }
-    }
+        if (_securitySettings.AdminIpWhitelist is not { Count: > 0 })
+            return true;
 
-    public class SecuritySettings
-    {
-        public List<string> AdminIpWhitelist { get; set; } = [];
+        var remoteIp = context.Connection.RemoteIpAddress;
+        if (remoteIp == null)
+            return false;
+
+        if (IPAddress.IsLoopback(remoteIp))
+            return true;
+
+        return _securitySettings.AdminIpWhitelist.Contains(remoteIp.ToString());
     }
+}
+
+public static class SecurityMiddlewareExtensions
+{
+    public static IApplicationBuilder UseAdminIpWhitelist(this IApplicationBuilder builder)
+        => builder.UseMiddleware<SecurityMiddleware>();
 }

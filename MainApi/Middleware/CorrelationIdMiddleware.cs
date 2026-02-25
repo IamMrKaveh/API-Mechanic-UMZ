@@ -2,6 +2,8 @@ namespace MainApi.Middleware;
 
 public class CorrelationIdMiddleware
 {
+    private const string HeaderName = "X-Correlation-ID";
+
     private readonly RequestDelegate _next;
     private readonly ILogger<CorrelationIdMiddleware> _logger;
 
@@ -13,13 +15,17 @@ public class CorrelationIdMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var correlationId = context.Request.Headers["X-Correlation-ID"].FirstOrDefault() ?? Guid.NewGuid().ToString();
-        context.TraceIdentifier = correlationId;
-        context.Response.Headers.Append("X-Correlation-ID", correlationId);
+        var correlationId = ResolveCorrelationId(context);
 
-        using (_logger.BeginScope("CorrelationId: {CorrelationId}", context.TraceIdentifier))
+        context.TraceIdentifier = correlationId;
+        context.Response.Headers.Append(HeaderName, correlationId);
+
+        using (_logger.BeginScope("CorrelationId: {CorrelationId}", correlationId))
         {
             await _next(context);
         }
     }
+
+    private static string ResolveCorrelationId(HttpContext context)
+        => context.Request.Headers[HeaderName].FirstOrDefault() ?? Guid.NewGuid().ToString();
 }
