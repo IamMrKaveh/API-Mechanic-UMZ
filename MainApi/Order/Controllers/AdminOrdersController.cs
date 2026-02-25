@@ -46,7 +46,6 @@ public class AdminOrdersController : BaseApiController
     {
         var command = new UpdateOrderStatusCommand(id, dto.OrderStatusId, dto.RowVersion, dto.UpdatedByUserId);
         var result = await _mediator.Send(command);
-
         return ToActionResult(result);
     }
 
@@ -59,9 +58,11 @@ public class AdminOrdersController : BaseApiController
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteOrder(int orderId, int userId)
+    public async Task<IActionResult> DeleteOrder(int id)
     {
-        var command = new DeleteOrderCommand(orderId, userId);
+        if (!CurrentUser.UserId.HasValue) return Unauthorized();
+
+        var command = new DeleteOrderCommand(id, CurrentUser.UserId.Value);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -75,10 +76,12 @@ public class AdminOrdersController : BaseApiController
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateOrder([FromBody] AdminCreateOrderDto dto, int userId)
+    public async Task<IActionResult> CreateOrder([FromBody] AdminCreateOrderDto dto)
     {
+        if (!CurrentUser.UserId.HasValue) return Unauthorized();
+
         var idempotencyKey = Guid.NewGuid().ToString();
-        var command = new CreateOrderCommand(dto, idempotencyKey, userId);
+        var command = new CreateOrderCommand(dto, idempotencyKey, CurrentUser.UserId.Value);
         var result = await _mediator.Send(command);
 
         return CreatedAtAction(nameof(GetOrderById), new { id = result.Data }, new { orderId = result.Data });
@@ -107,5 +110,3 @@ public class AdminOrdersController : BaseApiController
         return Ok(result);
     }
 }
-
-public record MarkAsShippedRequest(string RowVersion);

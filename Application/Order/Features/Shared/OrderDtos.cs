@@ -195,3 +195,5 @@ public record UpdateOrderStatusByIdDto
     public string RowVersion { get; init; } = string.Empty;
     public int UpdatedByUserId { get; init; }
 }
+
+public record MarkAsShippedRequest(string RowVersion);

@@ -5,36 +5,21 @@ namespace MainApi.Product.Controllers;
 public class ProductsController : BaseApiController
 {
     private readonly IMediator _mediator;
-    private readonly ISearchService _searchService;
 
-    public ProductsController(IMediator mediator, ICurrentUserService currentUserService, ISearchService searchService)
+    public ProductsController(IMediator mediator, ICurrentUserService currentUserService)
         : base(currentUserService)
     {
         _mediator = mediator;
-        _searchService = searchService;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetProducts([FromQuery] ProductCatalogSearchParams searchParams, CancellationToken ct)
+    public async Task<IActionResult> GetProducts(
+        [FromQuery] ProductCatalogSearchParams searchParams,
+        CancellationToken ct)
     {
-        
-        var searchParamsObj = new SearchProductsParams
-        {
-            Q = searchParams.Search ?? string.Empty,
-            CategoryId = searchParams.CategoryId,
-            BrandId = searchParams.BrandId,
-            MinPrice = searchParams.MinPrice,
-            MaxPrice = searchParams.MaxPrice,
-            InStockOnly = searchParams.InStockOnly,
-            SortBy = searchParams.SortBy,
-            Page = searchParams.Page,
-            PageSize = searchParams.PageSize
-        };
-
-        var result = await _searchService.SearchProductsAsync(searchParamsObj, ct);
-
-        
-        return Ok(result);
+        var query = new GetProductCatalogQuery(searchParams);
+        var result = await _mediator.Send(query, ct);
+        return ToActionResult(result);
     }
 
     [HttpGet("{id}")]
@@ -42,7 +27,14 @@ public class ProductsController : BaseApiController
     {
         var query = new GetProductByIdQuery(id);
         var result = await _mediator.Send(query);
+        return ToActionResult(result);
+    }
 
+    [HttpGet("{id}/details")]
+    public async Task<IActionResult> GetDetails(int id)
+    {
+        var query = new GetProductDetailsQuery(id);
+        var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
 

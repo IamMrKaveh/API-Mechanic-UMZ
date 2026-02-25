@@ -31,3 +31,18 @@ public record ReviewSummaryDto
     public int TwoStarCount { get; init; }
     public int OneStarCount { get; init; }
 }
+
+public record RejectReviewRequest
+{
+    public string? Reason { get; init; }
+}
+
+public record ReplyToReviewRequest
+{
+    public string Reply { get; init; } = string.Empty;
+}
+
+public record UpdateReviewStatusRequest
+{
+    public string Status { get; init; } = string.Empty;
+}
