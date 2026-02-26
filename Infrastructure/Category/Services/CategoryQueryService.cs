@@ -2,10 +2,10 @@ namespace Infrastructure.Category.Services;
 
 public class CategoryQueryService : ICategoryQueryService
 {
-    private readonly Persistence.Context.DBContext _context;
+    private readonly DBContext _context;
     private readonly IUrlResolverService _urlResolver;
 
-    public CategoryQueryService(Persistence.Context.DBContext context, IUrlResolverService urlResolver)
+    public CategoryQueryService(DBContext context, IUrlResolverService urlResolver)
     {
         _context = context;
         _urlResolver = urlResolver;
