@@ -4,44 +4,48 @@ public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet
 {
     public void Configure(EntityTypeBuilder<Domain.Wallet.Wallet> builder)
     {
-        builder.HasKey(w => w.Id);
-        builder.Property(w => w.RowVersion).IsRowVersion();
+        builder.HasKey(e => e.Id);
 
-        builder.HasIndex(w => w.UserId).IsUnique();
+        builder.Property(e => e.RowVersion).IsRowVersion();
 
-        builder.Property(w => w.CurrentBalance)
+        builder.Property<int>("_userId")
+            .HasColumnName("UserId")
+            .IsRequired();
+
+        builder.Property<decimal>("_currentBalance")
+            .HasColumnName("CurrentBalance")
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
-        builder.Property(w => w.ReservedBalance)
+        builder.Property<decimal>("_reservedBalance")
+            .HasColumnName("ReservedBalance")
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
-        builder.Property(w => w.Status)
+        builder.Property<WalletStatus>("_status")
+            .HasColumnName("Status")
             .HasConversion<string>()
             .HasMaxLength(20)
             .IsRequired();
 
-        builder.Property(w => w.CreatedAt).IsRequired();
-        builder.Property(w => w.UpdatedAt);
+        builder.Property(e => e.CreatedAt).IsRequired();
+        builder.Property(e => e.UpdatedAt);
 
-        builder.Ignore(w => w.AvailableBalance);
-        builder.Ignore(w => w.IsActive);
+        builder.HasIndex("_userId")
+            .IsUnique()
+            .HasDatabaseName("IX_Wallets_UserId");
 
-        builder.HasMany(w => w.PendingLedgerEntries)
-            .WithOne()
-            .HasForeignKey(e => e.WalletId)
+        builder.HasMany(e => e.Reservations)
+            .WithOne(r => r.Wallet)
+            .HasForeignKey("_walletId")
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(w => w.Reservations)
-            .WithOne()
-            .HasForeignKey(r => r.WalletId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Metadata
+            .FindNavigation(nameof(Domain.Wallet.Wallet.Reservations))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
 
-        builder.ToTable(t =>
-        {
-            t.HasCheckConstraint("CK_Wallet_CurrentBalance_NonNegative", "\"CurrentBalance\" >= 0");
-            t.HasCheckConstraint("CK_Wallet_ReservedBalance_NonNegative", "\"ReservedBalance\" >= 0");
-        });
+        builder.Metadata
+            .FindNavigation(nameof(Domain.Wallet.Wallet.PendingLedgerEntries))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
     }
 }
