@@ -10,6 +10,7 @@ public sealed class UserMappingProfile : Profile
 
         CreateMap<UserAddress, UserAddressDto>();
 
-        CreateMap<Domain.User.User, UserSummaryDto>();
+        CreateMap<Domain.User.User, UserSummaryDto>()
+            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber));
     }
 }
