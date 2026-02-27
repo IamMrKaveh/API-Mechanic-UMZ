@@ -1,18 +1,16 @@
-﻿using Application.Wallet.Contracts;
-
-namespace MainApi.Wallet.Controllers;
+﻿namespace MainApi.Wallet.Controllers;
 
 [ApiController]
 [Route("api/wallet")]
 [Authorize]
 public class WalletController : BaseApiController
 {
-    private readonly IWalletService _walletService;
+    private readonly IMediator _mediator;
 
-    public WalletController(IWalletService walletService, ICurrentUserService currentUserService)
+    public WalletController(IMediator mediator, ICurrentUserService currentUserService)
         : base(currentUserService)
     {
-        _walletService = walletService;
+        _mediator = mediator;
     }
 
     [HttpGet("balance")]
@@ -20,7 +18,7 @@ public class WalletController : BaseApiController
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
-        var result = await _walletService.GetBalanceAsync(CurrentUser.UserId.Value, ct);
+        var result = await _mediator.Send(new GetWalletBalanceQuery(CurrentUser.UserId.Value), ct);
         return ToActionResult(result);
     }
 
@@ -32,8 +30,8 @@ public class WalletController : BaseApiController
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
-        var result = await _walletService.GetLedgerAsync(
-            CurrentUser.UserId.Value, page, pageSize, ct);
+        var result = await _mediator.Send(
+            new GetWalletLedgerQuery(CurrentUser.UserId.Value, page, pageSize), ct);
         return ToActionResult(result);
     }
 }

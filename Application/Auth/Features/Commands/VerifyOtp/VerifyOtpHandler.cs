@@ -16,14 +16,15 @@ public class VerifyOtpHandler : IRequestHandler<VerifyOtpCommand, ServiceResult<
     }
 
     public async Task<ServiceResult<AuthResult>> Handle(
-        VerifyOtpCommand request, CancellationToken cancellationToken)
+        VerifyOtpCommand request,
+        CancellationToken ct)
     {
         var result = await _authService.VerifyOtpAsync(
             request.PhoneNumber,
             request.Code,
             request.IpAddress,
             request.UserAgent,
-            cancellationToken);
+            ct);
 
         if (result.IsFailed || result.Data == default)
         {

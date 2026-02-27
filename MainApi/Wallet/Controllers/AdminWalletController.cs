@@ -1,6 +1,4 @@
-﻿using Application.Wallet.Contracts;
-
-namespace MainApi.Wallet.Controllers;
+﻿namespace MainApi.Wallet.Controllers;
 
 [ApiController]
 [Route("api/admin/wallet")]
@@ -8,18 +6,18 @@ namespace MainApi.Wallet.Controllers;
 [EnableRateLimiting("admin-wallet")]
 public class AdminWalletController : BaseApiController
 {
-    private readonly IWalletService _walletService;
+    private readonly IMediator _mediator;
 
-    public AdminWalletController(IWalletService walletService, ICurrentUserService currentUserService)
+    public AdminWalletController(IMediator mediator, ICurrentUserService currentUserService)
         : base(currentUserService)
     {
-        _walletService = walletService;
+        _mediator = mediator;
     }
 
     [HttpGet("{userId}/balance")]
     public async Task<IActionResult> GetBalance(int userId, CancellationToken ct)
     {
-        var result = await _walletService.GetBalanceAsync(userId, ct);
+        var result = await _mediator.Send(new GetWalletBalanceQuery(userId), ct);
         return ToActionResult(result);
     }
 
@@ -33,19 +31,18 @@ public class AdminWalletController : BaseApiController
 
         var adminId = CurrentUser.UserId.Value;
         var correlationId = HttpContext.TraceIdentifier;
-        var auditDescription = BuildAuditDescription("CREDIT", adminId, dto.Reason, dto.Description);
 
-        var result = await _walletService.CreditAsync(
-            userId,
-            dto.Amount,
-            WalletTransactionType.AdminAdjustmentCredit,
-            WalletReferenceType.Admin,
-            adminId,
-            idempotencyKey: $"admin-credit-{userId}-{correlationId}",
-            correlationId: correlationId,
-            description: auditDescription,
-            ct: ct);
+        var command = new CreditWalletCommand(
+            UserId: userId,
+            Amount: dto.Amount,
+            TransactionType: WalletTransactionType.AdminAdjustmentCredit,
+            ReferenceType: WalletReferenceType.Admin,
+            ReferenceId: adminId,
+            IdempotencyKey: $"admin-credit-{userId}-{correlationId}",
+            CorrelationId: correlationId,
+            Description: BuildAuditDescription("CREDIT", adminId, dto.Reason, dto.Description));
 
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
@@ -59,19 +56,18 @@ public class AdminWalletController : BaseApiController
 
         var adminId = CurrentUser.UserId.Value;
         var correlationId = HttpContext.TraceIdentifier;
-        var auditDescription = BuildAuditDescription("DEBIT", adminId, dto.Reason, dto.Description);
 
-        var result = await _walletService.DebitAsync(
-            userId,
-            dto.Amount,
-            WalletTransactionType.AdminAdjustmentDebit,
-            WalletReferenceType.Admin,
-            adminId,
-            idempotencyKey: $"admin-debit-{userId}-{correlationId}",
-            correlationId: correlationId,
-            description: auditDescription,
-            ct: ct);
+        var command = new DebitWalletCommand(
+            UserId: userId,
+            Amount: dto.Amount,
+            TransactionType: WalletTransactionType.AdminAdjustmentDebit,
+            ReferenceType: WalletReferenceType.Admin,
+            ReferenceId: adminId,
+            IdempotencyKey: $"admin-debit-{userId}-{correlationId}",
+            CorrelationId: correlationId,
+            Description: BuildAuditDescription("DEBIT", adminId, dto.Reason, dto.Description));
 
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 

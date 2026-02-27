@@ -145,6 +145,26 @@ namespace Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OrderProcessStates",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    OrderId = table.Column<int>(type: "integer", nullable: false),
+                    CurrentStep = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    FailureReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    RetryCount = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CorrelationId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderProcessStates", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OrderStatus",
                 columns: table => new
                 {
@@ -257,42 +277,22 @@ namespace Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "WalletReconciliationAudits",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    WalletId = table.Column<int>(type: "integer", nullable: false),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
-                    SnapshotBalance = table.Column<decimal>(type: "numeric", nullable: false),
-                    LedgerBalance = table.Column<decimal>(type: "numeric", nullable: false),
-                    Delta = table.Column<decimal>(type: "numeric", nullable: false),
-                    DetectedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_WalletReconciliationAudits", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Wallets",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CurrentBalance = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     ReservedBalance = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
                     RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Wallets", x => x.Id);
-                    table.CheckConstraint("CK_Wallet_CurrentBalance_NonNegative", "\"CurrentBalance\" >= 0");
-                    table.CheckConstraint("CK_Wallet_ReservedBalance_NonNegative", "\"ReservedBalance\" >= 0");
                 });
 
             migrationBuilder.CreateTable(
@@ -583,6 +583,10 @@ namespace Infrastructure.Persistence.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     OtpHash = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsUsed = table.Column<bool>(type: "boolean", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    AttemptCount = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
@@ -635,28 +639,52 @@ namespace Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    WalletId = table.Column<int>(type: "integer", nullable: false),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    WalletId1 = table.Column<int>(type: "integer", nullable: true),
                     AmountDelta = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     BalanceAfter = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    TransactionType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    ReferenceType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    ReferenceId = table.Column<int>(type: "integer", nullable: false),
-                    IdempotencyKey = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     CorrelationId = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
+                    IdempotencyKey = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    ReferenceId = table.Column<int>(type: "integer", nullable: false),
+                    ReferenceType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    TransactionType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    WalletId = table.Column<int>(type: "integer", nullable: false),
+                    RowVersion = table.Column<byte[]>(type: "bytea", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WalletLedgerEntries", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_WalletLedgerEntries_Wallets_WalletId",
+                        name: "FK_WalletLedgerEntries_Wallets_WalletId1",
+                        column: x => x.WalletId1,
+                        principalTable: "Wallets",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WalletReconciliationAudits",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    WalletId = table.Column<int>(type: "integer", nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    SnapshotBalance = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    LedgerBalance = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Delta = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    DetectedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WalletReconciliationAudits", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WalletReconciliationAudits_Wallets_WalletId",
                         column: x => x.WalletId,
                         principalTable: "Wallets",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -666,13 +694,13 @@ namespace Infrastructure.Persistence.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     WalletId = table.Column<int>(type: "integer", nullable: false),
-                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    OrderId = table.Column<int>(type: "integer", nullable: false),
-                    Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    OrderId = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    RowVersion = table.Column<byte[]>(type: "bytea", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1370,6 +1398,12 @@ namespace Infrastructure.Persistence.Migrations
                 column: "VariantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderProcessStates_OrderId",
+                table: "OrderProcessStates",
+                column: "OrderId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_IdempotencyKey",
                 table: "Orders",
                 column: "IdempotencyKey",
@@ -1529,14 +1563,9 @@ namespace Infrastructure.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_WalletLedgerEntries_ReferenceType_ReferenceId",
+                name: "IX_WalletLedgerEntries_UserId",
                 table: "WalletLedgerEntries",
-                columns: new[] { "ReferenceType", "ReferenceId" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WalletLedgerEntries_UserId_CreatedAt",
-                table: "WalletLedgerEntries",
-                columns: new[] { "UserId", "CreatedAt" });
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WalletLedgerEntries_WalletId",
@@ -1544,19 +1573,50 @@ namespace Infrastructure.Persistence.Migrations
                 column: "WalletId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WalletLedgerEntries_WalletId_ReferenceType_ReferenceId",
+                table: "WalletLedgerEntries",
+                columns: new[] { "WalletId", "ReferenceType", "ReferenceId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletLedgerEntries_WalletId1",
+                table: "WalletLedgerEntries",
+                column: "WalletId1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletReconciliationAudits_DetectedAt",
+                table: "WalletReconciliationAudits",
+                column: "DetectedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletReconciliationAudits_UserId",
+                table: "WalletReconciliationAudits",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletReconciliationAudits_WalletId",
+                table: "WalletReconciliationAudits",
+                column: "WalletId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletReservations_ExpiresAt",
+                table: "WalletReservations",
+                column: "ExpiresAt",
+                filter: "\"Status\" = 'Pending'");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WalletReservations_OrderId",
                 table: "WalletReservations",
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WalletReservations_Status_ExpiresAt",
+                name: "IX_WalletReservations_WalletId",
                 table: "WalletReservations",
-                columns: new[] { "Status", "ExpiresAt" });
+                column: "WalletId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WalletReservations_WalletId_Status",
+                name: "IX_WalletReservations_WalletId_OrderId_Status",
                 table: "WalletReservations",
-                columns: new[] { "WalletId", "Status" });
+                columns: new[] { "WalletId", "OrderId", "Status" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Wallets_UserId",
@@ -1623,6 +1683,9 @@ namespace Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Notifications");
+
+            migrationBuilder.DropTable(
+                name: "OrderProcessStates");
 
             migrationBuilder.DropTable(
                 name: "OutboxMessages");

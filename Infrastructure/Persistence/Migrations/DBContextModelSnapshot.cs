@@ -17,7 +17,7 @@ namespace Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "9.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -254,16 +254,16 @@ namespace Infrastructure.Persistence.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Delta")
-                        .HasColumnType("numeric");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("DetectedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("LedgerBalance")
-                        .HasColumnType("numeric");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("SnapshotBalance")
-                        .HasColumnType("numeric");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -272,6 +272,15 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DetectedAt")
+                        .HasDatabaseName("IX_WalletReconciliationAudits_DetectedAt");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_WalletReconciliationAudits_UserId");
+
+                    b.HasIndex("WalletId")
+                        .HasDatabaseName("IX_WalletReconciliationAudits_WalletId");
 
                     b.ToTable("WalletReconciliationAudits");
                 });
@@ -1238,6 +1247,52 @@ namespace Infrastructure.Persistence.Migrations
                     b.ToTable("OrderItem");
                 });
 
+            modelBuilder.Entity("Domain.Order.OrderProcessState", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrentStep")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.ToTable("OrderProcessStates", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Order.OrderStatus", b =>
                 {
                     b.Property<int>("Id")
@@ -1907,8 +1962,17 @@ namespace Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("OtpHash")
                         .IsRequired()
@@ -1921,6 +1985,9 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("bytea");
 
                     b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UsedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("UserId")
@@ -2187,39 +2254,39 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("CurrentBalance")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("ReservedBalance")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("_currentBalance")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("CurrentBalance");
+
+                    b.Property<decimal>("_reservedBalance")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("ReservedBalance");
+
+                    b.Property<string>("_status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("Status");
+
+                    b.Property<int>("_userId")
+                        .HasColumnType("integer")
+                        .HasColumnName("UserId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("_userId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Wallets_UserId");
 
-                    b.ToTable("Wallets", t =>
-                        {
-                            t.HasCheckConstraint("CK_Wallet_CurrentBalance_NonNegative", "\"CurrentBalance\" >= 0");
-
-                            t.HasCheckConstraint("CK_Wallet_ReservedBalance_NonNegative", "\"ReservedBalance\" >= 0");
-                        });
+                    b.ToTable("Wallets");
                 });
 
             modelBuilder.Entity("Domain.Wallet.WalletLedgerEntry", b =>
@@ -2230,62 +2297,79 @@ namespace Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("AmountDelta")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("BalanceAfter")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("CorrelationId")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<int>("ReferenceId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ReferenceType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
-                    b.Property<string>("TransactionType")
+                    b.Property<int?>("WalletId1")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("_amountDelta")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("AmountDelta");
+
+                    b.Property<decimal>("_balanceAfter")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("BalanceAfter");
+
+                    b.Property<string>("_correlationId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("CorrelationId");
+
+                    b.Property<string>("_description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("Description");
+
+                    b.Property<string>("_idempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("IdempotencyKey");
+
+                    b.Property<int>("_referenceId")
+                        .HasColumnType("integer")
+                        .HasColumnName("ReferenceId");
+
+                    b.Property<string>("_referenceType")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("ReferenceType");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
+                    b.Property<string>("_transactionType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("TransactionType");
 
-                    b.Property<int>("WalletId")
-                        .HasColumnType("integer");
+                    b.Property<int>("_userId")
+                        .HasColumnType("integer")
+                        .HasColumnName("UserId");
+
+                    b.Property<int>("_walletId")
+                        .HasColumnType("integer")
+                        .HasColumnName("WalletId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique();
+                    b.HasIndex("WalletId1");
 
-                    b.HasIndex("WalletId");
+                    b.HasIndex("_idempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_WalletLedgerEntries_IdempotencyKey");
 
-                    b.HasIndex("ReferenceType", "ReferenceId");
+                    b.HasIndex("_userId")
+                        .HasDatabaseName("IX_WalletLedgerEntries_UserId");
 
-                    b.HasIndex("UserId", "CreatedAt");
+                    b.HasIndex("_walletId")
+                        .HasDatabaseName("IX_WalletLedgerEntries_WalletId");
+
+                    b.HasIndex("_walletId", "_referenceType", "_referenceId")
+                        .HasDatabaseName("IX_WalletLedgerEntries_WalletId_ReferenceType_ReferenceId");
 
                     b.ToTable("WalletLedgerEntries");
                 });
@@ -2298,41 +2382,51 @@ namespace Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("integer");
-
                     b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("WalletId")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("_amount")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("Amount");
+
+                    b.Property<DateTime?>("_expiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ExpiresAt");
+
+                    b.Property<int>("_orderId")
+                        .HasColumnType("integer")
+                        .HasColumnName("OrderId");
+
+                    b.Property<string>("_status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("Status");
+
+                    b.Property<int>("_walletId")
+                        .HasColumnType("integer")
+                        .HasColumnName("WalletId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderId");
+                    b.HasIndex("_expiresAt")
+                        .HasDatabaseName("IX_WalletReservations_ExpiresAt")
+                        .HasFilter("\"Status\" = 'Pending'");
 
-                    b.HasIndex("Status", "ExpiresAt");
+                    b.HasIndex("_orderId")
+                        .HasDatabaseName("IX_WalletReservations_OrderId");
 
-                    b.HasIndex("WalletId", "Status");
+                    b.HasIndex("_walletId")
+                        .HasDatabaseName("IX_WalletReservations_WalletId");
+
+                    b.HasIndex("_walletId", "_orderId", "_status")
+                        .HasDatabaseName("IX_WalletReservations_WalletId_OrderId_Status");
 
                     b.ToTable("WalletReservations");
                 });
@@ -2346,6 +2440,15 @@ namespace Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("AttributeType");
+                });
+
+            modelBuilder.Entity("Domain.Audit.WalletReconciliationAudit", b =>
+                {
+                    b.HasOne("Domain.Wallet.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Brand.Brand", b =>
@@ -2760,18 +2863,18 @@ namespace Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Domain.Wallet.Wallet", null)
                         .WithMany("PendingLedgerEntries")
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("WalletId1");
                 });
 
             modelBuilder.Entity("Domain.Wallet.WalletReservation", b =>
                 {
-                    b.HasOne("Domain.Wallet.Wallet", null)
+                    b.HasOne("Domain.Wallet.Wallet", "Wallet")
                         .WithMany("Reservations")
-                        .HasForeignKey("WalletId")
+                        .HasForeignKey("_walletId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Wallet");
                 });
 
             modelBuilder.Entity("Domain.Attribute.AttributeType", b =>
