@@ -20,33 +20,37 @@ public class VerifyPaymentHandler : IRequestHandler<VerifyPaymentCommand, Servic
     {
         var baseUrl = _frontendUrls.Value.BaseUrl;
 
-        
-        
-        
-
-        var result = await _paymentService.VerifyPaymentAsync(request.Authority, 0, cancellationToken); 
-
-        if (result.IsSucceed && result.Data != default)
+        try
         {
-            var data = result.Data;
-            var redirectUrl = data.IsVerified
-                ? $"{baseUrl}/payment/result?status=success&refId={data.RefId}"
-                : $"{baseUrl}/payment/result?status=failure&reason={Uri.EscapeDataString(data.Message ?? "Error")}";
+            var result = await _paymentService.VerifyPaymentAsync(request.Authority, 0, cancellationToken);
+
+            if (result.IsSucceed && result.Data != default)
+            {
+                var data = result.Data;
+                var redirectUrl = data.IsVerified
+                    ? $"{baseUrl}/payment/result?status=success&refId={data.RefId}"
+                    : $"{baseUrl}/payment/result?status=failure&reason={Uri.EscapeDataString(data.Message ?? "Error")}";
+
+                return ServiceResult<PaymentResultDto>.Success(new PaymentResultDto
+                {
+                    IsSuccess = data.IsVerified,
+                    RefId = data.RefId,
+                    Message = data.Message,
+                    RedirectUrl = redirectUrl
+                });
+            }
 
             return ServiceResult<PaymentResultDto>.Success(new PaymentResultDto
             {
-                IsSuccess = data.IsVerified,
-                RefId = data.RefId,
-                Message = data.Message,
-                RedirectUrl = redirectUrl
+                IsSuccess = false,
+                Message = result.Error,
+                RedirectUrl = $"{baseUrl}/payment/result?status=failure&reason={Uri.EscapeDataString(result.Error ?? "Error")}"
             });
         }
-
-        return ServiceResult<PaymentResultDto>.Success(new PaymentResultDto
+        catch (DomainException ex)
         {
-            IsSuccess = false,
-            Message = result.Error,
-            RedirectUrl = $"{baseUrl}/payment/result?status=failure&reason={Uri.EscapeDataString(result.Error ?? "Error")}"
-        });
+            _logger.LogWarning("VerifyPayment: Domain exception for {Authority}: {Message}", request.Authority, ex.Message);
+            return ServiceResult<PaymentResultDto>.Failure(ex.Message);
+        }
     }
 }
