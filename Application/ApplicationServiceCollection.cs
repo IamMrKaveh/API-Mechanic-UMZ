@@ -49,7 +49,6 @@ public static class ApplicationServiceCollection
     private static void RegisterApplicationServices(IServiceCollection services)
     {
         services.AddScoped<InventoryReservationService>();
-        services.AddScoped<DiscountApplicationService>();
         services.AddScoped<PaymentSettlementService>();
     }
 }

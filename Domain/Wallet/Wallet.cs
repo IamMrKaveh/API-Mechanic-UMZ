@@ -3,7 +3,6 @@
 public class Wallet : AggregateRoot, IAuditable
 {
     private readonly List<WalletReservation> _reservations = [];
-
     private readonly List<WalletLedgerEntry> _pendingLedgerEntries = [];
 
     private int _userId;
@@ -21,7 +20,6 @@ public class Wallet : AggregateRoot, IAuditable
     public DateTime? UpdatedAt { get; private set; }
 
     public IReadOnlyCollection<WalletReservation> Reservations => _reservations.AsReadOnly();
-
     public IReadOnlyCollection<WalletLedgerEntry> PendingLedgerEntries => _pendingLedgerEntries.AsReadOnly();
 
     private Wallet()
@@ -97,11 +95,6 @@ public class Wallet : AggregateRoot, IAuditable
 
     #region Credit / Debit
 
-    /// <summary>
-    /// Credits the wallet snapshot and produces a new ledger entry.
-    /// Idempotency is enforced at the database level via UNIQUE index on IdempotencyKey;
-    /// the application layer checks <see cref="IWalletRepository.HasIdempotencyKeyAsync"/> before calling this.
-    /// </summary>
     public WalletLedgerEntry Credit(
         Money amount,
         WalletTransactionType transactionType,
@@ -138,11 +131,6 @@ public class Wallet : AggregateRoot, IAuditable
         return entry;
     }
 
-    /// <summary>
-    /// Debits the wallet snapshot and produces a new ledger entry.
-    /// Idempotency is enforced at the database level via UNIQUE index on IdempotencyKey;
-    /// the application layer checks <see cref="IWalletRepository.HasIdempotencyKeyAsync"/> before calling this.
-    /// </summary>
     public WalletLedgerEntry Debit(
         Money amount,
         WalletTransactionType transactionType,
