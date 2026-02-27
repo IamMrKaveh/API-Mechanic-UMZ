@@ -21,48 +21,53 @@ public class ProcessWebhookHandler : IRequestHandler<ProcessWebhookCommand, Serv
 
     public async Task<ServiceResult> Handle(ProcessWebhookCommand request, CancellationToken cancellationToken)
     {
-        var tx = await _repository.GetByAuthorityWithOrderAsync(request.Authority, cancellationToken);
-        if (tx == null)
+        try
         {
-            _logger.LogWarning("Webhook: Transaction not found {Authority}", request.Authority);
-            return ServiceResult.Failure("تراکنش یافت نشد.");
-        }
-
-        
-        if (tx.IsSuccessful())
-        {
-            _logger.LogInformation("Webhook: Transaction {Authority} already succeeded", request.Authority);
-            return ServiceResult.Success();
-        }
-
-        if (request.Status.Equals("OK", StringComparison.OrdinalIgnoreCase) && request.RefId.HasValue)
-        {
-            
-            if (tx.Order != null)
+            var tx = await _repository.GetByAuthorityWithOrderAsync(request.Authority, cancellationToken);
+            if (tx == null)
             {
-                var processResult = _paymentDomainService.ProcessSuccessfulPayment(
-                    tx, tx.Order, request.RefId.Value,
-                    rawResponse: $"Webhook: {request.Status}");
+                _logger.LogWarning("Webhook: Transaction not found {Authority}", request.Authority);
+                return ServiceResult.Failure("تراکنش یافت نشد.");
+            }
 
-                if (!processResult.IsSuccess)
+            if (tx.IsSuccessful())
+            {
+                _logger.LogInformation("Webhook: Transaction {Authority} already succeeded", request.Authority);
+                return ServiceResult.Success();
+            }
+
+            if (request.Status.Equals("OK", StringComparison.OrdinalIgnoreCase) && request.RefId.HasValue)
+            {
+                if (tx.Order != null)
                 {
-                    _logger.LogWarning("Webhook: Processing failed for {Authority}: {Error}",
-                        request.Authority, processResult.Error);
-                    return ServiceResult.Failure(processResult.Error!);
+                    var processResult = _paymentDomainService.ProcessSuccessfulPayment(
+                        tx, tx.Order, request.RefId.Value,
+                        rawResponse: $"Webhook: {request.Status}");
+
+                    if (!processResult.IsSuccess)
+                    {
+                        _logger.LogWarning("Webhook: Processing failed for {Authority}: {Error}",
+                            request.Authority, processResult.Error);
+                        return ServiceResult.Failure(processResult.Error!);
+                    }
+                }
+                else
+                {
+                    tx.MarkAsSuccess(request.RefId.Value, rawResponse: $"Webhook: {request.Status}");
                 }
             }
             else
             {
-                
-                tx.MarkAsSuccess(request.RefId.Value, rawResponse: $"Webhook: {request.Status}");
+                _paymentDomainService.ProcessFailedPayment(tx, $"Webhook Failed: {request.Status}");
             }
-        }
-        else
-        {
-            _paymentDomainService.ProcessFailedPayment(tx, $"Webhook Failed: {request.Status}");
-        }
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return ServiceResult.Success();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return ServiceResult.Success();
+        }
+        catch (DomainException ex)
+        {
+            _logger.LogError("Webhook: Domain exception for {Authority}: {Message}", request.Authority, ex.Message);
+            return ServiceResult.Failure(ex.Message);
+        }
     }
 }
