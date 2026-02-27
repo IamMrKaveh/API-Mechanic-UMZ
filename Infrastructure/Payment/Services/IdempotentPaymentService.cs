@@ -1,6 +1,6 @@
 namespace Infrastructure.Payment.Services;
 
-public sealed class IdempotentPaymentService : IPaymentService
+public sealed class PaymentService : IPaymentService
 {
     private static readonly TimeSpan IdempotencyWindow = TimeSpan.FromHours(24);
     private static readonly TimeSpan GatewayTimeout = TimeSpan.FromSeconds(10);
@@ -9,14 +9,14 @@ public sealed class IdempotentPaymentService : IPaymentService
     private readonly IPaymentTransactionRepository _transactionRepo;
     private readonly ICacheService _cache;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<IdempotentPaymentService> _logger;
+    private readonly ILogger<PaymentService> _logger;
 
-    public IdempotentPaymentService(
+    public PaymentService(
         IPaymentGatewayFactory gatewayFactory,
         IPaymentTransactionRepository transactionRepo,
         ICacheService cache,
         IUnitOfWork unitOfWork,
-        ILogger<IdempotentPaymentService> logger
+        ILogger<PaymentService> logger
         )
     {
         _gatewayFactory = gatewayFactory;
@@ -26,7 +26,6 @@ public sealed class IdempotentPaymentService : IPaymentService
         _logger = logger;
     }
 
-    
     private record CachedPaymentInitiation(bool IsSuccess, string? Authority, string? PaymentUrl, string? Message);
     private record CachedPaymentVerification(bool IsVerified, long? RefId, string? CardPan, string? Message);
 

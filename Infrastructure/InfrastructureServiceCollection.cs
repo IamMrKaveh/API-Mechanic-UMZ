@@ -1,7 +1,3 @@
-using Infrastructure.Cache.Health;
-using Infrastructure.Cache.Options;
-using Infrastructure.Search.HealthChecks;
-using Infrastructure.Search.Options;
 using HealthStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus;
 
 namespace Infrastructure;
@@ -26,7 +22,6 @@ public static class InfrastructureServiceCollection
         AddBackgroundServices(services, configuration);
         AddEventHandlers(services);
         AddCachingAndConcurrency(services, configuration);
-        AddRedisServices(services, configuration);
         AddElasticsearchServices(services, configuration);
         AddHealthChecks(services, connectionString);
 
@@ -37,7 +32,7 @@ public static class InfrastructureServiceCollection
         IServiceCollection services,
         string connectionString)
     {
-        services.AddScoped<AuditableEntityInterceptor>();
+        services.AddSingleton<AuditableEntityInterceptor>();
 
         services.AddDbContext<DBContext>((sp, options) =>
         {
@@ -68,9 +63,6 @@ public static class InfrastructureServiceCollection
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<IAuditService, EnhancedAuditService>();
         services.AddTransient<IHtmlSanitizer, HtmlSanitizer>();
-
-        services.AddMediatR(cfg =>
-            cfg.RegisterServicesFromAssemblyContaining<Application.Order.Sagas.OrderProcessManagerSaga>());
     }
 
     private static void AddAuthServices(IServiceCollection services)
@@ -134,6 +126,7 @@ public static class InfrastructureServiceCollection
         services.AddScoped<ICartQueryService, CartQueryService>();
         services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
         services.AddScoped<IDiscountService, DiscountService>();
+        services.AddScoped<IWalletService, WalletService>();
         services.AddScoped<CartItemValidationService>();
         services.AddMemoryCache();
 
@@ -161,7 +154,7 @@ public static class InfrastructureServiceCollection
             configuration.GetSection(PaymentGatewayOptions.SectionName));
 
         services.AddSingleton<IPaymentGatewayFactory, PaymentGatewayFactory>();
-        services.AddScoped<IPaymentService, IdempotentPaymentService>();
+        services.AddScoped<IPaymentService, PaymentService>();
 
         services.AddHttpClient<IPaymentGateway, ZarinPalPaymentGateway>(client =>
         {
@@ -172,11 +165,11 @@ public static class InfrastructureServiceCollection
     private static void AddWalletServices(IServiceCollection services)
     {
         services.AddScoped<INotificationHandler<PaymentSucceededEvent>,
-            Application.Wallet.EventHandlers.PaymentSucceededWalletCreditEventHandler>();
+            PaymentSucceededWalletCreditEventHandler>();
         services.AddScoped<INotificationHandler<PaymentRefundedEvent>,
-            Application.Wallet.EventHandlers.PaymentRefundedWalletEventHandler>();
+            PaymentRefundedWalletEventHandler>();
         services.AddScoped<INotificationHandler<OrderCancelledEvent>,
-            Application.Wallet.EventHandlers.OrderCancelledWalletReleaseEventHandler>();
+            OrderCancelledWalletReleaseEventHandler>();
     }
 
     private static void AddBackgroundServices(
@@ -201,49 +194,12 @@ public static class InfrastructureServiceCollection
 
     private static void AddEventHandlers(IServiceCollection services)
     {
-        services.AddScoped<INotificationHandler<VariantStockChangedApplicationNotification>,
-            VariantStockCacheInvalidationHandler>();
-        services.AddScoped<INotificationHandler<VariantStockChangedEvent>,
-            InventoryStockSearchSyncHandler>();
-        services.AddScoped<INotificationHandler<StockCommittedEvent>,
-            InventoryStockSearchSyncHandler>();
-        services.AddScoped<INotificationHandler<StockReturnedEvent>,
-            InventoryStockSearchSyncHandler>();
-        services.AddScoped<INotificationHandler<PaymentSucceededEvent>,
-            PaymentSucceededInventoryCommitEventHandler>();
     }
 
     private static void AddCachingAndConcurrency(
-            IServiceCollection services,
-            IConfiguration configuration)
-    {
-        var cacheOptions = configuration.GetSection(CacheOptions.SectionName)
-            .Get<CacheOptions>() ?? new CacheOptions();
-
-        if (cacheOptions.IsEnabled)
-        {
-            services.AddSingleton<IDistributedLock, RedisDistributedLock>();
-        }
-        else
-        {
-            services.AddSingleton<IDistributedLock, NoOpDistributedLock>();
-        }
-    }
-
-    private static void AddRedisServices(
         IServiceCollection services,
         IConfiguration configuration)
     {
-        var cacheOptions = configuration.GetSection(CacheOptions.SectionName)
-            .Get<CacheOptions>() ?? new CacheOptions();
-
-        var redisConn = configuration.GetConnectionString("Redis");
-
-        if (cacheOptions.IsEnabled && !string.IsNullOrWhiteSpace(redisConn))
-        {
-            services.AddSingleton<IConnectionMultiplexer>(_ =>
-                ConnectionMultiplexer.Connect(redisConn));
-        }
     }
 
     private static void AddElasticsearchServices(
@@ -284,8 +240,8 @@ public static class InfrastructureServiceCollection
     }
 
     private static void AddHealthChecks(
-    IServiceCollection services,
-    string connectionString)
+        IServiceCollection services,
+        string connectionString)
     {
         services.AddHealthChecks()
             .AddNpgSql(
@@ -297,13 +253,7 @@ public static class InfrastructureServiceCollection
         services.AddHealthChecks()
             .AddCheck<ElasticsearchHealthCheck>(
                 "elasticsearch",
-                failureStatus: HealthStatus.Unhealthy,
+                failureStatus: HealthStatus.Degraded,
                 tags: new[] { "search", "elasticsearch" });
-
-        services.AddHealthChecks()
-            .AddCheck<RedisCacheHealthCheck>(
-                "redis",
-                failureStatus: HealthStatus.Unhealthy,
-                tags: new[] { "cache", "redis" });
     }
 }

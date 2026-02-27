@@ -1,4 +1,6 @@
-﻿namespace MainApi.Wallet.Controllers;
+﻿using Application.Wallet.Contracts;
+
+namespace MainApi.Wallet.Controllers;
 
 [ApiController]
 [Route("api/admin/wallet")]
@@ -6,67 +8,70 @@
 [EnableRateLimiting("admin-wallet")]
 public class AdminWalletController : BaseApiController
 {
-    private readonly IMediator _mediator;
+    private readonly IWalletService _walletService;
 
-    public AdminWalletController(IMediator mediator, ICurrentUserService currentUserService)
+    public AdminWalletController(IWalletService walletService, ICurrentUserService currentUserService)
         : base(currentUserService)
     {
-        _mediator = mediator;
+        _walletService = walletService;
     }
 
     [HttpGet("{userId}/balance")]
-    public async Task<IActionResult> GetBalance(int userId)
+    public async Task<IActionResult> GetBalance(int userId, CancellationToken ct)
     {
-        var result = await _mediator.Send(
-            new Application.Wallet.Features.Queries.GetWalletBalance.GetWalletBalanceQuery(userId));
+        var result = await _walletService.GetBalanceAsync(userId, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("{userId}/credit")]
-    public async Task<IActionResult> Credit(int userId, [FromBody] AdminWalletAdjustmentDto dto)
+    public async Task<IActionResult> Credit(
+        int userId,
+        [FromBody] AdminWalletAdjustmentDto dto,
+        CancellationToken ct)
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
         var adminId = CurrentUser.UserId.Value;
         var correlationId = HttpContext.TraceIdentifier;
-
         var auditDescription = BuildAuditDescription("CREDIT", adminId, dto.Reason, dto.Description);
 
-        var command = new Application.Wallet.Features.Commands.CreditWallet.CreditWalletCommand(
-            UserId: userId,
-            Amount: dto.Amount,
-            TransactionType: WalletTransactionType.AdminAdjustmentCredit,
-            ReferenceType: WalletReferenceType.Admin,
-            ReferenceId: adminId,
-            IdempotencyKey: $"admin-credit-{userId}-{correlationId}",
-            CorrelationId: correlationId,
-            Description: auditDescription);
+        var result = await _walletService.CreditAsync(
+            userId,
+            dto.Amount,
+            WalletTransactionType.AdminAdjustmentCredit,
+            WalletReferenceType.Admin,
+            adminId,
+            idempotencyKey: $"admin-credit-{userId}-{correlationId}",
+            correlationId: correlationId,
+            description: auditDescription,
+            ct: ct);
 
-        var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpPost("{userId}/debit")]
-    public async Task<IActionResult> Debit(int userId, [FromBody] AdminWalletAdjustmentDto dto)
+    public async Task<IActionResult> Debit(
+        int userId,
+        [FromBody] AdminWalletAdjustmentDto dto,
+        CancellationToken ct)
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
         var adminId = CurrentUser.UserId.Value;
         var correlationId = HttpContext.TraceIdentifier;
-
         var auditDescription = BuildAuditDescription("DEBIT", adminId, dto.Reason, dto.Description);
 
-        var command = new Application.Wallet.Features.Commands.DebitWallet.DebitWalletCommand(
-            UserId: userId,
-            Amount: dto.Amount,
-            TransactionType: WalletTransactionType.AdminAdjustmentDebit,
-            ReferenceType: WalletReferenceType.Admin,
-            ReferenceId: adminId,
-            IdempotencyKey: $"admin-debit-{userId}-{correlationId}",
-            CorrelationId: correlationId,
-            Description: auditDescription);
+        var result = await _walletService.DebitAsync(
+            userId,
+            dto.Amount,
+            WalletTransactionType.AdminAdjustmentDebit,
+            WalletReferenceType.Admin,
+            adminId,
+            idempotencyKey: $"admin-debit-{userId}-{correlationId}",
+            correlationId: correlationId,
+            description: auditDescription,
+            ct: ct);
 
-        var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
 

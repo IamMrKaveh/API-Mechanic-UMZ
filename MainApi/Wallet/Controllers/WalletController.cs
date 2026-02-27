@@ -1,33 +1,39 @@
-﻿namespace MainApi.Wallet.Controllers;
+﻿using Application.Wallet.Contracts;
+
+namespace MainApi.Wallet.Controllers;
 
 [ApiController]
 [Route("api/wallet")]
 [Authorize]
 public class WalletController : BaseApiController
 {
-    private readonly IMediator _mediator;
+    private readonly IWalletService _walletService;
 
-    public WalletController(IMediator mediator, ICurrentUserService currentUserService)
+    public WalletController(IWalletService walletService, ICurrentUserService currentUserService)
         : base(currentUserService)
     {
-        _mediator = mediator;
+        _walletService = walletService;
     }
 
     [HttpGet("balance")]
-    public async Task<IActionResult> GetBalance()
+    public async Task<IActionResult> GetBalance(CancellationToken ct)
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
-        var result = await _mediator.Send(new Application.Wallet.Features.Queries.GetWalletBalance.GetWalletBalanceQuery(CurrentUser.UserId.Value));
+        var result = await _walletService.GetBalanceAsync(CurrentUser.UserId.Value, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("ledger")]
-    public async Task<IActionResult> GetLedger([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetLedger(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
-        var result = await _mediator.Send(new Application.Wallet.Features.Queries.GetWalletLedger.GetWalletLedgerQuery(CurrentUser.UserId.Value, page, pageSize));
+        var result = await _walletService.GetLedgerAsync(
+            CurrentUser.UserId.Value, page, pageSize, ct);
         return ToActionResult(result);
     }
 }
