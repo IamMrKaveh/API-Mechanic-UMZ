@@ -92,17 +92,17 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
             if (userWithOtps == null)
                 return ServiceResult.Failure("خطای داخلی.");
 
-            userWithOtps.GenerateOtp(otpHash, 2);
+            userWithOtps.GenerateOtp(otpHash);
 
             await _unitOfWork.SaveChangesAsync(ct);
 
-            var smsResult = await _smsService.SendSmsAsync(normalizedPhone, otpCode, ct);
-            if (smsResult.IsFailed)
-            {
-                _logger.LogError("ارسال OTP به {PhoneNumber} ناموفق بود: {Error}",
-                    normalizedPhone, smsResult.ErrorMessage);
-                return ServiceResult.Failure("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
-            }
+            //var smsResult = await _smsService.SendSmsAsync(normalizedPhone, otpCode, ct);
+            //if (smsResult.IsFailed)
+            //{
+            //    _logger.LogError("ارسال OTP به {PhoneNumber} ناموفق بود: {Error}",
+            //        normalizedPhone, smsResult.ErrorMessage);
+            //    return ServiceResult.Failure("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
+            //}
 
             await _auditService.LogSecurityEventAsync(
                 "OtpRequested",

@@ -194,7 +194,9 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync();
     }
 
-    public async Task<UserOtp?> GetActiveOtpAsync(int userId, CancellationToken ct = default)
+    public async Task<UserOtp?> GetActiveOtpAsync(
+        int userId,
+        CancellationToken ct = default)
     {
         return await _context.UserOtps
             .Where(o => o.UserId == userId && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)

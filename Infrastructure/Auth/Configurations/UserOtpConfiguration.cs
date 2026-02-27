@@ -8,6 +8,25 @@ public sealed class UserOtpConfiguration : IEntityTypeConfiguration<UserOtp>
         builder.Property(e => e.RowVersion).IsRowVersion();
         builder.Property(e => e.OtpHash).IsRequired().HasMaxLength(256);
 
-        builder.HasOne(e => e.User).WithMany(u => u.UserOtps).HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.Property(e => e.ExpiresAt)
+            .HasField("_expiresAt")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.Property(e => e.IsUsed)
+            .HasField("_isUsed")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.Property(e => e.UsedAt)
+            .HasField("_usedAt")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.Property(e => e.AttemptCount)
+            .HasField("_attemptCount")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasOne(e => e.User)
+            .WithMany(u => u.UserOtps)
+            .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
