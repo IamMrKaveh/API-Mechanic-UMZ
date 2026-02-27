@@ -5,10 +5,14 @@ public class VariantMappingProfile : Profile
     public VariantMappingProfile()
     {
         CreateMap<ProductVariant, ProductVariantDto>()
-            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
-            .ForMember(dest => dest.Sku, opt => opt.MapFrom(src => src.Sku.Value))
+            .ConstructUsing(src => new ProductVariantDto(
+                src.Id,
+                src.ProductId,
+                src.Sku.Value,
+                src.SellingPrice.Amount,
+                src.SellingPrice.Amount,
+                src.StockQuantity))
             .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.SellingPrice.Amount))
-            .ForMember(dest => dest.FinalPrice, opt => opt.MapFrom(src => src.SellingPrice.Amount))
-            .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src => src.StockQuantity));
+            .ForMember(dest => dest.FinalPrice, opt => opt.MapFrom(src => src.SellingPrice.Amount));
     }
 }

@@ -63,9 +63,6 @@ public sealed class OrderMappingProfile : Profile
             .ForMember(dest => dest.ProductIcon, opt => opt.Ignore())
             .ForMember(dest => dest.Attributes, opt => opt.Ignore());
 
-        CreateMap<Domain.User.User, UserSummaryDto>()
-            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber));
-
         CreateMap<AddressSnapshot, AddressSnapshotDto>();
 
         CreateMap<OrderStatus, OrderStatusDto>();

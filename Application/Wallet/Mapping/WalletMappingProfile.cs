@@ -12,6 +12,10 @@ public class WalletMappingProfile : Profile
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
         CreateMap<Domain.Wallet.Wallet, WalletBalanceResponse>()
+            .ConstructUsing(src => new WalletBalanceResponse(
+                src.CurrentBalance,
+                src.ReservedBalance,
+                src.AvailableBalance))
             .ForMember(dest => dest.Balance, opt => opt.MapFrom(src => src.CurrentBalance))
             .ForMember(dest => dest.Reserved, opt => opt.MapFrom(src => src.ReservedBalance))
             .ForMember(dest => dest.Available, opt => opt.MapFrom(src => src.AvailableBalance));
