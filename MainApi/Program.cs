@@ -82,12 +82,12 @@ static void ConfigureAuthentication(WebApplicationBuilder builder)
 static void ConfigureServices(WebApplicationBuilder builder)
 {
     var configuration = builder.Configuration;
-
     ConfigureControllersAndApi(builder);
     ConfigureOptions(builder, configuration);
     ConfigureHttpClients(builder);
     ConfigureRedisAndDataProtection(builder);
-
+    builder.Services.Configure<LiaraStorageSettings>(
+        configuration.GetSection("LiaraStorage"));
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices(configuration);
     builder.Services.AddCustomCors(configuration);

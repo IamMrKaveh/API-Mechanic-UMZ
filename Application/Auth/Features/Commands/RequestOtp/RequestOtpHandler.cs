@@ -85,6 +85,8 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
             if (!canSend)
                 return ServiceResult.Failure(rateLimitError!);
 
+            await _userRepository.DeleteUserOtpsAsync(user.Id);
+
             var otpCode = _otpService.GenerateSecureOtp();
             var otpHash = _otpService.HashOtp(otpCode);
 
@@ -92,8 +94,9 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
             if (userWithOtps == null)
                 return ServiceResult.Failure("خطای داخلی.");
 
-            userWithOtps.GenerateOtp(otpHash);
+            var otp = userWithOtps.GenerateOtp(otpHash);
 
+            await _userRepository.AddUserOtpAsync(otp, ct);
             await _unitOfWork.SaveChangesAsync(ct);
 
             //var smsResult = await _smsService.SendSmsAsync(normalizedPhone, otpCode, ct);

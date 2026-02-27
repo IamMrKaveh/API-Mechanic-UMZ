@@ -170,6 +170,7 @@ global using Application.Shipping.Features.Queries.GetAvailableShippingsForVaria
 global using Application.Shipping.Features.Queries.GetShippingById;
 global using Application.Shipping.Features.Queries.GetShippings;
 global using Application.Shipping.Features.Shared;
+global using Application.Storage.Features.Shared;
 global using Application.Support.Features.Commands.CloseTicket;
 global using Application.Support.Features.Commands.CreateTicket;
 global using Application.Support.Features.Commands.ReplyToTicket;
