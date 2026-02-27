@@ -2,21 +2,25 @@ namespace Infrastructure.User.Repositories;
 
 public class UserRepository : IUserRepository
 {
-    private readonly Persistence.Context.DBContext _context;
+    private readonly DBContext _context;
 
-    public UserRepository(Persistence.Context.DBContext context)
+    public UserRepository(DBContext context)
     {
         _context = context;
     }
 
-    public async Task<Domain.User.User?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Domain.User.User?> GetByIdAsync(
+        int id,
+        CancellationToken ct = default)
     {
         return await _context.Users
             .Include(u => u.UserAddresses.Where(a => !a.IsDeleted))
             .FirstOrDefaultAsync(u => u.Id == id, ct);
     }
 
-    public async Task<Domain.User.User?> GetByIdIncludingDeletedAsync(int id, CancellationToken ct = default)
+    public async Task<Domain.User.User?> GetByIdIncludingDeletedAsync(
+        int id,
+        CancellationToken ct = default)
     {
         return await _context.Users
             .IgnoreQueryFilters()
@@ -24,28 +28,36 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.Id == id, ct);
     }
 
-    public async Task<Domain.User.User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken ct = default)
+    public async Task<Domain.User.User?> GetByPhoneNumberAsync(
+        string phoneNumber,
+        CancellationToken ct = default)
     {
         return await _context.Users
             .Include(u => u.UserAddresses.Where(a => !a.IsDeleted))
             .FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber, ct);
     }
 
-    public async Task<Domain.User.User?> GetWithAddressesAsync(int userId, CancellationToken ct = default)
+    public async Task<Domain.User.User?> GetWithAddressesAsync(
+        int userId,
+        CancellationToken ct = default)
     {
         return await _context.Users
             .Include(u => u.UserAddresses.Where(a => !a.IsDeleted))
             .FirstOrDefaultAsync(u => u.Id == userId, ct);
     }
 
-    public async Task<Domain.User.User?> GetWithOtpsAsync(int userId, CancellationToken ct = default)
+    public async Task<Domain.User.User?> GetWithOtpsAsync(
+        int userId,
+        CancellationToken ct = default)
     {
         return await _context.Users
             .Include(u => u.UserOtps)
             .FirstOrDefaultAsync(u => u.Id == userId, ct);
     }
 
-    public async Task<Domain.User.User?> GetForAuthenticationAsync(string phoneNumber, CancellationToken ct = default)
+    public async Task<Domain.User.User?> GetForAuthenticationAsync(
+        string phoneNumber,
+        CancellationToken ct = default)
     {
         return await _context.Users
             .Include(u => u.UserOtps)
@@ -53,14 +65,19 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber, ct);
     }
 
-    public async Task<Domain.User.User?> GetWithSessionsAsync(int userId, CancellationToken ct = default)
+    public async Task<Domain.User.User?> GetWithSessionsAsync(
+        int userId,
+        CancellationToken ct = default)
     {
         return await _context.Users
             .Include(u => u.UserSessions.Where(s => s.RevokedAt == null && s.ExpiresAt > DateTime.UtcNow))
             .FirstOrDefaultAsync(u => u.Id == userId, ct);
     }
 
-    public async Task<bool> PhoneNumberExistsAsync(string phoneNumber, int? excludeUserId = null, CancellationToken ct = default)
+    public async Task<bool> PhoneNumberExistsAsync(
+        string phoneNumber,
+        int? excludeUserId = null,
+        CancellationToken ct = default)
     {
         var query = _context.Users.Where(u => u.PhoneNumber == phoneNumber);
 
@@ -70,14 +87,20 @@ public class UserRepository : IUserRepository
         return await query.AnyAsync(ct);
     }
 
-    public async Task<bool> PhoneNumberExistsAsync(string phoneNumber, int userId, CancellationToken ct = default)
+    public async Task<bool> PhoneNumberExistsAsync(
+        string phoneNumber,
+        int userId,
+        CancellationToken ct = default)
     {
         return await _context.Users
             .Where(u => u.PhoneNumber == phoneNumber && u.Id != userId)
             .AnyAsync(ct);
     }
 
-    public async Task<bool> ExistsByPhoneNumberAsync(string phoneNumber, int? excludeUserId = null, CancellationToken ct = default)
+    public async Task<bool> ExistsByPhoneNumberAsync(
+        string phoneNumber,
+        int? excludeUserId = null,
+        CancellationToken ct = default)
     {
         var query = _context.Users.Where(u => u.PhoneNumber == phoneNumber);
 
@@ -87,7 +110,10 @@ public class UserRepository : IUserRepository
         return await query.AnyAsync(ct);
     }
 
-    public async Task<bool> EmailExistsAsync(string email, int? excludeUserId = null, CancellationToken ct = default)
+    public async Task<bool> EmailExistsAsync(
+        string email,
+        int? excludeUserId = null,
+        CancellationToken ct = default)
     {
         var query = _context.Users.Where(u => u.Email == email);
 
@@ -97,14 +123,11 @@ public class UserRepository : IUserRepository
         return await query.AnyAsync(ct);
     }
 
-    public async Task AddAsync(Domain.User.User user, CancellationToken ct = default)
+    public async Task AddAsync(
+        Domain.User.User user,
+        CancellationToken ct = default)
     {
         await _context.Users.AddAsync(user, ct);
-    }
-
-    public async Task AddUserAsync(Domain.User.User user)
-    {
-        await _context.Users.AddAsync(user);
     }
 
     public void Update(Domain.User.User user)
@@ -117,7 +140,9 @@ public class UserRepository : IUserRepository
         _context.Users.Update(user);
     }
 
-    public async Task<bool> HasActiveOrdersAsync(int userId, CancellationToken ct = default)
+    public async Task<bool> HasActiveOrdersAsync(
+        int userId,
+        CancellationToken ct = default)
     {
         return await _context.Orders
             .AnyAsync(o => o.UserId == userId && !o.IsDeleted && !o.IsPaid, ct);
@@ -127,8 +152,6 @@ public class UserRepository : IUserRepository
     {
         _context.Entry(user).Property(u => u.RowVersion).OriginalValue = rowVersion;
     }
-
-    
 
     public async Task<UserAddress?> GetUserAddressAsync(int addressId, CancellationToken ct = default)
     {
@@ -140,8 +163,6 @@ public class UserRepository : IUserRepository
     {
         await _context.UserAddresses.AddAsync(address, ct);
     }
-
-    
 
     public async Task DeleteUserOtpsAsync(int userId)
     {
@@ -180,8 +201,6 @@ public class UserRepository : IUserRepository
             .OrderByDescending(o => o.CreatedAt)
             .FirstOrDefaultAsync(ct);
     }
-
-    
 
     public async Task AddSessionAsync(UserSession session)
     {
@@ -246,8 +265,6 @@ public class UserRepository : IUserRepository
             .ToListAsync(ct);
     }
 
-    
-
     public async Task<(IEnumerable<Domain.User.User> Users, int TotalCount)> GetPagedAsync(
         string? search, bool? isActive, bool? isAdmin, int page, int pageSize, CancellationToken ct = default)
     {
@@ -298,8 +315,6 @@ public class UserRepository : IUserRepository
 
         return (users, totalItems);
     }
-
-    
 
     public async Task<bool> IsInWishlistAsync(int userId, int productId, CancellationToken ct = default)
     {

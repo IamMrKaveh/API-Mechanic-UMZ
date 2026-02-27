@@ -30,11 +30,6 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
-    /// <summary>
-    /// Collects domain events, serialises them to Outbox rows, and returns the
-    /// aggregate roots whose events will be cleared once the save succeeds.
-    /// Events are NOT cleared here so that a failed save can be retried safely.
-    /// </summary>
     private IReadOnlyList<AggregateRoot> PrepareOutboxMessages()
     {
         var domainEntities = _context.ChangeTracker
@@ -107,6 +102,5 @@ public class UnitOfWork : IUnitOfWork
     public void Dispose()
     {
         _currentTransaction?.Dispose();
-        _context.Dispose();
     }
 }

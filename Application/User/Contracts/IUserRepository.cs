@@ -2,7 +2,6 @@ namespace Application.User.Contracts;
 
 public interface IUserRepository
 {
-    
     Task<Domain.User.User?> GetByIdAsync(
         int id,
         CancellationToken ct = default
@@ -57,7 +56,6 @@ public interface IUserRepository
         CancellationToken ct = default
         );
 
-    
     Task<UserOtp?> GetActiveOtpAsync(
         int userId,
         CancellationToken ct = default
@@ -73,7 +71,6 @@ public interface IUserRepository
         CancellationToken ct = default
         );
 
-    
     Task<UserSession?> GetSessionBySelectorAsync(
         string tokenSelector,
         CancellationToken ct = default
@@ -99,7 +96,6 @@ public interface IUserRepository
         CancellationToken ct = default
         );
 
-    
     Task<bool> IsInWishlistAsync(
         int userId,
         int productId,
@@ -128,10 +124,6 @@ public interface IUserRepository
         Domain.User.User user
         );
 
-    Task AddUserAsync(
-        Domain.User.User user
-        );
-
     Task<bool> PhoneNumberExistsAsync(
         string phoneNumber,
         int userId,
@@ -140,7 +132,7 @@ public interface IUserRepository
 
     Task<UserAddress?> GetUserAddressAsync(
         int userAddressId,
-        CancellationToken cancellationToken
+        CancellationToken ct
         );
 
     Task AddAddressAsync(
