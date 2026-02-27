@@ -6,14 +6,19 @@ public class CreateUserHandler : IRequestHandler<CreateUserCommand, ServiceResul
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public CreateUserHandler(IUserRepository userRepository, IUnitOfWork unitOfWork, IMapper mapper)
+    public CreateUserHandler(
+        IUserRepository userRepository,
+        IUnitOfWork unitOfWork,
+        IMapper mapper)
     {
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
-    public async Task<ServiceResult<UserProfileDto>> Handle(CreateUserCommand request, CancellationToken ct)
+    public async Task<ServiceResult<UserProfileDto>> Handle(
+        CreateUserCommand request,
+        CancellationToken ct)
     {
         if (await _userRepository.PhoneNumberExistsAsync(request.Dto.PhoneNumber, 0, ct))
         {
@@ -23,7 +28,7 @@ public class CreateUserHandler : IRequestHandler<CreateUserCommand, ServiceResul
         var user = Domain.User.User.Create(
             request.Dto.PhoneNumber);
 
-        await _userRepository.AddUserAsync(user);
+        await _userRepository.AddAsync(user, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
         var dto = _mapper.Map<UserProfileDto>(user);

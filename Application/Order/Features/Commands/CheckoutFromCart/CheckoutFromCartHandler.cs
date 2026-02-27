@@ -14,7 +14,6 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
     private readonly IUnitOfWork _unitOfWork;
     private readonly OrderDomainService _orderDomainService;
     private readonly InventoryReservationService _inventoryReservationService;
-    private readonly DiscountApplicationService _discountApplicationService;
     private readonly ILogger<CheckoutFromCartHandler> _logger;
 
     public CheckoutFromCartHandler(
@@ -30,7 +29,6 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
         IUnitOfWork unitOfWork,
         OrderDomainService orderDomainService,
         InventoryReservationService inventoryReservationService,
-        DiscountApplicationService discountApplicationService,
         ILogger<CheckoutFromCartHandler> logger)
     {
         _orderRepository = orderRepository;
@@ -45,7 +43,6 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
         _unitOfWork = unitOfWork;
         _orderDomainService = orderDomainService;
         _inventoryReservationService = inventoryReservationService;
-        _discountApplicationService = discountApplicationService;
         _logger = logger;
     }
 
@@ -169,11 +166,17 @@ public class CheckoutFromCartHandler : IRequestHandler<CheckoutFromCartCommand, 
                     var userUsageCount = await _discountRepository.CountUserUsageAsync(
                         discountCode.Id, request.UserId, ct);
 
-                    var discountResult = _discountApplicationService.ApplyToOrder(
-                        discountCode, order, request.UserId, userUsageCount);
+                    var validation = discountCode.ValidateForApplication(
+                        order.TotalAmount.Amount,
+                        request.UserId,
+                        userUsageCount);
 
-                    if (!discountResult.IsSuccess)
-                        return ServiceResult<CheckoutResultDto>.Failure(discountResult.Error!);
+                    if (!validation.IsValid)
+                        return ServiceResult<CheckoutResultDto>.Failure(validation.Error!);
+
+                    var discountMoney = discountCode.CalculateDiscountMoney(order.TotalAmount);
+                    discountCode.RecordUsage(request.UserId, order.Id, discountMoney);
+                    order.ApplyDiscount(discountCode.Id, discountMoney);
 
                     _discountRepository.Update(discountCode);
                     await _orderRepository.UpdateAsync(order, ct);
