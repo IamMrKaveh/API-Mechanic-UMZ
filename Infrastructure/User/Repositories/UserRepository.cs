@@ -55,16 +55,6 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.Id == userId, ct);
     }
 
-    public async Task<Domain.User.User?> GetForAuthenticationAsync(
-        string phoneNumber,
-        CancellationToken ct = default)
-    {
-        return await _context.Users
-            .Include(u => u.UserOtps)
-            .Include(u => u.UserSessions.Where(s => s.RevokedAt == null && s.ExpiresAt > DateTime.UtcNow))
-            .FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber, ct);
-    }
-
     public async Task<Domain.User.User?> GetWithSessionsAsync(
         int userId,
         CancellationToken ct = default)
@@ -72,19 +62,6 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .Include(u => u.UserSessions.Where(s => s.RevokedAt == null && s.ExpiresAt > DateTime.UtcNow))
             .FirstOrDefaultAsync(u => u.Id == userId, ct);
-    }
-
-    public async Task<bool> PhoneNumberExistsAsync(
-        string phoneNumber,
-        int? excludeUserId = null,
-        CancellationToken ct = default)
-    {
-        var query = _context.Users.Where(u => u.PhoneNumber == phoneNumber);
-
-        if (excludeUserId.HasValue)
-            query = query.Where(u => u.Id != excludeUserId.Value);
-
-        return await query.AnyAsync(ct);
     }
 
     public async Task<bool> PhoneNumberExistsAsync(
@@ -103,19 +80,6 @@ public class UserRepository : IUserRepository
         CancellationToken ct = default)
     {
         var query = _context.Users.Where(u => u.PhoneNumber == phoneNumber);
-
-        if (excludeUserId.HasValue)
-            query = query.Where(u => u.Id != excludeUserId.Value);
-
-        return await query.AnyAsync(ct);
-    }
-
-    public async Task<bool> EmailExistsAsync(
-        string email,
-        int? excludeUserId = null,
-        CancellationToken ct = default)
-    {
-        var query = _context.Users.Where(u => u.Email == email);
 
         if (excludeUserId.HasValue)
             query = query.Where(u => u.Id != excludeUserId.Value);
@@ -186,37 +150,20 @@ public class UserRepository : IUserRepository
         await _context.UserOtps.AddAsync(otp, ct);
     }
 
-    public async Task<UserOtp?> GetActiveOtpAsync(int userId)
-    {
-        return await _context.UserOtps
-            .Where(o => o.UserId == userId && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
-            .OrderByDescending(o => o.CreatedAt)
-            .FirstOrDefaultAsync();
-    }
-
     public async Task<UserOtp?> GetActiveOtpAsync(
         int userId,
         CancellationToken ct = default)
     {
         return await _context.UserOtps
-            .Where(o => o.UserId == userId && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
+            .AsNoTracking()
+            .Where(o => o.UserId == userId && !o.IsUsed && o.ExpiresAt >= DateTime.UtcNow)
             .OrderByDescending(o => o.CreatedAt)
             .FirstOrDefaultAsync(ct);
-    }
-
-    public async Task AddSessionAsync(UserSession session)
-    {
-        await _context.UserSessions.AddAsync(session);
     }
 
     public async Task AddSessionAsync(UserSession session, CancellationToken ct = default)
     {
         await _context.UserSessions.AddAsync(session, ct);
-    }
-
-    public async Task<UserSession?> GetSessionBySelectorAsync(string selector)
-    {
-        return await _context.UserSessions.FirstOrDefaultAsync(s => s.TokenSelector == selector);
     }
 
     public async Task<UserSession?> GetSessionBySelectorAsync(string tokenSelector, CancellationToken ct = default)
@@ -225,25 +172,10 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(s => s.TokenSelector == tokenSelector, ct);
     }
 
-    public async Task RevokeSessionAsync(int sessionId)
-    {
-        var session = await _context.UserSessions.FindAsync(sessionId);
-        session?.Revoke();
-    }
-
     public async Task RevokeSessionAsync(int sessionId, CancellationToken ct = default)
     {
         var session = await _context.UserSessions.FindAsync(new object[] { sessionId }, ct);
         session?.Revoke();
-    }
-
-    public async Task RevokeAllUserSessionsAsync(int userId)
-    {
-        var sessions = await _context.UserSessions
-            .Where(s => s.UserId == userId && s.RevokedAt == null)
-            .ToListAsync();
-        foreach (var s in sessions)
-            s.Revoke();
     }
 
     public async Task RevokeAllUserSessionsAsync(int userId, CancellationToken ct = default)
