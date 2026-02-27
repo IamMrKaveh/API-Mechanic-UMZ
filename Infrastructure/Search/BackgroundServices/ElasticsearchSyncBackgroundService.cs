@@ -1,8 +1,7 @@
+using Infrastructure.Search.Options;
+
 namespace Infrastructure.Search.BackgroundServices;
 
-/// <summary>
-/// همگام‌سازی دوره‌ای دیتابیس با Elasticsearch
-/// </summary>
 public class ElasticsearchSyncBackgroundService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
@@ -21,20 +20,21 @@ public class ElasticsearchSyncBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var enabled = _configuration.GetValue("Elasticsearch:Sync:Enabled", true);
-        if (!enabled)
+        var elasticOptions = _configuration.GetSection(ElasticsearchOptions.SectionName)
+            .Get<ElasticsearchOptions>() ?? new ElasticsearchOptions();
+
+        // بررسی فعال بودن سرویس
+        if (!elasticOptions.IsEnabled || !elasticOptions.EnableBackgroundSync)
         {
             _logger.LogInformation("Elasticsearch sync background service is disabled");
             return;
         }
 
-        var intervalMinutes = _configuration.GetValue("Elasticsearch:Sync:IntervalMinutes", 5);
-
+        var intervalMinutes = elasticOptions.Sync.IntervalMinutes;
         _logger.LogInformation(
             "Elasticsearch sync background service started. Interval: {Interval} minutes",
             intervalMinutes);
 
-        
         await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
@@ -43,7 +43,6 @@ public class ElasticsearchSyncBackgroundService : BackgroundService
             {
                 using var scope = _scopeFactory.CreateScope();
                 var syncService = scope.ServiceProvider.GetRequiredService<ElasticsearchDatabaseSyncService>();
-
                 _logger.LogDebug("Starting periodic Elasticsearch sync");
                 await syncService.FullSyncAsync(stoppingToken);
                 _logger.LogDebug("Periodic Elasticsearch sync completed");
