@@ -1,26 +1,36 @@
+using Infrastructure.Search.Options;
+
 namespace Infrastructure.Search.HealthChecks;
 
 public class ElasticsearchHealthCheck : IHealthCheck
 {
     private readonly ElasticsearchClient _client;
     private readonly ILogger<ElasticsearchHealthCheck> _logger;
+    private readonly ElasticsearchOptions _options;
 
     public ElasticsearchHealthCheck(
         ElasticsearchClient client,
-        ILogger<ElasticsearchHealthCheck> logger)
+        ILogger<ElasticsearchHealthCheck> logger,
+        IOptions<ElasticsearchOptions> options)
     {
         _client = client;
         _logger = logger;
+        _options = options.Value;
     }
 
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
         CancellationToken cancellationToken = default)
     {
+        // اگر Elasticsearch غیرفعال است، Healthy برگردان
+        if (!_options.IsEnabled)
+        {
+            return HealthCheckResult.Healthy("Elasticsearch is disabled in configuration");
+        }
+
         try
         {
             var pingResponse = await _client.PingAsync(cancellationToken: cancellationToken);
-
             if (!pingResponse.IsValidResponse)
             {
                 _logger.LogError("Elasticsearch ping failed: {Error}", pingResponse.DebugInformation);
@@ -34,7 +44,6 @@ public class ElasticsearchHealthCheck : IHealthCheck
             }
 
             var healthResponse = await _client.Cluster.HealthAsync(cancellationToken: cancellationToken);
-
             if (!healthResponse.IsValidResponse)
             {
                 return HealthCheckResult.Degraded(
@@ -57,14 +66,10 @@ public class ElasticsearchHealthCheck : IHealthCheck
 
             return clusterStatus switch
             {
-                "green" => HealthCheckResult.Healthy(
-                    "Elasticsearch cluster is healthy", data),
-                "yellow" => HealthCheckResult.Degraded(
-                    "Elasticsearch cluster status is yellow", null, data),
-                "red" => HealthCheckResult.Unhealthy(
-                    "Elasticsearch cluster status is red", null, data),
-                _ => HealthCheckResult.Unhealthy(
-                    $"Unknown Elasticsearch cluster status: {clusterStatus}", null, data)
+                "green" => HealthCheckResult.Healthy("Elasticsearch cluster is healthy", data),
+                "yellow" => HealthCheckResult.Degraded("Elasticsearch cluster status is yellow", null, data),
+                "red" => HealthCheckResult.Unhealthy("Elasticsearch cluster status is red", null, data),
+                _ => HealthCheckResult.Unhealthy($"Unknown Elasticsearch cluster status: {clusterStatus}", null, data)
             };
         }
         catch (Exception ex)
@@ -72,84 +77,6 @@ public class ElasticsearchHealthCheck : IHealthCheck
             _logger.LogError(ex, "Exception occurred while checking Elasticsearch health");
             return HealthCheckResult.Unhealthy(
                 "Exception occurred while checking Elasticsearch",
-                exception: ex);
-        }
-    }
-}
-
-public class ElasticsearchIndexHealthCheck : IHealthCheck
-{
-    private readonly ElasticsearchClient _client;
-    private readonly ILogger<ElasticsearchIndexHealthCheck> _logger;
-    private readonly string[] _requiredIndices = { "products_v1", "categories_v1", "brands_v1" };
-
-    public ElasticsearchIndexHealthCheck(
-        ElasticsearchClient client,
-        ILogger<ElasticsearchIndexHealthCheck> logger)
-    {
-        _client = client;
-        _logger = logger;
-    }
-
-    public async Task<HealthCheckResult> CheckHealthAsync(
-    HealthCheckContext context,
-    CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var missingIndices = new List<string>();
-            var indexStats = new Dictionary<string, object>();
-
-            foreach (var indexName in _requiredIndices)
-            {
-                var existsResponse = await _client.Indices.ExistsAsync(
-                    indexName,
-                    cancellationToken: cancellationToken);
-
-                if (!existsResponse.Exists)
-                {
-                    missingIndices.Add(indexName);
-                    continue;
-                }
-
-                var statsResponse = await _client.Indices.StatsAsync(
-                    indices: indexName,
-                    cancellationToken: cancellationToken);
-
-                if (statsResponse.IsValidResponse &&
-                    statsResponse.Indices != null &&
-                    statsResponse.Indices.TryGetValue(indexName, out var stats))
-                {
-                    indexStats[indexName] = new
-                    {
-                        docs_count = stats.Total?.Docs?.Count ?? 0,
-                        store_size = stats.Total?.Store?.SizeInBytes ?? 0,
-                        segments_count = stats.Total?.Segments?.Count ?? 0
-                    };
-                }
-            }
-
-            if (missingIndices.Any())
-            {
-                return HealthCheckResult.Unhealthy(
-                    $"Required indices are missing: {string.Join(", ", missingIndices)}",
-                    data: new Dictionary<string, object>
-                    {
-                        ["missing_indices"] = missingIndices,
-                        ["existing_indices"] = indexStats
-                    });
-            }
-
-            return HealthCheckResult.Healthy(
-                "All required Elasticsearch indices exist",
-                data: indexStats);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception occurred while checking Elasticsearch indices health");
-
-            return HealthCheckResult.Unhealthy(
-                "Exception occurred while checking indices",
                 exception: ex);
         }
     }

@@ -1,4 +1,4 @@
-namespace Infrastructure.Search.Configuration;
+namespace Infrastructure.Search.Options;
 
 /// <summary>
 /// Elasticsearch configuration options
@@ -86,6 +86,20 @@ public class ElasticsearchOptions
     /// Batch size for bulk operations
     /// </summary>
     public int BulkBatchSize { get; set; } = 1000;
+
+    /// <summary>
+    /// آیا سرویس Elasticsearch فعال است
+    /// </summary>
+    public bool IsEnabled { get; set; } = true;
+
+    public SyncOptions Sync { get; set; } = new();
+
+    public class SyncOptions
+    {
+        public bool Enabled { get; set; } = true;
+        public int IntervalMinutes { get; set; } = 5;
+        public int BatchSize { get; set; } = 100;
+    }
 }
 
 /// <summary>

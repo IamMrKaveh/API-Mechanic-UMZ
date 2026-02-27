@@ -2,35 +2,27 @@ namespace Application.Search.Features.Queries.GetSearchIndexStats;
 
 public class GetSearchIndexStatsHandler : IRequestHandler<GetSearchIndexStatsQuery, ServiceResult<object>>
 {
-    private readonly ElasticsearchClient _client;
+    private readonly ISearchStatsService _statsService;
 
-    public GetSearchIndexStatsHandler(ElasticsearchClient client)
+    public GetSearchIndexStatsHandler(ISearchStatsService statsService)
     {
-        _client = client;
+        _statsService = statsService;
     }
 
     public async Task<ServiceResult<object>> Handle(GetSearchIndexStatsQuery request, CancellationToken ct)
     {
-        try
-        {
-            var healthResponse = await _client.Cluster.HealthAsync(cancellationToken: ct);
-            var statsResponse = await _client.Indices.StatsAsync(Indices.All, cancellationToken: ct);
+        var result = await _statsService.GetStatsAsync(ct);
 
-            if (!healthResponse.IsValidResponse || !statsResponse.IsValidResponse)
-                return ServiceResult<object>.Failure("خطا در دریافت وضعیت کلاستر الاستیک‌سرچ.");
+        if (!result.IsAvailable)
+            return ServiceResult<object>.Failure(result.UnavailableReason ?? "سرویس جستجو غیرفعال است.");
 
-            return ServiceResult<object>.Success(new
-            {
-                Status = healthResponse.Status.ToString(),
-                TotalDocuments = statsResponse.All?.Total?.Docs?.Count ?? 0,
-                ClusterName = healthResponse.ClusterName,
-                NumberOfNodes = healthResponse.NumberOfNodes,
-                ActivePrimaryShards = healthResponse.ActivePrimaryShards
-            });
-        }
-        catch (Exception ex)
+        return ServiceResult<object>.Success(new
         {
-            return ServiceResult<object>.Failure($"خطا در ارتباط با سرور جستجو: {ex.Message}");
-        }
+            result.Status,
+            result.TotalDocuments,
+            result.ClusterName,
+            result.NumberOfNodes,
+            result.ActivePrimaryShards
+        });
     }
 }

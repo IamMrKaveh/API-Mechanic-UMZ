@@ -1,3 +1,5 @@
+using Infrastructure.Search.Options;
+
 namespace Infrastructure.Search;
 
 public static class ElasticClientFactory
@@ -6,16 +8,27 @@ public static class ElasticClientFactory
         IConfiguration configuration,
         ILogger logger)
     {
-        var url = configuration["Elasticsearch:Url"]
-            ?? throw new InvalidOperationException("Elasticsearch Url is not configured");
+        var elasticOptions = configuration.GetSection(ElasticsearchOptions.SectionName)
+            .Get<ElasticsearchOptions>() ?? new ElasticsearchOptions();
 
-        var username = configuration["Elasticsearch:Username"];
-        var password = configuration["Elasticsearch:Password"];
+        // بررسی فعال بودن Elasticsearch
+        if (!elasticOptions.IsEnabled)
+        {
+            logger.LogWarning("Elasticsearch is disabled in configuration. Client will not be functional.");
+        }
 
-        var requestTimeout = configuration.GetValue<int>("Elasticsearch:RequestTimeout", 30);
+        var url = elasticOptions.Url;
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            throw new InvalidOperationException("Elasticsearch Url is not configured");
+        }
+
+        var username = elasticOptions.Username;
+        var password = elasticOptions.Password;
+        var requestTimeout = elasticOptions.TimeoutSeconds;
         var pingTimeout = configuration.GetValue<int>("Elasticsearch:PingTimeout", 5);
-        var maxRetries = configuration.GetValue<int>("Elasticsearch:MaxRetries", 3);
-        var enableDebugMode = configuration.GetValue<bool>("Elasticsearch:EnableDebugMode", false);
+        var maxRetries = elasticOptions.MaxRetries;
+        var debugMode = elasticOptions.DebugMode;
 
         var settings = new ElasticsearchClientSettings(new Uri(url))
             .DefaultIndex("products_v1")
@@ -31,7 +44,7 @@ public static class ElasticClientFactory
                 new BasicAuthentication(username, password));
         }
 
-        if (enableDebugMode)
+        if (debugMode)
         {
             settings = settings
                 .DisableDirectStreaming()

@@ -1,3 +1,7 @@
+using Infrastructure.Cache.Health;
+using Infrastructure.Cache.Options;
+using Infrastructure.Search.HealthChecks;
+using Infrastructure.Search.Options;
 using HealthStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus;
 
 namespace Infrastructure;
@@ -19,9 +23,9 @@ public static class InfrastructureServiceCollection
         AddDomainAndApplicationServices(services, configuration);
         AddPaymentServices(services, configuration);
         AddWalletServices(services);
-        AddBackgroundServices(services);
+        AddBackgroundServices(services, configuration);
         AddEventHandlers(services);
-        AddCachingAndConcurrency(services);
+        AddCachingAndConcurrency(services, configuration);
         AddRedisServices(services, configuration);
         AddElasticsearchServices(services, configuration);
         AddHealthChecks(services, connectionString);
@@ -63,7 +67,6 @@ public static class InfrastructureServiceCollection
         services.AddSingleton<IAuditMaskingService, AuditMaskingService>();
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<IAuditService, EnhancedAuditService>();
-        services.AddScoped<ISearchDatabaseSyncService, ElasticsearchDatabaseSyncService>();
         services.AddTransient<IHtmlSanitizer, HtmlSanitizer>();
 
         services.AddMediatR(cfg =>
@@ -106,6 +109,13 @@ public static class InfrastructureServiceCollection
 
     private static void AddDomainAndApplicationServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<CacheOptions>(
+            configuration.GetSection(CacheOptions.SectionName));
+
+        var cacheOptions = configuration
+            .GetSection(CacheOptions.SectionName)
+            .Get<CacheOptions>() ?? new CacheOptions();
+
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<InventoryDomainService>();
         services.AddScoped<IStockLedgerService, StockLedgerService>();
@@ -127,11 +137,22 @@ public static class InfrastructureServiceCollection
         services.AddScoped<CartItemValidationService>();
         services.AddMemoryCache();
 
-        var redisConn = configuration.GetConnectionString("Redis");
-        if (!string.IsNullOrWhiteSpace(redisConn))
-            services.AddScoped<ICacheService, RedisCacheService>();
+        if (cacheOptions.IsEnabled)
+        {
+            var redisConn = configuration.GetConnectionString("Redis");
+            if (!string.IsNullOrWhiteSpace(redisConn))
+            {
+                services.AddScoped<ICacheService, RedisCacheService>();
+            }
+            else
+            {
+                services.AddScoped<ICacheService, InMemoryCacheService>();
+            }
+        }
         else
+        {
             services.AddScoped<ICacheService, InMemoryCacheService>();
+        }
     }
 
     private static void AddPaymentServices(IServiceCollection services, IConfiguration configuration)
@@ -158,10 +179,20 @@ public static class InfrastructureServiceCollection
             Application.Wallet.EventHandlers.OrderCancelledWalletReleaseEventHandler>();
     }
 
-    private static void AddBackgroundServices(IServiceCollection services)
+    private static void AddBackgroundServices(
+        IServiceCollection services,
+        IConfiguration configuration)
     {
+        var elasticOptions = configuration.GetSection(ElasticsearchOptions.SectionName)
+            .Get<ElasticsearchOptions>() ?? new ElasticsearchOptions();
+
+        if (elasticOptions.IsEnabled && elasticOptions.EnableBackgroundSync)
+        {
+            services.AddHostedService<ElasticsearchOutboxProcessor>();
+            services.AddHostedService<ElasticsearchSyncBackgroundService>();
+        }
+
         services.AddHostedService<InventoryReservationExpiryService>();
-        services.AddHostedService<ElasticsearchOutboxProcessor>();
         services.AddHostedService<PaymentCleanupService>();
         services.AddHostedService<PaymentReconciliationService>();
         services.AddHostedService<OrderExpiryBackgroundService>();
@@ -182,38 +213,79 @@ public static class InfrastructureServiceCollection
             PaymentSucceededInventoryCommitEventHandler>();
     }
 
-    private static void AddCachingAndConcurrency(IServiceCollection services)
+    private static void AddCachingAndConcurrency(
+            IServiceCollection services,
+            IConfiguration configuration)
     {
-        services.AddSingleton<IDistributedLock, RedisDistributedLock>();
-    }
+        var cacheOptions = configuration.GetSection(CacheOptions.SectionName)
+            .Get<CacheOptions>() ?? new CacheOptions();
 
-    private static void AddRedisServices(IServiceCollection services, IConfiguration configuration)
-    {
-        var redisConn = configuration.GetConnectionString("Redis");
-        if (string.IsNullOrWhiteSpace(redisConn))
-            return;
-
-        services.AddSingleton<IConnectionMultiplexer>(_ =>
-            ConnectionMultiplexer.Connect(redisConn));
-    }
-
-    private static void AddElasticsearchServices(IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddSingleton<ElasticsearchClient>(sp =>
+        if (cacheOptions.IsEnabled)
         {
-            var logger = sp.GetRequiredService<ILogger<ElasticSearchService>>();
-            return ElasticClientFactory.Create(configuration, logger);
-        });
-
-        services.AddSingleton<ElasticsearchMetrics>();
-        services.AddSingleton<ElasticsearchCircuitBreaker>();
-        services.AddScoped<ElasticSearchService>();
-        services.AddScoped<ISearchService, ResilientElasticSearchService>();
-        services.AddScoped<IElasticIndexManager, ElasticIndexManager>();
-        services.AddScoped<IElasticBulkService, ElasticBulkService>();
+            services.AddSingleton<IDistributedLock, RedisDistributedLock>();
+        }
+        else
+        {
+            services.AddSingleton<IDistributedLock, NoOpDistributedLock>();
+        }
     }
 
-    private static void AddHealthChecks(IServiceCollection services, string connectionString)
+    private static void AddRedisServices(
+        IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var cacheOptions = configuration.GetSection(CacheOptions.SectionName)
+            .Get<CacheOptions>() ?? new CacheOptions();
+
+        var redisConn = configuration.GetConnectionString("Redis");
+
+        if (cacheOptions.IsEnabled && !string.IsNullOrWhiteSpace(redisConn))
+        {
+            services.AddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(redisConn));
+        }
+    }
+
+    private static void AddElasticsearchServices(
+        IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<ElasticsearchOptions>(
+            configuration.GetSection(ElasticsearchOptions.SectionName));
+
+        var elasticOptions = configuration.GetSection(ElasticsearchOptions.SectionName)
+            .Get<ElasticsearchOptions>() ?? new ElasticsearchOptions();
+
+        if (elasticOptions.IsEnabled)
+        {
+            services.AddSingleton<ElasticsearchClient>(sp =>
+            {
+                var logger = sp.GetRequiredService<ILogger<ElasticSearchService>>();
+                return ElasticClientFactory.Create(configuration, logger);
+            });
+
+            services.AddSingleton<ElasticsearchMetrics>();
+            services.AddSingleton<ElasticsearchCircuitBreaker>();
+            services.AddScoped<ElasticSearchService>();
+            services.AddScoped<ISearchService, ResilientElasticSearchService>();
+            services.AddScoped<IElasticIndexManager, ElasticIndexManager>();
+            services.AddScoped<IElasticBulkService, ElasticBulkService>();
+            services.AddScoped<ISearchDatabaseSyncService, ElasticsearchDatabaseSyncService>();
+            services.AddScoped<ISearchStatsService, ElasticsearchStatsService>();
+        }
+        else
+        {
+            services.AddScoped<ISearchService, NoOpSearchService>();
+            services.AddScoped<IElasticIndexManager, NoOpElasticIndexManager>();
+            services.AddScoped<IElasticBulkService, NoOpElasticBulkService>();
+            services.AddScoped<ISearchDatabaseSyncService, NoOpSearchDatabaseSyncService>();
+            services.AddScoped<ISearchStatsService, NoOpSearchStatsService>();
+        }
+    }
+
+    private static void AddHealthChecks(
+    IServiceCollection services,
+    string connectionString)
     {
         services.AddHealthChecks()
             .AddNpgSql(
@@ -221,5 +293,17 @@ public static class InfrastructureServiceCollection
                 name: "database",
                 failureStatus: HealthStatus.Unhealthy,
                 tags: new[] { "db", "sql", "postgresql" });
+
+        services.AddHealthChecks()
+            .AddCheck<ElasticsearchHealthCheck>(
+                "elasticsearch",
+                failureStatus: HealthStatus.Unhealthy,
+                tags: new[] { "search", "elasticsearch" });
+
+        services.AddHealthChecks()
+            .AddCheck<RedisCacheHealthCheck>(
+                "redis",
+                failureStatus: HealthStatus.Unhealthy,
+                tags: new[] { "cache", "redis" });
     }
 }
