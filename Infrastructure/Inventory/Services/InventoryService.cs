@@ -699,15 +699,41 @@ public class InventoryService : IInventoryService
             .FirstOrDefaultAsync(v => v.Id == variantId, ct);
     }
 
-    public Task ReconcileAsync(
+    public async Task ReconcileAsync(
         int variantId,
         int physicalCount,
         string reason,
         int userId,
         int? warehouseId = null,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        await ExecuteWithSerializableLockAsync(variantId, async variant =>
+        {
+            var difference = physicalCount - variant.StockQuantity;
+
+            if (difference == 0)
+            {
+                _logger.LogInformation(
+                    "[InventoryService] Reconcile: Variant={VariantId} - No discrepancy.", variantId);
+                return ServiceResult.Success();
+            }
+
+            _logger.LogWarning(
+                "[InventoryService] Reconcile discrepancy: Variant={VariantId}, System={System}, Physical={Physical}, Delta={Delta}",
+                variantId, variant.StockQuantity, physicalCount, difference);
+
+            var transaction = InventoryTransaction.CreateAdjustment(
+                variantId,
+                difference,
+                variant.StockQuantity,
+                userId,
+                $"[انبارگردانی] {reason} | سیستم: {variant.StockQuantity}, فیزیکی: {physicalCount}");
+
+            variant.AdjustStock(difference);
+
+            await _inventoryRepository.AddTransactionAsync(transaction, ct);
+
+            return ServiceResult.Success();
+        }, ct);
     }
 }

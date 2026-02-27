@@ -2,9 +2,9 @@ namespace Infrastructure.Product.Repositories;
 
 public class ProductRepository : IProductRepository
 {
-    private readonly Persistence.Context.DBContext _context;
+    private readonly DBContext _context;
 
-    public ProductRepository(Persistence.Context.DBContext context)
+    public ProductRepository(DBContext context)
     {
         _context = context;
     }
@@ -17,7 +17,6 @@ public class ProductRepository : IProductRepository
 
     public async Task<Domain.Product.Product?> GetByIdWithAllDetailsAsync(int id, CancellationToken ct = default)
     {
-        
         return await _context.Products
             .AsSplitQuery()
             .Include(p => p.Variants)
@@ -73,13 +72,22 @@ public class ProductRepository : IProductRepository
             .OriginalValue = rowVersion;
     }
 
-    public Task<ProductVariant?> GetVariantByIdAsync(int variantId, CancellationToken ct = default)
+    public async Task<ProductVariant?> GetVariantByIdAsync(int variantId, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        return await _context.Set<ProductVariant>()
+            .Include(v => v.Product)
+            .FirstOrDefaultAsync(v => v.Id == variantId, ct);
     }
 
-    public Task<IEnumerable<ProductVariant>> GetVariantsByIdsAsync(IEnumerable<int> variantIds, CancellationToken ct = default)
+    public async Task<IEnumerable<ProductVariant>> GetVariantsByIdsAsync(
+        IEnumerable<int> variantIds,
+        CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var ids = variantIds.ToList();
+
+        return await _context.Set<ProductVariant>()
+            .Include(v => v.Product)
+            .Where(v => ids.Contains(v.Id))
+            .ToListAsync(ct);
     }
 }

@@ -123,8 +123,19 @@ public class OrderRepository : IOrderRepository
                 ct);
     }
 
-    public Task<IEnumerable<Domain.Order.Order>> GetExpirableOrdersAsync(DateTime expiryThreshold, IEnumerable<string> statuses, CancellationToken ct)
+    public async Task<IEnumerable<Domain.Order.Order>> GetExpirableOrdersAsync(
+        DateTime expiryThreshold,
+        IEnumerable<string> statuses,
+        CancellationToken ct)
     {
-        throw new NotImplementedException();
+        var statusList = statuses.ToList();
+
+        return await _context.Orders
+            .Include(o => o.OrderItems)
+            .Where(o =>
+                !o.IsDeleted &&
+                statusList.Contains(o.Status) &&
+                o.CreatedAt <= expiryThreshold)
+            .ToListAsync(ct);
     }
 }
