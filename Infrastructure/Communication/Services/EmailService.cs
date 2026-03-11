@@ -1,43 +1,38 @@
 namespace Infrastructure.Communication.Services;
 
-public class EmailService : IEmailService
+internal class EmailService(
+    ILogger<EmailService> logger,
+    IOptions<SmtpOptions> smtpOptions) : IEmailService
 {
-    private readonly ILogger<EmailService> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly ILogger<EmailService> _logger = logger;
+    private readonly SmtpOptions _smtpOptions = smtpOptions.Value;
 
-    public EmailService(ILogger<EmailService> logger, IConfiguration configuration)
-    {
-        _logger = logger;
-        _configuration = configuration;
-    }
-
-    public async Task SendEmailAsync(string to, string subject, string body, bool isHtml = true, CancellationToken ct = default)
+    public async Task SendEmailAsync(
+        string to,
+        string subject,
+        string body,
+        bool isHtml = true,
+        CancellationToken ct = default)
     {
         try
         {
-            var smtpSettings = _configuration.GetSection("Smtp");
-            var host = smtpSettings["Host"];
-            var port = int.Parse(smtpSettings["Port"] ?? "587");
-            var username = smtpSettings["Username"];
-            var password = smtpSettings["Password"];
-            var fromEmail = smtpSettings["FromEmail"];
-            var fromName = smtpSettings["FromName"];
-
-            if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(username))
+            if (string.IsNullOrEmpty(_smtpOptions.Host) || string.IsNullOrEmpty(_smtpOptions.Username))
             {
                 _logger.LogWarning("SMTP settings not configured. Email not sent to {To}", to);
                 return;
             }
 
-            using var client = new System.Net.Mail.SmtpClient(host, port)
+            using var client = new System.Net.Mail.SmtpClient(_smtpOptions.Host, _smtpOptions.Port)
             {
-                Credentials = new System.Net.NetworkCredential(username, password),
+                Credentials = new System.Net.NetworkCredential(_smtpOptions.Username, _smtpOptions.Password),
                 EnableSsl = true
             };
 
             var message = new System.Net.Mail.MailMessage
             {
-                From = new System.Net.Mail.MailAddress(fromEmail ?? username, fromName ?? "Ledka"),
+                From = new System.Net.Mail.MailAddress(
+                    string.IsNullOrEmpty(_smtpOptions.FromEmail) ? _smtpOptions.Username : _smtpOptions.FromEmail,
+                    _smtpOptions.FromName),
                 Subject = subject,
                 Body = body,
                 IsBodyHtml = isHtml
@@ -54,7 +49,11 @@ public class EmailService : IEmailService
         }
     }
 
-    public async Task SendOrderConfirmationEmailAsync(string to, int orderId, decimal totalAmount, CancellationToken ct = default)
+    public async Task SendOrderConfirmationEmailAsync(
+        string to,
+        int orderId,
+        decimal totalAmount,
+        CancellationToken ct = default)
     {
         var subject = $"تایید سفارش #{orderId}";
         var body = $@"
@@ -64,14 +63,17 @@ public class EmailService : IEmailService
                 <p>شماره سفارش: <strong>{orderId}</strong></p>
                 <p>مبلغ کل: <strong>{totalAmount:N0} تومان</strong></p>
                 <p>با تشکر از خرید شما</p>
-                <p>فروشگاه لدکا</p>
             </body>
             </html>";
 
         await SendEmailAsync(to, subject, body, true, ct);
     }
 
-    public async Task SendOrderStatusUpdateEmailAsync(string to, int orderId, string newStatus, CancellationToken ct = default)
+    public async Task SendOrderStatusUpdateEmailAsync(
+        string to,
+        int orderId,
+        string newStatus,
+        CancellationToken ct = default)
     {
         var subject = $"بروزرسانی وضعیت سفارش #{orderId}";
         var body = $@"
@@ -80,14 +82,17 @@ public class EmailService : IEmailService
                 <h2>وضعیت سفارش شما تغییر کرد</h2>
                 <p>شماره سفارش: <strong>{orderId}</strong></p>
                 <p>وضعیت جدید: <strong>{newStatus}</strong></p>
-                <p>فروشگاه لدکا</p>
             </body>
             </html>";
 
         await SendEmailAsync(to, subject, body, true, ct);
     }
 
-    public async Task SendTicketAnsweredEmailAsync(string to, int ticketId, string ticketSubject, CancellationToken ct = default)
+    public async Task SendTicketAnsweredEmailAsync(
+        string to,
+        int ticketId,
+        string ticketSubject,
+        CancellationToken ct = default)
     {
         var subject = $"پاسخ جدید به تیکت: {ticketSubject}";
         var body = $@"
@@ -97,7 +102,6 @@ public class EmailService : IEmailService
                 <p>شماره تیکت: <strong>{ticketId}</strong></p>
                 <p>موضوع: <strong>{ticketSubject}</strong></p>
                 <p>برای مشاهده پاسخ، به پنل کاربری خود مراجعه کنید.</p>
-                <p>فروشگاه لدکا</p>
             </body>
             </html>";
 

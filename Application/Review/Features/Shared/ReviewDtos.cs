@@ -1,6 +1,6 @@
 namespace Application.Review.Features.Shared;
 
-public record ProductReviewDto
+public sealed record ProductReviewDto
 {
     public int Id { get; init; }
     public int ProductId { get; init; }
@@ -10,7 +10,7 @@ public record ProductReviewDto
     public int Rating { get; init; }
     public string? Title { get; init; }
     public string? Comment { get; init; }
-    public string Status { get; init; } = "Pending";
+    public string Status { get; init; } = string.Empty;
     public bool IsVerifiedPurchase { get; init; }
     public int LikeCount { get; init; }
     public int DislikeCount { get; init; }
@@ -20,7 +20,7 @@ public record ProductReviewDto
     public DateTime CreatedAt { get; init; }
 }
 
-public record ReviewSummaryDto
+public sealed record ReviewSummaryDto
 {
     public int ProductId { get; init; }
     public decimal AverageRating { get; init; }
@@ -32,17 +32,16 @@ public record ReviewSummaryDto
     public int OneStarCount { get; init; }
 }
 
-public record RejectReviewRequest
-{
-    public string? Reason { get; init; }
-}
+public sealed record RejectReviewRequest(string? Reason);
 
-public record ReplyToReviewRequest
-{
-    public string Reply { get; init; } = string.Empty;
-}
+public sealed record ReplyToReviewRequest(string Reply);
 
-public record UpdateReviewStatusRequest
-{
-    public string Status { get; init; } = string.Empty;
-}
+public sealed record UpdateReviewStatusRequest(string Status);
+
+public sealed record SubmitReviewRequest(
+    int ProductId,
+    int? OrderId,
+    int Rating,
+    string? Title,
+    string? Comment
+);

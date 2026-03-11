@@ -1,3 +1,5 @@
+using Domain.Common.ValueObjects;
+
 namespace Infrastructure.Common.Converters;
 
 public class MoneyConverter : ValueConverter<Money, decimal>

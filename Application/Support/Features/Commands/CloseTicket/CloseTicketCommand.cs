@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Support.Features.Commands.CloseTicket;
 
 public sealed record CloseTicketCommand(

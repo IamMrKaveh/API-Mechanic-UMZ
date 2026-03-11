@@ -2,15 +2,9 @@ namespace MainApi.Order.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class OrderStatusController : BaseApiController
+public class OrderStatusController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public OrderStatusController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     [AllowAnonymous]

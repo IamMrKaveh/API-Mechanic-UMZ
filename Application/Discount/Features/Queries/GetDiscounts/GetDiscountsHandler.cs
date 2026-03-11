@@ -1,34 +1,27 @@
+using Application.Common.Models;
+
 namespace Application.Discount.Features.Queries.GetDiscounts;
 
-public class GetDiscountsHandler : IRequestHandler<GetDiscountsQuery, ServiceResult<PaginatedResult<DiscountCodeDto>>>
+public class GetDiscountsHandler(IDiscountQueryService discountQueryService) : IRequestHandler<GetDiscountsQuery, ServiceResult<PaginatedResult<DiscountCodeDto>>>
 {
-    private readonly IDiscountRepository _discountRepository;
-    private readonly IMapper _mapper;
-
-    public GetDiscountsHandler(
-        IDiscountRepository discountRepository,
-        IMapper mapper
-        )
-    {
-        _discountRepository = discountRepository;
-        _mapper = mapper;
-    }
+    private readonly IDiscountQueryService _discountQueryService = discountQueryService;
 
     public async Task<ServiceResult<PaginatedResult<DiscountCodeDto>>> Handle(
         GetDiscountsQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        var (discounts, total) = await _discountRepository.GetPagedAsync(
+        var (discounts, total) = await _discountQueryService.GetPagedAsync(
             request.IncludeExpired,
             request.IncludeDeleted,
             request.Page,
             request.PageSize,
             ct);
 
-        var dtos = _mapper.Map<List<DiscountCodeDto>>(discounts);
-
         return ServiceResult<PaginatedResult<DiscountCodeDto>>.Success(
-            PaginatedResult<DiscountCodeDto>.Create(dtos, total, request.Page, request.PageSize));
+            PaginatedResult<DiscountCodeDto>.Create(
+                discounts.ToList(),
+                total,
+                request.Page,
+                request.PageSize));
     }
 }

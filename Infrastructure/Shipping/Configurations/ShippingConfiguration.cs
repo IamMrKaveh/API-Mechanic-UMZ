@@ -1,8 +1,10 @@
+using Domain.Common.ValueObjects;
+
 namespace Infrastructure.Shipping.Configurations;
 
-public sealed class ShippingConfiguration : IEntityTypeConfiguration<Domain.Shipping.Shipping>
+public sealed class ShippingConfiguration : IEntityTypeConfiguration<Domain.Shipping.Aggregates.Shipping>
 {
-    public void Configure(EntityTypeBuilder<Domain.Shipping.Shipping> builder)
+    public void Configure(EntityTypeBuilder<Domain.Shipping.Aggregates.Shipping> builder)
     {
         builder.HasKey(e => e.Id);
         builder.Property(e => e.RowVersion).IsRowVersion();

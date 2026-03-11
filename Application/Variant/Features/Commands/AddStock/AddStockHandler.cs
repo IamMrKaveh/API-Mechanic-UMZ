@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Variant.Features.Commands.AddStock;
 
 public class AddStockHandler : IRequestHandler<AddStockCommand, ServiceResult>
@@ -29,7 +31,7 @@ public class AddStockHandler : IRequestHandler<AddStockCommand, ServiceResult>
         if (result.IsFailed)
             return ServiceResult.Failure(result.Error!);
 
-        var (_, IsSuccess, Error, NewStock) = result.Data!.Results.FirstOrDefault();
+        var (_, IsSuccess, Error, NewStock) = result.Value!.Results.FirstOrDefault();
 
         if (!IsSuccess)
             return ServiceResult.Failure(Error ?? "خطا در افزایش موجودی.");

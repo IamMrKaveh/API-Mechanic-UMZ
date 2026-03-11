@@ -1,13 +1,17 @@
 namespace Domain.Category.Events;
 
-public class CategoryCreatedEvent : DomainEvent
+public sealed class CategoryCreatedEvent : DomainEvent
 {
-    public int CategoryId { get; }
+    public CategoryId CategoryId { get; }
     public string Name { get; }
+    public string Slug { get; }
+    public CategoryId? ParentCategoryId { get; }
 
-    public CategoryCreatedEvent(int categoryId, string name)
+    public CategoryCreatedEvent(CategoryId categoryId, string name, string slug, CategoryId? parentCategoryId)
     {
         CategoryId = categoryId;
         Name = name;
+        Slug = slug;
+        ParentCategoryId = parentCategoryId;
     }
 }

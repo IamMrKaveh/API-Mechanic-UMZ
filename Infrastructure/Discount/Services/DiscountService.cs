@@ -1,40 +1,39 @@
+using Domain.Discount.Interfaces;
+
 namespace Infrastructure.Discount.Services;
 
-public class DiscountService : IDiscountService
+public class DiscountService(
+    IDiscountRepository discountRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<DiscountService> logger) : IDiscountService
 {
-    private readonly IDiscountRepository _discountRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<DiscountService> _logger;
-
-    public DiscountService(
-        IDiscountRepository discountRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<DiscountService> logger)
-    {
-        _discountRepository = discountRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IDiscountRepository _discountRepository = discountRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<DiscountService> _logger = logger;
 
     public async Task<ServiceResult<DiscountApplyResultDto>> ValidateAndApplyDiscountAsync(
-        string code, decimal orderTotal, int userId, CancellationToken ct = default)
+        string code,
+        decimal orderTotal,
+        int userId,
+        CancellationToken ct = default)
     {
         return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
             using var transaction = await _unitOfWork.BeginTransactionAsync(ct);
             try
             {
+                var now = DateTime.UtcNow;
                 var discount = await _discountRepository.GetByCodeAsync(code, ct);
                 if (discount == null)
                     return ServiceResult<DiscountApplyResultDto>.Failure("کد تخفیف نامعتبر است.");
 
                 var userUsageCount = await _discountRepository.CountUserUsageAsync(discount.Id, userId, ct);
-                var (isValid, error) = discount.Validate(orderTotal, userId, userUsageCount);
+                var (isValid, error) = discount.Validate(orderTotal, now, userId, userUsageCount);
 
                 if (!isValid)
                     return ServiceResult<DiscountApplyResultDto>.Failure(error!);
 
-                var discountAmount = discount.CalculateDiscountAmount(orderTotal);
+                var discountAmount = discount.CalculateDiscountAmount(orderTotal, now);
 
                 discount.IncrementUsage();
                 _discountRepository.Update(discount);
@@ -57,11 +56,13 @@ public class DiscountService : IDiscountService
         }, ct);
     }
 
-    public async Task<ServiceResult> CancelDiscountUsageAsync(int orderId, CancellationToken ct = default)
+    public async Task<ServiceResult> CancelDiscountUsageAsync(
+        int orderId,
+        CancellationToken ct = default)
     {
         var usage = await _discountRepository.GetUsageByOrderIdAsync(orderId, ct);
         if (usage == null)
-            return ServiceResult.Success(); 
+            return ServiceResult.Success();
 
         var discount = await _discountRepository.GetByIdWithUsagesAsync(usage.DiscountCodeId, ct);
         if (discount == null)
@@ -77,7 +78,9 @@ public class DiscountService : IDiscountService
         return ServiceResult.Success();
     }
 
-    public async Task<ServiceResult> ConfirmDiscountUsageAsync(int orderId, CancellationToken ct = default)
+    public async Task<ServiceResult> ConfirmDiscountUsageAsync(
+        int orderId,
+        CancellationToken ct = default)
     {
         var usage = await _discountRepository.GetUsageByOrderIdAsync(orderId, ct);
         if (usage == null)

@@ -1,13 +1,7 @@
 namespace Domain.Notification.Events;
 
-public sealed class NotificationsBulkReadEvent : DomainEvent
+public sealed class NotificationsBulkReadEvent(int userId, int count) : DomainEvent
 {
-    public int UserId { get; }
-    public int Count { get; }
-
-    public NotificationsBulkReadEvent(int userId, int count)
-    {
-        UserId = userId;
-        Count = count;
-    }
+    public int UserId { get; } = userId;
+    public int Count { get; } = count;
 }

@@ -1,24 +1,15 @@
-using Infrastructure.Search.Options;
-
 namespace Infrastructure.Search.BackgroundServices;
 
-public class ElasticsearchSyncBackgroundService : BackgroundService
+public class ElasticsearchSyncBackgroundService(
+    IServiceScopeFactory scopeFactory,
+    ILogger<ElasticsearchSyncBackgroundService> logger,
+    IConfiguration configuration) : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<ElasticsearchSyncBackgroundService> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly ILogger<ElasticsearchSyncBackgroundService> _logger = logger;
+    private readonly IConfiguration _configuration = configuration;
 
-    public ElasticsearchSyncBackgroundService(
-        IServiceScopeFactory scopeFactory,
-        ILogger<ElasticsearchSyncBackgroundService> logger,
-        IConfiguration configuration)
-    {
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-        _configuration = configuration;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
         var elasticOptions = _configuration.GetSection(ElasticsearchOptions.SectionName)
             .Get<ElasticsearchOptions>() ?? new ElasticsearchOptions();
@@ -35,19 +26,19 @@ public class ElasticsearchSyncBackgroundService : BackgroundService
             "Elasticsearch sync background service started. Interval: {Interval} minutes",
             intervalMinutes);
 
-        await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+        await Task.Delay(TimeSpan.FromSeconds(30), ct);
 
-        while (!stoppingToken.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
             try
             {
                 using var scope = _scopeFactory.CreateScope();
                 var syncService = scope.ServiceProvider.GetRequiredService<ElasticsearchDatabaseSyncService>();
                 _logger.LogDebug("Starting periodic Elasticsearch sync");
-                await syncService.FullSyncAsync(stoppingToken);
+                await syncService.FullSyncAsync(ct);
                 _logger.LogDebug("Periodic Elasticsearch sync completed");
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
                 _logger.LogInformation("Elasticsearch sync background service is stopping");
                 break;
@@ -57,7 +48,7 @@ public class ElasticsearchSyncBackgroundService : BackgroundService
                 _logger.LogError(ex, "Error during periodic Elasticsearch sync");
             }
 
-            await Task.Delay(TimeSpan.FromMinutes(intervalMinutes), stoppingToken);
+            await Task.Delay(TimeSpan.FromMinutes(intervalMinutes), ct);
         }
     }
 }

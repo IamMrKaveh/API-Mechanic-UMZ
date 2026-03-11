@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Inventory.Contracts;
 
 public interface IInventoryQueryService
@@ -10,8 +12,16 @@ public interface IInventoryQueryService
 
     Task<IEnumerable<OutOfStockItemDto>> GetOutOfStockProductsAsync(CancellationToken ct = default);
 
-    Task<PaginatedResult<InventoryTransactionDto>> GetTransactionsAsync(
-        int? variantId, string? transactionType, DateTime? fromDate, DateTime? toDate, int page, int pageSize, CancellationToken ct = default);
+    Task<PaginatedResult<InventoryTransactionDto>> GetTransactionsPagedAsync(
+        int? variantId,
+        string? transactionType,
+        DateTime? fromDate,
+        DateTime? toDate,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 
     Task<InventoryStatisticsDto> GetStatisticsAsync(CancellationToken ct = default);
+
+    Task<IEnumerable<WarehouseStockDto>> GetWarehouseStockByVariantAsync(int variantId, CancellationToken ct = default);
 }

@@ -60,7 +60,6 @@ public sealed class PaymentStatistics : ValueObject
     public static PaymentStatistics Empty() =>
         Create(0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-    
     public decimal SuccessRate =>
         TotalTransactions > 0
             ? Math.Round((decimal)SuccessfulTransactions / TotalTransactions * 100, 2)

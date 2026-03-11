@@ -3,14 +3,9 @@ namespace MainApi.Discount.Controllers;
 [ApiController]
 [Route("api/admin/discounts")]
 [Authorize(Roles = "Admin")]
-public class AdminDiscountsController : ControllerBase
+public class AdminDiscountsController(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public AdminDiscountsController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<ActionResult<PaginatedResult<DiscountCodeDto>>> GetAll(
@@ -85,5 +80,3 @@ public class AdminDiscountsController : ControllerBase
         return Ok(result);
     }
 }
-
-public record CancelDiscountUsageRequest(int OrderId);

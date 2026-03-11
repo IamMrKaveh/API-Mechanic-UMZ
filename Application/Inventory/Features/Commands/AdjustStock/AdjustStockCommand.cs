@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Inventory.Features.Commands.AdjustStock;
 
 public record AdjustStockCommand : IRequest<ServiceResult>

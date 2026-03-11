@@ -3,15 +3,9 @@ namespace MainApi.Discount.Controllers;
 [ApiController]
 [Route("api/discounts")]
 [Authorize]
-public class DiscountsController : BaseApiController
+public class DiscountsController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public DiscountsController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpPost("validate")]
     public async Task<IActionResult> Validate([FromBody] ValidateDiscountRequest request)

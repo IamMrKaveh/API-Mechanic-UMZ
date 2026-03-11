@@ -1,16 +1,8 @@
 namespace Domain.Payment.Exceptions;
 
-public sealed class PaymentAlreadyVerifiedException : DomainException
+public sealed class PaymentAlreadyVerifiedException(Guid transactionId, long refId, DateTime? verifiedAt = null) : DomainException($"تراکنش {transactionId} قبلاً با کد پیگیری {refId} تأیید شده است.")
 {
-    public int TransactionId { get; }
-    public long RefId { get; }
-    public DateTime? VerifiedAt { get; }
-
-    public PaymentAlreadyVerifiedException(int transactionId, long refId, DateTime? verifiedAt = null)
-        : base($"تراکنش {transactionId} قبلاً با کد پیگیری {refId} تأیید شده است.")
-    {
-        TransactionId = transactionId;
-        RefId = refId;
-        VerifiedAt = verifiedAt;
-    }
+    public Guid TransactionId { get; } = transactionId;
+    public long RefId { get; } = refId;
+    public DateTime? VerifiedAt { get; } = verifiedAt;
 }

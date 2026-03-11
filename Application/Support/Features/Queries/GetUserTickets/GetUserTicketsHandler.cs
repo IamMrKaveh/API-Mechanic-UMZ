@@ -1,42 +1,22 @@
+using Application.Common.Models;
+
 namespace Application.Support.Features.Queries.GetUserTickets;
 
-public sealed class GetUserTicketsHandler
-    : IRequestHandler<GetUserTicketsQuery, ServiceResult<PaginatedResult<TicketDto>>>
+public sealed class GetUserTicketsHandler(ITicketQueryService ticketQueryService)
+        : IRequestHandler<GetUserTicketsQuery, ServiceResult<PaginatedResult<TicketDto>>>
 {
-    private readonly ITicketRepository _ticketRepository;
-
-    public GetUserTicketsHandler(ITicketRepository ticketRepository)
-    {
-        _ticketRepository = ticketRepository;
-    }
+    private readonly ITicketQueryService _ticketQueryService = ticketQueryService;
 
     public async Task<ServiceResult<PaginatedResult<TicketDto>>> Handle(
         GetUserTicketsQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var (items, totalCount) = await _ticketRepository.GetByUserIdAsync(
+        var result = await _ticketQueryService.GetUserTicketsPagedAsync(
             request.UserId,
             request.Status,
             request.Page,
             request.PageSize,
-            cancellationToken);
-
-        var dtos = items.Select(t => new TicketDto
-        {
-            Id = t.Id,
-            Subject = t.Subject,
-            Status = t.Status,
-            Priority = t.Priority,
-            CreatedAt = t.CreatedAt,
-            UpdatedAt = t.UpdatedAt
-        })
-            .ToList();
-
-        var result = PaginatedResult<TicketDto>.Create(
-            dtos,
-            totalCount,
-            request.Page,
-            request.PageSize);
+            ct);
 
         return ServiceResult<PaginatedResult<TicketDto>>.Success(result);
     }

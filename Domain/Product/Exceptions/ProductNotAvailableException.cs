@@ -1,18 +1,10 @@
 namespace Domain.Product.Exceptions;
 
-public sealed class ProductNotAvailableException : DomainException
+public sealed class ProductNotAvailableException(int productId, string reason, int? variantId = null) : DomainException($"محصول {productId} در دسترس نیست. دلیل: {reason}")
 {
-    public int ProductId { get; }
-    public int? VariantId { get; }
-    public string Reason { get; }
-
-    public ProductNotAvailableException(int productId, string reason, int? variantId = null)
-        : base($"محصول {productId} در دسترس نیست. دلیل: {reason}")
-    {
-        ProductId = productId;
-        VariantId = variantId;
-        Reason = reason;
-    }
+    public int ProductId { get; } = productId;
+    public int? VariantId { get; } = variantId;
+    public string Reason { get; } = reason;
 
     public static ProductNotAvailableException Deleted(int productId) =>
         new(productId, "محصول حذف شده است.");

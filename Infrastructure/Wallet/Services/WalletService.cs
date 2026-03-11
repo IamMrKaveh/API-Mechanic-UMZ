@@ -1,15 +1,11 @@
-﻿namespace Infrastructure.Wallet.Services;
+﻿using Application.Common.Models;
+using Domain.Wallet.Enums;
 
-public sealed class WalletService : IWalletService
+namespace Infrastructure.Wallet.Services;
+
+public sealed class WalletService(IMediator mediator) : IWalletService
 {
-    private readonly IMediator _mediator;
-    private readonly ILogger<WalletService> _logger;
-
-    public WalletService(IMediator mediator, ILogger<WalletService> logger)
-    {
-        _mediator = mediator;
-        _logger = logger;
-    }
+    private readonly IMediator _mediator = mediator;
 
     public async Task<ServiceResult<WalletDto>> GetBalanceAsync(
         int userId,

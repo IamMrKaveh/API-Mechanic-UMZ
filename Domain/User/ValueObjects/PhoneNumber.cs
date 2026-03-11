@@ -25,17 +25,17 @@ public sealed class PhoneNumber : ValueObject
         return new PhoneNumber(normalized);
     }
 
-    public static (bool Success, PhoneNumber? PhoneNumber, string? Error) TryCreate(string value)
+    public static Result<PhoneNumber> TryCreate(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return (false, null, "شماره تلفن الزامی است.");
+            return Result<PhoneNumber>.Failure("شماره تلفن الزامی است.");
 
         var normalized = Normalize(value);
 
         if (!IsValid(normalized))
-            return (false, null, "فرمت شماره تلفن نامعتبر است.");
+            return Result<PhoneNumber>.Failure("فرمت شماره تلفن نامعتبر است.");
 
-        return (true, new PhoneNumber(normalized), null);
+        return Result<PhoneNumber>.Success(new PhoneNumber(normalized));
     }
 
     public static PhoneNumber FromNormalized(string normalizedValue)
@@ -51,12 +51,12 @@ public sealed class PhoneNumber : ValueObject
         if (Value.Length < 7)
             return Value;
 
-        return $"{Value.Substring(0, 4)}***{Value.Substring(Value.Length - 4)}";
+        return $"{Value[..4]}***{Value[^4..]}";
     }
 
     public string GetInternationalFormat()
     {
-        return $"+98{Value.Substring(1)}";
+        return $"+98{Value[1..]}";
     }
 
     public bool Matches(string other)
@@ -70,24 +70,21 @@ public sealed class PhoneNumber : ValueObject
 
     private static string Normalize(string value)
     {
-        var digits = new string(value.Where(char.IsDigit).ToArray());
+        var digits = new string([.. value.Where(char.IsDigit)]);
 
-        
         digits = digits
             .Replace("۰", "0").Replace("۱", "1").Replace("۲", "2")
             .Replace("۳", "3").Replace("۴", "4").Replace("۵", "5")
             .Replace("۶", "6").Replace("۷", "7").Replace("۸", "8")
             .Replace("۹", "9");
 
-        
         if (digits.StartsWith("98") && digits.Length == 12)
-            digits = "0" + digits.Substring(2);
+            digits = string.Concat("0", digits.AsSpan(2));
 
         if (digits.StartsWith("0098") && digits.Length == 14)
-            digits = "0" + digits.Substring(4);
+            digits = string.Concat("0", digits.AsSpan(4));
 
-        
-        if (!digits.StartsWith("0") && digits.Length == 10)
+        if (!digits.StartsWith('0') && digits.Length == 10)
             digits = "0" + digits;
 
         return digits;

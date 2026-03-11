@@ -3,16 +3,10 @@ namespace MainApi.Auth.Controllers;
 [Route("api/sessions")]
 [ApiController]
 [Authorize]
-public class SessionController : ControllerBase
+public class SessionController(IMediator mediator, ICurrentUserService currentUserService) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly ICurrentUserService _currentUserService;
-
-    public SessionController(IMediator mediator, ICurrentUserService currentUserService)
-    {
-        _mediator = mediator;
-        _currentUserService = currentUserService;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     /// <summary>
     /// دریافت لیست نشست‌های فعال کاربر جاری
@@ -26,8 +20,8 @@ public class SessionController : ControllerBase
         var query = new GetUserSessionsQuery(_currentUserService.UserId.Value);
         var result = await _mediator.Send(query);
 
-        if (result.IsSucceed)
-            return Ok(result.Data);
+        if (result.IsSuccess)
+            return Ok(result.Value);
 
         return StatusCode(result.StatusCode, new { message = result.Error });
     }
@@ -44,7 +38,7 @@ public class SessionController : ControllerBase
         var command = new RevokeSessionCommand(_currentUserService.UserId.Value, sessionId);
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed)
+        if (result.IsSuccess)
             return Ok(new { message = "نشست با موفقیت ابطال شد." });
 
         return StatusCode(result.StatusCode, new { message = result.Error });
@@ -62,7 +56,7 @@ public class SessionController : ControllerBase
         var command = new LogoutAllCommand(_currentUserService.UserId.Value);
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed)
+        if (result.IsSuccess)
             return Ok(new { message = "تمام نشست‌ها ابطال شدند." });
 
         return StatusCode(result.StatusCode, new { message = result.Error });

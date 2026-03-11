@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Shipping.Interfaces;
+
 namespace Application.Shipping.Features.Commands.DeleteShipping;
 
 public class DeleteShippingHandler : IRequestHandler<DeleteShippingCommand, ServiceResult>

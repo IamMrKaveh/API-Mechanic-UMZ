@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Inventory.Features.Commands.BulkAdjustStock;
 
 public record BulkAdjustStockCommand : IRequest<ServiceResult<BulkAdjustResultDto>>

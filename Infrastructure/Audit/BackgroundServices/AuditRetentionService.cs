@@ -1,3 +1,5 @@
+using Domain.Audit.Entities;
+
 namespace Infrastructure.Audit.BackgroundServices;
 
 /// <summary>
@@ -127,7 +129,7 @@ public sealed class AuditRetentionService : BackgroundService
         CancellationToken ct = default)
     {
         var query = context.AuditLogs
-            .Where(a => a.Timestamp < cutoff);
+            .Where(a => a.CreatedAt < cutoff);
 
         if (includeEventTypes?.Any() == true)
             query = query.Where(a => includeEventTypes.Contains(a.EventType));
@@ -136,7 +138,7 @@ public sealed class AuditRetentionService : BackgroundService
             query = query.Where(a => !excludeEventTypes.Contains(a.EventType));
 
         var logsToArchive = await query
-            .OrderBy(a => a.Timestamp)
+            .OrderBy(a => a.CreatedAt)
             .Take(1000) 
             .ToListAsync(ct);
 
@@ -163,13 +165,13 @@ public sealed class AuditRetentionService : BackgroundService
         CancellationToken ct = default)
     {
         var query = context.AuditLogs
-            .Where(a => a.Timestamp < cutoff && !a.IsArchived);
+            .Where(a => a.CreatedAt < cutoff && !a.IsArchived);
 
         if (includeEventTypes?.Any() == true)
             query = query.Where(a => includeEventTypes.Contains(a.EventType));
 
         var logsToArchive = await query
-            .OrderBy(a => a.Timestamp)
+            .OrderBy(a => a.CreatedAt)
             .Take(500)
             .ToListAsync(ct);
 

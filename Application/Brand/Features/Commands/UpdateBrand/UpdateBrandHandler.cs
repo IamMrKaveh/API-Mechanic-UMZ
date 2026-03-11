@@ -1,32 +1,23 @@
+using Domain.Category.Interfaces;
+
 namespace Application.Brand.Features.Commands.UpdateBrand;
 
-public class UpdateBrandHandler : IRequestHandler<UpdateBrandCommand, ServiceResult>
+public class UpdateBrandHandler(
+    ICategoryRepository categoryRepository,
+    IUnitOfWork unitOfWork,
+    IMediaService mediaService,
+    IMediaQueryService mediaQueryService,
+    ILogger<UpdateBrandHandler> logger) : IRequestHandler<UpdateBrandCommand, ServiceResult>
 {
-    private readonly ICategoryRepository _categoryRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMediaService _mediaService;
-    private readonly IMediaQueryService _mediaQueryService;
-    private readonly ILogger<UpdateBrandHandler> _logger;
-
-    public UpdateBrandHandler(
-        ICategoryRepository categoryRepository,
-        IUnitOfWork unitOfWork,
-        IMediaService mediaService,
-        IMediaQueryService mediaQueryService,
-        ILogger<UpdateBrandHandler> logger
-        )
-    {
-        _categoryRepository = categoryRepository;
-        _unitOfWork = unitOfWork;
-        _mediaService = mediaService;
-        _mediaQueryService = mediaQueryService;
-        _logger = logger;
-    }
+    private readonly ICategoryRepository _categoryRepository = categoryRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IMediaService _mediaService = mediaService;
+    private readonly IMediaQueryService _mediaQueryService = mediaQueryService;
+    private readonly ILogger<UpdateBrandHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(
         UpdateBrandCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var category = await _categoryRepository.GetByIdWithGroupsAsync(request.CategoryId, ct);
         if (category == null)
@@ -36,7 +27,7 @@ public class UpdateBrandHandler : IRequestHandler<UpdateBrandCommand, ServiceRes
         {
             category.RenameBrand(request.BrandId, request.Name, request.Description);
 
-            Domain.Media.Media? newMedia = null;
+            Domain.Media.Aggregates.Media? newMedia = null;
             if (request.IconFile != null)
             {
                 var existingMedia = (await _mediaQueryService.GetEntityMediaAsync("Brand", request.BrandId))

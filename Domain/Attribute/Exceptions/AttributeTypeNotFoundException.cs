@@ -1,7 +1,5 @@
 namespace Domain.Attribute.Exceptions;
 
-public sealed class AttributeTypeNotFoundException : DomainException
+public sealed class AttributeTypeNotFoundException(int id) : DomainException($"ویژگی با شناسه {id} یافت نشد.")
 {
-    public AttributeTypeNotFoundException(int id)
-        : base($"ویژگی با شناسه {id} یافت نشد.") { }
 }

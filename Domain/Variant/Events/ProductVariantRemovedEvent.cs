@@ -1,13 +1,7 @@
 namespace Domain.Variant.Events;
 
-public sealed class ProductVariantRemovedEvent : DomainEvent
+public sealed class ProductVariantRemovedEvent(int productId, int variantId) : DomainEvent
 {
-    public int ProductId { get; }
-    public int VariantId { get; }
-
-    public ProductVariantRemovedEvent(int productId, int variantId)
-    {
-        ProductId = productId;
-        VariantId = variantId;
-    }
+    public int ProductId { get; } = productId;
+    public int VariantId { get; } = variantId;
 }

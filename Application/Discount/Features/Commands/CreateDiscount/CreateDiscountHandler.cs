@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Discount.Interfaces;
+
 namespace Application.Discount.Features.Commands.CreateDiscount;
 
 public class CreateDiscountHandler : IRequestHandler<CreateDiscountCommand, ServiceResult<DiscountCodeDto>>
@@ -38,7 +41,6 @@ public class CreateDiscountHandler : IRequestHandler<CreateDiscountCommand, Serv
             return ServiceResult<DiscountCodeDto>.Failure("کد تخفیف تکراری است.");
         }
 
-        
         var discount = DiscountCode.Create(
             sanitizedCode,
             request.Percentage,

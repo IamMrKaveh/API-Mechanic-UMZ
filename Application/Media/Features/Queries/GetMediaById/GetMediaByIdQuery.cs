@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Media.Features.Queries.GetMediaById;
 
 public record GetMediaByIdQuery(int MediaId)

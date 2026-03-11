@@ -1,24 +1,17 @@
 namespace Infrastructure.Search.HealthChecks;
 
-public class ElasticsearchDLQHealthCheck : IHealthCheck
+public class ElasticsearchDLQHealthCheck(
+    DBContext context,
+    ILogger<ElasticsearchDLQHealthCheck> logger,
+    IConfiguration configuration) : IHealthCheck
 {
-    private readonly Persistence.Context.DBContext _context;
-    private readonly ILogger<ElasticsearchDLQHealthCheck> _logger;
-    private readonly IConfiguration _configuration;
-
-    public ElasticsearchDLQHealthCheck(
-        Persistence.Context.DBContext context,
-        ILogger<ElasticsearchDLQHealthCheck> logger,
-        IConfiguration configuration)
-    {
-        _context = context;
-        _logger = logger;
-        _configuration = configuration;
-    }
+    private readonly DBContext _context = context;
+    private readonly ILogger<ElasticsearchDLQHealthCheck> _logger = logger;
+    private readonly IConfiguration _configuration = configuration;
 
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
-        CancellationToken cancellationToken = default)
+        CancellationToken ct = default)
     {
         try
         {
@@ -26,16 +19,16 @@ public class ElasticsearchDLQHealthCheck : IHealthCheck
             var criticalThreshold = _configuration.GetValue("Elasticsearch:DLQCriticalThreshold", 500);
 
             var pendingCount = await _context.FailedElasticOperations
-                .CountAsync(o => o.Status == "Pending" && o.RetryCount < 5, cancellationToken);
+                .CountAsync(o => o.Status == "Pending" && o.RetryCount < 5, ct);
 
             var failedCount = await _context.FailedElasticOperations
-                .CountAsync(o => o.RetryCount >= 5, cancellationToken);
+                .CountAsync(o => o.RetryCount >= 5, ct);
 
             var oldestPending = await _context.FailedElasticOperations
                 .Where(o => o.Status == "Pending" && o.RetryCount < 5)
                 .OrderBy(o => o.CreatedAt)
                 .Select(o => o.CreatedAt)
-                .FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(ct);
 
             var data = new Dictionary<string, object>
             {

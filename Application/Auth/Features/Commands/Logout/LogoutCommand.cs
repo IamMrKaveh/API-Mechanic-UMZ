@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Auth.Features.Commands.Logout;
 
 public record LogoutCommand : IRequest<ServiceResult>

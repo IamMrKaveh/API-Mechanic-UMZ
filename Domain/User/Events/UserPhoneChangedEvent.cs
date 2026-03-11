@@ -1,15 +1,8 @@
 namespace Domain.User.Events;
 
-public class UserPhoneChangedEvent : DomainEvent
+public class UserPhoneChangedEvent(int userId, string oldPhone, string newPhone) : DomainEvent
 {
-    public int UserId { get; }
-    public string OldPhoneNumber { get; }
-    public string NewPhoneNumber { get; }
-
-    public UserPhoneChangedEvent(int userId, string oldPhone, string newPhone)
-    {
-        UserId = userId;
-        OldPhoneNumber = oldPhone;
-        NewPhoneNumber = newPhone;
-    }
+    public int UserId { get; } = userId;
+    public string OldPhoneNumber { get; } = oldPhone;
+    public string NewPhoneNumber { get; } = newPhone;
 }

@@ -17,18 +17,10 @@ public sealed class ProductName : ValueObject
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("نام محصول الزامی است.");
 
-        var normalized = Normalize(name);
+        var normalized = PersianTextNormalizer.Normalize(name);
         Validate(normalized);
 
         return new ProductName(normalized);
-    }
-
-    private static string Normalize(string name)
-    {
-        return name.Trim()
-            .Replace("ي", "ی")
-            .Replace("ك", "ک")
-            .Replace("ى", "ی");
     }
 
     private static void Validate(string name)

@@ -1,11 +1,6 @@
 namespace Domain.Discount.Events;
 
-public sealed class DiscountExpiredEvent : DomainEvent
+public sealed class DiscountExpiredEvent(int discountId) : DomainEvent
 {
-    public int DiscountId { get; }
-
-    public DiscountExpiredEvent(int discountId)
-    {
-        DiscountId = discountId;
-    }
+    public int DiscountId { get; } = discountId;
 }

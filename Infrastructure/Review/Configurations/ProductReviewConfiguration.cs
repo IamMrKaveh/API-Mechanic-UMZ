@@ -1,3 +1,5 @@
+using Domain.Review.Aggregates;
+
 namespace Infrastructure.Review.Configurations;
 
 public sealed class ProductReviewConfiguration : IEntityTypeConfiguration<ProductReview>

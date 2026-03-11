@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Order.Features.Commands.CreateOrderStatus;
 
 public record CreateOrderStatusCommand(

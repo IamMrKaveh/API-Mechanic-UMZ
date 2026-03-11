@@ -5,14 +5,10 @@ namespace Application.Auth.Features.Commands.VerifyOtp;
 public class VerifyOtpHandler : IRequestHandler<VerifyOtpCommand, ServiceResult<AuthResult>>
 {
     private readonly IAuthService _authService;
-    private readonly IMapper _mapper;
 
-    public VerifyOtpHandler(
-        IAuthService authService,
-        IMapper mapper)
+    public VerifyOtpHandler(IAuthService authService)
     {
         _authService = authService;
-        _mapper = mapper;
     }
 
     public async Task<ServiceResult<AuthResult>> Handle(
@@ -26,12 +22,10 @@ public class VerifyOtpHandler : IRequestHandler<VerifyOtpCommand, ServiceResult<
             request.UserAgent,
             ct);
 
-        if (result.IsFailed || result.Data == default)
-        {
+        if (result.IsFailed || result.Value == default)
             return ServiceResult<AuthResult>.Failure(result.Error ?? "Verification failed", result.StatusCode);
-        }
 
-        var (accessToken, refreshTokenInfo, user, isNewUser) = result.Data;
+        var (accessToken, refreshTokenInfo, userDto, isNewUser) = result.Value;
 
         return ServiceResult<AuthResult>.Success(new AuthResult
         {
@@ -39,7 +33,7 @@ public class VerifyOtpHandler : IRequestHandler<VerifyOtpCommand, ServiceResult<
             RefreshToken = refreshTokenInfo.FullToken,
             AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(60),
             RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30),
-            User = _mapper.Map<UserProfileDto>(user),
+            User = userDto,
             IsNewUser = isNewUser
         });
     }

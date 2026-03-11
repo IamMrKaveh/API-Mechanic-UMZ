@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Analytics.Features.Queries.GetInventoryReport;
 
 public sealed class GetInventoryReportHandler

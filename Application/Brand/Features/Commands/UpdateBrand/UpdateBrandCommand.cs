@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Brand.Features.Commands.UpdateBrand;
 
 public record UpdateBrandCommand : IRequest<ServiceResult>

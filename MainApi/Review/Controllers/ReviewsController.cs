@@ -2,20 +2,11 @@ namespace MainApi.Review.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class ReviewsController : ControllerBase
+public class ReviewsController(IMediator mediator, ICurrentUserService currentUserService) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly ICurrentUserService _currentUserService;
+    private readonly IMediator _mediator = mediator;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
-    public ReviewsController(IMediator mediator, ICurrentUserService currentUserService)
-    {
-        _mediator = mediator;
-        _currentUserService = currentUserService;
-    }
-
-    /// <summary>
-    /// Get approved reviews for a product (public)
-    /// </summary>
     [HttpGet("product/{productId}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetProductReviews(
@@ -28,9 +19,6 @@ public class ReviewsController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>
-    /// Submit a new review (authenticated user)
-    /// </summary>
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> SubmitReview([FromBody] SubmitReviewRequest request)
@@ -49,7 +37,7 @@ public class ReviewsController : ControllerBase
         };
 
         var result = await _mediator.Send(command);
-        if (!result.IsSucceed)
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
 
         return CreatedAtAction(
@@ -58,9 +46,6 @@ public class ReviewsController : ControllerBase
             result);
     }
 
-    /// <summary>
-    /// Get current user's reviews
-    /// </summary>
     [HttpGet("my")]
     [Authorize]
     public async Task<IActionResult> GetMyReviews(
@@ -74,16 +59,4 @@ public class ReviewsController : ControllerBase
         var result = await _mediator.Send(query);
         return Ok(result);
     }
-}
-
-/// <summary>
-/// Request DTO for submit review endpoint
-/// </summary>
-public class SubmitReviewRequest
-{
-    public int ProductId { get; set; }
-    public int? OrderId { get; set; }
-    public int Rating { get; set; }
-    public string? Title { get; set; }
-    public string? Comment { get; set; }
 }

@@ -2,94 +2,45 @@ namespace Domain.Inventory.ValueObjects;
 
 public sealed class InventoryStatistics : ValueObject
 {
-    public int TotalVariants { get; }
-    public int InStockVariants { get; }
-    public int LowStockVariants { get; }
-    public int OutOfStockVariants { get; }
-    public int UnlimitedVariants { get; }
-    public Money TotalInventoryValue { get; }
-    public Money TotalSellingValue { get; }
+    public int TotalQuantity { get; }
+    public int ReservedQuantity { get; }
+    public int SoldQuantity { get; }
+    public int LowStockThreshold { get; }
 
-    private InventoryStatistics(
-        int totalVariants,
-        int inStockVariants,
-        int lowStockVariants,
-        int outOfStockVariants,
-        int unlimitedVariants,
-        Money totalInventoryValue,
-        Money totalSellingValue)
+    private InventoryStatistics(int totalQuantity, int reservedQuantity, int soldQuantity, int lowStockThreshold)
     {
-        TotalVariants = totalVariants;
-        InStockVariants = inStockVariants;
-        LowStockVariants = lowStockVariants;
-        OutOfStockVariants = outOfStockVariants;
-        UnlimitedVariants = unlimitedVariants;
-        TotalInventoryValue = totalInventoryValue;
-        TotalSellingValue = totalSellingValue;
+        TotalQuantity = totalQuantity;
+        ReservedQuantity = reservedQuantity;
+        SoldQuantity = soldQuantity;
+        LowStockThreshold = lowStockThreshold;
     }
 
-    public static InventoryStatistics Create(
-        int totalVariants,
-        int inStockVariants,
-        int lowStockVariants,
-        int outOfStockVariants,
-        int unlimitedVariants,
-        decimal totalInventoryValue,
-        decimal totalSellingValue)
+    public static InventoryStatistics Create(int totalQuantity, int reservedQuantity, int soldQuantity, int lowStockThreshold)
     {
-        Guard.Against.Negative(totalVariants, nameof(totalVariants));
-        Guard.Against.Negative(inStockVariants, nameof(inStockVariants));
-        Guard.Against.Negative(lowStockVariants, nameof(lowStockVariants));
-        Guard.Against.Negative(outOfStockVariants, nameof(outOfStockVariants));
-        Guard.Against.Negative(unlimitedVariants, nameof(unlimitedVariants));
-        Guard.Against.Negative(Convert.ToInt32(totalInventoryValue), nameof(totalInventoryValue));
-        Guard.Against.Negative(Convert.ToInt32(totalSellingValue), nameof(totalSellingValue));
+        if (totalQuantity < 0)
+            throw new DomainException("Total quantity cannot be negative.");
 
-        return new InventoryStatistics(
-            totalVariants,
-            inStockVariants,
-            lowStockVariants,
-            outOfStockVariants,
-            unlimitedVariants,
-            Money.FromDecimal(totalInventoryValue),
-            Money.FromDecimal(totalSellingValue));
+        if (reservedQuantity < 0)
+            throw new DomainException("Reserved quantity cannot be negative.");
+
+        if (soldQuantity < 0)
+            throw new DomainException("Sold quantity cannot be negative.");
+
+        if (lowStockThreshold <= 0)
+            throw new DomainException("Low stock threshold must be greater than zero.");
+
+        return new InventoryStatistics(totalQuantity, reservedQuantity, soldQuantity, lowStockThreshold);
     }
 
-    public static InventoryStatistics Empty() =>
-        Create(0, 0, 0, 0, 0, 0, 0);
+    public int AvailableQuantity => TotalQuantity - ReservedQuantity;
 
-    
-    public Money PotentialProfit => TotalSellingValue.Subtract(TotalInventoryValue);
-
-    public decimal InStockPercentage =>
-        TotalVariants > 0
-            ? Math.Round((decimal)InStockVariants / TotalVariants * 100, 2)
-            : 0;
-
-    public decimal OutOfStockPercentage =>
-        TotalVariants > 0
-            ? Math.Round((decimal)OutOfStockVariants / TotalVariants * 100, 2)
-            : 0;
-
-    public decimal LowStockPercentage =>
-        TotalVariants > 0
-            ? Math.Round((decimal)LowStockVariants / TotalVariants * 100, 2)
-            : 0;
-
-    public decimal ProfitMargin =>
-        TotalInventoryValue.Amount > 0
-            ? Math.Round(PotentialProfit.Amount / TotalInventoryValue.Amount * 100, 2)
-            : 0;
-
-    public bool HasCriticalStock => OutOfStockVariants > 0 || LowStockVariants > TotalVariants * 0.2m;
-
-    public bool IsHealthy => OutOfStockPercentage < 5 && LowStockPercentage < 10;
+    public bool IsLowStock => AvailableQuantity <= LowStockThreshold;
 
     protected override IEnumerable<object> GetEqualityComponents()
     {
-        yield return TotalVariants;
-        yield return InStockVariants;
-        yield return TotalInventoryValue;
-        yield return TotalSellingValue;
+        yield return TotalQuantity;
+        yield return ReservedQuantity;
+        yield return SoldQuantity;
+        yield return LowStockThreshold;
     }
 }

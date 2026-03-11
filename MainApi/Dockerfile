@@ -5,6 +5,7 @@ RUN dotnet restore "MainApi/MainApi.csproj"
 COPY . .
 WORKDIR "/src/MainApi"
 RUN dotnet publish "MainApi.csproj" -c Release -o /app/publish /p:UseAppHost=false /p:PublishTrimmed=true /p:PublishSingleFile=true
+
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS final
 WORKDIR /app
 COPY --from=build /app/publish .

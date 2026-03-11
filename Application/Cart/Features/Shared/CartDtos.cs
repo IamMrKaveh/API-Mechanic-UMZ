@@ -5,25 +5,24 @@ public record CartDetailDto
     public int Id { get; init; }
     public int? UserId { get; init; }
     public string? GuestToken { get; init; }
-    public List<CartItemDetailDto> Items { get; init; } = new();
+    public List<CartItemDetailDto> Items { get; init; } = [];
     public decimal TotalPrice { get; init; }
     public int TotalItems { get; init; }
-    public List<CartPriceChangeDto> PriceChanges { get; init; } = new();
+    public List<CartPriceChangeDto> PriceChanges { get; init; } = [];
 }
 
-public record CartItemDto
-{
-    public int Id { get; init; }
-    public int CartId { get; init; }
-    public int VariantId { get; init; }
-    public int Quantity { get; init; }
-    public string? ProductName { get; init; }
-    public decimal SellingPrice { get; init; }
-    public decimal TotalPrice { get; init; }
-    public string? ProductIcon { get; init; }
-    public Dictionary<string, AttributeValueDto>? Attributes { get; init; }
-    public string? RowVersion { get; init; }
-}
+public record CartItemDto(
+    int Id,
+    int CartId,
+    int VariantId,
+    int Quantity,
+    string? ProductName,
+    decimal SellingPrice,
+    decimal TotalPrice,
+    string? ProductIcon,
+    Dictionary<string, AttributeValueDto>? Attributes,
+    string? RowVersion
+);
 
 public record CartItemDetailDto
 {
@@ -59,14 +58,15 @@ public record CartSummaryDto
 public record CartCheckoutValidationDto
 {
     public bool IsValid { get; init; }
-    public List<string> Errors { get; init; } = new();
-    public List<CartPriceChangeDto> PriceChanges { get; init; } = new();
-    public List<CartStockIssueDto> StockIssues { get; init; } = new();
+    public List<string> Errors { get; init; } = [];
+    public List<CartPriceChangeDto> PriceChanges { get; init; } = [];
+    public List<CartStockIssueDto> StockIssues { get; init; } = [];
 }
 
-public record CartStockIssueDto(
-    int VariantId,
-    string ProductName,
-    int RequestedQuantity,
-    int AvailableStock
-);
+public record CartStockIssueDto
+{
+    public int VariantId { get; init; }
+    public string ProductName { get; init; }
+    public int RequestedQuantity { get; init; }
+    public int AvailableStock { get; init; }
+}

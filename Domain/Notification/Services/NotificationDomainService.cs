@@ -1,30 +1,18 @@
 namespace Domain.Notification.Services;
 
-/// <summary>
-/// Domain Service برای عملیات‌های پیچیده اعلان
-/// Stateless - بدون وابستگی به Infrastructure
-/// </summary>
 public sealed class NotificationDomainService
 {
-    /// <summary>
-    /// اعتبارسنجی دسترسی کاربر به اعلان
-    /// </summary>
-    public (bool HasAccess, string? Error) ValidateUserAccess(Notification notification, int userId)
+    public static Result ValidateUserAccess(Notification notification, int userId)
     {
         Guard.Against.Null(notification, nameof(notification));
 
         if (notification.UserId != userId)
-        {
-            return (false, "شما دسترسی به این اعلان را ندارید.");
-        }
+            return Result.Failure("شما دسترسی به این اعلان را ندارید.");
 
-        return (true, null);
+        return Result.Success();
     }
 
-    /// <summary>
-    /// علامت‌گذاری چند اعلان به عنوان خوانده شده
-    /// </summary>
-    public int MarkMultipleAsRead(IEnumerable<Notification> notifications)
+    public static int MarkMultipleAsRead(IEnumerable<Notification> notifications)
     {
         Guard.Against.Null(notifications, nameof(notifications));
 
@@ -41,76 +29,28 @@ public sealed class NotificationDomainService
         return count;
     }
 
-    /// <summary>
-    /// فیلتر اعلان‌های قابل حذف
-    /// </summary>
-    public IEnumerable<Notification> FilterDeletableNotifications(
+    public static IReadOnlyList<Notification> FilterDeletableNotifications(
         IEnumerable<Notification> notifications,
         TimeSpan minAge)
     {
         Guard.Against.Null(notifications, nameof(notifications));
 
-        return notifications.Where(n => n.IsOlderThan(minAge) && n.IsRead);
-    }
-
-    /// <summary>
-    /// محاسبه آمار اعلان‌های کاربر
-    /// </summary>
-    public NotificationStatistics CalculateStatistics(IEnumerable<Notification> notifications)
-    {
-        Guard.Against.Null(notifications, nameof(notifications));
-
-        var notificationList = notifications.ToList();
-
-        var total = notificationList.Count;
-        var unread = notificationList.Count(n => !n.IsRead);
-        var read = total - unread;
-
-        var typeBreakdown = notificationList
-            .GroupBy(n => n.Type)
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        return new NotificationStatistics(total, read, unread, typeBreakdown);
-    }
-
-    /// <summary>
-    /// گروه‌بندی اعلان‌ها بر اساس تاریخ
-    /// </summary>
-    public Dictionary<string, List<Notification>> GroupByDate(IEnumerable<Notification> notifications)
-    {
-        Guard.Against.Null(notifications, nameof(notifications));
-
-        var today = DateTime.UtcNow.Date;
-        var yesterday = today.AddDays(-1);
-        var lastWeek = today.AddDays(-7);
-
         return notifications
-            .GroupBy(n =>
-            {
-                var date = n.CreatedAt.Date;
-                if (date == today) return "امروز";
-                if (date == yesterday) return "دیروز";
-                if (date >= lastWeek) return "هفته گذشته";
-                return "قبل‌تر";
-            })
-            .ToDictionary(g => g.Key, g => g.OrderByDescending(n => n.CreatedAt).ToList());
+            .Where(n => n.IsOlderThan(minAge) && n.IsRead)
+            .ToList()
+            .AsReadOnly();
     }
-}
 
-/// <summary>
-/// آمار اعلان‌ها
-/// </summary>
-public sealed record NotificationStatistics(
-    int TotalCount,
-    int ReadCount,
-    int UnreadCount,
-    Dictionary<string, int> TypeBreakdown)
-{
-    public decimal ReadPercentage =>
-        TotalCount > 0 ? Math.Round((decimal)ReadCount / TotalCount * 100, 2) : 0;
+    public static ValueObjects.NotificationPriority DeterminePriority(ValueObjects.NotificationType type)
+    {
+        Guard.Against.Null(type, nameof(type));
 
-    public decimal UnreadPercentage =>
-        TotalCount > 0 ? Math.Round((decimal)UnreadCount / TotalCount * 100, 2) : 0;
+        if (type.IsHighPriority())
+            return ValueObjects.NotificationPriority.High;
 
-    public bool HasUnread => UnreadCount > 0;
+        if (type.IsOrderRelated())
+            return ValueObjects.NotificationPriority.Normal;
+
+        return ValueObjects.NotificationPriority.Low;
+    }
 }

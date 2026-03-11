@@ -8,7 +8,7 @@ public class OtpService : IOtpService
     public string GenerateSecureOtp()
     {
         Span<char> buffer = stackalloc char[6];
-        Span<char> digits = stackalloc char[10] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+        Span<char> digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
         int available = 10;
 
         Span<byte> rnd = stackalloc byte[1];

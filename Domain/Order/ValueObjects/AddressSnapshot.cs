@@ -89,61 +89,9 @@ public sealed class AddressSnapshot : ValueObject
             userAddress.Longitude);
     }
 
-    public string GetFullAddress()
-    {
-        return $"{Province}، {City}، {Address}";
-    }
+    public string GetFullAddress() => $"{Province}، {City}، {Address}";
 
-    public string GetShortAddress()
-    {
-        return $"{City}، {Address}";
-    }
-
-    public string ToJson()
-    {
-        return System.Text.Json.JsonSerializer.Serialize(new
-        {
-            OriginalAddressId,
-            Title,
-            ReceiverName,
-            PhoneNumber,
-            Province,
-            City,
-            Address,
-            PostalCode,
-            Latitude,
-            Longitude
-        });
-    }
-
-    public static AddressSnapshot FromJson(string json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-            throw new DomainException("داده آدرس نامعتبر است.");
-
-        try
-        {
-            var data = System.Text.Json.JsonSerializer.Deserialize<AddressData>(json);
-            if (data == null)
-                throw new DomainException("داده آدرس نامعتبر است.");
-
-            return new AddressSnapshot(
-                data.OriginalAddressId,
-                data.Title ?? "آدرس",
-                data.ReceiverName ?? "",
-                data.PhoneNumber ?? "",
-                data.Province ?? "",
-                data.City ?? "",
-                data.Address ?? "",
-                data.PostalCode ?? "",
-                data.Latitude,
-                data.Longitude);
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            throw new DomainException("فرمت داده آدرس نامعتبر است.");
-        }
-    }
+    public string GetShortAddress() => $"{City}، {Address}";
 
     private static void ValidatePhoneNumber(string phoneNumber)
     {
@@ -166,19 +114,5 @@ public sealed class AddressSnapshot : ValueObject
         yield return City;
         yield return Address;
         yield return PostalCode;
-    }
-
-    private class AddressData
-    {
-        public int OriginalAddressId { get; set; }
-        public string? Title { get; set; }
-        public string? ReceiverName { get; set; }
-        public string? PhoneNumber { get; set; }
-        public string? Province { get; set; }
-        public string? City { get; set; }
-        public string? Address { get; set; }
-        public string? PostalCode { get; set; }
-        public decimal? Latitude { get; set; }
-        public decimal? Longitude { get; set; }
     }
 }

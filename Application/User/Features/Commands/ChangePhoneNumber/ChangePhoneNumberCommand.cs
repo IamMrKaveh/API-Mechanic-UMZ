@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.User.Features.Commands.ChangePhoneNumber;
 
 public record ChangePhoneNumberCommand : IRequest<ServiceResult>

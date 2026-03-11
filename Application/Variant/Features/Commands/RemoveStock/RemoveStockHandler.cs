@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Variant.Interfaces;
+
 namespace Application.Variant.Features.Commands.RemoveStock;
 
 public class RemoveStockHandler : IRequestHandler<RemoveStockCommand, ServiceResult>

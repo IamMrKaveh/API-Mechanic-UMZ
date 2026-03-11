@@ -2,7 +2,7 @@ namespace Application.Media.Contracts;
 
 public interface IMediaService
 {
-    Task<Domain.Media.Media> AttachFileToEntityAsync(
+    Task<Domain.Media.Aggregates.Media> AttachFileToEntityAsync(
         Stream fileStream,
         string fileName,
         string contentType,

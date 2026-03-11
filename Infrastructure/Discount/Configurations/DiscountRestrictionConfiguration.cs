@@ -1,3 +1,5 @@
+using Domain.Discount.Entities;
+
 namespace Infrastructure.Discount.Configurations;
 
 public sealed class DiscountRestrictionConfiguration : IEntityTypeConfiguration<DiscountRestriction>

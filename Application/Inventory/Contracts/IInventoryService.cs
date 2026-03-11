@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Inventory.Contracts;
 
 public interface IInventoryService

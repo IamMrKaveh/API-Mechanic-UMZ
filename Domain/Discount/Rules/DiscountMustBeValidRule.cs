@@ -2,22 +2,21 @@ namespace Domain.Discount.Rules;
 
 public sealed class DiscountMustBeValidRule : IBusinessRule
 {
-    private readonly DiscountCode _discount;
-    private readonly decimal _orderTotal;
-    private readonly int _userPreviousUsageCount;
+    private readonly DiscountCode _discountCode;
+    private readonly decimal _orderAmount;
 
-    public DiscountMustBeValidRule(DiscountCode discount, decimal orderTotal, int userPreviousUsageCount = 0)
+    public DiscountMustBeValidRule(DiscountCode discountCode, decimal orderAmount)
     {
-        _discount = discount;
-        _orderTotal = orderTotal;
-        _userPreviousUsageCount = userPreviousUsageCount;
+        _discountCode = discountCode;
+        _orderAmount = orderAmount;
     }
+
+    public string Message => _discountCode.ValidateForApplication(_orderAmount).FailureReason
+                             ?? "کد تخفیف نامعتبر است.";
 
     public bool IsBroken()
     {
-        var validation = _discount.ValidateForApplication(_orderTotal, 0, _userPreviousUsageCount);
+        var validation = _discountCode.ValidateForApplication(_orderAmount);
         return !validation.IsValid;
     }
-
-    public string Message => "کد تخفیف معتبر نیست.";
 }

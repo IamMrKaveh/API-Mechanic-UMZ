@@ -1,11 +1,6 @@
+using Domain.Common.Abstractions;
+using Domain.Product.ValueObjects;
+
 namespace Domain.Product.Events;
 
-public sealed class ProductActivatedEvent : DomainEvent
-{
-    public int ProductId { get; }
-
-    public ProductActivatedEvent(int productId)
-    {
-        ProductId = productId;
-    }
-}
+public sealed record ProductActivatedEvent(ProductId ProductId) : IDomainEvent;

@@ -1,14 +1,7 @@
 namespace Domain.Category.Exceptions;
 
-public class CategoryHasActiveProductsException : DomainException
+public class CategoryHasActiveProductsException(int categoryId, int productCount) : DomainException($"امکان حذف دسته‌بندی وجود ندارد. تعداد {productCount} محصول فعال در این دسته‌بندی وجود دارد.")
 {
-    public int CategoryId { get; }
-    public int ProductCount { get; }
-
-    public CategoryHasActiveProductsException(int categoryId, int productCount)
-        : base($"امکان حذف دسته‌بندی وجود ندارد. تعداد {productCount} محصول فعال در این دسته‌بندی وجود دارد.")
-    {
-        CategoryId = categoryId;
-        ProductCount = productCount;
-    }
+    public int CategoryId { get; } = categoryId;
+    public int ProductCount { get; } = productCount;
 }

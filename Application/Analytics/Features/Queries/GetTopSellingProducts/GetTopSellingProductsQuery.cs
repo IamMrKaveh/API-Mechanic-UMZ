@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Analytics.Features.Queries.GetTopSellingProducts;
 
 public sealed record GetTopSellingProductsQuery(

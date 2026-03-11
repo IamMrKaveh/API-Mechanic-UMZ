@@ -1,5 +1,3 @@
-using Infrastructure.Search.Options;
-
 namespace Infrastructure.Search;
 
 public static class ElasticClientFactory

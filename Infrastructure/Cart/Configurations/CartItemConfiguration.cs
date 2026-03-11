@@ -1,3 +1,5 @@
+using Domain.Cart.Entity;
+
 namespace Infrastructure.Cart.Configurations;
 
 public sealed class CartItemConfiguration : IEntityTypeConfiguration<CartItem>

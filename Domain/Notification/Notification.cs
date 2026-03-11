@@ -1,50 +1,43 @@
 namespace Domain.Notification;
 
-public class Notification : AggregateRoot, IAuditable
+public class Notification : AggregateRoot, IAuditable, ISoftDeletable
 {
     public int UserId { get; private set; }
     public string Title { get; private set; } = null!;
     public string Message { get; private set; } = null!;
-    public string Type { get; private set; } = null!;
+    public ValueObjects.NotificationType Type { get; private set; } = null!;
     public bool IsRead { get; private set; }
     public string? ActionUrl { get; private set; }
     public int? RelatedEntityId { get; private set; }
     public string? RelatedEntityType { get; private set; }
     public DateTime? ReadAt { get; private set; }
-
-    
     public DateTime CreatedAt { get; private set; }
-
     public DateTime? UpdatedAt { get; private set; }
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public int? DeletedBy { get; private set; }
 
-    
     private const int MaxTitleLength = 200;
-
     private const int MaxMessageLength = 1000;
     private const int MaxActionUrlLength = 500;
     private const int MaxEntityTypeLength = 100;
 
-    
-    public User.User User { get; private set; } = null!;
-
     private Notification()
     { }
-
-    #region Factory Methods
 
     public static Notification Create(
         int userId,
         string title,
         string message,
-        string type,
+        ValueObjects.NotificationType type,
         string? actionUrl = null,
         int? relatedEntityId = null,
         string? relatedEntityType = null)
     {
         Guard.Against.NegativeOrZero(userId, nameof(userId));
+        Guard.Against.Null(type, nameof(type));
         ValidateTitle(title);
         ValidateMessage(message);
-        ValidateType(type);
         ValidateActionUrl(actionUrl);
         ValidateRelatedEntityType(relatedEntityType);
 
@@ -53,7 +46,7 @@ public class Notification : AggregateRoot, IAuditable
             UserId = userId,
             Title = title.Trim(),
             Message = message.Trim(),
-            Type = type.Trim(),
+            Type = type,
             ActionUrl = actionUrl?.Trim(),
             RelatedEntityId = relatedEntityId,
             RelatedEntityType = relatedEntityType?.Trim(),
@@ -64,55 +57,10 @@ public class Notification : AggregateRoot, IAuditable
         notification.AddDomainEvent(new Events.NotificationCreatedEvent(
             notification.Id,
             notification.UserId,
-            notification.Type));
+            notification.Type.Value));
 
         return notification;
     }
-
-    public static Notification CreateOrderNotification(
-        int userId,
-        string title,
-        string message,
-        string type,
-        int orderId,
-        string? actionUrl = null)
-    {
-        return Create(userId, title, message, type, actionUrl, orderId, "Order");
-    }
-
-    public static Notification CreateTicketNotification(
-        int userId,
-        string title,
-        string message,
-        int ticketId,
-        string? actionUrl = null)
-    {
-        return Create(userId, title, message, "TicketReply", actionUrl, ticketId, "Ticket");
-    }
-
-    public static Notification CreateProductNotification(
-        int userId,
-        string title,
-        string message,
-        string type,
-        int productId,
-        string? actionUrl = null)
-    {
-        return Create(userId, title, message, type, actionUrl, productId, "Product");
-    }
-
-    public static Notification CreateSystemAlert(
-        int userId,
-        string title,
-        string message,
-        string? actionUrl = null)
-    {
-        return Create(userId, title, message, "SystemAlert", actionUrl);
-    }
-
-    #endregion Factory Methods
-
-    #region Domain Behaviors
 
     public void MarkAsRead()
     {
@@ -125,58 +73,21 @@ public class Notification : AggregateRoot, IAuditable
         AddDomainEvent(new Events.NotificationReadEvent(Id, UserId));
     }
 
-    public void MarkAsUnread()
+    public void Delete(int? deletedBy = null)
     {
-        if (!IsRead) return;
+        if (IsDeleted) return;
 
-        IsRead = false;
-        ReadAt = null;
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+        DeletedBy = deletedBy;
         UpdatedAt = DateTime.UtcNow;
+
+        AddDomainEvent(new Events.NotificationDeletedEvent(Id, UserId));
     }
-
-    public void UpdateContent(string title, string message)
-    {
-        ValidateTitle(title);
-        ValidateMessage(message);
-
-        Title = title.Trim();
-        Message = message.Trim();
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void UpdateActionUrl(string? actionUrl)
-    {
-        ValidateActionUrl(actionUrl);
-
-        ActionUrl = actionUrl?.Trim();
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    #endregion Domain Behaviors
-
-    #region Query Methods
-
-    public bool IsOrderRelated() => RelatedEntityType == "Order";
-
-    public bool IsTicketRelated() => RelatedEntityType == "Ticket";
-
-    public bool IsProductRelated() => RelatedEntityType == "Product";
-
-    public bool HasRelatedEntity() => RelatedEntityId.HasValue && !string.IsNullOrEmpty(RelatedEntityType);
-
-    public bool HasActionUrl() => !string.IsNullOrWhiteSpace(ActionUrl);
 
     public TimeSpan? GetTimeSinceCreation() => DateTime.UtcNow - CreatedAt;
 
-    public TimeSpan? GetTimeSinceRead() => ReadAt.HasValue ? DateTime.UtcNow - ReadAt.Value : null;
-
-    public bool IsRecent(TimeSpan threshold) => GetTimeSinceCreation() <= threshold;
-
     public bool IsOlderThan(TimeSpan threshold) => GetTimeSinceCreation() > threshold;
-
-    #endregion Query Methods
-
-    #region Validation Methods
 
     private static void ValidateTitle(string title)
     {
@@ -196,22 +107,6 @@ public class Notification : AggregateRoot, IAuditable
             throw new DomainException($"متن اعلان نمی‌تواند بیش از {MaxMessageLength} کاراکتر باشد.");
     }
 
-    private static void ValidateType(string type)
-    {
-        if (string.IsNullOrWhiteSpace(type))
-            throw new DomainException("نوع اعلان الزامی است.");
-
-        
-        try
-        {
-            ValueObjects.NotificationType.FromString(type);
-        }
-        catch
-        {
-            
-        }
-    }
-
     private static void ValidateActionUrl(string? actionUrl)
     {
         if (!string.IsNullOrWhiteSpace(actionUrl) && actionUrl.Length > MaxActionUrlLength)
@@ -223,6 +118,4 @@ public class Notification : AggregateRoot, IAuditable
         if (!string.IsNullOrWhiteSpace(entityType) && entityType.Length > MaxEntityTypeLength)
             throw new DomainException($"نوع موجودیت مرتبط نمی‌تواند بیش از {MaxEntityTypeLength} کاراکتر باشد.");
     }
-
-    #endregion Validation Methods
 }

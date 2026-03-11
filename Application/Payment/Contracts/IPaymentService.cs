@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Payment.Contracts;
 
 public interface IPaymentService

@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Order.Features.Queries.GetAdminOrders;
 
 public class GetAdminOrdersHandler : IRequestHandler<GetAdminOrdersQuery, ServiceResult<PaginatedResult<AdminOrderDto>>>

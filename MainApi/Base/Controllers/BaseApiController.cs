@@ -1,47 +1,33 @@
 namespace MainApi.Base.Controllers;
 
 [ApiController]
-public abstract class BaseApiController : ControllerBase
+[Route("api/[controller]")]
+public abstract class BaseApiController(ISender mediator) : ControllerBase
 {
-    protected readonly ICurrentUserService CurrentUser;
+    protected readonly ISender Mediator = mediator;
 
-    protected BaseApiController(ICurrentUserService currentUserService)
-    {
-        CurrentUser = currentUserService;
-    }
+    protected CurrentUser CurrentUser =>
+        HttpContext.RequestServices.GetRequiredService<ICurrentUserService>().CurrentUser;
 
-    protected IActionResult ToActionResult(ServiceResult result)
-    {
-        if (result.IsFailed)
+    protected IActionResult ToActionResult<T>(ServiceResult<T> result) =>
+        result.Status switch
         {
-            return NoContent();
-        }
-
-        return result.Error switch
-        {
-            "NotFound" => NotFound(),
-            _ when result.Error != null && result.Error.Contains("Concurrency") => Conflict(new { message = result.Error }),
-            _ => BadRequest(new { message = result.Error })
+            ServiceResultStatus.Success => Ok(result.Value),
+            ServiceResultStatus.Created => StatusCode(201, result.Value),
+            ServiceResultStatus.NoContent => NoContent(),
+            ServiceResultStatus.NotFound => NotFound(result.Error),
+            ServiceResultStatus.BadRequest => BadRequest(result.Error),
+            ServiceResultStatus.Unauthorized => Unauthorized(result.Error),
+            ServiceResultStatus.Forbidden => Forbid(),
+            ServiceResultStatus.Conflict => Conflict(result.Error),
+            ServiceResultStatus.UnprocessableEntity => UnprocessableEntity(result.Error),
+            _ => StatusCode(500, result.Error)
         };
-    }
 
-    protected IActionResult ToActionResult<T>(ServiceResult<T> result)
+    protected IActionResult ToCreatedResult<T>(ServiceResult<T> result)
     {
-        if (result.IsFailed)
-        {
-            return result.Error switch
-            {
-                "NotFound" => NotFound(new { message = result.Error }),
-                _ when result.Error != null && result.Error.Contains("Concurrency") => Conflict(new { message = result.Error }),
-                _ => BadRequest(new { message = result.Error })
-            };
-        }
-
-        if (result.Data == null)
-        {
-            return NotFound();
-        }
-
-        return Ok(result.Data);
+        if (!result.IsSuccess)
+            return ToActionResult(result);
+        return StatusCode(201, result.Value);
     }
 }

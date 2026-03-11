@@ -1,12 +1,6 @@
 namespace Domain.Support.Exceptions;
 
-public sealed class TicketNotFoundException : DomainException
+public sealed class TicketNotFoundException(int ticketId) : DomainException($"تیکت با شناسه {ticketId} یافت نشد.")
 {
-    public int TicketId { get; }
-
-    public TicketNotFoundException(int ticketId)
-        : base($"تیکت با شناسه {ticketId} یافت نشد.")
-    {
-        TicketId = ticketId;
-    }
+    public int TicketId { get; } = ticketId;
 }

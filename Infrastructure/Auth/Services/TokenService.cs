@@ -1,22 +1,15 @@
 namespace Infrastructure.Auth.Services;
 
-public class TokenService : ITokenService
+public class TokenService(IConfiguration configuration) : ITokenService
 {
-    private readonly IConfiguration _configuration;
-    private readonly int _accessTokenExpirationMinutes;
-    private readonly int _refreshTokenExpirationDays;
-
-    public TokenService(IConfiguration configuration)
-    {
-        _configuration = configuration;
-        _accessTokenExpirationMinutes = configuration.GetValue("Jwt:AccessTokenExpirationMinutes", 60);
-        _refreshTokenExpirationDays = configuration.GetValue("Jwt:RefreshTokenExpirationDays", 7);
-    }
+    private readonly IConfiguration _configuration = configuration;
+    private readonly int _accessTokenExpirationMinutes = configuration.GetValue("Jwt:AccessTokenExpirationMinutes", 60);
+    private readonly int _refreshTokenExpirationDays = configuration.GetValue("Jwt:RefreshTokenExpirationDays", 7);
 
     /// <summary>
     /// تولید JWT Token
     /// </summary>
-    public string GenerateJwtToken(Domain.User.User user)
+    public string GenerateJwtToken(Domain.User.Aggregates.User user)
     {
         if (user == null)
             throw new ArgumentNullException(nameof(user), "کاربر نمی‌تواند خالی باشد.");
@@ -70,7 +63,6 @@ public class TokenService : ITokenService
     /// </summary>
     public RefreshTokenResult GenerateRefreshToken()
     {
-        
         var selectorBytes = new byte[32];
         RandomNumberGenerator.Fill(selectorBytes);
         var selector = Convert.ToBase64String(selectorBytes)
@@ -78,7 +70,6 @@ public class TokenService : ITokenService
             .Replace("/", "_")
             .TrimEnd('=');
 
-        
         var verifierBytes = new byte[32];
         RandomNumberGenerator.Fill(verifierBytes);
         var verifier = Convert.ToBase64String(verifierBytes)
@@ -86,7 +77,6 @@ public class TokenService : ITokenService
             .Replace("/", "_")
             .TrimEnd('=');
 
-        
         var fullToken = $"{selector}.{verifier}";
 
         return new RefreshTokenResult
@@ -128,7 +118,7 @@ public class TokenService : ITokenService
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)),
-                ValidateLifetime = false 
+                ValidateLifetime = false
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

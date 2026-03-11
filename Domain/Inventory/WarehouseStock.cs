@@ -3,16 +3,15 @@ namespace Domain.Inventory;
 /// <summary>
 /// موجودی یک Variant در یک انبار مشخص.
 /// </summary>
-public sealed class WarehouseStock : BaseEntity
+public sealed class WarehouseStock : Entity<WarehouseStock>
 {
     public int WarehouseId { get; private set; }
     public int VariantId { get; private set; }
-    public int OnHand { get; private set; }  
-    public int Reserved { get; private set; }  
-    public int Damaged { get; private set; }  
-    public int Available => OnHand - Reserved;  
+    public int OnHand { get; private set; }
+    public int Reserved { get; private set; }
+    public int Damaged { get; private set; }
+    public int Available => OnHand - Reserved;
 
-    
     public Warehouse? Warehouse { get; private set; }
 
     public ProductVariant? Variant { get; private set; }

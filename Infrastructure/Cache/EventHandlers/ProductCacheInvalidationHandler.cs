@@ -1,15 +1,12 @@
 namespace Infrastructure.Cache.EventHandlers;
 
-public sealed class ProductCacheInvalidationHandler :
+public sealed class ProductCacheInvalidationHandler(ICacheInvalidationService invalidation) :
     INotificationHandler<ProductUpdatedEvent>,
     INotificationHandler<PriceChangedEvent>,
     INotificationHandler<ProductActivatedEvent>,
     INotificationHandler<ProductDeactivatedEvent>
 {
-    private readonly ICacheInvalidationService _invalidation;
-
-    public ProductCacheInvalidationHandler(ICacheInvalidationService invalidation)
-        => _invalidation = invalidation;
+    private readonly ICacheInvalidationService _invalidation = invalidation;
 
     public Task Handle(ProductUpdatedEvent n, CancellationToken ct) => _invalidation.InvalidateProductAsync(n.ProductId, ct);
 

@@ -1,22 +1,19 @@
-namespace Domain.Common.Gaurd;
+namespace Domain.Common.Guards;
 
-/// <summary>
-/// Guard Clauses ساده
-/// </summary>
 public static class Guard
 {
     public static class Against
     {
         public static void Null<T>(T value, string paramName) where T : class
         {
-            if (value == null)
+            if (value is null)
                 throw new ArgumentNullException(paramName);
         }
 
-        public static void NullOrEmpty(string value, string paramName)
+        public static void NullOrWhiteSpace(string value, string paramName)
         {
             if (string.IsNullOrWhiteSpace(value))
-                throw new ArgumentException($"{paramName} cannot be null or empty.", paramName);
+                throw new ArgumentException($"{paramName} cannot be null or whitespace.", paramName);
         }
 
         public static void NegativeOrZero(int value, string paramName)
@@ -37,15 +34,9 @@ public static class Guard
                 throw new ArgumentOutOfRangeException(paramName, $"{paramName} cannot be negative.");
         }
 
-        internal static void NullOrWhiteSpace(string receiverName, string v)
-        {
-            if (string.IsNullOrWhiteSpace(receiverName))
-                throw new ArgumentException($"{v} cannot be null or whitespace.", v);
-        }
-
         public static void Empty<T>(IEnumerable<T> value, string paramName)
         {
-            if (value == null || !value.Any())
+            if (value is null || !value.Any())
                 throw new ArgumentException($"{paramName} cannot be null or empty.", paramName);
         }
     }

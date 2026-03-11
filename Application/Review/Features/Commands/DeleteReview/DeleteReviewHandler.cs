@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Review.Interfaces;
+
 namespace Application.Review.Features.Commands.DeleteReview;
 
 public class DeleteReviewHandler : IRequestHandler<DeleteReviewCommand, ServiceResult>

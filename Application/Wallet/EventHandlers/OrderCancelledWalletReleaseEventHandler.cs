@@ -1,27 +1,19 @@
-﻿namespace Application.Wallet.EventHandlers;
+﻿using Domain.Wallet.Enums;
 
-/// <summary>
-/// هنگام لغو سفارش:
-/// - اگر از کیف پول کسر شده بود → استرداد (Refund) می‌کند.
-/// - اگر فقط رزرو شده بود → رزرو را آزاد می‌کند.
-/// </summary>
-public class OrderCancelledWalletReleaseEventHandler : INotificationHandler<OrderCancelledEvent>
+namespace Application.Wallet.EventHandlers;
+
+public class OrderCancelledWalletReleaseEventHandler(
+    IMediator mediator,
+    IWalletQueryService walletQueryService,
+    ILogger<OrderCancelledWalletReleaseEventHandler> logger) : INotificationHandler<OrderCancelledEvent>
 {
-    private readonly IMediator _mediator;
-    private readonly IWalletRepository _walletRepository;
-    private readonly ILogger<OrderCancelledWalletReleaseEventHandler> _logger;
+    private readonly IMediator _mediator = mediator;
+    private readonly IWalletQueryService _walletQueryService = walletQueryService;
+    private readonly ILogger<OrderCancelledWalletReleaseEventHandler> _logger = logger;
 
-    public OrderCancelledWalletReleaseEventHandler(
-        IMediator mediator,
-        IWalletRepository walletRepository,
-        ILogger<OrderCancelledWalletReleaseEventHandler> logger)
-    {
-        _mediator = mediator;
-        _walletRepository = walletRepository;
-        _logger = logger;
-    }
-
-    public async Task Handle(OrderCancelledEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(
+        OrderCancelledEvent notification,
+        CancellationToken ct)
     {
         try
         {
@@ -29,8 +21,8 @@ public class OrderCancelledWalletReleaseEventHandler : INotificationHandler<Orde
                 "[WalletRelease] OrderCancelled: OrderId={OrderId}, UserId={UserId}",
                 notification.OrderId, notification.UserId);
 
-            var paymentEntry = await _walletRepository.GetOrderPaymentLedgerEntryAsync(
-                notification.UserId, notification.OrderId, cancellationToken);
+            var paymentEntry = await _walletQueryService.GetOrderPaymentLedgerEntryAsync(
+                notification.UserId, notification.OrderId, ct);
 
             if (paymentEntry != null)
             {
@@ -48,7 +40,7 @@ public class OrderCancelledWalletReleaseEventHandler : INotificationHandler<Orde
                     Description: $"استرداد وجه سفارش لغو شده #{notification.OrderId}"
                 );
 
-                var result = await _mediator.Send(refundCommand, cancellationToken);
+                var result = await _mediator.Send(refundCommand, ct);
                 if (result.IsFailed)
                 {
                     _logger.LogError(
@@ -62,7 +54,7 @@ public class OrderCancelledWalletReleaseEventHandler : INotificationHandler<Orde
                     notification.UserId,
                     notification.OrderId);
 
-                await _mediator.Send(releaseCommand, cancellationToken);
+                await _mediator.Send(releaseCommand, ct);
             }
         }
         catch (Exception ex)

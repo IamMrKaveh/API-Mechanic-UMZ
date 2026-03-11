@@ -1,29 +1,17 @@
+using Domain.Cart.Enum;
+
 namespace Domain.Cart.Services;
 
-/// <summary>
-/// Domain Service برای عملیات‌هایی که بین چند Aggregate هستند.
-/// Stateless - بدون وابستگی به Infrastructure.
-/// منطق موجودی و قیمت به Application Layer منتقل شده.
-/// </summary>
-public class CartDomainService
+public sealed class CartDomainService
 {
-    /// <summary>
-    /// تعیین استراتژی ادغام بر اساس قوانین کسب و کار
-    /// </summary>
-    public CartMergeStrategy DetermineMergeStrategy(Cart userCart, Cart guestCart)
+    public void MergeCarts(
+        Aggregates.Cart targetCart,
+        Aggregates.Cart sourceCart,
+        CartMergeStrategy strategy = CartMergeStrategy.SumQuantities)
     {
-        Guard.Against.Null(userCart, nameof(userCart));
-        Guard.Against.Null(guestCart, nameof(guestCart));
+        ArgumentNullException.ThrowIfNull(targetCart);
+        ArgumentNullException.ThrowIfNull(sourceCart);
 
-        
-        if (userCart.IsEmpty && !guestCart.IsEmpty)
-            return CartMergeStrategy.KeepGuestCart;
-
-        
-        if (!userCart.IsEmpty && guestCart.IsEmpty)
-            return CartMergeStrategy.KeepUserCart;
-
-        
-        return CartMergeStrategy.KeepHigherQuantity;
+        targetCart.MergeFrom(sourceCart, strategy);
     }
 }

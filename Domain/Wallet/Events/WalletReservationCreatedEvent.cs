@@ -1,17 +1,13 @@
-﻿namespace Domain.Wallet.Events;
+﻿using Domain.Common.Abstractions;
+using Domain.Common.ValueObjects;
+using Domain.User.ValueObjects;
+using Domain.Wallet.ValueObjects;
 
-public sealed class WalletReservationCreatedEvent : DomainEvent
-{
-    public int WalletId { get; }
-    public int UserId { get; }
-    public decimal Amount { get; }
-    public int OrderId { get; }
+namespace Domain.Wallet.Events;
 
-    public WalletReservationCreatedEvent(int walletId, int userId, decimal amount, int orderId)
-    {
-        WalletId = walletId;
-        UserId = userId;
-        Amount = amount;
-        OrderId = orderId;
-    }
-}
+public sealed record WalletReservationCreatedEvent(
+    WalletId WalletId,
+    UserId OwnerId,
+    WalletReservationId ReservationId,
+    Money Amount,
+    string Purpose) : IDomainEvent;

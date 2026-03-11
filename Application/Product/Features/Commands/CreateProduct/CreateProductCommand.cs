@@ -1,3 +1,7 @@
 namespace Application.Product.Features.Commands.CreateProduct;
 
-public record CreateProductCommand(CreateProductInput Input) : IRequest<int>;
+public sealed record CreateProductCommand(
+    string Name,
+    string Description,
+    int CategoryId,
+    int BrandId) : IRequest<ServiceResult<int>>;

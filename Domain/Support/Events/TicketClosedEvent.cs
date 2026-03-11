@@ -1,11 +1,9 @@
+using Domain.Common.Abstractions;
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Support.Events;
 
-public sealed class TicketClosedEvent : DomainEvent
-{
-    public int TicketId { get; }
-
-    public TicketClosedEvent(int ticketId)
-    {
-        TicketId = ticketId;
-    }
-}
+public sealed record TicketClosedEvent(
+    TicketId TicketId,
+    UserId CustomerId) : IDomainEvent;

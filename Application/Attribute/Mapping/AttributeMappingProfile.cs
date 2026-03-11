@@ -1,3 +1,6 @@
+using Domain.Attribute.Aggregates;
+using Domain.Attribute.Entities;
+
 namespace Application.Attribute.Mapping;
 
 public class AttributeMappingProfile : Profile

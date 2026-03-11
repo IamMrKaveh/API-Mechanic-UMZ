@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Order.Features.Queries.GetOrderItemById;
 
 public class GetOrderItemByIdHandler : IRequestHandler<GetOrderItemByIdQuery, ServiceResult<OrderItemDto>>

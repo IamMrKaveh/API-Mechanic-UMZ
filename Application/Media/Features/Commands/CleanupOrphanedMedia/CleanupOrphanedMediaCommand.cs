@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Media.Features.Commands.CleanupOrphanedMedia;
 
 public record CleanupOrphanedMediaCommand : IRequest<ServiceResult<CleanupResultDto>>;

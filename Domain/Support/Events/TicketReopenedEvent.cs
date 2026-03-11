@@ -1,11 +1,6 @@
 namespace Domain.Support.Events;
 
-public sealed class TicketReopenedEvent : DomainEvent
+public sealed class TicketReopenedEvent(int ticketId) : DomainEvent
 {
-    public int TicketId { get; }
-
-    public TicketReopenedEvent(int ticketId)
-    {
-        TicketId = ticketId;
-    }
+    public int TicketId { get; } = ticketId;
 }

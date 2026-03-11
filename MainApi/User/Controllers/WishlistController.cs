@@ -1,3 +1,5 @@
+using Application.Wishlist.Features.Shared;
+
 namespace MainApi.User.Controllers;
 
 [Route("api/[controller]")]
@@ -20,7 +22,7 @@ public class WishlistController : BaseApiController
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
-        var query = new GetUserWishlistQuery(CurrentUser.UserId.Value, page, pageSize);
+        var query = new GetWishlistByIdQuery(CurrentUser.UserId.Value, page, pageSize);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

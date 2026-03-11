@@ -1,13 +1,8 @@
 namespace Infrastructure.Common.Services;
 
-public sealed class UrlResolverService : IUrlResolverService
+public sealed class UrlResolverService(IConfiguration configuration) : IUrlResolverService
 {
-    private readonly string _baseUrl;
-
-    public UrlResolverService(IConfiguration configuration)
-    {
-        _baseUrl = configuration["Storage:BaseUrl"]?.TrimEnd('/') ?? string.Empty;
-    }
+    private readonly string _baseUrl = configuration["Storage:BaseUrl"]?.TrimEnd('/') ?? string.Empty;
 
     public string? ResolveUrl(string? relativePath)
     {

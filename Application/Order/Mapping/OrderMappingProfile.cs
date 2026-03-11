@@ -1,3 +1,5 @@
+using Domain.Order.Entities;
+
 namespace Application.Order.Mapping;
 
 public sealed class OrderMappingProfile : Profile
@@ -11,7 +13,7 @@ public sealed class OrderMappingProfile : Profile
             .ForMember(dest => dest.Latitude, opt => opt.Ignore())
             .ForMember(dest => dest.Longitude, opt => opt.Ignore());
 
-        CreateMap<Domain.Order.Order, OrderDto>()
+        CreateMap<Domain.Order.Aggregates.Order, OrderDto>()
             .ForMember(dest => dest.OrderNumber, opt => opt.MapFrom(src => src.OrderNumber.Value))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.Value))
             .ForMember(dest => dest.StatusDisplayName, opt => opt.MapFrom(src => src.Status.DisplayName))
@@ -25,7 +27,7 @@ public sealed class OrderMappingProfile : Profile
             .ForMember(dest => dest.OrderStatusId, opt => opt.Ignore())
             .ForMember(dest => dest.Shipping, opt => opt.Ignore());
 
-        CreateMap<Domain.Order.Order, AdminOrderDto>()
+        CreateMap<Domain.Order.Aggregates.Order, AdminOrderDto>()
             .ForMember(dest => dest.OrderNumber, opt => opt.MapFrom(src => src.OrderNumber.Value))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.Value))
             .ForMember(dest => dest.StatusDisplayName, opt => opt.MapFrom(src => src.Status.DisplayName))

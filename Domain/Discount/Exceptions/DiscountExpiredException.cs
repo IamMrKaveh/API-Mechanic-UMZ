@@ -1,14 +1,7 @@
 namespace Domain.Discount.Exceptions;
 
-public sealed class DiscountExpiredException : DomainException
+public sealed class DiscountExpiredException(string discountCode, DateTime expiryDate) : DomainException($"کد تخفیف {discountCode} در تاریخ {expiryDate:yyyy/MM/dd} منقضی شده است.")
 {
-    public string DiscountCode { get; }
-    public DateTime ExpiryDate { get; }
-
-    public DiscountExpiredException(string discountCode, DateTime expiryDate)
-        : base($"کد تخفیف {discountCode} در تاریخ {expiryDate:yyyy/MM/dd} منقضی شده است.")
-    {
-        DiscountCode = discountCode;
-        ExpiryDate = expiryDate;
-    }
+    public string DiscountCode { get; } = discountCode;
+    public DateTime ExpiryDate { get; } = expiryDate;
 }

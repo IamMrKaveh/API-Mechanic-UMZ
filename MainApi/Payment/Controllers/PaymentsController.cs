@@ -2,26 +2,20 @@ namespace MainApi.Payment.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class PaymentsController : ControllerBase
+public class PaymentsController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public PaymentsController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpPost("initiate")]
     [Authorize]
     public async Task<IActionResult> InitiatePayment([FromBody] PaymentInitiationDto dto)
     {
-        var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
-        var userId = int.Parse(User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value);
+        if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
-        var command = new InitiatePaymentCommand(dto, userId, ip);
+        var command = new InitiatePaymentCommand(dto, CurrentUser.UserId.Value, CurrentUser.IpAddress ?? "Unknown");
         var result = await _mediator.Send(command);
 
-        return result.IsSucceed ? Ok(result.Data) : BadRequest(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
     }
 
     [HttpGet("verify")]
@@ -30,9 +24,9 @@ public class PaymentsController : ControllerBase
         var command = new VerifyPaymentCommand(authority, status);
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed && result.Data?.RedirectUrl != null)
+        if (result.IsSuccess && result.Value?.RedirectUrl != null)
         {
-            return Redirect(result.Data.RedirectUrl);
+            return Redirect(result.Value.RedirectUrl);
         }
 
         return Ok(result);
@@ -43,7 +37,7 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> GetByAuthority(string authority)
     {
         var result = await _mediator.Send(new GetPaymentByAuthorityQuery(authority));
-        return result.IsSucceed ? Ok(result.Data) : NotFound(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
     }
 
     [HttpGet("by-order/{orderId}")]
@@ -51,7 +45,7 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> GetPaymentsByOrder(int orderId)
     {
         var result = await _mediator.Send(new GetPaymentsByOrderQuery(orderId));
-        return result.IsSucceed ? Ok(result.Data) : NotFound(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
     }
 
     [HttpGet("status/{authority}")]
@@ -59,7 +53,7 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> GetPaymentStatus(string authority)
     {
         var result = await _mediator.Send(new GetPaymentStatusQuery(authority));
-        return result.IsSucceed ? Ok(result.Data) : NotFound(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
     }
 
     [HttpPost("webhook/{gateway}")]
@@ -68,12 +62,5 @@ public class PaymentsController : ControllerBase
         var command = new ProcessWebhookCommand(gateway, payload.Authority, payload.Status, payload.RefId);
         await _mediator.Send(command);
         return Ok();
-    }
-
-    public class WebhookPayload
-    {
-        public string Authority { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public long? RefId { get; set; }
     }
 }

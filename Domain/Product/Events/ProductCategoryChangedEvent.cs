@@ -1,15 +1,10 @@
+using Domain.Category.ValueObjects;
+using Domain.Common.Abstractions;
+using Domain.Product.ValueObjects;
+
 namespace Domain.Product.Events;
 
-public sealed class ProductCategoryChangedEvent : DomainEvent
-{
-    public int ProductId { get; }
-    public int OldBrandId { get; }
-    public int NewBrandId { get; }
-
-    public ProductCategoryChangedEvent(int productId, int oldBrandId, int newBrandId)
-    {
-        ProductId = productId;
-        OldBrandId = oldBrandId;
-        NewBrandId = newBrandId;
-    }
-}
+public sealed record ProductCategoryChangedEvent(
+    ProductId ProductId,
+    CategoryId PreviousCategoryId,
+    CategoryId NewCategoryId) : IDomainEvent;

@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Attribute.Interfaces;
+
 namespace Application.Attribute.Features.Queries.GetAllAttributeTypes;
 
 public class GetAllAttributeTypesHandler : IRequestHandler<GetAllAttributeTypesQuery, ServiceResult<IEnumerable<AttributeTypeDto>>>

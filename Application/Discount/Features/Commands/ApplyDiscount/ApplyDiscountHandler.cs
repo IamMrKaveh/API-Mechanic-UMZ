@@ -1,3 +1,5 @@
+using Domain.Discount.Interfaces;
+
 namespace Application.Discount.Features.Commands.ApplyDiscount;
 
 public class ApplyDiscountHandler : IRequestHandler<ApplyDiscountCommand, ServiceResult<DiscountApplyResultDto>>
@@ -19,32 +21,26 @@ public class ApplyDiscountHandler : IRequestHandler<ApplyDiscountCommand, Servic
         CancellationToken ct
         )
     {
-        
         return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
             using var transaction = await _unitOfWork.BeginTransactionAsync(ct);
             try
             {
-                
                 var discount = await _discountRepository.GetByCodeAsync(request.Code, ct);
 
                 if (discount == null)
                     return ServiceResult<DiscountApplyResultDto>.Failure("کد تخفیف نامعتبر است.");
 
-                
                 var userUsageCount = await _discountRepository.CountUserUsageAsync(discount.Id, request.UserId, ct);
 
-                
                 var (isValid, error) = discount.Validate(request.OrderTotal, request.UserId, userUsageCount);
                 if (!isValid)
                 {
                     return ServiceResult<DiscountApplyResultDto>.Failure(error!);
                 }
 
-                
                 var discountAmount = discount.CalculateDiscountAmount(request.OrderTotal);
 
-                
                 discount.IncrementUsage();
                 _discountRepository.Update(discount);
 

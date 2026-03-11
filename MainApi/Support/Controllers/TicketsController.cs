@@ -41,9 +41,9 @@ public class TicketsController : BaseApiController
         var command = new CreateTicketCommand(CurrentUser.UserId.Value, dto.Subject, dto.Priority, dto.Message);
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed)
+        if (result.IsSuccess)
         {
-            return CreatedAtAction(nameof(GetTicketDetails), new { id = result.Data }, result.Data);
+            return CreatedAtAction(nameof(GetTicketDetails), new { id = result.Value }, result.Value);
         }
         return ToActionResult(result);
     }

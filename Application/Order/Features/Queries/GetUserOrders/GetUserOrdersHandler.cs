@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Order.Features.Queries.GetUserOrders;
 
 public class GetUserOrdersHandler : IRequestHandler<GetUserOrdersQuery, ServiceResult<PaginatedResult<OrderDto>>>

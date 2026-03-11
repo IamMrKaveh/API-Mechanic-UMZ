@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Variant.Features.Commands.AddVariant;
 
 public record AddVariantCommand : IRequest<ServiceResult<ProductVariantViewDto>>

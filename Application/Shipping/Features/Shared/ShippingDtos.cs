@@ -1,6 +1,6 @@
 namespace Application.Shipping.Features.Shared;
 
-public record ShippingDto
+public sealed record ShippingDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -20,19 +20,19 @@ public record ShippingDto
     public string? RowVersion { get; init; }
 }
 
-public record ShippingCreateDto
+public sealed record ShippingCreateDto
 {
     public string Name { get; init; } = string.Empty;
     public string? Description { get; init; }
     public decimal BaseCost { get; init; }
     public string? EstimatedDeliveryTime { get; init; }
-    public int MinDeliveryDays { get; init; } = 1;
-    public int MaxDeliveryDays { get; init; } = 7;
-    public bool IsActive { get; init; } = true;
+    public int MinDeliveryDays { get; init; }
+    public int MaxDeliveryDays { get; init; }
+    public bool IsActive { get; init; }
     public int SortOrder { get; init; }
 }
 
-public record ShippingUpdateDto
+public sealed record ShippingUpdateDto
 {
     public string Name { get; init; } = string.Empty;
     public string? Description { get; init; }
@@ -45,7 +45,7 @@ public record ShippingUpdateDto
     public string? RowVersion { get; init; }
 }
 
-public record AvailableShippingDto
+public sealed record AvailableShippingDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -59,7 +59,7 @@ public record AvailableShippingDto
     public int MaxDeliveryDays { get; init; }
 }
 
-public record ShippingCostResultDto
+public sealed record ShippingCostResultDto
 {
     public int ShippingId { get; init; }
     public string ShippingName { get; init; } = string.Empty;
@@ -71,10 +71,10 @@ public record ShippingCostResultDto
     public decimal? FreeShippingThreshold { get; init; }
     public decimal? RemainingForFreeShipping { get; init; }
     public string? EstimatedDeliveryTime { get; init; }
-    public List<ShippingCostItemDetailDto> ItemDetails { get; init; } = new();
+    public List<ShippingCostItemDetailDto> ItemDetails { get; init; } = [];
 }
 
-public record ShippingCostItemDetailDto
+public sealed record ShippingCostItemDetailDto
 {
     public int VariantId { get; init; }
     public string ProductName { get; init; } = string.Empty;
@@ -82,32 +82,31 @@ public record ShippingCostItemDetailDto
     public decimal ShippingMultiplier { get; init; }
 }
 
-public record ProductVariantShippingDto
+public sealed record ProductVariantShippingDto(
+    int Id,
+    int ProductVariantId,
+    int ShippingId,
+    string ShippingName,
+    bool IsActive
+);
+
+public sealed record UpdateProductVariantShippingsDto
 {
-    public int Id { get; init; }
     public int ProductVariantId { get; init; }
-    public int ShippingId { get; init; }
-    public string ShippingName { get; init; } = string.Empty;
-    public bool IsActive { get; init; }
+    public decimal ShippingMultiplier { get; init; }
+    public List<int> EnabledShippingIds { get; init; } = [];
 }
 
-public record UpdateProductVariantShippingsDto
-{
-    public int ProductVariantId { get; init; }
-    public decimal ShippingMultiplier { get; init; } = 1;
-    public List<int> EnabledShippingIds { get; init; } = new();
-}
-
-public record ProductVariantShippingInfoDto
+public sealed record ProductVariantShippingInfoDto
 {
     public int VariantId { get; init; }
     public string? ProductName { get; init; }
     public string? VariantDisplayName { get; init; }
     public decimal ShippingMultiplier { get; init; }
-    public List<ShippingSelectionDto> AvailableShippings { get; init; } = new();
+    public List<ShippingSelectionDto> AvailableShippings { get; init; } = [];
 }
 
-public record ShippingSelectionDto
+public sealed record ShippingSelectionDto
 {
     public int ShippingId { get; init; }
     public string Name { get; init; } = string.Empty;

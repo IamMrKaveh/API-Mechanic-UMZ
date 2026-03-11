@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Support.Features.Queries.GetUserTickets;
 
 public sealed record GetUserTicketsQuery(

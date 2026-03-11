@@ -47,18 +47,28 @@ public record MediaListItemDto
     public DateTime CreatedAt { get; init; }
 }
 
-public record SetPrimaryMediaRequestDto
-{
-    public int MediaId { get; init; }
-    public string EntityType { get; init; } = string.Empty;
-    public int EntityId { get; init; }
-}
+public record initPrimaryMediaRequestDto(
+    int MediaId,
+    string EntityType,
+    int EntityId
+);
 
 public record UploadImageInput(
     int? Id,
     string? AltText,
     int SortOrder,
     bool IsPrimary,
-    long? FileSize = null,
-    string? FileType = null
-    );
+    long? FileSize,
+    string? FileType
+);
+
+public record ReorderMediaRequest(
+    [Required]
+    string EntityType,
+
+    [Required]
+    int EntityId,
+
+    [Required]
+    IReadOnlyList<int> OrderedMediaIds
+);

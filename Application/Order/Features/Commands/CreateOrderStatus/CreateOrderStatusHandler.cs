@@ -1,33 +1,27 @@
+using Application.Common.Models;
+using Domain.Order.Entities;
+using Domain.Order.Interfaces;
+
 namespace Application.Order.Features.Commands.CreateOrderStatus;
 
-public class CreateOrderStatusHandler : IRequestHandler<CreateOrderStatusCommand, ServiceResult<OrderStatusDto>>
+public class CreateOrderStatusHandler(
+    IOrderStatusRepository orderStatusRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<CreateOrderStatusHandler> logger) : IRequestHandler<CreateOrderStatusCommand, ServiceResult<OrderStatusDto>>
 {
-    private readonly IOrderStatusRepository _orderStatusRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<CreateOrderStatusHandler> _logger;
-
-    public CreateOrderStatusHandler(
-        IOrderStatusRepository orderStatusRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<CreateOrderStatusHandler> logger
-        )
-    {
-        _orderStatusRepository = orderStatusRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IOrderStatusRepository _orderStatusRepository = orderStatusRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<CreateOrderStatusHandler> _logger = logger;
 
     public async Task<ServiceResult<OrderStatusDto>> Handle(
         CreateOrderStatusCommand request,
         CancellationToken ct
         )
     {
-        
         var existing = await _orderStatusRepository.GetByNameAsync(request.Name, ct);
         if (existing != null)
             return ServiceResult<OrderStatusDto>.Failure("وضعیت سفارش با این نام قبلاً وجود دارد.");
 
-        
         var status = OrderStatus.Create(
             request.Name,
             request.DisplayName,

@@ -3,7 +3,7 @@ namespace Domain.Payment.Exceptions;
 public sealed class PaymentNotFoundException : DomainException
 {
     public string? Authority { get; }
-    public int? TransactionId { get; }
+    public Guid? TransactionId { get; }
 
     public PaymentNotFoundException(string authority)
         : base($"تراکنش پرداخت با شناسه '{authority}' یافت نشد.")
@@ -11,8 +11,8 @@ public sealed class PaymentNotFoundException : DomainException
         Authority = authority;
     }
 
-    public PaymentNotFoundException(int transactionId)
-        : base($"تراکنش پرداخت با شناسه عددی {transactionId} یافت نشد.")
+    public PaymentNotFoundException(Guid transactionId)
+        : base($"تراکنش پرداخت با شناسه {transactionId} یافت نشد.")
     {
         TransactionId = transactionId;
     }

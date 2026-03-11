@@ -3,14 +3,9 @@ namespace MainApi.Order.Controllers;
 [Route("api/admin/order-statuses")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminOrderStatusController : BaseApiController
+public class AdminOrderStatusController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public AdminOrderStatusController(IMediator mediator, ICurrentUserService currentUserService) : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     [AllowAnonymous]
@@ -25,7 +20,7 @@ public class AdminOrderStatusController : BaseApiController
     public async Task<IActionResult> CreateOrderStatus([FromBody] CreateOrderStatusCommand command)
     {
         var result = await _mediator.Send(command);
-        if (result.IsSucceed) return CreatedAtAction(nameof(GetOrderStatus), new { id = result.Data!.Id }, result.Data);
+        if (result.IsSuccess) return CreatedAtAction(nameof(GetOrderStatus), new { id = result.Value!.Id }, result.Value);
         return ToActionResult(result);
     }
 

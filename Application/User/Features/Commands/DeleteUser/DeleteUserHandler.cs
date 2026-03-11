@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.User.Interfaces;
+
 namespace Application.User.Features.Commands.DeleteUser;
 
 public class DeleteUserHandler : IRequestHandler<DeleteUserCommand, ServiceResult>
@@ -16,16 +19,14 @@ public class DeleteUserHandler : IRequestHandler<DeleteUserCommand, ServiceResul
     public async Task<ServiceResult> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
         if (request.Id == request.CurrentUserId)
-        {
             return ServiceResult.Failure("Admins cannot delete their own account this way.");
-        }
 
         var user = await _userRepository.GetByIdAsync(request.Id);
         if (user == null) return ServiceResult.Failure("NotFound");
 
         user.Delete(request.CurrentUserId);
 
-        _userRepository.UpdateUser(user);
+        _userRepository.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await _auditService.LogAdminEventAsync("DeleteUser", request.CurrentUserId, $"Soft-deleted user {request.Id}");

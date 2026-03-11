@@ -2,17 +2,17 @@ namespace Domain.Product.Rules;
 
 public sealed class ProductMustBeActiveForVariantActivationRule : IBusinessRule
 {
-    private readonly Product _product;
+    private readonly Aggregates.Product _product;
 
-    public ProductMustBeActiveForVariantActivationRule(Product product)
+    public ProductMustBeActiveForVariantActivationRule(Aggregates.Product product)
     {
         _product = product;
     }
 
     public bool IsBroken()
     {
-        return _product.IsDeleted || !_product.IsActive;
+        return !_product.IsActive;
     }
 
-    public string Message => "امکان فعال‌سازی واریانت در محصول غیرفعال یا حذف‌شده وجود ندارد.";
+    public string Message => "امکان فعال‌سازی واریانت در محصول غیرفعال وجود ندارد.";
 }

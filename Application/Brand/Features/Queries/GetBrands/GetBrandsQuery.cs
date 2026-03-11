@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Brand.Features.Queries.GetBrands;
 
 public record GetAdminBrandsLegacyQuery(

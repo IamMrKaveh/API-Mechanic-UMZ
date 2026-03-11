@@ -1,37 +1,23 @@
+using Application.Common.Models;
+
 namespace Application.Notification.Features.Queries.GetUserNotifications;
 
-public sealed class GetUserNotificationsHandler
-    : IRequestHandler<GetUserNotificationsQuery, ServiceResult<PaginatedResult<NotificationDto>>>
+public sealed class GetUserNotificationsHandler(
+    INotificationQueryService notificationQueryService)
+        : IRequestHandler<GetUserNotificationsQuery, ServiceResult<PaginatedResult<NotificationDto>>>
 {
-    private readonly INotificationRepository _notificationRepository;
-    private readonly IMapper _mapper;
-
-    public GetUserNotificationsHandler(
-        INotificationRepository notificationRepository,
-        IMapper mapper)
-    {
-        _notificationRepository = notificationRepository;
-        _mapper = mapper;
-    }
+    private readonly INotificationQueryService _notificationQueryService = notificationQueryService;
 
     public async Task<ServiceResult<PaginatedResult<NotificationDto>>> Handle(
         GetUserNotificationsQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var (items, totalCount) = await _notificationRepository.GetByUserIdAsync(
+        var result = await _notificationQueryService.GetByUserIdAsync(
             request.UserId,
             request.IsRead,
             request.Page,
             request.PageSize,
-            cancellationToken);
-
-        var dtos = _mapper.Map<IEnumerable<NotificationDto>>(items);
-
-        var result = PaginatedResult<NotificationDto>.Create(
-            [.. dtos],
-            totalCount,
-            request.Page,
-            request.PageSize);
+            ct);
 
         return ServiceResult<PaginatedResult<NotificationDto>>.Success(result);
     }

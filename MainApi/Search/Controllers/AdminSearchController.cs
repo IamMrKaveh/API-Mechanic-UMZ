@@ -2,14 +2,10 @@ namespace MainApi.Search.Controllers;
 
 [ApiController]
 [Route("api/admin/search")]
-public class AdminSearchController : BaseApiController
+[Authorize(Roles = "Admin")]
+public class AdminSearchController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public AdminSearchController(IMediator mediator, ICurrentUserService currentUserService) : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpPost("sync")]
     public async Task<IActionResult> SyncAllData(CancellationToken ct = default)

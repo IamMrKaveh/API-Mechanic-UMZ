@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.User.Interfaces;
+
 namespace Application.User.Features.Commands.UpdateUser;
 
 public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, ServiceResult>
@@ -29,11 +32,15 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, ServiceResul
             return ServiceResult.Failure("User account is deleted and cannot be modified.");
 
         user.UpdateName(
-            !string.IsNullOrEmpty(request.UpdateRequest.FirstName) ? _htmlSanitizer.Sanitize(request.UpdateRequest.FirstName) : user.FirstName!,
-            !string.IsNullOrEmpty(request.UpdateRequest.LastName) ? _htmlSanitizer.Sanitize(request.UpdateRequest.LastName) : user.LastName!
+            !string.IsNullOrEmpty(request.UpdateRequest.FirstName)
+                ? _htmlSanitizer.Sanitize(request.UpdateRequest.FirstName)
+                : user.FirstName!,
+            !string.IsNullOrEmpty(request.UpdateRequest.LastName)
+                ? _htmlSanitizer.Sanitize(request.UpdateRequest.LastName)
+                : user.LastName!
         );
 
-        _userRepository.UpdateUser(user);
+        _userRepository.Update(user);
 
         try
         {

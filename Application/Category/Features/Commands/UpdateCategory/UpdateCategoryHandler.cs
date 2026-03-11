@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Category.Interfaces;
+
 namespace Application.Category.Features.Commands.UpdateCategory;
 
 public class UpdateCategoryHandler : IRequestHandler<UpdateCategoryCommand, ServiceResult>
@@ -41,7 +44,7 @@ public class UpdateCategoryHandler : IRequestHandler<UpdateCategoryCommand, Serv
 
         category.Update(request.Name, request.Description, request.SortOrder);
 
-        Domain.Media.Media? newMedia = null;
+        Domain.Media.Aggregates.Media? newMedia = null;
         if (request.IconFile != null)
         {
             var existingMedia = (await _mediaQueryService.GetEntityMediaAsync("Category", request.Id))

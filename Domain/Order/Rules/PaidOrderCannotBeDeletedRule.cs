@@ -1,13 +1,8 @@
 namespace Domain.Order.Rules;
 
-public sealed class PaidOrderCannotBeDeletedRule : IBusinessRule
+public sealed class PaidOrderCannotBeDeletedRule(Aggregates.Order order) : IBusinessRule
 {
-    private readonly Order _order;
-
-    public PaidOrderCannotBeDeletedRule(Order order)
-    {
-        _order = order;
-    }
+    private readonly Aggregates.Order _order = order;
 
     public bool IsBroken()
     {

@@ -1,15 +1,12 @@
 namespace Infrastructure.Cache.EventHandlers;
 
-public sealed class OrderCacheInvalidationHandler :
+public sealed class OrderCacheInvalidationHandler(ICacheInvalidationService invalidation) :
     INotificationHandler<OrderCreatedEvent>,
     INotificationHandler<OrderPaidEvent>,
     INotificationHandler<OrderCancelledEvent>,
     INotificationHandler<OrderStatusChangedEvent>
 {
-    private readonly ICacheInvalidationService _invalidation;
-
-    public OrderCacheInvalidationHandler(ICacheInvalidationService invalidation)
-        => _invalidation = invalidation;
+    private readonly ICacheInvalidationService _invalidation = invalidation;
 
     public Task Handle(OrderCreatedEvent n, CancellationToken ct) => Invalidate(n.UserId, ct);
 

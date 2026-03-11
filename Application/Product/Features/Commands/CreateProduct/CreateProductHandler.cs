@@ -1,29 +1,31 @@
+using Domain.Product.Interfaces;
+
 namespace Application.Product.Features.Commands.CreateProduct;
 
-public class CreateProductHandler : IRequestHandler<CreateProductCommand, int>
+public sealed class CreateProductHandler(
+    IProductRepository productRepository,
+    IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateProductCommand, ServiceResult<int>>
 {
-    private readonly IProductRepository _productRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IProductRepository _productRepository = productRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IDateTimeProvider _dateTimeProvider = dateTimeProvider;
 
-    public CreateProductHandler(IProductRepository productRepository, IUnitOfWork unitOfWork)
+    public async Task<ServiceResult<int>> Handle(
+        CreateProductCommand request,
+        CancellationToken ct)
     {
-        _productRepository = productRepository;
-        _unitOfWork = unitOfWork;
-    }
+        var product = Product.Create(
+            request.Name,
+            request.Description,
+            request.Price,
+            request.CategoryId,
+            request.BrandId,
+            _dateTimeProvider.UtcNow);
 
-    public async Task<int> Handle(CreateProductCommand request, CancellationToken cancellationToken)
-    {
-        var product = Domain.Product.Product.Create(
-            Domain.Product.ValueObjects.ProductName.Create(request.Input.Name),
-            Slug.Create(request.Input.Slug),
-            request.Input.CategoryId,
-            request.Input.BrandId,
-            request.Input.Description
-        );
+        await _productRepository.AddAsync(product, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
 
-        await _productRepository.AddAsync(product, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return product.Id;
+        return ServiceResult<int>.Success(product.Id);
     }
 }

@@ -1,17 +1,9 @@
 namespace Domain.Cart.Events;
 
-public class CartItemUpdatedEvent : DomainEvent
+public class CartItemUpdatedEvent(int cartId, int variantId, int oldQuantity, int newQuantity) : DomainEvent
 {
-    public int CartId { get; }
-    public int VariantId { get; }
-    public int OldQuantity { get; }
-    public int NewQuantity { get; }
-
-    public CartItemUpdatedEvent(int cartId, int variantId, int oldQuantity, int newQuantity)
-    {
-        CartId = cartId;
-        VariantId = variantId;
-        OldQuantity = oldQuantity;
-        NewQuantity = newQuantity;
-    }
+    public int CartId { get; } = cartId;
+    public int VariantId { get; } = variantId;
+    public int OldQuantity { get; } = oldQuantity;
+    public int NewQuantity { get; } = newQuantity;
 }

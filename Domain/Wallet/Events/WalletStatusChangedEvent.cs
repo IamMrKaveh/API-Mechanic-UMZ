@@ -1,17 +1,9 @@
 ﻿namespace Domain.Wallet.Events;
 
-public sealed class WalletStatusChangedEvent : DomainEvent
+public sealed class WalletStatusChangedEvent(int walletId, int userId, WalletStatus newStatus, string? reason) : DomainEvent
 {
-    public int WalletId { get; }
-    public int UserId { get; }
-    public WalletStatus NewStatus { get; }
-    public string? Reason { get; }
-
-    public WalletStatusChangedEvent(int walletId, int userId, WalletStatus newStatus, string? reason)
-    {
-        WalletId = walletId;
-        UserId = userId;
-        NewStatus = newStatus;
-        Reason = reason;
-    }
+    public int WalletId { get; } = walletId;
+    public int UserId { get; } = userId;
+    public WalletStatus NewStatus { get; } = newStatus;
+    public string? Reason { get; } = reason;
 }

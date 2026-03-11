@@ -1,75 +1,20 @@
 namespace Domain.Media.Services;
 
-/// <summary>
-/// Domain Service برای عملیات‌هایی که بین چند Media هستند
-/// Stateless - بدون وابستگی به Infrastructure
-/// </summary>
 public class MediaDomainService
 {
     private const int MaxMediaPerEntity = 20;
 
-    /// <summary>
-    /// اعتبارسنجی افزودن رسانه جدید به موجودیت
-    /// </summary>
-    public (bool CanAdd, string? Error) ValidateAddMedia(
-        IEnumerable<Media> existingMedias,
-        string fileType)
+    public static Result ValidateAddMedia(IEnumerable<Aggregates.Media> existingMedias, string fileType)
     {
-        var mediaList = existingMedias.Where(m => !m.IsDeleted).ToList();
+        var mediaList = existingMedias.Where(m => m.IsActive).ToList();
 
         if (mediaList.Count >= MaxMediaPerEntity)
-        {
-            return (false, $"حداکثر تعداد رسانه مجاز برای هر موجودیت {MaxMediaPerEntity} عدد است.");
-        }
+            return Result.Failure($"حداکثر تعداد رسانه مجاز برای هر موجودیت {MaxMediaPerEntity} عدد است.");
 
-        return (true, null);
+        return Result.Success();
     }
 
-    /// <summary>
-    /// تنظیم رسانه اصلی و حذف اصلی بودن از سایر رسانه‌ها
-    /// </summary>
-    public void SetPrimaryMedia(Media newPrimary, IEnumerable<Media> allMedias)
-    {
-        Guard.Against.Null(newPrimary, nameof(newPrimary));
-
-        if (!newPrimary.CanBeSetAsPrimary())
-        {
-            throw new DomainException("این رسانه قابل تنظیم به عنوان اصلی نیست.");
-        }
-
-        foreach (var media in allMedias.Where(m => m.IsPrimary && m.Id != newPrimary.Id))
-        {
-            media.RemovePrimary();
-        }
-
-        newPrimary.SetAsPrimary();
-    }
-
-    /// <summary>
-    /// مرتب‌سازی مجدد رسانه‌ها
-    /// </summary>
-    public void ReorderMedias(IEnumerable<Media> medias, IReadOnlyList<int> orderedIds)
-    {
-        Guard.Against.Null(medias, nameof(medias));
-        Guard.Against.Empty(orderedIds, nameof(orderedIds));
-
-        var mediaDict = medias.Where(m => !m.IsDeleted).ToDictionary(m => m.Id);
-
-        for (int i = 0; i < orderedIds.Count; i++)
-        {
-            if (mediaDict.TryGetValue(orderedIds[i], out var media))
-            {
-                media.UpdateSortOrder(i);
-            }
-        }
-    }
-
-    /// <summary>
-    /// اعتبارسنجی نوع فایل برای موجودیت خاص
-    /// </summary>
-    public (bool IsValid, string? Error) ValidateFileTypeForEntity(
-        string entityType,
-        string fileExtension)
+    public static Result ValidateFileTypeForEntity(string entityType, string fileExtension)
     {
         var imageExtensions = new[] { "jpg", "jpeg", "png", "gif", "webp", "bmp", "svg" };
         var documentExtensions = new[] { "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt" };
@@ -82,27 +27,64 @@ public class MediaDomainService
             entityType.Equals("Category", StringComparison.OrdinalIgnoreCase))
         {
             if (!imageExtensions.Contains(extension))
-            {
-                return (false, "برای این موجودیت فقط فایل‌های تصویری مجاز هستند.");
-            }
+                return Result.Failure("برای این موجودیت فقط فایل‌های تصویری مجاز هستند.");
         }
 
         var allAllowed = imageExtensions.Concat(documentExtensions).Concat(videoExtensions);
         if (!allAllowed.Contains(extension))
-        {
-            return (false, $"نوع فایل '{extension}' پشتیبانی نمی‌شود.");
-        }
+            return Result.Failure($"نوع فایل '{extension}' پشتیبانی نمی‌شود.");
 
-        return (true, null);
+        return Result.Success();
     }
 
-    /// <summary>
-    /// انتخاب رسانه اصلی پیش‌فرض پس از حذف اصلی فعلی
-    /// </summary>
-    public Media? SelectNewPrimaryAfterDeletion(IEnumerable<Media> remainingMedias)
+    public static void SetPrimaryMedia(Aggregates.Media newPrimary, IEnumerable<Aggregates.Media> allMedias)
+    {
+        Guard.Against.Null(newPrimary, nameof(newPrimary));
+
+        if (!newPrimary.CanBeSetAsPrimary())
+            throw new DomainException("این رسانه قابل تنظیم به عنوان اصلی نیست.");
+
+        foreach (var media in allMedias.Where(m => m.IsPrimary && m.Id != newPrimary.Id))
+        {
+            media.RemovePrimary();
+        }
+
+        newPrimary.SetAsPrimary();
+    }
+
+    public static void ReorderMedias(IEnumerable<Aggregates.Media> medias, IReadOnlyList<MediaId> orderedIds)
+    {
+        Guard.Against.Null(medias, nameof(medias));
+        Guard.Against.Empty(orderedIds, nameof(orderedIds));
+
+        var activeMedias = medias.Where(m => m.IsActive).ToList();
+        var activeMediaDict = activeMedias.ToDictionary(m => m.Id);
+
+        var activeIdSet = new HashSet<MediaId>(activeMediaDict.Keys);
+        var providedIdSet = new HashSet<MediaId>(orderedIds);
+
+        var invalidIds = providedIdSet.Except(activeIdSet).ToList();
+        if (invalidIds.Any())
+            throw new DomainException($"شناسه‌های رسانه نامعتبر یا غیرفعال: {string.Join(", ", invalidIds.Select(id => id.Value))}");
+
+        var missingIds = activeIdSet.Except(providedIdSet).ToList();
+        if (missingIds.Any())
+            throw new DomainException($"تمام رسانه‌های فعال باید در لیست مرتب‌سازی وجود داشته باشند. شناسه‌های ناموجود: {string.Join(", ", missingIds.Select(id => id.Value))}");
+
+        var distinctCount = orderedIds.Distinct().Count();
+        if (distinctCount != orderedIds.Count)
+            throw new DomainException("لیست مرتب‌سازی شامل شناسه‌های تکراری است.");
+
+        for (int i = 0; i < orderedIds.Count; i++)
+        {
+            activeMediaDict[orderedIds[i]].UpdateSortOrder(i);
+        }
+    }
+
+    public static Aggregates.Media? SelectNewPrimaryAfterDeletion(IEnumerable<Aggregates.Media> remainingMedias)
     {
         return remainingMedias
-            .Where(m => !m.IsDeleted && m.IsActive)
+            .Where(m => m.IsActive)
             .OrderBy(m => m.SortOrder)
             .ThenBy(m => m.CreatedAt)
             .FirstOrDefault();

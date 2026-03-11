@@ -1,19 +1,17 @@
+using Application.Common.Models;
+
 namespace Application.Variant.Features.Queries.GetProductVariants;
 
-public class GetProductVariantsHandler
-    : IRequestHandler<GetProductVariantsQuery, ServiceResult<IEnumerable<ProductVariantViewDto>>>
+public class GetProductVariantsHandler(IVariantQueryService variantQueryService)
+        : IRequestHandler<GetProductVariantsQuery, ServiceResult<IEnumerable<ProductVariantViewDto>>>
 {
-    private readonly IProductQueryService _productQueryService;
-
-    public GetProductVariantsHandler(IProductQueryService productQueryService)
-    {
-        _productQueryService = productQueryService;
-    }
+    private readonly IVariantQueryService _variantQueryService = variantQueryService;
 
     public async Task<ServiceResult<IEnumerable<ProductVariantViewDto>>> Handle(
-        GetProductVariantsQuery request, CancellationToken ct)
+        GetProductVariantsQuery request,
+        CancellationToken ct)
     {
-        var result = await _productQueryService.GetProductVariantsAsync(
+        var result = await _variantQueryService.GetProductVariantsAsync(
             request.ProductId, request.ActiveOnly, ct);
 
         return ServiceResult<IEnumerable<ProductVariantViewDto>>.Success(result);

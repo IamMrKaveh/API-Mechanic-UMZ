@@ -1,16 +1,12 @@
-﻿namespace Infrastructure.Wallet.Repositories;
+﻿using Domain.Wallet.Interfaces;
 
-public class WalletRepository : IWalletRepository
+namespace Infrastructure.Wallet.Repositories;
+
+public class WalletRepository(DBContext context) : IWalletRepository
 {
-    private readonly DBContext _context;
+    private readonly DBContext _context = context;
 
-    public WalletRepository(DBContext context)
-    {
-        _context = context;
-    }
-
-    /// <summary>Loads snapshot only – no ledger, no reservations.</summary>
-    public async Task<Domain.Wallet.Wallet?> GetByUserIdAsync(
+    public async Task<Domain.Wallet.Aggregates.Wallet?> GetByUserIdAsync(
         int userId,
         CancellationToken ct = default)
     {
@@ -18,12 +14,7 @@ public class WalletRepository : IWalletRepository
             .FirstOrDefaultAsync(w => w.UserId == userId, ct);
     }
 
-    /// <summary>
-    /// Loads wallet snapshot with active reservations and acquires a database-level
-    /// pessimistic write lock (SELECT … FOR UPDATE) so concurrent debits/credits
-    /// are serialized for the same wallet row.
-    /// </summary>
-    public async Task<Domain.Wallet.Wallet?> GetByUserIdForUpdateAsync(
+    public async Task<Domain.Wallet.Aggregates.Wallet?> GetByUserIdForUpdateAsync(
         int userId,
         CancellationToken ct = default)
     {
@@ -44,34 +35,14 @@ public class WalletRepository : IWalletRepository
         return wallet;
     }
 
-    /// <summary>Paginated ledger query – never loads via the Wallet aggregate.</summary>
-    public async Task<(List<WalletLedgerEntry> Items, int TotalCount)> GetLedgerPageAsync(
-        int userId,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
-    {
-        var query = _context.WalletLedgerEntries
-            .Where(e => e.UserId == userId)
-            .OrderByDescending(e => e.CreatedAt);
-
-        var total = await query.CountAsync(ct);
-        var items = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
-
-        return (items, total);
-    }
-
     public async Task AddAsync(
-        Domain.Wallet.Wallet wallet,
+        Domain.Wallet.Aggregates.Wallet wallet,
         CancellationToken ct = default)
     {
         await _context.Wallets.AddAsync(wallet, ct);
     }
 
-    public void Update(Domain.Wallet.Wallet wallet)
+    public void Update(Domain.Wallet.Aggregates.Wallet wallet)
     {
         _context.Wallets.Update(wallet);
     }
@@ -92,10 +63,6 @@ public class WalletRepository : IWalletRepository
             .AnyAsync(e => e.UserId == userId && e.IdempotencyKey == idempotencyKey, ct);
     }
 
-    /// <summary>
-    /// Returns a batch of expired pending reservations as lightweight projections.
-    /// No Wallet aggregate is loaded; only WalletReservation rows are queried.
-    /// </summary>
     public async Task<List<ExpiredReservationProjection>> GetExpiredReservationBatchAsync(
         int batchSize,
         CancellationToken ct = default)
@@ -118,11 +85,6 @@ public class WalletRepository : IWalletRepository
             .ToListAsync(ct);
     }
 
-    /// <summary>
-    /// Atomically marks the reservation as Expired and decrements the wallet's
-    /// ReservedBalance using a single UPDATE statement with optimistic concurrency
-    /// on the wallet RowVersion. Returns false if another process already expired it.
-    /// </summary>
     public async Task<bool> ExpireReservationAsync(
         int reservationId,
         int walletId,
@@ -145,19 +107,5 @@ public class WalletRepository : IWalletRepository
             ct);
 
         return affectedRows > 0;
-    }
-
-    public async Task<WalletLedgerEntry?> GetOrderPaymentLedgerEntryAsync(
-        int userId,
-        int orderId,
-        CancellationToken ct = default)
-    {
-        return await _context.WalletLedgerEntries
-            .FirstOrDefaultAsync(e =>
-                e.UserId == userId &&
-                e.ReferenceId == orderId &&
-                e.ReferenceType == WalletReferenceType.Order &&
-                e.TransactionType == WalletTransactionType.OrderPayment,
-                ct);
     }
 }

@@ -1,11 +1,6 @@
+using Domain.Common.Abstractions;
+using Domain.User.ValueObjects;
+
 namespace Domain.User.Events;
 
-public class UserDeactivatedEvent : DomainEvent
-{
-    public int UserId { get; }
-
-    public UserDeactivatedEvent(int userId)
-    {
-        UserId = userId;
-    }
-}
+public sealed record UserDeactivatedEvent(UserId UserId) : IDomainEvent;

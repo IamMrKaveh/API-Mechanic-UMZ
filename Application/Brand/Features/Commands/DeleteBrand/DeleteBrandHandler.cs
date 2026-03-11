@@ -1,32 +1,23 @@
+using Domain.Category.Interfaces;
+
 namespace Application.Brand.Features.Commands.DeleteBrand;
 
-public class DeleteBrandHandler : IRequestHandler<DeleteBrandCommand, ServiceResult>
+public class DeleteBrandHandler(
+    ICategoryRepository categoryRepository,
+    IUnitOfWork unitOfWork,
+    IMediaService mediaService,
+    IMediaQueryService mediaQueryService,
+    ILogger<DeleteBrandHandler> logger) : IRequestHandler<DeleteBrandCommand, ServiceResult>
 {
-    private readonly ICategoryRepository _categoryRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMediaService _mediaService;
-    private readonly IMediaQueryService _mediaQueryService;
-    private readonly ILogger<DeleteBrandHandler> _logger;
-
-    public DeleteBrandHandler(
-        ICategoryRepository categoryRepository,
-        IUnitOfWork unitOfWork,
-        IMediaService mediaService,
-        IMediaQueryService mediaQueryService,
-        ILogger<DeleteBrandHandler> logger
-        )
-    {
-        _categoryRepository = categoryRepository;
-        _unitOfWork = unitOfWork;
-        _mediaService = mediaService;
-        _mediaQueryService = mediaQueryService;
-        _logger = logger;
-    }
+    private readonly ICategoryRepository _categoryRepository = categoryRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IMediaService _mediaService = mediaService;
+    private readonly IMediaQueryService _mediaQueryService = mediaQueryService;
+    private readonly ILogger<DeleteBrandHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(
         DeleteBrandCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var category = await _categoryRepository.GetByIdWithGroupsAndProductsAsync(
             request.CategoryId, ct);

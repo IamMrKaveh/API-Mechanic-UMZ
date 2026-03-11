@@ -17,6 +17,9 @@ public static class MiddlewareExtensions
 
         app.UseMiddleware<RateLimitMiddleware>();
 
+        app.UseAdminIpWhitelist();
+        app.UseMiddleware<WebhookIpWhitelistMiddleware>();
+
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -25,9 +28,6 @@ public static class MiddlewareExtensions
 
         app.UseAuthentication();
         app.UseAuthorization();
-
-        app.UseAdminIpWhitelist();
-        app.UseMiddleware<WebhookIpWhitelistMiddleware>();
 
         return app;
     }

@@ -1,12 +1,6 @@
 namespace Domain.Discount.Exceptions;
 
-public sealed class DiscountNotActiveException : DomainException
+public sealed class DiscountNotActiveException(string code) : DomainException($"کد تخفیف '{code}' غیرفعال است.")
 {
-    public string Code { get; }
-
-    public DiscountNotActiveException(string code)
-        : base($"کد تخفیف '{code}' غیرفعال است.")
-    {
-        Code = code;
-    }
+    public string Code { get; } = code;
 }

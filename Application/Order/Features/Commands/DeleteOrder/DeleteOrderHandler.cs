@@ -1,24 +1,20 @@
+using Application.Common.Models;
 using Application.Features.Orders.Commands.DeleteOrder;
 
 namespace Application.Order.Features.Commands.DeleteOrder;
 
-public class DeleteOrderHandler : IRequestHandler<DeleteOrderCommand, ServiceResult>
+public class DeleteOrderHandler(
+    IOrderRepository orderRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService) : IRequestHandler<DeleteOrderCommand, ServiceResult>
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
+    private readonly IOrderRepository _orderRepository = orderRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
 
-    public DeleteOrderHandler(
-        IOrderRepository orderRepository,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService)
-    {
-        _orderRepository = orderRepository;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-    }
-
-    public async Task<ServiceResult> Handle(DeleteOrderCommand request, CancellationToken ct)
+    public async Task<ServiceResult> Handle(
+        DeleteOrderCommand request,
+        CancellationToken ct)
     {
         var order = await _orderRepository.GetByIdAsync(request.OrderId, ct);
         if (order == null)
@@ -26,7 +22,6 @@ public class DeleteOrderHandler : IRequestHandler<DeleteOrderCommand, ServiceRes
 
         try
         {
-            
             order.Delete(request.UserId);
         }
         catch (DomainException ex)

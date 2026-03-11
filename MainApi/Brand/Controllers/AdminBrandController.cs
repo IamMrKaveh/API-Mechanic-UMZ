@@ -3,15 +3,9 @@ namespace MainApi.Brand.Controllers;
 [Route("api/admin/brand")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminBrandController : BaseApiController
+public class AdminBrandController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public AdminBrandController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetBrands(
@@ -28,13 +22,18 @@ public class AdminBrandController : BaseApiController
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateBrand([FromForm] CreateBrandCommand command)
+    public async Task<IActionResult> CreateBrand([FromForm] CreateBrandRequest request)
     {
-        var result = await _mediator.Send(command);
-        if (result.IsSucceed)
+        var command = new CreateBrandCommand
         {
-            return CreatedAtAction(nameof(GetBrand), new { id = result.Data }, result.Data);
-        }
+            CategoryId = request.CategoryId,
+            Name = request.Name,
+            Description = request.Description,
+            IconFile = ToFileDto(request.IconFile)
+        };
+        var result = await _mediator.Send(command);
+        if (result.IsSuccess)
+            return CreatedAtAction(nameof(GetBrand), new { id = result.Value }, result.Value);
         return ToActionResult(result);
     }
 
@@ -47,10 +46,17 @@ public class AdminBrandController : BaseApiController
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateBrand(int id, [FromForm] UpdateBrandCommand command)
+    public async Task<IActionResult> UpdateBrand(int id, [FromForm] UpdateBrandRequest request)
     {
-        if (id != command.BrandId) return BadRequest("Mismatched Group ID"); 
-
+        var command = new UpdateBrandCommand
+        {
+            CategoryId = request.CategoryId,
+            BrandId = id,
+            Name = request.Name,
+            Description = request.Description,
+            IconFile = ToFileDto(request.IconFile),
+            RowVersion = request.RowVersion
+        };
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -64,9 +70,22 @@ public class AdminBrandController : BaseApiController
     }
 
     [HttpPost("move")]
-    public async Task<IActionResult> MoveBrand([FromBody] MoveBrandCommand command)
+    public async Task<IActionResult> MoveBrand([FromBody] MoveBrandRequest request)
     {
+        var command = new MoveBrandCommand(request.SourceCategoryId, request.TargetCategoryId, request.BrandId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
+    }
+
+    private static FileDto? ToFileDto(IFormFile? file)
+    {
+        if (file == null) return null;
+        return new FileDto
+        {
+            FileName = file.FileName,
+            ContentType = file.ContentType,
+            Length = file.Length,
+            Content = file.OpenReadStream()
+        };
     }
 }

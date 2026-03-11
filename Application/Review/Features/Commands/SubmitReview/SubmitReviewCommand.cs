@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Review.Features.Commands.SubmitReview;
 
 public record SubmitReviewCommand : IRequest<ServiceResult<ProductReviewDto>>

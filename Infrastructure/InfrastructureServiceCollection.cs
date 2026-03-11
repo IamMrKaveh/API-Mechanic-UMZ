@@ -1,3 +1,21 @@
+using Application.Cart;
+using Domain.Attribute.Interfaces;
+using Domain.Audit.Interfaces;
+using Domain.Category.Interfaces;
+using Domain.Discount.Interfaces;
+using Domain.Inventory.Interfaces;
+using Domain.Media.Interfaces;
+using Domain.Notification.Interfaces;
+using Domain.Order.Interfaces;
+using Domain.Payment.Interfaces;
+using Domain.Product.Interfaces;
+using Domain.Review.Interfaces;
+using Domain.Security.Interfaces;
+using Domain.Shipping.Interfaces;
+using Domain.Support.Interfaces;
+using Domain.User.Interfaces;
+using Domain.Variant.Interfaces;
+using Domain.Wallet.Interfaces;
 using HealthStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus;
 
 namespace Infrastructure;
@@ -14,7 +32,7 @@ public static class InfrastructureServiceCollection
 
         AddDatabaseServices(services, connectionString);
         AddCoreInfrastructure(services);
-        AddAuthServices(services);
+        AddAuthServices(services, configuration);
         AddRepositories(services);
         AddDomainAndApplicationServices(services, configuration);
         AddPaymentServices(services, configuration);
@@ -24,6 +42,12 @@ public static class InfrastructureServiceCollection
         AddCachingAndConcurrency(services, configuration);
         AddElasticsearchServices(services, configuration);
         AddHealthChecks(services, connectionString);
+
+        services.AddHttpClient<ILocationService, LocationService>(client =>
+        {
+            client.BaseAddress = new Uri("https://iran-locations-api.ir/api/v1/fa/");
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
 
         return services;
     }
@@ -48,9 +72,6 @@ public static class InfrastructureServiceCollection
             options.AddInterceptors(interceptor);
         });
 
-        services.AddScoped<IApplicationDbContext>(sp =>
-            sp.GetRequiredService<DBContext>());
-
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
     }
@@ -65,8 +86,16 @@ public static class InfrastructureServiceCollection
         services.AddTransient<IHtmlSanitizer, HtmlSanitizer>();
     }
 
-    private static void AddAuthServices(IServiceCollection services)
+    private static void AddAuthServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<SmtpOptions>(
+            configuration.GetSection(SmtpOptions.SectionName));
+
+        services.Configure<KavenegarOptions>(
+            configuration.GetSection(KavenegarOptions.SectionName));
+
+        services.AddScoped<ISessionRepository, SessionRepository>();
+        services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IOtpService, OtpService>();
@@ -90,7 +119,7 @@ public static class InfrastructureServiceCollection
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IWalletRepository, Infrastructure.Wallet.Repositories.WalletRepository>();
-        services.AddScoped<IShippingRepository, ShippingMethodRepository>();
+        services.AddScoped<IShippingRepository, ShippingRepository>();
         services.AddScoped<IVariantRepository, VariantRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
@@ -99,7 +128,9 @@ public static class InfrastructureServiceCollection
         services.AddScoped<IOrderProcessStateRepository, OrderProcessStateRepository>();
     }
 
-    private static void AddDomainAndApplicationServices(IServiceCollection services, IConfiguration configuration)
+    private static void AddDomainAndApplicationServices(
+        IServiceCollection services,
+        IConfiguration configuration)
     {
         services.Configure<CacheOptions>(
             configuration.GetSection(CacheOptions.SectionName));
@@ -110,6 +141,7 @@ public static class InfrastructureServiceCollection
 
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<InventoryDomainService>();
+        services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IStockLedgerService, StockLedgerService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
@@ -118,15 +150,21 @@ public static class InfrastructureServiceCollection
         services.AddScoped<IProductQueryService, ProductQueryService>();
         services.AddScoped<ICategoryQueryService, CategoryQueryService>();
         services.AddScoped<IOrderQueryService, OrderQueryService>();
+        services.AddScoped<IOrderStatusQueryService, OrderStatusQueryService>();
+        services.AddScoped<IPaymentQueryService, PaymentQueryService>();
         services.AddScoped<IInventoryQueryService, InventoryQueryService>();
         services.AddScoped<IReviewQueryService, ReviewQueryService>();
         services.AddScoped<IUserQueryService, UserQueryService>();
         services.AddScoped<IShippingQueryService, ShippingQueryService>();
         services.AddScoped<IMediaQueryService, MediaQueryService>();
         services.AddScoped<ICartQueryService, CartQueryService>();
+        services.AddScoped<ITicketQueryService, TicketQueryService>();
+        services.AddScoped<IWalletQueryService, WalletQueryService>();
         services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
         services.AddScoped<IDiscountService, DiscountService>();
         services.AddScoped<IWalletService, WalletService>();
+        services.AddScoped<INotificationQueryService, NotificationQueryService>();
+        services.AddScoped<IBrandQueryService, BrandQueryService>();
         services.AddScoped<CartItemValidationService>();
         services.AddMemoryCache();
 
@@ -203,8 +241,8 @@ public static class InfrastructureServiceCollection
     }
 
     private static void AddElasticsearchServices(
-        IServiceCollection services,
-        IConfiguration configuration)
+     IServiceCollection services,
+     IConfiguration configuration)
     {
         services.Configure<ElasticsearchOptions>(
             configuration.GetSection(ElasticsearchOptions.SectionName));
@@ -216,13 +254,13 @@ public static class InfrastructureServiceCollection
         {
             services.AddSingleton<ElasticsearchClient>(sp =>
             {
-                var logger = sp.GetRequiredService<ILogger<ElasticSearchService>>();
+                var logger = sp.GetRequiredService<ILogger<ElasticsearchService>>();
                 return ElasticClientFactory.Create(configuration, logger);
             });
 
             services.AddSingleton<ElasticsearchMetrics>();
             services.AddSingleton<ElasticsearchCircuitBreaker>();
-            services.AddScoped<ElasticSearchService>();
+            services.AddScoped<ElasticsearchService>();
             services.AddScoped<ISearchService, ResilientElasticSearchService>();
             services.AddScoped<IElasticIndexManager, ElasticIndexManager>();
             services.AddScoped<IElasticBulkService, ElasticBulkService>();

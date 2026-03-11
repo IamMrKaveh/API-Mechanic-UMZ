@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.User.Interfaces;
+
 namespace Application.User.Features.Commands.RestoreUser;
 
 public class RestoreUserHandler : IRequestHandler<RestoreUserCommand, ServiceResult>

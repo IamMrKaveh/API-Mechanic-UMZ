@@ -5,11 +5,8 @@ namespace Application.Security.Contracts;
 /// </summary>
 public interface ICurrentUserService
 {
-    int? UserId { get; }
-    string? GuestId { get; }
-    string? PhoneNumber { get; }
-    bool IsAdmin { get; }
+    CurrentUser CurrentUser { get; }
     bool IsAuthenticated { get; }
-    string? IpAddress { get; }
     string? UserAgent { get; }
+    string? GuestId { get; }
 }

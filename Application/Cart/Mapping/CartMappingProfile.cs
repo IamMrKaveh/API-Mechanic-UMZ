@@ -1,16 +1,18 @@
+using Domain.Cart.Entity;
+
 namespace Application.Cart.Mapping;
 
 public class CartMappingProfile : Profile
 {
     public CartMappingProfile()
     {
-        CreateMap<Domain.Cart.Cart, CartDetailDto>()
+        CreateMap<Domain.Cart.Aggregates.Cart, CartDetailDto>()
             .ForMember(dest => dest.Items, opt => opt.Ignore())
             .ForMember(dest => dest.TotalPrice, opt => opt.Ignore())
             .ForMember(dest => dest.TotalItems, opt => opt.Ignore())
             .ForMember(dest => dest.PriceChanges, opt => opt.Ignore());
 
-        CreateMap<Domain.Cart.CartItem, CartItemDto>()
+        CreateMap<CartItem, CartItemDto>()
             .ForMember(dest => dest.SellingPrice, opt => opt.MapFrom(src => src.SellingPrice))
             .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice))
             .ForMember(dest => dest.ProductName,

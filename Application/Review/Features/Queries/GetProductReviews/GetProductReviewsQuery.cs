@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Review.Features.Queries.GetProductReviews;
 
 public record GetProductReviewsQuery(int ProductId, int Page = 1, int PageSize = 10)

@@ -1,15 +1,9 @@
 namespace Domain.Order.Rules;
 
-public sealed class OrderStatusTransitionRule : IBusinessRule
+public sealed class OrderStatusTransitionRule(OrderStatusValue currentStatus, OrderStatusValue newStatus) : IBusinessRule
 {
-    private readonly OrderStatusValue _currentStatus;
-    private readonly OrderStatusValue _newStatus;
-
-    public OrderStatusTransitionRule(OrderStatusValue currentStatus, OrderStatusValue newStatus)
-    {
-        _currentStatus = currentStatus;
-        _newStatus = newStatus;
-    }
+    private readonly OrderStatusValue _currentStatus = currentStatus;
+    private readonly OrderStatusValue _newStatus = newStatus;
 
     public bool IsBroken()
     {

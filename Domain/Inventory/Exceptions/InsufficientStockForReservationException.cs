@@ -1,18 +1,9 @@
 namespace Domain.Inventory.Exceptions;
 
-public class InsufficientStockForReservationException : DomainException
+public class InsufficientStockForReservationException(int variantId, int availableStock, int requestedQuantity) : DomainException($"موجودی کافی برای رزرو نیست. واریانت: {variantId}، موجودی: {availableStock}، درخواستی: {requestedQuantity}")
 {
-    public int VariantId { get; }
-    public int AvailableStock { get; }
-    public int RequestedQuantity { get; }
-    public int Shortage { get; }
-
-    public InsufficientStockForReservationException(int variantId, int availableStock, int requestedQuantity)
-        : base($"موجودی کافی برای رزرو نیست. واریانت: {variantId}، موجودی: {availableStock}، درخواستی: {requestedQuantity}")
-    {
-        VariantId = variantId;
-        AvailableStock = availableStock;
-        RequestedQuantity = requestedQuantity;
-        Shortage = requestedQuantity - availableStock;
-    }
+    public int VariantId { get; } = variantId;
+    public int AvailableStock { get; } = availableStock;
+    public int RequestedQuantity { get; } = requestedQuantity;
+    public int Shortage { get; } = requestedQuantity - availableStock;
 }

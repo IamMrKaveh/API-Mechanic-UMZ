@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Review.Features.Queries.GetPendingReviews;
 
 public class GetPendingReviewsHandler

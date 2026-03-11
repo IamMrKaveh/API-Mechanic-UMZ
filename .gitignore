@@ -11,6 +11,14 @@
 
 Database/
 
+.env
+*.env
+!.env.example
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+keys/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -34,7 +42,7 @@ artifacts/
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
-
+appsettings.Development.json
 # NuGet Packages
 *.nupkg
 # NuGet Symbol Packages

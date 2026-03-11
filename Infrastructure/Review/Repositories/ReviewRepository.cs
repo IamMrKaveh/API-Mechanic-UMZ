@@ -1,22 +1,17 @@
+using Domain.Review.Aggregates;
+using Domain.Review.Interfaces;
+
 namespace Infrastructure.Review.Repositories;
 
-public class ReviewRepository : IReviewRepository
+public class ReviewRepository(DBContext context) : IReviewRepository
 {
-    private readonly Persistence.Context.DBContext _context;
-
-    public ReviewRepository(Persistence.Context.DBContext context)
-    {
-        _context = context;
-    }
-
-    public async Task<ProductReview?> GetByIdAsync(int reviewId, CancellationToken ct = default)
-    {
-        return await _context.ProductReviews
-            .FirstOrDefaultAsync(r => r.Id == reviewId, ct);
-    }
+    private readonly DBContext _context = context;
 
     public async Task<bool> UserHasReviewedProductAsync(
-        int userId, int productId, int? orderId = null, CancellationToken ct = default)
+        int userId,
+        int productId,
+        int? orderId = null,
+        CancellationToken ct = default)
     {
         var query = _context.ProductReviews
             .Where(r => r.UserId == userId && r.ProductId == productId && !r.IsDeleted);
@@ -28,14 +23,18 @@ public class ReviewRepository : IReviewRepository
     }
 
     public async Task<bool> UserHasPurchasedProductAsync(
-        int userId, int productId, CancellationToken ct = default)
+        int userId,
+        int productId,
+        CancellationToken ct = default)
     {
         return await _context.Orders
             .Where(o => o.UserId == userId && !o.IsDeleted && o.PaymentDate != null)
             .AnyAsync(o => o.OrderItems.Any(oi => oi.ProductId == productId), ct);
     }
 
-    public async Task AddAsync(ProductReview review, CancellationToken ct = default)
+    public async Task AddAsync(
+        ProductReview review,
+        CancellationToken ct = default)
     {
         await _context.ProductReviews.AddAsync(review, ct);
     }
@@ -45,8 +44,20 @@ public class ReviewRepository : IReviewRepository
         _context.ProductReviews.Update(review);
     }
 
+    public async Task<ProductReview?> GetByIdAsync(
+        int reviewId,
+        CancellationToken ct = default)
+    {
+        return await _context.ProductReviews
+            .FirstOrDefaultAsync(r => r.Id == reviewId, ct);
+    }
+
     public async Task<(IEnumerable<ProductReview> Reviews, int TotalCount)> GetByProductIdAsync(
-        int productId, string? status, int page, int pageSize, CancellationToken ct = default)
+        int productId,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
     {
         var query = _context.ProductReviews
             .Where(r => r.ProductId == productId && !r.IsDeleted);
@@ -67,7 +78,9 @@ public class ReviewRepository : IReviewRepository
     }
 
     public async Task<(IEnumerable<ProductReview> Reviews, int TotalCount)> GetPendingReviewsAsync(
-        int page, int pageSize, CancellationToken ct = default)
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
     {
         var query = _context.ProductReviews
             .Where(r => r.Status == "Pending" && !r.IsDeleted);

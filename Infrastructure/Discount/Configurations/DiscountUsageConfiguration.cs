@@ -1,3 +1,5 @@
+using Domain.Discount.Aggregates;
+
 namespace Infrastructure.Discount.Configurations;
 
 public sealed class DiscountUsageConfiguration : IEntityTypeConfiguration<DiscountUsage>

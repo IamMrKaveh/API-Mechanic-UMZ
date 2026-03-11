@@ -1,8 +1,8 @@
 namespace Infrastructure.Media.Configurations;
 
-public sealed class MediaConfiguration : IEntityTypeConfiguration<Domain.Media.Media>
+public sealed class MediaConfiguration : IEntityTypeConfiguration<Domain.Media.Aggregates.Media>
 {
-    public void Configure(EntityTypeBuilder<Domain.Media.Media> builder)
+    public void Configure(EntityTypeBuilder<Domain.Media.Aggregates.Media> builder)
     {
         builder.HasKey(e => e.Id);
         builder.Property(e => e.RowVersion).IsRowVersion();

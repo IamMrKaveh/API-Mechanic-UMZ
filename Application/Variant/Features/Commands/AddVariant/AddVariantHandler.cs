@@ -1,3 +1,9 @@
+using Application.Common.Models;
+using Domain.Attribute.Entities;
+using Domain.Attribute.Interfaces;
+using Domain.Product.Interfaces;
+using Domain.Shipping.Interfaces;
+
 namespace Application.Variant.Features.Commands.AddVariant;
 
 public class AddVariantHandler : IRequestHandler<AddVariantCommand, ServiceResult<ProductVariantViewDto>>
@@ -44,7 +50,7 @@ public class AddVariantHandler : IRequestHandler<AddVariantCommand, ServiceResul
 
                 
                 var attributeValues = request.AttributeValueIds.Any()
-                    ? await _attributeRepository.GetValuesByIdsAsync(request.AttributeValueIds, ct)
+                    ? await _attributeRepository.GetAttributeValuesByIdsAsync(request.AttributeValueIds, ct)
                     : new List<AttributeValue>();
 
                 if (request.AttributeValueIds.Any())

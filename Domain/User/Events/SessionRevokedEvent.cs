@@ -1,13 +1,7 @@
 namespace Domain.User.Events;
 
-public class SessionRevokedEvent : DomainEvent
+public class SessionRevokedEvent(int userId, int sessionId) : DomainEvent
 {
-    public int UserId { get; }
-    public int SessionId { get; }
-
-    public SessionRevokedEvent(int userId, int sessionId)
-    {
-        UserId = userId;
-        SessionId = sessionId;
-    }
+    public int UserId { get; } = userId;
+    public int SessionId { get; } = sessionId;
 }

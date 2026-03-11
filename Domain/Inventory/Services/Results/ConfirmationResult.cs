@@ -1,0 +1,23 @@
+﻿namespace Domain.Inventory.Services.Results;
+
+public sealed class ConfirmationResult
+{
+    public bool IsSuccess { get; }
+    public ProductVariantId VariantId { get; }
+    public int ConfirmedQuantity { get; }
+    public string? Error { get; }
+
+    private ConfirmationResult(bool isSuccess, ProductVariantId variantId, int confirmedQuantity = 0, string? error = null)
+    {
+        IsSuccess = isSuccess;
+        VariantId = variantId;
+        ConfirmedQuantity = confirmedQuantity;
+        Error = error;
+    }
+
+    public static ConfirmationResult Success(ProductVariantId variantId, int quantity)
+        => new(true, variantId, quantity);
+
+    public static ConfirmationResult Failed(ProductVariantId variantId, string error)
+        => new(false, variantId, error: error);
+}

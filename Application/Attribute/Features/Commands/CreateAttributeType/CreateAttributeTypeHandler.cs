@@ -1,3 +1,7 @@
+using Application.Common.Models;
+using Domain.Attribute.Aggregates;
+using Domain.Attribute.Interfaces;
+
 namespace Application.Attribute.Features.Commands.CreateAttributeType;
 
 public class CreateAttributeTypeHandler : IRequestHandler<CreateAttributeTypeCommand, ServiceResult<AttributeTypeDto>>

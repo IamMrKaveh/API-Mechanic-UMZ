@@ -1,27 +1,27 @@
+using Domain.Common.Events;
+
 namespace Domain.Order.Events;
 
 public sealed class OrderStatusChangedEvent : DomainEvent
 {
-    public int OrderId { get; }
-    public int UserId { get; }
-    public int OldStatusId { get; }
-    public int NewStatusId { get; }
-    public string OldStatusName { get; }
-    public string NewStatusName { get; }
+    public Guid OrderId { get; }
+    public string OrderNumber { get; }
+    public Guid UserId { get; }
+    public string PreviousStatus { get; }
+    public string NewStatus { get; }
 
     public OrderStatusChangedEvent(
-        int orderId,
-        int userId,
-        int oldStatusId,
-        int newStatusId,
-        string oldStatusName,
-        string newStatusName)
+        Guid orderId,
+        string orderNumber,
+        Guid userId,
+        string previousStatus,
+        string newStatus)
     {
         OrderId = orderId;
+        OrderNumber = orderNumber;
         UserId = userId;
-        OldStatusId = oldStatusId;
-        NewStatusId = newStatusId;
-        OldStatusName = oldStatusName;
-        NewStatusName = newStatusName;
+        PreviousStatus = previousStatus;
+        NewStatus = newStatus;
+        EventVersion = 1;
     }
 }

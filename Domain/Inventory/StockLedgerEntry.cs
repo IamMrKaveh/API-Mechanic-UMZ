@@ -1,63 +1,28 @@
 namespace Domain.Inventory;
 
-/// <summary>
-/// Stock Ledger Entry - دفتر کل موجودی (Append-Only).
-/// هر تغییر در موجودی به عنوان یک رکورد جدید ثبت می‌شود.
-/// هیچ رکوردی حذف یا ویرایش نمی‌شود - فقط اضافه می‌شود.
-///
-/// این الگو به ما امکان می‌دهد:
-/// - تاریخچه کامل موجودی را داشته باشیم
-/// - موجودی در هر لحظه را محاسبه کنیم
-/// - حسابرسی کامل داشته باشیم
-/// - Concurrent Writes را مدیریت کنیم
-/// </summary>
-public sealed class StockLedgerEntry : BaseEntity, IAuditable
+public sealed class StockLedgerEntry : Entity<StockLedgerEntry>, IAuditable
 {
-    
-    public int VariantId { get; private set; }
-
+    public ProductVariantId VariantId { get; private set; } = default!;
     public int? WarehouseId { get; private set; }
     public int? OrderItemId { get; private set; }
     public int? UserId { get; private set; }
-
-    
     public StockEventType EventType { get; private set; }
-
     public string EventTypeName => EventType.ToString();
-
-    
-    public int QuantityDelta { get; private set; }   
-
-    public int BalanceAfter { get; private set; }   
-    public decimal UnitCost { get; private set; }   
-
-    
-    public string? ReferenceNumber { get; private set; }  
-
-    public string? CorrelationId { get; private set; }  
+    public int QuantityDelta { get; private set; }
+    public int BalanceAfter { get; private set; }
+    public decimal UnitCost { get; private set; }
+    public string? ReferenceNumber { get; private set; }
+    public string? CorrelationId { get; private set; }
     public string? Note { get; private set; }
-    public string? Source { get; private set; }  
-
-    
     public string IdempotencyKey { get; private set; } = null!;
-
-    
     public DateTime CreatedAt { get; private set; }
-
-    public DateTime? UpdatedAt { get; private set; }
-
-    
-    public ProductVariant? Variant { get; private set; }
-
-    public Warehouse? Warehouse { get; private set; }
+    public DateTime? UpdatedAt => null;
 
     private StockLedgerEntry()
     { }
 
-    
-
     public static StockLedgerEntry StockIn(
-        int variantId,
+        ProductVariantId variantId,
         int quantity,
         int balanceAfter,
         decimal unitCost,
@@ -71,23 +36,8 @@ public sealed class StockLedgerEntry : BaseEntity, IAuditable
             unitCost, referenceNumber, note, warehouseId, userId);
     }
 
-    public static StockLedgerEntry StockOut(
-        int variantId,
-        int quantity,
-        int balanceAfter,
-        decimal unitCost,
-        string? referenceNumber = null,
-        string? note = null,
-        int? warehouseId = null,
-        int? userId = null)
-    {
-        Guard.Against.NegativeOrZero(quantity, nameof(quantity));
-        return Create(variantId, StockEventType.Sale, -quantity, balanceAfter,
-            unitCost, referenceNumber, note, warehouseId, userId);
-    }
-
     public static StockLedgerEntry Reserve(
-        int variantId,
+        ProductVariantId variantId,
         int quantity,
         int balanceAfter,
         string referenceNumber,
@@ -105,7 +55,7 @@ public sealed class StockLedgerEntry : BaseEntity, IAuditable
     }
 
     public static StockLedgerEntry ReleaseReservation(
-        int variantId,
+        ProductVariantId variantId,
         int quantity,
         int balanceAfter,
         string referenceNumber,
@@ -118,7 +68,7 @@ public sealed class StockLedgerEntry : BaseEntity, IAuditable
     }
 
     public static StockLedgerEntry CommitReservation(
-        int variantId,
+        ProductVariantId variantId,
         int quantity,
         int balanceAfter,
         string referenceNumber,
@@ -133,7 +83,7 @@ public sealed class StockLedgerEntry : BaseEntity, IAuditable
     }
 
     public static StockLedgerEntry Adjustment(
-        int variantId,
+        ProductVariantId variantId,
         int delta,
         int balanceAfter,
         string reason,
@@ -144,23 +94,8 @@ public sealed class StockLedgerEntry : BaseEntity, IAuditable
             0, null, reason, warehouseId, userId);
     }
 
-    public static StockLedgerEntry Return(
-        int variantId,
-        int quantity,
-        int balanceAfter,
-        string referenceNumber,
-        string? note = null,
-        int? warehouseId = null)
-    {
-        Guard.Against.NegativeOrZero(quantity, nameof(quantity));
-        return Create(variantId, StockEventType.Return, quantity, balanceAfter,
-            0, referenceNumber, note, warehouseId);
-    }
-
-    
-
     private static StockLedgerEntry Create(
-        int variantId,
+        ProductVariantId variantId,
         StockEventType eventType,
         int quantityDelta,
         int balanceAfter,
@@ -184,7 +119,6 @@ public sealed class StockLedgerEntry : BaseEntity, IAuditable
             UnitCost = unitCost,
             ReferenceNumber = referenceNumber,
             Note = note,
-            Source = "System",
             IdempotencyKey = $"{variantId}:{eventType}:{referenceNumber ?? Guid.NewGuid().ToString("N")}",
             CreatedAt = DateTime.UtcNow
         };

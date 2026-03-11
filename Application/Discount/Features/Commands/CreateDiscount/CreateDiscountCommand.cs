@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Discount.Features.Commands.CreateDiscount;
 
 public record CreateDiscountCommand : IRequest<ServiceResult<DiscountCodeDto>>

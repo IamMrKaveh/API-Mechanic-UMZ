@@ -1,26 +1,18 @@
 namespace Application.Category.Features.Queries.GetAdminCategories;
 
-public class GetAdminCategoriesHandler
-    : IRequestHandler<GetAdminCategoriesQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>
+public class GetAdminCategoriesHandler(
+    ICategoryQueryService categoryQueryService,
+    IMapper mapper) : IRequestHandler<GetAdminCategoriesQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>
 {
-    private readonly ICategoryRepository _repository;
-    private readonly IMapper _mapper;
-
-    public GetAdminCategoriesHandler(
-        ICategoryRepository repository,
-        IMapper mapper
-        )
-    {
-        _repository = repository;
-        _mapper = mapper;
-    }
+    private readonly ICategoryQueryService _categoryQueryService = categoryQueryService;
+    private readonly IMapper _mapper = mapper;
 
     public async Task<ServiceResult<PaginatedResult<CategoryListItemDto>>> Handle(
         GetAdminCategoriesQuery request,
         CancellationToken ct
         )
     {
-        var (categories, totalCount) = await _repository.GetPagedAsync(
+        var (categories, totalCount) = await _categoryQueryService.GetPagedAsync(
             request.Search,
             request.IsActive,
             request.IncludeDeleted,

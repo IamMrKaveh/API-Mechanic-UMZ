@@ -1,12 +1,6 @@
 ﻿namespace Domain.Wallet.Exceptions;
 
-public sealed class DuplicateWalletIdempotencyKeyException : DomainException
+public sealed class DuplicateWalletIdempotencyKeyException(string idempotencyKey) : DomainException($"عملیات کیف پول با کلید '{idempotencyKey}' قبلاً ثبت شده است.")
 {
-    public string IdempotencyKey { get; }
-
-    public DuplicateWalletIdempotencyKeyException(string idempotencyKey)
-        : base($"عملیات کیف پول با کلید '{idempotencyKey}' قبلاً ثبت شده است.")
-    {
-        IdempotencyKey = idempotencyKey;
-    }
+    public string IdempotencyKey { get; } = idempotencyKey;
 }

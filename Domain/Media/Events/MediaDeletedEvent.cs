@@ -1,17 +1,9 @@
 namespace Domain.Media.Events;
 
-public sealed class MediaDeletedEvent : DomainEvent
+public sealed class MediaDeletedEvent(Guid mediaId, string entityType, int entityId, int? deletedBy) : DomainEvent
 {
-    public int MediaId { get; }
-    public string EntityType { get; }
-    public int EntityId { get; }
-    public int? DeletedBy { get; }
-
-    public MediaDeletedEvent(int mediaId, string entityType, int entityId, int? deletedBy)
-    {
-        MediaId = mediaId;
-        EntityType = entityType;
-        EntityId = entityId;
-        DeletedBy = deletedBy;
-    }
+    public Guid MediaId { get; } = mediaId;
+    public string EntityType { get; } = entityType;
+    public int EntityId { get; } = entityId;
+    public int? DeletedBy { get; } = deletedBy;
 }

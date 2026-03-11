@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Payment.Features.Commands.InitiatePayment;
 
 public record InitiatePaymentCommand(

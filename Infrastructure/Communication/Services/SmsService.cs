@@ -1,21 +1,6 @@
 namespace Infrastructure.Communication.Services;
 
-/// <summary>
-/// تنظیمات سرویس Kavenegar
-/// </summary>
-public class KavenegarOptions
-{
-    public const string SectionName = "Kavenegar";
-
-    public string ApiKey { get; } = "CHANGE_ME";
-    public string SenderNumber { get; } = "2000660110";
-}
-
-/// <summary>
-/// سرویس اکنون فقط از IOptions<KavenegarOptions> استفاده می‌کند
-/// اگر ApiKey خالی باشد، InvalidOperationException پرتاب می‌شود
-/// </summary>
-public class SmsService : ISmsService
+internal class SmsService : ISmsService
 {
     private readonly ILogger<SmsService> _logger;
     private readonly KavenegarOptions _options;

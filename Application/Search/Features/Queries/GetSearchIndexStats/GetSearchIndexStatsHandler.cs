@@ -1,28 +1,27 @@
 namespace Application.Search.Features.Queries.GetSearchIndexStats;
 
-public class GetSearchIndexStatsHandler : IRequestHandler<GetSearchIndexStatsQuery, ServiceResult<object>>
+public sealed class GetSearchIndexStatsHandler
+    : IRequestHandler<GetSearchIndexStatsQuery, ServiceResult<SearchIndexStatsDto>>
 {
-    private readonly ISearchStatsService _statsService;
+    private readonly ISearchService _searchService;
 
-    public GetSearchIndexStatsHandler(ISearchStatsService statsService)
+    public GetSearchIndexStatsHandler(ISearchService searchService)
     {
-        _statsService = statsService;
+        _searchService = searchService;
     }
 
-    public async Task<ServiceResult<object>> Handle(GetSearchIndexStatsQuery request, CancellationToken ct)
+    public async Task<ServiceResult<SearchIndexStatsDto>> Handle(
+        GetSearchIndexStatsQuery request,
+        CancellationToken cancellationToken)
     {
-        var result = await _statsService.GetStatsAsync(ct);
+        var stats = await _searchService.GetIndexStatsAsync(cancellationToken);
 
-        if (!result.IsAvailable)
-            return ServiceResult<object>.Failure(result.UnavailableReason ?? "سرویس جستجو غیرفعال است.");
+        var dto = new SearchIndexStatsDto(
+            stats.ProductsCount,
+            stats.CategoriesCount,
+            stats.BrandsCount,
+            stats.ProductsCount + stats.CategoriesCount + stats.BrandsCount);
 
-        return ServiceResult<object>.Success(new
-        {
-            result.Status,
-            result.TotalDocuments,
-            result.ClusterName,
-            result.NumberOfNodes,
-            result.ActivePrimaryShards
-        });
+        return ServiceResult<SearchIndexStatsDto>.Success(dto);
     }
 }

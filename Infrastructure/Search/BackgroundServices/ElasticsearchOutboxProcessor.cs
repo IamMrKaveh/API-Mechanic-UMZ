@@ -4,26 +4,17 @@ namespace Infrastructure.Search.BackgroundServices;
 /// هر batch پردازش در scope جداگانه انجام می‌شود
 /// این از memory leak ناشی از Change Tracker بلوت جلوگیری می‌کند
 /// </summary>
-public class ElasticsearchOutboxProcessor : BackgroundService
+public class ElasticsearchOutboxProcessor(
+    IServiceScopeFactory scopeFactory,
+    ILogger<ElasticsearchOutboxProcessor> logger,
+    IConfiguration configuration
+        ) : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<ElasticsearchOutboxProcessor> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly ILogger<ElasticsearchOutboxProcessor> _logger = logger;
+    private readonly IConfiguration _configuration = configuration;
 
-    public ElasticsearchOutboxProcessor(
-        IServiceScopeFactory scopeFactory,
-        ILogger<ElasticsearchOutboxProcessor> logger,
-        IConfiguration configuration
-        )
-    {
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-        _configuration = configuration;
-    }
-
-    protected override async Task ExecuteAsync(
-        CancellationToken stoppingToken
-        )
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
         var intervalSeconds = _configuration.GetValue("Elasticsearch:DeadLetterQueue:ProcessIntervalSeconds", 60);
         var maxRetries = _configuration.GetValue("Elasticsearch:DeadLetterQueue:MaxRetries", 5);
@@ -33,16 +24,16 @@ public class ElasticsearchOutboxProcessor : BackgroundService
             "Elasticsearch outbox processor started. Interval: {Interval}s, MaxRetries: {MaxRetries}",
             intervalSeconds, maxRetries);
 
-        await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+        await Task.Delay(TimeSpan.FromSeconds(15), ct);
 
-        while (!stoppingToken.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
             try
             {
-                await ProcessOutboxMessagesAsync(batchSize, maxRetries, stoppingToken);
-                await ProcessDeadLetterQueueAsync(batchSize, maxRetries, stoppingToken);
+                await ProcessOutboxMessagesAsync(batchSize, maxRetries, ct);
+                await ProcessDeadLetterQueueAsync(batchSize, maxRetries, ct);
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
                 _logger.LogInformation("Elasticsearch outbox processor is stopping");
                 break;
@@ -52,15 +43,14 @@ public class ElasticsearchOutboxProcessor : BackgroundService
                 _logger.LogError(ex, "Error in Elasticsearch outbox processor");
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), ct);
         }
     }
 
     private async Task ProcessOutboxMessagesAsync(
         int batchSize,
         int maxRetries,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
 
@@ -101,8 +91,7 @@ public class ElasticsearchOutboxProcessor : BackgroundService
     private static async Task ProcessSingleMessageAsync(
         ElasticsearchOutboxMessage message,
         ISearchService searchService,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         switch (message.EntityType)
         {
@@ -126,8 +115,7 @@ public class ElasticsearchOutboxProcessor : BackgroundService
     private async Task ProcessDeadLetterQueueAsync(
         int batchSize,
         int maxRetries,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();

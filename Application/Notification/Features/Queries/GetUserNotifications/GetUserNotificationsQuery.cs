@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Notification.Features.Queries.GetUserNotifications;
 
 public sealed record GetUserNotificationsQuery(

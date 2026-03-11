@@ -1,20 +1,18 @@
+using Application.Common.Models;
+
 namespace Application.Order.Features.Commands.DeleteOrderItem;
 
-public class DeleteOrderItemHandler
-    : IRequestHandler<DeleteOrderItemCommand, ServiceResult>
+public class DeleteOrderItemHandler(
+    IOrderRepository orderRepository,
+    IUnitOfWork unitOfWork)
+        : IRequestHandler<DeleteOrderItemCommand, ServiceResult>
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IOrderRepository _orderRepository = orderRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-    public DeleteOrderItemHandler(
-        IOrderRepository orderRepository,
-        IUnitOfWork unitOfWork)
-    {
-        _orderRepository = orderRepository;
-        _unitOfWork = unitOfWork;
-    }
-
-    public async Task<ServiceResult> Handle(DeleteOrderItemCommand request, CancellationToken ct)
+    public async Task<ServiceResult> Handle(
+        DeleteOrderItemCommand request,
+        CancellationToken ct)
     {
         var order = await _orderRepository.GetByOrderItemIdAsync(request.Id, ct);
         if (order == null)

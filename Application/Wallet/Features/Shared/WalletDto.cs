@@ -1,36 +1,29 @@
 ﻿namespace Application.Wallet.Features.Shared;
 
-public record WalletDto(
-    int UserId,
-    decimal CurrentBalance,
-    decimal ReservedBalance,
-    decimal AvailableBalance,
-    string Status
-);
+public sealed record WalletDto
+{
+    public int Id { get; init; }
+    public int UserId { get; init; }
+    public decimal CurrentBalance { get; init; }
+    public decimal ReservedBalance { get; init; }
+    public decimal AvailableBalance { get; init; }
+    public string Status { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+}
 
-public record WalletLedgerEntryDto(
-    int Id,
-    decimal AmountDelta,
-    decimal BalanceAfter,
-    string TransactionType,
-    string ReferenceType,
-    int ReferenceId,
-    string? Description,
-    DateTime CreatedAt
-);
-
-public record WalletBalanceResponse(
-    decimal Balance,
-    decimal Reserved,
-    decimal Available
-);
-
-/// <summary>
-/// DTO for admin wallet adjustments.
-/// <see cref="Reason"/> is mandatory and stored in the ledger description for full auditability.
-/// </summary>
-public record AdminWalletAdjustmentDto(
-    decimal Amount,
-    string Reason,
-    string? Description
-);
+public sealed record WalletLedgerEntryDto
+{
+    public int Id { get; init; }
+    public int WalletId { get; init; }
+    public int UserId { get; init; }
+    public decimal AmountDelta { get; init; }
+    public decimal BalanceAfter { get; init; }
+    public string TransactionType { get; init; } = string.Empty;
+    public string ReferenceType { get; init; } = string.Empty;
+    public int ReferenceId { get; init; }
+    public string IdempotencyKey { get; init; } = string.Empty;
+    public string? CorrelationId { get; init; }
+    public string? Description { get; init; }
+    public DateTime CreatedAt { get; init; }
+}

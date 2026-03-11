@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Payment.Interfaces;
+
 namespace Application.Payment.Features.Commands.ExpireStalePayments;
 
 public class ExpireStalePaymentsHandler : IRequestHandler<ExpireStalePaymentsCommand, ServiceResult<int>>

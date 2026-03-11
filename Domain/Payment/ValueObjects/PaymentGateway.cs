@@ -39,6 +39,14 @@ public sealed class PaymentGateway : ValueObject
         };
     }
 
+    public static Result<PaymentGateway> TryParse(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Result<PaymentGateway>.Failure("نام درگاه پرداخت الزامی است.");
+
+        return Result<PaymentGateway>.Success(FromString(value));
+    }
+
     public static PaymentGateway Custom(string value, string? displayName = null)
     {
         if (string.IsNullOrWhiteSpace(value))

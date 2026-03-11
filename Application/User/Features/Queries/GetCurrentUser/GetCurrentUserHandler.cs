@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.User.Features.Queries.GetCurrentUser;
 
 public class GetCurrentUserHandler : IRequestHandler<GetCurrentUserQuery, ServiceResult<UserProfileDto>>

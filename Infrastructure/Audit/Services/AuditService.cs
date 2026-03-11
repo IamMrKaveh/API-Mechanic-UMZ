@@ -1,26 +1,21 @@
+using Domain.Audit.Entities;
+using Domain.Audit.Interfaces;
+
 namespace Infrastructure.Audit.Services;
 
 /// <summary>
 /// سرویس Audit برای ثبت و مدیریت لاگ‌های مربوط به رویدادهای مختلف در سیستم
 /// </summary>
-public class AuditService : IAuditService
+public class AuditService(
+    ILogger<AuditService> logger,
+    IAuditRepository auditRepository,
+    IAuditQueryService auditQueryService,
+    IHtmlSanitizer htmlSanitizer) : IAuditService
 {
-    private readonly ILogger<AuditService> _logger;
-    private readonly IAuditRepository _auditRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IHtmlSanitizer _htmlSanitizer;
-
-    public AuditService(
-        ILogger<AuditService> logger,
-        IAuditRepository auditRepository,
-        IUnitOfWork unitOfWork,
-        IHtmlSanitizer htmlSanitizer)
-    {
-        _logger = logger;
-        _auditRepository = auditRepository;
-        _unitOfWork = unitOfWork;
-        _htmlSanitizer = htmlSanitizer;
-    }
+    private readonly ILogger<AuditService> _logger = logger;
+    private readonly IAuditRepository _auditRepository = auditRepository;
+    private readonly IAuditQueryService _auditQueryService = auditQueryService;
+    private readonly IHtmlSanitizer _htmlSanitizer = htmlSanitizer;
 
     public async Task LogAsync(
         int? userId,
@@ -28,8 +23,7 @@ public class AuditService : IAuditService
         string action,
         string details,
         string? ipAddress = null,
-        string? userAgent = null
-        )
+        string? userAgent = null)
     {
         try
         {
@@ -60,10 +54,9 @@ public class AuditService : IAuditService
         DateTime? fromDate,
         DateTime? toDate,
         int page,
-        int pageSize
-        )
+        int pageSize)
     {
-        var (logs, totalCount) = await _auditRepository.GetAuditLogsAsync(fromDate, toDate, userId, eventType, page, pageSize);
+        var (logs, totalCount) = await _auditQueryService.GetAuditLogsAsync(fromDate, toDate, userId, eventType, page, pageSize);
 
         var dtos = logs.Select(l => new AuditDtos
         {
@@ -80,49 +73,88 @@ public class AuditService : IAuditService
         return (dtos, totalCount);
     }
 
-    public Task LogUserActionAsync(int userId, string action, string details, string ipAddress, string? userAgent = null)
+    public Task LogUserActionAsync(
+        int userId,
+        string action,
+        string details,
+        string ipAddress,
+        string? userAgent = null)
     {
         return LogAsync(userId, "UserAction", action, details, ipAddress, userAgent);
     }
 
-    public Task LogSecurityEventAsync(string eventType, string details, string ipAddress, int? userId = null, string? userAgent = null)
+    public Task LogSecurityEventAsync(
+        string eventType,
+        string details,
+        string ipAddress,
+        int? userId = null,
+        string? userAgent = null)
     {
         _logger.LogWarning("Security event: EventType={EventType}, Details={Details}, IP={IpAddress}",
             eventType, details, ipAddress);
         return LogAsync(userId, eventType, "SecurityEvent", details, ipAddress, userAgent);
     }
 
-    public Task LogSystemEventAsync(string eventType, string details, int? userId = null, string? ipAddress = null, string? userAgent = null)
+    public Task LogSystemEventAsync(
+        string eventType,
+        string details,
+        int? userId = null,
+        string? ipAddress = null,
+        string? userAgent = null)
     {
         return LogAsync(userId, eventType, "SystemEvent", details, ipAddress ?? "system", userAgent);
     }
 
-    public Task LogAdminEventAsync(string action, int userId, string details, string? ipAddress = null, string? userAgent = null)
+    public Task LogAdminEventAsync(
+        string action,
+        int userId,
+        string details,
+        string? ipAddress = null,
+        string? userAgent = null)
     {
         return LogAsync(userId, "AdminEvent", action, details, ipAddress ?? "system", userAgent);
     }
 
-    public Task LogOrderEventAsync(int orderId, string action, int userId, string details)
+    public Task LogOrderEventAsync(
+        int orderId,
+        string action,
+        int userId,
+        string details)
     {
         return LogAsync(userId, "OrderEvent", action, $"OrderId={orderId}, {details}");
     }
 
-    public Task LogCartEventAsync(int userId, string action, string details, string ipAddress, string? userAgent = null)
+    public Task LogCartEventAsync(
+        int userId,
+        string action,
+        string details,
+        string ipAddress,
+        string? userAgent = null)
     {
         return LogAsync(userId, "CartEvent", action, details, ipAddress, userAgent);
     }
 
-    public Task LogProductEventAsync(int productId, string action, string details, int? userId = null)
+    public Task LogProductEventAsync(
+        int productId,
+        string action,
+        string details,
+        int? userId = null)
     {
         return LogAsync(userId, "ProductEvent", action, $"ProductId={productId}, {details}");
     }
 
-    public Task LogInventoryEventAsync(int productId, string action, string details, int? userId = null)
+    public Task LogInventoryEventAsync(
+        int productId,
+        string action,
+        string details,
+        int? userId = null)
     {
         return LogAsync(userId, "InventoryEvent", action, $"Inventory: ProductId={productId}, {details}");
     }
 
-    public Task<byte[]> ExportToCsvAsync(AuditExportRequest request, CancellationToken ct = default)
+    public Task<byte[]> ExportToCsvAsync(
+        AuditExportRequest request,
+        CancellationToken ct = default)
     {
         return Task.FromResult(Array.Empty<byte>());
     }

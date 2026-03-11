@@ -1,24 +1,15 @@
 namespace Domain.Payment.Events;
 
-public class PaymentRefundedEvent : DomainEvent
+public sealed class PaymentRefundedEvent(
+    Guid transactionId,
+    Guid orderId,
+    int userId,
+    decimal amount,
+    string? reason) : DomainEvent
 {
-    public int TransactionId { get; }
-    public int OrderId { get; }
-    public int UserId { get; }
-    public decimal Amount { get; }
-    public string? Reason { get; }
-
-    public PaymentRefundedEvent(
-        int transactionId,
-        int orderId,
-        int userId,
-        decimal amount,
-        string reason)
-    {
-        TransactionId = transactionId;
-        OrderId = orderId;
-        UserId = userId;
-        Amount = amount;
-        Reason = reason;
-    }
+    public Guid TransactionId { get; } = transactionId;
+    public Guid OrderId { get; } = orderId;
+    public int UserId { get; } = userId;
+    public decimal Amount { get; } = amount;
+    public string? Reason { get; } = reason;
 }

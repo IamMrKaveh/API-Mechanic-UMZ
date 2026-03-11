@@ -9,7 +9,7 @@ public interface ITokenService
     /// تولید JWT Token
     /// </summary>
     string GenerateJwtToken(
-        Domain.User.User user
+        Domain.User.Aggregates.User user
         );
 
     /// <summary>

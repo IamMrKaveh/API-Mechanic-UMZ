@@ -1,23 +1,17 @@
+using Domain.Payment.Interfaces;
+
 namespace Application.Payment.Features.Commands.ProcessWebhook;
 
-public class ProcessWebhookHandler : IRequestHandler<ProcessWebhookCommand, ServiceResult>
+public class ProcessWebhookHandler(
+    IPaymentTransactionRepository repository,
+    PaymentDomainService paymentDomainService,
+    IUnitOfWork unitOfWork,
+    ILogger<ProcessWebhookHandler> logger) : IRequestHandler<ProcessWebhookCommand, ServiceResult>
 {
-    private readonly IPaymentTransactionRepository _repository;
-    private readonly PaymentDomainService _paymentDomainService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<ProcessWebhookHandler> _logger;
-
-    public ProcessWebhookHandler(
-        IPaymentTransactionRepository repository,
-        PaymentDomainService paymentDomainService,
-        IUnitOfWork unitOfWork,
-        ILogger<ProcessWebhookHandler> logger)
-    {
-        _repository = repository;
-        _paymentDomainService = paymentDomainService;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IPaymentTransactionRepository _repository = repository;
+    private readonly PaymentDomainService _paymentDomainService = paymentDomainService;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<ProcessWebhookHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(ProcessWebhookCommand request, CancellationToken cancellationToken)
     {

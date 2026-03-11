@@ -1,21 +1,20 @@
 ﻿namespace Infrastructure.Order.Repositories;
 
-public class OrderProcessStateRepository : IOrderProcessStateRepository
+public class OrderProcessStateRepository(DBContext context) : IOrderProcessStateRepository
 {
-    private readonly DBContext _context;
+    private readonly DBContext _context = context;
 
-    public OrderProcessStateRepository(DBContext context)
-    {
-        _context = context;
-    }
-
-    public async Task<OrderProcessState?> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
+    public async Task<OrderProcessState?> GetByOrderIdAsync(
+        int orderId,
+        CancellationToken ct = default)
     {
         return await _context.Set<OrderProcessState>()
             .FirstOrDefaultAsync(s => s.OrderId == orderId, ct);
     }
 
-    public async Task AddAsync(OrderProcessState state, CancellationToken ct = default)
+    public async Task AddAsync(
+        OrderProcessState state,
+        CancellationToken ct = default)
     {
         await _context.Set<OrderProcessState>().AddAsync(state, ct);
     }

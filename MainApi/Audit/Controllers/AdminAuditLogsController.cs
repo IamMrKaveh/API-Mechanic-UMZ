@@ -1,22 +1,13 @@
 namespace MainApi.Audit.Controllers;
 
-/// <summary>
-/// Admin Controller برای مدیریت و مشاهده لاگ‌های حسابرسی.
-/// فقط برای ادمین‌ها قابل دسترسی است.
-/// </summary>
 [ApiController]
 [Route("api/admin/audit-logs")]
 [Authorize(Roles = "Admin")]
 [Tags("Admin - Audit Logs")]
-public sealed class AdminAuditLogsController : ControllerBase
+public sealed class AdminAuditLogsController(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly IMediator _mediator = mediator;
 
-    public AdminAuditLogsController(IMediator mediator) => _mediator = mediator;
-
-    
-
-    /// <summary>دریافت لیست لاگ‌های حسابرسی با فیلتر و صفحه‌بندی</summary>
     [HttpGet]
     [ProducesResponseType(typeof(GetAuditLogsResult), 200)]
     public async Task<IActionResult> GetAuditLogs(
@@ -33,10 +24,6 @@ public sealed class AdminAuditLogsController : ControllerBase
         [FromQuery] bool sortDesc = true,
         CancellationToken ct = default)
     {
-        
-        pageSize = Math.Min(pageSize, 200);
-        page = Math.Max(page, 1);
-
         var result = await _mediator.Send(new GetAuditLogsQuery(
             UserId: userId,
             EventType: eventType,
@@ -54,9 +41,6 @@ public sealed class AdminAuditLogsController : ControllerBase
         return Ok(result);
     }
 
-    
-
-    /// <summary>آمار کلی لاگ‌های حسابرسی</summary>
     [HttpGet("statistics")]
     [ProducesResponseType(typeof(AuditStatisticsDto), 200)]
     public async Task<IActionResult> GetStatistics(
@@ -68,9 +52,6 @@ public sealed class AdminAuditLogsController : ControllerBase
         return Ok(result);
     }
 
-    
-
-    /// <summary>Export لاگ‌ها به CSV</summary>
     [HttpGet("export/csv")]
     [ProducesResponseType(200)]
     public async Task<IActionResult> ExportCsv(
@@ -81,8 +62,6 @@ public sealed class AdminAuditLogsController : ControllerBase
         [FromQuery] int maxRows = 10_000,
         CancellationToken ct = default)
     {
-        maxRows = Math.Min(maxRows, 100_000);
-
         var result = await _mediator.Send(new ExportAuditLogsQuery(
             UserId: userId,
             EventType: eventType,
@@ -95,7 +74,6 @@ public sealed class AdminAuditLogsController : ControllerBase
         return File(result.FileContent, result.ContentType, result.FileName);
     }
 
-    /// <summary>Export لاگ‌ها به JSON</summary>
     [HttpGet("export/json")]
     [ProducesResponseType(200)]
     public async Task<IActionResult> ExportJson(
@@ -106,8 +84,6 @@ public sealed class AdminAuditLogsController : ControllerBase
         [FromQuery] int maxRows = 5_000,
         CancellationToken ct = default)
     {
-        maxRows = Math.Min(maxRows, 50_000);
-
         var result = await _mediator.Send(new ExportAuditLogsQuery(
             UserId: userId,
             EventType: eventType,
@@ -120,9 +96,6 @@ public sealed class AdminAuditLogsController : ControllerBase
         return File(result.FileContent, result.ContentType, result.FileName);
     }
 
-    
-
-    /// <summary>لیست انواع رویداد قابل فیلتر</summary>
     [HttpGet("event-types")]
     [ProducesResponseType(typeof(IEnumerable<string>), 200)]
     public IActionResult GetEventTypes()

@@ -1,22 +1,13 @@
-using Infrastructure.Cache.Options;
-
 namespace Infrastructure.Cache.Services;
 
-public sealed class CacheInvalidationService : ICacheInvalidationService
+public sealed class CacheInvalidationService(
+    ICacheService cache,
+    ILogger<CacheInvalidationService> logger,
+    IOptions<CacheOptions> cacheOptions) : ICacheInvalidationService
 {
-    private readonly ICacheService _cache;
-    private readonly ILogger<CacheInvalidationService> _logger;
-    private readonly CacheOptions _cacheOptions;
-
-    public CacheInvalidationService(
-        ICacheService cache,
-        ILogger<CacheInvalidationService> logger,
-        IOptions<CacheOptions> cacheOptions)
-    {
-        _cache = cache;
-        _logger = logger;
-        _cacheOptions = cacheOptions.Value;
-    }
+    private readonly ICacheService _cache = cache;
+    private readonly ILogger<CacheInvalidationService> _logger = logger;
+    private readonly CacheOptions _cacheOptions = cacheOptions.Value;
 
     public async Task InvalidateProductAsync(int productId, CancellationToken ct = default)
     {

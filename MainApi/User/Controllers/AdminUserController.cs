@@ -3,15 +3,9 @@ namespace MainApi.User.Controllers;
 [Route("api/admin/user")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminUserController : BaseApiController
+public class AdminUserController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public AdminUserController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetUsers(
@@ -30,8 +24,8 @@ public class AdminUserController : BaseApiController
         var command = new CreateUserCommand(dto);
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed)
-            return CreatedAtAction(nameof(GetUser), new { id = result.Data?.Id }, result.Data);
+        if (result.IsSuccess)
+            return CreatedAtAction(nameof(GetUser), new { id = result.Value?.Id }, result.Value);
 
         return ToActionResult(ServiceResult.Failure(result.Error ?? "Error"));
     }
@@ -39,7 +33,7 @@ public class AdminUserController : BaseApiController
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUser(int id)
     {
-        var query = new GetAdminUserByIdQuery(id);
+        var query = new GetUserByIdQuery(id);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
@@ -58,6 +52,15 @@ public class AdminUserController : BaseApiController
     public async Task<IActionResult> ChangeUserStatus(int id, [FromBody] ChangeUserStatusDto dto)
     {
         var command = new ChangeUserStatusCommand(id, dto.IsActive);
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
+    }
+
+    [HttpPatch("{id}/role")]
+    public async Task<IActionResult> ChangeUserRole(int id, [FromBody] ChangeUserRoleRequest dto)
+    {
+        if (!CurrentUser.UserId.HasValue) return Unauthorized();
+        var command = new ChangeUserRoleCommand(id, dto.IsAdmin, CurrentUser.UserId.Value);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

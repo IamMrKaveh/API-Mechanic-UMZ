@@ -1,12 +1,6 @@
 namespace Domain.Discount.Exceptions;
 
-public sealed class DiscountNotFoundException : DomainException
+public sealed class DiscountNotFoundException(string code) : DomainException($"کد تخفیف '{code}' یافت نشد.")
 {
-    public string Code { get; }
-
-    public DiscountNotFoundException(string code)
-        : base($"کد تخفیف '{code}' یافت نشد.")
-    {
-        Code = code;
-    }
+    public string Code { get; } = code;
 }

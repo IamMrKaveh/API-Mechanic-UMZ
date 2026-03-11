@@ -1,15 +1,13 @@
+using Domain.Brand;
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
+using Domain.Common.Abstractions;
+using Domain.Product.ValueObjects;
+
 namespace Domain.Product.Events;
 
-public sealed class ProductCreatedEvent : DomainEvent
-{
-    public int ProductId { get; }
-    public string ProductName { get; }
-    public int BrandId { get; }
-
-    public ProductCreatedEvent(int productId, string productName, int brandId)
-    {
-        ProductId = productId;
-        ProductName = productName;
-        BrandId = brandId;
-    }
-}
+public sealed record ProductCreatedEvent(
+    ProductId ProductId,
+    string Name,
+    CategoryId CategoryId,
+    BrandId BrandId) : IDomainEvent;

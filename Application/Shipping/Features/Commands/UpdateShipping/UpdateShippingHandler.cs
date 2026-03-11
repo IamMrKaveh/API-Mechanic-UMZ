@@ -1,3 +1,7 @@
+using Application.Common.Models;
+using Domain.Common.ValueObjects;
+using Domain.Shipping.Interfaces;
+
 namespace Application.Shipping.Features.Commands.UpdateShipping;
 
 public class UpdateShippingHandler : IRequestHandler<UpdateShippingCommand, ServiceResult>

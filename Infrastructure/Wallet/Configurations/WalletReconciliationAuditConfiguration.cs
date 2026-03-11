@@ -32,7 +32,7 @@ public sealed class WalletReconciliationAuditConfiguration : IEntityTypeConfigur
         builder.HasIndex(e => e.DetectedAt)
             .HasDatabaseName("IX_WalletReconciliationAudits_DetectedAt");
 
-        builder.HasOne<Domain.Wallet.Wallet>()
+        builder.HasOne<Domain.Wallet.Aggregates.Wallet>()
             .WithMany()
             .HasForeignKey(e => e.WalletId)
             .OnDelete(DeleteBehavior.Restrict);

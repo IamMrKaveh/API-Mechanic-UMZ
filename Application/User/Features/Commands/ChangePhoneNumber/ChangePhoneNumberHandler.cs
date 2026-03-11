@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.User.Interfaces;
+
 namespace Application.User.Features.Commands.ChangePhoneNumber;
 
 public class ChangePhoneNumberHandler : IRequestHandler<ChangePhoneNumberCommand, ServiceResult>

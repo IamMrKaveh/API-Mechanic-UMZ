@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Attribute.Interfaces;
+
 namespace Application.Attribute.Features.Commands.UpdateAttributeType;
 
 public class UpdateAttributeTypeHandler : IRequestHandler<UpdateAttributeTypeCommand, ServiceResult>

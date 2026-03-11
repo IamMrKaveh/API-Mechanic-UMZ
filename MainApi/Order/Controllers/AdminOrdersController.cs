@@ -3,15 +3,9 @@ namespace MainApi.Order.Controllers;
 [ApiController]
 [Route("api/admin/orders")]
 [Authorize(Roles = "Admin")]
-public class AdminOrdersController : BaseApiController
+public class AdminOrdersController(ICurrentUserService currentUserService, IMediator mediator) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public AdminOrdersController(ICurrentUserService currentUserService, IMediator mediator)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetOrders(
@@ -84,7 +78,7 @@ public class AdminOrdersController : BaseApiController
         var command = new CreateOrderCommand(dto, idempotencyKey, CurrentUser.UserId.Value);
         var result = await _mediator.Send(command);
 
-        return CreatedAtAction(nameof(GetOrderById), new { id = result.Data }, new { orderId = result.Data });
+        return CreatedAtAction(nameof(GetOrderById), new { id = result.Value }, new { orderId = result.Value });
     }
 
     [HttpPatch("{id}/ship")]

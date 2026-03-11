@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Cart.Features.Queries.GetCartSummary;
 
 public class GetCartSummaryHandler : IRequestHandler<GetCartSummaryQuery, ServiceResult<CartSummaryDto>>

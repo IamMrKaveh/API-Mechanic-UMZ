@@ -1,3 +1,5 @@
+using Domain.Order.Entities;
+
 namespace Infrastructure.Order.Configurations;
 
 public sealed class OrderStatusConfiguration : IEntityTypeConfiguration<OrderStatus>

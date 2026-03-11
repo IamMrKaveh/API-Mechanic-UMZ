@@ -2,16 +2,10 @@ namespace MainApi.Auth.Controllers;
 
 [Route("api/auth")]
 [ApiController]
-public class AuthController : ControllerBase
+public class AuthController(IMediator mediator, ICurrentUserService currentUserService) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly ICurrentUserService _currentUserService;
-
-    public AuthController(IMediator mediator, ICurrentUserService currentUserService)
-    {
-        _mediator = mediator;
-        _currentUserService = currentUserService;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     /// <summary>
     /// درخواست ارسال کد OTP به شماره موبایل
@@ -31,7 +25,7 @@ public class AuthController : ControllerBase
 
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed)
+        if (result.IsSuccess)
             return Ok(new { message = "کد تأیید ارسال شد." });
 
         return StatusCode(result.StatusCode, new { message = result.Error });
@@ -58,8 +52,8 @@ public class AuthController : ControllerBase
 
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed)
-            return Ok(result.Data);
+        if (result.IsSuccess)
+            return Ok(result.Value);
 
         return StatusCode(result.StatusCode, new { message = result.Error });
     }
@@ -77,15 +71,15 @@ public class AuthController : ControllerBase
 
         var command = new RefreshTokenCommand
         {
-            RefreshToken = request.refreshToken,
+            RefreshToken = request.RefreshToken,
             IpAddress = clientIp,
             UserAgent = userAgent
         };
 
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed)
-            return Ok(result.Data);
+        if (result.IsSuccess)
+            return Ok(result.Value);
 
         return StatusCode(result.StatusCode, new { message = result.Error });
     }
@@ -97,18 +91,18 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Logout([FromBody] RefreshRequestDto request)
     {
-        if (!_currentUserService.UserId.HasValue)
+        if (_currentUserService.CurrentUser.UserId < 1)
             return Unauthorized();
 
         var command = new LogoutCommand
         {
-            UserId = _currentUserService.UserId.Value,
-            RefreshToken = request.refreshToken
+            UserId = _currentUserService.CurrentUser.UserId,
+            RefreshToken = request.RefreshToken
         };
 
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed)
+        if (result.IsSuccess)
             return Ok(new { message = "با موفقیت خارج شدید." });
 
         return StatusCode(result.StatusCode, new { message = result.Error });
@@ -121,13 +115,13 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<IActionResult> LogoutAll()
     {
-        if (!_currentUserService.UserId.HasValue)
+        if (_currentUserService.CurrentUser.UserId < 1)
             return Unauthorized();
 
-        var command = new LogoutAllCommand(_currentUserService.UserId.Value);
+        var command = new LogoutAllCommand(_currentUserService.CurrentUser.UserId);
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed)
+        if (result.IsSuccess)
             return Ok(new { message = "از تمام دستگاه‌ها خارج شدید." });
 
         return StatusCode(result.StatusCode, new { message = result.Error });

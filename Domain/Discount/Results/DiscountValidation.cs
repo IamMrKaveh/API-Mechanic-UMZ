@@ -1,14 +1,17 @@
-namespace Domain.Discount.Results;
+﻿namespace Domain.Discount.Results;
 
 public sealed class DiscountValidation
 {
-    public bool IsValid { get; private set; }
-    public string? Error { get; private set; }
+    public bool IsValid { get; }
+    public string? FailureReason { get; }
 
-    private DiscountValidation()
-    { }
+    private DiscountValidation(bool isValid, string? failureReason)
+    {
+        IsValid = isValid;
+        FailureReason = failureReason;
+    }
 
-    public static DiscountValidation Valid() => new() { IsValid = true };
+    public static DiscountValidation Success() => new(true, null);
 
-    public static DiscountValidation Invalid(string error) => new() { IsValid = false, Error = error };
+    public static DiscountValidation Fail(string reason) => new(false, reason);
 }

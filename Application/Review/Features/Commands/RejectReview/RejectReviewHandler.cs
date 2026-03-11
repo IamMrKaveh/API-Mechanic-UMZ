@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Review.Interfaces;
+
 namespace Application.Review.Features.Commands.RejectReview;
 
 public class RejectReviewHandler : IRequestHandler<RejectReviewCommand, ServiceResult>

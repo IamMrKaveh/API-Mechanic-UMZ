@@ -3,15 +3,9 @@ namespace MainApi.Order.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class OrdersController : BaseApiController
+public class OrdersController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public OrdersController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetOrders(
@@ -36,111 +30,35 @@ public class OrdersController : BaseApiController
         return ToActionResult(result);
     }
 
-    [HttpPost("checkout-from-cart")]
-    public async Task<IActionResult> CheckoutFromCart(
-        [FromBody] CreateOrderFromCartDto dto,
-        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey)
+    [HttpPost("checkout")]
+    public async Task<IActionResult> CheckoutFromCart([FromBody] CheckoutFromCartRequest request, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(idempotencyKey))
-            return BadRequest(new { message = "Idempotency-Key header is required" });
-
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new CheckoutFromCartCommand
-        {
-            UserId = CurrentUser.UserId.Value,
-            UserAddressId = dto.UserAddressId,
-            NewAddress = dto.NewAddress,
-            SaveNewAddress = dto.SaveNewAddress,
-            ShippingId = dto.ShippingId,
-            DiscountCode = dto.DiscountCode,
-            ExpectedItems = dto.ExpectedItems,
-            CallbackUrl = dto.CallbackUrl,
-            IdempotencyKey = idempotencyKey
-        };
-
-        var result = await _mediator.Send(command);
+        var command = new CheckoutFromCartCommand(request.ShippingAddress, request.PaymentMethod);
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpGet("verify-payment")]
-    [AllowAnonymous]
-    public async Task<IActionResult> VerifyPayment(
-        [FromQuery] string authority,
-        [FromQuery] string status)
+    [HttpPost("{orderId:int}/cancel")]
+    public async Task<IActionResult> CancelOrder(int orderId, CancellationToken ct)
     {
-        var command = new VerifyPaymentCommand(authority, status);
-        var result = await _mediator.Send(command);
-
-        if (result.IsSucceed && !string.IsNullOrEmpty(result.Data?.RedirectUrl))
-        {
-            return Redirect(result.Data.RedirectUrl);
-        }
-
+        var command = new CancelOrderCommand(orderId);
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpPost("validate-discount")]
-    public async Task<IActionResult> ValidateDiscount([FromBody] ValidateDiscountRequest request)
+    [HttpPost("{orderId:int}/confirm-delivery")]
+    public async Task<IActionResult> ConfirmDelivery(int orderId, CancellationToken ct)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var query = new ValidateDiscountQuery(request.Code, request.OrderTotal, CurrentUser.UserId.Value);
-        var result = await _mediator.Send(query);
+        var command = new ConfirmDeliveryCommand(orderId);
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpPost("{id}/cancel")]
-    public async Task<IActionResult> CancelOrder(int id, [FromBody] CancelOrderRequest request)
+    [HttpPost("{orderId:int}/return")]
+    public async Task<IActionResult> RequestReturn(int orderId, [FromBody] RequestReturnRequest request, CancellationToken ct)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new CancelOrderCommand
-        {
-            OrderId = id,
-            UserId = CurrentUser.UserId.Value,
-            IsAdmin = false,
-            Reason = request.Reason
-        };
-
-        var result = await _mediator.Send(command);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("{id}/confirm-delivery")]
-    public async Task<IActionResult> ConfirmDelivery(int id, [FromBody] ConfirmDeliveryRequest request)
-    {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new ConfirmDeliveryCommand
-        {
-            OrderId = id,
-            UserId = CurrentUser.UserId.Value,
-            RowVersion = request.RowVersion
-        };
-
-        var result = await _mediator.Send(command);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("{id}/request-return")]
-    public async Task<IActionResult> RequestReturn(int id, [FromBody] RequestReturnRequest request)
-    {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new RequestReturnCommand
-        {
-            OrderId = id,
-            UserId = CurrentUser.UserId.Value,
-            Reason = request.Reason,
-            RowVersion = request.RowVersion
-        };
-
-        var result = await _mediator.Send(command);
+        var command = new RequestReturnCommand(orderId, request.Reason);
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 }
-
-public record CancelOrderRequest(string Reason);
-public record ConfirmDeliveryRequest(string RowVersion);
-public record RequestReturnRequest(string Reason, string RowVersion);

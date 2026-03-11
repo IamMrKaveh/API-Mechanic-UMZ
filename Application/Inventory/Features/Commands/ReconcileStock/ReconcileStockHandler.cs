@@ -22,9 +22,9 @@ public class ReconcileStockHandler : IRequestHandler<ReconcileStockCommand, Serv
             request.UserId,
             cancellationToken);
 
-        if (result.IsSucceed && result.Data != default)
+        if (result.IsSuccess && result.Value != default)
         {
-            var data = result.Data;
+            var data = result.Value;
 
             if (data.HasDiscrepancy)
             {

@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Support.Interfaces;
+
 namespace Application.Support.Features.Commands.CloseTicket;
 
 public sealed class CloseTicketHandler : IRequestHandler<CloseTicketCommand, ServiceResult<bool>>

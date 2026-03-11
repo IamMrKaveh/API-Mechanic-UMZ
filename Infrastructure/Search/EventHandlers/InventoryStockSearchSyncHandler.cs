@@ -1,3 +1,5 @@
+using Domain.Variant.Aggregates;
+
 namespace Infrastructure.Search.EventHandlers;
 
 /// <summary>
@@ -5,58 +7,57 @@ namespace Infrastructure.Search.EventHandlers;
 /// از payload کامل رویداد استفاده می‌کند تا از DB round-trip جلوگیری شود (FIX #10)
 /// از Outbox pattern عبور می‌کند تا در صورت شکست retry شود
 /// </summary>
-public class InventoryStockSearchSyncHandler :
+public class InventoryStockSearchSyncHandler(
+    DBContext context,
+    ILogger<InventoryStockSearchSyncHandler> logger) :
     INotificationHandler<VariantStockChangedEvent>,
     INotificationHandler<StockCommittedEvent>,
     INotificationHandler<StockReturnedEvent>
 {
-    private readonly Persistence.Context.DBContext _context;
-    private readonly ILogger<InventoryStockSearchSyncHandler> _logger;
+    private readonly DBContext _context = context;
+    private readonly ILogger<InventoryStockSearchSyncHandler> _logger = logger;
 
-    public InventoryStockSearchSyncHandler(
-        Persistence.Context.DBContext context,
-        ILogger<InventoryStockSearchSyncHandler> logger)
+    public async Task Handle(
+        VariantStockChangedEvent notification,
+        CancellationToken ct)
     {
-        _context = context;
-        _logger = logger;
+        await SyncProductAvailabilityAsync(notification.ProductId, ct);
     }
 
-    public async Task Handle(VariantStockChangedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(
+        StockCommittedEvent notification,
+        CancellationToken ct)
     {
-        await SyncProductAvailabilityAsync(notification.ProductId, cancellationToken);
-    }
-
-    public async Task Handle(StockCommittedEvent notification, CancellationToken cancellationToken)
-    {
-        
-        var productId = await GetProductIdAsync(notification.VariantId, cancellationToken);
+        var productId = await GetProductIdAsync(notification.VariantId, ct);
         if (productId.HasValue)
-            await SyncProductAvailabilityAsync(productId.Value, cancellationToken);
+            await SyncProductAvailabilityAsync(productId.Value, ct);
     }
 
-    public async Task Handle(StockReturnedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(
+        StockReturnedEvent notification,
+        CancellationToken ct)
     {
-        var productId = await GetProductIdAsync(notification.VariantId, cancellationToken);
+        var productId = await GetProductIdAsync(notification.VariantId, ct);
         if (productId.HasValue)
-            await SyncProductAvailabilityAsync(productId.Value, cancellationToken);
+            await SyncProductAvailabilityAsync(productId.Value, ct);
     }
 
-    private async Task SyncProductAvailabilityAsync(int productId, CancellationToken ct)
+    private async Task SyncProductAvailabilityAsync(
+        int productId,
+        CancellationToken ct)
     {
         try
         {
-            
-            var hasStock = await _context.Set<Domain.Variant.ProductVariant>()
+            var hasStock = await _context.Set<ProductVariant>()
                 .Where(v => v.ProductId == productId && v.IsActive && !v.IsDeleted)
                 .AnyAsync(v => v.IsUnlimited || (v.StockQuantity - v.ReservedQuantity) > 0, ct);
 
-            
             var outboxMessage = new ElasticsearchOutboxMessage
             {
                 EntityType = "Product",
                 EntityId = productId.ToString(),
                 ChangeType = EntityChangeType.Updated.ToString(),
-                
+
                 Document = System.Text.Json.JsonSerializer.Serialize(new
                 {
                     productId,
@@ -78,13 +79,14 @@ public class InventoryStockSearchSyncHandler :
         {
             _logger.LogError(ex,
                 "Failed to queue Elasticsearch stock sync for Product {ProductId}", productId);
-            
         }
     }
 
-    private async Task<int?> GetProductIdAsync(int variantId, CancellationToken ct)
+    private async Task<int?> GetProductIdAsync(
+        int variantId,
+        CancellationToken ct)
     {
-        return await _context.Set<Domain.Variant.ProductVariant>()
+        return await _context.Set<ProductVariant>()
             .Where(v => v.Id == variantId)
             .Select(v => (int?)v.ProductId)
             .FirstOrDefaultAsync(ct);

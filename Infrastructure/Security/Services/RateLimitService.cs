@@ -1,17 +1,14 @@
 namespace Infrastructure.Security.Services;
 
-public class RateLimitService : IRateLimitService
+public class RateLimitService(IConnectionMultiplexer redis, ILogger<RateLimitService> logger) : IRateLimitService
 {
-    private readonly IConnectionMultiplexer _redis;
-    private readonly ILogger<RateLimitService> _logger;
+    private readonly IConnectionMultiplexer _redis = redis;
+    private readonly ILogger<RateLimitService> _logger = logger;
 
-    public RateLimitService(IConnectionMultiplexer redis, ILogger<RateLimitService> logger)
-    {
-        _redis = redis;
-        _logger = logger;
-    }
-
-    public async Task<(bool IsLimited, int RetryAfterSeconds)> IsLimitedAsync(string key, int maxAttempts = 5, int windowMinutes = 15)
+    public async Task<(bool IsLimited, int RetryAfterSeconds)> IsLimitedAsync(
+        string key,
+        int maxAttempts = 5,
+        int windowMinutes = 15)
     {
         if (!_redis.IsConnected)
         {
@@ -33,7 +30,7 @@ public class RateLimitService : IRateLimitService
             _ = transaction.SortedSetRemoveRangeByScoreAsync(key, 0, windowStart);
             var countTask = transaction.SortedSetLengthAsync(key);
             _ = transaction.SortedSetAddAsync(key, now.ToUnixTimeSeconds().ToString(), now.ToUnixTimeSeconds());
-            _ = transaction.KeyExpireAsync(key, window.Add(TimeSpan.FromSeconds(10)), ExpireWhen.Always); 
+            _ = transaction.KeyExpireAsync(key, window.Add(TimeSpan.FromSeconds(10)), ExpireWhen.Always);
 
             if (await transaction.ExecuteAsync())
             {

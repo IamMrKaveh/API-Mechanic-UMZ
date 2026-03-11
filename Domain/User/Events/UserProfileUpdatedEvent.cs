@@ -1,11 +1,10 @@
+using Domain.Common.Abstractions;
+using Domain.User.ValueObjects;
+
 namespace Domain.User.Events;
 
-public class UserProfileUpdatedEvent : DomainEvent
-{
-    public int UserId { get; }
-
-    public UserProfileUpdatedEvent(int userId)
-    {
-        UserId = userId;
-    }
-}
+public sealed record UserProfileUpdatedEvent(
+    UserId UserId,
+    string FirstName,
+    string LastName,
+    string? PhoneNumber) : IDomainEvent;

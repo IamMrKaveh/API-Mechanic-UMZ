@@ -3,15 +3,9 @@ namespace MainApi.Media.Controllers;
 [Route("api/admin/media")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminMediaController : BaseApiController
+public class AdminMediaController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public AdminMediaController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetAllMedia(
@@ -33,7 +27,7 @@ public class AdminMediaController : BaseApiController
     }
 
     [HttpPost]
-    [RequestSizeLimit(10_485_760)] 
+    [RequestSizeLimit(10_485_760)]
     public async Task<IActionResult> UploadMedia(
         [FromForm] IFormFile file,
         [FromForm] string entityType,
@@ -76,8 +70,14 @@ public class AdminMediaController : BaseApiController
     }
 
     [HttpPost("reorder")]
-    public async Task<IActionResult> ReorderMedia([FromBody] ReorderMediaCommand command)
+    public async Task<IActionResult> ReorderMedia([FromBody] ReorderMediaRequest request)
     {
+        var command = new ReorderMediaCommand
+        {
+            EntityType = request.EntityType,
+            EntityId = request.EntityId,
+            OrderedMediaIds = request.OrderedMediaIds
+        };
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

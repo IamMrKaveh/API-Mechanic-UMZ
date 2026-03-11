@@ -3,14 +3,9 @@ namespace MainApi.Analytic.Controllers;
 [ApiController]
 [Route("api/admin/analytics")]
 [Authorize(Roles = "Admin")]
-public class AdminAnalyticsController : ControllerBase
+public class AdminAnalyticsController(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public AdminAnalyticsController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboardStatistics(

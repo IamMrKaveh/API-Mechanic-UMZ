@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Product.Features.Queries.GetProductCatalog;
 
 public class GetProductCatalogHandler

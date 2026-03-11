@@ -1,4 +1,6 @@
-﻿namespace MainApi.Wallet.Controllers;
+﻿using Domain.Wallet.Enums;
+
+namespace MainApi.Wallet.Controllers;
 
 [ApiController]
 [Route("api/admin/wallet")]
@@ -18,6 +20,17 @@ public class AdminWalletController : BaseApiController
     public async Task<IActionResult> GetBalance(int userId, CancellationToken ct)
     {
         var result = await _mediator.Send(new GetWalletBalanceQuery(userId), ct);
+        return ToActionResult(result);
+    }
+
+    [HttpGet("{userId}/ledger")]
+    public async Task<IActionResult> GetLedger(
+        int userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(new GetWalletLedgerQuery(userId, page, pageSize), ct);
         return ToActionResult(result);
     }
 
@@ -58,10 +71,10 @@ public class AdminWalletController : BaseApiController
         var correlationId = HttpContext.TraceIdentifier;
 
         var command = new DebitWalletCommand(
-            UserId: userId,
-            Amount: dto.Amount,
-            TransactionType: WalletTransactionType.AdminAdjustmentDebit,
-            ReferenceType: WalletReferenceType.Admin,
+            userId,
+            dto.Amount,
+            WalletTransactionType.AdminAdjustmentDebit,
+            WalletReferenceType.Admin,
             ReferenceId: adminId,
             IdempotencyKey: $"admin-debit-{userId}-{correlationId}",
             CorrelationId: correlationId,
@@ -77,7 +90,7 @@ public class AdminWalletController : BaseApiController
         string reason,
         string? extraNote)
     {
-        var sb = new System.Text.StringBuilder();
+        var sb = new StringBuilder();
         sb.Append($"[ADMIN-{operation}] AdminId={adminId} | Reason={reason}");
         if (!string.IsNullOrWhiteSpace(extraNote))
             sb.Append($" | Note={extraNote}");

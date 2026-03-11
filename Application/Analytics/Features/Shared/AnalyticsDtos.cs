@@ -1,8 +1,6 @@
 namespace Application.Analytics.Features.Shared;
 
-
-
-public sealed class DashboardStatisticsDto
+public sealed record DashboardStatisticsDto
 {
     public int TotalOrders { get; init; }
     public int PendingOrders { get; init; }
@@ -23,11 +21,9 @@ public sealed class DashboardStatisticsDto
     public decimal ProfitMargin { get; init; }
 }
 
-
-
-public sealed class SalesChartDataPointDto
+public sealed record SalesChartDataPointDto
 {
-    public string Label { get; init; } = null!;
+    public string Label { get; init; } = string.Empty;
     public DateTime Date { get; init; }
     public int OrderCount { get; init; }
     public decimal Revenue { get; init; }
@@ -35,12 +31,10 @@ public sealed class SalesChartDataPointDto
     public int ItemsSold { get; init; }
 }
 
-
-
-public sealed class TopSellingProductDto
+public sealed record TopSellingProductDto
 {
     public int ProductId { get; init; }
-    public string ProductName { get; init; } = null!;
+    public string ProductName { get; init; } = string.Empty;
     public string? Sku { get; init; }
     public int TotalQuantitySold { get; init; }
     public decimal TotalRevenue { get; init; }
@@ -49,12 +43,10 @@ public sealed class TopSellingProductDto
     public decimal AverageSellingPrice { get; init; }
 }
 
-
-
-public sealed class CategoryPerformanceDto
+public sealed record CategoryPerformanceDto
 {
     public int CategoryId { get; init; }
-    public string CategoryName { get; init; } = null!;
+    public string CategoryName { get; init; } = string.Empty;
     public int TotalGroups { get; init; }
     public int TotalProducts { get; init; }
     public int TotalQuantitySold { get; init; }
@@ -64,9 +56,7 @@ public sealed class CategoryPerformanceDto
     public int OrderCount { get; init; }
 }
 
-
-
-public sealed class RevenueReportDto
+public sealed record RevenueReportDto
 {
     public DateTime FromDate { get; init; }
     public DateTime ToDate { get; init; }
@@ -83,16 +73,14 @@ public sealed class RevenueReportDto
     public IReadOnlyList<RevenueByStatusDto> ByStatus { get; init; } = [];
 }
 
-public sealed class RevenueByStatusDto
+public sealed record RevenueByStatusDto
 {
-    public string Status { get; init; } = null!;
+    public string Status { get; init; } = string.Empty;
     public int Count { get; init; }
     public decimal Amount { get; init; }
 }
 
-
-
-public sealed class InventoryReportDto
+public sealed record InventoryReportDto
 {
     public int TotalVariants { get; init; }
     public int ActiveVariants { get; init; }
@@ -108,30 +96,29 @@ public sealed class InventoryReportDto
     public IReadOnlyList<AnalyticsOutOfStockItemDto> OutOfStockItems { get; init; } = [];
 }
 
-public sealed class InventoryCategoryBreakdownDto
+public sealed record InventoryCategoryBreakdownDto
 {
     public int CategoryId { get; init; }
-    public string CategoryName { get; init; } = null!;
+    public string CategoryName { get; init; } = string.Empty;
     public int VariantCount { get; init; }
     public int TotalStock { get; init; }
     public decimal StockValue { get; init; }
 }
 
-public sealed class AnalyticsLowStockItemDto
-{
-    public int VariantId { get; init; }
-    public int ProductId { get; init; }
-    public string ProductName { get; init; } = null!;
-    public string? Sku { get; init; }
-    public int AvailableStock { get; init; }
-    public int LowStockThreshold { get; init; }
-}
+public sealed record AnalyticsLowStockItemDto(
+    int VariantId,
+    int ProductId,
+    string ProductName,
+    string? Sku,
+    int AvailableStock,
+    int LowStockThreshold
+);
 
-public sealed class AnalyticsOutOfStockItemDto
+public sealed record AnalyticsOutOfStockItemDto
 {
     public int VariantId { get; init; }
     public int ProductId { get; init; }
-    public string ProductName { get; init; } = null!;
+    public string ProductName { get; init; } = string.Empty;
     public string? Sku { get; init; }
     public DateTime? LastStockDate { get; init; }
 }

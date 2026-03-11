@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Media.Features.Commands.ReorderMedia;
 
 public record ReorderMediaCommand : IRequest<ServiceResult>

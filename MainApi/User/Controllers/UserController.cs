@@ -20,7 +20,7 @@ public class UserController : BaseApiController
         if (currentUserId == null) return Unauthorized();
         if (currentUserId != id && !CurrentUser.IsAdmin) return Forbid();
 
-        var query = new GetAdminUserByIdQuery(id); 
+        var query = new GetUserByIdQuery(id); 
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

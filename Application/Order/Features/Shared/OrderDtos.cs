@@ -1,6 +1,6 @@
 namespace Application.Order.Features.Shared;
 
-public record OrderDto
+public sealed record OrderDto
 {
     public int Id { get; init; }
     public int UserId { get; init; }
@@ -20,7 +20,7 @@ public record OrderDto
     public DateTime? DeliveryDate { get; init; }
     public string? CancellationReason { get; init; }
     public UserAddressDto? UserAddress { get; init; }
-    public List<OrderItemDto> OrderItems { get; init; } = new();
+    public List<OrderItemDto> OrderItems { get; init; } = [];
     public DateTime CreatedAt { get; init; }
     public string StatusDisplayName { get; init; } = string.Empty;
     public ShippingDto? Shipping { get; init; }
@@ -29,7 +29,7 @@ public record OrderDto
     public string? RowVersion { get; init; }
 }
 
-public record OrderItemDto
+public sealed record OrderItemDto
 {
     public int Id { get; init; }
     public int OrderId { get; init; }
@@ -51,31 +51,60 @@ public record OrderItemDto
     public Dictionary<string, object>? Attributes { get; init; }
 }
 
-public record OrderStatusDto
+public sealed record OrderStatusDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
+    public bool IsDeleted { get; init; }
     public string? Icon { get; init; }
     public string? Color { get; init; }
+    public int SortOrder { get; init; }
+    public bool AllowCancel { get; init; }
+    public bool AllowEdit { get; init; }
+    public bool IsDefault { get; init; }
 }
 
-public record CreateOrderItemDto
+public sealed record CreateOrderItemDto
 {
     public int VariantId { get; init; }
     public int Quantity { get; init; }
 }
 
-public record AdminOrderDto : OrderDto
+public sealed record AdminOrderDto
 {
-    public new decimal TotalProfit { get; init; }
+    public int Id { get; init; }
+    public int UserId { get; init; }
+    public string OrderNumber { get; init; } = string.Empty;
+    public string ReceiverName { get; init; } = string.Empty;
+    public int OrderStatusId { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public decimal TotalAmount { get; init; }
+    public decimal TotalProfit { get; init; }
+    public decimal ShippingCost { get; init; }
+    public decimal DiscountAmount { get; init; }
+    public decimal FinalAmount { get; init; }
+    public int ShippingId { get; init; }
+    public int? DiscountCodeId { get; init; }
+    public DateTime? PaymentDate { get; init; }
+    public DateTime? ShippedDate { get; init; }
+    public DateTime? DeliveryDate { get; init; }
+    public string? CancellationReason { get; init; }
+    public UserAddressDto? UserAddress { get; init; }
+    public List<OrderItemDto> OrderItems { get; init; } = [];
+    public DateTime CreatedAt { get; init; }
+    public string StatusDisplayName { get; init; } = string.Empty;
+    public ShippingDto? Shipping { get; init; }
+    public bool IsPaid { get; init; }
+    public bool IsCancelled { get; init; }
+    public string? RowVersion { get; init; }
     public UserSummaryDto? User { get; init; }
     public int OrderItemsCount { get; init; }
     public DateTime? UpdatedAt { get; init; }
     public bool IsDeleted { get; init; }
 }
 
-public record AddressSnapshotDto
+public sealed record AddressSnapshotDto
 {
     public int OriginalAddressId { get; init; }
     public string Title { get; init; } = string.Empty;
@@ -87,7 +116,7 @@ public record AddressSnapshotDto
     public string PostalCode { get; init; } = string.Empty;
 }
 
-public record UserSummaryDto
+public sealed record UserSummaryDto
 {
     public int Id { get; init; }
     public string PhoneNumber { get; init; } = string.Empty;
@@ -96,7 +125,7 @@ public record UserSummaryDto
     public bool IsAdmin { get; init; }
 }
 
-public record OrderStatisticsDto
+public sealed record OrderStatisticsDto
 {
     public int TotalOrders { get; init; }
     public int PaidOrders { get; init; }
@@ -114,36 +143,36 @@ public record OrderStatisticsDto
     public Dictionary<string, int>? StatusBreakdown { get; init; }
 }
 
-public record CreateOrderFromCartDto
+public sealed record CreateOrderFromCartDto
 {
     public int? UserAddressId { get; init; }
     public CreateUserAddressDto? NewAddress { get; init; }
     public bool SaveNewAddress { get; init; }
     public int ShippingId { get; init; }
     public string? DiscountCode { get; init; }
-    public List<CheckoutItemPriceDto> ExpectedItems { get; init; } = new();
+    public List<CheckoutItemPriceDto> ExpectedItems { get; init; } = [];
     public string? CallbackUrl { get; init; }
 }
 
-public record CheckoutItemPriceDto
+public sealed record CheckoutItemPriceDto
 {
     public int VariantId { get; init; }
     public decimal ExpectedPrice { get; init; }
 }
 
-public record UpdateOrderDto
+public sealed record UpdateOrderDto
 {
     public int? ShippingId { get; init; }
     public string RowVersion { get; init; } = string.Empty;
 }
 
-public record UpdateOrderItemDto
+public sealed record UpdateOrderItemDto
 {
     public int OrderItemId { get; init; }
     public int Quantity { get; init; }
 }
 
-public record UpdateOrderStatusDto
+public sealed record UpdateOrderStatusDto
 {
     public string? DisplayName { get; init; }
     public string? Icon { get; init; }
@@ -153,7 +182,7 @@ public record UpdateOrderStatusDto
     public bool? AllowEdit { get; init; }
 }
 
-public record CheckoutResultDto
+public sealed record CheckoutResultDto
 {
     public int OrderId { get; init; }
     public string? PaymentUrl { get; init; }
@@ -162,38 +191,51 @@ public record CheckoutResultDto
     public bool Success { get; init; }
 }
 
-public record AdminCreateOrderDto
+public sealed record AdminCreateOrderDto
 {
     public int UserId { get; init; }
     public string ReceiverName { get; init; } = string.Empty;
     public int UserAddressId { get; init; }
     public int ShippingId { get; init; }
     public string? DiscountCode { get; init; }
-    public List<AdminCreateOrderItemDto> OrderItems { get; init; } = new();
+    public List<AdminCreateOrderItemDto> OrderItems { get; init; } = [];
 }
 
-public record AdminCreateOrderItemDto
+public sealed record AdminCreateOrderItemDto
 {
     public int VariantId { get; init; }
     public int Quantity { get; init; }
     public decimal SellingPrice { get; init; }
 }
 
-public record CreateOrderDto
+public sealed record CreateOrderDto
 {
     public int UserId { get; init; }
     public string ReceiverName { get; init; } = string.Empty;
     public int UserAddressId { get; init; }
     public int ShippingId { get; init; }
     public string? DiscountCode { get; init; }
-    public List<CreateOrderItemDto> OrderItems { get; init; } = new();
+    public List<CreateOrderItemDto> OrderItems { get; init; } = [];
 }
 
-public record UpdateOrderStatusByIdDto
+public sealed record UpdateOrderStatusByIdDto
 {
     public string OrderStatusId { get; init; } = string.Empty;
     public string RowVersion { get; init; } = string.Empty;
     public int UpdatedByUserId { get; init; }
 }
 
-public record MarkAsShippedRequest(string RowVersion);
+public sealed record MarkAsShippedRequest
+{
+    public string RowVersion { get; init; } = string.Empty;
+}
+
+public sealed record CancelOrderRequest(string Reason);
+
+public sealed record ConfirmDeliveryRequest(string RowVersion);
+
+public sealed record RequestReturnRequest
+{
+    public string Reason { get; init; } = string.Empty;
+    public string RowVersion { get; init; } = string.Empty;
+}

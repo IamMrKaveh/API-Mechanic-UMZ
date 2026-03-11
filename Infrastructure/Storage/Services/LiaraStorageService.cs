@@ -111,7 +111,10 @@ public class LiaraStorageService : IStorageService
         return $"{_baseUrl.TrimEnd('/')}/{trimmedPath}";
     }
 
-    public async Task<IEnumerable<string>> ListFilesAsync(string prefix, int maxKeys = 1000, string? continuationToken = null)
+    public async Task<IEnumerable<string>> ListFilesAsync(
+        string prefix,
+        int maxKeys = 1000,
+        string? continuationToken = null)
     {
         try
         {
@@ -147,7 +150,9 @@ public class LiaraStorageService : IStorageService
         };
     }
 
-    public async Task<Stream?> GetFileAsync(string filePath, CancellationToken ct = default)
+    public async Task<Stream?> GetFileAsync(
+        string filePath,
+        CancellationToken ct = default)
     {
         try
         {
@@ -166,7 +171,9 @@ public class LiaraStorageService : IStorageService
         }
     }
 
-    public async Task<bool> FileExistsAsync(string filePath, CancellationToken ct = default)
+    public async Task<bool> FileExistsAsync(
+        string filePath,
+        CancellationToken ct = default)
     {
         try
         {
@@ -185,7 +192,11 @@ public class LiaraStorageService : IStorageService
         }
     }
 
-    public async Task<IReadOnlyList<string>> GetFilesAsync(string directory, int maxResults, string? continuationToken, CancellationToken ct = default)
+    public async Task<IReadOnlyList<string>> GetFilesAsync(
+        string directory,
+        int maxResults,
+        string? continuationToken,
+        CancellationToken ct = default)
     {
         try
         {
@@ -207,7 +218,12 @@ public class LiaraStorageService : IStorageService
         }
     }
 
-    public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, string directory, CancellationToken ct = default)
+    public async Task<string> UploadFileAsync(
+        Stream fileStream,
+        string fileName,
+        string contentType,
+        string directory,
+        CancellationToken ct = default)
     {
         var (path, _) = await SaveFileAsync(fileStream, fileName, directory.Trim('/'), "");
         return path;

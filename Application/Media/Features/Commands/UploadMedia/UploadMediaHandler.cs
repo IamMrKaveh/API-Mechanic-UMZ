@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Media.Interfaces;
+
 namespace Application.Media.Features.Commands.UploadMedia;
 
 public class UploadMediaHandler : IRequestHandler<UploadMediaCommand, ServiceResult<MediaDto>>
@@ -67,7 +70,7 @@ public class UploadMediaHandler : IRequestHandler<UploadMediaCommand, ServiceRes
         try
         {
             
-            var media = Domain.Media.Media.Create(
+            var media = Domain.Media.Aggregates.Media.Create(
                 filePath,
                 request.FileName,
                 request.ContentType,

@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Product.Features.Commands.UpdateProductDetails;
 
 public record UpdateProductDetailsCommand : IRequest<ServiceResult>

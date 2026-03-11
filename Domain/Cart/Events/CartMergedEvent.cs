@@ -1,13 +1,17 @@
 namespace Domain.Cart.Events;
 
-public class CartMergedEvent : DomainEvent
+public sealed class CartMergedEvent : DomainEvent
 {
-    public int TargetCartId { get; }
-    public int SourceCartId { get; }
+    public Guid TargetCartId { get; }
+    public Guid SourceCartId { get; }
+    public Guid UserId { get; }
+    public int MergedItemCount { get; }
 
-    public CartMergedEvent(int targetCartId, int sourceCartId)
+    public CartMergedEvent(Guid targetCartId, Guid sourceCartId, Guid userId, int mergedItemCount)
     {
         TargetCartId = targetCartId;
         SourceCartId = sourceCartId;
+        UserId = userId;
+        MergedItemCount = mergedItemCount;
     }
 }

@@ -1,8 +1,8 @@
 namespace Infrastructure.Order.Configurations;
 
-internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order.Order>
+internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order.Aggregates.Order>
 {
-    public void Configure(EntityTypeBuilder<Domain.Order.Order> builder)
+    public void Configure(EntityTypeBuilder<Domain.Order.Aggregates.Order> builder)
     {
         builder.HasKey(e => e.Id);
 

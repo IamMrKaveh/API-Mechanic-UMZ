@@ -1,3 +1,5 @@
+using Domain.Variant.Aggregates;
+
 namespace Application.Product.Mapping;
 
 public sealed class ProductMappingProfile : Profile

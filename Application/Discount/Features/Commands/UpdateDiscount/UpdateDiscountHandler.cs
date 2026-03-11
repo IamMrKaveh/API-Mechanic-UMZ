@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Discount.Interfaces;
+
 namespace Application.Discount.Features.Commands.UpdateDiscount;
 
 public class UpdateDiscountHandler : IRequestHandler<UpdateDiscountCommand, ServiceResult>

@@ -1,56 +1,26 @@
+using Application.Common.Models;
+
 namespace Application.Variant.Features.Queries.GetProductVariantShipping;
 
-public class GetProductVariantShippingHandler : IRequestHandler<GetProductVariantShippingQuery, ServiceResult<ProductVariantShippingInfoDto>>
+public class GetProductVariantShippingHandler(
+    IVariantQueryService variantQueryService,
+    ILogger<GetProductVariantShippingHandler> logger)
+        : IRequestHandler<GetProductVariantShippingQuery, ServiceResult<ProductVariantShippingInfoDto>>
 {
-    private readonly IProductRepository _productRepository;
-    private readonly IShippingRepository _shippingRepository;
-    private readonly ILogger<GetProductVariantShippingHandler> _logger;
+    private readonly IVariantQueryService _variantQueryService = variantQueryService;
+    private readonly ILogger<GetProductVariantShippingHandler> _logger = logger;
 
-    public GetProductVariantShippingHandler(
-        IProductRepository productRepository,
-        IShippingRepository shippingRepository,
-        ILogger<GetProductVariantShippingHandler> logger)
-    {
-        _productRepository = productRepository;
-        _shippingRepository = shippingRepository;
-        _logger = logger;
-    }
-
-    public async Task<ServiceResult<ProductVariantShippingInfoDto>> Handle(GetProductVariantShippingQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<ProductVariantShippingInfoDto>> Handle(
+        GetProductVariantShippingQuery request,
+        CancellationToken ct)
     {
         try
         {
-            var variant = await _productRepository.GetVariantByIdAsync(request.VariantId);
+            var result = await _variantQueryService.GetVariantShippingInfoAsync(request.VariantId, ct);
 
-            if (variant == null)
-            {
-                return ServiceResult<ProductVariantShippingInfoDto>.Failure("محصول یافت نشد.");
-            }
-
-            var allShippings = await _shippingRepository.GetAllAsync(false);
-
-            var enabledIds = variant.ProductVariantShippings
-                            .Where(pvsm => pvsm.IsActive)
-                            .Select(pvsm => pvsm.ShippingId)
-                            .ToHashSet();
-
-            var result = new ProductVariantShippingInfoDto
-            {
-                VariantId = variant.Id,
-                ProductName = variant.Product.Name,
-                VariantDisplayName = variant.Sku ?? "N/A",
-                ShippingMultiplier = variant.ShippingMultiplier,
-                AvailableShippings = allShippings.Select(sm => new ShippingSelectionDto
-                {
-                    ShippingId = sm.Id,
-                    Name = sm.Name,
-                    BaseCost = sm.Cost,
-                    Description = sm.Description,
-                    IsEnabled = enabledIds.Contains(sm.Id)
-                }).ToList()
-            };
-
-            return ServiceResult<ProductVariantShippingInfoDto>.Success(result);
+            return result == null
+                ? ServiceResult<ProductVariantShippingInfoDto>.Failure("محصول یافت نشد.")
+                : ServiceResult<ProductVariantShippingInfoDto>.Success(result);
         }
         catch (Exception ex)
         {

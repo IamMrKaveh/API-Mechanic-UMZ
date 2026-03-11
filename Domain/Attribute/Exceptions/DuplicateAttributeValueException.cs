@@ -1,7 +1,5 @@
 namespace Domain.Attribute.Exceptions;
 
-public sealed class DuplicateAttributeValueException : DomainException
+public sealed class DuplicateAttributeValueException(string value, string attributeTypeName) : DomainException($"مقدار '{value}' قبلاً در ویژگی '{attributeTypeName}' وجود دارد.")
 {
-    public DuplicateAttributeValueException(string value, string attributeTypeName)
-        : base($"مقدار '{value}' قبلاً در ویژگی '{attributeTypeName}' وجود دارد.") { }
 }

@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Shipping.Features.Queries.GetAvailableShippings;
 
 public record GetAvailableShippingsQuery(int UserId)

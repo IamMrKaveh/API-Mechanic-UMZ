@@ -1,15 +1,8 @@
 namespace Domain.Payment.Events;
 
-public class PaymentFailedEvent : DomainEvent
+public sealed class PaymentFailedEvent(Guid transactionId, Guid orderId, string reason) : DomainEvent
 {
-    public int TransactionId { get; }
-    public int OrderId { get; }
-    public string Reason { get; }
-
-    public PaymentFailedEvent(int transactionId, int orderId, string reason)
-    {
-        TransactionId = transactionId;
-        OrderId = orderId;
-        Reason = reason;
-    }
+    public Guid TransactionId { get; } = transactionId;
+    public Guid OrderId { get; } = orderId;
+    public string Reason { get; } = reason;
 }

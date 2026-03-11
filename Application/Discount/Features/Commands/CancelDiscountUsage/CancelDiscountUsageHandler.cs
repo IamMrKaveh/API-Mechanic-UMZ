@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Discount.Interfaces;
+
 namespace Application.Discount.Features.Commands.CancelDiscountUsage;
 
 public class CancelDiscountUsageHandler : IRequestHandler<CancelDiscountUsageCommand, ServiceResult>

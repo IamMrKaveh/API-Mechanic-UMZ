@@ -1,10 +1,10 @@
 namespace Domain.Category.Events;
 
-public class CategoriesReorderedEvent : DomainEvent
+public sealed class CategoriesReorderedEvent : DomainEvent
 {
-    public IReadOnlyList<int> CategoryIds { get; }
+    public IReadOnlyList<CategoryId> CategoryIds { get; }
 
-    public CategoriesReorderedEvent(IReadOnlyList<int> categoryIds)
+    public CategoriesReorderedEvent(IReadOnlyList<CategoryId> categoryIds)
     {
         CategoryIds = categoryIds;
     }

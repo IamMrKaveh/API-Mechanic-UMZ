@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Notification.Interfaces;
+
 namespace Application.Notification.Features.Commands.MarkAllNotificationsAsRead;
 
 public sealed class MarkAllNotificationsAsReadHandler

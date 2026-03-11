@@ -1,20 +1,17 @@
+using Application.Common.Models;
+
 namespace Application.Inventory.Features.Queries.GetLowStockProducts;
 
-public class GetLowStockProductsHandler
-    : IRequestHandler<GetLowStockProductsQuery, ServiceResult<IEnumerable<LowStockItemDto>>>
+public class GetLowStockProductsHandler(IInventoryQueryService queryService)
+        : IRequestHandler<GetLowStockProductsQuery, ServiceResult<IEnumerable<LowStockItemDto>>>
 {
-    private readonly IInventoryQueryService _queryService;
-
-    public GetLowStockProductsHandler(IInventoryQueryService queryService)
-    {
-        _queryService = queryService;
-    }
+    private readonly IInventoryQueryService _queryService = queryService;
 
     public async Task<ServiceResult<IEnumerable<LowStockItemDto>>> Handle(
         GetLowStockProductsQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var items = await _queryService.GetLowStockProductsAsync(request.Threshold, cancellationToken);
+        var items = await _queryService.GetLowStockProductsAsync(request.Threshold, ct);
         return ServiceResult<IEnumerable<LowStockItemDto>>.Success(items);
     }
 }

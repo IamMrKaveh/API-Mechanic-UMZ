@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Variant.Features.Commands.UpdateVariant;
 
 public record UpdateVariantCommand : IRequest<ServiceResult>

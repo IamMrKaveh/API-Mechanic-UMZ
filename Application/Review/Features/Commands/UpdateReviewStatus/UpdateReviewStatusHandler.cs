@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Review.Interfaces;
+
 namespace Application.Review.Features.Commands.UpdateReviewStatus;
 
 public class UpdateReviewStatusHandler : IRequestHandler<UpdateReviewStatusCommand, ServiceResult>

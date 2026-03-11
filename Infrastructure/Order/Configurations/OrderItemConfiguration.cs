@@ -1,3 +1,6 @@
+using Domain.Common.ValueObjects;
+using Domain.Order.Entities;
+
 namespace Infrastructure.Order.Configurations;
 
 public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>

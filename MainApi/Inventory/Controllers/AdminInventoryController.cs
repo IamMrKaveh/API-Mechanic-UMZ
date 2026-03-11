@@ -3,15 +3,9 @@ namespace MainApi.Inventory.Controllers;
 [ApiController]
 [Route("api/admin/inventory")]
 [Authorize(Roles = "Admin")]
-public class AdminInventoryController : BaseApiController
+public class AdminInventoryController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public AdminInventoryController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("transactions")]
     public async Task<IActionResult> GetInventoryTransactions(
@@ -24,6 +18,33 @@ public class AdminInventoryController : BaseApiController
     {
         var query = new GetInventoryTransactionsQuery(variantId, transactionType, fromDate, toDate, page, pageSize);
         var result = await _mediator.Send(query);
+        return ToActionResult(result);
+    }
+
+    [HttpGet("ledger")]
+    public async Task<IActionResult> GetStockLedger(
+        [FromQuery] int variantId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        var query = new GetStockLedgerByVariantQuery(variantId, page, pageSize);
+        var result = await _mediator.Send(query);
+        return ToActionResult(result);
+    }
+
+    [HttpGet("warehouse-stock/{variantId}")]
+    public async Task<IActionResult> GetWarehouseStock(int variantId)
+    {
+        var result = await _mediator.Send(new GetWarehouseStockQuery(variantId));
+        return ToActionResult(result);
+    }
+
+    [HttpPost("reverse")]
+    public async Task<IActionResult> ReverseTransaction([FromBody] ReverseInventoryTransactionCommand command)
+    {
+        if (!CurrentUser.UserId.HasValue) return Unauthorized();
+        var commandWithAdmin = command with { AdminUserId = CurrentUser.UserId.Value };
+        var result = await _mediator.Send(commandWithAdmin);
         return ToActionResult(result);
     }
 
@@ -95,12 +116,8 @@ public class AdminInventoryController : BaseApiController
         return ToActionResult(result);
     }
 
-    /// <summary>
-    /// Import دسته‌ای موجودی از تأمین‌کنندگان (Bulk StockIn)
-    /// </summary>
     [HttpPost("import")]
-    public async Task<IActionResult> BulkStockIn(
-        [FromBody] BulkStockInRequest request)
+    public async Task<IActionResult> BulkStockIn([FromBody] BulkStockInRequest request)
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
@@ -118,9 +135,6 @@ public class AdminInventoryController : BaseApiController
         return ToActionResult(result);
     }
 
-    /// <summary>
-    /// تأیید مرجوعی توسط ادمین و بازگشت موجودی به انبار
-    /// </summary>
     [HttpPost("approve-return/{orderId}")]
     public async Task<IActionResult> ApproveReturn(
         int orderId,
@@ -139,9 +153,6 @@ public class AdminInventoryController : BaseApiController
         return ToActionResult(result);
     }
 
-    /// <summary>
-    /// Commit دستی موجودی برای سفارش (در صورت عدم Commit خودکار)
-    /// </summary>
     [HttpPost("commit-order/{orderId}")]
     public async Task<IActionResult> CommitOrderInventory(int orderId)
     {

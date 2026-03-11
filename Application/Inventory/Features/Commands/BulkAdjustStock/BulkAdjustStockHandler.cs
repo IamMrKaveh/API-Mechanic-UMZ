@@ -26,9 +26,9 @@ public class BulkAdjustStockHandler : IRequestHandler<BulkAdjustStockCommand, Se
             request.UserId,
             ct);
 
-        if (result.IsSucceed && result.Data != default)
+        if (result.IsSuccess && result.Value != default)
         {
-            var data = result.Data;
+            var data = result.Value;
 
             await _auditService.LogInventoryEventAsync(
                 0,

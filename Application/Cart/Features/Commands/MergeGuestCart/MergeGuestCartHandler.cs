@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Cart.Features.Commands.MergeGuestCart;
 
 public class MergeGuestCartHandler : IRequestHandler<MergeGuestCartCommand, ServiceResult>

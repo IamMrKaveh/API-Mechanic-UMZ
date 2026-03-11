@@ -1,19 +1,14 @@
-﻿namespace Domain.Wallet.Events;
+﻿using Domain.Common.Abstractions;
+using Domain.Common.ValueObjects;
+using Domain.User.ValueObjects;
+using Domain.Wallet.ValueObjects;
 
-public sealed class WalletDebitedEvent : DomainEvent
-{
-    public int WalletId { get; }
-    public int UserId { get; }
-    public decimal Amount { get; }
-    public WalletReferenceType ReferenceType { get; }
-    public int ReferenceId { get; }
+namespace Domain.Wallet.Events;
 
-    public WalletDebitedEvent(int walletId, int userId, decimal amount, WalletReferenceType referenceType, int referenceId)
-    {
-        WalletId = walletId;
-        UserId = userId;
-        Amount = amount;
-        ReferenceType = referenceType;
-        ReferenceId = referenceId;
-    }
-}
+public sealed record WalletDebitedEvent(
+    WalletId WalletId,
+    UserId OwnerId,
+    Money Amount,
+    Money NewBalance,
+    string Description,
+    string ReferenceId) : IDomainEvent;

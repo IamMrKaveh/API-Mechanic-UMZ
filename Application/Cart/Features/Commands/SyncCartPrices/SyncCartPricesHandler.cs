@@ -1,4 +1,6 @@
 using AngleSharp.Common;
+using Application.Common.Models;
+using Domain.Product.Interfaces;
 
 namespace Application.Cart.Features.Commands.SyncCartPrices;
 
