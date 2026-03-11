@@ -1,4 +1,7 @@
-﻿namespace Infrastructure.Wallet.Configurations;
+﻿using Domain.Wallet.Aggregates;
+using Domain.Wallet.Enums;
+
+namespace Infrastructure.Wallet.Configurations;
 
 public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<WalletLedgerEntry>
 {

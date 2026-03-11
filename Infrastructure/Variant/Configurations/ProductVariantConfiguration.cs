@@ -1,3 +1,5 @@
+using Domain.Variant.Aggregates;
+
 namespace Infrastructure.Variant.Configurations;
 
 public sealed class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVariant>

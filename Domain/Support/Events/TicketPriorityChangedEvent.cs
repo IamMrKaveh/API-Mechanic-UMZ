@@ -1,15 +1,8 @@
 namespace Domain.Support.Events;
 
-public sealed class TicketPriorityChangedEvent : DomainEvent
+public sealed class TicketPriorityChangedEvent(int ticketId, string oldPriority, string newPriority) : DomainEvent
 {
-    public int TicketId { get; }
-    public string OldPriority { get; }
-    public string NewPriority { get; }
-
-    public TicketPriorityChangedEvent(int ticketId, string oldPriority, string newPriority)
-    {
-        TicketId = ticketId;
-        OldPriority = oldPriority;
-        NewPriority = newPriority;
-    }
+    public int TicketId { get; } = ticketId;
+    public string OldPriority { get; } = oldPriority;
+    public string NewPriority { get; } = newPriority;
 }

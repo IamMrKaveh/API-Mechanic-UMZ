@@ -1,29 +1,5 @@
 namespace Application.Category.Features.Shared;
 
-public record CategoryHierarchyDto
-{
-    public int Id { get; init; }
-    public string Title { get; init; } = string.Empty;
-    public IEnumerable<BrandHierarchyDto> Brands { get; init; } = [];
-}
-
-public record CategoryCreateDto
-{
-    public string Name { get; init; } = string.Empty;
-    public string Slug { get; init; } = string.Empty;
-    public string? Description { get; init; }
-    public int SortOrder { get; init; }
-}
-
-public record CategoryUpdateDto
-{
-    public string Name { get; init; } = string.Empty;
-    public string Slug { get; init; } = string.Empty;
-    public string? Description { get; init; }
-    public int SortOrder { get; init; }
-    public string? RowVersion { get; init; }
-}
-
 public record CategoryDto
 {
     public int Id { get; init; }
@@ -35,14 +11,28 @@ public record CategoryDto
     public string? IconUrl { get; init; }
     public int ActiveGroupsCount { get; init; }
     public int TotalProductsCount { get; init; }
-    public List<BrandSummaryDto> Brands { get; init; } = new();
+    public List<BrandSummaryDto> Brands { get; init; } = [];
     public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
     public string? RowVersion { get; init; }
 }
 
-public record CategoryDetailDto : CategoryDto
+public record CategoryDetailDto
 {
-    public List<ProductSummaryDto> Products { get; init; } = new();
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? Description { get; init; }
+    public int SortOrder { get; init; }
+    public bool IsActive { get; init; }
+    public string? IconUrl { get; init; }
+    public int ActiveGroupsCount { get; init; }
+    public int TotalProductsCount { get; init; }
+    public List<BrandSummaryDto> Brands { get; init; } = [];
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+    public string? RowVersion { get; init; }
+    public List<ProductSummaryDto> Products { get; init; } = [];
 }
 
 public record CategoryListItemDto
@@ -64,15 +54,14 @@ public record CategoryListItemDto
     public string? RowVersion { get; init; }
 }
 
-public record CategoryTreeDto
-{
-    public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string? Slug { get; init; }
-    public string? IconUrl { get; init; }
-    public int SortOrder { get; init; }
-    public IReadOnlyList<BrandTreeDto> Brands { get; init; } = [];
-}
+public record CategoryTreeDto(
+    int Id,
+    string Name,
+    string? Slug,
+    string? IconUrl,
+    int SortOrder,
+    IReadOnlyList<BrandTreeDto> Brands
+);
 
 public record CategoryProductItemDto
 {
@@ -89,18 +78,17 @@ public record CategoryProductItemDto
     public string? BrandName { get; init; }
 }
 
-public record CategoryWithBrandsDto
-{
-    public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string? Slug { get; init; }
-    public string? Description { get; init; }
-    public string? IconUrl { get; init; }
-    public bool IsActive { get; init; }
-    public bool IsDeleted { get; init; }
-    public int SortOrder { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime? UpdatedAt { get; init; }
-    public string? RowVersion { get; init; }
-    public IReadOnlyList<BrandSummaryDto> Brands { get; init; } = [];
-}
+public record CategoryWithBrandsDto(
+    int Id,
+    string Name,
+    string? Slug,
+    string? Description,
+    string? IconUrl,
+    bool IsActive,
+    bool IsDeleted,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
+    string? RowVersion,
+    IReadOnlyList<BrandSummaryDto> Brands
+);

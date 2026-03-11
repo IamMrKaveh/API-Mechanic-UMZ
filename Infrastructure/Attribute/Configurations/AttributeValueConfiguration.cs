@@ -1,3 +1,5 @@
+using Domain.Attribute.Entities;
+
 namespace Infrastructure.Attribute.Configurations;
 
 public sealed class AttributeValueConfiguration : IEntityTypeConfiguration<AttributeValue>

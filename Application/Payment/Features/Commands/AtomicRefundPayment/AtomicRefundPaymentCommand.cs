@@ -3,8 +3,7 @@ namespace Application.Payment.Features.Commands.AtomicRefundPayment;
 public sealed record AtomicRefundPaymentCommand(
     int OrderId,
     int RequestedByUserId,
-    string Reason,
-    decimal? PartialAmount = null
+    string Reason
 ) : IRequest<AtomicRefundResult>;
 
 public sealed record AtomicRefundResult(

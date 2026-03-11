@@ -2,15 +2,9 @@ namespace MainApi.Category.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CategoryController : BaseApiController
+public class CategoryController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public CategoryController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("hierarchy")]
     [AllowAnonymous]
@@ -28,7 +22,7 @@ public class CategoryController : BaseApiController
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var query = new GetAdminCategoriesLegacyQuery(search, page, pageSize);
+        var query = new GetPublicCategoriesQuery(search, page, pageSize);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

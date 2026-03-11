@@ -1,19 +1,15 @@
 namespace Infrastructure.Search;
 
-public class ElasticDeadLetterQueue : IElasticDeadLetterQueue
+public class ElasticDeadLetterQueue(
+    DBContext context,
+    ILogger<ElasticDeadLetterQueue> logger) : IElasticDeadLetterQueue
 {
-    private readonly Persistence.Context.DBContext _context;
-    private readonly ILogger<ElasticDeadLetterQueue> _logger;
+    private readonly DBContext _context = context;
+    private readonly ILogger<ElasticDeadLetterQueue> _logger = logger;
 
-    public ElasticDeadLetterQueue(
-        Persistence.Context.DBContext context,
-        ILogger<ElasticDeadLetterQueue> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
-
-    public async Task EnqueueAsync(FailedIndexOperation operation, CancellationToken ct)
+    public async Task EnqueueAsync(
+        FailedIndexOperation operation,
+        CancellationToken ct)
     {
         try
         {
@@ -43,7 +39,9 @@ public class ElasticDeadLetterQueue : IElasticDeadLetterQueue
         }
     }
 
-    public async Task<IEnumerable<FailedIndexOperation>> DequeueAsync(int count, CancellationToken ct)
+    public async Task<IEnumerable<FailedIndexOperation>> DequeueAsync(
+        int count,
+        CancellationToken ct)
     {
         var operations = await _context.FailedElasticOperations
             .Where(o => o.Status == "Pending" && o.RetryCount < 5)

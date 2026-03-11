@@ -35,9 +35,9 @@ public class AdminShippingsController : BaseApiController
             command = command with { CurrentUserId = CurrentUser.UserId.Value };
 
         var result = await _mediator.Send(command);
-        if (result.IsSucceed)
+        if (result.IsSuccess)
         {
-            return CreatedAtAction(nameof(GetShippingById), new { id = result.Data!.Id }, result.Data);
+            return CreatedAtAction(nameof(GetShippingById), new { id = result.Value!.Id }, result.Value);
         }
         return ToActionResult(result);
     }

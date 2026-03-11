@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Analytics.Features.Queries.GetSalesChartData;
 
 public sealed class GetSalesChartDataHandler

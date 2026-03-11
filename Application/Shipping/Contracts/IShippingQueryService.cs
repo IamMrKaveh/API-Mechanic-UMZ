@@ -4,26 +4,21 @@ public interface IShippingQueryService
 {
     Task<IEnumerable<AvailableShippingDto>> GetAvailableShippingsForCartAsync(
         int userId,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<ShippingCostResultDto> CalculateShippingCostAsync(
         int userId,
         int shippingId,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<IEnumerable<ShippingDto>> GetActiveShippingsAsync(
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<ShippingDto?> GetShippingByIdAsync(
         int id,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<IEnumerable<AvailableShippingDto>> GetAvailableShippingsForVariantsAsync(
         IReadOnlyCollection<int> variantIds,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 }

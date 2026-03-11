@@ -1,3 +1,7 @@
+using Application.Common.Models;
+using Domain.Common.ValueObjects;
+using Domain.Shipping.Interfaces;
+
 namespace Application.Shipping.Features.Commands.CreateShipping;
 
 public class CreateShippingHandler : IRequestHandler<CreateShippingCommand, ServiceResult<ShippingDto>>
@@ -35,7 +39,7 @@ public class CreateShippingHandler : IRequestHandler<CreateShippingCommand, Serv
         try
         {
             
-            var shipping = Domain.Shipping.Shipping.Create(
+            var shipping = Domain.Shipping.Aggregates.Shipping.Create(
                 request.Name,
                 Money.FromDecimal(request.Cost),
                 request.Description,

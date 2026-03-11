@@ -1,27 +1,23 @@
+using Application.Common.Models;
+using Domain.Inventory.Entities;
+using Domain.Inventory.Interfaces;
+using Domain.Order.Entities;
+using Domain.Variant.Aggregates;
+
 namespace Infrastructure.Inventory.Services;
 
-public class InventoryService : IInventoryService
+public class InventoryService(
+    DBContext context,
+    IInventoryRepository inventoryRepository,
+    InventoryDomainService domainService,
+    IUnitOfWork unitOfWork,
+    ILogger<InventoryService> logger) : IInventoryService
 {
-    private readonly Persistence.Context.DBContext _context;
-    private readonly IInventoryRepository _inventoryRepository;
-    private readonly InventoryDomainService _domainService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<InventoryService> _logger;
-
-    public InventoryService(
-        Persistence.Context.DBContext context,
-        IInventoryRepository inventoryRepository,
-        InventoryDomainService domainService,
-        IUnitOfWork unitOfWork,
-        ILogger<InventoryService> logger
-        )
-    {
-        _context = context;
-        _inventoryRepository = inventoryRepository;
-        _domainService = domainService;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly DBContext _context = context;
+    private readonly IInventoryRepository _inventoryRepository = inventoryRepository;
+    private readonly InventoryDomainService _domainService = domainService;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<InventoryService> _logger = logger;
 
     public async Task<ServiceResult> ReserveStockAsync(
         int variantId,
@@ -32,8 +28,7 @@ public class InventoryService : IInventoryService
         string? correlationId = null,
         string? cartId = null,
         DateTime? expiresAt = null,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         return await ExecuteWithSerializableLockAsync(variantId, async variant =>
         {
@@ -76,8 +71,7 @@ public class InventoryService : IInventoryService
         int? userId = null,
         string? referenceNumber = null,
         string? correlationId = null,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         return await ExecuteWithSerializableLockAsync(variantId, async variant =>
         {
@@ -113,8 +107,7 @@ public class InventoryService : IInventoryService
 
     public async Task<ServiceResult> CommitStockForOrderAsync(
         int orderId,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
 
@@ -125,7 +118,7 @@ public class InventoryService : IInventoryService
 
             try
             {
-                var orderItems = await _context.Set<Domain.Order.OrderItem>()
+                var orderItems = await _context.Set<OrderItem>()
                     .Where(oi => oi.OrderId == orderId)
                     .ToListAsync(ct);
 
@@ -193,8 +186,7 @@ public class InventoryService : IInventoryService
         int quantity,
         int? userId = null,
         string? reason = null,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         return await ExecuteWithSerializableLockAsync(variantId, async variant =>
         {
@@ -212,8 +204,7 @@ public class InventoryService : IInventoryService
 
     public async Task<ServiceResult> RollbackReservationsAsync(
         string referenceNumber,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         var transactions = await _context.InventoryTransactions
             .Where(t => t.ReferenceNumber == referenceNumber &&
@@ -254,8 +245,7 @@ public class InventoryService : IInventoryService
         int orderItemId,
         int userId,
         string reason,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         return await ExecuteWithSerializableLockAsync(variantId, async variant =>
         {
@@ -279,8 +269,7 @@ public class InventoryService : IInventoryService
         int orderId,
         int userId,
         string reason,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
 
@@ -291,7 +280,7 @@ public class InventoryService : IInventoryService
 
             try
             {
-                var orderItems = await _context.Set<Domain.Order.OrderItem>()
+                var orderItems = await _context.Set<OrderItem>()
                     .Where(oi => oi.OrderId == orderId)
                     .ToListAsync(ct);
 
@@ -339,8 +328,7 @@ public class InventoryService : IInventoryService
         int quantityChange,
         int userId,
         string notes,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         try
         {
@@ -368,8 +356,7 @@ public class InventoryService : IInventoryService
         int quantity,
         int userId,
         string notes,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         try
         {
@@ -394,8 +381,7 @@ public class InventoryService : IInventoryService
     public async Task<ServiceResult<(int VariantId, int FinalStock, int Difference, bool HasDiscrepancy, string Message)>> ReconcileStockAsync(
         int variantId,
         int userId,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         return await ExecuteWithSerializableLockAsync<ServiceResult<(int, int, int, bool, string)>>(variantId,
             async variant =>
@@ -422,8 +408,7 @@ public class InventoryService : IInventoryService
     public async Task<ServiceResult<(int Total, int Success, int Failed, IEnumerable<(int VariantId, bool IsSuccess, string? Error, int? NewStock)> Results)>> BulkAdjustStockAsync(
         IEnumerable<(int VariantId, int QuantityChange, string Notes)> items,
         int userId,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         var itemsList = items.ToList();
         var results = new List<(int, bool, string?, int?)>();
@@ -487,8 +472,7 @@ public class InventoryService : IInventoryService
         IEnumerable<(int VariantId, int Quantity, string? Notes)> items,
         int userId,
         string? supplierReference = null,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         var itemsList = items.ToList();
         var results = new List<(int, bool, string?, int?)>();
@@ -577,8 +561,7 @@ public class InventoryService : IInventoryService
         string? referenceNumber = null,
         int? stockBefore = null,
         bool saveChanges = true,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         var variant = await GetVariantWithTrackingAsync(variantId, ct);
         var currentStock = stockBefore ?? variant?.StockQuantity ?? 0;
@@ -596,8 +579,7 @@ public class InventoryService : IInventoryService
     private async Task<ServiceResult> ExecuteWithSerializableLockAsync(
         int variantId,
         Func<ProductVariant, Task<ServiceResult>> operation,
-        CancellationToken ct
-        )
+        CancellationToken ct = default)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
 
@@ -621,7 +603,7 @@ public class InventoryService : IInventoryService
 
                 var result = await operation(variant);
 
-                if (result.IsSucceed)
+                if (result.IsSuccess)
                 {
                     await _context.SaveChangesAsync(ct);
                     await transaction.CommitAsync(ct);
@@ -691,8 +673,7 @@ public class InventoryService : IInventoryService
 
     private async Task<ProductVariant?> GetVariantWithTrackingAsync(
         int variantId,
-        CancellationToken ct
-        )
+        CancellationToken ct = default)
     {
         return await _context.Set<ProductVariant>()
             .Include(v => v.Product)

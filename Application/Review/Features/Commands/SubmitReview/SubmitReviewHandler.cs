@@ -1,3 +1,8 @@
+using Application.Common.Models;
+using Domain.Product.Interfaces;
+using Domain.Review.Aggregates;
+using Domain.Review.Interfaces;
+
 namespace Application.Review.Features.Commands.SubmitReview;
 
 public class SubmitReviewHandler : IRequestHandler<SubmitReviewCommand, ServiceResult<ProductReviewDto>>

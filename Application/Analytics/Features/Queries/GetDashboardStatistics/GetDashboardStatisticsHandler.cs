@@ -1,27 +1,19 @@
+using Application.Common.Models;
+
 namespace Application.Analytics.Features.Queries.GetDashboardStatistics;
 
-public sealed class GetDashboardStatisticsHandler
-    : IRequestHandler<GetDashboardStatisticsQuery, ServiceResult<DashboardStatisticsDto>>
+public sealed class GetDashboardStatisticsHandler(
+    IAnalyticsQueryService analyticsQuery,
+    ICacheService cache,
+    ILogger<GetDashboardStatisticsHandler> logger) : IRequestHandler<GetDashboardStatisticsQuery, ServiceResult<DashboardStatisticsDto>>
 {
-    private readonly IAnalyticsQueryService _analyticsQuery;
-    private readonly ICacheService _cache;
-    private readonly ILogger<GetDashboardStatisticsHandler> _logger;
-
-    public GetDashboardStatisticsHandler(
-        IAnalyticsQueryService analyticsQuery,
-        ICacheService cache,
-        ILogger<GetDashboardStatisticsHandler> logger
-        )
-    {
-        _analyticsQuery = analyticsQuery;
-        _cache = cache;
-        _logger = logger;
-    }
+    private readonly IAnalyticsQueryService _analyticsQuery = analyticsQuery;
+    private readonly ICacheService _cache = cache;
+    private readonly ILogger<GetDashboardStatisticsHandler> _logger = logger;
 
     public async Task<ServiceResult<DashboardStatisticsDto>> Handle(
         GetDashboardStatisticsQuery request,
-        CancellationToken cancellationToken
-        )
+        CancellationToken ct)
     {
         var cacheKey = $"analytics:dashboard:{request.FromDate?.ToString("yyyyMMdd")}:{request.ToDate?.ToString("yyyyMMdd")}";
 
@@ -30,7 +22,7 @@ public sealed class GetDashboardStatisticsHandler
             return ServiceResult<DashboardStatisticsDto>.Success(cached);
 
         var result = await _analyticsQuery.GetDashboardStatisticsAsync(
-            request.FromDate, request.ToDate, cancellationToken);
+            request.FromDate, request.ToDate, ct);
 
         await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(10));
 

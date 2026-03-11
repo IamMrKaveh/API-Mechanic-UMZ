@@ -24,7 +24,7 @@ public sealed class PriceRange : ValueObject
 
     public static PriceRange FromVariants(IEnumerable<ProductVariant> variants)
     {
-        var activeVariants = variants.Where(v => !v.IsDeleted && v.IsActive).ToList();
+        var activeVariants = variants.Where(v => v.IsActive).ToList();
 
         if (!activeVariants.Any())
             return new PriceRange(Money.Zero(), Money.Zero());

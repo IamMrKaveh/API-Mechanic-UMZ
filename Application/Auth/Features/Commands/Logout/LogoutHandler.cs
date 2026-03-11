@@ -1,26 +1,30 @@
+using Application.Common.Models;
+using Domain.Security.Interfaces;
+
 namespace Application.Auth.Features.Commands.Logout;
 
 public class LogoutHandler : IRequestHandler<LogoutCommand, ServiceResult>
 {
     private readonly ITokenService _tokenService;
-    private readonly ISessionService _sessionManager;
+    private readonly ISessionRepository _sessionRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<LogoutHandler> _logger;
 
     public LogoutHandler(
         ITokenService tokenService,
-        ISessionService sessionManager,
-        ILogger<LogoutHandler> logger
-        )
+        ISessionRepository sessionRepository,
+        IUnitOfWork unitOfWork,
+        ILogger<LogoutHandler> logger)
     {
         _tokenService = tokenService;
-        _sessionManager = sessionManager;
+        _sessionRepository = sessionRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
     public async Task<ServiceResult> Handle(
         LogoutCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         try
         {
@@ -31,10 +35,11 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, ServiceResult>
             if (selector == null)
                 return ServiceResult.Success();
 
-            var session = await _sessionManager.GetSessionBySelectorAsync(selector, ct);
+            var session = await _sessionRepository.GetBySelectorAsync(selector, ct);
             if (session != null && session.UserId == request.UserId)
             {
-                await _sessionManager.RevokeSessionAsync(session.Id, ct);
+                await _sessionRepository.RevokeAsync(session.Id, ct);
+                await _unitOfWork.SaveChangesAsync(ct);
                 _logger.LogInformation("کاربر {UserId} از سیستم خارج شد.", request.UserId);
             }
 

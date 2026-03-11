@@ -1,26 +1,18 @@
-﻿using Domain.Common;
-
-namespace Infrastructure.Common.Outbox;
+﻿namespace Infrastructure.Common.Outbox;
 
 /// <summary>
 /// Background worker that reads unprocessed <see cref="OutboxMessage"/> rows and
 /// republishes them as MediatR notifications, guaranteeing at-least-once delivery
 /// even when the original process crashed after committing the transaction.
 /// </summary>
-public class OutboxPublisherService : BackgroundService
+public class OutboxPublisherService(
+    IServiceScopeFactory scopeFactory,
+    ILogger<OutboxPublisherService> logger) : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<OutboxPublisherService> _logger;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly ILogger<OutboxPublisherService> _logger = logger;
     private readonly TimeSpan _interval = TimeSpan.FromSeconds(15);
     private const int BatchSize = 100;
-
-    public OutboxPublisherService(
-        IServiceScopeFactory scopeFactory,
-        ILogger<OutboxPublisherService> logger)
-    {
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-    }
 
     protected override async Task ExecuteAsync(CancellationToken st)
     {

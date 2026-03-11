@@ -4,7 +4,7 @@ public class ShippingMappingProfile : Profile
 {
     public ShippingMappingProfile()
     {
-        CreateMap<Domain.Shipping.Shipping, ShippingDto>()
+        CreateMap<Domain.Shipping.Aggregates.Shipping, ShippingDto>()
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
             .ForMember(dest => dest.Cost, opt => opt.MapFrom(src => src.BaseCost.Amount))

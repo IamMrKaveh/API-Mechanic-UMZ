@@ -1,22 +1,26 @@
+using Application.Common.Models;
+
 namespace Application.Payment.Features.Queries.GetPaymentByAuthority;
 
-public class GetPaymentByAuthorityHandler : IRequestHandler<GetPaymentByAuthorityQuery, ServiceResult<PaymentTransactionDto?>>
+public class GetPaymentByAuthorityHandler
+    : IRequestHandler<GetPaymentByAuthorityQuery, ServiceResult<PaymentTransactionDto?>>
 {
-    private readonly IPaymentTransactionRepository _repository;
-    private readonly IMapper _mapper;
+    private readonly IPaymentQueryService _paymentQueryService;
 
-    public GetPaymentByAuthorityHandler(IPaymentTransactionRepository repository, IMapper mapper)
+    public GetPaymentByAuthorityHandler(IPaymentQueryService paymentQueryService)
     {
-        _repository = repository;
-        _mapper = mapper;
+        _paymentQueryService = paymentQueryService;
     }
 
-    public async Task<ServiceResult<PaymentTransactionDto?>> Handle(GetPaymentByAuthorityQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<PaymentTransactionDto?>> Handle(
+        GetPaymentByAuthorityQuery request,
+        CancellationToken ct)
     {
-        var tx = await _repository.GetByAuthorityAsync(request.Authority, cancellationToken);
-        if (tx == null)
+        var dto = await _paymentQueryService.GetByAuthorityAsync(request.Authority, ct);
+
+        if (dto is null)
             return ServiceResult<PaymentTransactionDto?>.Failure("تراکنش یافت نشد.");
 
-        return ServiceResult<PaymentTransactionDto?>.Success(_mapper.Map<PaymentTransactionDto>(tx));
+        return ServiceResult<PaymentTransactionDto?>.Success(dto);
     }
 }

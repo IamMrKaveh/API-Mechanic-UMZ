@@ -29,7 +29,7 @@ public record CreateAttributeValueDto
 {
     public string Value { get; init; } = string.Empty;
     public string DisplayValue { get; init; } = string.Empty;
-    public string? HexCode { get; init; } = string.Empty;
+    public string? HexCode { get; init; }
     public int SortOrder { get; init; }
 }
 

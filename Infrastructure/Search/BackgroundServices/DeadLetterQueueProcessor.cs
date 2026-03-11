@@ -4,37 +4,31 @@ namespace Infrastructure.Search.BackgroundServices;
 /// هر batch پردازش در scope جداگانه انجام می‌شود
 /// این از بلوت‌شدن EF Core Change Tracker جلوگیری می‌کند
 /// </summary>
-public class DeadLetterQueueProcessor : BackgroundService
+public class DeadLetterQueueProcessor(
+    IServiceProvider serviceProvider,
+    ILogger<DeadLetterQueueProcessor> logger) : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<DeadLetterQueueProcessor> _logger;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly ILogger<DeadLetterQueueProcessor> _logger = logger;
 
-    public DeadLetterQueueProcessor(
-        IServiceProvider serviceProvider,
-        ILogger<DeadLetterQueueProcessor> logger)
-    {
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
         _logger.LogInformation("Dead Letter Queue Processor is starting");
 
-        await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+        await Task.Delay(TimeSpan.FromMinutes(1), ct);
 
-        while (!stoppingToken.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
             try
             {
-                await ProcessFailedOperationsAsync(stoppingToken);
+                await ProcessFailedOperationsAsync(ct);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing dead letter queue");
             }
 
-            await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+            await Task.Delay(TimeSpan.FromMinutes(5), ct);
         }
     }
 
@@ -129,9 +123,9 @@ public class DeadLetterQueueProcessor : BackgroundService
         }
     }
 
-    public override Task StopAsync(CancellationToken cancellationToken)
+    public override Task StopAsync(CancellationToken ct)
     {
         _logger.LogInformation("Dead Letter Queue Processor is stopping");
-        return base.StopAsync(cancellationToken);
+        return base.StopAsync(ct);
     }
 }

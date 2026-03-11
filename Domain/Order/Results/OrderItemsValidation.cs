@@ -1,15 +1,9 @@
 namespace Domain.Order.Results;
 
-public sealed class OrderItemsValidation
+public sealed class OrderItemsValidation(bool isValid, IEnumerable<string> errors)
 {
-    public bool IsValid { get; }
-    public IReadOnlyList<string> Errors { get; }
-
-    public OrderItemsValidation(bool isValid, IEnumerable<string> errors)
-    {
-        IsValid = isValid;
-        Errors = errors.ToList().AsReadOnly();
-    }
+    public bool IsValid { get; } = isValid;
+    public IReadOnlyList<string> Errors { get; } = errors.ToList().AsReadOnly();
 
     public string GetErrorsSummary() => string.Join(" ", Errors);
 }

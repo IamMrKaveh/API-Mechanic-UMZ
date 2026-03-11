@@ -1,19 +1,11 @@
-using Application.Notification.Features.Commands.DeleteNotification;
-
 namespace MainApi.Notification.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class NotificationsController : BaseApiController
+public class NotificationsController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public NotificationsController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetMyNotifications(
@@ -35,7 +27,7 @@ public class NotificationsController : BaseApiController
 
         var query = new GetUnreadNotificationCountQuery(CurrentUser.UserId.Value);
         var result = await _mediator.Send(query);
-        if (result.IsSucceed) return Ok(new { count = result.Data });
+        if (result.IsSuccess) return Ok(new { count = result.Value });
         return ToActionResult(result);
     }
 

@@ -1,11 +1,6 @@
 namespace Domain.User.Events;
 
-public class UserRestoredEvent : DomainEvent
+public class UserRestoredEvent(int userId) : DomainEvent
 {
-    public int UserId { get; }
-
-    public UserRestoredEvent(int userId)
-    {
-        UserId = userId;
-    }
+    public int UserId { get; } = userId;
 }

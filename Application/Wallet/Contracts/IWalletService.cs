@@ -1,4 +1,7 @@
-﻿namespace Application.Wallet.Contracts;
+﻿using Application.Common.Models;
+using Domain.Wallet.Enums;
+
+namespace Application.Wallet.Contracts;
 
 public interface IWalletService
 {

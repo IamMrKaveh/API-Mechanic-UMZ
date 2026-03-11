@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Cart.Features.Commands.ClearCart;
 
 public class ClearCartHandler : IRequestHandler<ClearCartCommand, ServiceResult>

@@ -1,11 +1,6 @@
 namespace Domain.User.Events;
 
-public class UserPromotedToAdminEvent : DomainEvent
+public class UserPromotedToAdminEvent(int userId) : DomainEvent
 {
-    public int UserId { get; }
-
-    public UserPromotedToAdminEvent(int userId)
-    {
-        UserId = userId;
-    }
+    public int UserId { get; } = userId;
 }

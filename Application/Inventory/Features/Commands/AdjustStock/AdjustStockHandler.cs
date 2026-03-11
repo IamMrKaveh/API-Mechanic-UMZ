@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Inventory.Features.Commands.AdjustStock;
 
 public class AdjustStockHandler : IRequestHandler<AdjustStockCommand, ServiceResult>
@@ -22,7 +24,7 @@ public class AdjustStockHandler : IRequestHandler<AdjustStockCommand, ServiceRes
             request.Notes,
             cancellationToken);
 
-        if (result.IsSucceed)
+        if (result.IsSuccess)
         {
             await _auditService.LogInventoryEventAsync(
                 request.VariantId,

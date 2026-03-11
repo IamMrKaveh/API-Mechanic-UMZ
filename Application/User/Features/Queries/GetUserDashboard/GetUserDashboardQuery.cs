@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.User.Features.Queries.GetUserDashboard;
 
 public record GetUserDashboardQuery(int UserId) : IRequest<ServiceResult<UserDashboardDto>>;

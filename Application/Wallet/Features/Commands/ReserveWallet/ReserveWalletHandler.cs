@@ -1,4 +1,8 @@
-﻿namespace Application.Wallet.Features.Commands.ReserveWallet;
+﻿using Application.Common.Models;
+using Domain.Common.ValueObjects;
+using Domain.Wallet.Interfaces;
+
+namespace Application.Wallet.Features.Commands.ReserveWallet;
 
 public class ReserveWalletHandler : IRequestHandler<ReserveWalletCommand, ServiceResult<Unit>>
 {

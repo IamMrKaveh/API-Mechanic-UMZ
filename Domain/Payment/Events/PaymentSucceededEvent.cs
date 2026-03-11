@@ -1,27 +1,15 @@
 namespace Domain.Payment.Events;
 
-public class PaymentSucceededEvent : DomainEvent
+public sealed class PaymentSucceededEvent(
+    Guid transactionId,
+    Guid orderId,
+    long refId,
+    int userId = 0,
+    decimal amount = 0) : DomainEvent
 {
-    public int TransactionId { get; }
-    public int OrderId { get; }
-    public long RefId { get; }
-    public int UserId { get; }
-    public string? CardPan { get; }
-    public decimal Amount { get; }
-
-    public PaymentSucceededEvent(
-        int transactionId,
-        int orderId,
-        long refId,
-        int userId = 0,
-        string? cardPan = null,
-        decimal amount = 0)
-    {
-        TransactionId = transactionId;
-        OrderId = orderId;
-        RefId = refId;
-        UserId = userId;
-        CardPan = cardPan;
-        Amount = amount;
-    }
+    public Guid TransactionId { get; } = transactionId;
+    public Guid OrderId { get; } = orderId;
+    public long RefId { get; } = refId;
+    public int UserId { get; } = userId;
+    public decimal Amount { get; } = amount;
 }

@@ -1,11 +1,9 @@
 namespace Domain.Product.Specifications;
 
-public class DiscountedProductSpecification : Specification<Product>
+public class DiscountedProductSpecification : Specification<ProductVariant>
 {
-    public override Expression<Func<Product, bool>> ToExpression()
+    public override Expression<Func<ProductVariant, bool>> ToExpression()
     {
-        return p => p.IsActive &&
-                    !p.IsDeleted &&
-                    p.Variants.Any(v => !v.IsDeleted && v.OriginalPrice > v.SellingPrice);
+        return v => v.IsActive && v.CompareAtPrice != null && v.CompareAtPrice.Amount > v.Price.Amount;
     }
 }

@@ -1,3 +1,15 @@
+using Domain.Attribute.Aggregates;
+using Domain.Attribute.Entities;
+using Domain.Audit.Entities;
+using Domain.Inventory.Entities;
+using Domain.Payment.Aggregates;
+using Domain.Review.Aggregates;
+using Domain.Support.Aggregates;
+using Domain.User.Entities;
+using Domain.Variant.Aggregates;
+using Domain.Wallet.Aggregates;
+using Domain.Wallet.Entities;
+
 namespace Infrastructure.Persistence.Context;
 
 public sealed class DBContext : DbContext, IApplicationDbContext
@@ -9,20 +21,20 @@ public sealed class DBContext : DbContext, IApplicationDbContext
         ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
     }
 
-    public DbSet<Domain.User.User> Users => Set<Domain.User.User>();
+    public DbSet<Domain.User.Aggregates.User> Users => Set<Domain.User.Aggregates.User>();
     public DbSet<UserOtp> UserOtps => Set<UserOtp>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
-    public DbSet<Wishlist> Wishlists => Set<Wishlist>();
+    public DbSet<Domain.Wishlist.Aggregates.Wishlist> Wishlists => Set<Domain.Wishlist.Aggregates.Wishlist>();
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<Domain.Product.Product> Products => Set<Domain.Product.Product>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
     public DbSet<AttributeType> AttributeTypes => Set<AttributeType>();
-    public DbSet<Domain.Order.Order> Orders => Set<Domain.Order.Order>();
-    public DbSet<Domain.Shipping.Shipping> Shippings => Set<Domain.Shipping.Shipping>();
-    public DbSet<Domain.Cart.Cart> Carts => Set<Domain.Cart.Cart>();
-    public DbSet<Domain.Category.Category> Categories => Set<Domain.Category.Category>();
-    public DbSet<Domain.Brand.Brand> Brands => Set<Domain.Brand.Brand>();
-    public DbSet<Domain.Media.Media> Medias => Set<Domain.Media.Media>();
+    public DbSet<Domain.Order.Aggregates.Order> Orders => Set<Domain.Order.Aggregates.Order>();
+    public DbSet<Domain.Shipping.Aggregates.Shipping> Shippings => Set<Domain.Shipping.Aggregates.Shipping>();
+    public DbSet<Domain.Cart.Aggregates.Cart> Carts => Set<Domain.Cart.Aggregates.Cart>();
+    public DbSet<Domain.Category.Aggregates.Category> Categories => Set<Domain.Category.Aggregates.Category>();
+    public DbSet<Domain.Brand.Aggregates.Brand> Brands => Set<Domain.Brand.Aggregates.Brand>();
+    public DbSet<Domain.Media.Aggregates.Media> Medias => Set<Domain.Media.Aggregates.Media>();
     public DbSet<DiscountCode> DiscountCodes => Set<DiscountCode>();
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
     public DbSet<Domain.Notification.Notification> Notifications => Set<Domain.Notification.Notification>();
@@ -37,18 +49,17 @@ public sealed class DBContext : DbContext, IApplicationDbContext
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<AttributeValue> AttributeValues => Set<AttributeValue>();
     public DbSet<UserAddress> UserAddresses => Set<UserAddress>();
-    public DbSet<Domain.Wallet.Wallet> Wallets => Set<Domain.Wallet.Wallet>();
+    public DbSet<Domain.Wallet.Aggregates.Wallet> Wallets => Set<Domain.Wallet.Aggregates.Wallet>();
     public DbSet<WalletLedgerEntry> WalletLedgerEntries => Set<WalletLedgerEntry>();
     public DbSet<WalletReservation> WalletReservations => Set<WalletReservation>();
     public DbSet<WalletReconciliationAudit> WalletReconciliationAudits => Set<WalletReconciliationAudit>();
     public DbSet<OrderProcessState> OrderProcessStates => Set<OrderProcessState>();
 
-    protected override void OnModelCreating(ModelBuilder builder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(builder);
-
-        builder.ApplyConfigurationsFromAssembly(
-            Assembly.GetExecutingAssembly());
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Ignore<DomainEvent>();
+        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 
     protected override void ConfigureConventions(

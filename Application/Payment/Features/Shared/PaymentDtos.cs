@@ -1,6 +1,6 @@
+using Domain.Common.ValueObjects;
+
 namespace Application.Payment.Features.Shared;
-
-
 
 public record PaymentTransactionDto
 {
@@ -23,7 +23,7 @@ public class PaymentInitiationDto
 {
     public int OrderId { get; set; }
     public int UserId { get; set; }
-    public Domain.Common.Shared.ValueObjects.Money Amount { get; set; } = null!;
+    public Money Amount { get; set; } = null!;
     public string Description { get; set; } = string.Empty;
     public string CallbackUrl { get; set; } = string.Empty;
     public string? Mobile { get; set; }
@@ -52,8 +52,6 @@ public record PaymentStatusDto
     public TimeSpan? TimeUntilExpiry { get; init; }
 }
 
-
-
 public record PaymentSearchParams
 {
     public int? OrderId { get; init; }
@@ -63,6 +61,18 @@ public record PaymentSearchParams
     public DateTime? ToDate { get; init; }
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 20;
+}
+
+public record PaymentStatisticsDto
+{
+    public int TotalTransactions { get; init; }
+    public int SuccessfulTransactions { get; init; }
+    public int FailedTransactions { get; init; }
+    public int PendingTransactions { get; init; }
+    public decimal TotalAmount { get; init; }
+    public decimal SuccessfulAmount { get; init; }
+    public decimal TotalFees { get; init; }
+    public decimal SuccessRate { get; init; }
 }
 
 public sealed record SettlementReportDto(
@@ -79,3 +89,12 @@ public sealed record DiscrepancyDto(
     decimal Amount,
     string SystemStatus,
     string GatewayStatus);
+
+public class WebhookPayload
+{
+    public string Authority { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
+    public long? RefId { get; init; }
+}
+
+public sealed record RefundPaymentRequest(string Reason);

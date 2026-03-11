@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.User.Interfaces;
+
 namespace Application.User.Features.Commands.ChangeUserStatus;
 
 public class ChangeUserStatusHandler : IRequestHandler<ChangeUserStatusCommand, ServiceResult>
@@ -18,7 +21,7 @@ public class ChangeUserStatusHandler : IRequestHandler<ChangeUserStatusCommand, 
             return ServiceResult.Failure("NotFound");
 
         user.SetIsActive(request.IsActive);
-        _userRepository.UpdateUser(user);
+        _userRepository.Update(user);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return ServiceResult.Success();

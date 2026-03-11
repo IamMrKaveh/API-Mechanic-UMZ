@@ -28,27 +28,26 @@ public sealed class PaymentAuthority : ValueObject
         return new PaymentAuthority(normalized);
     }
 
-    public static (bool Success, PaymentAuthority? Authority, string? Error) TryCreate(string value)
+    public static Result<PaymentAuthority> TryParse(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return (false, null, "شناسه پرداخت الزامی است.");
+            return Result<PaymentAuthority>.Failure("شناسه پرداخت الزامی است.");
 
         var normalized = value.Trim();
 
         if (normalized.Length < MinLength)
-            return (false, null, $"شناسه پرداخت باید حداقل {MinLength} کاراکتر باشد.");
+            return Result<PaymentAuthority>.Failure($"شناسه پرداخت باید حداقل {MinLength} کاراکتر باشد.");
 
         if (normalized.Length > MaxLength)
-            return (false, null, $"شناسه پرداخت نمی‌تواند بیش از {MaxLength} کاراکتر باشد.");
+            return Result<PaymentAuthority>.Failure($"شناسه پرداخت نمی‌تواند بیش از {MaxLength} کاراکتر باشد.");
 
-        return (true, new PaymentAuthority(normalized), null);
+        return Result<PaymentAuthority>.Success(new PaymentAuthority(normalized));
     }
 
     public bool Matches(string other)
     {
         if (string.IsNullOrWhiteSpace(other))
             return false;
-
         return Value.Equals(other.Trim(), StringComparison.Ordinal);
     }
 

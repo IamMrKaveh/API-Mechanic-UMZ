@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Order.Features.Queries.GetOrderStatistics;
 
 public class GetOrderStatisticsHandler : IRequestHandler<GetOrderStatisticsQuery, ServiceResult<OrderStatisticsDto>>

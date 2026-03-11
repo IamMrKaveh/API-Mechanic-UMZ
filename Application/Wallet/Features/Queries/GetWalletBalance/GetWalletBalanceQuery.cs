@@ -1,4 +1,6 @@
-﻿namespace Application.Wallet.Features.Queries.GetWalletBalance;
+﻿using Application.Common.Models;
+
+namespace Application.Wallet.Features.Queries.GetWalletBalance;
 
 public record GetWalletBalanceQuery(
     int UserId

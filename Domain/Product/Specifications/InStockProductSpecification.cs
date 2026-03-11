@@ -1,9 +1,9 @@
 namespace Domain.Product.Specifications;
 
-public class InStockProductSpecification : Specification<Product>
+public class InStockProductSpecification : Specification<Inventory>
 {
-    public override Expression<Func<Product, bool>> ToExpression()
+    public override Expression<Func<Inventory, bool>> ToExpression()
     {
-        return p => p.Stats.TotalStock > 0 || p.Variants.Any(v => v.IsUnlimited);
+        return i => i.IsUnlimited || i.AvailableQuantity > 0;
     }
 }

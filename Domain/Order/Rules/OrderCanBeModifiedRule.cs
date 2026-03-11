@@ -1,13 +1,8 @@
 namespace Domain.Order.Rules;
 
-public sealed class OrderCanBeModifiedRule : IBusinessRule
+public sealed class OrderCanBeModifiedRule(Aggregates.Order order) : IBusinessRule
 {
-    private readonly Order _order;
-
-    public OrderCanBeModifiedRule(Order order)
-    {
-        _order = order;
-    }
+    private readonly Aggregates.Order _order = order;
 
     public bool IsBroken()
     {

@@ -1,25 +1,16 @@
-using Domain.Common;
-
 namespace Infrastructure.Common;
 
-public class UnitOfWork : IUnitOfWork
+public class UnitOfWork(DBContext context, IDbContextTransaction? currentTransaction) : IUnitOfWork
 {
-    private readonly Persistence.Context.DBContext _context;
-    private readonly ILogger<UnitOfWork> _logger;
-    private IDbContextTransaction? _currentTransaction;
+    private readonly DBContext _context = context;
+    private IDbContextTransaction? _currentTransaction = currentTransaction;
 
-    public UnitOfWork(Persistence.Context.DBContext context, ILogger<UnitOfWork> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
-
-    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async Task<int> SaveChangesAsync(CancellationToken ct = default)
     {
         var aggregatesToClear = PrepareOutboxMessages();
         try
         {
-            var result = await _context.SaveChangesAsync(cancellationToken);
+            var result = await _context.SaveChangesAsync(ct);
             foreach (var aggregate in aggregatesToClear)
                 aggregate.ClearDomainEvents();
             return result;
@@ -41,50 +32,54 @@ public class UnitOfWork : IUnitOfWork
             .SelectMany(x => x.Entity.DomainEvents)
             .ToList();
 
-        var outboxMessages = domainEvents.Select(de => OutboxMessage.From(de)).ToList();
+        var outboxMessages = domainEvents.Select(de => OutboxMessage.Create(de)).ToList();
 
         _context.OutboxMessages.AddRange(outboxMessages);
 
         return domainEntities.Select(e => e.Entity).ToList();
     }
 
-    public async Task<IDisposable> BeginTransactionAsync(CancellationToken cancellationToken = default)
+    public async Task<IDisposable> BeginTransactionAsync(CancellationToken ct = default)
     {
         if (_currentTransaction != null) return _currentTransaction;
-        _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        _currentTransaction = await _context.Database.BeginTransactionAsync(ct);
         return _currentTransaction;
     }
 
-    public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+    public async Task CommitTransactionAsync(CancellationToken ct = default)
     {
         if (_currentTransaction == null) throw new InvalidOperationException("No transaction started.");
         try
         {
-            await SaveChangesAsync(cancellationToken);
-            await _currentTransaction.CommitAsync(cancellationToken);
+            await SaveChangesAsync(ct);
+            await _currentTransaction.CommitAsync(ct);
         }
         catch
         {
-            await RollbackTransactionAsync(cancellationToken);
+            await RollbackTransactionAsync(ct);
             throw;
         }
         finally { await DisposeTransactionAsync(); }
     }
 
-    public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
+    public async Task RollbackTransactionAsync(CancellationToken ct = default)
     {
         if (_currentTransaction == null) return;
-        try { await _currentTransaction.RollbackAsync(cancellationToken); }
+        try { await _currentTransaction.RollbackAsync(ct); }
         finally { await DisposeTransactionAsync(); }
     }
 
-    public async Task<T> ExecuteStrategyAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default)
+    public async Task<T> ExecuteStrategyAsync<T>(
+        Func<Task<T>> operation,
+        CancellationToken ct = default)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync(operation);
     }
 
-    public async Task ExecuteStrategyAsync(Func<Task> operation, CancellationToken cancellationToken = default)
+    public async Task ExecuteStrategyAsync(
+        Func<Task> operation,
+        CancellationToken ct = default)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(operation);

@@ -1,3 +1,5 @@
+using Domain.Payment.Aggregates;
+
 namespace Application.Payment.Mapping;
 
 public class PaymentMappingProfile : Profile

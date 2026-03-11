@@ -1,16 +1,8 @@
 namespace Domain.Product.Exceptions;
 
-public class InsufficientStockException : DomainException
+public class InsufficientStockException(int variantId, int availableStock, int requestedQuantity) : DomainException($"موجودی کافی نیست. واریانت: {variantId}، موجودی: {availableStock}، درخواستی: {requestedQuantity}")
 {
-    public int VariantId { get; }
-    public int AvailableStock { get; }
-    public int RequestedQuantity { get; }
-
-    public InsufficientStockException(int variantId, int availableStock, int requestedQuantity)
-        : base($"موجودی کافی نیست. واریانت: {variantId}، موجودی: {availableStock}، درخواستی: {requestedQuantity}")
-    {
-        VariantId = variantId;
-        AvailableStock = availableStock;
-        RequestedQuantity = requestedQuantity;
-    }
+    public int VariantId { get; } = variantId;
+    public int AvailableStock { get; } = availableStock;
+    public int RequestedQuantity { get; } = requestedQuantity;
 }

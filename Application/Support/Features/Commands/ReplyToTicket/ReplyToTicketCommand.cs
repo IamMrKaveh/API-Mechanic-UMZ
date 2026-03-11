@@ -1,7 +1,3 @@
 namespace Application.Support.Features.Commands.ReplyToTicket;
 
-public sealed record ReplyToTicketCommand(
-    int TicketId,
-    int SenderId,
-    string Message,
-    bool IsAdminReply) : IRequest<ServiceResult<bool>>;
+public sealed record ReplyToTicketCommand(int TicketId, string Message) : IRequest<ServiceResult>;

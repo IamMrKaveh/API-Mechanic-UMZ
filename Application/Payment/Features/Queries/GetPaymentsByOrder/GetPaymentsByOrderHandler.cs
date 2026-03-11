@@ -1,20 +1,22 @@
+using Application.Common.Models;
+
 namespace Application.Payment.Features.Queries.GetPaymentsByOrder;
 
-public class GetPaymentsByOrderHandler : IRequestHandler<GetPaymentsByOrderQuery, ServiceResult<IEnumerable<PaymentTransactionDto>>>
+public class GetPaymentsByOrderHandler
+    : IRequestHandler<GetPaymentsByOrderQuery, ServiceResult<IEnumerable<PaymentTransactionDto>>>
 {
-    private readonly IPaymentTransactionRepository _repository;
-    private readonly IMapper _mapper;
+    private readonly IPaymentQueryService _paymentQueryService;
 
-    public GetPaymentsByOrderHandler(IPaymentTransactionRepository repository, IMapper mapper)
+    public GetPaymentsByOrderHandler(IPaymentQueryService paymentQueryService)
     {
-        _repository = repository;
-        _mapper = mapper;
+        _paymentQueryService = paymentQueryService;
     }
 
-    public async Task<ServiceResult<IEnumerable<PaymentTransactionDto>>> Handle(GetPaymentsByOrderQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<IEnumerable<PaymentTransactionDto>>> Handle(
+        GetPaymentsByOrderQuery request,
+        CancellationToken cancellationToken)
     {
-        var transactions = await _repository.GetByOrderIdAsync(request.OrderId, cancellationToken);
-        var dtos = _mapper.Map<IEnumerable<PaymentTransactionDto>>(transactions);
+        var dtos = await _paymentQueryService.GetByOrderIdAsync(request.OrderId, cancellationToken);
         return ServiceResult<IEnumerable<PaymentTransactionDto>>.Success(dtos);
     }
 }

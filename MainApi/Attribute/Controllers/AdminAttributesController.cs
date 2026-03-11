@@ -3,15 +3,9 @@ namespace MainApi.Attribute.Controllers;
 [ApiController]
 [Route("api/admin/attributes")]
 [Authorize(Roles = "Admin")]
-public class AdminAttributesController : BaseApiController
+public class AdminAttributesController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public AdminAttributesController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetAllAttributeTypes()
@@ -33,9 +27,9 @@ public class AdminAttributesController : BaseApiController
         var command = new CreateAttributeTypeCommand(dto.Name, dto.DisplayName, dto.SortOrder);
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed)
+        if (result.IsSuccess)
         {
-            return CreatedAtAction(nameof(GetAttributeType), new { id = result.Data!.Id }, result.Data);
+            return CreatedAtAction(nameof(GetAttributeType), new { id = result.Value!.Id }, result.Value);
         }
         return ToActionResult(result);
     }
@@ -61,9 +55,9 @@ public class AdminAttributesController : BaseApiController
         var command = new CreateAttributeValueCommand(typeId, dto.Value, dto.DisplayValue, dto.HexCode, dto.SortOrder);
         var result = await _mediator.Send(command);
 
-        if (result.IsSucceed)
+        if (result.IsSuccess)
         {
-            return CreatedAtAction(nameof(GetAttributeType), new { id = typeId }, result.Data);
+            return CreatedAtAction(nameof(GetAttributeType), new { id = typeId }, result.Value);
         }
         return ToActionResult(result);
     }

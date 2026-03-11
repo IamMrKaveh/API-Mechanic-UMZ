@@ -62,7 +62,10 @@ public class ElasticsearchMetrics
             description: "Duration of bulk requests");
     }
 
-    public void RecordSearchRequest(double durationMs, bool success, string? indexName = null)
+    public void RecordSearchRequest(
+        double durationMs,
+        bool success,
+        string? indexName = null)
     {
         _searchRequestCounter.Add(1,
             new KeyValuePair<string, object?>("success", success),
@@ -80,7 +83,10 @@ public class ElasticsearchMetrics
         }
     }
 
-    public void RecordIndexRequest(double durationMs, bool success, string? indexName = null)
+    public void RecordIndexRequest(
+        double durationMs,
+        bool success,
+        string? indexName = null)
     {
         _indexRequestCounter.Add(1,
             new KeyValuePair<string, object?>("success", success),
@@ -98,7 +104,11 @@ public class ElasticsearchMetrics
         }
     }
 
-    public void RecordBulkRequest(double durationMs, bool success, int itemCount, string? indexName = null)
+    public void RecordBulkRequest(
+        double durationMs,
+        bool success,
+        int itemCount,
+        string? indexName = null)
     {
         _bulkRequestCounter.Add(1,
             new KeyValuePair<string, object?>("success", success),
@@ -118,7 +128,9 @@ public class ElasticsearchMetrics
         }
     }
 
-    public void RecordBulkOperationSuccess(int itemCount, string? indexName = null)
+    public void RecordBulkOperationSuccess(
+        int itemCount,
+        string? indexName = null)
     {
         _bulkSuccessCounter.Add(1,
             new KeyValuePair<string, object?>("index", indexName ?? "unknown"),
@@ -135,7 +147,9 @@ public class ElasticsearchMetrics
             new KeyValuePair<string, object?>("index", indexName ?? "unknown"));
     }
 
-    public void RecordBulkOperationPartialFailure(int failedCount, string? indexName = null)
+    public void RecordBulkOperationPartialFailure(
+        int failedCount,
+        string? indexName = null)
     {
         _bulkPartialFailureCounter.Add(1,
             new KeyValuePair<string, object?>("index", indexName ?? "unknown"),

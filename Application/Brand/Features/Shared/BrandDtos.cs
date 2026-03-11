@@ -1,30 +1,32 @@
 namespace Application.Brand.Features.Shared;
 
-public record BrandCreateDto
+public record BrandSummaryDto
 {
-    public int CategoryId { get; init; }
+    public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
-    public string Slug { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? IconUrl { get; init; }
+    public bool IsActive { get; init; }
     public int SortOrder { get; init; }
-    public string? Description { get; init; }
+    public int ProductCount { get; init; }
+    public int ActiveProductCount { get; init; }
 }
 
-public record BrandUpdateDto
+public sealed record BrandDto
 {
+    public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
     public string Slug { get; init; } = string.Empty;
-    public int SortOrder { get; init; }
-    public string? Description { get; init; }
-    public int CategoryId { get; init; }
-    public string? RowVersion { get; init; }
+    public string? LogoUrl { get; init; }
+    public int ProductCount { get; init; }
 }
 
 public record BrandViewDto
 {
     public int Id { get; init; }
     public int CategoryId { get; init; }
-    public string CategoryName { get; init; } = string.Empty;
-    public string Name { get; init; } = string.Empty;
+    public string CategoryName { get; init; }
+    public string Name { get; init; }
     public string? Slug { get; init; }
     public string? Description { get; init; }
     public int SortOrder { get; init; }
@@ -39,7 +41,7 @@ public record BrandViewDto
 public record BrandHierarchyDto
 {
     public int Id { get; init; }
-    public string Title { get; init; } = string.Empty;
+    public string Title { get; init; }
 }
 
 public record BrandDetailDto
@@ -80,20 +82,48 @@ public record BrandListItemDto
 public record BrandTreeDto
 {
     public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
+    public string Name { get; init; }
     public string? Slug { get; init; }
     public int SortOrder { get; init; }
     public int ProductCount { get; init; }
 }
 
-public record BrandSummaryDto
-{
-    public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string? Slug { get; init; }
-    public string? IconUrl { get; init; }
-    public bool IsActive { get; init; }
-    public int SortOrder { get; init; }
-    public int ProductCount { get; init; }
-    public int ActiveProductCount { get; init; }
-}
+public record CreateBrandRequest(
+    int CategoryId,
+
+    [MaxLength(100)]
+    string Name,
+
+    [MaxLength(500)]
+    string? Description,
+
+    IFormFile? IconFile
+);
+
+public record UpdateBrandRequest(
+    [Required]
+    int CategoryId,
+
+    [Required]
+    [MaxLength(100)]
+    string Name,
+
+    [MaxLength(500)]
+    string? Description,
+
+    IFormFile? IconFile,
+
+    [Required]
+    string RowVersion
+);
+
+public record MoveBrandRequest(
+    [Required]
+    int SourceCategoryId,
+
+    [Required]
+    int TargetCategoryId,
+
+    [Required]
+    int BrandId
+);

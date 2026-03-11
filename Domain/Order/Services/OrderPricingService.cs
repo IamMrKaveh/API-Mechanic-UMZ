@@ -1,56 +1,49 @@
+using Domain.Common.ValueObjects;
+
 namespace Domain.Order.Services;
 
-/// <summary>
-/// سرویس محاسبه قیمت سفارش
-/// Stateless Domain Service
-/// </summary>
 public class OrderPricingService
 {
-    /// <summary>
-    /// محاسبه قیمت‌گذاری سفارش بر اساس آیتم‌ها، روش ارسال و تخفیف
-    /// </summary>
     public OrderPricingSummary CalculateOrderPricing(
-        IEnumerable<(ProductVariant Variant, int Quantity)> items,
-        Shipping.Shipping shippingMethod,
-        DiscountCode? discount = null)
+        IEnumerable<OrderItemSnapshot> itemSnapshots,
+        Money shippingCost,
+        Money discountAmount)
     {
-        var itemsList = items.ToList();
+        var itemsList = itemSnapshots.ToList();
 
-        
+        if (!itemsList.Any())
+        {
+            return new OrderPricingSummary(
+                Subtotal: Money.Zero(),
+                ShippingCost: shippingCost,
+                DiscountAmount: Money.Zero(),
+                FinalAmount: shippingCost,
+                TotalItems: 0);
+        }
+
         var subtotal = Money.Zero();
-        var totalProfit = Money.Zero();
 
-        foreach (var (variant, quantity) in itemsList)
+        foreach (var item in itemsList)
         {
-            var itemAmount = Money.FromDecimal(variant.SellingPrice).Multiply(quantity);
-            var itemProfit = Money.FromDecimal(variant.SellingPrice - variant.PurchasePrice).Multiply(quantity);
-
+            var itemAmount = item.UnitPrice.Multiply(item.Quantity);
             subtotal = subtotal.Add(itemAmount);
-            totalProfit = totalProfit.Add(itemProfit);
         }
 
-        
-        var totalShippingMultiplier = itemsList.Sum(x => x.Variant.ShippingMultiplier);
-        var shippingCost = Money.FromDecimal(shippingMethod.BaseCost.Amount * totalShippingMultiplier);
+        var cappedDiscount = discountAmount.IsGreaterThan(subtotal) ? subtotal : discountAmount;
 
-        
-        var discountAmount = Money.Zero();
-        if (discount != null && discount.IsCurrentlyValid())
-        {
-            var rawDiscount = discount.CalculateDiscountAmount(subtotal.Amount);
-            discountAmount = Money.FromDecimal(rawDiscount);
-        }
+        var beforeDiscount = subtotal.Add(shippingCost);
+        var finalAmount = beforeDiscount.IsGreaterThan(cappedDiscount)
+            ? beforeDiscount.Subtract(cappedDiscount)
+            : Money.Zero(subtotal.Currency);
 
-        
-        var finalAmount = subtotal.Add(shippingCost).Subtract(discountAmount);
+        var totalItems = itemsList.Sum(i => i.Quantity);
 
         return new OrderPricingSummary(
             Subtotal: subtotal,
             ShippingCost: shippingCost,
-            DiscountAmount: discountAmount,
+            DiscountAmount: cappedDiscount,
             FinalAmount: finalAmount,
-            TotalProfit: totalProfit
-        );
+            TotalItems: totalItems);
     }
 }
 
@@ -59,5 +52,4 @@ public record OrderPricingSummary(
     Money ShippingCost,
     Money DiscountAmount,
     Money FinalAmount,
-    Money TotalProfit
-);
+    int TotalItems);

@@ -1,3 +1,5 @@
+using Domain.Common.ValueObjects;
+
 namespace Application.Common.Mapping;
 
 public sealed class GlobalTypeConverterProfile : Profile

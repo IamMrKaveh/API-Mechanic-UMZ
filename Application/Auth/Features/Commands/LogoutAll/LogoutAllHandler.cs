@@ -1,30 +1,35 @@
+using Application.Common.Models;
+using Domain.Security.Interfaces;
+
 namespace Application.Auth.Features.Commands.LogoutAll;
 
 public class LogoutAllHandler : IRequestHandler<LogoutAllCommand, ServiceResult>
 {
-    private readonly ISessionService _sessionManager;
+    private readonly ISessionRepository _sessionRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditService _auditService;
     private readonly ILogger<LogoutAllHandler> _logger;
 
     public LogoutAllHandler(
-        ISessionService sessionManager,
+        ISessionRepository sessionRepository,
+        IUnitOfWork unitOfWork,
         IAuditService auditService,
-        ILogger<LogoutAllHandler> logger
-        )
+        ILogger<LogoutAllHandler> logger)
     {
-        _sessionManager = sessionManager;
+        _sessionRepository = sessionRepository;
+        _unitOfWork = unitOfWork;
         _auditService = auditService;
         _logger = logger;
     }
 
     public async Task<ServiceResult> Handle(
         LogoutAllCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         try
         {
-            await _sessionManager.RevokeAllUserSessionsAsync(request.UserId, ct);
+            await _sessionRepository.RevokeAllByUserAsync(request.UserId, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             await _auditService.LogSecurityEventAsync(
                 "LogoutAll",

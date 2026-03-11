@@ -1,17 +1,9 @@
 namespace Domain.Inventory.Events;
 
-public class StockReleasedEvent : DomainEvent
+public class StockReleasedEvent(int variantId, int productId, int quantity, string? reason = null) : DomainEvent
 {
-    public int VariantId { get; }
-    public int ProductId { get; }
-    public int Quantity { get; }
-    public string? Reason { get; }
-
-    public StockReleasedEvent(int variantId, int productId, int quantity, string? reason = null)
-    {
-        VariantId = variantId;
-        ProductId = productId;
-        Quantity = quantity;
-        Reason = reason;
-    }
+    public int VariantId { get; } = variantId;
+    public int ProductId { get; } = productId;
+    public int Quantity { get; } = quantity;
+    public string? Reason { get; } = reason;
 }

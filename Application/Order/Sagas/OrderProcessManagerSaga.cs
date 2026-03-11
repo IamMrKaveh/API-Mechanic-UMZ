@@ -1,3 +1,5 @@
+using Domain.Payment.Interfaces;
+
 namespace Application.Order.Sagas;
 
 /// <summary>
@@ -78,7 +80,7 @@ public sealed class OrderProcessManagerSaga :
                 expiresAt: DateTime.UtcNow.AddMinutes(30),
                 ct: ct);
 
-            if (!result.IsSucceed)
+            if (!result.IsSuccess)
             {
                 _logger.LogWarning(
                     "[Saga] Inventory reservation failed for Variant {VariantId}: {Error}",
@@ -215,7 +217,7 @@ public sealed class OrderProcessManagerSaga :
     
 
     private async Task CompensateOrderAsync(
-        Domain.Order.Order order,
+        Domain.Order.Aggregates.Order order,
         string reason,
         OrderProcessState? processState,
         CancellationToken ct)
@@ -252,7 +254,7 @@ public sealed class OrderProcessManagerSaga :
             var referenceNumber = $"ORDER-{orderId}";
             var result = await _inventoryService.RollbackReservationsAsync(referenceNumber, ct);
 
-            if (result.IsSucceed)
+            if (result.IsSuccess)
             {
                 _logger.LogInformation(
                     "[Saga] Inventory released for Order {OrderId}: {Reason}", orderId, reason);

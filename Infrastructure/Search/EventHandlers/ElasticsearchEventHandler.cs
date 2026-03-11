@@ -1,28 +1,19 @@
 namespace Infrastructure.Search.EventHandlers;
 
-public class ElasticsearchEventHandler : IElasticsearchEventHandler
+public class ElasticsearchEventHandler(
+    ISearchService searchService,
+    ILogger<ElasticsearchEventHandler> logger,
+    DBContext context,
+    ElasticsearchClient elasticClient) : IElasticsearchEventHandler
 {
-    private readonly ISearchService _searchService;
-    private readonly IElasticBulkService _bulkService;
-    private readonly ILogger<ElasticsearchEventHandler> _logger;
-    private readonly Persistence.Context.DBContext _context;
-    private readonly ElasticsearchClient _elasticClient;
+    private readonly ISearchService _searchService = searchService;
+    private readonly ILogger<ElasticsearchEventHandler> _logger = logger;
+    private readonly DBContext _context = context;
+    private readonly ElasticsearchClient _elasticClient = elasticClient;
 
-    public ElasticsearchEventHandler(
-        ISearchService searchService,
-        IElasticBulkService bulkService,
-        ILogger<ElasticsearchEventHandler> logger,
-        Persistence.Context.DBContext context,
-        ElasticsearchClient elasticClient)
-    {
-        _searchService = searchService;
-        _bulkService = bulkService;
-        _logger = logger;
-        _context = context;
-        _elasticClient = elasticClient;
-    }
-
-    public void HandleProductChangedAsync(ProductChangedEvent @event, CancellationToken ct = default)
+    public void HandleProductChangedAsync(
+        ProductChangedEvent @event,
+        CancellationToken ct = default)
     {
         try
         {
@@ -49,7 +40,9 @@ public class ElasticsearchEventHandler : IElasticsearchEventHandler
         }
     }
 
-    public async Task HandleCategoryChangedAsync(CategoryChangedEvent @event, CancellationToken ct = default)
+    public async Task HandleCategoryChangedAsync(
+        CategoryChangedEvent @event,
+        CancellationToken ct = default)
     {
         try
         {
@@ -84,7 +77,9 @@ public class ElasticsearchEventHandler : IElasticsearchEventHandler
         }
     }
 
-    public async Task HandleBrandChangedAsync(BrandChangedEvent @event, CancellationToken ct = default)
+    public async Task HandleBrandChangedAsync(
+        BrandChangedEvent @event,
+        CancellationToken ct = default)
     {
         try
         {

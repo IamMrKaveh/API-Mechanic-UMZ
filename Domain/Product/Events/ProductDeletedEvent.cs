@@ -1,13 +1,7 @@
 namespace Domain.Product.Events;
 
-public sealed class ProductDeletedEvent : DomainEvent
+public sealed class ProductDeletedEvent(int productId, int? deletedBy) : DomainEvent
 {
-    public int ProductId { get; }
-    public int? DeletedBy { get; }
-
-    public ProductDeletedEvent(int productId, int? deletedBy)
-    {
-        ProductId = productId;
-        DeletedBy = deletedBy;
-    }
+    public int ProductId { get; } = productId;
+    public int? DeletedBy { get; } = deletedBy;
 }

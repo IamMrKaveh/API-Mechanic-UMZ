@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Shipping.Interfaces;
+
 namespace Application.Shipping.Features.Commands.RestoreShipping;
 
 public class RestoreShippingHandler : IRequestHandler<RestoreShippingCommand, ServiceResult>

@@ -1,15 +1,17 @@
 namespace Domain.Brand.Events;
 
-public class BrandCreatedEvent : DomainEvent
+public sealed class BrandCreatedEvent : DomainEvent
 {
-    public int GroupId { get; }
-    public int CategoryId { get; }
+    public Guid BrandId { get; }
     public string Name { get; }
+    public string Slug { get; }
+    public Guid CategoryId { get; }
 
-    public BrandCreatedEvent(int groupId, int categoryId, string name)
+    public BrandCreatedEvent(Guid brandId, string name, string slug, Guid categoryId)
     {
-        GroupId = groupId;
-        CategoryId = categoryId;
+        BrandId = brandId;
         Name = name;
+        Slug = slug;
+        CategoryId = categoryId;
     }
 }

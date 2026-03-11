@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Product.Interfaces;
+
 namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
 
 /// <summary>

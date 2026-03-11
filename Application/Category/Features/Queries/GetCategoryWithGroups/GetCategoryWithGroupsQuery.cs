@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Category.Features.Queries.GetCategoryWithGroups;
 
 /// <summary>

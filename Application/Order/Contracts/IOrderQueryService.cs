@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Order.Contracts;
 
 public interface IOrderQueryService
@@ -6,9 +8,22 @@ public interface IOrderQueryService
 
     Task<AdminOrderDto?> GetAdminOrderDetailsAsync(int orderId, CancellationToken ct = default);
 
-    Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(int userId, string? status, int page, int pageSize, CancellationToken ct = default);
+    Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(
+        int userId,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 
-    Task<PaginatedResult<AdminOrderDto>> GetAdminOrdersAsync(int? userId, string? status, DateTime? fromDate, DateTime? toDate, bool? isPaid, int page, int pageSize, CancellationToken ct = default);
+    Task<PaginatedResult<AdminOrderDto>> GetAdminOrdersAsync(
+        int? userId,
+        string? status,
+        DateTime? fromDate,
+        DateTime? toDate,
+        bool? isPaid,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 
     Task<OrderStatisticsDto> GetOrderStatisticsAsync(DateTime? fromDate, DateTime? toDate, CancellationToken ct = default);
 

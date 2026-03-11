@@ -11,22 +11,16 @@ namespace Infrastructure.Cache.Redis.Lock;
 /// - Auto-release از طریق TTL
 /// - IAsyncDisposable برای استفاده با using statement
 /// </summary>
-public sealed class RedisDistributedLock : IDistributedLock
+public sealed class RedisDistributedLock(
+    IConnectionMultiplexer redis,
+    ILogger<RedisDistributedLock> logger) : IDistributedLock
 {
-    private readonly IDatabase _db;
-    private readonly ILogger<RedisDistributedLock> _logger;
+    private readonly IDatabase _db = redis.GetDatabase();
+    private readonly ILogger<RedisDistributedLock> _logger = logger;
 
     private static readonly TimeSpan DefaultLockTtl = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan DefaultRetryDelay = TimeSpan.FromMilliseconds(200);
     private const int DefaultRetryCount = 5;
-
-    public RedisDistributedLock(
-        IConnectionMultiplexer redis,
-        ILogger<RedisDistributedLock> logger)
-    {
-        _db = redis.GetDatabase();
-        _logger = logger;
-    }
 
     /// <summary>
     /// تلاش برای گرفتن قفل.
@@ -39,7 +33,7 @@ public sealed class RedisDistributedLock : IDistributedLock
         CancellationToken ct = default)
     {
         var lockKey = $"lock:{resource}";
-        var lockValue = Guid.NewGuid().ToString("N"); 
+        var lockValue = Guid.NewGuid().ToString("N");
         var expiry = ttl ?? DefaultLockTtl;
         var delay = retryDelay ?? DefaultRetryDelay;
 
@@ -61,7 +55,6 @@ public sealed class RedisDistributedLock : IDistributedLock
 
             if (attempt < retryCount)
             {
-                
                 var waitTime = TimeSpan.FromMilliseconds(
                     delay.TotalMilliseconds * Math.Pow(1.5, attempt));
 

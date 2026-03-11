@@ -1,4 +1,8 @@
-﻿namespace Application.Wallet.Features.Commands.DebitWallet;
+﻿using Application.Common.Models;
+using Domain.Common.ValueObjects;
+using Domain.Wallet.Interfaces;
+
+namespace Application.Wallet.Features.Commands.DebitWallet;
 
 public class DebitWalletHandler : IRequestHandler<DebitWalletCommand, ServiceResult<Unit>>
 {

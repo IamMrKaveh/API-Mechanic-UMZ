@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Media.Features.Queries.GetAllMedia;
 
 public class GetAllMediaHandler

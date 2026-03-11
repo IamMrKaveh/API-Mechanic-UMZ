@@ -1,12 +1,6 @@
 namespace Domain.Notification.Exceptions;
 
-public sealed class NotificationNotFoundException : DomainException
+public sealed class NotificationNotFoundException(int notificationId) : DomainException($"اعلان با شناسه {notificationId} یافت نشد.")
 {
-    public int NotificationId { get; }
-
-    public NotificationNotFoundException(int notificationId)
-        : base($"اعلان با شناسه {notificationId} یافت نشد.")
-    {
-        NotificationId = notificationId;
-    }
+    public int NotificationId { get; } = notificationId;
 }

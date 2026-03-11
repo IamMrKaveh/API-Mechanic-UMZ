@@ -1,4 +1,6 @@
-﻿namespace Application.Wallet.Features.Queries.GetWalletLedger;
+﻿using Application.Common.Models;
+
+namespace Application.Wallet.Features.Queries.GetWalletLedger;
 
 public record GetWalletLedgerQuery(
     int UserId,

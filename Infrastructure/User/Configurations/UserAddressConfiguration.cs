@@ -1,3 +1,5 @@
+using Domain.User.Entities;
+
 namespace Infrastructure.User.Configurations;
 
 public sealed class UserAddressConfiguration : IEntityTypeConfiguration<UserAddress>

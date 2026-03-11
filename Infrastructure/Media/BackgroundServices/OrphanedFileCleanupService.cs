@@ -4,37 +4,31 @@ namespace Infrastructure.Media.BackgroundServices;
 /// scope در داخل حلقه while ایجاد می‌شود
 /// این از بلوت‌شدن EF Core Change Tracker در طول اجرای طولانی جلوگیری می‌کند
 /// </summary>
-public class OrphanedFileCleanupService : BackgroundService
+public class OrphanedFileCleanupService(IServiceProvider serviceProvider, ILogger<OrphanedFileCleanupService> logger) : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<OrphanedFileCleanupService> _logger;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly ILogger<OrphanedFileCleanupService> _logger = logger;
 
-    public OrphanedFileCleanupService(IServiceProvider serviceProvider, ILogger<OrphanedFileCleanupService> logger)
-    {
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
         _logger.LogInformation("Media Cleanup Service started.");
 
-        while (!stoppingToken.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
             try
             {
-                await ProcessCleanupAsync(stoppingToken);
-                await Task.Delay(TimeSpan.FromHours(12), stoppingToken);
+                await ProcessCleanupAsync(ct);
+                await Task.Delay(TimeSpan.FromHours(12), ct);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in Media Cleanup Service");
-                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                await Task.Delay(TimeSpan.FromHours(1), ct);
             }
         }
     }
 
-    private async Task ProcessCleanupAsync(CancellationToken stoppingToken)
+    private async Task ProcessCleanupAsync(CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var storageService = scope.ServiceProvider.GetRequiredService<IStorageService>();
@@ -46,11 +40,11 @@ public class OrphanedFileCleanupService : BackgroundService
             .IgnoreQueryFilters()
             .Where(m => m.IsDeleted && m.DeletedAt < cutoffDate)
             .Take(100)
-            .ToListAsync(stoppingToken);
+            .ToListAsync(ct);
 
         foreach (var media in deletedMedias)
         {
-            if (stoppingToken.IsCancellationRequested) break;
+            if (ct.IsCancellationRequested) break;
 
             try
             {
@@ -67,7 +61,7 @@ public class OrphanedFileCleanupService : BackgroundService
 
         if (deletedMedias.Any())
         {
-            await context.SaveChangesAsync(stoppingToken);
+            await context.SaveChangesAsync(ct);
         }
     }
 }

@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Review.Features.Queries.GetReviewsByStatus;
 
 public class GetReviewsByStatusHandler : IRequestHandler<GetReviewsByStatusQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>

@@ -1,15 +1,8 @@
 namespace Domain.Order.Events;
 
-public sealed class OrderShippedEvent : DomainEvent
+public sealed class OrderShippedEvent(int orderId, int userId) : DomainEvent
 {
-    public int OrderId { get; }
-    public int UserId { get; }
-    public DateTime ShippedAt { get; }
-
-    public OrderShippedEvent(int orderId, int userId)
-    {
-        OrderId = orderId;
-        UserId = userId;
-        ShippedAt = DateTime.UtcNow;
-    }
+    public int OrderId { get; } = orderId;
+    public int UserId { get; } = userId;
+    public DateTime ShippedAt { get; } = DateTime.UtcNow;
 }

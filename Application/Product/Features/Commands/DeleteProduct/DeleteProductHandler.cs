@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Product.Interfaces;
+
 namespace Application.Product.Features.Commands.DeleteProduct;
 
 public class DeleteProductHandler : IRequestHandler<DeleteProductCommand, ServiceResult>

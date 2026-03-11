@@ -1,16 +1,8 @@
-﻿namespace Domain.Wallet.Exceptions;
+﻿using Domain.Common.ValueObjects;
+using Domain.Wallet.ValueObjects;
 
-public sealed class InsufficientWalletBalanceException : DomainException
+namespace Domain.Wallet.Exceptions;
+
+public sealed class InsufficientWalletBalanceException(WalletId walletId, Money requested, Money available) : Exception($"Wallet '{walletId}' has insufficient balance. Requested: {requested.Amount} {requested.Currency}, Available: {available.Amount} {available.Currency}.")
 {
-    public int UserId { get; }
-    public decimal Available { get; }
-    public decimal Required { get; }
-
-    public InsufficientWalletBalanceException(int userId, decimal available, decimal required)
-        : base($"موجودی کیف پول کافی نیست. موجودی: {available:N0}، مبلغ مورد نیاز: {required:N0}")
-    {
-        UserId = userId;
-        Available = available;
-        Required = required;
-    }
 }

@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Order.Features.Queries.GetOrderDetails;
 
 public class GetOrderDetailsHandler : IRequestHandler<GetOrderDetailsQuery, ServiceResult<OrderDto>>

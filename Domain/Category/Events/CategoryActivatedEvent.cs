@@ -1,10 +1,10 @@
 namespace Domain.Category.Events;
 
-public class CategoryActivatedEvent : DomainEvent
+public sealed class CategoryActivatedEvent : DomainEvent
 {
-    public int CategoryId { get; }
+    public CategoryId CategoryId { get; }
 
-    public CategoryActivatedEvent(int categoryId)
+    public CategoryActivatedEvent(CategoryId categoryId)
     {
         CategoryId = categoryId;
     }

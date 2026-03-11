@@ -1,3 +1,5 @@
+using Domain.Inventory.Entities;
+
 namespace Application.Inventory.Mapping;
 
 public class InventoryMappingProfile : Profile

@@ -1,47 +1,37 @@
 namespace Application.Audit.Features.Queries.GetAuditLogs;
 
-public sealed class GetAuditLogsHandler : IRequestHandler<GetAuditLogsQuery, GetAuditLogsResult>
+public sealed class GetAuditLogsHandler(
+    IAuditQueryService auditQueryService,
+    ILogger<GetAuditLogsHandler> logger) : IRequestHandler<GetAuditLogsQuery, GetAuditLogsResult>
 {
-    private readonly IAuditRepository _auditRepository;
-    private readonly ILogger<GetAuditLogsHandler> _logger;
-
-    public GetAuditLogsHandler(
-        IAuditRepository auditRepository,
-        ILogger<GetAuditLogsHandler> logger
-        )
-    {
-        _auditRepository = auditRepository;
-        _logger = logger;
-    }
+    private readonly IAuditQueryService _auditQueryService = auditQueryService;
+    private readonly ILogger<GetAuditLogsHandler> _logger = logger;
 
     public async Task<GetAuditLogsResult> Handle(
         GetAuditLogsQuery request,
         CancellationToken ct
         )
     {
-        var (logs, total) = await _auditRepository.GetAuditLogsAsync(
-            request.From,
-            request.To,
-            request.UserId,
-            request.EventType,
-            request.Page,
-            request.PageSize);
+        var searchRequest = new AuditSearchRequest
+        {
+            UserId = request.UserId,
+            EventType = request.EventType,
+            Action = request.Action,
+            Keyword = request.Keyword,
+            IpAddress = request.IpAddress,
+            From = request.From,
+            To = request.To,
+            Page = request.Page,
+            PageSize = request.PageSize,
+            SortDesc = request.SortDesc
+        };
+
+        var (logs, total) = await _auditQueryService.SearchAsync(searchRequest, ct);
 
         var totalPages = (int)Math.Ceiling((double)total / request.PageSize);
 
         return new GetAuditLogsResult(
-            logs.Select(l => new AuditDtos
-            {
-                Id = l.Id,
-                UserId = l.UserId,
-                EventType = l.EventType,
-                Action = l.Action,
-                Details = l.Details,
-                IpAddress = l.IpAddress,
-                UserAgent = l.UserAgent,
-                Timestamp = l.Timestamp,
-                IsArchived = l.IsArchived
-            }),
+            logs,
             total,
             request.Page,
             request.PageSize,

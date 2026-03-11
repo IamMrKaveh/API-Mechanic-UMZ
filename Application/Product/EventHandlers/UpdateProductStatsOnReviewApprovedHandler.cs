@@ -1,53 +1,46 @@
+using Domain.Product.Interfaces;
+using Domain.Review.Interfaces;
+
 namespace Application.Product.EventHandlers;
 
-public class UpdateProductStatsOnReviewApprovedHandler : INotificationHandler<ReviewApprovedEvent>
+public class UpdateProductStatsOnReviewApprovedHandler(
+    IProductRepository productRepository,
+    IReviewRepository reviewRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<UpdateProductStatsOnReviewApprovedHandler> logger) : INotificationHandler<ReviewApprovedEvent>
 {
-    private readonly IProductRepository _productRepository;
-    private readonly IReviewRepository _reviewRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<UpdateProductStatsOnReviewApprovedHandler> _logger;
+    private readonly IProductRepository _productRepository = productRepository;
+    private readonly IReviewRepository _reviewRepository = reviewRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<UpdateProductStatsOnReviewApprovedHandler> _logger = logger;
 
-    public UpdateProductStatsOnReviewApprovedHandler(
-        IProductRepository productRepository,
-        IReviewRepository reviewRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<UpdateProductStatsOnReviewApprovedHandler> logger)
-    {
-        _productRepository = productRepository;
-        _reviewRepository = reviewRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
-
-    public async Task Handle(ReviewApprovedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(ReviewApprovedEvent notification, CancellationToken ct)
     {
         try
         {
-            
-            var product = await _productRepository.GetByIdAsync(notification.ProductId, cancellationToken);
+            var product = await _productRepository.GetByIdAsync(notification.ProductId, ct);
             if (product == null) return;
 
-            
             var (reviews, totalCount) = await _reviewRepository.GetByProductIdAsync(
                 notification.ProductId,
                 "Approved",
                 1,
-                int.MaxValue, 
-                cancellationToken);
+                int.MaxValue,
+                ct);
 
             decimal avgRating = 0;
             if (totalCount > 0)
-            {
                 avgRating = (decimal)reviews.Average(r => r.Rating);
-            }
 
             var newStats = product.Stats.UpdateReviews(totalCount, avgRating);
             product.UpdateStats(newStats);
 
             _productRepository.Update(product);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
-            _logger.LogInformation("Updated stats for Product {ProductId} after review approval.", notification.ProductId);
+            _logger.LogInformation(
+                "Updated stats for Product {ProductId} after review approval.",
+                notification.ProductId);
         }
         catch (Exception ex)
         {

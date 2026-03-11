@@ -1,13 +1,18 @@
+using Domain.Common.Events;
+
 namespace Domain.Cart.Events;
 
-public class CartItemRemovedEvent : DomainEvent
+public sealed class CartItemRemovedEvent : DomainEvent
 {
-    public int CartId { get; }
-    public int VariantId { get; }
+    public Guid CartId { get; }
+    public Guid VariantId { get; }
+    public int RemovedQuantity { get; }
 
-    public CartItemRemovedEvent(int cartId, int variantId)
+    public CartItemRemovedEvent(Guid cartId, Guid variantId, int removedQuantity)
     {
         CartId = cartId;
         VariantId = variantId;
+        RemovedQuantity = removedQuantity;
+        EventVersion = 1;
     }
 }

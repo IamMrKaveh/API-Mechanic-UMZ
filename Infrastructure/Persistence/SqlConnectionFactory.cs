@@ -1,14 +1,9 @@
 namespace Infrastructure.Persistence;
 
-public class SqlConnectionFactory : ISqlConnectionFactory
+public class SqlConnectionFactory(IConfiguration configuration) : ISqlConnectionFactory
 {
-    private readonly string _connectionString;
-
-    public SqlConnectionFactory(IConfiguration configuration)
-    {
-        _connectionString = configuration.GetConnectionString("PoolerConnection")
+    private readonly string _connectionString = configuration.GetConnectionString("PoolerConnection")
             ?? throw new InvalidOperationException("Connection string 'PoolerConnection' not found.");
-    }
 
     public IDbConnection CreateConnection()
     {

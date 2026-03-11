@@ -1,17 +1,16 @@
 namespace Domain.Product.Specifications;
 
-public class ProductInCategorySpecification : Specification<Product>
+public class ProductInCategorySpecification : Specification<Aggregates.Product>
 {
-    private readonly int _categoryId;
+    private readonly CategoryId _categoryId;
 
-    public ProductInCategorySpecification(int categoryId)
+    public ProductInCategorySpecification(CategoryId categoryId)
     {
         _categoryId = categoryId;
     }
 
-    public override Expression<Func<Product, bool>> ToExpression()
+    public override Expression<Func<Aggregates.Product, bool>> ToExpression()
     {
-        return p => p.Brand != null
-        && p.Brand.CategoryId == _categoryId;
+        return p => p.IsActive && p.CategoryId == _categoryId;
     }
 }

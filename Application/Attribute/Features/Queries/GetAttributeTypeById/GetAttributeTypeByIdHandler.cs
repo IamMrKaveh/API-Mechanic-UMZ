@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Attribute.Interfaces;
+
 namespace Application.Attribute.Features.Queries.GetAttributeTypeById;
 
 public class GetAttributeTypeByIdHandler : IRequestHandler<GetAttributeTypeByIdQuery, ServiceResult<AttributeTypeDto?>>

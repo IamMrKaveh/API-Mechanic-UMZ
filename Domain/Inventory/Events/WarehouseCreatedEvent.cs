@@ -1,15 +1,8 @@
 namespace Domain.Inventory.Events;
 
-public sealed class WarehouseCreatedEvent : DomainEvent
+public sealed class WarehouseCreatedEvent(int warehouseId, string code, string name) : DomainEvent
 {
-    public int WarehouseId { get; }
-    public string WarehouseCode { get; }
-    public string WarehouseName { get; }
-
-    public WarehouseCreatedEvent(int warehouseId, string code, string name)
-    {
-        WarehouseId = warehouseId;
-        WarehouseCode = code;
-        WarehouseName = name;
-    }
+    public int WarehouseId { get; } = warehouseId;
+    public string WarehouseCode { get; } = code;
+    public string WarehouseName { get; } = name;
 }

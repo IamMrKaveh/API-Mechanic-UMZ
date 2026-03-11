@@ -1,26 +1,17 @@
-using Infrastructure.Search.Options;
-
 namespace Infrastructure.Search.HealthChecks;
 
-public class ElasticsearchHealthCheck : IHealthCheck
+public class ElasticsearchHealthCheck(
+    ElasticsearchClient client,
+    ILogger<ElasticsearchHealthCheck> logger,
+    IOptions<ElasticsearchOptions> options) : IHealthCheck
 {
-    private readonly ElasticsearchClient _client;
-    private readonly ILogger<ElasticsearchHealthCheck> _logger;
-    private readonly ElasticsearchOptions _options;
-
-    public ElasticsearchHealthCheck(
-        ElasticsearchClient client,
-        ILogger<ElasticsearchHealthCheck> logger,
-        IOptions<ElasticsearchOptions> options)
-    {
-        _client = client;
-        _logger = logger;
-        _options = options.Value;
-    }
+    private readonly ElasticsearchClient _client = client;
+    private readonly ILogger<ElasticsearchHealthCheck> _logger = logger;
+    private readonly ElasticsearchOptions _options = options.Value;
 
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
-        CancellationToken cancellationToken = default)
+        CancellationToken ct = default)
     {
         // اگر Elasticsearch غیرفعال است، Healthy برگردان
         if (!_options.IsEnabled)
@@ -30,7 +21,7 @@ public class ElasticsearchHealthCheck : IHealthCheck
 
         try
         {
-            var pingResponse = await _client.PingAsync(cancellationToken: cancellationToken);
+            var pingResponse = await _client.PingAsync(cancellationToken: ct);
             if (!pingResponse.IsValidResponse)
             {
                 _logger.LogError("Elasticsearch ping failed: {Error}", pingResponse.DebugInformation);
@@ -43,7 +34,7 @@ public class ElasticsearchHealthCheck : IHealthCheck
                     });
             }
 
-            var healthResponse = await _client.Cluster.HealthAsync(cancellationToken: cancellationToken);
+            var healthResponse = await _client.Cluster.HealthAsync(cancellationToken: ct);
             if (!healthResponse.IsValidResponse)
             {
                 return HealthCheckResult.Degraded(

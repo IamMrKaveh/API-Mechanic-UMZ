@@ -1,4 +1,7 @@
-﻿namespace Infrastructure.Wallet.Configurations;
+﻿using Domain.Wallet.Entities;
+using Domain.Wallet.Enums;
+
+namespace Infrastructure.Wallet.Configurations;
 
 public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<WalletReservation>
 {

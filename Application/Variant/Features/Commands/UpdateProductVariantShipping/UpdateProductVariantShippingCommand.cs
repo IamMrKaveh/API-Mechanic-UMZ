@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Variant.Features.Commands.UpdateProductVariantShipping;
 
 public record UpdateProductVariantShippingCommand : IRequest<ServiceResult>

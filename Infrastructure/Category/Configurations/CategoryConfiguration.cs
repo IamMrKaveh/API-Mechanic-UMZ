@@ -1,8 +1,8 @@
 namespace Infrastructure.Category.Configurations;
 
-public sealed class CategoryConfiguration : IEntityTypeConfiguration<Domain.Category.Category>
+public sealed class CategoryConfiguration : IEntityTypeConfiguration<Domain.Category.Aggregates.Category>
 {
-    public void Configure(EntityTypeBuilder<Domain.Category.Category> builder)
+    public void Configure(EntityTypeBuilder<Domain.Category.Aggregates.Category> builder)
     {
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Name)

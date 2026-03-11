@@ -5,20 +5,14 @@
 /// the ledger-derived totals and flags any discrepancies.
 /// Mandatory for financial-grade systems.
 /// </summary>
-public class WalletReconciliationService : BackgroundService
+public class WalletReconciliationService(
+    IServiceScopeFactory scopeFactory,
+    ILogger<WalletReconciliationService> logger) : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<WalletReconciliationService> _logger;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly ILogger<WalletReconciliationService> _logger = logger;
 
     private readonly TimeSpan _interval = TimeSpan.FromHours(24);
-
-    public WalletReconciliationService(
-        IServiceScopeFactory scopeFactory,
-        ILogger<WalletReconciliationService> logger)
-    {
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-    }
 
     protected override async Task ExecuteAsync(CancellationToken st)
     {

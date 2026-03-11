@@ -1,24 +1,20 @@
-﻿namespace Infrastructure.Wallet.BackgroundServices;
+﻿using Domain.Wallet.Interfaces;
+
+namespace Infrastructure.Wallet.BackgroundServices;
 
 /// <summary>
 /// Expires pending wallet reservations whose <c>ExpiresAt</c> has passed.
 /// Processes reservations in small batches directly against the WalletReservation table;
 /// never loads full Wallet aggregates, avoiding high memory usage and long-running locks.
 /// </summary>
-public class WalletReservationExpiryService : BackgroundService
+public class WalletReservationExpiryService(
+    IServiceScopeFactory scopeFactory,
+    ILogger<WalletReservationExpiryService> logger) : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<WalletReservationExpiryService> _logger;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly ILogger<WalletReservationExpiryService> _logger = logger;
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
     private const int BatchSize = 200;
-
-    public WalletReservationExpiryService(
-        IServiceScopeFactory scopeFactory,
-        ILogger<WalletReservationExpiryService> logger)
-    {
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-    }
 
     protected override async Task ExecuteAsync(CancellationToken st)
     {

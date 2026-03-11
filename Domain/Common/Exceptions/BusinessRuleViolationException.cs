@@ -1,12 +1,6 @@
 namespace Domain.Common.Exceptions;
 
-public class BusinessRuleViolationException : DomainException
+public class BusinessRuleViolationException(IBusinessRule brokenRule) : DomainException(brokenRule.Message)
 {
-    public IBusinessRule BrokenRule { get; }
-
-    public BusinessRuleViolationException(IBusinessRule brokenRule)
-        : base(brokenRule.Message)
-    {
-        BrokenRule = brokenRule;
-    }
+    public IBusinessRule BrokenRule { get; } = brokenRule;
 }

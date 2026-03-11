@@ -2,15 +2,9 @@ namespace MainApi.Product.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ProductsController : BaseApiController
+public class ProductsController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public ProductsController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetProducts(

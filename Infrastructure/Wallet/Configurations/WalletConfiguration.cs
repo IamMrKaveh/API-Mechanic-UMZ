@@ -1,8 +1,10 @@
-﻿namespace Infrastructure.Wallet.Configurations;
+﻿using Domain.Wallet.Enums;
 
-public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet.Wallet>
+namespace Infrastructure.Wallet.Configurations;
+
+public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet.Aggregates.Wallet>
 {
-    public void Configure(EntityTypeBuilder<Domain.Wallet.Wallet> builder)
+    public void Configure(EntityTypeBuilder<Domain.Wallet.Aggregates.Wallet> builder)
     {
         builder.HasKey(e => e.Id);
 
@@ -41,11 +43,11 @@ public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Metadata
-            .FindNavigation(nameof(Domain.Wallet.Wallet.Reservations))!
+            .FindNavigation(nameof(Domain.Wallet.Aggregates.Wallet.Reservations))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
 
         builder.Metadata
-            .FindNavigation(nameof(Domain.Wallet.Wallet.PendingLedgerEntries))!
+            .FindNavigation(nameof(Domain.Wallet.Aggregates.Wallet.PendingLedgerEntries))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
     }
 }

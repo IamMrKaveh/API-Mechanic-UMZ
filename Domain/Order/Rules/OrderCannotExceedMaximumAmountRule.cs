@@ -1,15 +1,9 @@
 namespace Domain.Order.Rules;
 
-public class OrderCannotExceedMaximumAmountRule : IBusinessRule
+public class OrderCannotExceedMaximumAmountRule(decimal orderTotal, decimal maxAmount = 500_000_000) : IBusinessRule
 {
-    private readonly decimal _orderTotal;
-    private readonly decimal _maxAmount;
-
-    public OrderCannotExceedMaximumAmountRule(decimal orderTotal, decimal maxAmount = 500_000_000)
-    {
-        _orderTotal = orderTotal;
-        _maxAmount = maxAmount;
-    }
+    private readonly decimal _orderTotal = orderTotal;
+    private readonly decimal _maxAmount = maxAmount;
 
     public bool IsBroken() => _orderTotal > _maxAmount;
 

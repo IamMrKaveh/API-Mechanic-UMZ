@@ -1,3 +1,5 @@
+using Domain.Common.Utilities;
+
 namespace Domain.User.ValueObjects;
 
 public sealed class FullName : ValueObject
@@ -15,8 +17,13 @@ public sealed class FullName : ValueObject
 
     public static FullName Create(string? firstName, string? lastName)
     {
-        var normalizedFirst = NormalizePersian(firstName ?? string.Empty);
-        var normalizedLast = NormalizePersian(lastName ?? string.Empty);
+        var normalizedFirst = string.IsNullOrWhiteSpace(firstName)
+            ? string.Empty
+            : PersianTextNormalizer.Normalize(firstName);
+
+        var normalizedLast = string.IsNullOrWhiteSpace(lastName)
+            ? string.Empty
+            : PersianTextNormalizer.Normalize(lastName);
 
         ValidateName(normalizedFirst, "نام");
         ValidateName(normalizedLast, "نام خانوادگی");
@@ -78,17 +85,6 @@ public sealed class FullName : ValueObject
     public FullName WithLastName(string lastName)
     {
         return Create(FirstName, lastName);
-    }
-
-    private static string NormalizePersian(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-            return string.Empty;
-
-        return text.Trim()
-            .Replace("ي", "ی")
-            .Replace("ك", "ک")
-            .Replace("ى", "ی");
     }
 
     private static void ValidateName(string name, string fieldName)

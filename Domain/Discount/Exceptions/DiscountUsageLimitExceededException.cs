@@ -1,16 +1,8 @@
 namespace Domain.Discount.Exceptions;
 
-public sealed class DiscountUsageLimitExceededException : DomainException
+public sealed class DiscountUsageLimitExceededException(string discountCode, int usageLimit, int currentUsage) : DomainException($"کد تخفیف {discountCode} به حداکثر تعداد استفاده ({usageLimit}) رسیده است.")
 {
-    public string DiscountCode { get; }
-    public int UsageLimit { get; }
-    public int CurrentUsage { get; }
-
-    public DiscountUsageLimitExceededException(string discountCode, int usageLimit, int currentUsage)
-        : base($"کد تخفیف {discountCode} به حداکثر تعداد استفاده ({usageLimit}) رسیده است.")
-    {
-        DiscountCode = discountCode;
-        UsageLimit = usageLimit;
-        CurrentUsage = currentUsage;
-    }
+    public string DiscountCode { get; } = discountCode;
+    public int UsageLimit { get; } = usageLimit;
+    public int CurrentUsage { get; } = currentUsage;
 }

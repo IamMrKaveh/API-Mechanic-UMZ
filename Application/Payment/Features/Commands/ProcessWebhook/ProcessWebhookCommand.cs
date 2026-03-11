@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Payment.Features.Commands.ProcessWebhook;
 
 public record ProcessWebhookCommand(

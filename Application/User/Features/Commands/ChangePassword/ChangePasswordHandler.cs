@@ -1,35 +1,28 @@
+using Domain.User.Interfaces;
+
 namespace Application.User.Features.Commands.ChangePassword;
 
-public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, ServiceResult>
+public sealed class ChangePasswordHandler(
+    IUserRepository userRepository,
+    IPasswordHasher passwordHasher,
+    IUnitOfWork unitOfWork) : IRequestHandler<ChangePasswordCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly IPasswordHasher _passwordHasher = passwordHasher;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-    public ChangePasswordHandler(IUserRepository userRepository, IUnitOfWork unitOfWork)
+    public async Task<ServiceResult> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
-        _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
-    }
+        var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
+        if (user is null)
+            return ServiceResult.Failure("User not found.");
 
-    public async Task<ServiceResult> Handle(ChangePasswordCommand request, CancellationToken ct)
-    {
-        if (request.Dto.NewPassword != request.Dto.ConfirmNewPassword)
-            return ServiceResult.Failure("رمز عبور جدید و تکرار آن یکسان نیستند.");
+        if (!_passwordHasher.Verify(request.Dto.CurrentPassword, user.PasswordHash))
+            return ServiceResult.Failure("Current password is incorrect.");
 
-        var user = await _userRepository.GetByIdAsync(request.UserId, ct);
-        if (user == null)
-            return ServiceResult.Failure("کاربر یافت نشد.", 404);
+        user.ChangePassword(_passwordHasher.Hash(request.Dto.NewPassword));
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        try
-        {
-            user.ChangePassword(request.Dto.CurrentPassword, request.Dto.NewPassword);
-            _userRepository.Update(user);
-            await _unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult.Success();
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult.Failure(ex.Message, 400);
-        }
+        return ServiceResult.Success();
     }
 }

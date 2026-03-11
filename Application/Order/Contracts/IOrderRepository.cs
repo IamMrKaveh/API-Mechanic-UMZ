@@ -2,63 +2,29 @@ namespace Application.Order.Contracts;
 
 public interface IOrderRepository
 {
-    /// <summary>
-    /// دریافت سفارش بر اساس شناسه
-    /// </summary>
-    Task<Domain.Order.Order?> GetByIdAsync(int id, CancellationToken ct = default);
-
-    /// <summary>
-    /// دریافت سفارش به همراه آیتم‌ها
-    /// </summary>
-    Task<Domain.Order.Order?> GetByIdWithItemsAsync(int id, CancellationToken ct = default);
-
-    /// <summary>
-    /// دریافت سفارش بر اساس کلید Idempotency
-    /// </summary>
-    Task<Domain.Order.Order?> GetByIdempotencyKeyAsync(string key, int userId, CancellationToken ct = default);
-
-    /// <summary>
-    /// بررسی وجود کلید Idempotency
-    /// </summary>
     Task<bool> ExistsByIdempotencyKeyAsync(string key, CancellationToken ct = default);
 
-    /// <summary>
-    /// دریافت سفارشات پرداخت نشده منقضی
-    /// </summary>
-    Task<IEnumerable<Domain.Order.Order>> GetExpiredUnpaidOrdersAsync(
-        DateTime cutoffTime,
-        int maxCount,
-        CancellationToken ct = default);
+    Task AddAsync(Domain.Order.Aggregates.Order order, CancellationToken ct = default);
 
-    /// <summary>
-    /// افزودن سفارش جدید
-    /// </summary>
-    Task AddAsync(Domain.Order.Order order, CancellationToken ct = default);
+    Task UpdateAsync(Domain.Order.Aggregates.Order order, CancellationToken ct = default);
 
-    /// <summary>
-    /// به‌روزرسانی سفارش
-    /// </summary>
-    Task UpdateAsync(
-        Domain.Order.Order order,
-        CancellationToken ct = default);
-
-    /// <summary>
-    /// تنظیم RowVersion اصلی برای Concurrency Control
-    /// </summary>
-    void SetOriginalRowVersion(Domain.Order.Order entity, byte[] rowVersion);
-
-    Task<Domain.Order.Order?> GetByIdempotencyKeyAsync(string key, CancellationToken ct = default);
-
-    Task<Domain.Order.Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken ct = default);
+    void SetOriginalRowVersion(Domain.Order.Aggregates.Order entity, byte[] rowVersion);
 
     Task<bool> HasActiveOrdersAsync(int userId, CancellationToken ct = default);
 
-    Task<Domain.Order.Order?> GetByOrderItemIdAsync(
-    int orderItemId,
-    CancellationToken ct = default);
+    Task<Domain.Order.Aggregates.Order?> GetByIdAsync(int id, CancellationToken ct = default);
 
-    Task<IEnumerable<Domain.Order.Order>> GetExpirableOrdersAsync(
-       DateTime expiryThreshold,
-       IEnumerable<string> statuses,
-       CancellationToken ct);
+    Task<Domain.Order.Aggregates.Order?> GetByIdWithItemsAsync(int id, CancellationToken ct = default);
+
+    Task<Domain.Order.Aggregates.Order?> GetByIdempotencyKeyAsync(string key, int userId, CancellationToken ct = default);
+
+    Task<Domain.Order.Aggregates.Order?> GetByIdempotencyKeyAsync(string key, CancellationToken ct = default);
+
+    Task<IEnumerable<Domain.Order.Aggregates.Order>> GetExpiredUnpaidOrdersAsync(DateTime cutoffTime, int maxCount, CancellationToken ct = default);
+
+    Task<Domain.Order.Aggregates.Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken ct = default);
+
+    Task<Domain.Order.Aggregates.Order?> GetByOrderItemIdAsync(int orderItemId, CancellationToken ct = default);
+
+    Task<IEnumerable<Domain.Order.Aggregates.Order>> GetExpirableOrdersAsync(DateTime expiryThreshold, IEnumerable<string> statuses, CancellationToken ct);
 }

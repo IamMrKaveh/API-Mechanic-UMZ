@@ -1,12 +1,25 @@
+using Domain.Product.Interfaces;
+using Domain.Variant.Aggregates;
+
 namespace Infrastructure.Product.Repositories;
 
-public class ProductRepository : IProductRepository
+public class ProductRepository(DBContext context) : IProductRepository
 {
-    private readonly DBContext _context;
+    private readonly DBContext _context = context;
 
-    public ProductRepository(DBContext context)
+    public async Task AddAsync(Domain.Product.Product product, CancellationToken ct = default)
     {
-        _context = context;
+        await _context.Products.AddAsync(product, ct);
+    }
+
+    public void Update(Domain.Product.Product product)
+    {
+        _context.Products.Update(product);
+    }
+
+    public void SetOriginalRowVersion(Domain.Product.Product entity, byte[] rowVersion)
+    {
+        _context.Entry(entity).Property(p => p.RowVersion).OriginalValue = rowVersion;
     }
 
     public async Task<Domain.Product.Product?> GetByIdAsync(int id, CancellationToken ct = default)
@@ -29,8 +42,8 @@ public class ProductRepository : IProductRepository
     public async Task<Domain.Product.Product?> GetByIdWithVariantsAsync(int id, CancellationToken ct = default)
     {
         return await _context.Products
-           .Include(p => p.Variants)
-           .FirstOrDefaultAsync(p => p.Id == id, ct);
+            .Include(p => p.Variants)
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
     }
 
     public async Task<Domain.Product.Product?> GetByIdIncludingDeletedAsync(int id, CancellationToken ct = default)
@@ -41,37 +54,6 @@ public class ProductRepository : IProductRepository
             .FirstOrDefaultAsync(p => p.Id == id, ct);
     }
 
-    public async Task<bool> ExistsBySkuAsync(string sku, int? excludeProductId = null, CancellationToken ct = default)
-    {
-        var normalizedSku = sku.Trim().ToUpperInvariant();
-        var query = _context.ProductVariants
-            .Where(v => v.Sku.Value == normalizedSku && !v.IsDeleted);
-
-        if (excludeProductId.HasValue)
-        {
-            query = query.Where(v => v.ProductId != excludeProductId.Value);
-        }
-
-        return await query.AnyAsync(ct);
-    }
-
-    public async Task AddAsync(Domain.Product.Product product, CancellationToken ct = default)
-    {
-        await _context.Products.AddAsync(product, ct);
-    }
-
-    public void Update(Domain.Product.Product product)
-    {
-        _context.Products.Update(product);
-    }
-
-    public void SetOriginalRowVersion(Domain.Product.Product entity, byte[] rowVersion)
-    {
-        _context.Entry(entity)
-            .Property(p => p.RowVersion)
-            .OriginalValue = rowVersion;
-    }
-
     public async Task<ProductVariant?> GetVariantByIdAsync(int variantId, CancellationToken ct = default)
     {
         return await _context.Set<ProductVariant>()
@@ -79,15 +61,24 @@ public class ProductRepository : IProductRepository
             .FirstOrDefaultAsync(v => v.Id == variantId, ct);
     }
 
-    public async Task<IEnumerable<ProductVariant>> GetVariantsByIdsAsync(
-        IEnumerable<int> variantIds,
-        CancellationToken ct = default)
+    public async Task<IEnumerable<ProductVariant>> GetVariantsByIdsAsync(IEnumerable<int> variantIds, CancellationToken ct = default)
     {
         var ids = variantIds.ToList();
-
         return await _context.Set<ProductVariant>()
             .Include(v => v.Product)
             .Where(v => ids.Contains(v.Id))
             .ToListAsync(ct);
+    }
+
+    public async Task<bool> ExistsBySkuAsync(string sku, int? excludeProductId = null, CancellationToken ct = default)
+    {
+        var normalizedSku = sku.Trim().ToUpperInvariant();
+        var query = _context.ProductVariants
+            .Where(v => v.Sku.Value == normalizedSku && !v.IsDeleted);
+
+        if (excludeProductId.HasValue)
+            query = query.Where(v => v.ProductId != excludeProductId.Value);
+
+        return await query.AnyAsync(ct);
     }
 }

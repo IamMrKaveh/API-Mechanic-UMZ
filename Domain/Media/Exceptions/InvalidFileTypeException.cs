@@ -16,6 +16,6 @@ public class InvalidFileTypeException : DomainException
         : base($"نوع فایل '{fileType}' مجاز نیست.")
     {
         FileType = fileType;
-        AllowedTypes = Array.Empty<string>();
+        AllowedTypes = [];
     }
 }

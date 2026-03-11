@@ -1,24 +1,15 @@
-using Infrastructure.Cache.Options;
-
 namespace Infrastructure.Cache.Health;
 
-public sealed class RedisCacheHealthCheck : IHealthCheck
+public sealed class RedisCacheHealthCheck(
+    IConnectionMultiplexer redis,
+    ILogger<RedisCacheHealthCheck> logger,
+    IOptions<CacheOptions> cacheOptions) : IHealthCheck
 {
     private static readonly TimeSpan MaxAcceptableLatency = TimeSpan.FromMilliseconds(100);
     private static readonly string PingKey = "health:ping";
-    private readonly IConnectionMultiplexer _redis;
-    private readonly ILogger<RedisCacheHealthCheck> _logger;
-    private readonly CacheOptions _cacheOptions;
-
-    public RedisCacheHealthCheck(
-        IConnectionMultiplexer redis,
-        ILogger<RedisCacheHealthCheck> logger,
-        IOptions<CacheOptions> cacheOptions)
-    {
-        _redis = redis;
-        _logger = logger;
-        _cacheOptions = cacheOptions.Value;
-    }
+    private readonly IConnectionMultiplexer _redis = redis;
+    private readonly ILogger<RedisCacheHealthCheck> _logger = logger;
+    private readonly CacheOptions _cacheOptions = cacheOptions.Value;
 
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,

@@ -1,13 +1,7 @@
 namespace Domain.User.Events;
 
-public class UserDeletedEvent : DomainEvent
+public class UserDeletedEvent(int userId, int? deletedBy) : DomainEvent
 {
-    public int UserId { get; }
-    public int? DeletedBy { get; }
-
-    public UserDeletedEvent(int userId, int? deletedBy)
-    {
-        UserId = userId;
-        DeletedBy = deletedBy;
-    }
+    public int UserId { get; } = userId;
+    public int? DeletedBy { get; } = deletedBy;
 }

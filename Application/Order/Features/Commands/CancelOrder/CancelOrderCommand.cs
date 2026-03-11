@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Order.Features.Commands.CancelOrder;
 
 public record CancelOrderCommand : IRequest<ServiceResult>

@@ -1,8 +1,8 @@
 namespace Infrastructure.Brand.Configurations;
 
-public sealed class BrandConfiguration : IEntityTypeConfiguration<Domain.Brand.Brand>
+public sealed class BrandConfiguration : IEntityTypeConfiguration<Domain.Brand.Aggregates.Brand>
 {
-    public void Configure(EntityTypeBuilder<Domain.Brand.Brand> builder)
+    public void Configure(EntityTypeBuilder<Domain.Brand.Aggregates.Brand> builder)
     {
         builder.HasKey(e => e.Id);
 

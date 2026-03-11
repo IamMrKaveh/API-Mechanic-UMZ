@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Support.Features.Queries.GetTicketDetails;
 
 public sealed record GetTicketDetailsQuery(

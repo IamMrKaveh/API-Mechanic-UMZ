@@ -1,29 +1,21 @@
+using Domain.Category.Interfaces;
+
 namespace Application.Brand.Features.Commands.CreateBrand;
 
-public class CreateBrandHandler : IRequestHandler<CreateBrandCommand, ServiceResult<int>>
+public class CreateBrandHandler(
+    ICategoryRepository categoryRepository,
+    IUnitOfWork unitOfWork,
+    IMediaService mediaService,
+    ILogger<CreateBrandHandler> logger) : IRequestHandler<CreateBrandCommand, ServiceResult<int>>
 {
-    private readonly ICategoryRepository _categoryRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMediaService _mediaService;
-    private readonly ILogger<CreateBrandHandler> _logger;
-
-    public CreateBrandHandler(
-        ICategoryRepository categoryRepository,
-        IUnitOfWork unitOfWork,
-        IMediaService mediaService,
-        ILogger<CreateBrandHandler> logger
-        )
-    {
-        _categoryRepository = categoryRepository;
-        _unitOfWork = unitOfWork;
-        _mediaService = mediaService;
-        _logger = logger;
-    }
+    private readonly ICategoryRepository _categoryRepository = categoryRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IMediaService _mediaService = mediaService;
+    private readonly ILogger<CreateBrandHandler> _logger = logger;
 
     public async Task<ServiceResult<int>> Handle(
         CreateBrandCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var category = await _categoryRepository.GetByIdWithGroupsAsync(request.CategoryId, ct);
         if (category == null)

@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Attribute.Interfaces;
+
 namespace Application.Attribute.Features.Commands.DeleteAttributeType;
 
 public class DeleteAttributeTypeHandler : IRequestHandler<DeleteAttributeTypeCommand, ServiceResult>

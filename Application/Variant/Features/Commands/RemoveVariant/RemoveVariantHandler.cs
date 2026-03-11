@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Product.Interfaces;
+
 namespace Application.Variant.Features.Commands.RemoveVariant;
 
 public class RemoveVariantHandler : IRequestHandler<RemoveVariantCommand, ServiceResult>

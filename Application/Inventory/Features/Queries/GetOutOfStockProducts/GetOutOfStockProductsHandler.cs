@@ -1,12 +1,14 @@
+using Application.Common.Models;
+
 namespace Application.Inventory.Features.Queries.GetOutOfStockProducts;
 
-public class GetOutOfStockProductsHandler : IRequestHandler<GetOutOfStockProductsQuery, ServiceResult<IEnumerable<OutOfStockItemDto>>>
+public class GetOutOfStockProductsHandler(IInventoryQueryService queryService) : IRequestHandler<GetOutOfStockProductsQuery, ServiceResult<IEnumerable<OutOfStockItemDto>>>
 {
-    private readonly IInventoryQueryService _queryService;
+    private readonly IInventoryQueryService _queryService = queryService;
 
-    public GetOutOfStockProductsHandler(IInventoryQueryService queryService) => _queryService = queryService;
-
-    public async Task<ServiceResult<IEnumerable<OutOfStockItemDto>>> Handle(GetOutOfStockProductsQuery request, CancellationToken ct)
+    public async Task<ServiceResult<IEnumerable<OutOfStockItemDto>>> Handle(
+        GetOutOfStockProductsQuery request,
+        CancellationToken ct)
     {
         var result = await _queryService.GetOutOfStockProductsAsync(ct);
         return ServiceResult<IEnumerable<OutOfStockItemDto>>.Success(result);

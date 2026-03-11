@@ -20,7 +20,7 @@ public class AdminReviewsController : ControllerBase
     {
         var query = new GetReviewsByStatusQuery(status, page, pageSize);
         var result = await _mediator.Send(query);
-        return result.IsSucceed ? Ok(result.Data) : StatusCode(result.StatusCode, result);
+        return result.IsSuccess ? Ok(result.Value) : StatusCode(result.StatusCode, result);
     }
 
     [HttpPatch("{reviewId}/approve")]
@@ -28,7 +28,7 @@ public class AdminReviewsController : ControllerBase
     {
         var command = new ApproveReviewCommand(reviewId);
         var result = await _mediator.Send(command);
-        if (!result.IsSucceed)
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
         return NoContent();
     }
@@ -38,7 +38,7 @@ public class AdminReviewsController : ControllerBase
     {
         var command = new RejectReviewCommand(reviewId, request.Reason);
         var result = await _mediator.Send(command);
-        if (!result.IsSucceed)
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
         return NoContent();
     }
@@ -48,7 +48,7 @@ public class AdminReviewsController : ControllerBase
     {
         var command = new UpdateReviewStatusCommand(reviewId, request.Status);
         var result = await _mediator.Send(command);
-        if (!result.IsSucceed)
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
         return NoContent();
     }
@@ -58,7 +58,7 @@ public class AdminReviewsController : ControllerBase
     {
         var command = new ReplyToReviewCommand(reviewId, request.Reply);
         var result = await _mediator.Send(command);
-        if (!result.IsSucceed)
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
         return NoContent();
     }
@@ -68,7 +68,7 @@ public class AdminReviewsController : ControllerBase
     {
         var command = new DeleteReviewCommand(reviewId);
         var result = await _mediator.Send(command);
-        if (!result.IsSucceed)
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
         return NoContent();
     }

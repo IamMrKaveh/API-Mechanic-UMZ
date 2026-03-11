@@ -1,3 +1,5 @@
+using Domain.Audit.Entities;
+
 namespace Infrastructure.Audit.Configurations;
 
 public sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
@@ -14,10 +16,10 @@ public sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.Property(x => x.IntegrityHash).HasMaxLength(100).IsRequired();
         builder.Property(x => x.IsArchived).HasDefaultValue(false);
 
-        builder.HasIndex(e => e.Timestamp);
+        builder.HasIndex(e => e.CreatedAt);
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => e.EventType);
         builder.HasIndex(x => x.IsArchived);
-        builder.HasIndex(x => new { x.UserId, x.Timestamp });
+        builder.HasIndex(x => new { x.UserId, x.CreatedAt });
     }
 }

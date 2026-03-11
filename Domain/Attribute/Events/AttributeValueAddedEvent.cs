@@ -1,15 +1,14 @@
+using Domain.Attribute.ValueObjects;
+using Domain.Common.Abstractions;
+
 namespace Domain.Attribute.Events;
 
-public sealed class AttributeValueAddedEvent : DomainEvent
+public sealed record AttributeValueAddedEvent(
+    AttributeTypeId AttributeTypeId,
+    AttributeValueId AttributeValueId,
+    string Value,
+    string DisplayValue) : IDomainEvent
 {
-    public int AttributeTypeId { get; }
-    public int AttributeValueId { get; }
-    public string Value { get; }
-
-    public AttributeValueAddedEvent(int attributeTypeId, int attributeValueId, string value)
-    {
-        AttributeTypeId = attributeTypeId;
-        AttributeValueId = attributeValueId;
-        Value = value;
-    }
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }

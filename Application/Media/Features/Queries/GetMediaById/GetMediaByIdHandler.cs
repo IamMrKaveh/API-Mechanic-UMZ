@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Media.Features.Queries.GetMediaById;
 
 public class GetMediaByIdHandler

@@ -1,26 +1,19 @@
+using Domain.Category.Interfaces;
+
 namespace Application.Brand.Features.Commands.MoveBrand;
 
-public class MoveBrandHandler : IRequestHandler<MoveBrandCommand, ServiceResult>
+public class MoveBrandHandler(
+    ICategoryRepository categoryRepository,
+    CategoryDomainService categoryDomainService,
+    IUnitOfWork unitOfWork) : IRequestHandler<MoveBrandCommand, ServiceResult>
 {
-    private readonly ICategoryRepository _categoryRepository;
-    private readonly CategoryDomainService _categoryDomainService;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public MoveBrandHandler(
-        ICategoryRepository categoryRepository,
-        CategoryDomainService categoryDomainService,
-        IUnitOfWork unitOfWork
-        )
-    {
-        _categoryRepository = categoryRepository;
-        _categoryDomainService = categoryDomainService;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly ICategoryRepository _categoryRepository = categoryRepository;
+    private readonly CategoryDomainService _categoryDomainService = categoryDomainService;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<ServiceResult> Handle(
         MoveBrandCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var sourceCategory = await _categoryRepository.GetByIdWithGroupsAsync(
             request.SourceCategoryId, ct);

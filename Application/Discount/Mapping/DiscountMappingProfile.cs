@@ -1,3 +1,6 @@
+using Domain.Discount.Aggregates;
+using Domain.Discount.Entities;
+
 namespace Application.Discount.Mapping;
 
 public class DiscountMappingProfile : Profile

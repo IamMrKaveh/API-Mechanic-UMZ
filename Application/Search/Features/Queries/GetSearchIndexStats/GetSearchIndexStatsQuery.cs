@@ -1,3 +1,9 @@
 namespace Application.Search.Features.Queries.GetSearchIndexStats;
 
-public record GetSearchIndexStatsQuery : IRequest<ServiceResult<object>>;
+public sealed record GetSearchIndexStatsQuery : IRequest<ServiceResult<SearchIndexStatsDto>>;
+
+public sealed record SearchIndexStatsDto(
+    long ProductsCount,
+    long CategoriesCount,
+    long BrandsCount,
+    long TotalDocuments);

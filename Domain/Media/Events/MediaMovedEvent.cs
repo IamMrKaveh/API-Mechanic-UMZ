@@ -1,19 +1,10 @@
 namespace Domain.Media.Events;
 
-public sealed class MediaMovedEvent : DomainEvent
+public sealed class MediaMovedEvent(Guid mediaId, string oldEntityType, int oldEntityId, string newEntityType, int newEntityId) : DomainEvent
 {
-    public int MediaId { get; }
-    public string OldEntityType { get; }
-    public int OldEntityId { get; }
-    public string NewEntityType { get; }
-    public int NewEntityId { get; }
-
-    public MediaMovedEvent(int mediaId, string oldEntityType, int oldEntityId, string newEntityType, int newEntityId)
-    {
-        MediaId = mediaId;
-        OldEntityType = oldEntityType;
-        OldEntityId = oldEntityId;
-        NewEntityType = newEntityType;
-        NewEntityId = newEntityId;
-    }
+    public Guid MediaId { get; } = mediaId;
+    public string OldEntityType { get; } = oldEntityType;
+    public int OldEntityId { get; } = oldEntityId;
+    public string NewEntityType { get; } = newEntityType;
+    public int NewEntityId { get; } = newEntityId;
 }

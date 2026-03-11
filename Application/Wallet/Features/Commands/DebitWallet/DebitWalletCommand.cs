@@ -1,4 +1,7 @@
-﻿namespace Application.Wallet.Features.Commands.DebitWallet;
+﻿using Application.Common.Models;
+using Domain.Wallet.Enums;
+
+namespace Application.Wallet.Features.Commands.DebitWallet;
 
 public record DebitWalletCommand(
     int UserId,

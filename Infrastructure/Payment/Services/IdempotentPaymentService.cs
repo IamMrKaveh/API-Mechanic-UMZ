@@ -1,38 +1,31 @@
+using Application.Common.Models;
+using Domain.Payment.Aggregates;
+using Domain.Payment.Interfaces;
+
 namespace Infrastructure.Payment.Services;
 
-public sealed class PaymentService : IPaymentService
+public sealed class PaymentService(
+    IPaymentGatewayFactory gatewayFactory,
+    IPaymentTransactionRepository transactionRepo,
+    ICacheService cache,
+    IUnitOfWork unitOfWork,
+    ILogger<PaymentService> logger) : IPaymentService
 {
     private static readonly TimeSpan IdempotencyWindow = TimeSpan.FromHours(24);
     private static readonly TimeSpan GatewayTimeout = TimeSpan.FromSeconds(10);
 
-    private readonly IPaymentGatewayFactory _gatewayFactory;
-    private readonly IPaymentTransactionRepository _transactionRepo;
-    private readonly ICacheService _cache;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<PaymentService> _logger;
-
-    public PaymentService(
-        IPaymentGatewayFactory gatewayFactory,
-        IPaymentTransactionRepository transactionRepo,
-        ICacheService cache,
-        IUnitOfWork unitOfWork,
-        ILogger<PaymentService> logger
-        )
-    {
-        _gatewayFactory = gatewayFactory;
-        _transactionRepo = transactionRepo;
-        _cache = cache;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IPaymentGatewayFactory _gatewayFactory = gatewayFactory;
+    private readonly IPaymentTransactionRepository _transactionRepo = transactionRepo;
+    private readonly ICacheService _cache = cache;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<PaymentService> _logger = logger;
 
     private record CachedPaymentInitiation(bool IsSuccess, string? Authority, string? PaymentUrl, string? Message);
     private record CachedPaymentVerification(bool IsVerified, long? RefId, string? CardPan, string? Message);
 
     public async Task<ServiceResult<(bool IsSuccess, string? Authority, string? PaymentUrl, string? Message)>> InitiatePaymentAsync(
         PaymentInitiationDto dto,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         var idempotencyKey = BuildIdempotencyKey(dto.OrderId, dto.Amount.Amount);
 
@@ -120,8 +113,7 @@ public sealed class PaymentService : IPaymentService
     public async Task<ServiceResult<(bool IsVerified, long? RefId, string? CardPan, string? Message)>> VerifyPaymentAsync(
         string authority,
         int amount,
-        CancellationToken ct = default
-        )
+        CancellationToken ct = default)
     {
         var verifyIdempotencyKey = $"payment:verify:{authority}";
 
@@ -177,7 +169,9 @@ public sealed class PaymentService : IPaymentService
         return ServiceResult<(bool, long?, string?, string?)>.Success((verifyResult.IsVerified, verifyResult.RefId, verifyResult.CardPan, verifyResult.Message));
     }
 
-    private static string BuildIdempotencyKey(int orderId, decimal amount) =>
+    private static string BuildIdempotencyKey(
+        int orderId,
+        decimal amount) =>
         $"payment:initiate:{orderId}:{amount:F0}";
 
     private static string BuildPaymentUrl(string? authority) =>

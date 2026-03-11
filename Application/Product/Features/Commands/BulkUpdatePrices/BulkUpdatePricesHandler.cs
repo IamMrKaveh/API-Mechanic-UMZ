@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Variant.Interfaces;
+
 namespace Application.Product.Features.Commands.BulkUpdatePrices;
 
 public class BulkUpdatePricesHandler : IRequestHandler<BulkUpdatePricesCommand, ServiceResult>

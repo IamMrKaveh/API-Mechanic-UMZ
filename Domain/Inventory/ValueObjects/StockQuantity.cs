@@ -25,7 +25,6 @@ public sealed class StockQuantity : ValueObject, IComparable<StockQuantity>
     public static StockQuantity Zero() => new(0);
 
     public bool IsZero => Value == 0;
-
     public bool IsPositive => Value > 0;
 
     public bool IsLowStock(int threshold) => Value > 0 && Value <= threshold;
@@ -53,12 +52,15 @@ public sealed class StockQuantity : ValueObject, IComparable<StockQuantity>
         return new StockQuantity(Value - quantity);
     }
 
-    public (bool CanSubtract, int Shortage) TrySubtract(int quantity)
+    public Result<StockQuantity> TrySubtract(int quantity)
     {
-        if (Value >= quantity)
-            return (true, 0);
+        if (quantity < 0)
+            return Result<StockQuantity>.Failure("مقدار کاهش نمی‌تواند منفی باشد.");
 
-        return (false, quantity - Value);
+        if (Value < quantity)
+            return Result<StockQuantity>.Failure($"موجودی کافی نیست. موجودی فعلی: {Value}، کمبود: {quantity - Value}");
+
+        return Result<StockQuantity>.Success(new StockQuantity(Value - quantity));
     }
 
     public int CompareTo(StockQuantity? other)

@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Auth.Features.Commands.RequestOtp;
 
 public record RequestOtpCommand : IRequest<ServiceResult>

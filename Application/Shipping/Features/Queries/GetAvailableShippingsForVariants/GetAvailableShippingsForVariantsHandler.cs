@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Shipping.Features.Queries.GetAvailableShippingsForVariants;
 
 public class GetAvailableShippingsForVariantsHandler

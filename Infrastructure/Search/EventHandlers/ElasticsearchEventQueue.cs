@@ -3,21 +3,15 @@ namespace Infrastructure.Search.EventHandlers;
 /// <summary>
 /// Queue-based event processor for batching Elasticsearch updates
 /// </summary>
-public class ElasticsearchEventQueue
+public class ElasticsearchEventQueue(
+    ILogger<ElasticsearchEventQueue> logger,
+    IConfiguration configuration)
 {
     private readonly ConcurrentQueue<IEntityChangeEvent> _eventQueue = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
-    private readonly ILogger<ElasticsearchEventQueue> _logger;
-    private readonly int _maxQueueSize;
+    private readonly ILogger<ElasticsearchEventQueue> _logger = logger;
+    private readonly int _maxQueueSize = configuration.GetValue("Elasticsearch:MaxEventQueueSize", 10000);
     private int _currentSize = 0;
-
-    public ElasticsearchEventQueue(
-        ILogger<ElasticsearchEventQueue> logger,
-        IConfiguration configuration)
-    {
-        _logger = logger;
-        _maxQueueSize = configuration.GetValue("Elasticsearch:MaxEventQueueSize", 10000);
-    }
 
     public bool EnqueueAsync(IEntityChangeEvent @event)
     {
@@ -59,8 +53,4 @@ public class ElasticsearchEventQueue
             _semaphore.Release();
         }
     }
-
-    public int Count => _currentSize;
-
-    public int MaxQueueSize => _maxQueueSize;
 }

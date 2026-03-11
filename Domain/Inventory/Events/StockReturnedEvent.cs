@@ -1,15 +1,8 @@
 namespace Domain.Inventory.Events;
 
-public sealed class StockReturnedEvent : DomainEvent
+public sealed class StockReturnedEvent(int variantId, int orderId, int quantity) : DomainEvent
 {
-    public int VariantId { get; }
-    public int OrderId { get; }
-    public int Quantity { get; }
-
-    public StockReturnedEvent(int variantId, int orderId, int quantity)
-    {
-        VariantId = variantId;
-        OrderId = orderId;
-        Quantity = quantity;
-    }
+    public int VariantId { get; } = variantId;
+    public int OrderId { get; } = orderId;
+    public int Quantity { get; } = quantity;
 }

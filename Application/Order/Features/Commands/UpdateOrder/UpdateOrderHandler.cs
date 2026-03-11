@@ -1,4 +1,6 @@
+using Application.Common.Models;
 using Application.Features.Orders.Commands.UpdateOrder;
+using Domain.Shipping.Interfaces;
 
 namespace Application.Order.Features.Commands.UpdateOrder;
 

@@ -2,21 +2,23 @@ namespace MainApi.Middleware;
 
 public class WebhookIpWhitelistMiddleware
 {
-    private const string WebhookPath = "/api/payments/webhook/zarinpal";
     private const string AllowedIpsConfigSection = "Zarinpal:AllowedIps";
 
     private readonly RequestDelegate _next;
     private readonly ILogger<WebhookIpWhitelistMiddleware> _logger;
     private readonly string[] _allowedIps;
+    private readonly WebhookOptions _webhookOptions;
 
     public WebhookIpWhitelistMiddleware(
         RequestDelegate next,
         IConfiguration configuration,
+        IOptions<WebhookOptions> webhookOptions,
         ILogger<WebhookIpWhitelistMiddleware> logger)
     {
         _next = next;
         _logger = logger;
         _allowedIps = configuration.GetSection(AllowedIpsConfigSection).Get<string[]>() ?? [];
+        _webhookOptions = webhookOptions.Value;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -33,8 +35,9 @@ public class WebhookIpWhitelistMiddleware
         await _next(context);
     }
 
-    private static bool IsWebhookRequest(HttpContext context)
-        => context.Request.Path.StartsWithSegments(WebhookPath);
+    private bool IsWebhookRequest(HttpContext context)
+        => _webhookOptions.AllowedPaths.Any(path =>
+            context.Request.Path.StartsWithSegments(path));
 
     private bool IsAllowedIp(HttpContext context)
     {

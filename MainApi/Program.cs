@@ -1,3 +1,12 @@
+using DotNetEnv;
+using Infrastructure;
+
+var envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+if (File.Exists(envFilePath))
+{
+    Env.Load(envFilePath);
+}
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .Enrich.FromLogContext()
@@ -10,9 +19,16 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
+    builder.Configuration
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+        .AddEnvironmentVariables();
+
     ConfigureSerilog(builder);
     ConfigureAuthentication(builder);
     ConfigureServices(builder);
+    builder.ValidateRequiredConfiguration();
 
     var app = builder.Build();
 
@@ -84,10 +100,11 @@ static void ConfigureServices(WebApplicationBuilder builder)
     var configuration = builder.Configuration;
     ConfigureControllersAndApi(builder);
     ConfigureOptions(builder, configuration);
-    ConfigureHttpClients(builder);
     ConfigureRedisAndDataProtection(builder);
+
     builder.Services.Configure<LiaraStorageSettings>(
         configuration.GetSection("LiaraStorage"));
+
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices(configuration);
     builder.Services.AddCustomCors(configuration);
@@ -119,15 +136,6 @@ static void ConfigureOptions(WebApplicationBuilder builder, IConfiguration confi
 
     builder.Services.Configure<SecuritySettings>(
         configuration.GetSection(SecuritySettings.SectionName));
-}
-
-static void ConfigureHttpClients(WebApplicationBuilder builder)
-{
-    builder.Services.AddHttpClient<ILocationService, LocationService>(client =>
-    {
-        client.BaseAddress = new Uri("https://iran-locations-api.ir/api/v1/fa/");
-        client.Timeout = TimeSpan.FromSeconds(10);
-    });
 }
 
 static void ConfigureRedisAndDataProtection(WebApplicationBuilder builder)

@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Search.Features.Queries.SearchProducts;
 
 public class SearchProductsHandler

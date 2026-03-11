@@ -3,14 +3,9 @@
 /// <summary>
 /// قفل توزیع‌شده No-Op که زمانی استفاده می‌شود که Redis غیرفعال است
 /// </summary>
-public sealed class NoOpDistributedLock : IDistributedLock
+public sealed class NoOpDistributedLock(ILogger<NoOpDistributedLock> logger) : IDistributedLock
 {
-    private readonly ILogger<NoOpDistributedLock> _logger;
-
-    public NoOpDistributedLock(ILogger<NoOpDistributedLock> logger)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger<NoOpDistributedLock> _logger = logger;
 
     public Task<ILockHandle?> TryAcquireAsync(
         string resource,

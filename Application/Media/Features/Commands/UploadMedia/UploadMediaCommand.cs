@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Media.Features.Commands.UploadMedia;
 
 public record UploadMediaCommand : IRequest<ServiceResult<MediaDto>>

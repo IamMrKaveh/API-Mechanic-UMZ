@@ -1,15 +1,8 @@
 namespace Domain.Payment.Events;
 
-public class PaymentInitiatedEvent : DomainEvent
+public sealed class PaymentInitiatedEvent(Guid transactionId, Guid orderId, decimal amount) : DomainEvent
 {
-    public int TransactionId { get; }
-    public int OrderId { get; }
-    public decimal Amount { get; }
-
-    public PaymentInitiatedEvent(int transactionId, int orderId, decimal amount)
-    {
-        TransactionId = transactionId;
-        OrderId = orderId;
-        Amount = amount;
-    }
+    public Guid TransactionId { get; } = transactionId;
+    public Guid OrderId { get; } = orderId;
+    public decimal Amount { get; } = amount;
 }

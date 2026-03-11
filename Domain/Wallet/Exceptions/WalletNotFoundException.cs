@@ -1,9 +1,5 @@
 ﻿namespace Domain.Wallet.Exceptions;
 
-public sealed class WalletNotFoundException : DomainException
+public sealed class WalletNotFoundException(int userId) : DomainException($"کیف پول کاربر {userId} یافت نشد.")
 {
-    public WalletNotFoundException(int userId)
-        : base($"کیف پول کاربر {userId} یافت نشد.")
-    {
-    }
 }

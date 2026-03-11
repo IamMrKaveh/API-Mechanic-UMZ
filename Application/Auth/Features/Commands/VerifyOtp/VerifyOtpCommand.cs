@@ -1,4 +1,5 @@
 using Application.Auth.Features.Shared;
+using Application.Common.Models;
 
 namespace Application.Auth.Features.Commands.VerifyOtp;
 

@@ -1,12 +1,6 @@
 namespace Domain.Product.Exceptions;
 
-public sealed class ProductNotFoundException : DomainException
+public sealed class ProductNotFoundException(int productId) : DomainException($"محصول با شناسه {productId} یافت نشد.")
 {
-    public int ProductId { get; }
-
-    public ProductNotFoundException(int productId)
-        : base($"محصول با شناسه {productId} یافت نشد.")
-    {
-        ProductId = productId;
-    }
+    public int ProductId { get; } = productId;
 }

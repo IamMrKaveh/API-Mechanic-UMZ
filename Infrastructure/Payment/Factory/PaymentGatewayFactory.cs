@@ -4,21 +4,14 @@ namespace Infrastructure.Payment.Factory;
 /// پیاده‌سازی Factory برای مدیریت چند درگاه پرداخت.
 /// درگاه‌های جدید فقط با ثبت در DI Container اضافه می‌شوند.
 /// </summary>
-public sealed class PaymentGatewayFactory : IPaymentGatewayFactory
+public sealed class PaymentGatewayFactory(
+    IEnumerable<IPaymentGateway> gateways,
+    IOptions<PaymentGatewayOptions> options,
+    ILogger<PaymentGatewayFactory> logger) : IPaymentGatewayFactory
 {
-    private readonly IEnumerable<IPaymentGateway> _gateways;
-    private readonly PaymentGatewayOptions _options;
-    private readonly ILogger<PaymentGatewayFactory> _logger;
-
-    public PaymentGatewayFactory(
-        IEnumerable<IPaymentGateway> gateways,
-        IOptions<PaymentGatewayOptions> options,
-        ILogger<PaymentGatewayFactory> logger)
-    {
-        _gateways = gateways;
-        _options = options.Value;
-        _logger = logger;
-    }
+    private readonly IEnumerable<IPaymentGateway> _gateways = gateways;
+    private readonly PaymentGatewayOptions _options = options.Value;
+    private readonly ILogger<PaymentGatewayFactory> _logger = logger;
 
     public IPaymentGateway GetGateway(string gatewayName)
     {

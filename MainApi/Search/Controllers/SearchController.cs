@@ -43,10 +43,10 @@ public class SearchController : ControllerBase
 
         var result = await _mediator.Send(query, ct);
 
-        if (!result.IsSucceed)
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, new { error = result.Error });
 
-        return Ok(result.Data);
+        return Ok(result.Value);
     }
 
     [HttpGet("global")]
@@ -56,10 +56,10 @@ public class SearchController : ControllerBase
     {
         var result = await _mediator.Send(new GlobalSearchQuery(q), ct);
 
-        if (!result.IsSucceed)
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, new { error = result.Error });
 
-        return Ok(result.Data);
+        return Ok(result.Value);
     }
 
     [HttpGet("suggestions")]
@@ -71,10 +71,10 @@ public class SearchController : ControllerBase
         var result = await _mediator.Send(
             new GetSearchSuggestionsQuery(q, maxSuggestions), ct);
 
-        if (!result.IsSucceed)
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, new { error = result.Error });
 
-        return Ok(result.Data);
+        return Ok(result.Value);
     }
 
     [HttpGet("products/fuzzy")]
@@ -87,9 +87,9 @@ public class SearchController : ControllerBase
         var result = await _mediator.Send(
             new FuzzySearchQuery(q, page, pageSize), ct);
 
-        if (!result.IsSucceed)
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, new { error = result.Error });
 
-        return Ok(result.Data);
+        return Ok(result.Value);
     }
 }

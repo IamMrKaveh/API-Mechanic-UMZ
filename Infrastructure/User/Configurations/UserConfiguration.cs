@@ -1,8 +1,8 @@
 namespace Infrastructure.User.Configurations;
 
-internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.User>
+internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.Aggregates.User>
 {
-    public void Configure(EntityTypeBuilder<Domain.User.User> builder)
+    public void Configure(EntityTypeBuilder<Domain.User.Aggregates.User> builder)
     {
         builder.ToTable("Users");
         builder.HasKey(e => e.Id);

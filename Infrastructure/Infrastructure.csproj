@@ -15,6 +15,7 @@
 		<PackageReference Include="AWSSDK.S3" Version="4.0.18.4" />
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 		<PackageReference Include="Dapper" Version="2.1.66" />
+		<PackageReference Include="DotNetEnv" Version="3.1.1" />
 		<PackageReference Include="Elastic.Clients.Elasticsearch" Version="9.3.0" />
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
 		<PackageReference Include="HtmlSanitizer" Version="9.0.892" />
@@ -57,8 +58,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Brand\Repositories\" />
-	  <Folder Include="Brand\Services\" />
+	  <Folder Include="Category\Services\" />
+	  <Folder Include="Product\Services\" />
+	  <Folder Include="Review\Services\" />
+	  <Folder Include="Shipping\Services\" />
+	  <Folder Include="User\Services\" />
 	</ItemGroup>
 
 </Project>

@@ -1,16 +1,38 @@
+using Application.Common.Models;
+
 namespace Application.Review.Contracts;
 
 public interface IReviewQueryService
 {
     Task<PaginatedResult<ProductReviewDto>> GetApprovedProductReviewsAsync(
-        int productId, int page, int pageSize, CancellationToken ct = default);
+        int productId,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 
     Task<PaginatedResult<ProductReviewDto>> GetReviewsByStatusAsync(
-        string status, int page, int pageSize, CancellationToken ct = default);
+        string status,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 
     Task<PaginatedResult<ProductReviewDto>> GetUserReviewsAsync(
-        int userId, int page, int pageSize, CancellationToken ct = default);
+        int userId,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 
-    Task<ReviewSummaryDto> GetProductReviewSummaryAsync(
-        int productId, CancellationToken ct = default);
+    Task<ReviewSummaryDto> GetProductReviewSummaryAsync(int productId, CancellationToken ct = default);
+
+    Task<PaginatedResult<ProductReviewDto>> GetByProductIdAsync(
+        int productId,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
+
+    Task<PaginatedResult<ProductReviewDto>> GetPendingReviewsAsync(
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 }

@@ -1,12 +1,6 @@
 namespace Domain.Category.Exceptions;
 
-public class CategoryNotFoundException : DomainException
+public class CategoryNotFoundException(int categoryId) : DomainException($"دسته‌بندی با شناسه {categoryId} یافت نشد.")
 {
-    public int CategoryId { get; }
-
-    public CategoryNotFoundException(int categoryId)
-        : base($"دسته‌بندی با شناسه {categoryId} یافت نشد.")
-    {
-        CategoryId = categoryId;
-    }
+    public int CategoryId { get; } = categoryId;
 }

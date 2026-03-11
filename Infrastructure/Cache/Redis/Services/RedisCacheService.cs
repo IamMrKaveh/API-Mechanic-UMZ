@@ -2,17 +2,11 @@ using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace Infrastructure.Cache.Redis.Services;
 
-public class RedisCacheService : ICacheService
+public class RedisCacheService(IConnectionMultiplexer redis, ILogger<RedisCacheService> logger) : ICacheService
 {
-    private readonly IDatabase _db;
-    private readonly ILogger<RedisCacheService> _logger;
+    private readonly IDatabase _db = redis.GetDatabase();
+    private readonly ILogger<RedisCacheService> _logger = logger;
     private static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(5);
-
-    public RedisCacheService(IConnectionMultiplexer redis, ILogger<RedisCacheService> logger)
-    {
-        _db = redis.GetDatabase();
-        _logger = logger;
-    }
 
     public async Task<T?> GetAsync<T>(string key) where T : class
     {

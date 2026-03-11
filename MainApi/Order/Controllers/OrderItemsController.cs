@@ -3,14 +3,9 @@ namespace MainApi.Order.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class OrderItemsController : BaseApiController
+public class OrderItemsController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public OrderItemsController(IMediator mediator, ICurrentUserService currentUserService) : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOrderItem(int id)

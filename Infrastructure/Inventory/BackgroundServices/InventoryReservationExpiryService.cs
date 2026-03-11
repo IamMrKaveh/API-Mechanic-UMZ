@@ -1,39 +1,35 @@
+using Application.Common.Models;
+
 namespace Infrastructure.Inventory.BackgroundServices;
 
 /// <summary>
 /// سرویس پس‌زمینه برای آزادسازی خودکار رزروهای منقضی‌شده سبد خرید
 /// مشابه PaymentCleanupService - هر 5 دقیقه اجرا می‌شود
 /// </summary>
-public class InventoryReservationExpiryService : BackgroundService
+public class InventoryReservationExpiryService(
+    IServiceProvider serviceProvider,
+    ILogger<InventoryReservationExpiryService> logger) : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<InventoryReservationExpiryService> _logger;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly ILogger<InventoryReservationExpiryService> _logger = logger;
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
 
-    public InventoryReservationExpiryService(
-        IServiceProvider serviceProvider,
-        ILogger<InventoryReservationExpiryService> logger)
-    {
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
         _logger.LogInformation("Inventory Reservation Expiry Service started.");
 
-        while (!stoppingToken.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
             try
             {
-                await ProcessExpiredReservationsAsync(stoppingToken);
+                await ProcessExpiredReservationsAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogError(ex, "Error processing expired inventory reservations.");
             }
 
-            await Task.Delay(_interval, stoppingToken);
+            await Task.Delay(_interval, ct);
         }
 
         _logger.LogInformation("Inventory Reservation Expiry Service stopped.");
@@ -47,7 +43,6 @@ public class InventoryReservationExpiryService : BackgroundService
 
         var now = DateTime.UtcNow;
 
-        
         var expiredReservations = await context.InventoryTransactions
             .Where(t =>
                 t.TransactionType == TransactionType.Reservation.Value &&
@@ -77,7 +72,6 @@ public class InventoryReservationExpiryService : BackgroundService
 
                 if (!string.IsNullOrEmpty(reservation.ReferenceNumber))
                 {
-                    
                     result = await inventoryService.RollbackReservationsAsync(
                         reservation.ReferenceNumber, ct);
                 }
@@ -91,7 +85,7 @@ public class InventoryReservationExpiryService : BackgroundService
                         ct);
                 }
 
-                if (result.IsSucceed)
+                if (result.IsSuccess)
                 {
                     _logger.LogInformation(
                         "Released expired reservation: Variant {VariantId}, Qty {Qty}, Ref {Ref}",

@@ -12,7 +12,7 @@ public record UserProfileDto
     public DateTime CreatedAt { get; init; }
     public DateTime? LastLoginAt { get; init; }
     public int LoginCount { get; init; }
-    public List<UserAddressDto> UserAddresses { get; init; } = new();
+    public List<UserAddressDto> UserAddresses { get; init; } = [];
 }
 
 public record UserAddressDto
@@ -114,5 +114,16 @@ public record AdminCreateUserDto
     public string? FirstName { get; init; }
     public string? LastName { get; init; }
     public string? Email { get; init; }
+    public bool IsAdmin { get; init; }
+}
+
+public record ChangePhoneNumberRequest
+{
+    public string NewPhoneNumber { get; init; } = string.Empty;
+    public string OtpCode { get; init; } = string.Empty;
+}
+
+public record ChangeUserRoleRequest
+{
     public bool IsAdmin { get; init; }
 }

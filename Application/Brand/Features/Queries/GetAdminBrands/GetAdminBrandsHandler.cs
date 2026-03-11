@@ -1,23 +1,23 @@
+using Application.Brand.Contracts;
+using Application.Common.Models;
+
 namespace Application.Brand.Features.Queries.GetAdminBrands;
 
 public class GetAdminBrandsHandler
     : IRequestHandler<GetAdminBrandsQuery, ServiceResult<PaginatedResult<BrandListItemDto>>>
 {
-    private readonly ICategoryQueryService _queryService;
+    private readonly IBrandQueryService _brandQueryService;
 
-    public GetAdminBrandsHandler(
-        ICategoryQueryService queryService
-        )
+    public GetAdminBrandsHandler(IBrandQueryService brandQueryService)
     {
-        _queryService = queryService;
+        _brandQueryService = brandQueryService;
     }
 
     public async Task<ServiceResult<PaginatedResult<BrandListItemDto>>> Handle(
         GetAdminBrandsQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        var result = await _queryService.GetBrandsPagedAsync(
+        var result = await _brandQueryService.GetBrandsPagedAsync(
             request.CategoryId,
             request.Search,
             request.IsActive,

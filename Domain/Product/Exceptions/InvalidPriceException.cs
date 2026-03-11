@@ -1,8 +1,5 @@
 namespace Domain.Product.Exceptions;
 
-public class InvalidPriceException : DomainException
+public class InvalidPriceException(string message) : DomainException(message)
 {
-    public InvalidPriceException(string message) : base(message)
-    {
-    }
 }

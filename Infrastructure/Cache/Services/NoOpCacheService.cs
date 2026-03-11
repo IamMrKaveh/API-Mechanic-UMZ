@@ -3,14 +3,9 @@
 /// <summary>
 /// سرویس Cache No-Op که زمانی استفاده می‌شود که Redis/Cache غیرفعال است
 /// </summary>
-public class NoOpCacheService : ICacheService
+public class NoOpCacheService(ILogger<NoOpCacheService> logger) : ICacheService
 {
-    private readonly ILogger<NoOpCacheService> _logger;
-
-    public NoOpCacheService(ILogger<NoOpCacheService> logger)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger<NoOpCacheService> _logger = logger;
 
     public Task<T?> GetAsync<T>(string key) where T : class
     {

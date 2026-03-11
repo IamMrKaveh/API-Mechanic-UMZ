@@ -1,3 +1,5 @@
+using Domain.Variant.Aggregates;
+
 namespace Application.Variant.Mapping;
 
 public class VariantMappingProfile : Profile

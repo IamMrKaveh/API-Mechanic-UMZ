@@ -1,16 +1,8 @@
 namespace Domain.Variant.Exceptions;
 
-public sealed class InvalidVariantOperationException : DomainException
+public sealed class InvalidVariantOperationException(int variantId, string operation, string reason) : DomainException($"عملیات '{operation}' روی واریانت {variantId} امکان‌پذیر نیست. دلیل: {reason}")
 {
-    public int VariantId { get; }
-    public string Operation { get; }
-    public string Reason { get; }
-
-    public InvalidVariantOperationException(int variantId, string operation, string reason)
-        : base($"عملیات '{operation}' روی واریانت {variantId} امکان‌پذیر نیست. دلیل: {reason}")
-    {
-        VariantId = variantId;
-        Operation = operation;
-        Reason = reason;
-    }
+    public int VariantId { get; } = variantId;
+    public string Operation { get; } = operation;
+    public string Reason { get; } = reason;
 }

@@ -1,23 +1,15 @@
 namespace Infrastructure.DataProtection.Repositories;
 
-public class ResilientRedisXmlRepository : IXmlRepository
+public class ResilientRedisXmlRepository(
+        IConnectionMultiplexer redis,
+        ILogger<ResilientRedisXmlRepository> logger,
+        string keyPrefix,
+        TimeSpan keyExpiration) : IXmlRepository
 {
-    private readonly IConnectionMultiplexer _redis;
-    private readonly ILogger<ResilientRedisXmlRepository> _logger;
-    private readonly string _keyPrefix;
-    private readonly TimeSpan _keyExpiration;
-
-    public ResilientRedisXmlRepository(
-            IConnectionMultiplexer redis,
-            ILogger<ResilientRedisXmlRepository> logger,
-            string keyPrefix,
-            TimeSpan keyExpiration)
-    {
-        _redis = redis ?? throw new ArgumentNullException(nameof(redis));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _keyPrefix = keyPrefix;
-        _keyExpiration = keyExpiration;
-    }
+    private readonly IConnectionMultiplexer _redis = redis ?? throw new ArgumentNullException(nameof(redis));
+    private readonly ILogger<ResilientRedisXmlRepository> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly string _keyPrefix = keyPrefix;
+    private readonly TimeSpan _keyExpiration = keyExpiration;
 
     public IReadOnlyCollection<XElement> GetAllElements()
     {
@@ -33,7 +25,6 @@ public class ResilientRedisXmlRepository : IXmlRepository
             var db = _redis.GetDatabase();
             var server = _redis.GetServer(_redis.GetEndPoints().First());
 
-            
             var keys = server.Keys(pattern: $"{_keyPrefix}:*");
 
             var keyStrings = new List<string>();
@@ -74,7 +65,9 @@ public class ResilientRedisXmlRepository : IXmlRepository
         return elements;
     }
 
-    public void StoreElement(XElement element, string friendlyName)
+    public void StoreElement(
+        XElement element,
+        string friendlyName)
     {
         try
         {

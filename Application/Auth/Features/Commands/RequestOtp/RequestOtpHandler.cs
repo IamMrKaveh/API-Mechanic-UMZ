@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.User.Interfaces;
+
 namespace Application.Auth.Features.Commands.RequestOtp;
 
 public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResult>
@@ -17,8 +20,7 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
         IRateLimitService rateLimitService,
         IAuditService auditService,
         IUnitOfWork unitOfWork,
-        ILogger<RequestOtpHandler> logger
-        )
+        ILogger<RequestOtpHandler> logger)
     {
         _userRepository = userRepository;
         _otpService = otpService;
@@ -31,8 +33,7 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
 
     public async Task<ServiceResult> Handle(
         RequestOtpCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         try
         {
@@ -60,52 +61,40 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
                     $"درخواست‌های متعدد. لطفاً {phoneRetryAfter} ثانیه صبر کنید.", 429);
             }
 
-            var user = await _userRepository.GetByPhoneNumberAsync(normalizedPhone, ct);
-            var isNewUser = user == null;
+            var user = await _userRepository.GetWithOtpsByPhoneAsync(normalizedPhone, ct);
 
-            if (isNewUser)
+            if (user == null)
             {
-                user = Domain.User.User.Create(normalizedPhone);
+                user = Domain.User.Aggregates.User.Create(normalizedPhone);
                 await _userRepository.AddAsync(user, ct);
-                await _unitOfWork.SaveChangesAsync(ct);
-                _logger.LogInformation("کاربر جدید با شماره {PhoneNumber} ایجاد شد.", normalizedPhone);
             }
 
-            if (user!.IsLockedOut)
+            if (user.IsLockedOut)
             {
                 var remaining = user.GetRemainingLockoutTime();
                 if (remaining.HasValue && remaining.Value > TimeSpan.Zero)
-                {
                     return ServiceResult.Failure(
                         $"حساب شما قفل شده است. لطفاً {(int)remaining.Value.TotalMinutes} دقیقه دیگر تلاش کنید.");
-                }
             }
 
-            var (canSend, rateLimitError, waitTime) = user.CheckOtpRateLimit();
+            var (canSend, rateLimitError, _) = user.CheckOtpRateLimit();
             if (!canSend)
                 return ServiceResult.Failure(rateLimitError!);
-
-            await _userRepository.DeleteUserOtpsAsync(user.Id);
 
             var otpCode = _otpService.GenerateSecureOtp();
             var otpHash = _otpService.HashOtp(otpCode);
 
-            var userWithOtps = await _userRepository.GetWithOtpsAsync(user.Id, ct);
-            if (userWithOtps == null)
-                return ServiceResult.Failure("خطای داخلی.");
+            user.GenerateOtp(otpHash);
 
-            var otp = userWithOtps.GenerateOtp(otpHash);
-
-            await _userRepository.AddUserOtpAsync(otp, ct);
             await _unitOfWork.SaveChangesAsync(ct);
 
-            //var smsResult = await _smsService.SendSmsAsync(normalizedPhone, otpCode, ct);
-            //if (smsResult.IsFailed)
-            //{
-            //    _logger.LogError("ارسال OTP به {PhoneNumber} ناموفق بود: {Error}",
-            //        normalizedPhone, smsResult.ErrorMessage);
-            //    return ServiceResult.Failure("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
-            //}
+            var smsResult = await _smsService.SendSmsAsync(normalizedPhone, otpCode, ct);
+            if (smsResult.IsFailed)
+            {
+                _logger.LogError("ارسال OTP به {PhoneNumber} ناموفق بود: {Error}",
+                    normalizedPhone, smsResult.ErrorMessage);
+                return ServiceResult.Failure("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
+            }
 
             await _auditService.LogSecurityEventAsync(
                 "OtpRequested",

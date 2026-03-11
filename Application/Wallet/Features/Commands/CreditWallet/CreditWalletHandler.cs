@@ -1,20 +1,17 @@
-﻿namespace Application.Wallet.Features.Commands.CreditWallet;
+﻿using Application.Common.Models;
+using Domain.Common.ValueObjects;
+using Domain.Wallet.Interfaces;
 
-public class CreditWalletHandler : IRequestHandler<CreditWalletCommand, ServiceResult<Unit>>
+namespace Application.Wallet.Features.Commands.CreditWallet;
+
+public class CreditWalletHandler(
+    IWalletRepository walletRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<CreditWalletHandler> logger) : IRequestHandler<CreditWalletCommand, ServiceResult<Unit>>
 {
-    private readonly IWalletRepository _walletRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<CreditWalletHandler> _logger;
-
-    public CreditWalletHandler(
-        IWalletRepository walletRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<CreditWalletHandler> logger)
-    {
-        _walletRepository = walletRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IWalletRepository _walletRepository = walletRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<CreditWalletHandler> _logger = logger;
 
     public async Task<ServiceResult<Unit>> Handle(
         CreditWalletCommand request,
@@ -34,7 +31,7 @@ public class CreditWalletHandler : IRequestHandler<CreditWalletCommand, ServiceR
             var wallet = await _walletRepository.GetByUserIdForUpdateAsync(request.UserId, ct);
             if (wallet == null)
             {
-                wallet = Domain.Wallet.Wallet.Create(request.UserId);
+                wallet = Domain.Wallet.Aggregates.Wallet.Create(request.UserId);
                 await _walletRepository.AddAsync(wallet, ct);
             }
 
@@ -74,11 +71,6 @@ public class CreditWalletHandler : IRequestHandler<CreditWalletCommand, ServiceR
         catch (DomainException ex)
         {
             return ServiceResult<Unit>.Failure(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error crediting wallet for user {UserId}", request.UserId);
-            return ServiceResult<Unit>.Failure("خطا در شارژ کیف پول.");
         }
     }
 }

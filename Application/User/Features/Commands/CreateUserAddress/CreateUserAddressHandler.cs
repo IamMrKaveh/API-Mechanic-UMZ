@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.User.Interfaces;
+
 namespace Application.User.Features.Commands.CreateUserAddress;
 
 public class CreateUserAddressHandler : IRequestHandler<CreateUserAddressCommand, ServiceResult<int>>

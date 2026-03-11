@@ -1,4 +1,7 @@
-﻿namespace Application.Wallet.Features.Commands.ReleaseWalletReservation;
+﻿using Application.Common.Models;
+using Domain.Wallet.Interfaces;
+
+namespace Application.Wallet.Features.Commands.ReleaseWalletReservation;
 
 public class ReleaseWalletReservationHandler : IRequestHandler<ReleaseWalletReservationCommand, ServiceResult<Unit>>
 {

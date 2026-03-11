@@ -1,3 +1,9 @@
+using Application.Common.Models;
+using Domain.Attribute.Entities;
+using Domain.Attribute.Interfaces;
+using Domain.Product.Interfaces;
+using Domain.Shipping.Interfaces;
+
 namespace Application.Variant.Features.Commands.UpdateVariant;
 
 public class UpdateVariantHandler : IRequestHandler<UpdateVariantCommand, ServiceResult>
@@ -59,7 +65,7 @@ public class UpdateVariantHandler : IRequestHandler<UpdateVariantCommand, Servic
 
         
         var attributeValues = request.AttributeValueIds.Any()
-            ? await _attributeRepository.GetValuesByIdsAsync(request.AttributeValueIds, ct)
+            ? await _attributeRepository.GetAttributeValuesByIdsAsync(request.AttributeValueIds, ct)
             : new List<AttributeValue>();
 
         if (request.AttributeValueIds.Any())
@@ -76,7 +82,7 @@ public class UpdateVariantHandler : IRequestHandler<UpdateVariantCommand, Servic
         {
             var shippingMethods = request.EnabledShippingMethodIds.Any()
                 ? await _shippingMethodRepository.GetByIdsAsync(request.EnabledShippingMethodIds, ct)
-                : new List<Domain.Shipping.Shipping>();
+                : new List<Domain.Shipping.Aggregates.Shipping>();
 
             product.SetVariantShippingMethods(request.VariantId, shippingMethods);
         }

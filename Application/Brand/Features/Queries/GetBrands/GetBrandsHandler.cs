@@ -1,23 +1,22 @@
+using Application.Common.Models;
+
 namespace Application.Brand.Features.Queries.GetBrands;
 
 public class GetAdminBrandsLegacyQueryHandler
     : IRequestHandler<GetAdminBrandsLegacyQuery, ServiceResult<PaginatedResult<BrandListItemDto>>>
 {
-    private readonly ICategoryQueryService _queryService;
+    private readonly IBrandQueryService _brandQueryService;
 
-    public GetAdminBrandsLegacyQueryHandler(
-        ICategoryQueryService queryService
-        )
+    public GetAdminBrandsLegacyQueryHandler(IBrandQueryService brandQueryService)
     {
-        _queryService = queryService;
+        _brandQueryService = brandQueryService;
     }
 
     public async Task<ServiceResult<PaginatedResult<BrandListItemDto>>> Handle(
         GetAdminBrandsLegacyQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        var result = await _queryService.GetBrandsPagedAsync(
+        var result = await _brandQueryService.GetBrandsPagedAsync(
             request.CategoryId,
             request.Search,
             isActive: null,

@@ -1,4 +1,6 @@
-﻿namespace Application.Wallet.Features.Commands.ReserveWallet;
+﻿using Application.Common.Models;
+
+namespace Application.Wallet.Features.Commands.ReserveWallet;
 
 public record ReserveWalletCommand(
     int UserId,

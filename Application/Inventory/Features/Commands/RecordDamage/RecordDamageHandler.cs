@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Inventory.Features.Commands.RecordDamage;
 
 public class RecordDamageHandler : IRequestHandler<RecordDamageCommand, ServiceResult>
@@ -22,7 +24,7 @@ public class RecordDamageHandler : IRequestHandler<RecordDamageCommand, ServiceR
             request.Notes,
             cancellationToken);
 
-        if (result.IsSucceed)
+        if (result.IsSuccess)
         {
             await _auditService.LogInventoryEventAsync(
                 request.VariantId,

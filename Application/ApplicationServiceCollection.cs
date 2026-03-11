@@ -34,9 +34,7 @@ public static class ApplicationServiceCollection
 
     private static void RegisterDomainServices(IServiceCollection services)
     {
-        services.AddScoped<PriceCalculatorService>();
         services.AddScoped<InventoryDomainService>();
-        services.AddScoped<UserDomainService>();
         services.AddScoped<CategoryDomainService>();
         services.AddScoped<CartDomainService>();
         services.AddScoped<OrderDomainService>();
@@ -50,5 +48,19 @@ public static class ApplicationServiceCollection
     {
         services.AddScoped<InventoryReservationService>();
         services.AddScoped<PaymentSettlementService>();
+        RegisterCheckoutServices(services);
+    }
+
+    private static void RegisterCheckoutServices(IServiceCollection services)
+    {
+        services.AddScoped<ICheckoutAddressResolverService, CheckoutAddressResolverService>();
+        services.AddScoped<ICheckoutShippingValidatorService, CheckoutShippingValidatorService>();
+        services.AddScoped<ICheckoutCartItemBuilderService, CheckoutCartItemBuilderService>();
+        services.AddScoped<ICheckoutPriceValidatorService, CheckoutPriceValidatorService>();
+        services.AddScoped<ICheckoutStockValidatorService, CheckoutStockValidatorService>();
+        services.AddScoped<ICheckoutOrderCreationService, CheckoutOrderCreationService>();
+        services.AddScoped<ICheckoutDiscountApplicatorService, CheckoutDiscountApplicatorService>();
+        services.AddScoped<ICheckoutPaymentProcessorService, CheckoutPaymentProcessorService>();
+        services.AddScoped<ICheckoutOrchestrationService, CheckoutOrchestrationService>();
     }
 }

@@ -1,9 +1,9 @@
 namespace Domain.Product.Specifications;
 
-public class ActiveProductSpecification : Specification<Product>
+public class ActiveProductSpecification : Specification<Aggregates.Product>
 {
-    public override Expression<Func<Product, bool>> ToExpression()
+    public override Expression<Func<Aggregates.Product, bool>> ToExpression()
     {
-        return p => p.IsActive && !p.IsDeleted;
+        return p => p.IsActive;
     }
 }

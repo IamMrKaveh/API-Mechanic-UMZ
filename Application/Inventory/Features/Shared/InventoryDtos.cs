@@ -2,75 +2,74 @@ namespace Application.Inventory.Features.Shared;
 
 public record InventoryTransactionDto
 {
-    public int Id { get; init; }
-    public int VariantId { get; init; }
-    public string TransactionType { get; init; } = string.Empty;
-    public int QuantityChange { get; init; }
-    public int StockBefore { get; init; }
-    public int StockAfter => StockBefore + QuantityChange;
-    public string? Notes { get; init; }
-    public string? ReferenceNumber { get; init; }
-    public string? CorrelationId { get; init; }
-    public DateTime? ExpiresAt { get; init; }
-    public bool IsReversed { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public string? ProductName { get; init; }
-    public string? Sku { get; init; }
-    public string? VariantSku { get; init; }
-    public string? UserName { get; init; }
+    public int Id { get; set; }
+    public int VariantId { get; set; }
+    public string TransactionType { get; set; } = string.Empty;
+    public int QuantityChange { get; set; }
+    public int StockBefore { get; set; }
+    public int StockAfter { get; set; }
+    public string? Notes { get; set; }
+    public string? ReferenceNumber { get; set; }
+    public string? CorrelationId { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public bool IsReversed { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public string? ProductName { get; set; }
+    public string? Sku { get; set; }
+    public string? VariantSku { get; set; }
+    public string? UserName { get; set; }
 }
 
 public record InventoryStatusDto
 {
-    public int VariantId { get; init; }
-    public int StockQuantity { get; init; }
-    public int ReservedQuantity { get; init; }
-    public int AvailableStock { get; init; }
-    public bool IsInStock { get; init; }
-    public bool IsUnlimited { get; init; }
+    public int VariantId { get; set; }
+    public int StockQuantity { get; set; }
+    public int ReservedQuantity { get; set; }
+    public int AvailableStock { get; set; }
+    public bool IsInStock { get; set; }
+    public bool IsUnlimited { get; set; }
 }
 
 public record LowStockItemDto
 {
-    public int VariantId { get; init; }
-    public int ProductId { get; init; }
-    public string ProductName { get; init; } = string.Empty;
-    public string? Sku { get; init; }
-    public int StockQuantity { get; init; }
-    public int ReservedQuantity { get; init; }
-    public int AvailableStock { get; init; }
-    public int LowStockThreshold { get; init; }
+    public int VariantId { get; set; }
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string? Sku { get; set; }
+    public int StockQuantity { get; set; }
+    public int ReservedQuantity { get; set; }
+    public int AvailableStock { get; set; }
+    public int LowStockThreshold { get; set; }
 }
 
 public record OutOfStockItemDto
 {
-    public int VariantId { get; init; }
-    public int ProductId { get; init; }
-    public string ProductName { get; init; } = string.Empty;
-    public string? Sku { get; init; }
-    public int StockQuantity { get; init; }
-    public int ReservedQuantity { get; init; }
+    public int VariantId { get; set; }
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string? Sku { get; set; }
+    public int StockQuantity { get; set; }
+    public int ReservedQuantity { get; set; }
 }
 
-public record InventoryStatisticsDto
-{
-    public int TotalVariants { get; init; }
-    public int InStockCount { get; init; }
-    public int LowStockCount { get; init; }
-    public int OutOfStockCount { get; init; }
-    public int UnlimitedCount { get; init; }
-    public decimal TotalInventoryValue { get; init; }
-    public decimal TotalSellingValue { get; init; }
-}
+public record InventoryStatisticsDto(
+    int TotalVariants,
+    int InStockCount,
+    int LowStockCount,
+    int OutOfStockCount,
+    int UnlimitedCount,
+    decimal TotalInventoryValue,
+    decimal TotalSellingValue
+);
 
 public record VariantStockStatusDto
 {
-    public int VariantId { get; init; }
-    public int StockQuantity { get; init; }
-    public int ReservedQuantity { get; init; }
-    public int AvailableStock { get; init; }
-    public bool IsInStock { get; init; }
-    public bool IsUnlimited { get; init; }
+    public int VariantId { get; set; }
+    public int StockQuantity { get; set; }
+    public int ReservedQuantity { get; set; }
+    public int AvailableStock { get; set; }
+    public bool IsInStock { get; set; }
+    public bool IsUnlimited { get; set; }
 }
 
 public record BulkAdjustItemResultDto
@@ -86,7 +85,7 @@ public record BulkAdjustResultDto
     public int TotalRequested { get; init; }
     public int SuccessCount { get; init; }
     public int FailedCount { get; init; }
-    public List<BulkAdjustItemResultDto> Results { get; init; } = new();
+    public List<BulkAdjustItemResultDto> Results { get; init; } = [];
 }
 
 public record ReconcileResultDto
@@ -98,30 +97,26 @@ public record ReconcileResultDto
     public string? Message { get; init; }
 }
 
-public class BulkStockInRequest
-{
-    public List<BulkStockInItemRequest> Items { get; init; } = [];
-    public string? SupplierReference { get; init; }
-}
+public record BulkStockInRequest(
+    List<BulkStockInItemRequest> Items,
+    string? SupplierReference
+);
 
-public class BulkStockInItemRequest
-{
-    public int VariantId { get; init; }
-    public int Quantity { get; init; }
-    public string? Notes { get; init; }
-}
+public record BulkStockInItemRequest(
+    int VariantId,
+    int Quantity,
+    string? Notes
+);
 
-public class ApproveReturnRequest
-{
-    public string? Reason { get; init; }
-}
+public record ApproveReturnRequest(
+    string? Reason
+);
 
-public record BulkAdjustItemDto
-{
-    public int VariantId { get; init; }
-    public int QuantityChange { get; init; }
-    public string Notes { get; init; } = string.Empty;
-}
+public record BulkAdjustItemDto(
+    int VariantId,
+    int QuantityChange,
+    string Notes
+);
 
 public record BulkStockInItemDto
 {
@@ -143,5 +138,33 @@ public record BulkStockInResultDto
     public int TotalRequested { get; init; }
     public int SuccessCount { get; init; }
     public int FailedCount { get; init; }
-    public List<BulkStockInItemResultDto> Results { get; init; } = new();
+    public List<BulkStockInItemResultDto> Results { get; init; } = [];
 }
+
+public record WarehouseStockDto
+{
+    public int WarehouseId { get; set; }
+    public string WarehouseName { get; set; } = string.Empty;
+    public int VariantId { get; set; }
+    public int Quantity { get; set; }
+    public int ReservedQuantity { get; set; }
+    public int AvailableQuantity { get; set; }
+}
+
+public record StockLedgerEntryDto(
+    int Id,
+    int VariantId,
+    int? WarehouseId,
+    string EventType,
+    int QuantityDelta,
+    int BalanceAfter,
+    decimal UnitCost,
+    string? ReferenceNumber,
+    string? Note,
+    string? Source,
+    DateTime CreatedAt
+);
+
+public record BatchAvailabilityRequest(
+    List<int> VariantIds
+);

@@ -1,8 +1,8 @@
 namespace Infrastructure.Cart.Configurations;
 
-public sealed class CartConfiguration : IEntityTypeConfiguration<Domain.Cart.Cart>
+public sealed class CartConfiguration : IEntityTypeConfiguration<Domain.Cart.Aggregates.Cart>
 {
-    public void Configure(EntityTypeBuilder<Domain.Cart.Cart> builder)
+    public void Configure(EntityTypeBuilder<Domain.Cart.Aggregates.Cart> builder)
     {
         builder.HasKey(e => e.Id);
         builder.Property(e => e.RowVersion).IsRowVersion();

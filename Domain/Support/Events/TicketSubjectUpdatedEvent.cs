@@ -1,13 +1,7 @@
 namespace Domain.Support.Events;
 
-public sealed class TicketSubjectUpdatedEvent : DomainEvent
+public sealed class TicketSubjectUpdatedEvent(int ticketId, string newSubject) : DomainEvent
 {
-    public int TicketId { get; }
-    public string NewSubject { get; }
-
-    public TicketSubjectUpdatedEvent(int ticketId, string newSubject)
-    {
-        TicketId = ticketId;
-        NewSubject = newSubject;
-    }
+    public int TicketId { get; } = ticketId;
+    public string NewSubject { get; } = newSubject;
 }

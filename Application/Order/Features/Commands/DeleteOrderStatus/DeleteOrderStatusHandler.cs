@@ -1,20 +1,16 @@
+using Application.Common.Models;
+using Domain.Order.Interfaces;
+
 namespace Application.Order.Features.Commands.DeleteOrderStatus;
 
-public class DeleteOrderStatusHandler : IRequestHandler<DeleteOrderStatusCommand, ServiceResult>
+public class DeleteOrderStatusHandler(
+    IOrderStatusRepository orderStatusRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<DeleteOrderStatusHandler> logger) : IRequestHandler<DeleteOrderStatusCommand, ServiceResult>
 {
-    private readonly IOrderStatusRepository _orderStatusRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<DeleteOrderStatusHandler> _logger;
-
-    public DeleteOrderStatusHandler(
-        IOrderStatusRepository orderStatusRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<DeleteOrderStatusHandler> logger)
-    {
-        _orderStatusRepository = orderStatusRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IOrderStatusRepository _orderStatusRepository = orderStatusRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<DeleteOrderStatusHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(DeleteOrderStatusCommand request, CancellationToken cancellationToken)
     {
@@ -28,7 +24,6 @@ public class DeleteOrderStatusHandler : IRequestHandler<DeleteOrderStatusCommand
 
         try
         {
-            
             status.Delete(request.DeletedByUserId);
         }
         catch (DomainException ex)

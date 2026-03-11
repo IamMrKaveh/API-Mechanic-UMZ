@@ -1,3 +1,5 @@
+using Domain.Support.Aggregates;
+
 namespace Infrastructure.Support.Configurations;
 
 public sealed class TicketMessageConfiguration : IEntityTypeConfiguration<TicketMessage>

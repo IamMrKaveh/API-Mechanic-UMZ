@@ -33,19 +33,6 @@ public sealed class NotificationPriority : ValueObject
         };
     }
 
-    public static NotificationPriority FromNotificationType(NotificationType type)
-    {
-        Guard.Against.Null(type, nameof(type));
-
-        if (type.IsHighPriority())
-            return High;
-
-        if (type.IsOrderRelated())
-            return Normal;
-
-        return Low;
-    }
-
     public static IEnumerable<NotificationPriority> GetAll()
     {
         yield return Low;

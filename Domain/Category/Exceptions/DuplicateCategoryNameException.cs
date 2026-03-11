@@ -1,12 +1,6 @@
 namespace Domain.Category.Exceptions;
 
-public class DuplicateCategoryNameException : DomainException
+public class DuplicateCategoryNameException(string categoryName) : DomainException($"دسته‌بندی با نام '{categoryName}' قبلاً وجود دارد.")
 {
-    public string CategoryName { get; }
-
-    public DuplicateCategoryNameException(string categoryName)
-        : base($"دسته‌بندی با نام '{categoryName}' قبلاً وجود دارد.")
-    {
-        CategoryName = categoryName;
-    }
+    public string CategoryName { get; } = categoryName;
 }

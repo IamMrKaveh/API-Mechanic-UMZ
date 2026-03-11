@@ -4,18 +4,10 @@ namespace Infrastructure.Inventory.Services;
 /// سرویس دفتر کل موجودی (Stock Ledger).
 /// تمام تغییرات موجودی را به صورت Append-Only ثبت می‌کند.
 /// </summary>
-public sealed class StockLedgerService : IStockLedgerService
+public sealed class StockLedgerService(DBContext context, ILogger<StockLedgerService> logger) : IStockLedgerService
 {
-    private readonly Persistence.Context.DBContext _context;
-    private readonly ILogger<StockLedgerService> _logger;
-
-    public StockLedgerService(Persistence.Context.DBContext context, ILogger<StockLedgerService> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
-
-    
+    private readonly DBContext _context = context;
+    private readonly ILogger<StockLedgerService> _logger = logger;
 
     public async Task RecordStockInAsync(
         int variantId,
@@ -27,7 +19,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? userId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
+        var balance = await new StockLedgerQueryService(_context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var entry = StockLedgerEntry.StockIn(
             variantId, quantity, balance + quantity,
@@ -50,7 +42,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? orderItemId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
+        var balance = await new StockLedgerQueryService(_context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
 
         if (balance < quantity)
@@ -71,7 +63,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
+        var balance = await new StockLedgerQueryService(_context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var entry = StockLedgerEntry.ReleaseReservation(
             variantId, quantity, balance + quantity,
@@ -88,7 +80,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
+        var balance = await new StockLedgerQueryService(_context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var entry = StockLedgerEntry.CommitReservation(
             variantId, quantity, balance, referenceNumber, orderItemId, warehouseId);
@@ -104,7 +96,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
+        var balance = await new StockLedgerQueryService(_context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var newBalance = balance + delta;
 
@@ -126,7 +118,7 @@ public sealed class StockLedgerService : IStockLedgerService
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var systemBalance = await new StockLedgerQueryService(_context, (ILogger<StockLedgerQueryService>)_logger)
+        var systemBalance = await new StockLedgerQueryService(_context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var delta = physicalCount - systemBalance;
 
@@ -146,9 +138,9 @@ public sealed class StockLedgerService : IStockLedgerService
             userId, warehouseId, ct);
     }
 
-    
-
-    private async Task AppendEntryAsync(StockLedgerEntry entry, CancellationToken ct)
+    private async Task AppendEntryAsync(
+        StockLedgerEntry entry,
+        CancellationToken ct)
     {
         await _context.StockLedgerEntries.AddAsync(entry, ct);
         await _context.SaveChangesAsync(ct);

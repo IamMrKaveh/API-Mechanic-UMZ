@@ -1,17 +1,11 @@
 namespace Infrastructure.Cache.Services;
 
-public class InMemoryCacheService : ICacheService
+public class InMemoryCacheService(IMemoryCache cache, ILogger<InMemoryCacheService> logger) : ICacheService
 {
-    private readonly IMemoryCache _cache;
+    private readonly IMemoryCache _cache = cache;
     private readonly ConcurrentDictionary<string, object> _locks = new();
     private readonly ConcurrentDictionary<string, bool> _allKeys = new();
-    private readonly ILogger<InMemoryCacheService> _logger;
-
-    public InMemoryCacheService(IMemoryCache cache, ILogger<InMemoryCacheService> logger)
-    {
-        _cache = cache;
-        _logger = logger;
-    }
+    private readonly ILogger<InMemoryCacheService> _logger = logger;
 
     public Task<T?> GetAsync<T>(string key) where T : class
     {

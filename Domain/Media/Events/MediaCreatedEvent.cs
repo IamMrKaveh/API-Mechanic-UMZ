@@ -1,15 +1,8 @@
 namespace Domain.Media.Events;
 
-public sealed class MediaCreatedEvent : DomainEvent
+public sealed class MediaCreatedEvent(Guid mediaId, string entityType, int entityId) : DomainEvent
 {
-    public int MediaId { get; }
-    public string EntityType { get; }
-    public int EntityId { get; }
-
-    public MediaCreatedEvent(int mediaId, string entityType, int entityId)
-    {
-        MediaId = mediaId;
-        EntityType = entityType;
-        EntityId = entityId;
-    }
+    public Guid MediaId { get; } = mediaId;
+    public string EntityType { get; } = entityType;
+    public int EntityId { get; } = entityId;
 }

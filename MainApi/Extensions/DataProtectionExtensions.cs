@@ -1,4 +1,7 @@
-namespace Microsoft.Extensions.DependencyInjection;
+using Infrastructure.DataProtection.Repositories;
+using Microsoft.AspNetCore.DataProtection.Repositories;
+
+namespace MainApi.Extensions;
 
 public static class DataProtectionExtensions
 {

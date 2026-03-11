@@ -1,17 +1,13 @@
 namespace Domain.Variant.Rules;
 
-public sealed class VariantSkuMustBeUniqueRule : IBusinessRule
+public sealed class VariantSkuMustBeUniqueRule(
+    string sku,
+    IEnumerable<ProductVariant> existingVariants,
+    int? excludeVariantId = null) : IBusinessRule
 {
-    private readonly string _sku;
-    private readonly IEnumerable<ProductVariant> _existingVariants;
-    private readonly int? _excludeVariantId;
-
-    public VariantSkuMustBeUniqueRule(string sku, IEnumerable<ProductVariant> existingVariants, int? excludeVariantId = null)
-    {
-        _sku = sku?.Trim().ToUpperInvariant() ?? string.Empty;
-        _existingVariants = existingVariants;
-        _excludeVariantId = excludeVariantId;
-    }
+    private readonly string _sku = sku;
+    private readonly IEnumerable<ProductVariant> _existingVariants = existingVariants;
+    private readonly int? _excludeVariantId = excludeVariantId;
 
     public bool IsBroken()
     {

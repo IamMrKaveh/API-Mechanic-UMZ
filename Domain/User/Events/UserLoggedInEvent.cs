@@ -1,11 +1,6 @@
 namespace Domain.User.Events;
 
-public sealed class UserLoggedInEvent : DomainEvent
+public sealed class UserLoggedInEvent(int userId) : DomainEvent
 {
-    public int UserId { get; }
-
-    public UserLoggedInEvent(int userId)
-    {
-        UserId = userId;
-    }
+    public int UserId { get; } = userId;
 }

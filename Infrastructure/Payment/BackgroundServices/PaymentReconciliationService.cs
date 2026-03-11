@@ -1,30 +1,24 @@
 namespace Infrastructure.Payment.BackgroundServices;
 
-public sealed class PaymentReconciliationService : BackgroundService
+public sealed class PaymentReconciliationService(
+    IServiceProvider serviceProvider,
+    ILogger<PaymentReconciliationService> logger) : BackgroundService
 {
     private static readonly TimeSpan ReconciliationInterval = TimeSpan.FromHours(6);
     private static readonly TimeSpan ReconciliationWindow = TimeSpan.FromHours(12);
 
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<PaymentReconciliationService> _logger;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly ILogger<PaymentReconciliationService> _logger = logger;
 
-    public PaymentReconciliationService(
-        IServiceProvider serviceProvider,
-        ILogger<PaymentReconciliationService> logger)
-    {
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
         _logger.LogInformation("Payment Reconciliation Service started.");
 
-        while (!stoppingToken.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
             try
             {
-                await RunReconciliationAsync(stoppingToken);
+                await RunReconciliationAsync(ct);
             }
             catch (OperationCanceledException)
             {
@@ -35,7 +29,7 @@ public sealed class PaymentReconciliationService : BackgroundService
                 _logger.LogError(ex, "Error during payment reconciliation.");
             }
 
-            await Task.Delay(ReconciliationInterval, stoppingToken);
+            await Task.Delay(ReconciliationInterval, ct);
         }
 
         _logger.LogInformation("Payment Reconciliation Service stopped.");

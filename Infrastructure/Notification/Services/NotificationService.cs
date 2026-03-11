@@ -1,20 +1,13 @@
 namespace Infrastructure.Notification.Services;
 
-public class NotificationService : INotificationService
+public class NotificationService(
+    DBContext context,
+    ILogger<NotificationService> logger,
+    IUnitOfWork unitOfWork) : INotificationService
 {
-    private readonly Persistence.Context.DBContext _context;
-    private readonly ILogger<NotificationService> _logger;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public NotificationService(
-        Persistence.Context.DBContext context,
-        ILogger<NotificationService> logger,
-        IUnitOfWork unitOfWork)
-    {
-        _context = context;
-        _logger = logger;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly DBContext _context = context;
+    private readonly ILogger<NotificationService> _logger = logger;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task CreateNotificationAsync(
         int userId,

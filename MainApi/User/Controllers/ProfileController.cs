@@ -3,15 +3,9 @@ namespace MainApi.User.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class ProfileController : BaseApiController
+public class ProfileController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public ProfileController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetProfile()
@@ -101,7 +95,7 @@ public class ProfileController : BaseApiController
     }
 
     [HttpPost("change-phone")]
-    public async Task<IActionResult> ChangePhoneNumber([FromBody] ChangePhoneNumberDto dto)
+    public async Task<IActionResult> ChangePhoneNumber([FromBody] ChangePhoneNumberRequest dto)
     {
         if (!CurrentUser.UserId.HasValue) return Unauthorized();
 
@@ -116,5 +110,3 @@ public class ProfileController : BaseApiController
         return ToActionResult(result);
     }
 }
-
-public record ChangePhoneNumberDto(string NewPhoneNumber, string OtpCode);

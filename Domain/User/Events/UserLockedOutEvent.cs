@@ -1,13 +1,7 @@
 namespace Domain.User.Events;
 
-public class UserLockedOutEvent : DomainEvent
+public class UserLockedOutEvent(int userId, DateTime lockoutEndTime) : DomainEvent
 {
-    public int UserId { get; }
-    public DateTime LockoutEndTime { get; }
-
-    public UserLockedOutEvent(int userId, DateTime lockoutEndTime)
-    {
-        UserId = userId;
-        LockoutEndTime = lockoutEndTime;
-    }
+    public int UserId { get; } = userId;
+    public DateTime LockoutEndTime { get; } = lockoutEndTime;
 }

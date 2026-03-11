@@ -4,30 +4,24 @@ namespace Infrastructure.Order.BackgroundServices;
 /// سرویس پس‌زمینه برای انقضای خودکار سفارش‌های پرداخت‌نشده.
 /// هر دقیقه اجرا می‌شود و سفارش‌های قدیمی را Expire می‌کند.
 /// </summary>
-public sealed class OrderExpiryBackgroundService : BackgroundService
+public sealed class OrderExpiryBackgroundService(
+    IServiceProvider serviceProvider,
+    ILogger<OrderExpiryBackgroundService> logger) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(1);
 
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<OrderExpiryBackgroundService> _logger;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly ILogger<OrderExpiryBackgroundService> _logger = logger;
 
-    public OrderExpiryBackgroundService(
-        IServiceProvider serviceProvider,
-        ILogger<OrderExpiryBackgroundService> logger)
-    {
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
         _logger.LogInformation("Order Expiry Service started.");
 
-        while (!stoppingToken.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
             try
             {
-                await RunExpiryCheckAsync(stoppingToken);
+                await RunExpiryCheckAsync(ct);
             }
             catch (OperationCanceledException)
             {
@@ -38,7 +32,7 @@ public sealed class OrderExpiryBackgroundService : BackgroundService
                 _logger.LogError(ex, "Unhandled error in Order Expiry Service.");
             }
 
-            await Task.Delay(CheckInterval, stoppingToken);
+            await Task.Delay(CheckInterval, ct);
         }
 
         _logger.LogInformation("Order Expiry Service stopped.");

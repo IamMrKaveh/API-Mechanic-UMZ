@@ -1,83 +1,34 @@
 namespace Application.Cart.Features.Commands.AddToCart;
 
-/// <summary>
-/// اعتبارسنجی موجودی به Domain Service منتقل شده
-/// Handler فقط orchestrate می‌کند و قوانین تجاری را به دامنه delegate می‌کند
-/// </summary>
-public class AddToCartHandler : IRequestHandler<AddToCartCommand, ServiceResult<CartDetailDto>>
+public sealed class AddToCartHandler(
+    ICartRepository cartRepository,
+    IProductVariantRepository variantRepository,
+    IUnitOfWork unitOfWork,
+    ICurrentUserService currentUserService) : IRequestHandler<AddToCartCommand, ServiceResult<int>>
 {
-    private readonly ICartRepository _cartRepository;
-    private readonly IProductRepository _productRepository;
-    private readonly ICartQueryService _cartQueryService;
-    private readonly ICurrentUserService _currentUser;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly CartItemValidationService _cartItemValidationService;
-    private readonly ILogger<AddToCartHandler> _logger;
+    private readonly ICartRepository _cartRepository = cartRepository;
+    private readonly IProductVariantRepository _variantRepository = variantRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
-    public AddToCartHandler(
-        ICartRepository cartRepository,
-        IProductRepository productRepository,
-        ICartQueryService cartQueryService,
-        ICurrentUserService currentUser,
-        IUnitOfWork unitOfWork,
-        CartItemValidationService cartItemValidationService,
-        ILogger<AddToCartHandler> logger
-        )
-    {
-        _cartRepository = cartRepository;
-        _productRepository = productRepository;
-        _cartQueryService = cartQueryService;
-        _currentUser = currentUser;
-        _unitOfWork = unitOfWork;
-        _cartItemValidationService = cartItemValidationService;
-        _logger = logger;
-    }
-
-    public async Task<ServiceResult<CartDetailDto>> Handle(
+    public async Task<ServiceResult<int>> Handle(
         AddToCartCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        
-        var variant = await _productRepository.GetVariantByIdAsync(request.VariantId, ct);
-        if (variant == null || !variant.IsActive || variant.IsDeleted)
-            return ServiceResult<CartDetailDto>.Failure("محصول یافت نشد یا غیرفعال است.", 404);
+        var userId = _currentUserService.UserId!.Value;
 
-        
-        var cart = await _cartRepository.GetCartAsync(_currentUser.UserId, _currentUser.GuestId, ct);
+        var variant = await _variantRepository.GetByIdAsync(request.VariantId, ct);
+        if (variant is null)
+            return ServiceResult<int>.Failure("Product variant not found.");
 
-        if (cart == null)
-        {
-            cart = Domain.Cart.Cart.Create(_currentUser.UserId, _currentUser.GuestId);
-            await _cartRepository.AddAsync(cart, ct);
-        }
+        var cart = await _cartRepository.GetByUserIdAsync(userId, ct)
+                   ?? Cart.Create(userId);
 
-        
-        var existingItem = cart.FindItemByVariant(request.VariantId);
-        var currentCartQuantity = existingItem?.Quantity ?? 0;
+        var cartItem = cart.AddItem(request.VariantId, request.Quantity, variant.Price);
 
-        var (isValid, error) = _cartItemValidationService.ValidateAddToCart(
-            request.Quantity,
-            variant.AvailableStock,
-            variant.IsUnlimited,
-            currentCartQuantity);
-
-        if (!isValid)
-            return ServiceResult<CartDetailDto>.Failure(error!, 400);
-
-        
-        cart.AddItem(request.VariantId, request.Quantity, variant.SellingPrice);
-
+        await _cartRepository.UpsertAsync(cart, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        _logger.LogInformation(
-            "آیتم {VariantId} با تعداد {Quantity} به سبد {CartId} اضافه شد.",
-            request.VariantId, request.Quantity, cart.Id);
-
-        
-        var cartDetail = await _cartQueryService.GetCartDetailAsync(
-            _currentUser.UserId, _currentUser.GuestId, ct);
-
-        return ServiceResult<CartDetailDto>.Success(cartDetail!);
+        return ServiceResult<int>.Success(cartItem.Id);
     }
 }

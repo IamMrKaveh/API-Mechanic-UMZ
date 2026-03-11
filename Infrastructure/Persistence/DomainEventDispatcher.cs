@@ -1,22 +1,15 @@
 namespace Infrastructure.Persistence;
 
-public class DomainEventDispatcher : IDomainEventDispatcher
+public class DomainEventDispatcher(
+    DBContext context,
+    IMediator mediator,
+    ILogger<DomainEventDispatcher> logger) : IDomainEventDispatcher
 {
-    private readonly Context.DBContext _context;
-    private readonly IMediator _mediator;
-    private readonly ILogger<DomainEventDispatcher> _logger;
+    private readonly DBContext _context = context;
+    private readonly IMediator _mediator = mediator;
+    private readonly ILogger<DomainEventDispatcher> _logger = logger;
 
-    public DomainEventDispatcher(
-        Context.DBContext context,
-        IMediator mediator,
-        ILogger<DomainEventDispatcher> logger)
-    {
-        _context = context;
-        _mediator = mediator;
-        _logger = logger;
-    }
-
-    public async Task DispatchEventsAsync(CancellationToken cancellationToken = default)
+    public async Task DispatchEventsAsync(CancellationToken ct = default)
     {
         var domainEntities = _context.ChangeTracker
             .Entries<AggregateRoot>()
@@ -27,7 +20,6 @@ public class DomainEventDispatcher : IDomainEventDispatcher
             .SelectMany(x => x.Entity.DomainEvents)
             .ToList();
 
-        
         foreach (var entity in domainEntities)
         {
             entity.Entity.ClearDomainEvents();
@@ -41,7 +33,7 @@ public class DomainEventDispatcher : IDomainEventDispatcher
                     "Dispatching domain event: {EventType}",
                     domainEvent.GetType().Name);
 
-                await _mediator.Publish(domainEvent, cancellationToken);
+                await _mediator.Publish(domainEvent, ct);
             }
             catch (Exception ex)
             {
@@ -49,7 +41,6 @@ public class DomainEventDispatcher : IDomainEventDispatcher
                     ex,
                     "Error dispatching domain event: {EventType}",
                     domainEvent.GetType().Name);
-                
             }
         }
     }

@@ -1,21 +1,11 @@
 namespace Domain.Product.Events;
 
-public sealed class StockChangedEvent : DomainEvent
+public sealed class StockChangedEvent(int variantId, int productId, int oldStock, int newStock, int quantityChange, string reason) : DomainEvent
 {
-    public int VariantId { get; }
-    public int ProductId { get; }
-    public int OldStock { get; }
-    public int NewStock { get; }
-    public int QuantityChange { get; }
-    public string Reason { get; }
-
-    public StockChangedEvent(int variantId, int productId, int oldStock, int newStock, int quantityChange, string reason)
-    {
-        VariantId = variantId;
-        ProductId = productId;
-        OldStock = oldStock;
-        NewStock = newStock;
-        QuantityChange = quantityChange;
-        Reason = reason;
-    }
+    public int VariantId { get; } = variantId;
+    public int ProductId { get; } = productId;
+    public int OldStock { get; } = oldStock;
+    public int NewStock { get; } = newStock;
+    public int QuantityChange { get; } = quantityChange;
+    public string Reason { get; } = reason;
 }

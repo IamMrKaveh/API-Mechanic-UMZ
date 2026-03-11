@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.User.Features.Commands.UpdateProfile;
 
 public record UpdateProfileCommand : IRequest<ServiceResult<UserProfileDto>>

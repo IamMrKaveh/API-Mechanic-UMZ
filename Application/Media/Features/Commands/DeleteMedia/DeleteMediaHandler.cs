@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Media.Interfaces;
+
 namespace Application.Media.Features.Commands.DeleteMedia;
 
 public class DeleteMediaHandler : IRequestHandler<DeleteMediaCommand, ServiceResult>

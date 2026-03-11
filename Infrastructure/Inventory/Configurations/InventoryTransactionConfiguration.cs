@@ -1,3 +1,5 @@
+using Domain.Inventory.Entities;
+
 namespace Infrastructure.Inventory.Configurations;
 
 public sealed class InventoryTransactionConfiguration : IEntityTypeConfiguration<InventoryTransaction>

@@ -1,19 +1,16 @@
 namespace Application.Product.Features.Shared;
 
+public sealed record AdminProductSearchParams(
+    string? Name,
+    int? CategoryId,
+    int? BrandId,
+    bool? IsActive,
+    bool IncludeDeleted,
+    int Page,
+    int PageSize
+);
 
-
-public record AdminProductSearchParams
-{
-    public string? Name { get; init; }
-    public int? CategoryId { get; init; }
-    public int? BrandId { get; init; }
-    public bool? IsActive { get; init; }
-    public bool IncludeDeleted { get; init; }
-    public int Page { get; init; } = 1;
-    public int PageSize { get; init; } = 20;
-}
-
-public record AdminProductListItemDto
+public sealed record AdminProductListItemDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -31,7 +28,7 @@ public record AdminProductListItemDto
     public DateTime? UpdatedAt { get; init; }
 }
 
-public record AdminProductDetailDto
+public sealed record AdminProductDetailDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -48,22 +45,19 @@ public record AdminProductDetailDto
     public string? RowVersion { get; init; }
 }
 
+public sealed record ProductCatalogSearchParams(
+    string? Search,
+    int? CategoryId,
+    int? BrandId,
+    decimal? MinPrice,
+    decimal? MaxPrice,
+    bool InStockOnly,
+    string? SortBy,
+    int Page,
+    int PageSize
+);
 
-
-public record ProductCatalogSearchParams
-{
-    public string? Search { get; init; }
-    public int? CategoryId { get; init; }
-    public int? BrandId { get; init; }
-    public decimal? MinPrice { get; init; }
-    public decimal? MaxPrice { get; init; }
-    public bool InStockOnly { get; init; }
-    public string? SortBy { get; init; } 
-    public int Page { get; init; } = 1;
-    public int PageSize { get; init; } = 20;
-}
-
-public record ProductCatalogItemDto
+public sealed record ProductCatalogItemDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -77,23 +71,22 @@ public record ProductCatalogItemDto
     public int ReviewCount { get; init; }
 }
 
-public record ProductSummaryDto
-{
-    public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string? Sku { get; init; }
-    public string? IconUrl { get; init; }
-    public decimal MinPrice { get; init; }
-    public decimal MaxPrice { get; init; }
-    public bool IsActive { get; init; }
-    public decimal SellingPrice { get; init; }
-    public decimal PurchasePrice { get; init; }
-    public string? Icon { get; init; }
-    public int Count { get; init; }
-    public bool IsInStock { get; init; }
-}
+public sealed record ProductSummaryDto(
+    int Id,
+    string Name,
+    string? Sku,
+    string? IconUrl,
+    decimal MinPrice,
+    decimal MaxPrice,
+    bool IsActive,
+    decimal SellingPrice,
+    decimal PurchasePrice,
+    string? Icon,
+    int Count,
+    bool IsInStock
+);
 
-public record PublicProductDetailDto
+public sealed record PublicProductDetailDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -112,16 +105,14 @@ public record PublicProductDetailDto
     public int ReviewCount { get; init; }
 }
 
-public record BrandInfoDto
+public sealed record BrandInfoDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
     public string CategoryName { get; init; } = string.Empty;
 }
 
-
-
-public record ProductVariantViewDto
+public sealed record ProductVariantViewDto
 {
     public int Id { get; init; }
     public string? Sku { get; init; }
@@ -134,194 +125,184 @@ public record ProductVariantViewDto
     public bool IsInStock { get; init; }
     public bool HasDiscount { get; init; }
     public decimal DiscountPercentage { get; init; }
-    public Dictionary<string, AttributeValueDto> Attributes { get; init; } = new();
+    public Dictionary<string, AttributeValueDto> Attributes { get; init; } = [];
     public IEnumerable<MediaDto> Images { get; init; } = [];
     public string? RowVersion { get; init; }
     public decimal ShippingMultiplier { get; init; }
-    public List<int> EnabledShippingIds { get; init; } = new();
+    public List<int> EnabledShippingIds { get; init; } = [];
 }
 
-public record AttributeValueDto(
+public sealed record AttributeValueDto(
     int Id,
     string TypeName,
     string TypeDisplayName,
     string Value,
     string DisplayValue,
-    string? HexCode);
+    string? HexCode
+);
 
-public record AttributeTypeWithValuesDto(
+public sealed record AttributeTypeWithValuesDto(
     int Id,
     string Name,
     string DisplayName,
     int SortOrder,
     bool IsActive,
-    List<AttributeValueSimpleDto> Values);
+    List<AttributeValueSimpleDto> Values
+);
 
-public record AttributeValueSimpleDto(
+public sealed record AttributeValueSimpleDto(
     int Id,
     string Value,
     string DisplayValue,
     string? HexCode,
     int SortOrder,
-    bool IsActive);
-
-
-
-public record CreateProductVariantInput
-{
-    public int? Id { get; init; }
-    public string? Sku { get; init; }
-    public decimal PurchasePrice { get; init; }
-    public decimal SellingPrice { get; init; }
-    public decimal OriginalPrice { get; init; }
-    public int Stock { get; init; }
-    public bool IsUnlimited { get; init; }
-    public bool IsActive { get; init; } = true;
-    public List<int> AttributeValueIds { get; init; } = new();
-    public decimal ShippingMultiplier { get; init; } = 1;
-    public List<int>? EnabledShippingIds { get; init; }
-}
-
-/// <summary>
-/// DTO قدیمی ادمین - برای Handlerهای Legacy که مستقیماً از Repository بارگذاری می‌کنند.
-/// در آینده به AdminProductDetailDto مهاجرت داده شود.
-/// </summary>
-public record AdminProductViewDto
-{
-    public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string? Description { get; init; }
-    public string? Sku { get; init; }
-    public int BrandId { get; init; }
-    public bool IsActive { get; init; }
-    public bool IsDeleted { get; init; }
-    public string? IconUrl { get; init; }
-    public IEnumerable<Application.Media.Features.Shared.MediaDto> Images { get; init; } = [];
-    public List<ProductVariantResponseDto> Variants { get; init; } = [];
-    public string? RowVersion { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime? UpdatedAt { get; init; }
-    public BrandSummaryInProductDto Brand { get; init; } = null!;
-}
-
-/// <summary>
-/// DTO عمومی محصول - برای Handlerهای Legacy که مستقیماً از Repository بارگذاری می‌کنند.
-/// در آینده به PublicProductDetailDto مهاجرت داده شود.
-/// </summary>
-public record PublicProductViewDto
-{
-    public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string? Description { get; init; }
-    public string? Sku { get; init; }
-    public int BrandId { get; init; }
-    public string? IconUrl { get; init; }
-    public IEnumerable<Application.Media.Features.Shared.MediaDto> Images { get; init; } = [];
-    public List<ProductVariantResponseDto> Variants { get; init; } = [];
-    public decimal MinPrice { get; init; }
-    public decimal MaxPrice { get; init; }
-    public int TotalStock { get; init; }
-    public BrandSummaryInProductDto Brand { get; init; } = null!;
-}
-
-public record ProductVariantResponseDto
-{
-    public int Id { get; init; }
-    public string? Sku { get; init; }
-    public decimal PurchasePrice { get; init; }
-    public decimal SellingPrice { get; init; }
-    public decimal OriginalPrice { get; init; }
-    public int Stock { get; init; }
-    public bool IsUnlimited { get; init; }
-    public bool IsActive { get; init; }
-    public decimal ShippingMultiplier { get; init; }
-    public List<int> EnabledShippingIds { get; init; } = [];
-    public Dictionary<string, AttributeValueDto> Attributes { get; init; } = new();
-    public IEnumerable<Application.Media.Features.Shared.MediaDto> Images { get; init; } = [];
-    public string? RowVersion { get; init; }
-    public bool IsInStock { get; init; }
-    public bool HasDiscount { get; init; }
-    public int DiscountPercentage { get; init; }
-}
-
-/// <summary>
-/// DTO واریانت ورودی - برای UpdateProductHandler
-/// </summary>
-public record CreateProductVariantDto
-{
-    public int? Id { get; init; }
-    public string? Sku { get; init; }
-    public decimal PurchasePrice { get; init; }
-    public decimal SellingPrice { get; init; }
-    public decimal OriginalPrice { get; init; }
-    public int Stock { get; init; }
-    public bool IsUnlimited { get; init; }
-    public int? LowStockThreshold { get; init; }
-    public bool IsActive { get; init; } = true;
-    public decimal ShippingMultiplier { get; init; } = 1;
-    public List<int> AttributeValueIds { get; init; } = [];
-    public List<int>? EnabledShippingIds { get; init; }
-}
-
-public record ProductDto
-{
-    public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string? Description { get; init; }
-    public string? Sku { get; init; }
-    public int BrandId { get; init; }
-    public bool IsActive { get; init; }
-    public bool IsFeatured { get; init; }
-    public string? RowVersion { get; init; }
-}
-
-public record AdminProductListDto
-{
-    public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string? Sku { get; init; }
-    public int BrandId { get; init; }
-    public string? BrandName { get; init; }
-    public string? CategoryName { get; init; }
-    public bool IsActive { get; init; }
-    public bool IsFeatured { get; init; }
-    public decimal MinPrice { get; init; }
-    public decimal MaxPrice { get; init; }
-    public int TotalStock { get; init; }
-    public decimal AverageRating { get; init; }
-    public int ReviewCount { get; init; }
-    public int SalesCount { get; init; }
-    public int VariantCount { get; init; }
-    public string? IconUrl { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public string? RowVersion { get; init; }
-}
-
-public record ProductSearchParams
-{
-    public string? SearchTerm { get; init; }
-    public int? CategoryId { get; init; }
-    public int? BrandId { get; init; }
-    public decimal? MinPrice { get; init; }
-    public decimal? MaxPrice { get; init; }
-    public bool? IsActive { get; init; }
-    public bool? IsFeatured { get; init; }
-    public bool? InStock { get; init; }
-    public string? SortBy { get; init; }
-    public bool SortDescending { get; init; }
-    public int Page { get; init; } = 1;
-    public int PageSize { get; init; } = 20;
-}
-
-public record CreateProductInput(
-    string Name,
-    string Slug,
-    int CategoryId,
-    int BrandId,
-    string? Description
+    bool IsActive
 );
 
-public record UpdateProductInput(
+public sealed record CreateProductVariantInput(
+    int? Id,
+    string? Sku,
+    decimal PurchasePrice,
+    decimal SellingPrice,
+    decimal OriginalPrice,
+    int Stock,
+    bool IsUnlimited,
+    bool IsActive,
+    List<int> AttributeValueIds,
+    decimal ShippingMultiplier,
+    List<int>? EnabledShippingIds
+);
+
+/// <summary>
+/// DTO قدیمی ادمین - برای Handlerهای Legacy
+/// </summary>
+public sealed record AdminProductViewDto(
+    int Id,
+    string Name,
+    string? Description,
+    string? Sku,
+    int BrandId,
+    bool IsActive,
+    bool IsDeleted,
+    string? IconUrl,
+    IEnumerable<Application.Media.Features.Shared.MediaDto> Images,
+    List<ProductVariantResponseDto> Variants,
+    string? RowVersion,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
+    BrandSummaryInProductDto Brand
+);
+
+/// <summary>
+/// DTO عمومی محصول - برای Handlerهای Legacy
+/// </summary>
+public sealed record PublicProductViewDto(
+    int Id,
+    string Name,
+    string? Description,
+    string? Sku,
+    int BrandId,
+    string? IconUrl,
+    IEnumerable<Application.Media.Features.Shared.MediaDto> Images,
+    List<ProductVariantResponseDto> Variants,
+    decimal MinPrice,
+    decimal MaxPrice,
+    int TotalStock,
+    BrandSummaryInProductDto Brand
+);
+
+public sealed record ProductVariantResponseDto(
+    int Id,
+    string? Sku,
+    decimal PurchasePrice,
+    decimal SellingPrice,
+    decimal OriginalPrice,
+    int Stock,
+    bool IsUnlimited,
+    bool IsActive,
+    decimal ShippingMultiplier,
+    List<int> EnabledShippingIds,
+    Dictionary<string, AttributeValueDto> Attributes,
+    IEnumerable<Application.Media.Features.Shared.MediaDto> Images,
+    string? RowVersion,
+    bool IsInStock,
+    bool HasDiscount,
+    int DiscountPercentage
+);
+
+public sealed record CreateProductVariantDto(
+    int? Id,
+    string? Sku,
+    decimal PurchasePrice,
+    decimal SellingPrice,
+    decimal OriginalPrice,
+    int Stock,
+    bool IsUnlimited,
+    int? LowStockThreshold,
+    bool IsActive,
+    decimal ShippingMultiplier,
+    List<int> AttributeValueIds,
+    List<int>? EnabledShippingIds
+);
+
+public sealed record ProductDto
+{
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public string? Sku { get; init; }
+    public int BrandId { get; init; }
+    public bool IsActive { get; init; }
+    public bool IsFeatured { get; init; }
+    public string? RowVersion { get; init; }
+}
+
+public sealed record AdminProductListDto(
+    int Id,
+    string Name,
+    string? Sku,
+    int BrandId,
+    string? BrandName,
+    string? CategoryName,
+    bool IsActive,
+    bool IsFeatured,
+    decimal MinPrice,
+    decimal MaxPrice,
+    int TotalStock,
+    decimal AverageRating,
+    int ReviewCount,
+    int SalesCount,
+    int VariantCount,
+    string? IconUrl,
+    DateTime CreatedAt,
+    string? RowVersion
+);
+
+public sealed record ProductSearchParams(
+    string? SearchTerm,
+    int? CategoryId,
+    int? BrandId,
+    decimal? MinPrice,
+    decimal? MaxPrice,
+    bool? IsActive,
+    bool? IsFeatured,
+    bool? InStock,
+    string? SortBy,
+    bool SortDescending,
+    int Page,
+    int PageSize
+);
+
+public sealed record CreateProductInput
+{
+    public string Name { get; init; } = string.Empty;
+    public string Slug { get; init; } = string.Empty;
+    public int CategoryId { get; init; }
+    public int BrandId { get; init; }
+    public string? Description { get; init; }
+}
+
+public sealed record UpdateProductInput(
     int Id,
     string Name,
     string Slug,
@@ -334,4 +315,27 @@ public record UpdateProductInput(
     List<UploadImageInput> Images
 );
 
-public record BrandSummaryInProductDto(int Id, string Name, string CategoryName);
+public sealed record BrandSummaryInProductDto(
+    int Id,
+    string Name,
+    string CategoryName
+);
+
+public sealed record UpdateProductDetailsRequest(
+    string Name,
+    string Description,
+    int CategoryId,
+    int BrandId);
+
+public sealed record ChangePriceRequest(decimal NewPrice);
+
+public sealed record BulkUpdatePricesRequest(IReadOnlyList<ProductPriceUpdateItem> Items);
+
+public sealed record ProductPriceUpdateItem(int ProductId, decimal NewPrice);
+
+public sealed record CreateProductRequest(
+    string Name,
+    string Description,
+    decimal Price,
+    int CategoryId,
+    int BrandId);

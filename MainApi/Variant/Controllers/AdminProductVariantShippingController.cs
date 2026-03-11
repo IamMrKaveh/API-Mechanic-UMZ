@@ -1,16 +1,11 @@
 namespace MainApi.Variant.Controllers;
 
+[ApiController]
 [Route("api/admin/products/variants/shipping")]
 [Authorize(Roles = "Admin")]
-public class AdminProductVariantShippingController : BaseApiController
+public class AdminProductVariantShippingController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public AdminProductVariantShippingController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetShippings()

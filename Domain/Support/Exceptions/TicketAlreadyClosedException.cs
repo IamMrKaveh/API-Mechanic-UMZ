@@ -1,18 +1,7 @@
+using Domain.Support.ValueObjects;
+
 namespace Domain.Support.Exceptions;
 
-public sealed class TicketAlreadyClosedException : DomainException
+public sealed class TicketAlreadyClosedException(TicketId ticketId) : Exception($"Ticket '{ticketId}' is already closed and cannot be modified.")
 {
-    public int TicketId { get; }
-
-    public TicketAlreadyClosedException(int ticketId)
-        : base($"تیکت {ticketId} قبلاً بسته شده است و امکان ارسال پیام جدید وجود ندارد.")
-    {
-        TicketId = ticketId;
-    }
-
-    public TicketAlreadyClosedException()
-        : base("��یکت قبلاً بسته شده است و امکان ارسال پیام جدید وجود ندارد.")
-    {
-        TicketId = 0;
-    }
 }

@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Category.Interfaces;
+
 namespace Application.Category.Features.Commands.CreateCategory;
 
 public class CreateCategoryHandler : IRequestHandler<CreateCategoryCommand, ServiceResult<int>>
@@ -32,7 +35,7 @@ public class CreateCategoryHandler : IRequestHandler<CreateCategoryCommand, Serv
         }
 
         
-        var category = Domain.Category.Category.Create(request.Name, request.Description);
+        var category = Domain.Category.Aggregates.Category.Create(request.Name, request.Description);
 
         await _categoryRepository.AddAsync(category, ct);
         await _unitOfWork.SaveChangesAsync(ct);

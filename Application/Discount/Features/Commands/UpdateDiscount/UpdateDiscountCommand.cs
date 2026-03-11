@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Discount.Features.Commands.UpdateDiscount;
 
 public record UpdateDiscountCommand : IRequest<ServiceResult>

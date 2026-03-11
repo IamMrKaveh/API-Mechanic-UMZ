@@ -1,3 +1,5 @@
+using Domain.Attribute.Aggregates;
+
 namespace Infrastructure.Attribute.Configurations;
 
 public sealed class AttributeTypeConfiguration : IEntityTypeConfiguration<AttributeType>

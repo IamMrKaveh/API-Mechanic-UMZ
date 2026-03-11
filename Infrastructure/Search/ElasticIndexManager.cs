@@ -1,20 +1,13 @@
 namespace Infrastructure.Search;
 
-public class ElasticIndexManager : IElasticIndexManager
+public class ElasticIndexManager(
+    ElasticsearchClient client,
+    ILogger<ElasticIndexManager> logger,
+    IConfiguration configuration) : IElasticIndexManager
 {
-    private readonly ElasticsearchClient _client;
-    private readonly ILogger<ElasticIndexManager> _logger;
-    private readonly IConfiguration _configuration;
-
-    public ElasticIndexManager(
-        ElasticsearchClient client,
-        ILogger<ElasticIndexManager> logger,
-        IConfiguration configuration)
-    {
-        _client = client;
-        _logger = logger;
-        _configuration = configuration;
-    }
+    private readonly ElasticsearchClient _client = client;
+    private readonly ILogger<ElasticIndexManager> _logger = logger;
+    private readonly IConfiguration _configuration = configuration;
 
     public async Task<bool> CreateProductIndexAsync(CancellationToken ct = default)
     {
@@ -284,13 +277,17 @@ public class ElasticIndexManager : IElasticIndexManager
         return success;
     }
 
-    public async Task<bool> IndexExistsAsync(string indexName, CancellationToken ct = default)
+    public async Task<bool> IndexExistsAsync(
+        string indexName,
+        CancellationToken ct = default)
     {
         var response = await _client.Indices.ExistsAsync(indexName, ct);
         return response.Exists;
     }
 
-    public async Task<bool> DeleteIndexAsync(string indexName, CancellationToken ct = default)
+    public async Task<bool> DeleteIndexAsync(
+        string indexName,
+        CancellationToken ct = default)
     {
         try
         {
@@ -312,7 +309,10 @@ public class ElasticIndexManager : IElasticIndexManager
         }
     }
 
-    public async Task<bool> ReindexAsync(string sourceIndex, string destinationIndex, CancellationToken ct = default)
+    public async Task<bool> ReindexAsync(
+        string sourceIndex,
+        string destinationIndex,
+        CancellationToken ct = default)
     {
         try
         {

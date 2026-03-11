@@ -2,12 +2,12 @@ using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace Infrastructure.Cache.Redis.Lock;
 
-public sealed class RedisLockHandle : ILockHandle
+public sealed class RedisLockHandle(IDatabase db, string key, string value, ILogger logger) : ILockHandle
 {
-    private readonly IDatabase _db;
-    private readonly string _key;
-    private readonly string _value;    
-    private readonly ILogger _logger;
+    private readonly IDatabase _db = db;
+    private readonly string _key = key;
+    private readonly string _value = value;
+    private readonly ILogger _logger = logger;
     private bool _released;
 
     private static readonly string LuaRelease = @"
@@ -16,14 +16,6 @@ public sealed class RedisLockHandle : ILockHandle
         else
             return 0
         end";
-
-    public RedisLockHandle(IDatabase db, string key, string value, ILogger logger)
-    {
-        _db = db;
-        _key = key;
-        _value = value;
-        _logger = logger;
-    }
 
     public string Resource => _key;
     public bool IsAcquired => !_released;
@@ -40,8 +32,6 @@ public sealed class RedisLockHandle : ILockHandle
 
         try
         {
-            
-            
             await _db.ScriptEvaluateAsync(
                 LuaRelease,
                 new RedisKey[] { _key },

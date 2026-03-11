@@ -1,29 +1,18 @@
+using Application.Common.Models;
+
 namespace Application.Discount.Features.Queries.GetDiscountById;
 
-public class GetDiscountByIdHandler : IRequestHandler<GetDiscountByIdQuery, ServiceResult<DiscountCodeDetailDto?>>
+public class GetDiscountByIdHandler(IDiscountQueryService discountQueryService) : IRequestHandler<GetDiscountByIdQuery, ServiceResult<DiscountCodeDetailDto?>>
 {
-    private readonly IDiscountRepository _discountRepository;
-    private readonly IMapper _mapper;
-
-    public GetDiscountByIdHandler(
-        IDiscountRepository discountRepository,
-        IMapper mapper
-        )
-    {
-        _discountRepository = discountRepository;
-        _mapper = mapper;
-    }
+    private readonly IDiscountQueryService _discountQueryService = discountQueryService;
 
     public async Task<ServiceResult<DiscountCodeDetailDto?>> Handle(
         GetDiscountByIdQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        var discount = await _discountRepository.GetByIdWithDetailsAsync(request.Id, ct);
-        if (discount == null) return ServiceResult<DiscountCodeDetailDto?>.Failure("Not found");
-
-        var dto = _mapper.Map<DiscountCodeDetailDto>(discount);
-
-        return ServiceResult<DiscountCodeDetailDto?>.Success(dto);
+        var dto = await _discountQueryService.GetDetailByIdAsync(request.Id, ct);
+        return dto == null
+            ? ServiceResult<DiscountCodeDetailDto?>.Failure("یافت نشد")
+            : ServiceResult<DiscountCodeDetailDto?>.Success(dto);
     }
 }

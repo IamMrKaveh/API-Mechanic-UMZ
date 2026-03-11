@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.User.Interfaces;
+
 namespace Application.User.Features.Commands.CreateUser;
 
 public class CreateUserHandler : IRequestHandler<CreateUserCommand, ServiceResult<UserProfileDto>>
@@ -25,7 +28,7 @@ public class CreateUserHandler : IRequestHandler<CreateUserCommand, ServiceResul
             return ServiceResult<UserProfileDto>.Failure("User with this phone number already exists.");
         }
 
-        var user = Domain.User.User.Create(
+        var user = Domain.User.Aggregates.User.Create(
             request.Dto.PhoneNumber);
 
         await _userRepository.AddAsync(user, ct);

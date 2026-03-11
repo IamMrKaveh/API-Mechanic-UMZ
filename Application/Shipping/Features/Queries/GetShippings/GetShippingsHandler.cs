@@ -1,26 +1,20 @@
+using Application.Common.Models;
+
 namespace Application.Shipping.Features.Queries.GetShippings;
 
-public class GetShippingsHandler : IRequestHandler<GetShippingsQuery, ServiceResult<IEnumerable<ShippingDto>>>
+public class GetShippingsHandler(
+    IShippingQueryService shippingQueryService,
+    IMapper mapper) : IRequestHandler<GetShippingsQuery, ServiceResult<IEnumerable<ShippingDto>>>
 {
-    private readonly IShippingRepository _shippingRepository;
-    private readonly IMapper _mapper;
-
-    public GetShippingsHandler(
-        IShippingRepository shippingRepository,
-        IMapper mapper
-        )
-    {
-        _shippingRepository = shippingRepository;
-        _mapper = mapper;
-    }
+    private readonly IShippingQueryService _shippingQueryService = shippingQueryService;
+    private readonly IMapper _mapper = mapper;
 
     public async Task<ServiceResult<IEnumerable<ShippingDto>>> Handle(
         GetShippingsQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        var s = await _shippingRepository.GetAllAsync(request.IncludeDeleted);
-        var dtos = _mapper.Map<IEnumerable<ShippingDto>>(s);
+        var shippings = await _shippingQueryService.GetAllAsync(request.IncludeDeleted, ct);
+        var dtos = _mapper.Map<IEnumerable<ShippingDto>>(shippings);
         return ServiceResult<IEnumerable<ShippingDto>>.Success(dtos);
     }
 }

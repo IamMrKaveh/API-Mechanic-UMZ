@@ -1,11 +1,6 @@
 namespace Domain.User.Events;
 
-public class UserDemotedFromAdminEvent : DomainEvent
+public class UserDemotedFromAdminEvent(int userId) : DomainEvent
 {
-    public int UserId { get; }
-
-    public UserDemotedFromAdminEvent(int userId)
-    {
-        UserId = userId;
-    }
+    public int UserId { get; } = userId;
 }

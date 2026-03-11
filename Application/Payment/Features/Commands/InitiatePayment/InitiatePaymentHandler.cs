@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Payment.Features.Commands.InitiatePayment;
 
 public class InitiatePaymentHandler : IRequestHandler<InitiatePaymentCommand, ServiceResult<PaymentResultDto>>
@@ -17,14 +19,14 @@ public class InitiatePaymentHandler : IRequestHandler<InitiatePaymentCommand, Se
         {
             var result = await _paymentService.InitiatePaymentAsync(request.Dto, ct);
 
-            if (result.IsSucceed && result.Data != default)
+            if (result.IsSuccess && result.Value != default)
             {
                 return ServiceResult<PaymentResultDto>.Success(new PaymentResultDto
                 {
-                    IsSuccess = result.Data.IsSuccess,
-                    Authority = result.Data.Authority,
-                    PaymentUrl = result.Data.PaymentUrl,
-                    Message = result.Data.Message
+                    IsSuccess = result.Value.IsSuccess,
+                    Authority = result.Value.Authority,
+                    PaymentUrl = result.Value.PaymentUrl,
+                    Message = result.Value.Message
                 });
             }
 

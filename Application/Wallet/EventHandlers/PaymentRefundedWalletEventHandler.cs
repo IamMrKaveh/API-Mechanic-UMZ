@@ -1,4 +1,6 @@
-﻿namespace Application.Wallet.EventHandlers;
+﻿using Domain.Wallet.Enums;
+
+namespace Application.Wallet.EventHandlers;
 
 /// <summary>
 /// هنگام استرداد وجه، مستقیماً کیف پول کاربر را شارژ می‌کند.

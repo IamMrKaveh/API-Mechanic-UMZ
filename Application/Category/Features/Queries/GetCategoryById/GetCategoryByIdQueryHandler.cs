@@ -1,21 +1,13 @@
 namespace Application.Category.Features.Queries.GetCategoryById;
 
-public class GetCategoryByIdQueryHandler
-    : IRequestHandler<GetCategoryByIdQuery, ServiceResult<CategoryWithBrandsDto?>>
+public class GetCategoryByIdQueryHandler(
+    ICategoryQueryService queryService) : IRequestHandler<GetCategoryByIdQuery, ServiceResult<CategoryWithBrandsDto?>>
 {
-    private readonly ICategoryQueryService _queryService;
-
-    public GetCategoryByIdQueryHandler(
-        ICategoryQueryService queryService
-        )
-    {
-        _queryService = queryService;
-    }
+    private readonly ICategoryQueryService _queryService = queryService;
 
     public async Task<ServiceResult<CategoryWithBrandsDto?>> Handle(
         GetCategoryByIdQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var result = await _queryService.GetCategoryWithBrandsAsync(request.Id, ct);
 

@@ -1,18 +1,13 @@
 namespace Application.Audit.Features.Queries.ExportAuditLogs;
 
-public sealed class ExportAuditLogsHandler : IRequestHandler<ExportAuditLogsQuery, ExportAuditLogsResult>
+public sealed class ExportAuditLogsHandler(
+    IAuditService auditService) : IRequestHandler<ExportAuditLogsQuery, ExportAuditLogsResult>
 {
-    private readonly IAuditService _auditService;
-
-    public ExportAuditLogsHandler(
-        IAuditService auditService
-        )
-        => _auditService = auditService;
+    private readonly IAuditService _auditService = auditService;
 
     public async Task<ExportAuditLogsResult> Handle(
         ExportAuditLogsQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var exportRequest = new AuditExportRequest
         {

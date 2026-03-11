@@ -1,55 +1,41 @@
+using Domain.Payment.Interfaces;
+
 namespace Application.Payment.Features.Commands.AtomicRefundPayment;
 
-public sealed class AtomicRefundPaymentHandler : IRequestHandler<AtomicRefundPaymentCommand, AtomicRefundResult>
+public sealed class AtomicRefundPaymentHandler(
+    IOrderRepository orderRepository,
+    IPaymentTransactionRepository paymentRepo,
+    IPaymentGatewayFactory gatewayFactory,
+    IInventoryService inventoryService,
+    IUnitOfWork unitOfWork,
+    PaymentSettlementService settlementService,
+    ILogger<AtomicRefundPaymentHandler> logger) : IRequestHandler<AtomicRefundPaymentCommand, AtomicRefundResult>
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IPaymentTransactionRepository _paymentRepo;
-    private readonly IPaymentGatewayFactory _gatewayFactory;
-    private readonly IInventoryService _inventoryService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly PaymentSettlementService _settlementService;
-    private readonly ILogger<AtomicRefundPaymentHandler> _logger;
-
-    public AtomicRefundPaymentHandler(
-        IOrderRepository orderRepository,
-        IPaymentTransactionRepository paymentRepo,
-        IPaymentGatewayFactory gatewayFactory,
-        IInventoryService inventoryService,
-        IUnitOfWork unitOfWork,
-        PaymentSettlementService settlementService,
-        ILogger<AtomicRefundPaymentHandler> logger)
-    {
-        _orderRepository = orderRepository;
-        _paymentRepo = paymentRepo;
-        _gatewayFactory = gatewayFactory;
-        _inventoryService = inventoryService;
-        _unitOfWork = unitOfWork;
-        _settlementService = settlementService;
-        _logger = logger;
-    }
+    private readonly IOrderRepository _orderRepository = orderRepository;
+    private readonly IPaymentTransactionRepository _paymentRepo = paymentRepo;
+    private readonly IPaymentGatewayFactory _gatewayFactory = gatewayFactory;
+    private readonly IInventoryService _inventoryService = inventoryService;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly PaymentSettlementService _settlementService = settlementService;
+    private readonly ILogger<AtomicRefundPaymentHandler> _logger = logger;
 
     public async Task<AtomicRefundResult> Handle(
         AtomicRefundPaymentCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        
         var order = await _orderRepository.GetByIdAsync(request.OrderId, ct);
         if (order is null)
             return Fail($"سفارش {request.OrderId} یافت نشد.");
 
-        
         var successfulPayment = await _paymentRepo.GetVerifiedByOrderIdAsync(request.OrderId, ct);
         if (successfulPayment is null)
             return Fail("تراکنش پرداخت موفق برای این سفارش یافت نشد.");
 
-        
         var eligibility = _settlementService.ValidateRefundEligibility(order, successfulPayment);
         if (!eligibility.IsValid)
             return Fail(eligibility.Error!);
 
-        
-        var amountValidation = _settlementService.ValidateRefundAmount(successfulPayment, request.PartialAmount);
+        var amountValidation = _settlementService.ValidateRefundAmount(successfulPayment);
         if (!amountValidation.IsValid)
             return Fail(amountValidation.Error!);
 
@@ -59,7 +45,6 @@ public sealed class AtomicRefundPaymentHandler : IRequestHandler<AtomicRefundPay
             "[Refund] Starting atomic refund for Order {OrderId}, Amount={Amount}",
             request.OrderId, refundAmount);
 
-        
         var gateway = _gatewayFactory.GetGateway(successfulPayment.Gateway);
         string? refundTransactionId = null;
 
@@ -95,18 +80,15 @@ public sealed class AtomicRefundPaymentHandler : IRequestHandler<AtomicRefundPay
                 gateway.GatewayName);
         }
 
-        
         var settlementResult = _settlementService.ProcessRefund(order, successfulPayment, request.Reason);
         if (!settlementResult.IsSuccess)
             return Fail(settlementResult.Error!);
 
-        
         await _inventoryService.ReturnStockForOrderAsync(
             order.Id,
             request.RequestedByUserId,
             request.Reason, ct);
 
-        
         _paymentRepo.Update(successfulPayment);
         await _orderRepository.UpdateAsync(order, ct);
         await _unitOfWork.SaveChangesAsync(ct);

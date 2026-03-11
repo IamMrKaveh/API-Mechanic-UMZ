@@ -2,15 +2,9 @@ namespace MainApi.Media.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class MediaController : BaseApiController
+public class MediaController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public MediaController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("{entityType}/{entityId}")]
     [AllowAnonymous]

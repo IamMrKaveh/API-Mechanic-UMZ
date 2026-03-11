@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Inventory.Features.Commands.CommitStockForOrder;
 
 public class CommitStockForOrderHandler : IRequestHandler<CommitStockForOrderCommand, ServiceResult>

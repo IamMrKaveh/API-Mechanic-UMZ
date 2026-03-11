@@ -3,15 +3,9 @@ namespace MainApi.Category.Controllers;
 [Route("api/admin/categories")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminCategoryController : BaseApiController
+public class AdminCategoryController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
 {
-    private readonly IMediator _mediator;
-
-    public AdminCategoryController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetCategories(
@@ -29,7 +23,6 @@ public class AdminCategoryController : BaseApiController
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCategory(int id)
     {
-        
         var query = new GetCategoryWithGroupsQuery(id);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
@@ -39,9 +32,9 @@ public class AdminCategoryController : BaseApiController
     public async Task<IActionResult> CreateCategory([FromForm] CreateCategoryCommand command)
     {
         var result = await _mediator.Send(command);
-        if (result.IsSucceed)
+        if (result.IsSuccess)
         {
-            return CreatedAtAction(nameof(GetCategory), new { id = result.Data }, result.Data);
+            return CreatedAtAction(nameof(GetCategory), new { id = result.Value }, result.Value);
         }
         return ToActionResult(result);
     }

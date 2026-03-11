@@ -1,29 +1,17 @@
+using Application.Common.Models;
+
 namespace Application.Order.Features.Queries.GetOrderStatuses;
 
-public class GetOrderStatusesHandler : IRequestHandler<GetOrderStatusesQuery, ServiceResult<IEnumerable<OrderStatusDto>>>
+public class GetOrderStatusesHandler(IOrderStatusQueryService orderStatusQueryService)
+        : IRequestHandler<GetOrderStatusesQuery, ServiceResult<IEnumerable<OrderStatusDto>>>
 {
-    private readonly IOrderStatusRepository _orderStatusRepository;
-
-    public GetOrderStatusesHandler(IOrderStatusRepository orderStatusRepository)
-    {
-        _orderStatusRepository = orderStatusRepository;
-    }
+    private readonly IOrderStatusQueryService _orderStatusQueryService = orderStatusQueryService;
 
     public async Task<ServiceResult<IEnumerable<OrderStatusDto>>> Handle(
         GetOrderStatusesQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var statuses = await _orderStatusRepository.GetAllAsync(cancellationToken);
-
-        var dtos = statuses.Select(s => new OrderStatusDto
-        {
-            Id = s.Id,
-            Name = s.Name,
-            DisplayName = s.DisplayName,
-            Icon = s.Icon,
-            Color = s.Color,
-        });
-
-        return ServiceResult<IEnumerable<OrderStatusDto>>.Success(dtos);
+        var statuses = await _orderStatusQueryService.GetAllAsync(ct);
+        return ServiceResult<IEnumerable<OrderStatusDto>>.Success(statuses);
     }
 }

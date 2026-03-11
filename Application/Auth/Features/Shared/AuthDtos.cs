@@ -1,22 +1,23 @@
 namespace Application.Auth.Features.Shared;
 
-/// <summary>
-/// اینترفیس سرویس احراز هویت - حذف شد
-/// تمام منطق به Command/Query Handler‌ها منتقل شده است
-/// این فایل فقط شامل AuthResult است
-/// </summary>
-public class AuthResult
+public record AuthResult
 {
-    public string AccessToken { get; init; } = null!;
-    public string RefreshToken { get; init; } = null!;
+    public string AccessToken { get; init; } = string.Empty;
+    public string RefreshToken { get; init; } = string.Empty;
     public DateTime AccessTokenExpiresAt { get; init; }
     public DateTime RefreshTokenExpiresAt { get; init; }
     public UserProfileDto User { get; init; } = null!;
     public bool IsNewUser { get; init; }
 }
 
-public record LoginRequestDto(string PhoneNumber);
+public record LoginRequestDto
+{
+    public string PhoneNumber { get; init; } = string.Empty;
+}
 
 public record VerifyOtpRequestDto(string PhoneNumber, string Code);
 
-public record RefreshRequestDto(string refreshToken);
+public record RefreshRequestDto
+{
+    public string RefreshToken { get; init; } = string.Empty;
+}

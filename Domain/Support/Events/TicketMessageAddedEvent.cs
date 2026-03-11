@@ -1,13 +1,14 @@
+using Domain.Common.Abstractions;
+using Domain.Support.Enums;
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Support.Events;
 
-public sealed class TicketMessageAddedEvent : DomainEvent
-{
-    public int TicketId { get; }
-    public string MessagePreview { get; }
-
-    public TicketMessageAddedEvent(int ticketId, string messagePreview)
-    {
-        TicketId = ticketId;
-        MessagePreview = messagePreview;
-    }
-}
+public sealed record TicketMessageAddedEvent(
+    TicketId TicketId,
+    TicketMessageId MessageId,
+    UserId CustomerId,
+    UserId SenderId,
+    TicketMessageSenderType SenderType,
+    int NewMessageCount) : IDomainEvent;

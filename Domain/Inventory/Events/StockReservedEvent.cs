@@ -1,17 +1,11 @@
+using Domain.Common.Abstractions;
+using Domain.Inventory.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Inventory.Events;
 
-public class StockReservedEvent : DomainEvent
-{
-    public int VariantId { get; }
-    public int ProductId { get; }
-    public int Quantity { get; }
-    public int? OrderItemId { get; }
-
-    public StockReservedEvent(int variantId, int productId, int quantity, int? orderItemId = null)
-    {
-        VariantId = variantId;
-        ProductId = productId;
-        Quantity = quantity;
-        OrderItemId = orderItemId;
-    }
-}
+public sealed record StockReservedEvent(
+    InventoryId InventoryId,
+    ProductVariantId VariantId,
+    int QuantityReserved,
+    int TotalReservedQuantity) : IDomainEvent;

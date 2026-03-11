@@ -1,22 +1,26 @@
+using Application.Auth.Contracts;
+using Application.Common.Models;
+using Domain.User.Interfaces;
+
 namespace Application.User.Features.Commands.DeactivateAccount;
 
 public class DeactivateAccountHandler : IRequestHandler<DeactivateAccountCommand, ServiceResult>
 {
     private readonly IUserRepository _userRepository;
-    private readonly ISessionService _sessionManager;
+    private readonly ISessionService _sessionService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditService _auditService;
     private readonly ILogger<DeactivateAccountHandler> _logger;
 
     public DeactivateAccountHandler(
         IUserRepository userRepository,
-        ISessionService sessionManager,
+        ISessionService sessionService,
         IUnitOfWork unitOfWork,
         IAuditService auditService,
         ILogger<DeactivateAccountHandler> logger)
     {
         _userRepository = userRepository;
-        _sessionManager = sessionManager;
+        _sessionService = sessionService;
         _unitOfWork = unitOfWork;
         _auditService = auditService;
         _logger = logger;
@@ -31,14 +35,12 @@ public class DeactivateAccountHandler : IRequestHandler<DeactivateAccountCommand
 
         try
         {
-            
             user.Deactivate();
 
             _userRepository.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            
-            await _sessionManager.RevokeAllUserSessionsAsync(request.UserId, cancellationToken);
+            await _sessionService.RevokeAllUserSessionsAsync(request.UserId, cancellationToken);
 
             await _auditService.LogSecurityEventAsync(
                 "AccountDeactivated",

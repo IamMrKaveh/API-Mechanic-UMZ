@@ -1,24 +1,8 @@
 namespace Domain.User.ValueObjects;
 
-public sealed class UserId : ValueObject
+public sealed record UserId(Guid Value)
 {
-    public int Value { get; }
-
-    private UserId(int value) => Value = value;
-
-    public static UserId Create(int value)
-    {
-        if (value <= 0)
-            throw new DomainException("شناسه کاربر باید عدد مثبت باشد.");
-        return new UserId(value);
-    }
-
-    protected override IEnumerable<object> GetEqualityComponents()
-    {
-        yield return Value;
-    }
-
+    public static UserId NewId() => new(Guid.NewGuid());
+    public static UserId From(Guid value) => new(value);
     public override string ToString() => Value.ToString();
-
-    public static implicit operator int(UserId userId) => userId.Value;
 }

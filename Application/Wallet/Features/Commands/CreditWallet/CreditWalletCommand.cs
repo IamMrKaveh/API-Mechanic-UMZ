@@ -1,4 +1,7 @@
-﻿namespace Application.Wallet.Features.Commands.CreditWallet;
+﻿using Application.Common.Models;
+using Domain.Wallet.Enums;
+
+namespace Application.Wallet.Features.Commands.CreditWallet;
 
 public record CreditWalletCommand(
     int UserId,

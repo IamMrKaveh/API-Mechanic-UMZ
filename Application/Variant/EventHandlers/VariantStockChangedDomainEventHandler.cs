@@ -1,28 +1,19 @@
+using Domain.Variant.Interfaces;
+
 namespace Application.Variant.EventHandlers;
 
-/// <summary>
-/// Handler رویداد دامنه که آن را به Application Notification تبدیل می‌کند
-/// داده‌های لازم را از DB می‌خواند و یک notification enriched ارسال می‌کند
-/// </summary>
-public class VariantStockChangedDomainEventHandler : INotificationHandler<VariantStockChangedEvent>
+public class VariantStockChangedDomainEventHandler(
+    IVariantRepository variantRepository,
+    IPublisher publisher,
+    ILogger<VariantStockChangedDomainEventHandler> logger) : INotificationHandler<VariantStockChangedEvent>
 {
-    private readonly IProductRepository _productRepository;
-    private readonly IPublisher _publisher;
-    private readonly ILogger<VariantStockChangedDomainEventHandler> _logger;
+    private readonly IVariantRepository _variantRepository = variantRepository;
+    private readonly IPublisher _publisher = publisher;
+    private readonly ILogger<VariantStockChangedDomainEventHandler> _logger = logger;
 
-    public VariantStockChangedDomainEventHandler(
-        IProductRepository productRepository,
-        IPublisher publisher,
-        ILogger<VariantStockChangedDomainEventHandler> logger)
+    public async Task Handle(VariantStockChangedEvent notification, CancellationToken ct)
     {
-        _productRepository = productRepository;
-        _publisher = publisher;
-        _logger = logger;
-    }
-
-    public async Task Handle(VariantStockChangedEvent notification, CancellationToken cancellationToken)
-    {
-        var variant = await _productRepository.GetVariantByIdAsync(notification.VariantId, cancellationToken);
+        var variant = await _variantRepository.GetWithProductAsync(notification.VariantId, ct);
 
         if (variant == null)
         {
@@ -43,6 +34,6 @@ public class VariantStockChangedDomainEventHandler : INotificationHandler<Varian
             IsInStock = variant.IsInStock
         };
 
-        await _publisher.Publish(appNotification, cancellationToken);
+        await _publisher.Publish(appNotification, ct);
     }
 }

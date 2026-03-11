@@ -1,3 +1,6 @@
+using Application.Common.Models;
+using Domain.Category.Interfaces;
+
 namespace Application.Category.Features.Commands.ReorderCategories;
 
 public class ReorderCategoriesHandler : IRequestHandler<ReorderCategoriesCommand, ServiceResult>

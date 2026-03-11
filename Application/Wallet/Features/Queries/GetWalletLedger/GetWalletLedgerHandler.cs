@@ -1,22 +1,21 @@
 ﻿namespace Application.Wallet.Features.Queries.GetWalletLedger;
 
-public class GetWalletLedgerHandler : IRequestHandler<GetWalletLedgerQuery, ServiceResult<PaginatedResult<WalletLedgerEntryDto>>>
+public class GetWalletLedgerHandler
+    : IRequestHandler<GetWalletLedgerQuery, ServiceResult<PaginatedResult<WalletLedgerEntryDto>>>
 {
-    private readonly IWalletRepository _walletRepository;
+    private readonly IWalletQueryService _walletQueryService;
 
-    public GetWalletLedgerHandler(
-        IWalletRepository walletRepository
-        )
+    public GetWalletLedgerHandler(IWalletQueryService walletQueryService)
     {
-        _walletRepository = walletRepository;
+        _walletQueryService = walletQueryService;
     }
 
     public async Task<ServiceResult<PaginatedResult<WalletLedgerEntryDto>>> Handle(
         GetWalletLedgerQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        var (items, total) = await _walletRepository.GetLedgerPageAsync(request.UserId, request.Page, request.PageSize, ct);
+        var (items, total) = await _walletQueryService.GetLedgerPageAsync(
+            request.UserId, request.Page, request.PageSize, ct);
 
         var entries = items.Select(e => new WalletLedgerEntryDto(
             e.Id,

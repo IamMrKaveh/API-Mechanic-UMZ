@@ -1,13 +1,8 @@
 namespace Domain.Order.Rules;
 
-public sealed class ShippedOrderCannotBeCancelledRule : IBusinessRule
+public sealed class ShippedOrderCannotBeCancelledRule(Aggregates.Order order) : IBusinessRule
 {
-    private readonly Order _order;
-
-    public ShippedOrderCannotBeCancelledRule(Order order)
-    {
-        _order = order;
-    }
+    private readonly Aggregates.Order _order = order;
 
     public bool IsBroken()
     {

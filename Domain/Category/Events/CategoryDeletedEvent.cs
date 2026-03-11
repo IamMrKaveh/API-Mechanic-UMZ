@@ -1,13 +1,11 @@
 namespace Domain.Category.Events;
 
-public class CategoryDeletedEvent : DomainEvent
+public sealed class CategoryDeletedEvent : DomainEvent
 {
-    public int CategoryId { get; }
-    public int? DeletedBy { get; }
+    public CategoryId CategoryId { get; }
 
-    public CategoryDeletedEvent(int categoryId, int? deletedBy)
+    public CategoryDeletedEvent(CategoryId categoryId)
     {
         CategoryId = categoryId;
-        DeletedBy = deletedBy;
     }
 }

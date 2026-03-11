@@ -3,22 +3,30 @@ namespace MainApi.Payment.Controllers;
 [Route("api/admin/payments")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminPaymentsController : ControllerBase
+public class AdminPaymentsController(IMediator mediator, ICurrentUserService currentUserService) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly ICurrentUserService _currentUserService;
-
-    public AdminPaymentsController(IMediator mediator, ICurrentUserService currentUserService)
-    {
-        _mediator = mediator;
-        _currentUserService = currentUserService;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     [HttpGet]
     public async Task<IActionResult> GetPayments([FromQuery] PaymentSearchParams searchParams)
     {
         var result = await _mediator.Send(new GetAdminPaymentsQuery(searchParams));
-        return result.IsSucceed ? Ok(result.Data) : BadRequest(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
+    }
+
+    [HttpGet("by-authority/{authority}")]
+    public async Task<IActionResult> GetPaymentByAuthority(string authority)
+    {
+        var result = await _mediator.Send(new GetPaymentByAuthorityQuery(authority));
+        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
+    }
+
+    [HttpGet("by-order/{orderId}")]
+    public async Task<IActionResult> GetPaymentsByOrder(int orderId)
+    {
+        var result = await _mediator.Send(new GetPaymentsByOrderQuery(orderId));
+        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
     }
 
     [HttpPost("{orderId}/refund")]
@@ -29,8 +37,7 @@ public class AdminPaymentsController : ControllerBase
         var command = new AtomicRefundPaymentCommand(
             orderId,
             _currentUserService.UserId.Value,
-            request.Reason,
-            request.PartialAmount);
+            request.Reason);
 
         var result = await _mediator.Send(command);
         return result.IsSuccess ? Ok(result) : BadRequest(result.Error);
@@ -41,8 +48,6 @@ public class AdminPaymentsController : ControllerBase
     {
         var cutoff = DateTime.UtcNow.AddMinutes(-minutesOld);
         var result = await _mediator.Send(new ExpireStalePaymentsCommand(cutoff));
-        return result.IsSucceed ? Ok(result.Data) : BadRequest(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
     }
 }
-
-public record RefundPaymentRequest(string Reason, decimal? PartialAmount = null);

@@ -1,17 +1,9 @@
 namespace Domain.Payment.Events;
 
-public class PaymentExpiredEvent : DomainEvent
+public sealed class PaymentExpiredEvent(Guid transactionId, Guid orderId, decimal amount, string authority) : DomainEvent
 {
-    public int TransactionId { get; }
-    public int OrderId { get; }
-    public decimal Amount { get; }
-    public string Authority { get; }
-
-    public PaymentExpiredEvent(int transactionId, int orderId, decimal amount, string authority)
-    {
-        TransactionId = transactionId;
-        OrderId = orderId;
-        Amount = amount;
-        Authority = authority;
-    }
+    public Guid TransactionId { get; } = transactionId;
+    public Guid OrderId { get; } = orderId;
+    public decimal Amount { get; } = amount;
+    public string Authority { get; } = authority;
 }

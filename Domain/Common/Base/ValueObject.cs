@@ -1,15 +1,12 @@
 namespace Domain.Common.Base;
 
-/// <summary>
-/// کلاس پایه برای Value Object‌ها
-/// </summary>
 public abstract class ValueObject
 {
     protected abstract IEnumerable<object> GetEqualityComponents();
 
     public override bool Equals(object? obj)
     {
-        if (obj == null || obj.GetType() != GetType())
+        if (obj is null || obj.GetType() != GetType())
             return false;
 
         var other = (ValueObject)obj;
@@ -20,7 +17,7 @@ public abstract class ValueObject
     {
         return GetEqualityComponents()
             .Select(x => x?.GetHashCode() ?? 0)
-            .Aggregate((x, y) => x ^ y);
+            .Aggregate(HashCode.Combine);
     }
 
     public static bool operator ==(ValueObject? left, ValueObject? right)
@@ -31,7 +28,5 @@ public abstract class ValueObject
     }
 
     public static bool operator !=(ValueObject? left, ValueObject? right)
-    {
-        return !(left == right);
-    }
+        => !(left == right);
 }

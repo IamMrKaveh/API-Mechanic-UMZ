@@ -1,51 +1,29 @@
+using Domain.Support.Interfaces;
+
 namespace Application.Support.Features.Commands.ReplyToTicket;
 
-public sealed class ReplyToTicketHandler : IRequestHandler<ReplyToTicketCommand, ServiceResult<bool>>
+public sealed class ReplyToTicketHandler(
+    ITicketRepository ticketRepository,
+    IUnitOfWork unitOfWork,
+    ICurrentUserService currentUserService) : IRequestHandler<ReplyToTicketCommand, ServiceResult>
 {
-    private readonly ITicketRepository _ticketRepository;
-    private readonly TicketDomainService _ticketDomainService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<ReplyToTicketHandler> _logger;
+    private readonly ITicketRepository _ticketRepository = ticketRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
-    public ReplyToTicketHandler(
-        ITicketRepository ticketRepository,
-        TicketDomainService ticketDomainService,
-        IUnitOfWork unitOfWork,
-        ILogger<ReplyToTicketHandler> logger)
+    public async Task<ServiceResult> Handle(
+        ReplyToTicketCommand request,
+        CancellationToken ct)
     {
-        _ticketRepository = ticketRepository;
-        _ticketDomainService = ticketDomainService;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+        var senderId = _currentUserService.UserId!.Value;
+        var ticket = await _ticketRepository.GetByIdAsync(request.TicketId, ct);
 
-    public async Task<ServiceResult<bool>> Handle(ReplyToTicketCommand request, CancellationToken cancellationToken)
-    {
-        var ticket = await _ticketRepository.GetByIdWithMessagesAsync(request.TicketId, cancellationToken);
         if (ticket is null)
-            throw new TicketNotFoundException(request.TicketId);
+            return ServiceResult.Failure("Ticket not found.");
 
-        
-        var accessResult = _ticketDomainService.ValidateUserAccess(ticket, request.SenderId, request.IsAdminReply);
-        if (!accessResult.HasAccess)
-            throw new TicketAccessDeniedException(request.TicketId, request.SenderId);
+        ticket.AddReply(senderId, request.Message);
+        await _unitOfWork.SaveChangesAsync(ct);
 
-        
-        var canSendResult = _ticketDomainService.ValidateCanSendMessage(ticket);
-        if (!canSendResult.CanSend)
-            return ServiceResult<bool>.Failure(canSendResult.Error!);
-
-        ticket.AddMessage(request.Message, request.IsAdminReply, request.SenderId);
-
-        _ticketRepository.Update(ticket);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation(
-            "Reply added to ticket {TicketId} by {SenderType} {SenderId}",
-            request.TicketId,
-            request.IsAdminReply ? "admin" : "user",
-            request.SenderId);
-
-        return ServiceResult<bool>.Success(true);
+        return ServiceResult.Success();
     }
 }

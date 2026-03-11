@@ -1,13 +1,7 @@
 namespace Domain.User.Events;
 
-public sealed class UserLoginFailedEvent : DomainEvent
+public sealed class UserLoginFailedEvent(int userId, int failedAttempts) : DomainEvent
 {
-    public int UserId { get; }
-    public int FailedAttempts { get; }
-
-    public UserLoginFailedEvent(int userId, int failedAttempts)
-    {
-        UserId = userId;
-        FailedAttempts = failedAttempts;
-    }
+    public int UserId { get; } = userId;
+    public int FailedAttempts { get; } = failedAttempts;
 }

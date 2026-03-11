@@ -3,16 +3,10 @@ namespace MainApi.Product.Controllers;
 [ApiController]
 [Route("api/admin/products")]
 [Authorize(Roles = "Admin")]
-public class AdminProductsController : ControllerBase
+public class AdminProductsController(IMediator mediator, ICurrentUserService currentUserService) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly ICurrentUserService _currentUserService;
-
-    public AdminProductsController(IMediator mediator, ICurrentUserService currentUserService)
-    {
-        _mediator = mediator;
-        _currentUserService = currentUserService;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     [HttpGet]
     public async Task<ActionResult<ServiceResult<PaginatedResult<AdminProductListDto>>>> GetAll(
@@ -42,11 +36,17 @@ public class AdminProductsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateProductInput input)
+    public async Task<IActionResult> Create([FromBody] CreateProductRequest request, CancellationToken ct)
     {
-        var command = new CreateProductCommand(input);
-        var productId = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetById), new { id = productId }, productId);
+        var command = new CreateProductCommand(
+            request.Name,
+            request.Description,
+            request.Price,
+            request.CategoryId,
+            request.BrandId);
+
+        var result = await _mediator.Send(command, ct);
+        return ToCreatedResult(result, nameof(GetById), new { productId = result.Value });
     }
 
     [HttpPut("{id}")]
@@ -59,13 +59,12 @@ public class AdminProductsController : ControllerBase
         return NoContent();
     }
 
-    [HttpPut("{id}/details")]
-    public async Task<IActionResult> UpdateDetails(int id, [FromBody] UpdateProductDetailsCommand command)
+    [HttpPut("{productId:int}/details")]
+    public async Task<IActionResult> UpdateDetails(int productId, [FromBody] UpdateProductDetailsRequest request, CancellationToken ct)
     {
-        if (id != command.Id) return BadRequest();
-        var result = await _mediator.Send(command);
-        if (result.IsFailed) return StatusCode(result.StatusCode, result);
-        return NoContent();
+        var command = new UpdateProductDetailsCommand(productId, request.Name, request.Description, request.CategoryId, request.BrandId);
+        var result = await _mediator.Send(command, ct);
+        return ToActionResult(result);
     }
 
     [HttpDelete("{id}")]
@@ -103,20 +102,20 @@ public class AdminProductsController : ControllerBase
         return NoContent();
     }
 
-    [HttpPatch("{id}/price")]
-    public async Task<IActionResult> ChangePrice(int id, [FromBody] ChangePriceCommand command)
+    [HttpPut("{productId:int}/price")]
+    public async Task<IActionResult> ChangePrice(int productId, [FromBody] ChangePriceRequest request, CancellationToken ct)
     {
-        if (id != command.ProductId) return BadRequest();
-        var result = await _mediator.Send(command);
-        if (result.IsFailed) return StatusCode(result.StatusCode, result);
-        return NoContent();
+        var command = new ChangePriceCommand(productId, request.NewPrice);
+        var result = await _mediator.Send(command, ct);
+        return ToActionResult(result);
     }
 
-    [HttpPost("bulk-update-prices")]
-    public async Task<IActionResult> BulkUpdatePrices([FromBody] BulkUpdatePricesCommand command)
+    [HttpPut("prices/bulk")]
+    public async Task<IActionResult> BulkUpdatePrices([FromBody] BulkUpdatePricesRequest request, CancellationToken ct)
     {
-        var result = await _mediator.Send(command);
-        if (result.IsFailed) return StatusCode(result.StatusCode, result);
-        return Ok(result);
+        var items = request.Items.Select(i => new PriceUpdateItem(i.ProductId, i.NewPrice)).ToList();
+        var command = new BulkUpdatePricesCommand(items);
+        var result = await _mediator.Send(command, ct);
+        return ToActionResult(result);
     }
 }

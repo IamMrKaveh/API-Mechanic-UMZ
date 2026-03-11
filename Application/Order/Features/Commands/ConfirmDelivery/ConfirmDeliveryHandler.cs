@@ -1,26 +1,19 @@
+using Application.Common.Models;
+
 namespace Application.Order.Features.Commands.ConfirmDelivery;
 
-public class ConfirmDeliveryHandler : IRequestHandler<ConfirmDeliveryCommand, ServiceResult>
+public class ConfirmDeliveryHandler(
+    IOrderRepository orderRepository,
+    IUnitOfWork unitOfWork,
+    INotificationService notificationService,
+    IAuditService auditService,
+    ILogger<ConfirmDeliveryHandler> logger) : IRequestHandler<ConfirmDeliveryCommand, ServiceResult>
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly INotificationService _notificationService;
-    private readonly IAuditService _auditService;
-    private readonly ILogger<ConfirmDeliveryHandler> _logger;
-
-    public ConfirmDeliveryHandler(
-        IOrderRepository orderRepository,
-        IUnitOfWork unitOfWork,
-        INotificationService notificationService,
-        IAuditService auditService,
-        ILogger<ConfirmDeliveryHandler> logger)
-    {
-        _orderRepository = orderRepository;
-        _unitOfWork = unitOfWork;
-        _notificationService = notificationService;
-        _auditService = auditService;
-        _logger = logger;
-    }
+    private readonly IOrderRepository _orderRepository = orderRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly INotificationService _notificationService = notificationService;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ILogger<ConfirmDeliveryHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(
         ConfirmDeliveryCommand request,

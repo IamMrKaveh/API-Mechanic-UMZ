@@ -1,22 +1,15 @@
 namespace Infrastructure.Payment.ZarinPal;
 
-public class ZarinPalPaymentGateway : IPaymentGateway
+public class ZarinPalPaymentGateway(
+    HttpClient httpClient,
+    IOptions<ZarinpalSettingsDto> settings,
+    ILogger<ZarinPalPaymentGateway> logger) : IPaymentGateway
 {
-    private readonly HttpClient _httpClient;
-    private readonly ZarinpalSettingsDto _settings;
-    private readonly ILogger<ZarinPalPaymentGateway> _logger;
+    private readonly HttpClient _httpClient = httpClient;
+    private readonly ZarinpalSettingsDto _settings = settings.Value;
+    private readonly ILogger<ZarinPalPaymentGateway> _logger = logger;
 
     public string GatewayName => "ZarinPal";
-
-    public ZarinPalPaymentGateway(
-        HttpClient httpClient,
-        IOptions<ZarinpalSettingsDto> settings,
-        ILogger<ZarinPalPaymentGateway> logger)
-    {
-        _httpClient = httpClient;
-        _settings = settings.Value;
-        _logger = logger;
-    }
 
     public async Task<PaymentRequestResultDto> RequestPaymentAsync(
         decimal amount,
@@ -84,7 +77,9 @@ public class ZarinPalPaymentGateway : IPaymentGateway
         }
     }
 
-    public async Task<GatewayVerificationResultDto> VerifyPaymentAsync(string authority, int amount)
+    public async Task<GatewayVerificationResultDto> VerifyPaymentAsync(
+        string authority,
+        int amount)
     {
         var verifyUrl = _settings.IsSandbox
             ? "https://sandbox.zarinpal.com/pg/v4/payment/verify.json"

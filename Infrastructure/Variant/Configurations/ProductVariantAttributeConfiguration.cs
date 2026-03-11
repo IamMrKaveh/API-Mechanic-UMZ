@@ -1,3 +1,5 @@
+using Domain.Variant.Entities;
+
 namespace Infrastructure.Variant.Configurations;
 
 public sealed class ProductVariantAttributeConfiguration : IEntityTypeConfiguration<ProductVariantAttribute>

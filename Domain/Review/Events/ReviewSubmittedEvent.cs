@@ -1,15 +1,9 @@
 namespace Domain.Review.Events;
 
-public sealed class ReviewSubmittedEvent : DomainEvent
+public sealed class ReviewSubmittedEvent(ProductReviewId reviewId, int productId, int userId, int rating) : DomainEvent
 {
-    public int ReviewId { get; }
-    public int ProductId { get; }
-    public int UserId { get; }
-
-    public ReviewSubmittedEvent(int reviewId, int productId, int userId)
-    {
-        ReviewId = reviewId;
-        ProductId = productId;
-        UserId = userId;
-    }
+    public ProductReviewId ReviewId { get; } = reviewId;
+    public int ProductId { get; } = productId;
+    public int UserId { get; } = userId;
+    public int Rating { get; } = rating;
 }

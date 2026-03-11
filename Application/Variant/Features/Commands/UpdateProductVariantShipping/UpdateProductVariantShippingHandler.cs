@@ -1,3 +1,7 @@
+using Application.Common.Models;
+using Domain.Shipping.Interfaces;
+using Domain.Variant.Interfaces;
+
 namespace Application.Variant.Features.Commands.UpdateProductVariantShipping;
 
 public class UpdateProductVariantShippingHandler : IRequestHandler<UpdateProductVariantShippingCommand, ServiceResult>

@@ -15,8 +15,8 @@ public class VariantMustHaveValidPricingRule : IBusinessRule
 
     public bool IsBroken()
     {
-        if (_sellingPrice < _purchasePrice) return true; 
-        if (_originalPrice > 0 && _sellingPrice > _originalPrice) return true; 
+        if (_sellingPrice < _purchasePrice) return true;
+        if (_originalPrice > 0 && _sellingPrice > _originalPrice) return true;
         return false;
     }
 

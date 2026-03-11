@@ -2,33 +2,18 @@ using SortOrder = Elastic.Clients.Elasticsearch.SortOrder;
 
 namespace Infrastructure.Search.Services;
 
-public class ElasticSearchService : ISearchService
+public sealed class ElasticsearchService : ISearchService
 {
-    private readonly ElasticsearchClient _client;
-    private readonly ILogger<ElasticSearchService> _logger;
+    private readonly ElasticClient _client;
+    private readonly ElasticsearchIndexOptions _indexes;
+    private readonly ILogger<ElasticsearchService> _logger;
     private readonly IConfiguration _configuration;
     private readonly Dictionary<string, float> _fieldBoosts;
 
-    public ElasticSearchService(
-        ElasticsearchClient client,
-        ILogger<ElasticSearchService> logger,
-        IConfiguration configuration)
+    public ElasticsearchService(ElasticClient client, IOptions<ElasticsearchOptions> options)
     {
         _client = client;
-        _logger = logger;
-        _configuration = configuration;
-
-        _fieldBoosts = configuration
-            .GetSection("Search:FieldBoosts")
-            .Get<Dictionary<string, float>>() ?? new Dictionary<string, float>
-            {
-                { "name", 5 },
-                { "categoryName", 3 },
-                { "BrandName", 2 },
-                { "description", 1 },
-                { "brand", 2.5f },
-                { "tags", 2 }
-            };
+        _indexes = options.Value.Indexes;
     }
 
     public async Task<SearchResultDto<ProductSearchResultItemDto>> SearchProductsAsync(
@@ -220,6 +205,15 @@ public class ElasticSearchService : ISearchService
         };
     }
 
+    public async Task<SearchResult<ProductSearchDocument>> SearchAsync(string query, CancellationToken ct)
+    {
+        var response = await _client.SearchAsync<ProductSearchDocument>(s => s
+            .Index(_indexes.Products)
+            .Query(q => q.MultiMatch(m => m.Query(query))), ct);
+
+        return MapToSearchResult(response);
+    }
+
     public async Task<List<string>> GetSuggestionsAsync(
         string query,
         int maxSuggestions = 10,
@@ -287,55 +281,26 @@ public class ElasticSearchService : ISearchService
         }
     }
 
-    public async Task IndexProductAsync(ProductSearchDocument document, CancellationToken ct = default)
+    public async Task IndexProductAsync(ProductSearchDocument document, CancellationToken ct)
     {
-        var response = await _client.IndexAsync(document, i => i
-            .Index("products_v1")
-            .Id(document.ProductId)
-            .Refresh(Refresh.WaitFor), ct);
-
-        if (!response.IsValidResponse)
-        {
-            _logger.LogError("Failed to index product {ProductId}: {Error}", document.ProductId, response.DebugInformation);
-            throw new InvalidOperationException($"Failed to index product {document.ProductId}");
-        }
-
-        _logger.LogInformation("Successfully indexed product {ProductId}", document.ProductId);
+        await _client.IndexAsync(document, i => i
+            .Index(_indexes.Products)
+            .Refresh(Refresh.False), ct);
     }
 
-    public async Task IndexCategoryAsync(CategorySearchDocument document, CancellationToken ct = default)
+    public async Task IndexCategoryAsync(CategorySearchDocument document, CancellationToken ct)
     {
-        var response = await _client.IndexAsync(document, i => i
-            .Index("categories_v1")
-            .Id(document.CategoryId)
-            .Refresh(Refresh.WaitFor), ct);
-
-        if (!response.IsValidResponse)
-        {
-            _logger.LogError("Failed to index category {CategoryId}: {Error}", document.CategoryId, response.DebugInformation);
-            throw new InvalidOperationException($"Failed to index category {document.CategoryId}");
-        }
-
-        _logger.LogInformation("Successfully indexed category {CategoryId}", document.CategoryId);
+        await _client.IndexAsync(document, i => i
+            .Index(_indexes.Categories)
+            .Refresh(Refresh.False), ct);
     }
 
-    public async Task IndexBrandAsync(BrandSearchDocument document, CancellationToken ct = default)
+    public async Task IndexBrandAsync(BrandSearchDocument document, CancellationToken ct)
     {
-        var response = await _client.IndexAsync(document, i => i
-            .Index("Brands_v1")
-            .Id(document.BrandId)
-            .Refresh(Refresh.WaitFor), ct);
-
-        if (!response.IsValidResponse)
-        {
-            _logger.LogError("Failed to index category group {BrandId}: {Error}", document.BrandId, response.DebugInformation);
-            throw new InvalidOperationException($"Failed to index category group {document.BrandId}");
-        }
-
-        _logger.LogInformation("Successfully indexed category group {BrandId}", document.BrandId);
+        await _client.IndexAsync(document, i => i
+            .Index(_indexes.Brands)
+            .Refresh(Refresh.False), ct);
     }
-
-    
 
     private async Task<List<ProductSearchResultItemDto>> SearchProductsInternalAsync(
         string query, int maxResults, CancellationToken ct)

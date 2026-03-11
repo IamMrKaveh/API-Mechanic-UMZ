@@ -56,6 +56,24 @@ public sealed class PaymentStatus : ValueObject
         };
     }
 
+    public static Result<PaymentStatus> TryParse(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Result<PaymentStatus>.Success(Pending);
+
+        return value.ToLowerInvariant() switch
+        {
+            "pending" => Result<PaymentStatus>.Success(Pending),
+            "processing" => Result<PaymentStatus>.Success(Processing),
+            "success" => Result<PaymentStatus>.Success(Success),
+            "failed" => Result<PaymentStatus>.Success(Failed),
+            "expired" => Result<PaymentStatus>.Success(Expired),
+            "cancelled" => Result<PaymentStatus>.Success(Cancelled),
+            "refunded" => Result<PaymentStatus>.Success(Refunded),
+            _ => Result<PaymentStatus>.Failure($"وضعیت پرداخت '{value}' نامعتبر است.")
+        };
+    }
+
     public static IEnumerable<PaymentStatus> GetAll()
     {
         yield return Pending;
@@ -77,23 +95,23 @@ public sealed class PaymentStatus : ValueObject
         return GetAll().Where(s => !s.IsFinal);
     }
 
-    public bool IsSuccess() => this == Success;
+    public bool IsSuccess() => Value == Success.Value;
 
-    public bool IsPending() => this == Pending;
+    public bool IsPending() => Value == Pending.Value;
 
-    public bool IsProcessing() => this == Processing;
+    public bool IsProcessing() => Value == Processing.Value;
 
-    public bool IsFailed() => this == Failed;
+    public bool IsFailed() => Value == Failed.Value;
 
-    public bool IsExpired() => this == Expired;
+    public bool IsExpired() => Value == Expired.Value;
 
-    public bool IsCancelled() => this == Cancelled;
+    public bool IsCancelled() => Value == Cancelled.Value;
 
-    public bool IsRefunded() => this == Refunded;
+    public bool IsRefunded() => Value == Refunded.Value;
 
     public bool CanTransitionTo(PaymentStatus newStatus)
     {
-        if (IsFinal && newStatus != Refunded)
+        if (IsFinal && newStatus.Value != Refunded.Value)
             return false;
 
         return Value switch
@@ -115,25 +133,4 @@ public sealed class PaymentStatus : ValueObject
     public static implicit operator string(PaymentStatus status) => status.Value;
 
     public static implicit operator int(PaymentStatus status) => status.Order;
-
-    public static bool operator ==(PaymentStatus? left, PaymentStatus? right)
-    {
-        if (left is null && right is null) return true;
-        if (left is null || right is null) return false;
-        return left.Value == right.Value;
-    }
-
-    public static bool operator !=(PaymentStatus? left, PaymentStatus? right) => !(left == right);
-
-    public override bool Equals(object? obj)
-    {
-        if (obj is PaymentStatus other)
-            return Value == other.Value;
-        return false;
-    }
-
-    public override int GetHashCode()
-    {
-        return Value.GetHashCode();
-    }
 }

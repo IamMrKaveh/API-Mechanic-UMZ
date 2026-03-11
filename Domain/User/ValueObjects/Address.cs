@@ -1,3 +1,5 @@
+using Domain.Common.Utilities;
+
 namespace Domain.User.ValueObjects;
 
 public sealed class Address : ValueObject
@@ -44,8 +46,8 @@ public sealed class Address : ValueObject
             ValidateLongitude(longitude.Value);
 
         return new Address(
-            NormalizePersian(province),
-            NormalizePersian(city),
+            PersianTextNormalizer.Normalize(province),
+            PersianTextNormalizer.Normalize(city),
             street.Trim(),
             NormalizePostalCode(postalCode),
             latitude,
@@ -84,8 +86,6 @@ public sealed class Address : ValueObject
     {
         return new Address(Province, City, Street, PostalCode, null, null);
     }
-
-    #region Validation Methods
 
     private static void ValidateProvince(string province)
     {
@@ -137,14 +137,6 @@ public sealed class Address : ValueObject
             throw new DomainException("طول جغرافیایی نامعتبر است.");
     }
 
-    private static string NormalizePersian(string text)
-    {
-        return text.Trim()
-            .Replace("ي", "ی")
-            .Replace("ك", "ک")
-            .Replace("ى", "ی");
-    }
-
     private static string NormalizePostalCode(string postalCode)
     {
         return new string(postalCode.Where(char.IsDigit).ToArray())
@@ -153,8 +145,6 @@ public sealed class Address : ValueObject
             .Replace("۶", "6").Replace("۷", "7").Replace("۸", "8")
             .Replace("۹", "9");
     }
-
-    #endregion Validation Methods
 
     protected override IEnumerable<object> GetEqualityComponents()
     {

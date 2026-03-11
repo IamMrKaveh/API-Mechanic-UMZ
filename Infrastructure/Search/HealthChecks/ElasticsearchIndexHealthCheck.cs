@@ -1,22 +1,16 @@
 ﻿namespace Infrastructure.Search.HealthChecks;
 
-public class ElasticsearchIndexHealthCheck : IHealthCheck
+public class ElasticsearchIndexHealthCheck(
+    ElasticsearchClient client,
+    ILogger<ElasticsearchIndexHealthCheck> logger) : IHealthCheck
 {
-    private readonly ElasticsearchClient _client;
-    private readonly ILogger<ElasticsearchIndexHealthCheck> _logger;
+    private readonly ElasticsearchClient _client = client;
+    private readonly ILogger<ElasticsearchIndexHealthCheck> _logger = logger;
     private readonly string[] _requiredIndices = { "products_v1", "categories_v1", "brands_v1" };
-
-    public ElasticsearchIndexHealthCheck(
-        ElasticsearchClient client,
-        ILogger<ElasticsearchIndexHealthCheck> logger)
-    {
-        _client = client;
-        _logger = logger;
-    }
 
     public async Task<HealthCheckResult> CheckHealthAsync(
     HealthCheckContext context,
-    CancellationToken cancellationToken = default)
+    CancellationToken ct = default)
     {
         try
         {
@@ -27,7 +21,7 @@ public class ElasticsearchIndexHealthCheck : IHealthCheck
             {
                 var existsResponse = await _client.Indices.ExistsAsync(
                     indexName,
-                    cancellationToken: cancellationToken);
+                    cancellationToken: ct);
 
                 if (!existsResponse.Exists)
                 {
@@ -37,7 +31,7 @@ public class ElasticsearchIndexHealthCheck : IHealthCheck
 
                 var statsResponse = await _client.Indices.StatsAsync(
                     indices: indexName,
-                    cancellationToken: cancellationToken);
+                    cancellationToken: ct);
 
                 if (statsResponse.IsValidResponse &&
                     statsResponse.Indices != null &&

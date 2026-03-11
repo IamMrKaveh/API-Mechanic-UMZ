@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Application.Location.Features.Queries.GetCities;
 
 public record GetStatesQuery : IRequest<ServiceResult<IEnumerable<StateDto>>>;

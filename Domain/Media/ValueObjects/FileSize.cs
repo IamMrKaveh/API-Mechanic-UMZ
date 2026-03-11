@@ -4,7 +4,7 @@ public sealed class FileSize : ValueObject, IComparable<FileSize>
 {
     public long Bytes { get; }
 
-    private const long MaxSizeBytes = 100 * 1024 * 1024; 
+    private const long MaxSizeBytes = 100 * 1024 * 1024;
 
     private FileSize(long bytes)
     {
