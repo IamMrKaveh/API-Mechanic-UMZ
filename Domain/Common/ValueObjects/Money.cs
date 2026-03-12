@@ -64,7 +64,21 @@ public sealed record Money
         return Amount >= other.Amount;
     }
 
+    public bool IsLessThan(Money other)
+    {
+        EnsureSameCurrency(other);
+        return Amount < other.Amount;
+    }
+
+    public bool IsLessThanOrEqual(Money other)
+    {
+        EnsureSameCurrency(other);
+        return Amount <= other.Amount;
+    }
+
     public bool IsZero => Amount == 0;
+
+    public bool IsPositive => Amount > 0;
 
     public string ToTomanString() => $"{Amount:N0} تومان";
 
@@ -74,11 +88,11 @@ public sealed record Money
 
     public static bool operator >(Money left, Money right) => left.IsGreaterThan(right);
 
-    public static bool operator <(Money left, Money right) => right.IsGreaterThan(left);
+    public static bool operator <(Money left, Money right) => left.IsLessThan(right);
 
     public static bool operator >=(Money left, Money right) => left.IsGreaterThanOrEqual(right);
 
-    public static bool operator <=(Money left, Money right) => right.IsGreaterThanOrEqual(left);
+    public static bool operator <=(Money left, Money right) => left.IsLessThanOrEqual(right);
 
     private void EnsureSameCurrency(Money other)
     {

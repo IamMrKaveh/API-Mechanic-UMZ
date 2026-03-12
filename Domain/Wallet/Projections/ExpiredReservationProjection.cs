@@ -1,8 +1,8 @@
 ﻿namespace Domain.Wallet.Projections;
 
 public sealed record ExpiredReservationProjection(
-    int ReservationId,
-    int WalletId,
-    decimal Amount,
-    int OrderId,
+    WalletReservationId ReservationId,
+    WalletId WalletId,
+    Money Amount,
+    string Purpose,
     DateTime ExpiresAt);

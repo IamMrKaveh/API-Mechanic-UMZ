@@ -1,11 +1,10 @@
-﻿using Domain.Wallet.ValueObjects;
-
-namespace Domain.Wallet.Aggregates;
+﻿namespace Domain.Wallet.Aggregates;
 
 public sealed class WalletLedgerEntry : AggregateRoot<WalletLedgerEntryId>
 {
     private WalletLedgerEntry()
-    { }
+    {
+    }
 
     public WalletId WalletId { get; private set; } = default!;
     public UserId OwnerId { get; private set; } = default!;
@@ -14,6 +13,7 @@ public sealed class WalletLedgerEntry : AggregateRoot<WalletLedgerEntryId>
     public WalletTransactionType TransactionType { get; private set; }
     public string Description { get; private set; } = default!;
     public string ReferenceId { get; private set; } = default!;
+    public string? IdempotencyKey { get; private set; }
     public DateTime OccurredAt { get; private set; }
 
     public static WalletLedgerEntry Create(
@@ -24,8 +24,17 @@ public sealed class WalletLedgerEntry : AggregateRoot<WalletLedgerEntryId>
         Money balanceAfter,
         WalletTransactionType transactionType,
         string description,
-        string referenceId)
+        string referenceId,
+        string? idempotencyKey = null)
     {
+        Guard.Against.Null(id, nameof(id));
+        Guard.Against.Null(walletId, nameof(walletId));
+        Guard.Against.Null(ownerId, nameof(ownerId));
+        Guard.Against.Null(amount, nameof(amount));
+        Guard.Against.Null(balanceAfter, nameof(balanceAfter));
+        Guard.Against.NullOrWhiteSpace(description, nameof(description));
+        Guard.Against.NullOrWhiteSpace(referenceId, nameof(referenceId));
+
         var entry = new WalletLedgerEntry
         {
             Id = id,
@@ -36,6 +45,7 @@ public sealed class WalletLedgerEntry : AggregateRoot<WalletLedgerEntryId>
             TransactionType = transactionType,
             Description = description,
             ReferenceId = referenceId,
+            IdempotencyKey = idempotencyKey,
             OccurredAt = DateTime.UtcNow
         };
 
@@ -43,5 +53,16 @@ public sealed class WalletLedgerEntry : AggregateRoot<WalletLedgerEntryId>
             id, walletId, ownerId, amount, balanceAfter, transactionType, description, referenceId));
 
         return entry;
+    }
+
+    public bool IsCredit => TransactionType == WalletTransactionType.Credit;
+
+    public bool IsDebit => TransactionType == WalletTransactionType.Debit || TransactionType == WalletTransactionType.ReservationConfirmed;
+
+    public bool MatchesIdempotencyKey(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(IdempotencyKey))
+            return false;
+        return string.Equals(IdempotencyKey, key.Trim(), StringComparison.Ordinal);
     }
 }
