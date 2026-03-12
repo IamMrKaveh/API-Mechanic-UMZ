@@ -1,9 +1,9 @@
 namespace Domain.Variant.Specifications;
 
-public class InStockVariantSpecification : Specification<ProductVariant>
+public class InStockVariantSpecification : Specification<Inventory.Aggregates.Inventory>
 {
-    public override Expression<Func<ProductVariant, bool>> ToExpression()
+    public override Expression<Func<Inventory.Aggregates.Inventory, bool>> ToExpression()
     {
-        return v => v.IsUnlimited || (v.StockQuantity - v.ReservedQuantity) > 0;
+        return i => i.IsUnlimited || i.AvailableQuantity > 0;
     }
 }

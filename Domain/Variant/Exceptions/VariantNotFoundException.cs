@@ -1,7 +1,24 @@
 namespace Domain.Variant.Exceptions;
 
-public sealed class VariantNotFoundException(int variantId, int? productId = null) : DomainException($"واریانت با شناسه {variantId} یافت نشد.")
+public sealed class VariantNotFoundException : DomainException
 {
-    public int VariantId { get; } = variantId;
-    public int? ProductId { get; } = productId;
+    public ProductVariantId? VariantId { get; }
+    public ProductId? ProductId { get; }
+
+    public VariantNotFoundException(ProductVariantId variantId)
+        : base($"واریانت با شناسه {variantId} یافت نشد.")
+    {
+        VariantId = variantId;
+    }
+
+    public VariantNotFoundException(ProductVariantId variantId, ProductId productId)
+        : base($"واریانت با شناسه {variantId} برای محصول {productId} یافت نشد.")
+    {
+        VariantId = variantId;
+        ProductId = productId;
+    }
+
+    public VariantNotFoundException(string sku)
+        : base($"واریانت با کد SKU '{sku}' یافت نشد.")
+    { }
 }

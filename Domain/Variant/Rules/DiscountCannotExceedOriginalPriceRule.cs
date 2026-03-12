@@ -1,28 +1,20 @@
 namespace Domain.Variant.Rules;
 
-public sealed class DiscountCannotExceedOriginalPriceRule : IBusinessRule
+public sealed class DiscountCannotExceedOriginalPriceRule(Money originalPrice, Money discountedPrice) : IBusinessRule
 {
-    private readonly decimal _originalPrice;
-    private readonly decimal _discountedPrice;
-    private readonly decimal _purchasePrice;
-
-    public DiscountCannotExceedOriginalPriceRule(decimal originalPrice, decimal discountedPrice, decimal purchasePrice)
-    {
-        _originalPrice = originalPrice;
-        _discountedPrice = discountedPrice;
-        _purchasePrice = purchasePrice;
-    }
+    private readonly Money _originalPrice = originalPrice;
+    private readonly Money _discountedPrice = discountedPrice;
 
     public bool IsBroken()
     {
-        if (_discountedPrice > _originalPrice)
+        if (_discountedPrice.Amount > _originalPrice.Amount)
             return true;
 
-        if (_discountedPrice < _purchasePrice)
+        if (_discountedPrice.Amount < 0)
             return true;
 
         return false;
     }
 
-    public string Message => "قیمت تخفیف‌خورده نمی‌تواند بیشتر از قیمت اصلی یا کمتر از قیمت خرید باشد.";
+    public string Message => "قیمت تخفیف‌خورده نمی‌تواند بیشتر از قیمت اصلی یا منفی باشد.";
 }
