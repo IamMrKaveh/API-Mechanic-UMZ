@@ -1,7 +1,7 @@
 namespace Domain.User.Events;
 
-public class UserCreatedEvent(int userId, string phoneNumber) : DomainEvent
+public class UserCreatedEvent(UserId userId, string phoneNumber) : DomainEvent
 {
-    public int UserId { get; } = userId;
+    public UserId UserId { get; } = userId;
     public string PhoneNumber { get; } = phoneNumber;
 }

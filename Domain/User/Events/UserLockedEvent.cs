@@ -1,7 +1,8 @@
-namespace Domain.User.Events;
+﻿namespace Domain.User.Events;
 
-public sealed record UserLoginFailedEvent(
+public sealed record UserLockedEvent(
     UserId UserId,
+    DateTime LockoutEnd,
     int FailedAttempts) : IDomainEvent
 {
     public Guid EventId { get; } = Guid.NewGuid();

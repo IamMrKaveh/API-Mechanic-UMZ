@@ -1,8 +1,8 @@
-namespace Domain.User.Events;
+﻿namespace Domain.User.Events;
 
-public sealed record UserDeletedEvent(
+public sealed record UserAddressUpdatedEvent(
     UserId UserId,
-    int? DeletedBy) : IDomainEvent
+    UserAddressId AddressId) : IDomainEvent
 {
     public Guid EventId { get; } = Guid.NewGuid();
     public DateTime OccurredAt { get; } = DateTime.UtcNow;

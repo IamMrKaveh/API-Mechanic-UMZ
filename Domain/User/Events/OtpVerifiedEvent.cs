@@ -1,6 +1,6 @@
 namespace Domain.User.Events;
 
-public class OtpVerifiedEvent(int userId) : DomainEvent
+public class OtpVerifiedEvent(UserId userId) : DomainEvent
 {
-    public int UserId { get; } = userId;
+    public UserId UserId { get; } = userId;
 }

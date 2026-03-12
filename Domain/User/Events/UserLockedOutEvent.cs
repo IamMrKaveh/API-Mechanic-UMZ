@@ -1,7 +1,9 @@
 namespace Domain.User.Events;
 
-public class UserLockedOutEvent(int userId, DateTime lockoutEndTime) : DomainEvent
+public sealed record UserLockedOutEvent(
+    UserId UserId,
+    DateTime LockoutEnd) : IDomainEvent
 {
-    public int UserId { get; } = userId;
-    public DateTime LockoutEndTime { get; } = lockoutEndTime;
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }
