@@ -1,24 +1,34 @@
 namespace Domain.Wishlist.Aggregates;
 
-public class Wishlist : Entity
+public sealed class Wishlist : AggregateRoot<WishlistId>, IAuditable
 {
-    public int UserId { get; private set; }
-    public int ProductId { get; private set; }
-    public DateTime CreatedAt { get; private set; }
-
-    public User.Aggregates.User User { get; private set; } = null!;
-    public Product.Product Product { get; private set; } = null!;
-
     private Wishlist()
     { }
 
-    public static Wishlist Create(int userId, int productId)
+    public UserId UserId { get; private set; } = default!;
+    public ProductId ProductId { get; private set; } = default!;
+    public DateTime CreatedAt { get; private set; }
+    public DateTime? UpdatedAt { get; private set; }
+
+    private Wishlist(WishlistId id, UserId userId, ProductId productId) : base(id)
     {
-        return new Wishlist
-        {
-            UserId = userId,
-            ProductId = productId,
-            CreatedAt = DateTime.UtcNow
-        };
+        UserId = userId;
+        ProductId = productId;
+        CreatedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new WishlistItemAddedEvent(id, userId, productId));
+    }
+
+    public static Wishlist Create(UserId userId, ProductId productId)
+    {
+        Guard.Against.Null(userId, nameof(userId));
+        Guard.Against.Null(productId, nameof(productId));
+
+        return new Wishlist(WishlistId.NewId(), userId, productId);
+    }
+
+    public void Touch()
+    {
+        UpdatedAt = DateTime.UtcNow;
     }
 }
