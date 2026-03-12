@@ -1,17 +1,10 @@
 namespace Domain.Variant.Rules;
 
-public sealed class StockCannotBeNegativeRule : IBusinessRule
+public sealed class StockCannotBeNegativeRule(int currentStock, int requestedDeduction, bool isUnlimited) : IBusinessRule
 {
-    private readonly int _currentStock;
-    private readonly int _requestedDeduction;
-    private readonly bool _isUnlimited;
-
-    public StockCannotBeNegativeRule(int currentStock, int requestedDeduction, bool isUnlimited)
-    {
-        _currentStock = currentStock;
-        _requestedDeduction = requestedDeduction;
-        _isUnlimited = isUnlimited;
-    }
+    private readonly int _currentStock = currentStock;
+    private readonly int _requestedDeduction = requestedDeduction;
+    private readonly bool _isUnlimited = isUnlimited;
 
     public bool IsBroken()
     {

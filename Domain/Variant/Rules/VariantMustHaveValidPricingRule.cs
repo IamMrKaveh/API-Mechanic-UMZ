@@ -1,24 +1,20 @@
 namespace Domain.Variant.Rules;
 
-public class VariantMustHaveValidPricingRule : IBusinessRule
+public class VariantMustHaveValidPricingRule(Money sellingPrice, Money? compareAtPrice) : IBusinessRule
 {
-    private readonly decimal _purchasePrice;
-    private readonly decimal _sellingPrice;
-    private readonly decimal _originalPrice;
-
-    public VariantMustHaveValidPricingRule(decimal purchasePrice, decimal sellingPrice, decimal originalPrice)
-    {
-        _purchasePrice = purchasePrice;
-        _sellingPrice = sellingPrice;
-        _originalPrice = originalPrice;
-    }
+    private readonly Money _sellingPrice = sellingPrice;
+    private readonly Money? _compareAtPrice = compareAtPrice;
 
     public bool IsBroken()
     {
-        if (_sellingPrice < _purchasePrice) return true;
-        if (_originalPrice > 0 && _sellingPrice > _originalPrice) return true;
+        if (_sellingPrice.Amount <= 0)
+            return true;
+
+        if (_compareAtPrice is not null && _compareAtPrice.Amount < _sellingPrice.Amount)
+            return true;
+
         return false;
     }
 
-    public string Message => "قیمت‌گذاری محصول معتبر نیست (قیمت فروش نباید کمتر از خرید یا بیشتر از قیمت خط‌خورده باشد).";
+    public string Message => "قیمت‌گذاری واریانت معتبر نیست (قیمت فروش باید مثبت باشد و قیمت مقایسه‌ای نباید کمتر از قیمت فروش باشد).";
 }

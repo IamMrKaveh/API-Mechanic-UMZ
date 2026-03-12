@@ -2,62 +2,55 @@ namespace Domain.Variant.ValueObjects;
 
 public sealed class PriceRange : ValueObject
 {
-    public Money MinPrice { get; }
-    public Money MaxPrice { get; }
+    public Money Min { get; }
+    public Money Max { get; }
 
-    private PriceRange(Money minPrice, Money maxPrice)
+    private PriceRange(Money min, Money max)
     {
-        MinPrice = minPrice;
-        MaxPrice = maxPrice;
+        Min = min;
+        Max = max;
     }
 
-    public static PriceRange Create(Money minPrice, Money maxPrice)
+    public static PriceRange Create(Money min, Money max)
     {
-        Guard.Against.Null(minPrice, nameof(minPrice));
-        Guard.Against.Null(maxPrice, nameof(maxPrice));
+        Guard.Against.Null(min, nameof(min));
+        Guard.Against.Null(max, nameof(max));
 
-        if (minPrice.Amount > maxPrice.Amount)
-            throw new DomainException("حداقل قیمت نمی‌تواند بیشتر از حداکثر قیمت باشد.");
+        if (min.Amount < 0)
+            throw new DomainException("حداقل قیمت نمی‌تواند منفی باشد.");
 
-        return new PriceRange(minPrice, maxPrice);
+        if (max.Amount < min.Amount)
+            throw new DomainException("حداکثر قیمت نمی‌تواند کمتر از حداقل قیمت باشد.");
+
+        return new PriceRange(min, max);
     }
 
-    public static PriceRange FromVariants(IEnumerable<ProductVariant> variants)
+    public static PriceRange Single(Money price)
     {
-        var activeVariants = variants.Where(v => v.IsActive).ToList();
-
-        if (!activeVariants.Any())
-            return new PriceRange(Money.Zero(), Money.Zero());
-
-        var min = activeVariants.Min(v => v.SellingPrice);
-        var max = activeVariants.Max(v => v.SellingPrice);
-
-        return new PriceRange(
-            Money.FromDecimal(min != null ? min.Amount : 0m),
-            Money.FromDecimal(max != null ? max.Amount : 0m));
+        Guard.Against.Null(price, nameof(price));
+        return new PriceRange(price, price);
     }
 
-    public bool IsSinglePrice => MinPrice.Amount == MaxPrice.Amount;
-
-    public Money GetDifference() => MaxPrice.Subtract(MinPrice);
+    public bool IsSinglePrice => Min.Amount == Max.Amount;
 
     public bool Contains(Money price)
     {
-        return price.Amount >= MinPrice.Amount && price.Amount <= MaxPrice.Amount;
+        Guard.Against.Null(price, nameof(price));
+        return price.Amount >= Min.Amount && price.Amount <= Max.Amount;
     }
 
     public string ToDisplayString()
     {
         if (IsSinglePrice)
-            return MinPrice.ToTomanString();
+            return Min.ToTomanString();
 
-        return $"{MinPrice.ToTomanString()} تا {MaxPrice.ToTomanString()}";
+        return $"{Min.ToTomanString()} - {Max.ToTomanString()}";
     }
 
     protected override IEnumerable<object> GetEqualityComponents()
     {
-        yield return MinPrice;
-        yield return MaxPrice;
+        yield return Min;
+        yield return Max;
     }
 
     public override string ToString() => ToDisplayString();

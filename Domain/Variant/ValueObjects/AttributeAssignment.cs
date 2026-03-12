@@ -1,8 +1,19 @@
-﻿using Domain.Attribute.ValueObjects;
-
-namespace Domain.Variant.ValueObjects;
+﻿namespace Domain.Variant.ValueObjects;
 
 public sealed record AttributeAssignment(
-    AttributeId AttributeId,
+    AttributeTypeId AttributeId,
     AttributeValueId ValueId,
-    string DisplayValue);
+    string DisplayValue)
+{
+    public static AttributeAssignment Create(
+        AttributeTypeId attributeId,
+        AttributeValueId valueId,
+        string displayValue)
+    {
+        Guard.Against.Null(attributeId, nameof(attributeId));
+        Guard.Against.Null(valueId, nameof(valueId));
+        Guard.Against.NullOrWhiteSpace(displayValue, nameof(displayValue));
+
+        return new AttributeAssignment(attributeId, valueId, displayValue.Trim());
+    }
+}

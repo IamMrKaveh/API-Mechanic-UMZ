@@ -8,15 +8,23 @@ public interface IVariantRepository
 
     void SetOriginalRowVersion(ProductVariant entity, byte[] rowVersion);
 
-    Task<ProductVariant?> GetByIdAsync(int id, CancellationToken ct = default);
+    Task<ProductVariant?> GetByIdAsync(ProductVariantId id, CancellationToken ct = default);
 
-    Task<ProductVariant?> GetByIdForUpdateAsync(int id, CancellationToken ct = default);
+    Task<ProductVariant?> GetByIdForUpdateAsync(ProductVariantId id, CancellationToken ct = default);
 
-    Task<ProductVariant?> GetWithProductAsync(int id, CancellationToken ct = default);
+    Task<ProductVariant?> GetWithProductAsync(ProductVariantId id, CancellationToken ct = default);
 
-    Task<ProductVariant?> GetVariantWithShippingsAsync(int id, CancellationToken ct = default);
+    Task<ProductVariant?> GetVariantWithShippingsAsync(ProductVariantId id, CancellationToken ct = default);
 
-    Task<IReadOnlyList<ProductVariant>> GetByProductIdAsync(int productId, CancellationToken ct = default);
+    Task<ProductVariant?> GetBySkuAsync(string sku, CancellationToken ct = default);
 
-    Task<IReadOnlyList<ProductVariant>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default);
+    Task<IReadOnlyList<ProductVariant>> GetByProductIdAsync(ProductId productId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<ProductVariant>> GetActiveByProductIdAsync(ProductId productId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<ProductVariant>> GetByIdsAsync(IEnumerable<ProductVariantId> ids, CancellationToken ct = default);
+
+    Task<bool> ExistsBySkuAsync(string sku, ProductVariantId? excludeId = null, CancellationToken ct = default);
+
+    Task<bool> ExistsAsync(ProductVariantId id, CancellationToken ct = default);
 }
