@@ -13,61 +13,52 @@ public sealed class TicketPriority : ValueObject
         SortOrder = sortOrder;
     }
 
-    public static TicketPriority Low => new("Low", "کم", 1);
-    public static TicketPriority Normal => new("Normal", "معمولی", 2);
-    public static TicketPriority High => new("High", "زیاد", 3);
-    public static TicketPriority Urgent => new("Urgent", "فوری", 4);
+    public static readonly TicketPriority Low = new("Low", "کم", 1);
+    public static readonly TicketPriority Normal = new("Normal", "معمولی", 2);
+    public static readonly TicketPriority High = new("High", "زیاد", 3);
+    public static readonly TicketPriority Urgent = new("Urgent", "فوری", 4);
 
-    /// <summary>
-    /// Lenient factory — returns Normal for unknown values (backward-compat).
-    /// </summary>
+    private static readonly IReadOnlyDictionary<string, TicketPriority> All =
+        new Dictionary<string, TicketPriority>(StringComparer.OrdinalIgnoreCase)
+        {
+            [Low.Value] = Low,
+            [Normal.Value] = Normal,
+            [High.Value] = High,
+            [Urgent.Value] = Urgent
+        };
+
     public static TicketPriority FromString(string value)
     {
         if (string.IsNullOrWhiteSpace(value)) return Normal;
-        return value.ToLowerInvariant() switch
-        {
-            "low" => Low,
-            "normal" => Normal,
-            "high" => High,
-            "urgent" => Urgent,
-            _ => Normal
-        };
+
+        if (All.TryGetValue(value, out var priority))
+            return priority;
+
+        return Normal;
     }
 
-    /// <summary>
-    /// Strict factory — throws DomainException for unknown values.
-    /// Use this inside Aggregate Roots to enforce the invariant.
-    /// </summary>
     public static TicketPriority Parse(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new DomainException("اولویت تیکت نمی‌تواند خالی باشد.");
 
-        return value.ToLowerInvariant() switch
-        {
-            "low" => Low,
-            "normal" => Normal,
-            "high" => High,
-            "urgent" => Urgent,
-            _ => throw new DomainException($"اولویت '{value}' نامعتبر است.")
-        };
+        if (All.TryGetValue(value, out var priority))
+            return priority;
+
+        throw new DomainException($"اولویت '{value}' نامعتبر است.");
     }
 
-    public static IEnumerable<TicketPriority> GetAll()
-    {
-        yield return Low;
-        yield return Normal;
-        yield return High;
-        yield return Urgent;
-    }
+    public static IEnumerable<TicketPriority> GetAll() => All.Values.OrderBy(p => p.SortOrder);
 
     public bool IsHighPriority() => SortOrder >= High.SortOrder;
 
     public bool IsUrgent() => this == Urgent;
 
+    public bool IsNormalOrBelow() => SortOrder <= Normal.SortOrder;
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
-        yield return Value;
+        yield return Value.ToLowerInvariant();
     }
 
     public override string ToString() => DisplayName;

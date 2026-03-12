@@ -1,7 +1,19 @@
 namespace Domain.Support.Exceptions;
 
-public sealed class TicketAccessDeniedException(int ticketId, int userId) : DomainException($"کاربر {userId} دسترسی به تیکت {ticketId} را ندارد.")
+public sealed class TicketAccessDeniedException : Common.Exceptions.DomainException
 {
-    public int TicketId { get; } = ticketId;
-    public int UserId { get; } = userId;
+    public TicketAccessDeniedException(TicketId ticketId, UserId userId)
+        : base($"کاربر '{userId}' دسترسی به تیکت '{ticketId}' را ندارد.")
+    {
+        TicketId = ticketId;
+        UserId = userId;
+    }
+
+    public TicketAccessDeniedException(int ticketId, int userId)
+        : base($"کاربر {userId} دسترسی به تیکت {ticketId} را ندارد.")
+    {
+    }
+
+    public TicketId? TicketId { get; }
+    public UserId? UserId { get; }
 }
