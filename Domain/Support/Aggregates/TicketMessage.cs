@@ -1,8 +1,11 @@
-using Domain.Support.Enums;
+using Domain.Common.Abstractions;
+using Domain.Support.Events;
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Support.Aggregates;
 
-public sealed class TicketMessage : AggregateRoot<TicketMessageId>
+public sealed class TicketMessage : Entity<TicketMessageId>
 {
     private TicketMessage()
     { }
@@ -15,14 +18,14 @@ public sealed class TicketMessage : AggregateRoot<TicketMessageId>
     public DateTime? EditedAt { get; private set; }
     public DateTime SentAt { get; private set; }
 
-    public static TicketMessage Create(
+    internal static TicketMessage Create(
         TicketMessageId id,
         TicketId ticketId,
         UserId senderId,
         TicketMessageSenderType senderType,
         string content)
     {
-        var message = new TicketMessage
+        return new TicketMessage
         {
             Id = id,
             TicketId = ticketId,
@@ -32,16 +35,21 @@ public sealed class TicketMessage : AggregateRoot<TicketMessageId>
             IsEdited = false,
             SentAt = DateTime.UtcNow
         };
-
-        message.RaiseDomainEvent(new TicketMessageCreatedEvent(id, ticketId, senderId, senderType));
-        return message;
     }
 
-    public void EditContent(string newContent)
+    internal void EditContent(string newContent)
     {
         Content = newContent;
         IsEdited = true;
         EditedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new TicketMessageEditedEvent(Id, TicketId, SenderId));
     }
+
+    public bool IsFromCustomer() => SenderType == TicketMessageSenderType.Customer;
+
+    public bool IsFromAgent() => SenderType == TicketMessageSenderType.Agent;
+
+    public bool IsFromSystem() => SenderType == TicketMessageSenderType.System;
+
+    public bool WasEditedAfter(TimeSpan threshold) =>
+        IsEdited && EditedAt.HasValue && EditedAt.Value - SentAt > threshold;
 }

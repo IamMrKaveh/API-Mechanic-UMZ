@@ -1,7 +1,9 @@
 namespace Domain.Support.Events;
 
-public sealed class TicketSubjectUpdatedEvent(int ticketId, string newSubject) : DomainEvent
+public sealed record TicketSubjectUpdatedEvent(
+    TicketId TicketId,
+    string NewSubject) : IDomainEvent
 {
-    public int TicketId { get; } = ticketId;
-    public string NewSubject { get; } = newSubject;
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }
