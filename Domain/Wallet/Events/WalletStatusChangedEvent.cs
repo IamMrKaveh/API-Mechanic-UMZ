@@ -1,9 +1,11 @@
 ﻿namespace Domain.Wallet.Events;
 
-public sealed class WalletStatusChangedEvent(int walletId, int userId, WalletStatus newStatus, string? reason) : DomainEvent
+public sealed record WalletStatusChangedEvent(
+    WalletId WalletId,
+    UserId OwnerId,
+    WalletStatus NewStatus,
+    string? Reason) : IDomainEvent
 {
-    public int WalletId { get; } = walletId;
-    public int UserId { get; } = userId;
-    public WalletStatus NewStatus { get; } = newStatus;
-    public string? Reason { get; } = reason;
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }

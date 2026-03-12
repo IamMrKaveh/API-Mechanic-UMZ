@@ -1,9 +1,13 @@
 ﻿namespace Domain.Wallet.Events;
 
-public sealed class WalletReservationCommittedEvent(int walletId, int userId, decimal amount, int orderId) : DomainEvent
+public sealed record WalletReservationCommittedEvent(
+    WalletId WalletId,
+    UserId OwnerId,
+    WalletReservationId ReservationId,
+    Money Amount,
+    string Description,
+    string ReferenceId) : IDomainEvent
 {
-    public int WalletId { get; } = walletId;
-    public int UserId { get; } = userId;
-    public decimal Amount { get; } = amount;
-    public int OrderId { get; } = orderId;
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }

@@ -1,7 +1,6 @@
-﻿using Domain.Wallet.ValueObjects;
+﻿namespace Domain.Wallet.Exceptions;
 
-namespace Domain.Wallet.Exceptions;
-
-public sealed class WalletReservationNotFoundException(WalletReservationId reservationId) : Exception($"Wallet reservation '{reservationId}' was not found.")
+public sealed class WalletReservationNotFoundException(WalletReservationId reservationId) : DomainException($"رزرو کیف پول با شناسه '{reservationId}' یافت نشد.")
 {
+    public WalletReservationId ReservationId { get; } = reservationId;
 }

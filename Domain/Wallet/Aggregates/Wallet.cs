@@ -1,15 +1,12 @@
-﻿using Domain.Wallet.Entities;
-using Domain.Wallet.Exceptions;
-using Domain.Wallet.ValueObjects;
-
-namespace Domain.Wallet.Aggregates;
+﻿namespace Domain.Wallet.Aggregates;
 
 public sealed class Wallet : AggregateRoot<WalletId>
 {
     private readonly List<WalletReservation> _activeReservations = new();
 
     private Wallet()
-    { }
+    {
+    }
 
     public UserId OwnerId { get; private set; } = default!;
     public Money Balance { get; private set; } = default!;
@@ -25,10 +22,14 @@ public sealed class Wallet : AggregateRoot<WalletId>
             .Sum(r => r.Amount.Amount),
         Balance.Currency);
 
-    public Money AvailableBalance => Balance - ReservedBalance;
+    public Money AvailableBalance => Balance.Subtract(ReservedBalance);
 
     public static Wallet Create(WalletId id, UserId ownerId, string currency)
     {
+        Guard.Against.Null(id, nameof(id));
+        Guard.Against.Null(ownerId, nameof(ownerId));
+        Guard.Against.NullOrWhiteSpace(currency, nameof(currency));
+
         var wallet = new Wallet
         {
             Id = id,
@@ -45,13 +46,12 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
     public void Credit(Money amount, string description, string referenceId)
     {
-        if (!IsActive)
-            throw new WalletInactiveException(Id);
+        EnsureActive();
+        ValidateAmount(amount);
+        Guard.Against.NullOrWhiteSpace(description, nameof(description));
+        Guard.Against.NullOrWhiteSpace(referenceId, nameof(referenceId));
 
-        if (amount.Amount <= 0)
-            throw new InvalidWalletAmountException(amount.Amount);
-
-        Balance = Balance + amount;
+        Balance = Balance.Add(amount);
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new WalletCreditedEvent(Id, OwnerId, amount, Balance, description, referenceId));
@@ -59,16 +59,15 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
     public void Debit(Money amount, string description, string referenceId)
     {
-        if (!IsActive)
-            throw new WalletInactiveException(Id);
+        EnsureActive();
+        ValidateAmount(amount);
+        Guard.Against.NullOrWhiteSpace(description, nameof(description));
+        Guard.Against.NullOrWhiteSpace(referenceId, nameof(referenceId));
 
-        if (amount.Amount <= 0)
-            throw new InvalidWalletAmountException(amount.Amount);
-
-        if (AvailableBalance < amount)
+        if (AvailableBalance.IsLessThan(amount))
             throw new InsufficientWalletBalanceException(Id, amount, AvailableBalance);
 
-        Balance = Balance - amount;
+        Balance = Balance.Subtract(amount);
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new WalletDebitedEvent(Id, OwnerId, amount, Balance, description, referenceId));
@@ -76,10 +75,12 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
     public WalletReservation CreateReservation(WalletReservationId reservationId, Money amount, string purpose)
     {
-        if (!IsActive)
-            throw new WalletInactiveException(Id);
+        EnsureActive();
+        Guard.Against.Null(reservationId, nameof(reservationId));
+        ValidateAmount(amount);
+        Guard.Against.NullOrWhiteSpace(purpose, nameof(purpose));
 
-        if (AvailableBalance < amount)
+        if (AvailableBalance.IsLessThan(amount))
             throw new InsufficientWalletBalanceException(Id, amount, AvailableBalance);
 
         var reservation = WalletReservation.Create(reservationId, Id, amount, purpose);
@@ -92,11 +93,14 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
     public void ConfirmReservation(WalletReservationId reservationId, string description, string referenceId)
     {
-        var reservation = _activeReservations.FirstOrDefault(r => r.Id == reservationId)
-            ?? throw new WalletReservationNotFoundException(reservationId);
+        Guard.Against.Null(reservationId, nameof(reservationId));
+        Guard.Against.NullOrWhiteSpace(description, nameof(description));
+        Guard.Against.NullOrWhiteSpace(referenceId, nameof(referenceId));
+
+        var reservation = GetActiveReservation(reservationId);
 
         reservation.Confirm();
-        Balance = Balance - reservation.Amount;
+        Balance = Balance.Subtract(reservation.Amount);
         _activeReservations.Remove(reservation);
         UpdatedAt = DateTime.UtcNow;
 
@@ -105,8 +109,9 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
     public void ReleaseReservation(WalletReservationId reservationId)
     {
-        var reservation = _activeReservations.FirstOrDefault(r => r.Id == reservationId)
-            ?? throw new WalletReservationNotFoundException(reservationId);
+        Guard.Against.Null(reservationId, nameof(reservationId));
+
+        var reservation = GetActiveReservation(reservationId);
 
         reservation.Release();
         _activeReservations.Remove(reservation);
@@ -115,12 +120,57 @@ public sealed class Wallet : AggregateRoot<WalletId>
         RaiseDomainEvent(new WalletReservationReleasedEvent(Id, OwnerId, reservationId, reservation.Amount));
     }
 
-    public void Deactivate()
+    public void Activate()
+    {
+        if (IsActive)
+            return;
+
+        IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new WalletStatusChangedEvent(Id, OwnerId, WalletStatus.Active, null));
+    }
+
+    public void Deactivate(string? reason = null)
     {
         if (!IsActive)
             return;
 
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new WalletStatusChangedEvent(Id, OwnerId, WalletStatus.Suspended, reason));
+    }
+
+    public bool HasSufficientBalance(Money amount)
+    {
+        Guard.Against.Null(amount, nameof(amount));
+        return AvailableBalance.IsGreaterThanOrEqual(amount);
+    }
+
+    public bool HasActiveReservation(WalletReservationId reservationId)
+    {
+        return _activeReservations.Any(r => r.Id == reservationId && r.Status == WalletReservationStatus.Active);
+    }
+
+    private WalletReservation GetActiveReservation(WalletReservationId reservationId)
+    {
+        var reservation = _activeReservations.FirstOrDefault(r => r.Id == reservationId);
+        if (reservation is null)
+            throw new WalletReservationNotFoundException(reservationId);
+        return reservation;
+    }
+
+    private void EnsureActive()
+    {
+        if (!IsActive)
+            throw new WalletInactiveException(Id);
+    }
+
+    private static void ValidateAmount(Money amount)
+    {
+        Guard.Against.Null(amount, nameof(amount));
+        if (amount.Amount <= 0)
+            throw new InvalidWalletAmountException(amount.Amount);
     }
 }

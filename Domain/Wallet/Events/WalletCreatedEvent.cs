@@ -1,10 +1,10 @@
-﻿using Domain.Common.Abstractions;
-using Domain.User.ValueObjects;
-using Domain.Wallet.ValueObjects;
-
-namespace Domain.Wallet.Events;
+﻿namespace Domain.Wallet.Events;
 
 public sealed record WalletCreatedEvent(
     WalletId WalletId,
     UserId OwnerId,
-    string Currency) : IDomainEvent;
+    string Currency) : IDomainEvent
+{
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+}
