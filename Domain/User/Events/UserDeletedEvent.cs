@@ -1,7 +1,9 @@
 namespace Domain.User.Events;
 
-public class UserDeletedEvent(int userId, int? deletedBy) : DomainEvent
+public sealed record UserDeletedEvent(
+    UserId UserId,
+    int? DeletedBy) : IDomainEvent
 {
-    public int UserId { get; } = userId;
-    public int? DeletedBy { get; } = deletedBy;
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }

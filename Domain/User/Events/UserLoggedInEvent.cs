@@ -1,6 +1,7 @@
 namespace Domain.User.Events;
 
-public sealed class UserLoggedInEvent(int userId) : DomainEvent
+public sealed record UserLoggedInEvent(UserId UserId) : IDomainEvent
 {
-    public int UserId { get; } = userId;
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }

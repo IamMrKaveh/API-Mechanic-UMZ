@@ -1,7 +1,9 @@
 namespace Domain.User.Events;
 
-public sealed class UserLoginFailedEvent(int userId, int failedAttempts) : DomainEvent
+public sealed record UserLoginFailedEvent(
+    UserId UserId,
+    int FailedAttempts) : IDomainEvent
 {
-    public int UserId { get; } = userId;
-    public int FailedAttempts { get; } = failedAttempts;
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }

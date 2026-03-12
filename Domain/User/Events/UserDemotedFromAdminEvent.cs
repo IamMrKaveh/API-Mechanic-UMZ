@@ -1,6 +1,7 @@
 namespace Domain.User.Events;
 
-public class UserDemotedFromAdminEvent(int userId) : DomainEvent
+public sealed record UserDemotedFromAdminEvent(UserId UserId) : IDomainEvent
 {
-    public int UserId { get; } = userId;
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }

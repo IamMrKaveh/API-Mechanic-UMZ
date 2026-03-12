@@ -1,6 +1,6 @@
 namespace Domain.User.Events;
 
-public class AllSessionsRevokedEvent(int userId) : DomainEvent
+public class AllSessionsRevokedEvent(UserId userId) : DomainEvent
 {
-    public int UserId { get; } = userId;
+    public UserId UserId { get; } = userId;
 }

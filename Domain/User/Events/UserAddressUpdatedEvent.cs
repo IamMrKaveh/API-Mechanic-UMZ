@@ -1,0 +1,9 @@
+﻿namespace Domain.User.Events;
+
+public sealed record UserAddressUpdatedEvent(
+    UserId UserId,
+    UserAddressId AddressId) : IDomainEvent
+{
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+}

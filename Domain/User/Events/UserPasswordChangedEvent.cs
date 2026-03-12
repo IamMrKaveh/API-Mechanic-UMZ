@@ -1,6 +1,7 @@
-﻿using Domain.Common.Abstractions;
-using Domain.User.ValueObjects;
+﻿namespace Domain.User.Events;
 
-namespace Domain.User.Events;
-
-public sealed record UserPasswordChangedEvent(UserId UserId) : IDomainEvent;
+public sealed record UserPasswordChangedEvent(UserId UserId) : IDomainEvent
+{
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+}
