@@ -7,12 +7,37 @@ public interface IWishlistRepository
         CancellationToken ct = default);
 
     Task RemoveAsync(
-        int userId,
-        int productId,
+        WishlistId wishlistId,
+        CancellationToken ct = default);
+
+    Task RemoveAsync(
+        UserId userId,
+        ProductId productId,
+        CancellationToken ct = default);
+
+    Task<Aggregates.Wishlist?> GetByIdAsync(
+        WishlistId wishlistId,
+        CancellationToken ct = default);
+
+    Task<Aggregates.Wishlist?> GetByUserAndProductAsync(
+        UserId userId,
+        ProductId productId,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<Aggregates.Wishlist>> GetByUserIdAsync(
+        UserId userId,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<Aggregates.Wishlist>> GetByProductIdAsync(
+        ProductId productId,
         CancellationToken ct = default);
 
     Task<bool> ExistsAsync(
-        int userId,
-        int productId,
+        UserId userId,
+        ProductId productId,
+        CancellationToken ct = default);
+
+    Task<int> CountByUserIdAsync(
+        UserId userId,
         CancellationToken ct = default);
 }
