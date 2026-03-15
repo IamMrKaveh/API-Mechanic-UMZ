@@ -2,7 +2,7 @@ namespace Domain.Category.Services;
 
 public class CategoryDomainService
 {
-    public void MoveGroup(Category sourceCategory, Category targetCategory, int groupId)
+    public static void MoveGroup(Aggregates.Category sourceCategory, Aggregates.Category targetCategory, int groupId)
     {
         Guard.Against.Null(sourceCategory, nameof(sourceCategory));
         Guard.Against.Null(targetCategory, nameof(targetCategory));
@@ -23,7 +23,7 @@ public class CategoryDomainService
             new BrandMovedEvent(groupId, oldCategoryId, targetCategory.Id));
     }
 
-    public Result ValidateCategoryMerge(Category sourceCategory, Category targetCategory)
+    public static Result ValidateCategoryMerge(Aggregates.Category sourceCategory, Aggregates.Category targetCategory)
     {
         Guard.Against.Null(sourceCategory, nameof(sourceCategory));
         Guard.Against.Null(targetCategory, nameof(targetCategory));
@@ -46,7 +46,7 @@ public class CategoryDomainService
         return Result.Success();
     }
 
-    public void ReorderCategories(IReadOnlyList<Category> categories, IReadOnlyList<int> orderedIds)
+    public static void ReorderCategories(IReadOnlyList<Aggregates.Category> categories, IReadOnlyList<int> orderedIds)
     {
         var categoryDict = categories
             .Where(c => c.IsActive)

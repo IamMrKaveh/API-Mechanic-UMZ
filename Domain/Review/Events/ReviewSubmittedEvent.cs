@@ -1,3 +1,5 @@
+using Domain.Review.ValueObjects;
+
 namespace Domain.Review.Events;
 
 public sealed class ReviewSubmittedEvent(ProductReviewId reviewId, int productId, int userId, int rating) : DomainEvent

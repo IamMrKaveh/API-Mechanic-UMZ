@@ -1,4 +1,4 @@
-﻿namespace Domain.Variant.ValueObjects;
+﻿namespace Domain.Shipping.ValueObjects;
 
 public sealed record ShippingAssignment(
     ShippingId ShippingId,

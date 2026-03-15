@@ -1,4 +1,7 @@
-﻿namespace Domain.Wallet.Entities;
+﻿using Domain.Wallet.Enums;
+using Domain.Wallet.ValueObjects;
+
+namespace Domain.Wallet.Entities;
 
 public sealed class WalletReservation : Entity<WalletReservationId>
 {

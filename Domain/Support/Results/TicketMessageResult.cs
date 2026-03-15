@@ -1,4 +1,6 @@
-﻿namespace Domain.Support.Results;
+﻿using Domain.Support.Aggregates;
+
+namespace Domain.Support.Results;
 
 public sealed class TicketMessageResult
 {

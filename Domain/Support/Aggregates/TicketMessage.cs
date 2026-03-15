@@ -1,5 +1,4 @@
-using Domain.Common.Abstractions;
-using Domain.Support.Events;
+using Domain.Support.Enums;
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
 

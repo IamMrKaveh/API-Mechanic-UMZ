@@ -1,3 +1,7 @@
+using Domain.Payment.Events;
+using Domain.Payment.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Payment.Aggregates;
 
 public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IAuditable

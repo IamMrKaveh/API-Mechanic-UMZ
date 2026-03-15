@@ -1,4 +1,6 @@
-﻿namespace Domain.Review.Events;
+﻿using Domain.Review.ValueObjects;
+
+namespace Domain.Review.Events;
 
 public sealed class ReviewDeletedEvent(ProductReviewId reviewId, int productId, int? deletedBy) : DomainEvent
 {

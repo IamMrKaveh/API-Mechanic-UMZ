@@ -1,3 +1,7 @@
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
+using Domain.Product.ValueObjects;
+
 namespace Domain.Product.Interfaces;
 
 public interface IProductRepository

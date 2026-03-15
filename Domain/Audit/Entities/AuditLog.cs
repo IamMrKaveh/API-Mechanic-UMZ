@@ -1,3 +1,5 @@
+using Domain.Audit.ValueObjects;
+
 namespace Domain.Audit.Entities;
 
 public sealed class AuditLog : Entity<AuditLogId>

@@ -1,6 +1,9 @@
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Support.Exceptions;
 
-public sealed class TicketAccessDeniedException : Common.Exceptions.DomainException
+public sealed class TicketAccessDeniedException : DomainException
 {
     public TicketAccessDeniedException(TicketId ticketId, UserId userId)
         : base($"کاربر '{userId}' دسترسی به تیکت '{ticketId}' را ندارد.")

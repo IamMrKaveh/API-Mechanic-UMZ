@@ -1,3 +1,5 @@
+using Domain.User.ValueObjects;
+
 namespace Domain.User.Events;
 
 public class OtpGeneratedEvent(UserId userId, string phoneNumber) : DomainEvent

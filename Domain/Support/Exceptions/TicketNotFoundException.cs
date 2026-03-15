@@ -1,6 +1,8 @@
+using Domain.Support.ValueObjects;
+
 namespace Domain.Support.Exceptions;
 
-public sealed class TicketNotFoundException : Common.Exceptions.DomainException
+public sealed class TicketNotFoundException : DomainException
 {
     public TicketNotFoundException(TicketId ticketId)
         : base($"تیکت با شناسه '{ticketId}' یافت نشد.")

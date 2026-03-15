@@ -1,6 +1,9 @@
-namespace Domain.Inventory;
+using Domain.Inventory.Events;
+using Domain.Inventory.ValueObjects;
 
-public sealed class Warehouse : Entity<Warehouse>, IActivatable, IAuditable
+namespace Domain.Inventory.Aggregates;
+
+public sealed class Warehouse : AggregateRoot<int>, IActivatable, IAuditable
 {
     public WarehouseCode Code { get; private set; } = null!;
     public string Name { get; private set; } = null!;
@@ -14,12 +17,11 @@ public sealed class Warehouse : Entity<Warehouse>, IActivatable, IAuditable
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    public ICollection<WarehouseStock> Stocks { get; private set; } = [];
-
     private Warehouse()
     { }
 
     public static Warehouse Create(
+        int id,
         string code,
         string name,
         string city,
@@ -35,6 +37,7 @@ public sealed class Warehouse : Entity<Warehouse>, IActivatable, IAuditable
 
         var warehouse = new Warehouse
         {
+            Id = id,
             Code = codeVo,
             Name = name.Trim(),
             City = city.Trim(),
@@ -46,29 +49,9 @@ public sealed class Warehouse : Entity<Warehouse>, IActivatable, IAuditable
             CreatedAt = DateTime.UtcNow
         };
 
-        warehouse.AddDomainEvent(new WarehouseCreatedEvent(warehouse.Id, warehouse.Code.Value, warehouse.Name));
+        warehouse.RaiseDomainEvent(new WarehouseCreatedEvent(warehouse.Id, warehouse.Code.Value, warehouse.Name));
         return warehouse;
     }
-
-    public WarehouseStock GetOrCreateStock(int variantId)
-    {
-        var stock = Stocks.FirstOrDefault(s => s.VariantId == variantId);
-        if (stock is null)
-        {
-            stock = WarehouseStock.Create(Id, variantId);
-            Stocks.Add(stock);
-        }
-        return stock;
-    }
-
-    public int GetAvailableStock(int variantId)
-    {
-        var stock = Stocks.FirstOrDefault(s => s.VariantId == variantId);
-        return stock?.Available ?? 0;
-    }
-
-    public bool CanFulfill(int variantId, int quantity) =>
-        GetAvailableStock(variantId) >= quantity;
 
     public void Update(string name, string city, string? address, string? phone, int priority)
     {
@@ -80,6 +63,7 @@ public sealed class Warehouse : Entity<Warehouse>, IActivatable, IAuditable
         Phone = phone?.Trim();
         Priority = priority;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
     }
 
     public void Activate()
@@ -88,8 +72,9 @@ public sealed class Warehouse : Entity<Warehouse>, IActivatable, IAuditable
 
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
-        AddDomainEvent(new WarehouseActivatedEvent(Id, Code.Value));
+        RaiseDomainEvent(new WarehouseActivatedEvent(Id, Code.Value));
     }
 
     public void Deactivate()
@@ -98,16 +83,18 @@ public sealed class Warehouse : Entity<Warehouse>, IActivatable, IAuditable
 
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
-        AddDomainEvent(new WarehouseDeactivatedEvent(Id, Code.Value));
+        RaiseDomainEvent(new WarehouseDeactivatedEvent(Id, Code.Value));
     }
 
     public void SetAsDefault()
     {
         IsDefault = true;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
-        AddDomainEvent(new WarehouseSetAsDefaultEvent(Id, Code.Value));
+        RaiseDomainEvent(new WarehouseSetAsDefaultEvent(Id, Code.Value));
     }
 
     public void RequestDeletion(int? deletedBy = null)
@@ -117,7 +104,8 @@ public sealed class Warehouse : Entity<Warehouse>, IActivatable, IAuditable
 
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
-        AddDomainEvent(new WarehouseDeletedEvent(Id, Code.Value, deletedBy));
+        RaiseDomainEvent(new WarehouseDeletedEvent(Id, Code.Value, deletedBy));
     }
 }

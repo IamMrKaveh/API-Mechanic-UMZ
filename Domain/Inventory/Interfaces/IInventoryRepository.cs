@@ -1,3 +1,6 @@
+using Domain.Inventory.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Inventory.Interfaces;
 
 public interface IInventoryRepository

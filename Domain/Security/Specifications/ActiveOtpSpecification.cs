@@ -1,4 +1,6 @@
-﻿namespace Domain.Security.Specifications;
+﻿using Domain.Security.Aggregates;
+
+namespace Domain.Security.Specifications;
 
 public class ActiveOtpSpecification : Specification<UserOtp>
 {

@@ -1,4 +1,6 @@
-﻿namespace Domain.Shipping.Results;
+﻿using Domain.Shipping.ValueObjects;
+
+namespace Domain.Shipping.Results;
 
 public sealed class ShippingCostCalculationResult
 {

@@ -1,3 +1,5 @@
+using Domain.Review.ValueObjects;
+
 namespace Domain.Review.Exceptions;
 
 public sealed class ReviewNotFoundException : DomainException

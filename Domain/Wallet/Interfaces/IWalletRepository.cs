@@ -1,4 +1,10 @@
-﻿namespace Domain.Wallet.Interfaces;
+﻿using Domain.User.ValueObjects;
+using Domain.Wallet.Aggregates;
+using Domain.Wallet.Entities;
+using Domain.Wallet.Projections;
+using Domain.Wallet.ValueObjects;
+
+namespace Domain.Wallet.Interfaces;
 
 public interface IWalletRepository
 {

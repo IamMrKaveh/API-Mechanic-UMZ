@@ -1,3 +1,7 @@
+using Domain.Attribute.Aggregates;
+using Domain.Attribute.Entities;
+using Domain.Attribute.ValueObjects;
+
 namespace Domain.Attribute.Interfaces;
 
 public interface IAttributeRepository

@@ -1,4 +1,6 @@
 ﻿using Domain.Security.Aggregates;
+using Domain.Security.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Security.Interfaces;
 

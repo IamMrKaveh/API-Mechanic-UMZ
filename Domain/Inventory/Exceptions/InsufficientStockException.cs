@@ -1,4 +1,6 @@
-﻿namespace Domain.Inventory.Exceptions;
+﻿using Domain.Variant.ValueObjects;
+
+namespace Domain.Inventory.Exceptions;
 
 public sealed class InsufficientStockException(ProductVariantId variantId, int requested, int available) : Exception($"Insufficient stock for variant '{variantId}'. Requested: {requested}, Available: {available}.")
 {

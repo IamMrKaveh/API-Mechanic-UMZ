@@ -1,3 +1,6 @@
+using Domain.Payment.Aggregates;
+using Domain.Payment.ValueObjects;
+
 namespace Domain.Payment.Interfaces;
 
 public interface IPaymentTransactionRepository

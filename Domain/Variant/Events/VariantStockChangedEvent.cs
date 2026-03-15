@@ -1,3 +1,6 @@
+using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Variant.Events;
 
 public sealed class VariantStockChangedEvent(

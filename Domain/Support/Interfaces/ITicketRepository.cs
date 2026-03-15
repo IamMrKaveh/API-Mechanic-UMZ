@@ -1,3 +1,7 @@
+using Domain.Support.Aggregates;
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Support.Interfaces;
 
 public interface ITicketRepository

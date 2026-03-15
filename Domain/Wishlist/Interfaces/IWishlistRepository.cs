@@ -1,4 +1,8 @@
-﻿namespace Domain.Wishlist.Interfaces;
+﻿using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+using Domain.Wishlist.ValueObjects;
+
+namespace Domain.Wishlist.Interfaces;
 
 public interface IWishlistRepository
 {

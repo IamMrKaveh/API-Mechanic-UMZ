@@ -1,4 +1,7 @@
-namespace Domain.Inventory;
+using Domain.Inventory.ValueObjects;
+using Domain.Variant.ValueObjects;
+
+namespace Domain.Inventory.Entities;
 
 public sealed class StockLedgerEntry : Entity<StockLedgerEntry>, IAuditable
 {

@@ -1,3 +1,11 @@
+using Domain.Discount.Entities;
+using Domain.Discount.Enums;
+using Domain.Discount.Events;
+using Domain.Discount.Exceptions;
+using Domain.Discount.Results;
+using Domain.Discount.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Discount.Aggregates;
 
 public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
@@ -122,6 +130,7 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
 
         UsageCount++;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
         var usage = DiscountUsageRecord.Create(Id, Code, userId, orderId, discountedAmount, UsageCount);
         _usages.Add(usage);
@@ -138,6 +147,7 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
         var restriction = DiscountRestriction.Create(restrictionId, Id, restrictionType, restrictionValue);
         _restrictions.Add(restriction);
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
     }
 
     public void RemoveRestriction(DiscountRestrictionId restrictionId)
@@ -149,6 +159,7 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
 
         _restrictions.Remove(restriction);
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
     }
 
     public void Activate()
@@ -158,6 +169,7 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
 
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
         RaiseDomainEvent(new DiscountCodeActivatedEvent(Id, Code));
     }
 
@@ -168,6 +180,7 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
 
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
         RaiseDomainEvent(new DiscountCodeDeactivatedEvent(Id, Code));
     }
 }

@@ -1,3 +1,5 @@
+using Domain.Order.ValueObjects;
+
 namespace Domain.Order.Rules;
 
 public class OrderMustBeInPendingStateRule(OrderStatusValue currentStatus) : IBusinessRule

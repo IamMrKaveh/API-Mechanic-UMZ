@@ -1,3 +1,5 @@
+using Domain.Variant.Aggregates;
+
 namespace Domain.Variant.Specifications;
 
 public class ActiveVariantSpecification : Specification<ProductVariant>

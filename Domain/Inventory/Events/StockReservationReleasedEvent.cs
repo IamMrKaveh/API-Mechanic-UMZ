@@ -4,8 +4,14 @@ using Domain.Variant.ValueObjects;
 
 namespace Domain.Inventory.Events;
 
-public sealed record StockReservationReleasedEvent(
+public sealed class StockReservationReleasedEvent(
     InventoryId InventoryId,
     ProductVariantId VariantId,
     int QuantityReleased,
-    int TotalReservedQuantity) : IDomainEvent;
+    int TotalReservedQuantity) : DomainEvent
+{
+    public InventoryId InventoryId { get; } = InventoryId;
+    public ProductVariantId VariantId { get; } = VariantId;
+    public int QuantityReleased { get; } = QuantityReleased;
+    public int TotalReservedQuantity { get; } = TotalReservedQuantity;
+}

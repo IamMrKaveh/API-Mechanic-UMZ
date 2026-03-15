@@ -1,3 +1,5 @@
+using Domain.User.ValueObjects;
+
 namespace Domain.User.Events;
 
 public class SessionCreatedEvent(UserId userId, int sessionId, string ipAddress) : DomainEvent

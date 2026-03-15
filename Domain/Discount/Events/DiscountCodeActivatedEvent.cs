@@ -1,4 +1,6 @@
-﻿namespace Domain.Discount.Events;
+﻿using Domain.Discount.ValueObjects;
+
+namespace Domain.Discount.Events;
 
 public sealed class DiscountCodeActivatedEvent : DomainEvent
 {

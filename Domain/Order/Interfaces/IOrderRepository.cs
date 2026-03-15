@@ -1,4 +1,6 @@
-﻿namespace Domain.Order.Interfaces;
+﻿using Domain.Order.ValueObjects;
+
+namespace Domain.Order.Interfaces;
 
 public interface IOrderRepository
 {

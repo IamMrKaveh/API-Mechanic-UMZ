@@ -1,3 +1,6 @@
+using Domain.Brand.Events;
+using Domain.Brand.Exceptions;
+using Domain.Brand.ValueObjects;
 using Slug = Domain.Brand.ValueObjects.Slug;
 
 namespace Domain.Brand.Aggregates;

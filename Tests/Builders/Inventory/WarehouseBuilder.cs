@@ -1,4 +1,6 @@
-﻿namespace Tests.Builders.Inventory;
+﻿using Domain.Inventory.Aggregates;
+
+namespace Tests.Builders.Inventory;
 
 public class WarehouseBuilder
 {

@@ -1,19 +1,26 @@
+using System;
+using System.Linq.Expressions;
+
 namespace Domain.Common.Specifications;
 
-internal class NotSpecification<T> : Specification<T>
+public class NotSpecification<T> : Specification<T>
 {
-    private readonly Specification<T> _spec;
+    private readonly Specification<T> _inner;
 
-    public NotSpecification(Specification<T> spec)
+    public NotSpecification(Specification<T> inner)
     {
-        _spec = spec;
+        _inner = inner;
     }
 
     public override Expression<Func<T, bool>> ToExpression()
     {
-        var expr = _spec.ToExpression();
-        var param = Expression.Parameter(typeof(T), "x");
-        var body = Expression.Not(Expression.Invoke(expr, param));
-        return Expression.Lambda<Func<T, bool>>(body, param);
+        var innerExpression = _inner.ToExpression();
+
+        var parameter = Expression.Parameter(typeof(T));
+        var visitor = new ParameterReplacer(innerExpression.Parameters[0], parameter);
+
+        var inner = visitor.Visit(innerExpression.Body);
+
+        return Expression.Lambda<Func<T, bool>>(Expression.Not(inner!), parameter);
     }
 }

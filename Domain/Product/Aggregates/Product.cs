@@ -1,3 +1,8 @@
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
+using Domain.Product.Events;
+using Domain.Product.ValueObjects;
+
 namespace Domain.Product.Aggregates;
 
 public sealed class Product : AggregateRoot<ProductId>

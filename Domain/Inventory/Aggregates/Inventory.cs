@@ -1,4 +1,10 @@
-﻿namespace Domain.Inventory.Aggregates;
+﻿using Domain.Inventory.Entities;
+using Domain.Inventory.Events;
+using Domain.Inventory.Exceptions;
+using Domain.Inventory.ValueObjects;
+using Domain.Variant.ValueObjects;
+
+namespace Domain.Inventory.Aggregates;
 
 public sealed class Inventory : AggregateRoot<InventoryId>
 {
@@ -59,6 +65,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         StockQuantity += quantity;
         IsUnlimited = false;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
         var entry = StockLedgerEntry.StockIn(
             VariantId,
@@ -68,6 +75,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             referenceNumber,
             reason,
             userId: userId);
+
         _ledgerEntries.Add(entry);
 
         RaiseDomainEvent(new StockIncreasedEvent(Id, VariantId, quantity, StockQuantity, reason));
@@ -85,6 +93,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             StockQuantity -= quantity;
 
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
         var entry = StockLedgerEntry.Adjustment(
             VariantId,
@@ -92,6 +101,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             IsUnlimited ? 0 : StockQuantity,
             reason,
             userId);
+
         _ledgerEntries.Add(entry);
 
         RaiseDomainEvent(new StockDecreasedEvent(Id, VariantId, quantity, IsUnlimited ? -1 : StockQuantity, reason));
@@ -101,6 +111,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     {
         IsUnlimited = true;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
         RaiseDomainEvent(new StockSetUnlimitedEvent(Id, VariantId));
     }
 
@@ -115,6 +126,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         IsUnlimited = false;
         StockQuantity = currentStock;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
     }
 
     public void ReserveStock(int quantity, string referenceNumber, int? orderItemId = null, int? userId = null, string? correlationId = null)
@@ -129,6 +141,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             ReservedQuantity += quantity;
 
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
         var entry = StockLedgerEntry.Reserve(
             VariantId,
@@ -138,6 +151,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             correlationId,
             userId: userId,
             orderItemId: orderItemId);
+
         _ledgerEntries.Add(entry);
 
         RaiseDomainEvent(new StockReservedEvent(Id, VariantId, quantity, ReservedQuantity));
@@ -157,6 +171,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
 
         ReservedQuantity -= actualRelease;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
         var entry = StockLedgerEntry.ReleaseReservation(
             VariantId,
@@ -164,6 +179,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             AvailableQuantity,
             referenceNumber,
             reason);
+
         _ledgerEntries.Add(entry);
 
         RaiseDomainEvent(new StockReservationReleasedEvent(Id, VariantId, actualRelease, ReservedQuantity));
@@ -183,6 +199,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         ReservedQuantity -= quantity;
         StockQuantity -= quantity;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
         var entry = StockLedgerEntry.CommitReservation(
             VariantId,
@@ -190,9 +207,41 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             StockQuantity,
             referenceNumber,
             orderItemId);
+
         _ledgerEntries.Add(entry);
 
-        RaiseDomainEvent(new StockCommittedEvent(VariantId, orderItemId ?? 0, quantity));
+        RaiseDomainEvent(new StockCommittedEvent(VariantId.Value.GetHashCode(), orderItemId ?? 0, quantity));
+    }
+
+    public void ReverseTransaction(string idempotencyKey, string reason, int userId)
+    {
+        if (IsUnlimited)
+            throw new DomainException("امکان برگشت تراکنش برای واریانت نامحدود وجود ندارد.");
+
+        var originalEntry = _ledgerEntries.FirstOrDefault(e => e.IdempotencyKey == idempotencyKey);
+        if (originalEntry is null)
+            throw new DomainException("تراکنش مورد نظر یافت نشد.");
+
+        var reversalDelta = -originalEntry.QuantityDelta;
+        var newStock = StockQuantity + reversalDelta;
+
+        if (newStock < 0)
+            throw new NegativeStockException(VariantId, StockQuantity, Math.Abs(reversalDelta));
+
+        StockQuantity = newStock;
+        UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
+
+        var entry = StockLedgerEntry.Adjustment(
+            VariantId,
+            reversalDelta,
+            StockQuantity,
+            $"برگشت تراکنش: {reason}",
+            userId);
+
+        _ledgerEntries.Add(entry);
+
+        RaiseDomainEvent(new AdjustStockEvent(VariantId.Value.GetHashCode(), StockQuantity, reversalDelta));
     }
 
     public void ReturnStock(int quantity, string reason, int? orderItemId = null, int? userId = null)
@@ -205,6 +254,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
 
         StockQuantity += quantity;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
         var entry = StockLedgerEntry.StockIn(
             VariantId,
@@ -214,15 +264,16 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             null,
             reason,
             userId: userId);
+
         _ledgerEntries.Add(entry);
 
-        RaiseDomainEvent(new StockRestoredEvent(VariantId, 0, StockQuantity, quantity, reason));
+        RaiseDomainEvent(new StockRestoredEvent(VariantId.Value.GetHashCode(), 0, StockQuantity, quantity, reason));
     }
 
     public void AdjustStock(int quantityChange, int userId, string reason)
     {
         if (IsUnlimited)
-            throw new DomainException("واریانت نامحدود قابل تنظی�� دستی نیست.");
+            throw new DomainException("واریانت نامحدود قابل تنظیم دستی نیست.");
 
         var newStock = StockQuantity + quantityChange;
         if (newStock < 0)
@@ -230,6 +281,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
 
         StockQuantity = newStock;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
         var entry = StockLedgerEntry.Adjustment(
             VariantId,
@@ -237,9 +289,10 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             StockQuantity,
             reason,
             userId);
+
         _ledgerEntries.Add(entry);
 
-        RaiseDomainEvent(new AdjustStockEvent(VariantId, StockQuantity, quantityChange));
+        RaiseDomainEvent(new AdjustStockEvent(VariantId.Value.GetHashCode(), StockQuantity, quantityChange));
     }
 
     public void RecordDamage(int quantity, int userId, string reason)
@@ -255,6 +308,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
 
         StockQuantity -= quantity;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
         var entry = StockLedgerEntry.Adjustment(
             VariantId,
@@ -262,6 +316,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             StockQuantity,
             $"ضایعات: {reason}",
             userId);
+
         _ledgerEntries.Add(entry);
     }
 
@@ -276,6 +331,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
 
         StockQuantity = calculatedStockFromTransactions;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
         var entry = StockLedgerEntry.Adjustment(
             VariantId,
@@ -283,6 +339,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             StockQuantity,
             $"انبارگردانی: اختلاف {difference} واحد",
             userId);
+
         _ledgerEntries.Add(entry);
     }
 
@@ -293,6 +350,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
 
         LowStockThreshold = threshold;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
     }
 
     public bool CanFulfill(int quantity) => IsUnlimited || AvailableQuantity >= quantity;

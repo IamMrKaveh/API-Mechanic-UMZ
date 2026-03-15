@@ -1,4 +1,6 @@
-﻿namespace Domain.Support.Exceptions;
+﻿using Domain.Support.ValueObjects;
+
+namespace Domain.Support.Exceptions;
 
 public sealed class TicketMessageNotFoundException(TicketMessageId messageId)
     : DomainException($"پیام تیکت با شناسه '{messageId}' یافت نشد.")

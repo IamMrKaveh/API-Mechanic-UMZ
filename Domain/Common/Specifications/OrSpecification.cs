@@ -1,6 +1,9 @@
+using System;
+using System.Linq.Expressions;
+
 namespace Domain.Common.Specifications;
 
-internal class OrSpecification<T> : Specification<T>
+public class OrSpecification<T> : Specification<T>
 {
     private readonly Specification<T> _left;
     private readonly Specification<T> _right;
@@ -13,13 +16,16 @@ internal class OrSpecification<T> : Specification<T>
 
     public override Expression<Func<T, bool>> ToExpression()
     {
-        var leftExpr = _left.ToExpression();
-        var rightExpr = _right.ToExpression();
-        var param = Expression.Parameter(typeof(T), "x");
-        var body = Expression.OrElse(
-            Expression.Invoke(leftExpr, param),
-            Expression.Invoke(rightExpr, param)
-        );
-        return Expression.Lambda<Func<T, bool>>(body, param);
+        var leftExpression = _left.ToExpression();
+        var rightExpression = _right.ToExpression();
+
+        var parameter = Expression.Parameter(typeof(T));
+        var leftVisitor = new ParameterReplacer(leftExpression.Parameters[0], parameter);
+        var rightVisitor = new ParameterReplacer(rightExpression.Parameters[0], parameter);
+
+        var left = leftVisitor.Visit(leftExpression.Body);
+        var right = rightVisitor.Visit(rightExpression.Body);
+
+        return Expression.Lambda<Func<T, bool>>(Expression.OrElse(left!, right!), parameter);
     }
 }

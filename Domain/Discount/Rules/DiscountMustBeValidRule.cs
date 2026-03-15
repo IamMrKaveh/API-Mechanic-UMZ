@@ -1,3 +1,5 @@
+using Domain.Discount.Aggregates;
+
 namespace Domain.Discount.Rules;
 
 public sealed class DiscountMustBeValidRule : IBusinessRule

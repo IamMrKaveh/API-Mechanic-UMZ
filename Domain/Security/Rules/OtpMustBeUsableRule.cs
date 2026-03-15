@@ -1,4 +1,6 @@
-﻿namespace Domain.Security.Rules;
+﻿using Domain.Security.Aggregates;
+
+namespace Domain.Security.Rules;
 
 public sealed class OtpMustBeUsableRule : IBusinessRule
 {

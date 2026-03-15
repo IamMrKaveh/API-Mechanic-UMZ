@@ -1,3 +1,5 @@
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Inventory.Exceptions;
 
 public class NegativeStockException(ProductVariantId variantId, int currentStock, int requestedDeduction) : DomainException($"کسر {requestedDeduction} عدد از موجودی {currentStock} منجر به موجودی منفی ({currentStock - requestedDeduction}) می‌شود.")

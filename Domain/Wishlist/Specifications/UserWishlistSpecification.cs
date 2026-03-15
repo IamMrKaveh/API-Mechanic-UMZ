@@ -1,4 +1,6 @@
-﻿namespace Domain.Wishlist.Specifications;
+﻿using Domain.User.ValueObjects;
+
+namespace Domain.Wishlist.Specifications;
 
 public sealed class UserWishlistSpecification : Specification<Aggregates.Wishlist>
 {

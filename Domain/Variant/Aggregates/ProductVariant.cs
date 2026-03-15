@@ -1,3 +1,11 @@
+using Domain.Product.Exceptions;
+using Domain.Product.ValueObjects;
+using Domain.Shipping.ValueObjects;
+using Domain.Variant.Entities;
+using Domain.Variant.Events;
+using Domain.Variant.Exceptions;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Variant.Aggregates;
 
 public sealed class ProductVariant : AggregateRoot<ProductVariantId>
@@ -155,7 +163,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>
         IsDeleted = true;
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new ProductVariantRemovedEvent(ProductId.Value.GetHashCode(), Id.Value.GetHashCode()));
+        RaiseDomainEvent(new ProductVariantRemovedEvent(ProductId, Id));
     }
 
     public bool IsDiscounted => CompareAtPrice is not null && CompareAtPrice.Amount > Price.Amount;

@@ -1,4 +1,6 @@
-﻿namespace Domain.Cart.Interfaces;
+﻿using Domain.Cart.ValueObjects;
+
+namespace Domain.Cart.Interfaces;
 
 public interface ICartRepository
 {

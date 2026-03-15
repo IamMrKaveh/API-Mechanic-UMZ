@@ -1,6 +1,6 @@
 ﻿namespace Domain.Support.Enums;
 
-public enum TicketStatus
+public enum TicketStatusEnum
 {
     Open = 1,
     WaitingOnCustomer = 2,

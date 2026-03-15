@@ -1,3 +1,5 @@
+using Domain.User.ValueObjects;
+
 namespace Domain.User.Events;
 
 public class OtpVerifiedEvent(UserId userId) : DomainEvent

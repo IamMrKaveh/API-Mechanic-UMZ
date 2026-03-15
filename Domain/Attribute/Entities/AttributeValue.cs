@@ -1,3 +1,7 @@
+using Domain.Attribute.Aggregates;
+using Domain.Attribute.ValueObjects;
+using Domain.Variant.Entities;
+
 namespace Domain.Attribute.Entities;
 
 public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, ISoftDeletable, IActivatable

@@ -1,4 +1,6 @@
-﻿namespace Domain.Inventory.Services.Results;
+﻿using Domain.Variant.ValueObjects;
+
+namespace Domain.Inventory.Services.Results;
 
 public sealed class ReleaseResult
 {

@@ -1,6 +1,6 @@
 ﻿namespace Domain.Support.Enums;
 
-public enum TicketPriority
+public enum TicketPriorityEnum
 {
     Low = 1,
     Normal = 2,

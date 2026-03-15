@@ -1,3 +1,5 @@
+using Domain.User.ValueObjects;
+
 namespace Domain.User.Events;
 
 public class UserPhoneChangedEvent(UserId userId, string oldPhone, string newPhone) : DomainEvent

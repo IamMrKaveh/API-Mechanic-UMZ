@@ -1,4 +1,8 @@
-﻿namespace Domain.Security.Events;
+﻿using Domain.Security.Enums;
+using Domain.Security.ValueObjects;
+using Domain.User.ValueObjects;
+
+namespace Domain.Security.Events;
 
 public sealed record UserOtpExpiredEvent(
     UserOtpId OtpId,

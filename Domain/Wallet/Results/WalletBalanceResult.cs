@@ -1,4 +1,7 @@
-﻿namespace Domain.Wallet.Results;
+﻿using Domain.User.ValueObjects;
+using Domain.Wallet.ValueObjects;
+
+namespace Domain.Wallet.Results;
 
 public sealed record WalletBalanceResult(
     WalletId WalletId,

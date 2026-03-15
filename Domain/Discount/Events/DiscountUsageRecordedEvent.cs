@@ -1,4 +1,7 @@
-﻿namespace Domain.Discount.Events;
+﻿using Domain.Discount.ValueObjects;
+using Domain.User.ValueObjects;
+
+namespace Domain.Discount.Events;
 
 public sealed class DiscountUsageRecordedEvent : DomainEvent
 {

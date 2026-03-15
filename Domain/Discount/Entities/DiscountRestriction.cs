@@ -1,3 +1,6 @@
+using Domain.Discount.Enums;
+using Domain.Discount.ValueObjects;
+
 namespace Domain.Discount.Entities;
 
 public sealed class DiscountRestriction : Entity<DiscountRestrictionId>

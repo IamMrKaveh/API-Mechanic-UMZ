@@ -1,4 +1,6 @@
-﻿namespace Domain.Wallet.Projections;
+﻿using Domain.Wallet.ValueObjects;
+
+namespace Domain.Wallet.Projections;
 
 public sealed record ExpiredReservationProjection(
     WalletReservationId ReservationId,

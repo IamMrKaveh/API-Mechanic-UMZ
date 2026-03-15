@@ -1,3 +1,5 @@
+using Domain.Order.Entities;
+
 namespace Domain.Order.Rules;
 
 public sealed class OrderMustHaveItemsRule : IBusinessRule

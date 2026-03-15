@@ -1,4 +1,7 @@
-﻿namespace Domain.Review.Services;
+﻿using Domain.Review.Aggregates;
+using Domain.Review.Interfaces;
+
+namespace Domain.Review.Services;
 
 public sealed class ReviewDomainService
 {

@@ -1,4 +1,7 @@
-﻿namespace Domain.Security.Results;
+﻿using Domain.Security.Aggregates;
+using Domain.User.ValueObjects;
+
+namespace Domain.Security.Results;
 
 public sealed class SessionCreationResult
 {

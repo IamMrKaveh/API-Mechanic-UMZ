@@ -1,3 +1,6 @@
+using Domain.Variant.Aggregates;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Variant.Rules;
 
 public sealed class VariantSkuMustBeUniqueRule(

@@ -1,3 +1,6 @@
+using Domain.Review.Aggregates;
+using Domain.Review.ValueObjects;
+
 namespace Domain.Review.Interfaces;
 
 public interface IReviewRepository

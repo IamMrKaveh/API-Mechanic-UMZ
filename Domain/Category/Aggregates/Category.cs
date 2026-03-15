@@ -1,3 +1,6 @@
+using Domain.Category.Events;
+using Domain.Category.ValueObjects;
+
 namespace Domain.Category.Aggregates;
 
 public sealed class Category : AggregateRoot<CategoryId>
