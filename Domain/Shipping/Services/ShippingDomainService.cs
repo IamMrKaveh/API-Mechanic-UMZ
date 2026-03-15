@@ -1,4 +1,7 @@
-﻿namespace Domain.Shipping.Services;
+﻿using Domain.Shipping.Results;
+using Domain.Shipping.ValueObjects;
+
+namespace Domain.Shipping.Services;
 
 public sealed class ShippingDomainService
 {

@@ -1,4 +1,4 @@
-using Domain.Common.ValueObjects;
+using Domain.Order.ValueObjects;
 
 namespace Domain.Order.Services;
 

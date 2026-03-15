@@ -1,3 +1,5 @@
+using Domain.Review.Aggregates;
+
 namespace Domain.Review.Specifications;
 
 public class PendingReviewsSpecification : Specification<ProductReview>

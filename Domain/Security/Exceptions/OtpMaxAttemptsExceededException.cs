@@ -1,4 +1,6 @@
-﻿namespace Domain.Security.Exceptions;
+﻿using Domain.Security.ValueObjects;
+
+namespace Domain.Security.Exceptions;
 
 public sealed class OtpMaxAttemptsExceededException(UserOtpId otpId, int maxAttempts)
     : DomainException($"تعداد تلاش‌های تأیید کد OTP '{otpId}' به حداکثر ({maxAttempts}) رسیده است.")

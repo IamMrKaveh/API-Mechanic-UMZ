@@ -1,3 +1,6 @@
+using System;
+using System.Linq.Expressions;
+
 namespace Domain.Common.Specifications;
 
 public class AndSpecification<T> : Specification<T>
@@ -13,15 +16,16 @@ public class AndSpecification<T> : Specification<T>
 
     public override Expression<Func<T, bool>> ToExpression()
     {
-        var leftExpr = _left.ToExpression();
-        var rightExpr = _right.ToExpression();
+        var leftExpression = _left.ToExpression();
+        var rightExpression = _right.ToExpression();
 
         var parameter = Expression.Parameter(typeof(T));
-        var body = Expression.AndAlso(
-            Expression.Invoke(leftExpr, parameter),
-            Expression.Invoke(rightExpr, parameter)
-        );
+        var leftVisitor = new ParameterReplacer(leftExpression.Parameters[0], parameter);
+        var rightVisitor = new ParameterReplacer(rightExpression.Parameters[0], parameter);
 
-        return Expression.Lambda<Func<T, bool>>(body, parameter);
+        var left = leftVisitor.Visit(leftExpression.Body);
+        var right = rightVisitor.Visit(rightExpression.Body);
+
+        return Expression.Lambda<Func<T, bool>>(Expression.AndAlso(left!, right!), parameter);
     }
 }

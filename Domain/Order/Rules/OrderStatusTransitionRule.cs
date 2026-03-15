@@ -1,3 +1,5 @@
+using Domain.Order.ValueObjects;
+
 namespace Domain.Order.Rules;
 
 public sealed class OrderStatusTransitionRule(OrderStatusValue currentStatus, OrderStatusValue newStatus) : IBusinessRule

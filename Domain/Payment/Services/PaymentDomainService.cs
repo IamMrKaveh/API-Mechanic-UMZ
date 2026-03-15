@@ -1,3 +1,6 @@
+using Domain.Payment.Aggregates;
+using Domain.Payment.Results;
+
 namespace Domain.Payment.Services;
 
 public sealed class PaymentDomainService

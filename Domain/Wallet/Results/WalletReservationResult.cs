@@ -1,4 +1,7 @@
-﻿namespace Domain.Wallet.Results;
+﻿using Domain.Wallet.Entities;
+using Domain.Wallet.ValueObjects;
+
+namespace Domain.Wallet.Results;
 
 public sealed record WalletReservationResult
 {

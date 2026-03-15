@@ -1,3 +1,6 @@
+using Domain.Shipping.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Variant.Entities;
 
 public sealed class ProductVariantShipping : Entity<ProductVariantShippingId>

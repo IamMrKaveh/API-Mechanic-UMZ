@@ -1,3 +1,5 @@
+using Domain.Inventory.Entities;
+
 namespace Infrastructure.Inventory.Services;
 
 /// <summary>

@@ -1,10 +1,13 @@
-﻿namespace Domain.Security.Events;
+﻿using Domain.Security.ValueObjects;
+using Domain.User.ValueObjects;
+
+namespace Domain.Security.Events;
 
 public sealed record UserSessionCreatedEvent(
     UserSessionId SessionId,
     UserId UserId,
     DeviceInfo DeviceInfo,
-    Common.ValueObjects.IpAddress IpAddress,
+    IpAddress IpAddress,
     DateTime ExpiresAt) : IDomainEvent
 {
     public Guid EventId { get; } = Guid.NewGuid();

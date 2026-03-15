@@ -1,3 +1,5 @@
+using Domain.User.Exceptions;
+
 namespace Domain.User.ValueObjects;
 
 public sealed class PhoneNumber : ValueObject

@@ -1,4 +1,8 @@
-﻿namespace Domain.Wishlist.Exceptions;
+﻿using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+using Domain.Wishlist.ValueObjects;
+
+namespace Domain.Wishlist.Exceptions;
 
 public sealed class WishlistItemNotFoundException : DomainException
 {

@@ -1,3 +1,5 @@
+using Domain.User.ValueObjects;
+
 namespace Domain.User.Entities;
 
 public sealed class UserAddress : Entity<UserAddressId>, IAuditable, ISoftDeletable

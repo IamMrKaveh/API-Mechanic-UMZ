@@ -1,3 +1,9 @@
+using Domain.Cart.Entities;
+using Domain.Cart.Enum;
+using Domain.Cart.Events;
+using Domain.Cart.Exceptions;
+using Domain.Cart.ValueObjects;
+
 namespace Domain.Cart.Aggregates;
 
 public sealed class Cart : AggregateRoot<Guid>

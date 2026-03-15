@@ -1,11 +1,14 @@
-﻿using Domain.Brand;
-using Domain.Brand.ValueObjects;
-using Domain.Common.Abstractions;
+﻿using Domain.Brand.ValueObjects;
 using Domain.Product.ValueObjects;
 
 namespace Domain.Product.Events;
 
-public sealed record ProductBrandChangedEvent(
+public sealed class ProductBrandChangedEvent(
     ProductId ProductId,
     BrandId PreviousBrandId,
-    BrandId NewBrandId) : IDomainEvent;
+    BrandId NewBrandId) : DomainEvent
+{
+    public ProductId ProductId { get; } = ProductId;
+    public BrandId PreviousBrandId { get; } = PreviousBrandId;
+    public BrandId NewBrandId { get; } = NewBrandId;
+}

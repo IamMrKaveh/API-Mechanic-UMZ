@@ -1,3 +1,6 @@
+using Domain.Review.Events;
+using Domain.Review.ValueObjects;
+
 namespace Domain.Review.Aggregates;
 
 public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable, ISoftDeletable
@@ -66,7 +69,7 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable, ISoftDe
             Status = ReviewStatus.Pending
         };
 
-        review.RaiseDomainEvent(new Events.ReviewSubmittedEvent(id, productId, userId, rating));
+        review.RaiseDomainEvent(new ReviewSubmittedEvent(id, productId, userId, rating));
         return review;
     }
 
@@ -79,7 +82,7 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable, ISoftDe
         RejectionReason = null;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new Events.ReviewApprovedEvent(Id, ProductId, Rating));
+        RaiseDomainEvent(new ReviewApprovedEvent(Id, ProductId, Rating));
     }
 
     public void Reject(string? reason = null)
@@ -121,7 +124,7 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable, ISoftDe
         DeletedBy = deletedBy;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new Events.ReviewDeletedEvent(Id, ProductId, deletedBy));
+        RaiseDomainEvent(new ReviewDeletedEvent(Id, ProductId, deletedBy));
     }
 
     private void EnsureNotDeleted()

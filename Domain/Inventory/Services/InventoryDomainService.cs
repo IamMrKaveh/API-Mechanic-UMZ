@@ -1,14 +1,11 @@
-using Domain.Inventory.Aggregates;
 using Domain.Inventory.Services.Results;
-using Domain.Inventory.ValueObjects;
-using Domain.Variant.ValueObjects;
 
 namespace Domain.Inventory.Services;
 
 public sealed class InventoryDomainService
 {
     public ReservationResult Reserve(
-        Inventory inventory,
+        Aggregates.Inventory inventory,
         int quantity,
         string referenceNumber,
         int? orderItemId = null,
@@ -32,7 +29,7 @@ public sealed class InventoryDomainService
     }
 
     public ConfirmationResult ConfirmReservation(
-        Inventory inventory,
+        Aggregates.Inventory inventory,
         int quantity,
         string referenceNumber,
         int? orderItemId = null)
@@ -56,7 +53,7 @@ public sealed class InventoryDomainService
     }
 
     public ReleaseResult RollbackReservation(
-        Inventory inventory,
+        Aggregates.Inventory inventory,
         int quantity,
         string referenceNumber,
         string? reason = null)
@@ -77,7 +74,7 @@ public sealed class InventoryDomainService
     }
 
     public AdjustmentResult ReturnStock(
-        Inventory inventory,
+        Aggregates.Inventory inventory,
         int quantity,
         string reason,
         int? orderItemId = null,
@@ -96,7 +93,7 @@ public sealed class InventoryDomainService
     }
 
     public AdjustmentResult AdjustStock(
-        Inventory inventory,
+        Aggregates.Inventory inventory,
         int quantityChange,
         int userId,
         string reason)
@@ -122,7 +119,7 @@ public sealed class InventoryDomainService
     }
 
     public AdjustmentResult RecordDamage(
-        Inventory inventory,
+        Aggregates.Inventory inventory,
         int quantity,
         int userId,
         string reason)
@@ -147,7 +144,7 @@ public sealed class InventoryDomainService
         return AdjustmentResult.Success(inventory.VariantId, inventory.StockQuantity);
     }
 
-    public StockValidationResult ValidateStockDeduction(Inventory inventory, int quantity)
+    public StockValidationResult ValidateStockDeduction(Aggregates.Inventory inventory, int quantity)
     {
         Guard.Against.Null(inventory, nameof(inventory));
 
@@ -161,7 +158,7 @@ public sealed class InventoryDomainService
     }
 
     public BatchStockStatus CalculateBatchStockStatus(
-        IEnumerable<(Inventory Inventory, int RequestedQuantity)> items)
+        IEnumerable<(Aggregates.Inventory Inventory, int RequestedQuantity)> items)
     {
         var itemsList = items.ToList();
         var results = new List<VariantStockStatus>();
@@ -184,7 +181,7 @@ public sealed class InventoryDomainService
         return new BatchStockStatus(results, allAvailable);
     }
 
-    public LowStockCheckResult CheckLowStock(Inventory inventory)
+    public LowStockCheckResult CheckLowStock(Aggregates.Inventory inventory)
     {
         Guard.Against.Null(inventory, nameof(inventory));
 
@@ -201,7 +198,7 @@ public sealed class InventoryDomainService
     }
 
     public ReconcileResult Reconcile(
-        Inventory inventory,
+        Aggregates.Inventory inventory,
         int calculatedStockFromTransactions,
         int userId)
     {

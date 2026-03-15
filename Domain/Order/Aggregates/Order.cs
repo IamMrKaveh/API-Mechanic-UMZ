@@ -1,3 +1,8 @@
+using Domain.Order.Entities;
+using Domain.Order.Events;
+using Domain.Order.Exceptions;
+using Domain.Order.ValueObjects;
+
 namespace Domain.Order.Aggregates;
 
 public sealed class Order : AggregateRoot<Guid>

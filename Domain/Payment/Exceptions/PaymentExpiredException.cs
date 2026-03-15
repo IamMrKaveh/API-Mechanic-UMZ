@@ -1,3 +1,5 @@
+using Domain.Payment.ValueObjects;
+
 namespace Domain.Payment.Exceptions;
 
 public sealed class PaymentExpiredException(string authority, DateTime expiryDate) : DomainException($"تراکنش پرداخت با شناسه '{authority}' منقضی شده است. زمان انقضا: {expiryDate:yyyy/MM/dd HH:mm}")

@@ -1,3 +1,7 @@
+using Domain.Shipping.Events;
+using Domain.Shipping.Exceptions;
+using Domain.Shipping.ValueObjects;
+
 namespace Domain.Shipping.Aggregates;
 
 public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditable

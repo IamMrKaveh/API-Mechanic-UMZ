@@ -1,4 +1,6 @@
-﻿namespace Domain.Variant.ValueObjects;
+﻿using Domain.Attribute.ValueObjects;
+
+namespace Domain.Variant.ValueObjects;
 
 public sealed record AttributeAssignment(
     AttributeTypeId AttributeId,

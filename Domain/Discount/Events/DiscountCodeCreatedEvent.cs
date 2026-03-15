@@ -1,27 +1,20 @@
-﻿namespace Domain.Discount.Events;
+﻿using Domain.Discount.Enums;
+using Domain.Discount.ValueObjects;
 
-public sealed class DiscountCodeCreatedEvent : DomainEvent
+namespace Domain.Discount.Events;
+
+public sealed class DiscountCodeCreatedEvent(
+    DiscountCodeId discountCodeId,
+    string code,
+    DiscountType type,
+    decimal value,
+    int? usageLimit,
+    DateTime? expiresAt) : DomainEvent
 {
-    public DiscountCodeId DiscountCodeId { get; }
-    public string Code { get; }
-    public DiscountType Type { get; }
-    public decimal Value { get; }
-    public int? UsageLimit { get; }
-    public DateTime? ExpiresAt { get; }
-
-    public DiscountCodeCreatedEvent(
-        DiscountCodeId discountCodeId,
-        string code,
-        DiscountType type,
-        decimal value,
-        int? usageLimit,
-        DateTime? expiresAt)
-    {
-        DiscountCodeId = discountCodeId;
-        Code = code;
-        Type = type;
-        Value = value;
-        UsageLimit = usageLimit;
-        ExpiresAt = expiresAt;
-    }
+    public DiscountCodeId DiscountCodeId { get; } = discountCodeId;
+    public string Code { get; } = code;
+    public DiscountType Type { get; } = type;
+    public decimal Value { get; } = value;
+    public int? UsageLimit { get; } = usageLimit;
+    public DateTime? ExpiresAt { get; } = expiresAt;
 }

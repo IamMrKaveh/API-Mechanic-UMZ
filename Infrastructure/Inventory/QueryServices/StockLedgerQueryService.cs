@@ -1,3 +1,5 @@
+using Domain.Inventory.Entities;
+
 namespace Infrastructure.Inventory.QueryServices;
 
 public class StockLedgerQueryService(DBContext context) : IStockLedgerQueryService

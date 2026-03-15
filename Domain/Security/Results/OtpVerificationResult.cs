@@ -1,4 +1,6 @@
-﻿namespace Domain.Security.Results;
+﻿using Domain.Security.Aggregates;
+
+namespace Domain.Security.Results;
 
 public sealed class OtpVerificationResult
 {

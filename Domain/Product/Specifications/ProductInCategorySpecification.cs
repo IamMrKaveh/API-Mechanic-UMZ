@@ -1,3 +1,5 @@
+using Domain.Category.ValueObjects;
+
 namespace Domain.Product.Specifications;
 
 public class ProductInCategorySpecification : Specification<Aggregates.Product>

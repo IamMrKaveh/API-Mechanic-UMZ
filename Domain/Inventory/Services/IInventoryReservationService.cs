@@ -1,4 +1,6 @@
-﻿namespace Domain.Inventory.Services;
+﻿using Domain.Inventory.Services.Results;
+
+namespace Domain.Inventory.Services;
 
 public interface IInventoryReservationService
 {

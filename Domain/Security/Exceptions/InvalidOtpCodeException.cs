@@ -1,4 +1,6 @@
-﻿namespace Domain.Security.Exceptions;
+﻿using Domain.Security.ValueObjects;
+
+namespace Domain.Security.Exceptions;
 
 public sealed class InvalidOtpCodeException(UserOtpId otpId)
     : DomainException($"کد OTP وارد شده برای '{otpId}' نامعتبر است.")

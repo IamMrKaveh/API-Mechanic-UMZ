@@ -1,3 +1,5 @@
+using Domain.Cart.Exceptions;
+
 namespace Domain.Cart.Entities;
 
 public sealed class CartItem : Entity<Guid>

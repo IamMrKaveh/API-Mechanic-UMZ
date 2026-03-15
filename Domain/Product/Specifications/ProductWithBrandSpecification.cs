@@ -1,4 +1,6 @@
-﻿namespace Domain.Product.Specifications;
+﻿using Domain.Brand.ValueObjects;
+
+namespace Domain.Product.Specifications;
 
 public class ProductWithBrandSpecification : Specification<Aggregates.Product>
 {

@@ -1,3 +1,5 @@
+using Domain.Support.ValueObjects;
+
 namespace Domain.Support.Exceptions;
 
 public sealed class TicketAlreadyClosedException(TicketId ticketId)

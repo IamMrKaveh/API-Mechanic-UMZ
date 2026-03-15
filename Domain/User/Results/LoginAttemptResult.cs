@@ -1,4 +1,6 @@
-﻿namespace Domain.User.Results;
+﻿using Domain.User.ValueObjects;
+
+namespace Domain.User.Results;
 
 public sealed class LoginAttemptResult
 {

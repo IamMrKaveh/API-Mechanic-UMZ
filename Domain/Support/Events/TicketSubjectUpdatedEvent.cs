@@ -1,3 +1,5 @@
+using Domain.Support.ValueObjects;
+
 namespace Domain.Support.Events;
 
 public sealed record TicketSubjectUpdatedEvent(

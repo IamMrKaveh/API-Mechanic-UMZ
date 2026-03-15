@@ -1,3 +1,5 @@
+using Domain.Media.ValueObjects;
+
 namespace Domain.Media.Exceptions;
 
 public class MediaNotFoundException : DomainException

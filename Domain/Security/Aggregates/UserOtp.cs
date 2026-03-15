@@ -1,4 +1,10 @@
-﻿namespace Domain.Security.Aggregates;
+﻿using Domain.Security.Enums;
+using Domain.Security.Events;
+using Domain.Security.Exceptions;
+using Domain.Security.ValueObjects;
+using Domain.User.ValueObjects;
+
+namespace Domain.Security.Aggregates;
 
 public sealed class UserOtp : AggregateRoot<UserOtpId>
 {

@@ -1,3 +1,5 @@
+using Domain.Notification.Events;
+
 namespace Domain.Notification;
 
 public class Notification : AggregateRoot, IAuditable, ISoftDeletable
@@ -54,7 +56,7 @@ public class Notification : AggregateRoot, IAuditable, ISoftDeletable
             CreatedAt = DateTime.UtcNow
         };
 
-        notification.AddDomainEvent(new Events.NotificationCreatedEvent(
+        notification.AddDomainEvent(new NotificationCreatedEvent(
             notification.Id,
             notification.UserId,
             notification.Type.Value));
@@ -70,7 +72,7 @@ public class Notification : AggregateRoot, IAuditable, ISoftDeletable
         ReadAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
 
-        AddDomainEvent(new Events.NotificationReadEvent(Id, UserId));
+        AddDomainEvent(new NotificationReadEvent(Id, UserId));
     }
 
     public void Delete(int? deletedBy = null)
@@ -82,7 +84,7 @@ public class Notification : AggregateRoot, IAuditable, ISoftDeletable
         DeletedBy = deletedBy;
         UpdatedAt = DateTime.UtcNow;
 
-        AddDomainEvent(new Events.NotificationDeletedEvent(Id, UserId));
+        AddDomainEvent(new NotificationDeletedEvent(Id, UserId));
     }
 
     public TimeSpan? GetTimeSinceCreation() => DateTime.UtcNow - CreatedAt;

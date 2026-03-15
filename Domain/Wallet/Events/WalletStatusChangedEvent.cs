@@ -1,4 +1,8 @@
-﻿namespace Domain.Wallet.Events;
+﻿using Domain.User.ValueObjects;
+using Domain.Wallet.Enums;
+using Domain.Wallet.ValueObjects;
+
+namespace Domain.Wallet.Events;
 
 public sealed record WalletStatusChangedEvent(
     WalletId WalletId,

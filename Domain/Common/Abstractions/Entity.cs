@@ -2,37 +2,46 @@
 
 public abstract class Entity<TId> where TId : notnull
 {
-    private readonly List<IDomainEvent> _domainEvents = [];
+    public TId Id { get; protected set; } = default!;
 
-    public TId Id { get; protected init; } = default!;
+    private readonly List<IDomainEvent> _domainEvents = new();
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
     protected Entity()
     { }
 
-    protected Entity(TId id) => Id = id;
+    protected Entity(TId id)
+    {
+        Id = id;
+    }
 
-    protected void RaiseDomainEvent(IDomainEvent domainEvent)
+    public void AddDomainEvent(IDomainEvent domainEvent)
     {
         _domainEvents.Add(domainEvent);
     }
 
-    public void ClearDomainEvents() => _domainEvents.Clear();
+    public void RemoveDomainEvent(IDomainEvent domainEvent)
+    {
+        _domainEvents.Remove(domainEvent);
+    }
+
+    public void ClearDomainEvents()
+    {
+        _domainEvents.Clear();
+    }
 
     public override bool Equals(object? obj)
     {
-        if (obj is null || obj.GetType() != GetType())
-            return false;
-
-        var other = (Entity<TId>)obj;
-        return Id.Equals(other.Id);
+        if (obj is not Entity<TId> other) return false;
+        if (ReferenceEquals(this, other)) return true;
+        if (GetType() != other.GetType()) return false;
+        return EqualityComparer<TId>.Default.Equals(Id, other.Id);
     }
 
-    public override int GetHashCode() => Id.GetHashCode();
+    public override int GetHashCode() => EqualityComparer<TId>.Default.GetHashCode(Id);
 
-    public static bool operator ==(Entity<TId>? left, Entity<TId>? right)
-        => left is not null && right is not null && left.Equals(right);
+    public static bool operator ==(Entity<TId>? left, Entity<TId>? right) =>
+        left?.Equals(right) ?? right is null;
 
-    public static bool operator !=(Entity<TId>? left, Entity<TId>? right)
-        => !(left == right);
+    public static bool operator !=(Entity<TId>? left, Entity<TId>? right) => !(left == right);
 }

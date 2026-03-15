@@ -1,7 +1,12 @@
+using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Variant.Events;
 
-public sealed class ProductVariantRemovedEvent(ProductId productId, ProductVariantId variantId) : DomainEvent
+public sealed record ProductVariantRemovedEvent(
+    ProductId ProductId,
+    ProductVariantId VariantId) : IDomainEvent
 {
-    public ProductId ProductId { get; } = productId;
-    public ProductVariantId VariantId { get; } = variantId;
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }

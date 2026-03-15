@@ -1,3 +1,5 @@
+using Domain.Variant.Aggregates;
+
 namespace Domain.Product.Rules;
 
 public sealed class ProductMustHaveAtLeastOneVariantRule : IBusinessRule

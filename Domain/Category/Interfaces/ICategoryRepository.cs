@@ -1,3 +1,5 @@
+using Domain.Category.ValueObjects;
+
 namespace Domain.Category.Interfaces;
 
 public interface ICategoryRepository

@@ -1,3 +1,6 @@
+using Domain.Discount.Aggregates;
+using Domain.Discount.ValueObjects;
+
 namespace Domain.Discount.Interfaces;
 
 public interface IDiscountRepository

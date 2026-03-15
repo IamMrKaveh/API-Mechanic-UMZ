@@ -1,3 +1,5 @@
+using Domain.Variant.Aggregates;
+
 namespace Domain.Variant.Rules;
 
 public sealed class VariantMustBeActiveForPurchaseRule(ProductVariant variant) : IBusinessRule

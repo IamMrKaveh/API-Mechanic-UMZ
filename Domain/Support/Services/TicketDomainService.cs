@@ -1,3 +1,9 @@
+using Domain.Support.Aggregates;
+using Domain.Support.Enums;
+using Domain.Support.Results;
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Support.Services;
 
 public sealed class TicketDomainService

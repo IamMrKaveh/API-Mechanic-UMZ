@@ -1,4 +1,7 @@
-﻿namespace Domain.Wallet.Exceptions;
+﻿using Domain.User.ValueObjects;
+using Domain.Wallet.ValueObjects;
+
+namespace Domain.Wallet.Exceptions;
 
 public sealed class WalletNotFoundException : DomainException
 {

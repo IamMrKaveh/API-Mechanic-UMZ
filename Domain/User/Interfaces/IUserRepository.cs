@@ -1,3 +1,6 @@
+using Domain.User.Entities;
+using Domain.User.ValueObjects;
+
 namespace Domain.User.Interfaces;
 
 public interface IUserRepository

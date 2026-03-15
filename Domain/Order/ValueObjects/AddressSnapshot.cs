@@ -1,8 +1,10 @@
+using Domain.User.Entities;
+
 namespace Domain.Order.ValueObjects;
 
 public sealed class AddressSnapshot : ValueObject
 {
-    public int OriginalAddressId { get; }
+    public Guid OriginalAddressId { get; }
     public string Title { get; }
     public string ReceiverName { get; }
     public string PhoneNumber { get; }
@@ -14,7 +16,7 @@ public sealed class AddressSnapshot : ValueObject
     public decimal? Longitude { get; }
 
     private AddressSnapshot(
-        int originalAddressId,
+        Guid originalAddressId,
         string title,
         string receiverName,
         string phoneNumber,
@@ -38,7 +40,7 @@ public sealed class AddressSnapshot : ValueObject
     }
 
     public static AddressSnapshot Create(
-        int originalAddressId,
+        Guid originalAddressId,
         string title,
         string receiverName,
         string phoneNumber,
@@ -77,7 +79,7 @@ public sealed class AddressSnapshot : ValueObject
         Guard.Against.Null(userAddress, nameof(userAddress));
 
         return Create(
-            userAddress.Id,
+            userAddress.Id.Value,
             userAddress.Title,
             userAddress.ReceiverName,
             userAddress.PhoneNumber,

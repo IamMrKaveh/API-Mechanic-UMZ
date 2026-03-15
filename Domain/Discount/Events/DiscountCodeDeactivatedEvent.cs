@@ -1,8 +1,15 @@
-﻿using Domain.Common.Abstractions;
-using Domain.Discount.ValueObjects;
+﻿using Domain.Discount.ValueObjects;
 
 namespace Domain.Discount.Events;
 
-public sealed record DiscountCodeDeactivatedEvent(
-    DiscountCodeId DiscountCodeId,
-    string Code) : IDomainEvent;
+public sealed class DiscountCodeDeactivatedEvent : DomainEvent
+{
+    public DiscountCodeId DiscountCodeId { get; }
+    public string Code { get; }
+
+    public DiscountCodeDeactivatedEvent(DiscountCodeId discountCodeId, string code)
+    {
+        DiscountCodeId = discountCodeId;
+        Code = code;
+    }
+}

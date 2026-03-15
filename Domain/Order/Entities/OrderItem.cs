@@ -1,3 +1,5 @@
+using Domain.Order.ValueObjects;
+
 namespace Domain.Order.Entities;
 
 public sealed class OrderItem : Entity<Guid>

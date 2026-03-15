@@ -1,4 +1,9 @@
-﻿namespace Domain.Wallet.Aggregates;
+﻿using Domain.User.ValueObjects;
+using Domain.Wallet.Enums;
+using Domain.Wallet.Events;
+using Domain.Wallet.ValueObjects;
+
+namespace Domain.Wallet.Aggregates;
 
 public sealed class WalletLedgerEntry : AggregateRoot<WalletLedgerEntryId>
 {

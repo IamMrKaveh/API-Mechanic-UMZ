@@ -1,3 +1,6 @@
+using Domain.Media.Events;
+using Domain.Media.ValueObjects;
+
 namespace Domain.Media.Aggregates;
 
 public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable

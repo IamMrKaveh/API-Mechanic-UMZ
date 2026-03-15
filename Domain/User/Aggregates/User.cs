@@ -1,3 +1,8 @@
+using Domain.User.Entities;
+using Domain.User.Events;
+using Domain.User.Exceptions;
+using Domain.User.ValueObjects;
+
 namespace Domain.User.Aggregates;
 
 public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable, ISoftDeletable
@@ -358,7 +363,7 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable, ISof
         if (!DefaultAddressId.HasValue)
             return _addresses.FirstOrDefault(a => !a.IsDeleted);
 
-        return _addresses.FirstOrDefault(a => a.Id == DefaultAddressId.Value && !a.IsDeleted);
+        return _addresses.FirstOrDefault(a => a.Id == DefaultAddressId && !a.IsDeleted);
     }
 
     public bool HasAddress(UserAddressId addressId)

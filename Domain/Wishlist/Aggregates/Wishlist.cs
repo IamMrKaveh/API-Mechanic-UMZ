@@ -1,3 +1,8 @@
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+using Domain.Wishlist.Events;
+using Domain.Wishlist.ValueObjects;
+
 namespace Domain.Wishlist.Aggregates;
 
 public sealed class Wishlist : AggregateRoot<WishlistId>, IAuditable

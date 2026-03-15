@@ -1,3 +1,8 @@
+using Domain.Support.Enums;
+using Domain.Support.Events;
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Support.Aggregates;
 
 public sealed class Ticket : AggregateRoot<TicketId>, IAuditable

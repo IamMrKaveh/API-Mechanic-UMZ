@@ -1,4 +1,6 @@
-﻿namespace Domain.Security.Exceptions;
+﻿using Domain.Security.ValueObjects;
+
+namespace Domain.Security.Exceptions;
 
 public sealed class OtpAlreadyVerifiedException(UserOtpId otpId)
     : DomainException($"کد OTP '{otpId}' قبلاً تأیید شده است.")

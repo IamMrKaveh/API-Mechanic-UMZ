@@ -1,4 +1,7 @@
-﻿namespace Domain.User.Services;
+﻿using Domain.User.Results;
+using Domain.User.ValueObjects;
+
+namespace Domain.User.Services;
 
 public sealed class UserDomainService
 {
@@ -189,7 +192,7 @@ public sealed class UserDomainService
 
         if (user.DefaultAddressId.HasValue)
         {
-            var defaultAddress = user.Addresses.FirstOrDefault(a => a.Id == user.DefaultAddressId.Value && !a.IsDeleted);
+            var defaultAddress = user.Addresses.FirstOrDefault(a => a.Id == user.DefaultAddressId && !a.IsDeleted);
             if (defaultAddress is not null)
                 return defaultAddress.Id;
         }

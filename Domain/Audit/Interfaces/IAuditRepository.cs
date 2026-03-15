@@ -1,3 +1,5 @@
+using Domain.Audit.Entities;
+
 namespace Domain.Audit.Interfaces;
 
 public interface IAuditRepository

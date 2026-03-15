@@ -1,4 +1,6 @@
-﻿namespace Domain.User.Events;
+﻿using Domain.User.ValueObjects;
+
+namespace Domain.User.Events;
 
 public sealed record UserPasswordChangedEvent(UserId UserId) : IDomainEvent
 {

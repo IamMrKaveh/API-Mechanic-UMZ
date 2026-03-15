@@ -1,6 +1,7 @@
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Entities;
 using Domain.Audit.Entities;
+using Domain.Inventory.Aggregates;
 using Domain.Inventory.Entities;
 using Domain.Payment.Aggregates;
 using Domain.Review.Aggregates;

@@ -1,3 +1,5 @@
+using Domain.Inventory.Aggregates;
+
 namespace Infrastructure.Inventory.Configurations;
 
 public sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>

@@ -1,3 +1,7 @@
+using Domain.Product.ValueObjects;
+using Domain.Variant.Aggregates;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Variant.Interfaces;
 
 public interface IVariantRepository

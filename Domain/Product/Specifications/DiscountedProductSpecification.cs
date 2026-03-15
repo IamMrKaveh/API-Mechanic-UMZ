@@ -1,3 +1,5 @@
+using Domain.Variant.Aggregates;
+
 namespace Domain.Product.Specifications;
 
 public class DiscountedProductSpecification : Specification<ProductVariant>

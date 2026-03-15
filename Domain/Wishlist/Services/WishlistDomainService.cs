@@ -1,4 +1,7 @@
-﻿namespace Domain.Wishlist.Services;
+﻿using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+
+namespace Domain.Wishlist.Services;
 
 public sealed class WishlistDomainService
 {
