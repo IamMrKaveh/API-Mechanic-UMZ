@@ -1,6 +1,6 @@
 namespace Domain.Order.Entities;
 
-public class OrderStatus : Entity<Guid>, ISoftDeletable, IActivatable
+public class OrderStatus : Entity<Guid>, IActivatable
 {
     public Guid OrderId { get; private init; }
     public string Name { get; private set; } = null!;
@@ -12,11 +12,6 @@ public class OrderStatus : Entity<Guid>, ISoftDeletable, IActivatable
     public bool IsDefault { get; private set; }
     public bool AllowCancel { get; private set; }
     public bool AllowEdit { get; private set; }
-
-    public bool IsDeleted { get; private set; }
-
-    public DateTime? DeletedAt { get; private set; }
-    public int? DeletedBy { get; private set; }
 
     private OrderStatus()
     { }
@@ -74,7 +69,6 @@ public class OrderStatus : Entity<Guid>, ISoftDeletable, IActivatable
         bool allowEdit)
     {
         Guard.Against.NullOrWhiteSpace(displayName, nameof(displayName));
-        EnsureNotDeleted();
 
         DisplayName = displayName.Trim();
         Icon = icon?.Trim();
@@ -82,24 +76,5 @@ public class OrderStatus : Entity<Guid>, ISoftDeletable, IActivatable
         SortOrder = sortOrder;
         AllowCancel = allowCancel;
         AllowEdit = allowEdit;
-    }
-
-    public void Delete(int? deletedBy = null)
-    {
-        if (IsDeleted) return;
-
-        if (IsDefault)
-            throw new DomainException("امکان حذف وضعیت پیش‌فرض وجود ندارد.");
-
-        IsDeleted = true;
-        DeletedAt = DateTime.UtcNow;
-        DeletedBy = deletedBy;
-        IsActive = false;
-    }
-
-    private void EnsureNotDeleted()
-    {
-        if (IsDeleted)
-            throw new DomainException("وضعیت حذف شده است.");
     }
 }

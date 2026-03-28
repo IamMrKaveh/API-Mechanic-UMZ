@@ -1,3 +1,5 @@
+using Domain.Security.Events;
+
 namespace Application.Auth.EventHandlers;
 
 public class UserLockedOutEventHandler(

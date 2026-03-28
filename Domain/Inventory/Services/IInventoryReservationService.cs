@@ -1,12 +1,13 @@
 ﻿using Domain.Inventory.Services.Results;
+using Domain.Inventory.ValueObjects;
 
 namespace Domain.Inventory.Services;
 
 public interface IInventoryReservationService
 {
-    BatchReservationValidation ValidateBatchAvailability(IReadOnlyList<(int VariantId, int Quantity)> items);
+    BatchReservationValidation ValidateBatchAvailability(IReadOnlyList<BatchReservationItem> items);
 
-    BatchReservationResult ReserveBatch(IReadOnlyList<(int VariantId, int Quantity)> items);
+    BatchReservationResult ReserveBatch(IReadOnlyList<BatchReservationItem> items);
 
-    BatchReleaseResult ReleaseBatch(IReadOnlyList<(int VariantId, int Quantity)> items);
+    BatchReleaseResult ReleaseBatch(IReadOnlyList<BatchReservationItem> items);
 }

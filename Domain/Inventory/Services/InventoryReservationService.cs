@@ -1,17 +1,18 @@
 using Domain.Inventory.Services.Results;
+using Domain.Inventory.ValueObjects;
 
 namespace Domain.Inventory.Services;
 
 public sealed class InventoryReservationService : IInventoryReservationService
 {
-    public BatchReservationValidation ValidateBatchAvailability(IReadOnlyList<(int VariantId, int Quantity)> items)
+    public BatchReservationValidation ValidateBatchAvailability(IReadOnlyList<BatchReservationItem> items)
     {
         var errors = new List<string>();
 
-        foreach (var (variantId, quantity) in items)
+        foreach (var item in items)
         {
-            if (quantity <= 0)
-                errors.Add($"Variant {variantId}: quantity must be greater than zero.");
+            if (item.Quantity <= 0)
+                errors.Add($"Variant {item.VariantId}: quantity must be greater than zero.");
         }
 
         return errors.Count > 0
@@ -19,7 +20,7 @@ public sealed class InventoryReservationService : IInventoryReservationService
             : BatchReservationValidation.Valid();
     }
 
-    public BatchReservationResult ReserveBatch(IReadOnlyList<(int VariantId, int Quantity)> items)
+    public BatchReservationResult ReserveBatch(IReadOnlyList<BatchReservationItem> items)
     {
         var validation = ValidateBatchAvailability(items);
         return validation.IsValid
@@ -27,7 +28,7 @@ public sealed class InventoryReservationService : IInventoryReservationService
             : BatchReservationResult.Fail(validation.Errors);
     }
 
-    public BatchReleaseResult ReleaseBatch(IReadOnlyList<(int VariantId, int Quantity)> items)
+    public BatchReleaseResult ReleaseBatch(IReadOnlyList<BatchReservationItem> items)
     {
         if (items.Count == 0)
             return BatchReleaseResult.Fail("No items provided for release.");

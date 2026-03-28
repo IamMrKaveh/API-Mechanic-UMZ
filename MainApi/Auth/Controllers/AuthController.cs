@@ -1,11 +1,12 @@
+using MainApi.Auth.Requests;
+
 namespace MainApi.Auth.Controllers;
 
 [Route("api/auth")]
 [ApiController]
-public class AuthController(IMediator mediator, ICurrentUserService currentUserService) : ControllerBase
+public class AuthController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     /// <summary>
     /// درخواست ارسال کد OTP به شماره موبایل
@@ -13,7 +14,7 @@ public class AuthController(IMediator mediator, ICurrentUserService currentUserS
     [HttpPost("request-otp")]
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> RequestOtp([FromBody] LoginRequestDto request)
+    public async Task<IActionResult> RequestOtp([FromBody] LoginRequest request)
     {
         var clientIp = HttpContextHelper.GetClientIpAddress(HttpContext);
 
@@ -24,11 +25,7 @@ public class AuthController(IMediator mediator, ICurrentUserService currentUserS
         };
 
         var result = await _mediator.Send(command);
-
-        if (result.IsSuccess)
-            return Ok(new { message = "کد تأیید ارسال شد." });
-
-        return StatusCode(result.StatusCode, new { message = result.Error });
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -51,11 +48,7 @@ public class AuthController(IMediator mediator, ICurrentUserService currentUserS
         };
 
         var result = await _mediator.Send(command);
-
-        if (result.IsSuccess)
-            return Ok(result.Value);
-
-        return StatusCode(result.StatusCode, new { message = result.Error });
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -64,7 +57,7 @@ public class AuthController(IMediator mediator, ICurrentUserService currentUserS
     [HttpPost("refresh-token")]
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshRequestDto request)
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshRequest request)
     {
         var clientIp = HttpContextHelper.GetClientIpAddress(HttpContext);
         var userAgent = Request.Headers.UserAgent.ToString();
@@ -77,11 +70,7 @@ public class AuthController(IMediator mediator, ICurrentUserService currentUserS
         };
 
         var result = await _mediator.Send(command);
-
-        if (result.IsSuccess)
-            return Ok(result.Value);
-
-        return StatusCode(result.StatusCode, new { message = result.Error });
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -89,23 +78,16 @@ public class AuthController(IMediator mediator, ICurrentUserService currentUserS
     /// </summary>
     [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> Logout([FromBody] RefreshRequestDto request)
+    public async Task<IActionResult> Logout([FromBody] RefreshRequest request)
     {
-        if (_currentUserService.CurrentUser.UserId < 1)
-            return Unauthorized();
-
         var command = new LogoutCommand
         {
-            UserId = _currentUserService.CurrentUser.UserId,
+            UserId = CurrentUser.UserId,
             RefreshToken = request.RefreshToken
         };
 
         var result = await _mediator.Send(command);
-
-        if (result.IsSuccess)
-            return Ok(new { message = "با موفقیت خارج شدید." });
-
-        return StatusCode(result.StatusCode, new { message = result.Error });
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -115,15 +97,8 @@ public class AuthController(IMediator mediator, ICurrentUserService currentUserS
     [Authorize]
     public async Task<IActionResult> LogoutAll()
     {
-        if (_currentUserService.CurrentUser.UserId < 1)
-            return Unauthorized();
-
-        var command = new LogoutAllCommand(_currentUserService.CurrentUser.UserId);
+        var command = new LogoutAllCommand(CurrentUser.UserId);
         var result = await _mediator.Send(command);
-
-        if (result.IsSuccess)
-            return Ok(new { message = "از تمام دستگاه‌ها خارج شدید." });
-
-        return StatusCode(result.StatusCode, new { message = result.Error });
+        return ToActionResult(result);
     }
 }

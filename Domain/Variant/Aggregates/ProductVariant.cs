@@ -21,7 +21,6 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>
     public Money Price { get; private set; } = default!;
     public Money? CompareAtPrice { get; private set; }
     public bool IsActive { get; private set; }
-    public bool IsDeleted { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
@@ -54,7 +53,6 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>
             Price = price,
             CompareAtPrice = compareAtPrice,
             IsActive = true,
-            IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -65,8 +63,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>
 
     public void ChangePrice(Money newPrice, Money? newCompareAtPrice = null)
     {
-        EnsureNotDeleted();
-
+        EnsureActive();
         Guard.Against.Null(newPrice, nameof(newPrice));
 
         if (newPrice.Amount <= 0)
@@ -84,60 +81,43 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>
 
     public void ChangeSku(Sku newSku)
     {
-        EnsureNotDeleted();
+        EnsureActive();
         Guard.Against.Null(newSku, nameof(newSku));
-
         Sku = newSku;
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void SetAttributes(IEnumerable<AttributeAssignment> assignments)
     {
-        EnsureNotDeleted();
-
+        EnsureActive();
         _attributes.Clear();
-
         foreach (var assignment in assignments)
         {
             _attributes.Add(ProductVariantAttribute.Create(
-                Id,
-                assignment.AttributeId,
-                assignment.ValueId,
-                assignment.DisplayValue));
+                Id, assignment.AttributeId, assignment.ValueId, assignment.DisplayValue));
         }
-
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new ProductVariantAttributeSetEvent(Id, ProductId));
     }
 
     public void SetShippingMethods(IEnumerable<ShippingAssignment> assignments)
     {
-        EnsureNotDeleted();
-
+        EnsureActive();
         _shippingMethods.Clear();
-
         foreach (var assignment in assignments)
         {
             _shippingMethods.Add(ProductVariantShipping.Create(
-                Id,
-                assignment.ShippingId,
-                assignment.Weight,
-                assignment.Width,
-                assignment.Height,
-                assignment.Length));
+                Id, assignment.ShippingId,
+                assignment.Weight, assignment.Width,
+                assignment.Height, assignment.Length));
         }
-
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new ProductVariantShippingSetEvent(Id, ProductId));
     }
 
     public void Activate()
     {
-        EnsureNotDeleted();
-
-        if (IsActive)
-            return;
-
+        if (IsActive) return;
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new ProductVariantActivatedEvent(Id, ProductId));
@@ -145,28 +125,21 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>
 
     public void Deactivate()
     {
-        EnsureNotDeleted();
-
-        if (!IsActive)
-            return;
-
+        if (!IsActive) return;
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new ProductVariantDeactivatedEvent(Id, ProductId));
     }
 
-    public void Delete()
+    public void Remove()
     {
-        if (IsDeleted)
-            return;
-
-        IsDeleted = true;
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new ProductVariantRemovedEvent(ProductId, Id));
     }
 
-    public bool IsDiscounted => CompareAtPrice is not null && CompareAtPrice.Amount > Price.Amount;
+    public bool IsDiscounted =>
+        CompareAtPrice is not null && CompareAtPrice.Amount > Price.Amount;
 
     public decimal? DiscountPercentage
     {
@@ -174,20 +147,21 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>
         {
             if (!IsDiscounted || CompareAtPrice is null || CompareAtPrice.Amount == 0)
                 return null;
-            return Math.Round((CompareAtPrice.Amount - Price.Amount) / CompareAtPrice.Amount * 100, 2);
+            return Math.Round(
+                (CompareAtPrice.Amount - Price.Amount) / CompareAtPrice.Amount * 100, 2);
         }
     }
 
     public bool SkuMatches(string sku)
     {
-        if (string.IsNullOrWhiteSpace(sku))
-            return false;
+        if (string.IsNullOrWhiteSpace(sku)) return false;
         return Sku.Value.Equals(sku.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
-    private void EnsureNotDeleted()
+    private void EnsureActive()
     {
-        if (IsDeleted)
-            throw new InvalidVariantOperationException(Id.Value.GetHashCode(), "تغییر", "واریانت حذف شده است.");
+        if (!IsActive)
+            throw new InvalidVariantOperationException(
+                Id, "تغییر", "عملیات بر روی واریانت غیرفعال یا حذف‌شده مجاز نیست.");
     }
 }

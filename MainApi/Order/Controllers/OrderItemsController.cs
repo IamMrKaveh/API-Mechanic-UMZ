@@ -3,7 +3,7 @@ namespace MainApi.Order.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class OrderItemsController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class OrderItemsController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 

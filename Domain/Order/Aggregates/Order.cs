@@ -5,7 +5,7 @@ using Domain.Order.ValueObjects;
 
 namespace Domain.Order.Aggregates;
 
-public sealed class Order : AggregateRoot<Guid>
+public sealed class Order : AggregateRoot<OrderId>
 {
     private readonly List<OrderItem> _items = [];
 
@@ -22,7 +22,6 @@ public sealed class Order : AggregateRoot<Guid>
     public Guid? PaymentTransactionId { get; private set; }
     public Guid IdempotencyKey { get; private init; }
     public string? CancellationReason { get; private set; }
-    public bool IsDeleted { get; private set; }
     public DateTime CreatedAt { get; private init; }
     public DateTime? UpdatedAt { get; private set; }
 
@@ -37,7 +36,7 @@ public sealed class Order : AggregateRoot<Guid>
     { }
 
     private Order(
-        Guid id,
+        OrderId id,
         Guid userId,
         OrderNumber orderNumber,
         ReceiverInfo receiverInfo,
@@ -57,16 +56,15 @@ public sealed class Order : AggregateRoot<Guid>
         AppliedDiscountCodeId = appliedDiscountCodeId;
         IdempotencyKey = idempotencyKey;
         Status = OrderStatusValue.Created;
-        IsDeleted = false;
         CreatedAt = DateTime.UtcNow;
 
         foreach (var snapshot in itemSnapshots)
-            _items.Add(OrderItem.FromSnapshot(id, snapshot));
+            _items.Add(OrderItem.FromSnapshot(id.Value, snapshot));
 
         RecalculateTotals();
 
         RaiseDomainEvent(new OrderCreatedEvent(
-            id,
+            Guid.NewGuid(),
             userId,
             orderNumber.Value,
             FinalAmount.Amount,
@@ -76,6 +74,7 @@ public sealed class Order : AggregateRoot<Guid>
     }
 
     public static Order Place(
+        OrderId orderId,
         Guid userId,
         ReceiverInfo receiverInfo,
         DeliveryAddress deliveryAddress,
@@ -97,7 +96,7 @@ public sealed class Order : AggregateRoot<Guid>
             throw new ArgumentException("Idempotency key cannot be empty.", nameof(idempotencyKey));
 
         return new Order(
-            Guid.NewGuid(),
+            orderId,
             userId,
             OrderNumber.Generate(),
             receiverInfo,
@@ -111,34 +110,22 @@ public sealed class Order : AggregateRoot<Guid>
 
     public bool HasItems() => _items.Any();
 
-    public bool CanBeCancelled()
-    {
-        if (IsDeleted) return false;
-        return Status.CanBeCancelled();
-    }
+    public bool CanBeCancelled() => Status.CanBeCancelled();
 
-    public bool CanBeModified()
-    {
-        if (IsDeleted) return false;
-        return Status.CanBeEdited();
-    }
+    public bool CanBeModified() => Status.CanBeEdited();
 
     public void MarkAsReserved()
     {
-        EnsureNotDeleted();
         TransitionTo(OrderStatusValue.Reserved);
     }
 
     public void MarkAsPending()
     {
-        EnsureNotDeleted();
         TransitionTo(OrderStatusValue.Pending);
     }
 
     public void MarkAsPaid(Guid paymentTransactionId)
     {
-        EnsureNotDeleted();
-
         if (paymentTransactionId == Guid.Empty)
             throw new ArgumentException("Payment transaction ID cannot be empty.", nameof(paymentTransactionId));
 
@@ -147,7 +134,7 @@ public sealed class Order : AggregateRoot<Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new OrderPaidEvent(
-            Id,
+            Guid.NewGuid(),
             OrderNumber.Value,
             UserId,
             paymentTransactionId,
@@ -157,32 +144,26 @@ public sealed class Order : AggregateRoot<Guid>
 
     public void MarkAsFailed()
     {
-        EnsureNotDeleted();
         TransitionTo(OrderStatusValue.Failed);
     }
 
     public void StartProcessing()
     {
-        EnsureNotDeleted();
         TransitionTo(OrderStatusValue.Processing);
     }
 
     public void MarkAsShipped()
     {
-        EnsureNotDeleted();
         TransitionTo(OrderStatusValue.Shipped);
     }
 
     public void MarkAsDelivered()
     {
-        EnsureNotDeleted();
         TransitionTo(OrderStatusValue.Delivered);
     }
 
     public void Cancel(string reason)
     {
-        EnsureNotDeleted();
-
         if (string.IsNullOrWhiteSpace(reason))
             throw new ArgumentException("Cancellation reason cannot be empty.", nameof(reason));
 
@@ -194,7 +175,7 @@ public sealed class Order : AggregateRoot<Guid>
         CancellationReason = reason;
 
         RaiseDomainEvent(new OrderCancelledEvent(
-            Id,
+            Guid.NewGuid(),
             OrderNumber.Value,
             UserId,
             reason,
@@ -203,8 +184,6 @@ public sealed class Order : AggregateRoot<Guid>
 
     public void Expire()
     {
-        EnsureNotDeleted();
-
         if (IsPaid)
             throw new InvalidOrderTransitionException(Status.Value, OrderStatusValue.Expired.Value);
 
@@ -213,25 +192,12 @@ public sealed class Order : AggregateRoot<Guid>
 
     public void Refund()
     {
-        EnsureNotDeleted();
         TransitionTo(OrderStatusValue.Refunded);
     }
 
     public void MarkAsReturned()
     {
-        EnsureNotDeleted();
         TransitionTo(OrderStatusValue.Returned);
-    }
-
-    public void SoftDelete()
-    {
-        if (IsDeleted) return;
-
-        if (IsPaid)
-            throw new DomainException("سفارش پرداخت شده قابل حذف نیست.");
-
-        IsDeleted = true;
-        UpdatedAt = DateTime.UtcNow;
     }
 
     private void TransitionTo(OrderStatusValue next)
@@ -244,7 +210,7 @@ public sealed class Order : AggregateRoot<Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new OrderStatusChangedEvent(
-            Id,
+            Guid.NewGuid(),
             OrderNumber.Value,
             UserId,
             previous.Value,
@@ -261,11 +227,5 @@ public sealed class Order : AggregateRoot<Guid>
         FinalAmount = beforeDiscount.IsGreaterThan(DiscountAmount)
             ? beforeDiscount.Subtract(DiscountAmount)
             : Money.Zero(SubTotal.Currency);
-    }
-
-    private void EnsureNotDeleted()
-    {
-        if (IsDeleted)
-            throw new DomainException("سفارش حذف شده است و قابل تغییر نیست.");
     }
 }

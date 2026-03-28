@@ -1,9 +1,11 @@
+using MainApi.Brand.Requests;
+
 namespace MainApi.Brand.Controllers;
 
 [Route("api/admin/brand")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminBrandController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class AdminBrandController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 

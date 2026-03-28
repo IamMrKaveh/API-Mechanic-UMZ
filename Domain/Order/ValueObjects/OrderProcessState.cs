@@ -1,29 +1,18 @@
+using Domain.Order.Enums;
+
 namespace Domain.Order.ValueObjects;
 
 public class OrderProcessState
 {
     public int Id { get; private set; }
     public int OrderId { get; private set; }
-    public string CurrentStep { get; private set; } = string.Empty;
-    public string Status { get; private set; } = string.Empty;
+    public ProcessStepEnum CurrentStep { get; private set; }
+    public ProcessStatusEnum Status { get; private set; }
     public string? FailureReason { get; private set; }
     public int RetryCount { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public string? CorrelationId { get; private set; }
-
-    public static class Steps
-    {
-        public const string Created = "Created";
-        public const string InventoryReserving = "InventoryReserving";
-        public const string InventoryReserved = "InventoryReserved";
-        public const string PaymentPending = "PaymentPending";
-        public const string PaymentSucceeded = "PaymentSucceeded";
-        public const string Completed = "Completed";
-        public const string Compensating = "Compensating";
-        public const string Compensated = "Compensated";
-        public const string Failed = "Failed";
-    }
 
     private OrderProcessState()
     { }
@@ -33,8 +22,8 @@ public class OrderProcessState
         return new OrderProcessState
         {
             OrderId = orderId,
-            CurrentStep = Steps.Created,
-            Status = "InProgress",
+            CurrentStep = ProcessStepEnum.Created,
+            Status = ProcessStatusEnum.InProgress,
             CorrelationId = correlationId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
@@ -42,7 +31,7 @@ public class OrderProcessState
         };
     }
 
-    public void TransitionTo(string step)
+    public void TransitionTo(ProcessStepEnum step)
     {
         CurrentStep = step;
         UpdatedAt = DateTime.UtcNow;
@@ -50,30 +39,30 @@ public class OrderProcessState
 
     public void MarkCompleted()
     {
-        CurrentStep = Steps.Completed;
-        Status = "Completed";
+        CurrentStep = ProcessStepEnum.Completed;
+        Status = ProcessStatusEnum.Completed;
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void MarkFailed(string reason)
     {
-        CurrentStep = Steps.Failed;
-        Status = "Failed";
+        CurrentStep = ProcessStepEnum.Failed;
+        Status = ProcessStatusEnum.Failed;
         FailureReason = reason;
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void MarkCompensating()
     {
-        CurrentStep = Steps.Compensating;
-        Status = "Compensating";
+        CurrentStep = ProcessStepEnum.Compensating;
+        Status = ProcessStatusEnum.Compensating;
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void MarkCompensated()
     {
-        CurrentStep = Steps.Compensated;
-        Status = "Compensated";
+        CurrentStep = ProcessStepEnum.Compensated;
+        Status = ProcessStatusEnum.Compensated;
         UpdatedAt = DateTime.UtcNow;
     }
 

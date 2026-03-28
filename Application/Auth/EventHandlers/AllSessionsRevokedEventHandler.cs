@@ -1,3 +1,4 @@
+using Domain.Security.Events;
 using Domain.Security.Interfaces;
 
 namespace Application.Auth.EventHandlers;

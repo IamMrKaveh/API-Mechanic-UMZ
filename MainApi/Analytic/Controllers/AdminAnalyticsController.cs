@@ -3,7 +3,7 @@ namespace MainApi.Analytic.Controllers;
 [ApiController]
 [Route("api/admin/analytics")]
 [Authorize(Roles = "Admin")]
-public class AdminAnalyticsController(IMediator mediator) : ControllerBase
+public class AdminAnalyticsController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -11,11 +11,11 @@ public class AdminAnalyticsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> GetDashboardStatistics(
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
         var result = await _mediator.Send(
-            new GetDashboardStatisticsQuery(fromDate, toDate), cancellationToken);
-        return Ok(result);
+            new GetDashboardStatisticsQuery(fromDate, toDate), ct);
+        return ToActionResult(result);
     }
 
     [HttpGet("sales-chart")]
@@ -23,11 +23,11 @@ public class AdminAnalyticsController(IMediator mediator) : ControllerBase
         [FromQuery] DateTime fromDate,
         [FromQuery] DateTime toDate,
         [FromQuery] string groupBy = "day",
-        CancellationToken cancellationToken = default)
+        CancellationToken ct = default)
     {
         var result = await _mediator.Send(
-            new GetSalesChartDataQuery(fromDate, toDate, groupBy), cancellationToken);
-        return Ok(result);
+            new GetSalesChartDataQuery(fromDate, toDate, groupBy), ct);
+        return ToActionResult(result);
     }
 
     [HttpGet("top-products")]
@@ -35,41 +35,41 @@ public class AdminAnalyticsController(IMediator mediator) : ControllerBase
         [FromQuery] int count = 10,
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken ct = default)
     {
         var result = await _mediator.Send(
-            new GetTopSellingProductsQuery(count, fromDate, toDate), cancellationToken);
-        return Ok(result);
+            new GetTopSellingProductsQuery(count, fromDate, toDate), ct);
+        return ToActionResult(result);
     }
 
     [HttpGet("category-performance")]
     public async Task<IActionResult> GetCategoryPerformance(
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken ct = default)
     {
         var result = await _mediator.Send(
-            new GetCategoryPerformanceQuery(fromDate, toDate), cancellationToken);
-        return Ok(result);
+            new GetCategoryPerformanceQuery(fromDate, toDate), ct);
+        return ToActionResult(result);
     }
 
     [HttpGet("revenue")]
     public async Task<IActionResult> GetRevenueReport(
         [FromQuery] DateTime fromDate,
         [FromQuery] DateTime toDate,
-        CancellationToken cancellationToken = default)
+        CancellationToken ct = default)
     {
         var result = await _mediator.Send(
-            new GetRevenueReportQuery(fromDate, toDate), cancellationToken);
-        return Ok(result);
+            new GetRevenueReportQuery(fromDate, toDate), ct);
+        return ToActionResult(result);
     }
 
     [HttpGet("inventory")]
     public async Task<IActionResult> GetInventoryReport(
-        CancellationToken cancellationToken = default)
+        CancellationToken ct = default)
     {
         var result = await _mediator.Send(
-            new GetInventoryReportQuery(), cancellationToken);
-        return Ok(result);
+            new GetInventoryReportQuery(), ct);
+        return ToActionResult(result);
     }
 }

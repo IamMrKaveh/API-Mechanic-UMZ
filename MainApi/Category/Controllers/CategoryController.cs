@@ -2,7 +2,7 @@ namespace MainApi.Category.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CategoryController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class CategoryController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 

@@ -164,7 +164,3 @@ public record StockLedgerEntryDto(
     string? Source,
     DateTime CreatedAt
 );
-
-public record BatchAvailabilityRequest(
-    List<int> VariantIds
-);

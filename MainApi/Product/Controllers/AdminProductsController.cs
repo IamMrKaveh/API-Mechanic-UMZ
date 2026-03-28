@@ -3,10 +3,9 @@ namespace MainApi.Product.Controllers;
 [ApiController]
 [Route("api/admin/products")]
 [Authorize(Roles = "Admin")]
-public class AdminProductsController(IMediator mediator, ICurrentUserService currentUserService) : ControllerBase
+public class AdminProductsController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     [HttpGet]
     public async Task<ActionResult<ServiceResult<PaginatedResult<AdminProductListDto>>>> GetAll(
@@ -14,7 +13,7 @@ public class AdminProductsController(IMediator mediator, ICurrentUserService cur
     {
         var query = new GetAdminProductsQuery(searchParams);
         var result = await _mediator.Send(query);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpGet("{id}")]
@@ -22,17 +21,14 @@ public class AdminProductsController(IMediator mediator, ICurrentUserService cur
     {
         var query = new GetAdminProductByIdQuery(id);
         var result = await _mediator.Send(query);
-        if (result.IsFailed)
-            return StatusCode(result.StatusCode, result);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpGet("{id}/detail")]
     public async Task<IActionResult> GetDetail(int id)
     {
         var result = await _mediator.Send(new GetAdminProductDetailQuery(id));
-        if (result.IsFailed) return StatusCode(result.StatusCode, result);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpPost]
@@ -46,17 +42,15 @@ public class AdminProductsController(IMediator mediator, ICurrentUserService cur
             request.BrandId);
 
         var result = await _mediator.Send(command, ct);
-        return ToCreatedResult(result, nameof(GetById), new { productId = result.Value });
+        return ToActionResult(result);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateProductInput input)
     {
-        if (id != input.Id) return BadRequest();
-
         var command = new UpdateProductCommand(input);
-        await _mediator.Send(command);
-        return NoContent();
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
     }
 
     [HttpPut("{productId:int}/details")]
@@ -72,34 +66,28 @@ public class AdminProductsController(IMediator mediator, ICurrentUserService cur
     {
         var command = new DeleteProductCommand(id);
         var result = await _mediator.Send(command);
-        if (result.IsFailed)
-            return StatusCode(result.StatusCode, result);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpPost("{id}/restore")]
     public async Task<IActionResult> Restore(int id)
     {
-        if (!_currentUserService.UserId.HasValue) return Unauthorized();
-        var result = await _mediator.Send(new RestoreProductCommand(id, _currentUserService.UserId.Value));
-        if (result.IsFailed) return StatusCode(result.StatusCode, result);
-        return Ok(result);
+        var result = await _mediator.Send(new RestoreProductCommand(id, CurrentUser.UserId));
+        return ToActionResult(result);
     }
 
     [HttpPatch("{id}/activate")]
     public async Task<IActionResult> Activate(int id)
     {
         var result = await _mediator.Send(new ActivateProductCommand(id));
-        if (result.IsFailed) return StatusCode(result.StatusCode, result);
-        return NoContent();
+        return ToActionResult(result);
     }
 
     [HttpPatch("{id}/deactivate")]
     public async Task<IActionResult> Deactivate(int id)
     {
         var result = await _mediator.Send(new DeactivateProductCommand(id));
-        if (result.IsFailed) return StatusCode(result.StatusCode, result);
-        return NoContent();
+        return ToActionResult(result);
     }
 
     [HttpPut("{productId:int}/price")]

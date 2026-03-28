@@ -3,7 +3,7 @@ namespace MainApi.Notification.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class NotificationsController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class NotificationsController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -13,9 +13,7 @@ public class NotificationsController(IMediator mediator, ICurrentUserService cur
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var query = new GetUserNotificationsQuery(CurrentUser.UserId.Value, unreadOnly ? false : null, page, pageSize);
+        var query = new GetUserNotificationsQuery(CurrentUser.UserId, unreadOnly ? false : null, page, pageSize);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
@@ -23,9 +21,7 @@ public class NotificationsController(IMediator mediator, ICurrentUserService cur
     [HttpGet("count")]
     public async Task<IActionResult> GetUnreadCount()
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var query = new GetUnreadNotificationCountQuery(CurrentUser.UserId.Value);
+        var query = new GetUnreadNotificationCountQuery(CurrentUser.UserId);
         var result = await _mediator.Send(query);
         if (result.IsSuccess) return Ok(new { count = result.Value });
         return ToActionResult(result);
@@ -34,9 +30,7 @@ public class NotificationsController(IMediator mediator, ICurrentUserService cur
     [HttpPatch("{id}/read")]
     public async Task<IActionResult> MarkAsRead(int id)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new MarkNotificationAsReadCommand(id, CurrentUser.UserId.Value);
+        var command = new MarkNotificationAsReadCommand(id, CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -44,9 +38,7 @@ public class NotificationsController(IMediator mediator, ICurrentUserService cur
     [HttpPatch("read-all")]
     public async Task<IActionResult> MarkAllAsRead()
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new MarkAllNotificationsAsReadCommand(CurrentUser.UserId.Value);
+        var command = new MarkAllNotificationsAsReadCommand(CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -54,8 +46,7 @@ public class NotificationsController(IMediator mediator, ICurrentUserService cur
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteNotification(int id)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-        var command = new DeleteNotificationCommand(id, CurrentUser.UserId.Value);
+        var command = new DeleteNotificationCommand(id, CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

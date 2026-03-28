@@ -3,15 +3,9 @@ namespace MainApi.Location.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [AllowAnonymous]
-public class LocationController : BaseApiController
+public class LocationController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator;
-
-    public LocationController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("states")]
     public async Task<IActionResult> GetStates()

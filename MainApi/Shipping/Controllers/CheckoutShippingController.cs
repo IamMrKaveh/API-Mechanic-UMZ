@@ -2,21 +2,15 @@ namespace MainApi.Shipping.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CheckoutShippingController : BaseApiController
+public class CheckoutShippingController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator;
-
-    public CheckoutShippingController(IMediator mediator, ICurrentUserService currentUserService) : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("available-methods")]
     [Authorize]
     public async Task<IActionResult> GetAvailableShippings()
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-        var query = new GetAvailableShippingsQuery(CurrentUser.UserId.Value);
+        var query = new GetAvailableShippingsQuery(CurrentUser.UserId);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
@@ -33,8 +27,7 @@ public class CheckoutShippingController : BaseApiController
     [Authorize]
     public async Task<IActionResult> CalculateShippingCost([FromQuery] int shippingMethodId)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-        var query = new CalculateShippingCostQuery(CurrentUser.UserId.Value, shippingMethodId);
+        var query = new CalculateShippingCostQuery(CurrentUser.UserId, shippingMethodId);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

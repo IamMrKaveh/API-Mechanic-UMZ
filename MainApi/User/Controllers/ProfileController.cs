@@ -3,16 +3,14 @@ namespace MainApi.User.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class ProfileController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class ProfileController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetProfile()
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var query = new GetCurrentUserQuery(CurrentUser.UserId.Value);
+        var query = new GetCurrentUserQuery(CurrentUser.UserId);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
@@ -20,11 +18,9 @@ public class ProfileController(IMediator mediator, ICurrentUserService currentUs
     [HttpPut]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateRequest)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var command = new UpdateProfileCommand
         {
-            UserId = CurrentUser.UserId.Value,
+            UserId = CurrentUser.UserId,
             FirstName = updateRequest.FirstName,
             LastName = updateRequest.LastName
         };
@@ -35,9 +31,7 @@ public class ProfileController(IMediator mediator, ICurrentUserService currentUs
     [HttpDelete]
     public async Task<IActionResult> DeleteAccount()
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new DeactivateAccountCommand(CurrentUser.UserId.Value);
+        var command = new DeactivateAccountCommand(CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -45,9 +39,7 @@ public class ProfileController(IMediator mediator, ICurrentUserService currentUs
     [HttpGet("reviews")]
     public async Task<IActionResult> GetMyReviews([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var query = new GetUserReviewsQuery(CurrentUser.UserId.Value, page, pageSize);
+        var query = new GetUserReviewsQuery(CurrentUser.UserId, page, pageSize);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
@@ -55,9 +47,7 @@ public class ProfileController(IMediator mediator, ICurrentUserService currentUs
     [HttpGet("addresses")]
     public async Task<IActionResult> GetUserAddresses()
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var query = new GetUserAddressesQuery(CurrentUser.UserId.Value);
+        var query = new GetUserAddressesQuery(CurrentUser.UserId);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
@@ -65,43 +55,37 @@ public class ProfileController(IMediator mediator, ICurrentUserService currentUs
     [HttpPost("addresses")]
     public async Task<IActionResult> AddAddress([FromBody] CreateUserAddressDto addressDto)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-        var result = await _mediator.Send(new CreateUserAddressCommand(CurrentUser.UserId.Value, addressDto));
+        var result = await _mediator.Send(new CreateUserAddressCommand(CurrentUser.UserId, addressDto));
         return ToActionResult(result);
     }
 
     [HttpPut("addresses/{id}")]
     public async Task<IActionResult> UpdateAddress(int id, [FromBody] UpdateUserAddressDto addressDto)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-        var result = await _mediator.Send(new UpdateUserAddressCommand(CurrentUser.UserId.Value, id, addressDto));
+        var result = await _mediator.Send(new UpdateUserAddressCommand(CurrentUser.UserId, id, addressDto));
         return ToActionResult(result);
     }
 
     [HttpDelete("addresses/{id}")]
     public async Task<IActionResult> DeleteAddress(int id)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-        var result = await _mediator.Send(new DeleteUserAddressCommand(CurrentUser.UserId.Value, id));
+        var result = await _mediator.Send(new DeleteUserAddressCommand(CurrentUser.UserId, id));
         return ToActionResult(result);
     }
 
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-        var result = await _mediator.Send(new ChangePasswordCommand(CurrentUser.UserId.Value, dto));
+        var result = await _mediator.Send(new ChangePasswordCommand(CurrentUser.UserId, dto));
         return ToActionResult(result);
     }
 
     [HttpPost("change-phone")]
     public async Task<IActionResult> ChangePhoneNumber([FromBody] ChangePhoneNumberRequest dto)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var command = new ChangePhoneNumberCommand
         {
-            UserId = CurrentUser.UserId.Value,
+            UserId = CurrentUser.UserId,
             NewPhoneNumber = dto.NewPhoneNumber,
             OtpCode = dto.OtpCode
         };

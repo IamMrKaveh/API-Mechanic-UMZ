@@ -3,7 +3,7 @@ namespace MainApi.User.Controllers;
 [Route("api/admin/user")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminUserController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class AdminUserController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -23,11 +23,7 @@ public class AdminUserController(IMediator mediator, ICurrentUserService current
     {
         var command = new CreateUserCommand(dto);
         var result = await _mediator.Send(command);
-
-        if (result.IsSuccess)
-            return CreatedAtAction(nameof(GetUser), new { id = result.Value?.Id }, result.Value);
-
-        return ToActionResult(ServiceResult.Failure(result.Error ?? "Error"));
+        return ToActionResult(result);
     }
 
     [HttpGet("{id}")]
@@ -41,9 +37,7 @@ public class AdminUserController(IMediator mediator, ICurrentUserService current
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateProfileDto updateRequest)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new UpdateUserCommand(id, updateRequest, CurrentUser.UserId.Value);
+        var command = new UpdateUserCommand(id, updateRequest, CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -59,8 +53,7 @@ public class AdminUserController(IMediator mediator, ICurrentUserService current
     [HttpPatch("{id}/role")]
     public async Task<IActionResult> ChangeUserRole(int id, [FromBody] ChangeUserRoleRequest dto)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-        var command = new ChangeUserRoleCommand(id, dto.IsAdmin, CurrentUser.UserId.Value);
+        var command = new ChangeUserRoleCommand(id, dto.IsAdmin, CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -68,9 +61,7 @@ public class AdminUserController(IMediator mediator, ICurrentUserService current
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new DeleteUserCommand(id, CurrentUser.UserId.Value);
+        var command = new DeleteUserCommand(id, CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

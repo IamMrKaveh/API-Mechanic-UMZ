@@ -3,7 +3,7 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Security.Events;
 
-public sealed record UserSessionExpiredEvent(
+public sealed record SessionExpiredEvent(
     UserSessionId SessionId,
     UserId UserId) : IDomainEvent
 {

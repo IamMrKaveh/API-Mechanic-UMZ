@@ -2,14 +2,9 @@ namespace MainApi.Security.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SecurityController : ControllerBase
+public class SecurityController(IAntiforgery antiforgery, IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IAntiforgery _antiforgery;
-
-    public SecurityController(IAntiforgery antiforgery)
-    {
-        _antiforgery = antiforgery;
-    }
+    private readonly IAntiforgery _antiforgery = antiforgery;
 
     [HttpGet("csrf-token")]
     [IgnoreAntiforgeryToken]

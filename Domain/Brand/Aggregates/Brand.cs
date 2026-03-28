@@ -1,11 +1,10 @@
 using Domain.Brand.Events;
 using Domain.Brand.Exceptions;
 using Domain.Brand.ValueObjects;
-using Slug = Domain.Brand.ValueObjects.Slug;
 
 namespace Domain.Brand.Aggregates;
 
-public sealed class Brand : AggregateRoot<Guid>
+public sealed class Brand : AggregateRoot<BrandId>
 {
     public BrandName Name { get; private set; } = null!;
     public Slug Slug { get; private set; } = null!;
@@ -13,7 +12,6 @@ public sealed class Brand : AggregateRoot<Guid>
     public string? LogoPath { get; private set; }
     public Guid CategoryId { get; private set; }
     public bool IsActive { get; private set; }
-    public bool IsDeleted { get; private set; }
     public DateTime CreatedAt { get; private init; }
     public DateTime? UpdatedAt { get; private set; }
 
@@ -21,7 +19,7 @@ public sealed class Brand : AggregateRoot<Guid>
     { }
 
     private Brand(
-        Guid id,
+        BrandId id,
         BrandName name,
         Slug slug,
         Guid categoryId,
@@ -34,10 +32,9 @@ public sealed class Brand : AggregateRoot<Guid>
         Description = description;
         LogoPath = logoPath;
         IsActive = true;
-        IsDeleted = false;
         CreatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new BrandCreatedEvent(id, name.Value, slug.Value, categoryId));
+        RaiseDomainEvent(new BrandCreatedEvent(id.Value, name.Value, slug.Value, categoryId));
     }
 
     public static Brand Create(
@@ -50,26 +47,22 @@ public sealed class Brand : AggregateRoot<Guid>
         if (categoryId == Guid.Empty)
             throw new ArgumentException("Category ID cannot be empty.", nameof(categoryId));
 
-        return new Brand(Guid.NewGuid(), name, slug, categoryId, description, logoPath);
+        return new Brand(BrandId.NewId(), name, slug, categoryId, description, logoPath);
     }
 
     public void UpdateDetails(BrandName name, Slug slug, string? description, string? logoPath)
     {
-        EnsureNotDeleted();
-
         Name = name;
         Slug = slug;
         Description = description;
         LogoPath = logoPath;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new BrandUpdatedEvent(Id, name.Value, slug.Value, description));
+        RaiseDomainEvent(new BrandUpdatedEvent(Id.Value, name.Value, slug.Value, description));
     }
 
     public void ChangeCategory(Guid newCategoryId)
     {
-        EnsureNotDeleted();
-
         if (newCategoryId == Guid.Empty)
             throw new ArgumentException("Category ID cannot be empty.", nameof(newCategoryId));
 
@@ -80,48 +73,28 @@ public sealed class Brand : AggregateRoot<Guid>
         CategoryId = newCategoryId;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new BrandCategoryChangedEvent(Id, previousCategoryId, newCategoryId));
+        RaiseDomainEvent(new BrandCategoryChangedEvent(Id.Value, previousCategoryId, newCategoryId));
     }
 
     public void Activate()
     {
-        EnsureNotDeleted();
-
         if (IsActive)
-            throw new BrandAlreadyActiveException(Id);
+            throw new BrandAlreadyActiveException(Id.Value);
 
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new BrandActivatedEvent(Id, Name.Value, CategoryId));
+        RaiseDomainEvent(new BrandActivatedEvent(Id.Value, Name.Value, CategoryId));
     }
 
     public void Deactivate()
     {
-        EnsureNotDeleted();
-
         if (!IsActive)
-            throw new BrandAlreadyDeactivatedException(Id);
+            throw new BrandAlreadyDeactivatedException(Id.Value);
 
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new BrandDeactivatedEvent(Id, Name.Value, CategoryId));
-    }
-
-    public void Delete()
-    {
-        EnsureNotDeleted();
-        IsDeleted = true;
-        IsActive = false;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new BrandDeletedEvent(Id, CategoryId));
-    }
-
-    private void EnsureNotDeleted()
-    {
-        if (IsDeleted)
-            throw new DeletedBrandMutationException(Id);
+        RaiseDomainEvent(new BrandDeactivatedEvent(Id.Value, Name.Value, CategoryId));
     }
 }

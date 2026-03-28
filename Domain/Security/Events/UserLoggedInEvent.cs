@@ -1,6 +1,6 @@
 using Domain.User.ValueObjects;
 
-namespace Domain.User.Events;
+namespace Domain.Security.Events;
 
 public sealed record UserLoggedInEvent(UserId UserId) : IDomainEvent
 {

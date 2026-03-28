@@ -3,7 +3,7 @@ namespace MainApi.Attribute.Controllers;
 [ApiController]
 [Route("api/admin/attributes")]
 [Authorize(Roles = "Admin")]
-public class AdminAttributesController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class AdminAttributesController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -35,7 +35,9 @@ public class AdminAttributesController(IMediator mediator, ICurrentUserService c
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateAttributeType(int id, [FromBody] UpdateAttributeTypeDto dto)
+    public async Task<IActionResult> UpdateAttributeType(
+        int id,
+        [FromBody] UpdateAttributeTypeDto dto)
     {
         var command = new UpdateAttributeTypeCommand(id, dto.Name, dto.DisplayName, dto.SortOrder, dto.IsActive);
         var result = await _mediator.Send(command);
@@ -50,7 +52,9 @@ public class AdminAttributesController(IMediator mediator, ICurrentUserService c
     }
 
     [HttpPost("{typeId}/values")]
-    public async Task<IActionResult> CreateAttributeValue(int typeId, [FromBody] CreateAttributeValueDto dto)
+    public async Task<IActionResult> CreateAttributeValue(
+        int typeId,
+        [FromBody] CreateAttributeValueDto dto)
     {
         var command = new CreateAttributeValueCommand(typeId, dto.Value, dto.DisplayValue, dto.HexCode, dto.SortOrder);
         var result = await _mediator.Send(command);
@@ -63,7 +67,9 @@ public class AdminAttributesController(IMediator mediator, ICurrentUserService c
     }
 
     [HttpPut("values/{id}")]
-    public async Task<IActionResult> UpdateAttributeValue(int id, [FromBody] UpdateAttributeValueDto dto)
+    public async Task<IActionResult> UpdateAttributeValue(
+        int id,
+        [FromBody] UpdateAttributeValueDto dto)
     {
         var command = new UpdateAttributeValueCommand(id, dto.Value, dto.DisplayValue, dto.HexCode, dto.SortOrder, dto.IsActive);
         var result = await _mediator.Send(command);

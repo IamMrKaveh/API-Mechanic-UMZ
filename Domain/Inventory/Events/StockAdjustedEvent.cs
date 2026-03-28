@@ -1,11 +1,20 @@
+using Domain.Inventory.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Inventory.Events;
 
-public class AdjustStockEvent(int variantId, int newQuantity, int adjustment) : DomainEvent
+public sealed class StockAdjustedEvent(
+    InventoryId inventoryId,
+    ProductVariantId variantId,
+    int newQuantity,
+    int adjustment,
+    string reason) : DomainEvent
 {
-    public int VariantId { get; } = variantId;
+    public InventoryId InventoryId { get; } = inventoryId;
+    public ProductVariantId VariantId { get; } = variantId;
     public int NewQuantity { get; } = newQuantity;
     public int Adjustment { get; } = adjustment;
+    public string Reason { get; } = reason;
     public bool IsIncrease { get; } = adjustment > 0;
-
     public int PreviousQuantity => NewQuantity - Adjustment;
 }

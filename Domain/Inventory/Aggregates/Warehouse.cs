@@ -3,7 +3,7 @@ using Domain.Inventory.ValueObjects;
 
 namespace Domain.Inventory.Aggregates;
 
-public sealed class Warehouse : AggregateRoot<int>, IActivatable, IAuditable
+public sealed class Warehouse : AggregateRoot<WarehouseId>, IActivatable, IAuditable
 {
     public WarehouseCode Code { get; private set; } = null!;
     public string Name { get; private set; } = null!;
@@ -21,7 +21,7 @@ public sealed class Warehouse : AggregateRoot<int>, IActivatable, IAuditable
     { }
 
     public static Warehouse Create(
-        int id,
+        int rawId,
         string code,
         string name,
         string city,
@@ -33,11 +33,12 @@ public sealed class Warehouse : AggregateRoot<int>, IActivatable, IAuditable
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
         Guard.Against.NullOrWhiteSpace(city, nameof(city));
 
+        var warehouseId = WarehouseId.Create(rawId);
         var codeVo = WarehouseCode.Create(code);
 
         var warehouse = new Warehouse
         {
-            Id = id,
+            Id = warehouseId,
             Code = codeVo,
             Name = name.Trim(),
             City = city.Trim(),
@@ -49,7 +50,7 @@ public sealed class Warehouse : AggregateRoot<int>, IActivatable, IAuditable
             CreatedAt = DateTime.UtcNow
         };
 
-        warehouse.RaiseDomainEvent(new WarehouseCreatedEvent(warehouse.Id, warehouse.Code.Value, warehouse.Name));
+        warehouse.RaiseDomainEvent(new WarehouseCreatedEvent(warehouseId, codeVo.Value, warehouse.Name));
         return warehouse;
     }
 
@@ -73,7 +74,6 @@ public sealed class Warehouse : AggregateRoot<int>, IActivatable, IAuditable
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
-
         RaiseDomainEvent(new WarehouseActivatedEvent(Id, Code.Value));
     }
 
@@ -84,7 +84,6 @@ public sealed class Warehouse : AggregateRoot<int>, IActivatable, IAuditable
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
-
         RaiseDomainEvent(new WarehouseDeactivatedEvent(Id, Code.Value));
     }
 
@@ -93,7 +92,6 @@ public sealed class Warehouse : AggregateRoot<int>, IActivatable, IAuditable
         IsDefault = true;
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
-
         RaiseDomainEvent(new WarehouseSetAsDefaultEvent(Id, Code.Value));
     }
 
@@ -105,7 +103,6 @@ public sealed class Warehouse : AggregateRoot<int>, IActivatable, IAuditable
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
-
         RaiseDomainEvent(new WarehouseDeletedEvent(Id, Code.Value, deletedBy));
     }
 }

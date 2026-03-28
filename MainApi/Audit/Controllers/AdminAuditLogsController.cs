@@ -4,7 +4,7 @@ namespace MainApi.Audit.Controllers;
 [Route("api/admin/audit-logs")]
 [Authorize(Roles = "Admin")]
 [Tags("Admin - Audit Logs")]
-public sealed class AdminAuditLogsController(IMediator mediator) : ControllerBase
+public sealed class AdminAuditLogsController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -38,7 +38,7 @@ public sealed class AdminAuditLogsController(IMediator mediator) : ControllerBas
             SortDesc: sortDesc),
             ct);
 
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpGet("statistics")]
@@ -49,7 +49,7 @@ public sealed class AdminAuditLogsController(IMediator mediator) : ControllerBas
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetAuditStatisticsQuery(from, to), ct);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpGet("export/csv")]
@@ -71,7 +71,7 @@ public sealed class AdminAuditLogsController(IMediator mediator) : ControllerBas
             MaxRows: maxRows),
             ct);
 
-        return File(result.FileContent, result.ContentType, result.FileName);
+        return ToActionResult(result);
     }
 
     [HttpGet("export/json")]
@@ -93,20 +93,6 @@ public sealed class AdminAuditLogsController(IMediator mediator) : ControllerBas
             MaxRows: maxRows),
             ct);
 
-        return File(result.FileContent, result.ContentType, result.FileName);
-    }
-
-    [HttpGet("event-types")]
-    [ProducesResponseType(typeof(IEnumerable<string>), 200)]
-    public IActionResult GetEventTypes()
-    {
-        var types = new[]
-        {
-            "UserAction", "SecurityEvent", "AdminEvent",
-            "OrderEvent", "PaymentEvent", "InventoryEvent",
-            "CartEvent", "ProductEvent", "SystemEvent",
-            "AuthEvent", "RefundEvent"
-        };
-        return Ok(types);
+        return ToActionResult(result);
     }
 }

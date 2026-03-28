@@ -4,7 +4,7 @@ using Domain.Variant.Entities;
 
 namespace Domain.Attribute.Entities;
 
-public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, ISoftDeletable, IActivatable
+public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActivatable
 {
     public AttributeTypeId AttributeTypeId { get; private set; } = null!;
     public string Value { get; private set; } = null!;
@@ -14,9 +14,6 @@ public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, ISoft
     public bool IsActive { get; private set; } = true;
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
-    public bool IsDeleted { get; private set; }
-    public DateTime? DeletedAt { get; private set; }
-    public int? DeletedBy { get; private set; }
 
     public AttributeType AttributeType { get; private set; } = null!;
     public ICollection<ProductVariantAttribute> VariantAttributes { get; private set; } = new List<ProductVariantAttribute>();
@@ -67,14 +64,5 @@ public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, ISoft
         SortOrder = sortOrder;
         IsActive = isActive;
         UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void Delete(int? deletedBy = null)
-    {
-        if (IsDeleted) return;
-        IsDeleted = true;
-        DeletedAt = DateTime.UtcNow;
-        DeletedBy = deletedBy;
-        IsActive = false;
     }
 }

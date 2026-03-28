@@ -4,11 +4,10 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Security.Events;
 
-public sealed record UserOtpGeneratedEvent(
-    UserOtpId OtpId,
+public sealed record SessionRevokedEvent(
+    UserSessionId SessionId,
     UserId UserId,
-    OtpPurpose Purpose,
-    DateTime ExpiresAt) : IDomainEvent
+    SessionRevocationReason Reason) : IDomainEvent
 {
     public Guid EventId { get; } = Guid.NewGuid();
     public DateTime OccurredAt { get; } = DateTime.UtcNow;

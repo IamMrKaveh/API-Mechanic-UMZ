@@ -1,11 +1,12 @@
+using MainApi.Review.Requests;
+
 namespace MainApi.Review.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class ReviewsController(IMediator mediator, ICurrentUserService currentUserService) : ControllerBase
+public class ReviewsController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     [HttpGet("product/{productId}")]
     [AllowAnonymous]
@@ -16,20 +17,17 @@ public class ReviewsController(IMediator mediator, ICurrentUserService currentUs
     {
         var query = new GetProductReviewsQuery(productId, page, pageSize);
         var result = await _mediator.Send(query);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> SubmitReview([FromBody] SubmitReviewRequest request)
     {
-        var userId = _currentUserService.UserId;
-        if (userId == null) return Unauthorized();
-
         var command = new SubmitReviewCommand
         {
             ProductId = request.ProductId,
-            UserId = userId.Value,
+            UserId = CurrentUser.UserId,
             OrderId = request.OrderId,
             Rating = request.Rating,
             Title = request.Title,
@@ -52,10 +50,7 @@ public class ReviewsController(IMediator mediator, ICurrentUserService currentUs
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var userId = _currentUserService.UserId;
-        if (userId == null) return Unauthorized();
-
-        var query = new GetUserReviewsQuery(userId.Value, page, pageSize);
+        var query = new GetUserReviewsQuery(CurrentUser.UserId, page, pageSize);
         var result = await _mediator.Send(query);
         return Ok(result);
     }
