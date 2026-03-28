@@ -3,7 +3,7 @@ namespace MainApi.Order.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class OrdersController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class OrdersController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -13,9 +13,7 @@ public class OrdersController(IMediator mediator, ICurrentUserService currentUse
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var query = new GetUserOrdersQuery(CurrentUser.UserId.Value, status, page, pageSize);
+        var query = new GetUserOrdersQuery(CurrentUser.UserId, status, page, pageSize);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
@@ -23,15 +21,15 @@ public class OrdersController(IMediator mediator, ICurrentUserService currentUse
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOrderById(int id)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var query = new GetOrderDetailsQuery(id, CurrentUser.UserId.Value);
+        var query = new GetOrderDetailsQuery(id, CurrentUser.UserId);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpPost("checkout")]
-    public async Task<IActionResult> CheckoutFromCart([FromBody] CheckoutFromCartRequest request, CancellationToken ct)
+    public async Task<IActionResult> CheckoutFromCart(
+        [FromBody] CheckoutFromCartRequest request,
+        CancellationToken ct)
     {
         var command = new CheckoutFromCartCommand(request.ShippingAddress, request.PaymentMethod);
         var result = await _mediator.Send(command, ct);
@@ -39,7 +37,9 @@ public class OrdersController(IMediator mediator, ICurrentUserService currentUse
     }
 
     [HttpPost("{orderId:int}/cancel")]
-    public async Task<IActionResult> CancelOrder(int orderId, CancellationToken ct)
+    public async Task<IActionResult> CancelOrder(
+        int orderId,
+        CancellationToken ct)
     {
         var command = new CancelOrderCommand(orderId);
         var result = await _mediator.Send(command, ct);
@@ -47,7 +47,9 @@ public class OrdersController(IMediator mediator, ICurrentUserService currentUse
     }
 
     [HttpPost("{orderId:int}/confirm-delivery")]
-    public async Task<IActionResult> ConfirmDelivery(int orderId, CancellationToken ct)
+    public async Task<IActionResult> ConfirmDelivery(
+        int orderId,
+        CancellationToken ct)
     {
         var command = new ConfirmDeliveryCommand(orderId);
         var result = await _mediator.Send(command, ct);
@@ -55,7 +57,10 @@ public class OrdersController(IMediator mediator, ICurrentUserService currentUse
     }
 
     [HttpPost("{orderId:int}/return")]
-    public async Task<IActionResult> RequestReturn(int orderId, [FromBody] RequestReturnRequest request, CancellationToken ct)
+    public async Task<IActionResult> RequestReturn(
+        int orderId,
+        [FromBody] RequestReturnRequest request,
+        CancellationToken ct)
     {
         var command = new RequestReturnCommand(orderId, request.Reason);
         var result = await _mediator.Send(command, ct);

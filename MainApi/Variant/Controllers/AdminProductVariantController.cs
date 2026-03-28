@@ -3,18 +3,14 @@ namespace MainApi.Variant.Controllers;
 [Route("api/admin/variants")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminProductVariantController : BaseApiController
+public class AdminProductVariantController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator;
-
-    public AdminProductVariantController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("by-product/{productId}")]
-    public async Task<IActionResult> GetVariantsByProduct(int productId, [FromQuery] bool activeOnly = true)
+    public async Task<IActionResult> GetVariantsByProduct(
+        int productId,
+        [FromQuery] bool activeOnly = true)
     {
         var result = await _mediator.Send(new GetProductVariantsQuery(productId, activeOnly));
         return ToActionResult(result);
@@ -28,41 +24,32 @@ public class AdminProductVariantController : BaseApiController
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateVariantCommand command)
+    public async Task<IActionResult> Update([FromBody] UpdateVariantCommand command)
     {
-        if (id != command.VariantId) return BadRequest("Variant ID mismatch");
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id, [FromQuery] int productId)
+    public async Task<IActionResult> Delete(
+        [FromQuery] int productId,
+        [FromQuery] int variantId)
     {
-        var command = new RemoveVariantCommand(productId, id);
+        var command = new RemoveVariantCommand(productId, variantId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpPost("{id}/stock")]
-    public async Task<IActionResult> AddStock(int id, [FromBody] AddStockCommand command)
+    public async Task<IActionResult> AddStock([FromBody] AddStockCommand command)
     {
-        if (id != command.VariantId) return BadRequest("Variant ID mismatch");
-
-        if (command.UserId <= 0 && CurrentUser.UserId.HasValue)
-            command = command with { UserId = CurrentUser.UserId.Value };
-
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpPost("{id}/remove-stock")]
-    public async Task<IActionResult> RemoveStock(int id, [FromBody] RemoveStockCommand command)
+    public async Task<IActionResult> RemoveStock([FromBody] RemoveStockCommand command)
     {
-        if (id != command.VariantId) return BadRequest("Variant ID mismatch");
-
-        if (command.UserId <= 0 && CurrentUser.UserId.HasValue)
-            command = command with { UserId = CurrentUser.UserId.Value };
-
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

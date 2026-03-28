@@ -1,12 +1,10 @@
-﻿using Domain.Security.Enums;
 using Domain.User.ValueObjects;
 
 namespace Domain.Security.Events;
 
-public sealed record AllUserSessionsRevokedEvent(
+public sealed record UserLockedOutEvent(
     UserId UserId,
-    SessionRevocationReason Reason,
-    int RevokedCount) : IDomainEvent
+    DateTime LockoutEnd) : IDomainEvent
 {
     public Guid EventId { get; } = Guid.NewGuid();
     public DateTime OccurredAt { get; } = DateTime.UtcNow;

@@ -63,7 +63,7 @@ public sealed class UserOtp : AggregateRoot<UserOtpId>
             CreatedAt = DateTime.UtcNow
         };
 
-        otp.RaiseDomainEvent(new UserOtpGeneratedEvent(id, userId, purpose, otp.ExpiresAt));
+        otp.RaiseDomainEvent(new OtpGeneratedEvent(id, userId, purpose, otp.ExpiresAt));
         return otp;
     }
 
@@ -82,13 +82,13 @@ public sealed class UserOtp : AggregateRoot<UserOtpId>
 
         if (!Code.Matches(providedCode))
         {
-            RaiseDomainEvent(new UserOtpVerificationFailedEvent(Id, UserId, Purpose, VerificationAttempts, RemainingAttempts));
+            RaiseDomainEvent(new OtpVerificationFailedEvent(Id, UserId, Purpose, VerificationAttempts, RemainingAttempts));
             throw new InvalidOtpCodeException(Id);
         }
 
         IsVerified = true;
         VerifiedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new UserOtpVerifiedEvent(Id, UserId, Purpose));
+        RaiseDomainEvent(new OtpVerifiedEvent(Id, UserId, Purpose));
     }
 
     public void MarkExpired()
@@ -96,6 +96,6 @@ public sealed class UserOtp : AggregateRoot<UserOtpId>
         if (IsVerified || IsExpired)
             return;
 
-        RaiseDomainEvent(new UserOtpExpiredEvent(Id, UserId, Purpose));
+        RaiseDomainEvent(new OtpExpiredEvent(Id, UserId, Purpose));
     }
 }

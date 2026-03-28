@@ -3,7 +3,7 @@ namespace MainApi.Media.Controllers;
 [Route("api/admin/media")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminMediaController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class AdminMediaController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -35,8 +35,6 @@ public class AdminMediaController(IMediator mediator, ICurrentUserService curren
         [FromForm] bool isPrimary = false,
         [FromForm] string? altText = null)
     {
-        if (file == null) return BadRequest("File is required.");
-
         var command = new UploadMediaCommand
         {
             FileStream = file.OpenReadStream(),

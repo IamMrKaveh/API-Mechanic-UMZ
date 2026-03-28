@@ -7,7 +7,7 @@ namespace Domain.Support.Aggregates;
 
 public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
 {
-    private readonly List<TicketMessage> _messages = new();
+    private readonly List<TicketMessage> _messages = [];
 
     private Ticket()
     { }
@@ -17,7 +17,7 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
     public string Subject { get; private set; } = default!;
     public TicketStatus Status { get; private set; } = default!;
     public TicketPriority Priority { get; private set; } = default!;
-    public string Category { get; private set; } = default!;
+    public TicketCategory Category { get; private set; } = default!;
     public DateTime? ResolvedAt { get; private set; }
     public DateTime? LastActivityAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
@@ -35,42 +35,29 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
 
     public bool IsAnswered => Status == TicketStatus.Answered;
 
-    public bool IsHighPriority() => Priority.IsHighPriority();
-
-    public bool IsUrgent() => Priority.IsUrgent();
-
-    public bool RequiresUrgentAttention()
-    {
-        if (IsClosed) return false;
-        if (IsUrgent()) return true;
-        if (IsHighPriority() && IsAwaitingReply) return true;
-        if (IsAwaitingReply && CreatedAt < DateTime.UtcNow.AddHours(-24)) return true;
-        return false;
-    }
-
     public TicketMessage? LastMessage => _messages.OrderByDescending(m => m.SentAt).FirstOrDefault();
 
     public static Ticket Open(
         TicketId id,
         UserId customerId,
         string subject,
-        string category,
+        TicketCategory category,
         TicketPriority? priority = null)
     {
         Guard.Against.Null(id, nameof(id));
         Guard.Against.Null(customerId, nameof(customerId));
         Guard.Against.NullOrWhiteSpace(subject, nameof(subject));
-        Guard.Against.NullOrWhiteSpace(category, nameof(category));
+        Guard.Against.Null(category, nameof(category));
 
         if (subject.Trim().Length > 200)
-            throw new Common.Exceptions.DomainException("عنوان تیکت نمی‌تواند بیش از ۲۰۰ کاراکتر باشد.");
+            throw new DomainException("عنوان تیکت نمی‌تواند بیش از ۲۰۰ کاراکتر باشد.");
 
         var ticket = new Ticket
         {
             Id = id,
             CustomerId = customerId,
             Subject = subject.Trim(),
-            Category = category.Trim(),
+            Category = category,
             Priority = priority ?? TicketPriority.Normal,
             Status = TicketStatus.Open,
             CreatedAt = DateTime.UtcNow,
@@ -78,7 +65,7 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
             LastActivityAt = DateTime.UtcNow
         };
 
-        ticket.RaiseDomainEvent(new TicketCreatedEvent(id, customerId, subject.Trim(), category.Trim(), priority ?? TicketPriority.Normal));
+        ticket.RaiseDomainEvent(new TicketCreatedEvent(id, customerId, subject.Trim(), category.Value, priority ?? TicketPriority.Normal));
         return ticket;
     }
 
@@ -89,12 +76,12 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
         string content)
     {
         if (IsClosed)
-            throw new Exceptions.TicketAlreadyClosedException(Id);
+            throw new DomainException("تیکت بسته شده است.");
 
         Guard.Against.NullOrWhiteSpace(content, nameof(content));
 
         if (content.Trim().Length > 5000)
-            throw new Common.Exceptions.DomainException("متن پیام نمی‌تواند بیش از ۵۰۰۰ کاراکتر باشد.");
+            throw new DomainException("متن پیام نمی‌تواند بیش از ۵۰۰۰ کاراکتر باشد.");
 
         var message = TicketMessage.Create(messageId, Id, senderId, senderType, content.Trim());
         _messages.Add(message);
@@ -118,18 +105,18 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
     public void EditMessage(TicketMessageId messageId, UserId editorId, string newContent)
     {
         if (IsClosed)
-            throw new Exceptions.TicketAlreadyClosedException(Id);
+            throw new DomainException("تیکت بسته شده است.");
 
         var message = _messages.FirstOrDefault(m => m.Id == messageId)
-            ?? throw new Common.Exceptions.DomainException("پیام یافت نشد.");
+            ?? throw new DomainException("پیام یافت نشد.");
 
         if (message.SenderId != editorId)
-            throw new Common.Exceptions.DomainException("شما مجاز به ویرایش این پیام نیستید.");
+            throw new DomainException("شما مجاز به ویرایش این پیام نیستید.");
 
         Guard.Against.NullOrWhiteSpace(newContent, nameof(newContent));
 
         if (newContent.Trim().Length > 5000)
-            throw new Common.Exceptions.DomainException("متن پیام نمی‌تواند بیش از ۵۰۰۰ کاراکتر باشد.");
+            throw new DomainException("متن پیام نمی‌تواند بیش از ۵۰۰۰ کاراکتر باشد.");
 
         message.EditContent(newContent.Trim());
         UpdatedAt = DateTime.UtcNow;
@@ -138,7 +125,7 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
     public void AssignTo(UserId agentId)
     {
         if (IsClosed)
-            throw new Exceptions.TicketAlreadyClosedException(Id);
+            throw new DomainException("تیکت بسته شده است.");
 
         Guard.Against.Null(agentId, nameof(agentId));
 
@@ -173,12 +160,12 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
     public void UpdateSubject(string newSubject)
     {
         if (IsClosed)
-            throw new Exceptions.TicketAlreadyClosedException(Id);
+            throw new DomainException("تیکت بسته شده است.");
 
         Guard.Against.NullOrWhiteSpace(newSubject, nameof(newSubject));
 
         if (newSubject.Trim().Length > 200)
-            throw new Common.Exceptions.DomainException("عنوان تیکت نمی‌تواند بیش از ۲۰۰ کاراکتر باشد.");
+            throw new DomainException("عنوان تیکت نمی‌تواند بیش از ۲۰۰ کاراکتر باشد.");
 
         Subject = newSubject.Trim();
         UpdatedAt = DateTime.UtcNow;
@@ -189,7 +176,7 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
     public void Resolve()
     {
         if (IsClosed)
-            throw new Exceptions.TicketAlreadyClosedException(Id);
+            throw new DomainException("تیکت بسته شده است.");
 
         var previous = Status;
         Status = TicketStatus.Answered;
@@ -228,28 +215,6 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
         RaiseDomainEvent(new TicketStatusChangedEvent(Id, CustomerId, previous, TicketStatus.Open));
     }
 
-    public void MarkAsAwaitingReply()
-    {
-        if (IsClosed) return;
-
-        var previous = Status;
-        Status = TicketStatus.AwaitingReply;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new TicketStatusChangedEvent(Id, CustomerId, previous, TicketStatus.AwaitingReply));
-    }
-
-    public void MarkAsAnswered()
-    {
-        if (IsClosed) return;
-
-        var previous = Status;
-        Status = TicketStatus.Answered;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new TicketStatusChangedEvent(Id, CustomerId, previous, TicketStatus.Answered));
-    }
-
     private void UpdateStatusAfterMessage(TicketMessageSenderType senderType)
     {
         if (senderType == TicketMessageSenderType.Customer && IsAwaitingReply)
@@ -268,24 +233,5 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
         {
             Status = TicketStatus.AwaitingReply;
         }
-    }
-
-    public TimeSpan? GetTimeToFirstResponse()
-    {
-        var firstAgentMessage = _messages
-            .Where(m => m.SenderType == TicketMessageSenderType.Agent)
-            .OrderBy(m => m.SentAt)
-            .FirstOrDefault();
-
-        if (firstAgentMessage is null) return null;
-
-        return firstAgentMessage.SentAt - CreatedAt;
-    }
-
-    public TimeSpan GetAge() => DateTime.UtcNow - CreatedAt;
-
-    public bool HasUnreadMessages(UserId userId)
-    {
-        return _messages.Any(m => m.SenderId != userId);
     }
 }

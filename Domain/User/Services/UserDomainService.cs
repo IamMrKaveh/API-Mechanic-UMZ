@@ -11,9 +11,6 @@ public sealed class UserDomainService
     {
         Guard.Against.Null(user, nameof(user));
 
-        if (user.IsDeleted)
-            return LoginAttemptResult.AccountDeleted();
-
         if (!user.IsActive)
             return LoginAttemptResult.AccountInactive();
 
@@ -43,9 +40,6 @@ public sealed class UserDomainService
     {
         Guard.Against.Null(user, nameof(user));
 
-        if (user.IsDeleted)
-            return Result.Failure("کاربر حذف شده است.");
-
         if (!user.IsActive)
             return Result.Failure("حساب کاربری غیرفعال است.");
 
@@ -68,9 +62,6 @@ public sealed class UserDomainService
     {
         Guard.Against.Null(user, nameof(user));
 
-        if (user.IsDeleted)
-            return Result.Failure("کاربر حذف شده است.");
-
         if (!user.IsActive)
             return Result.Failure("حساب کاربری غیرفعال است.");
 
@@ -87,13 +78,10 @@ public sealed class UserDomainService
     {
         Guard.Against.Null(user, nameof(user));
 
-        if (user.IsDeleted)
-            return Result.Failure("کاربر حذف شده است.");
-
         if (!user.IsActive)
             return Result.Failure("حساب کاربری غیرفعال است.");
 
-        var activeAddressCount = user.Addresses.Count(a => !a.IsDeleted);
+        var activeAddressCount = user.Addresses.Count;
 
         if (activeAddressCount >= MaxAddressesPerUser)
             return Result.Failure($"حداکثر تعداد آدرس مجاز {MaxAddressesPerUser} عدد است.");
@@ -106,9 +94,6 @@ public sealed class UserDomainService
         Guard.Against.Null(user, nameof(user));
         Guard.Against.Null(addressId, nameof(addressId));
 
-        if (user.IsDeleted)
-            return Result.Failure("کاربر حذف شده است.");
-
         if (!user.HasAddress(addressId))
             return Result.Failure("آدرس یافت نشد.");
 
@@ -119,9 +104,6 @@ public sealed class UserDomainService
     {
         Guard.Against.Null(user, nameof(user));
         Guard.Against.Null(addressId, nameof(addressId));
-
-        if (user.IsDeleted)
-            return Result.Failure("کاربر حذف شده است.");
 
         if (!user.IsActive)
             return Result.Failure("حساب کاربری غیرفعال است.");
@@ -139,9 +121,6 @@ public sealed class UserDomainService
 
         if (!requestingUser.IsAdmin)
             return Result.Failure("فقط مدیران می‌توانند کاربران را ارتقا دهند.");
-
-        if (targetUser.IsDeleted)
-            return Result.Failure("کاربر هدف حذف شده است.");
 
         if (!targetUser.IsActive)
             return Result.Failure("کاربر هدف غیرفعال است.");
@@ -177,9 +156,6 @@ public sealed class UserDomainService
         if (!requestingUser.IsAdmin)
             return Result.Failure("فقط مدیران می‌توانند کاربران را حذف کنند.");
 
-        if (targetUser.IsDeleted)
-            return Result.Failure("کاربر قبلاً حذف شده است.");
-
         if (requestingUser.Id == targetUser.Id)
             return Result.Failure("نمی‌توانید حساب خودتان را حذف کنید.");
 
@@ -192,12 +168,12 @@ public sealed class UserDomainService
 
         if (user.DefaultAddressId.HasValue)
         {
-            var defaultAddress = user.Addresses.FirstOrDefault(a => a.Id == user.DefaultAddressId && !a.IsDeleted);
+            var defaultAddress = user.Addresses.FirstOrDefault(a => a.Id == user.DefaultAddressId);
             if (defaultAddress is not null)
                 return defaultAddress.Id;
         }
 
-        var firstActive = user.Addresses.FirstOrDefault(a => !a.IsDeleted);
+        var firstActive = user.Addresses.FirstOrDefault();
         return firstActive?.Id;
     }
 }

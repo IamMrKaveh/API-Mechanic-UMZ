@@ -1,22 +1,15 @@
-using MainApi.Settings;
+using MainApi.Security.Settings;
 
 namespace MainApi.Middleware;
 
-public class SecurityMiddleware
+public class SecurityMiddleware(
+    RequestDelegate next,
+    IOptions<SecuritySettings> securitySettings,
+    ILogger<SecurityMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly SecuritySettings _securitySettings;
-    private readonly ILogger<SecurityMiddleware> _logger;
-
-    public SecurityMiddleware(
-        RequestDelegate next,
-        IOptions<SecuritySettings> securitySettings,
-        ILogger<SecurityMiddleware> logger)
-    {
-        _next = next;
-        _securitySettings = securitySettings.Value;
-        _logger = logger;
-    }
+    private readonly RequestDelegate _next = next;
+    private readonly SecuritySettings _securitySettings = securitySettings.Value;
+    private readonly ILogger<SecurityMiddleware> _logger = logger;
 
     public async Task InvokeAsync(HttpContext context)
     {

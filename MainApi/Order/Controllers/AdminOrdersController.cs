@@ -3,7 +3,7 @@ namespace MainApi.Order.Controllers;
 [ApiController]
 [Route("api/admin/orders")]
 [Authorize(Roles = "Admin")]
-public class AdminOrdersController(ICurrentUserService currentUserService, IMediator mediator) : BaseApiController(currentUserService)
+public class AdminOrdersController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -19,7 +19,7 @@ public class AdminOrdersController(ICurrentUserService currentUserService, IMedi
     {
         var query = new GetAdminOrdersQuery(userId, status, fromDate, toDate, isPaid, page, pageSize);
         var result = await _mediator.Send(query);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpGet("{id}")]
@@ -27,12 +27,7 @@ public class AdminOrdersController(ICurrentUserService currentUserService, IMedi
     {
         var query = new GetAdminOrderByIdQuery(id);
         var result = await _mediator.Send(query);
-
-        if (result == null)
-        {
-            return NotFound(new { message = "Order not found" });
-        }
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpPatch("{id}/status")]
@@ -54,8 +49,6 @@ public class AdminOrdersController(ICurrentUserService currentUserService, IMedi
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteOrder(int id)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var command = new DeleteOrderCommand(id, CurrentUser.UserId.Value);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
@@ -66,31 +59,27 @@ public class AdminOrdersController(ICurrentUserService currentUserService, IMedi
     {
         var query = new GetOrderStatisticsQuery(fromDate, toDate);
         var result = await _mediator.Send(query);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] AdminCreateOrderDto dto)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var idempotencyKey = Guid.NewGuid().ToString();
-        var command = new CreateOrderCommand(dto, idempotencyKey, CurrentUser.UserId.Value);
+        var command = new CreateOrderCommand(dto, idempotencyKey, CurrentUser.UserId);
         var result = await _mediator.Send(command);
 
-        return CreatedAtAction(nameof(GetOrderById), new { id = result.Value }, new { orderId = result.Value });
+        return ToActionResult(result);
     }
 
     [HttpPatch("{id}/ship")]
     public async Task<IActionResult> MarkAsShipped(int id, [FromBody] MarkAsShippedRequest request)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var command = new MarkOrderAsShippedCommand
         {
             OrderId = id,
             RowVersion = request.RowVersion,
-            UpdatedByUserId = CurrentUser.UserId.Value
+            UpdatedByUserId = CurrentUser.UserId
         };
 
         var result = await _mediator.Send(command);
@@ -101,6 +90,6 @@ public class AdminOrdersController(ICurrentUserService currentUserService, IMedi
     public async Task<IActionResult> ExpireOrders()
     {
         var result = await _mediator.Send(new ExpireOrdersCommand());
-        return Ok(result);
+        return ToActionResult(result);
     }
 }

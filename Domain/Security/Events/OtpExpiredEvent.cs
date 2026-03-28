@@ -4,7 +4,7 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Security.Events;
 
-public sealed record UserOtpExpiredEvent(
+public sealed record OtpExpiredEvent(
     UserOtpId OtpId,
     UserId UserId,
     OtpPurpose Purpose) : IDomainEvent

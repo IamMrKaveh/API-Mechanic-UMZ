@@ -1,5 +1,5 @@
 ﻿namespace Domain.Order.ValueObjects;
 
-internal class OrderStatusId
+public class OrderStatusId
 {
 }

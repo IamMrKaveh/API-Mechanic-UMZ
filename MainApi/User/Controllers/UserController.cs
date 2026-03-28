@@ -2,25 +2,15 @@ namespace MainApi.User.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class UserController : BaseApiController
+public class UserController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator;
-
-    public UserController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("{id}")]
     [Authorize]
     public async Task<IActionResult> GetUser(int id)
     {
-        var currentUserId = CurrentUser.UserId;
-        if (currentUserId == null) return Unauthorized();
-        if (currentUserId != id && !CurrentUser.IsAdmin) return Forbid();
-
-        var query = new GetUserByIdQuery(id); 
+        var query = new GetUserByIdQuery(id);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
@@ -29,9 +19,7 @@ public class UserController : BaseApiController
     [Authorize]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateProfileDto updateRequest)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new UpdateUserCommand(id, updateRequest, CurrentUser.UserId.Value);
+        var command = new UpdateUserCommand(id, updateRequest, CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

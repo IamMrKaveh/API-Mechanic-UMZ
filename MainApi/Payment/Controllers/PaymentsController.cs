@@ -2,7 +2,7 @@ namespace MainApi.Payment.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class PaymentsController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class PaymentsController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -10,12 +10,9 @@ public class PaymentsController(IMediator mediator, ICurrentUserService currentU
     [Authorize]
     public async Task<IActionResult> InitiatePayment([FromBody] PaymentInitiationDto dto)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new InitiatePaymentCommand(dto, CurrentUser.UserId.Value, CurrentUser.IpAddress ?? "Unknown");
+        var command = new InitiatePaymentCommand(dto, CurrentUser.UserId, CurrentUser.IpAddress ?? "Unknown");
         var result = await _mediator.Send(command);
-
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
+        return ToActionResult(result);
     }
 
     [HttpGet("verify")]
@@ -23,13 +20,7 @@ public class PaymentsController(IMediator mediator, ICurrentUserService currentU
     {
         var command = new VerifyPaymentCommand(authority, status);
         var result = await _mediator.Send(command);
-
-        if (result.IsSuccess && result.Value?.RedirectUrl != null)
-        {
-            return Redirect(result.Value.RedirectUrl);
-        }
-
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpGet("{authority}")]
@@ -37,7 +28,7 @@ public class PaymentsController(IMediator mediator, ICurrentUserService currentU
     public async Task<IActionResult> GetByAuthority(string authority)
     {
         var result = await _mediator.Send(new GetPaymentByAuthorityQuery(authority));
-        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
+        return ToActionResult(result);
     }
 
     [HttpGet("by-order/{orderId}")]
@@ -45,7 +36,7 @@ public class PaymentsController(IMediator mediator, ICurrentUserService currentU
     public async Task<IActionResult> GetPaymentsByOrder(int orderId)
     {
         var result = await _mediator.Send(new GetPaymentsByOrderQuery(orderId));
-        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
+        return ToActionResult(result);
     }
 
     [HttpGet("status/{authority}")]
@@ -53,14 +44,14 @@ public class PaymentsController(IMediator mediator, ICurrentUserService currentU
     public async Task<IActionResult> GetPaymentStatus(string authority)
     {
         var result = await _mediator.Send(new GetPaymentStatusQuery(authority));
-        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
+        return ToActionResult(result);
     }
 
     [HttpPost("webhook/{gateway}")]
     public async Task<IActionResult> Webhook(string gateway, [FromBody] WebhookPayload payload)
     {
         var command = new ProcessWebhookCommand(gateway, payload.Authority, payload.Status, payload.RefId);
-        await _mediator.Send(command);
-        return Ok();
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
     }
 }

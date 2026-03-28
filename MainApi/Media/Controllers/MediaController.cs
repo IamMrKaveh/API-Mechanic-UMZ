@@ -2,7 +2,7 @@ namespace MainApi.Media.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class MediaController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class MediaController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 

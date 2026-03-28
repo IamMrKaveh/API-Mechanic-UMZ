@@ -15,7 +15,7 @@ public sealed class CreateProductHandler(
         CreateProductCommand request,
         CancellationToken ct)
     {
-        var product = Product.Create(
+        var product = Domain.Product.Aggregates.Product.Create(
             request.Name,
             request.Description,
             request.Price,

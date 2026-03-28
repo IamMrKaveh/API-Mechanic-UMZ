@@ -1,3 +1,5 @@
+using Domain.Security.Aggregates;
+
 namespace Application.Auth.Mapping;
 
 public class AuthMappingProfile : Profile

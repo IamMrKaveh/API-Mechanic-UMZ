@@ -2,7 +2,7 @@ namespace MainApi.Order.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class OrderStatusController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class OrderStatusController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 

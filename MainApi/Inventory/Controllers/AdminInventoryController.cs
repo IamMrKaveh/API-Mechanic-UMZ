@@ -3,7 +3,7 @@ namespace MainApi.Inventory.Controllers;
 [ApiController]
 [Route("api/admin/inventory")]
 [Authorize(Roles = "Admin")]
-public class AdminInventoryController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class AdminInventoryController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -42,7 +42,6 @@ public class AdminInventoryController(IMediator mediator, ICurrentUserService cu
     [HttpPost("reverse")]
     public async Task<IActionResult> ReverseTransaction([FromBody] ReverseInventoryTransactionCommand command)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
         var commandWithAdmin = command with { AdminUserId = CurrentUser.UserId.Value };
         var result = await _mediator.Send(commandWithAdmin);
         return ToActionResult(result);
@@ -65,9 +64,6 @@ public class AdminInventoryController(IMediator mediator, ICurrentUserService cu
     [HttpPost("adjust")]
     public async Task<IActionResult> AdjustStock([FromBody] AdjustStockCommand command)
     {
-        if (command.UserId <= 0 && CurrentUser.UserId.HasValue)
-            command = command with { UserId = CurrentUser.UserId.Value };
-
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -75,9 +71,6 @@ public class AdminInventoryController(IMediator mediator, ICurrentUserService cu
     [HttpPost("bulk-adjust")]
     public async Task<IActionResult> BulkAdjustStock([FromBody] BulkAdjustStockCommand command)
     {
-        if (command.UserId <= 0 && CurrentUser.UserId.HasValue)
-            command = command with { UserId = CurrentUser.UserId.Value };
-
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -85,8 +78,7 @@ public class AdminInventoryController(IMediator mediator, ICurrentUserService cu
     [HttpPost("reconcile/{variantId}")]
     public async Task<IActionResult> ReconcileStock(int variantId)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-        var command = new ReconcileStockCommand(variantId, CurrentUser.UserId.Value);
+        var command = new ReconcileStockCommand(variantId, CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -94,9 +86,6 @@ public class AdminInventoryController(IMediator mediator, ICurrentUserService cu
     [HttpPost("damage")]
     public async Task<IActionResult> RecordDamage([FromBody] RecordDamageCommand command)
     {
-        if (command.UserId <= 0 && CurrentUser.UserId.HasValue)
-            command = command with { UserId = CurrentUser.UserId.Value };
-
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -119,8 +108,6 @@ public class AdminInventoryController(IMediator mediator, ICurrentUserService cu
     [HttpPost("import")]
     public async Task<IActionResult> BulkStockIn([FromBody] BulkStockInRequest request)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var command = new BulkStockInCommand(
             request.Items.Select(i => new BulkStockInItemDto
             {
@@ -128,7 +115,7 @@ public class AdminInventoryController(IMediator mediator, ICurrentUserService cu
                 Quantity = i.Quantity,
                 Notes = i.Notes
             }).ToList(),
-            CurrentUser.UserId.Value,
+            CurrentUser.UserId,
             request.SupplierReference);
 
         var result = await _mediator.Send(command);
@@ -140,12 +127,10 @@ public class AdminInventoryController(IMediator mediator, ICurrentUserService cu
         int orderId,
         [FromBody] ApproveReturnRequest? request = null)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var command = new ApproveReturnCommand
         {
             OrderId = orderId,
-            AdminUserId = CurrentUser.UserId.Value,
+            AdminUserId = CurrentUser.UserId,
             Reason = request?.Reason ?? "تأیید مرجوعی توسط ادمین"
         };
 

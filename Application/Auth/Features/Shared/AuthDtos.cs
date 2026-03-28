@@ -9,15 +9,3 @@ public record AuthResult
     public UserProfileDto User { get; init; } = null!;
     public bool IsNewUser { get; init; }
 }
-
-public record LoginRequestDto
-{
-    public string PhoneNumber { get; init; } = string.Empty;
-}
-
-public record VerifyOtpRequestDto(string PhoneNumber, string Code);
-
-public record RefreshRequestDto
-{
-    public string RefreshToken { get; init; } = string.Empty;
-}

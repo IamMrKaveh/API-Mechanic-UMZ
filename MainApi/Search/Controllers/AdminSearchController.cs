@@ -3,7 +3,7 @@ namespace MainApi.Search.Controllers;
 [ApiController]
 [Route("api/admin/search")]
 [Authorize(Roles = "Admin")]
-public class AdminSearchController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class AdminSearchController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 

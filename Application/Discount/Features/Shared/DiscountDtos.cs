@@ -99,9 +99,3 @@ public record DiscountValidationDto(
     decimal EstimatedDiscount,
     string? Message
 );
-
-public record ValidateDiscountRequest(string Code, decimal OrderTotal);
-
-public record ApplyDiscountRequest(string Code, decimal OrderTotal);
-
-public record CancelDiscountUsageRequest(int OrderId);

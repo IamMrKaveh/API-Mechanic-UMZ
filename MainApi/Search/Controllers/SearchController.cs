@@ -2,14 +2,9 @@ namespace MainApi.Search.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class SearchController : ControllerBase
+public class SearchController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator;
-
-    public SearchController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("products")]
     public async Task<IActionResult> SearchProducts(
@@ -40,13 +35,8 @@ public class SearchController : ControllerBase
             PageSize = pageSize,
             Tags = tags?.ToList()
         };
-
         var result = await _mediator.Send(query, ct);
-
-        if (!result.IsSuccess)
-            return StatusCode(result.StatusCode, new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     [HttpGet("global")]
@@ -55,11 +45,7 @@ public class SearchController : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GlobalSearchQuery(q), ct);
-
-        if (!result.IsSuccess)
-            return StatusCode(result.StatusCode, new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     [HttpGet("suggestions")]
@@ -70,11 +56,7 @@ public class SearchController : ControllerBase
     {
         var result = await _mediator.Send(
             new GetSearchSuggestionsQuery(q, maxSuggestions), ct);
-
-        if (!result.IsSuccess)
-            return StatusCode(result.StatusCode, new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 
     [HttpGet("products/fuzzy")]
@@ -86,10 +68,6 @@ public class SearchController : ControllerBase
     {
         var result = await _mediator.Send(
             new FuzzySearchQuery(q, page, pageSize), ct);
-
-        if (!result.IsSuccess)
-            return StatusCode(result.StatusCode, new { error = result.Error });
-
-        return Ok(result.Value);
+        return ToActionResult(result);
     }
 }

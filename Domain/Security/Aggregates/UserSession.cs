@@ -73,7 +73,7 @@ public sealed class UserSession : AggregateRoot<UserSessionId>
             LastActivityAt = DateTime.UtcNow
         };
 
-        session.RaiseDomainEvent(new UserSessionCreatedEvent(id, userId, deviceInfo, ipAddress, expiresAt));
+        session.RaiseDomainEvent(new SessionCreatedEvent(id, userId, deviceInfo, ipAddress, expiresAt));
         return session;
     }
 
@@ -96,7 +96,7 @@ public sealed class UserSession : AggregateRoot<UserSessionId>
         IsRevoked = true;
         RevokedAt = DateTime.UtcNow;
         RevocationReason = reason;
-        RaiseDomainEvent(new UserSessionRevokedEvent(Id, UserId, reason));
+        RaiseDomainEvent(new SessionRevokedEvent(Id, UserId, reason));
     }
 
     public void MarkExpired()
@@ -107,7 +107,7 @@ public sealed class UserSession : AggregateRoot<UserSessionId>
         IsRevoked = true;
         RevokedAt = DateTime.UtcNow;
         RevocationReason = SessionRevocationReason.Expired;
-        RaiseDomainEvent(new UserSessionExpiredEvent(Id, UserId));
+        RaiseDomainEvent(new SessionExpiredEvent(Id, UserId));
     }
 
     public bool ValidateRefreshToken(string token)

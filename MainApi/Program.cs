@@ -1,5 +1,6 @@
 using DotNetEnv;
 using Infrastructure;
+using MainApi.Security.Settings;
 
 var envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
 if (File.Exists(envFilePath))

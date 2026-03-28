@@ -2,8 +2,8 @@ namespace Domain.Common.Events;
 
 public abstract class DomainEvent : IDomainEvent
 {
-    public Guid EventId => Guid.NewGuid();
-    public DateTime OccurredAt => DateTime.UtcNow;
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
     public Guid CorrelationId { get; private set; } = Guid.NewGuid();
     public Guid? CausationId { get; private set; }
     public int EventVersion { get; protected init; } = 1;

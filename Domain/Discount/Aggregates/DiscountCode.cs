@@ -17,9 +17,8 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
     { }
 
     public string Code { get; private set; } = default!;
-    public DiscountType Type { get; private set; }
-    public decimal Value { get; private set; }
-    public decimal? MaximumDiscountAmount { get; private set; }
+    public DiscountValue Value { get; private set; } = default!;
+    public Money? MaximumDiscountAmount { get; private set; }
     public int? UsageLimit { get; private set; }
     public int UsageCount { get; private set; }
     public DateTime? StartsAt { get; private set; }
@@ -39,21 +38,14 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
     public static DiscountCode Create(
         DiscountCodeId id,
         string code,
-        DiscountType type,
-        decimal value,
-        decimal? maximumDiscountAmount = null,
+        DiscountValue value,
+        Money? maximumDiscountAmount = null,
         int? usageLimit = null,
         DateTime? startsAt = null,
         DateTime? expiresAt = null)
     {
         if (string.IsNullOrWhiteSpace(code))
             throw new DomainException("کد تخفیف الزامی است.");
-
-        if (value <= 0)
-            throw new InvalidDiscountException("مقدار تخفیف باید بزرگتر از صفر باشد.");
-
-        if (type == DiscountType.Percentage && value > 100)
-            throw new InvalidDiscountException("درصد تخفیف نمی‌تواند بیش از ۱۰۰ باشد.");
 
         if (expiresAt.HasValue && startsAt.HasValue && expiresAt.Value <= startsAt.Value)
             throw new InvalidDiscountException("تاریخ انقضا باید بعد از تاریخ شروع باشد.");
@@ -62,7 +54,6 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
         {
             Id = id,
             Code = code.Trim().ToUpperInvariant(),
-            Type = type,
             Value = value,
             MaximumDiscountAmount = maximumDiscountAmount,
             UsageLimit = usageLimit,
@@ -74,11 +65,12 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
             UpdatedAt = DateTime.UtcNow
         };
 
-        discountCode.RaiseDomainEvent(new DiscountCodeCreatedEvent(id, code, type, value, usageLimit, expiresAt));
+        discountCode.RaiseDomainEvent(new DiscountCodeCreatedEvent(
+            id, code, value.Type, value.Amount, usageLimit, expiresAt));
         return discountCode;
     }
 
-    public DiscountValidation ValidateForApplication(decimal orderAmount)
+    public DiscountValidation ValidateForApplication(Money orderAmount)
     {
         if (!IsActive)
             return DiscountValidation.Fail("کد تخفیف غیرفعال است.");
@@ -96,34 +88,32 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
         {
             if (restriction.RestrictionType == DiscountRestrictionType.MinimumOrderAmount)
             {
-                if (decimal.TryParse(restriction.RestrictionValue, out var minAmount) && orderAmount < minAmount)
-                    return DiscountValidation.Fail($"حداقل مبلغ سفارش برای استفاده از این کد تخفیف {minAmount:N0} تومان است.");
+                if (decimal.TryParse(restriction.RestrictionValue, out var minAmount)
+                    && orderAmount.Amount < minAmount)
+                    return DiscountValidation.Fail(
+                        $"حداقل مبلغ سفارش برای استفاده از این کد تخفیف {minAmount:N0} تومان است.");
             }
         }
 
         return DiscountValidation.Success();
     }
 
-    public decimal CalculateDiscount(decimal orderAmount)
+    public Money CalculateDiscount(Money orderAmount)
     {
-        var discount = Type switch
-        {
-            DiscountType.Percentage => Math.Round(orderAmount * Value / 100, 0),
-            DiscountType.FixedAmount => Value,
-            DiscountType.FreeShipping => 0,
-            _ => 0
-        };
+        var discountedPrice = Value.Apply(orderAmount);
+        var discountAmount = orderAmount.Subtract(discountedPrice);
 
-        if (MaximumDiscountAmount.HasValue && discount > MaximumDiscountAmount.Value)
-            discount = MaximumDiscountAmount.Value;
+        if (MaximumDiscountAmount is not null
+            && discountAmount.IsGreaterThan(MaximumDiscountAmount))
+            discountAmount = MaximumDiscountAmount;
 
-        if (discount > orderAmount)
-            discount = orderAmount;
+        if (discountAmount.IsGreaterThan(orderAmount))
+            discountAmount = orderAmount;
 
-        return discount;
+        return discountAmount;
     }
 
-    public DiscountUsageRecord RecordUsage(UserId userId, string orderId, decimal discountedAmount)
+    public DiscountUsageRecord RecordUsage(UserId userId, string orderId, Money discountedAmount)
     {
         if (!IsRedeemable)
             throw new DiscountCodeNotRedeemableException(Id, Code);
@@ -132,19 +122,25 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
 
-        var usage = DiscountUsageRecord.Create(Id, Code, userId, orderId, discountedAmount, UsageCount);
+        var usage = DiscountUsageRecord.Create(
+            Id, Code, userId, orderId, discountedAmount.Amount, UsageCount);
         _usages.Add(usage);
 
-        RaiseDomainEvent(new DiscountCodeAppliedEvent(Id, Code, userId, orderId, discountedAmount, UsageCount));
+        RaiseDomainEvent(new DiscountCodeAppliedEvent(
+            Id, Code, userId, orderId, discountedAmount.Amount, UsageCount));
         return usage;
     }
 
-    public void AddRestriction(DiscountRestrictionId restrictionId, DiscountRestrictionType restrictionType, string restrictionValue)
+    public void AddRestriction(
+        DiscountRestrictionId restrictionId,
+        DiscountRestrictionType restrictionType,
+        string restrictionValue)
     {
         if (string.IsNullOrWhiteSpace(restrictionValue))
             throw new DomainException("مقدار محدودیت الزامی است.");
 
-        var restriction = DiscountRestriction.Create(restrictionId, Id, restrictionType, restrictionValue);
+        var restriction = DiscountRestriction.Create(
+            restrictionId, Id, restrictionType, restrictionValue);
         _restrictions.Add(restriction);
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
@@ -153,9 +149,7 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
     public void RemoveRestriction(DiscountRestrictionId restrictionId)
     {
         var restriction = _restrictions.FirstOrDefault(r => r.Id == restrictionId);
-
-        if (restriction is null)
-            return;
+        if (restriction is null) return;
 
         _restrictions.Remove(restriction);
         UpdatedAt = DateTime.UtcNow;
@@ -164,8 +158,7 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
 
     public void Activate()
     {
-        if (IsActive)
-            return;
+        if (IsActive) return;
 
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
@@ -175,8 +168,7 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
 
     public void Deactivate()
     {
-        if (!IsActive)
-            return;
+        if (!IsActive) return;
 
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;

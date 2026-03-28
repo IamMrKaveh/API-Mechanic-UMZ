@@ -1,9 +1,11 @@
+using MainApi.Discount.Requests;
+
 namespace MainApi.Discount.Controllers;
 
 [ApiController]
 [Route("api/admin/discounts")]
 [Authorize(Roles = "Admin")]
-public class AdminDiscountsController(IMediator mediator) : ControllerBase
+public class AdminDiscountsController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -15,23 +17,21 @@ public class AdminDiscountsController(IMediator mediator) : ControllerBase
         [FromQuery] int pageSize = 20)
     {
         var result = await _mediator.Send(new GetDiscountsQuery(includeExpired, includeDeleted, page, pageSize));
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
         var result = await _mediator.Send(new GetDiscountByIdQuery(id));
-        if (result.IsFailed) return NotFound(result);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpGet("{id}/usage-report")]
     public async Task<IActionResult> GetUsageReport(int id)
     {
         var result = await _mediator.Send(new GetDiscountUsageReportQuery(id));
-        if (result.IsFailed) return NotFound(result);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpGet("info/{code}")]
@@ -39,36 +39,28 @@ public class AdminDiscountsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> GetDiscountInfo(string code)
     {
         var result = await _mediator.Send(new GetDiscountInfoQuery(code));
-        if (result.IsFailed) return NotFound(result);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpPost]
     public async Task<ActionResult<ServiceResult<DiscountCodeDto>>> Create(CreateDiscountCommand command)
     {
         var result = await _mediator.Send(command);
-        if (result.IsFailed)
-            return BadRequest(result);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<ServiceResult>> Update(int id, UpdateDiscountCommand command)
+    public async Task<ActionResult<ServiceResult>> Update(UpdateDiscountCommand command)
     {
-        if (id != command.Id) return BadRequest();
         var result = await _mediator.Send(command);
-        if (result.IsFailed)
-            return BadRequest(result);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpDelete("{id}")]
     public async Task<ActionResult<ServiceResult>> Delete(int id)
     {
         var result = await _mediator.Send(new DeleteDiscountCommand(id));
-        if (result.IsFailed)
-            return BadRequest(result);
-        return Ok(result);
+        return ToActionResult(result);
     }
 
     [HttpPost("{id}/cancel-usage")]
@@ -76,7 +68,6 @@ public class AdminDiscountsController(IMediator mediator) : ControllerBase
     {
         var command = new CancelDiscountUsageCommand(request.OrderId, id);
         var result = await _mediator.Send(command);
-        if (result.IsFailed) return BadRequest(result);
-        return Ok(result);
+        return ToActionResult(result);
     }
 }

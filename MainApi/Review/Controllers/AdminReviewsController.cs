@@ -1,16 +1,13 @@
+using MainApi.Review.Requests;
+
 namespace MainApi.Review.Controllers;
 
 [Route("api/admin/reviews")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminReviewsController : ControllerBase
+public class AdminReviewsController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator;
-
-    public AdminReviewsController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetReviewsByStatus(
@@ -20,7 +17,7 @@ public class AdminReviewsController : ControllerBase
     {
         var query = new GetReviewsByStatusQuery(status, page, pageSize);
         var result = await _mediator.Send(query);
-        return result.IsSuccess ? Ok(result.Value) : StatusCode(result.StatusCode, result);
+        return ToActionResult(result);
     }
 
     [HttpPatch("{reviewId}/approve")]
@@ -28,9 +25,7 @@ public class AdminReviewsController : ControllerBase
     {
         var command = new ApproveReviewCommand(reviewId);
         var result = await _mediator.Send(command);
-        if (!result.IsSuccess)
-            return StatusCode(result.StatusCode, result);
-        return NoContent();
+        return ToActionResult(result);
     }
 
     [HttpPatch("{reviewId}/reject")]
@@ -38,9 +33,7 @@ public class AdminReviewsController : ControllerBase
     {
         var command = new RejectReviewCommand(reviewId, request.Reason);
         var result = await _mediator.Send(command);
-        if (!result.IsSuccess)
-            return StatusCode(result.StatusCode, result);
-        return NoContent();
+        return ToActionResult(result);
     }
 
     [HttpPatch("{reviewId}/status")]
@@ -48,9 +41,7 @@ public class AdminReviewsController : ControllerBase
     {
         var command = new UpdateReviewStatusCommand(reviewId, request.Status);
         var result = await _mediator.Send(command);
-        if (!result.IsSuccess)
-            return StatusCode(result.StatusCode, result);
-        return NoContent();
+        return ToActionResult(result);
     }
 
     [HttpPost("{reviewId}/reply")]
@@ -58,9 +49,7 @@ public class AdminReviewsController : ControllerBase
     {
         var command = new ReplyToReviewCommand(reviewId, request.Reply);
         var result = await _mediator.Send(command);
-        if (!result.IsSuccess)
-            return StatusCode(result.StatusCode, result);
-        return NoContent();
+        return ToActionResult(result);
     }
 
     [HttpDelete("{reviewId}")]
@@ -68,8 +57,6 @@ public class AdminReviewsController : ControllerBase
     {
         var command = new DeleteReviewCommand(reviewId);
         var result = await _mediator.Send(command);
-        if (!result.IsSuccess)
-            return StatusCode(result.StatusCode, result);
-        return NoContent();
+        return ToActionResult(result);
     }
 }

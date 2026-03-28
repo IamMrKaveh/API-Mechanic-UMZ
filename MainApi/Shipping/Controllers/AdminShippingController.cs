@@ -3,15 +3,9 @@ namespace MainApi.Shipping.Controllers;
 [ApiController]
 [Route("api/admin/shipping")]
 [Authorize(Roles = "Admin")]
-public class AdminShippingsController : BaseApiController
+public class AdminShippingsController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator;
-
-    public AdminShippingsController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetShippings([FromQuery] bool includeDeleted = false)
@@ -31,25 +25,13 @@ public class AdminShippingsController : BaseApiController
     [HttpPost]
     public async Task<IActionResult> CreateShipping([FromBody] CreateShippingCommand command)
     {
-        if (command.CurrentUserId <= 0 && CurrentUser.UserId.HasValue)
-            command = command with { CurrentUserId = CurrentUser.UserId.Value };
-
         var result = await _mediator.Send(command);
-        if (result.IsSuccess)
-        {
-            return CreatedAtAction(nameof(GetShippingById), new { id = result.Value!.Id }, result.Value);
-        }
         return ToActionResult(result);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateShipping(int id, [FromBody] UpdateShippingCommand command)
     {
-        if (id != command.Id) return BadRequest("ID Mismatch");
-
-        if (command.CurrentUserId <= 0 && CurrentUser.UserId.HasValue)
-            command = command with { CurrentUserId = CurrentUser.UserId.Value };
-
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -57,9 +39,7 @@ public class AdminShippingsController : BaseApiController
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteShipping(int id)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new DeleteShippingCommand(id, CurrentUser.UserId.Value);
+        var command = new DeleteShippingCommand(id, CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -67,9 +47,7 @@ public class AdminShippingsController : BaseApiController
     [HttpPost("{id}/restore")]
     public async Task<IActionResult> RestoreShipping(int id)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var command = new RestoreShippingCommand(id, CurrentUser.UserId.Value);
+        var command = new RestoreShippingCommand(id, CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

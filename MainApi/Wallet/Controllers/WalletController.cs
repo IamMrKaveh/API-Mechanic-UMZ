@@ -3,22 +3,14 @@
 [ApiController]
 [Route("api/wallet")]
 [Authorize]
-public class WalletController : BaseApiController
+public class WalletController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator;
-
-    public WalletController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("balance")]
     public async Task<IActionResult> GetBalance(CancellationToken ct)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var result = await _mediator.Send(new GetWalletBalanceQuery(CurrentUser.UserId.Value), ct);
+        var result = await _mediator.Send(new GetWalletBalanceQuery(CurrentUser.UserId), ct);
         return ToActionResult(result);
     }
 
@@ -28,10 +20,8 @@ public class WalletController : BaseApiController
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var result = await _mediator.Send(
-            new GetWalletLedgerQuery(CurrentUser.UserId.Value, page, pageSize), ct);
+            new GetWalletLedgerQuery(CurrentUser.UserId, page, pageSize), ct);
         return ToActionResult(result);
     }
 }

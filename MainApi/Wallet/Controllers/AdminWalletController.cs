@@ -1,20 +1,12 @@
-﻿using Domain.Wallet.Enums;
-
-namespace MainApi.Wallet.Controllers;
+﻿namespace MainApi.Wallet.Controllers;
 
 [ApiController]
 [Route("api/admin/wallet")]
 [Authorize(Roles = "Admin")]
 [EnableRateLimiting("admin-wallet")]
-public class AdminWalletController : BaseApiController
+public class AdminWalletController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator;
-
-    public AdminWalletController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet("{userId}/balance")]
     public async Task<IActionResult> GetBalance(int userId, CancellationToken ct)
@@ -40,9 +32,7 @@ public class AdminWalletController : BaseApiController
         [FromBody] AdminWalletAdjustmentDto dto,
         CancellationToken ct)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
-        var adminId = CurrentUser.UserId.Value;
+        var adminId = CurrentUser.UserId;
         var correlationId = HttpContext.TraceIdentifier;
 
         var command = new CreditWalletCommand(
@@ -65,8 +55,6 @@ public class AdminWalletController : BaseApiController
         [FromBody] AdminWalletAdjustmentDto dto,
         CancellationToken ct)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var adminId = CurrentUser.UserId.Value;
         var correlationId = HttpContext.TraceIdentifier;
 

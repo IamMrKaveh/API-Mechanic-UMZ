@@ -3,7 +3,7 @@ namespace MainApi.Variant.Controllers;
 [ApiController]
 [Route("api/admin/products/variants/shipping")]
 [Authorize(Roles = "Admin")]
-public class AdminProductVariantShippingController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class AdminProductVariantShippingController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -27,16 +27,13 @@ public class AdminProductVariantShippingController(IMediator mediator, ICurrentU
         int variantId,
         [FromBody] UpdateProductVariantShippingsDto dto)
     {
-        if (!CurrentUser.UserId.HasValue) return Unauthorized();
-
         var command = new UpdateProductVariantShippingCommand
         {
             VariantId = variantId,
             ShippingMultiplier = dto.ShippingMultiplier,
             EnabledShippingIds = dto.EnabledShippingIds,
-            UserId = CurrentUser.UserId.Value
+            UserId = CurrentUser.UserId
         };
-
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

@@ -2,14 +2,9 @@ namespace MainApi.Payment.Controllers;
 
 [ApiController]
 [Route("api/mock-gateway")]
-public sealed class MockGatewayController : ControllerBase
+public sealed class MockGatewayController(IWebHostEnvironment env, IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IWebHostEnvironment _env;
-
-    public MockGatewayController(IWebHostEnvironment env)
-    {
-        _env = env;
-    }
+    private readonly IWebHostEnvironment _env = env;
 
     [HttpGet]
     public IActionResult Index([FromQuery] string orderId, [FromQuery] decimal amount)

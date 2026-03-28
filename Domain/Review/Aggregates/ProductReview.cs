@@ -3,17 +3,17 @@ using Domain.Review.ValueObjects;
 
 namespace Domain.Review.Aggregates;
 
-public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable, ISoftDeletable
+public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable
 {
     public int ProductId { get; private set; }
     public int UserId { get; private set; }
     public int? OrderId { get; private set; }
 
-    public int Rating { get; private set; }
+    public Rating Rating { get; private set; } = default!;
     public string? Title { get; private set; }
     public string? Comment { get; private set; }
 
-    public string Status { get; private set; } = ReviewStatus.Pending;
+    public ReviewStatus Status { get; private set; } = default!;
     public bool IsVerifiedPurchase { get; private set; }
 
     public int LikeCount { get; private set; }
@@ -25,9 +25,6 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable, ISoftDe
 
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
-    public bool IsDeleted { get; private set; }
-    public DateTime? DeletedAt { get; private set; }
-    public int? DeletedBy { get; private set; }
 
     private ProductReview()
     { }
@@ -35,7 +32,7 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable, ISoftDe
     public static ProductReview Create(
         int productId,
         int userId,
-        int rating,
+        Rating rating,
         string? title,
         string? comment,
         bool isVerifiedPurchase,
@@ -43,9 +40,7 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable, ISoftDe
     {
         Guard.Against.NegativeOrZero(productId, nameof(productId));
         Guard.Against.NegativeOrZero(userId, nameof(userId));
-
-        if (rating < 1 || rating > 5)
-            throw new DomainException("امتیاز باید بین ۱ تا ۵ باشد.");
+        Guard.Against.Null(rating, nameof(rating));
 
         if (title != null && title.Trim().Length > 100)
             throw new DomainException("عنوان نظر نمی‌تواند بیش از ۱۰۰ کاراکتر باشد.");
@@ -69,25 +64,23 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable, ISoftDe
             Status = ReviewStatus.Pending
         };
 
-        review.RaiseDomainEvent(new ReviewSubmittedEvent(id, productId, userId, rating));
+        review.RaiseDomainEvent(new ReviewSubmittedEvent(id, productId, userId, rating.Value));
         return review;
     }
 
     public void Approve()
     {
-        EnsureNotDeleted();
         if (Status == ReviewStatus.Approved) return;
 
         Status = ReviewStatus.Approved;
         RejectionReason = null;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new ReviewApprovedEvent(Id, ProductId, Rating));
+        RaiseDomainEvent(new ReviewApprovedEvent(Id, ProductId, Rating.Value));
     }
 
     public void Reject(string? reason = null)
     {
-        EnsureNotDeleted();
         if (Status == ReviewStatus.Rejected) return;
 
         if (!string.IsNullOrWhiteSpace(reason) && reason.Length > 500)
@@ -100,7 +93,6 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable, ISoftDe
 
     public void AddAdminReply(string reply)
     {
-        EnsureNotDeleted();
         if (string.IsNullOrWhiteSpace(reply))
             throw new DomainException("متن پاسخ الزامی است.");
 
@@ -113,30 +105,5 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable, ISoftDe
 
         if (Status == ReviewStatus.Pending)
             Approve();
-    }
-
-    public void Delete(int? deletedBy)
-    {
-        if (IsDeleted) return;
-
-        IsDeleted = true;
-        DeletedAt = DateTime.UtcNow;
-        DeletedBy = deletedBy;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new ReviewDeletedEvent(Id, ProductId, deletedBy));
-    }
-
-    private void EnsureNotDeleted()
-    {
-        if (IsDeleted)
-            throw new DomainException("نظر حذف شده است.");
-    }
-
-    public static class ReviewStatus
-    {
-        public const string Pending = "Pending";
-        public const string Approved = "Approved";
-        public const string Rejected = "Rejected";
     }
 }

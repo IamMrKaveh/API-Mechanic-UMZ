@@ -3,7 +3,7 @@ namespace MainApi.Category.Controllers;
 [Route("api/admin/categories")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminCategoryController(IMediator mediator, ICurrentUserService currentUserService) : BaseApiController(currentUserService)
+public class AdminCategoryController(IMediator mediator) : BaseApiController(mediator)
 {
     private readonly IMediator _mediator = mediator;
 

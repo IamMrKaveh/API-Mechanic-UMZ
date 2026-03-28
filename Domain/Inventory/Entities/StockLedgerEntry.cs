@@ -3,12 +3,12 @@ using Domain.Variant.ValueObjects;
 
 namespace Domain.Inventory.Entities;
 
-public sealed class StockLedgerEntry : Entity<StockLedgerEntry>, IAuditable
+public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
 {
     public ProductVariantId VariantId { get; private set; } = default!;
-    public int? WarehouseId { get; private set; }
-    public int? OrderItemId { get; private set; }
-    public int? UserId { get; private set; }
+    public WarehouseId? WarehouseId { get; private set; }
+    public Guid? OrderItemId { get; private set; }
+    public Guid? UserId { get; private set; }
     public StockEventType EventType { get; private set; }
     public string EventTypeName => EventType.ToString();
     public int QuantityDelta { get; private set; }
@@ -31,8 +31,8 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntry>, IAuditable
         decimal unitCost,
         string? referenceNumber = null,
         string? note = null,
-        int? warehouseId = null,
-        int? userId = null)
+        WarehouseId? warehouseId = null,
+        Guid? userId = null)
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
         return Create(variantId, StockEventType.StockIn, quantity, balanceAfter,
@@ -45,9 +45,9 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntry>, IAuditable
         int balanceAfter,
         string referenceNumber,
         string? correlationId = null,
-        int? warehouseId = null,
-        int? userId = null,
-        int? orderItemId = null)
+        WarehouseId? warehouseId = null,
+        Guid? userId = null,
+        Guid? orderItemId = null)
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
         var entry = Create(variantId, StockEventType.Reservation, -quantity, balanceAfter,
@@ -63,7 +63,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntry>, IAuditable
         int balanceAfter,
         string referenceNumber,
         string? reason = null,
-        int? warehouseId = null)
+        WarehouseId? warehouseId = null)
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
         return Create(variantId, StockEventType.ReservationRelease, quantity, balanceAfter,
@@ -75,8 +75,8 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntry>, IAuditable
         int quantity,
         int balanceAfter,
         string referenceNumber,
-        int? orderItemId = null,
-        int? warehouseId = null)
+        Guid? orderItemId = null,
+        WarehouseId? warehouseId = null)
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
         var entry = Create(variantId, StockEventType.ReservationCommit, -quantity, balanceAfter,
@@ -90,8 +90,8 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntry>, IAuditable
         int delta,
         int balanceAfter,
         string reason,
-        int? userId = null,
-        int? warehouseId = null)
+        Guid? userId = null,
+        WarehouseId? warehouseId = null)
     {
         return Create(variantId, StockEventType.Adjustment, delta, balanceAfter,
             0, null, reason, warehouseId, userId);
@@ -105,14 +105,15 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntry>, IAuditable
         decimal unitCost,
         string? referenceNumber,
         string? note,
-        int? warehouseId = null,
-        int? userId = null)
+        WarehouseId? warehouseId = null,
+        Guid? userId = null)
     {
         if (balanceAfter < 0)
             throw new DomainException("موجودی پس از این رویداد نمی‌تواند منفی باشد.");
 
         return new StockLedgerEntry
         {
+            Id = StockLedgerEntryId.NewId(),
             VariantId = variantId,
             WarehouseId = warehouseId,
             UserId = userId,
@@ -122,7 +123,8 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntry>, IAuditable
             UnitCost = unitCost,
             ReferenceNumber = referenceNumber,
             Note = note,
-            IdempotencyKey = $"{variantId}:{eventType}:{referenceNumber ?? Guid.NewGuid().ToString("N")}",
+            IdempotencyKey =
+                $"{variantId}:{eventType}:{referenceNumber ?? Guid.NewGuid().ToString("N")}",
             CreatedAt = DateTime.UtcNow
         };
     }

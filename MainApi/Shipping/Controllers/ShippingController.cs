@@ -2,15 +2,9 @@ namespace MainApi.Shipping.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ShippingController : BaseApiController
+public class ShippingController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator;
-
-    public ShippingController(IMediator mediator, ICurrentUserService currentUserService)
-        : base(currentUserService)
-    {
-        _mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetActiveShippings()

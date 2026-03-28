@@ -1,8 +1,10 @@
-﻿namespace Domain.Inventory.Events;
+﻿using Domain.Inventory.ValueObjects;
 
-public sealed class WarehouseDeletedEvent(int warehouseId, string code, int? deletedBy) : DomainEvent
+namespace Domain.Inventory.Events;
+
+public sealed class WarehouseDeletedEvent(WarehouseId warehouseId, string warehouseCode, int? deletedBy) : DomainEvent
 {
-    public int WarehouseId { get; } = warehouseId;
-    public string Code { get; } = code;
+    public WarehouseId WarehouseId { get; } = warehouseId;
+    public string WarehouseCode { get; } = warehouseCode;
     public int? DeletedBy { get; } = deletedBy;
 }
