@@ -1,4 +1,5 @@
 using Domain.Media.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Media.Services;
 
@@ -11,7 +12,10 @@ public class MediaDomainService
         var mediaList = existingMedias.Where(m => m.IsActive).ToList();
 
         if (mediaList.Count >= MaxMediaPerEntity)
-            return Result.Failure($"حداکثر تعداد رسانه مجاز برای هر موجودیت {MaxMediaPerEntity} عدد است.");
+            return Result.Failure(new Error(
+                "400",
+                $"حداکثر تعداد رسانه مجاز برای هر موجودیت {MaxMediaPerEntity} عدد است.",
+                ErrorType.Validation));
 
         return Result.Success();
     }
@@ -29,12 +33,18 @@ public class MediaDomainService
             entityType.Equals("Category", StringComparison.OrdinalIgnoreCase))
         {
             if (!imageExtensions.Contains(extension))
-                return Result.Failure("برای این موجودیت فقط فایل‌های تصویری مجاز هستند.");
+                return Result.Failure(new Error(
+                    "400",
+                    "برای این موجودیت فقط فایل‌های تصویری مجاز هستند.",
+                    ErrorType.Forbidden));
         }
 
         var allAllowed = imageExtensions.Concat(documentExtensions).Concat(videoExtensions);
         if (!allAllowed.Contains(extension))
-            return Result.Failure($"نوع فایل '{extension}' پشتیبانی نمی‌شود.");
+            return Result.Failure(new Error(
+                "400",
+                $"نوع فایل '{extension}' پشتیبانی نمی‌شود.",
+                ErrorType.Validation));
 
         return Result.Success();
     }

@@ -17,7 +17,7 @@ public sealed class FreeShippingThreshold : ValueObject
     {
         Guard.Against.Null(thresholdAmount, nameof(thresholdAmount));
 
-        if (thresholdAmount.IsZero)
+        if (thresholdAmount.IsZero())
             throw new DomainException("آستانه ارسال رایگان باید بزرگتر از صفر باشد.");
 
         return new FreeShippingThreshold(true, thresholdAmount);

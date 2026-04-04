@@ -1,4 +1,6 @@
-﻿namespace Domain.Shipping.ValueObjects;
+﻿using SharedKernel.Results;
+
+namespace Domain.Shipping.ValueObjects;
 
 public sealed class ShippingOrderRange : ValueObject
 {
@@ -42,10 +44,16 @@ public sealed class ShippingOrderRange : ValueObject
     public Result Validate(Money orderTotal)
     {
         if (HasMinimum && MinOrderAmount!.IsGreaterThan(orderTotal))
-            return Result.Failure($"حداقل مبلغ سفارش برای این روش ارسال {MinOrderAmount.ToTomanString()} است.");
+            return Result.Failure(new Error(
+                "400",
+                $"حداقل مبلغ سفارش برای این روش ارسال {MinOrderAmount.ToTomanString()} است.",
+                ErrorType.Validation));
 
         if (HasMaximum && orderTotal.IsGreaterThan(MaxOrderAmount!))
-            return Result.Failure($"حداکثر مبلغ سفارش برای این روش ارسال {MaxOrderAmount!.ToTomanString()} است.");
+            return Result.Failure(new Error(
+                "400",
+                $"حداکثر مبلغ سفارش برای این روش ارسال {MaxOrderAmount!.ToTomanString()} است.",
+                ErrorType.Validation));
 
         return Result.Success();
     }

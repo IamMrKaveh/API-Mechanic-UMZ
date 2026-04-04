@@ -1,7 +1,13 @@
+using Domain.Common.Abstractions;
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Support.Events;
 
-public sealed class TicketAnsweredEvent(int ticketId, int? adminId) : DomainEvent
+public sealed record TicketAnsweredEvent(
+    TicketId TicketId,
+    UserId AdminId) : IDomainEvent
 {
-    public int TicketId { get; } = ticketId;
-    public int? AdminId { get; } = adminId;
+    public Guid EventId { get; } = Guid.NewGuid();
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }

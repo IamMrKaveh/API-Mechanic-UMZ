@@ -22,6 +22,7 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable
     public string? AdminReply { get; private set; }
     public DateTime? RepliedAt { get; private set; }
     public string? RejectionReason { get; private set; }
+    public bool IsDeleted { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
@@ -105,5 +106,11 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable
 
         if (Status == ReviewStatus.Pending)
             Approve();
+    }
+
+    public void MarkAsDeleted()
+    {
+        IsDeleted = true;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

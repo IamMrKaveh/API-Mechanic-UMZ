@@ -1,3 +1,5 @@
+using SharedKernel.Results;
+
 namespace Domain.Inventory.ValueObjects;
 
 public sealed class StockQuantity : ValueObject, IComparable<StockQuantity>
@@ -55,19 +57,23 @@ public sealed class StockQuantity : ValueObject, IComparable<StockQuantity>
     public Result<StockQuantity> TrySubtract(int quantity)
     {
         if (quantity < 0)
-            return Result<StockQuantity>.Failure("مقدار کاهش نمی‌تواند منفی باشد.");
+            return Result<StockQuantity>.Failure(new Error(
+                "400",
+                "مقدار کاهش نمی‌تواند منفی باشد.",
+                ErrorType.Validation));
 
         if (Value < quantity)
-            return Result<StockQuantity>.Failure($"موجودی کافی نیست. موجودی فعلی: {Value}، کمبود: {quantity - Value}");
+            return Result<StockQuantity>.Failure(new Error(
+                "400",
+                $"موجودی کافی نیست. موجودی فعلی: {Value}، کمبود: {quantity - Value}",
+                ErrorType.Validation));
 
         return Result<StockQuantity>.Success(new StockQuantity(Value - quantity));
     }
 
-    public int CompareTo(StockQuantity? other)
-    {
-        if (other == null) return 1;
-        return Value.CompareTo(other.Value);
-    }
+    public int CompareTo(StockQuantity? other) => other == null
+            ? 1
+            : Value.CompareTo(other.Value);
 
     protected override IEnumerable<object> GetEqualityComponents()
     {

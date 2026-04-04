@@ -182,7 +182,7 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
         if (FailedLoginAttempts >= MaxFailedLoginAttempts)
         {
             LockoutEnd = DateTime.UtcNow.Add(LockoutDuration);
-            RaiseDomainEvent(new UserLockedOutEvent(Id, LockoutEnd.Value));
+            RaiseDomainEvent(new UserLockedOutEvent(Id, LockoutEnd.Value, FailedLoginAttempts));
         }
 
         RaiseDomainEvent(new UserLoginFailedEvent(Id, FailedLoginAttempts));

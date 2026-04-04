@@ -1,5 +1,6 @@
 ﻿using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Wishlist.Services;
 
@@ -12,10 +13,10 @@ public sealed class WishlistDomainService
         int currentItemCount)
     {
         if (alreadyExists)
-            return Result.Failure("این محصول قبلاً در لیست علاقه‌مندی‌های شما وجود دارد.");
+            return Result.Failure((new Error("400", "این محصول قبلاً در لیست علاقه‌مندی‌های شما وجود دارد.")));
 
         if (currentItemCount >= MaxWishlistItemsPerUser)
-            return Result.Failure($"حداکثر تعداد مجاز آیتم در لیست علاقه‌مندی {MaxWishlistItemsPerUser} عدد است.");
+            return Result.Failure((new Error("400", $"حداکثر تعداد مجاز آیتم در لیست علاقه‌مندی {MaxWishlistItemsPerUser} عدد است.")));
 
         return Result.Success();
     }
@@ -23,7 +24,7 @@ public sealed class WishlistDomainService
     public static Result ValidateRemoveItem(bool exists)
     {
         if (!exists)
-            return Result.Failure("آیتم مورد نظر در لیست علاقه‌مندی‌های شما یافت نشد.");
+            return Result.Failure((new Error("400", "آیتم مورد نظر در لیست علاقه‌مندی‌های شما یافت نشد.")));
 
         return Result.Success();
     }

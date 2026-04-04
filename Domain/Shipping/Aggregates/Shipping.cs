@@ -1,6 +1,8 @@
 using Domain.Shipping.Events;
 using Domain.Shipping.Exceptions;
 using Domain.Shipping.ValueObjects;
+using Domain.User.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Shipping.Aggregates;
 
@@ -161,7 +163,10 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
     public Result ValidateForOrder(Money orderTotal)
     {
         if (!IsActive)
-            return Result.Failure("روش ارسال غیرفعال است.");
+            return Result.Failure(new Error(
+                "400",
+                "روش ارسال غیرفعال است.",
+                ErrorType.Validation));
 
         return OrderRange.Validate(orderTotal);
     }
@@ -214,7 +219,7 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void RequestDeletion(int? deletedBy = null)
+    public void RequestDeletion(UserId? deletedBy = null)
     {
         if (IsDefault)
             throw new DefaultShippingCannotBeDeletedException(Id);
