@@ -1,3 +1,6 @@
+using Domain.User.Entities;
+using Domain.User.ValueObjects;
+
 namespace Application.User.Features.Shared;
 
 public record UserProfileDto
@@ -81,10 +84,10 @@ public record UpdateUserAddressDto
 {
     public string Title { get; init; } = string.Empty;
     public string ReceiverName { get; init; } = string.Empty;
-    public string PhoneNumber { get; init; } = string.Empty;
+    public PhoneNumber PhoneNumber { get; init; } = null!;
     public string Province { get; init; } = string.Empty;
     public string City { get; init; } = string.Empty;
-    public string Address { get; init; } = string.Empty;
+    public UserAddress Address { get; init; } = null!;
     public string PostalCode { get; init; } = string.Empty;
     public bool IsDefault { get; init; }
 }

@@ -1,16 +1,12 @@
-using Application.Common.Models;
+using Application.Brand.Contracts;
+using Application.Brand.Features.Shared;
+using Application.Common.Results;
 
 namespace Application.Brand.Features.Queries.GetBrandById;
 
-public class GetBrandByIdHandler
-    : IRequestHandler<GetBrandByIdQuery, ServiceResult<BrandDetailDto?>>
+public class GetBrandByIdHandler(IBrandQueryService brandQueryService) : IRequestHandler<GetBrandByIdQuery, ServiceResult<BrandDetailDto?>>
 {
-    private readonly IBrandQueryService _brandQueryService;
-
-    public GetBrandByIdHandler(IBrandQueryService brandQueryService)
-    {
-        _brandQueryService = brandQueryService;
-    }
+    private readonly IBrandQueryService _brandQueryService = brandQueryService;
 
     public async Task<ServiceResult<BrandDetailDto?>> Handle(
         GetBrandByIdQuery request,
@@ -19,7 +15,7 @@ public class GetBrandByIdHandler
         var result = await _brandQueryService.GetBrandDetailAsync(request.Id, ct);
 
         if (result == null)
-            return ServiceResult<BrandDetailDto?>.Failure("گروه یافت نشد.", 404);
+            return ServiceResult<BrandDetailDto?>.NotFound("گروه یافت نشد.");
 
         return ServiceResult<BrandDetailDto?>.Success(result);
     }

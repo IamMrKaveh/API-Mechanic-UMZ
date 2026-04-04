@@ -1,39 +1,34 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Cache.Contracts;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Product.Interfaces;
 
 namespace Application.Product.Features.Commands.RestoreProduct;
 
-public class RestoreProductHandler : IRequestHandler<RestoreProductCommand, ServiceResult>
+public class RestoreProductHandler(
+    IProductRepository productRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICacheService cacheService) : IRequestHandler<RestoreProductCommand, ServiceResult>
 {
-    private readonly IProductRepository _productRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
-    private readonly ICacheService _cacheService;
+    private readonly IProductRepository _productRepository = productRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ICacheService _cacheService = cacheService;
 
-    public RestoreProductHandler(
-        IProductRepository productRepository,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService,
-        ICacheService cacheService)
-    {
-        _productRepository = productRepository;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-        _cacheService = cacheService;
-    }
-
-    public async Task<ServiceResult> Handle(RestoreProductCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        RestoreProductCommand request,
+        CancellationToken ct)
     {
         var product = await _productRepository.GetByIdIncludingDeletedAsync(request.Id);
         if (product == null)
-        {
-            return ServiceResult.Failure("Product not found.");
-        }
+            return ServiceResult.NotFound("Product not found.");
 
         product.Restore();
 
         _productRepository.Update(product);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         await _auditService.LogProductEventAsync(request.Id, "RestoreProduct", $"Product '{product.Name}' restored.", request.UserId);
 

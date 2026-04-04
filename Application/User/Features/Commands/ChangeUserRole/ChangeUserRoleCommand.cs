@@ -1,9 +1,9 @@
-﻿using Application.Common.Models;
+﻿using Application.Common.Results;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.ChangeUserRole;
 
 public record ChangeUserRoleCommand(
-    int UserId,
+    UserId UserId,
     bool IsAdmin,
-    int AdminUserId
-) : IRequest<ServiceResult>;
+    UserId AdminUserId) : IRequest<ServiceResult>;

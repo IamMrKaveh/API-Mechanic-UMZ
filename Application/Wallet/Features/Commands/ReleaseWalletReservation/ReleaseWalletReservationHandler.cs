@@ -1,37 +1,30 @@
-﻿using Application.Common.Models;
+﻿using Application.Common.Exceptions;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Wallet.Interfaces;
 
 namespace Application.Wallet.Features.Commands.ReleaseWalletReservation;
 
-public class ReleaseWalletReservationHandler : IRequestHandler<ReleaseWalletReservationCommand, ServiceResult<Unit>>
+public class ReleaseWalletReservationHandler(
+    IWalletRepository walletRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<ReleaseWalletReservationHandler> logger) : IRequestHandler<ReleaseWalletReservationCommand, ServiceResult<Unit>>
 {
-    private readonly IWalletRepository _walletRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<ReleaseWalletReservationHandler> _logger;
-
-    public ReleaseWalletReservationHandler(
-        IWalletRepository walletRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<ReleaseWalletReservationHandler> logger
-        )
-    {
-        _walletRepository = walletRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IWalletRepository _walletRepository = walletRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<ReleaseWalletReservationHandler> _logger = logger;
 
     public async Task<ServiceResult<Unit>> Handle(
         ReleaseWalletReservationCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         try
         {
             var wallet = await _walletRepository.GetByUserIdForUpdateAsync(request.UserId, ct);
-            if (wallet == null)
+            if (wallet is null)
                 return ServiceResult<Unit>.Success(Unit.Value);
 
-            wallet.ReleaseReservation(request.OrderId);
+            wallet.ReleaseReservation(request.WalletReservationId);
             _walletRepository.Update(wallet);
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -39,13 +32,18 @@ public class ReleaseWalletReservationHandler : IRequestHandler<ReleaseWalletRese
         }
         catch (ConcurrencyException)
         {
-            _logger.LogWarning("Concurrency conflict releasing wallet reservation for order {OrderId}.", request.OrderId);
-            return ServiceResult<Unit>.Failure("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.", 409);
+            _logger.LogWarning(
+                "Concurrency conflict releasing wallet reservation for order {OrderId}.",
+                request.WalletReservationId);
+            return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error releasing wallet reservation for order {OrderId}", request.OrderId);
-            return ServiceResult<Unit>.Failure("خطا در آزادسازی رزرو کیف پول.");
+            _logger.LogError(
+                ex,
+                "Error releasing wallet reservation for order {OrderId}",
+                request.WalletReservationId);
+            return ServiceResult<Unit>.Unexpected("خطا در آزادسازی رزرو کیف پول.");
         }
     }
 }

@@ -1,5 +1,9 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Results;
 using Application.Features.Orders.Commands.DeleteOrder;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
+using Domain.Order.Interfaces;
 
 namespace Application.Order.Features.Commands.DeleteOrder;
 
@@ -18,7 +22,7 @@ public class DeleteOrderHandler(
     {
         var order = await _orderRepository.GetByIdAsync(request.OrderId, ct);
         if (order == null)
-            return ServiceResult.Failure("سفارش یافت نشد.", 404);
+            return ServiceResult.NotFound("سفارش یافت نشد.");
 
         try
         {
@@ -26,7 +30,7 @@ public class DeleteOrderHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message, 400);
+            return ServiceResult.Unexpected(ex.Message);
         }
 
         await _orderRepository.UpdateAsync(order, ct);
@@ -36,7 +40,7 @@ public class DeleteOrderHandler(
             order.Id,
             "DeleteOrder",
             request.UserId,
-            $"سفارش {order.Id} حذف نرم شد.");
+            $"سفارش {order.Id} حذف شد.");
 
         return ServiceResult.Success();
     }

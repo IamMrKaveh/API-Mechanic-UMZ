@@ -1,35 +1,30 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Auth.Contracts;
+using Application.Common.Results;
+using Application.Communication.Contracts;
+using Application.Security.Contracts;
+using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.Auth.Features.Commands.RequestOtp;
 
-public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResult>
+public class RequestOtpHandler(
+    IUserRepository userRepository,
+    IOtpService otpService,
+    ISmsService smsService,
+    IRateLimitService rateLimitService,
+    IAuditService auditService,
+    IUnitOfWork unitOfWork,
+    ILogger<RequestOtpHandler> logger) : IRequestHandler<RequestOtpCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IOtpService _otpService;
-    private readonly ISmsService _smsService;
-    private readonly IRateLimitService _rateLimitService;
-    private readonly IAuditService _auditService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<RequestOtpHandler> _logger;
-
-    public RequestOtpHandler(
-        IUserRepository userRepository,
-        IOtpService otpService,
-        ISmsService smsService,
-        IRateLimitService rateLimitService,
-        IAuditService auditService,
-        IUnitOfWork unitOfWork,
-        ILogger<RequestOtpHandler> logger)
-    {
-        _userRepository = userRepository;
-        _otpService = otpService;
-        _smsService = smsService;
-        _rateLimitService = rateLimitService;
-        _auditService = auditService;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly IOtpService _otpService = otpService;
+    private readonly ISmsService _smsService = smsService;
+    private readonly IRateLimitService _rateLimitService = rateLimitService;
+    private readonly IAuditService _auditService = auditService;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<RequestOtpHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(
         RequestOtpCommand request,
@@ -39,7 +34,7 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
         {
             var (phoneSuccess, phoneNumber, phoneError) = PhoneNumber.TryCreate(request.PhoneNumber);
             if (!phoneSuccess)
-                return ServiceResult.Failure(phoneError!);
+                return ServiceResult.Unexpected(phoneError!);
 
             var normalizedPhone = phoneNumber!.Value;
 
@@ -48,8 +43,7 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
             if (isIpLimited)
             {
                 _logger.LogWarning("درخواست OTP از IP {IpAddress} مسدود شد.", request.IpAddress);
-                return ServiceResult.Failure(
-                    $"تعداد درخواست‌ها بیش از حد مجاز است. لطفاً {ipRetryAfter} ثانیه صبر کنید.", 429);
+                return ServiceResult.RateLimitExceeded($"تعداد درخواست‌ها بیش از حد مجاز است. لطفاً {ipRetryAfter} ثانیه صبر کنید.");
             }
 
             var (isPhoneLimited, phoneRetryAfter) = await _rateLimitService.IsLimitedAsync(
@@ -57,8 +51,7 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
             if (isPhoneLimited)
             {
                 _logger.LogWarning("درخواست OTP برای شماره {PhoneNumber} مسدود شد.", normalizedPhone);
-                return ServiceResult.Failure(
-                    $"درخواست‌های متعدد. لطفاً {phoneRetryAfter} ثانیه صبر کنید.", 429);
+                return ServiceResult.RateLimitExceeded($"درخواست‌های متعدد. لطفاً {phoneRetryAfter} ثانیه صبر کنید.");
             }
 
             var user = await _userRepository.GetWithOtpsByPhoneAsync(normalizedPhone, ct);
@@ -73,13 +66,13 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
             {
                 var remaining = user.GetRemainingLockoutTime();
                 if (remaining.HasValue && remaining.Value > TimeSpan.Zero)
-                    return ServiceResult.Failure(
+                    return ServiceResult.Unexpected(
                         $"حساب شما قفل شده است. لطفاً {(int)remaining.Value.TotalMinutes} دقیقه دیگر تلاش کنید.");
             }
 
             var (canSend, rateLimitError, _) = user.CheckOtpRateLimit();
             if (!canSend)
-                return ServiceResult.Failure(rateLimitError!);
+                return ServiceResult.RateLimitReached(rateLimitError!);
 
             var otpCode = _otpService.GenerateSecureOtp();
             var otpHash = _otpService.HashOtp(otpCode);
@@ -93,7 +86,7 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
             {
                 _logger.LogError("ارسال OTP به {PhoneNumber} ناموفق بود: {Error}",
                     normalizedPhone, smsResult.ErrorMessage);
-                return ServiceResult.Failure("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
+                return ServiceResult.Unexpected("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
             }
 
             await _auditService.LogSecurityEventAsync(
@@ -108,7 +101,7 @@ public class RequestOtpHandler : IRequestHandler<RequestOtpCommand, ServiceResul
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در درخواست OTP برای شماره {PhoneNumber}", request.PhoneNumber);
-            return ServiceResult.Failure("خطای داخلی سرور.");
+            return ServiceResult.Unexpected("خطای داخلی سرور.");
         }
     }
 }

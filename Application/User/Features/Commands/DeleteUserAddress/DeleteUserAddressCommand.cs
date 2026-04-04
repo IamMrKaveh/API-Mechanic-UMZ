@@ -1,5 +1,6 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.DeleteUserAddress;
 
-public record DeleteUserAddressCommand(int UserId, int AddressId) : IRequest<ServiceResult>;
+public record DeleteUserAddressCommand(UserId UserId, UserAddressId AddressId) : IRequest<ServiceResult>;

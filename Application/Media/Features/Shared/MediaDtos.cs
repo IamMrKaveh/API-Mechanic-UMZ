@@ -47,12 +47,6 @@ public record MediaListItemDto
     public DateTime CreatedAt { get; init; }
 }
 
-public record initPrimaryMediaRequestDto(
-    int MediaId,
-    string EntityType,
-    int EntityId
-);
-
 public record UploadImageInput(
     int? Id,
     string? AltText,
@@ -60,15 +54,4 @@ public record UploadImageInput(
     bool IsPrimary,
     long? FileSize,
     string? FileType
-);
-
-public record ReorderMediaRequest(
-    [Required]
-    string EntityType,
-
-    [Required]
-    int EntityId,
-
-    [Required]
-    IReadOnlyList<int> OrderedMediaIds
 );

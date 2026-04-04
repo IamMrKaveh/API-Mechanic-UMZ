@@ -18,7 +18,7 @@ public interface IDiscountRepository
         CancellationToken ct = default);
 
     Task<bool> ExistsByCodeAsync(
-        string code,
+        DiscountCode code,
         DiscountCodeId? excludeId = null,
         CancellationToken ct = default);
 

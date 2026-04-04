@@ -1,6 +1,6 @@
 namespace Domain.Cart.ValueObjects;
 
-public sealed record GuestToken
+public sealed class GuestToken : ValueObject
 {
     public string Value { get; }
 
@@ -15,6 +15,11 @@ public sealed record GuestToken
         if (value.Trim().Length < 8)
             throw new ArgumentException("Guest token is too short.", nameof(value));
         return new GuestToken(value.Trim());
+    }
+
+    protected override IEnumerable<object> GetEqualityComponents()
+    {
+        yield return Value;
     }
 
     public override string ToString() => Value;

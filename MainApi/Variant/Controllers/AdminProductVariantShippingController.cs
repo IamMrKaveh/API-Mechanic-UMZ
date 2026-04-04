@@ -1,3 +1,7 @@
+using Application.Shipping.Features.Shared;
+using Application.Variant.Features.Commands.UpdateProductVariantShipping;
+using Application.Variant.Features.Queries.GetProductVariantShipping;
+
 namespace MainApi.Variant.Controllers;
 
 [ApiController]

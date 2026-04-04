@@ -1,40 +1,39 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Review.Features.Shared;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 using Domain.Product.Interfaces;
 using Domain.Review.Aggregates;
 using Domain.Review.Interfaces;
 
 namespace Application.Review.Features.Commands.SubmitReview;
 
-public class SubmitReviewHandler : IRequestHandler<SubmitReviewCommand, ServiceResult<ProductReviewDto>>
+public class SubmitReviewHandler(
+    IProductRepository productRepository,
+    IReviewRepository reviewRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<SubmitReviewHandler> logger) : IRequestHandler<SubmitReviewCommand, ServiceResult<ProductReviewDto>>
 {
-    private readonly IProductRepository _productRepository;
-    private readonly IReviewRepository _reviewRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<SubmitReviewHandler> _logger;
-
-    public SubmitReviewHandler(
-        IProductRepository productRepository,
-        IReviewRepository reviewRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<SubmitReviewHandler> logger)
-    {
-        _productRepository = productRepository;
-        _reviewRepository = reviewRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IProductRepository _productRepository = productRepository;
+    private readonly IReviewRepository _reviewRepository = reviewRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<SubmitReviewHandler> _logger = logger;
 
     public async Task<ServiceResult<ProductReviewDto>> Handle(
-        SubmitReviewCommand request, CancellationToken ct)
+        SubmitReviewCommand request,
+        CancellationToken ct)
     {
         var product = await _productRepository.GetByIdAsync(request.ProductId, ct);
-        if (product == null || product.IsDeleted || !product.IsActive)
-            return ServiceResult<ProductReviewDto>.Failure("محصول یافت نشد.", 404);
+
+        if (product is null)
+            return ServiceResult<ProductReviewDto>.NotFound("محصول یافت نشد.");
+
+        if (product.IsDeleted || !product.IsActive)
+            return ServiceResult<ProductReviewDto>.NotFound("محصول حذف شده یا غیرفعال هست");
 
         if (await _reviewRepository.UserHasReviewedProductAsync(request.UserId, request.ProductId, request.OrderId, ct))
-            return ServiceResult<ProductReviewDto>.Failure("شما قبلاً برای این محصول نظر ثبت کرده‌اید.", 400);
+            return ServiceResult<ProductReviewDto>.Conflict("شما قبلاً برای این محصول نظر ثبت کرده‌اید.");
 
-        
         var isVerifiedPurchase = await _reviewRepository.UserHasPurchasedProductAsync(request.UserId, request.ProductId, ct);
 
         try
@@ -51,8 +50,12 @@ public class SubmitReviewHandler : IRequestHandler<SubmitReviewCommand, ServiceR
             await _reviewRepository.AddAsync(review, ct);
             await _unitOfWork.SaveChangesAsync(ct);
 
-            _logger.LogInformation("Review {ReviewId} submitted by user {UserId} for product {ProductId}. Verified: {IsVerified}",
-                review.Id, request.UserId, request.ProductId, isVerifiedPurchase);
+            _logger.LogInformation(
+                "Review {ReviewId} submitted by user {UserId} for product {ProductId}. Verified: {IsVerified}",
+                review.Id,
+                request.UserId,
+                request.ProductId,
+                isVerifiedPurchase);
 
             var dto = new ProductReviewDto
             {
@@ -72,7 +75,7 @@ public class SubmitReviewHandler : IRequestHandler<SubmitReviewCommand, ServiceR
         }
         catch (DomainException ex)
         {
-            return ServiceResult<ProductReviewDto>.Failure(ex.Message, 400);
+            return ServiceResult<ProductReviewDto>.Unexpected(ex.Message);
         }
     }
 }

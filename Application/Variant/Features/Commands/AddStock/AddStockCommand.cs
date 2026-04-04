@@ -1,5 +1,5 @@
-using Application.Common.Models;
+using Application.Common.Results;
 
 namespace Application.Variant.Features.Commands.AddStock;
 
-public record AddStockCommand(int VariantId, int Quantity, int UserId, string Notes) : IRequest<ServiceResult>;
+public record AddStockCommand(Guid VariantId, int Quantity, Guid UserId, string Notes) : IRequest<ServiceResult>;

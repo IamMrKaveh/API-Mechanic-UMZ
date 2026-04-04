@@ -1,6 +1,7 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Product.Features.Shared;
+using Domain.Product.ValueObjects;
 
 namespace Application.Product.Features.Queries.GetProductDetails;
 
-public record GetProductDetailsQuery(int ProductId)
-    : IRequest<ServiceResult<PublicProductDetailDto?>>;
+public record GetProductDetailsQuery(ProductId ProductId) : IRequest<ServiceResult<PublicProductDetailDto?>>;

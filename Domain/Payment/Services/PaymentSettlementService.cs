@@ -1,4 +1,5 @@
 using Domain.Payment.Aggregates;
+using Domain.Payment.Interfaces;
 using Domain.Payment.Results;
 
 namespace Domain.Payment.Services;
@@ -6,7 +7,7 @@ namespace Domain.Payment.Services;
 public sealed class PaymentSettlementService
 {
     public static RefundEligibilityResult ValidateRefundEligibility(
-        Order.Aggregates.Order order,
+        IOrderPaymentContext order,
         PaymentTransaction payment)
     {
         Guard.Against.Null(order, nameof(order));
@@ -15,7 +16,7 @@ public sealed class PaymentSettlementService
         if (!order.IsPaid && !order.IsDelivered)
             return RefundEligibilityResult.Failed(
                 $"استرداد فقط برای سفارش‌های پرداخت‌شده یا تحویل‌داده‌شده مجاز است. " +
-                $"وضعیت فعلی: {order.Status.DisplayName}");
+                $"وضعیت فعلی: {order.StatusDisplayName}");
 
         if (!payment.IsSuccessful())
             return RefundEligibilityResult.Failed("فقط تراکنش‌های پرداخت موفق قابل استرداد هستند.");
@@ -47,7 +48,7 @@ public sealed class PaymentSettlementService
     }
 
     public static SettlementRefundResult ProcessRefund(
-        Order.Aggregates.Order order,
+        IOrderPaymentContext order,
         PaymentTransaction payment,
         string reason)
     {
@@ -67,7 +68,7 @@ public sealed class PaymentSettlementService
     }
 
     public static PaymentSuccessSettlementResult ProcessPaymentSuccess(
-        Order.Aggregates.Order order,
+        IOrderPaymentContext order,
         Guid paymentTransactionId)
     {
         Guard.Against.Null(order, nameof(order));

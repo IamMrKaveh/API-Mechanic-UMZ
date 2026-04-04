@@ -1,4 +1,7 @@
+using Application.Audit.Contracts;
+using Domain.Common.Interfaces;
 using Domain.Security.Interfaces;
+using Domain.User.Events;
 
 namespace Application.Auth.EventHandlers;
 
@@ -13,7 +16,9 @@ public class UserDeactivatedEventHandler(
     private readonly IAuditService _auditService = auditService;
     private readonly ILogger<UserDeactivatedEventHandler> _logger = logger;
 
-    public async Task Handle(UserDeactivatedEvent notification, CancellationToken ct)
+    public async Task Handle(
+        UserDeactivatedEvent notification,
+        CancellationToken ct)
     {
         _logger.LogInformation("Domain Event: User {UserId} deactivated.", notification.UserId);
 
@@ -24,6 +29,6 @@ public class UserDeactivatedEventHandler(
             "AccountDeactivated",
             $"حساب کاربر {notification.UserId} غیرفعال شد و تمام نشست‌ها ابطال شدند.",
             "system",
-            notification.UserId);
+            notification.UserId.Value);
     }
 }

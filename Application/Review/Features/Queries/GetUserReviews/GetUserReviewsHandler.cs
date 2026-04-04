@@ -1,16 +1,13 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Review.Contracts;
+using Application.Review.Features.Shared;
+using SharedKernel.Models;
 
 namespace Application.Review.Features.Queries.GetUserReviews;
 
-public class GetUserReviewsHandler
-    : IRequestHandler<GetUserReviewsQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>
+public class GetUserReviewsHandler(IReviewQueryService reviewQueryService) : IRequestHandler<GetUserReviewsQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>
 {
-    private readonly IReviewQueryService _reviewQueryService;
-
-    public GetUserReviewsHandler(IReviewQueryService reviewQueryService)
-    {
-        _reviewQueryService = reviewQueryService;
-    }
+    private readonly IReviewQueryService _reviewQueryService = reviewQueryService;
 
     public async Task<ServiceResult<PaginatedResult<ProductReviewDto>>> Handle(
         GetUserReviewsQuery request, CancellationToken ct)

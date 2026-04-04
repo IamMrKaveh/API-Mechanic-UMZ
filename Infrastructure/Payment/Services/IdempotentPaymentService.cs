@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 using Domain.Payment.Aggregates;
 using Domain.Payment.Interfaces;
 
@@ -128,7 +128,7 @@ public sealed class PaymentService(
 
         var transaction = await _transactionRepo.GetByAuthorityAsync(authority, ct);
         if (transaction is null)
-            return ServiceResult<(bool, long?, string?, string?)>.Failure("تراکنش یافت نشد.");
+            return ServiceResult<(bool, long?, string?, string?)>.NotFound("تراکنش یافت نشد.");
 
         if (transaction.IsSuccessful())
         {
@@ -150,7 +150,7 @@ public sealed class PaymentService(
             _transactionRepo.Update(transaction);
             await _unitOfWork.SaveChangesAsync(ct);
 
-            return ServiceResult<(bool, long?, string?, string?)>.Failure(gatewayResult.Message ?? "پرداخت تأیید نشد.");
+            return ServiceResult<(bool, long?, string?, string?)>.Validation(gatewayResult.Message ?? "پرداخت تأیید نشد.");
         }
 
         transaction.MarkAsSuccess(gatewayResult.RefId!.Value, gatewayResult.CardPan);

@@ -1,3 +1,10 @@
+using Application.Analytics.Features.Queries.GetCategoryPerformance;
+using Application.Analytics.Features.Queries.GetDashboardStatistics;
+using Application.Analytics.Features.Queries.GetInventoryReport;
+using Application.Analytics.Features.Queries.GetRevenueReport;
+using Application.Analytics.Features.Queries.GetSalesChartData;
+using Application.Analytics.Features.Queries.GetTopSellingProducts;
+
 namespace MainApi.Analytic.Controllers;
 
 [ApiController]

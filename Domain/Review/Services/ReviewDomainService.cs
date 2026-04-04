@@ -1,5 +1,10 @@
-﻿using Domain.Review.Aggregates;
+﻿using Domain.Order.ValueObjects;
+using Domain.Product.ValueObjects;
+using Domain.Review.Aggregates;
 using Domain.Review.Interfaces;
+using Domain.Review.ValueObjects;
+using Domain.User.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Review.Services;
 
@@ -14,18 +19,19 @@ public sealed class ReviewDomainService
     }
 
     public async Task<Result<ProductReview>> SubmitReviewAsync(
-        int productId,
-        int userId,
-        int rating,
+        ProductId productId,
+        UserId userId,
+        Rating rating,
         string? title,
         string? comment,
-        int? orderId,
+        OrderId? orderId,
         bool requirePurchaseVerification,
-        Func<int, int, int?, CancellationToken, Task<bool>> hasExistingReviewCheck,
+        Func<UserId, ProductId, OrderId?, CancellationToken, Task<bool>> hasExistingReviewCheck,
         CancellationToken ct = default)
     {
-        Guard.Against.NegativeOrZero(productId, nameof(productId));
-        Guard.Against.NegativeOrZero(userId, nameof(userId));
+        Guard.Against.Null(productId, nameof(productId));
+        Guard.Against.Null(userId, nameof(userId));
+        Guard.Against.Null(rating, nameof(rating));
 
         bool alreadyReviewed = await hasExistingReviewCheck(userId, productId, orderId, ct);
         if (alreadyReviewed)

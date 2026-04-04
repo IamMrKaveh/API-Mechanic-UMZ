@@ -1,6 +1,6 @@
 namespace Domain.Common.ValueObjects;
 
-public sealed record Money
+public sealed class Money : ValueObject
 {
     public decimal Amount { get; }
     public string Currency { get; }
@@ -76,30 +76,21 @@ public sealed record Money
         return Amount <= other.Amount;
     }
 
-    public bool IsZero => Amount == 0;
-
-    public bool IsPositive => Amount > 0;
-
-    public string ToTomanString() => $"{Amount:N0} تومان";
-
-    public static Money operator +(Money left, Money right) => left.Add(right);
-
-    public static Money operator -(Money left, Money right) => left.Subtract(right);
-
-    public static bool operator >(Money left, Money right) => left.IsGreaterThan(right);
-
-    public static bool operator <(Money left, Money right) => left.IsLessThan(right);
-
-    public static bool operator >=(Money left, Money right) => left.IsGreaterThanOrEqual(right);
-
-    public static bool operator <=(Money left, Money right) => left.IsLessThanOrEqual(right);
-
     private void EnsureSameCurrency(Money other)
     {
         if (!string.Equals(Currency, other.Currency, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException(
-                $"Cannot operate on different currencies: {Currency} and {other.Currency}.");
+            throw new InvalidOperationException($"Cannot operate on money with different currencies: {Currency} and {other.Currency}");
     }
 
-    public override string ToString() => $"{Amount:N0} {Currency}";
+    public string ToTomanString()
+    {
+        var tomanAmount = Currency == "IRR" ? Amount / 10 : Amount;
+        return $"{tomanAmount:N0} تومان";
+    }
+
+    protected override IEnumerable<object> GetEqualityComponents()
+    {
+        yield return Amount;
+        yield return Currency;
+    }
 }

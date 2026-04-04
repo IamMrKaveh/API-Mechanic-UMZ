@@ -1,4 +1,9 @@
-﻿namespace MainApi.Wallet.Controllers;
+﻿using Application.Wallet.Features.Commands.CreditWallet;
+using Application.Wallet.Features.Commands.DebitWallet;
+using Application.Wallet.Features.Queries.GetWalletBalance;
+using Application.Wallet.Features.Queries.GetWalletLedger;
+
+namespace MainApi.Wallet.Controllers;
 
 [ApiController]
 [Route("api/admin/wallet")]
@@ -55,7 +60,7 @@ public class AdminWalletController(IMediator mediator) : BaseApiController(media
         [FromBody] AdminWalletAdjustmentDto dto,
         CancellationToken ct)
     {
-        var adminId = CurrentUser.UserId.Value;
+        var adminId = CurrentUser.UserId;
         var correlationId = HttpContext.TraceIdentifier;
 
         var command = new DebitWalletCommand(

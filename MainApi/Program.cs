@@ -1,5 +1,8 @@
-using DotNetEnv;
+using Application.Storage.Features.Shared;
 using Infrastructure;
+using MainApi.Extensions;
+using MainApi.Filters;
+using MainApi.Options;
 using MainApi.Security.Settings;
 
 var envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
@@ -32,8 +35,6 @@ try
     builder.ValidateRequiredConfiguration();
 
     var app = builder.Build();
-
-    ValidateAutoMapperConfiguration(app);
 
     app.UseApplicationMiddleware();
     app.MapControllers();
@@ -147,12 +148,4 @@ static void ConfigureRedisAndDataProtection(WebApplicationBuilder builder)
     builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
     builder.Services.AddDataProtection()
         .PersistKeysToStackExchangeRedis(redis, "DataProtection-Keys-");
-}
-
-static void ValidateAutoMapperConfiguration(WebApplication app)
-{
-    app.Services
-       .GetRequiredService<IMapper>()
-       .ConfigurationProvider
-       .AssertConfigurationIsValid();
 }

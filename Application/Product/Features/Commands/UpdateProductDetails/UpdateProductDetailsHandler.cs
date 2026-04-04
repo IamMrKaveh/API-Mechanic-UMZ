@@ -1,40 +1,35 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Exceptions;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Product.Interfaces;
+using SharedKernel.Contracts;
 
 namespace Application.Product.Features.Commands.UpdateProductDetails;
 
-public class UpdateProductDetailsHandler : IRequestHandler<UpdateProductDetailsCommand, ServiceResult>
+public class UpdateProductDetailsHandler(
+    IProductRepository productRepository,
+    IUnitOfWork unitOfWork,
+    IHtmlSanitizer htmlSanitizer,
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<UpdateProductDetailsCommand, ServiceResult>
 {
-    private readonly IProductRepository _productRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IHtmlSanitizer _htmlSanitizer;
-    private readonly IAuditService _auditService;
-    private readonly ICurrentUserService _currentUserService;
-
-    public UpdateProductDetailsHandler(
-        IProductRepository productRepository,
-        IUnitOfWork unitOfWork,
-        IHtmlSanitizer htmlSanitizer,
-        IAuditService auditService,
-        ICurrentUserService currentUserService)
-    {
-        _productRepository = productRepository;
-        _unitOfWork = unitOfWork;
-        _htmlSanitizer = htmlSanitizer;
-        _auditService = auditService;
-        _currentUserService = currentUserService;
-    }
+    private readonly IProductRepository _productRepository = productRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IHtmlSanitizer _htmlSanitizer = htmlSanitizer;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     public async Task<ServiceResult> Handle(UpdateProductDetailsCommand request, CancellationToken ct)
     {
         var product = await _productRepository.GetByIdAsync(request.Id, ct);
-        if (product == null) return ServiceResult.Failure("Product not found.");
+        if (product == null) return ServiceResult.NotFound("Product not found.");
 
         _productRepository.SetOriginalRowVersion(product, Convert.FromBase64String(request.RowVersion));
 
         if (!string.IsNullOrEmpty(request.Sku)
             && await _productRepository.ExistsBySkuAsync(request.Sku, request.Id, ct))
-            return ServiceResult.Failure("Product SKU already exists.");
+            return ServiceResult.Conflict("Product SKU already exists.");
 
         product.UpdateDetails(
             _htmlSanitizer.Sanitize(request.Name),
@@ -49,12 +44,15 @@ public class UpdateProductDetailsHandler : IRequestHandler<UpdateProductDetailsC
         {
             await _unitOfWork.SaveChangesAsync(ct);
             await _auditService.LogProductEventAsync(
-                request.Id, "UpdateProductDetails", "Product details updated.", _currentUserService.UserId);
+                request.Id,
+                "UpdateProductDetails",
+                "Product details updated.",
+                _currentUserService.CurrentUser.UserId);
             return ServiceResult.Success();
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Failure("This product was modified by another user. Please refresh and try again.");
+            return ServiceResult.Conflict("This product was modified by another user. Please refresh and try again.");
         }
     }
 }

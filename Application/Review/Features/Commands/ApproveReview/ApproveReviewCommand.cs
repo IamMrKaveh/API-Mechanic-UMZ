@@ -1,5 +1,6 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Review.ValueObjects;
 
 namespace Application.Review.Features.Commands.ApproveReview;
 
-public record ApproveReviewCommand(int ReviewId) : IRequest<ServiceResult>;
+public record ApproveReviewCommand(ProductReviewId ReviewId) : IRequest<ServiceResult>;

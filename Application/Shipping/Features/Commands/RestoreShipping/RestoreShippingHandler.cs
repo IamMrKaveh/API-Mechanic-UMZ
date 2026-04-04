@@ -1,44 +1,41 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Shipping.Interfaces;
+using SharedKernel.Contracts;
 
 namespace Application.Shipping.Features.Commands.RestoreShipping;
 
-public class RestoreShippingHandler : IRequestHandler<RestoreShippingCommand, ServiceResult>
+public class RestoreShippingHandler(
+    IShippingRepository shippingMethodRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<RestoreShippingCommand, ServiceResult>
 {
-    private readonly IShippingRepository _shippingMethodRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
-    private readonly ICurrentUserService _currentUserService;
+    private readonly IShippingRepository _shippingMethodRepository = shippingMethodRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
-    public RestoreShippingHandler(
-        IShippingRepository shippingMethodRepository,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService,
-        ICurrentUserService currentUserService)
+    public async Task<ServiceResult> Handle(
+        RestoreShippingCommand request,
+        CancellationToken ct)
     {
-        _shippingMethodRepository = shippingMethodRepository;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-        _currentUserService = currentUserService;
-    }
-
-    public async Task<ServiceResult> Handle(RestoreShippingCommand request, CancellationToken cancellationToken)
-    {
-        var method = await _shippingMethodRepository.GetByIdAsync(request.Id, cancellationToken);
+        var method = await _shippingMethodRepository.GetByIdAsync(request.Id, ct);
         if (method == null)
-            return ServiceResult.Failure("روش ارسال یافت نشد.", 404);
+            return ServiceResult.NotFound("روش ارسال یافت نشد.");
 
-        
         method.Restore();
 
         _shippingMethodRepository.Update(method);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         await _auditService.LogAdminEventAsync(
             "RestoreShippingMethod",
             request.CurrentUserId,
             $"Restored shipping method ID: {request.Id}",
-            _currentUserService.IpAddress);
+            _currentUserService.CurrentUser.IpAddress,
+            _currentUserService.UserAgent);
 
         return ServiceResult.Success();
     }

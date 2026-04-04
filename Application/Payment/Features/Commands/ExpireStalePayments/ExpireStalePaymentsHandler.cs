@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 using Domain.Payment.Interfaces;
 
 namespace Application.Payment.Features.Commands.ExpireStalePayments;

@@ -1,8 +1,6 @@
-﻿using System.Net;
+﻿namespace Domain.Common.ValueObjects;
 
-namespace Domain.Common.ValueObjects;
-
-public sealed record IpAddress
+public sealed class IpAddress : ValueObject
 {
     public string Value { get; }
 
@@ -20,6 +18,11 @@ public sealed record IpAddress
     }
 
     public static IpAddress Unknown => new("0.0.0.0");
+
+    protected override IEnumerable<object> GetEqualityComponents()
+    {
+        yield return Value;
+    }
 
     public override string ToString() => Value;
 }

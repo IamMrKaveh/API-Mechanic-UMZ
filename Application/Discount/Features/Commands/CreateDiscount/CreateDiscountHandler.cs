@@ -1,48 +1,37 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Results;
+using Application.Discount.Features.Shared;
+using Domain.Common.Interfaces;
+using Domain.Discount.Aggregates;
 using Domain.Discount.Interfaces;
+using SharedKernel.Contracts;
 
 namespace Application.Discount.Features.Commands.CreateDiscount;
 
-public class CreateDiscountHandler : IRequestHandler<CreateDiscountCommand, ServiceResult<DiscountCodeDto>>
+public class CreateDiscountHandler(
+    IDiscountRepository discountRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICurrentUserService currentUserService,
+    IMapper mapper) : IRequestHandler<CreateDiscountCommand, ServiceResult<DiscountCodeDto>>
 {
-    private readonly IDiscountRepository _discountRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IHtmlSanitizer _htmlSanitizer;
-    private readonly IAuditService _auditService;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly IMapper _mapper;
-
-    public CreateDiscountHandler(
-        IDiscountRepository discountRepository,
-        IUnitOfWork unitOfWork,
-        IHtmlSanitizer htmlSanitizer,
-        IAuditService auditService,
-        ICurrentUserService currentUserService,
-        IMapper mapper
-        )
-    {
-        _discountRepository = discountRepository;
-        _unitOfWork = unitOfWork;
-        _htmlSanitizer = htmlSanitizer;
-        _auditService = auditService;
-        _currentUserService = currentUserService;
-        _mapper = mapper;
-    }
+    private readonly IDiscountRepository _discountRepository = discountRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
+    private readonly IMapper _mapper = mapper;
 
     public async Task<ServiceResult<DiscountCodeDto>> Handle(
         CreateDiscountCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        var sanitizedCode = _htmlSanitizer.Sanitize(request.Code).ToUpper().Trim();
-
-        if (await _discountRepository.ExistsByCodeAsync(sanitizedCode, ct: ct))
+        if (await _discountRepository.ExistsByCodeAsync(request.Code, null, ct))
         {
-            return ServiceResult<DiscountCodeDto>.Failure("کد تخفیف تکراری است.");
+            return ServiceResult<DiscountCodeDto>.Conflict("کد تخفیف تکراری است.");
         }
 
         var discount = DiscountCode.Create(
-            sanitizedCode,
+            request.Code,
             request.Percentage,
             request.MaxDiscountAmount,
             request.MinOrderAmount,
@@ -63,7 +52,10 @@ public class CreateDiscountHandler : IRequestHandler<CreateDiscountCommand, Serv
         await _discountRepository.AddAsync(discount, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        await _auditService.LogAdminEventAsync("CreateDiscount", _currentUserService.UserId ?? 0, $"Code created: {discount.Code.Value}");
+        await _auditService.LogAdminEventAsync(
+            "CreateDiscount",
+            _currentUserService.CurrentUser.UserId,
+            $"Code created: {discount.Code}");
 
         return ServiceResult<DiscountCodeDto>.Success(_mapper.Map<DiscountCodeDto>(discount));
     }

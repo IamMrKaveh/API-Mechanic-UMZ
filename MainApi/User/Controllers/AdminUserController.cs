@@ -1,3 +1,13 @@
+using Application.User.Features.Commands.ChangeUserRole;
+using Application.User.Features.Commands.ChangeUserStatus;
+using Application.User.Features.Commands.CreateUser;
+using Application.User.Features.Commands.DeleteUser;
+using Application.User.Features.Commands.RestoreUser;
+using Application.User.Features.Commands.UpdateUser;
+using Application.User.Features.Queries.GetUserById;
+using Application.User.Features.Queries.GetUsers;
+using Application.User.Features.Shared;
+
 namespace MainApi.User.Controllers;
 
 [Route("api/admin/user")]

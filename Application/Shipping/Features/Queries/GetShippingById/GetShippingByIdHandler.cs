@@ -1,23 +1,20 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Shipping.Contracts;
+using Application.Shipping.Features.Shared;
 
 namespace Application.Shipping.Features.Queries.GetShippingById;
 
-public class GetShippingByIdHandler : IRequestHandler<GetShippingByIdQuery, ServiceResult<ShippingDto>>
+public class GetShippingByIdHandler(IShippingQueryService shippingQueryService) : IRequestHandler<GetShippingByIdQuery, ServiceResult<ShippingDto>>
 {
-    private readonly IShippingQueryService _shippingQueryService;
-
-    public GetShippingByIdHandler(
-        IShippingQueryService shippingQueryService
-        ) => _shippingQueryService = shippingQueryService;
+    private readonly IShippingQueryService _shippingQueryService = shippingQueryService;
 
     public async Task<ServiceResult<ShippingDto>> Handle(
         GetShippingByIdQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var shipping = await _shippingQueryService.GetShippingByIdAsync(request.Id, ct);
-        if (shipping == null)
-            return ServiceResult<ShippingDto>.Failure("NotFound");
+        if (shipping is null)
+            return ServiceResult<ShippingDto>.NotFound("NotFound");
         return ServiceResult<ShippingDto>.Success(shipping);
     }
 }

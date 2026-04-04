@@ -4,6 +4,6 @@ public class NotificationMappingProfile : Profile
 {
     public NotificationMappingProfile()
     {
-        CreateMap<Domain.Notification.Notification, NotificationDto>();
+        CreateMap<Domain.Notification.Aggregates.Notification, NotificationDto>();
     }
 }

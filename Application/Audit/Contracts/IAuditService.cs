@@ -1,3 +1,8 @@
+using Application.Audit.Features.Shared;
+using Domain.Order.ValueObjects;
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Application.Audit.Contracts;
 
 /// <summary>
@@ -6,7 +11,7 @@ namespace Application.Audit.Contracts;
 public interface IAuditService
 {
     Task LogAsync(
-        int? userId,
+        UserId? userId,
         string eventType,
         string action,
         string details,
@@ -14,7 +19,7 @@ public interface IAuditService
         string? userAgent = null);
 
     Task LogUserActionAsync(
-        int userId,
+        UserId userId,
         string action,
         string details,
         string ipAddress,
@@ -24,46 +29,43 @@ public interface IAuditService
         string eventType,
         string details,
         string ipAddress,
-        int? userId = null,
+        UserId? userId = null,
         string? userAgent = null);
 
     Task LogSystemEventAsync(
         string eventType,
         string details,
-        int? userId = null,
+        UserId? userId = null,
         string? ipAddress = null,
         string? userAgent = null);
 
     Task LogAdminEventAsync(
         string action,
-        int userId,
+        UserId userId,
         string details,
         string? ipAddress = null,
         string? userAgent = null);
 
     Task LogOrderEventAsync(
-        int orderId,
+        OrderId orderId,
         string action,
-        int userId,
+        UserId userId,
         string details);
 
     Task LogProductEventAsync(
-        int productId,
+        ProductId productId,
         string action,
         string details,
-        int? userId = null);
+        UserId? userId = null);
 
     Task LogInventoryEventAsync(
-        int productId,
+        ProductId productId,
         string action,
         string details,
-        int? userId = null);
+        UserId? userId = null);
 
-    /// <summary>
-    /// دریافت لاگ‌های حسابرسی با فیلتر و صفحه‌بندی
-    /// </summary>
     Task<(IEnumerable<AuditDtos> Logs, int TotalItems)> GetAuditLogsAsync(
-        int? userId,
+        UserId? userId,
         string? eventType,
         DateTime? fromDate,
         DateTime? toDate,

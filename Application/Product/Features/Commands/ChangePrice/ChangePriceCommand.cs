@@ -1,12 +1,12 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Product.Features.Commands.ChangePrice;
 
-public record ChangePriceCommand : IRequest<ServiceResult>
-{
-    public int ProductId { get; init; }
-    public int VariantId { get; init; }
-    public decimal PurchasePrice { get; init; }
-    public decimal SellingPrice { get; init; }
-    public decimal OriginalPrice { get; init; }
-}
+public record ChangePriceCommand(
+    ProductId ProductId,
+    ProductVariantId VariantId,
+    decimal PurchasePrice,
+    decimal SellingPrice,
+    decimal OriginalPrice) : IRequest<ServiceResult>;

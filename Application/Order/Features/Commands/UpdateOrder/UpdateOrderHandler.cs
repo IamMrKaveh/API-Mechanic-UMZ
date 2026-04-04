@@ -1,39 +1,34 @@
-using Application.Common.Models;
-using Application.Features.Orders.Commands.UpdateOrder;
+using Application.Common.Exceptions;
+using Application.Common.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
+using Domain.Order.Interfaces;
 using Domain.Shipping.Interfaces;
 
 namespace Application.Order.Features.Commands.UpdateOrder;
 
-public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, ServiceResult>
+public class UpdateOrderHandler(
+    IOrderRepository orderRepository,
+    IShippingRepository shippingRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<UpdateOrderHandler> logger) : IRequestHandler<UpdateOrderCommand, ServiceResult>
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IShippingRepository _shippingRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<UpdateOrderHandler> _logger;
-
-    public UpdateOrderHandler(
-        IOrderRepository orderRepository,
-        IShippingRepository shippingRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<UpdateOrderHandler> logger)
-    {
-        _orderRepository = orderRepository;
-        _shippingRepository = shippingRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IOrderRepository _orderRepository = orderRepository;
+    private readonly IShippingRepository _shippingRepository = shippingRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<UpdateOrderHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(UpdateOrderCommand request, CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
+        var order = await _orderRepository.FindByIdAsync(request.OrderId, ct);
         if (order == null)
-            return ServiceResult.Failure("سفارش یافت نشد.", 404);
+            return ServiceResult.NotFound("سفارش یافت نشد.");
 
         if (!string.IsNullOrEmpty(request.Dto.RowVersion))
             _orderRepository.SetOriginalRowVersion(order, Convert.FromBase64String(request.Dto.RowVersion));
 
         if (!order.CanBeModified())
-            return ServiceResult.Failure("این سفارش قابل ویرایش نیست.", 400);
+            return ServiceResult.Forbidden("این سفارش قابل ویرایش نیست.");
 
         try
         {
@@ -43,7 +38,7 @@ public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, ServiceRes
                     request.Dto.ShippingId.Value, ct);
 
                 if (shipping == null || !shipping.IsActive)
-                    return ServiceResult.Failure("روش ارسال نامعتبر است.", 400);
+                    return ServiceResult.Unexpected("روش ارسال نامعتبر است.");
 
                 var shippingCost = shipping.CalculateCost(order.TotalAmount);
                 order.UpdateShipping(shipping.Id, shippingCost);
@@ -56,11 +51,11 @@ public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, ServiceRes
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message, 400);
+            return ServiceResult.Unexpected(ex.Message);
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Failure("این سفارش توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.");
+            return ServiceResult.Conflict("این سفارش توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.");
         }
     }
 }

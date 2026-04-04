@@ -1,10 +1,11 @@
-﻿using Application.Common.Models;
+﻿using Application.Common.Results;
+using Domain.User.ValueObjects;
+using Domain.Wallet.ValueObjects;
 
 namespace Application.Wallet.Features.Commands.ReserveWallet;
 
 public record ReserveWalletCommand(
-    int UserId,
+    UserId UserId,
     decimal Amount,
-    int OrderId,
-    DateTime? ExpiresAt = null
-) : IRequest<ServiceResult<Unit>>;
+    WalletId WalletId,
+    DateTime? ExpiresAt = null) : IRequest<ServiceResult<Unit>>;

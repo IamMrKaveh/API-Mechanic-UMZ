@@ -1,23 +1,20 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Product.Contracts;
+using Application.Product.Features.Shared;
 
 namespace Application.Product.Features.Queries.GetProductDetails;
 
-public class GetProductDetailsHandler
-    : IRequestHandler<GetProductDetailsQuery, ServiceResult<PublicProductDetailDto?>>
+public class GetProductDetailsHandler(IProductQueryService productQueryService) : IRequestHandler<GetProductDetailsQuery, ServiceResult<PublicProductDetailDto?>>
 {
-    private readonly IProductQueryService _productQueryService;
-
-    public GetProductDetailsHandler(IProductQueryService productQueryService)
-    {
-        _productQueryService = productQueryService;
-    }
+    private readonly IProductQueryService _productQueryService = productQueryService;
 
     public async Task<ServiceResult<PublicProductDetailDto?>> Handle(
-        GetProductDetailsQuery request, CancellationToken ct)
+        GetProductDetailsQuery request,
+        CancellationToken ct)
     {
         var result = await _productQueryService.GetPublicProductDetailAsync(request.ProductId, ct);
-        if (result == null)
-            return ServiceResult<PublicProductDetailDto?>.Failure("Product not found.", 404);
+        if (result is null)
+            return ServiceResult<PublicProductDetailDto?>.NotFound("Product not found.");
 
         return ServiceResult<PublicProductDetailDto?>.Success(result);
     }

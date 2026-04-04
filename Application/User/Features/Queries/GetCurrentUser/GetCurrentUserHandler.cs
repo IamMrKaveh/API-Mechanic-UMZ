@@ -1,22 +1,20 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.User.Contracts;
+using Application.User.Features.Shared;
 
 namespace Application.User.Features.Queries.GetCurrentUser;
 
-public class GetCurrentUserHandler : IRequestHandler<GetCurrentUserQuery, ServiceResult<UserProfileDto>>
+public class GetCurrentUserHandler(IUserQueryService userQueryService) : IRequestHandler<GetCurrentUserQuery, ServiceResult<UserProfileDto>>
 {
-    private readonly IUserQueryService _userQueryService;
-
-    public GetCurrentUserHandler(IUserQueryService userQueryService)
-    {
-        _userQueryService = userQueryService;
-    }
+    private readonly IUserQueryService _userQueryService = userQueryService;
 
     public async Task<ServiceResult<UserProfileDto>> Handle(
-        GetCurrentUserQuery request, CancellationToken cancellationToken)
+        GetCurrentUserQuery request,
+        CancellationToken ct)
     {
-        var profile = await _userQueryService.GetUserProfileAsync(request.UserId, cancellationToken);
-        if (profile == null)
-            return ServiceResult<UserProfileDto>.Failure("کاربر یافت نشد.", 404);
+        var profile = await _userQueryService.GetUserProfileAsync(request.UserId, ct);
+        if (profile is null)
+            return ServiceResult<UserProfileDto>.NotFound("کاربر یافت نشد.");
 
         return ServiceResult<UserProfileDto>.Success(profile);
     }

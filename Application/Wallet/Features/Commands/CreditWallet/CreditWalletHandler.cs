@@ -1,4 +1,7 @@
-﻿using Application.Common.Models;
+﻿using Application.Common.Exceptions;
+using Application.Common.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
 using Domain.Wallet.Interfaces;
 
@@ -66,11 +69,11 @@ public class CreditWalletHandler(
             _logger.LogWarning(
                 "Concurrency conflict crediting wallet for user {UserId}. Retry recommended.",
                 request.UserId);
-            return ServiceResult<Unit>.Failure("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.", 409);
+            return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
         {
-            return ServiceResult<Unit>.Failure(ex.Message);
+            return ServiceResult<Unit>.Unexpected(ex.Message);
         }
     }
 }

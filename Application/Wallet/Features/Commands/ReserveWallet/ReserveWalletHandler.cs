@@ -1,60 +1,58 @@
-﻿using Application.Common.Models;
+﻿using Application.Common.Exceptions;
+using Application.Common.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
+using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 
 namespace Application.Wallet.Features.Commands.ReserveWallet;
 
-public class ReserveWalletHandler : IRequestHandler<ReserveWalletCommand, ServiceResult<Unit>>
+public class ReserveWalletHandler(
+    IWalletRepository walletRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<ReserveWalletHandler> logger
+        ) : IRequestHandler<ReserveWalletCommand, ServiceResult<Unit>>
 {
-    private readonly IWalletRepository _walletRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<ReserveWalletHandler> _logger;
-
-    public ReserveWalletHandler(
-        IWalletRepository walletRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<ReserveWalletHandler> logger
-        )
-    {
-        _walletRepository = walletRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IWalletRepository _walletRepository = walletRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<ReserveWalletHandler> _logger = logger;
 
     public async Task<ServiceResult<Unit>> Handle(
         ReserveWalletCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         try
         {
             var wallet = await _walletRepository.GetByUserIdForUpdateAsync(request.UserId, ct);
-            if (wallet == null)
-                return ServiceResult<Unit>.Failure("کیف پول یافت نشد.", 404);
+            if (wallet is null)
+                return ServiceResult<Unit>.NotFound("کیف پول یافت نشد.");
 
-            wallet.Reserve(Money.FromDecimal(request.Amount), request.OrderId, request.ExpiresAt);
+            wallet.Reserve(Money.FromDecimal(request.Amount), request.WalletId, request.ExpiresAt);
             _walletRepository.Update(wallet);
             await _unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }
-        catch (Domain.Wallet.Exceptions.InsufficientWalletBalanceException ex)
+        catch (InsufficientWalletBalanceException ex)
         {
-            return ServiceResult<Unit>.Failure(ex.Message, 422);
+            return ServiceResult<Unit>.Unexpected(ex.Message);
         }
         catch (ConcurrencyException)
         {
-            _logger.LogWarning("Concurrency conflict reserving wallet for user {UserId}. Retry recommended.", request.UserId);
-            return ServiceResult<Unit>.Failure("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.", 409);
+            _logger.LogWarning(
+                "Concurrency conflict reserving wallet for user {UserId}. Retry recommended.",
+                request.UserId);
+            return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
         {
-            return ServiceResult<Unit>.Failure(ex.Message);
+            return ServiceResult<Unit>.Unexpected(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error reserving wallet for user {UserId}", request.UserId);
-            return ServiceResult<Unit>.Failure("خطا در رزرو کیف پول.");
+            return ServiceResult<Unit>.Unexpected("خطا در رزرو کیف پول.");
         }
     }
 }

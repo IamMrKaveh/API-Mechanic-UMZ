@@ -1,8 +1,8 @@
 namespace Infrastructure.Notification.Configurations;
 
-public sealed class NotificationConfiguration : IEntityTypeConfiguration<Domain.Notification.Notification>
+public sealed class NotificationConfiguration : IEntityTypeConfiguration<Domain.Notification.Aggregates.Notification>
 {
-    public void Configure(EntityTypeBuilder<Domain.Notification.Notification> builder)
+    public void Configure(EntityTypeBuilder<Domain.Notification.Aggregates.Notification> builder)
     {
         builder.HasKey(e => e.Id);
         builder.Property(e => e.RowVersion).IsRowVersion();

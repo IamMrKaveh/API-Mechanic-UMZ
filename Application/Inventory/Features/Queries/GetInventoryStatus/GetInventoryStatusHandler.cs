@@ -1,9 +1,10 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Inventory.Contracts;
+using Application.Inventory.Features.Shared;
 
 namespace Application.Inventory.Features.Queries.GetInventoryStatus;
 
-public class GetInventoryStatusHandler(IInventoryQueryService queryService)
-        : IRequestHandler<GetInventoryStatusQuery, ServiceResult<InventoryStatusDto>>
+public class GetInventoryStatusHandler(IInventoryQueryService queryService) : IRequestHandler<GetInventoryStatusQuery, ServiceResult<InventoryStatusDto>>
 {
     private readonly IInventoryQueryService _queryService = queryService;
 
@@ -14,7 +15,7 @@ public class GetInventoryStatusHandler(IInventoryQueryService queryService)
         var status = await _queryService.GetInventoryStatusAsync(request.VariantId, ct);
 
         if (status is null)
-            return ServiceResult<InventoryStatusDto>.Failure("واریانت مورد نظر یافت نشد.");
+            return ServiceResult<InventoryStatusDto>.NotFound("واریانت مورد نظر یافت نشد.");
 
         return ServiceResult<InventoryStatusDto>.Success(status);
     }

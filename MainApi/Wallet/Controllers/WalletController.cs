@@ -1,4 +1,7 @@
-﻿namespace MainApi.Wallet.Controllers;
+﻿using Application.Wallet.Features.Queries.GetWalletBalance;
+using Application.Wallet.Features.Queries.GetWalletLedger;
+
+namespace MainApi.Wallet.Controllers;
 
 [ApiController]
 [Route("api/wallet")]

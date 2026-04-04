@@ -1,3 +1,5 @@
+using Application.User.Features.Shared;
+
 namespace Application.Auth.Features.Shared;
 
 public record AuthResult

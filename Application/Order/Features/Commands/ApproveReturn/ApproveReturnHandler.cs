@@ -1,4 +1,9 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Results;
+using Application.Inventory.Contracts;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
+using Domain.Order.Interfaces;
 
 namespace Application.Order.Features.Commands.ApproveReturn;
 
@@ -21,7 +26,7 @@ public class ApproveReturnHandler(
     {
         var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
         if (order == null)
-            return ServiceResult.Failure("سفارش یافت نشد.", 404);
+            return ServiceResult.NotFound("سفارش یافت نشد.");
 
         try
         {
@@ -29,7 +34,7 @@ public class ApproveReturnHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message, 400);
+            return ServiceResult.Forbidden(ex.Message);
         }
 
         return await _unitOfWork.ExecuteStrategyAsync(async () =>
@@ -46,12 +51,12 @@ public class ApproveReturnHandler(
                     request.Reason,
                     ct);
 
-                if (result.IsFailed)
+                if (result.IsFailure)
                 {
                     _logger.LogError(
                         "Failed to return stock for Order {OrderId}: {Error}",
                         request.OrderId, result.Error);
-                    return ServiceResult.Failure($"خطا در بازگشت موجودی: {result.Error}");
+                    return ServiceResult.Unexpected($"خطا در بازگشت موجودی: {result.Error}");
                 }
 
                 await _auditService.LogOrderEventAsync(
@@ -69,7 +74,7 @@ public class ApproveReturnHandler(
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error approving return for order {OrderId}", request.OrderId);
-                return ServiceResult.Failure("خطایی در تأیید مرجوعی رخ داد.");
+                return ServiceResult.Unexpected("خطایی در تأیید مرجوعی رخ داد.");
             }
         }, ct);
     }

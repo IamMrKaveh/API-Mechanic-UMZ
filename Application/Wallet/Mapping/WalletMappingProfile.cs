@@ -1,4 +1,5 @@
-﻿using Domain.Wallet.Aggregates;
+﻿using Application.Wallet.Features.Shared;
+using Domain.Wallet.Aggregates;
 
 namespace Application.Wallet.Mapping;
 

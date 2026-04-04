@@ -1,4 +1,3 @@
-using Application.Common.Models;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Interfaces;
 

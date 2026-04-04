@@ -1,3 +1,4 @@
+using Application.User.Features.Shared;
 using Domain.Security.Aggregates;
 
 namespace Application.Auth.Mapping;

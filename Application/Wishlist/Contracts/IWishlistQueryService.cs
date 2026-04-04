@@ -1,4 +1,5 @@
-﻿using Application.Common.Models;
+﻿using Application.Wishlist.Features.Queries.GetWishlistById;
+using SharedKernel.Models;
 
 namespace Application.Wishlist.Contracts;
 

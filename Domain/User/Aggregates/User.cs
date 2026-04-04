@@ -1,3 +1,4 @@
+using Domain.Security.Events;
 using Domain.User.Entities;
 using Domain.User.Events;
 using Domain.User.Exceptions;
@@ -240,6 +241,7 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
         string city,
         string address,
         string postalCode,
+        bool isDefault,
         decimal? latitude = null,
         decimal? longitude = null)
     {
@@ -292,7 +294,7 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
 
     public UserAddress? GetDefaultAddress()
     {
-        if (!DefaultAddressId.HasValue)
+        if (Convert.ToString(DefaultAddressId?.Value) != string.Empty)
             return _addresses.FirstOrDefault();
 
         return _addresses.FirstOrDefault(a => a.Id == DefaultAddressId);

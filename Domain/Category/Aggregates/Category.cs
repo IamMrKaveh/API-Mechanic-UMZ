@@ -9,7 +9,7 @@ public sealed class Category : AggregateRoot<CategoryId>
     { }
 
     public string Name { get; private set; } = default!;
-    public string Slug { get; private set; } = default!;
+    public Slug Slug { get; private set; } = default!;
     public string? Description { get; private set; }
     public CategoryId? ParentCategoryId { get; private set; }
     public bool IsActive { get; private set; }
@@ -22,7 +22,7 @@ public sealed class Category : AggregateRoot<CategoryId>
     public static Category Create(
         CategoryId id,
         string name,
-        string slug,
+        Slug slug,
         string? description = null,
         CategoryId? parentCategoryId = null,
         int sortOrder = 0)
@@ -40,18 +40,18 @@ public sealed class Category : AggregateRoot<CategoryId>
             UpdatedAt = DateTime.UtcNow
         };
 
-        category.RaiseDomainEvent(new CategoryCreatedEvent(id, name, slug, parentCategoryId));
+        category.RaiseDomainEvent(new CategoryCreatedEvent(id, name, slug.Value, parentCategoryId));
         return category;
     }
 
-    public void UpdateDetails(string name, string slug, string? description, int sortOrder)
+    public void UpdateDetails(string name, Slug slug, string? description, int sortOrder)
     {
         Name = name;
         Slug = slug;
         Description = description;
         SortOrder = sortOrder;
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new CategoryUpdatedEvent(Id, name, slug, description));
+        RaiseDomainEvent(new CategoryUpdatedEvent(Id, name, slug.Value, description));
     }
 
     public void MoveToParent(CategoryId? newParentCategoryId)

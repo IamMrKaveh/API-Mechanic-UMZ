@@ -1,39 +1,39 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Product.Interfaces;
+using SharedKernel.Contracts;
 
 namespace Application.Product.Features.Commands.DeactivateProduct;
 
-public class DeactivateProductHandler : IRequestHandler<DeactivateProductCommand, ServiceResult>
+public class DeactivateProductHandler(
+    IProductRepository productRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<DeactivateProductCommand, ServiceResult>
 {
-    private readonly IProductRepository _productRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
-    private readonly ICurrentUserService _currentUserService;
+    private readonly IProductRepository _productRepository = productRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
-    public DeactivateProductHandler(
-        IProductRepository productRepository,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService,
-        ICurrentUserService currentUserService)
-    {
-        _productRepository = productRepository;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-        _currentUserService = currentUserService;
-    }
-
-    public async Task<ServiceResult> Handle(DeactivateProductCommand request, CancellationToken ct)
+    public async Task<ServiceResult> Handle(
+        DeactivateProductCommand request,
+        CancellationToken ct)
     {
         var product = await _productRepository.GetByIdAsync(request.ProductId, ct);
         if (product == null)
-            return ServiceResult.Failure("Product not found.");
+            return ServiceResult.NotFound("Product not found.");
 
         product.Deactivate();
         _productRepository.Update(product);
         await _unitOfWork.SaveChangesAsync(ct);
 
         await _auditService.LogProductEventAsync(
-            product.Id, "DeactivateProduct", $"Product '{product.Name}' deactivated.", _currentUserService.UserId);
+            product.Id.Value,
+            "DeactivateProduct",
+            $"Product '{product.Name}' deactivated.",
+            _currentUserService.CurrentUser.UserId);
 
         return ServiceResult.Success();
     }

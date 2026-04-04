@@ -1,4 +1,6 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 using Domain.Order.Interfaces;
 
 namespace Application.Order.Features.Commands.DeleteOrderStatus;
@@ -16,11 +18,11 @@ public class DeleteOrderStatusHandler(
     {
         var status = await _orderStatusRepository.GetByIdAsync(request.Id, cancellationToken);
         if (status == null)
-            return ServiceResult.Failure("وضعیت سفارش یافت نشد.", 404);
+            return ServiceResult.NotFound("وضعیت سفارش یافت نشد.");
 
         var isUsed = await _orderStatusRepository.IsInUseAsync(request.Id, cancellationToken);
         if (isUsed)
-            return ServiceResult.Failure("امکان حذف وضعیتی که به سفارشات اختصاص داده شده وجود ندارد.", 400);
+            return ServiceResult.Forbidden("امکان حذف وضعیتی که به سفارشات اختصاص داده شده وجود ندارد.");
 
         try
         {
@@ -28,7 +30,7 @@ public class DeleteOrderStatusHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message, 400);
+            return ServiceResult.Unexpected(ex.Message);
         }
 
         _orderStatusRepository.Update(status);

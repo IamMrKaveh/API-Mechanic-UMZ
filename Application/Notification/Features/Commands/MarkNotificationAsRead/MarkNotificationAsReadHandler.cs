@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 using Domain.Notification.Interfaces;
 
 namespace Application.Notification.Features.Commands.MarkNotificationAsRead;

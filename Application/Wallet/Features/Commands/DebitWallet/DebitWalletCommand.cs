@@ -1,10 +1,11 @@
-﻿using Application.Common.Models;
+﻿using Application.Common.Results;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
 
 namespace Application.Wallet.Features.Commands.DebitWallet;
 
 public record DebitWalletCommand(
-    int UserId,
+    UserId UserId,
     decimal Amount,
     WalletTransactionType TransactionType,
     WalletReferenceType ReferenceType,

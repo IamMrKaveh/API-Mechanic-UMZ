@@ -1,4 +1,6 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.User.Contracts;
+using Application.User.Features.Shared;
 
 namespace Application.User.Features.Queries.GetUserById;
 
@@ -11,8 +13,8 @@ public class GetUserByIdHandler(IUserQueryService userQueryService) : IRequestHa
         CancellationToken ct)
     {
         var dto = await _userQueryService.GetUserProfileAsync(request.Id, ct);
-        return dto == null
-            ? ServiceResult<UserProfileDto?>.Failure("User not found")
+        return dto is null
+            ? ServiceResult<UserProfileDto?>.NotFound("User not found")
             : ServiceResult<UserProfileDto?>.Success(dto);
     }
 }

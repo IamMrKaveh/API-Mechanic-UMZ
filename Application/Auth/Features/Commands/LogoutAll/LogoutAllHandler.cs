@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 using Domain.Security.Interfaces;
 
 namespace Application.Auth.Features.Commands.LogoutAll;
@@ -43,7 +43,7 @@ public class LogoutAllHandler : IRequestHandler<LogoutAllCommand, ServiceResult>
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در خروج کاربر {UserId} از تمام دستگاه‌ها", request.UserId);
-            return ServiceResult.Failure("خطای داخلی سرور.");
+            return ServiceResult.Unexpected("خطای داخلی سرور.");
         }
     }
 }

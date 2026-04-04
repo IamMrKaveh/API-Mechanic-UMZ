@@ -1,11 +1,5 @@
 ﻿namespace Application.Common.Behaviors;
 
-public interface ICacheableQuery
-{
-    string CacheKey { get; }
-    TimeSpan? CacheDuration { get; }
-}
-
 public class CachingBehavior<TRequest, TResponse>(ICacheService cacheService) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
     where TResponse : class

@@ -1,3 +1,6 @@
+using Application.Category.Features.Shared;
+using SharedKernel.Models;
+
 namespace Application.Category.Contracts;
 
 public interface ICategoryQueryService

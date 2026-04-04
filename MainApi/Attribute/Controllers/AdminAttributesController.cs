@@ -1,3 +1,13 @@
+using Application.Attribute.Features.Commands.CreateAttributeType;
+using Application.Attribute.Features.Commands.CreateAttributeValue;
+using Application.Attribute.Features.Commands.DeleteAttributeType;
+using Application.Attribute.Features.Commands.DeleteAttributeValue;
+using Application.Attribute.Features.Commands.UpdateAttributeType;
+using Application.Attribute.Features.Commands.UpdateAttributeValue;
+using Application.Attribute.Features.Queries.GetAllAttributeTypes;
+using Application.Attribute.Features.Queries.GetAttributeTypeById;
+using Application.Attribute.Features.Shared;
+
 namespace MainApi.Attribute.Controllers;
 
 [ApiController]
@@ -8,39 +18,40 @@ public class AdminAttributesController(IMediator mediator) : BaseApiController(m
     private readonly IMediator _mediator = mediator;
 
     [HttpGet]
-    public async Task<IActionResult> GetAllAttributeTypes()
+    public async Task<IActionResult> GetAllAttributeTypes(CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetAllAttributeTypesQuery());
+        var command = new GetAllAttributeTypesQuery();
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetAttributeType(int id)
+    public async Task<IActionResult> GetAttributeType(
+        int id,
+        CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetAttributeTypeByIdQuery(id));
+        var result = await _mediator.Send(new GetAttributeTypeByIdQuery(id), ct);
         return ToActionResult(result);
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateAttributeType([FromBody] CreateAttributeTypeDto dto)
+    public async Task<IActionResult> CreateAttributeType(
+        [FromBody] CreateAttributeTypeDto dto,
+        CancellationToken ct)
     {
         var command = new CreateAttributeTypeCommand(dto.Name, dto.DisplayName, dto.SortOrder);
-        var result = await _mediator.Send(command);
-
-        if (result.IsSuccess)
-        {
-            return CreatedAtAction(nameof(GetAttributeType), new { id = result.Value!.Id }, result.Value);
-        }
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateAttributeType(
         int id,
-        [FromBody] UpdateAttributeTypeDto dto)
+        [FromBody] UpdateAttributeTypeDto dto,
+        CancellationToken ct)
     {
         var command = new UpdateAttributeTypeCommand(id, dto.Name, dto.DisplayName, dto.SortOrder, dto.IsActive);
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
@@ -58,11 +69,6 @@ public class AdminAttributesController(IMediator mediator) : BaseApiController(m
     {
         var command = new CreateAttributeValueCommand(typeId, dto.Value, dto.DisplayValue, dto.HexCode, dto.SortOrder);
         var result = await _mediator.Send(command);
-
-        if (result.IsSuccess)
-        {
-            return CreatedAtAction(nameof(GetAttributeType), new { id = typeId }, result.Value);
-        }
         return ToActionResult(result);
     }
 

@@ -1,8 +1,8 @@
-using Application.Common.Models;
+using Application.Analytics.Features.Shared;
+using Application.Common.Results;
 
 namespace Application.Analytics.Features.Queries.GetCategoryPerformance;
 
 public sealed record GetCategoryPerformanceQuery(
     DateTime? FromDate,
-    DateTime? ToDate
-    ) : IRequest<ServiceResult<IReadOnlyList<CategoryPerformanceDto>>>;
+    DateTime? ToDate) : IRequest<ServiceResult<IReadOnlyList<CategoryPerformanceDto>>>;

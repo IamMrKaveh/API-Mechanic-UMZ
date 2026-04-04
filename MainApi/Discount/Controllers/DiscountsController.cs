@@ -1,3 +1,5 @@
+using Application.Discount.Features.Commands.ApplyDiscount;
+using Application.Discount.Features.Queries.ValidateDiscount;
 using MainApi.Discount.Requests;
 
 namespace MainApi.Discount.Controllers;

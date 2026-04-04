@@ -1,23 +1,17 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
 
 namespace Application.Auth.Features.Commands.RevokeSession;
 
-public class RevokeSessionHandler : IRequestHandler<RevokeSessionCommand, ServiceResult>
+public class RevokeSessionHandler(
+    IUserRepository userRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<RevokeSessionHandler> logger) : IRequestHandler<RevokeSessionCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<RevokeSessionHandler> _logger;
-
-    public RevokeSessionHandler(
-        IUserRepository userRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<RevokeSessionHandler> logger)
-    {
-        _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<RevokeSessionHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(
         RevokeSessionCommand request,
@@ -28,13 +22,13 @@ public class RevokeSessionHandler : IRequestHandler<RevokeSessionCommand, Servic
             var user = await _userRepository.GetWithSessionsAsync(request.UserId, ct);
 
             if (user == null)
-                return ServiceResult.Failure("کاربر یافت نشد.", 404);
+                return ServiceResult.NotFound("کاربر یافت نشد.");
 
             var targetSession = user.GetActiveSessions()
                 .FirstOrDefault(s => s.Id == request.SessionId);
 
             if (targetSession == null)
-                return ServiceResult.Failure("نشست یافت نشد یا متعلق به شما نیست.", 404);
+                return ServiceResult.NotFound("نشست یافت نشد.");
 
             user.RevokeSession(request.SessionId);
 
@@ -50,7 +44,7 @@ public class RevokeSessionHandler : IRequestHandler<RevokeSessionCommand, Servic
         {
             _logger.LogError(ex, "خطا در ابطال نشست {SessionId} برای کاربر {UserId}",
                 request.SessionId, request.UserId);
-            return ServiceResult.Failure("خطای داخلی سرور.");
+            return ServiceResult.Unexpected("خطای داخلی سرور.");
         }
     }
 }

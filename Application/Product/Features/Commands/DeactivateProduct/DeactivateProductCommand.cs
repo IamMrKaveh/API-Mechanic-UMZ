@@ -1,5 +1,6 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Product.ValueObjects;
 
 namespace Application.Product.Features.Commands.DeactivateProduct;
 
-public record DeactivateProductCommand(int ProductId) : IRequest<ServiceResult>;
+public record DeactivateProductCommand(ProductId ProductId) : IRequest<ServiceResult>;

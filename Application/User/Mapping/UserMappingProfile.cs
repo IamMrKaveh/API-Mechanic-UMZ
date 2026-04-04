@@ -1,3 +1,5 @@
+using Application.Order.Features.Shared;
+using Application.User.Features.Shared;
 using Domain.User.Entities;
 
 namespace Application.User.Mapping;

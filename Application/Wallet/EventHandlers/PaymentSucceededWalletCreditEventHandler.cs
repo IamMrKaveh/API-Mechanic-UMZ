@@ -42,7 +42,7 @@ public class PaymentSucceededWalletCreditEventHandler : INotificationHandler<Pay
             );
 
             var result = await _mediator.Send(command, cancellationToken);
-            if (result.IsFailed)
+            if (result.IsFailure)
             {
                 _logger.LogError(
                     "[WalletCredit] CreditWalletCommand failed for TransactionId={TxId}: {Error}",

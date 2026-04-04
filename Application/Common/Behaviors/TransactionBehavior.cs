@@ -1,14 +1,9 @@
 namespace Application.Common.Behaviors;
 
-public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+public class TransactionBehavior<TRequest, TResponse>(IUnitOfWork unitOfWork) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    private readonly IUnitOfWork _unitOfWork;
-
-    public TransactionBehavior(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-    }
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<TResponse> Handle(
         TRequest request,

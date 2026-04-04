@@ -1,4 +1,6 @@
-﻿using Domain.Security.Interfaces;
+﻿using Domain.Security.Aggregates;
+using Domain.Security.Interfaces;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Auth.Repositories;
 

@@ -1,3 +1,5 @@
+using SharedKernel.Contracts;
+
 namespace MainApi.Filters;
 
 [AttributeUsage(AttributeTargets.Method)]

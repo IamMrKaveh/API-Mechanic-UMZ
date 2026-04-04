@@ -1,5 +1,7 @@
-﻿using Application.Common.Models;
+﻿using Application.Common.Results;
+using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
+using SharedKernel.Models;
 
 namespace Application.Wallet.Contracts;
 

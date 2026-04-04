@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 using Domain.Security.Interfaces;
 
 namespace Application.Auth.Features.Commands.Logout;
@@ -48,7 +48,7 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, ServiceResult>
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در خروج کاربر {UserId}", request.UserId);
-            return ServiceResult.Failure("خطای داخلی سرور.");
+            return ServiceResult.Unexpected("خطای داخلی سرور.");
         }
     }
 }

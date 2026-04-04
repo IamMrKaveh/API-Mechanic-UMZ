@@ -1,5 +1,7 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Order.Features.Shared;
+using Domain.Order.ValueObjects;
 
-namespace Application.Features.Orders.Commands.UpdateOrder;
+namespace Application.Order.Features.Commands.UpdateOrder;
 
-public record UpdateOrderCommand(int OrderId, UpdateOrderDto Dto) : IRequest<ServiceResult>;
+public record UpdateOrderCommand(OrderId OrderId, UpdateOrderDto Dto) : IRequest<ServiceResult>;

@@ -1,3 +1,5 @@
+using Application.Shipping.Features.Shared;
+
 namespace Application.Shipping.Contracts;
 
 public interface IShippingQueryService

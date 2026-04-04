@@ -1,14 +1,13 @@
-﻿namespace Application.Wallet.Features.Queries.GetWalletLedger;
+﻿using Application.Common.Results;
+using Application.Wallet.Contracts;
+using Application.Wallet.Features.Shared;
+using SharedKernel.Models;
 
-public class GetWalletLedgerHandler
-    : IRequestHandler<GetWalletLedgerQuery, ServiceResult<PaginatedResult<WalletLedgerEntryDto>>>
+namespace Application.Wallet.Features.Queries.GetWalletLedger;
+
+public class GetWalletLedgerHandler(IWalletQueryService walletQueryService) : IRequestHandler<GetWalletLedgerQuery, ServiceResult<PaginatedResult<WalletLedgerEntryDto>>>
 {
-    private readonly IWalletQueryService _walletQueryService;
-
-    public GetWalletLedgerHandler(IWalletQueryService walletQueryService)
-    {
-        _walletQueryService = walletQueryService;
-    }
+    private readonly IWalletQueryService _walletQueryService = walletQueryService;
 
     public async Task<ServiceResult<PaginatedResult<WalletLedgerEntryDto>>> Handle(
         GetWalletLedgerQuery request,

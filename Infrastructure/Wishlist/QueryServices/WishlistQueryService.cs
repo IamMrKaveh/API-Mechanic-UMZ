@@ -1,4 +1,9 @@
-﻿namespace Infrastructure.Wishlist.QueryServices;
+﻿using Application.Wishlist.Contracts;
+using Application.Wishlist.Features.Queries.GetWishlistById;
+using Infrastructure.Persistence.Context;
+using SharedKernel.Models;
+
+namespace Infrastructure.Wishlist.QueryServices;
 
 public class WishlistQueryService(DBContext context) : IWishlistQueryService
 {

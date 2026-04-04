@@ -1,22 +1,19 @@
-using Application.Common.Models;
+using Application.Common.Features.Shared;
+using Application.Common.Results;
+using Application.Payment.Contracts;
+using Application.Payment.Features.Shared;
+using Domain.Common.Exceptions;
 
 namespace Application.Payment.Features.Commands.VerifyPayment;
 
-public class VerifyPaymentHandler : IRequestHandler<VerifyPaymentCommand, ServiceResult<PaymentResultDto>>
+public class VerifyPaymentHandler(
+    IPaymentService paymentService,
+    IOptions<FrontendUrlsDto> frontendUrls,
+    ILogger<VerifyPaymentHandler> logger) : IRequestHandler<VerifyPaymentCommand, ServiceResult<PaymentResultDto>>
 {
-    private readonly IPaymentService _paymentService;
-    private readonly IOptions<FrontendUrlsDto> _frontendUrls;
-    private readonly ILogger<VerifyPaymentHandler> _logger;
-
-    public VerifyPaymentHandler(
-        IPaymentService paymentService,
-        IOptions<FrontendUrlsDto> frontendUrls,
-        ILogger<VerifyPaymentHandler> logger)
-    {
-        _paymentService = paymentService;
-        _frontendUrls = frontendUrls;
-        _logger = logger;
-    }
+    private readonly IPaymentService _paymentService = paymentService;
+    private readonly IOptions<FrontendUrlsDto> _frontendUrls = frontendUrls;
+    private readonly ILogger<VerifyPaymentHandler> _logger = logger;
 
     public async Task<ServiceResult<PaymentResultDto>> Handle(VerifyPaymentCommand request, CancellationToken cancellationToken)
     {
@@ -45,14 +42,14 @@ public class VerifyPaymentHandler : IRequestHandler<VerifyPaymentCommand, Servic
             return ServiceResult<PaymentResultDto>.Success(new PaymentResultDto
             {
                 IsSuccess = false,
-                Message = result.Error,
+                Message = result.Error?.Message,
                 RedirectUrl = $"{baseUrl}/payment/result?status=failure&reason={Uri.EscapeDataString(result.Error ?? "Error")}"
             });
         }
         catch (DomainException ex)
         {
             _logger.LogWarning("VerifyPayment: Domain exception for {Authority}: {Message}", request.Authority, ex.Message);
-            return ServiceResult<PaymentResultDto>.Failure(ex.Message);
+            return ServiceResult<PaymentResultDto>.Unexpected(ex.Message);
         }
     }
 }

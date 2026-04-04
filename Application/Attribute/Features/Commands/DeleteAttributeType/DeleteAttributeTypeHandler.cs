@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 using Domain.Attribute.Interfaces;
 
 namespace Application.Attribute.Features.Commands.DeleteAttributeType;
@@ -19,12 +19,11 @@ public class DeleteAttributeTypeHandler : IRequestHandler<DeleteAttributeTypeCom
 
     public async Task<ServiceResult> Handle(
         DeleteAttributeTypeCommand request,
-        CancellationToken cancellationToken
-        )
+        CancellationToken cancellationToken)
     {
         var attributeType = await _repository.GetAttributeTypeByIdAsync(request.Id);
         if (attributeType == null)
-            return ServiceResult.Failure("Attribute type not found.");
+            return ServiceResult.NotFound("Attribute type not found.");
 
         await _repository.DeleteAttributeTypeAsync(attributeType.Id);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

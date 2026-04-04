@@ -1,35 +1,32 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Exceptions;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
 
 namespace Application.User.Features.Commands.UpdateUser;
 
-public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, ServiceResult>
+public class UpdateUserHandler(
+    IUserRepository userRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    IHtmlSanitizer htmlSanitizer) : IRequestHandler<UpdateUserCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
-    private readonly IHtmlSanitizer _htmlSanitizer;
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly IHtmlSanitizer _htmlSanitizer = htmlSanitizer;
 
-    public UpdateUserHandler(
-        IUserRepository userRepository,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService,
-        IHtmlSanitizer htmlSanitizer)
+    public async Task<ServiceResult> Handle(
+        UpdateUserCommand request,
+        CancellationToken ct)
     {
-        _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-        _htmlSanitizer = htmlSanitizer;
-    }
-
-    public async Task<ServiceResult> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
-    {
-        var user = await _userRepository.GetByIdAsync(request.Id);
+        var user = await _userRepository.GetByIdAsync(request.Id, ct);
         if (user == null)
-            return ServiceResult.Failure("NotFound");
+            return ServiceResult.NotFound("NotFound");
 
         if (user.IsDeleted)
-            return ServiceResult.Failure("User account is deleted and cannot be modified.");
+            return ServiceResult.Forbidden("User account is deleted and cannot be modified.");
 
         user.UpdateName(
             !string.IsNullOrEmpty(request.UpdateRequest.FirstName)
@@ -44,13 +41,16 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, ServiceResul
 
         try
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _auditService.LogAdminEventAsync("UpdateUser", request.CurrentUserId, $"Updated profile for user {request.Id}");
+            await _unitOfWork.SaveChangesAsync(ct);
+            await _auditService.LogAdminEventAsync(
+                "UpdateUser",
+                request.CurrentUserId,
+                $"Updated profile for user {request.Id}");
             return ServiceResult.Success();
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Failure("User was modified by another process");
+            return ServiceResult.Conflict("User was modified by another process");
         }
     }
 }

@@ -1,3 +1,18 @@
+using Application.Common.Results;
+using Application.Product.Features.Commands.ActivateProduct;
+using Application.Product.Features.Commands.BulkUpdatePrices;
+using Application.Product.Features.Commands.CreateProduct;
+using Application.Product.Features.Commands.DeactivateProduct;
+using Application.Product.Features.Commands.DeleteProduct;
+using Application.Product.Features.Commands.RestoreProduct;
+using Application.Product.Features.Commands.UpdateProduct;
+using Application.Product.Features.Commands.UpdateProductDetails;
+using Application.Product.Features.Queries.GetAdminProductById;
+using Application.Product.Features.Queries.GetAdminProductDetail;
+using Application.Product.Features.Queries.GetAdminProducts;
+using Application.Product.Features.Shared;
+using SharedKernel.Models;
+
 namespace MainApi.Product.Controllers;
 
 [ApiController]

@@ -2,7 +2,7 @@
 
 namespace Domain.Common.ValueObjects;
 
-public sealed record Email
+public sealed class Email : ValueObject
 {
     private static readonly Regex EmailRegex =
         new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -22,6 +22,11 @@ public sealed record Email
             throw new ArgumentException($"'{value}' is not a valid email address.", nameof(value));
 
         return new Email(normalized);
+    }
+
+    protected override IEnumerable<object> GetEqualityComponents()
+    {
+        yield return Value;
     }
 
     public override string ToString() => Value;

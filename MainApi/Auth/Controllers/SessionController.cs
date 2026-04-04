@@ -1,3 +1,5 @@
+using SharedKernel.Contracts;
+
 namespace MainApi.Auth.Controllers;
 
 [Route("api/sessions")]

@@ -1,18 +1,20 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Discount.Contracts;
+using Application.Discount.Features.Shared;
 
 namespace Application.Discount.Features.Queries.GetDiscountUsageReport;
 
-public class GetDiscountUsageReportHandler(IDiscountQueryService discountQueryService) : IRequestHandler<GetDiscountUsageReportQuery, ServiceResult<DiscountUsageReportDto>>
+public class GetDiscountUsageReportHandler(IDiscountQueryService discountQueryService) : IRequestHandler<GetDiscountUsageReportQuery, ServiceResult<DiscountUsageReportDto?>>
 {
     private readonly IDiscountQueryService _discountQueryService = discountQueryService;
 
-    public async Task<ServiceResult<DiscountUsageReportDto>> Handle(
+    public async Task<ServiceResult<DiscountUsageReportDto?>> Handle(
         GetDiscountUsageReportQuery request,
         CancellationToken ct)
     {
         var report = await _discountQueryService.GetUsageReportByIdAsync(request.DiscountCodeId, ct);
-        return report == null
-            ? ServiceResult<DiscountUsageReportDto>.Failure("کد تخفیف یافت نشد.")
-            : ServiceResult<DiscountUsageReportDto>.Success(report);
+        return report is null
+            ? ServiceResult<DiscountUsageReportDto?>.NotFound("کد تخفیف یافت نشد.")
+            : ServiceResult<DiscountUsageReportDto?>.Success(report);
     }
 }

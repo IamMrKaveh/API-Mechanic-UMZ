@@ -1,8 +1,11 @@
-﻿namespace Application.Discount.Contracts;
+﻿using Application.Discount.Features.Shared;
+using SharedKernel.Models;
+
+namespace Application.Discount.Contracts;
 
 public interface IDiscountQueryService
 {
-    Task<(IEnumerable<DiscountCodeDto> Discounts, int TotalCount)> GetPagedAsync(
+    Task<(PaginatedResult<DiscountCodeDto> Discounts, int TotalCount)> GetPagedAsync(
         bool includeExpired,
         bool includeDeleted,
         int page,

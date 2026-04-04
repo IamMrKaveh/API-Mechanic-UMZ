@@ -1,14 +1,16 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Shipping.Features.Shared;
+using Domain.Shipping.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Shipping.Features.Commands.CreateShipping;
 
 public record CreateShippingCommand(
-    string Name,
+    ShippingName Name,
     decimal Cost,
     string? Description,
     string? EstimatedDeliveryTime,
     int MinDeliveryDays,
     int MaxDeliveryDays,
     bool IsActive,
-    int CurrentUserId
-    ) : IRequest<ServiceResult<ShippingDto>>;
+    UserId CurrentUserId) : IRequest<ServiceResult<ShippingDto>>;
