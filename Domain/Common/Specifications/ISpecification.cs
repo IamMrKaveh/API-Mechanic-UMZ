@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+
 namespace Domain.Common.Specifications;
 
 public interface ISpecification<T>

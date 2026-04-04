@@ -17,15 +17,13 @@ public sealed class ShippingName : ValueObject
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("نام روش ارسال الزامی است.");
 
-        var normalized = PersianTextNormalizer.Normalize(name);
-
-        if (normalized.Length < MinLength)
+        if (name.Length < MinLength)
             throw new DomainException($"نام روش ارسال باید حداقل {MinLength} کاراکتر باشد.");
 
-        if (normalized.Length > MaxLength)
+        if (name.Length > MaxLength)
             throw new DomainException($"نام روش ارسال نمی‌تواند بیش از {MaxLength} کاراکتر باشد.");
 
-        return new ShippingName(normalized);
+        return new ShippingName(name);
     }
 
     public bool IsSameAs(string other)

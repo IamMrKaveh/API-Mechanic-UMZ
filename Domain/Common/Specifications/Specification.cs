@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+
 namespace Domain.Common.Specifications;
 
 public abstract class Specification<T> : ISpecification<T>
@@ -20,18 +22,9 @@ public abstract class Specification<T> : ISpecification<T>
         return _compiledPredicate(entity);
     }
 
-    public Specification<T> And(Specification<T> other)
-    {
-        return new AndSpecification<T>(this, other);
-    }
+    public Specification<T> And(Specification<T> other) => new AndSpecification<T>(this, other);
 
-    public Specification<T> Or(Specification<T> other)
-    {
-        return new OrSpecification<T>(this, other);
-    }
+    public Specification<T> Or(Specification<T> other) => new OrSpecification<T>(this, other);
 
-    public Specification<T> Not()
-    {
-        return new NotSpecification<T>(this);
-    }
+    public Specification<T> Not() => new NotSpecification<T>(this);
 }

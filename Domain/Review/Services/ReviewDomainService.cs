@@ -35,26 +35,33 @@ public sealed class ReviewDomainService
 
         bool alreadyReviewed = await hasExistingReviewCheck(userId, productId, orderId, ct);
         if (alreadyReviewed)
-            return Result<ProductReview>.Failure("کاربر قبلاً برای این محصول نظر ثبت کرده است.");
+            return Result<ProductReview>.Failure(Error.Validation("Review.AlreadyExists", "کاربر قبلاً برای این محصول نظر ثبت کرده است."));
 
         bool isVerifiedPurchase = false;
 
         if (requirePurchaseVerification)
         {
-            isVerifiedPurchase = await _purchaseVerificationService.UserHasPurchasedProductAsync(userId, productId, ct);
+            int numericUserId = (int)Convert.ChangeType(userId.Value, typeof(int));
+            int numericProductId = (int)Convert.ChangeType(productId.Value, typeof(int));
+
+            isVerifiedPurchase = await _purchaseVerificationService.UserHasPurchasedProductAsync(numericUserId, numericProductId, ct);
 
             if (!isVerifiedPurchase)
-                return Result<ProductReview>.Failure("برای ثبت نظر باید محصول را خریداری کرده باشید.");
+                return Result<ProductReview>.Failure(Error.Validation("Review.NotPurchased", "برای ثبت نظر باید محصول را خریداری کرده باشید."));
         }
 
+        var numericUserIdCreate = (int)Convert.ChangeType(userId.Value, typeof(int));
+        var numericProductIdCreate = (int)Convert.ChangeType(productId.Value, typeof(int));
+        int? numericOrderIdCreate = orderId != null ? (int?)Convert.ChangeType(orderId.Value, typeof(int)) : null;
+
         var review = ProductReview.Create(
-            productId,
-            userId,
+            numericProductIdCreate,
+            numericUserIdCreate,
             rating,
             title,
             comment,
             isVerifiedPurchase,
-            orderId);
+            numericOrderIdCreate);
 
         return Result<ProductReview>.Success(review);
     }

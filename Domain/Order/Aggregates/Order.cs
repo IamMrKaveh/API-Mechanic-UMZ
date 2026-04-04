@@ -22,6 +22,7 @@ public sealed class Order : AggregateRoot<OrderId>
     public Guid? PaymentTransactionId { get; private set; }
     public Guid IdempotencyKey { get; private init; }
     public string? CancellationReason { get; private set; }
+    public bool IsDeleted { get; private set; }
     public DateTime CreatedAt { get; private init; }
     public DateTime? UpdatedAt { get; private set; }
 
@@ -58,13 +59,16 @@ public sealed class Order : AggregateRoot<OrderId>
         Status = OrderStatusValue.Created;
         CreatedAt = DateTime.UtcNow;
 
+        var idObj = (object)id.Value;
+        var actualOrderId = idObj is Guid g ? g : (Guid.TryParse(idObj.ToString(), out var parsed) ? parsed : new Guid(idObj.ToString()!.PadLeft(32, '0')));
+
         foreach (var snapshot in itemSnapshots)
-            _items.Add(OrderItem.FromSnapshot(id.Value, snapshot));
+            _items.Add(OrderItem.FromSnapshot(actualOrderId, snapshot));
 
         RecalculateTotals();
 
         RaiseDomainEvent(new OrderCreatedEvent(
-            Guid.NewGuid(),
+            actualOrderId,
             userId,
             orderNumber.Value,
             FinalAmount.Amount,
@@ -134,7 +138,7 @@ public sealed class Order : AggregateRoot<OrderId>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new OrderPaidEvent(
-            Guid.NewGuid(),
+            GetActualOrderId(),
             OrderNumber.Value,
             UserId,
             paymentTransactionId,
@@ -175,7 +179,7 @@ public sealed class Order : AggregateRoot<OrderId>
         CancellationReason = reason;
 
         RaiseDomainEvent(new OrderCancelledEvent(
-            Guid.NewGuid(),
+            GetActualOrderId(),
             OrderNumber.Value,
             UserId,
             reason,
@@ -200,6 +204,12 @@ public sealed class Order : AggregateRoot<OrderId>
         TransitionTo(OrderStatusValue.Returned);
     }
 
+    public void MarkAsDeleted()
+    {
+        IsDeleted = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     private void TransitionTo(OrderStatusValue next)
     {
         if (!Status.CanTransitionTo(next))
@@ -210,7 +220,7 @@ public sealed class Order : AggregateRoot<OrderId>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new OrderStatusChangedEvent(
-            Guid.NewGuid(),
+            GetActualOrderId(),
             OrderNumber.Value,
             UserId,
             previous.Value,
@@ -227,5 +237,11 @@ public sealed class Order : AggregateRoot<OrderId>
         FinalAmount = beforeDiscount.IsGreaterThan(DiscountAmount)
             ? beforeDiscount.Subtract(DiscountAmount)
             : Money.Zero(SubTotal.Currency);
+    }
+
+    private Guid GetActualOrderId()
+    {
+        var idObj = (object)Id.Value;
+        return idObj is Guid g ? g : (Guid.TryParse(idObj.ToString(), out var parsed) ? parsed : new Guid(idObj.ToString()!.PadLeft(32, '0')));
     }
 }

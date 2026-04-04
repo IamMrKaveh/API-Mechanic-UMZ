@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
+  </ItemGroup>
+
 </Project>

@@ -17,7 +17,7 @@ public class ProductWithMinRatingSpecification : Specification<ProductReview>
     public override Expression<Func<ProductReview, bool>> ToExpression()
     {
         return r => r.Rating >= _minRating
-                    && r.Status == ProductReview.ReviewStatus.Approved
+                    && r.Status == Domain.Review.ValueObjects.ReviewStatus.Approved
                     && !r.IsDeleted;
     }
 }

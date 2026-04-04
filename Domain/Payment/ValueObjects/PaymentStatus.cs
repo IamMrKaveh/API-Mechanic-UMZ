@@ -1,3 +1,5 @@
+using SharedKernel.Results;
+
 namespace Domain.Payment.ValueObjects;
 
 public sealed class PaymentStatus : ValueObject
@@ -70,7 +72,10 @@ public sealed class PaymentStatus : ValueObject
             "expired" => Result<PaymentStatus>.Success(Expired),
             "cancelled" => Result<PaymentStatus>.Success(Cancelled),
             "refunded" => Result<PaymentStatus>.Success(Refunded),
-            _ => Result<PaymentStatus>.Failure($"وضعیت پرداخت '{value}' نامعتبر است.")
+            _ => Result<PaymentStatus>.Failure(new Error(
+                "400",
+                $"وضعیت پرداخت '{value}' نامعتبر است.",
+                ErrorType.Validation))
         };
     }
 

@@ -3,7 +3,7 @@ using Domain.Support.Enums;
 using Domain.Support.Results;
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
-using FluentResults;
+using SharedKernel.Results;
 
 namespace Domain.Support.Services;
 
@@ -31,9 +31,12 @@ public sealed class TicketDomainService
         Guard.Against.Null(ticket, nameof(ticket));
 
         if (ticket.IsClosed)
-            return Result.Fail("تیکت بسته شده است و امکان ارسال پیام وجود ندارد.");
+            return Result.Failure(new Error(
+                "400",
+                "تیکت بسته شده است و امکان ارسال پیام وجود ندارد.",
+                ErrorType.Validation));
 
-        return Result.Ok();
+        return Result.Success();
     }
 
     public Result ValidateCanClose(Ticket ticket)
@@ -41,9 +44,12 @@ public sealed class TicketDomainService
         Guard.Against.Null(ticket, nameof(ticket));
 
         if (ticket.IsClosed)
-            return Result.Fail("تیکت قبلاً بسته شده است.");
+            return Result.Failure(new Error(
+                "400",
+                "تیکت قبلاً بسته شده است.",
+                ErrorType.Validation));
 
-        return Result.Ok();
+        return Result.Success();
     }
 
     public Result ValidateCanEditMessage(Ticket ticket, TicketMessageId messageId, UserId editorId, bool isAdmin)
@@ -53,20 +59,32 @@ public sealed class TicketDomainService
         Guard.Against.Null(editorId, nameof(editorId));
 
         if (ticket.IsClosed)
-            return Result.Fail("امکان ویرایش پیام در تیکت بسته‌شده وجود ندارد.");
+            return Result.Failure(new Error(
+                "400",
+                "امکان ویرایش پیام در تیکت بسته‌شده وجود ندارد.",
+                ErrorType.Forbidden));
 
         var message = ticket.Messages.FirstOrDefault(m => m.Id == messageId);
         if (message is null)
-            return Result.Fail("پیام یافت نشد.");
+            return Result.Failure(new Error(
+                "404",
+                "پیام یافت نشد.",
+                ErrorType.NotFound));
 
         if (!isAdmin && message.SenderId != editorId)
-            return Result.Fail("شما مجاز به ویرایش این پیام نیستید.");
+            return Result.Failure(new Error(
+                "403",
+                "شما مجاز به ویرایش این پیام نیستید.",
+                ErrorType.Forbidden));
 
         var editWindow = TimeSpan.FromMinutes(15);
         if (!isAdmin && DateTime.UtcNow - message.SentAt > editWindow)
-            return Result.Fail("مهلت ویرایش پیام به پایان رسیده است.");
+            return Result.Failure(new Error(
+                "400",
+                "مهلت ویرایش پیام به پایان رسیده است.",
+                ErrorType.Forbidden));
 
-        return Result.Ok();
+        return Result.Success();
     }
 
     public TicketStatistics CalculateStatistics(IEnumerable<Ticket> tickets)
@@ -170,15 +188,24 @@ public sealed class TicketDomainService
         Guard.Against.Null(newPriority, nameof(newPriority));
 
         if (ticket.IsClosed)
-            return Result.Fail("امکان تغییر اولویت تیکت بسته‌شده وجود ندارد.");
+            return Result.Failure(new Error(
+                "400",
+                "امکان تغییر اولویت تیکت بسته‌شده وجود ندارد.",
+                ErrorType.Forbidden));
 
         if (!isAdmin && newPriority == ValueObjects.TicketPriority.Urgent)
-            return Result.Fail("فقط مدیران می‌توانند اولویت تیکت را به فوری تغییر دهند.");
+            return Result.Failure(new Error(
+                "403",
+                "فقط مدیران می‌توانند اولویت تیکت را به فوری تغییر دهند.",
+                ErrorType.Forbidden));
 
         if (ticket.Priority == newPriority)
-            return Result.Fail("اولویت جدید با اولویت فعلی یکسان است.");
+            return Result.Failure(new Error(
+                "400",
+                "اولویت جدید با اولویت فعلی یکسان است.",
+                ErrorType.Validation));
 
-        return Result.Ok();
+        return Result.Success();
     }
 
     public Result ValidateAssignment(Ticket ticket, UserId agentId)
@@ -187,12 +214,17 @@ public sealed class TicketDomainService
         Guard.Against.Null(agentId, nameof(agentId));
 
         if (ticket.IsClosed)
-            return Result.Fail("امکان تخصیص تیکت بسته‌شده وجود ندارد.");
+            return Result.Failure(new Error(
+                "403",
+                "امکان تخصیص تیکت بسته‌شده وجود ندارد.",
+                ErrorType.Forbidden));
 
         if (ticket.AssignedAgentId == agentId)
-            return Result.Fail("این تیکت قبلاً به این اپراتور تخصیص داده شده است.");
+            return Result.Failure(new Error(
+                "400",
+                "این تیکت قبلاً به این اپراتور تخصیص داده شده است."));
 
-        return Result.Ok();
+        return Result.Success();
     }
 
     private static TimeSpan? CalculateAverageResponseTime(IReadOnlyList<Ticket> tickets)

@@ -8,8 +8,8 @@ public sealed class InventoryDomainService
         Aggregates.Inventory inventory,
         int quantity,
         string referenceNumber,
-        int? orderItemId = null,
-        int? userId = null,
+        Guid? orderItemId = null,
+        Guid? userId = null,
         string? correlationId = null)
     {
         Guard.Against.Null(inventory, nameof(inventory));
@@ -32,7 +32,7 @@ public sealed class InventoryDomainService
         Aggregates.Inventory inventory,
         int quantity,
         string referenceNumber,
-        int? orderItemId = null)
+        Guid? orderItemId = null)
     {
         Guard.Against.Null(inventory, nameof(inventory));
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
@@ -77,8 +77,8 @@ public sealed class InventoryDomainService
         Aggregates.Inventory inventory,
         int quantity,
         string reason,
-        int? orderItemId = null,
-        int? userId = null)
+        Guid? orderItemId = null,
+        Guid? userId = null)
     {
         Guard.Against.Null(inventory, nameof(inventory));
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
@@ -95,11 +95,10 @@ public sealed class InventoryDomainService
     public AdjustmentResult AdjustStock(
         Aggregates.Inventory inventory,
         int quantityChange,
-        int userId,
+        Guid userId,
         string reason)
     {
         Guard.Against.Null(inventory, nameof(inventory));
-        Guard.Against.NegativeOrZero(userId, nameof(userId));
         Guard.Against.NullOrWhiteSpace(reason, nameof(reason));
 
         if (inventory.IsUnlimited)
@@ -121,12 +120,11 @@ public sealed class InventoryDomainService
     public AdjustmentResult RecordDamage(
         Aggregates.Inventory inventory,
         int quantity,
-        int userId,
+        Guid userId,
         string reason)
     {
         Guard.Against.Null(inventory, nameof(inventory));
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
-        Guard.Against.NegativeOrZero(userId, nameof(userId));
         Guard.Against.NullOrWhiteSpace(reason, nameof(reason));
 
         if (inventory.IsUnlimited)
@@ -200,10 +198,9 @@ public sealed class InventoryDomainService
     public ReconcileResult Reconcile(
         Aggregates.Inventory inventory,
         int calculatedStockFromTransactions,
-        int userId)
+        Guid userId)
     {
         Guard.Against.Null(inventory, nameof(inventory));
-        Guard.Against.NegativeOrZero(userId, nameof(userId));
 
         if (inventory.IsUnlimited)
             return ReconcileResult.NotApplicable(inventory.VariantId);

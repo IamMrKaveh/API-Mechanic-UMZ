@@ -76,6 +76,8 @@ public sealed class Money : ValueObject
         return Amount <= other.Amount;
     }
 
+    public bool IsZero() => Amount == 0;
+
     private void EnsureSameCurrency(Money other)
     {
         if (!string.Equals(Currency, other.Currency, StringComparison.OrdinalIgnoreCase))

@@ -3,14 +3,9 @@ using System.Linq.Expressions;
 
 namespace Domain.Common.Specifications;
 
-public class NotSpecification<T> : Specification<T>
+public class NotSpecification<T>(Specification<T> inner) : Specification<T>
 {
-    private readonly Specification<T> _inner;
-
-    public NotSpecification(Specification<T> inner)
-    {
-        _inner = inner;
-    }
+    private readonly Specification<T> _inner = inner;
 
     public override Expression<Func<T, bool>> ToExpression()
     {

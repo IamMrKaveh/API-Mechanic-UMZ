@@ -21,7 +21,7 @@ public sealed class Warehouse : AggregateRoot<WarehouseId>, IActivatable, IAudit
     { }
 
     public static Warehouse Create(
-        int rawId,
+        Guid rawId,
         string code,
         string name,
         string city,
@@ -33,7 +33,7 @@ public sealed class Warehouse : AggregateRoot<WarehouseId>, IActivatable, IAudit
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
         Guard.Against.NullOrWhiteSpace(city, nameof(city));
 
-        var warehouseId = WarehouseId.Create(rawId);
+        var warehouseId = WarehouseId.From(rawId);
         var codeVo = WarehouseCode.Create(code);
 
         var warehouse = new Warehouse

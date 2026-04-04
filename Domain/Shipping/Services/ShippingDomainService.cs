@@ -1,5 +1,6 @@
 ﻿using Domain.Shipping.Results;
 using Domain.Shipping.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Shipping.Services;
 
@@ -18,7 +19,7 @@ public sealed class ShippingDomainService
 
         var validationResult = shipping.ValidateForOrder(orderTotal);
         if (validationResult.IsFailure)
-            return ShippingCostCalculationResult.NotAvailable(shipping.Id, validationResult.Error!);
+            return ShippingCostCalculationResult.NotAvailable(shipping.Id, validationResult.Error.Message!);
 
         Money cost;
         bool isFree = shipping.QualifiesForFreeShipping(orderTotal);
@@ -55,7 +56,10 @@ public sealed class ShippingDomainService
         Guard.Against.Null(allShippings, nameof(allShippings));
 
         if (!newDefault.IsActive)
-            return Result.Failure("امکان تنظیم روش ارسال غیرفعال به عنوان پیش‌فرض وجود ندارد.");
+            return Result.Failure(new Error(
+                "400",
+                "امکان تنظیم روش ارسال غیرفعال به عنوان پیش‌فرض وجود ندارد.",
+                ErrorType.Forbidden));
 
         foreach (var shipping in allShippings)
         {
@@ -117,7 +121,7 @@ public sealed class ShippingDomainService
             if (!isAvailable)
             {
                 var validation = shipping.ValidateForOrder(orderTotal);
-                unavailableReason = validation.Error;
+                unavailableReason = validation.Error.Message;
             }
 
             result.Add(new ShippingAvailability(

@@ -8,7 +8,7 @@ using Domain.Variant.ValueObjects;
 
 namespace Domain.Variant.Aggregates;
 
-public sealed class ProductVariant : AggregateRoot<ProductVariantId>
+public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDeletable
 {
     private readonly List<ProductVariantAttribute> _attributes = [];
     private readonly List<ProductVariantShipping> _shippingMethods = [];
@@ -151,6 +151,12 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>
                 (CompareAtPrice.Amount - Price.Amount) / CompareAtPrice.Amount * 100, 2);
         }
     }
+
+    public bool IsDeleted => throw new NotImplementedException();
+
+    public DateTime? DeletedAt => throw new NotImplementedException();
+
+    public int? DeletedBy => throw new NotImplementedException();
 
     public bool SkuMatches(string sku)
     {

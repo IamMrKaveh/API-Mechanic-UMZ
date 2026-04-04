@@ -1,5 +1,3 @@
-using Common.Extensions;
-
 namespace Domain.User.ValueObjects;
 
 public sealed class Address : ValueObject
@@ -46,8 +44,8 @@ public sealed class Address : ValueObject
             ValidateLongitude(longitude.Value);
 
         return new Address(
-            PersianTextNormalizer.Normalize(province),
-            PersianTextNormalizer.Normalize(city),
+            (province),
+            (city),
             street.Trim(),
             NormalizePostalCode(postalCode),
             latitude,

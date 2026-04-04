@@ -6,7 +6,4 @@ global using Domain.Common.Guards;
 global using Domain.Common.Interfaces;
 global using Domain.Common.Specifications;
 global using Domain.Common.ValueObjects;
-global using System;
-global using System.Collections.Generic;
-global using System.Linq;
 global using System.Linq.Expressions;

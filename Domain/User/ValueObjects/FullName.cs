@@ -1,5 +1,3 @@
-using Common.Extensions;
-
 namespace Domain.User.ValueObjects;
 
 public sealed class FullName : ValueObject
@@ -19,11 +17,11 @@ public sealed class FullName : ValueObject
     {
         var normalizedFirst = string.IsNullOrWhiteSpace(firstName)
             ? string.Empty
-            : PersianTextNormalizer.Normalize(firstName);
+            : (firstName);
 
         var normalizedLast = string.IsNullOrWhiteSpace(lastName)
             ? string.Empty
-            : PersianTextNormalizer.Normalize(lastName);
+            : (lastName);
 
         ValidateName(normalizedFirst, "نام");
         ValidateName(normalizedLast, "نام خانوادگی");

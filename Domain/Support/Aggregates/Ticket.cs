@@ -49,9 +49,6 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
         Guard.Against.NullOrWhiteSpace(subject, nameof(subject));
         Guard.Against.Null(category, nameof(category));
 
-        if (subject.Trim().Length > 200)
-            throw new DomainException("عنوان تیکت نمی‌تواند بیش از ۲۰۰ کاراکتر باشد.");
-
         var ticket = new Ticket
         {
             Id = id,
@@ -79,9 +76,6 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
             throw new DomainException("تیکت بسته شده است.");
 
         Guard.Against.NullOrWhiteSpace(content, nameof(content));
-
-        if (content.Trim().Length > 5000)
-            throw new DomainException("متن پیام نمی‌تواند بیش از ۵۰۰۰ کاراکتر باشد.");
 
         var message = TicketMessage.Create(messageId, Id, senderId, senderType, content.Trim());
         _messages.Add(message);
@@ -114,9 +108,6 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
             throw new DomainException("شما مجاز به ویرایش این پیام نیستید.");
 
         Guard.Against.NullOrWhiteSpace(newContent, nameof(newContent));
-
-        if (newContent.Trim().Length > 5000)
-            throw new DomainException("متن پیام نمی‌تواند بیش از ۵۰۰۰ کاراکتر باشد.");
 
         message.EditContent(newContent.Trim());
         UpdatedAt = DateTime.UtcNow;
@@ -163,9 +154,6 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
             throw new DomainException("تیکت بسته شده است.");
 
         Guard.Against.NullOrWhiteSpace(newSubject, nameof(newSubject));
-
-        if (newSubject.Trim().Length > 200)
-            throw new DomainException("عنوان تیکت نمی‌تواند بیش از ۲۰۰ کاراکتر باشد.");
 
         Subject = newSubject.Trim();
         UpdatedAt = DateTime.UtcNow;
@@ -233,5 +221,23 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
         {
             Status = TicketStatus.AwaitingReply;
         }
+    }
+
+    public bool IsHighPriority() => Priority == TicketPriority.High || Priority == TicketPriority.Urgent;
+
+    public bool IsUrgent() => Priority == TicketPriority.Urgent;
+
+    public bool RequiresUrgentAttention() => IsOpen && IsUrgent() && (DateTime.UtcNow - CreatedAt).TotalHours > 1;
+
+    public TimeSpan? GetTimeToFirstResponse()
+    {
+        var customerMsg = _messages.FirstOrDefault(m => m.SenderType == TicketMessageSenderType.Customer);
+        var agentMsg = _messages.FirstOrDefault(m => m.SenderType == TicketMessageSenderType.Agent);
+
+        if (customerMsg != null && agentMsg != null && agentMsg.SentAt >= customerMsg.SentAt)
+        {
+            return agentMsg.SentAt - customerMsg.SentAt;
+        }
+        return null;
     }
 }

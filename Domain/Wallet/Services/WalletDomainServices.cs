@@ -3,6 +3,7 @@ using Domain.Wallet.Enums;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Results;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Wallet.Services;
 
@@ -129,7 +130,9 @@ public sealed class WalletDomainService
         Guard.Against.Null(reservationId, nameof(reservationId));
 
         if (!wallet.HasActiveReservation(reservationId))
-            return Result.Failure($"رزرو با شناسه '{reservationId}' یافت نشد یا فعال نیست.");
+            return Result.Failure((new Error(
+                "400",
+                $"رزرو با شناسه '{reservationId}' یافت نشد یا فعال نیست.")));
 
         wallet.ReleaseReservation(reservationId);
         return Result.Success();
@@ -158,16 +161,16 @@ public sealed class WalletDomainService
         Guard.Against.Null(amount, nameof(amount));
 
         if (!sourceWallet.IsActive)
-            return Result.Failure("کیف پول مبدأ غیرفعال است.");
+            return Result.Failure((new Error("400", "کیف پول مبدأ غیرفعال است.")));
 
         if (!destinationWallet.IsActive)
-            return Result.Failure("کیف پول مقصد غیرفعال است.");
+            return Result.Failure((new Error("400", "کیف پول مقصد غیرفعال است.")));
 
         if (sourceWallet.Id == destinationWallet.Id)
-            return Result.Failure("انتقال به همان کیف پول امکان‌پذیر نیست.");
+            return Result.Failure((new Error("400", "انتقال به همان کیف پول امکان‌پذیر نیست.")));
 
         if (!sourceWallet.HasSufficientBalance(amount))
-            return Result.Failure($"موجودی کافی نیست. موجودی قابل دسترس: {sourceWallet.AvailableBalance.ToTomanString()}");
+            return Result.Failure((new Error("400", $"موجودی کافی نیست. موجودی قابل دسترس: {sourceWallet.AvailableBalance.ToTomanString()}")));
 
         return Result.Success();
     }

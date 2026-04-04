@@ -1,3 +1,5 @@
+using SharedKernel.Results;
+
 namespace Domain.Payment.ValueObjects;
 
 public sealed class PaymentGateway : ValueObject
@@ -42,7 +44,10 @@ public sealed class PaymentGateway : ValueObject
     public static Result<PaymentGateway> TryParse(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Result<PaymentGateway>.Failure("نام درگاه پرداخت الزامی است.");
+            return Result<PaymentGateway>.Failure(new Error(
+                "400",
+                "نام درگاه پرداخت الزامی است.",
+                ErrorType.Validation));
 
         return Result<PaymentGateway>.Success(FromString(value));
     }
