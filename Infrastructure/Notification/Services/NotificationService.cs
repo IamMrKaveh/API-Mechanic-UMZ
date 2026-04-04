@@ -21,7 +21,7 @@ public class NotificationService(
     {
         try
         {
-            var notification = Domain.Notification.Notification.Create(
+            var notification = Domain.Notification.Aggregates.Notification.Create(
                 userId,
                 title,
                 message,

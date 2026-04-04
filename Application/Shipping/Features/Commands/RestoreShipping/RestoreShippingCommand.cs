@@ -1,5 +1,6 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Shipping.ValueObjects;
 
 namespace Application.Shipping.Features.Commands.RestoreShipping;
 
-public record RestoreShippingCommand(int Id, int CurrentUserId) : IRequest<ServiceResult>;
+public record RestoreShippingCommand(ShippingId Id, Guid CurrentUserId) : IRequest<ServiceResult>;

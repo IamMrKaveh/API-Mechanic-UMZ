@@ -1,57 +1,49 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Results;
 using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
+using Domain.Common.Interfaces;
 using Domain.Product.Interfaces;
 using Domain.Shipping.Interfaces;
+using SharedKernel.Contracts;
 
 namespace Application.Variant.Features.Commands.UpdateVariant;
 
-public class UpdateVariantHandler : IRequestHandler<UpdateVariantCommand, ServiceResult>
+public class UpdateVariantHandler(
+    IProductRepository productRepository,
+    IAttributeRepository attributeRepository,
+    IShippingRepository shippingMethodRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<UpdateVariantCommand, ServiceResult>
 {
-    private readonly IProductRepository _productRepository;
-    private readonly IAttributeRepository _attributeRepository;
-    private readonly IShippingRepository _shippingMethodRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
-    private readonly ICurrentUserService _currentUserService;
+    private readonly IProductRepository _productRepository = productRepository;
+    private readonly IAttributeRepository _attributeRepository = attributeRepository;
+    private readonly IShippingRepository _shippingMethodRepository = shippingMethodRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
-    public UpdateVariantHandler(
-        IProductRepository productRepository,
-        IAttributeRepository attributeRepository,
-        IShippingRepository shippingMethodRepository,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService,
-        ICurrentUserService currentUserService)
-    {
-        _productRepository = productRepository;
-        _attributeRepository = attributeRepository;
-        _shippingMethodRepository = shippingMethodRepository;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-        _currentUserService = currentUserService;
-    }
-
-    public async Task<ServiceResult> Handle(UpdateVariantCommand request, CancellationToken ct)
+    public async Task<ServiceResult> Handle(
+        UpdateVariantCommand request,
+        CancellationToken ct)
     {
         var product = await _productRepository.GetByIdWithVariantsAsync(request.ProductId, ct);
         if (product == null)
-            return ServiceResult.Failure("Product not found.");
+            return ServiceResult.NotFound("Product not found.");
 
         var variant = product.FindVariant(request.VariantId);
         if (variant == null)
-            return ServiceResult.Failure("Variant not found.");
+            return ServiceResult.NotFound("Variant not found.");
 
-        
         product.UpdateVariantDetails(request.VariantId, request.Sku, request.ShippingMultiplier);
 
-        
         product.ChangeVariantPrices(
             request.VariantId,
             request.PurchasePrice,
             request.SellingPrice,
             request.OriginalPrice);
 
-        
         if (!request.IsUnlimited)
         {
             var stockDiff = request.Stock - variant.StockQuantity;
@@ -63,21 +55,19 @@ public class UpdateVariantHandler : IRequestHandler<UpdateVariantCommand, Servic
 
         product.SetVariantUnlimited(request.VariantId, request.IsUnlimited);
 
-        
         var attributeValues = request.AttributeValueIds.Any()
             ? await _attributeRepository.GetAttributeValuesByIdsAsync(request.AttributeValueIds, ct)
             : new List<AttributeValue>();
 
-        if (request.AttributeValueIds.Any())
+        if (request.AttributeValueIds.Count != 0)
         {
             var missingIds = request.AttributeValueIds.Except(attributeValues.Select(av => av.Id)).ToList();
             if (missingIds.Any())
-                return ServiceResult.Failure($"Invalid attribute values: {string.Join(", ", missingIds)}");
+                return ServiceResult.Unexpected($"Invalid attribute values: {string.Join(", ", missingIds)}");
         }
 
         product.SetVariantAttributes(request.VariantId, attributeValues);
 
-        
         if (request.EnabledShippingMethodIds != null)
         {
             var shippingMethods = request.EnabledShippingMethodIds.Any()
@@ -93,7 +83,7 @@ public class UpdateVariantHandler : IRequestHandler<UpdateVariantCommand, Servic
         await _auditService.LogProductEventAsync(
             product.Id, "UpdateVariant",
             $"Variant {request.VariantId} updated on product '{product.Name}'.",
-            _currentUserService.UserId);
+            _currentUserService.CurrentUser.UserId);
 
         return ServiceResult.Success();
     }

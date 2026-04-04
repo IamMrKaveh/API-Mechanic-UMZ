@@ -1,4 +1,5 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Payment.Features.Shared;
 
 namespace Application.Payment.Features.Queries.GetPaymentByAuthority;
 

@@ -1,4 +1,10 @@
-﻿using Domain.Shipping.Interfaces;
+﻿using Application.Inventory.Features.Queries.GetVariantAvailability;
+using Application.Media.Features.Shared;
+using Application.Product.Features.Shared;
+using Application.Shipping.Features.Shared;
+using Application.Variant.Contracts;
+using Domain.Shipping.Interfaces;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Variant.QueryServices;
 

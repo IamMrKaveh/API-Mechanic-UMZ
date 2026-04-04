@@ -1,3 +1,6 @@
+using Application.Media.Features.Queries.GetEntityMedia;
+using Application.Media.Features.Queries.GetMediaById;
+
 namespace MainApi.Media.Controllers;
 
 [Route("api/[controller]")]

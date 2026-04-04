@@ -1,4 +1,9 @@
-﻿namespace Infrastructure.Wallet.QueryServices;
+﻿using Application.Wallet.Contracts;
+using Application.Wallet.Features.Shared;
+using Infrastructure.Persistence.Context;
+using SharedKernel.Models;
+
+namespace Infrastructure.Wallet.QueryServices;
 
 public class WalletQueryService(DBContext context) : IWalletQueryService
 {

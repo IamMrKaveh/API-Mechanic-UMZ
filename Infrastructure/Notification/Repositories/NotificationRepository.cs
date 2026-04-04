@@ -27,13 +27,13 @@ public class NotificationRepository(DBContext context) : INotificationRepository
     }
 
     public async Task AddAsync(
-        Domain.Notification.Notification notification,
+        Domain.Notification.Aggregates.Notification notification,
         CancellationToken ct = default)
     {
         await _context.Notifications.AddAsync(notification, ct);
     }
 
-    public void Update(Domain.Notification.Notification notification)
+    public void Update(Domain.Notification.Aggregates.Notification notification)
     {
         _context.Notifications.Update(notification);
     }

@@ -1,3 +1,6 @@
+using Application.Shipping.Features.Shared;
+using Application.User.Features.Shared;
+
 namespace Application.Order.Features.Shared;
 
 public sealed record OrderDto

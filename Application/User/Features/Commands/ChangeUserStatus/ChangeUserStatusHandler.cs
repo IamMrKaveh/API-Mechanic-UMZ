@@ -1,29 +1,26 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
 
 namespace Application.User.Features.Commands.ChangeUserStatus;
 
-public class ChangeUserStatusHandler : IRequestHandler<ChangeUserStatusCommand, ServiceResult>
+public class ChangeUserStatusHandler(IUserRepository userRepository, IUnitOfWork unitOfWork) : IRequestHandler<ChangeUserStatusCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-    public ChangeUserStatusHandler(IUserRepository userRepository, IUnitOfWork unitOfWork)
-    {
-        _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
-    }
-
-    public async Task<ServiceResult> Handle(ChangeUserStatusCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(
+        ChangeUserStatusCommand request,
+        CancellationToken ct)
     {
         var user = await _userRepository.GetByIdAsync(request.Id);
         if (user == null)
-            return ServiceResult.Failure("NotFound");
+            return ServiceResult.NotFound("NotFound");
 
         user.SetIsActive(request.IsActive);
         _userRepository.Update(user);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
     }
 }

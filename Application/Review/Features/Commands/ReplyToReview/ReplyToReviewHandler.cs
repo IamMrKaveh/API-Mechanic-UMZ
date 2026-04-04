@@ -1,35 +1,32 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 using Domain.Review.Interfaces;
+using SharedKernel.Contracts;
 
 namespace Application.Review.Features.Commands.ReplyToReview;
 
-public class ReplyToReviewHandler : IRequestHandler<ReplyToReviewCommand, ServiceResult>
+public class ReplyToReviewHandler(
+    IReviewRepository reviewRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICurrentUserService currentUserService,
+    ILogger<ReplyToReviewHandler> logger) : IRequestHandler<ReplyToReviewCommand, ServiceResult>
 {
-    private readonly IReviewRepository _reviewRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ILogger<ReplyToReviewHandler> _logger;
+    private readonly IReviewRepository _reviewRepository = reviewRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
+    private readonly ILogger<ReplyToReviewHandler> _logger = logger;
 
-    public ReplyToReviewHandler(
-        IReviewRepository reviewRepository,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService,
-        ICurrentUserService currentUserService,
-        ILogger<ReplyToReviewHandler> logger)
-    {
-        _reviewRepository = reviewRepository;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-        _currentUserService = currentUserService;
-        _logger = logger;
-    }
-
-    public async Task<ServiceResult> Handle(ReplyToReviewCommand request, CancellationToken ct)
+    public async Task<ServiceResult> Handle(
+        ReplyToReviewCommand request,
+        CancellationToken ct)
     {
         var review = await _reviewRepository.GetByIdAsync(request.ReviewId, ct);
         if (review == null)
-            return ServiceResult.Failure("نظر یافت نشد.", 404);
+            return ServiceResult.NotFound("نظر یافت نشد.");
 
         try
         {
@@ -42,16 +39,16 @@ public class ReplyToReviewHandler : IRequestHandler<ReplyToReviewCommand, Servic
                 review.ProductId,
                 "ReplyToReview",
                 $"Admin replied to review {request.ReviewId}.",
-                _currentUserService.UserId);
+                _currentUserService.CurrentUser.UserId);
 
             _logger.LogInformation("Admin {UserId} replied to review {ReviewId}",
-                _currentUserService.UserId, request.ReviewId);
+                _currentUserService.CurrentUser.UserId, request.ReviewId);
 
             return ServiceResult.Success();
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Unexpected(ex.Message);
         }
     }
 }

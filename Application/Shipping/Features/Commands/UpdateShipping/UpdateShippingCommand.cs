@@ -1,9 +1,10 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Shipping.ValueObjects;
 
 namespace Application.Shipping.Features.Commands.UpdateShipping;
 
 public record UpdateShippingCommand(
-    int Id,
+    ShippingId Id,
     string Name,
     decimal Cost,
     string? Description,
@@ -12,4 +13,4 @@ public record UpdateShippingCommand(
     int MaxDeliveryDays,
     bool IsActive,
     string? RowVersion,
-    int CurrentUserId) : IRequest<ServiceResult>;
+    Guid CurrentUserId) : IRequest<ServiceResult>;

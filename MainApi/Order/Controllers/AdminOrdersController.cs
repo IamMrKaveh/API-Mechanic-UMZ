@@ -1,3 +1,14 @@
+using Application.Features.Orders.Commands.DeleteOrder;
+using Application.Order.Features.Commands.CreateOrder;
+using Application.Order.Features.Commands.ExpireOrders;
+using Application.Order.Features.Commands.MarkOrderAsShipped;
+using Application.Order.Features.Commands.UpdateOrder;
+using Application.Order.Features.Commands.UpdateOrderStatus;
+using Application.Order.Features.Queries.GetAdminOrderById;
+using Application.Order.Features.Queries.GetAdminOrders;
+using Application.Order.Features.Queries.GetOrderStatistics;
+using Application.Order.Features.Shared;
+
 namespace MainApi.Order.Controllers;
 
 [ApiController]
@@ -49,7 +60,7 @@ public class AdminOrdersController(IMediator mediator) : BaseApiController(media
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteOrder(int id)
     {
-        var command = new DeleteOrderCommand(id, CurrentUser.UserId.Value);
+        var command = new DeleteOrderCommand(id, CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

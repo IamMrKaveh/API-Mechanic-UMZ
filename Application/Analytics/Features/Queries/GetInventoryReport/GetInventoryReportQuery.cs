@@ -1,4 +1,5 @@
-using Application.Common.Models;
+using Application.Analytics.Features.Shared;
+using Application.Common.Results;
 
 namespace Application.Analytics.Features.Queries.GetInventoryReport;
 

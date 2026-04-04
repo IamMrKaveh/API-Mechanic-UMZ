@@ -1,66 +1,58 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Auth.Contracts;
+using Application.Common.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.ChangePhoneNumber;
 
-public class ChangePhoneNumberHandler : IRequestHandler<ChangePhoneNumberCommand, ServiceResult>
+public class ChangePhoneNumberHandler(
+    IUserRepository userRepository,
+    IOtpService otpService,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ILogger<ChangePhoneNumberHandler> logger) : IRequestHandler<ChangePhoneNumberCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IOtpService _otpService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
-    private readonly ILogger<ChangePhoneNumberHandler> _logger;
-
-    public ChangePhoneNumberHandler(
-        IUserRepository userRepository,
-        IOtpService otpService,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService,
-        ILogger<ChangePhoneNumberHandler> logger)
-    {
-        _userRepository = userRepository;
-        _otpService = otpService;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-        _logger = logger;
-    }
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly IOtpService _otpService = otpService;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ILogger<ChangePhoneNumberHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(
-        ChangePhoneNumberCommand request, CancellationToken cancellationToken)
+        ChangePhoneNumberCommand request,
+        CancellationToken ct)
     {
-        
         var (phoneSuccess, phoneNumber, phoneError) =
             PhoneNumber.TryCreate(request.NewPhoneNumber);
         if (!phoneSuccess)
-            return ServiceResult.Failure(phoneError!);
+            return ServiceResult.Unexpected(phoneError!);
 
         var normalizedPhone = phoneNumber!.Value;
 
-        
-        if (await _userRepository.PhoneNumberExistsAsync(normalizedPhone, request.UserId, cancellationToken))
-            return ServiceResult.Failure("این شماره تلفن قبلاً ثبت شده است.");
+        if (await _userRepository.PhoneNumberExistsAsync(normalizedPhone, request.UserId, ct))
+            return ServiceResult.Conflict("این شماره تلفن قبلاً ثبت شده است.");
 
-        
-        var user = await _userRepository.GetWithOtpsAsync(request.UserId, cancellationToken);
+        var user = await _userRepository.GetWithOtpsAsync(request.UserId, ct);
         if (user == null)
-            return ServiceResult.Failure("کاربر یافت نشد.", 404);
+            return ServiceResult.NotFound("کاربر یافت نشد.");
 
-        
         var otpHash = _otpService.HashOtp(request.OtpCode);
         if (!user.VerifyOtp(request.OtpCode))
         {
             _userRepository.Update(user);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Failure("کد تأیید نادرست است.");
+            await _unitOfWork.SaveChangesAsync(ct);
+            return ServiceResult.Unexpected("کد تأیید نادرست است.");
         }
 
         try
         {
-            
             user.ChangePhoneNumber(normalizedPhone);
 
             _userRepository.Update(user);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             await _auditService.LogSecurityEventAsync(
                 "PhoneNumberChanged",
@@ -70,9 +62,9 @@ public class ChangePhoneNumberHandler : IRequestHandler<ChangePhoneNumberCommand
 
             return ServiceResult.Success();
         }
-        catch (Domain.Common.Exceptions.DomainException ex)
+        catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Unexpected(ex.Message);
         }
     }
 }

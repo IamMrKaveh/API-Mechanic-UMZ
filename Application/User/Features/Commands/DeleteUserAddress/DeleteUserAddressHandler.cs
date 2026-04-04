@@ -1,21 +1,22 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
 
 namespace Application.User.Features.Commands.DeleteUserAddress;
 
-public class DeleteUserAddressHandler : IRequestHandler<DeleteUserAddressCommand, ServiceResult>
+public class DeleteUserAddressHandler(IUserRepository repo, IUnitOfWork uow) : IRequestHandler<DeleteUserAddressCommand, ServiceResult>
 {
-    private readonly IUserRepository _repo;
-    private readonly IUnitOfWork _uow;
+    private readonly IUserRepository _repo = repo;
+    private readonly IUnitOfWork _uow = uow;
 
-    public DeleteUserAddressHandler(IUserRepository repo, IUnitOfWork uow)
-    { _repo = repo; _uow = uow; }
-
-    public async Task<ServiceResult> Handle(DeleteUserAddressCommand request, CancellationToken ct)
+    public async Task<ServiceResult> Handle(
+        DeleteUserAddressCommand request,
+        CancellationToken ct)
     {
         var user = await _repo.GetWithAddressesAsync(request.UserId, ct);
-        if (user == null) return ServiceResult.Failure("User not found.");
-        user.RemoveAddress(request.AddressId, request.UserId);
+        if (user == null)
+            return ServiceResult.NotFound("User not found.");
+        user.RemoveAddress(request.AddressId);
         _repo.Update(user);
         await _uow.SaveChangesAsync(ct);
         return ServiceResult.Success();

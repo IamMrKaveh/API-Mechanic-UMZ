@@ -1,4 +1,11 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Exceptions;
+using Application.Common.Results;
+using Application.Notification.Contracts;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
+using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.ConfirmDelivery;
 
@@ -21,10 +28,10 @@ public class ConfirmDeliveryHandler(
     {
         var order = await _orderRepository.GetByIdAsync(request.OrderId, ct);
         if (order == null)
-            return ServiceResult.Failure("سفارش یافت نشد.", 404);
+            return ServiceResult.NotFound("سفارش یافت نشد.");
 
         if (order.UserId != request.UserId)
-            return ServiceResult.Failure("شما مجاز به تأیید تحویل این سفارش نیستید.", 403);
+            return ServiceResult.Unauthorized("شما مجاز به تأیید تحویل این سفارش نیستید.");
 
         if (!string.IsNullOrEmpty(request.RowVersion))
             _orderRepository.SetOriginalRowVersion(order, Convert.FromBase64String(request.RowVersion));
@@ -37,7 +44,7 @@ public class ConfirmDeliveryHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message, 400);
+            return ServiceResult.Unexpected(ex.Message);
         }
 
         await _orderRepository.UpdateAsync(order, ct);
@@ -64,8 +71,7 @@ public class ConfirmDeliveryHandler(
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Failure(
-                "این سفارش توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.", 409);
+            return ServiceResult.Conflict("این سفارش توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.");
         }
     }
 }

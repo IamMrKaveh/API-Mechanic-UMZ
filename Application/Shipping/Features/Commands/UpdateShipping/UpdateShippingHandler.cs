@@ -1,41 +1,38 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Exceptions;
+using Application.Common.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
 using Domain.Shipping.Interfaces;
+using SharedKernel.Contracts;
 
 namespace Application.Shipping.Features.Commands.UpdateShipping;
 
-public class UpdateShippingHandler : IRequestHandler<UpdateShippingCommand, ServiceResult>
+public class UpdateShippingHandler(
+    IShippingRepository shippingMethodRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<UpdateShippingCommand, ServiceResult>
 {
-    private readonly IShippingRepository _shippingMethodRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
-    private readonly ICurrentUserService _currentUserService;
-
-    public UpdateShippingHandler(
-        IShippingRepository shippingMethodRepository,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService,
-        ICurrentUserService currentUserService)
-    {
-        _shippingMethodRepository = shippingMethodRepository;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-        _currentUserService = currentUserService;
-    }
+    private readonly IShippingRepository _shippingMethodRepository = shippingMethodRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     public async Task<ServiceResult> Handle(
         UpdateShippingCommand request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var method = await _shippingMethodRepository.GetByIdAsync(request.Id, cancellationToken);
+        var method = await _shippingMethodRepository.GetByIdAsync(request.Id, ct);
         if (method == null)
-            return ServiceResult.Failure("روش ارسال یافت نشد.", 404);
+            return ServiceResult.NotFound("روش ارسال یافت نشد.");
 
         if (request.RowVersion != null)
             _shippingMethodRepository.SetOriginalRowVersion(method, Convert.FromBase64String(request.RowVersion));
 
-        if (await _shippingMethodRepository.ExistsByNameAsync(request.Name, request.Id, cancellationToken))
-            return ServiceResult.Failure("روش ارسال با این نام قبلاً وجود دارد.");
+        if (await _shippingMethodRepository.ExistsByNameAsync(request.Name, request.Id, ct))
+            return ServiceResult.Conflict("روش ارسال با این نام قبلاً وجود دارد.");
 
         try
         {
@@ -53,23 +50,24 @@ public class UpdateShippingHandler : IRequestHandler<UpdateShippingCommand, Serv
                 method.Deactivate();
 
             _shippingMethodRepository.Update(method);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             await _auditService.LogAdminEventAsync(
                 "UpdateShippingMethod",
                 request.CurrentUserId,
                 $"Updated shipping method ID: {request.Id}",
-                _currentUserService.IpAddress);
+                _currentUserService.CurrentUser.IpAddress,
+                _currentUserService.UserAgent);
 
             return ServiceResult.Success();
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message, 400);
+            return ServiceResult.Unexpected(ex.Message);
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Failure("رکورد توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.");
+            return ServiceResult.Conflict("رکورد توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.");
         }
     }
 }

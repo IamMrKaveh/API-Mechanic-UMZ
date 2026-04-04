@@ -1,4 +1,8 @@
-﻿namespace Application.Variant.Contracts;
+﻿using Application.Inventory.Features.Queries.GetVariantAvailability;
+using Application.Product.Features.Shared;
+using Application.Shipping.Features.Shared;
+
+namespace Application.Variant.Contracts;
 
 public interface IVariantQueryService
 {

@@ -1,15 +1,13 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Payment.Contracts;
+using Application.Payment.Features.Shared;
+using Domain.Common.Exceptions;
 
 namespace Application.Payment.Features.Commands.InitiatePayment;
 
-public class InitiatePaymentHandler : IRequestHandler<InitiatePaymentCommand, ServiceResult<PaymentResultDto>>
+public class InitiatePaymentHandler(IPaymentService paymentService) : IRequestHandler<InitiatePaymentCommand, ServiceResult<PaymentResultDto>>
 {
-    private readonly IPaymentService _paymentService;
-
-    public InitiatePaymentHandler(IPaymentService paymentService)
-    {
-        _paymentService = paymentService;
-    }
+    private readonly IPaymentService _paymentService = paymentService;
 
     public async Task<ServiceResult<PaymentResultDto>> Handle(
         InitiatePaymentCommand request,
@@ -30,11 +28,11 @@ public class InitiatePaymentHandler : IRequestHandler<InitiatePaymentCommand, Se
                 });
             }
 
-            return ServiceResult<PaymentResultDto>.Failure(result.Error ?? "Failed to initiate payment", result.StatusCode);
+            return ServiceResult<PaymentResultDto>.Unexpected(result.Error?.Message ?? "Failed to initiate payment");
         }
         catch (DomainException ex)
         {
-            return ServiceResult<PaymentResultDto>.Failure(ex.Message);
+            return ServiceResult<PaymentResultDto>.Unexpected(ex.Message);
         }
     }
 }

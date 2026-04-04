@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 using Domain.Attribute.Interfaces;
 
 namespace Application.Attribute.Features.Commands.DeleteAttributeValue;
@@ -19,15 +19,14 @@ public class DeleteAttributeValueHandler : IRequestHandler<DeleteAttributeValueC
 
     public async Task<ServiceResult> Handle(
         DeleteAttributeValueCommand request,
-        CancellationToken cancellationToken
-        )
+        CancellationToken ct)
     {
         var attributeValue = await _repository.GetAttributeValueByIdAsync(request.Id);
         if (attributeValue == null)
-            return ServiceResult.Failure("Attribute value not found.");
+            return ServiceResult.NotFound("Attribute value not found.");
 
         await _repository.DeleteAttributeValueAsync(attributeValue.Id);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
     }
 }

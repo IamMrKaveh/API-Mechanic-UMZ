@@ -1,4 +1,5 @@
-using Application.Common.Models;
+using Application.Inventory.Features.Shared;
+using SharedKernel.Models;
 
 namespace Application.Inventory.Contracts;
 

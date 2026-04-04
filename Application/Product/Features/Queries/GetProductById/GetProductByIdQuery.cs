@@ -1,4 +1,5 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Product.Features.Shared;
 
 namespace Application.Product.Features.Queries.GetProductById;
 

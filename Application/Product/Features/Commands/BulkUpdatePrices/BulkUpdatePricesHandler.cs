@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 using Domain.Variant.Interfaces;
 
 namespace Application.Product.Features.Commands.BulkUpdatePrices;

@@ -1,3 +1,11 @@
+using Application.Common.Behaviors;
+using Application.Order.Features.Commands.CheckoutFromCart.Services;
+using Domain.Cart.Services;
+using Domain.Inventory.Services;
+using Domain.Media.Services;
+using Domain.Payment.Services;
+using Domain.Support.Services;
+
 namespace Application;
 
 public static class ApplicationServiceCollection
@@ -5,7 +13,6 @@ public static class ApplicationServiceCollection
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         RegisterMediatR(services);
-        RegisterAutoMapper(services);
         RegisterDomainServices(services);
         RegisterApplicationServices(services);
         RegisterValidation(services);
@@ -22,11 +29,6 @@ public static class ApplicationServiceCollection
         });
     }
 
-    private static void RegisterAutoMapper(IServiceCollection services)
-    {
-        services.AddAutoMapper(Assembly.GetExecutingAssembly());
-    }
-
     private static void RegisterValidation(IServiceCollection services)
     {
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
@@ -35,13 +37,10 @@ public static class ApplicationServiceCollection
     private static void RegisterDomainServices(IServiceCollection services)
     {
         services.AddScoped<InventoryDomainService>();
-        services.AddScoped<CategoryDomainService>();
         services.AddScoped<CartDomainService>();
-        services.AddScoped<OrderDomainService>();
         services.AddScoped<PaymentDomainService>();
         services.AddScoped<MediaDomainService>();
         services.AddScoped<TicketDomainService>();
-        services.AddScoped<NotificationDomainService>();
     }
 
     private static void RegisterApplicationServices(IServiceCollection services)

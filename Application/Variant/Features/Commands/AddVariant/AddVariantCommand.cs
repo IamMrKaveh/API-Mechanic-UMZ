@@ -1,17 +1,16 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Product.Features.Shared;
 
 namespace Application.Variant.Features.Commands.AddVariant;
 
-public record AddVariantCommand : IRequest<ServiceResult<ProductVariantViewDto>>
-{
-    public int ProductId { get; init; }
-    public string? Sku { get; init; }
-    public decimal PurchasePrice { get; init; }
-    public decimal SellingPrice { get; init; }
-    public decimal OriginalPrice { get; init; }
-    public int Stock { get; init; }
-    public bool IsUnlimited { get; init; }
-    public decimal ShippingMultiplier { get; init; } = 1;
-    public List<int> AttributeValueIds { get; init; } = new();
-    public List<int>? EnabledShippingMethodIds { get; init; }
-}
+public record AddVariantCommand(
+    int ProductId,
+    string? Sku,
+    decimal PurchasePrice,
+    decimal SellingPrice,
+    decimal OriginalPrice,
+    int Stock,
+    bool IsUnlimited,
+    decimal ShippingMultiplier,
+    List<int> AttributeValueIds,
+    List<int>? EnabledShippingMethodIds) : IRequest<ServiceResult<ProductVariantViewDto>>;

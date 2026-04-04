@@ -1,3 +1,7 @@
+using Application.Audit.Features.Queries.ExportAuditLogs;
+using Application.Audit.Features.Queries.GetAuditLogs;
+using Application.Audit.Features.Queries.GetAuditStatistics;
+
 namespace MainApi.Audit.Controllers;
 
 [ApiController]
@@ -9,7 +13,6 @@ public sealed class AdminAuditLogsController(IMediator mediator) : BaseApiContro
     private readonly IMediator _mediator = mediator;
 
     [HttpGet]
-    [ProducesResponseType(typeof(GetAuditLogsResult), 200)]
     public async Task<IActionResult> GetAuditLogs(
         [FromQuery] int? userId = null,
         [FromQuery] string? eventType = null,
@@ -24,36 +27,34 @@ public sealed class AdminAuditLogsController(IMediator mediator) : BaseApiContro
         [FromQuery] bool sortDesc = true,
         CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new GetAuditLogsQuery(
-            UserId: userId,
-            EventType: eventType,
-            Action: action,
-            Keyword: keyword,
-            IpAddress: ipAddress,
-            From: from,
-            To: to,
-            Page: page,
-            PageSize: pageSize,
-            SortBy: sortBy,
-            SortDesc: sortDesc),
-            ct);
-
+        var command = new GetAuditLogsQuery(
+            userId,
+            eventType,
+            action,
+            keyword,
+            ipAddress,
+            from,
+            to,
+            page,
+            pageSize,
+            sortBy,
+            sortDesc);
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("statistics")]
-    [ProducesResponseType(typeof(AuditStatisticsDto), 200)]
     public async Task<IActionResult> GetStatistics(
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null,
         CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new GetAuditStatisticsQuery(from, to), ct);
+        var command = new GetAuditStatisticsQuery(from, to);
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("export/csv")]
-    [ProducesResponseType(200)]
     public async Task<IActionResult> ExportCsv(
         [FromQuery] int? userId = null,
         [FromQuery] string? eventType = null,
@@ -62,20 +63,19 @@ public sealed class AdminAuditLogsController(IMediator mediator) : BaseApiContro
         [FromQuery] int maxRows = 10_000,
         CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new ExportAuditLogsQuery(
-            UserId: userId,
-            EventType: eventType,
-            From: from,
-            To: to,
-            Format: "csv",
-            MaxRows: maxRows),
-            ct);
+        var command = new ExportAuditLogsQuery(
+            userId,
+            eventType,
+            from,
+            to,
+            "csv",
+            maxRows);
+        var result = await _mediator.Send(command, ct);
 
         return ToActionResult(result);
     }
 
     [HttpGet("export/json")]
-    [ProducesResponseType(200)]
     public async Task<IActionResult> ExportJson(
         [FromQuery] int? userId = null,
         [FromQuery] string? eventType = null,
@@ -84,14 +84,14 @@ public sealed class AdminAuditLogsController(IMediator mediator) : BaseApiContro
         [FromQuery] int maxRows = 5_000,
         CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new ExportAuditLogsQuery(
-            UserId: userId,
-            EventType: eventType,
-            From: from,
-            To: to,
-            Format: "json",
-            MaxRows: maxRows),
-            ct);
+        var command = new ExportAuditLogsQuery(
+            userId,
+            eventType,
+            from,
+            to,
+            "json",
+            maxRows);
+        var result = await _mediator.Send(command, ct);
 
         return ToActionResult(result);
     }

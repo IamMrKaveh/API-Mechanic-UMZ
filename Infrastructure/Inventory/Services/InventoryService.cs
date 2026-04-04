@@ -1,8 +1,12 @@
-using Application.Common.Models;
-using Domain.Inventory.Entities;
+using Application.Common.Results;
+using Application.Inventory.Contracts;
+using Domain.Common.Interfaces;
 using Domain.Inventory.Interfaces;
+using Domain.Inventory.Services;
 using Domain.Order.Entities;
 using Domain.Variant.Aggregates;
+using Domain.Variant.ValueObjects;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Inventory.Services;
 
@@ -55,7 +59,7 @@ public class InventoryService(
                 correlationId, cartId, expiresAt);
 
             if (!result.IsSuccess)
-                return ServiceResult.Failure(result.Error!);
+                return ServiceResult.Unexpected(result.Error!);
 
             if (result.Transaction is not null)
                 await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
@@ -96,7 +100,7 @@ public class InventoryService(
                 variant, quantity, orderItemId, userId, referenceNumber, correlationId);
 
             if (!result.IsSuccess)
-                return ServiceResult.Failure(result.Error!);
+                return ServiceResult.Unexpected(result.Error!);
 
             if (result.Transaction is not null)
                 await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
@@ -125,7 +129,7 @@ public class InventoryService(
                 if (!orderItems.Any())
                 {
                     await transaction.RollbackAsync(ct);
-                    return ServiceResult.Failure("آیتمی برای سفارش یافت نشد.");
+                    return ServiceResult.NotFound("آیتمی برای سفارش یافت نشد.");
                 }
 
                 foreach (var item in orderItems)
@@ -176,7 +180,7 @@ public class InventoryService(
             {
                 await transaction.RollbackAsync(ct);
                 _logger.LogError(ex, "Failed to commit stock for order {OrderId}", orderId);
-                return ServiceResult.Failure("خطا در Commit موجودی سفارش.");
+                return ServiceResult.Unexpected("خطا در Commit موجودی سفارش.");
             }
         });
     }
@@ -193,7 +197,7 @@ public class InventoryService(
             var result = _domainService.RollbackReservation(variant, quantity, userId, reason);
 
             if (!result.IsSuccess)
-                return ServiceResult.Failure(result.Message ?? "خطا در آزادسازی موجودی.");
+                return ServiceResult.Unexpected(result.Message ?? "خطا در آزادسازی موجودی.");
 
             if (result.Transaction is not null)
                 await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
@@ -252,7 +256,7 @@ public class InventoryService(
             var result = _domainService.ReturnStock(variant, quantity, orderId, orderItemId, userId, reason);
 
             if (!result.IsSuccess)
-                return ServiceResult.Failure(result.Error!);
+                return ServiceResult.Unexpected(result.Error!);
 
             if (result.Transaction is not null)
                 await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
@@ -318,7 +322,7 @@ public class InventoryService(
             {
                 await transaction.RollbackAsync(ct);
                 _logger.LogError(ex, "Failed to return stock for order {OrderId}", orderId);
-                return ServiceResult.Failure("خطا در مرجوعی موجودی سفارش.");
+                return ServiceResult.Unexpected("خطا در مرجوعی موجودی سفارش.");
             }
         });
     }
@@ -334,10 +338,10 @@ public class InventoryService(
         {
             var variant = await GetVariantWithTrackingAsync(variantId, ct);
             if (variant is null)
-                return ServiceResult.Failure("واریانت مورد نظر یافت نشد.");
+                return ServiceResult.Unexpected("واریانت مورد نظر یافت نشد.");
 
             var result = _domainService.AdjustStock(variant, quantityChange, userId, notes);
-            if (!result.IsSuccess) return ServiceResult.Failure(result.Error!);
+            if (!result.IsSuccess) return ServiceResult.Unexpected(result.Error!);
 
             if (result.Transaction is not null)
                 await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
@@ -347,7 +351,7 @@ public class InventoryService(
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Failure("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
+            return ServiceResult.Unexpected("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
         }
     }
 
@@ -361,10 +365,10 @@ public class InventoryService(
         try
         {
             var variant = await GetVariantWithTrackingAsync(variantId, ct);
-            if (variant is null) return ServiceResult.Failure("واریانت مورد نظر یافت نشد.");
+            if (variant is null) return ServiceResult.Unexpected("واریانت مورد نظر یافت نشد.");
 
             var result = _domainService.RecordDamage(variant, quantity, userId, notes);
-            if (!result.IsSuccess) return ServiceResult.Failure(result.Error!);
+            if (!result.IsSuccess) return ServiceResult.Unexpected(result.Error!);
 
             if (result.Transaction is not null)
                 await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
@@ -374,11 +378,11 @@ public class InventoryService(
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Failure("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
+            return ServiceResult.Unexpected("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
         }
     }
 
-    public async Task<ServiceResult<(int VariantId, int FinalStock, int Difference, bool HasDiscrepancy, string Message)>> ReconcileStockAsync(
+    public async Task<ServiceResult<(ProductVariantId VariantId, int FinalStock, int Difference, bool HasDiscrepancy, string Message)>> ReconcileStockAsync(
         int variantId,
         int userId,
         CancellationToken ct = default)
@@ -389,13 +393,15 @@ public class InventoryService(
                 var calculatedStock = await _inventoryRepository.CalculateStockFromTransactionsAsync(variantId, ct);
                 var result = _domainService.Reconcile(variant, calculatedStock, userId);
 
-                if (!result.IsSuccess)
-                    return ServiceResult<(int, int, int, bool, string)>.Failure(result.Message!);
+                if (result.IsFailure)
+                    return ServiceResult<(ProductVariantId, int, int, bool, string)>
+                    .Validation(result.Message!);
 
                 if (result.Transaction is not null)
                     await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
 
-                return ServiceResult<(int, int, int, bool, string)>.Success((
+                return ServiceResult<(ProductVariantId, int, int, bool, string)>
+                .Success((
                     result.VariantId,
                     result.FinalStock,
                     result.Difference,
@@ -464,7 +470,8 @@ public class InventoryService(
         {
             await transaction.RollbackAsync(ct);
             _logger.LogError(ex, "Bulk stock adjustment failed.");
-            return ServiceResult<(int, int, int, IEnumerable<(int, bool, string?, int?)>)>.Failure("خطا در تنظیم دسته‌ای موجودی.");
+            return ServiceResult<(int, int, int, IEnumerable<(int, bool, string?, int?)>)>
+                .Unexpected("خطا در تنظیم دسته‌ای موجودی.");
         }
     }
 
@@ -547,7 +554,7 @@ public class InventoryService(
         {
             await transaction.RollbackAsync(ct);
             _logger.LogError(ex, "Bulk StockIn failed.");
-            return ServiceResult<(int, int, int, IEnumerable<(int, bool, string?, int?)>)>.Failure("خطا در Import دسته‌ای موجودی.");
+            return ServiceResult<(int, int, int, IEnumerable<(int, bool, string?, int?)>)>.Unexpected("خطا در Import دسته‌ای موجودی.");
         }
     }
 
@@ -598,7 +605,7 @@ public class InventoryService(
                 if (variant is null)
                 {
                     await transaction.RollbackAsync(ct);
-                    return ServiceResult.Failure("واریانت مورد نظر یافت نشد.");
+                    return ServiceResult.Unexpected("واریانت مورد نظر یافت نشد.");
                 }
 
                 var result = await operation(variant);
@@ -619,7 +626,7 @@ public class InventoryService(
             {
                 await transaction.RollbackAsync(ct);
                 _logger.LogError(ex, "Error in serializable lock for variant {VariantId}", variantId);
-                return ServiceResult.Failure("خطا در عملیات موجودی. لطفاً دوباره تلاش کنید.");
+                return ServiceResult.Unexpected("خطا در عملیات موجودی. لطفاً دوباره تلاش کنید.");
             }
         });
     }
@@ -648,7 +655,7 @@ public class InventoryService(
                 {
                     await transaction.RollbackAsync(ct);
                     if (typeof(TResult) == typeof(ServiceResult))
-                        return (TResult)(object)ServiceResult.Failure("واریانت مورد نظر یافت نشد.");
+                        return (TResult)(object)ServiceResult.NotFound("واریانت مورد نظر یافت نشد.");
 
                     var failMethod = typeof(TResult).GetMethod("Failure", new[] { typeof(string) });
                     if (failMethod is not null)

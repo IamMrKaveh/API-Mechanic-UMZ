@@ -1,10 +1,15 @@
-using Application.Common.Models;
+using Application.Review.Features.Shared;
+using Application.User.Features.Shared;
+using Domain.User.ValueObjects;
+using SharedKernel.Models;
 
 namespace Application.User.Contracts;
 
 public interface IUserQueryService
 {
-    Task<UserProfileDto?> GetUserProfileAsync(int userId, CancellationToken ct = default);
+    Task<UserProfileDto?> GetUserProfileAsync(
+        UserId userId,
+        CancellationToken ct = default);
 
     Task<PaginatedResult<UserProfileDto>> GetUsersPagedAsync(
         string? search,
@@ -15,11 +20,17 @@ public interface IUserQueryService
         int pageSize,
         CancellationToken ct = default);
 
-    Task<IEnumerable<UserAddressDto>> GetUserAddressesAsync(int userId, CancellationToken ct = default);
+    Task<IEnumerable<UserAddressDto>> GetUserAddressesAsync(
+        UserId userId,
+        CancellationToken ct = default);
 
-    Task<IEnumerable<UserSessionDto>> GetActiveSessionsAsync(int userId, CancellationToken ct = default);
+    Task<IEnumerable<UserSessionDto>> GetActiveSessionsAsync(
+        UserId userId,
+        CancellationToken ct = default);
 
-    Task<UserDashboardDto?> GetUserDashboardAsync(int userId, CancellationToken ct = default);
+    Task<UserDashboardDto?> GetUserDashboardAsync(
+        UserId userId,
+        CancellationToken ct = default);
 
     Task<PaginatedResult<ProductReviewDto>> GetUserReviewsPagedAsync(
         int userId,

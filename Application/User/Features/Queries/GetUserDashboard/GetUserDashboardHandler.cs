@@ -1,27 +1,23 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.User.Contracts;
 
 namespace Application.User.Features.Queries.GetUserDashboard;
 
-public class GetUserDashboardHandler
-    : IRequestHandler<GetUserDashboardQuery, ServiceResult<UserDashboardDto>>
+public class GetUserDashboardHandler(IUserQueryService userQueryService)
+        : IRequestHandler<GetUserDashboardQuery, ServiceResult<UserDashboardDto>>
 {
-    private readonly IUserQueryService _userQueryService;
-
-    public GetUserDashboardHandler(IUserQueryService userQueryService)
-    {
-        _userQueryService = userQueryService;
-    }
+    private readonly IUserQueryService _userQueryService = userQueryService;
 
     public async Task<ServiceResult<UserDashboardDto>> Handle(
-        GetUserDashboardQuery request, CancellationToken cancellationToken)
+        GetUserDashboardQuery request,
+        CancellationToken ct)
     {
         var dashboard = await _userQueryService.GetUserDashboardAsync(
-            request.UserId, cancellationToken);
+            request.UserId, ct);
 
-        if (dashboard == null)
-            return ServiceResult<UserDashboardDto>.Failure("کاربر یافت نشد.", 404);
+        if (dashboard is null)
+            return ServiceResult<UserDashboardDto>.NotFound("کاربر یافت نشد.");
 
-        
         var result = new UserDashboardDto
         {
             TotalOrders = dashboard.TotalOrders,

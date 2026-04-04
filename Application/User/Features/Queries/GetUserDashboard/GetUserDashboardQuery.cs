@@ -1,8 +1,9 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Queries.GetUserDashboard;
 
-public record GetUserDashboardQuery(int UserId) : IRequest<ServiceResult<UserDashboardDto>>;
+public record GetUserDashboardQuery(UserId UserId) : IRequest<ServiceResult<UserDashboardDto>>;
 
 public class UserDashboardDto
 {

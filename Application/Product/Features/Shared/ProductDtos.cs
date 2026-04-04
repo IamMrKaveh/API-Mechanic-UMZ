@@ -1,3 +1,5 @@
+using Application.Media.Features.Shared;
+
 namespace Application.Product.Features.Shared;
 
 public sealed record AdminProductSearchParams(

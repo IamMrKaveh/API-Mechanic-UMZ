@@ -1,3 +1,5 @@
+using SharedKernel.Contracts;
+
 namespace Infrastructure.Security.Services;
 
 public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService

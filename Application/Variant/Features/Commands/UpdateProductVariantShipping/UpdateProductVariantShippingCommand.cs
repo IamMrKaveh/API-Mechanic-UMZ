@@ -1,11 +1,11 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Variant.Features.Commands.UpdateProductVariantShipping;
 
-public record UpdateProductVariantShippingCommand : IRequest<ServiceResult>
-{
-    public int VariantId { get; init; }
-    public decimal ShippingMultiplier { get; init; } = 1;
-    public List<int> EnabledShippingIds { get; init; } = new();
-    public int UserId { get; init; }
-}
+public record UpdateProductVariantShippingCommand(
+    ProductVariantId VariantId,
+    decimal ShippingMultiplier,
+    List<int> EnabledShippingIds,
+    UserId UserId) : IRequest<ServiceResult>;

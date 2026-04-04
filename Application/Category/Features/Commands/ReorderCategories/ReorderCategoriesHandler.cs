@@ -1,35 +1,27 @@
-using Application.Common.Models;
+using Application.Common.Results;
 using Domain.Category.Interfaces;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 
 namespace Application.Category.Features.Commands.ReorderCategories;
 
-public class ReorderCategoriesHandler : IRequestHandler<ReorderCategoriesCommand, ServiceResult>
+public class ReorderCategoriesHandler(
+    ICategoryRepository categoryRepository,
+    CategoryDomainService categoryDomainService,
+    IUnitOfWork unitOfWork) : IRequestHandler<ReorderCategoriesCommand, ServiceResult>
 {
-    private readonly ICategoryRepository _categoryRepository;
-    private readonly CategoryDomainService _categoryDomainService;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public ReorderCategoriesHandler(
-        ICategoryRepository categoryRepository,
-        CategoryDomainService categoryDomainService,
-        IUnitOfWork unitOfWork
-        )
-    {
-        _categoryRepository = categoryRepository;
-        _categoryDomainService = categoryDomainService;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly ICategoryRepository _categoryRepository = categoryRepository;
+    private readonly CategoryDomainService _categoryDomainService = categoryDomainService;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<ServiceResult> Handle(
         ReorderCategoriesCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var categories = await _categoryRepository.GetAllActiveAsync(ct);
 
         try
         {
-            
             _categoryDomainService.ReorderCategories(categories, request.OrderedCategoryIds);
 
             foreach (var category in categories)
@@ -42,7 +34,7 @@ public class ReorderCategoriesHandler : IRequestHandler<ReorderCategoriesCommand
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Unexpected(ex.Message);
         }
     }
 }

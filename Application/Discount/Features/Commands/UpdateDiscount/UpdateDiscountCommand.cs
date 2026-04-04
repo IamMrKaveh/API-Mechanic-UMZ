@@ -1,10 +1,11 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Discount.ValueObjects;
 
 namespace Application.Discount.Features.Commands.UpdateDiscount;
 
 public record UpdateDiscountCommand : IRequest<ServiceResult>
 {
-    public int Id { get; init; }
+    public DiscountCodeId Id { get; init; } = null!;
     public decimal Percentage { get; init; }
     public decimal? MaxDiscountAmount { get; init; }
     public decimal? MinOrderAmount { get; init; }

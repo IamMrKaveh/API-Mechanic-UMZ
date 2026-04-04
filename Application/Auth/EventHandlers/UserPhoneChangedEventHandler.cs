@@ -1,4 +1,7 @@
+using Application.Audit.Contracts;
+using Domain.Common.Interfaces;
 using Domain.Security.Interfaces;
+using Domain.User.Events;
 
 namespace Application.Auth.EventHandlers;
 

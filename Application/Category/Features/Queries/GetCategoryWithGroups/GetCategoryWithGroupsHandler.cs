@@ -1,18 +1,12 @@
-using Application.Common.Models;
+using Application.Category.Contracts;
+using Application.Category.Features.Shared;
+using Application.Common.Results;
 
 namespace Application.Category.Features.Queries.GetCategoryWithGroups;
 
-public class GetCategoryWithGroupsHandler
-    : IRequestHandler<GetCategoryWithGroupsQuery, ServiceResult<CategoryWithBrandsDto?>>
+public class GetCategoryWithGroupsHandler(ICategoryQueryService queryService) : IRequestHandler<GetCategoryWithGroupsQuery, ServiceResult<CategoryWithBrandsDto?>>
 {
-    private readonly ICategoryQueryService _queryService;
-
-    public GetCategoryWithGroupsHandler(
-        ICategoryQueryService queryService
-        )
-    {
-        _queryService = queryService;
-    }
+    private readonly ICategoryQueryService _queryService = queryService;
 
     public async Task<ServiceResult<CategoryWithBrandsDto?>> Handle(
         GetCategoryWithGroupsQuery request,
@@ -23,7 +17,7 @@ public class GetCategoryWithGroupsHandler
             request.CategoryId, ct);
 
         if (result == null)
-            return ServiceResult<CategoryWithBrandsDto?>.Failure("دسته‌بندی یافت نشد.", 404);
+            return ServiceResult<CategoryWithBrandsDto?>.NotFound("دسته‌بندی یافت نشد.");
 
         return ServiceResult<CategoryWithBrandsDto?>.Success(result);
     }

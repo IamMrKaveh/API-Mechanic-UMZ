@@ -1,7 +1,8 @@
+using Domain.Notification.ValueObjects;
+
 namespace Domain.Notification.Events;
 
-public sealed class NotificationReadEvent(int notificationId, int userId) : DomainEvent
+public sealed class NotificationReadEvent(NotificationId notificationId) : DomainEvent
 {
-    public int NotificationId { get; } = notificationId;
-    public int UserId { get; } = userId;
+    public NotificationId NotificationId { get; } = notificationId;
 }

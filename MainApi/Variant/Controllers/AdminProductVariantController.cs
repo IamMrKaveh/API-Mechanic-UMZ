@@ -1,3 +1,10 @@
+using Application.Variant.Features.Commands.AddStock;
+using Application.Variant.Features.Commands.AddVariant;
+using Application.Variant.Features.Commands.RemoveStock;
+using Application.Variant.Features.Commands.RemoveVariant;
+using Application.Variant.Features.Commands.UpdateVariant;
+using Application.Variant.Features.Queries.GetProductVariants;
+
 namespace MainApi.Variant.Controllers;
 
 [Route("api/admin/variants")]

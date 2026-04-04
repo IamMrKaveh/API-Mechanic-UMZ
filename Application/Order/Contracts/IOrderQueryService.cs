@@ -1,4 +1,5 @@
-using Application.Common.Models;
+using Application.Order.Features.Shared;
+using SharedKernel.Models;
 
 namespace Application.Order.Contracts;
 

@@ -1,22 +1,16 @@
-﻿using Application.Common.Models;
-using Domain.Inventory.Entities;
+﻿using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Inventory.Interfaces;
 
 namespace Application.Inventory.Features.Commands.ReverseInventoryTransaction;
 
-public class ReverseInventoryTransactionHandler
-    : IRequestHandler<ReverseInventoryTransactionCommand, ServiceResult>
+public class ReverseInventoryTransactionHandler(
+    IInventoryRepository inventoryRepository,
+    IUnitOfWork unitOfWork)
+        : IRequestHandler<ReverseInventoryTransactionCommand, ServiceResult>
 {
-    private readonly IInventoryRepository _inventoryRepository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public ReverseInventoryTransactionHandler(
-        IInventoryRepository inventoryRepository,
-        IUnitOfWork unitOfWork)
-    {
-        _inventoryRepository = inventoryRepository;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly IInventoryRepository _inventoryRepository = inventoryRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<ServiceResult> Handle(
         ReverseInventoryTransactionCommand request,
@@ -25,20 +19,20 @@ public class ReverseInventoryTransactionHandler
         var transaction = await _inventoryRepository.GetByIdAsync(request.TransactionId, cancellationToken);
 
         if (transaction is null)
-            return ServiceResult.Failure("تراکنش یافت نشد");
+            return ServiceResult.NotFound("تراکنش یافت نشد");
 
         if (transaction.IsReversed)
-            return ServiceResult.Failure("این تراکنش قبلاً برگشت خورده است");
+            return ServiceResult.Conflict("این تراکنش قبلاً برگشت خورده است");
 
         var variant = await _inventoryRepository.GetVariantWithLockAsync(transaction.VariantId, cancellationToken);
 
         if (variant is null)
-            return ServiceResult.Failure("واریانت محصول یافت نشد");
+            return ServiceResult.NotFound("واریانت محصول یافت نشد");
 
         var reversalQuantity = -transaction.QuantityChange;
 
         if (!variant.IsUnlimited && variant.StockQuantity + reversalQuantity < 0)
-            return ServiceResult.Failure("موجودی نمی‌تواند منفی باشد");
+            return ServiceResult.Forbidden("موجودی نمی‌تواند منفی باشد");
 
         transaction.MarkAsReversed();
 

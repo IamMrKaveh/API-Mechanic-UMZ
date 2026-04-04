@@ -1,27 +1,24 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Order.Contracts;
+using Application.Order.Features.Shared;
 
 namespace Application.Order.Features.Queries.GetOrderDetails;
 
-public class GetOrderDetailsHandler : IRequestHandler<GetOrderDetailsQuery, ServiceResult<OrderDto>>
+public class GetOrderDetailsHandler(IOrderQueryService orderQueryService) : IRequestHandler<GetOrderDetailsQuery, ServiceResult<OrderDto>>
 {
-    private readonly IOrderQueryService _orderQueryService;
-
-    public GetOrderDetailsHandler(IOrderQueryService orderQueryService)
-    {
-        _orderQueryService = orderQueryService;
-    }
+    private readonly IOrderQueryService _orderQueryService = orderQueryService;
 
     public async Task<ServiceResult<OrderDto>> Handle(
         GetOrderDetailsQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
         var order = await _orderQueryService.GetOrderDetailsAsync(
             request.OrderId,
             request.UserId,
-            cancellationToken);
+            ct);
 
-        if (order == null)
-            return ServiceResult<OrderDto>.Failure("سفارش یافت نشد.", 404);
+        if (order is null)
+            return ServiceResult<OrderDto>.NotFound("سفارش یافت نشد.");
 
         return ServiceResult<OrderDto>.Success(order);
     }

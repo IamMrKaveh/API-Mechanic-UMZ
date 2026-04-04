@@ -9,8 +9,7 @@ public interface ICacheService
     Task<bool> SetAsync<T>(
         string key,
         T value,
-        TimeSpan? expiry = null
-        ) where T : class;
+        TimeSpan? expiry = null) where T : class;
 
     Task SetAsync<T>(
         string key,
@@ -26,27 +25,19 @@ public interface ICacheService
         string prefix,
         CancellationToken ct = default);
 
-    Task ClearAsync(
-        string key
-        );
+    Task ClearAsync(string key);
 
-    Task ClearByPrefixAsync(
-        string prefix
-        );
+    Task ClearByPrefixAsync(string prefix);
 
     Task<bool> AcquireLockAsync(
         string key,
-        TimeSpan expiry
-        );
+        TimeSpan expiry);
 
-    Task ReleaseLockAsync(
-        string key
-        );
+    Task ReleaseLockAsync(string key);
 
     Task<bool> AcquireLockWithRetryAsync(
         string key,
         TimeSpan expiry,
         int retryCount = 3,
-        int retryDelayMs = 500
-        );
+        int retryDelayMs = 500);
 }

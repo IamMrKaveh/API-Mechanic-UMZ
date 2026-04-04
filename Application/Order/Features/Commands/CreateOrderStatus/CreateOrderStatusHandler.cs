@@ -1,4 +1,6 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Order.Features.Shared;
+using Domain.Common.Interfaces;
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
 
@@ -15,12 +17,11 @@ public class CreateOrderStatusHandler(
 
     public async Task<ServiceResult<OrderStatusDto>> Handle(
         CreateOrderStatusCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var existing = await _orderStatusRepository.GetByNameAsync(request.Name, ct);
-        if (existing != null)
-            return ServiceResult<OrderStatusDto>.Failure("وضعیت سفارش با این نام قبلاً وجود دارد.");
+        if (existing is not null)
+            return ServiceResult<OrderStatusDto>.Conflict("وضعیت سفارش با این نام قبلاً وجود دارد.");
 
         var status = OrderStatus.Create(
             request.Name,

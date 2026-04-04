@@ -1,3 +1,7 @@
+using Application.Cache.Contracts;
+using Application.Cache.Features.Shared;
+using Application.Variant.Features.Shared;
+
 namespace Infrastructure.Cache.EventHandlers;
 
 /// <summary>

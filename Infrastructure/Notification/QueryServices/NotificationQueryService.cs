@@ -4,14 +4,14 @@ public class NotificationQueryService(DBContext context) : INotificationQuerySer
 {
     private readonly DBContext _context = context;
 
-    public async Task<Domain.Notification.Notification?> GetByIdAsync(
+    public async Task<Domain.Notification.Aggregates.Notification?> GetByIdAsync(
         int id,
         CancellationToken ct = default)
     {
         return await _context.Notifications.FindAsync([id], ct);
     }
 
-    public async Task<(IEnumerable<Domain.Notification.Notification> Items, int TotalCount)> GetByUserIdAsync(
+    public async Task<(IEnumerable<Domain.Notification.Aggregates.Notification> Items, int TotalCount)> GetByUserIdAsync(
         int userId,
         bool? isRead,
         int page,
@@ -37,7 +37,7 @@ public class NotificationQueryService(DBContext context) : INotificationQuerySer
         return (items, totalCount);
     }
 
-    public async Task<IEnumerable<Domain.Notification.Notification>> GetUnreadByUserIdAsync(
+    public async Task<IEnumerable<Domain.Notification.Aggregates.Notification>> GetUnreadByUserIdAsync(
         int userId,
         int? limit = null,
         CancellationToken ct = default)
@@ -62,7 +62,7 @@ public class NotificationQueryService(DBContext context) : INotificationQuerySer
             .CountAsync(n => n.UserId == userId && !n.IsRead, ct);
     }
 
-    public async Task<IEnumerable<Domain.Notification.Notification>> GetByRelatedEntityAsync(
+    public async Task<IEnumerable<Domain.Notification.Aggregates.Notification>> GetByRelatedEntityAsync(
         string entityType,
         int entityId,
         CancellationToken ct = default)
@@ -73,7 +73,7 @@ public class NotificationQueryService(DBContext context) : INotificationQuerySer
             .ToListAsync(ct);
     }
 
-    public async Task<IEnumerable<Domain.Notification.Notification>> GetRecentByUserIdAsync(
+    public async Task<IEnumerable<Domain.Notification.Aggregates.Notification>> GetRecentByUserIdAsync(
         int userId,
         int count,
         CancellationToken ct = default)

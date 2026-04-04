@@ -1,3 +1,13 @@
+using Application.Cart.Features.Commands.AddToCart;
+using Application.Cart.Features.Commands.ClearCart;
+using Application.Cart.Features.Commands.MergeGuestCart;
+using Application.Cart.Features.Commands.RemoveFromCart;
+using Application.Cart.Features.Commands.SyncCartPrices;
+using Application.Cart.Features.Commands.UpdateCartItemQuantity;
+using Application.Cart.Features.Queries.GetCart;
+using Application.Cart.Features.Queries.GetCartSummary;
+using Application.Cart.Features.Queries.ValidateCartForCheckout;
+
 namespace MainApi.Cart.Controllers;
 
 [Route("api/[controller]")]

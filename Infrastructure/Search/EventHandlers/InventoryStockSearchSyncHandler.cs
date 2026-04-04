@@ -1,4 +1,7 @@
+using Domain.Inventory.Events;
 using Domain.Variant.Aggregates;
+using Domain.Variant.Events;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Search.EventHandlers;
 

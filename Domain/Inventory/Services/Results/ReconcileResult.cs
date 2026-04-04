@@ -5,6 +5,7 @@ namespace Domain.Inventory.Services.Results;
 public sealed class ReconcileResult
 {
     public bool IsSuccess { get; }
+    public bool IsFailure => !IsSuccess;
     public bool HasDiscrepancy { get; }
     public ProductVariantId VariantId { get; }
     public int FinalStock { get; }

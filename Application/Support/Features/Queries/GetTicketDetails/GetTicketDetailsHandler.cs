@@ -1,5 +1,9 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Support.Contracts;
+using Application.Support.Features.Shared;
+using Domain.Support.Exceptions;
 using Domain.Support.Interfaces;
+using Domain.Support.Services;
 
 namespace Application.Support.Features.Queries.GetTicketDetails;
 
@@ -17,16 +21,20 @@ public sealed class GetTicketDetailsHandler(
         GetTicketDetailsQuery request,
         CancellationToken ct)
     {
-        var ticket = await _ticketRepository.GetByIdWithMessagesAsync(request.TicketId, ct)
-            ?? throw new TicketNotFoundException(request.TicketId);
+        var ticket = await _ticketRepository.GetByIdWithMessagesAsync(request.Ticket, ct)
+            ?? throw new TicketNotFoundException(request.Ticket);
+
+        if (ticket is null)
+            return ServiceResult<TicketDetailDto>.NotFound("تیکت یافت نشد.");
+
         var (HasAccess, _) = _ticketDomainService.ValidateUserAccess(ticket, request.UserId, request.IsAdmin);
         if (!HasAccess)
-            throw new TicketAccessDeniedException(request.TicketId, request.UserId);
+            throw new TicketAccessDeniedException(request.Ticket, request.UserId);
 
-        var dto = await _ticketQueryService.GetTicketDetailAsync(request.TicketId, ct);
+        var dto = await _ticketQueryService.GetTicketDetailAsync(request.Ticket, ct);
 
-        if (dto == null)
-            return ServiceResult<TicketDetailDto>.Failure("تیکت یافت نشد.", 404);
+        if (dto is null)
+            return ServiceResult<TicketDetailDto>.NotFound("تیکت یافت نشد.");
 
         return ServiceResult<TicketDetailDto>.Success(dto);
     }

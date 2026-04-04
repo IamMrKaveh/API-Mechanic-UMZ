@@ -1,5 +1,14 @@
+using Application.Audit.Contracts;
+using Application.Auth.Contracts;
+using Application.Common.Results;
+using Application.Communication.Contracts;
+using Application.Security.Contracts;
+using Application.User.Features.Shared;
+using Domain.Common.Interfaces;
 using Domain.Security.Interfaces;
 using Domain.User.Interfaces;
+using Infrastructure.Auth.Options;
+using MapsterMapper;
 
 namespace Infrastructure.Auth.Services;
 
@@ -42,7 +51,7 @@ public sealed class AuthService(
         {
             var (phoneSuccess, phone, phoneError) = PhoneNumber.TryCreate(phoneNumber);
             if (!phoneSuccess)
-                return ServiceResult.Failure(phoneError!);
+                return ServiceResult.Unexpected(phoneError!);
 
             var normalizedPhone = phone!.Value;
 
@@ -51,8 +60,7 @@ public sealed class AuthService(
             if (isIpLimited)
             {
                 _logger.LogWarning("درخواست OTP از IP {IpAddress} مسدود شد.", ipAddress);
-                return ServiceResult.Failure(
-                    $"تعداد درخواست‌ها بیش از حد مجاز است. لطفاً {ipRetryAfter} ثانیه صبر کنید.", 429);
+                return ServiceResult.RateLimitExceeded($"تعداد درخواست‌ها بیش از حد مجاز است. لطفاً {ipRetryAfter} ثانیه صبر کنید.");
             }
 
             var (isPhoneLimited, phoneRetryAfter) = await _rateLimitService.IsLimitedAsync(
@@ -60,8 +68,7 @@ public sealed class AuthService(
             if (isPhoneLimited)
             {
                 _logger.LogWarning("درخواست OTP برای شماره {PhoneNumber} مسدود شد.", normalizedPhone);
-                return ServiceResult.Failure(
-                    $"درخواست‌های متعدد. لطفاً {phoneRetryAfter} ثانیه صبر کنید.", 429);
+                return ServiceResult.RateLimitExceeded($"درخواست‌های متعدد. لطفاً {phoneRetryAfter} ثانیه صبر کنید.");
             }
 
             var user = await _userRepository.GetWithOtpsByPhoneAsync(normalizedPhone, ct);
@@ -76,13 +83,12 @@ public sealed class AuthService(
             {
                 var remaining = user.GetRemainingLockoutTime();
                 if (remaining.HasValue && remaining.Value > TimeSpan.Zero)
-                    return ServiceResult.Failure(
-                        $"حساب شما قفل شده است. لطفاً {(int)remaining.Value.TotalMinutes} دقیقه دیگر تلاش کنید.");
+                    return ServiceResult.RateLimitExceeded($"حساب شما قفل شده است. لطفاً {(int)remaining.Value.TotalMinutes} دقیقه دیگر تلاش کنید.");
             }
 
             var (canSend, rateLimitError, _) = user.CheckOtpRateLimit();
             if (!canSend)
-                return ServiceResult.Failure(rateLimitError!);
+                return ServiceResult.RateLimitExceeded(rateLimitError!);
 
             var otpCode = _otpService.GenerateSecureOtp();
             var otpHash = _otpService.HashOtp(otpCode);
@@ -96,7 +102,7 @@ public sealed class AuthService(
             {
                 _logger.LogError("ارسال OTP به {PhoneNumber} ناموفق بود: {Error}",
                     normalizedPhone, smsResult.ErrorMessage);
-                return ServiceResult.Failure("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
+                return ServiceResult.Unexpected("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
             }
 
             await _auditService.LogSecurityEventAsync(
@@ -111,7 +117,7 @@ public sealed class AuthService(
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در درخواست OTP برای شماره {PhoneNumber}", phoneNumber);
-            return ServiceResult.Failure("خطای داخلی سرور.");
+            return ServiceResult.Unexpected("خطای داخلی سرور.");
         }
     }
 
@@ -127,29 +133,32 @@ public sealed class AuthService(
         {
             var (phoneSuccess, phone, phoneError) = PhoneNumber.TryCreate(phoneNumber);
             if (!phoneSuccess)
-                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure(phoneError!);
+                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                    .Unexpected(phoneError!);
 
             var normalizedPhone = phone!.Value;
 
             if (string.IsNullOrWhiteSpace(code) || code.Length != 6)
-                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure("کد تأیید نامعتبر است.");
+                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                    .Unexpected("کد تأیید نامعتبر است.");
 
             var (isLimited, retryAfter) = await _rateLimitService.IsLimitedAsync(
                 $"otp_verify:{normalizedPhone}", MaxOtpAttempts, LockoutDurationMinutes);
             if (isLimited)
-                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure(
-                    $"تعداد تلاش‌های ناموفق بیش از حد مجاز است. لطفاً {retryAfter / 60} دقیقه صبر کنید.", 429);
+                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                    .RateLimitExceeded($"تعداد تلاش‌های ناموفق بیش از حد مجاز است. لطفاً {retryAfter / 60} دقیقه صبر کنید.");
 
             var user = await _userRepository.GetWithOtpsAndSessionsByPhoneAsync(normalizedPhone, ct);
             if (user == null)
-                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure("کاربر یافت نشد.", 404);
+                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                    .NotFound("کاربر یافت نشد.");
 
             if (user.IsLockedOut)
             {
                 var remaining = user.GetRemainingLockoutTime();
                 if (remaining.HasValue && remaining.Value > TimeSpan.Zero)
-                    return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure(
-                        $"حساب شما قفل شده است. لطفاً {(int)remaining.Value.TotalMinutes} دقیقه دیگر تلاش کنید.");
+                    return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                        .Forbidden($"حساب شما قفل شده است. لطفاً {(int)remaining.Value.TotalMinutes} دقیقه دیگر تلاش کنید.");
                 user.ResetLockout();
             }
 
@@ -165,8 +174,8 @@ public sealed class AuthService(
                     ipAddress,
                     user.Id);
 
-                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure(
-                    "کد تأیید نادرست یا منقضی شده است.");
+                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                    .Unexpected("کد تأیید نادرست یا منقضی شده است.");
             }
 
             var refreshTokenResult = _tokenService.GenerateRefreshToken();
@@ -194,7 +203,8 @@ public sealed class AuthService(
 
             _logger.LogInformation("کاربر {UserId} با موفقیت وارد شد.", user.Id);
 
-            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Success((
+            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                .Success((
                 accessToken,
                 refreshTokenResult,
                 _mapper.Map<UserProfileDto>(user),
@@ -203,7 +213,8 @@ public sealed class AuthService(
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در تأیید OTP برای شماره {PhoneNumber}", phoneNumber);
-            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure("خطای داخلی سرور.");
+            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                .Unexpected("خطای داخلی سرور.");
         }
     }
 
@@ -218,19 +229,20 @@ public sealed class AuthService(
         {
             var (selector, verifier) = _tokenService.ParseRefreshToken(refreshToken);
             if (selector == null || verifier == null)
-                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure("فرمت توکن نامعتبر است.");
+                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                    .Unexpected("فرمت توکن نامعتبر است.");
 
             var session = await _sessionRepository.GetBySelectorAsync(selector, ct);
             if (session == null)
-                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure(
-                    "نشست یافت نشد. لطفاً دوباره وارد شوید.", 401);
+                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                    .Unauthorized("نشست یافت نشد. لطفاً دوباره وارد شوید.");
 
             if (session.ExpiresAt < DateTime.UtcNow)
             {
                 session.Revoke();
                 await _unitOfWork.SaveChangesAsync(ct);
-                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure(
-                    "نشست منقضی شده است. لطفاً دوباره وارد شوید.", 401);
+                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                    .Unauthorized("نشست منقضی شده است. لطفاً دوباره وارد شوید.");
             }
 
             if (session.RevokedAt.HasValue)
@@ -244,24 +256,24 @@ public sealed class AuthService(
                 await _sessionRepository.RevokeAllByUserAsync(session.UserId, ct);
                 await _unitOfWork.SaveChangesAsync(ct);
 
-                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure(
-                    "توکن نامعتبر است. لطفاً دوباره وارد شوید.", 401);
+                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                    .Unauthorized("توکن نامعتبر است. لطفاً دوباره وارد شوید.");
             }
 
             var verifierHash = _tokenService.HashToken(verifier);
             if (!CryptographicOperations.FixedTimeEquals(
                 Encoding.UTF8.GetBytes(session.TokenVerifierHash),
                 Encoding.UTF8.GetBytes(verifierHash)))
-                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure(
-                    "توکن نامعتبر است.", 401);
+                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                    .Unauthorized("توکن نامعتبر است.");
 
             var user = await _userRepository.GetByIdAsync(session.UserId, ct);
             if (user == null || !user.IsActive || user.IsDeleted)
             {
                 session.Revoke();
                 await _unitOfWork.SaveChangesAsync(ct);
-                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure(
-                    "حساب کاربری غیرفعال است.", 401);
+                return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                    .Unauthorized("حساب کاربری غیرفعال است.");
             }
 
             session.Revoke();
@@ -284,7 +296,8 @@ public sealed class AuthService(
 
             _logger.LogInformation("توکن کاربر {UserId} تمدید شد.", user.Id);
 
-            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Success((
+            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                .Success((
                 accessToken,
                 newRefreshTokenResult,
                 _mapper.Map<UserProfileDto>(user),
@@ -293,7 +306,8 @@ public sealed class AuthService(
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در تمدید توکن");
-            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure("خطای داخلی سرور.");
+            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
+                .Unexpected("خطای داخلی سرور.");
         }
     }
 
@@ -321,7 +335,7 @@ public sealed class AuthService(
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در خروج کاربر {UserId}", userId);
-            return ServiceResult.Failure("خطای داخلی سرور.");
+            return ServiceResult.Unexpected("خطای داخلی سرور.");
         }
     }
 
@@ -346,7 +360,7 @@ public sealed class AuthService(
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در خروج کاربر {UserId} از تمام دستگاه‌ها", userId);
-            return ServiceResult.Failure("خطای داخلی سرور.");
+            return ServiceResult.Unexpected("خطای داخلی سرور.");
         }
     }
 }

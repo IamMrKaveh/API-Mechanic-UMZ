@@ -1,45 +1,37 @@
-using Application.Common.Models;
+using Application.Common.Exceptions;
+using Application.Common.Results;
+using Application.Media.Contracts;
 using Domain.Category.Interfaces;
+using Domain.Common.Interfaces;
 
 namespace Application.Category.Features.Commands.UpdateCategory;
 
-public class UpdateCategoryHandler : IRequestHandler<UpdateCategoryCommand, ServiceResult>
+public class UpdateCategoryHandler(
+    ICategoryRepository categoryRepository,
+    IUnitOfWork unitOfWork,
+    IMediaService mediaService,
+    IMediaQueryService mediaQueryService,
+    ILogger<UpdateCategoryHandler> logger) : IRequestHandler<UpdateCategoryCommand, ServiceResult>
 {
-    private readonly ICategoryRepository _categoryRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMediaService _mediaService;
-    private readonly IMediaQueryService _mediaQueryService;
-    private readonly ILogger<UpdateCategoryHandler> _logger;
-
-    public UpdateCategoryHandler(
-        ICategoryRepository categoryRepository,
-        IUnitOfWork unitOfWork,
-        IMediaService mediaService,
-        IMediaQueryService mediaQueryService,
-        ILogger<UpdateCategoryHandler> logger
-        )
-    {
-        _categoryRepository = categoryRepository;
-        _unitOfWork = unitOfWork;
-        _mediaService = mediaService;
-        _mediaQueryService = mediaQueryService;
-        _logger = logger;
-    }
+    private readonly ICategoryRepository _categoryRepository = categoryRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IMediaService _mediaService = mediaService;
+    private readonly IMediaQueryService _mediaQueryService = mediaQueryService;
+    private readonly ILogger<UpdateCategoryHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(
         UpdateCategoryCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var category = await _categoryRepository.GetByIdWithGroupsAsync(request.Id, ct);
         if (category == null)
-            return ServiceResult.Failure("دسته‌بندی یافت نشد.", 404);
+            return ServiceResult.NotFound("دسته‌بندی یافت نشد.");
 
         _categoryRepository.SetOriginalRowVersion(category, Convert.FromBase64String(request.RowVersion));
 
         if (await _categoryRepository.ExistsByNameAsync(request.Name.Trim(), request.Id, ct))
         {
-            return ServiceResult.Failure("دسته‌بندی با این نام قبلاً وجود دارد.");
+            return ServiceResult.Conflict("دسته‌بندی با این نام قبلاً وجود دارد.");
         }
 
         category.Update(request.Name, request.Description, request.SortOrder);
@@ -75,7 +67,7 @@ public class UpdateCategoryHandler : IRequestHandler<UpdateCategoryCommand, Serv
             if (newMedia != null)
                 await _mediaService.DeleteMediaAsync(newMedia.Id);
 
-            return ServiceResult.Failure("این رکورد توسط کاربر دیگری تغییر یافته است. لطفاً مجدداً تلاش کنید.");
+            return ServiceResult.Conflict("این رکورد توسط کاربر دیگری تغییر یافته است. لطفاً مجدداً تلاش کنید.");
         }
     }
 }

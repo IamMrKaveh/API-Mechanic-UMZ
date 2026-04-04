@@ -1,25 +1,22 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Product.Contracts;
+using Application.Product.Features.Shared;
 
 namespace Application.Product.Features.Queries.GetAdminProductById;
 
-public class GetAdminProductByIdHandler
-    : IRequestHandler<GetAdminProductByIdQuery, ServiceResult<AdminProductDetailDto?>>
+public class GetAdminProductByIdHandler(IProductQueryService productQueryService) : IRequestHandler<GetAdminProductByIdQuery, ServiceResult<AdminProductDetailDto?>>
 {
-    private readonly IProductQueryService _productQueryService;
-
-    public GetAdminProductByIdHandler(IProductQueryService productQueryService)
-    {
-        _productQueryService = productQueryService;
-    }
+    private readonly IProductQueryService _productQueryService = productQueryService;
 
     public async Task<ServiceResult<AdminProductDetailDto?>> Handle(
-        GetAdminProductByIdQuery request, CancellationToken cancellationToken)
+        GetAdminProductByIdQuery request,
+        CancellationToken ct)
     {
         var result = await _productQueryService.GetAdminProductDetailAsync(
-            request.ProductId, cancellationToken);
+            request.ProductId, ct);
 
         if (result == null)
-            return ServiceResult<AdminProductDetailDto?>.Failure("Product not found.", 404);
+            return ServiceResult<AdminProductDetailDto?>.NotFound("Product not found.");
 
         return ServiceResult<AdminProductDetailDto?>.Success(result);
     }

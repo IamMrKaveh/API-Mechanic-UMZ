@@ -1,4 +1,9 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Results;
+using Application.Discount.Contracts;
+using Application.Inventory.Contracts;
+using Domain.Common.Interfaces;
+using Domain.Order.Interfaces;
 
 namespace Application.Order.Features.Commands.CancelOrder;
 
@@ -26,11 +31,11 @@ public class CancelOrderHandler(
         var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
 
         if (order == null)
-            return ServiceResult.Failure("سفارش یافت نشد.", 404);
+            return ServiceResult.NotFound("سفارش یافت نشد.");
 
         var validation = _orderDomainService.ValidateCancellation(order, request.UserId, request.IsAdmin);
         if (!validation.CanCancel)
-            return ServiceResult.Failure(validation.Error!, 400);
+            return ServiceResult.Validation(validation.Error!);
 
         return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
@@ -63,7 +68,7 @@ public class CancelOrderHandler(
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error cancelling order {OrderId}", request.OrderId);
-                return ServiceResult.Failure("خطایی در لغو سفارش رخ داد.");
+                return ServiceResult.Unexpected("خطایی در لغو سفارش رخ داد.");
             }
         }, ct);
     }

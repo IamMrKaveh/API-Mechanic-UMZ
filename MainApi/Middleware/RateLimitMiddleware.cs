@@ -1,3 +1,5 @@
+using SharedKernel.Contracts;
+
 namespace MainApi.Middleware;
 
 public class RateLimitMiddleware

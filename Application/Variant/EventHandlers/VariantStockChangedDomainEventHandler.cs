@@ -1,3 +1,5 @@
+using Application.Variant.Features.Shared;
+using Domain.Variant.Events;
 using Domain.Variant.Interfaces;
 
 namespace Application.Variant.EventHandlers;

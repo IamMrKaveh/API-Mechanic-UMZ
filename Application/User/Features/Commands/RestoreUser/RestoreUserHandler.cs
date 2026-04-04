@@ -1,29 +1,26 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
 
 namespace Application.User.Features.Commands.RestoreUser;
 
-public class RestoreUserHandler : IRequestHandler<RestoreUserCommand, ServiceResult>
+public class RestoreUserHandler(IUserRepository userRepository, IUnitOfWork unitOfWork) : IRequestHandler<RestoreUserCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-    public RestoreUserHandler(IUserRepository userRepository, IUnitOfWork unitOfWork)
+    public async Task<ServiceResult> Handle(
+        RestoreUserCommand request,
+        CancellationToken ct)
     {
-        _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
-    }
-
-    public async Task<ServiceResult> Handle(RestoreUserCommand request, CancellationToken cancellationToken)
-    {
-        var user = await _userRepository.GetByIdAsync(request.Id); 
+        var user = await _userRepository.GetByIdAsync(request.Id);
         if (user == null)
-            return ServiceResult.Failure("NotFound");
+            return ServiceResult.NotFound("User Not Found");
 
         user.Restore();
 
         _userRepository.Update(user);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

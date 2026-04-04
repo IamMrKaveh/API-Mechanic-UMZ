@@ -1,3 +1,11 @@
+using Application.Media.Features.Commands.CleanupOrphanedMedia;
+using Application.Media.Features.Commands.DeleteMedia;
+using Application.Media.Features.Commands.ReorderMedia;
+using Application.Media.Features.Commands.SetPrimaryMedia;
+using Application.Media.Features.Commands.UploadMedia;
+using Application.Media.Features.Queries.GetAllMedia;
+using MainApi.Media.Requests;
+
 namespace MainApi.Media.Controllers;
 
 [Route("api/admin/media")]
@@ -60,7 +68,7 @@ public class AdminMediaController(IMediator mediator) : BaseApiController(mediat
     }
 
     [HttpPatch("set-primary")]
-    public async Task<IActionResult> SetPrimaryMedia([FromBody] SetPrimaryMediaRequestDto request)
+    public async Task<IActionResult> SetPrimaryMedia([FromBody] SetPrimaryMediaRequest request)
     {
         var command = new SetPrimaryMediaCommand(request.MediaId);
         var result = await _mediator.Send(command);

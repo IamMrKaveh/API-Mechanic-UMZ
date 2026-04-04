@@ -1,19 +1,21 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Order.Interfaces;
 
 namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
-public class UpdateOrderStatusDefinitionHandler(IOrderStatusRepository repo, IUnitOfWork unitOfWork) : IRequestHandler<UpdateOrderStatusDefinitionCommand, ServiceResult>
+public class UpdateOrderStatusDefinitionHandler(IOrderStatusRepository orderStatusRepository, IUnitOfWork unitOfWork) : IRequestHandler<UpdateOrderStatusDefinitionCommand, ServiceResult>
 {
-    private readonly IOrderStatusRepository _repo = repo;
+    private readonly IOrderStatusRepository _orderStatusRepository = orderStatusRepository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<ServiceResult> Handle(
         UpdateOrderStatusDefinitionCommand request,
         CancellationToken ct)
     {
-        var status = await _repo.GetByIdAsync(request.Id, ct);
-        if (status == null) return ServiceResult.Failure("وضعیت یافت نشد.", 404);
+        var status = await _orderStatusRepository.GetByIdAsync(request.Id, ct);
+        if (status == null)
+            return ServiceResult.NotFound("وضعیت یافت نشد.");
 
         status.Update(
             request.Dto.DisplayName ?? status.DisplayName,
@@ -24,7 +26,7 @@ public class UpdateOrderStatusDefinitionHandler(IOrderStatusRepository repo, IUn
             request.Dto.AllowEdit ?? status.AllowEdit
         );
 
-        _repo.Update(status);
+        _orderStatusRepository.Update(status);
         await _unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
     }

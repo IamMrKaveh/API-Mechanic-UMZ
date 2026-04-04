@@ -1,8 +1,10 @@
-﻿namespace Application.Auth.Contracts;
+﻿using Domain.User.ValueObjects;
+
+namespace Application.Auth.Contracts;
 
 public interface ISessionService
 {
     Task RevokeAllUserSessionsAsync(
-        int userId,
+        UserId userId,
         CancellationToken ct = default);
 }

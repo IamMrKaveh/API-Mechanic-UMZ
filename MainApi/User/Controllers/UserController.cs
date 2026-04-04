@@ -1,3 +1,7 @@
+using Application.User.Features.Commands.UpdateUser;
+using Application.User.Features.Queries.GetUserById;
+using Application.User.Features.Shared;
+
 namespace MainApi.User.Controllers;
 
 [Route("api/[controller]")]

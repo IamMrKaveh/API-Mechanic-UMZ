@@ -1,23 +1,19 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 using Domain.Media.Interfaces;
+using Domain.Media.Services;
 
 namespace Application.Media.Features.Commands.ReorderMedia;
 
-public class ReorderMediaHandler : IRequestHandler<ReorderMediaCommand, ServiceResult>
+public class ReorderMediaHandler(
+    IMediaRepository mediaRepository,
+    MediaDomainService mediaDomainService,
+    IUnitOfWork unitOfWork) : IRequestHandler<ReorderMediaCommand, ServiceResult>
 {
-    private readonly IMediaRepository _mediaRepository;
-    private readonly MediaDomainService _mediaDomainService;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public ReorderMediaHandler(
-        IMediaRepository mediaRepository,
-        MediaDomainService mediaDomainService,
-        IUnitOfWork unitOfWork)
-    {
-        _mediaRepository = mediaRepository;
-        _mediaDomainService = mediaDomainService;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly IMediaRepository _mediaRepository = mediaRepository;
+    private readonly MediaDomainService _mediaDomainService = mediaDomainService;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<ServiceResult> Handle(
         ReorderMediaCommand request, CancellationToken cancellationToken)
@@ -26,11 +22,10 @@ public class ReorderMediaHandler : IRequestHandler<ReorderMediaCommand, ServiceR
             request.EntityType, request.EntityId, cancellationToken);
 
         if (!medias.Any())
-            return ServiceResult.Failure("رسانه‌ای برای این موجودیت یافت نشد.", 404);
+            return ServiceResult.NotFound("رسانه‌ای برای این موجودیت یافت نشد.");
 
         try
         {
-            
             _mediaDomainService.ReorderMedias(medias, request.OrderedMediaIds);
 
             foreach (var media in medias)
@@ -43,7 +38,7 @@ public class ReorderMediaHandler : IRequestHandler<ReorderMediaCommand, ServiceR
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.NotFound(ex.Message);
         }
     }
 }

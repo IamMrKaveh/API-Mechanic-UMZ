@@ -1,4 +1,5 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Order.Features.Shared;
 
 namespace Application.Order.Features.Commands.CreateOrderStatus;
 
@@ -9,5 +10,4 @@ public record CreateOrderStatusCommand(
     string? Color,
     int SortOrder,
     bool AllowCancel,
-    bool AllowEdit
-    ) : IRequest<ServiceResult<OrderStatusDto>>;
+    bool AllowEdit) : IRequest<ServiceResult<OrderStatusDto>>;

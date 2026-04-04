@@ -1,4 +1,7 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
+using Domain.Order.Interfaces;
 
 namespace Application.Order.Features.Commands.DeleteOrderItem;
 
@@ -16,7 +19,7 @@ public class DeleteOrderItemHandler(
     {
         var order = await _orderRepository.GetByOrderItemIdAsync(request.Id, ct);
         if (order == null)
-            return ServiceResult.Failure("سفارش یا آیتم یافت نشد.", 404);
+            return ServiceResult.NotFound("سفارش یا آیتم یافت نشد.");
 
         try
         {
@@ -27,7 +30,7 @@ public class DeleteOrderItemHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message, 400);
+            return ServiceResult.Unexpected(ex.Message);
         }
     }
 }

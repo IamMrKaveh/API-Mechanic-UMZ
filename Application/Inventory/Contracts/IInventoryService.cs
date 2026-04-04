@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 
 namespace Application.Inventory.Contracts;
 
@@ -13,8 +13,7 @@ public interface IInventoryService
         string? correlationId = null,
         string? cartId = null,
         DateTime? expiresAt = null,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<ServiceResult> ConfirmReservationAsync(
         int variantId,
@@ -23,26 +22,22 @@ public interface IInventoryService
         int? userId = null,
         string? referenceNumber = null,
         string? correlationId = null,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<ServiceResult> CommitStockForOrderAsync(
         int orderId,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<ServiceResult> RollbackReservationAsync(
         int variantId,
         int quantity,
         int? userId = null,
         string? reason = null,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<ServiceResult> RollbackReservationsAsync(
         string referenceNumber,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<ServiceResult> ReturnStockAsync(
         int variantId,
@@ -51,8 +46,7 @@ public interface IInventoryService
         int orderItemId,
         int userId,
         string reason,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<ServiceResult> ReturnStockForOrderAsync(
         int orderId,
@@ -66,35 +60,30 @@ public interface IInventoryService
         int quantityChange,
         int userId,
         string notes,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<ServiceResult> RecordDamageAsync(
         int variantId,
         int quantity,
         int userId,
         string notes,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task<ServiceResult<(int VariantId, int FinalStock, int Difference, bool HasDiscrepancy, string Message)>> ReconcileStockAsync(
         int variantId,
         int userId,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
-    Task<ServiceResult<(int Total, int Success, int Failed, IEnumerable<(int VariantId, bool IsSuccess, string? Error, int? NewStock)> Results)>> BulkAdjustStockAsync(
-        IEnumerable<(int VariantId, int QuantityChange, string Notes)> items,
+    Task<ServiceResult<(int Total, int Success, int Failed, IEnumerable<(Guid VariantId, bool IsSuccess, string? Error, int? NewStock)> Results)>> BulkAdjustStockAsync(
+        IEnumerable<(Guid VariantId, int QuantityChange, string Notes)> items,
         int userId,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
-    Task<ServiceResult<(int Total, int Success, int Failed, IEnumerable<(int VariantId, bool IsSuccess, string? Error, int? NewStock)> Results)>> BulkStockInAsync(
-        IEnumerable<(int VariantId, int Quantity, string? Notes)> items,
-        int userId,
+    Task<ServiceResult<(int Total, int Success, int Failed, IEnumerable<(Guid VariantId, bool IsSuccess, string? Error, int? NewStock)> Results)>> BulkStockInAsync(
+        IEnumerable<(Guid VariantId, int Quantity, string? Notes)> items,
+        Guid userId,
         string? supplierReference = null,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task LogTransactionAsync(
         int variantId,
@@ -106,8 +95,7 @@ public interface IInventoryService
         string? referenceNumber = null,
         int? stockBefore = null,
         bool saveChanges = true,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 
     Task ReconcileAsync(
         int variantId,
@@ -115,6 +103,5 @@ public interface IInventoryService
         string reason,
         int userId,
         int? warehouseId = null,
-        CancellationToken ct = default
-        );
+        CancellationToken ct = default);
 }

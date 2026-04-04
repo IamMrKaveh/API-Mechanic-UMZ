@@ -1,46 +1,39 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Shipping.Interfaces;
 using Domain.Variant.Interfaces;
 
 namespace Application.Variant.Features.Commands.UpdateProductVariantShipping;
 
-public class UpdateProductVariantShippingHandler : IRequestHandler<UpdateProductVariantShippingCommand, ServiceResult>
+public class UpdateProductVariantShippingHandler(
+    IVariantRepository variantRepository,
+    IShippingRepository shippingRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ILogger<UpdateProductVariantShippingHandler> logger) : IRequestHandler<UpdateProductVariantShippingCommand, ServiceResult>
 {
-    private readonly IVariantRepository _variantRepository;
-    private readonly IShippingRepository _shippingRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
-    private readonly ILogger<UpdateProductVariantShippingHandler> _logger;
+    private readonly IVariantRepository _variantRepository = variantRepository;
+    private readonly IShippingRepository _shippingRepository = shippingRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ILogger<UpdateProductVariantShippingHandler> _logger = logger;
 
-    public UpdateProductVariantShippingHandler(
-        IVariantRepository variantRepository,
-        IShippingRepository shippingRepository,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService,
-        ILogger<UpdateProductVariantShippingHandler> logger)
+    public async Task<ServiceResult> Handle(
+        UpdateProductVariantShippingCommand request,
+        CancellationToken ct)
     {
-        _variantRepository = variantRepository;
-        _shippingRepository = shippingRepository;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-        _logger = logger;
-    }
-
-    public async Task<ServiceResult> Handle(UpdateProductVariantShippingCommand request, CancellationToken cancellationToken)
-    {
-        var variant = await _variantRepository.GetByIdForUpdateAsync(request.VariantId, cancellationToken);
+        var variant = await _variantRepository.GetByIdForUpdateAsync(request.VariantId, ct);
         if (variant == null)
-        {
-            return ServiceResult.Failure("محصول یافت نشد.");
-        }
+            return ServiceResult.NotFound("محصول یافت نشد.");
 
-        var validShippingIds = await _shippingRepository.GetAllAsync(false, cancellationToken);
+        var validShippingIds = await _shippingRepository.GetAllAsync(false, ct);
         var validIds = validShippingIds.Select(sm => sm.Id).ToHashSet();
 
         var invalidIds = request.EnabledShippingIds.Where(id => !validIds.Contains(id)).ToList();
         if (invalidIds.Any())
         {
-            return ServiceResult.Failure($"برخی از روش‌های ارسال انتخاب شده نامعتبر هستند: {string.Join(", ", invalidIds)}");
+            return ServiceResult.Unexpected($"برخی از روش‌های ارسال انتخاب شده نامعتبر هستند: {string.Join(", ", invalidIds)}");
         }
 
         variant.UpdateDetails(variant.Sku, request.ShippingMultiplier);
@@ -60,7 +53,7 @@ public class UpdateProductVariantShippingHandler : IRequestHandler<UpdateProduct
 
         if (idsToAdd.Any())
         {
-            var shippingsToAdd = await _shippingRepository.GetByIdsAsync(idsToAdd, cancellationToken);
+            var shippingsToAdd = await _shippingRepository.GetByIdsAsync(idsToAdd, ct);
             foreach (var sm in shippingsToAdd)
             {
                 variant.AddShipping(sm);
@@ -68,9 +61,13 @@ public class UpdateProductVariantShippingHandler : IRequestHandler<UpdateProduct
         }
 
         _variantRepository.Update(variant);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
 
-        await _auditService.LogProductEventAsync(variant.ProductId, "UpdateShippings", $"Shipping s updated for variant {request.VariantId}.", request.UserId);
+        await _auditService.LogProductEventAsync(
+            variant.ProductId,
+            "UpdateShippings",
+            $"Shipping s updated for variant {request.VariantId}.",
+            request.UserId);
 
         return ServiceResult.Success();
     }

@@ -1,4 +1,10 @@
+using Application.Auth.Features.Commands.Logout;
+using Application.Auth.Features.Commands.LogoutAll;
+using Application.Auth.Features.Commands.RefreshToken;
+using Application.Auth.Features.Commands.RequestOtp;
+using Application.Auth.Features.Commands.VerifyOtp;
 using MainApi.Auth.Requests;
+using MainApi.Extensions;
 
 namespace MainApi.Auth.Controllers;
 
@@ -14,17 +20,17 @@ public class AuthController(IMediator mediator) : BaseApiController(mediator)
     [HttpPost("request-otp")]
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> RequestOtp([FromBody] LoginRequest request)
+    public async Task<IActionResult> RequestOtp(
+        [FromBody] LoginRequest request,
+        CancellationToken ct)
     {
-        var clientIp = HttpContextHelper.GetClientIpAddress(HttpContext);
-
         var command = new RequestOtpCommand
         {
             PhoneNumber = request.PhoneNumber,
-            IpAddress = clientIp
+            IpAddress = HttpContextHelper.GetClientIpAddress(HttpContext)
         };
 
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
@@ -36,17 +42,13 @@ public class AuthController(IMediator mediator) : BaseApiController(mediator)
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequestDto request)
     {
-        var clientIp = HttpContextHelper.GetClientIpAddress(HttpContext);
-        var userAgent = Request.Headers.UserAgent.ToString();
-
         var command = new VerifyOtpCommand
         {
             PhoneNumber = request.PhoneNumber,
             Code = request.Code,
-            IpAddress = clientIp,
-            UserAgent = userAgent
+            IpAddress = HttpContextHelper.GetClientIpAddress(HttpContext),
+            UserAgent = Request.Headers.UserAgent.ToString()
         };
-
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
@@ -59,16 +61,12 @@ public class AuthController(IMediator mediator) : BaseApiController(mediator)
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshRequest request)
     {
-        var clientIp = HttpContextHelper.GetClientIpAddress(HttpContext);
-        var userAgent = Request.Headers.UserAgent.ToString();
-
         var command = new RefreshTokenCommand
         {
             RefreshToken = request.RefreshToken,
-            IpAddress = clientIp,
-            UserAgent = userAgent
+            IpAddress = HttpContextHelper.GetClientIpAddress(HttpContext),
+            UserAgent = Request.Headers.UserAgent.ToString()
         };
-
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

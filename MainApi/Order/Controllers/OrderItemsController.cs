@@ -1,3 +1,6 @@
+using Application.Order.Features.Commands.DeleteOrderItem;
+using Application.Order.Features.Queries.GetOrderItemById;
+
 namespace MainApi.Order.Controllers;
 
 [Route("api/[controller]")]
@@ -11,13 +14,6 @@ public class OrderItemsController(IMediator mediator) : BaseApiController(mediat
     public async Task<IActionResult> GetOrderItem(int id)
     {
         var result = await _mediator.Send(new GetOrderItemByIdQuery(id));
-        return ToActionResult(result);
-    }
-
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateOrderItem(int id, [FromBody] UpdateOrderItemDto itemDto)
-    {
-        var result = await _mediator.Send(new UpdateOrderItemCommand(id, itemDto));
         return ToActionResult(result);
     }
 

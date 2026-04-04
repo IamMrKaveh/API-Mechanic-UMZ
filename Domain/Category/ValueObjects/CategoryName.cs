@@ -1,4 +1,4 @@
-using Domain.Common.Utilities;
+using Common.Extensions;
 
 namespace Domain.Category.ValueObjects;
 

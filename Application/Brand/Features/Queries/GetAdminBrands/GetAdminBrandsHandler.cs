@@ -1,5 +1,5 @@
 using Application.Brand.Contracts;
-using Application.Common.Models;
+using Application.Common.Results;
 
 namespace Application.Brand.Features.Queries.GetAdminBrands;
 

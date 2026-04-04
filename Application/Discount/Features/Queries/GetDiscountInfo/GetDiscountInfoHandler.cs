@@ -1,4 +1,6 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Discount.Contracts;
+using Application.Discount.Features.Shared;
 
 namespace Application.Discount.Features.Queries.GetDiscountInfo;
 
@@ -11,8 +13,9 @@ public class GetDiscountInfoHandler(IDiscountQueryService discountQueryService) 
         CancellationToken ct)
     {
         var dto = await _discountQueryService.GetDiscountInfoByCodeAsync(request.Code, ct);
+
         return dto == null
-            ? ServiceResult<DiscountInfoDto>.Failure("کد تخفیف یافت نشد.")
+            ? ServiceResult<DiscountInfoDto>.NotFound("کد تخفیف یافت نشد.")
             : ServiceResult<DiscountInfoDto>.Success(dto);
     }
 }

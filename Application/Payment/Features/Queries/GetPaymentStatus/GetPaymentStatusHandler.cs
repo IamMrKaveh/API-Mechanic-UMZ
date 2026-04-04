@@ -1,26 +1,23 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Payment.Contracts;
+using Application.Payment.Features.Shared;
 
 namespace Application.Payment.Features.Queries.GetPaymentStatus;
 
-public class GetPaymentStatusHandler
-    : IRequestHandler<GetPaymentStatusQuery, ServiceResult<PaymentStatusDto>>
+public class GetPaymentStatusHandler(IPaymentQueryService paymentQueryService)
+        : IRequestHandler<GetPaymentStatusQuery, ServiceResult<PaymentStatusDto?>>
 {
-    private readonly IPaymentQueryService _paymentQueryService;
+    private readonly IPaymentQueryService _paymentQueryService = paymentQueryService;
 
-    public GetPaymentStatusHandler(IPaymentQueryService paymentQueryService)
-    {
-        _paymentQueryService = paymentQueryService;
-    }
-
-    public async Task<ServiceResult<PaymentStatusDto>> Handle(
+    public async Task<ServiceResult<PaymentStatusDto?>> Handle(
         GetPaymentStatusQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var dto = await _paymentQueryService.GetStatusByAuthorityAsync(request.Authority, cancellationToken);
+        var dto = await _paymentQueryService.GetStatusByAuthorityAsync(request.Authority, ct);
 
         if (dto is null)
-            return ServiceResult<PaymentStatusDto>.Failure("تراکنش یافت نشد.");
+            return ServiceResult<PaymentStatusDto?>.NotFound("تراکنش یافت نشد.");
 
-        return ServiceResult<PaymentStatusDto>.Success(dto);
+        return ServiceResult<PaymentStatusDto?>.Success(dto);
     }
 }

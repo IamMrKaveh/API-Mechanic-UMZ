@@ -1,8 +1,9 @@
-﻿using Application.Common.Models;
+﻿using Application.Common.Results;
+using Domain.User.ValueObjects;
+using Domain.Wallet.ValueObjects;
 
 namespace Application.Wallet.Features.Commands.ReleaseWalletReservation;
 
 public record ReleaseWalletReservationCommand(
-    int UserId,
-    int OrderId
-    ) : IRequest<ServiceResult<Unit>>;
+    UserId UserId,
+    WalletReservationId WalletReservationId) : IRequest<ServiceResult<Unit>>;

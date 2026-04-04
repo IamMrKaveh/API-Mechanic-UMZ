@@ -1,3 +1,10 @@
+using Application.Category.Features.Commands.CreateCategory;
+using Application.Category.Features.Commands.DeleteCategory;
+using Application.Category.Features.Commands.ReorderCategories;
+using Application.Category.Features.Commands.UpdateCategory;
+using Application.Category.Features.Queries.GetAdminCategories;
+using Application.Category.Features.Queries.GetCategoryWithGroups;
+
 namespace MainApi.Category.Controllers;
 
 [Route("api/admin/categories")]

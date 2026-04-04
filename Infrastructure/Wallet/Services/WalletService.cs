@@ -1,5 +1,14 @@
-﻿using Application.Common.Models;
+﻿using Application.Common.Results;
+using Application.Wallet.Contracts;
+using Application.Wallet.Features.Commands.CreditWallet;
+using Application.Wallet.Features.Commands.DebitWallet;
+using Application.Wallet.Features.Commands.ReleaseWalletReservation;
+using Application.Wallet.Features.Commands.ReserveWallet;
+using Application.Wallet.Features.Queries.GetWalletBalance;
+using Application.Wallet.Features.Queries.GetWalletLedger;
+using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
+using SharedKernel.Models;
 
 namespace Infrastructure.Wallet.Services;
 
@@ -11,8 +20,7 @@ public sealed class WalletService(IMediator mediator) : IWalletService
         int userId,
         CancellationToken ct = default)
     {
-        return await _mediator.Send(
-            new GetWalletBalanceQuery(userId), ct);
+        return await _mediator.Send(new GetWalletBalanceQuery(userId), ct);
     }
 
     public async Task<ServiceResult<PaginatedResult<WalletLedgerEntryDto>>> GetLedgerAsync(
@@ -21,8 +29,7 @@ public sealed class WalletService(IMediator mediator) : IWalletService
         int pageSize,
         CancellationToken ct = default)
     {
-        return await _mediator.Send(
-            new GetWalletLedgerQuery(userId, page, pageSize), ct);
+        return await _mediator.Send(new GetWalletLedgerQuery(userId, page, pageSize), ct);
     }
 
     public async Task<ServiceResult<Unit>> CreditAsync(

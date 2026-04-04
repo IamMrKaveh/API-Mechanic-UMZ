@@ -1,3 +1,5 @@
+using Domain.Security.Aggregates;
+
 namespace Infrastructure.Auth.Configurations;
 
 public sealed class UserSessionConfiguration : IEntityTypeConfiguration<UserSession>

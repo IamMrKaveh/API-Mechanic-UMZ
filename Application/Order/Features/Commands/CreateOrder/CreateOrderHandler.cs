@@ -1,5 +1,12 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Results;
+using Application.Discount.Contracts;
+using Application.Inventory.Contracts;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
+using Domain.Discount.Results;
+using Domain.Order.Interfaces;
 using Domain.Shipping.Interfaces;
 using Domain.User.Interfaces;
 
@@ -14,8 +21,7 @@ public class CreateOrderHandler(
     IUnitOfWork unitOfWork,
     OrderDomainService orderDomainService,
     IAuditService auditService,
-    ILogger<CreateOrderHandler> logger
-        ) : IRequestHandler<CreateOrderCommand, ServiceResult<int>>
+    ILogger<CreateOrderHandler> logger) : IRequestHandler<CreateOrderCommand, ServiceResult<int>>
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly IUserRepository _userRepository = userRepository;
@@ -32,7 +38,7 @@ public class CreateOrderHandler(
         CancellationToken ct)
     {
         if (await _orderRepository.ExistsByIdempotencyKeyAsync(request.IdempotencyKey, ct))
-            return ServiceResult<int>.Failure("درخواست تکراری. سفارش قبلاً ثبت شده است.");
+            return ServiceResult<int>.Conflict("درخواست تکراری. سفارش قبلاً ثبت شده است.");
 
         return await _unitOfWork.ExecuteStrategyAsync(async () =>
         {
@@ -41,12 +47,12 @@ public class CreateOrderHandler(
                 var userAddress = await _userRepository.GetUserAddressAsync(
                     request.Dto.UserAddressId, ct);
                 if (userAddress == null || userAddress.UserId != request.Dto.UserId)
-                    return ServiceResult<int>.Failure("آدرس کاربر نامعتبر است.");
+                    return ServiceResult<int>.Validation("آدرس کاربر نامعتبر است.");
 
                 var shipping = await _shippingRepository.GetByIdAsync(
                     request.Dto.ShippingId, ct);
                 if (shipping == null || !shipping.IsActive)
-                    return ServiceResult<int>.Failure("روش ارسال انتخاب شده معتبر نیست.");
+                    return ServiceResult<int>.Validation("روش ارسال انتخاب شده معتبر نیست.");
 
                 var orderItemSnapshots = new List<OrderItemSnapshot>();
 
@@ -121,12 +127,12 @@ public class CreateOrderHandler(
             }
             catch (DomainException ex)
             {
-                return ServiceResult<int>.Failure(ex.Message);
+                return ServiceResult<int>.Unexpected(ex.Message);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating admin order");
-                return ServiceResult<int>.Failure("خطایی در ایجاد سفارش رخ داد.");
+                return ServiceResult<int>.Unexpected("خطایی در ایجاد سفارش رخ داد.");
             }
         }, ct);
     }

@@ -80,33 +80,6 @@ public sealed record OrderStatusValue
         return Transitions.TryGetValue(this, out var allowed) && allowed.Contains(next);
     }
 
-    public IReadOnlyCollection<OrderStatusValue> GetAllowedNext()
-    {
-        return Transitions.TryGetValue(this, out var allowed)
-            ? allowed.ToArray()
-            : Array.Empty<OrderStatusValue>();
-    }
-
-    public static IReadOnlyCollection<OrderStatusValue> GetAll()
-    {
-        return All.Values.ToArray();
-    }
-
-    public static IReadOnlyCollection<OrderStatusValue> GetFinalStatuses()
-    {
-        return All.Values.Where(x => x.IsFinal).ToArray();
-    }
-
-    public static IReadOnlyCollection<OrderStatusValue> GetActiveStatuses()
-    {
-        return All.Values.Where(x => !x.IsFinal).ToArray();
-    }
-
-    public bool RequiresPayment()
-    {
-        return this == Pending;
-    }
-
     public bool CanBeCancelled()
     {
         return !IsFinal && this != Shipped;
@@ -115,21 +88,6 @@ public sealed record OrderStatusValue
     public bool CanBeEdited()
     {
         return this == Created || this == Reserved || this == Pending;
-    }
-
-    public bool CanBeShipped()
-    {
-        return this == Processing;
-    }
-
-    public bool CanBeDelivered()
-    {
-        return this == Shipped;
-    }
-
-    public override string ToString()
-    {
-        return DisplayName;
     }
 
     public static implicit operator string(OrderStatusValue status)

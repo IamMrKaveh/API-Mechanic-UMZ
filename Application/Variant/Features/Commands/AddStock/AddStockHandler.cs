@@ -1,24 +1,19 @@
-using Application.Common.Models;
+using Application.Audit.Contracts;
+using Application.Common.Results;
+using Application.Inventory.Contracts;
 
 namespace Application.Variant.Features.Commands.AddStock;
 
-public class AddStockHandler : IRequestHandler<AddStockCommand, ServiceResult>
+public class AddStockHandler(
+    IInventoryService inventoryService,
+    IAuditService auditService) : IRequestHandler<AddStockCommand, ServiceResult>
 {
-    private readonly IInventoryService _inventoryService;
-    private readonly IAuditService _auditService;
-
-    public AddStockHandler(
-        IInventoryService inventoryService,
-        IAuditService auditService)
-    {
-        _inventoryService = inventoryService;
-        _auditService = auditService;
-    }
+    private readonly IInventoryService _inventoryService = inventoryService;
+    private readonly IAuditService _auditService = auditService;
 
     public async Task<ServiceResult> Handle(
         AddStockCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var result = await _inventoryService.BulkStockInAsync(
             [(
@@ -28,13 +23,13 @@ public class AddStockHandler : IRequestHandler<AddStockCommand, ServiceResult>
             request.UserId,
             ct: ct);
 
-        if (result.IsFailed)
-            return ServiceResult.Failure(result.Error!);
+        if (result.IsFailure)
+            return ServiceResult.Unexpected(result.Error.Message!);
 
         var (_, IsSuccess, Error, NewStock) = result.Value!.Results.FirstOrDefault();
 
         if (!IsSuccess)
-            return ServiceResult.Failure(Error ?? "خطا در افزایش موجودی.");
+            return ServiceResult.Unexpected(Error ?? "خطا در افزایش موجودی.");
 
         await _auditService.LogInventoryEventAsync(
             request.VariantId,

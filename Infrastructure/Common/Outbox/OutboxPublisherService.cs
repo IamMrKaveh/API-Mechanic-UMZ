@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Common.Outbox;
+﻿using Infrastructure.Persistence.Outbox;
+
+namespace Infrastructure.Common.Outbox;
 
 /// <summary>
 /// Background worker that reads unprocessed <see cref="OutboxMessage"/> rows and

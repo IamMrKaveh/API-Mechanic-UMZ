@@ -1,3 +1,17 @@
+using Application.Review.Features.Queries.GetUserReviews;
+using Application.User.Features.Commands.ChangePassword;
+using Application.User.Features.Commands.ChangePhoneNumber;
+using Application.User.Features.Commands.CreateUserAddress;
+using Application.User.Features.Commands.DeactivateAccount;
+using Application.User.Features.Commands.DeleteUserAddress;
+using Application.User.Features.Commands.UpdateProfile;
+using Application.User.Features.Commands.UpdateUserAddress;
+using Application.User.Features.Queries.GetCurrentUser;
+using Application.User.Features.Queries.GetUserAddresses;
+using Application.User.Features.Shared;
+using media
+
+
 namespace MainApi.User.Controllers;
 
 [Route("api/[controller]")]
@@ -18,12 +32,11 @@ public class ProfileController(IMediator mediator) : BaseApiController(mediator)
     [HttpPut]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateRequest)
     {
-        var command = new UpdateProfileCommand
-        {
-            UserId = CurrentUser.UserId,
-            FirstName = updateRequest.FirstName,
-            LastName = updateRequest.LastName
-        };
+        var command = new UpdateProfileCommand(
+            CurrentUser.UserId,
+            updateRequest.FirstName,
+            updateRequest.LastName,
+            updateRequest.Email);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

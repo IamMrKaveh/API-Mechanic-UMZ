@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 using Domain.Attribute.Interfaces;
 
 namespace Application.Attribute.Features.Queries.GetAllAttributeTypes;

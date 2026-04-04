@@ -1,59 +1,54 @@
+using Application.Audit.Contracts;
 using Application.Auth.Contracts;
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
 
 namespace Application.User.Features.Commands.DeactivateAccount;
 
-public class DeactivateAccountHandler : IRequestHandler<DeactivateAccountCommand, ServiceResult>
+public class DeactivateAccountHandler(
+    IUserRepository userRepository,
+    ISessionService sessionService,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ILogger<DeactivateAccountHandler> logger) : IRequestHandler<DeactivateAccountCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository;
-    private readonly ISessionService _sessionService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
-    private readonly ILogger<DeactivateAccountHandler> _logger;
-
-    public DeactivateAccountHandler(
-        IUserRepository userRepository,
-        ISessionService sessionService,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService,
-        ILogger<DeactivateAccountHandler> logger)
-    {
-        _userRepository = userRepository;
-        _sessionService = sessionService;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-        _logger = logger;
-    }
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly ISessionService _sessionService = sessionService;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ILogger<DeactivateAccountHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(
-        DeactivateAccountCommand request, CancellationToken cancellationToken)
+        DeactivateAccountCommand request,
+        CancellationToken ct)
     {
-        var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
+        var user = await _userRepository.GetByIdAsync(request.UserId, ct);
         if (user == null)
-            return ServiceResult.Failure("کاربر یافت نشد.", 404);
+            return ServiceResult.NotFound("کاربر یافت نشد.");
 
         try
         {
             user.Deactivate();
 
             _userRepository.Update(user);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
 
-            await _sessionService.RevokeAllUserSessionsAsync(request.UserId, cancellationToken);
+            await _sessionService.RevokeAllUserSessionsAsync(request.UserId, ct);
 
             await _auditService.LogSecurityEventAsync(
                 "AccountDeactivated",
                 $"حساب کاربر {request.UserId} غیرفعال شد.",
                 "system",
-                request.UserId);
+                request.UserId.Value);
 
             _logger.LogInformation("حساب کاربر {UserId} غیرفعال شد.", request.UserId);
             return ServiceResult.Success();
         }
-        catch (Domain.Common.Exceptions.DomainException ex)
+        catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Unexpected(ex.Message);
         }
     }
 }

@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 
 namespace Application.Order.Features.Queries.GetOrderStatuses;
 

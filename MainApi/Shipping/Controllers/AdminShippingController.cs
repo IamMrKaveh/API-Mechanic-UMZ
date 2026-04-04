@@ -1,3 +1,10 @@
+using Application.Shipping.Features.Commands.CreateShipping;
+using Application.Shipping.Features.Commands.DeleteShipping;
+using Application.Shipping.Features.Commands.RestoreShipping;
+using Application.Shipping.Features.Commands.UpdateShipping;
+using Application.Shipping.Features.Queries.GetShippingById;
+using Application.Shipping.Features.Queries.GetShippings;
+
 namespace MainApi.Shipping.Controllers;
 
 [ApiController]

@@ -5,7 +5,5 @@ namespace Application.Common.Contracts;
 /// </summary>
 public interface IDomainEventDispatcher
 {
-    Task DispatchEventsAsync(
-        CancellationToken ct = default
-        );
+    Task DispatchEventsAsync(CancellationToken ct = default);
 }

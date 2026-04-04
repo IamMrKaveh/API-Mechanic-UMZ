@@ -1,4 +1,5 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Application.Discount.Features.Shared;
 
 namespace Application.Discount.Features.Queries.GetDiscountInfo;
 

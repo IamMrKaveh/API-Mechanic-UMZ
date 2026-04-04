@@ -1,26 +1,18 @@
-using Application.Common.Models;
 using Domain.Attribute.Interfaces;
+using Domain.Common.Interfaces;
 
 namespace Application.Attribute.Features.Commands.UpdateAttributeType;
 
-public class UpdateAttributeTypeHandler : IRequestHandler<UpdateAttributeTypeCommand, ServiceResult>
+public class UpdateAttributeTypeHandler(
+    IAttributeRepository repository,
+    IUnitOfWork unitOfWork) : IRequestHandler<UpdateAttributeTypeCommand, ServiceResult>
 {
-    private readonly IAttributeRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public UpdateAttributeTypeHandler(
-        IAttributeRepository repository,
-        IUnitOfWork unitOfWork
-        )
-    {
-        _repository = repository;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly IAttributeRepository _repository = repository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<ServiceResult> Handle(
         UpdateAttributeTypeCommand request,
-        CancellationToken cancellationToken
-        )
+        CancellationToken ct)
     {
         var attributeType = await _repository.GetAttributeTypeByIdAsync(request.Id);
         if (attributeType == null)
@@ -41,7 +33,7 @@ public class UpdateAttributeTypeHandler : IRequestHandler<UpdateAttributeTypeCom
         try
         {
             await _repository.UpdateAttributeTypeAsync(attributeType);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }
         catch (ConcurrencyException)

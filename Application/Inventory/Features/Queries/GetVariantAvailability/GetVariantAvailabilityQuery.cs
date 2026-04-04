@@ -1,4 +1,4 @@
-using Application.Common.Models;
+using Application.Common.Results;
 
 namespace Application.Inventory.Features.Queries.GetVariantAvailability;
 

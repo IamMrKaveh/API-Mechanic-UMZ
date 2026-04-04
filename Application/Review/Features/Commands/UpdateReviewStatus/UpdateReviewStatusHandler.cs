@@ -1,27 +1,23 @@
-using Application.Common.Models;
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Review.Interfaces;
 
 namespace Application.Review.Features.Commands.UpdateReviewStatus;
 
-public class UpdateReviewStatusHandler : IRequestHandler<UpdateReviewStatusCommand, ServiceResult>
+public class UpdateReviewStatusHandler(IReviewRepository reviewRepository, IUnitOfWork unitOfWork, ILogger<UpdateReviewStatusHandler> logger) : IRequestHandler<UpdateReviewStatusCommand, ServiceResult>
 {
-    private readonly IReviewRepository _reviewRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<UpdateReviewStatusHandler> _logger;
+    private readonly IReviewRepository _reviewRepository = reviewRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<UpdateReviewStatusHandler> _logger = logger;
 
-    public UpdateReviewStatusHandler(IReviewRepository reviewRepository, IUnitOfWork unitOfWork, ILogger<UpdateReviewStatusHandler> logger)
+    public async Task<ServiceResult> Handle(
+        UpdateReviewStatusCommand request,
+        CancellationToken ct)
     {
-        _reviewRepository = reviewRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
-
-    public async Task<ServiceResult> Handle(UpdateReviewStatusCommand request, CancellationToken cancellationToken)
-    {
-        var review = await _reviewRepository.GetByIdAsync(request.ReviewId);
+        var review = await _reviewRepository.GetByIdAsync(request.ReviewId, ct);
         if (review == null)
         {
-            return ServiceResult.Failure("Review not found");
+            return ServiceResult.NotFound("Review not found");
         }
 
         if (request.Status == "Approved")
@@ -30,7 +26,7 @@ public class UpdateReviewStatusHandler : IRequestHandler<UpdateReviewStatusComma
             review.Reject();
 
         _reviewRepository.Update(review);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         _logger.LogInformation("Review {ReviewId} status updated to {Status}", request.ReviewId, request.Status);
         return ServiceResult.Success();

@@ -1,17 +1,14 @@
 namespace Application.Common.Exceptions;
 
-public class ConcurrencyException : Exception
+public sealed class ConcurrencyException : Exception
 {
-    public ConcurrencyException(
-        string message
-        ) : base(message)
+    public ConcurrencyException(string message) : base(message)
     {
     }
 
     public ConcurrencyException(
         string message,
-        Exception innerException
-        ) : base(message, innerException)
+        Exception innerException) : base(message, innerException)
     {
     }
 }

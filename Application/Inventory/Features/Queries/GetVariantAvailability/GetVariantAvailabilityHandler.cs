@@ -1,4 +1,6 @@
-using Application.Common.Models;
+using Application.Cache.Contracts;
+using Application.Common.Results;
+using Application.Inventory.Contracts;
 
 namespace Application.Inventory.Features.Queries.GetVariantAvailability;
 
@@ -34,7 +36,7 @@ public class GetVariantAvailabilityHandler(
 
         var status = await _inventoryQueryService.GetVariantStatusAsync(request.VariantId, cancellationToken);
         if (status == null)
-            return ServiceResult<VariantAvailabilityDto>.Failure("واریانت یافت نشد.", 404);
+            return ServiceResult<VariantAvailabilityDto>.NotFound("واریانت یافت نشد.");
 
         var dto = new VariantAvailabilityDto
         {

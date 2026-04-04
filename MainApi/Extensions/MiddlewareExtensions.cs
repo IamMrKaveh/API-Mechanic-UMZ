@@ -1,4 +1,6 @@
-﻿namespace MainApi.Extensions;
+﻿using MainApi.Middleware;
+
+namespace MainApi.Extensions;
 
 public static class MiddlewareExtensions
 {
