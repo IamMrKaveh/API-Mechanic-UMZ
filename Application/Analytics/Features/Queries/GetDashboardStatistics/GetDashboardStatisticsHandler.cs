@@ -1,3 +1,6 @@
+using Application.Analytics.Contracts;
+using Application.Analytics.Features.Shared;
+using Application.Cache.Contracts;
 using Application.Common.Results;
 
 namespace Application.Analytics.Features.Queries.GetDashboardStatistics;
@@ -17,7 +20,7 @@ public sealed class GetDashboardStatisticsHandler(
     {
         var cacheKey = $"analytics:dashboard:{request.FromDate?.ToString("yyyyMMdd")}:{request.ToDate?.ToString("yyyyMMdd")}";
 
-        var cached = await _cache.GetAsync<DashboardStatisticsDto>(cacheKey);
+        var cached = await _cache.GetAsync<DashboardStatisticsDto>(cacheKey, ct);
         if (cached is not null)
             return ServiceResult<DashboardStatisticsDto>.Success(cached);
 

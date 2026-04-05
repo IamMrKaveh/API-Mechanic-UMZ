@@ -1,5 +1,6 @@
 ﻿using Domain.Security.Aggregates;
 using Domain.User.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Security.Results;
 
@@ -34,4 +35,8 @@ public sealed class SessionCreationResult
             IsSuccess = false,
             Error = error
         };
+
+    public Result<UserSession> ToResult() => IsSuccess
+        ? Result<UserSession>.Success(Session!)
+        : Result<UserSession>.Failure(new Error("SessionCreation.Failed", Error ?? string.Empty));
 }

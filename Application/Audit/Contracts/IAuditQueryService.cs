@@ -1,4 +1,6 @@
-﻿namespace Application.Audit.Contracts;
+﻿using Application.Audit.Features.Shared;
+
+namespace Application.Audit.Contracts;
 
 public interface IAuditQueryService
 {

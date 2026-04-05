@@ -1,6 +1,7 @@
 ﻿using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.User.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Security.Results;
 
@@ -37,4 +38,8 @@ public sealed class OtpGenerationResult
             IsSuccess = false,
             Error = error
         };
+
+    public Result<UserOtp> ToResult() => IsSuccess
+        ? Result<UserOtp>.Success(Otp!)
+        : Result<UserOtp>.Failure(new SharedKernel.Results.Error("OtpGeneration.Failed", Error ?? string.Empty));
 }

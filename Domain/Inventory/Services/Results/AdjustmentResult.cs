@@ -1,4 +1,5 @@
 ﻿using Domain.Variant.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Inventory.Services.Results;
 
@@ -27,4 +28,8 @@ public sealed class AdjustmentResult
 
     public static AdjustmentResult NotApplicable(ProductVariantId variantId, string message)
         => new(true, variantId, message: message);
+
+    public Result<AdjustmentResult> ToResult() => IsSuccess
+        ? Result<AdjustmentResult>.Success(this)
+        : Result<AdjustmentResult>.Failure(new Error("Adjustment.Failed", Error ?? string.Empty));
 }

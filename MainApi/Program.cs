@@ -1,15 +1,10 @@
 using Application.Storage.Features.Shared;
 using Infrastructure;
-using MainApi.Extensions;
-using MainApi.Filters;
-using MainApi.Options;
+using Infrastructure.Security.Settings;
+using MainApi.Common.Extensions;
+using MainApi.Common.Filters;
+using MainApi.Common.Options;
 using MainApi.Security.Settings;
-
-var envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
-if (File.Exists(envFilePath))
-{
-    Env.Load(envFilePath);
-}
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -19,8 +14,6 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
-    Log.Information("Starting Ledka");
-
     var builder = WebApplication.CreateBuilder(args);
 
     builder.Configuration
@@ -39,7 +32,6 @@ try
     app.UseApplicationMiddleware();
     app.MapControllers();
 
-    Log.Information("Ledka started successfully.");
     app.Run();
 }
 catch (Exception ex) when (ex is not HostAbortedException)
@@ -69,9 +61,14 @@ static void ConfigureSerilog(WebApplicationBuilder builder)
 
 static void ConfigureAuthentication(WebApplicationBuilder builder)
 {
+    builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+    builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection(GoogleAuthSettings.SectionName));
+
     var jwtKey = builder.Configuration["Jwt:Key"] ?? string.Empty;
     var issuer = builder.Configuration["Jwt:Issuer"];
     var audience = builder.Configuration["Jwt:Audience"];
+    var googleClientId = builder.Configuration["Authentication:Google:ClientId"] ?? string.Empty;
+    var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty;
 
     builder.Services
         .AddAuthentication(options =>
@@ -94,6 +91,12 @@ static void ConfigureAuthentication(WebApplicationBuilder builder)
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.FromSeconds(30)
             };
+        })
+        .AddGoogle(options =>
+        {
+            options.ClientId = googleClientId;
+            options.ClientSecret = googleClientSecret;
+            options.SaveTokens = true;
         });
 }
 
@@ -114,6 +117,8 @@ static void ConfigureServices(WebApplicationBuilder builder)
 
 static void ConfigureControllersAndApi(WebApplicationBuilder builder)
 {
+    builder.Services.AddCustomApiVersioning();
+
     builder.Services.AddControllers(options =>
     {
         options.Filters.Add<ValidationFilter>();
@@ -121,7 +126,6 @@ static void ConfigureControllersAndApi(WebApplicationBuilder builder)
     });
 
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN");
 }

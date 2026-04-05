@@ -1,5 +1,6 @@
 ﻿using Domain.Security.Aggregates;
 using Domain.Security.Enums;
+using SharedKernel.Results;
 
 namespace Domain.Security.Results;
 
@@ -47,4 +48,8 @@ public sealed class SessionValidationResult
             IsExpired = true,
             Error = "نشست منقضی شده است."
         };
+
+    public Result<UserSession> ToResult() => IsValid
+        ? Result<UserSession>.Success(Session!)
+        : Result<UserSession>.Failure(new Error("SessionValidation.Failed", Error ?? string.Empty));
 }

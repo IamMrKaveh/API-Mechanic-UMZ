@@ -1,5 +1,5 @@
+using Application.Attribute.Features.Shared;
 using Application.Common.Results;
-using Application.Product.Features.Shared;
 using Domain.Attribute.Interfaces;
 using Domain.Common.Interfaces;
 

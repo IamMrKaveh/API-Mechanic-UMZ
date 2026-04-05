@@ -1,0 +1,36 @@
+﻿using MainApi.Common.Middleware;
+
+namespace MainApi.Common.Extensions;
+
+public static class MiddlewareExtensions
+{
+    public static WebApplication UseApplicationMiddleware(this WebApplication app)
+    {
+        app.UseMiddleware<CorrelationIdMiddleware>();
+        app.UseCustomExceptionHandler();
+        app.UseMiddleware<SecurityHeadersMiddleware>();
+
+        app.UseRequestPerformanceMonitoring();
+
+        app.UseHttpsRedirection();
+        app.UseStaticFiles();
+
+        app.UseCustomCors();
+
+        app.UseMiddleware<RateLimitMiddleware>();
+
+        app.UseAdminIpWhitelist();
+        app.UseMiddleware<WebhookIpWhitelistMiddleware>();
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        return app;
+    }
+}

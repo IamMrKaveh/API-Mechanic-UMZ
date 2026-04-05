@@ -1,3 +1,6 @@
+using Domain.Common.Abstractions;
+using Domain.Common.Guards;
+using Domain.Common.Interfaces;
 using Domain.Product.Exceptions;
 using Domain.Product.ValueObjects;
 using Domain.Shipping.ValueObjects;
@@ -5,6 +8,9 @@ using Domain.Variant.Entities;
 using Domain.Variant.Events;
 using Domain.Variant.Exceptions;
 using Domain.Variant.ValueObjects;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Domain.Variant.Aggregates;
 
@@ -22,7 +28,11 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
     public Money? CompareAtPrice { get; private set; }
     public bool IsActive { get; private set; }
     public DateTime CreatedAt { get; private set; }
-    public DateTime UpdatedAt { get; private set; }
+    public DateTime? UpdatedAt { get; private set; }
+
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public Guid? DeletedBy { get; private set; }
 
     public IReadOnlyList<ProductVariantAttribute> Attributes => _attributes.AsReadOnly();
     public IReadOnlyList<ProductVariantShipping> ShippingMethods => _shippingMethods.AsReadOnly();
@@ -53,8 +63,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
             Price = price,
             CompareAtPrice = compareAtPrice,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow
         };
 
         variant.RaiseDomainEvent(new ProductVariantCreatedEvent(id, productId, sku.Value, price));
@@ -131,9 +140,12 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
         RaiseDomainEvent(new ProductVariantDeactivatedEvent(Id, ProductId));
     }
 
-    public void Remove()
+    public void Remove(Guid? deletedBy = null)
     {
         IsActive = false;
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+        DeletedBy = deletedBy;
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new ProductVariantRemovedEvent(ProductId, Id));
     }
@@ -152,12 +164,6 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
         }
     }
 
-    public bool IsDeleted => throw new NotImplementedException();
-
-    public DateTime? DeletedAt => throw new NotImplementedException();
-
-    public int? DeletedBy => throw new NotImplementedException();
-
     public bool SkuMatches(string sku)
     {
         if (string.IsNullOrWhiteSpace(sku)) return false;
@@ -166,7 +172,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
 
     private void EnsureActive()
     {
-        if (!IsActive)
+        if (!IsActive || IsDeleted)
             throw new InvalidVariantOperationException(
                 Id, "تغییر", "عملیات بر روی واریانت غیرفعال یا حذف‌شده مجاز نیست.");
     }

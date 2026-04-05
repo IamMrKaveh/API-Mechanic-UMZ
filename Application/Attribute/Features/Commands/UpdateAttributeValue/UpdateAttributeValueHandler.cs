@@ -1,27 +1,21 @@
 using Application.Common.Results;
 using Domain.Attribute.Interfaces;
+using Domain.Common.Interfaces;
 
 namespace Application.Attribute.Features.Commands.UpdateAttributeValue;
 
-public class UpdateAttributeValueHandler : IRequestHandler<UpdateAttributeValueCommand, ServiceResult>
+public class UpdateAttributeValueHandler(
+    IAttributeRepository repository,
+    IUnitOfWork unitOfWork) : IRequestHandler<UpdateAttributeValueCommand, ServiceResult>
 {
-    private readonly IAttributeRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public UpdateAttributeValueHandler(
-        IAttributeRepository repository,
-        IUnitOfWork unitOfWork
-        )
-    {
-        _repository = repository;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly IAttributeRepository _repository = repository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<ServiceResult> Handle(
         UpdateAttributeValueCommand request,
         CancellationToken ct)
     {
-        var attributeValue = await _repository.GetAttributeValueByIdAsync(request.Id);
+        var attributeValue = await _repository.GetAttributeValueByIdAsync(request.Id, ct);
         if (attributeValue == null)
             return ServiceResult.NotFound("Attribute value not found.");
 
@@ -36,7 +30,7 @@ public class UpdateAttributeValueHandler : IRequestHandler<UpdateAttributeValueC
                     request.IsActive ?? attributeValue.IsActive
                 );
 
-        await _repository.UpdateAttributeValueAsync(attributeValue);
+        await _repository.UpdateAttributeValueAsync(attributeValue, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();

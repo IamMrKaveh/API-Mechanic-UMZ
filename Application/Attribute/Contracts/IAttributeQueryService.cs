@@ -1,4 +1,7 @@
-﻿namespace Application.Attribute.Contracts;
+﻿using Application.Attribute.Features.Shared;
+using Application.Product.Features.Shared;
+
+namespace Application.Attribute.Contracts;
 
 public interface IAttributeQueryService
 {

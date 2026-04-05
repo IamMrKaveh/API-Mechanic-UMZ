@@ -1,3 +1,6 @@
+using Application.Common.Results;
+using Application.Security.Interfaces;
+using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
 
 namespace Application.User.Features.Commands.ChangePassword;
@@ -21,6 +24,8 @@ public sealed class ChangePasswordHandler(
             return ServiceResult.Failure("Current password is incorrect.");
 
         user.ChangePassword(_passwordHasher.Hash(request.Dto.NewPassword));
+
+        _userRepository.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ServiceResult.Success();

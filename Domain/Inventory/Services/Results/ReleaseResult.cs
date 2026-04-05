@@ -1,4 +1,5 @@
 ﻿using Domain.Variant.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Inventory.Services.Results;
 
@@ -25,4 +26,8 @@ public sealed class ReleaseResult
 
     public static ReleaseResult NothingToRelease(ProductVariantId variantId)
         => new(true, variantId, 0, "موجودی رزرو شده‌ای برای آزادسازی وجود ندارد");
+
+    public Result<ReleaseResult> ToResult() => IsSuccess
+        ? Result<ReleaseResult>.Success(this)
+        : Result<ReleaseResult>.Failure(new Error("Release.Failed", Message ?? string.Empty));
 }

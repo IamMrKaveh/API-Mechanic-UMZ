@@ -1,5 +1,4 @@
 ﻿using Domain.User.ValueObjects;
-using Domain.Wallet.Aggregates;
 using Domain.Wallet.Entities;
 using Domain.Wallet.Projections;
 using Domain.Wallet.ValueObjects;

@@ -1,4 +1,5 @@
 ﻿using Domain.Variant.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Inventory.Services.Results;
 
@@ -22,4 +23,8 @@ public sealed class ConfirmationResult
 
     public static ConfirmationResult Failed(ProductVariantId variantId, string error)
         => new(false, variantId, error: error);
+
+    public Result<ConfirmationResult> ToResult() => IsSuccess
+        ? Result<ConfirmationResult>.Success(this)
+        : Result<ConfirmationResult>.Failure(new Error("Confirmation.Failed", Error ?? string.Empty));
 }

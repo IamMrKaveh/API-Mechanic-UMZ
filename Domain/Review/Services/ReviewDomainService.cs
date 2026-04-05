@@ -1,10 +1,14 @@
-﻿using Domain.Order.ValueObjects;
+﻿using Domain.Common.Guards;
+using Domain.Order.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Review.Aggregates;
 using Domain.Review.Interfaces;
 using Domain.Review.ValueObjects;
 using Domain.User.ValueObjects;
 using SharedKernel.Results;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Domain.Review.Services;
 
@@ -41,27 +45,20 @@ public sealed class ReviewDomainService
 
         if (requirePurchaseVerification)
         {
-            int numericUserId = (int)Convert.ChangeType(userId.Value, typeof(int));
-            int numericProductId = (int)Convert.ChangeType(productId.Value, typeof(int));
-
-            isVerifiedPurchase = await _purchaseVerificationService.UserHasPurchasedProductAsync(numericUserId, numericProductId, ct);
+            isVerifiedPurchase = await _purchaseVerificationService.UserHasPurchasedProductAsync(userId, productId, ct);
 
             if (!isVerifiedPurchase)
                 return Result<ProductReview>.Failure(Error.Validation("Review.NotPurchased", "برای ثبت نظر باید محصول را خریداری کرده باشید."));
         }
 
-        var numericUserIdCreate = (int)Convert.ChangeType(userId.Value, typeof(int));
-        var numericProductIdCreate = (int)Convert.ChangeType(productId.Value, typeof(int));
-        int? numericOrderIdCreate = orderId != null ? (int?)Convert.ChangeType(orderId.Value, typeof(int)) : null;
-
         var review = ProductReview.Create(
-            numericProductIdCreate,
-            numericUserIdCreate,
+            productId,
+            userId,
             rating,
             title,
             comment,
             isVerifiedPurchase,
-            numericOrderIdCreate);
+            orderId);
 
         return Result<ProductReview>.Success(review);
     }

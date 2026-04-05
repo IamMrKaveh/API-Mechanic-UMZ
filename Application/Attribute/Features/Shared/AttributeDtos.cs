@@ -41,3 +41,30 @@ public record UpdateAttributeValueDto
     public int? SortOrder { get; init; }
     public bool? IsActive { get; init; }
 }
+
+public sealed record AttributeValueDto(
+    int Id,
+    string TypeName,
+    string TypeDisplayName,
+    string Value,
+    string DisplayValue,
+    string? HexCode
+);
+
+public sealed record AttributeTypeWithValuesDto(
+    int Id,
+    string Name,
+    string DisplayName,
+    int SortOrder,
+    bool IsActive,
+    List<AttributeValueSimpleDto> Values
+);
+
+public sealed record AttributeValueSimpleDto(
+    int Id,
+    string Value,
+    string DisplayValue,
+    string? HexCode,
+    int SortOrder,
+    bool IsActive
+);

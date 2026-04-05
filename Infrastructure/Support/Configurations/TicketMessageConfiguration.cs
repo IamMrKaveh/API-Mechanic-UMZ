@@ -1,4 +1,4 @@
-using Domain.Support.Aggregates;
+using Domain.Support.Entities;
 
 namespace Infrastructure.Support.Configurations;
 

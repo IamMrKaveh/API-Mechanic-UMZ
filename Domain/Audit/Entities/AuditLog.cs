@@ -1,17 +1,21 @@
+using Domain.Audit.Events;
 using Domain.Audit.ValueObjects;
+using Domain.Common.Abstractions;
+using Domain.User.ValueObjects;
+using System;
 
 namespace Domain.Audit.Entities;
 
-public sealed class AuditLog : Entity<AuditLogId>
+public sealed class AuditLog : AggregateRoot<AuditLogId>
 {
-    public int? UserId { get; private set; }
+    public UserId? UserId { get; private set; }
     public string EventType { get; private set; } = null!;
     public string Action { get; private set; } = null!;
     public string? Details { get; private set; }
     public string IpAddress { get; private set; } = null!;
     public string? UserAgent { get; private set; }
     public string? EntityType { get; private set; }
-    public int? EntityId { get; private set; }
+    public string? EntityId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public string IntegrityHash { get; private set; } = null!;
     public bool IsArchived { get; private set; }
@@ -21,12 +25,12 @@ public sealed class AuditLog : Entity<AuditLogId>
     { }
 
     public static AuditLog Create(
-        int? userId,
+        UserId? userId,
         string eventType,
         string action,
         string ipAddress,
         string? entityType = null,
-        int? entityId = null,
+        string? entityId = null,
         string? details = null,
         string? userAgent = null)
     {
@@ -46,6 +50,8 @@ public sealed class AuditLog : Entity<AuditLogId>
 
         auditLog.IntegrityHash = auditLog.ComputeHash();
 
+        auditLog.RaiseDomainEvent(new AuditLogCreatedEvent(auditLog.Id, auditLog.Action));
+
         return auditLog;
     }
 
@@ -63,7 +69,8 @@ public sealed class AuditLog : Entity<AuditLogId>
 
     private string ComputeHash()
     {
-        var data = $"{UserId}|{EventType}|{Action}|{Details}|{IpAddress}|{CreatedAt:O}";
+        var userIdString = UserId?.Value.ToString() ?? "null";
+        var data = $"{userIdString}|{EventType}|{Action}|{Details}|{IpAddress}|{CreatedAt:O}";
         using var sha = System.Security.Cryptography.SHA256.Create();
         var bytes = System.Text.Encoding.UTF8.GetBytes(data);
         var hash = sha.ComputeHash(bytes);

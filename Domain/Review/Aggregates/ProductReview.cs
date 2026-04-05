@@ -1,13 +1,16 @@
+using Domain.Order.ValueObjects;
+using Domain.Product.ValueObjects;
 using Domain.Review.Events;
 using Domain.Review.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Review.Aggregates;
 
 public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable
 {
-    public int ProductId { get; private set; }
-    public int UserId { get; private set; }
-    public int? OrderId { get; private set; }
+    public ProductId ProductId { get; private set; } = default!;
+    public UserId UserId { get; private set; } = default!;
+    public OrderId? OrderId { get; private set; }
 
     public Rating Rating { get; private set; } = default!;
     public string? Title { get; private set; }
@@ -31,16 +34,16 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable
     { }
 
     public static ProductReview Create(
-        int productId,
-        int userId,
+        ProductId productId,
+        UserId userId,
         Rating rating,
         string? title,
         string? comment,
         bool isVerifiedPurchase,
-        int? orderId = null)
+        OrderId? orderId = null)
     {
-        Guard.Against.NegativeOrZero(productId, nameof(productId));
-        Guard.Against.NegativeOrZero(userId, nameof(userId));
+        Guard.Against.Null(productId, nameof(productId));
+        Guard.Against.Null(userId, nameof(userId));
         Guard.Against.Null(rating, nameof(rating));
 
         if (title != null && title.Trim().Length > 100)
@@ -65,7 +68,7 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable
             Status = ReviewStatus.Pending
         };
 
-        review.RaiseDomainEvent(new ReviewSubmittedEvent(id, productId, userId, rating.Value));
+        review.RaiseDomainEvent(new ReviewSubmittedEvent(id, productId, userId, rating));
         return review;
     }
 

@@ -1,3 +1,4 @@
+using Domain.Common.Interfaces;
 using Domain.Security.Events;
 using Domain.Security.Interfaces;
 
@@ -12,7 +13,9 @@ public class AllSessionsRevokedEventHandler(
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly ILogger<AllSessionsRevokedEventHandler> _logger = logger;
 
-    public async Task Handle(AllSessionsRevokedEvent notification, CancellationToken ct)
+    public async Task Handle(
+        AllSessionsRevokedEvent notification,
+        CancellationToken ct)
     {
         _logger.LogInformation(
             "Domain Event: All sessions revoked for user {UserId}.",
