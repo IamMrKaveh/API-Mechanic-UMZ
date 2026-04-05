@@ -1,4 +1,5 @@
 ﻿using Domain.Security.Aggregates;
+using SharedKernel.Results;
 
 namespace Domain.Security.Results;
 
@@ -37,4 +38,8 @@ public sealed class OtpVerificationResult
             IsSuccess = false,
             Error = error
         };
+
+    public Result<UserOtp> ToResult() => IsSuccess
+        ? Result<UserOtp>.Success(Otp!)
+        : Result<UserOtp>.Failure(new Error("OtpVerification.Failed", Error ?? string.Empty));
 }

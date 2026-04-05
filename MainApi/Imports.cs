@@ -1,7 +1,6 @@
 global using Application;
-global using Domain.Wallet.Enums;
 global using FluentValidation;
-global using MainApi.Base.Controllers;
+global using MainApi.Base.Controllers.v1;
 global using MediatR;
 global using Microsoft.AspNetCore.Antiforgery;
 global using Microsoft.AspNetCore.Authentication.JwtBearer;

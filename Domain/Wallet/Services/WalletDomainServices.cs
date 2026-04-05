@@ -1,9 +1,8 @@
-﻿using Domain.Wallet.Aggregates;
+﻿using Domain.Wallet.Entities;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Results;
 using Domain.Wallet.ValueObjects;
-using SharedKernel.Results;
 
 namespace Domain.Wallet.Services;
 

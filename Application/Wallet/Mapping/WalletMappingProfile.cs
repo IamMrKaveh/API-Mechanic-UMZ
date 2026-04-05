@@ -1,5 +1,5 @@
 ﻿using Application.Wallet.Features.Shared;
-using Domain.Wallet.Aggregates;
+using Domain.Wallet.Entities;
 
 namespace Application.Wallet.Mapping;
 

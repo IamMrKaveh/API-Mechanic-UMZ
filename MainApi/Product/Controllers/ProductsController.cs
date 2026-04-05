@@ -1,3 +1,9 @@
+using Application.Product.Features.Queries.GetProductById;
+using Application.Product.Features.Queries.GetProductCatalog;
+using Application.Product.Features.Queries.GetProductDetails;
+using Application.Product.Features.Shared;
+using Application.Review.Features.Queries.GetProductReviewSummary;
+
 namespace MainApi.Product.Controllers;
 
 [ApiController]

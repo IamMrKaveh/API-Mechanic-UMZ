@@ -1,3 +1,6 @@
+using Application.Audit.Contracts;
+using Application.Audit.Features.Shared;
+
 namespace Application.Audit.Features.Queries.GetAuditLogs;
 
 public sealed class GetAuditLogsHandler(
@@ -9,8 +12,7 @@ public sealed class GetAuditLogsHandler(
 
     public async Task<GetAuditLogsResult> Handle(
         GetAuditLogsQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var searchRequest = new AuditSearchRequest
         {

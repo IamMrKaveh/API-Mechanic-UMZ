@@ -1,3 +1,4 @@
+using Domain.Support.Entities;
 using Domain.Support.Enums;
 using Domain.Support.Events;
 using Domain.Support.ValueObjects;

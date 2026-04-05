@@ -12,11 +12,7 @@
 
 		<!-- API Versioning -->
 		<PackageReference Include="Asp.Versioning.Mvc" Version="8.1.1" />
-
-		<!-- Health Checks -->
-		<PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
-		<PackageReference Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
-
+		
 		<!-- Security -->
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.13" />
@@ -112,7 +108,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Application\Application.csproj" />
-    <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 

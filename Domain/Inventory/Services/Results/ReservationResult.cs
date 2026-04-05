@@ -1,4 +1,5 @@
 ﻿using Domain.Variant.ValueObjects;
+using SharedKernel.Results;
 
 namespace Domain.Inventory.Services.Results;
 
@@ -42,4 +43,8 @@ public sealed class ReservationResult
 
     public int GetShortage() => RequestedQuantity.HasValue && AvailableStock.HasValue
         ? Math.Max(0, RequestedQuantity.Value - AvailableStock.Value) : 0;
+
+    public Result<ReservationResult> ToResult() => IsSuccess
+        ? Result<ReservationResult>.Success(this)
+        : Result<ReservationResult>.Failure(new SharedKernel.Results.Error("Reservation.Failed", Error ?? string.Empty));
 }

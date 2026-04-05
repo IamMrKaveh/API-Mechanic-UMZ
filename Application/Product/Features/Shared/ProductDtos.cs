@@ -1,4 +1,5 @@
 using Application.Media.Features.Shared;
+using Application.Variant.Features.Shared;
 
 namespace Application.Product.Features.Shared;
 
@@ -107,74 +108,6 @@ public sealed record PublicProductDetailDto
     public int ReviewCount { get; init; }
 }
 
-public sealed record BrandInfoDto
-{
-    public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string CategoryName { get; init; } = string.Empty;
-}
-
-public sealed record ProductVariantViewDto
-{
-    public int Id { get; init; }
-    public string? Sku { get; init; }
-    public decimal PurchasePrice { get; init; }
-    public decimal OriginalPrice { get; init; }
-    public decimal SellingPrice { get; init; }
-    public int Stock { get; init; }
-    public bool IsUnlimited { get; init; }
-    public bool IsActive { get; init; }
-    public bool IsInStock { get; init; }
-    public bool HasDiscount { get; init; }
-    public decimal DiscountPercentage { get; init; }
-    public Dictionary<string, AttributeValueDto> Attributes { get; init; } = [];
-    public IEnumerable<MediaDto> Images { get; init; } = [];
-    public string? RowVersion { get; init; }
-    public decimal ShippingMultiplier { get; init; }
-    public List<int> EnabledShippingIds { get; init; } = [];
-}
-
-public sealed record AttributeValueDto(
-    int Id,
-    string TypeName,
-    string TypeDisplayName,
-    string Value,
-    string DisplayValue,
-    string? HexCode
-);
-
-public sealed record AttributeTypeWithValuesDto(
-    int Id,
-    string Name,
-    string DisplayName,
-    int SortOrder,
-    bool IsActive,
-    List<AttributeValueSimpleDto> Values
-);
-
-public sealed record AttributeValueSimpleDto(
-    int Id,
-    string Value,
-    string DisplayValue,
-    string? HexCode,
-    int SortOrder,
-    bool IsActive
-);
-
-public sealed record CreateProductVariantInput(
-    int? Id,
-    string? Sku,
-    decimal PurchasePrice,
-    decimal SellingPrice,
-    decimal OriginalPrice,
-    int Stock,
-    bool IsUnlimited,
-    bool IsActive,
-    List<int> AttributeValueIds,
-    decimal ShippingMultiplier,
-    List<int>? EnabledShippingIds
-);
-
 /// <summary>
 /// DTO قدیمی ادمین - برای Handlerهای Legacy
 /// </summary>
@@ -187,7 +120,7 @@ public sealed record AdminProductViewDto(
     bool IsActive,
     bool IsDeleted,
     string? IconUrl,
-    IEnumerable<Application.Media.Features.Shared.MediaDto> Images,
+    IEnumerable<MediaDto> Images,
     List<ProductVariantResponseDto> Variants,
     string? RowVersion,
     DateTime CreatedAt,
@@ -211,40 +144,6 @@ public sealed record PublicProductViewDto(
     decimal MaxPrice,
     int TotalStock,
     BrandSummaryInProductDto Brand
-);
-
-public sealed record ProductVariantResponseDto(
-    int Id,
-    string? Sku,
-    decimal PurchasePrice,
-    decimal SellingPrice,
-    decimal OriginalPrice,
-    int Stock,
-    bool IsUnlimited,
-    bool IsActive,
-    decimal ShippingMultiplier,
-    List<int> EnabledShippingIds,
-    Dictionary<string, AttributeValueDto> Attributes,
-    IEnumerable<Application.Media.Features.Shared.MediaDto> Images,
-    string? RowVersion,
-    bool IsInStock,
-    bool HasDiscount,
-    int DiscountPercentage
-);
-
-public sealed record CreateProductVariantDto(
-    int? Id,
-    string? Sku,
-    decimal PurchasePrice,
-    decimal SellingPrice,
-    decimal OriginalPrice,
-    int Stock,
-    bool IsUnlimited,
-    int? LowStockThreshold,
-    bool IsActive,
-    decimal ShippingMultiplier,
-    List<int> AttributeValueIds,
-    List<int>? EnabledShippingIds
 );
 
 public sealed record ProductDto
@@ -317,27 +216,10 @@ public sealed record UpdateProductInput(
     List<UploadImageInput> Images
 );
 
-public sealed record BrandSummaryInProductDto(
-    int Id,
-    string Name,
-    string CategoryName
-);
-
 public sealed record UpdateProductDetailsRequest(
     string Name,
     string Description,
     int CategoryId,
     int BrandId);
 
-public sealed record ChangePriceRequest(decimal NewPrice);
-
-public sealed record BulkUpdatePricesRequest(IReadOnlyList<ProductPriceUpdateItem> Items);
-
 public sealed record ProductPriceUpdateItem(int ProductId, decimal NewPrice);
-
-public sealed record CreateProductRequest(
-    string Name,
-    string Description,
-    decimal Price,
-    int CategoryId,
-    int BrandId);

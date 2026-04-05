@@ -1,7 +1,19 @@
 using Domain.Media.ValueObjects;
 using SharedKernel.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Guards;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Domain.Media.Services;
+
+public static class MediaEntityTypes
+{
+    public const string Product = "Product";
+    public const string Brand = "Brand";
+    public const string Category = "Category";
+}
 
 public class MediaDomainService
 {
@@ -13,7 +25,7 @@ public class MediaDomainService
 
         if (mediaList.Count >= MaxMediaPerEntity)
             return Result.Failure(new Error(
-                "400",
+                "Media.LimitExceeded",
                 $"حداکثر تعداد رسانه مجاز برای هر موجودیت {MaxMediaPerEntity} عدد است.",
                 ErrorType.Validation));
 
@@ -28,21 +40,21 @@ public class MediaDomainService
 
         var extension = fileExtension.ToLowerInvariant().TrimStart('.');
 
-        if (entityType.Equals("Product", StringComparison.OrdinalIgnoreCase) ||
-            entityType.Equals("Brand", StringComparison.OrdinalIgnoreCase) ||
-            entityType.Equals("Category", StringComparison.OrdinalIgnoreCase))
+        if (entityType.Equals(MediaEntityTypes.Product, StringComparison.OrdinalIgnoreCase) ||
+            entityType.Equals(MediaEntityTypes.Brand, StringComparison.OrdinalIgnoreCase) ||
+            entityType.Equals(MediaEntityTypes.Category, StringComparison.OrdinalIgnoreCase))
         {
             if (!imageExtensions.Contains(extension))
                 return Result.Failure(new Error(
-                    "400",
+                    "Media.InvalidType",
                     "برای این موجودیت فقط فایل‌های تصویری مجاز هستند.",
-                    ErrorType.Forbidden));
+                    ErrorType.Validation));
         }
 
         var allAllowed = imageExtensions.Concat(documentExtensions).Concat(videoExtensions);
         if (!allAllowed.Contains(extension))
             return Result.Failure(new Error(
-                "400",
+                "Media.UnsupportedType",
                 $"نوع فایل '{extension}' پشتیبانی نمی‌شود.",
                 ErrorType.Validation));
 

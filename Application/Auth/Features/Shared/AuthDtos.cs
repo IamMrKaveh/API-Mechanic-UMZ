@@ -11,3 +11,5 @@ public record AuthResult
     public UserProfileDto User { get; init; } = null!;
     public bool IsNewUser { get; init; }
 }
+
+public record TokenResultDto(string AccessToken, string RefreshToken);

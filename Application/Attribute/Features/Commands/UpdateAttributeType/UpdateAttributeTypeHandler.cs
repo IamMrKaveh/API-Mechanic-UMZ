@@ -1,3 +1,5 @@
+using Application.Common.Exceptions;
+using Application.Common.Results;
 using Domain.Attribute.Interfaces;
 using Domain.Common.Interfaces;
 
@@ -15,10 +17,10 @@ public class UpdateAttributeTypeHandler(
         CancellationToken ct)
     {
         var attributeType = await _repository.GetAttributeTypeByIdAsync(request.Id);
-        if (attributeType == null)
+        if (attributeType is null)
             return ServiceResult.Failure("Attribute type not found.");
 
-        if (request.Name != null && await _repository.AttributeTypeExistsAsync(request.Name, request.Id))
+        if (request.Name is not null && await _repository.AttributeTypeExistsAsync(request.Name, request.Id))
         {
             return ServiceResult.Failure("Attribute type name already exists.");
         }

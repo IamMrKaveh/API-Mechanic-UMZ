@@ -1,4 +1,4 @@
-﻿using Domain.Wallet.Aggregates;
+﻿using Domain.Wallet.Entities;
 using Domain.Wallet.Enums;
 
 namespace Infrastructure.Wallet.Configurations;

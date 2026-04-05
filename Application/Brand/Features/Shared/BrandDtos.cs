@@ -1,5 +1,18 @@
 namespace Application.Brand.Features.Shared;
 
+public sealed record BrandInfoDto
+{
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string CategoryName { get; init; } = string.Empty;
+}
+
+public sealed record BrandSummaryInProductDto(
+    int Id,
+    string Name,
+    string CategoryName
+);
+
 public record BrandSummaryDto
 {
     public int Id { get; init; }

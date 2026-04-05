@@ -8,13 +8,26 @@ public sealed class Notification : AggregateRoot<NotificationId>, IAuditable
 {
     public UserId UserId { get; private set; }
     public bool IsRead { get; private set; }
-
-    public DateTime CreatedAt => throw new NotImplementedException();
-
-    public DateTime? UpdatedAt => throw new NotImplementedException();
+    public DateTime CreatedAt { get; private set; }
+    public DateTime? UpdatedAt { get; private set; }
 
     private Notification()
     { }
+
+    public static Notification Create(NotificationId id, UserId userId, NotificationType notificationType)
+    {
+        var notification = new Notification
+        {
+            Id = id,
+            UserId = userId,
+            IsRead = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        notification.RaiseDomainEvent(new NotificationCreatedEvent(id, userId, notificationType));
+
+        return notification;
+    }
 
     public void EnsureUserAccess(UserId userId)
     {
@@ -27,6 +40,7 @@ public sealed class Notification : AggregateRoot<NotificationId>, IAuditable
         if (IsRead) return;
 
         IsRead = true;
+        UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new NotificationReadEvent(Id));
     }
 }

@@ -14,7 +14,6 @@ using Domain.Security.Aggregates;
 using Domain.Support.Aggregates;
 using Domain.User.Entities;
 using Domain.Variant.Aggregates;
-using Domain.Wallet.Aggregates;
 using Domain.Wallet.Entities;
 using Infrastructure.Common.Converters;
 using Infrastructure.Persistence.Outbox;

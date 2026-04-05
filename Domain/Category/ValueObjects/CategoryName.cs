@@ -1,3 +1,9 @@
+using Domain.Common.Base;
+using Domain.Common.Exceptions;
+using SharedKernel.Extensions;
+using System;
+using System.Collections.Generic;
+
 namespace Domain.Category.ValueObjects;
 
 public sealed class CategoryName : ValueObject
@@ -17,11 +23,10 @@ public sealed class CategoryName : ValueObject
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("نام دسته‌بندی الزامی است.");
 
-        //moved to application
-        //var normalized = PersianTextNormalizer.Normalize(name);
-        Validate(name);
+        var normalized = PersianTextNormalizer.Normalize(name);
+        Validate(normalized);
 
-        return new CategoryName(name);
+        return new CategoryName(normalized);
     }
 
     private static void Validate(string name)

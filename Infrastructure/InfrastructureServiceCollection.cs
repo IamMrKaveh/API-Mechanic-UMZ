@@ -18,6 +18,7 @@ using Application.Product.Contracts;
 using Application.Review.Contracts;
 using Application.Search.Contracts;
 using Application.Security.Contracts;
+using Application.Security.Interfaces;
 using Application.Shipping.Contracts;
 using Application.Support.Contracts;
 using Application.User.Contracts;
@@ -45,6 +46,7 @@ using Domain.Support.Interfaces;
 using Domain.User.Interfaces;
 using Domain.Variant.Interfaces;
 using Domain.Wallet.Interfaces;
+using Ganss.Xss;
 using Infrastructure.Analytics.Services;
 using Infrastructure.Attribute.Repositories;
 using Infrastructure.Audit.BackgroundServices;
@@ -100,6 +102,7 @@ using Infrastructure.Search.HealthChecks;
 using Infrastructure.Search.Options;
 using Infrastructure.Search.Services;
 using Infrastructure.Security.Services;
+using Infrastructure.Security.Tools;
 using Infrastructure.Shipping.QueryServices;
 using Infrastructure.Shipping.Repositories;
 using Infrastructure.Storage.Services;
@@ -137,7 +140,7 @@ public static class InfrastructureServiceCollection
         AddEventHandlers(services);
         AddCachingAndConcurrency(services, configuration);
         AddElasticsearchServices(services, configuration);
-        AddHealthChecks(services, connectionString);
+        AddHealthChecks(services, configuration, connectionString);
 
         services.AddHttpClient<ILocationService, LocationService>(client =>
         {
@@ -228,6 +231,8 @@ public static class InfrastructureServiceCollection
         IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+
         services.Configure<CacheOptions>(
             configuration.GetSection(CacheOptions.SectionName));
 
@@ -262,8 +267,8 @@ public static class InfrastructureServiceCollection
         services.AddScoped<INotificationQueryService, NotificationQueryService>();
         services.AddScoped<IBrandQueryService, BrandQueryService>();
         services.AddScoped<CartItemValidationService>();
-        services.AddMemoryCache();
 
+        services.AddMemoryCache();
         if (cacheOptions.IsEnabled)
         {
             var redisConn = configuration.GetConnectionString("Redis");
@@ -372,19 +377,29 @@ public static class InfrastructureServiceCollection
 
     private static void AddHealthChecks(
         IServiceCollection services,
+        IConfiguration configuration,
         string connectionString)
     {
-        services.AddHealthChecks()
+        var healthChecksBuilder = services.AddHealthChecks()
             .AddNpgSql(
                 connectionString,
                 name: "database",
                 failureStatus: HealthStatus.Unhealthy,
-                tags: new[] { "db", "sql", "postgresql" });
+                tags: ["db", "sql", "postgresql"]);
 
-        services.AddHealthChecks()
-            .AddCheck<ElasticsearchHealthCheck>(
-                "elasticsearch",
-                failureStatus: HealthStatus.Degraded,
-                tags: new[] { "search", "elasticsearch" });
+        var redisConnectionString = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConnectionString))
+        {
+            healthChecksBuilder.AddRedis(
+                redisConnectionString,
+                name: "redis",
+                failureStatus: HealthStatus.Unhealthy,
+                tags: ["cache", "redis"]);
+        }
+
+        healthChecksBuilder.AddCheck<ElasticsearchHealthCheck>(
+            "elasticsearch",
+            failureStatus: HealthStatus.Degraded,
+            tags: ["search", "elasticsearch"]);
     }
 }

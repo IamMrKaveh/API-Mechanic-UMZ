@@ -1,6 +1,7 @@
 using Application.Common.Results;
 using Application.Product.Features.Commands.ActivateProduct;
 using Application.Product.Features.Commands.BulkUpdatePrices;
+using Application.Product.Features.Commands.ChangePrice;
 using Application.Product.Features.Commands.CreateProduct;
 using Application.Product.Features.Commands.DeactivateProduct;
 using Application.Product.Features.Commands.DeleteProduct;
@@ -11,6 +12,7 @@ using Application.Product.Features.Queries.GetAdminProductById;
 using Application.Product.Features.Queries.GetAdminProductDetail;
 using Application.Product.Features.Queries.GetAdminProducts;
 using Application.Product.Features.Shared;
+using MainApi.Product.Requests;
 using SharedKernel.Models;
 
 namespace MainApi.Product.Controllers;
@@ -47,7 +49,9 @@ public class AdminProductsController(IMediator mediator) : BaseApiController(med
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateProductRequest request, CancellationToken ct)
+    public async Task<IActionResult> Create(
+        [FromBody] CreateProductRequest request,
+        CancellationToken ct)
     {
         var command = new CreateProductCommand(
             request.Name,
@@ -61,7 +65,9 @@ public class AdminProductsController(IMediator mediator) : BaseApiController(med
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductInput input)
+    public async Task<IActionResult> Update(
+        int id,
+        [FromBody] UpdateProductInput input)
     {
         var command = new UpdateProductCommand(input);
         var result = await _mediator.Send(command);
