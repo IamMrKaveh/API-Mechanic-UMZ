@@ -1,6 +1,6 @@
-﻿using MainApi.Common.Middleware;
+﻿using Presentation.Common.Middleware;
 
-namespace MainApi.Common.Extensions;
+namespace Presentation.Common.Extensions;
 
 public static class MiddlewareExtensions
 {

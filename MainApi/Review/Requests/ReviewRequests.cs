@@ -1,4 +1,4 @@
-﻿namespace MainApi.Review.Requests;
+﻿namespace Presentation.Review.Requests;
 
 public sealed record RejectReviewRequest(string? Reason);
 

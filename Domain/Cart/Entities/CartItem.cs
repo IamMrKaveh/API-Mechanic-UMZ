@@ -1,14 +1,15 @@
 using Domain.Cart.Exceptions;
+using Domain.Cart.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
 
 namespace Domain.Cart.Entities;
 
-public sealed class CartItem : Entity<Guid>
+public sealed class CartItem : Entity<CartItemId>
 {
-    public Guid CartId { get; private init; }
-    public Guid VariantId { get; private init; }
-    public Guid ProductId { get; private init; }
+    public CartId CartId { get; private init; } = default!;
+    public ProductVariantId VariantId { get; private init; } = default!;
+    public ProductId ProductId { get; private init; } = default!;
     public ProductName ProductName { get; private init; } = null!;
     public Sku Sku { get; private init; } = null!;
     public Money UnitPrice { get; private init; } = null!;
@@ -20,10 +21,10 @@ public sealed class CartItem : Entity<Guid>
     { }
 
     private CartItem(
-        Guid id,
-        Guid cartId,
-        Guid variantId,
-        Guid productId,
+        CartItemId id,
+        CartId cartId,
+        ProductVariantId variantId,
+        ProductId productId,
         ProductName productName,
         Sku sku,
         Money unitPrice,
@@ -42,9 +43,9 @@ public sealed class CartItem : Entity<Guid>
     }
 
     internal static CartItem Create(
-        Guid cartId,
-        Guid variantId,
-        Guid productId,
+        CartId cartId,
+        ProductVariantId variantId,
+        ProductId productId,
         ProductName productName,
         Sku sku,
         Money unitPrice,
@@ -55,7 +56,7 @@ public sealed class CartItem : Entity<Guid>
             throw new InvalidCartQuantityException(quantity);
 
         return new CartItem(
-            Guid.NewGuid(),
+            CartItemId.NewId(),
             cartId,
             variantId,
             productId,

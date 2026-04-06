@@ -1,4 +1,4 @@
-﻿namespace MainApi.Media.Requests;
+﻿namespace Presentation.Media.Requests;
 
 public record SetPrimaryMediaRequest(
     int MediaId,

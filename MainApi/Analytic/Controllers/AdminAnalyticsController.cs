@@ -4,8 +4,9 @@ using Application.Analytics.Features.Queries.GetInventoryReport;
 using Application.Analytics.Features.Queries.GetRevenueReport;
 using Application.Analytics.Features.Queries.GetSalesChartData;
 using Application.Analytics.Features.Queries.GetTopSellingProducts;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Analytic.Controllers;
+namespace Presentation.Analytic.Controllers;
 
 [ApiController]
 [Route("api/admin/analytics")]

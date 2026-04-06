@@ -1,3 +1,3 @@
-﻿namespace MainApi.Payment.Requests;
+﻿namespace Presentation.Payment.Requests;
 
 public sealed record RefundPaymentRequest(string Reason);

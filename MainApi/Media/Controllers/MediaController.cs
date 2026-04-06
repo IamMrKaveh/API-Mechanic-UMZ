@@ -1,7 +1,8 @@
 using Application.Media.Features.Queries.GetEntityMedia;
 using Application.Media.Features.Queries.GetMediaById;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Media.Controllers;
+namespace Presentation.Media.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

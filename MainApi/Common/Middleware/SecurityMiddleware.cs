@@ -1,6 +1,6 @@
-using MainApi.Security.Settings;
+using Presentation.Security.Settings;
 
-namespace MainApi.Common.Middleware;
+namespace Presentation.Common.Middleware;
 
 public class SecurityMiddleware(
     RequestDelegate next,

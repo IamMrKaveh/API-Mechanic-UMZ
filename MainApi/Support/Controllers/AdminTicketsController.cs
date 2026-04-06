@@ -1,4 +1,6 @@
-namespace MainApi.Support.Controllers;
+using Presentation.Base.Controllers.v1;
+
+namespace Presentation.Support.Controllers;
 
 [Route("api/admin/tickets")]
 [ApiController]

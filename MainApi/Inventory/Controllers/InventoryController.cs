@@ -1,6 +1,7 @@
-using MainApi.Inventory.Requests;
+using Presentation.Base.Controllers.v1;
+using Presentation.Inventory.Requests;
 
-namespace MainApi.Inventory.Controllers;
+namespace Presentation.Inventory.Controllers;
 
 [ApiController]
 [Route("api/inventory")]

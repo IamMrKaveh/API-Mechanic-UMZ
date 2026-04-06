@@ -1,4 +1,4 @@
-namespace MainApi.Common.Filters;
+namespace Presentation.Common.Filters;
 
 public class ValidationFilter : IActionFilter
 {

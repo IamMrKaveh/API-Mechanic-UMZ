@@ -1,6 +1,6 @@
 using SharedKernel.Contracts;
 
-namespace MainApi.Common.Middleware;
+namespace Presentation.Common.Middleware;
 
 public class RateLimitMiddleware
 {

@@ -1,4 +1,6 @@
-namespace MainApi.Shipping.Controllers;
+using Presentation.Base.Controllers.v1;
+
+namespace Presentation.Shipping.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

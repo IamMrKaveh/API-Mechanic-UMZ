@@ -1,6 +1,7 @@
-using MainApi.Discount.Requests;
+using Presentation.Base.Controllers.v1;
+using Presentation.Discount.Requests;
 
-namespace MainApi.Discount.Controllers;
+namespace Presentation.Discount.Controllers;
 
 [ApiController]
 [Route("api/admin/discounts")]

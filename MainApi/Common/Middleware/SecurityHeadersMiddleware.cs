@@ -1,4 +1,4 @@
-namespace MainApi.Common.Middleware;
+namespace Presentation.Common.Middleware;
 
 public class SecurityHeadersMiddleware
 {

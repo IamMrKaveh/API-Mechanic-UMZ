@@ -1,6 +1,7 @@
-using MainApi.Brand.Requests;
+using Presentation.Base.Controllers.v1;
+using Presentation.Brand.Requests;
 
-namespace MainApi.Brand.Controllers;
+namespace Presentation.Brand.Controllers;
 
 [Route("api/admin/brand")]
 [ApiController]

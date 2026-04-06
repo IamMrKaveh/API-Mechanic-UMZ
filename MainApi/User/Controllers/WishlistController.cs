@@ -1,6 +1,7 @@
 using Application.Wishlist.Features.Shared;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.User.Controllers;
+namespace Presentation.User.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

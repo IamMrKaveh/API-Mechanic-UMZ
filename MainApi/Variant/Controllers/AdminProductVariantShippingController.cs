@@ -1,8 +1,9 @@
 using Application.Shipping.Features.Shared;
 using Application.Variant.Features.Commands.UpdateProductVariantShipping;
 using Application.Variant.Features.Queries.GetProductVariantShipping;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Variant.Controllers;
+namespace Presentation.Variant.Controllers;
 
 [ApiController]
 [Route("api/admin/products/variants/shipping")]

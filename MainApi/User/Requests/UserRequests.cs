@@ -1,4 +1,4 @@
-﻿namespace MainApi.User.Requests;
+﻿namespace Presentation.User.Requests;
 
 public record ChangePhoneNumberRequest(string NewPhoneNumber, string OtpCode);
 

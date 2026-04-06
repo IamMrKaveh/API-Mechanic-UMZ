@@ -5,12 +5,13 @@ using Application.Auth.Features.Commands.LogoutAll;
 using Application.Auth.Features.Commands.RefreshToken;
 using Application.Auth.Features.Commands.RequestOtp;
 using Application.Auth.Features.Commands.VerifyOtp;
-using MainApi.Auth.Requests;
-using MainApi.Common.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
+using Presentation.Auth.Requests;
+using Presentation.Base.Controllers.v1;
+using Presentation.Common.Extensions;
 
-namespace MainApi.Auth.Controllers;
+namespace Presentation.Auth.Controllers;
 
 [Route("api/auth")]
 [ApiController]

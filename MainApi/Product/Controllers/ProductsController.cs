@@ -3,8 +3,9 @@ using Application.Product.Features.Queries.GetProductCatalog;
 using Application.Product.Features.Queries.GetProductDetails;
 using Application.Product.Features.Shared;
 using Application.Review.Features.Queries.GetProductReviewSummary;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Product.Controllers;
+namespace Presentation.Product.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

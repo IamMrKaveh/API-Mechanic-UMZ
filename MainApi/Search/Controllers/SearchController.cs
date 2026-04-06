@@ -1,4 +1,6 @@
-namespace MainApi.Search.Controllers;
+using Presentation.Base.Controllers.v1;
+
+namespace Presentation.Search.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

@@ -2,8 +2,9 @@
 using Application.Wallet.Features.Commands.DebitWallet;
 using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Wallet.Controllers;
+namespace Presentation.Wallet.Controllers;
 
 [ApiController]
 [Route("api/admin/wallet")]

@@ -1,8 +1,9 @@
+using Domain.Order.ValueObjects;
+
 namespace Domain.Order.Entities;
 
-public class OrderStatus : Entity<Guid>, IActivatable
+public class OrderStatus : Entity<OrderStatusId>, IActivatable
 {
-    public Guid OrderId { get; private init; }
     public string Name { get; private set; } = null!;
     public string DisplayName { get; private set; } = null!;
     public string? Icon { get; private set; }
@@ -17,7 +18,7 @@ public class OrderStatus : Entity<Guid>, IActivatable
     { }
 
     private OrderStatus(
-        Guid id,
+        OrderStatusId id,
         string name,
         string displayName,
         string? icon = null,
@@ -50,7 +51,7 @@ public class OrderStatus : Entity<Guid>, IActivatable
         Guard.Against.NullOrWhiteSpace(displayName, nameof(displayName));
 
         return new OrderStatus(
-            Guid.NewGuid(),
+            OrderStatusId.NewId(),
             name.Trim(),
             displayName.Trim(),
             icon?.Trim(),

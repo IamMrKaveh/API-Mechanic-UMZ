@@ -1,10 +1,10 @@
 using Application.Media.Features.Shared;
 using Infrastructure;
 using Infrastructure.Security.Settings;
-using MainApi.Common.Extensions;
-using MainApi.Common.Filters;
-using MainApi.Common.Options;
-using MainApi.Security.Settings;
+using Presentation.Common.Extensions;
+using Presentation.Common.Filters;
+using Presentation.Common.Options;
+using Presentation.Security.Settings;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)

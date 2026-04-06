@@ -1,7 +1,7 @@
 ﻿using Application.Common.Interfaces;
 using Application.Common.Results;
 
-namespace MainApi.Common.Mappers;
+namespace Presentation.Common.Mappers;
 
 public sealed class HttpResultMapper : IHttpResultMapper
 {

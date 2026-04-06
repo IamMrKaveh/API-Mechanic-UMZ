@@ -1,4 +1,5 @@
 using Domain.Audit.Entities;
+using Domain.User.ValueObjects;
 
 namespace Domain.Audit.Interfaces;
 
@@ -9,13 +10,13 @@ public interface IAuditRepository
         CancellationToken ct = default);
 
     Task<IEnumerable<AuditLog>> GetByUserIdAsync(
-        int userId,
+        UserId userId,
         int page,
         int pageSize,
         CancellationToken ct = default);
 
     Task<IEnumerable<AuditLog>> GetByEntityAsync(
         string entityType,
-        int entityId,
+        string entityId,
         CancellationToken ct = default);
 }

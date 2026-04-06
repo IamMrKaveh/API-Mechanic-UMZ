@@ -1,12 +1,13 @@
 ﻿using Domain.Cart.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Cart.Interfaces;
 
 public interface ICartRepository
 {
-    Task<Aggregates.Cart?> FindByIdAsync(Guid cartId, CancellationToken cancellationToken = default);
+    Task<Aggregates.Cart?> FindByIdAsync(CartId cartId, CancellationToken cancellationToken = default);
 
-    Task<Aggregates.Cart?> FindByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<Aggregates.Cart?> FindByUserIdAsync(UserId userId, CancellationToken cancellationToken = default);
 
     Task<Aggregates.Cart?> FindByGuestTokenAsync(GuestToken token, CancellationToken cancellationToken = default);
 

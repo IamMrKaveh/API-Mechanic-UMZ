@@ -1,4 +1,4 @@
-﻿namespace MainApi.Discount.Requests;
+﻿namespace Presentation.Discount.Requests;
 
 public record ValidateDiscountRequest(string Code, decimal OrderTotal);
 

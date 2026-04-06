@@ -1,6 +1,6 @@
 ﻿using Application.Product.Features.Shared;
 
-namespace MainApi.Product.Requests;
+namespace Presentation.Product.Requests;
 
 public sealed record ChangePriceRequest(decimal NewPrice);
 

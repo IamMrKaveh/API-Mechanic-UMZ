@@ -5,8 +5,9 @@ using Application.Payment.Features.Queries.GetPaymentByAuthority;
 using Application.Payment.Features.Queries.GetPaymentsByOrder;
 using Application.Payment.Features.Queries.GetPaymentStatus;
 using Application.Payment.Features.Shared;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Payment.Controllers;
+namespace Presentation.Payment.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

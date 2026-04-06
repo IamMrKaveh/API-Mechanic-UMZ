@@ -12,10 +12,11 @@ using Application.Product.Features.Queries.GetAdminProductById;
 using Application.Product.Features.Queries.GetAdminProductDetail;
 using Application.Product.Features.Queries.GetAdminProducts;
 using Application.Product.Features.Shared;
-using MainApi.Product.Requests;
+using Presentation.Base.Controllers.v1;
+using Presentation.Product.Requests;
 using SharedKernel.Models;
 
-namespace MainApi.Product.Controllers;
+namespace Presentation.Product.Controllers;
 
 [ApiController]
 [Route("api/admin/products")]

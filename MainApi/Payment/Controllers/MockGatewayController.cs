@@ -1,4 +1,6 @@
-namespace MainApi.Payment.Controllers;
+using Presentation.Base.Controllers.v1;
+
+namespace Presentation.Payment.Controllers;
 
 [ApiController]
 [Route("api/mock-gateway")]
