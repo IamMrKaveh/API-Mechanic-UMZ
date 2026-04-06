@@ -4,9 +4,10 @@ using Application.Review.Features.Commands.RejectReview;
 using Application.Review.Features.Commands.ReplyToReview;
 using Application.Review.Features.Commands.UpdateReviewStatus;
 using Application.Review.Features.Queries.GetReviewsByStatus;
-using MainApi.Review.Requests;
+using Presentation.Base.Controllers.v1;
+using Presentation.Review.Requests;
 
-namespace MainApi.Review.Controllers;
+namespace Presentation.Review.Controllers;
 
 [Route("api/admin/reviews")]
 [ApiController]

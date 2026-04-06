@@ -1,4 +1,4 @@
-﻿namespace MainApi.Common.Options;
+﻿namespace Presentation.Common.Options;
 
 public class WebhookOptions
 {

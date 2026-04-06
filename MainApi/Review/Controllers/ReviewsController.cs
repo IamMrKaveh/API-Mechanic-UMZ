@@ -1,6 +1,7 @@
-using MainApi.Review.Requests;
+using Presentation.Base.Controllers.v1;
+using Presentation.Review.Requests;
 
-namespace MainApi.Review.Controllers;
+namespace Presentation.Review.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

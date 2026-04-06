@@ -1,4 +1,4 @@
-﻿namespace MainApi.Auth.Requests;
+﻿namespace Presentation.Auth.Requests;
 
 public record LoginRequest
 {

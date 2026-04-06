@@ -1,4 +1,6 @@
-namespace MainApi.Notification.Controllers;
+using Presentation.Base.Controllers.v1;
+
+namespace Presentation.Notification.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

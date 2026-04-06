@@ -4,8 +4,9 @@ using Application.Variant.Features.Commands.RemoveStock;
 using Application.Variant.Features.Commands.RemoveVariant;
 using Application.Variant.Features.Commands.UpdateVariant;
 using Application.Variant.Features.Queries.GetProductVariants;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Variant.Controllers;
+namespace Presentation.Variant.Controllers;
 
 [Route("api/admin/variants")]
 [ApiController]

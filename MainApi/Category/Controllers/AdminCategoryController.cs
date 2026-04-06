@@ -4,8 +4,9 @@ using Application.Category.Features.Commands.ReorderCategories;
 using Application.Category.Features.Commands.UpdateCategory;
 using Application.Category.Features.Queries.GetAdminCategories;
 using Application.Category.Features.Queries.GetCategoryWithGroups;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Category.Controllers;
+namespace Presentation.Category.Controllers;
 
 [Route("api/admin/categories")]
 [ApiController]

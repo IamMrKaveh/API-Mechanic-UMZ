@@ -1,4 +1,6 @@
 using Domain.Inventory.ValueObjects;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 
 namespace Domain.Inventory.Entities;
@@ -7,8 +9,8 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
 {
     public ProductVariantId VariantId { get; private set; } = default!;
     public WarehouseId? WarehouseId { get; private set; }
-    public Guid? OrderItemId { get; private set; }
-    public Guid? UserId { get; private set; }
+    public OrderItemId? OrderItemId { get; private set; }
+    public UserId? UserId { get; private set; }
     public StockEventType EventType { get; private set; }
     public string EventTypeName => EventType.ToString();
     public int QuantityDelta { get; private set; }
@@ -32,7 +34,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
         string? referenceNumber = null,
         string? note = null,
         WarehouseId? warehouseId = null,
-        Guid? userId = null)
+        UserId? userId = null)
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
         return Create(variantId, StockEventType.StockIn, quantity, balanceAfter,
@@ -46,8 +48,8 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
         string referenceNumber,
         string? correlationId = null,
         WarehouseId? warehouseId = null,
-        Guid? userId = null,
-        Guid? orderItemId = null)
+        UserId? userId = null,
+        OrderItemId? orderItemId = null)
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
         var entry = Create(variantId, StockEventType.Reservation, -quantity, balanceAfter,
@@ -75,7 +77,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
         int quantity,
         int balanceAfter,
         string referenceNumber,
-        Guid? orderItemId = null,
+        OrderItemId? orderItemId = null,
         WarehouseId? warehouseId = null)
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
@@ -90,7 +92,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
         int delta,
         int balanceAfter,
         string reason,
-        Guid? userId = null,
+        UserId? userId = null,
         WarehouseId? warehouseId = null)
     {
         return Create(variantId, StockEventType.Adjustment, delta, balanceAfter,
@@ -106,7 +108,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
         string? referenceNumber,
         string? note,
         WarehouseId? warehouseId = null,
-        Guid? userId = null)
+        UserId? userId = null)
     {
         if (balanceAfter < 0)
             throw new DomainException("موجودی پس از این رویداد نمی‌تواند منفی باشد.");

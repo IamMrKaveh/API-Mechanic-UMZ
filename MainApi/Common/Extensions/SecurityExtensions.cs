@@ -1,4 +1,4 @@
-namespace MainApi.Common.Extensions;
+namespace Presentation.Common.Extensions;
 
 public static class SecurityExtensions
 {

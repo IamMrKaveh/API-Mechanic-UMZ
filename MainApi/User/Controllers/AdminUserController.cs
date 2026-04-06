@@ -7,8 +7,9 @@ using Application.User.Features.Commands.UpdateUser;
 using Application.User.Features.Queries.GetUserById;
 using Application.User.Features.Queries.GetUsers;
 using Application.User.Features.Shared;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.User.Controllers;
+namespace Presentation.User.Controllers;
 
 [Route("api/admin/user")]
 [ApiController]

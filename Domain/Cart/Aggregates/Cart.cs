@@ -3,14 +3,17 @@ using Domain.Cart.Enum;
 using Domain.Cart.Events;
 using Domain.Cart.Exceptions;
 using Domain.Cart.ValueObjects;
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Domain.Cart.Aggregates;
 
-public sealed class Cart : AggregateRoot<Guid>
+public sealed class Cart : AggregateRoot<CartId>
 {
     private readonly List<CartItem> _items = [];
 
-    public Guid? UserId { get; private set; }
+    public UserId? UserId { get; private set; }
     public GuestToken? GuestToken { get; private set; }
     public bool IsCheckedOut { get; private set; }
     public DateTime CreatedAt { get; private init; }
@@ -21,34 +24,33 @@ public sealed class Cart : AggregateRoot<Guid>
     private Cart()
     { }
 
-    private Cart(Guid id, Guid? userId, GuestToken? guestToken) : base(id)
+    private Cart(CartId id, UserId? userId, GuestToken? guestToken) : base(id)
     {
         UserId = userId;
         GuestToken = guestToken;
         IsCheckedOut = false;
         CreatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new CartCreatedEvent(id, userId, guestToken?.Value));
+        RaiseDomainEvent(new CartCreatedEvent(id.Value, userId?.Value, guestToken?.Value));
     }
 
-    public static Cart CreateForUser(Guid userId)
+    public static Cart CreateForUser(UserId userId)
     {
-        if (userId == Guid.Empty)
-            throw new ArgumentException("User ID cannot be empty.", nameof(userId));
-        return new Cart(Guid.NewGuid(), userId, null);
+        ArgumentNullException.ThrowIfNull(userId);
+        return new Cart(CartId.NewId(), userId, null);
     }
 
     public static Cart CreateForGuest(GuestToken guestToken)
     {
         ArgumentNullException.ThrowIfNull(guestToken);
-        return new Cart(Guid.NewGuid(), null, guestToken);
+        return new Cart(CartId.NewId(), null, guestToken);
     }
 
     public void AddItem(
-        Guid variantId,
-        Guid productId,
-        string productName,
-        string sku,
+        ProductVariantId variantId,
+        ProductId productId,
+        ProductName productName,
+        Sku sku,
         Money unitPrice,
         Money originalPrice,
         int quantity)
@@ -68,28 +70,28 @@ public sealed class Cart : AggregateRoot<Guid>
         }
 
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new CartItemAddedEvent(Id, variantId, productId, productName, quantity, unitPrice.Amount));
+        RaiseDomainEvent(new CartItemAddedEvent(Id.Value, variantId.Value, productId.Value, productName.Value, quantity, unitPrice.Amount));
     }
 
-    public void RemoveItem(Guid variantId)
+    public void RemoveItem(ProductVariantId variantId)
     {
         EnsureNotCheckedOut();
 
         var item = _items.FirstOrDefault(i => i.VariantId == variantId)
-            ?? throw new CartItemNotFoundException(variantId);
+            ?? throw new CartItemNotFoundException(variantId.Value);
 
         _items.Remove(item);
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new CartItemRemovedEvent(Id, variantId, item.Quantity));
+        RaiseDomainEvent(new CartItemRemovedEvent(Id.Value, variantId.Value, item.Quantity));
     }
 
-    public void UpdateItemQuantity(Guid variantId, int quantity)
+    public void UpdateItemQuantity(ProductVariantId variantId, int quantity)
     {
         EnsureNotCheckedOut();
 
         var item = _items.FirstOrDefault(i => i.VariantId == variantId)
-            ?? throw new CartItemNotFoundException(variantId);
+            ?? throw new CartItemNotFoundException(variantId.Value);
 
         item.UpdateQuantity(quantity);
         UpdatedAt = DateTime.UtcNow;
@@ -113,13 +115,12 @@ public sealed class Cart : AggregateRoot<Guid>
         UpdatedAt = DateTime.UtcNow;
 
         var total = _items.Sum(i => i.TotalPrice.Amount);
-        RaiseDomainEvent(new CartCheckedOutEvent(Id, UserId, _items.Count, total));
+        RaiseDomainEvent(new CartCheckedOutEvent(Id.Value, UserId?.Value, _items.Count, total));
     }
 
-    public void AssignToUser(Guid userId)
+    public void AssignToUser(UserId userId)
     {
-        if (userId == Guid.Empty)
-            throw new ArgumentException("User ID cannot be empty.", nameof(userId));
+        ArgumentNullException.ThrowIfNull(userId);
         UserId = userId;
         GuestToken = null;
         UpdatedAt = DateTime.UtcNow;
@@ -129,7 +130,7 @@ public sealed class Cart : AggregateRoot<Guid>
     {
         EnsureNotCheckedOut();
 
-        if (!UserId.HasValue)
+        if (UserId is null)
             throw new InvalidOperationException("Target cart must belong to an authenticated user.");
 
         ArgumentNullException.ThrowIfNull(sourceCart);
@@ -196,11 +197,11 @@ public sealed class Cart : AggregateRoot<Guid>
         }
 
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new CartMergedEvent(Id, sourceCart.Id, UserId!.Value, sourceCart.Items.Count));
+        RaiseDomainEvent(new CartMergedEvent(Id.Value, sourceCart.Id.Value, UserId!.Value.Value, sourceCart.Items.Count));
     }
 
     public void ValidateStockAvailability(
-        Guid variantId,
+        ProductVariantId variantId,
         int requestedQuantity,
         int availableStock,
         bool isUnlimited)
@@ -209,10 +210,10 @@ public sealed class Cart : AggregateRoot<Guid>
             throw new InvalidCartQuantityException(requestedQuantity);
 
         if (!isUnlimited && availableStock < requestedQuantity)
-            throw new InsufficientStockForCartException(variantId, requestedQuantity, availableStock);
+            throw new InsufficientStockForCartException(variantId.Value, requestedQuantity, availableStock);
     }
 
-    public bool HasItem(Guid variantId) => _items.Any(i => i.VariantId == variantId);
+    public bool HasItem(ProductVariantId variantId) => _items.Any(i => i.VariantId == variantId);
 
     public bool IsEmpty => _items.Count == 0;
 
@@ -224,6 +225,6 @@ public sealed class Cart : AggregateRoot<Guid>
     private void EnsureNotCheckedOut()
     {
         if (IsCheckedOut)
-            throw new CartAlreadyCheckedOutException(Id);
+            throw new CartAlreadyCheckedOutException(Id.Value);
     }
 }

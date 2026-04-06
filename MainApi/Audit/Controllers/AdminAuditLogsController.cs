@@ -1,8 +1,9 @@
 using Application.Audit.Features.Queries.ExportAuditLogs;
 using Application.Audit.Features.Queries.GetAuditLogs;
 using Application.Audit.Features.Queries.GetAuditStatistics;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Audit.Controllers;
+namespace Presentation.Audit.Controllers;
 
 [ApiController]
 [Route("api/admin/audit-logs")]

@@ -1,7 +1,8 @@
 using Application.Order.Features.Commands.DeleteOrderItem;
 using Application.Order.Features.Queries.GetOrderItemById;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Order.Controllers;
+namespace Presentation.Order.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

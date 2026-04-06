@@ -1,12 +1,14 @@
 using Domain.Order.ValueObjects;
+using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Domain.Order.Entities;
 
-public sealed class OrderItem : Entity<Guid>
+public sealed class OrderItem : Entity<OrderItemId>
 {
-    public Guid OrderId { get; private init; }
-    public Guid VariantId { get; private init; }
-    public Guid ProductId { get; private init; }
+    public OrderId OrderId { get; private init; } = default!;
+    public ProductVariantId VariantId { get; private init; } = default!;
+    public ProductId ProductId { get; private init; } = default!;
     public string ProductName { get; private init; } = null!;
     public string Sku { get; private init; } = null!;
     public Money UnitPrice { get; private init; } = null!;
@@ -16,10 +18,10 @@ public sealed class OrderItem : Entity<Guid>
     { }
 
     private OrderItem(
-        Guid id,
-        Guid orderId,
-        Guid variantId,
-        Guid productId,
+        OrderItemId id,
+        OrderId orderId,
+        ProductVariantId variantId,
+        ProductId productId,
         string productName,
         string sku,
         Money unitPrice,
@@ -34,10 +36,10 @@ public sealed class OrderItem : Entity<Guid>
         Quantity = quantity;
     }
 
-    internal static OrderItem FromSnapshot(Guid orderId, OrderItemSnapshot snapshot)
+    internal static OrderItem FromSnapshot(OrderId orderId, OrderItemSnapshot snapshot)
     {
         return new OrderItem(
-            Guid.NewGuid(),
+            OrderItemId.NewId(),
             orderId,
             snapshot.VariantId,
             snapshot.ProductId,

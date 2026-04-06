@@ -1,14 +1,11 @@
 using Domain.Order.Entities;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using Domain.Order.ValueObjects;
 
 namespace Domain.Order.Interfaces;
 
 public interface IOrderStatusRepository
 {
-    Task<OrderStatus?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<OrderStatus?> GetByIdAsync(OrderStatusId id, CancellationToken ct = default);
 
     Task<IReadOnlyList<OrderStatus>> GetAllAsync(CancellationToken ct = default);
 

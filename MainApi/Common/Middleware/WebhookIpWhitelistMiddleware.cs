@@ -1,6 +1,6 @@
-using MainApi.Common.Options;
+using Presentation.Common.Options;
 
-namespace MainApi.Common.Middleware;
+namespace Presentation.Common.Middleware;
 
 public class WebhookIpWhitelistMiddleware
 {

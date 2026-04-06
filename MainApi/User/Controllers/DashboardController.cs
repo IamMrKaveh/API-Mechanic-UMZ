@@ -1,4 +1,6 @@
-namespace MainApi.User.Controllers;
+using Presentation.Base.Controllers.v1;
+
+namespace Presentation.User.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

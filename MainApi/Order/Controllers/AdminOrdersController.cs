@@ -8,8 +8,9 @@ using Application.Order.Features.Queries.GetAdminOrderById;
 using Application.Order.Features.Queries.GetAdminOrders;
 using Application.Order.Features.Queries.GetOrderStatistics;
 using Application.Order.Features.Shared;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Order.Controllers;
+namespace Presentation.Order.Controllers;
 
 [ApiController]
 [Route("api/admin/orders")]

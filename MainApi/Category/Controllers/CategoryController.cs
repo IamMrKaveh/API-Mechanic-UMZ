@@ -1,4 +1,6 @@
-namespace MainApi.Category.Controllers;
+using Presentation.Base.Controllers.v1;
+
+namespace Presentation.Category.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

@@ -1,17 +1,20 @@
+using Domain.Notification.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Notification.Interfaces;
 
 public interface INotificationRepository
 {
     Task<Aggregates.Notification?> GetByIdAsync(
-        int id,
+        NotificationId id,
         CancellationToken ct = default);
 
     Task<IReadOnlyList<Aggregates.Notification>> GetUnreadByUserIdAsync(
-        int userId,
+        UserId userId,
         CancellationToken ct = default);
 
     Task<IReadOnlyList<Aggregates.Notification>> GetByUserIdAsync(
-        int userId,
+        UserId userId,
         int page,
         int pageSize,
         CancellationToken ct = default);

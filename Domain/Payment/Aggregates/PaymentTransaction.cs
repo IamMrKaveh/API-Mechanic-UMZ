@@ -1,3 +1,4 @@
+using Domain.Order.ValueObjects;
 using Domain.Payment.Events;
 using Domain.Payment.ValueObjects;
 using Domain.User.ValueObjects;
@@ -6,7 +7,7 @@ namespace Domain.Payment.Aggregates;
 
 public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IAuditable
 {
-    public Guid OrderId { get; private set; }
+    public OrderId OrderId { get; private set; } = default!;
     public UserId UserId { get; private set; } = default!;
     public PaymentAuthority Authority { get; private set; } = null!;
     public PaymentGateway Gateway { get; private set; } = null!;
@@ -32,7 +33,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
 
     private PaymentTransaction(
         PaymentTransactionId id,
-        Guid orderId,
+        OrderId orderId,
         UserId userId,
         PaymentAuthority authority,
         Money amount,
@@ -53,7 +54,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
     }
 
     public static PaymentTransaction Initiate(
-        Guid orderId,
+        OrderId orderId,
         UserId userId,
         string authority,
         decimal amount,
@@ -61,9 +62,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         string? description = null,
         int expiryMinutes = DefaultExpiryMinutes)
     {
-        if (orderId == Guid.Empty)
-            throw new ArgumentException("شناسه سفارش الزامی است.", nameof(orderId));
-
+        ArgumentNullException.ThrowIfNull(orderId);
         Guard.Against.Null(userId, nameof(userId));
         ValidateAmount(amount);
         ValidateDescription(description);
@@ -84,7 +83,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
 
         transaction.RaiseDomainEvent(new PaymentInitiatedEvent(
             transaction.Id.Value,
-            orderId,
+            orderId.Value,
             amount));
 
         return transaction;
@@ -114,7 +113,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
 
         RaiseDomainEvent(new PaymentSucceededEvent(
             Id.Value,
-            OrderId,
+            OrderId.Value,
             refId,
             userId: 0,
             Amount.Amount));
@@ -131,7 +130,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
 
         RaiseDomainEvent(new PaymentFailedEvent(
             Id.Value,
-            OrderId,
+            OrderId.Value,
             ErrorMessage));
     }
 
@@ -145,7 +144,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
 
         RaiseDomainEvent(new PaymentExpiredEvent(
             Id.Value,
-            OrderId,
+            OrderId.Value,
             Amount.Amount,
             Authority));
     }
@@ -161,7 +160,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
 
         RaiseDomainEvent(new PaymentCancelledEvent(
             Id.Value,
-            OrderId,
+            OrderId.Value,
             ErrorMessage));
     }
 
@@ -175,7 +174,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
 
         RaiseDomainEvent(new PaymentRefundedEvent(
             Id.Value,
-            OrderId,
+            OrderId.Value,
             0,
             Amount.Amount,
             ErrorMessage));

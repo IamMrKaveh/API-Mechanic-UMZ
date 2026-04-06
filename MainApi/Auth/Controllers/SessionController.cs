@@ -1,6 +1,7 @@
+using Presentation.Base.Controllers.v1;
 using SharedKernel.Contracts;
 
-namespace MainApi.Auth.Controllers;
+namespace Presentation.Auth.Controllers;
 
 [Route("api/sessions")]
 [ApiController]

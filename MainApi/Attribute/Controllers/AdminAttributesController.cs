@@ -7,8 +7,9 @@ using Application.Attribute.Features.Commands.UpdateAttributeValue;
 using Application.Attribute.Features.Queries.GetAllAttributeTypes;
 using Application.Attribute.Features.Queries.GetAttributeTypeById;
 using Application.Attribute.Features.Shared;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Attribute.Controllers;
+namespace Presentation.Attribute.Controllers;
 
 [ApiController]
 [Route("api/admin/attributes")]

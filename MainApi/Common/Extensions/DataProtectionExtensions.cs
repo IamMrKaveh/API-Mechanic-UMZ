@@ -1,7 +1,7 @@
 using Infrastructure.DataProtection.Repositories;
 using Microsoft.AspNetCore.DataProtection.Repositories;
 
-namespace MainApi.Common.Extensions;
+namespace Presentation.Common.Extensions;
 
 public static class DataProtectionExtensions
 {

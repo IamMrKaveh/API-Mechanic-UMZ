@@ -1,4 +1,4 @@
-﻿namespace MainApi.Security.Settings;
+﻿namespace Presentation.Security.Settings;
 
 public class SecuritySettings
 {

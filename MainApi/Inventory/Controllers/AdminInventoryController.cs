@@ -1,4 +1,6 @@
-namespace MainApi.Inventory.Controllers;
+using Presentation.Base.Controllers.v1;
+
+namespace Presentation.Inventory.Controllers;
 
 [ApiController]
 [Route("api/admin/inventory")]

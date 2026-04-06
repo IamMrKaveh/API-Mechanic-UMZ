@@ -1,4 +1,4 @@
-﻿namespace MainApi.Order.Requests;
+﻿namespace Presentation.Order.Requests;
 
 public sealed record MarkAsShippedRequest(string RowVersion);
 public sealed record CancelOrderRequest(string Reason);

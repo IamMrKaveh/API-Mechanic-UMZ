@@ -1,15 +1,18 @@
-﻿namespace Domain.Payment.Interfaces;
+﻿using Domain.Order.ValueObjects;
+using Domain.Payment.ValueObjects;
+
+namespace Domain.Payment.Interfaces;
 
 public interface IOrderPaymentContext
 {
-    Guid Id { get; }
+    OrderId Id { get; }
     bool IsPaid { get; }
     bool IsDelivered { get; }
     string StatusDisplayName { get; }
 
     void Refund();
 
-    void MarkAsPaid(Guid paymentTransactionId);
+    void MarkAsPaid(PaymentTransactionId paymentTransactionId);
 
     void StartProcessing();
 }

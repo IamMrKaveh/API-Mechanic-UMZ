@@ -1,7 +1,10 @@
+using Domain.Discount.ValueObjects;
 using Domain.Order.Entities;
 using Domain.Order.Events;
 using Domain.Order.Exceptions;
 using Domain.Order.ValueObjects;
+using Domain.Payment.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Order.Aggregates;
 
@@ -10,7 +13,7 @@ public sealed class Order : AggregateRoot<OrderId>
     private readonly List<OrderItem> _items = [];
 
     public OrderNumber OrderNumber { get; private init; } = null!;
-    public Guid UserId { get; private init; }
+    public UserId UserId { get; private init; } = default!;
     public OrderStatusValue Status { get; private set; } = null!;
     public ReceiverInfo ReceiverInfo { get; private set; } = null!;
     public DeliveryAddress DeliveryAddress { get; private set; } = null!;
@@ -18,8 +21,8 @@ public sealed class Order : AggregateRoot<OrderId>
     public Money ShippingCost { get; private set; } = null!;
     public Money DiscountAmount { get; private set; } = null!;
     public Money FinalAmount { get; private set; } = null!;
-    public Guid? AppliedDiscountCodeId { get; private set; }
-    public Guid? PaymentTransactionId { get; private set; }
+    public DiscountCodeId? AppliedDiscountCodeId { get; private set; }
+    public PaymentTransactionId? PaymentTransactionId { get; private set; }
     public Guid IdempotencyKey { get; private init; }
     public string? CancellationReason { get; private set; }
     public bool IsDeleted { get; private set; }
@@ -38,13 +41,13 @@ public sealed class Order : AggregateRoot<OrderId>
 
     private Order(
         OrderId id,
-        Guid userId,
+        UserId userId,
         OrderNumber orderNumber,
         ReceiverInfo receiverInfo,
         DeliveryAddress deliveryAddress,
         Money shippingCost,
         Money discountAmount,
-        Guid? appliedDiscountCodeId,
+        DiscountCodeId? appliedDiscountCodeId,
         IEnumerable<OrderItemSnapshot> itemSnapshots,
         Guid idempotencyKey) : base(id)
     {
@@ -59,17 +62,14 @@ public sealed class Order : AggregateRoot<OrderId>
         Status = OrderStatusValue.Created;
         CreatedAt = DateTime.UtcNow;
 
-        var idObj = (object)id.Value;
-        var actualOrderId = idObj is Guid g ? g : (Guid.TryParse(idObj.ToString(), out var parsed) ? parsed : new Guid(idObj.ToString()!.PadLeft(32, '0')));
-
         foreach (var snapshot in itemSnapshots)
-            _items.Add(OrderItem.FromSnapshot(actualOrderId, snapshot));
+            _items.Add(OrderItem.FromSnapshot(id, snapshot));
 
         RecalculateTotals();
 
         RaiseDomainEvent(new OrderCreatedEvent(
-            actualOrderId,
-            userId,
+            id.Value,
+            userId.Value,
             orderNumber.Value,
             FinalAmount.Amount,
             FinalAmount.Currency,
@@ -79,12 +79,12 @@ public sealed class Order : AggregateRoot<OrderId>
 
     public static Order Place(
         OrderId orderId,
-        Guid userId,
+        UserId userId,
         ReceiverInfo receiverInfo,
         DeliveryAddress deliveryAddress,
         Money shippingCost,
         Money discountAmount,
-        Guid? appliedDiscountCodeId,
+        DiscountCodeId? appliedDiscountCodeId,
         IEnumerable<OrderItemSnapshot> itemSnapshots,
         Guid idempotencyKey)
     {
@@ -93,8 +93,7 @@ public sealed class Order : AggregateRoot<OrderId>
         if (!snapshots.Any())
             throw new EmptyOrderException();
 
-        if (userId == Guid.Empty)
-            throw new ArgumentException("User ID cannot be empty.", nameof(userId));
+        ArgumentNullException.ThrowIfNull(userId);
 
         if (idempotencyKey == Guid.Empty)
             throw new ArgumentException("Idempotency key cannot be empty.", nameof(idempotencyKey));
@@ -128,20 +127,19 @@ public sealed class Order : AggregateRoot<OrderId>
         TransitionTo(OrderStatusValue.Pending);
     }
 
-    public void MarkAsPaid(Guid paymentTransactionId)
+    public void MarkAsPaid(PaymentTransactionId paymentTransactionId)
     {
-        if (paymentTransactionId == Guid.Empty)
-            throw new ArgumentException("Payment transaction ID cannot be empty.", nameof(paymentTransactionId));
+        ArgumentNullException.ThrowIfNull(paymentTransactionId);
 
         TransitionTo(OrderStatusValue.Paid);
         PaymentTransactionId = paymentTransactionId;
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new OrderPaidEvent(
-            GetActualOrderId(),
+            Id.Value,
             OrderNumber.Value,
-            UserId,
-            paymentTransactionId,
+            UserId.Value,
+            paymentTransactionId.Value,
             FinalAmount.Amount,
             FinalAmount.Currency));
     }
@@ -179,9 +177,9 @@ public sealed class Order : AggregateRoot<OrderId>
         CancellationReason = reason;
 
         RaiseDomainEvent(new OrderCancelledEvent(
-            GetActualOrderId(),
+            Id.Value,
             OrderNumber.Value,
-            UserId,
+            UserId.Value,
             reason,
             wasPaid));
     }
@@ -220,9 +218,9 @@ public sealed class Order : AggregateRoot<OrderId>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new OrderStatusChangedEvent(
-            GetActualOrderId(),
+            Id.Value,
             OrderNumber.Value,
-            UserId,
+            UserId.Value,
             previous.Value,
             next.Value));
     }
@@ -237,11 +235,5 @@ public sealed class Order : AggregateRoot<OrderId>
         FinalAmount = beforeDiscount.IsGreaterThan(DiscountAmount)
             ? beforeDiscount.Subtract(DiscountAmount)
             : Money.Zero(SubTotal.Currency);
-    }
-
-    private Guid GetActualOrderId()
-    {
-        var idObj = (object)Id.Value;
-        return idObj is Guid g ? g : (Guid.TryParse(idObj.ToString(), out var parsed) ? parsed : new Guid(idObj.ToString()!.PadLeft(32, '0')));
     }
 }

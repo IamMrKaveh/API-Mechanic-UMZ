@@ -1,4 +1,4 @@
-﻿namespace MainApi.Brand.Requests;
+﻿namespace Presentation.Brand.Requests;
 
 public record CreateBrandRequest(
     int CategoryId,

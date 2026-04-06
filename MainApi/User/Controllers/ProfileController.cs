@@ -11,8 +11,10 @@ using Application.User.Features.Queries.GetUserAddresses;
 using Application.User.Features.Shared;
 using media
 
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.User.Controllers;
+
+namespace Presentation.User.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

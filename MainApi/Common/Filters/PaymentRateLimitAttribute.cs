@@ -1,6 +1,6 @@
 using SharedKernel.Contracts;
 
-namespace MainApi.Common.Filters;
+namespace Presentation.Common.Filters;
 
 [AttributeUsage(AttributeTargets.Method)]
 public class PaymentRateLimitAttribute : ActionFilterAttribute

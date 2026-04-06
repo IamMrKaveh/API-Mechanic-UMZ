@@ -4,9 +4,10 @@ using Application.Media.Features.Commands.ReorderMedia;
 using Application.Media.Features.Commands.SetPrimaryMedia;
 using Application.Media.Features.Commands.UploadMedia;
 using Application.Media.Features.Queries.GetAllMedia;
-using MainApi.Media.Requests;
+using Presentation.Base.Controllers.v1;
+using Presentation.Media.Requests;
 
-namespace MainApi.Media.Controllers;
+namespace Presentation.Media.Controllers;
 
 [Route("api/admin/media")]
 [ApiController]

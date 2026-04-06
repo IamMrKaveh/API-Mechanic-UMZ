@@ -1,3 +1,6 @@
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
+
 namespace Domain.Brand.Interfaces;
 
 public interface IBrandRepository
@@ -13,7 +16,7 @@ public interface IBrandRepository
         byte[] rowVersion);
 
     Task<Domain.Brand.Aggregates.Brand?> GetByIdAsync(
-        Guid id,
+        BrandId id,
         CancellationToken ct = default);
 
     Task<Domain.Brand.Aggregates.Brand?> GetBySlugAsync(
@@ -22,12 +25,12 @@ public interface IBrandRepository
 
     Task<bool> ExistsByNameInCategoryAsync(
         string name,
-        Guid categoryId,
-        Guid? excludeId = null,
+        CategoryId categoryId,
+        BrandId? excludeId = null,
         CancellationToken ct = default);
 
     Task<bool> ExistsBySlugAsync(
         string slug,
-        Guid? excludeId = null,
+        BrandId? excludeId = null,
         CancellationToken ct = default);
 }

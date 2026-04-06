@@ -4,8 +4,9 @@ using Application.Shipping.Features.Commands.RestoreShipping;
 using Application.Shipping.Features.Commands.UpdateShipping;
 using Application.Shipping.Features.Queries.GetShippingById;
 using Application.Shipping.Features.Queries.GetShippings;
+using Presentation.Base.Controllers.v1;
 
-namespace MainApi.Shipping.Controllers;
+namespace Presentation.Shipping.Controllers;
 
 [ApiController]
 [Route("api/admin/shipping")]
