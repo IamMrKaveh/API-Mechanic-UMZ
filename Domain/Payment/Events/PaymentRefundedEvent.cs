@@ -1,15 +1,19 @@
+using Domain.Order.ValueObjects;
+using Domain.Payment.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Payment.Events;
 
 public sealed class PaymentRefundedEvent(
-    Guid transactionId,
-    Guid orderId,
-    int userId,
+    PaymentTransactionId paymentTransactionId,
+    OrderId orderId,
+    UserId userId,
     decimal amount,
     string? reason) : DomainEvent
 {
-    public Guid TransactionId { get; } = transactionId;
-    public Guid OrderId { get; } = orderId;
-    public int UserId { get; } = userId;
+    public PaymentTransactionId PaymentTransactionId { get; } = paymentTransactionId;
+    public OrderId OrderId { get; } = orderId;
+    public UserId UserId { get; } = userId;
     public decimal Amount { get; } = amount;
     public string? Reason { get; } = reason;
 }

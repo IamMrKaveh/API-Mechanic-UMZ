@@ -197,7 +197,7 @@ public sealed class Cart : AggregateRoot<CartId>
         }
 
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new CartMergedEvent(Id.Value, sourceCart.Id.Value, UserId!.Value.Value, sourceCart.Items.Count));
+        RaiseDomainEvent(new CartMergedEvent(Id.Value, sourceCart.Id.Value, UserId!.Value, sourceCart.Items.Count));
     }
 
     public void ValidateStockAvailability(

@@ -2,6 +2,8 @@
 using Domain.Inventory.Events;
 using Domain.Inventory.Exceptions;
 using Domain.Inventory.ValueObjects;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 
 namespace Domain.Inventory.Aggregates;
@@ -66,7 +68,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     public void IncreaseStock(
         int quantity,
         string reason,
-        Guid? userId = null,
+        UserId? userId = null,
         string? referenceNumber = null)
     {
         if (quantity <= 0)
@@ -87,7 +89,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     public void DecreaseStock(
         int quantity,
         string reason,
-        Guid? userId = null,
+        UserId? userId = null,
         string? referenceNumber = null)
     {
         if (quantity <= 0)
@@ -134,8 +136,8 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     public void ReserveStock(
         int quantity,
         string referenceNumber,
-        Guid? orderItemId = null,
-        Guid? userId = null,
+        OrderItemId? orderItemId = null,
+        UserId? userId = null,
         string? correlationId = null)
     {
         if (quantity <= 0)
@@ -180,7 +182,10 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             new StockReservationReleasedEvent(Id, VariantId, actualRelease, ReservedQuantity));
     }
 
-    public void ConfirmReservation(int quantity, string referenceNumber, Guid? orderItemId = null)
+    public void ConfirmReservation(
+        int quantity,
+        string referenceNumber,
+        OrderItemId? orderItemId = null)
     {
         if (quantity <= 0)
             throw new InvalidStockQuantityException(quantity);
@@ -203,15 +208,15 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         RaiseDomainEvent(new StockCommittedEvent(Id, VariantId, 0, quantity));
     }
 
-    public void ReverseStockChange(string idempotencyKey, string reason, Guid userId)
+    public void ReverseStockChange(
+        string idempotencyKey,
+        string reason,
+        UserId userId)
     {
         if (IsUnlimited)
             throw new DomainException("امکان برگشت تراکنش برای واریانت نامحدود وجود ندارد.");
 
-        var originalEntry = _ledgerEntries.FirstOrDefault(e => e.IdempotencyKey == idempotencyKey);
-        if (originalEntry is null)
-            throw new DomainException("تراکنش مورد نظر یافت نشد.");
-
+        var originalEntry = _ledgerEntries.FirstOrDefault(e => e.IdempotencyKey == idempotencyKey) ?? throw new DomainException("تراکنش مورد نظر یافت نشد.");
         var reversalDelta = -originalEntry.QuantityDelta;
         var newStock = StockQuantity + reversalDelta;
 
@@ -233,8 +238,8 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     public void ReturnStock(
         int quantity,
         string reason,
-        Guid? orderItemId = null,
-        Guid? userId = null)
+        OrderItemId? orderItemId = null,
+        UserId? userId = null)
     {
         if (quantity <= 0)
             throw new InvalidStockQuantityException(quantity);
@@ -252,7 +257,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         RaiseDomainEvent(new StockRestoredEvent(Id, VariantId, StockQuantity, quantity, reason));
     }
 
-    public void AdjustStock(int quantityChange, Guid userId, string reason)
+    public void AdjustStock(int quantityChange, UserId userId, string reason)
     {
         if (IsUnlimited)
             throw new DomainException("واریانت نامحدود قابل تنظیم دستی نیست.");
@@ -270,7 +275,10 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         RaiseDomainEvent(new StockAdjustedEvent(Id, VariantId, StockQuantity, quantityChange, reason));
     }
 
-    public void RecordDamage(int quantity, Guid userId, string reason)
+    public void RecordDamage(
+        int quantity,
+        UserId userId,
+        string reason)
     {
         if (quantity <= 0)
             throw new InvalidStockQuantityException(quantity);
@@ -291,7 +299,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         _ledgerEntries.Add(entry);
     }
 
-    public void Reconcile(int calculatedStockFromLedger, Guid userId)
+    public void Reconcile(int calculatedStockFromLedger, UserId userId)
     {
         if (IsUnlimited) return;
 

@@ -41,25 +41,29 @@ public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActi
 
     internal static AttributeValue Create(AttributeType attributeType, string value, string displayValue, string? hexCode, int sortOrder)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new DomainException("مقدار الزامی است.");
+        Guard.Against.Null(attributeType, nameof(attributeType));
+        Guard.Against.NullOrWhiteSpace(value, nameof(value));
+        Guard.Against.Negative(sortOrder, nameof(sortOrder));
+
+        var trimmedValue = value.Trim();
+        var trimmedDisplay = string.IsNullOrWhiteSpace(displayValue) ? trimmedValue : displayValue.Trim();
 
         return new AttributeValue(
             AttributeValueId.NewId(),
             attributeType,
-            value.Trim(),
-            displayValue?.Trim() ?? value.Trim(),
+            trimmedValue,
+            trimmedDisplay,
             hexCode?.Trim(),
             sortOrder);
     }
 
     public void Update(string value, string displayValue, string? hexCode, int sortOrder, bool isActive)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new DomainException("مقدار الزامی است.");
+        Guard.Against.NullOrWhiteSpace(value, nameof(value));
+        Guard.Against.Negative(sortOrder, nameof(sortOrder));
 
         Value = value.Trim();
-        DisplayValue = displayValue?.Trim() ?? value.Trim();
+        DisplayValue = string.IsNullOrWhiteSpace(displayValue) ? Value : displayValue.Trim();
         HexCode = hexCode?.Trim();
         SortOrder = sortOrder;
         IsActive = isActive;

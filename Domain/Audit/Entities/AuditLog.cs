@@ -1,8 +1,8 @@
 using Domain.Audit.Events;
 using Domain.Audit.ValueObjects;
-using Domain.Common.Abstractions;
 using Domain.User.ValueObjects;
-using System;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Domain.Audit.Entities;
 
@@ -34,22 +34,25 @@ public sealed class AuditLog : AggregateRoot<AuditLogId>
         string? details = null,
         string? userAgent = null)
     {
+        Guard.Against.NullOrWhiteSpace(eventType, nameof(eventType));
+        Guard.Against.NullOrWhiteSpace(action, nameof(action));
+        Guard.Against.NullOrWhiteSpace(ipAddress, nameof(ipAddress));
+
         var auditLog = new AuditLog
         {
             Id = AuditLogId.NewId(),
             UserId = userId,
-            EventType = eventType,
-            Action = action,
-            IpAddress = ipAddress,
-            EntityType = entityType,
-            EntityId = entityId,
-            Details = details,
-            UserAgent = userAgent,
+            EventType = eventType.Trim(),
+            Action = action.Trim(),
+            IpAddress = ipAddress.Trim(),
+            EntityType = entityType?.Trim(),
+            EntityId = entityId?.Trim(),
+            Details = details?.Trim(),
+            UserAgent = userAgent?.Trim(),
             CreatedAt = DateTime.UtcNow
         };
 
         auditLog.IntegrityHash = auditLog.ComputeHash();
-
         auditLog.RaiseDomainEvent(new AuditLogCreatedEvent(auditLog.Id, auditLog.Action));
 
         return auditLog;
@@ -71,9 +74,8 @@ public sealed class AuditLog : AggregateRoot<AuditLogId>
     {
         var userIdString = UserId?.Value.ToString() ?? "null";
         var data = $"{userIdString}|{EventType}|{Action}|{Details}|{IpAddress}|{CreatedAt:O}";
-        using var sha = System.Security.Cryptography.SHA256.Create();
-        var bytes = System.Text.Encoding.UTF8.GetBytes(data);
-        var hash = sha.ComputeHash(bytes);
+        var bytes = Encoding.UTF8.GetBytes(data);
+        var hash = SHA256.HashData(bytes);
         return Convert.ToBase64String(hash);
     }
 }

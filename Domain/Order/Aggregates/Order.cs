@@ -68,8 +68,8 @@ public sealed class Order : AggregateRoot<OrderId>
         RecalculateTotals();
 
         RaiseDomainEvent(new OrderCreatedEvent(
-            id.Value,
-            userId.Value,
+            id,
+            userId,
             orderNumber.Value,
             FinalAmount.Amount,
             FinalAmount.Currency,
@@ -136,10 +136,10 @@ public sealed class Order : AggregateRoot<OrderId>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new OrderPaidEvent(
-            Id.Value,
+            Id,
             OrderNumber.Value,
-            UserId.Value,
-            paymentTransactionId.Value,
+            UserId,
+            paymentTransactionId,
             FinalAmount.Amount,
             FinalAmount.Currency));
     }
@@ -177,9 +177,9 @@ public sealed class Order : AggregateRoot<OrderId>
         CancellationReason = reason;
 
         RaiseDomainEvent(new OrderCancelledEvent(
-            Id.Value,
+            Id,
             OrderNumber.Value,
-            UserId.Value,
+            UserId,
             reason,
             wasPaid));
     }
@@ -218,9 +218,9 @@ public sealed class Order : AggregateRoot<OrderId>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new OrderStatusChangedEvent(
-            Id.Value,
+            Id,
             OrderNumber.Value,
-            UserId.Value,
+            UserId,
             previous.Value,
             next.Value));
     }

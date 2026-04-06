@@ -1,4 +1,6 @@
 using Domain.Inventory.Services.Results;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Inventory.Services;
 
@@ -8,8 +10,8 @@ public sealed class InventoryDomainService
         Aggregates.Inventory inventory,
         int quantity,
         string referenceNumber,
-        Guid? orderItemId = null,
-        Guid? userId = null,
+        OrderItemId? orderItemId = null,
+        UserId? userId = null,
         string? correlationId = null)
     {
         Guard.Against.Null(inventory, nameof(inventory));
@@ -32,7 +34,7 @@ public sealed class InventoryDomainService
         Aggregates.Inventory inventory,
         int quantity,
         string referenceNumber,
-        Guid? orderItemId = null)
+        OrderItemId? orderItemId = null)
     {
         Guard.Against.Null(inventory, nameof(inventory));
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
@@ -77,8 +79,8 @@ public sealed class InventoryDomainService
         Aggregates.Inventory inventory,
         int quantity,
         string reason,
-        Guid? orderItemId = null,
-        Guid? userId = null)
+        OrderItemId? orderItemId = null,
+        UserId? userId = null)
     {
         Guard.Against.Null(inventory, nameof(inventory));
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
@@ -95,7 +97,7 @@ public sealed class InventoryDomainService
     public AdjustmentResult AdjustStock(
         Aggregates.Inventory inventory,
         int quantityChange,
-        Guid userId,
+        UserId userId,
         string reason)
     {
         Guard.Against.Null(inventory, nameof(inventory));
@@ -120,7 +122,7 @@ public sealed class InventoryDomainService
     public AdjustmentResult RecordDamage(
         Aggregates.Inventory inventory,
         int quantity,
-        Guid userId,
+        UserId userId,
         string reason)
     {
         Guard.Against.Null(inventory, nameof(inventory));
@@ -198,7 +200,7 @@ public sealed class InventoryDomainService
     public ReconcileResult Reconcile(
         Aggregates.Inventory inventory,
         int calculatedStockFromTransactions,
-        Guid userId)
+        UserId userId)
     {
         Guard.Against.Null(inventory, nameof(inventory));
 

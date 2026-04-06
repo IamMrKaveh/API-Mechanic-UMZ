@@ -1,6 +1,7 @@
 using Domain.Payment.Aggregates;
 using Domain.Payment.Interfaces;
 using Domain.Payment.Results;
+using Domain.Payment.ValueObjects;
 
 namespace Domain.Payment.Services;
 
@@ -69,7 +70,7 @@ public sealed class PaymentSettlementService
 
     public static PaymentSuccessSettlementResult ProcessPaymentSuccess(
         IOrderPaymentContext order,
-        Guid paymentTransactionId)
+        PaymentTransactionId paymentTransactionId)
     {
         Guard.Against.Null(order, nameof(order));
 

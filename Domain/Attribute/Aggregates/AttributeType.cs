@@ -1,5 +1,7 @@
 using Domain.Attribute.Entities;
 using Domain.Attribute.Events;
+using Domain.Attribute.Exceptions;
+using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
 
 namespace Domain.Attribute.Aggregates;
@@ -29,24 +31,49 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         CreatedAt = DateTime.UtcNow;
     }
 
-    public static AttributeType Create(string name, string displayName, int sortOrder, bool isActive)
+    public static AttributeType Create(
+        string name,
+        string displayName,
+        int sortOrder,
+        bool isActive,
+        IAttributeTypeUniquenessChecker uniquenessChecker)
     {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException("نام ویژگی الزامی است.");
+        Guard.Against.NullOrWhiteSpace(name, nameof(name));
+        Guard.Against.Null(uniquenessChecker, nameof(uniquenessChecker));
+        Guard.Against.Negative(sortOrder, nameof(sortOrder));
+
+        var trimmedName = name.Trim();
+        var trimmedDisplayName = string.IsNullOrWhiteSpace(displayName) ? trimmedName : displayName.Trim();
+
+        if (!uniquenessChecker.IsUnique(trimmedName))
+            throw new DuplicateAttributeException(trimmedName);
 
         var id = AttributeTypeId.NewId();
-        var attributeType = new AttributeType(id, name.Trim(), displayName?.Trim() ?? name.Trim(), sortOrder, isActive);
-        attributeType.RaiseDomainEvent(new AttributeTypeCreatedEvent(id, name.Trim(), displayName?.Trim() ?? name.Trim(), sortOrder));
+        var attributeType = new AttributeType(id, trimmedName, trimmedDisplayName, sortOrder, isActive);
+
+        attributeType.RaiseDomainEvent(new AttributeTypeCreatedEvent(id, trimmedName, trimmedDisplayName, sortOrder));
         return attributeType;
     }
 
-    public void Update(string name, string displayName, int sortOrder, bool isActive)
+    public void Update(
+        string name,
+        string displayName,
+        int sortOrder,
+        bool isActive,
+        IAttributeTypeUniquenessChecker uniquenessChecker)
     {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException("نام ویژگی الزامی است.");
+        Guard.Against.NullOrWhiteSpace(name, nameof(name));
+        Guard.Against.Null(uniquenessChecker, nameof(uniquenessChecker));
+        Guard.Against.Negative(sortOrder, nameof(sortOrder));
 
-        Name = name.Trim();
-        DisplayName = displayName?.Trim() ?? name.Trim();
+        var trimmedName = name.Trim();
+        var trimmedDisplayName = string.IsNullOrWhiteSpace(displayName) ? trimmedName : displayName.Trim();
+
+        if (!Name.Equals(trimmedName, StringComparison.OrdinalIgnoreCase) && !uniquenessChecker.IsUnique(trimmedName, Id))
+            throw new DuplicateAttributeException(trimmedName);
+
+        Name = trimmedName;
+        DisplayName = trimmedDisplayName;
         SortOrder = sortOrder;
         IsActive = isActive;
         UpdatedAt = DateTime.UtcNow;
@@ -54,33 +81,47 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
 
     public AttributeValue AddValue(string value, string displayValue, string? hexCode = null, int sortOrder = 0)
     {
-        if (_values.Any(v => v.Value.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase)))
-            throw new DomainException($"مقدار '{value}' قبلاً برای این ویژگی وجود دارد.");
+        Guard.Against.NullOrWhiteSpace(value, nameof(value));
+        Guard.Against.Negative(sortOrder, nameof(sortOrder));
 
-        var attributeValue = AttributeValue.Create(this, value, displayValue, hexCode, sortOrder);
+        var trimmedValue = value.Trim();
+
+        if (_values.Any(v => v.Value.Equals(trimmedValue, StringComparison.OrdinalIgnoreCase)))
+            throw new DuplicateAttributeException(trimmedValue);
+
+        var attributeValue = AttributeValue.Create(this, trimmedValue, displayValue, hexCode, sortOrder);
         _values.Add(attributeValue);
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new AttributeValueAddedEvent(Id, attributeValue.Id, value.Trim(), displayValue?.Trim() ?? value.Trim()));
+        RaiseDomainEvent(new AttributeValueAddedEvent(Id, attributeValue.Id, trimmedValue, attributeValue.DisplayValue));
         return attributeValue;
     }
 
     public void UpdateValue(AttributeValueId valueId, string value, string displayValue, string? hexCode, int sortOrder, bool isActive)
     {
-        var attrValue = _values.FirstOrDefault(v => v.Id == valueId) ?? throw new DomainException("مقدار ویژگی یافت نشد.");
-        if (!attrValue.Value.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+        Guard.Against.NullOrWhiteSpace(value, nameof(value));
+        Guard.Against.Negative(sortOrder, nameof(sortOrder));
+
+        var attrValue = _values.FirstOrDefault(v => v.Id == valueId)
+            ?? throw new AttributeValueNotFoundException(valueId);
+
+        var trimmedValue = value.Trim();
+
+        if (!attrValue.Value.Equals(trimmedValue, StringComparison.OrdinalIgnoreCase))
         {
-            if (_values.Any(v => v.Id != valueId && v.Value.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase)))
-                throw new DomainException($"مقدار '{value}' قبلاً وجود دارد.");
+            if (_values.Any(v => v.Id != valueId && v.Value.Equals(trimmedValue, StringComparison.OrdinalIgnoreCase)))
+                throw new DuplicateAttributeException(trimmedValue);
         }
 
-        attrValue.Update(value, displayValue, hexCode, sortOrder, isActive);
+        attrValue.Update(trimmedValue, displayValue, hexCode, sortOrder, isActive);
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void RemoveValue(AttributeValueId valueId)
     {
-        var attrValue = _values.FirstOrDefault(v => v.Id == valueId) ?? throw new DomainException("مقدار ویژگی یافت نشد.");
+        var attrValue = _values.FirstOrDefault(v => v.Id == valueId)
+            ?? throw new AttributeValueNotFoundException(valueId);
+
         _values.Remove(attrValue);
         UpdatedAt = DateTime.UtcNow;
     }

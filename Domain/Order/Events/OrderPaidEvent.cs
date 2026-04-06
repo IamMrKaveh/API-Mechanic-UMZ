@@ -1,21 +1,23 @@
-using Domain.Common.Events;
+using Domain.Order.ValueObjects;
+using Domain.Payment.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Order.Events;
 
 public sealed class OrderPaidEvent : DomainEvent
 {
-    public Guid OrderId { get; }
+    public OrderId OrderId { get; }
     public string OrderNumber { get; }
-    public Guid UserId { get; }
-    public Guid PaymentTransactionId { get; }
+    public UserId UserId { get; }
+    public PaymentTransactionId PaymentTransactionId { get; }
     public decimal PaidAmount { get; }
     public string Currency { get; }
 
     public OrderPaidEvent(
-        Guid orderId,
+        OrderId orderId,
         string orderNumber,
-        Guid userId,
-        Guid paymentTransactionId,
+        UserId userId,
+        PaymentTransactionId paymentTransactionId,
         decimal paidAmount,
         string currency)
     {
