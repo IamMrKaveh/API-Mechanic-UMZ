@@ -1,105 +1,62 @@
+using Application.Common.Results;
+using Domain.Order.Interfaces;
 using Domain.Payment.Interfaces;
+using Domain.Payment.Services;
+using Domain.Common.Interfaces;
 
 namespace Application.Payment.Features.Commands.AtomicRefundPayment;
 
-public sealed class AtomicRefundPaymentHandler(
+public class AtomicRefundPaymentHandler(
     IOrderRepository orderRepository,
-    IPaymentTransactionRepository paymentRepo,
-    IPaymentGatewayFactory gatewayFactory,
-    IInventoryService inventoryService,
+    IPaymentTransactionRepository paymentRepository,
     IUnitOfWork unitOfWork,
-    PaymentSettlementService settlementService,
-    ILogger<AtomicRefundPaymentHandler> logger) : IRequestHandler<AtomicRefundPaymentCommand, AtomicRefundResult>
+    ILogger<AtomicRefundPaymentHandler> logger) : IRequestHandler<AtomicRefundPaymentCommand, ServiceResult>
 {
-    private readonly IOrderRepository _orderRepository = orderRepository;
-    private readonly IPaymentTransactionRepository _paymentRepo = paymentRepo;
-    private readonly IPaymentGatewayFactory _gatewayFactory = gatewayFactory;
-    private readonly IInventoryService _inventoryService = inventoryService;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly PaymentSettlementService _settlementService = settlementService;
-    private readonly ILogger<AtomicRefundPaymentHandler> _logger = logger;
-
-    public async Task<AtomicRefundResult> Handle(
-        AtomicRefundPaymentCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(AtomicRefundPaymentCommand request, CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdAsync(request.OrderId, ct);
+        var order = await orderRepository.FindByIdAsync(request.OrderId, ct);
         if (order is null)
-            return Fail($"سفارش {request.OrderId} یافت نشد.");
+            return ServiceResult.NotFound("سفارش یافت نشد.");
 
-        var successfulPayment = await _paymentRepo.GetVerifiedByOrderIdAsync(request.OrderId, ct);
-        if (successfulPayment is null)
-            return Fail("تراکنش پرداخت موفق برای این سفارش یافت نشد.");
+        if (!order.IsPaid)
+            return ServiceResult.Failure("سفارش پرداخت نشده است.");
 
-        var eligibility = _settlementService.ValidateRefundEligibility(order, successfulPayment);
+        var payment = await paymentRepository.GetVerifiedByOrderIdAsync(request.OrderId, ct);
+        if (payment is null)
+            return ServiceResult.NotFound("تراکنش پرداخت یافت نشد.");
+
+        var eligibility = PaymentSettlementService.ValidateRefundEligibility(
+            new OrderPaymentContextAdapter(order), payment);
+
         if (!eligibility.IsValid)
-            return Fail(eligibility.Error!);
+            return ServiceResult.Failure(eligibility.Error!);
 
-        var amountValidation = _settlementService.ValidateRefundAmount(successfulPayment);
-        if (!amountValidation.IsValid)
-            return Fail(amountValidation.Error!);
+        var refundResult = PaymentSettlementService.ProcessRefund(
+            new OrderPaymentContextAdapter(order), payment, request.Reason);
 
-        var refundAmount = amountValidation.RefundAmount;
+        if (!refundResult.IsSuccess)
+            return ServiceResult.Failure(refundResult.Error!);
 
-        _logger.LogInformation(
-            "[Refund] Starting atomic refund for Order {OrderId}, Amount={Amount}",
-            request.OrderId, refundAmount);
+        orderRepository.Update(order);
+        paymentRepository.Update(payment);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        var gateway = _gatewayFactory.GetGateway(successfulPayment.Gateway);
-        string? refundTransactionId = null;
-
-        if (gateway is IRefundableGateway refundableGateway)
-        {
-            try
-            {
-                var refundResult = await refundableGateway.RefundAsync(
-                    successfulPayment.RefId.ToString()!,
-                    (int)refundAmount,
-                    request.Reason);
-
-                refundTransactionId = refundResult.RefundTransactionId;
-
-                if (!refundResult.IsSuccess)
-                {
-                    _logger.LogError("[Refund] Gateway refund failed for Order {OrderId}: {Error}",
-                        request.OrderId, refundResult.Message);
-                    return Fail($"استرداد از درگاه ناموفق بود: {refundResult.Message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[Refund] Gateway exception for Order {OrderId}", request.OrderId);
-                return Fail("خطا در ارتباط با درگاه پرداخت برای استرداد.");
-            }
-        }
-        else
-        {
-            refundTransactionId = $"MANUAL-REFUND-{Guid.NewGuid():N}";
-            _logger.LogWarning(
-                "[Refund] Gateway {Gateway} does not support automatic refund. Manual refund required.",
-                gateway.GatewayName);
-        }
-
-        var settlementResult = _settlementService.ProcessRefund(order, successfulPayment, request.Reason);
-        if (!settlementResult.IsSuccess)
-            return Fail(settlementResult.Error!);
-
-        await _inventoryService.ReturnStockForOrderAsync(
-            order.Id,
-            request.RequestedByUserId,
-            request.Reason, ct);
-
-        _paymentRepo.Update(successfulPayment);
-        await _orderRepository.UpdateAsync(order, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
-
-        _logger.LogInformation(
-            "[Refund] Order {OrderId} refunded successfully. Amount={Amount}, TxId={TxId}",
-            request.OrderId, refundAmount, refundTransactionId);
-
-        return new AtomicRefundResult(true, refundTransactionId, refundAmount, null);
+        logger.LogInformation("Refund processed for order {OrderId}", request.OrderId);
+        return ServiceResult.Success();
     }
+}
 
-    private static AtomicRefundResult Fail(string error) =>
-        new(false, null, null, error);
+internal sealed class OrderPaymentContextAdapter(Domain.Order.Aggregates.Order order)
+    : Domain.Payment.Interfaces.IOrderPaymentContext
+{
+    public Guid Id => order.Id.Value;
+    public bool IsPaid => order.IsPaid;
+    public bool IsDelivered => order.IsDelivered;
+    public string StatusDisplayName => order.Status.DisplayName;
+
+    public void Refund() => order.Refund();
+
+    public void MarkAsPaid(Guid paymentTransactionId) => order.MarkAsPaid(paymentTransactionId);
+
+    public void StartProcessing() => order.StartProcessing();
 }

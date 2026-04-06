@@ -1,20 +1,19 @@
 using Application.Common.Results;
+using Application.Shipping.Contracts;
+using Application.Shipping.Features.Shared;
 
 namespace Application.Shipping.Features.Queries.GetShippings;
 
 public class GetShippingsHandler(
-    IShippingQueryService shippingQueryService,
-    IMapper mapper) : IRequestHandler<GetShippingsQuery, ServiceResult<IEnumerable<ShippingDto>>>
+    IShippingQueryService shippingQueryService) : IRequestHandler<GetShippingsQuery, ServiceResult<IReadOnlyList<ShippingListItemDto>>>
 {
     private readonly IShippingQueryService _shippingQueryService = shippingQueryService;
-    private readonly IMapper _mapper = mapper;
 
-    public async Task<ServiceResult<IEnumerable<ShippingDto>>> Handle(
+    public async Task<ServiceResult<IReadOnlyList<ShippingListItemDto>>> Handle(
         GetShippingsQuery request,
         CancellationToken ct)
     {
-        var shippings = await _shippingQueryService.GetAllAsync(request.IncludeDeleted, ct);
-        var dtos = _mapper.Map<IEnumerable<ShippingDto>>(shippings);
-        return ServiceResult<IEnumerable<ShippingDto>>.Success(dtos);
+        var shippings = await _shippingQueryService.GetAllShippingsAsync(request.IncludeInactive, ct);
+        return ServiceResult<IReadOnlyList<ShippingListItemDto>>.Success(shippings);
     }
 }

@@ -1,52 +1,29 @@
+using Application.Common.Results;
+using Domain.Inventory.Interfaces;
+using Domain.Inventory.Services;
+using Domain.Variant.ValueObjects;
+using Domain.Common.Interfaces;
+
 namespace Application.Inventory.Features.Commands.ReconcileStock;
 
-public class ReconcileStockHandler : IRequestHandler<ReconcileStockCommand, ServiceResult<ReconcileResultDto>>
+public class ReconcileStockHandler(
+    IInventoryRepository inventoryRepository,
+    InventoryDomainService inventoryDomainService,
+    IUnitOfWork unitOfWork) : IRequestHandler<ReconcileStockCommand, ServiceResult>
 {
-    private readonly IInventoryService _inventoryService;
-    private readonly IAuditService _auditService;
-
-    public ReconcileStockHandler(
-        IInventoryService inventoryService,
-        IAuditService auditService)
+    public async Task<ServiceResult> Handle(ReconcileStockCommand request, CancellationToken ct)
     {
-        _inventoryService = inventoryService;
-        _auditService = auditService;
-    }
+        var inventory = await inventoryRepository.GetByVariantIdAsync(
+            ProductVariantId.From(request.VariantId), ct);
 
-    public async Task<ServiceResult<ReconcileResultDto>> Handle(
-        ReconcileStockCommand request,
-        CancellationToken cancellationToken)
-    {
-        var result = await _inventoryService.ReconcileStockAsync(
-            request.VariantId,
-            request.UserId,
-            cancellationToken);
+        if (inventory is null)
+            return ServiceResult.NotFound("موجودی یافت نشد.");
 
-        if (result.IsSuccess && result.Value != default)
-        {
-            var data = result.Value;
+        var result = inventoryDomainService.Reconcile(inventory, request.CalculatedStock, request.UserId);
 
-            if (data.HasDiscrepancy)
-            {
-                await _auditService.LogInventoryEventAsync(
-                    request.VariantId,
-                    "StockReconciled",
-                    $"انبارگردانی: اختلاف {data.Difference} واحد اصلاح شد. موجودی نهایی: {data.FinalStock}",
-                    request.UserId);
-            }
+        inventoryRepository.Update(inventory);
+        await unitOfWork.SaveChangesAsync(ct);
 
-            var dto = new ReconcileResultDto
-            {
-                VariantId = data.VariantId,
-                FinalStock = data.FinalStock,
-                Difference = data.Difference,
-                HasDiscrepancy = data.HasDiscrepancy,
-                Message = data.Message
-            };
-
-            return ServiceResult<ReconcileResultDto>.Success(dto);
-        }
-
-        return ServiceResult<ReconcileResultDto>.Failure(result.Error ?? "Failed", result.StatusCode);
+        return ServiceResult.Success();
     }
 }

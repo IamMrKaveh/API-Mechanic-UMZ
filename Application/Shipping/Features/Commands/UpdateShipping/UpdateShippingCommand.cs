@@ -1,16 +1,13 @@
 using Application.Common.Results;
-using Domain.Shipping.ValueObjects;
+using Application.Shipping.Features.Shared;
 
 namespace Application.Shipping.Features.Commands.UpdateShipping;
 
 public record UpdateShippingCommand(
-    ShippingId Id,
+    Guid Id,
     string Name,
-    decimal Cost,
+    decimal BaseCost,
     string? Description,
     string? EstimatedDeliveryTime,
     int MinDeliveryDays,
-    int MaxDeliveryDays,
-    bool IsActive,
-    string? RowVersion,
-    Guid CurrentUserId) : IRequest<ServiceResult>;
+    int MaxDeliveryDays) : IRequest<ServiceResult<ShippingDto>>;

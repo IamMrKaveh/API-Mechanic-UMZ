@@ -1,3 +1,11 @@
+using Application.Common.Results;
+using Application.Support.Features.Shared;
+
 namespace Application.Support.Features.Commands.CreateTicket;
 
-public sealed record CreateTicketCommand(string Subject, string Message) : IRequest<ServiceResult<int>>;
+public record CreateTicketCommand(
+    Guid UserId,
+    string Subject,
+    string Category,
+    string? Priority,
+    string InitialMessage) : IRequest<ServiceResult<TicketDto>>;

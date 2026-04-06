@@ -1,11 +1,11 @@
+using Application.Brand.Features.Shared;
 using Application.Common.Results;
 
 namespace Application.Brand.Features.Commands.CreateBrand;
 
-public record CreateBrandCommand : IRequest<ServiceResult<int>>
-{
-    public int CategoryId { get; init; }
-    public required string Name { get; init; }
-    public string? Description { get; init; }
-    public FileDto? IconFile { get; init; }
-}
+public record CreateBrandCommand(
+    string Name,
+    Guid CategoryId,
+    string? Slug,
+    string? Description,
+    string? LogoPath) : IRequest<ServiceResult<BrandDetailDto>>;

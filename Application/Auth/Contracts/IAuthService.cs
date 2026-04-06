@@ -1,3 +1,4 @@
+using Application.Auth.Features.Shared;
 using Application.Common.Results;
 using Application.User.Features.Shared;
 
@@ -24,11 +25,11 @@ public interface IAuthService
         CancellationToken ct = default);
 
     Task<ServiceResult> LogoutAsync(
-        int userId,
-        string refreshToken,
+        Guid userId,
+        string? refreshToken,
         CancellationToken ct = default);
 
     Task<ServiceResult> LogoutAllAsync(
-        int userId,
+        Guid userId,
         CancellationToken ct = default);
 }

@@ -1,33 +1,54 @@
 using Application.Common.Results;
+using Domain.Inventory.Interfaces;
+using Domain.Inventory.Services;
+using Domain.Variant.ValueObjects;
+using Domain.Common.Interfaces;
 
 namespace Application.Inventory.Features.Commands.CommitStockForOrder;
 
-public class CommitStockForOrderHandler : IRequestHandler<CommitStockForOrderCommand, ServiceResult>
+public class CommitStockForOrderHandler(
+    IInventoryRepository inventoryRepository,
+    InventoryDomainService inventoryDomainService,
+    IUnitOfWork unitOfWork,
+    ILogger<CommitStockForOrderHandler> logger) : IRequestHandler<CommitStockForOrderCommand, ServiceResult>
 {
-    private readonly IInventoryService _inventoryService;
-    private readonly ILogger<CommitStockForOrderHandler> _logger;
-
-    public CommitStockForOrderHandler(
-        IInventoryService inventoryService,
-        ILogger<CommitStockForOrderHandler> logger)
+    public async Task<ServiceResult> Handle(CommitStockForOrderCommand request, CancellationToken ct)
     {
-        _inventoryService = inventoryService;
-        _logger = logger;
-    }
+        var errors = new List<string>();
 
-    public async Task<ServiceResult> Handle(
-        CommitStockForOrderCommand request, CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Committing stock for Order {OrderId}", request.OrderId);
-
-        var result = await _inventoryService.CommitStockForOrderAsync(request.OrderId, cancellationToken);
-
-        if (result.IsFailed)
+        foreach (var item in request.Items)
         {
-            _logger.LogError("Failed to commit stock for Order {OrderId}: {Error}",
-                request.OrderId, result.Error);
+            var inventory = await inventoryRepository.GetByVariantIdAsync(
+                ProductVariantId.From(item.VariantId), ct);
+
+            if (inventory is null)
+            {
+                errors.Add($"موجودی واریانت {item.VariantId} یافت نشد.");
+                continue;
+            }
+
+            var result = inventoryDomainService.ConfirmReservation(
+                inventory, item.Quantity, request.OrderNumber, item.OrderItemId);
+
+            if (!result.IsSuccess)
+            {
+                errors.Add($"واریانت {item.VariantId}: {result.Error}");
+                continue;
+            }
+
+            inventoryRepository.Update(inventory);
         }
 
-        return result;
+        if (errors.Count > 0)
+        {
+            logger.LogError("Stock commit failed for order {OrderNumber}: {Errors}",
+                request.OrderNumber, string.Join(", ", errors));
+            return ServiceResult.Failure(string.Join(" | ", errors));
+        }
+
+        await unitOfWork.SaveChangesAsync(ct);
+        logger.LogInformation("Stock committed for order {OrderNumber}", request.OrderNumber);
+
+        return ServiceResult.Success();
     }
 }

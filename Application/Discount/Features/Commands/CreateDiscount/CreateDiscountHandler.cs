@@ -1,62 +1,38 @@
-using Application.Audit.Contracts;
 using Application.Common.Results;
 using Application.Discount.Features.Shared;
 using Domain.Common.Interfaces;
+using Domain.Common.ValueObjects;
 using Domain.Discount.Aggregates;
 using Domain.Discount.Interfaces;
-using SharedKernel.Contracts;
+using Domain.Discount.ValueObjects;
+using Mapster;
 
 namespace Application.Discount.Features.Commands.CreateDiscount;
 
 public class CreateDiscountHandler(
     IDiscountRepository discountRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService,
-    IMapper mapper) : IRequestHandler<CreateDiscountCommand, ServiceResult<DiscountCodeDto>>
+    IMapper mapper) : IRequestHandler<CreateDiscountCommand, ServiceResult<DiscountDto>>
 {
-    private readonly IDiscountRepository _discountRepository = discountRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
-    private readonly IMapper _mapper = mapper;
-
-    public async Task<ServiceResult<DiscountCodeDto>> Handle(
-        CreateDiscountCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult<DiscountDto>> Handle(CreateDiscountCommand request, CancellationToken ct)
     {
-        if (await _discountRepository.ExistsByCodeAsync(request.Code, null, ct))
-        {
-            return ServiceResult<DiscountCodeDto>.Conflict("کد تخفیف تکراری است.");
-        }
+        var discountValue = DiscountValue.Create(request.DiscountType, request.DiscountValue);
+        Money? maxDiscount = request.MaximumDiscountAmount.HasValue
+            ? Money.FromDecimal(request.MaximumDiscountAmount.Value)
+            : null;
 
         var discount = DiscountCode.Create(
+            DiscountCodeId.NewId(),
             request.Code,
-            request.Percentage,
-            request.MaxDiscountAmount,
-            request.MinOrderAmount,
+            discountValue,
+            maxDiscount,
             request.UsageLimit,
-            request.ExpiresAt,
             request.StartsAt,
-            request.MaxUsagePerUser
-        );
+            request.ExpiresAt);
 
-        if (request.Restrictions != null)
-        {
-            foreach (var r in request.Restrictions)
-            {
-                discount.AddRestriction(r.RestrictionType, r.EntityId);
-            }
-        }
+        await discountRepository.AddAsync(discount, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        await _discountRepository.AddAsync(discount, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
-
-        await _auditService.LogAdminEventAsync(
-            "CreateDiscount",
-            _currentUserService.CurrentUser.UserId,
-            $"Code created: {discount.Code}");
-
-        return ServiceResult<DiscountCodeDto>.Success(_mapper.Map<DiscountCodeDto>(discount));
+        return ServiceResult<DiscountDto>.Success(mapper.Map<DiscountDto>(discount));
     }
 }

@@ -1,77 +1,56 @@
+using Application.Brand.Features.Shared;
+using Application.Common.Results;
+using Domain.Brand.Interfaces;
+using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
+using Domain.Category.ValueObjects;
+using Domain.Common.Interfaces;
+using Domain.Common.ValueObjects;
 
 namespace Application.Brand.Features.Commands.UpdateBrand;
 
 public class UpdateBrandHandler(
+    IBrandRepository brandRepository,
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
-    IMediaService mediaService,
-    IMediaQueryService mediaQueryService,
-    ILogger<UpdateBrandHandler> logger) : IRequestHandler<UpdateBrandCommand, ServiceResult>
+    IMapper mapper,
+    ILogger<UpdateBrandHandler> logger) : IRequestHandler<UpdateBrandCommand, ServiceResult<BrandDetailDto>>
 {
-    private readonly ICategoryRepository _categoryRepository = categoryRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IMediaService _mediaService = mediaService;
-    private readonly IMediaQueryService _mediaQueryService = mediaQueryService;
-    private readonly ILogger<UpdateBrandHandler> _logger = logger;
-
-    public async Task<ServiceResult> Handle(
-        UpdateBrandCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult<BrandDetailDto>> Handle(UpdateBrandCommand request, CancellationToken ct)
     {
-        var category = await _categoryRepository.GetByIdWithGroupsAsync(request.CategoryId, ct);
-        if (category == null)
-            return ServiceResult.Failure("دسته‌بندی یافت نشد.", 404);
+        var brand = await brandRepository.GetByIdAsync(request.Id, ct);
+        if (brand is null)
+            return ServiceResult<BrandDetailDto>.NotFound("برند یافت نشد.");
 
-        try
-        {
-            category.RenameBrand(request.BrandId, request.Name, request.Description);
+        var category = await categoryRepository.GetByIdAsync(CategoryId.From(request.CategoryId), ct);
+        if (category is null)
+            return ServiceResult<BrandDetailDto>.NotFound("دسته‌بندی یافت نشد.");
 
-            Domain.Media.Aggregates.Media? newMedia = null;
-            if (request.IconFile != null)
-            {
-                var existingMedia = (await _mediaQueryService.GetEntityMediaAsync("Brand", request.BrandId))
-                    .FirstOrDefault(m => m.IsPrimary);
+        if (await brandRepository.ExistsByNameInCategoryAsync(request.Name, request.CategoryId, request.Id, ct))
+            return ServiceResult<BrandDetailDto>.Conflict("برندی با این نام در این دسته‌بندی قبلاً ثبت شده است.");
 
-                if (existingMedia != null)
-                    await _mediaService.DeleteMediaAsync(existingMedia.Id);
+        var slug = string.IsNullOrWhiteSpace(request.Slug)
+            ? Slug.GenerateFrom(request.Name)
+            : Slug.FromString(request.Slug);
 
-                newMedia = await _mediaService.AttachFileToEntityAsync(
-                    request.IconFile.Content,
-                    request.IconFile.FileName,
-                    request.IconFile.ContentType,
-                    request.IconFile.Length,
-                    "Brand",
-                    request.BrandId,
-                    isPrimary: true);
-            }
+        if (await brandRepository.ExistsBySlugAsync(slug.Value, request.Id, ct))
+            return ServiceResult<BrandDetailDto>.Conflict("برندی با این Slug قبلاً ثبت شده است.");
 
-            _categoryRepository.Update(category);
+        brand.UpdateDetails(BrandName.Create(request.Name), slug, request.Description, request.LogoPath);
 
-            try
-            {
-                await _unitOfWork.SaveChangesAsync(ct);
-                return ServiceResult.Success();
-            }
-            catch (ConcurrencyException)
-            {
-                if (newMedia != null)
-                    await _mediaService.DeleteMediaAsync(newMedia.Id);
+        if (brand.CategoryId != request.CategoryId)
+            brand.ChangeCategory(request.CategoryId);
 
-                return ServiceResult.Failure("این رکورد توسط کاربر دیگری تغییر یافته است.");
-            }
-        }
-        catch (BrandNotFoundException)
-        {
-            return ServiceResult.Failure("گروه یافت نشد.", 404);
-        }
-        catch (DuplicateBrandNameException ex)
-        {
-            return ServiceResult.Failure(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult.Failure(ex.Message);
-        }
+        if (request.IsActive && !brand.IsActive)
+            brand.Activate();
+        else if (!request.IsActive && brand.IsActive)
+            brand.Deactivate();
+
+        brandRepository.Update(brand);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        logger.LogInformation("Brand {BrandId} updated", request.Id);
+        var dto = mapper.Map<BrandDetailDto>(brand) with { CategoryName = category.Name };
+        return ServiceResult<BrandDetailDto>.Success(dto);
     }
 }

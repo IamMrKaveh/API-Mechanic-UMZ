@@ -1,47 +1,48 @@
+using Domain.Inventory.Interfaces;
+using Domain.Inventory.Services;
+using Domain.Order.Interfaces;
+using Domain.Payment.Events;
+using Domain.Variant.ValueObjects;
+using Domain.Common.Interfaces;
+
 namespace Application.Payment.EventHandlers;
 
-/// <summary>
-/// پس از پرداخت موفق، رزرو موجودی سفارش را Commit می‌کند.
-/// از جاسازی مستقیم در VerifyPaymentHandler جدا شده تا Single Responsibility رعایت شود.
-/// </summary>
-public class PaymentSucceededInventoryCommitEventHandler
-    : INotificationHandler<PaymentSucceededEvent>
+public class PaymentSucceededInventoryCommitEventHandler(
+    IOrderRepository orderRepository,
+    IInventoryRepository inventoryRepository,
+    InventoryDomainService inventoryDomainService,
+    IUnitOfWork unitOfWork,
+    ILogger<PaymentSucceededInventoryCommitEventHandler> logger) : INotificationHandler<PaymentSucceededEvent>
 {
-    private readonly IInventoryService _inventoryService;
-    private readonly ILogger<PaymentSucceededInventoryCommitEventHandler> _logger;
-
-    public PaymentSucceededInventoryCommitEventHandler(
-        IInventoryService inventoryService,
-        ILogger<PaymentSucceededInventoryCommitEventHandler> logger)
+    public async Task Handle(PaymentSucceededEvent notification, CancellationToken ct)
     {
-        _inventoryService = inventoryService;
-        _logger = logger;
-    }
-
-    public async Task Handle(PaymentSucceededEvent notification, CancellationToken cancellationToken)
-    {
-        _logger.LogInformation(
-            "Committing inventory reservations for Order {OrderId} after successful payment.",
-            notification.OrderId);
-
-        var result = await _inventoryService.CommitStockForOrderAsync(
-            notification.OrderId, cancellationToken);
-
-        if (result.IsFailed)
+        try
         {
-            
-            _logger.LogError(
-                "Failed to commit inventory for Order {OrderId}. Error: {Error}. Manual reconciliation may be required.",
-                notification.OrderId, result.Error);
+            var order = await orderRepository.FindByIdAsync(notification.OrderId, ct);
+            if (order is null) return;
 
-            
-            
+            foreach (var item in order.Items)
+            {
+                var inventory = await inventoryRepository.GetByVariantIdAsync(
+                    ProductVariantId.From(item.VariantId), ct);
+
+                if (inventory is null) continue;
+
+                var result = inventoryDomainService.ConfirmReservation(
+                    inventory, item.Quantity, order.OrderNumber.Value, item.Id);
+
+                if (result.IsSuccess)
+                    inventoryRepository.Update(inventory);
+                else
+                    logger.LogWarning("Failed to commit stock for variant {VariantId}: {Error}",
+                        item.VariantId, result.Error);
+            }
+
+            await unitOfWork.SaveChangesAsync(ct);
         }
-        else
+        catch (Exception ex)
         {
-            _logger.LogInformation(
-                "Successfully committed inventory reservations for Order {OrderId}.",
-                notification.OrderId);
+            logger.LogError(ex, "Error committing inventory for order {OrderId}", notification.OrderId);
         }
     }
 }

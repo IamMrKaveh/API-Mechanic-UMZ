@@ -1,49 +1,37 @@
-using Application.Audit.Contracts;
 using Application.Common.Results;
 using Domain.Common.Exceptions;
 using Domain.Common.Interfaces;
 using Domain.Shipping.Interfaces;
-using SharedKernel.Contracts;
+using Domain.Shipping.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Shipping.Features.Commands.DeleteShipping;
 
 public class DeleteShippingHandler(
-    IShippingRepository shippingMethodRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<DeleteShippingCommand, ServiceResult>
+    IShippingRepository shippingRepository,
+    IUnitOfWork unitOfWork) : IRequestHandler<DeleteShippingCommand, ServiceResult>
 {
-    private readonly IShippingRepository _shippingMethodRepository = shippingMethodRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
-
-    public async Task<ServiceResult> Handle(
-        DeleteShippingCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(DeleteShippingCommand request, CancellationToken ct)
     {
-        var method = await _shippingMethodRepository.GetByIdAsync(request.Id, ct);
-        if (method == null)
+        var shipping = await shippingRepository.GetByIdAsync(ShippingId.From(request.Id), ct);
+        if (shipping is null)
             return ServiceResult.NotFound("روش ارسال یافت نشد.");
 
         try
         {
-            method.Delete(request.CurrentUserId);
+            UserId? deletedBy = request.DeletedByUserId.HasValue
+                ? UserId.From(request.DeletedByUserId.Value)
+                : null;
+
+            shipping.RequestDeletion(deletedBy);
+            shippingRepository.Update(shipping);
+            await unitOfWork.SaveChangesAsync(ct);
+
+            return ServiceResult.Success();
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Unexpected(ex.Message);
+            return ServiceResult.Failure(ex.Message);
         }
-
-        _shippingMethodRepository.Update(method);
-        await _unitOfWork.SaveChangesAsync(ct);
-
-        await _auditService.LogAdminEventAsync(
-            "DeleteShippingMethod",
-            request.CurrentUserId,
-            $"Soft-deleted shipping method ID: {request.Id}",
-            _currentUserService.CurrentUser.IpAddress);
-
-        return ServiceResult.Success();
     }
 }

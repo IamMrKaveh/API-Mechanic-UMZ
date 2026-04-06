@@ -1,59 +1,50 @@
+using Application.Common.Results;
+using Domain.Inventory.Interfaces;
+using Domain.Inventory.Services;
+using Domain.Variant.ValueObjects;
+using Domain.Common.Interfaces;
+
 namespace Application.Inventory.Features.Commands.BulkAdjustStock;
 
-public class BulkAdjustStockHandler : IRequestHandler<BulkAdjustStockCommand, ServiceResult<BulkAdjustResultDto>>
+public class BulkAdjustStockHandler(
+    IInventoryRepository inventoryRepository,
+    InventoryDomainService inventoryDomainService,
+    IUnitOfWork unitOfWork,
+    ILogger<BulkAdjustStockHandler> logger) : IRequestHandler<BulkAdjustStockCommand, ServiceResult>
 {
-    private readonly IInventoryService _inventoryService;
-    private readonly IAuditService _auditService;
-
-    public BulkAdjustStockHandler(
-        IInventoryService inventoryService,
-        IAuditService auditService
-        )
+    public async Task<ServiceResult> Handle(BulkAdjustStockCommand request, CancellationToken ct)
     {
-        _inventoryService = inventoryService;
-        _auditService = auditService;
-    }
+        var errors = new List<string>();
 
-    public async Task<ServiceResult<BulkAdjustResultDto>> Handle(
-        BulkAdjustStockCommand request,
-        CancellationToken ct
-        )
-    {
-        var mappedItems = request.Items.Select(x => (x.VariantId, x.QuantityChange, x.Notes));
-
-        var result = await _inventoryService.BulkAdjustStockAsync(
-            mappedItems,
-            request.UserId,
-            ct);
-
-        if (result.IsSuccess && result.Value != default)
+        foreach (var item in request.Items)
         {
-            var data = result.Value;
+            var inventory = await inventoryRepository.GetByVariantIdAsync(
+                ProductVariantId.From(item.VariantId), ct);
 
-            await _auditService.LogInventoryEventAsync(
-                0,
-                "BulkStockAdjustment",
-                $"تنظیم دسته‌ای موجودی: {data.Success} موفق، {data.Failed} ناموفق از {data.Total}",
-                request.UserId);
-
-            var dto = new BulkAdjustResultDto
+            if (inventory is null)
             {
-                TotalRequested = data.Total,
-                SuccessCount = data.Success,
-                FailedCount = data.Failed,
-                Results = data.Results.Select(r => new BulkAdjustItemResultDto
-                {
-                    VariantId = r.VariantId,
-                    IsSuccess = r.IsSuccess,
-                    Error = r.Error,
-                    NewStock = r.NewStock ?? 0
-                })
-                .ToList()
-            };
+                errors.Add($"موجودی برای واریانت {item.VariantId} یافت نشد.");
+                continue;
+            }
 
-            return ServiceResult<BulkAdjustResultDto>.Success(dto);
+            var result = inventoryDomainService.AdjustStock(
+                inventory, item.QuantityChange, request.UserId, request.Reason);
+
+            if (!result.IsSuccess)
+            {
+                errors.Add($"واریانت {item.VariantId}: {result.Error}");
+                continue;
+            }
+
+            inventoryRepository.Update(inventory);
         }
 
-        return ServiceResult<BulkAdjustResultDto>.Failure(result.Error ?? "Failed", result.StatusCode);
+        if (errors.Count > 0)
+            return ServiceResult.Failure(string.Join(" | ", errors));
+
+        await unitOfWork.SaveChangesAsync(ct);
+        logger.LogInformation("Bulk stock adjustment completed for {Count} variants", request.Items.Count);
+
+        return ServiceResult.Success();
     }
 }

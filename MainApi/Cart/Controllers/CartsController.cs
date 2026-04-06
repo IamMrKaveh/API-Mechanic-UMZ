@@ -46,7 +46,7 @@ public class CartController(IMediator mediator) : BaseApiController(mediator)
     }
 
     [HttpPut("items/{variantId}")]
-    public async Task<IActionResult> UpdateItemQuantity(int variantId, [FromBody] UpdateCartItemQuantityCommand command)
+    public async Task<IActionResult> UpdateItemQuantity(int variantId, [FromBody] UpdateCartItemCommand command)
     {
         var result = await _mediator.Send(command);
         return ToActionResult(result);

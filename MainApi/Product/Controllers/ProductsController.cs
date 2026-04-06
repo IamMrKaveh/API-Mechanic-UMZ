@@ -25,7 +25,7 @@ public class ProductsController(IMediator mediator) : BaseApiController(mediator
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var query = new GetProductByIdQuery(id);
+        var query = new GetProductQuery(id);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

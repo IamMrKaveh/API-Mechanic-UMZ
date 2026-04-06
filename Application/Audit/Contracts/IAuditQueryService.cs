@@ -1,19 +1,22 @@
 ﻿using Application.Audit.Features.Shared;
+using SharedKernel.Models;
 
 namespace Application.Audit.Contracts;
 
 public interface IAuditQueryService
 {
-    Task<(IEnumerable<AuditDtos> Logs, int Total)> GetAuditLogsAsync(
+    Task<PaginatedResult<AuditLogDto>> GetAuditLogsAsync(
+        Guid? userId,
+        string? eventType,
+        string? entityType,
         DateTime? from,
         DateTime? to,
-        int? userId,
-        string? type,
         int page,
-        int size,
+        int pageSize,
         CancellationToken ct = default);
 
-    Task<(IEnumerable<AuditDtos> Logs, int Total)> SearchAsync(
-        AuditSearchRequest request,
+    Task<IReadOnlyList<AuditLogDto>> GetByEntityAsync(
+        string entityType,
+        string entityId,
         CancellationToken ct = default);
 }

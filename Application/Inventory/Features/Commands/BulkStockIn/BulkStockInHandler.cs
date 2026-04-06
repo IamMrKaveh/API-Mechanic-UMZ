@@ -1,46 +1,45 @@
+using Application.Common.Results;
+using Domain.Inventory.Interfaces;
+using Domain.Variant.ValueObjects;
+using Domain.Common.Interfaces;
+
 namespace Application.Inventory.Features.Commands.BulkStockIn;
 
-public class BulkStockInHandler : IRequestHandler<BulkStockInCommand, ServiceResult<BulkStockInResultDto>>
+public class BulkStockInHandler(
+    IInventoryRepository inventoryRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<BulkStockInHandler> logger) : IRequestHandler<BulkStockInCommand, ServiceResult>
 {
-    private readonly IInventoryService _inventoryService;
-
-    public BulkStockInHandler(IInventoryService inventoryService)
+    public async Task<ServiceResult> Handle(BulkStockInCommand request, CancellationToken ct)
     {
-        _inventoryService = inventoryService;
-    }
+        var errors = new List<string>();
 
-    public async Task<ServiceResult<BulkStockInResultDto>> Handle(
-        BulkStockInCommand request, CancellationToken cancellationToken)
-    {
-        var mappedItems = request.Items.Select(x => (x.VariantId, x.Quantity, x.Notes));
-
-        var result = await _inventoryService.BulkStockInAsync(
-            mappedItems,
-            request.UserId,
-            request.SupplierReference,
-            cancellationToken);
-
-        if (result.IsSuccess && result.Value != default)
+        foreach (var item in request.Items)
         {
-            var data = result.Value;
+            var inventory = await inventoryRepository.GetByVariantIdAsync(
+                ProductVariantId.From(item.VariantId), ct);
 
-            var dto = new BulkStockInResultDto
+            if (inventory is null)
             {
-                TotalRequested = data.Total,
-                SuccessCount = data.Success,
-                FailedCount = data.Failed,
-                Results = data.Results.Select(r => new BulkStockInItemResultDto
-                {
-                    VariantId = r.VariantId,
-                    IsSuccess = r.IsSuccess,
-                    Error = r.Error,
-                    NewStock = r.NewStock ?? 0
-                }).ToList()
-            };
+                errors.Add($"موجودی برای واریانت {item.VariantId} یافت نشد.");
+                continue;
+            }
 
-            return ServiceResult<BulkStockInResultDto>.Success(dto);
+            try
+            {
+                inventory.IncreaseStock(item.Quantity, request.Reason, request.UserId, item.ReferenceNumber);
+                inventoryRepository.Update(inventory);
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"واریانت {item.VariantId}: {ex.Message}");
+            }
         }
 
-        return ServiceResult<BulkStockInResultDto>.Failure(result.Error ?? "Failed", result.StatusCode);
+        if (errors.Count > 0)
+            return ServiceResult.Failure(string.Join(" | ", errors));
+
+        await unitOfWork.SaveChangesAsync(ct);
+        return ServiceResult.Success();
     }
 }

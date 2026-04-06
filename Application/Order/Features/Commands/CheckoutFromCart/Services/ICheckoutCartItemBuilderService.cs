@@ -1,6 +1,10 @@
-﻿namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+﻿using Application.Common.Results;
+using Application.Order.Features.Commands.CheckoutFromCart.Services;
+using Domain.Order.ValueObjects;
+
+namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
 
 public interface ICheckoutCartItemBuilderService
 {
-    Task<ServiceResult<CheckoutCartItemsResult>> BuildAsync(Domain.Cart.Aggregates.Cart cart, CancellationToken ct);
+    Task<ServiceResult<CheckoutCartItemsResult>> BuildAsync(Guid cartId, Guid userId, CancellationToken ct);
 }

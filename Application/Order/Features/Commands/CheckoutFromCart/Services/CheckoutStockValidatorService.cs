@@ -1,17 +1,34 @@
-﻿using Domain.Variant.Aggregates;
+﻿using Application.Common.Results;
+using Domain.Inventory.Interfaces;
+using Domain.Order.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
 
-public sealed class CheckoutStockValidatorService(IInventoryReservationService inventoryReservationService) : ICheckoutStockValidatorService
+public class CheckoutStockValidatorService(IInventoryRepository inventoryRepository)
+    : ICheckoutStockValidatorService
 {
-    private readonly IInventoryReservationService _inventoryReservationService = inventoryReservationService;
-
-    public ServiceResult Validate(IReadOnlyList<(ProductVariant Variant, int Quantity)> variantItems)
+    public async Task<ServiceResult> ValidateAsync(List<OrderItemSnapshot> items, CancellationToken ct)
     {
-        var result = _inventoryReservationService.ValidateBatchAvailability(variantItems);
-        if (!result.IsValid)
-            return ServiceResult.Failure(result.GetErrorsSummary());
+        var errors = new List<string>();
 
-        return ServiceResult.Success();
+        foreach (var item in items)
+        {
+            var inventory = await inventoryRepository.GetByVariantIdAsync(
+                ProductVariantId.From(item.VariantId), ct);
+
+            if (inventory is null)
+            {
+                errors.Add($"موجودی واریانت {item.VariantId} یافت نشد.");
+                continue;
+            }
+
+            if (!inventory.CanFulfill(item.Quantity))
+                errors.Add($"موجودی کافی برای محصول {item.ProductName} وجود ندارد.");
+        }
+
+        return errors.Count > 0
+            ? ServiceResult.Failure(string.Join(" | ", errors))
+            : ServiceResult.Success();
     }
 }

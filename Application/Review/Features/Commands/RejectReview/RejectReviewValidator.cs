@@ -4,7 +4,7 @@ public class RejectReviewValidator : AbstractValidator<RejectReviewCommand>
 {
     public RejectReviewValidator()
     {
-        RuleFor(x => x.ReviewId).GreaterThan(0);
-        RuleFor(x => x.Reason).MaximumLength(500).WithMessage("دلیل رد نباید بیش از ۵۰۰ کاراکتر باشد.");
+        RuleFor(x => x.ReviewId).NotEmpty();
+        RuleFor(x => x.Reason).MaximumLength(500).When(x => x.Reason is not null);
     }
 }

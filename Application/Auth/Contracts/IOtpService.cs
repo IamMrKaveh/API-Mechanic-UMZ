@@ -1,28 +1,10 @@
+using Domain.Security.Enums;
+
 namespace Application.Auth.Contracts;
 
-/// <summary>
-/// سرویس OTP - فقط تولید و اعتبارسنجی کد
-/// ذخیره‌سازی توسط Domain (User Aggregate) انجام می‌شود
-/// </summary>
 public interface IOtpService
 {
-    /// <summary>
-    /// تولید کد OTP امن
-    /// </summary>
-    string GenerateSecureOtp();
+    Task<bool> SendOtpAsync(string phoneNumber, string code, OtpPurpose purpose, CancellationToken ct = default);
 
-    /// <summary>
-    /// هش کردن کد OTP
-    /// </summary>
-    string HashOtp(
-        string otp
-        );
-
-    /// <summary>
-    /// تأیید کد OTP
-    /// </summary>
-    bool VerifyOtp(
-        string otp,
-        string hash
-        );
+    Task<bool> ValidateRateLimitAsync(Guid userId, OtpPurpose purpose, CancellationToken ct = default);
 }

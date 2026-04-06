@@ -1,10 +1,13 @@
 using Application.Common.Behaviors;
+using Application.Common.Mapping;
 using Application.Order.Features.Commands.CheckoutFromCart.Services;
 using Domain.Cart.Services;
 using Domain.Inventory.Services;
 using Domain.Media.Services;
 using Domain.Payment.Services;
 using Domain.Support.Services;
+using Mapster;
+using MapsterMapper;
 
 namespace Application;
 
@@ -16,6 +19,7 @@ public static class ApplicationServiceCollection
         RegisterDomainServices(services);
         RegisterApplicationServices(services);
         RegisterValidation(services);
+        RegisterMapster(services);
         return services;
     }
 
@@ -61,5 +65,16 @@ public static class ApplicationServiceCollection
         services.AddScoped<ICheckoutDiscountApplicatorService, CheckoutDiscountApplicatorService>();
         services.AddScoped<ICheckoutPaymentProcessorService, CheckoutPaymentProcessorService>();
         services.AddScoped<ICheckoutOrchestrationService, CheckoutOrchestrationService>();
+    }
+
+    private static void RegisterMapster(IServiceCollection services)
+    {
+        MapsterConfig.Configure();
+
+        var config = TypeAdapterConfig.GlobalSettings;
+        config.Scan(Assembly.GetExecutingAssembly());
+
+        services.AddSingleton(config);
+        services.AddScoped<IMapper, ServiceMapper>();
     }
 }

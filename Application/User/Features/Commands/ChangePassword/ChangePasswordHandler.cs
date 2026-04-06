@@ -2,31 +2,29 @@ using Application.Common.Results;
 using Application.Security.Interfaces;
 using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.ChangePassword;
 
-public sealed class ChangePasswordHandler(
+public class ChangePasswordHandler(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
     IUnitOfWork unitOfWork) : IRequestHandler<ChangePasswordCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository = userRepository;
-    private readonly IPasswordHasher _passwordHasher = passwordHasher;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
-    public async Task<ServiceResult> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(ChangePasswordCommand request, CancellationToken ct)
     {
-        var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
+        var user = await userRepository.GetByIdAsync(UserId.From(request.UserId), ct);
         if (user is null)
-            return ServiceResult.Failure("User not found.");
+            return ServiceResult.NotFound("کاربر یافت نشد.");
 
-        if (!_passwordHasher.Verify(request.Dto.CurrentPassword, user.PasswordHash))
-            return ServiceResult.Failure("Current password is incorrect.");
+        if (!passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+            return ServiceResult.Failure("رمز عبور فعلی نادرست است.");
 
-        user.ChangePassword(_passwordHasher.Hash(request.Dto.NewPassword));
+        var newHash = passwordHasher.Hash(request.NewPassword);
+        user.ChangePasswordHash(newHash);
 
-        _userRepository.Update(user);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        userRepository.Update(user);
+        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

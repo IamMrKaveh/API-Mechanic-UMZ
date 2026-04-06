@@ -1,25 +1,33 @@
-﻿namespace Application.Common.Behaviors;
+﻿using Application.Cache.Contracts;
+using Application.Cache.Interfaces;
 
-public class CachingBehavior<TRequest, TResponse>(ICacheService cacheService) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
-    where TResponse : class
+namespace Application.Common.Behaviors;
+
+public sealed class CachingBehavior<TRequest, TResponse>(
+    ICacheService cacheService,
+    ILogger<CachingBehavior<TRequest, TResponse>> logger) : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : notnull
 {
-    private readonly ICacheService _cacheService = cacheService;
-
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken ct)
     {
-        if (request is not ICacheableQuery cacheableQuery)
-            return await next(ct);
+        if (request is not ICacheableQuery cacheable)
+            return await next();
 
-        var cached = await _cacheService.GetAsync<TResponse>(cacheableQuery.CacheKey);
+        var cached = await cacheService.GetAsync<TResponse>(cacheable.CacheKey, ct);
         if (cached is not null)
+        {
+            logger.LogDebug("Cache hit for {Key}", cacheable.CacheKey);
             return cached;
+        }
 
-        var response = await next(ct);
-        await _cacheService.SetAsync(cacheableQuery.CacheKey, response, cacheableQuery.CacheDuration);
+        var response = await next();
+
+        if (response is not null)
+            await cacheService.SetAsync(cacheable.CacheKey, response, cacheable.Expiry, ct);
+
         return response;
     }
 }

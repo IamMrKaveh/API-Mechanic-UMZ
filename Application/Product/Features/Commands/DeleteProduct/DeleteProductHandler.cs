@@ -1,38 +1,32 @@
-using Application.Audit.Contracts;
 using Application.Common.Results;
 using Domain.Common.Interfaces;
 using Domain.Product.Interfaces;
-using SharedKernel.Contracts;
+using Domain.Product.ValueObjects;
 
 namespace Application.Product.Features.Commands.DeleteProduct;
 
 public class DeleteProductHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<DeleteProductCommand, ServiceResult>
+    ILogger<DeleteProductHandler> logger) : IRequestHandler<DeleteProductCommand, ServiceResult>
 {
     private readonly IProductRepository _productRepository = productRepository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
+    private readonly ILogger<DeleteProductHandler> _logger = logger;
 
-    public async Task<ServiceResult> Handle(DeleteProductCommand request, CancellationToken ct)
+    public async Task<ServiceResult> Handle(
+        DeleteProductCommand request,
+        CancellationToken ct)
     {
-        var product = await _productRepository.GetByIdWithVariantsAsync(request.Id, ct);
-        if (product == null)
-            return ServiceResult.NotFound("Product not found.");
+        var product = await _productRepository.GetByIdAsync(ProductId.From(request.Id), ct);
+        if (product is null)
+            return ServiceResult.NotFound("محصول یافت نشد.");
 
-        product.Delete(_currentUserService.CurrentUser.UserId);
+        product.Deactivate();
         _productRepository.Update(product);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        await _auditService.LogProductEventAsync(
-            request.Id,
-            "DeleteProduct",
-            $"Product '{product.Name}' soft-deleted.",
-            _currentUserService.CurrentUser.UserId);
-
+        _logger.LogInformation("Product {ProductId} deleted by user {UserId}", request.Id, request.DeletedByUserId);
         return ServiceResult.Success();
     }
 }

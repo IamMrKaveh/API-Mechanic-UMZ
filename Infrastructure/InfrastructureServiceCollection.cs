@@ -259,7 +259,7 @@ public static class InfrastructureServiceCollection
         services.AddScoped<IShippingQueryService, ShippingQueryService>();
         services.AddScoped<IMediaQueryService, MediaQueryService>();
         services.AddScoped<ICartQueryService, CartQueryService>();
-        services.AddScoped<ITicketQueryService, TicketQueryService>();
+        services.AddScoped<ISupportQueryService, TicketQueryService>();
         services.AddScoped<IWalletQueryService, WalletQueryService>();
         services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
         services.AddScoped<IDiscountService, DiscountService>();

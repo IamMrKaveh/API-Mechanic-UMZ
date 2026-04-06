@@ -1,40 +1,51 @@
-﻿using Domain.User.Entities;
+﻿using Application.Common.Results;
+using Application.Order.Features.Shared;
+using Domain.Common.Interfaces;
+using Domain.Common.ValueObjects;
+using Domain.Order.Aggregates;
+using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
 
-public sealed class CheckoutOrderCreationService(
+public class CheckoutOrderCreationService(
     IOrderRepository orderRepository,
-    OrderDomainService orderDomainService,
     IUnitOfWork unitOfWork) : ICheckoutOrderCreationService
 {
-    private readonly IOrderRepository _orderRepository = orderRepository;
-    private readonly OrderDomainService _orderDomainService = orderDomainService;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
-    public async Task<ServiceResult<Domain.Order.Aggregates.Order>> CreateAsync(
-        int userId,
-        UserAddress address,
-        Domain.Shipping.Aggregates.Shipping shippingMethod,
-        string idempotencyKey,
-        IReadOnlyList<OrderItemSnapshot> orderItemSnapshots,
+    public async Task<ServiceResult<CheckoutResultDto>> CreateAsync(
+        Guid userId,
+        ReceiverInfo receiverInfo,
+        DeliveryAddress deliveryAddress,
+        List<OrderItemSnapshot> items,
+        Money shippingCost,
+        Money discountAmount,
+        Guid? discountCodeId,
+        Guid idempotencyKey,
         CancellationToken ct)
     {
-        var itemsValidation = _orderDomainService.ValidateOrderItems(orderItemSnapshots);
-        if (!itemsValidation.IsValid)
-            return ServiceResult<Domain.Order.Aggregates.Order>.Failure(itemsValidation.GetErrorsSummary());
+        if (await orderRepository.ExistsByIdempotencyKeyAsync(idempotencyKey, ct))
+            return ServiceResult<CheckoutResultDto>.Conflict("سفارش قبلاً ثبت شده است.");
 
-        var order = _orderDomainService.PlaceOrder(
+        var orderId = OrderId.NewId();
+        var order = Order.Place(
+            orderId,
             userId,
-            address,
-            address.ReceiverName,
-            shippingMethod,
-            idempotencyKey,
-            orderItemSnapshots,
-            discountResult: null);
+            receiverInfo,
+            deliveryAddress,
+            shippingCost,
+            discountAmount,
+            discountCodeId,
+            items,
+            idempotencyKey);
 
-        await _orderRepository.AddAsync(order, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
+        orderRepository.Add(order);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        return ServiceResult<Domain.Order.Aggregates.Order>.Success(order);
+        return ServiceResult<CheckoutResultDto>.Success(new CheckoutResultDto
+        {
+            OrderId = orderId.Value,
+            OrderNumber = order.OrderNumber.Value,
+            FinalAmount = order.FinalAmount.Amount
+        });
     }
 }

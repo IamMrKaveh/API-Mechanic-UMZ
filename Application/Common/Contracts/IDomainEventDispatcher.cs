@@ -1,9 +1,10 @@
+using Domain.Common.Abstractions;
+
 namespace Application.Common.Contracts;
 
-/// <summary>
-/// انتشار Domain Events پس از SaveChangesAsync
-/// </summary>
 public interface IDomainEventDispatcher
 {
-    Task DispatchEventsAsync(CancellationToken ct = default);
+    Task DispatchAsync(
+        IEnumerable<IDomainEvent> domainEvents,
+        CancellationToken ct = default);
 }

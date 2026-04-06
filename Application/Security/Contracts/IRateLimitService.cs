@@ -1,8 +1,5 @@
 namespace Application.Security.Contracts;
 
-/// <summary>
-/// سرویس محدودیت نرخ
-/// </summary>
 public interface IRateLimitService
 {
     Task<(bool IsLimited, int RetryAfterSeconds)> IsLimitedAsync(

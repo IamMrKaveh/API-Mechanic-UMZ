@@ -1,21 +1,22 @@
 using Application.Common.Results;
+using Application.Discount.Contracts;
+using Application.Discount.Features.Shared;
 
 namespace Application.Discount.Features.Queries.ValidateDiscount;
 
-public class ValidateDiscountHandler(IDiscountQueryService discountQueryService) : IRequestHandler<ValidateDiscountQuery, ServiceResult<DiscountValidationDto>>
+public class ValidateDiscountHandler(
+    IDiscountService discountService) : IRequestHandler<ValidateDiscountQuery, ServiceResult<DiscountValidationResult>>
 {
-    private readonly IDiscountQueryService _discountQueryService = discountQueryService;
+    private readonly IDiscountService _discountService = discountService;
 
-    public async Task<ServiceResult<DiscountValidationDto>> Handle(
+    public async Task<ServiceResult<DiscountValidationResult>> Handle(
         ValidateDiscountQuery request,
         CancellationToken ct)
     {
-        var result = await _discountQueryService.ValidateDiscountAsync(
+        return await _discountService.ValidateAndApplyDiscountAsync(
             request.Code,
-            request.OrderTotal,
+            request.OrderAmount,
             request.UserId,
             ct);
-
-        return ServiceResult<DiscountValidationDto>.Success(result);
     }
 }

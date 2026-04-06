@@ -1,38 +1,33 @@
 using Application.Common.Results;
+using Domain.Inventory.Interfaces;
+using Domain.Inventory.Services;
+using Domain.Variant.ValueObjects;
+using Domain.Common.Interfaces;
 
 namespace Application.Inventory.Features.Commands.RecordDamage;
 
-public class RecordDamageHandler : IRequestHandler<RecordDamageCommand, ServiceResult>
+public class RecordDamageHandler(
+    IInventoryRepository inventoryRepository,
+    InventoryDomainService inventoryDomainService,
+    IUnitOfWork unitOfWork) : IRequestHandler<RecordDamageCommand, ServiceResult>
 {
-    private readonly IInventoryService _inventoryService;
-    private readonly IAuditService _auditService;
-
-    public RecordDamageHandler(
-        IInventoryService inventoryService,
-        IAuditService auditService)
+    public async Task<ServiceResult> Handle(RecordDamageCommand request, CancellationToken ct)
     {
-        _inventoryService = inventoryService;
-        _auditService = auditService;
-    }
+        var inventory = await inventoryRepository.GetByVariantIdAsync(
+            ProductVariantId.From(request.VariantId), ct);
 
-    public async Task<ServiceResult> Handle(RecordDamageCommand request, CancellationToken cancellationToken)
-    {
-        var result = await _inventoryService.RecordDamageAsync(
-            request.VariantId,
-            request.Quantity,
-            request.UserId,
-            request.Notes,
-            cancellationToken);
+        if (inventory is null)
+            return ServiceResult.NotFound("موجودی یافت نشد.");
 
-        if (result.IsSuccess)
-        {
-            await _auditService.LogInventoryEventAsync(
-                request.VariantId,
-                "DamageRecorded",
-                $"ثبت خسارت: {request.Quantity} واحد. توضیحات: {request.Notes}",
-                request.UserId);
-        }
+        var result = inventoryDomainService.RecordDamage(
+            inventory, request.Quantity, request.UserId, request.Reason);
 
-        return result;
+        if (!result.IsSuccess)
+            return ServiceResult.Failure(result.Error!);
+
+        inventoryRepository.Update(inventory);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        return ServiceResult.Success();
     }
 }

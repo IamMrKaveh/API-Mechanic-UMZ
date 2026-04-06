@@ -1,44 +1,27 @@
 using Application.Common.Results;
 using Domain.Common.Interfaces;
 using Domain.Support.Interfaces;
-using Domain.Support.Services;
+using Domain.Support.ValueObjects;
 
 namespace Application.Support.Features.Commands.CloseTicket;
 
-public sealed class CloseTicketHandler(
+public class CloseTicketHandler(
     ITicketRepository ticketRepository,
-    TicketDomainService ticketDomainService,
-    IUnitOfWork unitOfWork,
-    ILogger<CloseTicketHandler> logger) : IRequestHandler<CloseTicketCommand, ServiceResult<bool>>
+    IUnitOfWork unitOfWork) : IRequestHandler<CloseTicketCommand, ServiceResult>
 {
-    private readonly ITicketRepository _ticketRepository = ticketRepository;
-    private readonly TicketDomainService _ticketDomainService = ticketDomainService;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ILogger<CloseTicketHandler> _logger = logger;
-
-    public async Task<ServiceResult<bool>> Handle(
-        CloseTicketCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(CloseTicketCommand request, CancellationToken ct)
     {
-        var ticket = await _ticketRepository.GetByIdWithMessagesAsync(request.TicketId, ct);
+        var ticket = await ticketRepository.GetByIdAsync(TicketId.From(request.TicketId), ct);
         if (ticket is null)
-            return ServiceResult<bool>.NotFound("تیکت پشتیبانی یافت نشد");
+            return ServiceResult.NotFound("تیکت یافت نشد.");
 
-        var accessResult = _ticketDomainService.ValidateUserAccess(ticket, request.UserId, request.IsAdmin);
-        if (!accessResult.HasAccess)
-            return ServiceResult<bool>.Forbidden("شما اجازه دسترسی به این تیکت را ندارید");
-
-        var canCloseResult = _ticketDomainService.ValidateCanClose(ticket);
-        if (!canCloseResult.CanClose)
-            return ServiceResult<bool>.Validation(canCloseResult.Error!);
+        if (!request.IsAdmin && ticket.CustomerId.Value != request.UserId)
+            return ServiceResult.Forbidden("دسترسی ممنوع.");
 
         ticket.Close();
+        ticketRepository.Update(ticket);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        _ticketRepository.Update(ticket);
-        await _unitOfWork.SaveChangesAsync(ct);
-
-        _logger.LogInformation("Ticket {TicketId} closed by user {UserId}", request.TicketId, request.UserId);
-
-        return ServiceResult<bool>.Success(true);
+        return ServiceResult.Success();
     }
 }

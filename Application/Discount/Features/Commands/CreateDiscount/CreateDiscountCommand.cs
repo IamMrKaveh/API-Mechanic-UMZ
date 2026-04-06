@@ -1,17 +1,14 @@
 using Application.Common.Results;
 using Application.Discount.Features.Shared;
-using Domain.Common.ValueObjects;
-using Domain.Discount.Aggregates;
+using Domain.Discount.Enums;
 
 namespace Application.Discount.Features.Commands.CreateDiscount;
 
 public record CreateDiscountCommand(
-    DiscountCode Code,
-    Percentage Percentage,
-    decimal? MaxDiscountAmount,
-    decimal? MinOrderAmount,
+    string Code,
+    DiscountType DiscountType,
+    decimal DiscountValue,
+    decimal? MaximumDiscountAmount,
     int? UsageLimit,
-    int? MaxUsagePerUser,
-    DateTime? ExpiresAt,
     DateTime? StartsAt,
-    List<CreateDiscountRestrictionDto>? Restrictions) : IRequest<ServiceResult<DiscountCodeDto>>;
+    DateTime? ExpiresAt) : IRequest<ServiceResult<DiscountDto>>;

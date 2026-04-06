@@ -1,15 +1,14 @@
 using Application.Common.Results;
+using Application.Media.Features.Shared;
 
 namespace Application.Media.Features.Commands.UploadMedia;
 
-public record UploadMediaCommand : IRequest<ServiceResult<MediaDto>>
-{
-    public required Stream FileStream { get; init; }
-    public required string FileName { get; init; }
-    public required string ContentType { get; init; }
-    public required long FileSize { get; init; }
-    public required string EntityType { get; init; }
-    public required int EntityId { get; init; }
-    public bool IsPrimary { get; init; }
-    public string? AltText { get; init; }
-}
+public record UploadMediaCommand(
+    Stream FileStream,
+    string FileName,
+    string ContentType,
+    long FileSize,
+    string EntityType,
+    int EntityId,
+    bool IsPrimary = false,
+    string? AltText = null) : IRequest<ServiceResult<MediaDto>>;

@@ -1,4 +1,6 @@
 using Domain.Cart.Exceptions;
+using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Domain.Cart.Entities;
 
@@ -7,8 +9,8 @@ public sealed class CartItem : Entity<Guid>
     public Guid CartId { get; private init; }
     public Guid VariantId { get; private init; }
     public Guid ProductId { get; private init; }
-    public string ProductName { get; private init; } = null!;
-    public string Sku { get; private init; } = null!;
+    public ProductName ProductName { get; private init; } = null!;
+    public Sku Sku { get; private init; } = null!;
     public Money UnitPrice { get; private init; } = null!;
     public Money OriginalPrice { get; private init; } = null!;
     public int Quantity { get; private set; }
@@ -22,8 +24,8 @@ public sealed class CartItem : Entity<Guid>
         Guid cartId,
         Guid variantId,
         Guid productId,
-        string productName,
-        string sku,
+        ProductName productName,
+        Sku sku,
         Money unitPrice,
         Money originalPrice,
         int quantity) : base(id)
@@ -43,8 +45,8 @@ public sealed class CartItem : Entity<Guid>
         Guid cartId,
         Guid variantId,
         Guid productId,
-        string productName,
-        string sku,
+        ProductName productName,
+        Sku sku,
         Money unitPrice,
         Money originalPrice,
         int quantity)

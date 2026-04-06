@@ -5,29 +5,15 @@ namespace Application.Discount.Contracts;
 
 public interface IDiscountQueryService
 {
-    Task<(PaginatedResult<DiscountCodeDto> Discounts, int TotalCount)> GetPagedAsync(
-        bool includeExpired,
-        bool includeDeleted,
+    Task<DiscountDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
+
+    Task<DiscountDto?> GetByCodeAsync(string code, CancellationToken ct = default);
+
+    Task<DiscountValidationResultDto> ValidateDiscountAsync(string code, decimal orderAmount, Guid userId, CancellationToken ct = default);
+
+    Task<PaginatedResult<DiscountDto>> GetDiscountsPagedAsync(
+        bool? isActive,
         int page,
         int pageSize,
-        CancellationToken ct = default);
-
-    Task<DiscountCodeDetailDto?> GetDetailByIdAsync(
-        int id,
-        CancellationToken ct = default);
-
-    Task<IEnumerable<DiscountCodeDto>> GetActiveDiscountsAsync(
-        CancellationToken ct = default);
-
-    Task<IEnumerable<DiscountCodeDto>> GetExpiringDiscountsAsync(
-        DateTime beforeDate,
-        CancellationToken ct = default);
-
-    Task<DiscountInfoDto?> GetDiscountInfoByCodeAsync(
-        string code,
-        CancellationToken ct = default);
-
-    Task<DiscountUsageReportDto?> GetUsageReportByIdAsync(
-        int id,
         CancellationToken ct = default);
 }

@@ -5,25 +5,21 @@ namespace Application.Product.Contracts;
 
 public interface IProductQueryService
 {
-    Task<ProductDto?> GetByIdAsync(
-        int id,
+    Task<ProductDetailDto?> GetProductDetailAsync(int productId, CancellationToken ct = default);
+
+    Task<ProductDetailDto?> GetProductBySlugAsync(string slug, CancellationToken ct = default);
+
+    Task<PaginatedResult<ProductListItemDto>> GetProductsPagedAsync(
+        int? categoryId,
+        int? brandId,
+        string? search,
+        bool? isActive,
+        bool includeDeleted,
+        int page,
+        int pageSize,
         CancellationToken ct = default);
 
-    Task<IEnumerable<ProductDto>> GetAllAsync(CancellationToken ct = default);
-
-    Task<AdminProductDetailDto?> GetAdminProductDetailAsync(
-        int productId,
-        CancellationToken ct = default);
-
-    Task<PaginatedResult<AdminProductListItemDto>> GetAdminProductsAsync(
-        AdminProductSearchParams searchParams,
-        CancellationToken ct = default);
-
-    Task<PublicProductDetailDto?> GetPublicProductDetailAsync(
-        int productId,
-        CancellationToken ct = default);
-
-    Task<PaginatedResult<ProductCatalogItemDto>> GetProductCatalogAsync(
-        ProductCatalogSearchParams searchParams,
+    Task<IReadOnlyList<ProductListItemDto>> GetFeaturedProductsAsync(
+        int count = 10,
         CancellationToken ct = default);
 }

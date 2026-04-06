@@ -1,20 +1,22 @@
+using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
+using Application.Common.Results;
 
 namespace Application.Auth.Features.Commands.VerifyOtp;
 
-public class VerifyOtpHandler : IRequestHandler<VerifyOtpCommand, ServiceResult<AuthResult>>
+public class VerifyOtpHandler(
+    IAuthService authService,
+    ILogger<VerifyOtpHandler> logger) : IRequestHandler<VerifyOtpCommand, ServiceResult<AuthResult>>
 {
-    private readonly IAuthService _authService;
-
-    public VerifyOtpHandler(IAuthService authService)
-    {
-        _authService = authService;
-    }
+    private readonly IAuthService _authService = authService;
+    private readonly ILogger<VerifyOtpHandler> _logger = logger;
 
     public async Task<ServiceResult<AuthResult>> Handle(
         VerifyOtpCommand request,
         CancellationToken ct)
     {
+        _logger.LogInformation("OTP verify for {Phone}", request.PhoneNumber);
+
         var result = await _authService.VerifyOtpAsync(
             request.PhoneNumber,
             request.Code,
@@ -22,18 +24,16 @@ public class VerifyOtpHandler : IRequestHandler<VerifyOtpCommand, ServiceResult<
             request.UserAgent,
             ct);
 
-        if (result.IsFailed || result.Value == default)
-            return ServiceResult<AuthResult>.Failure(result.Error ?? "Verification failed", result.StatusCode);
+        if (result.IsFailure)
+            return ServiceResult<AuthResult>.Failure(result.Error ?? "");
 
-        var (accessToken, refreshTokenInfo, userDto, isNewUser) = result.Value;
+        var (accessToken, refreshToken, user, isNewUser) = result.Value;
 
         return ServiceResult<AuthResult>.Success(new AuthResult
         {
             AccessToken = accessToken,
-            RefreshToken = refreshTokenInfo.FullToken,
-            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(60),
-            RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30),
-            User = userDto,
+            RefreshToken = refreshToken.FullToken,
+            User = user,
             IsNewUser = isNewUser
         });
     }

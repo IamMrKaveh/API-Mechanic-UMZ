@@ -1,44 +1,30 @@
+using Application.Notification.Contracts;
+using Domain.Payment.Events;
+using Domain.User.ValueObjects;
+
 namespace Application.Payment.EventHandlers;
 
-/// <summary>
-/// وقتی پرداخت موفق شد، پیامک و نوتیفیکیشن ارسال می‌شود
-/// </summary>
-public sealed class PaymentSucceededNotificationEventHandler : INotificationHandler<Domain.Payment.Events.PaymentSucceededEvent>
+public class PaymentSucceededNotificationEventHandler(
+    INotificationService notificationService,
+    ILogger<PaymentSucceededNotificationEventHandler> logger) : INotificationHandler<PaymentSucceededEvent>
 {
-    private readonly INotificationService _notificationService;
-    private readonly ISmsService _smsService;
-    private readonly ILogger<PaymentSucceededNotificationEventHandler> _logger;
-
-    public PaymentSucceededNotificationEventHandler(
-        INotificationService notificationService,
-        ISmsService smsService,
-        ILogger<PaymentSucceededNotificationEventHandler> logger)
-    {
-        _notificationService = notificationService;
-        _smsService = smsService;
-        _logger = logger;
-    }
-
-    public async Task Handle(Domain.Payment.Events.PaymentSucceededEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(PaymentSucceededEvent notification, CancellationToken ct)
     {
         try
         {
-            
-            await _notificationService.SendPaymentNotificationAsync(
-                notification.UserId,
-                notification.OrderId,
-                isSuccess: true,
-                Convert.ToString(notification.RefId),
-                cancellationToken);
+            if (notification.UserId == 0) return;
 
-            _logger.LogInformation(
-                "Payment success notification sent for order {OrderId}, RefId: {RefId}",
-                notification.OrderId,
-                notification.RefId);
+            await notificationService.CreateNotificationAsync(
+                UserId.From(Guid.Empty),
+                "پرداخت موفق",
+                $"پرداخت سفارش شما با موفقیت انجام شد. کد پیگیری: {notification.RefId}",
+                "PaymentSuccess",
+                ct: ct);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to handle PaymentSucceededEvent for order {OrderId}", notification.OrderId);
+            logger.LogError(ex, "Failed to send payment success notification for order {OrderId}",
+                notification.OrderId);
         }
     }
 }

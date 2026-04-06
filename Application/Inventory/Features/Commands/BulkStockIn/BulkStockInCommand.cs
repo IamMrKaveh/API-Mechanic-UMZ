@@ -3,7 +3,8 @@ using Application.Common.Results;
 namespace Application.Inventory.Features.Commands.BulkStockIn;
 
 public record BulkStockInCommand(
-    List<BulkStockInItemDto> Items,
-    int UserId,
-    string? SupplierReference = null)
-    : IRequest<ServiceResult<BulkStockInResultDto>>;
+    List<StockInItem> Items,
+    Guid? UserId,
+    string Reason) : IRequest<ServiceResult>;
+
+public record StockInItem(Guid VariantId, int Quantity, string? ReferenceNumber);

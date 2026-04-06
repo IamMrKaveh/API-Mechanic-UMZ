@@ -1,6 +1,5 @@
 using Application.Common.Results;
-using Domain.Discount.ValueObjects;
 
 namespace Application.Discount.Features.Commands.DeleteDiscount;
 
-public record DeleteDiscountCommand(DiscountCodeId Id) : IRequest<ServiceResult>;
+public record DeleteDiscountCommand(Guid Id) : IRequest<ServiceResult>;

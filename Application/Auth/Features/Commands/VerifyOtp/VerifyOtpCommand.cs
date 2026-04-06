@@ -3,10 +3,8 @@ using Application.Common.Results;
 
 namespace Application.Auth.Features.Commands.VerifyOtp;
 
-public record VerifyOtpCommand : IRequest<ServiceResult<AuthResult>>
-{
-    public required string PhoneNumber { get; init; }
-    public required string Code { get; init; }
-    public required string IpAddress { get; init; }
-    public string? UserAgent { get; init; }
-}
+public record VerifyOtpCommand(
+    string PhoneNumber,
+    string Code,
+    string IpAddress,
+    string? UserAgent) : IRequest<ServiceResult<AuthResult>>;

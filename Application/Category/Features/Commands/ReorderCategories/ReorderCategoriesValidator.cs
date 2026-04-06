@@ -4,10 +4,11 @@ public class ReorderCategoriesValidator : AbstractValidator<ReorderCategoriesCom
 {
     public ReorderCategoriesValidator()
     {
-        RuleFor(x => x.OrderedCategoryIds)
-            .NotNull().WithMessage("لیست شناسه‌ها الزامی است.")
-            .Must(ids => ids != null && ids.Count > 0).WithMessage("لیست شناسه‌ها نمی‌تواند خالی باشد.")
-            .Must(ids => ids != null && ids.Distinct().Count() == ids.Count)
-            .WithMessage("شناسه‌های تکراری مجاز نیست.");
+        RuleFor(x => x.Items).NotEmpty().WithMessage("لیست دسته‌بندی‌ها نمی‌تواند خالی باشد.");
+        RuleForEach(x => x.Items).ChildRules(item =>
+        {
+            item.RuleFor(x => x.Id).NotEmpty();
+            item.RuleFor(x => x.SortOrder).GreaterThanOrEqualTo(0);
+        });
     }
 }

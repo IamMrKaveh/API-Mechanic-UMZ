@@ -1,31 +1,37 @@
-﻿using Application.Cart;
-using Domain.Variant.Aggregates;
+﻿using Application.Common.Results;
+using Domain.Cart.Interfaces;
+using Domain.Cart.ValueObjects;
+using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
 
-public sealed class CheckoutCartItemBuilderService(ICartRepository cartRepository) : ICheckoutCartItemBuilderService
+public class CheckoutCartItemBuilderService(ICartRepository cartRepository)
+    : ICheckoutCartItemBuilderService
 {
-    private readonly ICartRepository _cartRepository = cartRepository;
-
-    public async Task<ServiceResult<CheckoutCartItemsResult>> BuildAsync(Domain.Cart.Aggregates.Cart cart, CancellationToken ct)
+    public async Task<ServiceResult<CheckoutCartItemsResult>> BuildAsync(
+        Guid cartId, Guid userId, CancellationToken ct)
     {
-        var orderItemSnapshots = new List<OrderItemSnapshot>();
-        var variantItems = new List<(ProductVariant Variant, int Quantity)>();
+        var cart = await cartRepository.FindByIdAsync(cartId, ct);
+        if (cart is null)
+            return ServiceResult<CheckoutCartItemsResult>.NotFound("سبد خرید یافت نشد.");
 
-        foreach (var cartItem in cart.CartItems)
-        {
-            var variant = await _cartRepository.GetVariantByIdAsync(cartItem.VariantId, ct);
-            if (variant == null || !variant.IsActive)
-                return ServiceResult<CheckoutCartItemsResult>.Failure("محصول ناشناخته یا غیرفعال در سبد خرید وجود دارد.");
+        if (cart.UserId != userId)
+            return ServiceResult<CheckoutCartItemsResult>.Forbidden("دسترسی ممنوع.");
 
-            variantItems.Add((variant, cartItem.Quantity));
-            orderItemSnapshots.Add(OrderItemSnapshot.FromVariant(variant, cartItem.Quantity));
-        }
+        if (cart.IsEmpty)
+            return ServiceResult<CheckoutCartItemsResult>.Failure("سبد خرید خالی است.");
 
-        return ServiceResult<CheckoutCartItemsResult>.Success(new CheckoutCartItemsResult
-        {
-            OrderItemSnapshots = orderItemSnapshots.AsReadOnly(),
-            VariantItems = variantItems.AsReadOnly()
-        });
+        var snapshots = cart.Items.Select(item => new OrderItemSnapshot(
+            item.VariantId,
+            item.ProductId,
+            item.ProductName.Value,
+            item.Sku.Value,
+            item.UnitPrice,
+            item.Quantity)).ToList();
+
+        var subtotal = cart.TotalAmount.Amount;
+
+        return ServiceResult<CheckoutCartItemsResult>.Success(
+            new CheckoutCartItemsResult(snapshots, subtotal));
     }
 }

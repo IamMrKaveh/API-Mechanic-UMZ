@@ -1,8 +1,11 @@
+using Application.Common.Results;
+using Application.Media.Features.Shared;
+
 namespace Application.Media.Contracts;
 
 public interface IMediaService
 {
-    Task<Domain.Media.Aggregates.Media> AttachFileToEntityAsync(
+    Task<ServiceResult<MediaDto>> UploadAsync(
         Stream fileStream,
         string fileName,
         string contentType,
@@ -11,8 +14,11 @@ public interface IMediaService
         int entityId,
         bool isPrimary = false,
         string? altText = null,
-        bool saveChanges = true,
         CancellationToken ct = default);
 
-    Task DeleteMediaAsync(int mediaId, int? deletedBy = null, CancellationToken ct = default);
+    Task<ServiceResult> DeleteAsync(Guid mediaId, CancellationToken ct = default);
+
+    Task<ServiceResult> SetAsPrimaryAsync(Guid mediaId, CancellationToken ct = default);
+
+    Task<ServiceResult> ReorderAsync(string entityType, int entityId, List<Guid> orderedIds, CancellationToken ct = default);
 }

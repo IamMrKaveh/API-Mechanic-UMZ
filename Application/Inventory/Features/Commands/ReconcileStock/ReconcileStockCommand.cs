@@ -2,4 +2,4 @@ using Application.Common.Results;
 
 namespace Application.Inventory.Features.Commands.ReconcileStock;
 
-public record ReconcileStockCommand(int VariantId, int UserId) : IRequest<ServiceResult<ReconcileResultDto>>;
+public record ReconcileStockCommand(Guid VariantId, int CalculatedStock, Guid UserId) : IRequest<ServiceResult>;

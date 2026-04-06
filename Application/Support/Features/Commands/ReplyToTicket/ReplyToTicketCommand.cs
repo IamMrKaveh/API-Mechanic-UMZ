@@ -1,3 +1,9 @@
+using Application.Common.Results;
+
 namespace Application.Support.Features.Commands.ReplyToTicket;
 
-public sealed record ReplyToTicketCommand(int TicketId, string Message) : IRequest<ServiceResult>;
+public record ReplyToTicketCommand(
+    Guid TicketId,
+    Guid SenderId,
+    string Content,
+    bool IsAdmin = false) : IRequest<ServiceResult>;

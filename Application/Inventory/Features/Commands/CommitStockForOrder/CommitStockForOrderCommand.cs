@@ -2,4 +2,8 @@ using Application.Common.Results;
 
 namespace Application.Inventory.Features.Commands.CommitStockForOrder;
 
-public record CommitStockForOrderCommand(int OrderId) : IRequest<ServiceResult>;
+public record CommitStockForOrderCommand(
+    List<OrderItemStockCommit> Items,
+    string OrderNumber) : IRequest<ServiceResult>;
+
+public record OrderItemStockCommit(Guid VariantId, int Quantity, Guid? OrderItemId);

@@ -1,38 +1,38 @@
 using Application.Common.Results;
+using Domain.Inventory.Interfaces;
+using Domain.Inventory.Services;
+using Domain.Variant.ValueObjects;
+using Domain.Common.Interfaces;
 
 namespace Application.Inventory.Features.Commands.AdjustStock;
 
-public class AdjustStockHandler : IRequestHandler<AdjustStockCommand, ServiceResult>
+public class AdjustStockHandler(
+    IInventoryRepository inventoryRepository,
+    InventoryDomainService inventoryDomainService,
+    IUnitOfWork unitOfWork,
+    ILogger<AdjustStockHandler> logger) : IRequestHandler<AdjustStockCommand, ServiceResult>
 {
-    private readonly IInventoryService _inventoryService;
-    private readonly IAuditService _auditService;
-
-    public AdjustStockHandler(
-        IInventoryService inventoryService,
-        IAuditService auditService)
+    public async Task<ServiceResult> Handle(AdjustStockCommand request, CancellationToken ct)
     {
-        _inventoryService = inventoryService;
-        _auditService = auditService;
-    }
+        var inventory = await inventoryRepository.GetByVariantIdAsync(
+            ProductVariantId.From(request.VariantId), ct);
 
-    public async Task<ServiceResult> Handle(AdjustStockCommand request, CancellationToken cancellationToken)
-    {
-        var result = await _inventoryService.AdjustStockAsync(
-            request.VariantId,
-            request.QuantityChange,
-            request.UserId,
-            request.Notes,
-            cancellationToken);
+        if (inventory is null)
+            return ServiceResult.NotFound("موجودی یافت نشد.");
 
-        if (result.IsSuccess)
-        {
-            await _auditService.LogInventoryEventAsync(
-                request.VariantId,
-                "StockAdjustment",
-                $"تنظیم دستی موجودی: {request.QuantityChange:+#;-#;0} واحد. توضیحات: {request.Notes}",
-                request.UserId);
-        }
+        var result = inventoryDomainService.AdjustStock(
+            inventory, request.QuantityChange, request.UserId, request.Reason);
 
-        return result;
+        if (!result.IsSuccess)
+            return ServiceResult.Failure(result.Error!);
+
+        inventoryRepository.Update(inventory);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        logger.LogInformation(
+            "Stock adjusted for variant {VariantId} by {Change}",
+            request.VariantId, request.QuantityChange);
+
+        return ServiceResult.Success();
     }
 }

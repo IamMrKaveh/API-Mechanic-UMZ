@@ -1,28 +1,30 @@
 namespace Application.Common.Behaviors;
 
-public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validators) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+public sealed class ValidationBehavior<TRequest, TResponse>(
+    IEnumerable<IValidator<TRequest>> validators) : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : notnull
 {
-    private readonly IEnumerable<IValidator<TRequest>> _validators = validators;
-
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken ct)
     {
-        if (!_validators.Any())
-            return await next(ct);
+        if (!validators.Any())
+            return await next();
 
         var context = new ValidationContext<TRequest>(request);
-        var failures = _validators
+        var failures = validators
             .Select(v => v.Validate(context))
             .SelectMany(r => r.Errors)
-            .Where(f => f is not null)
+            .Where(f => f != null)
             .ToList();
 
         if (failures.Count != 0)
-            throw new FluentValidation.ValidationException(failures);
+        {
+            var errors = string.Join(" | ", failures.Select(f => f.ErrorMessage));
+            throw new ValidationException(failures);
+        }
 
-        return await next(ct);
+        return await next();
     }
 }

@@ -1,54 +1,35 @@
-using Application.Audit.Contracts;
 using Application.Common.Results;
 using Application.User.Features.Shared;
-using Domain.Common.Exceptions;
 using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.UpdateProfile;
 
 public class UpdateProfileHandler(
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    IMapper mapper,
-    ILogger<UpdateProfileHandler> logger) : IRequestHandler<UpdateProfileCommand, ServiceResult<UserProfileDto>>
+    IMapper mapper) : IRequestHandler<UpdateProfileCommand, ServiceResult<UserProfileDto>>
 {
-    private readonly IUserRepository _userRepository = userRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly IMapper _mapper = mapper;
-    private readonly ILogger<UpdateProfileHandler> _logger = logger;
-
-    public async Task<ServiceResult<UserProfileDto>> Handle(
-        UpdateProfileCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult<UserProfileDto>> Handle(UpdateProfileCommand request, CancellationToken ct)
     {
-        var user = await _userRepository.GetByIdAsync(request.UserId, ct);
+        var user = await userRepository.GetByIdAsync(UserId.From(request.UserId), ct);
         if (user is null)
             return ServiceResult<UserProfileDto>.NotFound("کاربر یافت نشد.");
 
-        try
-        {
-            if (request.FullName is null)
-                return ServiceResult<UserProfileDto>.NotFound("نام خالی میباشد");
+        var fullName = FullName.Create(
+            request.FirstName ?? user.FullName.FirstName,
+            request.LastName ?? user.FullName.LastName);
 
-            user.UpdateProfile(request.FullName, request.PhoneNumber);
+        PhoneNumber? phoneNumber = null;
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+            phoneNumber = PhoneNumber.Create(request.PhoneNumber);
 
-            _userRepository.Update(user);
-            await _unitOfWork.SaveChangesAsync(ct);
+        user.UpdateProfile(fullName, phoneNumber);
 
-            await _auditService.LogUserActionAsync(
-                request.UserId,
-                "UpdateProfile",
-                "پروفایل کاربر به‌روزرسانی شد.",
-                "system");
+        userRepository.Update(user);
+        await unitOfWork.SaveChangesAsync(ct);
 
-            return ServiceResult<UserProfileDto>.Success(_mapper.Map<UserProfileDto>(user));
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult<UserProfileDto>.Unexpected(ex.Message);
-        }
+        return ServiceResult<UserProfileDto>.Success(mapper.Map<UserProfileDto>(user));
     }
 }

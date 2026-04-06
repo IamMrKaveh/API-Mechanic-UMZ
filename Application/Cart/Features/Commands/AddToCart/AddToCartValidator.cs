@@ -4,11 +4,14 @@ public class AddToCartValidator : AbstractValidator<AddToCartCommand>
 {
     public AddToCartValidator()
     {
-        RuleFor(x => x.VariantId)
-            .GreaterThan(0).WithMessage("شناسه واریانت معتبر نیست.");
+        RuleFor(x => x)
+            .Must(x => x.UserId.HasValue || !string.IsNullOrWhiteSpace(x.GuestToken))
+            .WithMessage("UserId یا GuestToken الزامی است.");
+
+        RuleFor(x => x.VariantId).GreaterThan(0).WithMessage("محصول الزامی است.");
 
         RuleFor(x => x.Quantity)
             .GreaterThan(0).WithMessage("تعداد باید بزرگتر از صفر باشد.")
-            .LessThanOrEqualTo(1000).WithMessage("حداکثر تعداد مجاز ۱۰۰۰ عدد است.");
+            .LessThanOrEqualTo(100).WithMessage("تعداد نمی‌تواند بیش از ۱۰۰ باشد.");
     }
 }

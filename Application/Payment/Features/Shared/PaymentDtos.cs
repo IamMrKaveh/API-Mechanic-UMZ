@@ -2,24 +2,7 @@ using Domain.Common.ValueObjects;
 
 namespace Application.Payment.Features.Shared;
 
-public record PaymentTransactionDto
-{
-    public int Id { get; init; }
-    public int OrderId { get; init; }
-    public int UserId { get; init; }
-    public string Authority { get; init; } = string.Empty;
-    public decimal Amount { get; init; }
-    public string Gateway { get; init; } = string.Empty;
-    public string Status { get; init; } = string.Empty;
-    public long? RefId { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime? VerifiedAt { get; init; }
-    public string? ErrorMessage { get; init; }
-    public string? CardPan { get; init; }
-    public decimal Fee { get; init; }
-}
-
-public class PaymentInitiationDto
+public record PaymentInitiationDto
 {
     public int OrderId { get; set; }
     public int UserId { get; set; }
@@ -38,18 +21,6 @@ public record PaymentResultDto
     public string? Message { get; init; }
     public string? RedirectUrl { get; init; }
     public long? RefId { get; init; }
-}
-
-public record PaymentStatusDto
-{
-    public int TransactionId { get; init; }
-    public int OrderId { get; init; }
-    public string Status { get; init; } = string.Empty;
-    public string StatusDisplayName { get; init; } = string.Empty;
-    public long? RefId { get; init; }
-    public DateTime? VerifiedAt { get; init; }
-    public string? ErrorMessage { get; init; }
-    public TimeSpan? TimeUntilExpiry { get; init; }
 }
 
 public record PaymentSearchParams
@@ -90,11 +61,51 @@ public sealed record DiscrepancyDto(
     string SystemStatus,
     string GatewayStatus);
 
-public class WebhookPayload
+public record WebhookPayload
 {
     public string Authority { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public long? RefId { get; init; }
 }
 
-public sealed record RefundPaymentRequest(string Reason);
+public record PaymentTransactionDto
+{
+    public Guid Id { get; init; }
+    public Guid OrderId { get; init; }
+    public string Authority { get; init; } = string.Empty;
+    public string Gateway { get; init; } = string.Empty;
+    public decimal Amount { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public string StatusDisplayName { get; init; } = string.Empty;
+    public long? RefId { get; init; }
+    public bool IsSuccessful { get; init; }
+    public DateTime? VerifiedAt { get; init; }
+    public DateTime ExpiresAt { get; init; }
+    public DateTime CreatedAt { get; init; }
+}
+
+public record PaymentInitiationResult
+{
+    public string Authority { get; init; } = string.Empty;
+    public string PaymentUrl { get; init; } = string.Empty;
+    public Guid TransactionId { get; init; }
+}
+
+public record PaymentVerificationResult
+{
+    public bool IsSuccess { get; init; }
+    public long? RefId { get; init; }
+    public string? Error { get; init; }
+    public Guid TransactionId { get; init; }
+    public Guid OrderId { get; init; }
+    public decimal Amount { get; init; }
+}
+
+public record PaymentStatusDto
+{
+    public Guid TransactionId { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public string StatusDisplayName { get; init; } = string.Empty;
+    public TimeSpan? TimeUntilExpiry { get; init; }
+    public bool CanPay { get; init; }
+}
