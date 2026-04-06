@@ -1,9 +1,7 @@
-﻿using Domain.Variant.Aggregates;
+﻿using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
 
-public sealed class CheckoutCartItemsResult
-{
-    public IReadOnlyList<OrderItemSnapshot> OrderItemSnapshots { get; init; } = [];
-    public IReadOnlyList<(ProductVariant Variant, int Quantity)> VariantItems { get; init; } = [];
-}
+public record CheckoutCartItemsResult(
+    List<OrderItemSnapshot> Items,
+    decimal Subtotal);

@@ -1,10 +1,13 @@
-﻿namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+﻿using Application.Common.Results;
+using Domain.Common.ValueObjects;
+
+namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
 
 public interface ICheckoutDiscountApplicatorService
 {
-    Task<ServiceResult> ApplyAsync(
-        Domain.Order.Aggregates.Order order,
+    Task<ServiceResult<(Money DiscountAmount, Guid? DiscountCodeId)>> ApplyAsync(
         string? discountCode,
-        int userId,
+        decimal orderAmount,
+        Guid userId,
         CancellationToken ct);
 }

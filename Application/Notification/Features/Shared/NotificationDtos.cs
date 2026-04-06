@@ -1,15 +1,13 @@
 namespace Application.Notification.Features.Shared;
 
-public record NotificationDto(
-    int Id,
-    int UserId,
-    string Title,
-    string Message,
-    string Type,
-    string? ActionUrl,
-    string? RelatedEntityType,
-    int? RelatedEntityId,
-    bool IsRead,
-    DateTime? ReadAt,
-    DateTime CreatedAt
-);
+public record NotificationDto
+{
+    public Guid Id { get; init; }
+    public Guid UserId { get; init; }
+    public string Title { get; init; } = string.Empty;
+    public string Message { get; init; } = string.Empty;
+    public string Type { get; init; } = string.Empty;
+    public string? ActionUrl { get; init; }
+    public bool IsRead { get; init; }
+    public DateTime CreatedAt { get; init; }
+}

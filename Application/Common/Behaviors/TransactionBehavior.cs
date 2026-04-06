@@ -1,31 +1,45 @@
+using Domain.Common.Interfaces;
+
 namespace Application.Common.Behaviors;
 
-public class TransactionBehavior<TRequest, TResponse>(IUnitOfWork unitOfWork) : IPipelineBehavior<TRequest, TResponse>
+public sealed class TransactionBehavior<TRequest, TResponse>(
+    IUnitOfWork unitOfWork,
+    ILogger<TransactionBehavior<TRequest, TResponse>> logger) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken ct)
     {
-        var isCommand = request.GetType().Name.EndsWith("Command");
+        if (request is IQuery)
+            return await next();
 
-        if (!isCommand)
-            return await next(ct);
-
-        await _unitOfWork.BeginTransactionAsync(ct);
         try
         {
-            var response = await next(ct);
-            await _unitOfWork.CommitTransactionAsync(ct);
-            return response;
+            return await unitOfWork.ExecuteStrategyAsync(async () =>
+            {
+                await using var transaction = await unitOfWork.BeginTransactionAsync(ct);
+                try
+                {
+                    var response = await next();
+                    await unitOfWork.CommitTransactionAsync(ct);
+                    return response;
+                }
+                catch
+                {
+                    await unitOfWork.RollbackTransactionAsync(ct);
+                    throw;
+                }
+            }, ct);
         }
-        catch
+        catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync(ct);
+            logger.LogError(ex, "Transaction failed for {RequestType}", typeof(TRequest).Name);
             throw;
         }
     }
 }
+
+public interface IQuery
+{ }

@@ -4,7 +4,6 @@ public class MarkOrderAsShippedValidator : AbstractValidator<MarkOrderAsShippedC
 {
     public MarkOrderAsShippedValidator()
     {
-        RuleFor(x => x.OrderId).GreaterThan(0).WithMessage("OrderId is required.");
-        RuleFor(x => x.RowVersion).NotEmpty().WithMessage("RowVersion is required for concurrency control.");
+        RuleFor(x => x.OrderId).NotEmpty();
     }
 }

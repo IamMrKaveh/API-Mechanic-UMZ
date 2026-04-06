@@ -5,18 +5,21 @@ namespace Application.Media.Contracts;
 
 public interface IMediaQueryService
 {
-    Task<int> CountByEntityAsync(
+    Task<MediaDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
+
+    Task<IReadOnlyList<MediaDto>> GetByEntityAsync(
         string entityType,
         int entityId,
         CancellationToken ct = default);
 
-    Task<IReadOnlySet<string>> GetAllFilePathsAsync(CancellationToken ct = default);
+    Task<MediaDto?> GetPrimaryByEntityAsync(
+        string entityType,
+        int entityId,
+        CancellationToken ct = default);
 
-    Task<IReadOnlyList<MediaDto>> GetEntityMediaAsync(string entityType, int entityId, CancellationToken ct = default);
-
-    Task<string?> GetPrimaryImageUrlAsync(string entityType, int entityId, CancellationToken ct = default);
-
-    Task<MediaDetailDto?> GetMediaByIdAsync(int mediaId, CancellationToken ct = default);
-
-    Task<PaginatedResult<MediaListItemDto>> GetAllMediaPagedAsync(string? entityType, int page, int pageSize, CancellationToken ct = default);
+    Task<PaginatedResult<MediaDto>> GetAllAsync(
+        string? entityType,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 }

@@ -1,64 +1,40 @@
+using Application.Common.Results;
+using Application.Discount.Features.Shared;
+using Domain.Common.Interfaces;
+using Domain.Common.ValueObjects;
 using Domain.Discount.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.Discount.Features.Commands.ApplyDiscount;
 
-public class ApplyDiscountHandler : IRequestHandler<ApplyDiscountCommand, ServiceResult<DiscountApplyResultDto>>
+public class ApplyDiscountHandler(
+    IDiscountRepository discountRepository,
+    IUnitOfWork unitOfWork) : IRequestHandler<ApplyDiscountCommand, ServiceResult<DiscountApplicationResultDto>>
 {
-    private readonly IDiscountRepository _discountRepository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public ApplyDiscountHandler(
-        IDiscountRepository discountRepository,
-        IUnitOfWork unitOfWork
-        )
+    public async Task<ServiceResult<DiscountApplicationResultDto>> Handle(
+        ApplyDiscountCommand request, CancellationToken ct)
     {
-        _discountRepository = discountRepository;
-        _unitOfWork = unitOfWork;
-    }
+        var discount = await discountRepository.GetByCodeAsync(request.Code, ct);
+        if (discount is null)
+            return ServiceResult<DiscountApplicationResultDto>.NotFound("کد تخفیف یافت نشد.");
 
-    public async Task<ServiceResult<DiscountApplyResultDto>> Handle(
-        ApplyDiscountCommand request,
-        CancellationToken ct
-        )
-    {
-        return await _unitOfWork.ExecuteStrategyAsync(async () =>
+        var orderAmount = Money.FromDecimal(request.OrderAmount);
+        var validation = discount.ValidateForApplication(orderAmount);
+
+        if (!validation.IsValid)
+            return ServiceResult<DiscountApplicationResultDto>.Failure(validation.FailureReason!);
+
+        var discountAmount = discount.CalculateDiscount(orderAmount);
+        var userId = UserId.From(request.UserId);
+        discount.RecordUsage(userId, request.OrderId, discountAmount);
+
+        discountRepository.Update(discount);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        return ServiceResult<DiscountApplicationResultDto>.Success(new DiscountApplicationResultDto
         {
-            using var transaction = await _unitOfWork.BeginTransactionAsync(ct);
-            try
-            {
-                var discount = await _discountRepository.GetByCodeAsync(request.Code, ct);
-
-                if (discount == null)
-                    return ServiceResult<DiscountApplyResultDto>.Failure("کد تخفیف نامعتبر است.");
-
-                var userUsageCount = await _discountRepository.CountUserUsageAsync(discount.Id, request.UserId, ct);
-
-                var (isValid, error) = discount.Validate(request.OrderTotal, request.UserId, userUsageCount);
-                if (!isValid)
-                {
-                    return ServiceResult<DiscountApplyResultDto>.Failure(error!);
-                }
-
-                var discountAmount = discount.CalculateDiscountAmount(request.OrderTotal);
-
-                discount.IncrementUsage();
-                _discountRepository.Update(discount);
-
-                await _unitOfWork.SaveChangesAsync(ct);
-                await _unitOfWork.CommitTransactionAsync(ct);
-
-                return ServiceResult<DiscountApplyResultDto>.Success(new DiscountApplyResultDto
-                {
-                    DiscountCodeId = discount.Id,
-                    DiscountAmount = discountAmount,
-                    Code = discount.Code.Value
-                });
-            }
-            catch (Exception)
-            {
-                await _unitOfWork.RollbackTransactionAsync(ct);
-                throw;
-            }
-        }, ct);
+            IsSuccess = true,
+            DiscountAmount = discountAmount.Amount
+        });
     }
 }

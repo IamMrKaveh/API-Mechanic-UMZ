@@ -1,10 +1,9 @@
-﻿using Domain.Variant.Aggregates;
+﻿using Application.Common.Results;
+using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
 
 public interface ICheckoutPriceValidatorService
 {
-    ServiceResult Validate(
-        IReadOnlyList<(ProductVariant Variant, int Quantity)> variantItems,
-        IReadOnlyList<CheckoutItemPriceDto> expectedItems);
+    Task<ServiceResult> ValidateAsync(List<OrderItemSnapshot> items, CancellationToken ct);
 }

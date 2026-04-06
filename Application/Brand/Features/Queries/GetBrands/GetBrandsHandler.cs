@@ -1,26 +1,24 @@
+using Application.Brand.Contracts;
+using Application.Brand.Features.Shared;
 using Application.Common.Results;
+using SharedKernel.Models;
 
 namespace Application.Brand.Features.Queries.GetBrands;
 
-public class GetAdminBrandsLegacyQueryHandler
-    : IRequestHandler<GetAdminBrandsLegacyQuery, ServiceResult<PaginatedResult<BrandListItemDto>>>
+public class GetBrandsHandler(
+    IBrandQueryService brandQueryService) : IRequestHandler<GetBrandsQuery, ServiceResult<PaginatedResult<BrandListItemDto>>>
 {
-    private readonly IBrandQueryService _brandQueryService;
-
-    public GetAdminBrandsLegacyQueryHandler(IBrandQueryService brandQueryService)
-    {
-        _brandQueryService = brandQueryService;
-    }
+    private readonly IBrandQueryService _brandQueryService = brandQueryService;
 
     public async Task<ServiceResult<PaginatedResult<BrandListItemDto>>> Handle(
-        GetAdminBrandsLegacyQuery request,
+        GetBrandsQuery request,
         CancellationToken ct)
     {
         var result = await _brandQueryService.GetBrandsPagedAsync(
             request.CategoryId,
             request.Search,
-            isActive: null,
-            includeDeleted: false,
+            request.IsActive,
+            request.IncludeDeleted,
             request.Page,
             request.PageSize,
             ct);

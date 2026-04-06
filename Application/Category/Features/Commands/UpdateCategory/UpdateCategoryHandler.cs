@@ -1,73 +1,55 @@
-using Application.Common.Exceptions;
+using Application.Category.Features.Shared;
 using Application.Common.Results;
-using Application.Media.Contracts;
 using Domain.Category.Interfaces;
+using Domain.Category.ValueObjects;
 using Domain.Common.Interfaces;
+using Domain.Common.ValueObjects;
 
 namespace Application.Category.Features.Commands.UpdateCategory;
 
 public class UpdateCategoryHandler(
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
-    IMediaService mediaService,
-    IMediaQueryService mediaQueryService,
-    ILogger<UpdateCategoryHandler> logger) : IRequestHandler<UpdateCategoryCommand, ServiceResult>
+    IMapper mapper,
+    ILogger<UpdateCategoryHandler> logger) : IRequestHandler<UpdateCategoryCommand, ServiceResult<CategoryDto>>
 {
-    private readonly ICategoryRepository _categoryRepository = categoryRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IMediaService _mediaService = mediaService;
-    private readonly IMediaQueryService _mediaQueryService = mediaQueryService;
-    private readonly ILogger<UpdateCategoryHandler> _logger = logger;
-
-    public async Task<ServiceResult> Handle(
-        UpdateCategoryCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult<CategoryDto>> Handle(UpdateCategoryCommand request, CancellationToken ct)
     {
-        var category = await _categoryRepository.GetByIdWithGroupsAsync(request.Id, ct);
-        if (category == null)
-            return ServiceResult.NotFound("دسته‌بندی یافت نشد.");
+        var category = await categoryRepository.GetByIdAsync(CategoryId.From(request.Id), ct);
+        if (category is null)
+            return ServiceResult<CategoryDto>.NotFound("دسته‌بندی یافت نشد.");
 
-        _categoryRepository.SetOriginalRowVersion(category, Convert.FromBase64String(request.RowVersion));
+        if (await categoryRepository.ExistsByNameAsync(request.Name, CategoryId.From(request.Id), ct))
+            return ServiceResult<CategoryDto>.Conflict("دسته‌بندی با این نام قبلاً ثبت شده است.");
 
-        if (await _categoryRepository.ExistsByNameAsync(request.Name.Trim(), request.Id, ct))
+        var slug = string.IsNullOrWhiteSpace(request.Slug)
+            ? Slug.GenerateFrom(request.Name)
+            : Slug.FromString(request.Slug);
+
+        if (await categoryRepository.ExistsBySlugAsync(slug.Value, CategoryId.From(request.Id), ct))
+            return ServiceResult<CategoryDto>.Conflict("Slug قبلاً استفاده شده است.");
+
+        category.UpdateDetails(request.Name, slug, request.Description, request.SortOrder);
+
+        if (request.IsActive && !category.IsActive)
+            category.Activate();
+        else if (!request.IsActive && category.IsActive)
+            category.Deactivate();
+
+        if (request.ParentCategoryId.HasValue)
         {
-            return ServiceResult.Conflict("دسته‌بندی با این نام قبلاً وجود دارد.");
+            var newParentId = CategoryId.From(request.ParentCategoryId.Value);
+            if (category.ParentCategoryId != newParentId)
+                category.MoveToParent(newParentId);
+        }
+        else if (category.ParentCategoryId is not null)
+        {
+            category.MoveToParent(null);
         }
 
-        category.Update(request.Name, request.Description, request.SortOrder);
+        categoryRepository.Update(category);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        Domain.Media.Aggregates.Media? newMedia = null;
-        if (request.IconFile != null)
-        {
-            var existingMedia = (await _mediaQueryService.GetEntityMediaAsync("Category", request.Id))
-                .FirstOrDefault(m => m.IsPrimary);
-
-            if (existingMedia != null)
-                await _mediaService.DeleteMediaAsync(existingMedia.Id);
-
-            newMedia = await _mediaService.AttachFileToEntityAsync(
-                request.IconFile.Content,
-                request.IconFile.FileName,
-                request.IconFile.ContentType,
-                request.IconFile.Length,
-                "Category",
-                request.Id,
-                isPrimary: true);
-        }
-
-        _categoryRepository.Update(category);
-
-        try
-        {
-            await _unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult.Success();
-        }
-        catch (ConcurrencyException)
-        {
-            if (newMedia != null)
-                await _mediaService.DeleteMediaAsync(newMedia.Id);
-
-            return ServiceResult.Conflict("این رکورد توسط کاربر دیگری تغییر یافته است. لطفاً مجدداً تلاش کنید.");
-        }
+        return ServiceResult<CategoryDto>.Success(mapper.Map<CategoryDto>(category));
     }
 }

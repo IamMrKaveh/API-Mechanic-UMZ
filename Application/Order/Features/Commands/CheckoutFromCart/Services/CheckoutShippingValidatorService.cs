@@ -1,16 +1,27 @@
-﻿using Domain.Shipping.Interfaces;
+﻿using Application.Common.Results;
+using Domain.Common.ValueObjects;
+using Domain.Shipping.Interfaces;
+using Domain.Shipping.ValueObjects;
 
 namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
 
-public sealed class CheckoutShippingValidatorService(IShippingRepository shippingRepository) : ICheckoutShippingValidatorService
+public class CheckoutShippingValidatorService(IShippingRepository shippingRepository)
+    : ICheckoutShippingValidatorService
 {
-    private readonly IShippingRepository _shippingRepository = shippingRepository;
-
-    public async Task<ServiceResult<Domain.Shipping.Aggregates.Shipping>> ValidateAsync(int shippingId, CancellationToken ct)
+    public async Task<ServiceResult<Money>> ValidateAndCalculateCostAsync(
+        Guid shippingId, decimal orderAmount, CancellationToken ct)
     {
-        var shippingMethod = await _shippingRepository.GetByIdAsync(shippingId, ct);
-        if (shippingMethod == null || !shippingMethod.IsActive)
-            return ServiceResult<Domain.Shipping.Aggregates.Shipping>.Failure("روش ارسال انتخاب شده معتبر نیست.");
-        return ServiceResult<Domain.Shipping.Aggregates.Shipping>.Success(shippingMethod);
+        var shipping = await shippingRepository.GetByIdAsync(ShippingId.From(shippingId), ct);
+        if (shipping is null)
+            return ServiceResult<Money>.NotFound("روش ارسال یافت نشد.");
+
+        var orderTotal = Money.FromDecimal(orderAmount);
+        var validation = shipping.ValidateForOrder(orderTotal);
+
+        if (!validation.IsSuccess)
+            return ServiceResult<Money>.Failure(validation.Error.Message);
+
+        var cost = shipping.CalculateCost(orderTotal);
+        return ServiceResult<Money>.Success(cost);
     }
 }

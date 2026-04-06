@@ -1,15 +1,19 @@
+using Application.Category.Contracts;
+using Application.Category.Features.Shared;
+using Application.Common.Results;
+
 namespace Application.Category.Features.Queries.GetCategoryTree;
 
 public class GetCategoryTreeHandler(
-    ICategoryQueryService queryService) : IRequestHandler<GetCategoryTreeQuery, ServiceResult<IReadOnlyList<CategoryTreeDto>>>
+    ICategoryQueryService categoryQueryService) : IRequestHandler<GetCategoryTreeQuery, ServiceResult<IReadOnlyList<CategoryTreeDto>>>
 {
-    private readonly ICategoryQueryService _queryService = queryService;
+    private readonly ICategoryQueryService _categoryQueryService = categoryQueryService;
 
     public async Task<ServiceResult<IReadOnlyList<CategoryTreeDto>>> Handle(
         GetCategoryTreeQuery request,
         CancellationToken ct)
     {
-        var tree = await _queryService.GetCategoryTreeAsync(ct);
+        var tree = await _categoryQueryService.GetCategoryTreeAsync(ct);
         return ServiceResult<IReadOnlyList<CategoryTreeDto>>.Success(tree);
     }
 }

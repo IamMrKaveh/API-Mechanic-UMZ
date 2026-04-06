@@ -1,25 +1,37 @@
+using Application.Common.Results;
+using Application.Support.Features.Shared;
+using Domain.Common.Interfaces;
 using Domain.Support.Aggregates;
+using Domain.Support.Enums;
 using Domain.Support.Interfaces;
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Support.Features.Commands.CreateTicket;
 
-public sealed class CreateTicketHandler(
+public class CreateTicketHandler(
     ITicketRepository ticketRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUserService currentUserService) : IRequestHandler<CreateTicketCommand, ServiceResult<int>>
+    IMapper mapper) : IRequestHandler<CreateTicketCommand, ServiceResult<TicketDto>>
 {
-    private readonly ITicketRepository _ticketRepository = ticketRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
-
-    public async Task<ServiceResult<int>> Handle(CreateTicketCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<TicketDto>> Handle(CreateTicketCommand request, CancellationToken ct)
     {
-        var userId = _currentUserService.UserId!.Value;
-        var ticket = Ticket.Create(userId, request.Subject, request.Message);
+        var category = TicketCategory.FromString(request.Category);
+        var priority = string.IsNullOrWhiteSpace(request.Priority)
+            ? TicketPriority.Normal
+            : TicketPriority.FromString(request.Priority);
 
-        await _ticketRepository.AddAsync(ticket, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        var ticketId = TicketId.NewId();
+        var customerId = UserId.From(request.UserId);
 
-        return ServiceResult<int>.Success(ticket.Id);
+        var ticket = Ticket.Open(ticketId, customerId, request.Subject, category, priority);
+
+        var messageId = TicketMessageId.NewId();
+        ticket.AddMessage(messageId, customerId, TicketMessageSenderType.Customer, request.InitialMessage);
+
+        await ticketRepository.AddAsync(ticket, ct);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        return ServiceResult<TicketDto>.Success(mapper.Map<TicketDto>(ticket));
     }
 }

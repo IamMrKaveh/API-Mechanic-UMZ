@@ -25,7 +25,7 @@ public class AdminShippingsController(IMediator mediator) : BaseApiController(me
     [HttpGet("{id}")]
     public async Task<IActionResult> GetShippingById(int id)
     {
-        var result = await _mediator.Send(new GetShippingByIdQuery(id));
+        var result = await _mediator.Send(new GetShippingQuery(id));
         return ToActionResult(result);
     }
 

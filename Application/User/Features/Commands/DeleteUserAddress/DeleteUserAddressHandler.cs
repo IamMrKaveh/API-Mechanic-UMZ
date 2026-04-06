@@ -1,24 +1,31 @@
 using Application.Common.Results;
+using Domain.Common.Exceptions;
 using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.DeleteUserAddress;
 
-public class DeleteUserAddressHandler(IUserRepository repo, IUnitOfWork uow) : IRequestHandler<DeleteUserAddressCommand, ServiceResult>
+public class DeleteUserAddressHandler(
+    IUserRepository userRepository,
+    IUnitOfWork unitOfWork) : IRequestHandler<DeleteUserAddressCommand, ServiceResult>
 {
-    private readonly IUserRepository _repo = repo;
-    private readonly IUnitOfWork _uow = uow;
-
-    public async Task<ServiceResult> Handle(
-        DeleteUserAddressCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(DeleteUserAddressCommand request, CancellationToken ct)
     {
-        var user = await _repo.GetWithAddressesAsync(request.UserId, ct);
-        if (user == null)
-            return ServiceResult.NotFound("User not found.");
-        user.RemoveAddress(request.AddressId);
-        _repo.Update(user);
-        await _uow.SaveChangesAsync(ct);
-        return ServiceResult.Success();
+        var user = await userRepository.GetWithAddressesAsync(UserId.From(request.UserId), ct);
+        if (user is null)
+            return ServiceResult.NotFound("کاربر یافت نشد.");
+
+        try
+        {
+            user.RemoveAddress(UserAddressId.From(request.AddressId));
+            userRepository.Update(user);
+            await unitOfWork.SaveChangesAsync(ct);
+            return ServiceResult.Success();
+        }
+        catch (DomainException ex)
+        {
+            return ServiceResult.Failure(ex.Message);
+        }
     }
 }

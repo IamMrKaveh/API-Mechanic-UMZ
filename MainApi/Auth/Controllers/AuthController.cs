@@ -25,7 +25,7 @@ public class AuthController(IMediator mediator) : BaseApiController(mediator)
         [FromBody] LoginRequest request,
         CancellationToken ct)
     {
-        var command = new RequestOtpCommand
+        var command = new SendOtpCommand
         {
             PhoneNumber = request.PhoneNumber,
             IpAddress = HttpContextHelper.GetClientIpAddress(HttpContext)

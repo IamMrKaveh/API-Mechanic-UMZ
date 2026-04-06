@@ -1,57 +1,100 @@
-using Application.Audit.Contracts;
 using Application.Common.Exceptions;
 using Application.Common.Results;
+using Application.Product.Features.Shared;
+using Domain.Brand.Interfaces;
+using Domain.Brand.ValueObjects;
+using Domain.Category.Interfaces;
+using Domain.Category.ValueObjects;
 using Domain.Common.Interfaces;
+using Domain.Common.ValueObjects;
 using Domain.Product.Interfaces;
-using SharedKernel.Contracts;
+using Domain.Product.ValueObjects;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Product.Features.Commands.UpdateProduct;
 
 public class UpdateProductHandler(
     IProductRepository productRepository,
+    ICategoryRepository categoryRepository,
+    IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
-    IHtmlSanitizer htmlSanitizer,
-    IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<UpdateProductCommand, ServiceResult>
+    ILogger<UpdateProductHandler> logger) : IRequestHandler<UpdateProductCommand, ServiceResult<ProductDetailDto>>
 {
     private readonly IProductRepository _productRepository = productRepository;
+    private readonly ICategoryRepository _categoryRepository = categoryRepository;
+    private readonly IBrandRepository _brandRepository = brandRepository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IHtmlSanitizer _htmlSanitizer = htmlSanitizer;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
+    private readonly ILogger<UpdateProductHandler> _logger = logger;
 
-    public async Task<ServiceResult> Handle(
+    public async Task<ServiceResult<ProductDetailDto>> Handle(
         UpdateProductCommand request,
         CancellationToken ct)
     {
-        var product = await _productRepository.GetByIdAsync(request.UpdateProductInput.Id, ct);
-        if (product == null)
-            return ServiceResult.NotFound("Product not found.");
+        var product = await _productRepository.GetByIdAsync(ProductId.From(request.Id), ct);
+        if (product is null)
+            return ServiceResult<ProductDetailDto>.NotFound("محصول یافت نشد.");
 
-        if (!string.IsNullOrEmpty(request.UpdateProductInput.Sku) && await _productRepository.ExistsBySkuAsync(request.UpdateProductInput.Sku, request.UpdateProductInput.Id, ct))
-            return ServiceResult.Conflict("Product SKU already exists.");
+        var category = await _categoryRepository.GetByIdAsync(CategoryId.From(request.CategoryId), ct);
+        if (category is null)
+            return ServiceResult<ProductDetailDto>.NotFound("دسته‌بندی یافت نشد.");
 
-        if (!string.IsNullOrEmpty(request.UpdateProductInput.RowVersion))
-            _productRepository.SetOriginalRowVersion(product, System.Convert.FromBase64String(request.UpdateProductInput.RowVersion));
+        var brand = await _brandRepository.GetByIdAsync(request.BrandId, ct);
+        if (brand is null)
+            return ServiceResult<ProductDetailDto>.NotFound("برند یافت نشد.");
 
-        product.UpdateDetails(
-            _htmlSanitizer.Sanitize(request.UpdateProductInput.Name),
-            _htmlSanitizer.Sanitize(request.UpdateProductInput.Description ?? string.Empty),
-            request.UpdateProductInput.Sku,
-            request.UpdateProductInput.BrandId,
-            request.UpdateProductInput.IsActive);
+        var slug = string.IsNullOrWhiteSpace(request.Slug)
+            ? Slug.GenerateFrom(request.Name)
+            : Slug.FromString(request.Slug);
 
-        _productRepository.Update(product);
+        if (await _productRepository.ExistsBySlugAsync(slug.Value, ProductId.From(request.Id), ct))
+            return ServiceResult<ProductDetailDto>.Conflict("محصولی با این Slug قبلاً ثبت شده است.");
 
         try
         {
+            var rowVersion = Convert.FromBase64String(request.RowVersion);
+            _productRepository.SetOriginalRowVersion(product, rowVersion);
+
+            product.UpdateDetails(request.Name, slug.Value, request.Description);
+
+            if (product.CategoryId != request.CategoryId)
+                product.ChangeCategory(CategoryId.From(request.CategoryId));
+
+            if (product.BrandId != request.BrandId)
+                product.ChangeBrand(BrandId.From(request.BrandId));
+
+            if (request.IsActive && !product.IsActive) product.Activate();
+            else if (!request.IsActive && product.IsActive) product.Deactivate();
+
+            if (request.IsFeatured && !product.IsFeatured) product.MarkAsFeatured();
+            else if (!request.IsFeatured && product.IsFeatured) product.UnmarkAsFeatured();
+
+            _productRepository.Update(product);
             await _unitOfWork.SaveChangesAsync(ct);
-            await _auditService.LogProductEventAsync(request.UpdateProductInput.Id, "UpdateProduct", "Product details updated", _currentUserService.UserId);
-            return ServiceResult.Success();
         }
-        catch (ConcurrencyException)
+        catch (DbUpdateConcurrencyException)
         {
-            return ServiceResult.Conflict("Concurrency Conflict: The record was modified by another user.");
+            throw new ConcurrencyException("اطلاعات محصول توسط کاربر دیگری تغییر کرده است.");
         }
+
+        _logger.LogInformation("Product {ProductId} updated", product.Id);
+
+        var dto = new ProductDetailDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Slug = product.Slug,
+            Description = product.Description,
+            CategoryId = product.CategoryId,
+            CategoryName = category.Name.Value,
+            BrandId = product.BrandId,
+            BrandName = brand.Name.Value,
+            IsActive = product.IsActive,
+            IsFeatured = product.IsFeatured,
+            IsDeleted = false,
+            CreatedAt = product.CreatedAt,
+            UpdatedAt = product.UpdatedAt
+        };
+
+        return ServiceResult<ProductDetailDto>.Success(dto);
     }
 }

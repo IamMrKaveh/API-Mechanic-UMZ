@@ -5,14 +5,12 @@ public class VerifyOtpValidator : AbstractValidator<VerifyOtpCommand>
     public VerifyOtpValidator()
     {
         RuleFor(x => x.PhoneNumber)
-            .NotEmpty().WithMessage("شماره تلفن الزامی است.");
+            .NotEmpty()
+            .Matches(@"^09\d{9}$").WithMessage("فرمت شماره موبایل نامعتبر است.");
 
         RuleFor(x => x.Code)
-            .NotEmpty().WithMessage("کد تأیید الزامی است.")
-            .Length(6).WithMessage("کد تأیید باید ۶ رقم باشد.")
-            .Matches(@"^\d{6}$").WithMessage("کد تأیید فقط باید شامل اعداد باشد.");
-
-        RuleFor(x => x.IpAddress)
-            .NotEmpty().WithMessage("آدرس IP الزامی است.");
+            .NotEmpty().WithMessage("کد OTP الزامی است.")
+            .Length(4, 8).WithMessage("کد OTP باید بین ۴ تا ۸ رقم باشد.")
+            .Matches(@"^\d+$").WithMessage("کد OTP فقط باید شامل اعداد باشد.");
     }
 }

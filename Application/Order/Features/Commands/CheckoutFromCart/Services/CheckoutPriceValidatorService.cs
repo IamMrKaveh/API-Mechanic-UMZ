@@ -1,26 +1,26 @@
-﻿using Domain.Variant.Aggregates;
+﻿using Application.Common.Results;
+using Domain.Order.ValueObjects;
+using Domain.Variant.Interfaces;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
 
-public sealed class CheckoutPriceValidatorService(OrderDomainService orderDomainService) : ICheckoutPriceValidatorService
+public class CheckoutPriceValidatorService(IVariantRepository variantRepository)
+    : ICheckoutPriceValidatorService
 {
-    private readonly OrderDomainService _orderDomainService = orderDomainService;
-
-    public ServiceResult Validate(
-        IReadOnlyList<(ProductVariant Variant, int Quantity)> variantItems,
-        IReadOnlyList<CheckoutItemPriceDto> expectedItems)
+    public async Task<ServiceResult> ValidateAsync(List<OrderItemSnapshot> items, CancellationToken ct)
     {
-        var priceExpectations = variantItems
-            .Select(vi => (
-                vi.Variant,
-                ExpectedPrice: expectedItems
-                    .FirstOrDefault(e => e.VariantId == vi.Variant.Id)?.ExpectedPrice
-                    ?? vi.Variant.SellingPrice.Amount))
-            .ToList();
+        foreach (var item in items)
+        {
+            var variant = await variantRepository.GetByIdAsync(
+                ProductVariantId.From(item.VariantId), ct);
 
-        var result = _orderDomainService.ValidatePriceIntegrity(priceExpectations);
-        if (!result.IsValid)
-            return ServiceResult.Failure(result.GetErrorsSummary());
+            if (variant is null) continue;
+
+            if (Math.Abs(variant.Price.Amount - item.UnitPrice.Amount) > 1)
+                return ServiceResult.Failure(
+                    $"قیمت محصول {item.ProductName} تغییر کرده است. لطفاً سبد خرید را بروزرسانی کنید.");
+        }
 
         return ServiceResult.Success();
     }

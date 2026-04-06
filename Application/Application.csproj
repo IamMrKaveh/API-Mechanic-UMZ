@@ -100,4 +100,8 @@
     <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Wishlist\Mapping\" />
+  </ItemGroup>
+
 </Project>

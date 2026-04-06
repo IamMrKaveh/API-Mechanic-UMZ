@@ -1,19 +1,33 @@
+using Domain.Common.Interfaces;
 using Domain.User.Events;
+using Domain.Wallet.Interfaces;
+using Domain.Wallet.ValueObjects;
 
 namespace Application.Auth.EventHandlers;
 
-public class UserCreatedEventHandler(ILogger<UserCreatedEventHandler> logger) : INotificationHandler<UserCreatedEvent>
+public sealed class UserCreatedEventHandler(
+    IWalletRepository walletRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<UserCreatedEventHandler> logger) : INotificationHandler<UserRegisteredEvent>
 {
-    private readonly ILogger<UserCreatedEventHandler> _logger = logger;
-
-    public Task Handle(
-        UserCreatedEvent notification,
+    public async Task Handle(
+        UserRegisteredEvent notification,
         CancellationToken ct)
     {
-        _logger.LogInformation(
-            "Domain Event: New user created. UserId={UserId}, PhoneNumber={PhoneNumber}.",
-            notification.UserId, notification.PhoneNumber);
+        try
+        {
+            var walletId = WalletId.NewId();
+            var userId = notification.UserId;
+            var wallet = Wallet.Create(walletId, userId, "IRR");
 
-        return Task.CompletedTask;
+            await walletRepository.AddAsync(wallet, ct);
+            await unitOfWork.SaveChangesAsync(ct);
+
+            logger.LogInformation("Wallet created for user {UserId}", userId.Value);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to create wallet for user {UserId}", notification.UserId.Value);
+        }
     }
 }

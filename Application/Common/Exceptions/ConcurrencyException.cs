@@ -1,14 +1,3 @@
 namespace Application.Common.Exceptions;
 
-public sealed class ConcurrencyException : Exception
-{
-    public ConcurrencyException(string message) : base(message)
-    {
-    }
-
-    public ConcurrencyException(
-        string message,
-        Exception innerException) : base(message, innerException)
-    {
-    }
-}
+public class ConcurrencyException(string message = "تغییرات همزمان رخ داده است. لطفاً دوباره تلاش کنید.") : Exception(message);

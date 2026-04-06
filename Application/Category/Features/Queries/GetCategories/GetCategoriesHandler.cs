@@ -1,28 +1,24 @@
+using Application.Category.Contracts;
+using Application.Category.Features.Shared;
 using Application.Common.Results;
+using SharedKernel.Models;
 
 namespace Application.Category.Features.Queries.GetCategories;
 
-public class GetAdminCategoriesLegacyQueryHandler
-    : IRequestHandler<GetAdminCategoriesLegacyQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>
+public class GetCategoriesHandler(
+    ICategoryQueryService categoryQueryService) : IRequestHandler<GetCategoriesQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>
 {
-    private readonly ICategoryQueryService _queryService;
-
-    public GetAdminCategoriesLegacyQueryHandler(
-        ICategoryQueryService queryService
-        )
-    {
-        _queryService = queryService;
-    }
+    private readonly ICategoryQueryService _categoryQueryService = categoryQueryService;
 
     public async Task<ServiceResult<PaginatedResult<CategoryListItemDto>>> Handle(
-        GetAdminCategoriesLegacyQuery request,
-        CancellationToken ct
-        )
+        GetCategoriesQuery request,
+        CancellationToken ct)
     {
-        var result = await _queryService.GetCategoriesPagedAsync(
+        var result = await _categoryQueryService.GetCategoriesPagedAsync(
+            request.ParentId,
             request.Search,
-            isActive: null,
-            includeDeleted: false,
+            request.IsActive,
+            request.IncludeDeleted,
             request.Page,
             request.PageSize,
             ct);

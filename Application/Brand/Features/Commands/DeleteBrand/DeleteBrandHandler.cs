@@ -1,57 +1,27 @@
-using Domain.Category.Interfaces;
+using Application.Common.Results;
+using Domain.Brand.Interfaces;
+using Domain.Common.Interfaces;
 
 namespace Application.Brand.Features.Commands.DeleteBrand;
 
 public class DeleteBrandHandler(
-    ICategoryRepository categoryRepository,
+    IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
-    IMediaService mediaService,
-    IMediaQueryService mediaQueryService,
     ILogger<DeleteBrandHandler> logger) : IRequestHandler<DeleteBrandCommand, ServiceResult>
 {
-    private readonly ICategoryRepository _categoryRepository = categoryRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IMediaService _mediaService = mediaService;
-    private readonly IMediaQueryService _mediaQueryService = mediaQueryService;
-    private readonly ILogger<DeleteBrandHandler> _logger = logger;
-
-    public async Task<ServiceResult> Handle(
-        DeleteBrandCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(DeleteBrandCommand request, CancellationToken ct)
     {
-        var category = await _categoryRepository.GetByIdWithGroupsAndProductsAsync(
-            request.CategoryId, ct);
+        var brand = await brandRepository.GetByIdAsync(request.Id, ct);
+        if (brand is null)
+            return ServiceResult.NotFound("برند یافت نشد.");
 
-        if (category == null)
-            return ServiceResult.Failure("دسته‌بندی یافت نشد.", 404);
+        if (!brand.IsActive)
+            brand.Deactivate();
 
-        try
-        {
-            category.RemoveBrand(request.BrandId, request.DeletedBy);
+        brandRepository.Update(brand);
+        await unitOfWork.SaveChangesAsync(ct);
 
-            _categoryRepository.Update(category);
-
-            try
-            {
-                var mediaList = await _mediaQueryService.GetEntityMediaAsync("Brand", request.BrandId);
-                foreach (var media in mediaList)
-                    await _mediaService.DeleteMediaAsync(media.Id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "خطا در حذف مدیای گروه {GroupId}", request.BrandId);
-            }
-
-            await _unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult.Success();
-        }
-        catch (BrandNotFoundException)
-        {
-            return ServiceResult.Failure("گروه یافت نشد.", 404);
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult.Failure(ex.Message);
-        }
+        logger.LogInformation("Brand {BrandId} deleted", request.Id);
+        return ServiceResult.Success();
     }
 }

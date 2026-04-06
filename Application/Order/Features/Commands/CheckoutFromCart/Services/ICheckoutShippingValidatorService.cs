@@ -1,6 +1,12 @@
-﻿namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+﻿using Application.Common.Results;
+using Domain.Common.ValueObjects;
+
+namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
 
 public interface ICheckoutShippingValidatorService
 {
-    Task<ServiceResult<Domain.Shipping.Aggregates.Shipping>> ValidateAsync(int shippingId, CancellationToken ct);
+    Task<ServiceResult<Money>> ValidateAndCalculateCostAsync(
+        Guid shippingId,
+        decimal orderAmount,
+        CancellationToken ct);
 }

@@ -1,24 +1,44 @@
 using Application.Common.Results;
+using Application.User.Features.Shared;
 using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.CreateUserAddress;
 
-public class CreateUserAddressHandler(IUserRepository userRepository, IUnitOfWork unitOfWork) : IRequestHandler<CreateUserAddressCommand, ServiceResult<int>>
+public class CreateUserAddressHandler(
+    IUserRepository userRepository,
+    IUnitOfWork unitOfWork,
+    IMapper mapper) : IRequestHandler<CreateUserAddressCommand, ServiceResult<UserAddressDto>>
 {
-    private readonly IUserRepository _userRepository = userRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
-    public async Task<ServiceResult<int>> Handle(
-        CreateUserAddressCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult<UserAddressDto>> Handle(
+        CreateUserAddressCommand request, CancellationToken ct)
     {
-        var user = await _userRepository.GetWithAddressesAsync(request.UserId, ct);
+        var user = await userRepository.GetWithAddressesAsync(UserId.From(request.UserId), ct);
         if (user is null)
-            return ServiceResult<int>.NotFound("User not found.");
-        var addr = user.AddAddress(request.Dto.Title, request.Dto.ReceiverName, request.Dto.PhoneNumber, request.Dto.Province, request.Dto.City, request.Dto.Address, request.Dto.PostalCode, request.Dto.IsDefault);
-        _userRepository.Update(user);
-        await _unitOfWork.SaveChangesAsync(ct);
-        return ServiceResult<int>.Success(addr.Id);
+            return ServiceResult<UserAddressDto>.NotFound("کاربر یافت نشد.");
+
+        var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
+        var addressId = UserAddressId.NewId();
+
+        var address = user.AddAddress(
+            addressId,
+            request.Title,
+            request.ReceiverName,
+            phoneNumber,
+            request.Province,
+            request.City,
+            request.Address,
+            request.PostalCode,
+            request.Latitude,
+            request.Longitude);
+
+        if (request.IsDefault)
+            user.SetDefaultAddress(addressId);
+
+        userRepository.Update(user);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        return ServiceResult<UserAddressDto>.Success(mapper.Map<UserAddressDto>(address));
     }
 }

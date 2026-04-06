@@ -1,4 +1,4 @@
-using Application.Storage.Features.Shared;
+using Application.Media.Features.Shared;
 using Infrastructure;
 using Infrastructure.Security.Settings;
 using MainApi.Common.Extensions;

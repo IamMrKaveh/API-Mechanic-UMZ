@@ -7,9 +7,7 @@ namespace Application.User.Contracts;
 
 public interface IUserQueryService
 {
-    Task<UserProfileDto?> GetUserProfileAsync(
-        UserId userId,
-        CancellationToken ct = default);
+    Task<UserProfileDto?> GetUserProfileAsync(UserId userId, CancellationToken ct = default);
 
     Task<PaginatedResult<UserProfileDto>> GetUsersPagedAsync(
         string? search,
@@ -20,21 +18,12 @@ public interface IUserQueryService
         int pageSize,
         CancellationToken ct = default);
 
-    Task<IEnumerable<UserAddressDto>> GetUserAddressesAsync(
-        UserId userId,
-        CancellationToken ct = default);
+    Task<IEnumerable<UserAddressDto>> GetUserAddressesAsync(UserId userId, CancellationToken ct = default);
 
-    Task<IEnumerable<UserSessionDto>> GetActiveSessionsAsync(
-        UserId userId,
-        CancellationToken ct = default);
+    Task<IEnumerable<UserSessionDto>> GetActiveSessionsAsync(UserId userId, CancellationToken ct = default);
 
-    Task<UserDashboardDto?> GetUserDashboardAsync(
-        UserId userId,
-        CancellationToken ct = default);
+    Task<UserDashboardDto?> GetUserDashboardAsync(UserId userId, CancellationToken ct = default);
 
     Task<PaginatedResult<ProductReviewDto>> GetUserReviewsPagedAsync(
-        int userId,
-        int page,
-        int pageSize,
-        CancellationToken ct = default);
+        Guid userId, int page, int pageSize, CancellationToken ct = default);
 }

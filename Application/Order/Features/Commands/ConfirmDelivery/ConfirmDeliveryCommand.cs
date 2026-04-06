@@ -2,9 +2,4 @@ using Application.Common.Results;
 
 namespace Application.Order.Features.Commands.ConfirmDelivery;
 
-public record ConfirmDeliveryCommand : IRequest<ServiceResult>
-{
-    public int OrderId { get; init; }
-    public int UserId { get; init; }
-    public string RowVersion { get; init; } = string.Empty;
-}
+public record ConfirmDeliveryCommand(Guid OrderId, Guid UserId) : IRequest<ServiceResult>;

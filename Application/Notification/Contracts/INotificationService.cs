@@ -1,49 +1,23 @@
+using Domain.Notification.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Application.Notification.Contracts;
 
-/// <summary>
-/// سرویس ایجاد و مدیریت نوتیفیکیشن‌ها
-/// </summary>
 public interface INotificationService
 {
-    /// <summary>
-    /// ایجاد نوتیفیکیشن
-    /// </summary>
     Task CreateNotificationAsync(
-        int userId,
+        UserId userId,
         string title,
         string message,
-        string type,
+        string typeName,
         string? actionUrl = null,
-        int? relatedEntityId = null,
-        string? relatedEntityType = null,
+        Guid? referenceId = null,
+        string? referenceType = null,
         CancellationToken ct = default);
 
-    /// <summary>
-    /// ارسال نوتیفیکیشن تغییر وضعیت سفارش
-    /// </summary>
-    Task SendOrderStatusNotificationAsync(
-        int userId,
-        int orderId,
-        string oldStatus,
-        string newStatus,
-        CancellationToken ct = default);
+    Task MarkAsReadAsync(Guid notificationId, Guid userId, CancellationToken ct = default);
 
-    /// <summary>
-    /// ارسال نوتیفیکیشن پرداخت
-    /// </summary>
-    Task SendPaymentNotificationAsync(
-        int userId,
-        int orderId,
-        bool isSuccess,
-        string? refId = null,
-        CancellationToken ct = default);
+    Task MarkAllAsReadAsync(Guid userId, CancellationToken ct = default);
 
-    /// <summary>
-    /// ارسال نوتیفیکیشن موجودی کم
-    /// </summary>
-    Task SendLowStockNotificationAsync(
-        int productId,
-        string productName,
-        int currentStock,
-        CancellationToken ct = default);
+    Task DeleteAsync(Guid notificationId, Guid userId, CancellationToken ct = default);
 }

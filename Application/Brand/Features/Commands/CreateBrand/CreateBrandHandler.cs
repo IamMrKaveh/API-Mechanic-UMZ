@@ -1,63 +1,51 @@
+using Application.Brand.Features.Shared;
+using Application.Common.Results;
+using Domain.Brand.Aggregates;
+using Domain.Brand.Interfaces;
+using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
+using Domain.Category.ValueObjects;
+using Domain.Common.Interfaces;
+using Domain.Common.ValueObjects;
 
 namespace Application.Brand.Features.Commands.CreateBrand;
 
 public class CreateBrandHandler(
+    IBrandRepository brandRepository,
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
-    IMediaService mediaService,
-    ILogger<CreateBrandHandler> logger) : IRequestHandler<CreateBrandCommand, ServiceResult<int>>
+    IMapper mapper,
+    ILogger<CreateBrandHandler> logger) : IRequestHandler<CreateBrandCommand, ServiceResult<BrandDetailDto>>
 {
-    private readonly ICategoryRepository _categoryRepository = categoryRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IMediaService _mediaService = mediaService;
-    private readonly ILogger<CreateBrandHandler> _logger = logger;
-
-    public async Task<ServiceResult<int>> Handle(
-        CreateBrandCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult<BrandDetailDto>> Handle(CreateBrandCommand request, CancellationToken ct)
     {
-        var category = await _categoryRepository.GetByIdWithGroupsAsync(request.CategoryId, ct);
-        if (category == null)
-            return ServiceResult<int>.Failure("دسته‌بندی یافت نشد.", 404);
+        var category = await categoryRepository.GetByIdAsync(CategoryId.From(request.CategoryId), ct);
+        if (category is null)
+            return ServiceResult<BrandDetailDto>.NotFound("دسته‌بندی یافت نشد.");
 
-        try
-        {
-            var group = category.AddBrand(request.Name, request.Description);
+        if (await brandRepository.ExistsByNameInCategoryAsync(request.Name, request.CategoryId, null, ct))
+            return ServiceResult<BrandDetailDto>.Conflict("برندی با این نام در این دسته‌بندی قبلاً ثبت شده است.");
 
-            _categoryRepository.Update(category);
-            await _unitOfWork.SaveChangesAsync(ct);
+        var slug = string.IsNullOrWhiteSpace(request.Slug)
+            ? Slug.GenerateFrom(request.Name)
+            : Slug.FromString(request.Slug);
 
-            if (request.IconFile != null)
-            {
-                try
-                {
-                    await _mediaService.AttachFileToEntityAsync(
-                        request.IconFile.Content,
-                        request.IconFile.FileName,
-                        request.IconFile.ContentType,
-                        request.IconFile.Length,
-                        "Brand",
-                        group.Id,
-                        isPrimary: true);
+        if (await brandRepository.ExistsBySlugAsync(slug.Value, null, ct))
+            return ServiceResult<BrandDetailDto>.Conflict("برندی با این Slug قبلاً ثبت شده است.");
 
-                    await _unitOfWork.SaveChangesAsync(ct);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "خطا در آپلود آیکون گروه {GroupId}", group.Id);
-                }
-            }
+        var brand = Brand.Create(
+            BrandName.Create(request.Name),
+            slug,
+            request.CategoryId,
+            request.Description,
+            request.LogoPath);
 
-            return ServiceResult<int>.Success(group.Id);
-        }
-        catch (DuplicateBrandNameException ex)
-        {
-            return ServiceResult<int>.Failure(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult<int>.Failure(ex.Message);
-        }
+        await brandRepository.AddAsync(brand, ct);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        logger.LogInformation("Brand {Name} created with ID {Id}", brand.Name.Value, brand.Id.Value);
+
+        var dto = mapper.Map<BrandDetailDto>(brand) with { CategoryName = category.Name };
+        return ServiceResult<BrandDetailDto>.Success(dto);
     }
 }

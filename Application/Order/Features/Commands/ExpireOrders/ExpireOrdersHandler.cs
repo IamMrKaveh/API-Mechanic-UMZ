@@ -1,62 +1,38 @@
+using Application.Common.Results;
+using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
+using Domain.Order.Interfaces;
+
 namespace Application.Order.Features.Commands.ExpireOrders;
 
-public sealed class ExpireOrdersHandler : IRequestHandler<ExpireOrdersCommand, ExpireOrdersResult>
+public class ExpireOrdersHandler(
+    IOrderRepository orderRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<ExpireOrdersHandler> logger) : IRequestHandler<ExpireOrdersCommand, ServiceResult<int>>
 {
-    private static readonly TimeSpan OrderExpiryWindow = TimeSpan.FromMinutes(30);
-
-    private readonly IOrderRepository _orderRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<ExpireOrdersHandler> _logger;
-
-    public ExpireOrdersHandler(
-        IOrderRepository orderRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<ExpireOrdersHandler> logger)
+    public async Task<ServiceResult<int>> Handle(ExpireOrdersCommand request, CancellationToken ct)
     {
-        _orderRepository = orderRepository;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+        var pendingOrders = await orderRepository.FindPendingExpiredAsync(ct);
+        var expiredCount = 0;
 
-    public async Task<ExpireOrdersResult> Handle(ExpireOrdersCommand request, CancellationToken ct)
-    {
-        var expiryThreshold = DateTime.UtcNow.Subtract(OrderExpiryWindow);
-
-        var expirableStatuses = new[]
-        {
-            OrderStatusValue.Pending.Value,
-            OrderStatusValue.Created.Value,
-        };
-
-        var ordersToExpire = await _orderRepository
-            .GetExpirableOrdersAsync(expiryThreshold, expirableStatuses, ct);
-
-        if (!ordersToExpire.Any())
-            return new ExpireOrdersResult(0, Array.Empty<int>());
-
-        var expiredIds = new List<int>();
-
-        foreach (var order in ordersToExpire)
+        foreach (var order in pendingOrders)
         {
             try
             {
                 order.Expire();
-                await _orderRepository.UpdateAsync(order, ct);
-                expiredIds.Add(order.Id);
-
-                _logger.LogInformation(
-                    "Order {OrderId} ({OrderNumber}) expired after {Window} minutes.",
-                    order.Id, order.OrderNumber, OrderExpiryWindow.TotalMinutes);
+                orderRepository.Update(order);
+                expiredCount++;
             }
-            catch (Exception ex)
+            catch (DomainException ex)
             {
-                _logger.LogError(ex, "Failed to expire Order {OrderId}", order.Id);
+                logger.LogWarning(ex, "Could not expire order {OrderId}", order.Id.Value);
             }
         }
 
-        await _unitOfWork.SaveChangesAsync(ct);
+        if (expiredCount > 0)
+            await unitOfWork.SaveChangesAsync(ct);
 
-        _logger.LogInformation("Expired {Count} orders.", expiredIds.Count);
-        return new ExpireOrdersResult(expiredIds.Count, expiredIds);
+        logger.LogInformation("{Count} orders expired", expiredCount);
+        return ServiceResult<int>.Success(expiredCount);
     }
 }

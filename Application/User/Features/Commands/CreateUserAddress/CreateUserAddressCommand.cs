@@ -1,9 +1,17 @@
 using Application.Common.Results;
 using Application.User.Features.Shared;
-using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.CreateUserAddress;
 
 public record CreateUserAddressCommand(
-    UserId UserId,
-    CreateUserAddressDto Dto) : IRequest<ServiceResult<int>>;
+    Guid UserId,
+    string Title,
+    string ReceiverName,
+    string PhoneNumber,
+    string Province,
+    string City,
+    string Address,
+    string PostalCode,
+    bool IsDefault,
+    decimal? Latitude,
+    decimal? Longitude) : IRequest<ServiceResult<UserAddressDto>>;

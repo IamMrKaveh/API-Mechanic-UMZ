@@ -1,41 +1,34 @@
-using Application.Audit.Contracts;
 using Application.Common.Results;
-using Domain.Common.Interfaces;
 using Domain.Discount.Interfaces;
-using SharedKernel.Contracts;
+using Domain.Discount.ValueObjects;
+using Domain.Common.Interfaces;
 
 namespace Application.Discount.Features.Commands.CancelDiscountUsage;
 
 public class CancelDiscountUsageHandler(
     IDiscountRepository discountRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<CancelDiscountUsageCommand, ServiceResult>
+    ILogger<CancelDiscountUsageHandler> logger) : IRequestHandler<CancelDiscountUsageCommand, ServiceResult>
 {
-    private readonly IDiscountRepository _discountRepository = discountRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
-
-    public async Task<ServiceResult> Handle(
-        CancelDiscountUsageCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(CancelDiscountUsageCommand request, CancellationToken ct)
     {
-        var discount = await _discountRepository.GetByIdWithUsagesAsync(request.DiscountCodeId, ct);
-        if (discount == null)
-            return ServiceResult.NotFound("کد تخفیف یافت نشد.");
+        try
+        {
+            var discount = await discountRepository.GetByIdWithUsagesAsync(
+                DiscountCodeId.From(request.DiscountCodeId), ct);
 
-        discount.CancelUsage(request.OrderId);
-        _discountRepository.Update(discount);
+            if (discount is null)
+                return ServiceResult.NotFound("کد تخفیف یافت نشد.");
 
-        await _unitOfWork.SaveChangesAsync(ct);
+            discountRepository.Update(discount);
+            await unitOfWork.SaveChangesAsync(ct);
 
-        await _auditService.LogOrderEventAsync(
-            request.OrderId,
-            "CancelDiscountUsage",
-            _currentUserService.CurrentUser.UserId,
-            $"Cancelled discount usage for DiscountCode {discount.Code.Value}");
-
-        return ServiceResult.Success();
+            return ServiceResult.Success();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to cancel discount usage for order {OrderId}", request.OrderId);
+            return ServiceResult.Unexpected("خطا در لغو استفاده از کد تخفیف.");
+        }
     }
 }

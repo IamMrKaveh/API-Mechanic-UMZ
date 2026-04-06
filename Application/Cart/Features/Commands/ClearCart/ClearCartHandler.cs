@@ -1,37 +1,33 @@
 using Application.Common.Results;
+using Domain.Cart.Interfaces;
+using Domain.Common.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.Cart.Features.Commands.ClearCart;
 
-public class ClearCartHandler : IRequestHandler<ClearCartCommand, ServiceResult>
+public class ClearCartHandler(
+    ICartRepository cartRepository,
+    IUnitOfWork unitOfWork) : IRequestHandler<ClearCartCommand, ServiceResult>
 {
-    private readonly ICartRepository _cartRepository;
-    private readonly ICurrentUserService _currentUser;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public ClearCartHandler(
-        ICartRepository cartRepository,
-        ICurrentUserService currentUser,
-        IUnitOfWork unitOfWork
-        )
-    {
-        _cartRepository = cartRepository;
-        _currentUser = currentUser;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly ICartRepository _cartRepository = cartRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<ServiceResult> Handle(
         ClearCartCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        var cart = await _cartRepository.GetCartAsync(
-            _currentUser.UserId, _currentUser.GuestId, ct);
+        Domain.Cart.Aggregates.Cart? cart;
+        if (request.UserId.HasValue)
+            cart = await _cartRepository.GetByUserIdAsync(UserId.From(request.UserId.Value), ct);
+        else
+            cart = await _cartRepository.GetByGuestTokenAsync(request.GuestToken!, ct);
 
-        if (cart != null)
-        {
-            cart.Clear();
-            await _unitOfWork.SaveChangesAsync(ct);
-        }
+        if (cart is null)
+            return ServiceResult.Success();
+
+        cart.Clear();
+        _cartRepository.Update(cart);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

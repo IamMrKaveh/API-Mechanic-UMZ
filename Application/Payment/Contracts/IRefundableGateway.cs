@@ -1,13 +1,12 @@
+using Application.Common.Results;
+
 namespace Application.Payment.Contracts;
 
-/// <summary>
-/// اینترفیس اختیاری برای درگاه‌هایی که Refund API دارند.
-/// </summary>
-public interface IRefundableGateway
+public interface IRefundableGateway : IPaymentGateway
 {
-    Task<GatewayRefundResultDto> RefundAsync(
-        string originalRefId,
-        int amount,
+    Task<ServiceResult<decimal>> RefundAsync(
+        string authority,
+        decimal amount,
         string reason,
         CancellationToken ct = default);
 }

@@ -1,10 +1,11 @@
+using Application.Category.Features.Shared;
 using Application.Common.Results;
 
 namespace Application.Category.Features.Commands.CreateCategory;
 
-public record CreateCategoryCommand : IRequest<ServiceResult<int>>
-{
-    public required string Name { get; init; }
-    public string? Description { get; init; }
-    public FileDto? IconFile { get; init; }
-}
+public record CreateCategoryCommand(
+    string Name,
+    string? Slug,
+    string? Description,
+    Guid? ParentCategoryId,
+    int SortOrder) : IRequest<ServiceResult<CategoryDto>>;

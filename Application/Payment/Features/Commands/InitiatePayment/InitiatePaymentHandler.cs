@@ -1,38 +1,29 @@
 using Application.Common.Results;
 using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
-using Domain.Common.Exceptions;
+using Domain.Order.Interfaces;
 
 namespace Application.Payment.Features.Commands.InitiatePayment;
 
-public class InitiatePaymentHandler(IPaymentService paymentService) : IRequestHandler<InitiatePaymentCommand, ServiceResult<PaymentResultDto>>
+public class InitiatePaymentHandler(
+    IOrderRepository orderRepository,
+    IPaymentService paymentService,
+    ILogger<InitiatePaymentHandler> logger) : IRequestHandler<InitiatePaymentCommand, ServiceResult<PaymentInitiationResult>>
 {
-    private readonly IPaymentService _paymentService = paymentService;
-
-    public async Task<ServiceResult<PaymentResultDto>> Handle(
-        InitiatePaymentCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult<PaymentInitiationResult>> Handle(
+        InitiatePaymentCommand request, CancellationToken ct)
     {
-        try
-        {
-            var result = await _paymentService.InitiatePaymentAsync(request.Dto, ct);
+        var order = await orderRepository.FindByIdAsync(request.OrderId, ct);
+        if (order is null)
+            return ServiceResult<PaymentInitiationResult>.NotFound("سفارش یافت نشد.");
 
-            if (result.IsSuccess && result.Value != default)
-            {
-                return ServiceResult<PaymentResultDto>.Success(new PaymentResultDto
-                {
-                    IsSuccess = result.Value.IsSuccess,
-                    Authority = result.Value.Authority,
-                    PaymentUrl = result.Value.PaymentUrl,
-                    Message = result.Value.Message
-                });
-            }
+        if (order.UserId != request.UserId)
+            return ServiceResult<PaymentInitiationResult>.Forbidden("دسترسی ممنوع.");
 
-            return ServiceResult<PaymentResultDto>.Unexpected(result.Error?.Message ?? "Failed to initiate payment");
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult<PaymentResultDto>.Unexpected(ex.Message);
-        }
+        if (order.IsPaid)
+            return ServiceResult<PaymentInitiationResult>.Conflict("سفارش قبلاً پرداخت شده است.");
+
+        return await paymentService.InitiatePaymentAsync(
+            request.OrderId, order.FinalAmount.Amount, request.IpAddress, ct);
     }
 }

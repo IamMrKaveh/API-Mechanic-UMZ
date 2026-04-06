@@ -1,41 +1,22 @@
+using Application.Cart.Contracts;
+using Application.Cart.Features.Shared;
+using Application.Common.Results;
+using Domain.User.ValueObjects;
+
 namespace Application.Cart.Features.Queries.GetCart;
 
-public class GetCartHandler : IRequestHandler<GetCartQuery, ServiceResult<CartDetailDto>>
+public class GetCartHandler(
+    ICartQueryService cartQueryService) : IRequestHandler<GetCartQuery, ServiceResult<CartDetailDto>>
 {
-    private readonly ICartQueryService _cartQueryService;
-    private readonly ICurrentUserService _currentUser;
-
-    public GetCartHandler(
-        ICartQueryService cartQueryService,
-        ICurrentUserService currentUser
-        )
-    {
-        _cartQueryService = cartQueryService;
-        _currentUser = currentUser;
-    }
+    private readonly ICartQueryService _cartQueryService = cartQueryService;
 
     public async Task<ServiceResult<CartDetailDto>> Handle(
         GetCartQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        var cart = await _cartQueryService.GetCartDetailAsync(
-            _currentUser.UserId, _currentUser.GuestId, ct);
+        UserId? userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
+        var cart = await _cartQueryService.GetCartDetailAsync(userId, request.GuestToken, ct);
 
-        if (cart == null)
-        {
-            return ServiceResult<CartDetailDto>.Success(new CartDetailDto
-            {
-                Id = 0,
-                UserId = _currentUser.UserId,
-                GuestToken = _currentUser.GuestId,
-                Items = new List<CartItemDetailDto>(),
-                TotalPrice = 0,
-                TotalItems = 0,
-                PriceChanges = new List<CartPriceChangeDto>()
-            });
-        }
-
-        return ServiceResult<CartDetailDto>.Success(cart);
+        return ServiceResult<CartDetailDto>.Success(cart ?? new CartDetailDto());
     }
 }

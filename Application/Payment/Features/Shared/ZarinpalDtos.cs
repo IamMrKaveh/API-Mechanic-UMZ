@@ -37,3 +37,17 @@ public class ZarinpalSettingsDto
     public bool IsSandbox { get; init; }
     public string MerchantId { get; init; } = null!;
 }
+
+public record ZarinpalRequestDto(
+    string MerchantId,
+    int Amount,
+    string CallbackUrl,
+    string Description,
+    string? Email = null,
+    string? Mobile = null);
+
+public record ZarinpalRequestResponse(int Status, string? Authority);
+
+public record ZarinpalVerifyDto(string MerchantId, int Amount, string Authority);
+
+public record ZarinpalVerifyResponse(int Status, long? RefId);

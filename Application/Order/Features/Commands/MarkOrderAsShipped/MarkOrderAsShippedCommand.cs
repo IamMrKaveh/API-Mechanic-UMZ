@@ -2,9 +2,4 @@ using Application.Common.Results;
 
 namespace Application.Order.Features.Commands.MarkOrderAsShipped;
 
-public record MarkOrderAsShippedCommand : IRequest<ServiceResult>
-{
-    public int OrderId { get; init; }
-    public string RowVersion { get; init; } = string.Empty;
-    public int UpdatedByUserId { get; init; }
-}
+public record MarkOrderAsShippedCommand(Guid OrderId) : IRequest<ServiceResult>;

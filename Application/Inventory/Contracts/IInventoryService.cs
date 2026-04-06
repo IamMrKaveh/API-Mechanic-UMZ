@@ -5,103 +5,45 @@ namespace Application.Inventory.Contracts;
 public interface IInventoryService
 {
     Task<ServiceResult> ReserveStockAsync(
-        int variantId,
+        Guid variantId,
         int quantity,
-        int orderItemId,
-        int? userId = null,
-        string? referenceNumber = null,
-        string? correlationId = null,
-        string? cartId = null,
-        DateTime? expiresAt = null,
+        string referenceNumber,
+        Guid? orderItemId = null,
         CancellationToken ct = default);
 
-    Task<ServiceResult> ConfirmReservationAsync(
-        int variantId,
+    Task<ServiceResult> ReleaseReservationAsync(
+        Guid variantId,
         int quantity,
-        int orderItemId,
-        int? userId = null,
-        string? referenceNumber = null,
-        string? correlationId = null,
-        CancellationToken ct = default);
-
-    Task<ServiceResult> CommitStockForOrderAsync(
-        int orderId,
-        CancellationToken ct = default);
-
-    Task<ServiceResult> RollbackReservationAsync(
-        int variantId,
-        int quantity,
-        int? userId = null,
+        string referenceNumber,
         string? reason = null,
         CancellationToken ct = default);
 
-    Task<ServiceResult> RollbackReservationsAsync(
+    Task<ServiceResult> CommitReservationAsync(
+        Guid variantId,
+        int quantity,
         string referenceNumber,
+        Guid? orderItemId = null,
+        CancellationToken ct = default);
+
+    Task<ServiceResult> IncreaseStockAsync(
+        Guid variantId,
+        int quantity,
+        string reason,
+        Guid? userId = null,
+        CancellationToken ct = default);
+
+    Task<ServiceResult> AdjustStockAsync(
+        Guid variantId,
+        int quantityChange,
+        Guid userId,
+        string reason,
         CancellationToken ct = default);
 
     Task<ServiceResult> ReturnStockAsync(
-        int variantId,
+        Guid variantId,
         int quantity,
-        int orderId,
-        int orderItemId,
-        int userId,
         string reason,
-        CancellationToken ct = default);
-
-    Task<ServiceResult> ReturnStockForOrderAsync(
-        int orderId,
-        int userId,
-        string reason,
-        CancellationToken ct = default
-        );
-
-    Task<ServiceResult> AdjustStockAsync(
-        int variantId,
-        int quantityChange,
-        int userId,
-        string notes,
-        CancellationToken ct = default);
-
-    Task<ServiceResult> RecordDamageAsync(
-        int variantId,
-        int quantity,
-        int userId,
-        string notes,
-        CancellationToken ct = default);
-
-    Task<ServiceResult<(int VariantId, int FinalStock, int Difference, bool HasDiscrepancy, string Message)>> ReconcileStockAsync(
-        int variantId,
-        int userId,
-        CancellationToken ct = default);
-
-    Task<ServiceResult<(int Total, int Success, int Failed, IEnumerable<(Guid VariantId, bool IsSuccess, string? Error, int? NewStock)> Results)>> BulkAdjustStockAsync(
-        IEnumerable<(Guid VariantId, int QuantityChange, string Notes)> items,
-        int userId,
-        CancellationToken ct = default);
-
-    Task<ServiceResult<(int Total, int Success, int Failed, IEnumerable<(Guid VariantId, bool IsSuccess, string? Error, int? NewStock)> Results)>> BulkStockInAsync(
-        IEnumerable<(Guid VariantId, int Quantity, string? Notes)> items,
-        Guid userId,
-        string? supplierReference = null,
-        CancellationToken ct = default);
-
-    Task LogTransactionAsync(
-        int variantId,
-        string transactionType,
-        int quantityChange,
-        int? orderItemId,
-        int? userId,
-        string? notes = null,
-        string? referenceNumber = null,
-        int? stockBefore = null,
-        bool saveChanges = true,
-        CancellationToken ct = default);
-
-    Task ReconcileAsync(
-        int variantId,
-        int physicalCount,
-        string reason,
-        int userId,
-        int? warehouseId = null,
+        Guid? orderItemId = null,
+        Guid? userId = null,
         CancellationToken ct = default);
 }

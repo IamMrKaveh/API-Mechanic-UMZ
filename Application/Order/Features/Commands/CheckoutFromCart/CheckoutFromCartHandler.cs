@@ -8,17 +8,13 @@ public class CheckoutFromCartHandler(
     ICheckoutOrchestrationService orchestrationService,
     ILogger<CheckoutFromCartHandler> logger) : IRequestHandler<CheckoutFromCartCommand, ServiceResult<CheckoutResultDto>>
 {
-    private readonly ICheckoutOrchestrationService _orchestrationService = orchestrationService;
-    private readonly ILogger<CheckoutFromCartHandler> _logger = logger;
-
     public async Task<ServiceResult<CheckoutResultDto>> Handle(
-        CheckoutFromCartCommand request,
-        CancellationToken ct)
+        CheckoutFromCartCommand request, CancellationToken ct)
     {
-        _logger.LogInformation(
-            "Checkout initiated for user {UserId} with idempotency key {Key}",
-            request.UserId, request.IdempotencyKey);
+        logger.LogInformation(
+            "Checkout initiated for user {UserId}, cart {CartId}",
+            request.UserId, request.CartId);
 
-        return await _orchestrationService.OrchestrateAsync(request, ct);
+        return await orchestrationService.ProcessCheckoutAsync(request, ct);
     }
 }

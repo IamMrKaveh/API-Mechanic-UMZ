@@ -13,3 +13,9 @@ public record AuthResult
 }
 
 public record TokenResultDto(string AccessToken, string RefreshToken);
+
+public record RefreshTokenResult
+{
+    public string FullToken { get; init; } = string.Empty;
+    public DateTime ExpiresAt { get; init; }
+}

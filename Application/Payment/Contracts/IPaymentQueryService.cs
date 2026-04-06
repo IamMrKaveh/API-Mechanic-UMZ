@@ -5,24 +5,18 @@ namespace Application.Payment.Contracts;
 
 public interface IPaymentQueryService
 {
-    Task<PaginatedResult<PaymentTransactionDto>> GetPagedAsync(
-        PaymentSearchParams searchParams,
+    Task<PaymentTransactionDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
+
+    Task<PaymentTransactionDto?> GetByAuthorityAsync(string authority, CancellationToken ct = default);
+
+    Task<PaymentTransactionDto?> GetLatestByOrderIdAsync(Guid orderId, CancellationToken ct = default);
+
+    Task<PaginatedResult<PaymentTransactionDto>> GetAllAsync(
+        Guid? userId,
+        string? status,
+        int page,
+        int pageSize,
         CancellationToken ct = default);
 
-    Task<PaymentTransactionDto?> GetByAuthorityAsync(
-        string authority,
-        CancellationToken ct = default);
-
-    Task<IEnumerable<PaymentTransactionDto>> GetByOrderIdAsync(
-        int orderId,
-        CancellationToken ct = default);
-
-    Task<PaymentStatusDto?> GetStatusByAuthorityAsync(
-        string authority,
-        CancellationToken ct = default);
-
-    Task<PaymentStatisticsDto> GetStatisticsAsync(
-        DateTime? fromDate,
-        DateTime? toDate,
-        CancellationToken ct = default);
+    Task<IReadOnlyList<PaymentTransactionDto>> GetByOrderIdAsync(Guid orderId, CancellationToken ct = default);
 }

@@ -1,18 +1,15 @@
 using Application.Common.Results;
-using Domain.Discount.ValueObjects;
+using Application.Discount.Features.Shared;
+using Domain.Discount.Enums;
 
 namespace Application.Discount.Features.Commands.UpdateDiscount;
 
-public record UpdateDiscountCommand : IRequest<ServiceResult>
-{
-    public DiscountCodeId Id { get; init; } = null!;
-    public decimal Percentage { get; init; }
-    public decimal? MaxDiscountAmount { get; init; }
-    public decimal? MinOrderAmount { get; init; }
-    public int? UsageLimit { get; init; }
-    public int? MaxUsagePerUser { get; init; }
-    public bool IsActive { get; init; }
-    public DateTime? ExpiresAt { get; init; }
-    public DateTime? StartsAt { get; init; }
-    public required string ConcurrencyToken { get; init; }
-}
+public record UpdateDiscountCommand(
+    Guid Id,
+    DiscountType DiscountType,
+    decimal DiscountValue,
+    decimal? MaximumDiscountAmount,
+    int? UsageLimit,
+    DateTime? StartsAt,
+    DateTime? ExpiresAt,
+    bool IsActive) : IRequest<ServiceResult<DiscountDto>>;

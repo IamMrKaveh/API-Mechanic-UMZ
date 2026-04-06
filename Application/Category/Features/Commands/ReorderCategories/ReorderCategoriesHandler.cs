@@ -1,40 +1,26 @@
 using Application.Common.Results;
 using Domain.Category.Interfaces;
-using Domain.Common.Exceptions;
+using Domain.Category.ValueObjects;
 using Domain.Common.Interfaces;
 
 namespace Application.Category.Features.Commands.ReorderCategories;
 
 public class ReorderCategoriesHandler(
     ICategoryRepository categoryRepository,
-    CategoryDomainService categoryDomainService,
     IUnitOfWork unitOfWork) : IRequestHandler<ReorderCategoriesCommand, ServiceResult>
 {
-    private readonly ICategoryRepository _categoryRepository = categoryRepository;
-    private readonly CategoryDomainService _categoryDomainService = categoryDomainService;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
-    public async Task<ServiceResult> Handle(
-        ReorderCategoriesCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(ReorderCategoriesCommand request, CancellationToken ct)
     {
-        var categories = await _categoryRepository.GetAllActiveAsync(ct);
-
-        try
+        foreach (var item in request.Items)
         {
-            _categoryDomainService.ReorderCategories(categories, request.OrderedCategoryIds);
+            var category = await categoryRepository.GetByIdAsync(CategoryId.From(item.Id), ct);
+            if (category is null) continue;
 
-            foreach (var category in categories)
-            {
-                _categoryRepository.Update(category);
-            }
+            category.UpdateDetails(category.Name, category.Slug, category.Description, item.SortOrder);
+            categoryRepository.Update(category);
+        }
 
-            await _unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult.Success();
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult.Unexpected(ex.Message);
-        }
+        await unitOfWork.SaveChangesAsync(ct);
+        return ServiceResult.Success();
     }
 }
