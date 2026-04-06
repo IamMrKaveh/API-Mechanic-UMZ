@@ -64,3 +64,4 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+.vs/API/DesignTimeBuild/.dtbcache.v2

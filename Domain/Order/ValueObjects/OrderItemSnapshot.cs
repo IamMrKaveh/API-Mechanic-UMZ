@@ -1,27 +1,30 @@
-﻿namespace Domain.Order.ValueObjects;
+﻿using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
+
+namespace Domain.Order.ValueObjects;
 
 public sealed record OrderItemSnapshot
 {
-    public Guid VariantId { get; init; }
-    public Guid ProductId { get; init; }
-    public string ProductName { get; init; } = null!;
-    public string Sku { get; init; } = null!;
+    public ProductVariantId VariantId { get; init; }
+    public ProductId ProductId { get; init; }
+    public ProductName ProductName { get; init; } = null!;
+    public Sku Sku { get; init; } = null!;
     public Money UnitPrice { get; init; } = null!;
     public int Quantity { get; init; }
 
     private OrderItemSnapshot() { }
 
     public static OrderItemSnapshot Create(
-        Guid variantId,
-        Guid productId,
-        string productName,
-        string sku,
+        ProductVariantId variantId,
+        ProductId productId,
+        ProductName productName,
+        Sku sku,
         Money unitPrice,
         int quantity)
     {
-        if (variantId == Guid.Empty)
+        if (variantId is null)
             throw new ArgumentException("Variant ID cannot be empty.", nameof(variantId));
-        if (productId == Guid.Empty)
+        if (productId is null)
             throw new ArgumentException("Product ID cannot be empty.", nameof(productId));
         if (string.IsNullOrWhiteSpace(productName))
             throw new ArgumentException("Product name cannot be empty.", nameof(productName));
@@ -35,8 +38,8 @@ public sealed record OrderItemSnapshot
         {
             VariantId = variantId,
             ProductId = productId,
-            ProductName = productName.Trim(),
-            Sku = sku.Trim().ToUpperInvariant(),
+            ProductName = productName,
+            Sku = sku,
             UnitPrice = unitPrice,
             Quantity = quantity
         };

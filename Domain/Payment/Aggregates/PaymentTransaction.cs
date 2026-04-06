@@ -82,8 +82,8 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
             expiryMinutes);
 
         transaction.RaiseDomainEvent(new PaymentInitiatedEvent(
-            transaction.Id.Value,
-            orderId.Value,
+            transaction.Id,
+            orderId,
             amount));
 
         return transaction;
@@ -112,8 +112,8 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         IsVerificationInProgress = false;
 
         RaiseDomainEvent(new PaymentSucceededEvent(
-            Id.Value,
-            OrderId.Value,
+            Id,
+            OrderId,
             refId,
             userId: 0,
             Amount.Amount));
@@ -129,8 +129,8 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         IsVerificationInProgress = false;
 
         RaiseDomainEvent(new PaymentFailedEvent(
-            Id.Value,
-            OrderId.Value,
+            Id,
+            OrderId,
             ErrorMessage));
     }
 
@@ -143,8 +143,8 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         IsVerificationInProgress = false;
 
         RaiseDomainEvent(new PaymentExpiredEvent(
-            Id.Value,
-            OrderId.Value,
+            Id,
+            OrderId,
             Amount.Amount,
             Authority));
     }
@@ -159,8 +159,8 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         IsVerificationInProgress = false;
 
         RaiseDomainEvent(new PaymentCancelledEvent(
-            Id.Value,
-            OrderId.Value,
+            Id,
+            OrderId,
             ErrorMessage));
     }
 
@@ -173,9 +173,9 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new PaymentRefundedEvent(
-            Id.Value,
-            OrderId.Value,
-            0,
+            Id,
+            OrderId,
+            UserId.NewId(),
             Amount.Amount,
             ErrorMessage));
     }

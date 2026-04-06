@@ -1,11 +1,13 @@
 using Domain.Common.Events;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Order.Events;
 
 public sealed class OrderCreatedEvent : DomainEvent
 {
-    public Guid OrderId { get; }
-    public Guid UserId { get; }
+    public OrderId OrderId { get; }
+    public UserId UserId { get; }
     public string OrderNumber { get; }
     public decimal FinalAmount { get; }
     public string Currency { get; }
@@ -13,8 +15,8 @@ public sealed class OrderCreatedEvent : DomainEvent
     public Guid IdempotencyKey { get; }
 
     public OrderCreatedEvent(
-        Guid orderId,
-        Guid userId,
+        OrderId orderId,
+        UserId userId,
         string orderNumber,
         decimal finalAmount,
         string currency,

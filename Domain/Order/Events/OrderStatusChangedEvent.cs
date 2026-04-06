@@ -1,19 +1,20 @@
-using Domain.Common.Events;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Order.Events;
 
 public sealed class OrderStatusChangedEvent : DomainEvent
 {
-    public Guid OrderId { get; }
+    public OrderId OrderId { get; }
     public string OrderNumber { get; }
-    public Guid UserId { get; }
+    public UserId UserId { get; }
     public string PreviousStatus { get; }
     public string NewStatus { get; }
 
     public OrderStatusChangedEvent(
-        Guid orderId,
+        OrderId orderId,
         string orderNumber,
-        Guid userId,
+        UserId userId,
         string previousStatus,
         string newStatus)
     {

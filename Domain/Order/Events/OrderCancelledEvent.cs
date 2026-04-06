@@ -1,19 +1,20 @@
-using Domain.Common.Events;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Order.Events;
 
 public sealed class OrderCancelledEvent : DomainEvent
 {
-    public Guid OrderId { get; }
+    public OrderId OrderId { get; }
     public string OrderNumber { get; }
-    public Guid UserId { get; }
+    public UserId UserId { get; }
     public string CancellationReason { get; }
     public bool WasPaid { get; }
 
     public OrderCancelledEvent(
-        Guid orderId,
+        OrderId orderId,
         string orderNumber,
-        Guid userId,
+        UserId userId,
         string cancellationReason,
         bool wasPaid)
     {
