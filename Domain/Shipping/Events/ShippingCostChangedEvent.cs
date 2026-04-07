@@ -2,16 +2,9 @@
 
 namespace Domain.Shipping.Events;
 
-public sealed class ShippingCostChangedEvent : DomainEvent
+public sealed class ShippingCostChangedEvent(ShippingId shippingId, decimal previousCost, decimal newCost) : DomainEvent
 {
-    public ShippingId ShippingId { get; }
-    public decimal PreviousCost { get; }
-    public decimal NewCost { get; }
-
-    public ShippingCostChangedEvent(ShippingId shippingId, decimal previousCost, decimal newCost)
-    {
-        ShippingId = shippingId;
-        PreviousCost = previousCost;
-        NewCost = newCost;
-    }
+    public ShippingId ShippingId { get; } = shippingId;
+    public decimal PreviousCost { get; } = previousCost;
+    public decimal NewCost { get; } = newCost;
 }

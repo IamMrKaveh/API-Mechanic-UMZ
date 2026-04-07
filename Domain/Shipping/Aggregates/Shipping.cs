@@ -2,7 +2,6 @@ using Domain.Shipping.Events;
 using Domain.Shipping.Exceptions;
 using Domain.Shipping.ValueObjects;
 using Domain.User.ValueObjects;
-using SharedKernel.Results;
 
 namespace Domain.Shipping.Aggregates;
 
@@ -57,7 +56,7 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
             CreatedAt = DateTime.UtcNow
         };
 
-        shipping.RaiseDomainEvent(new ShippingCreatedEvent(shippingId, name.Value, baseCost.Amount));
+        shipping.RaiseDomainEvent(new ShippingCreatedEvent(shippingId, name, baseCost.Amount));
         return shipping;
     }
 
@@ -82,7 +81,7 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
         DeliveryTime = deliveryTime;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new ShippingUpdatedEvent(Id, name.Value));
+        RaiseDomainEvent(new ShippingUpdatedEvent(Id, name));
 
         if (previousCost != baseCost.Amount)
             RaiseDomainEvent(new ShippingCostChangedEvent(Id, previousCost, baseCost.Amount));
@@ -177,7 +176,7 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new ShippingActivatedEvent(Id, Name.Value));
+        RaiseDomainEvent(new ShippingActivatedEvent(Id, Name));
     }
 
     public void Deactivate()
@@ -190,7 +189,7 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new ShippingDeactivatedEvent(Id, Name.Value));
+        RaiseDomainEvent(new ShippingDeactivatedEvent(Id, Name));
     }
 
     public void SetAsDefault()
@@ -201,7 +200,7 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
         IsDefault = true;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new ShippingSetAsDefaultEvent(Id, Name.Value));
+        RaiseDomainEvent(new ShippingSetAsDefaultEvent(Id, Name));
     }
 
     public void UnsetDefault()

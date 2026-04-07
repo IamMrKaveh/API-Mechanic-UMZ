@@ -1,7 +1,10 @@
+using Domain.Discount.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Discount.Events;
 
-public sealed class DiscountDeletedEvent(int discountId, int? deletedBy) : DomainEvent
+public sealed class DiscountDeletedEvent(DiscountCodeId discountId, UserId? deletedBy) : DomainEvent
 {
-    public int DiscountId { get; } = discountId;
-    public int? DeletedBy { get; } = deletedBy;
+    public DiscountCodeId DiscountId { get; } = discountId;
+    public UserId? DeletedBy { get; } = deletedBy;
 }

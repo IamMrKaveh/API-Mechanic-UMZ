@@ -70,7 +70,7 @@ public sealed class Order : AggregateRoot<OrderId>
         RaiseDomainEvent(new OrderCreatedEvent(
             id,
             userId,
-            orderNumber.Value,
+            orderNumber,
             FinalAmount.Amount,
             FinalAmount.Currency,
             _items.Count,
@@ -137,7 +137,7 @@ public sealed class Order : AggregateRoot<OrderId>
 
         RaiseDomainEvent(new OrderPaidEvent(
             Id,
-            OrderNumber.Value,
+            OrderNumber,
             UserId,
             paymentTransactionId,
             FinalAmount.Amount,
@@ -170,7 +170,7 @@ public sealed class Order : AggregateRoot<OrderId>
             throw new ArgumentException("Cancellation reason cannot be empty.", nameof(reason));
 
         if (!CanBeCancelled())
-            throw new OrderCancellationNotAllowedException(Status.Value);
+            throw new OrderCancellationNotAllowedException(Status);
 
         var wasPaid = IsPaid;
         TransitionTo(OrderStatusValue.Cancelled);
@@ -178,7 +178,7 @@ public sealed class Order : AggregateRoot<OrderId>
 
         RaiseDomainEvent(new OrderCancelledEvent(
             Id,
-            OrderNumber.Value,
+            OrderNumber,
             UserId,
             reason,
             wasPaid));
@@ -187,7 +187,7 @@ public sealed class Order : AggregateRoot<OrderId>
     public void Expire()
     {
         if (IsPaid)
-            throw new InvalidOrderTransitionException(Status.Value, OrderStatusValue.Expired.Value);
+            throw new InvalidOrderTransitionException(Status, OrderStatusValue.Expired.Value);
 
         TransitionTo(OrderStatusValue.Expired);
     }
@@ -211,7 +211,7 @@ public sealed class Order : AggregateRoot<OrderId>
     private void TransitionTo(OrderStatusValue next)
     {
         if (!Status.CanTransitionTo(next))
-            throw new InvalidOrderTransitionException(Status.Value, next.Value);
+            throw new InvalidOrderTransitionException(Status, next);
 
         var previous = Status;
         Status = next;
@@ -219,10 +219,10 @@ public sealed class Order : AggregateRoot<OrderId>
 
         RaiseDomainEvent(new OrderStatusChangedEvent(
             Id,
-            OrderNumber.Value,
+            OrderNumber,
             UserId,
-            previous.Value,
-            next.Value));
+            previous,
+            next));
     }
 
     private void RecalculateTotals()

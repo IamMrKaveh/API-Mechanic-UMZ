@@ -1,15 +1,11 @@
-﻿namespace Domain.Brand.Events;
+﻿using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
 
-public sealed class BrandCategoryChangedEvent : DomainEvent
+namespace Domain.Brand.Events;
+
+public sealed class BrandCategoryChangedEvent(BrandId brandId, CategoryId previousCategoryId, CategoryId newCategoryId) : DomainEvent
 {
-    public Guid BrandId { get; }
-    public Guid PreviousCategoryId { get; }
-    public Guid NewCategoryId { get; }
-
-    public BrandCategoryChangedEvent(Guid brandId, Guid previousCategoryId, Guid newCategoryId)
-    {
-        BrandId = brandId;
-        PreviousCategoryId = previousCategoryId;
-        NewCategoryId = newCategoryId;
-    }
+    public BrandId BrandId { get; } = brandId;
+    public CategoryId PreviousCategoryId { get; } = previousCategoryId;
+    public CategoryId NewCategoryId { get; } = newCategoryId;
 }

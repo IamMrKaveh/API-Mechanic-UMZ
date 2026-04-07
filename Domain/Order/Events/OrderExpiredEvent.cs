@@ -1,12 +1,12 @@
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Order.Events;
 
-/// <summary>
-/// رویداد انقضای سفارش - زمانی که سفارش در مهلت مقرر پرداخت نشده است.
-/// </summary>
-public sealed class OrderExpiredEvent(int orderId, int userId, string orderNumber) : DomainEvent
+public sealed class OrderExpiredEvent(OrderId orderId, UserId userId, OrderNumber orderNumber) : DomainEvent
 {
-    public int OrderId { get; } = orderId;
-    public int UserId { get; } = userId;
-    public string OrderNumber { get; } = orderNumber;
+    public OrderId OrderId { get; } = orderId;
+    public UserId UserId { get; } = userId;
+    public OrderNumber OrderNumber { get; } = orderNumber;
     public DateTime ExpiredAt { get; } = DateTime.UtcNow;
 }

@@ -3,26 +3,16 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Order.Events;
 
-public sealed class OrderCancelledEvent : DomainEvent
+public sealed class OrderCancelledEvent(
+    OrderId orderId,
+    OrderNumber orderNumber,
+    UserId userId,
+    string cancellationReason,
+    bool wasPaid) : DomainEvent
 {
-    public OrderId OrderId { get; }
-    public string OrderNumber { get; }
-    public UserId UserId { get; }
-    public string CancellationReason { get; }
-    public bool WasPaid { get; }
-
-    public OrderCancelledEvent(
-        OrderId orderId,
-        string orderNumber,
-        UserId userId,
-        string cancellationReason,
-        bool wasPaid)
-    {
-        OrderId = orderId;
-        OrderNumber = orderNumber;
-        UserId = userId;
-        CancellationReason = cancellationReason;
-        WasPaid = wasPaid;
-        EventVersion = 1;
-    }
+    public OrderId OrderId { get; } = orderId;
+    public OrderNumber OrderNumber { get; } = orderNumber;
+    public UserId UserId { get; } = userId;
+    public string CancellationReason { get; } = cancellationReason;
+    public bool WasPaid { get; } = wasPaid;
 }

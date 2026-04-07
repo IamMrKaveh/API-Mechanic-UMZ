@@ -1,7 +1,10 @@
-﻿namespace Domain.Notification.Events;
+﻿using Domain.Notification.ValueObjects;
+using Domain.User.ValueObjects;
 
-public class NotificationDeletedEvent(int notificationId, int userId) : DomainEvent
+namespace Domain.Notification.Events;
+
+public class NotificationDeletedEvent(NotificationId notificationId, UserId userId) : DomainEvent
 {
-    public int NotificationId { get; } = notificationId;
-    public int UserId { get; } = userId;
+    public NotificationId NotificationId { get; } = notificationId;
+    public UserId UserId { get; } = userId;
 }

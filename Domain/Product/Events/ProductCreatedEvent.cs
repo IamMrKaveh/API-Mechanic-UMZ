@@ -6,12 +6,12 @@ namespace Domain.Product.Events;
 
 public sealed class ProductCreatedEvent(
     ProductId ProductId,
-    string Name,
+    ProductName productName,
     CategoryId CategoryId,
     BrandId BrandId) : DomainEvent
 {
     public ProductId ProductId { get; } = ProductId;
-    public string Name { get; } = Name;
+    public ProductName ProductName { get; } = productName;
     public CategoryId CategoryId { get; } = CategoryId;
     public BrandId BrandId { get; } = BrandId;
 }

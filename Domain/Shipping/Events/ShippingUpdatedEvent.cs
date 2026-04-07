@@ -2,8 +2,8 @@
 
 namespace Domain.Shipping.Events;
 
-public sealed class ShippingUpdatedEvent(ShippingId shippingId, string name) : DomainEvent
+public sealed class ShippingUpdatedEvent(ShippingId shippingId, ShippingName name) : DomainEvent
 {
     public ShippingId ShippingId { get; } = shippingId;
-    public string Name { get; } = name;
+    public ShippingName Name { get; } = name;
 }

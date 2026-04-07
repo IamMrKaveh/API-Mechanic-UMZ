@@ -1,9 +1,12 @@
+using Domain.Order.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Order.Events;
 
-public sealed class OrderItemAddedEvent(int orderId, int variantId, int quantity, decimal unitPrice) : DomainEvent
+public sealed class OrderItemAddedEvent(OrderId orderId, ProductVariantId variantId, int quantity, decimal unitPrice) : DomainEvent
 {
-    public int OrderId { get; } = orderId;
-    public int VariantId { get; } = variantId;
+    public OrderId OrderId { get; } = orderId;
+    public ProductVariantId VariantId { get; } = variantId;
     public int Quantity { get; } = quantity;
     public decimal UnitPrice { get; } = unitPrice;
 }

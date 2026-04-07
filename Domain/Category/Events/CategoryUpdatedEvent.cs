@@ -2,18 +2,10 @@ using Domain.Category.ValueObjects;
 
 namespace Domain.Category.Events;
 
-public sealed class CategoryUpdatedEvent : DomainEvent
+public sealed class CategoryUpdatedEvent(CategoryId categoryId, string name, Slug slug, string? description) : DomainEvent
 {
-    public CategoryId CategoryId { get; }
-    public string Name { get; }
-    public string Slug { get; }
-    public string? Description { get; }
-
-    public CategoryUpdatedEvent(CategoryId categoryId, string name, string slug, string? description)
-    {
-        CategoryId = categoryId;
-        Name = name;
-        Slug = slug;
-        Description = description;
-    }
+    public CategoryId CategoryId { get; } = categoryId;
+    public string Name { get; } = name;
+    public Slug Slug { get; } = slug;
+    public string? Description { get; } = description;
 }

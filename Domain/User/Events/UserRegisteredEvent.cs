@@ -4,7 +4,7 @@ namespace Domain.User.Events;
 
 public sealed record UserRegisteredEvent(
     UserId UserId,
-    string Email,
+    Email Email,
     string FirstName,
     string LastName) : IDomainEvent
 {

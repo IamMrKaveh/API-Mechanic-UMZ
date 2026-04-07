@@ -8,7 +8,7 @@ public sealed record TicketCreatedEvent(
     UserId CustomerId,
     string Subject,
     string Category,
-    ValueObjects.TicketPriority Priority) : IDomainEvent
+    TicketPriority Priority) : IDomainEvent
 {
     public Guid EventId { get; } = Guid.NewGuid();
     public DateTime OccurredAt { get; } = DateTime.UtcNow;

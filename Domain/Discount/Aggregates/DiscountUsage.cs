@@ -1,5 +1,6 @@
 using Domain.Discount.Events;
 using Domain.Discount.ValueObjects;
+using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Domain.Discount.Aggregates;
@@ -12,7 +13,7 @@ public sealed class DiscountUsage : AggregateRoot<DiscountUsageId>
     public DiscountCodeId DiscountCodeId { get; private set; } = default!;
     public string Code { get; private set; } = default!;
     public UserId UserId { get; private set; } = default!;
-    public string OrderId { get; private set; } = default!;
+    public OrderId OrderId { get; private set; } = default!;
     public decimal DiscountedAmount { get; private set; }
     public int UsageCountAtTime { get; private set; }
     public DateTime UsedAt { get; private set; }
@@ -22,7 +23,7 @@ public sealed class DiscountUsage : AggregateRoot<DiscountUsageId>
         DiscountCodeId discountCodeId,
         string code,
         UserId userId,
-        string orderId,
+        OrderId orderId,
         decimal discountedAmount,
         int usageCountAtTime)
     {

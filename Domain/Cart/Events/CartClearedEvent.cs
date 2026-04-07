@@ -1,6 +1,8 @@
+using Domain.Cart.ValueObjects;
+
 namespace Domain.Cart.Events;
 
-public class CartClearedEvent(int cartId) : DomainEvent
+public class CartClearedEvent(CartId cartId) : DomainEvent
 {
-    public int CartId { get; } = cartId;
+    public CartId CartId { get; } = cartId;
 }

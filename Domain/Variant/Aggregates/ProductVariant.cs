@@ -1,6 +1,3 @@
-using Domain.Common.Abstractions;
-using Domain.Common.Guards;
-using Domain.Common.Interfaces;
 using Domain.Product.Exceptions;
 using Domain.Product.ValueObjects;
 using Domain.Shipping.ValueObjects;
@@ -8,9 +5,6 @@ using Domain.Variant.Entities;
 using Domain.Variant.Events;
 using Domain.Variant.Exceptions;
 using Domain.Variant.ValueObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Domain.Variant.Aggregates;
 
@@ -66,7 +60,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
             CreatedAt = DateTime.UtcNow
         };
 
-        variant.RaiseDomainEvent(new ProductVariantCreatedEvent(id, productId, sku.Value, price));
+        variant.RaiseDomainEvent(new ProductVariantCreatedEvent(id, productId, sku, price));
         return variant;
     }
 

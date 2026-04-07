@@ -1,6 +1,8 @@
+using Domain.Discount.ValueObjects;
+
 namespace Domain.Discount.Events;
 
-public sealed class DiscountActivatedEvent(int discountId) : DomainEvent
+public sealed class DiscountActivatedEvent(DiscountCodeId discountId) : DomainEvent
 {
-    public int DiscountId { get; } = discountId;
+    public DiscountCodeId DiscountId { get; } = discountId;
 }

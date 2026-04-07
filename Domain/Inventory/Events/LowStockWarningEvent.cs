@@ -1,15 +1,18 @@
+using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Inventory.Events;
 
 public class LowStockWarningEvent(
-    int variantId,
-    int productId,
-    string productName,
+    ProductVariantId variantId,
+    ProductId productId,
+    ProductName productName,
     int currentStock,
     int threshold) : DomainEvent
 {
-    public int VariantId { get; } = variantId;
-    public int ProductId { get; } = productId;
-    public string ProductName { get; } = productName;
+    public ProductVariantId VariantId { get; } = variantId;
+    public ProductId ProductId { get; } = productId;
+    public ProductName ProductName { get; } = productName;
     public int CurrentStock { get; } = currentStock;
     public int Threshold { get; } = threshold;
     public int Shortage { get; } = threshold - currentStock;
