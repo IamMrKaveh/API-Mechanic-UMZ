@@ -1,10 +1,20 @@
-﻿using Domain.Product.ValueObjects;
+﻿using Domain.Common.Exceptions;
+using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Domain.Wishlist.Exceptions;
 
-public sealed class WishlistItemAlreadyExistsException(UserId userId, ProductId productId) : DomainException($"محصول '{productId}' قبلاً در لیست علاقه‌مندی‌های کاربر '{userId}' وجود دارد.")
+public sealed class WishlistItemAlreadyExistsException : DomainException
 {
-    public UserId UserId { get; } = userId;
-    public ProductId ProductId { get; } = productId;
+    public UserId UserId { get; }
+    public ProductId ProductId { get; }
+
+    public override string ErrorCode => "WISHLIST_ITEM_ALREADY_EXISTS";
+
+    public WishlistItemAlreadyExistsException(UserId userId, ProductId productId)
+        : base($"محصول '{productId}' قبلاً در لیست علاقه‌مندی‌های کاربر '{userId}' وجود دارد.")
+    {
+        UserId = userId;
+        ProductId = productId;
+    }
 }

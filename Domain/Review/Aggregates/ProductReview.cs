@@ -6,7 +6,7 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Review.Aggregates;
 
-public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable
+public class ProductReview : AggregateRoot<ReviewId>, IAuditable
 {
     public ProductId ProductId { get; private set; } = default!;
     public UserId UserId { get; private set; } = default!;
@@ -52,7 +52,7 @@ public class ProductReview : AggregateRoot<ProductReviewId>, IAuditable
         if (comment != null && comment.Trim().Length > 1000)
             throw new DomainException("متن نظر نمی‌تواند بیش از ۱۰۰۰ کاراکتر باشد.");
 
-        var id = ProductReviewId.NewId();
+        var id = ReviewId.NewId();
 
         var review = new ProductReview
         {

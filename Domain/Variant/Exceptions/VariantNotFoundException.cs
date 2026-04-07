@@ -1,3 +1,4 @@
+using Domain.Common.Exceptions;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
 
@@ -7,6 +8,9 @@ public sealed class VariantNotFoundException : DomainException
 {
     public VariantId? VariantId { get; }
     public ProductId? ProductId { get; }
+    public string? Sku { get; }
+
+    public override string ErrorCode => "VARIANT_NOT_FOUND";
 
     public VariantNotFoundException(VariantId variantId)
         : base($"واریانت با شناسه {variantId} یافت نشد.")
@@ -23,5 +27,7 @@ public sealed class VariantNotFoundException : DomainException
 
     public VariantNotFoundException(string sku)
         : base($"واریانت با کد SKU '{sku}' یافت نشد.")
-    { }
+    {
+        Sku = sku;
+    }
 }

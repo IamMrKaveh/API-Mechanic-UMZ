@@ -1,8 +1,17 @@
-﻿using Domain.Shipping.ValueObjects;
+﻿using Domain.Common.Exceptions;
+using Domain.Shipping.ValueObjects;
 
 namespace Domain.Shipping.Exceptions;
 
-public sealed class ShippingNotFoundException(ShippingId shippingId) : DomainException($"روش ارسال با شناسه '{shippingId}' یافت نشد.")
+public sealed class ShippingNotFoundException : DomainException
 {
-    public ShippingId ShippingId { get; } = shippingId;
+    public ShippingId ShippingId { get; }
+
+    public override string ErrorCode => "SHIPPING_NOT_FOUND";
+
+    public ShippingNotFoundException(ShippingId shippingId)
+        : base($"روش ارسال با شناسه '{shippingId}' یافت نشد.")
+    {
+        ShippingId = shippingId;
+    }
 }

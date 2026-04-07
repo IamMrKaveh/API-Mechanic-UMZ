@@ -1,6 +1,17 @@
+using Domain.Common.Exceptions;
+using Domain.Category.ValueObjects;
+
 namespace Domain.Category.Exceptions;
 
-public class CategoryNotFoundException(int categoryId) : DomainException($"دسته‌بندی با شناسه {categoryId} یافت نشد.")
+public sealed class CategoryNotFoundException : DomainException
 {
-    public int CategoryId { get; } = categoryId;
+    public CategoryId CategoryId { get; }
+
+    public override string ErrorCode => "CATEGORY_NOT_FOUND";
+
+    public CategoryNotFoundException(CategoryId categoryId)
+        : base($"دسته‌بندی با شناسه {categoryId} یافت نشد.")
+    {
+        CategoryId = categoryId;
+    }
 }

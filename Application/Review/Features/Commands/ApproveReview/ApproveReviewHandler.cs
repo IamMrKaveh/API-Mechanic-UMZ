@@ -11,7 +11,7 @@ public class ApproveReviewHandler(
 {
     public async Task<ServiceResult> Handle(ApproveReviewCommand request, CancellationToken ct)
     {
-        var review = await reviewRepository.GetByIdAsync(ProductReviewId.From(request.ReviewId), ct);
+        var review = await reviewRepository.GetByIdAsync(ReviewId.From(request.ReviewId), ct);
         if (review is null)
             return ServiceResult.NotFound("نظر یافت نشد.");
 

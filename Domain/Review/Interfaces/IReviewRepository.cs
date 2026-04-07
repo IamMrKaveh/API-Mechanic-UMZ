@@ -11,5 +11,5 @@ public interface IReviewRepository
 
     Task<bool> UserHasReviewedProductAsync(int userId, int productId, int? orderId, CancellationToken ct);
 
-    Task<ProductReview?> GetByIdAsync(ProductReviewId id, CancellationToken ct = default);
+    Task<ProductReview?> GetByIdAsync(ReviewId id, CancellationToken ct = default);
 }
