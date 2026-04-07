@@ -19,11 +19,13 @@ public class CreateBrandHandler(
 {
     public async Task<ServiceResult<BrandDetailDto>> Handle(CreateBrandCommand request, CancellationToken ct)
     {
-        var category = await categoryRepository.GetByIdAsync(CategoryId.From(request.CategoryId), ct);
+        var categoryId = CategoryId.From(request.CategoryId);
+
+        var category = await categoryRepository.GetByIdAsync(categoryId, ct);
         if (category is null)
             return ServiceResult<BrandDetailDto>.NotFound("دسته‌بندی یافت نشد.");
 
-        if (await brandRepository.ExistsByNameInCategoryAsync(request.Name, request.CategoryId, null, ct))
+        if (await brandRepository.ExistsByNameInCategoryAsync(request.Name, categoryId, null, ct))
             return ServiceResult<BrandDetailDto>.Conflict("برندی با این نام در این دسته‌بندی قبلاً ثبت شده است.");
 
         var slug = string.IsNullOrWhiteSpace(request.Slug)
@@ -33,19 +35,15 @@ public class CreateBrandHandler(
         if (await brandRepository.ExistsBySlugAsync(slug.Value, null, ct))
             return ServiceResult<BrandDetailDto>.Conflict("برندی با این Slug قبلاً ثبت شده است.");
 
-        var brand = Brand.Create(
-            BrandName.Create(request.Name),
-            slug,
-            request.CategoryId,
-            request.Description,
-            request.LogoPath);
+        var brandName = BrandName.Create(request.Name);
+
+        var uniquenessChecker = new BrandUniquenessCheckerAdapter(brandRepository);
+        var brand = Domain.Brand.Aggregates.Brand.Create(brandName, slug, categoryId, uniquenessChecker, request.Description, request.LogoPath);
 
         await brandRepository.AddAsync(brand, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("Brand {Name} created with ID {Id}", brand.Name.Value, brand.Id.Value);
-
-        var dto = mapper.Map<BrandDetailDto>(brand) with { CategoryName = category.Name };
+        var dto = mapper.Map<BrandDetailDto>(brand);
         return ServiceResult<BrandDetailDto>.Success(dto);
     }
 }

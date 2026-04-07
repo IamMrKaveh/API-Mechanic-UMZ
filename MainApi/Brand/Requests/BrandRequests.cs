@@ -1,22 +1,23 @@
 ﻿namespace Presentation.Brand.Requests;
 
 public record CreateBrandRequest(
-    int CategoryId,
+    Guid CategoryId,
     string Name,
+    string? Slug,
     string? Description,
-    IFormFile? IconFile
+    string? LogoPath
 );
 
 public record UpdateBrandRequest(
-    int CategoryId,
     string Name,
+    Guid CategoryId,
+    string? Slug,
     string? Description,
-    IFormFile? IconFile,
+    string? LogoPath,
     string RowVersion
 );
 
 public record MoveBrandRequest(
-    int SourceCategoryId,
-    int TargetCategoryId,
-    int BrandId
+    Guid BrandId,
+    Guid TargetCategoryId
 );

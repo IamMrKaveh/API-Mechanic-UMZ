@@ -1,12 +1,10 @@
-﻿using System;
+﻿namespace Domain.Security.ValueObjects;
 
-namespace Domain.Security.ValueObjects;
-
-public sealed record UserOtpId
+public sealed record OtpId
 {
     public Guid Value { get; }
 
-    private UserOtpId(Guid value)
+    private OtpId(Guid value)
     {
         if (value == Guid.Empty)
             throw new ArgumentException("UserOtpId cannot be empty.", nameof(value));
@@ -14,9 +12,9 @@ public sealed record UserOtpId
         Value = value;
     }
 
-    public static UserOtpId NewId() => new(Guid.NewGuid());
+    public static OtpId NewId() => new(Guid.NewGuid());
 
-    public static UserOtpId From(Guid value) => new(value);
+    public static OtpId From(Guid value) => new(value);
 
     public override string ToString() => Value.ToString();
 }

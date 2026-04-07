@@ -30,7 +30,7 @@ public sealed class SecurityDomainService
                 OtpRateLimitWindow);
         }
 
-        var otpId = UserOtpId.NewId();
+        var otpId = OtpId.NewId();
         var code = OtpCode.Generate(codeLength);
 
         var otp = UserOtp.Create(otpId, userId, code, purpose, DefaultOtpValidity);
@@ -83,7 +83,7 @@ public sealed class SecurityDomainService
                 MaxActiveSessionsPerUser);
         }
 
-        var sessionId = UserSessionId.NewId();
+        var sessionId = SessionId.NewId();
         var refreshToken = RefreshToken.Generate();
         var deviceInfoVo = DeviceInfo.Create(deviceInfo);
         var ipAddressVo = Common.ValueObjects.IpAddress.Create(ipAddress);

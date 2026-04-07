@@ -1,8 +1,9 @@
 using Application.Common.Results;
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
 
 namespace Application.Brand.Features.Commands.MoveBrand;
 
 public record MoveBrandCommand(
-    int SourceCategoryId,
-    int TargetCategoryId,
-    int BrandId) : IRequest<ServiceResult>;
+    BrandId BrandId,
+    CategoryId TargetCategoryId) : IRequest<ServiceResult>;

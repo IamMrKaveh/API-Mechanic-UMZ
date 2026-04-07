@@ -1,53 +1,29 @@
+using Application.Common.Results;
+using Domain.Brand.Interfaces;
 using Domain.Category.Interfaces;
+using Domain.Common.Interfaces;
 
 namespace Application.Brand.Features.Commands.MoveBrand;
 
 public class MoveBrandHandler(
+    IBrandRepository brandRepository,
     ICategoryRepository categoryRepository,
-    CategoryDomainService categoryDomainService,
     IUnitOfWork unitOfWork) : IRequestHandler<MoveBrandCommand, ServiceResult>
 {
-    private readonly ICategoryRepository _categoryRepository = categoryRepository;
-    private readonly CategoryDomainService _categoryDomainService = categoryDomainService;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
-    public async Task<ServiceResult> Handle(
-        MoveBrandCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(MoveBrandCommand request, CancellationToken ct)
     {
-        var sourceCategory = await _categoryRepository.GetByIdWithGroupsAsync(
-            request.SourceCategoryId, ct);
+        var brand = await brandRepository.GetByIdAsync(request.BrandId, ct);
+        if (brand is null)
+            return ServiceResult.NotFound("برند یافت نشد.");
 
-        if (sourceCategory == null)
-            return ServiceResult.Failure("دسته‌بندی مبدأ یافت نشد.", 404);
+        var category = await categoryRepository.GetByIdAsync(request.TargetCategoryId, ct);
+        if (category is null)
+            return ServiceResult.NotFound("دسته‌بندی مقصد یافت نشد.");
 
-        var targetCategory = await _categoryRepository.GetByIdWithGroupsAsync(
-            request.TargetCategoryId, ct);
+        brand.ChangeCategory(request.TargetCategoryId);
+        brandRepository.Update(brand);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        if (targetCategory == null)
-            return ServiceResult.Failure("دسته‌بندی مقصد یافت نشد.", 404);
-
-        try
-        {
-            _categoryDomainService.MoveGroup(sourceCategory, targetCategory, request.BrandId);
-
-            _categoryRepository.Update(sourceCategory);
-            _categoryRepository.Update(targetCategory);
-
-            await _unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult.Success();
-        }
-        catch (BrandNotFoundException)
-        {
-            return ServiceResult.Failure("گروه یافت نشد.", 404);
-        }
-        catch (DuplicateBrandNameException ex)
-        {
-            return ServiceResult.Failure(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult.Failure(ex.Message);
-        }
+        return ServiceResult.Success();
     }
 }

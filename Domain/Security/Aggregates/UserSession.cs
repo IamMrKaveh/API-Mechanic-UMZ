@@ -6,7 +6,7 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Security.Aggregates;
 
-public sealed class UserSession : AggregateRoot<UserSessionId>
+public sealed class UserSession : AggregateRoot<SessionId>
 {
     private const int MaxSessionDurationDays = 90;
 
@@ -41,7 +41,7 @@ public sealed class UserSession : AggregateRoot<UserSessionId>
     }
 
     public static UserSession Create(
-        UserSessionId id,
+        SessionId id,
         UserId userId,
         RefreshToken refreshToken,
         DeviceInfo deviceInfo,

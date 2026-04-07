@@ -1,12 +1,9 @@
 ﻿namespace Presentation.Media.Requests;
 
-public record SetPrimaryMediaRequest(
-    int MediaId,
-    string EntityType,
-    int EntityId);
+public record SetPrimaryMediaRequest(Guid MediaId);
 
 public record ReorderMediaRequest(
     string EntityType,
     int EntityId,
-    IReadOnlyList<int> OrderedMediaIds
+    IReadOnlyList<Guid> MediaIds
 );
