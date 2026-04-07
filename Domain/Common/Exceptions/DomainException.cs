@@ -1,15 +1,15 @@
 namespace Domain.Common.Exceptions;
 
-public abstract class DomainException : Exception
+public class DomainException : Exception
 {
-    public abstract string ErrorCode { get; }
+    public virtual string ErrorCode => "DOMAIN_ERROR";
 
-    protected DomainException(string message)
+    public DomainException(string message)
         : base(message)
     {
     }
 
-    protected DomainException(string message, Exception innerException)
+    public DomainException(string message, Exception innerException)
         : base(message, innerException)
     {
     }

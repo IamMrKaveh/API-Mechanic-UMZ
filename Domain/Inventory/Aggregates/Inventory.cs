@@ -3,6 +3,7 @@ using Domain.Inventory.Events;
 using Domain.Inventory.Exceptions;
 using Domain.Inventory.ValueObjects;
 using Domain.Order.ValueObjects;
+using Domain.Product.Exceptions;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 
