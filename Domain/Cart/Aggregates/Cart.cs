@@ -80,7 +80,7 @@ public sealed class Cart : AggregateRoot<CartId>
         EnsureNotCheckedOut();
 
         var item = _items.FirstOrDefault(i => i.VariantId == variantId)
-            ?? throw new CartItemNotFoundException(variantId.Value);
+            ?? throw new CartItemNotFoundException(variantId);
 
         _items.Remove(item);
         UpdatedAt = DateTime.UtcNow;
@@ -94,7 +94,7 @@ public sealed class Cart : AggregateRoot<CartId>
         EnsureNotCheckedOut();
 
         var item = _items.FirstOrDefault(i => i.VariantId == variantId)
-            ?? throw new CartItemNotFoundException(variantId.Value);
+            ?? throw new CartItemNotFoundException(variantId);
 
         item.UpdateQuantity(quantity);
         UpdatedAt = DateTime.UtcNow;
@@ -219,7 +219,7 @@ public sealed class Cart : AggregateRoot<CartId>
             throw new InvalidCartQuantityException(requestedQuantity);
 
         if (!isUnlimited && availableStock < requestedQuantity)
-            throw new InsufficientStockForCartException(variantId.Value, requestedQuantity, availableStock);
+            throw new InsufficientStockForCartException(variantId, requestedQuantity, availableStock);
     }
 
     public bool HasItem(VariantId variantId) => _items.Any(i => i.VariantId == variantId);
@@ -234,6 +234,6 @@ public sealed class Cart : AggregateRoot<CartId>
     private void EnsureNotCheckedOut()
     {
         if (IsCheckedOut)
-            throw new CartAlreadyCheckedOutException(Id.Value);
+            throw new CartAlreadyCheckedOutException(Id);
     }
 }

@@ -184,10 +184,10 @@ public sealed class Order : AggregateRoot<OrderId>
             wasPaid));
     }
 
-    public void Expire()
+    public void Expire(OrderStatusValue orderStatusValue)
     {
         if (IsPaid)
-            throw new InvalidOrderTransitionException(Status, OrderStatusValue.Expired.Value);
+            throw new InvalidOrderTransitionException(Status, orderStatusValue);
 
         TransitionTo(OrderStatusValue.Expired);
     }

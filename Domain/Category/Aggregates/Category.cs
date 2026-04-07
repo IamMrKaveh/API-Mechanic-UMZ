@@ -23,7 +23,7 @@ public sealed class Category : AggregateRoot<CategoryId>
 
     public static Category Create(
         CategoryId id,
-        string name,
+        CategoryName name,
         Slug slug,
         ICategoryUniquenessChecker uniquenessChecker,
         string? description = null,
@@ -36,7 +36,7 @@ public sealed class Category : AggregateRoot<CategoryId>
             throw new DuplicateCategoryNameException(name);
 
         if (parentCategoryId != null && parentCategoryId == id)
-            throw new InvalidOperationException(string.Empty);
+            throw new DomainException("دسته‌بندی نمی‌تواند والد خودش باشد.");
 
         var category = new Category
         {
@@ -56,7 +56,7 @@ public sealed class Category : AggregateRoot<CategoryId>
     }
 
     public void UpdateDetails(
-        string name,
+        CategoryName name,
         Slug slug,
         ICategoryUniquenessChecker uniquenessChecker,
         string? description,
@@ -80,7 +80,7 @@ public sealed class Category : AggregateRoot<CategoryId>
     public void MoveToParent(CategoryId? newParentCategoryId)
     {
         if (newParentCategoryId == Id)
-            throw new InvalidOperationException(string.Empty);
+            throw new DomainException("دسته‌بندی نمی‌تواند والد خودش باشد.");
 
         if (ParentCategoryId == newParentCategoryId)
             return;
