@@ -6,7 +6,7 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Security.Aggregates;
 
-public sealed class UserOtp : AggregateRoot<UserOtpId>
+public sealed class UserOtp : AggregateRoot<OtpId>
 {
     private const int MaxVerificationAttempts = 5;
 
@@ -35,7 +35,7 @@ public sealed class UserOtp : AggregateRoot<UserOtpId>
     }
 
     public static UserOtp Create(
-        UserOtpId id,
+        OtpId id,
         UserId userId,
         OtpCode code,
         OtpPurpose purpose,

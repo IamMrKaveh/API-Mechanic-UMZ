@@ -6,13 +6,13 @@ using Domain.Common.Events;
 namespace Domain.Security.Events;
 
 public sealed class OtpVerificationFailedEvent(
-    UserOtpId otpId,
+    OtpId otpId,
     UserId userId,
     OtpPurpose purpose,
     int attemptNumber,
     int remainingAttempts) : DomainEvent
 {
-    public UserOtpId OtpId { get; } = otpId;
+    public OtpId OtpId { get; } = otpId;
     public UserId UserId { get; } = userId;
     public OtpPurpose Purpose { get; } = purpose;
     public int AttemptNumber { get; } = attemptNumber;

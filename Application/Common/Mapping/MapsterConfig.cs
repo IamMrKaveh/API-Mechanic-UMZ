@@ -1,5 +1,4 @@
 ﻿using Application.Attribute.Features.Shared;
-using Application.Auth.Features.Shared;
 using Application.Brand.Features.Shared;
 using Application.Cart.Features.Shared;
 using Application.Category.Features.Shared;
@@ -17,26 +16,16 @@ using Application.Variant.Features.Shared;
 using Application.Wallet.Features.Shared;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Entities;
-using Domain.Brand.Aggregates;
-using Domain.Cart.Aggregates;
 using Domain.Cart.Entities;
-using Domain.Category.Aggregates;
 using Domain.Discount.Aggregates;
-using Domain.Inventory.Aggregates;
-using Domain.Media.Aggregates;
-using Domain.Notification.Aggregates;
-using Domain.Order.Aggregates;
 using Domain.Order.Entities;
 using Domain.Payment.Aggregates;
 using Domain.Review.Aggregates;
 using Domain.Security.Aggregates;
-using Domain.Shipping.Aggregates;
 using Domain.Support.Aggregates;
 using Domain.Support.Entities;
-using Domain.User.Aggregates;
 using Domain.User.Entities;
 using Domain.Variant.Aggregates;
-using Domain.Wallet.Aggregates;
 using Domain.Wallet.Entities;
 using Mapster;
 
@@ -86,23 +75,23 @@ public static class MapsterConfig
 
     private static void ConfigureBrandMappings()
     {
-        TypeAdapterConfig<Brand, BrandDto>.NewConfig()
+        TypeAdapterConfig<Domain.Brand.Aggregates.Brand, BrandDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.Name, src => src.Name.Value)
             .Map(dest => dest.Slug, src => src.Slug.Value)
             .Map(dest => dest.Description, src => src.Description)
             .Map(dest => dest.LogoPath, src => src.LogoPath)
-            .Map(dest => dest.CategoryId, src => src.CategoryId)
+            .Map(dest => dest.CategoryId, src => src.CategoryId.Value)
             .Map(dest => dest.IsActive, src => src.IsActive)
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .Map(dest => dest.UpdatedAt, src => src.UpdatedAt);
 
-        TypeAdapterConfig<Brand, BrandDetailDto>.NewConfig()
+        TypeAdapterConfig<Domain.Brand.Aggregates.Brand, BrandDetailDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.Name, src => src.Name.Value)
             .Map(dest => dest.Slug, src => src.Slug.Value)
             .Map(dest => dest.Description, src => src.Description)
-            .Map(dest => dest.CategoryId, src => src.CategoryId)
+            .Map(dest => dest.CategoryId, src => src.CategoryId.Value)
             .Map(dest => dest.IsActive, src => src.IsActive)
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .Ignore(dest => dest.CategoryName)
@@ -112,7 +101,7 @@ public static class MapsterConfig
 
     private static void ConfigureCategoryMappings()
     {
-        TypeAdapterConfig<Category, CategoryDto>.NewConfig()
+        TypeAdapterConfig<Domain.Category.Aggregates.Category, CategoryDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.Name, src => src.Name)
             .Map(dest => dest.Slug, src => src.Slug.Value)
@@ -126,9 +115,9 @@ public static class MapsterConfig
 
     private static void ConfigureCartMappings()
     {
-        TypeAdapterConfig<Cart, CartDetailDto>.NewConfig()
-            .Map(dest => dest.Id, src => src.Id)
-            .Map(dest => dest.UserId, src => src.UserId)
+        TypeAdapterConfig<Domain.Cart.Aggregates.Cart, CartDetailDto>.NewConfig()
+            .Map(dest => dest.Id, src => src.Id.Value)
+            .Map(dest => dest.UserId, src => src.UserId != null ? src.UserId.Value : (Guid?)null)
             .Map(dest => dest.GuestToken, src => src.GuestToken != null ? src.GuestToken.Value : null)
             .Map(dest => dest.IsCheckedOut, src => src.IsCheckedOut)
             .Map(dest => dest.TotalPrice, src => src.TotalAmount.Amount)
@@ -137,9 +126,9 @@ public static class MapsterConfig
             .Ignore(dest => dest.PriceChanges);
 
         TypeAdapterConfig<CartItem, CartItemDto>.NewConfig()
-            .Map(dest => dest.Id, src => src.Id)
-            .Map(dest => dest.VariantId, src => src.VariantId)
-            .Map(dest => dest.ProductId, src => src.ProductId)
+            .Map(dest => dest.Id, src => src.Id.Value)
+            .Map(dest => dest.VariantId, src => src.VariantId.Value)
+            .Map(dest => dest.ProductId, src => src.ProductId.Value)
             .Map(dest => dest.ProductName, src => src.ProductName.Value)
             .Map(dest => dest.Sku, src => src.Sku.Value)
             .Map(dest => dest.UnitPrice, src => src.UnitPrice.Amount)
@@ -171,7 +160,7 @@ public static class MapsterConfig
 
     private static void ConfigureInventoryMappings()
     {
-        TypeAdapterConfig<Inventory, InventoryDto>.NewConfig()
+        TypeAdapterConfig<Domain.Inventory.Aggregates.Inventory, InventoryDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.VariantId, src => src.VariantId.Value)
             .Map(dest => dest.StockQuantity, src => src.StockQuantity)
@@ -186,7 +175,7 @@ public static class MapsterConfig
 
     private static void ConfigureMediaMappings()
     {
-        TypeAdapterConfig<Media, MediaDto>.NewConfig()
+        TypeAdapterConfig<Domain.Media.Aggregates.Media, MediaDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.FilePath, src => src.FilePath)
             .Map(dest => dest.FileName, src => src.FileName)
@@ -203,7 +192,7 @@ public static class MapsterConfig
 
     private static void ConfigureNotificationMappings()
     {
-        TypeAdapterConfig<Notification, NotificationDto>.NewConfig()
+        TypeAdapterConfig<Domain.Notification.Aggregates.Notification, NotificationDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.UserId, src => src.UserId.Value)
             .Map(dest => dest.IsRead, src => src.IsRead)
@@ -212,10 +201,10 @@ public static class MapsterConfig
 
     private static void ConfigureOrderMappings()
     {
-        TypeAdapterConfig<Order, OrderDto>.NewConfig()
+        TypeAdapterConfig<Domain.Order.Aggregates.Order, OrderDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.OrderNumber, src => src.OrderNumber.Value)
-            .Map(dest => dest.UserId, src => src.UserId)
+            .Map(dest => dest.UserId, src => src.UserId.Value)
             .Map(dest => dest.Status, src => src.Status.Value)
             .Map(dest => dest.StatusDisplayName, src => src.Status.DisplayName)
             .Map(dest => dest.SubTotal, src => src.SubTotal.Amount)
@@ -230,9 +219,9 @@ public static class MapsterConfig
             .Map(dest => dest.Items, src => src.Items.Adapt<List<OrderItemDto>>());
 
         TypeAdapterConfig<OrderItem, OrderItemDto>.NewConfig()
-            .Map(dest => dest.Id, src => src.Id)
-            .Map(dest => dest.VariantId, src => src.VariantId)
-            .Map(dest => dest.ProductId, src => src.ProductId)
+            .Map(dest => dest.Id, src => src.Id.Value)
+            .Map(dest => dest.VariantId, src => src.VariantId.Value)
+            .Map(dest => dest.ProductId, src => src.ProductId.Value)
             .Map(dest => dest.ProductName, src => src.ProductName)
             .Map(dest => dest.Sku, src => src.Sku)
             .Map(dest => dest.UnitPrice, src => src.UnitPrice.Amount)
@@ -244,7 +233,7 @@ public static class MapsterConfig
     {
         TypeAdapterConfig<PaymentTransaction, PaymentTransactionDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
-            .Map(dest => dest.OrderId, src => src.OrderId)
+            .Map(dest => dest.OrderId, src => src.OrderId.Value)
             .Map(dest => dest.Authority, src => src.Authority.Value)
             .Map(dest => dest.Gateway, src => src.Gateway.Value)
             .Map(dest => dest.Amount, src => src.Amount.Amount)
@@ -278,7 +267,7 @@ public static class MapsterConfig
 
     private static void ConfigureShippingMappings()
     {
-        TypeAdapterConfig<Shipping, ShippingDto>.NewConfig()
+        TypeAdapterConfig<Domain.Shipping.Aggregates.Shipping, ShippingDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.Name, src => src.Name.Value)
             .Map(dest => dest.Description, src => src.Description)
@@ -296,7 +285,7 @@ public static class MapsterConfig
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .Map(dest => dest.UpdatedAt, src => src.UpdatedAt);
 
-        TypeAdapterConfig<Shipping, ShippingListItemDto>.NewConfig()
+        TypeAdapterConfig<Domain.Shipping.Aggregates.Shipping, ShippingListItemDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.Name, src => src.Name.Value)
             .Map(dest => dest.BaseCost, src => src.BaseCost.Amount)
@@ -342,7 +331,7 @@ public static class MapsterConfig
 
     private static void ConfigureUserMappings()
     {
-        TypeAdapterConfig<User, UserProfileDto>.NewConfig()
+        TypeAdapterConfig<Domain.User.Aggregates.User, UserProfileDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.PhoneNumber, src => src.PhoneNumber != null ? src.PhoneNumber.Value : string.Empty)
             .Map(dest => dest.FirstName, src => src.FullName.FirstName)
@@ -386,13 +375,17 @@ public static class MapsterConfig
             .Map(dest => dest.ProductId, src => src.ProductId.Value)
             .Map(dest => dest.Sku, src => src.Sku.Value)
             .Map(dest => dest.Price, src => src.Price.Amount)
+            .Map(dest => dest.CompareAtPrice, src => src.CompareAtPrice != null ? src.CompareAtPrice.Amount : (decimal?)null)
+            .Map(dest => dest.IsActive, src => src.IsActive)
+            .Map(dest => dest.IsDiscounted, src => src.IsDiscounted)
+            .Map(dest => dest.DiscountPercentage, src => src.DiscountPercentage)
             .Map(dest => dest.FinalPrice, src => src.Price.Amount)
             .Ignore(dest => dest.StockQuantity);
     }
 
     private static void ConfigureWalletMappings()
     {
-        TypeAdapterConfig<Wallet, WalletDto>.NewConfig()
+        TypeAdapterConfig<Domain.Wallet.Aggregates.Wallet, WalletDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.UserId, src => src.OwnerId.Value)
             .Map(dest => dest.CurrentBalance, src => src.Balance.Amount)

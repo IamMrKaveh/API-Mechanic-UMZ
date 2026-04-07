@@ -16,18 +16,18 @@ public class CreateCategoryHandler(
 {
     public async Task<ServiceResult<CategoryDto>> Handle(CreateCategoryCommand request, CancellationToken ct)
     {
-        if (await categoryRepository.ExistsByNameAsync(request.Name, null, ct))
+        if (await categoryRepository.ExistsByNameAsync(request.CategoryName, null, ct))
             return ServiceResult<CategoryDto>.Conflict("دسته‌بندی با این نام قبلاً ثبت شده است.");
 
         var slug = string.IsNullOrWhiteSpace(request.Slug)
-            ? Slug.GenerateFrom(request.Name)
+            ? Slug.GenerateFrom(request.CategoryName)
             : Slug.FromString(request.Slug);
 
         if (await categoryRepository.ExistsBySlugAsync(slug.Value, null, ct))
             return ServiceResult<CategoryDto>.Conflict("دسته‌بندی با این Slug قبلاً ثبت شده است.");
 
         CategoryId? parentId = null;
-        if (request.ParentCategoryId.HasValue)
+        if (request.ParentCategoryId is not null)
         {
             parentId = CategoryId.From(request.ParentCategoryId.Value);
             var parent = await categoryRepository.GetByIdAsync(parentId, ct);
@@ -35,9 +35,9 @@ public class CreateCategoryHandler(
                 return ServiceResult<CategoryDto>.NotFound("دسته‌بندی والد یافت نشد.");
         }
 
-        var category = Category.Create(
+        var category = Domain.Category.Aggregates.Category.Create(
             CategoryId.NewId(),
-            request.Name,
+            request.CategoryName,
             slug,
             request.Description,
             parentId,

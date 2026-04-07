@@ -6,11 +6,11 @@ using Domain.Common.Events;
 namespace Domain.Security.Events;
 
 public sealed class SessionRevokedEvent(
-    UserSessionId sessionId,
+    SessionId sessionId,
     UserId userId,
     SessionRevocationReason reason) : DomainEvent
 {
-    public UserSessionId SessionId { get; } = sessionId;
+    public SessionId SessionId { get; } = sessionId;
     public UserId UserId { get; } = userId;
     public SessionRevocationReason Reason { get; } = reason;
 }

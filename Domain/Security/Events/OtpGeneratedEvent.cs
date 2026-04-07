@@ -6,12 +6,12 @@ using Domain.Common.Events;
 namespace Domain.Security.Events;
 
 public sealed class OtpGeneratedEvent(
-    UserOtpId otpId,
+    OtpId otpId,
     UserId userId,
     OtpPurpose purpose,
     DateTime expiresAt) : DomainEvent
 {
-    public UserOtpId OtpId { get; } = otpId;
+    public OtpId OtpId { get; } = otpId;
     public UserId UserId { get; } = userId;
     public OtpPurpose Purpose { get; } = purpose;
     public DateTime ExpiresAt { get; } = expiresAt;

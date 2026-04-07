@@ -1,13 +1,15 @@
 ﻿namespace Presentation.Auth.Requests;
 
-public record LoginRequest
-{
-    public string PhoneNumber { get; init; } = string.Empty;
-}
+public record SendOtpRequest(string PhoneNumber);
 
-public record VerifyOtpRequestDto(string PhoneNumber, string Code);
+public record VerifyOtpRequest(
+    string PhoneNumber,
+    string Code,
+    string? DeviceInfo = null
+);
 
-public record RefreshRequest
-{
-    public string RefreshToken { get; init; } = string.Empty;
-}
+public record RefreshRequest(string RefreshToken);
+
+public record RevokeSessionRequest(Guid SessionId);
+
+public record GoogleLoginRequest(string IdToken);

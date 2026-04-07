@@ -1,15 +1,13 @@
 ﻿namespace Presentation.Review.Requests;
 
-public sealed record RejectReviewRequest(string? Reason);
-
-public sealed record ReplyToReviewRequest(string Reply);
-
-public sealed record UpdateReviewStatusRequest(string Status);
-
-public sealed record SubmitReviewRequest(
-    int ProductId,
-    int? OrderId,
+public record CreateReviewRequest(
+    Guid ProductId,
     int Rating,
     string? Title,
-    string? Comment
+    string? Comment,
+    Guid? OrderId = null
 );
+
+public record RejectReviewRequest(string? Reason = null);
+
+public record AddAdminReplyRequest(string Reply);

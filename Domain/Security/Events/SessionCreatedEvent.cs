@@ -5,13 +5,13 @@ using Domain.Common.Events;
 namespace Domain.Security.Events;
 
 public sealed class SessionCreatedEvent(
-    UserSessionId sessionId,
+    SessionId sessionId,
     UserId userId,
     DeviceInfo deviceInfo,
     IpAddress ipAddress,
     DateTime expiresAt) : DomainEvent
 {
-    public UserSessionId SessionId { get; } = sessionId;
+    public SessionId SessionId { get; } = sessionId;
     public UserId UserId { get; } = userId;
     public DeviceInfo DeviceInfo { get; } = deviceInfo;
     public IpAddress IpAddress { get; } = ipAddress;

@@ -5,9 +5,9 @@ using Domain.Common.Events;
 namespace Domain.Security.Events;
 
 public sealed class SessionExpiredEvent(
-    UserSessionId sessionId,
+    SessionId sessionId,
     UserId userId) : DomainEvent
 {
-    public UserSessionId SessionId { get; } = sessionId;
+    public SessionId SessionId { get; } = sessionId;
     public UserId UserId { get; } = userId;
 }

@@ -7,7 +7,7 @@ namespace Domain.Security.Interfaces;
 public interface ISessionRepository
 {
     Task<UserSession?> GetByIdAsync(
-        UserSessionId sessionId,
+        SessionId sessionId,
         CancellationToken ct = default);
 
     Task<UserSession?> GetByRefreshTokenAsync(
@@ -29,7 +29,7 @@ public interface ISessionRepository
     void Update(UserSession session);
 
     Task RevokeAsync(
-        UserSessionId sessionId,
+        SessionId sessionId,
         CancellationToken ct = default);
 
     Task RevokeAllByUserAsync(

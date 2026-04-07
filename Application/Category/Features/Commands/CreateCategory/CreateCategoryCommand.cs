@@ -1,11 +1,13 @@
 using Application.Category.Features.Shared;
 using Application.Common.Results;
+using Domain.Category.ValueObjects;
+using Domain.Common.ValueObjects;
 
 namespace Application.Category.Features.Commands.CreateCategory;
 
 public record CreateCategoryCommand(
-    string Name,
-    string? Slug,
+    CategoryName CategoryName,
+    Slug? Slug,
     string? Description,
-    Guid? ParentCategoryId,
-    int SortOrder) : IRequest<ServiceResult<CategoryDto>>;
+    CategoryId? ParentCategoryId,
+    int SortOrder = 0) : IRequest<ServiceResult<CategoryDto>>;

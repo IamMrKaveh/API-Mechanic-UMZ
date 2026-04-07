@@ -15,18 +15,18 @@ public class UpdateCategoryHandler(
 {
     public async Task<ServiceResult<CategoryDto>> Handle(UpdateCategoryCommand request, CancellationToken ct)
     {
-        var category = await categoryRepository.GetByIdAsync(CategoryId.From(request.Id), ct);
+        var category = await categoryRepository.GetByIdAsync(request.Id, ct);
         if (category is null)
             return ServiceResult<CategoryDto>.NotFound("دسته‌بندی یافت نشد.");
 
-        if (await categoryRepository.ExistsByNameAsync(request.Name, CategoryId.From(request.Id), ct))
+        if (await categoryRepository.ExistsByNameAsync(request.Name, request.Id, ct))
             return ServiceResult<CategoryDto>.Conflict("دسته‌بندی با این نام قبلاً ثبت شده است.");
 
         var slug = string.IsNullOrWhiteSpace(request.Slug)
             ? Slug.GenerateFrom(request.Name)
             : Slug.FromString(request.Slug);
 
-        if (await categoryRepository.ExistsBySlugAsync(slug.Value, CategoryId.From(request.Id), ct))
+        if (await categoryRepository.ExistsBySlugAsync(slug.Value, request.Id, ct))
             return ServiceResult<CategoryDto>.Conflict("Slug قبلاً استفاده شده است.");
 
         category.UpdateDetails(request.Name, slug, request.Description, request.SortOrder);
@@ -36,7 +36,7 @@ public class UpdateCategoryHandler(
         else if (!request.IsActive && category.IsActive)
             category.Deactivate();
 
-        if (request.ParentCategoryId.HasValue)
+        if (request.ParentCategoryId is not null)
         {
             var newParentId = CategoryId.From(request.ParentCategoryId.Value);
             if (category.ParentCategoryId != newParentId)

@@ -10,4 +10,4 @@ public record UpdateBrandCommand(
     string? Slug,
     string? Description,
     string? LogoPath,
-    bool IsActive) : IRequest<ServiceResult<BrandDetailDto>>;
+    string RowVersion) : IRequest<ServiceResult<BrandDetailDto>>;

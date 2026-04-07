@@ -8,7 +8,7 @@ namespace Domain.Security.Interfaces;
 public interface IOtpRepository
 {
     Task<UserOtp?> GetByIdAsync(
-        UserOtpId otpId,
+        OtpId otpId,
         CancellationToken ct = default);
 
     Task<UserOtp?> GetLatestActiveByUserIdAsync(

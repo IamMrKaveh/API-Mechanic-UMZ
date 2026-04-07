@@ -5,11 +5,11 @@ namespace Domain.Security.Exceptions;
 
 public sealed class OtpExpiredException : DomainException
 {
-    public UserOtpId OtpId { get; }
+    public OtpId OtpId { get; }
 
     public override string ErrorCode => "OTP_EXPIRED";
 
-    public OtpExpiredException(UserOtpId otpId)
+    public OtpExpiredException(OtpId otpId)
         : base($"کد OTP '{otpId}' منقضی شده است.")
     {
         OtpId = otpId;
