@@ -15,7 +15,7 @@ public class AdjustStockHandler(
     public async Task<ServiceResult> Handle(AdjustStockCommand request, CancellationToken ct)
     {
         var inventory = await inventoryRepository.GetByVariantIdAsync(
-            ProductVariantId.From(request.VariantId), ct);
+            VariantId.From(request.VariantId), ct);
 
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");

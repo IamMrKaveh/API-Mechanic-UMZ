@@ -6,7 +6,7 @@ namespace Domain.Inventory.Services.Results;
 public sealed class ReservationResult
 {
     public bool IsSuccess { get; }
-    public ProductVariantId VariantId { get; }
+    public VariantId VariantId { get; }
     public int ReservedQuantity { get; }
     public bool IsUnlimited { get; }
     public string? Error { get; }
@@ -15,7 +15,7 @@ public sealed class ReservationResult
 
     private ReservationResult(
         bool isSuccess,
-        ProductVariantId variantId,
+        VariantId variantId,
         int reservedQuantity = 0,
         bool isUnlimited = false,
         string? error = null,
@@ -31,14 +31,14 @@ public sealed class ReservationResult
         RequestedQuantity = requestedQuantity;
     }
 
-    public static ReservationResult Success(ProductVariantId variantId, int quantity, bool isUnlimited = false)
+    public static ReservationResult Success(VariantId variantId, int quantity, bool isUnlimited = false)
         => new(true, variantId, quantity, isUnlimited);
 
-    public static ReservationResult InsufficientStock(ProductVariantId variantId, int available, int requested)
+    public static ReservationResult InsufficientStock(VariantId variantId, int available, int requested)
         => new(false, variantId, error: $"موجودی کافی نیست. موجودی: {available}، درخواستی: {requested}",
             availableStock: available, requestedQuantity: requested);
 
-    public static ReservationResult Failed(ProductVariantId variantId, string error)
+    public static ReservationResult Failed(VariantId variantId, string error)
         => new(false, variantId, error: error);
 
     public int GetShortage() => RequestedQuantity.HasValue && AvailableStock.HasValue

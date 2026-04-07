@@ -13,7 +13,7 @@ public class CheckoutPriceValidatorService(IVariantRepository variantRepository)
         foreach (var item in items)
         {
             var variant = await variantRepository.GetByIdAsync(
-                ProductVariantId.From(item.VariantId), ct);
+                VariantId.From(item.VariantId), ct);
 
             if (variant is null) continue;
 

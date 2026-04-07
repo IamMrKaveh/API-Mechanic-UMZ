@@ -1,9 +1,9 @@
 ﻿using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.User.Events;
 
-public sealed record UserPasswordChangedEvent(UserId UserId) : IDomainEvent
+public sealed class UserPasswordChangedEvent(UserId userId) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserId UserId { get; } = userId;
 }

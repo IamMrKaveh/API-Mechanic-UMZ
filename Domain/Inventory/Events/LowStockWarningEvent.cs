@@ -4,13 +4,13 @@ using Domain.Variant.ValueObjects;
 namespace Domain.Inventory.Events;
 
 public class LowStockWarningEvent(
-    ProductVariantId variantId,
+    VariantId variantId,
     ProductId productId,
     ProductName productName,
     int currentStock,
     int threshold) : DomainEvent
 {
-    public ProductVariantId VariantId { get; } = variantId;
+    public VariantId VariantId { get; } = variantId;
     public ProductId ProductId { get; } = productId;
     public ProductName ProductName { get; } = productName;
     public int CurrentStock { get; } = currentStock;

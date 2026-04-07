@@ -6,11 +6,11 @@ namespace Domain.Inventory.Services.Results;
 public sealed class ConfirmationResult
 {
     public bool IsSuccess { get; }
-    public ProductVariantId VariantId { get; }
+    public VariantId VariantId { get; }
     public int ConfirmedQuantity { get; }
     public string? Error { get; }
 
-    private ConfirmationResult(bool isSuccess, ProductVariantId variantId, int confirmedQuantity = 0, string? error = null)
+    private ConfirmationResult(bool isSuccess, VariantId variantId, int confirmedQuantity = 0, string? error = null)
     {
         IsSuccess = isSuccess;
         VariantId = variantId;
@@ -18,10 +18,10 @@ public sealed class ConfirmationResult
         Error = error;
     }
 
-    public static ConfirmationResult Success(ProductVariantId variantId, int quantity)
+    public static ConfirmationResult Success(VariantId variantId, int quantity)
         => new(true, variantId, quantity);
 
-    public static ConfirmationResult Failed(ProductVariantId variantId, string error)
+    public static ConfirmationResult Failed(VariantId variantId, string error)
         => new(false, variantId, error: error);
 
     public Result<ConfirmationResult> ToResult() => IsSuccess

@@ -4,11 +4,12 @@ using Domain.Wishlist.ValueObjects;
 
 namespace Domain.Wishlist.Events;
 
-public sealed record WishlistItemRemovedEvent(
-    WishlistId WishlistId,
-    UserId UserId,
-    ProductId ProductId) : IDomainEvent
+public sealed class WishlistItemRemovedEvent(
+    WishlistId wishlistId,
+    UserId userId,
+    ProductId productId) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public WishlistId WishlistId { get; } = wishlistId;
+    public UserId UserId { get; } = userId;
+    public ProductId ProductId { get; } = productId;
 }

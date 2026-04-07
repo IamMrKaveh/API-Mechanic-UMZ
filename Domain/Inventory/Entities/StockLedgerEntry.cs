@@ -7,7 +7,7 @@ namespace Domain.Inventory.Entities;
 
 public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
 {
-    public ProductVariantId VariantId { get; private set; } = default!;
+    public VariantId VariantId { get; private set; } = default!;
     public WarehouseId? WarehouseId { get; private set; }
     public OrderItemId? OrderItemId { get; private set; }
     public UserId? UserId { get; private set; }
@@ -27,7 +27,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
     { }
 
     public static StockLedgerEntry StockIn(
-        ProductVariantId variantId,
+        VariantId variantId,
         int quantity,
         int balanceAfter,
         decimal unitCost,
@@ -42,7 +42,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
     }
 
     public static StockLedgerEntry Reserve(
-        ProductVariantId variantId,
+        VariantId variantId,
         int quantity,
         int balanceAfter,
         string referenceNumber,
@@ -60,7 +60,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
     }
 
     public static StockLedgerEntry ReleaseReservation(
-        ProductVariantId variantId,
+        VariantId variantId,
         int quantity,
         int balanceAfter,
         string referenceNumber,
@@ -73,7 +73,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
     }
 
     public static StockLedgerEntry CommitReservation(
-        ProductVariantId variantId,
+        VariantId variantId,
         int quantity,
         int balanceAfter,
         string referenceNumber,
@@ -88,7 +88,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
     }
 
     public static StockLedgerEntry Adjustment(
-        ProductVariantId variantId,
+        VariantId variantId,
         int delta,
         int balanceAfter,
         string reason,
@@ -100,7 +100,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
     }
 
     private static StockLedgerEntry Create(
-        ProductVariantId variantId,
+        VariantId variantId,
         StockEventType eventType,
         int quantityDelta,
         int balanceAfter,

@@ -1,13 +1,15 @@
 ﻿using Domain.User.ValueObjects;
 using Domain.Wallet.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.Wallet.Events;
 
-public sealed record WalletCreatedEvent(
-    WalletId WalletId,
-    UserId OwnerId,
-    string Currency) : IDomainEvent
+public sealed class WalletCreatedEvent(
+    WalletId walletId,
+    UserId ownerId,
+    string currency) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public WalletId WalletId { get; } = walletId;
+    public UserId OwnerId { get; } = ownerId;
+    public string Currency { get; } = currency;
 }

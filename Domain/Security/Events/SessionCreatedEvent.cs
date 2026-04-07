@@ -1,15 +1,19 @@
 ﻿using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.Security.Events;
 
-public sealed record SessionCreatedEvent(
-    UserSessionId SessionId,
-    UserId UserId,
-    DeviceInfo DeviceInfo,
-    IpAddress IpAddress,
-    DateTime ExpiresAt) : IDomainEvent
+public sealed class SessionCreatedEvent(
+    UserSessionId sessionId,
+    UserId userId,
+    DeviceInfo deviceInfo,
+    IpAddress ipAddress,
+    DateTime expiresAt) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserSessionId SessionId { get; } = sessionId;
+    public UserId UserId { get; } = userId;
+    public DeviceInfo DeviceInfo { get; } = deviceInfo;
+    public IpAddress IpAddress { get; } = ipAddress;
+    public DateTime ExpiresAt { get; } = expiresAt;
 }

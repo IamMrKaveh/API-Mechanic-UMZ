@@ -14,7 +14,7 @@ public class RecordDamageHandler(
     public async Task<ServiceResult> Handle(RecordDamageCommand request, CancellationToken ct)
     {
         var inventory = await inventoryRepository.GetByVariantIdAsync(
-            ProductVariantId.From(request.VariantId), ct);
+            VariantId.From(request.VariantId), ct);
 
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");

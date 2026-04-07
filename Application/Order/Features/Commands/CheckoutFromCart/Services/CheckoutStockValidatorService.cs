@@ -15,7 +15,7 @@ public class CheckoutStockValidatorService(IInventoryRepository inventoryReposit
         foreach (var item in items)
         {
             var inventory = await inventoryRepository.GetByVariantIdAsync(
-                ProductVariantId.From(item.VariantId), ct);
+                VariantId.From(item.VariantId), ct);
 
             if (inventory is null)
             {

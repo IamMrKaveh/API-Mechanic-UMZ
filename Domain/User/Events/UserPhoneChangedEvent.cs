@@ -1,13 +1,14 @@
-using Domain.Common.Abstractions;
 using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.User.Events;
 
-public sealed record UserPhoneChangedEvent(
-    UserId UserId,
-    PhoneNumber OldPhone,
-    PhoneNumber NewPhone) : IDomainEvent
+public sealed class UserPhoneChangedEvent(
+    UserId userId,
+    PhoneNumber oldPhone,
+    PhoneNumber newPhone) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserId UserId { get; } = userId;
+    public PhoneNumber OldPhone { get; } = oldPhone;
+    public PhoneNumber NewPhone { get; } = newPhone;
 }

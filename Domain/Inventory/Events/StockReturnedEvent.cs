@@ -3,9 +3,9 @@ using Domain.Variant.ValueObjects;
 
 namespace Domain.Inventory.Events;
 
-public sealed class StockReturnedEvent(ProductVariantId variantId, OrderId orderId, int quantity) : DomainEvent
+public sealed class StockReturnedEvent(VariantId variantId, OrderId orderId, int quantity) : DomainEvent
 {
-    public ProductVariantId VariantId { get; } = variantId;
+    public VariantId VariantId { get; } = variantId;
     public OrderId OrderId { get; } = orderId;
     public int Quantity { get; } = quantity;
 }

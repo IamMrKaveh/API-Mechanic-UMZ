@@ -1,11 +1,12 @@
 using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.Security.Events;
 
-public sealed record UserLoginFailedEvent(
-    UserId UserId,
-    int FailedAttempts) : IDomainEvent
+public sealed class UserLoginFailedEvent(
+    UserId userId,
+    int failedAttempts) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserId UserId { get; } = userId;
+    public int FailedAttempts { get; } = failedAttempts;
 }

@@ -5,7 +5,7 @@ using Domain.Variant.ValueObjects;
 namespace Application.Variant.Features.Commands.UpdateProductVariantShipping;
 
 public record UpdateProductVariantShippingCommand(
-    ProductVariantId VariantId,
+    VariantId VariantId,
     decimal ShippingMultiplier,
     List<int> EnabledShippingIds,
     UserId UserId) : IRequest<ServiceResult>;

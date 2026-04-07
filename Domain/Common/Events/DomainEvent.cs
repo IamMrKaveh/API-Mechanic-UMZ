@@ -27,4 +27,8 @@ public abstract class DomainEvent : IDomainEvent
         CausationId = causationId;
         return this;
     }
+
+    public void SetCorrelation(Guid correlationId) => CorrelationId = correlationId;
+
+    public void SetCausation(Guid causationId) => CausationId = causationId;
 }

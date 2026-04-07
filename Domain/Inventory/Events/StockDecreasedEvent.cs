@@ -6,13 +6,13 @@ namespace Domain.Inventory.Events;
 
 public sealed class StockDecreasedEvent(
     InventoryId InventoryId,
-    ProductVariantId VariantId,
+    VariantId VariantId,
     int QuantityRemoved,
     int NewStockQuantity,
     string Reason = "") : DomainEvent
 {
     public InventoryId InventoryId { get; } = InventoryId;
-    public ProductVariantId VariantId { get; } = VariantId;
+    public VariantId VariantId { get; } = VariantId;
     public int QuantityRemoved { get; } = QuantityRemoved;
     public int NewStockQuantity { get; } = NewStockQuantity;
     public string Reason { get; } = Reason;

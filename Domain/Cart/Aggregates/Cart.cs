@@ -47,7 +47,7 @@ public sealed class Cart : AggregateRoot<CartId>
     }
 
     public void AddItem(
-        ProductVariantId variantId,
+        VariantId variantId,
         ProductId productId,
         ProductName productName,
         Sku sku,
@@ -75,7 +75,7 @@ public sealed class Cart : AggregateRoot<CartId>
         RaiseDomainEvent(new CartItemAddedEvent(Id, variantId, productId, productName, quantity, unitPrice.Amount));
     }
 
-    public void RemoveItem(ProductVariantId variantId)
+    public void RemoveItem(VariantId variantId)
     {
         EnsureNotCheckedOut();
 
@@ -89,7 +89,7 @@ public sealed class Cart : AggregateRoot<CartId>
         RaiseDomainEvent(new CartItemRemovedEvent(Id, variantId, item.Quantity));
     }
 
-    public void UpdateItemQuantity(ProductVariantId variantId, int quantity)
+    public void UpdateItemQuantity(VariantId variantId, int quantity)
     {
         EnsureNotCheckedOut();
 
@@ -210,7 +210,7 @@ public sealed class Cart : AggregateRoot<CartId>
     }
 
     public void ValidateStockAvailability(
-        ProductVariantId variantId,
+        VariantId variantId,
         int requestedQuantity,
         int availableStock,
         bool isUnlimited)
@@ -222,7 +222,7 @@ public sealed class Cart : AggregateRoot<CartId>
             throw new InsufficientStockForCartException(variantId.Value, requestedQuantity, availableStock);
     }
 
-    public bool HasItem(ProductVariantId variantId) => _items.Any(i => i.VariantId == variantId);
+    public bool HasItem(VariantId variantId) => _items.Any(i => i.VariantId == variantId);
 
     public bool IsEmpty => _items.Count == 0;
 

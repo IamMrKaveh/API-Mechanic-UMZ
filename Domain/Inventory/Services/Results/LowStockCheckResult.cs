@@ -7,7 +7,7 @@ public sealed class LowStockCheckResult
     public bool IsLowStock { get; }
     public bool IsOutOfStock { get; }
     public bool IsNotApplicable { get; }
-    public ProductVariantId? VariantId { get; }
+    public VariantId? VariantId { get; }
     public int? CurrentStock { get; }
     public int? Threshold { get; }
 
@@ -15,7 +15,7 @@ public sealed class LowStockCheckResult
         bool isLowStock = false,
         bool isOutOfStock = false,
         bool isNotApplicable = false,
-        ProductVariantId? variantId = null,
+        VariantId? variantId = null,
         int? currentStock = null,
         int? threshold = null)
     {
@@ -31,9 +31,9 @@ public sealed class LowStockCheckResult
 
     public static LowStockCheckResult Healthy(int currentStock) => new(currentStock: currentStock);
 
-    public static LowStockCheckResult OutOfStock(ProductVariantId variantId, int stock)
+    public static LowStockCheckResult OutOfStock(VariantId variantId, int stock)
         => new(isOutOfStock: true, variantId: variantId, currentStock: stock);
 
-    public static LowStockCheckResult LowStock(ProductVariantId variantId, int stock, int threshold)
+    public static LowStockCheckResult LowStock(VariantId variantId, int stock, int threshold)
         => new(isLowStock: true, variantId: variantId, currentStock: stock, threshold: threshold);
 }

@@ -1,13 +1,15 @@
 ﻿using Domain.Security.Enums;
 using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.Security.Events;
 
-public sealed record AllSessionsRevokedEvent(
-    UserId UserId,
-    SessionRevocationReason Reason,
-    int RevokedCount) : IDomainEvent
+public sealed class AllSessionsRevokedEvent(
+    UserId userId,
+    SessionRevocationReason reason,
+    int revokedCount) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserId UserId { get; } = userId;
+    public SessionRevocationReason Reason { get; } = reason;
+    public int RevokedCount { get; } = revokedCount;
 }

@@ -15,7 +15,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     private Inventory()
     { }
 
-    public ProductVariantId VariantId { get; private set; } = default!;
+    public VariantId VariantId { get; private set; } = default!;
     public int StockQuantity { get; private set; }
     public bool IsUnlimited { get; private set; }
     public int ReservedQuantity { get; private set; }
@@ -36,7 +36,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
 
     public static Inventory Create(
         InventoryId id,
-        ProductVariantId variantId,
+        VariantId variantId,
         int initialStock = 0,
         int lowStockThreshold = 5)
     {

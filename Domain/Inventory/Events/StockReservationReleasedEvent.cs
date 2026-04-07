@@ -6,12 +6,12 @@ namespace Domain.Inventory.Events;
 
 public sealed class StockReservationReleasedEvent(
     InventoryId InventoryId,
-    ProductVariantId VariantId,
+    VariantId VariantId,
     int QuantityReleased,
     int TotalReservedQuantity) : DomainEvent
 {
     public InventoryId InventoryId { get; } = InventoryId;
-    public ProductVariantId VariantId { get; } = VariantId;
+    public VariantId VariantId { get; } = VariantId;
     public int QuantityReleased { get; } = QuantityReleased;
     public int TotalReservedQuantity { get; } = TotalReservedQuantity;
 }

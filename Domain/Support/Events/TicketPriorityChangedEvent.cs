@@ -1,14 +1,17 @@
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.Support.Events;
 
-public sealed record TicketPriorityChangedEvent(
-    TicketId TicketId,
-    UserId CustomerId,
-    TicketPriority PreviousPriority,
-    TicketPriority NewPriority) : IDomainEvent
+public sealed class TicketPriorityChangedEvent(
+    TicketId ticketId,
+    UserId customerId,
+    TicketPriority previousPriority,
+    TicketPriority newPriority) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public TicketId TicketId { get; } = ticketId;
+    public UserId CustomerId { get; } = customerId;
+    public TicketPriority PreviousPriority { get; } = previousPriority;
+    public TicketPriority NewPriority { get; } = newPriority;
 }

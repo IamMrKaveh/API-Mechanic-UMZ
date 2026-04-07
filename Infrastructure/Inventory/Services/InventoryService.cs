@@ -382,7 +382,7 @@ public class InventoryService(
         }
     }
 
-    public async Task<ServiceResult<(ProductVariantId VariantId, int FinalStock, int Difference, bool HasDiscrepancy, string Message)>> ReconcileStockAsync(
+    public async Task<ServiceResult<(VariantId VariantId, int FinalStock, int Difference, bool HasDiscrepancy, string Message)>> ReconcileStockAsync(
         int variantId,
         int userId,
         CancellationToken ct = default)
@@ -394,13 +394,13 @@ public class InventoryService(
                 var result = _domainService.Reconcile(variant, calculatedStock, userId);
 
                 if (result.IsFailure)
-                    return ServiceResult<(ProductVariantId, int, int, bool, string)>
+                    return ServiceResult<(VariantId, int, int, bool, string)>
                     .Validation(result.Message!);
 
                 if (result.Transaction is not null)
                     await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
 
-                return ServiceResult<(ProductVariantId, int, int, bool, string)>
+                return ServiceResult<(VariantId, int, int, bool, string)>
                 .Success((
                     result.VariantId,
                     result.FinalStock,

@@ -1,11 +1,12 @@
 ﻿using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.User.Events;
 
-public sealed record UserAddressUpdatedEvent(
-    UserId UserId,
-    UserAddressId AddressId) : IDomainEvent
+public sealed class UserAddressUpdatedEvent(
+    UserId userId,
+    UserAddressId addressId) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserId UserId { get; } = userId;
+    public UserAddressId AddressId { get; } = addressId;
 }

@@ -1,13 +1,17 @@
 ﻿using Domain.User.ValueObjects;
+using Domain.Common.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.User.Events;
 
-public sealed record UserRegisteredEvent(
-    UserId UserId,
-    Email Email,
-    string FirstName,
-    string LastName) : IDomainEvent
+public sealed class UserRegisteredEvent(
+    UserId userId,
+    Email email,
+    string firstName,
+    string lastName) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserId UserId { get; } = userId;
+    public Email Email { get; } = email;
+    public string FirstName { get; } = firstName;
+    public string LastName { get; } = lastName;
 }

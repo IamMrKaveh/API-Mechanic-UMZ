@@ -5,7 +5,7 @@ namespace Domain.Order.ValueObjects;
 
 public sealed record OrderItemSnapshot
 {
-    public ProductVariantId VariantId { get; init; }
+    public VariantId VariantId { get; init; }
     public ProductId ProductId { get; init; }
     public ProductName ProductName { get; init; } = null!;
     public Sku Sku { get; init; } = null!;
@@ -15,7 +15,7 @@ public sealed record OrderItemSnapshot
     private OrderItemSnapshot() { }
 
     public static OrderItemSnapshot Create(
-        ProductVariantId variantId,
+        VariantId variantId,
         ProductId productId,
         ProductName productName,
         Sku sku,

@@ -1,12 +1,12 @@
-using Domain.Common.Abstractions;
 using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.User.Events;
 
-public sealed record UserDeletedEvent(
-    UserId UserId,
-    UserId? DeletedBy) : IDomainEvent
+public sealed class UserDeletedEvent(
+    UserId userId,
+    UserId? deletedBy) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserId UserId { get; } = userId;
+    public UserId? DeletedBy { get; } = deletedBy;
 }

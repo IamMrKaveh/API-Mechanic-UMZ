@@ -1,12 +1,13 @@
 ﻿using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.Security.Events;
 
-public sealed record SessionExpiredEvent(
-    UserSessionId SessionId,
-    UserId UserId) : IDomainEvent
+public sealed class SessionExpiredEvent(
+    UserSessionId sessionId,
+    UserId userId) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserSessionId SessionId { get; } = sessionId;
+    public UserId UserId { get; } = userId;
 }

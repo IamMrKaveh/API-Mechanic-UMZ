@@ -7,7 +7,7 @@ namespace Domain.Order.Entities;
 public sealed class OrderItem : Entity<OrderItemId>
 {
     public OrderId OrderId { get; private init; } = default!;
-    public ProductVariantId VariantId { get; private init; } = default!;
+    public VariantId VariantId { get; private init; } = default!;
     public ProductId ProductId { get; private init; } = default!;
     public string ProductName { get; private init; } = null!;
     public string Sku { get; private init; } = null!;
@@ -20,7 +20,7 @@ public sealed class OrderItem : Entity<OrderItemId>
     private OrderItem(
         OrderItemId id,
         OrderId orderId,
-        ProductVariantId variantId,
+        VariantId variantId,
         ProductId productId,
         string productName,
         string sku,
