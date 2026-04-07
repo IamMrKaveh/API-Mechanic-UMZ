@@ -6,12 +6,12 @@ namespace Domain.Inventory.Services.Results;
 public sealed class AdjustmentResult
 {
     public bool IsSuccess { get; }
-    public ProductVariantId VariantId { get; }
+    public VariantId VariantId { get; }
     public int NewStock { get; }
     public string? Error { get; }
     public string? Message { get; }
 
-    private AdjustmentResult(bool isSuccess, ProductVariantId variantId, int newStock = 0, string? error = null, string? message = null)
+    private AdjustmentResult(bool isSuccess, VariantId variantId, int newStock = 0, string? error = null, string? message = null)
     {
         IsSuccess = isSuccess;
         VariantId = variantId;
@@ -20,13 +20,13 @@ public sealed class AdjustmentResult
         Message = message;
     }
 
-    public static AdjustmentResult Success(ProductVariantId variantId, int newStock)
+    public static AdjustmentResult Success(VariantId variantId, int newStock)
         => new(true, variantId, newStock);
 
-    public static AdjustmentResult Failed(ProductVariantId variantId, string error)
+    public static AdjustmentResult Failed(VariantId variantId, string error)
         => new(false, variantId, error: error);
 
-    public static AdjustmentResult NotApplicable(ProductVariantId variantId, string message)
+    public static AdjustmentResult NotApplicable(VariantId variantId, string message)
         => new(true, variantId, message: message);
 
     public Result<AdjustmentResult> ToResult() => IsSuccess

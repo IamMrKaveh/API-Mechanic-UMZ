@@ -6,7 +6,7 @@ namespace Application.Product.Features.Commands.ChangePrice;
 
 public record ChangePriceCommand(
     ProductId ProductId,
-    ProductVariantId VariantId,
+    VariantId VariantId,
     decimal PurchasePrice,
     decimal SellingPrice,
     decimal OriginalPrice) : IRequest<ServiceResult>;

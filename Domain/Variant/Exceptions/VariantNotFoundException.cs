@@ -5,16 +5,16 @@ namespace Domain.Variant.Exceptions;
 
 public sealed class VariantNotFoundException : DomainException
 {
-    public ProductVariantId? VariantId { get; }
+    public VariantId? VariantId { get; }
     public ProductId? ProductId { get; }
 
-    public VariantNotFoundException(ProductVariantId variantId)
+    public VariantNotFoundException(VariantId variantId)
         : base($"واریانت با شناسه {variantId} یافت نشد.")
     {
         VariantId = variantId;
     }
 
-    public VariantNotFoundException(ProductVariantId variantId, ProductId productId)
+    public VariantNotFoundException(VariantId variantId, ProductId productId)
         : base($"واریانت با شناسه {variantId} برای محصول {productId} یافت نشد.")
     {
         VariantId = variantId;

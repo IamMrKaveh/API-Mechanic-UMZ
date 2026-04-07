@@ -1,13 +1,13 @@
-﻿using Domain.Common.Abstractions;
-using Domain.Shipping.ValueObjects;
+﻿using Domain.Shipping.ValueObjects;
 using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.Shipping.Events;
 
-public sealed record ShippingDeletedEvent(
-    ShippingId ShippingId,
-    UserId? DeletedBy) : IDomainEvent
+public sealed class ShippingDeletedEvent(
+    ShippingId shippingId,
+    UserId? deletedBy) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public ShippingId ShippingId { get; } = shippingId;
+    public UserId? DeletedBy { get; } = deletedBy;
 }

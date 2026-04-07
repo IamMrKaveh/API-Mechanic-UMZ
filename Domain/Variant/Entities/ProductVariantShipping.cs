@@ -3,12 +3,12 @@ using Domain.Variant.ValueObjects;
 
 namespace Domain.Variant.Entities;
 
-public sealed class ProductVariantShipping : Entity<ProductVariantShippingId>
+public sealed class ProductVariantShipping : Entity<VariantShippingId>
 {
     private ProductVariantShipping()
     { }
 
-    public ProductVariantId VariantId { get; private set; } = default!;
+    public VariantId VariantId { get; private set; } = default!;
     public ShippingId ShippingId { get; private set; } = default!;
     public decimal Weight { get; private set; }
     public decimal Width { get; private set; }
@@ -16,7 +16,7 @@ public sealed class ProductVariantShipping : Entity<ProductVariantShippingId>
     public decimal Length { get; private set; }
 
     internal static ProductVariantShipping Create(
-        ProductVariantId variantId,
+        VariantId variantId,
         ShippingId shippingId,
         decimal weight,
         decimal width,
@@ -34,7 +34,7 @@ public sealed class ProductVariantShipping : Entity<ProductVariantShippingId>
 
         return new ProductVariantShipping
         {
-            Id = ProductVariantShippingId.NewId(),
+            Id = VariantShippingId.NewId(),
             VariantId = variantId,
             ShippingId = shippingId,
             Weight = weight,

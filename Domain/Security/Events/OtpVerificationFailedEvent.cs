@@ -1,16 +1,20 @@
 ﻿using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.Security.Events;
 
-public sealed record OtpVerificationFailedEvent(
-    UserOtpId OtpId,
-    UserId UserId,
-    OtpPurpose Purpose,
-    int AttemptNumber,
-    int RemainingAttempts) : IDomainEvent
+public sealed class OtpVerificationFailedEvent(
+    UserOtpId otpId,
+    UserId userId,
+    OtpPurpose purpose,
+    int attemptNumber,
+    int remainingAttempts) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserOtpId OtpId { get; } = otpId;
+    public UserId UserId { get; } = userId;
+    public OtpPurpose Purpose { get; } = purpose;
+    public int AttemptNumber { get; } = attemptNumber;
+    public int RemainingAttempts { get; } = remainingAttempts;
 }

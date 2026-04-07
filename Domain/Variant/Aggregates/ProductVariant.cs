@@ -8,7 +8,7 @@ using Domain.Variant.ValueObjects;
 
 namespace Domain.Variant.Aggregates;
 
-public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDeletable
+public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
 {
     private readonly List<ProductVariantAttribute> _attributes = [];
     private readonly List<ProductVariantShipping> _shippingMethods = [];
@@ -32,7 +32,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
     public IReadOnlyList<ProductVariantShipping> ShippingMethods => _shippingMethods.AsReadOnly();
 
     public static ProductVariant Create(
-        ProductVariantId id,
+        VariantId id,
         ProductId productId,
         Sku sku,
         Money price,
@@ -60,7 +60,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
             CreatedAt = DateTime.UtcNow
         };
 
-        variant.RaiseDomainEvent(new ProductVariantCreatedEvent(id, productId, sku, price));
+        variant.RaiseDomainEvent(new VariantCreatedEvent(id, productId, sku, price));
         return variant;
     }
 
@@ -100,7 +100,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
                 Id, assignment.AttributeId, assignment.ValueId, assignment.DisplayValue));
         }
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new ProductVariantAttributeSetEvent(Id, ProductId));
+        RaiseDomainEvent(new VariantAttributeSetEvent(Id, ProductId));
     }
 
     public void SetShippingMethods(IEnumerable<ShippingAssignment> assignments)
@@ -115,7 +115,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
                 assignment.Height, assignment.Length));
         }
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new ProductVariantShippingSetEvent(Id, ProductId));
+        RaiseDomainEvent(new VariantShippingSetEvent(Id, ProductId));
     }
 
     public void Activate()
@@ -123,7 +123,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
         if (IsActive) return;
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new ProductVariantActivatedEvent(Id, ProductId));
+        RaiseDomainEvent(new VariantActivatedEvent(Id, ProductId));
     }
 
     public void Deactivate()
@@ -131,7 +131,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
         if (!IsActive) return;
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new ProductVariantDeactivatedEvent(Id, ProductId));
+        RaiseDomainEvent(new VariantDeactivatedEvent(Id, ProductId));
     }
 
     public void Remove(Guid? deletedBy = null)
@@ -141,7 +141,7 @@ public sealed class ProductVariant : AggregateRoot<ProductVariantId>, ISoftDelet
         DeletedAt = DateTime.UtcNow;
         DeletedBy = deletedBy;
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new ProductVariantRemovedEvent(ProductId, Id));
+        RaiseDomainEvent(new VariantRemovedEvent(ProductId, Id));
     }
 
     public bool IsDiscounted =>

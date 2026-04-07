@@ -1,9 +1,11 @@
 ﻿using Domain.User.ValueObjects;
+using Domain.Common.Events;
+using Domain.Common.ValueObjects;
 
 namespace Domain.User.Events;
 
-public sealed record UserEmailVerifiedEvent(UserId UserId, Email Email) : IDomainEvent
+public sealed class UserEmailVerifiedEvent(UserId userId, Email email) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserId UserId { get; } = userId;
+    public Email Email { get; } = email;
 }

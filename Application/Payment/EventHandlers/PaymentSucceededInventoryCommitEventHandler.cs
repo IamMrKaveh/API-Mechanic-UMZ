@@ -24,7 +24,7 @@ public class PaymentSucceededInventoryCommitEventHandler(
             foreach (var item in order.Items)
             {
                 var inventory = await inventoryRepository.GetByVariantIdAsync(
-                    ProductVariantId.From(item.VariantId), ct);
+                    VariantId.From(item.VariantId), ct);
 
                 if (inventory is null) continue;
 

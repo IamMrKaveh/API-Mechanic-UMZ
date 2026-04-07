@@ -1,13 +1,14 @@
-using Domain.Common.Abstractions;
 using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.Security.Events;
 
-public sealed record UserLockedOutEvent(
-    UserId UserId,
-    DateTime LockoutEnd,
-    int FailedAttempts) : IDomainEvent
+public sealed class UserLockedOutEvent(
+    UserId userId,
+    DateTime lockoutEnd,
+    int failedAttempts) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public UserId UserId { get; } = userId;
+    public DateTime LockoutEnd { get; } = lockoutEnd;
+    public int FailedAttempts { get; } = failedAttempts;
 }

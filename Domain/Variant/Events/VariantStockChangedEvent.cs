@@ -4,11 +4,11 @@ using Domain.Variant.ValueObjects;
 namespace Domain.Variant.Events;
 
 public sealed class VariantStockChangedEvent(
-    ProductVariantId variantId,
+    VariantId variantId,
     ProductId productId,
     int quantityChanged) : DomainEvent
 {
-    public ProductVariantId VariantId { get; } = variantId;
+    public VariantId VariantId { get; } = variantId;
     public ProductId ProductId { get; } = productId;
     public int QuantityChanged { get; } = quantityChanged;
 }

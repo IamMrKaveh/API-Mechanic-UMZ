@@ -1,17 +1,22 @@
 using Domain.Support.Enums;
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.Support.Events;
 
-public sealed record TicketMessageAddedEvent(
-    TicketId TicketId,
-    TicketMessageId MessageId,
-    UserId CustomerId,
-    UserId SenderId,
-    TicketMessageSenderType SenderType,
-    int NewMessageCount) : IDomainEvent
+public sealed class TicketMessageAddedEvent(
+    TicketId ticketId,
+    TicketMessageId messageId,
+    UserId customerId,
+    UserId senderId,
+    TicketMessageSenderType senderType,
+    int newMessageCount) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public TicketId TicketId { get; } = ticketId;
+    public TicketMessageId MessageId { get; } = messageId;
+    public UserId CustomerId { get; } = customerId;
+    public UserId SenderId { get; } = senderId;
+    public TicketMessageSenderType SenderType { get; } = senderType;
+    public int NewMessageCount { get; } = newMessageCount;
 }

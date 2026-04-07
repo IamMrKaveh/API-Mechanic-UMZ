@@ -6,11 +6,11 @@ namespace Domain.Variant.Rules;
 public sealed class VariantSkuMustBeUniqueRule(
     Sku sku,
     IEnumerable<ProductVariant> existingVariants,
-    ProductVariantId? excludeVariantId = null) : IBusinessRule
+    VariantId? excludeVariantId = null) : IBusinessRule
 {
     private readonly Sku _sku = sku;
     private readonly IEnumerable<ProductVariant> _existingVariants = existingVariants;
-    private readonly ProductVariantId? _excludeVariantId = excludeVariantId;
+    private readonly VariantId? _excludeVariantId = excludeVariantId;
 
     public bool IsBroken()
     {

@@ -1,11 +1,12 @@
 using Domain.Support.ValueObjects;
+using Domain.Common.Events;
 
 namespace Domain.Support.Events;
 
-public sealed record TicketSubjectUpdatedEvent(
-    TicketId TicketId,
-    string NewSubject) : IDomainEvent
+public sealed class TicketSubjectUpdatedEvent(
+    TicketId ticketId,
+    string newSubject) : DomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public TicketId TicketId { get; } = ticketId;
+    public string NewSubject { get; } = newSubject;
 }

@@ -6,8 +6,8 @@ namespace Domain.Inventory.Events;
 
 public sealed class StockSetUnlimitedEvent(
     InventoryId InventoryId,
-    ProductVariantId VariantId) : DomainEvent
+    VariantId VariantId) : DomainEvent
 {
     public InventoryId InventoryId { get; } = InventoryId;
-    public ProductVariantId VariantId { get; } = VariantId;
+    public VariantId VariantId { get; } = VariantId;
 }

@@ -8,7 +8,7 @@ namespace Domain.Cart.Entities;
 public sealed class CartItem : Entity<CartItemId>
 {
     public CartId CartId { get; private init; } = default!;
-    public ProductVariantId VariantId { get; private init; } = default!;
+    public VariantId VariantId { get; private init; } = default!;
     public ProductId ProductId { get; private init; } = default!;
     public ProductName ProductName { get; private init; } = null!;
     public Sku Sku { get; private init; } = null!;
@@ -23,7 +23,7 @@ public sealed class CartItem : Entity<CartItemId>
     private CartItem(
         CartItemId id,
         CartId cartId,
-        ProductVariantId variantId,
+        VariantId variantId,
         ProductId productId,
         ProductName productName,
         Sku sku,
@@ -44,7 +44,7 @@ public sealed class CartItem : Entity<CartItemId>
 
     internal static CartItem Create(
         CartId cartId,
-        ProductVariantId variantId,
+        VariantId variantId,
         ProductId productId,
         ProductName productName,
         Sku sku,
