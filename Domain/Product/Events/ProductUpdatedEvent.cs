@@ -4,12 +4,12 @@ namespace Domain.Product.Events;
 
 public sealed class ProductUpdatedEvent(
     ProductId ProductId,
-    string Name,
-    string Slug,
+    ProductName productName,
+    Slug Slug,
     string Description) : DomainEvent
 {
     public ProductId ProductId { get; } = ProductId;
-    public string Name { get; } = Name;
-    public string Slug { get; } = Slug;
+    public ProductName ProductName { get; } = productName;
+    public Slug Slug { get; } = Slug;
     public string Description { get; } = Description;
 }

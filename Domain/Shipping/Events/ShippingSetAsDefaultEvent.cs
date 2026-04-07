@@ -2,14 +2,8 @@
 
 namespace Domain.Shipping.Events;
 
-public sealed class ShippingSetAsDefaultEvent : DomainEvent
+public sealed class ShippingSetAsDefaultEvent(ShippingId shippingId, ShippingName name) : DomainEvent
 {
-    public ShippingId ShippingId { get; }
-    public string Name { get; }
-
-    public ShippingSetAsDefaultEvent(ShippingId shippingId, string name)
-    {
-        ShippingId = shippingId;
-        Name = name;
-    }
+    public ShippingId ShippingId { get; } = shippingId;
+    public ShippingName Name { get; } = name;
 }

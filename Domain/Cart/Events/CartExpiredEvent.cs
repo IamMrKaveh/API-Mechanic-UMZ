@@ -1,7 +1,9 @@
+using Domain.Cart.ValueObjects;
+
 namespace Domain.Cart.Events;
 
-public class CartExpiredEvent(int cartId, string? guestToken) : DomainEvent
+public class CartExpiredEvent(CartId cartId, GuestToken? guestToken) : DomainEvent
 {
-    public int CartId { get; } = cartId;
-    public string? GuestToken { get; } = guestToken;
+    public CartId CartId { get; } = cartId;
+    public GuestToken? GuestToken { get; } = guestToken;
 }

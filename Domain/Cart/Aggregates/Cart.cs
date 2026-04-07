@@ -31,7 +31,7 @@ public sealed class Cart : AggregateRoot<CartId>
         IsCheckedOut = false;
         CreatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new CartCreatedEvent(id.Value, userId?.Value, guestToken?.Value));
+        RaiseDomainEvent(new CartCreatedEvent(id, userId, guestToken));
     }
 
     public static Cart CreateForUser(UserId userId)
@@ -70,7 +70,9 @@ public sealed class Cart : AggregateRoot<CartId>
         }
 
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new CartItemAddedEvent(Id.Value, variantId.Value, productId.Value, productName.Value, quantity, unitPrice.Amount));
+        IncrementVersion();
+
+        RaiseDomainEvent(new CartItemAddedEvent(Id, variantId, productId, productName, quantity, unitPrice.Amount));
     }
 
     public void RemoveItem(ProductVariantId variantId)
@@ -82,8 +84,9 @@ public sealed class Cart : AggregateRoot<CartId>
 
         _items.Remove(item);
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
-        RaiseDomainEvent(new CartItemRemovedEvent(Id.Value, variantId.Value, item.Quantity));
+        RaiseDomainEvent(new CartItemRemovedEvent(Id, variantId, item.Quantity));
     }
 
     public void UpdateItemQuantity(ProductVariantId variantId, int quantity)
@@ -95,6 +98,7 @@ public sealed class Cart : AggregateRoot<CartId>
 
         item.UpdateQuantity(quantity);
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
     }
 
     public void Clear()
@@ -102,6 +106,7 @@ public sealed class Cart : AggregateRoot<CartId>
         EnsureNotCheckedOut();
         _items.Clear();
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
     }
 
     public void Checkout()
@@ -109,13 +114,14 @@ public sealed class Cart : AggregateRoot<CartId>
         EnsureNotCheckedOut();
 
         if (_items.Count == 0)
-            throw new InvalidOperationException("Cannot checkout an empty cart.");
+            throw new InvalidOperationException(string.Empty);
 
         IsCheckedOut = true;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
         var total = _items.Sum(i => i.TotalPrice.Amount);
-        RaiseDomainEvent(new CartCheckedOutEvent(Id.Value, UserId?.Value, _items.Count, total));
+        RaiseDomainEvent(new CartCheckedOutEvent(Id, UserId, _items.Count, total));
     }
 
     public void AssignToUser(UserId userId)
@@ -124,6 +130,7 @@ public sealed class Cart : AggregateRoot<CartId>
         UserId = userId;
         GuestToken = null;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
     }
 
     public void MergeFrom(Cart sourceCart, CartMergeStrategy strategy = CartMergeStrategy.SumQuantities)
@@ -131,7 +138,7 @@ public sealed class Cart : AggregateRoot<CartId>
         EnsureNotCheckedOut();
 
         if (UserId is null)
-            throw new InvalidOperationException("Target cart must belong to an authenticated user.");
+            throw new InvalidOperationException(string.Empty);
 
         ArgumentNullException.ThrowIfNull(sourceCart);
 
@@ -197,7 +204,9 @@ public sealed class Cart : AggregateRoot<CartId>
         }
 
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new CartMergedEvent(Id.Value, sourceCart.Id.Value, UserId!.Value, sourceCart.Items.Count));
+        IncrementVersion();
+
+        RaiseDomainEvent(new CartMergedEvent(Id, sourceCart.Id, UserId!, sourceCart.Items.Count));
     }
 
     public void ValidateStockAvailability(

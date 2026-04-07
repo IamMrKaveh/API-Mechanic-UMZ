@@ -1,9 +1,12 @@
+using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Domain.Product.Events;
 
-public sealed class PriceChangedEvent(int variantId, int productId, decimal oldPrice, decimal newPrice, decimal? oldOriginalPrice, decimal? newOriginalPrice) : DomainEvent
+public sealed class PriceChangedEvent(ProductVariantId variantId, ProductId productId, decimal oldPrice, decimal newPrice, decimal? oldOriginalPrice, decimal? newOriginalPrice) : DomainEvent
 {
-    public int VariantId { get; } = variantId;
-    public int ProductId { get; } = productId;
+    public ProductVariantId VariantId { get; } = variantId;
+    public ProductId ProductId { get; } = productId;
     public decimal OldPrice { get; } = oldPrice;
     public decimal NewPrice { get; } = newPrice;
     public decimal? OldOriginalPrice { get; } = oldOriginalPrice;

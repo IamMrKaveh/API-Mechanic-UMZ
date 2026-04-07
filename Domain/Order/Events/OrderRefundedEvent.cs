@@ -1,8 +1,11 @@
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Domain.Order.Events;
 
-public sealed class OrderRefundedEvent(int orderId, int userId, decimal amount) : DomainEvent
+public sealed class OrderRefundedEvent(OrderId orderId, UserId userId, decimal amount) : DomainEvent
 {
-    public int OrderId { get; } = orderId;
-    public int UserId { get; } = userId;
+    public OrderId OrderId { get; } = orderId;
+    public UserId UserId { get; } = userId;
     public decimal Amount { get; } = amount;
 }

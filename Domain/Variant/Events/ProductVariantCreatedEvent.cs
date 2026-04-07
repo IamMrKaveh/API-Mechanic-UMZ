@@ -6,7 +6,7 @@ namespace Domain.Variant.Events;
 public sealed record ProductVariantCreatedEvent(
     ProductVariantId VariantId,
     ProductId ProductId,
-    string Sku,
+    Sku Sku,
     Money Price) : IDomainEvent
 {
     public Guid EventId { get; } = Guid.NewGuid();

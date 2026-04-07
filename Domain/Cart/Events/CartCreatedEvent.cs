@@ -1,18 +1,11 @@
-﻿using Domain.Common.Events;
+﻿using Domain.Cart.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Cart.Events;
 
-public sealed class CartCreatedEvent : DomainEvent
+public sealed class CartCreatedEvent(CartId cartId, UserId? userId, GuestToken? guestToken) : DomainEvent
 {
-    public Guid CartId { get; }
-    public Guid? UserId { get; }
-    public string? GuestToken { get; }
-
-    public CartCreatedEvent(Guid cartId, Guid? userId, string? guestToken)
-    {
-        CartId = cartId;
-        UserId = userId;
-        GuestToken = guestToken;
-        EventVersion = 1;
-    }
+    public CartId CartId { get; } = cartId;
+    public UserId? UserId { get; } = userId;
+    public GuestToken? GuestToken { get; } = guestToken;
 }

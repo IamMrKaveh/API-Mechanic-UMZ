@@ -2,12 +2,7 @@ using Domain.Category.ValueObjects;
 
 namespace Domain.Category.Events;
 
-public sealed class CategoriesReorderedEvent : DomainEvent
+public sealed class CategoriesReorderedEvent(IReadOnlyList<CategoryId> categoryIds) : DomainEvent
 {
-    public IReadOnlyList<CategoryId> CategoryIds { get; }
-
-    public CategoriesReorderedEvent(IReadOnlyList<CategoryId> categoryIds)
-    {
-        CategoryIds = categoryIds;
-    }
+    public IReadOnlyList<CategoryId> CategoryIds { get; } = categoryIds;
 }

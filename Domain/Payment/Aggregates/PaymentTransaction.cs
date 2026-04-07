@@ -115,7 +115,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
             Id,
             OrderId,
             refId,
-            userId: 0,
+            userId: UserId.NewId(),
             Amount.Amount));
     }
 

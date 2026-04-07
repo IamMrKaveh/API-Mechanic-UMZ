@@ -1,4 +1,6 @@
 using Domain.Category.Events;
+using Domain.Category.Exceptions;
+using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
 
 namespace Domain.Category.Aggregates;
@@ -23,10 +25,19 @@ public sealed class Category : AggregateRoot<CategoryId>
         CategoryId id,
         string name,
         Slug slug,
+        ICategoryUniquenessChecker uniquenessChecker,
         string? description = null,
         CategoryId? parentCategoryId = null,
         int sortOrder = 0)
     {
+        ArgumentNullException.ThrowIfNull(uniquenessChecker);
+
+        if (!uniquenessChecker.IsUnique(name, slug.Value))
+            throw new DuplicateCategoryNameException(name);
+
+        if (parentCategoryId != null && parentCategoryId == id)
+            throw new InvalidOperationException(string.Empty);
+
         var category = new Category
         {
             Id = id,
@@ -40,25 +51,45 @@ public sealed class Category : AggregateRoot<CategoryId>
             UpdatedAt = DateTime.UtcNow
         };
 
-        category.RaiseDomainEvent(new CategoryCreatedEvent(id, name, slug.Value, parentCategoryId));
+        category.RaiseDomainEvent(new CategoryCreatedEvent(id, name, slug, parentCategoryId));
         return category;
     }
 
-    public void UpdateDetails(string name, Slug slug, string? description, int sortOrder)
+    public void UpdateDetails(
+        string name,
+        Slug slug,
+        ICategoryUniquenessChecker uniquenessChecker,
+        string? description,
+        int sortOrder)
     {
+        ArgumentNullException.ThrowIfNull(uniquenessChecker);
+
+        if (!uniquenessChecker.IsUnique(name, slug.Value, Id))
+            throw new DuplicateCategoryNameException(name);
+
         Name = name;
         Slug = slug;
         Description = description;
         SortOrder = sortOrder;
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new CategoryUpdatedEvent(Id, name, slug.Value, description));
+        IncrementVersion();
+
+        RaiseDomainEvent(new CategoryUpdatedEvent(Id, name, slug, description));
     }
 
     public void MoveToParent(CategoryId? newParentCategoryId)
     {
+        if (newParentCategoryId == Id)
+            throw new InvalidOperationException(string.Empty);
+
+        if (ParentCategoryId == newParentCategoryId)
+            return;
+
         var previousParent = ParentCategoryId;
         ParentCategoryId = newParentCategoryId;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
+
         RaiseDomainEvent(new CategoryParentChangedEvent(Id, previousParent, newParentCategoryId));
     }
 
@@ -69,6 +100,8 @@ public sealed class Category : AggregateRoot<CategoryId>
 
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
+
         RaiseDomainEvent(new CategoryActivatedEvent(Id));
     }
 
@@ -79,6 +112,8 @@ public sealed class Category : AggregateRoot<CategoryId>
 
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
+
         RaiseDomainEvent(new CategoryDeactivatedEvent(Id));
     }
 }

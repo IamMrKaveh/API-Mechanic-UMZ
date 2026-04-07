@@ -205,7 +205,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             VariantId, quantity, StockQuantity, referenceNumber, orderItemId);
 
         _ledgerEntries.Add(entry);
-        RaiseDomainEvent(new StockCommittedEvent(Id, VariantId, 0, quantity));
+        RaiseDomainEvent(new StockCommittedEvent(Id, VariantId, OrderItemId.NewId(), quantity));
     }
 
     public void ReverseStockChange(

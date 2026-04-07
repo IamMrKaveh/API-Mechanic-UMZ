@@ -4,6 +4,7 @@ using Domain.Discount.Events;
 using Domain.Discount.Exceptions;
 using Domain.Discount.Results;
 using Domain.Discount.ValueObjects;
+using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Domain.Discount.Aggregates;
@@ -113,7 +114,7 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
         return discountAmount;
     }
 
-    public DiscountUsageRecord RecordUsage(UserId userId, string orderId, Money discountedAmount)
+    public DiscountUsageRecord RecordUsage(UserId userId, OrderId orderId, Money discountedAmount)
     {
         if (!IsRedeemable)
             throw new DiscountCodeNotRedeemableException(Id, Code);

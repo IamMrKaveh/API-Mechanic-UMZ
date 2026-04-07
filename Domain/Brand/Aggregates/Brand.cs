@@ -1,5 +1,6 @@
 using Domain.Brand.Events;
 using Domain.Brand.Exceptions;
+using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 
@@ -35,29 +36,46 @@ public sealed class Brand : AggregateRoot<BrandId>
         IsActive = true;
         CreatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new BrandCreatedEvent(id.Value, name.Value, slug.Value, categoryId.Value));
+        RaiseDomainEvent(new BrandCreatedEvent(id, name, slug, categoryId));
     }
 
     public static Brand Create(
         BrandName name,
         Slug slug,
         CategoryId categoryId,
+        IBrandUniquenessChecker uniquenessChecker,
         string? description = null,
         string? logoPath = null)
     {
         ArgumentNullException.ThrowIfNull(categoryId);
+        ArgumentNullException.ThrowIfNull(uniquenessChecker);
+
+        if (!uniquenessChecker.IsUnique(name.Value, slug.Value))
+            throw new BrandNameAlreadyExistsException(name);
+
         return new Brand(BrandId.NewId(), name, slug, categoryId, description, logoPath);
     }
 
-    public void UpdateDetails(BrandName name, Slug slug, string? description, string? logoPath)
+    public void UpdateDetails(
+        BrandName name,
+        Slug slug,
+        IBrandUniquenessChecker uniquenessChecker,
+        string? description,
+        string? logoPath)
     {
+        ArgumentNullException.ThrowIfNull(uniquenessChecker);
+
+        if (!uniquenessChecker.IsUnique(name.Value, slug.Value, Id))
+            throw new BrandNameAlreadyExistsException(name);
+
         Name = name;
         Slug = slug;
         Description = description;
         LogoPath = logoPath;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
-        RaiseDomainEvent(new BrandUpdatedEvent(Id.Value, name.Value, slug.Value, description));
+        RaiseDomainEvent(new BrandUpdatedEvent(Id, name, slug, description));
     }
 
     public void ChangeCategory(CategoryId newCategoryId)
@@ -70,29 +88,32 @@ public sealed class Brand : AggregateRoot<BrandId>
         var previousCategoryId = CategoryId;
         CategoryId = newCategoryId;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
-        RaiseDomainEvent(new BrandCategoryChangedEvent(Id.Value, previousCategoryId.Value, newCategoryId.Value));
+        RaiseDomainEvent(new BrandCategoryChangedEvent(Id, previousCategoryId, newCategoryId));
     }
 
     public void Activate()
     {
         if (IsActive)
-            throw new BrandAlreadyActiveException(Id.Value);
+            throw new BrandAlreadyActiveException(Id);
 
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
-        RaiseDomainEvent(new BrandActivatedEvent(Id.Value, Name.Value, CategoryId.Value));
+        RaiseDomainEvent(new BrandActivatedEvent(Id, Name, CategoryId));
     }
 
     public void Deactivate()
     {
         if (!IsActive)
-            throw new BrandAlreadyDeactivatedException(Id.Value);
+            throw new BrandAlreadyDeactivatedException(Id);
 
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
 
-        RaiseDomainEvent(new BrandDeactivatedEvent(Id.Value, Name.Value, CategoryId.Value));
+        RaiseDomainEvent(new BrandDeactivatedEvent(Id, Name, CategoryId));
     }
 }

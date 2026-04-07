@@ -62,7 +62,7 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
             UpdatedAt = DateTime.UtcNow
         };
 
-        user.RaiseDomainEvent(new UserRegisteredEvent(id, email.Value, fullName.FirstName, fullName.LastName));
+        user.RaiseDomainEvent(new UserRegisteredEvent(id, email, fullName.FirstName, fullName.LastName));
         return user;
     }
 
@@ -110,7 +110,7 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
         IsEmailVerified = true;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new UserEmailVerifiedEvent(Id, Email.Value));
+        RaiseDomainEvent(new UserEmailVerifiedEvent(Id, Email));
     }
 
     public void Activate()

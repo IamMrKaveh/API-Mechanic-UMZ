@@ -1,8 +1,10 @@
+using Domain.Media.ValueObjects;
+
 namespace Domain.Media.Events;
 
-public sealed class MediaSetAsPrimaryEvent(Guid mediaId, string entityType, int entityId) : DomainEvent
+public sealed class MediaSetAsPrimaryEvent(MediaId mediaId, string entityType, int entityId) : DomainEvent
 {
-    public Guid MediaId { get; } = mediaId;
+    public MediaId MediaId { get; } = mediaId;
     public string EntityType { get; } = entityType;
     public int EntityId { get; } = entityId;
 }

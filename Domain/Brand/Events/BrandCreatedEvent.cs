@@ -1,17 +1,12 @@
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
+
 namespace Domain.Brand.Events;
 
-public sealed class BrandCreatedEvent : DomainEvent
+public sealed class BrandCreatedEvent(BrandId brandId, BrandName name, Slug slug, CategoryId categoryId) : DomainEvent
 {
-    public Guid BrandId { get; }
-    public string Name { get; }
-    public string Slug { get; }
-    public Guid CategoryId { get; }
-
-    public BrandCreatedEvent(Guid brandId, string name, string slug, Guid categoryId)
-    {
-        BrandId = brandId;
-        Name = name;
-        Slug = slug;
-        CategoryId = categoryId;
-    }
+    public BrandId BrandId { get; } = brandId;
+    public BrandName Name { get; } = name;
+    public Slug Slug { get; } = slug;
+    public CategoryId CategoryId { get; } = categoryId;
 }

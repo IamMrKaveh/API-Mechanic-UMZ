@@ -8,10 +8,8 @@ public sealed class InvalidOrderTransitionException(string fromStatus, string to
 {
 }
 
-public sealed class EmptyOrderException : DomainException
+public sealed class EmptyOrderException() : DomainException("An order must contain at least one item.")
 {
-    public EmptyOrderException()
-        : base("An order must contain at least one item.") { }
 }
 
 public sealed class OrderAlreadyCancelledException(Guid orderId) : DomainException($"Order '{orderId}' has already been cancelled.")

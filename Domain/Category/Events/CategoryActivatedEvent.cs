@@ -2,12 +2,7 @@ using Domain.Category.ValueObjects;
 
 namespace Domain.Category.Events;
 
-public sealed class CategoryActivatedEvent : DomainEvent
+public sealed class CategoryActivatedEvent(CategoryId categoryId) : DomainEvent
 {
-    public CategoryId CategoryId { get; }
-
-    public CategoryActivatedEvent(CategoryId categoryId)
-    {
-        CategoryId = categoryId;
-    }
+    public CategoryId CategoryId { get; } = categoryId;
 }

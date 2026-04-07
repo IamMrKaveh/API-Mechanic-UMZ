@@ -22,8 +22,8 @@ public sealed class Product : AggregateRoot<ProductId>
 
     public static Product Create(
         ProductId id,
-        string name,
-        string slug,
+        ProductName name,
+        Slug slug,
         string description,
         CategoryId categoryId,
         BrandId brandId)
@@ -46,7 +46,7 @@ public sealed class Product : AggregateRoot<ProductId>
         return product;
     }
 
-    public void UpdateDetails(string name, string slug, string description)
+    public void UpdateDetails(ProductName name, Slug slug, string description)
     {
         Name = name;
         Slug = slug;

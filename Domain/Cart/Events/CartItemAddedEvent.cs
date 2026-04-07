@@ -1,30 +1,21 @@
-using Domain.Common.Events;
+using Domain.Cart.ValueObjects;
+using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Domain.Cart.Events;
 
-public sealed class CartItemAddedEvent : DomainEvent
+public sealed class CartItemAddedEvent(
+    CartId cartId,
+    ProductVariantId variantId,
+    ProductId productId,
+    ProductName productName,
+    int quantity,
+    decimal unitPrice) : DomainEvent
 {
-    public Guid CartId { get; }
-    public Guid VariantId { get; }
-    public Guid ProductId { get; }
-    public string ProductName { get; }
-    public int Quantity { get; }
-    public decimal UnitPrice { get; }
-
-    public CartItemAddedEvent(
-        Guid cartId,
-        Guid variantId,
-        Guid productId,
-        string productName,
-        int quantity,
-        decimal unitPrice)
-    {
-        CartId = cartId;
-        VariantId = variantId;
-        ProductId = productId;
-        ProductName = productName;
-        Quantity = quantity;
-        UnitPrice = unitPrice;
-        EventVersion = 1;
-    }
+    public CartId CartId { get; } = cartId;
+    public ProductVariantId VariantId { get; } = variantId;
+    public ProductId ProductId { get; } = productId;
+    public ProductName ProductName { get; } = productName;
+    public int Quantity { get; } = quantity;
+    public decimal UnitPrice { get; } = unitPrice;
 }

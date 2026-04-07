@@ -3,26 +3,16 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Order.Events;
 
-public sealed class OrderStatusChangedEvent : DomainEvent
+public sealed class OrderStatusChangedEvent(
+    OrderId orderId,
+    OrderNumber orderNumber,
+    UserId userId,
+    OrderStatusValue previousStatus,
+    OrderStatusValue newStatus) : DomainEvent
 {
-    public OrderId OrderId { get; }
-    public string OrderNumber { get; }
-    public UserId UserId { get; }
-    public string PreviousStatus { get; }
-    public string NewStatus { get; }
-
-    public OrderStatusChangedEvent(
-        OrderId orderId,
-        string orderNumber,
-        UserId userId,
-        string previousStatus,
-        string newStatus)
-    {
-        OrderId = orderId;
-        OrderNumber = orderNumber;
-        UserId = userId;
-        PreviousStatus = previousStatus;
-        NewStatus = newStatus;
-        EventVersion = 1;
-    }
+    public OrderId OrderId { get; } = orderId;
+    public OrderNumber OrderNumber { get; } = orderNumber;
+    public UserId UserId { get; } = userId;
+    public OrderStatusValue PreviousStatus { get; } = previousStatus;
+    public OrderStatusValue NewStatus { get; } = newStatus;
 }

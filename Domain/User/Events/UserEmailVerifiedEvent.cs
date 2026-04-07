@@ -2,7 +2,7 @@
 
 namespace Domain.User.Events;
 
-public sealed record UserEmailVerifiedEvent(UserId UserId, string Email) : IDomainEvent
+public sealed record UserEmailVerifiedEvent(UserId UserId, Email Email) : IDomainEvent
 {
     public Guid EventId { get; } = Guid.NewGuid();
     public DateTime OccurredAt { get; } = DateTime.UtcNow;

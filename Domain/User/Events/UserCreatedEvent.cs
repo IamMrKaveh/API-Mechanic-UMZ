@@ -2,8 +2,8 @@ using Domain.User.ValueObjects;
 
 namespace Domain.User.Events;
 
-public class UserCreatedEvent(UserId userId, string phoneNumber) : DomainEvent
+public class UserCreatedEvent(UserId userId, PhoneNumber phoneNumber) : DomainEvent
 {
     public UserId UserId { get; } = userId;
-    public string PhoneNumber { get; } = phoneNumber;
+    public PhoneNumber PhoneNumber { get; } = phoneNumber;
 }

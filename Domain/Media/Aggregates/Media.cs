@@ -1,5 +1,6 @@
 using Domain.Media.Events;
 using Domain.Media.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Media.Aggregates;
 
@@ -49,7 +50,7 @@ public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable
         IsActive = true;
         CreatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new MediaCreatedEvent(id.Value, entityType, entityId));
+        RaiseDomainEvent(new MediaCreatedEvent(id, entityType, entityId));
     }
 
     public static Media Create(
@@ -106,7 +107,7 @@ public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable
         IsPrimary = true;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new MediaSetAsPrimaryEvent(Id.Value, EntityType, EntityId));
+        RaiseDomainEvent(new MediaSetAsPrimaryEvent(Id, EntityType, EntityId));
     }
 
     public void RemovePrimary()
@@ -117,13 +118,13 @@ public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void RequestDeletion(int? deletedBy = null)
+    public void RequestDeletion(UserId? deletedBy = null)
     {
         IsActive = false;
         IsPrimary = false;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new MediaDeletedEvent(Id.Value, EntityType, EntityId, deletedBy));
+        RaiseDomainEvent(new MediaDeletedEvent(Id, EntityType, EntityId, deletedBy));
     }
 
     public bool CanBeSetAsPrimary() => IsActive && !IsPrimary;
