@@ -1,14 +1,17 @@
+using Domain.Common.Exceptions;
 using Domain.Review.ValueObjects;
 
 namespace Domain.Review.Exceptions;
 
 public sealed class ReviewNotFoundException : DomainException
 {
-    public ReviewNotFoundException(ProductReviewId id) : base($"نظری با شناسه {id.Value} یافت نشد.")
-    {
-    }
+    public ReviewId ReviewId { get; }
 
-    public ReviewNotFoundException(int id) : base($"نظری با شناسه {id} یافت نشد.")
+    public override string ErrorCode => "REVIEW_NOT_FOUND";
+
+    public ReviewNotFoundException(ReviewId id)
+        : base($"نظری با شناسه {id} یافت نشد.")
     {
+        ReviewId = id;
     }
 }

@@ -1,24 +1,74 @@
-﻿namespace Domain.Cart.Exceptions;
+﻿using Domain.Cart.ValueObjects;
+using Domain.Common.Exceptions;
+using Domain.Variant.ValueObjects;
 
-public sealed class CartNotFoundException(Guid cartId) : Exception($"Cart with ID '{cartId}' was not found.")
+namespace Domain.Cart.Exceptions;
+
+public sealed class CartNotFoundException : DomainException
 {
+    public CartId CartId { get; }
+
+    public override string ErrorCode => "CART_NOT_FOUND";
+
+    public CartNotFoundException(CartId cartId)
+        : base($"سبد خرید با شناسه {cartId} یافت نشد.")
+    {
+        CartId = cartId;
+    }
 }
 
-public sealed class CartItemNotFoundException(Guid variantId) : Exception($"Cart item for variant '{variantId}' was not found.")
+public sealed class CartItemNotFoundException : DomainException
 {
+    public VariantId VariantId { get; }
+
+    public override string ErrorCode => "CART_ITEM_NOT_FOUND";
+
+    public CartItemNotFoundException(VariantId variantId)
+        : base($"آیتم سبد خرید برای واریانت {variantId} یافت نشد.")
+    {
+        VariantId = variantId;
+    }
 }
 
-public sealed class CartAlreadyCheckedOutException(Guid cartId) : Exception($"Cart '{cartId}' has already been checked out.")
+public sealed class CartAlreadyCheckedOutException : DomainException
 {
+    public CartId CartId { get; }
+
+    public override string ErrorCode => "CART_ALREADY_CHECKED_OUT";
+
+    public CartAlreadyCheckedOutException(CartId cartId)
+        : base($"سبد خرید {cartId} قبلاً تسویه شده است.")
+    {
+        CartId = cartId;
+    }
 }
 
-public sealed class InvalidCartQuantityException(int quantity) : Exception($"Cart item quantity '{quantity}' is invalid. Must be greater than zero.")
+public sealed class InvalidCartQuantityException : DomainException
 {
+    public int Quantity { get; }
+
+    public override string ErrorCode => "INVALID_CART_QUANTITY";
+
+    public InvalidCartQuantityException(int quantity)
+        : base($"تعداد آیتم سبد خرید '{quantity}' نامعتبر است. تعداد باید بزرگتر از صفر باشد.")
+    {
+        Quantity = quantity;
+    }
 }
 
-public sealed class InsufficientStockForCartException(Guid variantId, int requestedQuantity, int availableStock) : DomainException($"Insufficient stock for variant '{variantId}'. Requested: {requestedQuantity}, Available: {availableStock}.")
+public sealed class InsufficientStockForCartException : DomainException
 {
-    public Guid VariantId { get; } = variantId;
-    public int RequestedQuantity { get; } = requestedQuantity;
-    public int AvailableStock { get; } = availableStock;
+    public VariantId VariantId { get; }
+    public int RequestedQuantity { get; }
+    public int AvailableStock { get; }
+
+    public override string ErrorCode => "INSUFFICIENT_STOCK_FOR_CART";
+
+    public InsufficientStockForCartException(VariantId variantId, int requestedQuantity, int availableStock)
+        : base($"موجودی کافی برای واریانت {variantId} نیست. درخواستی: {requestedQuantity}، موجودی: {availableStock}.")
+    {
+        VariantId = variantId;
+        RequestedQuantity = requestedQuantity;
+        AvailableStock = availableStock;
+    }
 }

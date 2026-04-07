@@ -1,6 +1,17 @@
+using Domain.Common.Exceptions;
+using Domain.Notification.ValueObjects;
+
 namespace Domain.Notification.Exceptions;
 
-public sealed class NotificationNotFoundException(int notificationId) : DomainException($"اعلان با شناسه {notificationId} یافت نشد.")
+public sealed class NotificationNotFoundException : DomainException
 {
-    public int NotificationId { get; } = notificationId;
+    public NotificationId NotificationId { get; }
+
+    public override string ErrorCode => "NOTIFICATION_NOT_FOUND";
+
+    public NotificationNotFoundException(NotificationId notificationId)
+        : base($"اعلان با شناسه {notificationId} یافت نشد.")
+    {
+        NotificationId = notificationId;
+    }
 }

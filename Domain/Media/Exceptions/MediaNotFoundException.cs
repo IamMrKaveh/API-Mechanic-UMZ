@@ -1,20 +1,17 @@
+using Domain.Common.Exceptions;
 using Domain.Media.ValueObjects;
 
 namespace Domain.Media.Exceptions;
 
-public class MediaNotFoundException : DomainException
+public sealed class MediaNotFoundException : DomainException
 {
     public MediaId MediaId { get; }
 
-    public MediaNotFoundException(MediaId mediaId)
-        : base($"رسانه با شناسه {mediaId.Value} یافت نشد.")
-    {
-        MediaId = mediaId;
-    }
+    public override string ErrorCode => "MEDIA_NOT_FOUND";
 
-    public MediaNotFoundException(int mediaId)
+    public MediaNotFoundException(MediaId mediaId)
         : base($"رسانه با شناسه {mediaId} یافت نشد.")
     {
-        MediaId = ValueObjects.MediaId.From(Guid.Empty);
+        MediaId = mediaId;
     }
 }

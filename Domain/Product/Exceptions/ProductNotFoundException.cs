@@ -1,6 +1,16 @@
+using Domain.Product.ValueObjects;
+
 namespace Domain.Product.Exceptions;
 
-public sealed class ProductNotFoundException(int productId) : DomainException($"محصول با شناسه {productId} یافت نشد.")
+public sealed class ProductNotFoundException : DomainException
 {
-    public int ProductId { get; } = productId;
+    public ProductId ProductId { get; }
+
+    public override string ErrorCode => "PRODUCT_NOT_FOUND";
+
+    public ProductNotFoundException(ProductId productId)
+        : base($"محصول با شناسه {productId} یافت نشد.")
+    {
+        ProductId = productId;
+    }
 }

@@ -1,9 +1,13 @@
+using Domain.Common.Exceptions;
+
 namespace Domain.Media.Exceptions;
 
-public class InvalidFileTypeException : DomainException
+public sealed class InvalidFileTypeException : DomainException
 {
     public string FileType { get; }
     public IReadOnlyList<string> AllowedTypes { get; }
+
+    public override string ErrorCode => "INVALID_FILE_TYPE";
 
     public InvalidFileTypeException(string fileType, IEnumerable<string> allowedTypes)
         : base($"نوع فایل '{fileType}' مجاز نیست. انواع مجاز: {string.Join(", ", allowedTypes)}")
@@ -16,6 +20,6 @@ public class InvalidFileTypeException : DomainException
         : base($"نوع فایل '{fileType}' مجاز نیست.")
     {
         FileType = fileType;
-        AllowedTypes = [];
+        AllowedTypes = Array.Empty<string>();
     }
 }

@@ -1,6 +1,16 @@
-﻿namespace Domain.Wallet.Exceptions;
+﻿using Domain.Common.Exceptions;
 
-public sealed class DuplicateWalletIdempotencyKeyException(string idempotencyKey) : DomainException($"عملیات کیف پول با کلید '{idempotencyKey}' قبلاً ثبت شده است.")
+namespace Domain.Wallet.Exceptions;
+
+public sealed class DuplicateWalletIdempotencyKeyException : DomainException
 {
-    public string IdempotencyKey { get; } = idempotencyKey;
+    public string IdempotencyKey { get; }
+
+    public override string ErrorCode => "DUPLICATE_WALLET_IDEMPOTENCY_KEY";
+
+    public DuplicateWalletIdempotencyKeyException(string idempotencyKey)
+        : base($"عملیات کیف پول با کلید '{idempotencyKey}' قبلاً ثبت شده است.")
+    {
+        IdempotencyKey = idempotencyKey;
+    }
 }

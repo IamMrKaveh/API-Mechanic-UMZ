@@ -1,24 +1,22 @@
+using System;
+
 namespace Domain.Order.ValueObjects;
 
-public sealed class OrderId : ValueObject
+public sealed record OrderId
 {
-    public int Value { get; }
+    public Guid Value { get; }
 
-    private OrderId(int value) => Value = value;
-
-    public static OrderId Create(int value)
+    private OrderId(Guid value)
     {
-        if (value <= 0)
-            throw new DomainException("شناسه سفارش باید عدد مثبت باشد.");
-        return new OrderId(value);
+        if (value == Guid.Empty)
+            throw new ArgumentException("OrderId cannot be empty.", nameof(value));
+
+        Value = value;
     }
 
-    protected override IEnumerable<object> GetEqualityComponents()
-    {
-        yield return Value;
-    }
+    public static OrderId NewId() => new(Guid.NewGuid());
+
+    public static OrderId From(Guid value) => new(value);
 
     public override string ToString() => Value.ToString();
-
-    public static implicit operator int(OrderId orderId) => orderId.Value;
 }

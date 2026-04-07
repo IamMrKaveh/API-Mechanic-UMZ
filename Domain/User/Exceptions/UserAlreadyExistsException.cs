@@ -1,6 +1,16 @@
+using Domain.Common.Exceptions;
+
 namespace Domain.User.Exceptions;
 
-public class UserAlreadyExistsException(string phoneNumber) : DomainException($"کاربری با شماره تلفن '{phoneNumber}' قبلاً ثبت‌نام کرده است.")
+public sealed class UserAlreadyExistsException : DomainException
 {
-    public string PhoneNumber { get; } = phoneNumber;
+    public string PhoneNumber { get; }
+
+    public override string ErrorCode => "USER_ALREADY_EXISTS";
+
+    public UserAlreadyExistsException(string phoneNumber)
+        : base($"کاربری با شماره تلفن '{phoneNumber}' قبلاً ثبت‌نام کرده است.")
+    {
+        PhoneNumber = phoneNumber;
+    }
 }
