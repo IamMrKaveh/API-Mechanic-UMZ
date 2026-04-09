@@ -9,7 +9,7 @@ public interface ICategoryRepository
         CancellationToken ct = default);
 
     Task<Aggregates.Category?> GetBySlugAsync(
-        string slug,
+        Slug slug,
         CancellationToken ct = default);
 
     Task<IReadOnlyList<Aggregates.Category>> GetByParentIdAsync(

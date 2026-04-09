@@ -1,3 +1,5 @@
+using Application.User.Features.Shared;
+
 namespace Application.User.Features.Queries.GetUserDashboard;
 
 public class GetUserDashboardHandler(IUserQueryService userQueryService)

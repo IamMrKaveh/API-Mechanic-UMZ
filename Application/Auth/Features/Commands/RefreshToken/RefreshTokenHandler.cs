@@ -1,5 +1,6 @@
 using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
+using Application.Common.Results;
 
 namespace Application.Auth.Features.Commands.RefreshToken;
 
@@ -16,7 +17,7 @@ public class RefreshTokenHandler(IAuthService authService) : IRequestHandler<Ref
             ct);
 
         if (result.IsFailed || result.Value == default)
-            return ServiceResult<AuthResult>.Failure(result.Error ?? "Refresh failed", result.StatusCode);
+            return ServiceResult<AuthResult>.Failure(result.Error ?? "Refresh failed", result.Type);
 
         var (accessToken, refreshTokenInfo, userDto, isNewUser) = result.Value;
 

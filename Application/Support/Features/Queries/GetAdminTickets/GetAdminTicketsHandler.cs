@@ -1,3 +1,5 @@
+using Application.Support.Features.Shared;
+
 namespace Application.Support.Features.Queries.GetAdminTickets;
 
 public sealed class GetAdminTicketsHandler(ITicketQueryService ticketQueryService)
@@ -12,9 +14,7 @@ public sealed class GetAdminTicketsHandler(ITicketQueryService ticketQueryServic
         var result = await _ticketQueryService.GetAdminTicketsPagedAsync(
             request.Status,
             request.Priority,
-            request.UserId,
-            request.Page,
-            request.PageSize,
+            request.UserId
             ct);
 
         return ServiceResult<PaginatedResult<TicketDto>>.Success(result);

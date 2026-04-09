@@ -1,7 +1,7 @@
 using Application.Common.Interfaces;
 using Application.Common.Results;
 using Asp.Versioning;
-using SharedKernel.Contracts;
+using Presentation.Common.Interfaces;
 using SharedKernel.Models;
 
 namespace Presentation.Base.Endpoints.v1;
@@ -20,7 +20,7 @@ public abstract class BaseApiController(ISender mediator) : ControllerBase
         HttpContext.RequestServices.GetRequiredService<IHttpResultMapper>();
 
     protected CurrentUser CurrentUser => CurrentUserService.CurrentUser;
-    protected string? GuestId => CurrentUserService.GuestId;
+    protected string? GuestId => CurrentUserService.GuestToken;
     protected bool IsAuthenticated => CurrentUserService.IsAuthenticated;
 
     protected IActionResult ToActionResult<T>(ServiceResult<T> result) =>

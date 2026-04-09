@@ -1,4 +1,6 @@
 using Domain.Cart.Interfaces;
+using Domain.Cart.ValueObjects;
+using Domain.Common.Interfaces;
 using Domain.User.ValueObjects;
 
 namespace Application.Cart.Features.Commands.ClearCart;
@@ -10,15 +12,13 @@ public class ClearCartHandler(
     private readonly ICartRepository _cartRepository = cartRepository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-    public async Task<ServiceResult> Handle(
-        ClearCartCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(ClearCartCommand request, CancellationToken ct)
     {
         Domain.Cart.Aggregates.Cart? cart;
         if (request.UserId.HasValue)
-            cart = await _cartRepository.GetByUserIdAsync(UserId.From(request.UserId.Value), ct);
+            cart = await _cartRepository.FindByUserIdAsync(UserId.From(request.UserId.Value), ct);
         else
-            cart = await _cartRepository.GetByGuestTokenAsync(request.GuestToken!, ct);
+            cart = await _cartRepository.FindByGuestTokenAsync(GuestToken.Create(request.GuestToken!), ct);
 
         if (cart is null)
             return ServiceResult.Success();

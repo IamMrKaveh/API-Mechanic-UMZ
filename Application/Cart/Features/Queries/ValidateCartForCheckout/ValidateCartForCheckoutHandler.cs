@@ -1,6 +1,6 @@
 using Application.Cart.Contracts;
 using Application.Cart.Features.Shared;
-using SharedKernel.Contracts;
+using Application.Common.Interfaces;
 
 namespace Application.Cart.Features.Queries.ValidateCartForCheckout;
 
@@ -18,7 +18,7 @@ public class ValidateCartForCheckoutHandler(
         )
     {
         var validation = await _cartQueryService.ValidateCartForCheckoutAsync(
-            _currentUser.UserId, _currentUser.GuestId, ct);
+            _currentUser.UserId, _currentUser.GuestToken, ct);
 
         return ServiceResult<CartCheckoutValidationDto>.Success(validation);
     }

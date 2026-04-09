@@ -11,7 +11,8 @@ public class GetWalletLedgerHandler(IWalletQueryService walletQueryService) : IR
         CancellationToken ct)
     {
         var (items, total) = await _walletQueryService.GetLedgerPageAsync(
-            request.UserId, request.Page, request.PageSize, ct);
+            request.UserId,
+            ct);
 
         var entries = items.Select(e => new WalletLedgerEntryDto(
             e.Id,

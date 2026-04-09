@@ -1,4 +1,3 @@
 namespace Application.Media.Features.Queries.GetMediaById;
 
-public record GetMediaByIdQuery(int MediaId)
-    : IRequest<ServiceResult<MediaDetailDto?>>;
+public record GetMediaByIdQuery(Guid MediaId) : IRequest<ServiceResult<MediaDetailDto?>>;

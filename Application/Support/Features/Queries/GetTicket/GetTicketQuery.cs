@@ -2,4 +2,4 @@
 
 namespace Application.Support.Features.Queries.GetTicket;
 
-public record GetTicketQuery(int TicketId, int RequestingUserId, bool IsAdmin) : IRequest<ServiceResult<TicketDto>>;
+public record GetTicketQuery(Guid TicketId, Guid RequestingUserId, bool IsAdmin) : IRequest<ServiceResult<TicketDto>>;

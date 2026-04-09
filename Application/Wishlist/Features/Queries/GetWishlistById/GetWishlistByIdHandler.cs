@@ -1,6 +1,4 @@
-using Application.Wishlist.Contracts;
 using Application.Wishlist.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Wishlist.Features.Queries.GetWishlistById;
 
@@ -15,8 +13,6 @@ public class GetWishlistByIdHandler(IWishlistQueryService wishlistQueryService)
     {
         var result = await _wishlistQueryService.GetPagedAsync(
             request.UserId,
-            request.Page,
-            request.PageSize,
             ct);
 
         return ServiceResult<PaginatedResult<WishlistItemDto>>.Success(result);

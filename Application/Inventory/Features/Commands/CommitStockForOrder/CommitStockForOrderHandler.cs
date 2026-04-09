@@ -1,6 +1,11 @@
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
 using Domain.Variant.ValueObjects;
+using Domain.Order.ValueObjects;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Inventory.Features.Commands.CommitStockForOrder;
 
@@ -16,8 +21,7 @@ public class CommitStockForOrderHandler(
 
         foreach (var item in request.Items)
         {
-            var inventory = await inventoryRepository.GetByVariantIdAsync(
-                VariantId.From(item.VariantId), ct);
+            var inventory = await inventoryRepository.GetByVariantIdAsync(VariantId.From(item.VariantId), ct);
 
             if (inventory is null)
             {
@@ -25,12 +29,17 @@ public class CommitStockForOrderHandler(
                 continue;
             }
 
-            var result = inventoryDomainService.ConfirmReservation(
-                inventory, item.Quantity, request.OrderNumber, item.OrderItemId);
+            var orderItemId = item.OrderItemId.HasValue ? OrderItemId.From(item.OrderItemId.Value) : null;
 
-            if (!result.IsSuccess)
+            var result = inventoryDomainService.ConfirmReservation(
+                inventory,
+                item.Quantity,
+                request.OrderNumber,
+                orderItemId);
+
+            if (result.IsFailure)
             {
-                errors.Add($"واریانت {item.VariantId}: {result.Error}");
+                errors.Add($"واریانت {item.VariantId}: {result.Error.Message}");
                 continue;
             }
 
@@ -39,8 +48,7 @@ public class CommitStockForOrderHandler(
 
         if (errors.Count > 0)
         {
-            logger.LogError("Stock commit failed for order {OrderNumber}: {Errors}",
-                request.OrderNumber, string.Join(", ", errors));
+            logger.LogError("Stock commit failed for order {OrderNumber}: {Errors}", request.OrderNumber, string.Join(", ", errors));
             return ServiceResult.Failure(string.Join(" | ", errors));
         }
 

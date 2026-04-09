@@ -4,7 +4,7 @@ using Domain.Variant.Entities;
 
 namespace Domain.Attribute.Entities;
 
-public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActivatable
+public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActivatable, ISoftDeletable
 {
     public AttributeTypeId AttributeTypeId { get; private set; } = null!;
     public string Value { get; private set; } = null!;
@@ -17,6 +17,12 @@ public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActi
 
     public AttributeType AttributeType { get; private set; } = null!;
     public ICollection<ProductVariantAttribute> VariantAttributes { get; private set; } = new List<ProductVariantAttribute>();
+
+    public bool IsDeleted { get; private set; }
+
+    public DateTime? DeletedAt { get; private set; }
+
+    public Guid? DeletedBy { get; private set; }
 
     private AttributeValue()
     { }

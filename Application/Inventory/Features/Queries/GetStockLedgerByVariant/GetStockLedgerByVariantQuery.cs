@@ -1,10 +1,5 @@
-﻿using Application.Common.Results;
-using Application.Inventory.Features.Shared;
-using SharedKernel.Models;
+﻿using Application.Inventory.Features.Shared;
 
 namespace Application.Inventory.Features.Queries.GetStockLedgerByVariant;
 
-public record GetStockLedgerByVariantQuery(
-    Guid VariantId,
-    int Page = 1,
-    int PageSize = 50) : IRequest<ServiceResult<PaginatedResult<StockLedgerEntryDto>>>;
+public record GetStockLedgerByVariantQuery(Guid VariantId) : IRequest<ServiceResult<PaginatedResult<StockLedgerEntryDto>>>;

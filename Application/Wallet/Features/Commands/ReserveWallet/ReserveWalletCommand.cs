@@ -1,10 +1,7 @@
-﻿using Domain.User.ValueObjects;
-using Domain.Wallet.ValueObjects;
-
-namespace Application.Wallet.Features.Commands.ReserveWallet;
+﻿namespace Application.Wallet.Features.Commands.ReserveWallet;
 
 public record ReserveWalletCommand(
-    UserId UserId,
+    Guid UserId,
     decimal Amount,
-    WalletId WalletId,
+    Guid WalletId,
     DateTime? ExpiresAt = null) : IRequest<ServiceResult<Unit>>;

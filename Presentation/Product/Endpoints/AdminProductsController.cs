@@ -41,13 +41,13 @@ public class AdminProductsController(IMediator mediator) : BaseApiController(med
     public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
     {
         var command = new CreateProductCommand(
-            request.Name,
-            request.Slug,
-            request.Description,
-            request.Price,
             request.CategoryId,
             request.BrandId,
-            CurrentUser.UserId);
+            CurrentUser.UserId,
+            request.Name,
+            request.Description,
+            request.Price,
+            request.Slug);
 
         var result = await _mediator.Send(command);
         return ToActionResult(result);

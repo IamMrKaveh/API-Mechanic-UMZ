@@ -1,3 +1,4 @@
+using Domain.Notification.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Application.Notification.Contracts;
@@ -14,9 +15,17 @@ public interface INotificationService
         string? referenceType = null,
         CancellationToken ct = default);
 
-    Task MarkAsReadAsync(Guid notificationId, Guid userId, CancellationToken ct = default);
+    Task MarkAsReadAsync(
+        NotificationId notificationId,
+        UserId userId,
+        CancellationToken ct = default);
 
-    Task MarkAllAsReadAsync(Guid userId, CancellationToken ct = default);
+    Task MarkAllAsReadAsync(
+        UserId userId,
+        CancellationToken ct = default);
 
-    Task DeleteAsync(Guid notificationId, Guid userId, CancellationToken ct = default);
+    Task DeleteAsync(
+        NotificationId notificationId,
+        UserId userId,
+        CancellationToken ct = default);
 }

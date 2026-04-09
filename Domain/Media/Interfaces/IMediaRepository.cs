@@ -4,13 +4,17 @@ namespace Domain.Media.Interfaces;
 
 public interface IMediaRepository
 {
-    Task AddAsync(Aggregates.Media media, CancellationToken ct = default);
+    Task AddAsync(
+        Aggregates.Media media,
+        CancellationToken ct = default);
 
     void Update(Aggregates.Media media);
 
     void Remove(Aggregates.Media media);
 
-    Task<Aggregates.Media?> GetByIdAsync(MediaId id, CancellationToken ct = default);
+    Task<Aggregates.Media?> GetByIdAsync(
+        MediaId id,
+        CancellationToken ct = default);
 
     Task<IReadOnlyList<Aggregates.Media>> GetByEntityAsync(
         string entityType,

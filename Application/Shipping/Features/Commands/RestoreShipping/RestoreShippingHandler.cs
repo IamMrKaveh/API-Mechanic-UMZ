@@ -1,5 +1,5 @@
+using Application.Common.Interfaces;
 using Domain.Shipping.Interfaces;
-using SharedKernel.Contracts;
 
 namespace Application.Shipping.Features.Commands.RestoreShipping;
 

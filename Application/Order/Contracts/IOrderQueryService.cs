@@ -1,23 +1,28 @@
 using Application.Order.Features.Shared;
-using SharedKernel.Models;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Order.Contracts;
 
 public interface IOrderQueryService
 {
-    Task<OrderDto?> GetOrderByIdAsync(Guid orderId, CancellationToken ct = default);
+    Task<OrderDto?> GetOrderByIdAsync(
+        OrderId orderId,
+        CancellationToken ct = default);
 
-    Task<OrderDto?> GetOrderByNumberAsync(string orderNumber, CancellationToken ct = default);
+    Task<OrderDto?> GetOrderByNumberAsync(
+        OrderNumber orderNumber,
+        CancellationToken ct = default);
 
     Task<PaginatedResult<OrderListItemDto>> GetUserOrdersAsync(
-        Guid userId,
+        UserId userId,
         int page,
         int pageSize,
         CancellationToken ct = default);
 
     Task<PaginatedResult<OrderListItemDto>> GetAllOrdersAsync(
         string? status,
-        Guid? userId,
+        UserId? userId,
         DateTime? from,
         DateTime? to,
         int page,

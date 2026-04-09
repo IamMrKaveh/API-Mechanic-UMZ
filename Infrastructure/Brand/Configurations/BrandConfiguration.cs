@@ -1,3 +1,6 @@
+using Domain.Brand.ValueObjects;
+using Domain.Common.ValueObjects;
+
 namespace Infrastructure.Brand.Configurations;
 
 public sealed class BrandConfiguration : IEntityTypeConfiguration<Domain.Brand.Aggregates.Brand>

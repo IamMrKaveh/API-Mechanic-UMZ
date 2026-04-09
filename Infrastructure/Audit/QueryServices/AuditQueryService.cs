@@ -1,13 +1,19 @@
-﻿namespace Infrastructure.Audit.QueryServices;
+﻿using Application.Audit.Contracts;
+using Application.Audit.Features.Shared;
+using Domain.User.ValueObjects;
+using Infrastructure.Persistence.Context;
+using SharedKernel.Models;
+
+namespace Infrastructure.Audit.QueryServices;
 
 public class AuditQueryService(DBContext context) : IAuditQueryService
 {
     private readonly DBContext _context = context;
 
-    public async Task<(IEnumerable<AuditDtos> Logs, int Total)> GetAuditLogsAsync(
+    public async Task<(IEnumerable<AuditLogDto> Logs, int Total)> GetAuditLogsAsync(
+        UserId? userId,
         DateTime? from,
         DateTime? to,
-        int? userId,
         string? type,
         int page,
         int size,
@@ -21,8 +27,8 @@ public class AuditQueryService(DBContext context) : IAuditQueryService
         if (to.HasValue)
             query = query.Where(l => l.CreatedAt <= to.Value);
 
-        if (userId.HasValue)
-            query = query.Where(l => l.UserId == userId.Value);
+        if (userId is not null)
+            query = query.Where(l => l.UserId == userId);
 
         if (!string.IsNullOrEmpty(type))
             query = query.Where(l => l.EventType == type);
@@ -33,10 +39,10 @@ public class AuditQueryService(DBContext context) : IAuditQueryService
             .OrderByDescending(l => l.CreatedAt)
             .Skip((page - 1) * size)
             .Take(size)
-            .Select(l => new AuditDtos
+            .Select(l => new AuditLogDto
             {
-                Id = l.Id,
-                UserId = l.UserId,
+                Id = l.Id.Value,
+                UserId = l.UserId.Value,
                 EventType = l.EventType,
                 Action = l.Action,
                 Details = l.Details,
@@ -50,7 +56,17 @@ public class AuditQueryService(DBContext context) : IAuditQueryService
         return (logs, total);
     }
 
-    public async Task<(IEnumerable<AuditDtos> Logs, int Total)> SearchAsync(
+    public Task<PaginatedResult<AuditLogDto>> GetAuditLogsAsync(UserId? userId, string? eventType, string? entityType, DateTime? from, DateTime? to, int page, int pageSize, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IReadOnlyList<AuditLogDto>> GetByEntityAsync(string entityType, string entityId, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<(IEnumerable<AuditLogDto> Logs, int Total)> SearchAsync(
         AuditSearchRequest request,
         CancellationToken ct = default)
     {
@@ -86,7 +102,7 @@ public class AuditQueryService(DBContext context) : IAuditQueryService
         var logs = await query
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(l => new AuditDtos
+            .Select(l => new AuditLogDto
             {
                 Id = l.Id,
                 UserId = l.UserId,

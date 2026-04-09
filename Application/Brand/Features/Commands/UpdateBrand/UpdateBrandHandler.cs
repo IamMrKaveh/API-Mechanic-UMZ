@@ -13,7 +13,7 @@ public class UpdateBrandHandler(
 {
     public async Task<ServiceResult<BrandDetailDto>> Handle(UpdateBrandCommand request, CancellationToken ct)
     {
-        var brandId = BrandId.From(request.Id.Value);
+        var brandId = BrandId.From(request.BrandId.Value);
         var brand = await brandRepository.GetByIdAsync(brandId, ct);
         if (brand is null)
             return ServiceResult<BrandDetailDto>.NotFound("Brand not found.");

@@ -59,3 +59,5 @@ public record CategoryTreeDto
     public int SortOrder { get; init; }
     public List<CategoryTreeDto> Children { get; init; } = [];
 }
+
+public record CategoryOrderItemDto(Guid Id, int SortOrder);

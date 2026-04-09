@@ -1,6 +1,6 @@
+using Application.Common.Interfaces;
 using Application.Security.Contracts;
 using Presentation.Common.Extensions;
-using SharedKernel.Contracts;
 
 namespace Presentation.Common.Middleware;
 

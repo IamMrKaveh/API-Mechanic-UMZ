@@ -1,6 +1,11 @@
+using Application.Cart.Contracts;
 using Application.Cart.Features.Shared;
+using Application.Common.Results;
 using Domain.Cart.Interfaces;
+using Domain.Cart.ValueObjects;
+using Domain.Common.Interfaces;
 using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Cart.Features.Commands.RemoveFromCart;
 
@@ -19,14 +24,15 @@ public class RemoveFromCartHandler(
     {
         Domain.Cart.Aggregates.Cart? cart;
         if (request.UserId.HasValue)
-            cart = await _cartRepository.GetByUserIdAsync(UserId.From(request.UserId.Value), ct);
+            cart = await _cartRepository.FindByUserIdAsync(UserId.From(request.UserId.Value), ct);
         else
-            cart = await _cartRepository.GetByGuestTokenAsync(request.GuestToken!, ct);
+            cart = await _cartRepository.FindByGuestTokenAsync(GuestToken.Create(request.GuestToken!), ct);
 
         if (cart is null)
             return ServiceResult<CartDetailDto>.NotFound("سبد خرید یافت نشد.");
 
-        cart.RemoveItem(request.VariantId);
+        var variantId = VariantId.From(request.VariantId);
+        cart.RemoveItem(variantId);
         _cartRepository.Update(cart);
         await _unitOfWork.SaveChangesAsync(ct);
 

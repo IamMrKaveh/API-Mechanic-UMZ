@@ -1,3 +1,3 @@
 ﻿namespace Application.Wishlist.Features.Commands.RemoveFromWishlist;
 
-public record RemoveFromWishlistCommand(int UserId, int ProductId) : IRequest<ServiceResult>;
+public record RemoveFromWishlistCommand(Guid UserId, Guid ProductId) : IRequest<ServiceResult>;

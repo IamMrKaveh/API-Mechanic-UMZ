@@ -1,12 +1,21 @@
 using Domain.Security.Enums;
+using Domain.Security.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Auth.Contracts;
 
 public interface IOtpService
 {
-    string HashOtp(string otp);
+    string HashOtp(OtpCode otp);
 
-    Task<bool> SendOtpAsync(string phoneNumber, string code, OtpPurpose purpose, CancellationToken ct = default);
+    Task<bool> SendOtpAsync(
+        PhoneNumber phoneNumber,
+        OtpCode code,
+        OtpPurpose purpose,
+        CancellationToken ct = default);
 
-    Task<bool> ValidateRateLimitAsync(Guid userId, OtpPurpose purpose, CancellationToken ct = default);
+    Task<bool> ValidateRateLimitAsync(
+        UserId userId,
+        OtpPurpose purpose,
+        CancellationToken ct = default);
 }

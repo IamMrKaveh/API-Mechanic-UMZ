@@ -1,18 +1,17 @@
 ﻿using Application.Wishlist.Features.Shared;
-using SharedKernel.Models;
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Wishlist.Contracts;
 
 public interface IWishlistQueryService
 {
     Task<PaginatedResult<WishlistItemDto>> GetPagedAsync(
-        Guid userId,
-        int page,
-        int pageSize,
+        UserId userId,
         CancellationToken ct = default);
 
     Task<bool> IsInWishlistAsync(
-        Guid userId,
-        int productId,
+        UserId userId,
+        ProductId productId,
         CancellationToken ct = default);
 }

@@ -1,7 +1,9 @@
-﻿using Application.Order.Features.Shared;
+﻿using Application.Order.Features.Commands.CheckoutFromCart;
+using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+using Application.Order.Features.Shared;
 using Domain.Cart.Interfaces;
 
-namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+namespace Infrastructure.Order.Services;
 
 public class CheckoutOrchestrationService(
     ICheckoutAddressResolverService addressResolver,

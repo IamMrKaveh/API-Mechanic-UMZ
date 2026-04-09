@@ -1,5 +1,5 @@
+using Application.Common.Interfaces;
 using Domain.Product.Interfaces;
-using SharedKernel.Contracts;
 
 namespace Application.Product.Features.Commands.DeactivateProduct;
 

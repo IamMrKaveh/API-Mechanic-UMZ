@@ -1,3 +1,8 @@
+using Application.Analytics.Contracts;
+using Application.Analytics.Features.Shared;
+using Domain.Order.ValueObjects;
+using Infrastructure.Persistence.Context;
+
 namespace Infrastructure.Analytics.Services;
 
 public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQueryService
@@ -13,7 +18,9 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
     ];
 
     public async Task<DashboardStatisticsDto> GetDashboardStatisticsAsync(
-        DateTime? fromDate, DateTime? toDate, CancellationToken cancellationToken = default)
+        DateTime? fromDate,
+        DateTime? toDate,
+        CancellationToken ct = default)
     {
         var from = fromDate ?? DateTime.UtcNow.AddDays(-30);
         var to = toDate ?? DateTime.UtcNow;
@@ -22,12 +29,12 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
             .IgnoreQueryFilters()
             .Where(o => !o.IsDeleted && o.CreatedAt >= from && o.CreatedAt <= to);
 
-        var totalOrders = await ordersQuery.CountAsync(cancellationToken);
+        var totalOrders = await ordersQuery.CountAsync(ct);
 
         var statusCounts = await ordersQuery
             .GroupBy(o => o.Status)
             .Select(g => new { Status = g.Key, Count = g.Count() })
-            .ToListAsync(cancellationToken);
+            .ToListAsync(ct);
 
         var revenueQuery = _context.Orders
             .IgnoreQueryFilters()
@@ -36,7 +43,7 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
 
         var revenueData = await revenueQuery
             .Select(o => new { o.FinalAmount, o.TotalProfit })
-            .ToListAsync(cancellationToken);
+            .ToListAsync(ct);
 
         var totalRevenue = revenueData.Sum(o => o.FinalAmount.Amount);
         var totalProfit = revenueData.Sum(o => o.TotalProfit.Amount);
@@ -44,30 +51,30 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
 
         var totalUsers = await _context.Users
             .IgnoreQueryFilters()
-            .CountAsync(u => !u.IsDeleted, cancellationToken);
+            .CountAsync(u => !u.IsDeleted, ct);
 
         var newUsers = await _context.Users
             .IgnoreQueryFilters()
-            .CountAsync(u => !u.IsDeleted && u.CreatedAt >= from && u.CreatedAt <= to, cancellationToken);
+            .CountAsync(u => !u.IsDeleted && u.CreatedAt >= from && u.CreatedAt <= to, ct);
 
         var totalProducts = await _context.Products
             .IgnoreQueryFilters()
-            .CountAsync(p => !p.IsDeleted, cancellationToken);
+            .CountAsync(p => !p.IsDeleted, ct);
 
         var activeProducts = await _context.Products
             .IgnoreQueryFilters()
-            .CountAsync(p => !p.IsDeleted && p.IsActive, cancellationToken);
+            .CountAsync(p => !p.IsDeleted && p.IsActive, ct);
 
         var outOfStockVariants = await _context.ProductVariants
             .IgnoreQueryFilters()
             .CountAsync(v => !v.IsDeleted && v.IsActive && !v.IsUnlimited
-                && (v.StockQuantity - v.ReservedQuantity) <= 0, cancellationToken);
+                && (v.StockQuantity - v.ReservedQuantity) <= 0, ct);
 
         var lowStockVariants = await _context.ProductVariants
             .IgnoreQueryFilters()
             .CountAsync(v => !v.IsDeleted && v.IsActive && !v.IsUnlimited
                 && (v.StockQuantity - v.ReservedQuantity) > 0
-                && (v.StockQuantity - v.ReservedQuantity) <= v.LowStockThreshold, cancellationToken);
+                && (v.StockQuantity - v.ReservedQuantity) <= v.LowStockThreshold, ct);
 
         var cancelledCount = statusCounts
             .Where(s => s.Status.Value == OrderStatusValue.Cancelled.Value)
@@ -96,7 +103,10 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
     }
 
     public async Task<IReadOnlyList<SalesChartDataPointDto>> GetSalesChartDataAsync(
-        DateTime fromDate, DateTime toDate, string groupBy, CancellationToken cancellationToken = default)
+        DateTime fromDate,
+        DateTime toDate,
+        string groupBy,
+        CancellationToken ct = default)
     {
         var orders = await _context.Orders
             .IgnoreQueryFilters()
@@ -110,7 +120,7 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
                 TotalProfit = o.TotalProfit,
                 ItemCount = o.OrderItems.Sum(i => i.Quantity)
             })
-            .ToListAsync(cancellationToken);
+            .ToListAsync(ct);
 
         var grouped = groupBy.ToLowerInvariant() switch
         {
@@ -160,7 +170,10 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
     }
 
     public async Task<IReadOnlyList<TopSellingProductDto>> GetTopSellingProductsAsync(
-        int count, DateTime? fromDate, DateTime? toDate, CancellationToken cancellationToken = default)
+        int count,
+        DateTime? fromDate,
+        DateTime? toDate,
+        CancellationToken ct = default)
     {
         var from = fromDate ?? DateTime.MinValue;
         var to = toDate ?? DateTime.UtcNow;
@@ -185,8 +198,23 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
             })
             .OrderByDescending(x => x.TotalQuantitySold)
             .Take(count)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(ct);
 
         return result.AsReadOnly();
+    }
+
+    public Task<IReadOnlyList<CategoryPerformanceDto>> GetCategoryPerformanceAsync(DateTime? fromDate, DateTime? toDate, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<RevenueReportDto> GetRevenueReportAsync(DateTime fromDate, DateTime toDate, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<InventoryReportDto> GetInventoryReportAsync(CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
     }
 }

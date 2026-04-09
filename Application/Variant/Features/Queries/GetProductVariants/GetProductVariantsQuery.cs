@@ -1,4 +1,6 @@
+using Application.Variant.Features.Shared;
+
 namespace Application.Variant.Features.Queries.GetProductVariants;
 
-public record GetProductVariantsQuery(int ProductId, bool ActiveOnly = true)
-    : IRequest<ServiceResult<IEnumerable<ProductVariantViewDto>>>;
+public record GetProductVariantsQuery(Guid ProductId, bool ActiveOnly = true)
+    : IRequest<ServiceResult<PaginatedResult<ProductVariantViewDto>>>;

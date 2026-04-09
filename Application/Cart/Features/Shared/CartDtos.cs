@@ -7,24 +7,29 @@ public record CartDetailDto
     public Guid Id { get; init; }
     public Guid? UserId { get; init; }
     public string? GuestToken { get; init; }
+    public bool IsCheckedOut { get; init; }
     public List<CartItemDetailDto> Items { get; init; } = [];
     public decimal TotalPrice { get; init; }
     public int TotalItems { get; init; }
     public List<CartPriceChangeDto> PriceChanges { get; init; } = [];
 }
 
-public record CartItemDto(
-    Guid Id,
-    Guid CartId,
-    Guid VariantId,
-    int Quantity,
-    string? ProductName,
-    decimal SellingPrice,
-    decimal TotalPrice,
-    string? ProductIcon,
-    Dictionary<string, AttributeValueDto>? Attributes,
-    string? RowVersion
-);
+public record CartItemDto
+{
+    public Guid Id { get; init; }
+    public Guid CartId { get; init; }
+    public Guid VariantId { get; init; }
+    public Guid ProductId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
+    public string Sku { get; init; } = string.Empty;
+    public decimal UnitPrice { get; init; }
+    public decimal OriginalPrice { get; init; }
+    public int Quantity { get; init; }
+    public decimal TotalPrice { get; init; }
+    public DateTime AddedAt { get; init; }
+    public string? ProductIcon { get; init; }
+    public Dictionary<string, AttributeValueDto>? Attributes { get; init; }
+}
 
 public record CartItemDetailDto
 {
@@ -71,4 +76,11 @@ public record CartStockIssueDto
     public string ProductName { get; init; } = null!;
     public int RequestedQuantity { get; init; }
     public int AvailableStock { get; init; }
+}
+
+public sealed record SyncCartPricesResult
+{
+    public bool HasChanges { get; init; }
+    public List<CartPriceChangeDto> PriceChanges { get; init; } = [];
+    public List<Guid> RemovedVariantIds { get; init; } = [];
 }

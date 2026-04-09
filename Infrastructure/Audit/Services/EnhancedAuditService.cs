@@ -28,7 +28,7 @@ public sealed class EnhancedAuditService(
     private readonly ILogger<EnhancedAuditService> _logger = logger;
 
     public async Task LogAsync(
-        int? userId,
+        Guid? userId,
         string eventType,
         string action,
         string details,
@@ -63,7 +63,7 @@ public sealed class EnhancedAuditService(
     }
 
     public async Task<(IEnumerable<AuditLogDto> Logs, int TotalItems)> GetAuditLogsAsync(
-        int? userId,
+        Guid? userId,
         string? eventType,
         DateTime? fromDate,
         DateTime? toDate,
@@ -121,11 +121,11 @@ public sealed class EnhancedAuditService(
             sb.AppendLine($"{log.Id},{log.UserId},{log.EventType},{log.Action},{log.IpAddress},{log.Timestamp:O}");
         }
 
-        return System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+        return Encoding.UTF8.GetBytes(sb.ToString());
     }
 
     public Task LogUserActionAsync(
-        int userId,
+        Guid userId,
         string action,
         string details,
         string ipAddress,
@@ -146,28 +146,28 @@ public sealed class EnhancedAuditService(
     public Task LogSystemEventAsync(
         string eventType,
         string details,
-        int? userId = null,
+        Guid? userId = null,
         string? ipAddress = null,
         string? userAgent = null)
         => LogAsync(userId, eventType, "SystemEvent", details, ipAddress ?? "system", userAgent);
 
     public Task LogAdminEventAsync(
         string action,
-        int userId,
+        Guid userId,
         string details,
         string? ipAddress = null,
         string? userAgent = null)
         => LogAsync(userId, "AdminEvent", action, details, ipAddress ?? "system", userAgent);
 
     public Task LogOrderEventAsync(
-        int orderId,
+        Guid orderId,
         string action,
         int userId,
         string details)
         => LogAsync(userId, "OrderEvent", action, $"OrderId={orderId}, {details}");
 
     public Task LogCartEventAsync(
-        int userId,
+        Guid userId,
         string action,
         string details,
         string ipAddress,
@@ -175,23 +175,23 @@ public sealed class EnhancedAuditService(
         => LogAsync(userId, "CartEvent", action, details, ipAddress, userAgent);
 
     public Task LogProductEventAsync(
-        int productId,
+        Guid productId,
         string action,
         string details,
-        int? userId = null)
+        Guid? userId = null)
         => LogAsync(userId, "ProductEvent", action, $"ProductId={productId}, {details}");
 
     public Task LogInventoryEventAsync(
-        int productId,
+        Guid productId,
         string action,
         string details,
-        int? userId = null)
+        Guid? userId = null)
         => LogAsync(userId, "InventoryEvent", action, $"Inventory: ProductId={productId}, {details}");
 
     public Task LogPaymentEventAsync(
-        int orderId,
+        Guid orderId,
         string action,
-        int userId,
+        Guid userId,
         string details)
         => LogAsync(userId, "PaymentEvent", action, $"OrderId={orderId}, {details}");
 

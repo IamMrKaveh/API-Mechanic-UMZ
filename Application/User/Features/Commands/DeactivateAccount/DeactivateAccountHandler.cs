@@ -1,5 +1,6 @@
 using Domain.Common.Exceptions;
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.DeactivateAccount;
 
@@ -20,7 +21,8 @@ public class DeactivateAccountHandler(
         DeactivateAccountCommand request,
         CancellationToken ct)
     {
-        var user = await _userRepository.GetByIdAsync(request.UserId, ct);
+        var userId = UserId.From(request.UserId);
+        var user = await _userRepository.GetByIdAsync(userId, ct);
         if (user == null)
             return ServiceResult.NotFound("کاربر یافت نشد.");
 
@@ -37,14 +39,14 @@ public class DeactivateAccountHandler(
                 "AccountDeactivated",
                 $"حساب کاربر {request.UserId} غیرفعال شد.",
                 "system",
-                request.UserId.Value);
+                request.UserId);
 
             _logger.LogInformation("حساب کاربر {UserId} غیرفعال شد.", request.UserId);
             return ServiceResult.Success();
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Unexpected(ex.Message);
+            return ServiceResult.Failure(ex.Message);
         }
     }
 }

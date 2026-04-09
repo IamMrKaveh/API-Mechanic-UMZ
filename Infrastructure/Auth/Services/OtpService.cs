@@ -1,4 +1,7 @@
 using Application.Auth.Contracts;
+using Domain.Security.Enums;
+using Domain.Security.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Infrastructure.Auth.Services;
 
@@ -30,7 +33,7 @@ public class OtpService : IOtpService
     /// <summary>
     /// هش کردن کد OTP با استفاده از SHA256
     /// </summary>
-    public string HashOtp(string otp)
+    public string HashOtp(OtpCode otp)
     {
         if (string.IsNullOrWhiteSpace(otp))
             throw new ArgumentNullException(nameof(otp), "کد OTP نمی‌تواند خالی باشد.");
@@ -41,10 +44,20 @@ public class OtpService : IOtpService
         return Convert.ToBase64String(hashBytes);
     }
 
+    public Task<bool> SendOtpAsync(PhoneNumber phoneNumber, OtpCode code, OtpPurpose purpose, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> ValidateRateLimitAsync(UserId userId, OtpPurpose purpose, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
     /// <summary>
     /// تأیید کد OTP
     /// </summary>
-    public bool VerifyOtp(string otp, string hash)
+    public bool VerifyOtp(OtpCode otp, string hash)
     {
         if (string.IsNullOrWhiteSpace(otp) || string.IsNullOrWhiteSpace(hash))
             return false;

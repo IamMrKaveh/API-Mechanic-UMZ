@@ -1,6 +1,5 @@
 using Application.Payment.Features.Commands.AtomicRefundPayment;
 using Application.Payment.Features.Queries.GetAdminPayments;
-using Application.Payment.Features.Shared;
 using Presentation.Payment.Requests;
 
 namespace Presentation.Payment.Endpoints;
@@ -15,18 +14,13 @@ public class AdminPaymentsController(IMediator mediator) : BaseApiController(med
     [HttpGet]
     public async Task<IActionResult> GetPayments([FromQuery] AdminPaymentSearchRequest request)
     {
-        var searchParams = new PaymentSearchParams
-        {
-            Page = request.Page,
-            PageSize = request.PageSize,
-            Status = request.Status,
-            UserId = request.UserId,
-            FromDate = request.FromDate,
-            ToDate = request.ToDate,
-            Gateway = request.Gateway
-        };
-
-        var query = new GetAdminPaymentsQuery(searchParams);
+        var query = new GetAdminPaymentsQuery(
+            request.OrderId,
+            request.UserId,
+            request.Status,
+            request.Gateway,
+            request.FromDate,
+            request.ToDate);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

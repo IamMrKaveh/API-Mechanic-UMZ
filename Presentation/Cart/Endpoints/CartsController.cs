@@ -40,7 +40,11 @@ public class CartController(ISender mediator) : BaseApiController(mediator)
     [HttpPost("items")]
     public async Task<IActionResult> AddItem([FromBody] AddToCartRequest request)
     {
-        var command = new AddToCartCommand(CurrentUser.UserId, GuestId, request.VariantId, request.Quantity);
+        var command = new AddToCartCommand(
+            CurrentUser.UserId,
+            request.VariantId,
+            GuestId,
+            request.Quantity);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }

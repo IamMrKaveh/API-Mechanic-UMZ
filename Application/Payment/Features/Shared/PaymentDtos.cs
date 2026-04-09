@@ -20,18 +20,6 @@ public record PaymentResultDto
     public long? RefId { get; init; }
 }
 
-public record PaymentSearchParams
-{
-    public Guid? OrderId { get; init; }
-    public Guid? UserId { get; init; }
-    public string? Status { get; init; }
-    public string? Gateway { get; init; }
-    public DateTime? FromDate { get; init; }
-    public DateTime? ToDate { get; init; }
-    public int Page { get; init; } = 1;
-    public int PageSize { get; init; } = 20;
-}
-
 public record PaymentStatisticsDto
 {
     public int TotalTransactions { get; init; }

@@ -1,14 +1,11 @@
+using Application.Review.Features.Shared;
+
 namespace Application.Review.Features.Queries.GetPendingReviews;
 
-public class GetPendingReviewsHandler
-    : IRequestHandler<GetPendingReviewsQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>
+public class GetPendingReviewsHandler(IReviewQueryService reviewQueryService)
+        : IRequestHandler<GetPendingReviewsQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>
 {
-    private readonly IReviewQueryService _reviewQueryService;
-
-    public GetPendingReviewsHandler(IReviewQueryService reviewQueryService)
-    {
-        _reviewQueryService = reviewQueryService;
-    }
+    private readonly IReviewQueryService _reviewQueryService = reviewQueryService;
 
     public async Task<ServiceResult<PaginatedResult<ProductReviewDto>>> Handle(
         GetPendingReviewsQuery request, CancellationToken ct)

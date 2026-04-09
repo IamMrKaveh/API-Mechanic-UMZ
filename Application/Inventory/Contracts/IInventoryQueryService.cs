@@ -1,10 +1,13 @@
 using Application.Inventory.Features.Shared;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Contracts;
 
 public interface IInventoryQueryService
 {
-    Task<InventoryDto?> GetByVariantIdAsync(Guid variantId, CancellationToken ct = default);
+    Task<InventoryDto?> GetByVariantIdAsync(
+        VariantId variantId,
+        CancellationToken ct = default);
 
     Task<PaginatedResult<InventoryDto>> GetLowStockAsync(
         int threshold,
@@ -18,6 +21,6 @@ public interface IInventoryQueryService
         CancellationToken ct = default);
 
     Task<IReadOnlyList<InventoryDto>> GetByVariantIdsAsync(
-        IEnumerable<Guid> variantIds,
+        IEnumerable<VariantId> variantIds,
         CancellationToken ct = default);
 }

@@ -32,7 +32,7 @@ public class AdminCategoryController(IMediator mediator) : BaseApiController(med
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCategory(Guid id)
     {
-        var query = new GetCategoryWithGroupsQuery(id);
+        var query = new GetCategoryWithBrandsQuery(id);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

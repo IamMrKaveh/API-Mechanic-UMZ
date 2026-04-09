@@ -6,7 +6,7 @@ using Domain.Attribute.ValueObjects;
 
 namespace Domain.Attribute.Aggregates;
 
-public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, IActivatable
+public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, IActivatable, ISoftDeletable
 {
     private readonly List<AttributeValue> _values = [];
 
@@ -18,6 +18,12 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
     public DateTime? UpdatedAt { get; private set; }
 
     public IReadOnlyCollection<AttributeValue> Values => _values.AsReadOnly();
+
+    public bool IsDeleted { get; private set; }
+
+    public DateTime? DeletedAt { get; private set; }
+
+    public Guid? DeletedBy { get; private set; }
 
     private AttributeType()
     { }

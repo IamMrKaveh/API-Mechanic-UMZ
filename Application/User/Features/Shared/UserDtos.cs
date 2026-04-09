@@ -88,6 +88,11 @@ public record UserDashboardDto
     public int UnreadNotifications { get; init; }
     public int TotalOrders { get; init; }
     public decimal TotalSpent { get; init; }
+    public int PendingOrders { get; set; }
+    public int DeliveredOrders { get; set; }
+    public int ActiveAddresses { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+    public DateTime MemberSince { get; set; }
 }
 
 public record UpdateProfileDto

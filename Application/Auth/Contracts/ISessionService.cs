@@ -1,21 +1,28 @@
 ﻿using Application.Auth.Features.Shared;
+using Domain.Common.ValueObjects;
+using Domain.Security.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Auth.Contracts;
 
 public interface ISessionService
 {
     Task<ServiceResult<RefreshTokenResult>> CreateSessionAsync(
-        Guid userId,
-        string ipAddress,
+        UserId userId,
+        IpAddress ipAddress,
         string? userAgent,
         CancellationToken ct = default);
 
     Task<ServiceResult<RefreshTokenResult>> RefreshSessionAsync(
-        string refreshToken,
-        string ipAddress,
+        RefreshToken refreshToken,
+        IpAddress ipAddress,
         CancellationToken ct = default);
 
-    Task RevokeSessionAsync(Guid sessionId, CancellationToken ct = default);
+    Task RevokeSessionAsync(
+        SessionId sessionId,
+        CancellationToken ct = default);
 
-    Task RevokeAllSessionsAsync(Guid userId, CancellationToken ct = default);
+    Task RevokeAllSessionsAsync(
+        UserId userId,
+        CancellationToken ct = default);
 }

@@ -1,4 +1,4 @@
-using Application.Order.Features.Commands.CheckoutFromCart.Services;
+using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Domain.Cart.Services;
 using Domain.Inventory.Services;
 using Domain.Media.Services;

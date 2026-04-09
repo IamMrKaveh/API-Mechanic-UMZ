@@ -1,12 +1,15 @@
+using Domain.Common.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Application.Audit.Contracts;
 
 public interface IAuditMaskingService
 {
-    string MaskPhoneNumber(string phoneNumber);
+    string MaskPhoneNumber(PhoneNumber phoneNumber);
 
-    string MaskEmail(string email);
+    string MaskEmail(Email email);
 
-    string MaskIpAddress(string ipAddress);
+    string MaskIpAddress(IpAddress ipAddress);
 
     string MaskSensitiveData(string data);
 }

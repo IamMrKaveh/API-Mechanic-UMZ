@@ -1,13 +1,15 @@
 using Application.Payment.Features.Shared;
+using Domain.Common.ValueObjects;
+using Domain.Order.ValueObjects;
 
 namespace Application.Payment.Contracts;
 
 public interface IPaymentService
 {
     Task<ServiceResult<PaymentInitiationResult>> InitiatePaymentAsync(
-        Guid orderId,
-        decimal amount,
-        string ipAddress,
+        OrderId orderId,
+        Money amount,
+        IpAddress ipAddress,
         CancellationToken ct = default);
 
     Task<ServiceResult<PaymentVerificationResult>> VerifyPaymentAsync(

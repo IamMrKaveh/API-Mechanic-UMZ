@@ -1,6 +1,7 @@
-﻿using Application.Order.Features.Shared;
+﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+using Application.Order.Features.Shared;
 
-namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+namespace Infrastructure.Order.Services;
 
 public class CheckoutPaymentProcessorService(IPaymentService paymentService)
     : ICheckoutPaymentProcessorService

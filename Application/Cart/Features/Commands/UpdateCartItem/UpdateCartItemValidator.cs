@@ -5,7 +5,7 @@ public class UpdateCartItemValidator : AbstractValidator<UpdateCartItemCommand>
     public UpdateCartItemValidator()
     {
         RuleFor(x => x.VariantId)
-            .GreaterThan(0).WithMessage("شناسه واریانت معتبر نیست.");
+            .NotEmpty().WithMessage("شناسه واریانت معتبر نیست.");
 
         RuleFor(x => x.Quantity)
             .GreaterThanOrEqualTo(0).WithMessage("تعداد نمی‌تواند منفی باشد.")

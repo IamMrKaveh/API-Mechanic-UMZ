@@ -1,11 +1,12 @@
 ﻿using Application.Audit.Features.Shared;
+using Domain.User.ValueObjects;
 
 namespace Application.Audit.Contracts;
 
 public interface IAuditQueryService
 {
     Task<PaginatedResult<AuditLogDto>> GetAuditLogsAsync(
-        Guid? userId,
+        UserId? userId,
         string? eventType,
         string? entityType,
         DateTime? from,

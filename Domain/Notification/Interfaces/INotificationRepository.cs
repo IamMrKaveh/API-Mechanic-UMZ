@@ -15,8 +15,6 @@ public interface INotificationRepository
 
     Task<IReadOnlyList<Aggregates.Notification>> GetByUserIdAsync(
         UserId userId,
-        int page,
-        int pageSize,
         CancellationToken ct = default);
 
     Task<IReadOnlyList<Aggregates.Notification>> GetReadNotificationsOlderThanAsync(

@@ -6,9 +6,5 @@ public class FuzzySearchValidator : AbstractValidator<FuzzySearchQuery>
     {
         RuleFor(x => x.Q)
             .NotEmpty().WithMessage("عبارت جستجو نمی‌تواند خالی باشد.");
-
-        RuleFor(x => x.Page).GreaterThan(0);
-
-        RuleFor(x => x.PageSize).InclusiveBetween(1, 100);
     }
 }

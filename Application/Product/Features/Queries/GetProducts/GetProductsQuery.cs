@@ -3,8 +3,8 @@
 namespace Application.Product.Features.Queries.GetProducts;
 
 public record GetProductsQuery(
-    int? CategoryId,
-    int? BrandId,
+    Guid? CategoryId,
+    Guid? BrandId,
     string? Search,
     bool? IsActive,
     bool IncludeDeleted,

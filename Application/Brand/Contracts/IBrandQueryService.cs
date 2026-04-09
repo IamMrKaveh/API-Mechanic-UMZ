@@ -2,15 +2,18 @@
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Domain.Common.ValueObjects;
-using SharedKernel.Models;
 
 namespace Application.Brand.Contracts;
 
 public interface IBrandQueryService
 {
-    Task<BrandDetailDto?> GetBrandDetailAsync(BrandId brandId, CancellationToken ct = default);
+    Task<BrandDetailDto?> GetBrandDetailAsync(
+        BrandId brandId,
+        CancellationToken ct = default);
 
-    Task<BrandDto?> GetBrandBySlugAsync(Slug slug, CancellationToken ct = default);
+    Task<BrandDto?> GetBrandBySlugAsync(
+        Slug slug,
+        CancellationToken ct = default);
 
     Task<PaginatedResult<BrandListItemDto>> GetBrandsPagedAsync(
         CategoryId? categoryId,

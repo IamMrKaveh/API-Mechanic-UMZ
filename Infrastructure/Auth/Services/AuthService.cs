@@ -1,12 +1,15 @@
 using Application.Audit.Contracts;
 using Application.Auth.Contracts;
-using Application.Common.Results;
+using Application.Auth.Features.Shared;
 using Application.Communication.Contracts;
 using Application.Security.Contracts;
 using Application.User.Features.Shared;
 using Domain.Common.Interfaces;
+using Domain.Common.ValueObjects;
 using Domain.Security.Interfaces;
+using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
 using Infrastructure.Auth.Options;
 using MapsterMapper;
 
@@ -43,15 +46,15 @@ public sealed class AuthService(
     private int RefreshTokenExpirationDays => _authOptions.RefreshTokenExpirationDays;
 
     public async Task<ServiceResult> RequestOtpAsync(
-        string phoneNumber,
-        string ipAddress,
+        PhoneNumber phoneNumber,
+        IpAddress ipAddress,
         CancellationToken ct = default)
     {
         try
         {
             var (phoneSuccess, phone, phoneError) = PhoneNumber.TryCreate(phoneNumber);
             if (!phoneSuccess)
-                return ServiceResult.Unexpected(phoneError!);
+                return ServiceResult.Failure(phoneError!);
 
             var normalizedPhone = phone!.Value;
 
@@ -102,7 +105,7 @@ public sealed class AuthService(
             {
                 _logger.LogError("ارسال OTP به {PhoneNumber} ناموفق بود: {Error}",
                     normalizedPhone, smsResult.ErrorMessage);
-                return ServiceResult.Unexpected("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
+                return ServiceResult.Failure("خطا در ارسال کد تأیید. لطفاً دوباره تلاش کنید.");
             }
 
             await _auditService.LogSecurityEventAsync(
@@ -117,15 +120,15 @@ public sealed class AuthService(
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در درخواست OTP برای شماره {PhoneNumber}", phoneNumber);
-            return ServiceResult.Unexpected("خطای داخلی سرور.");
+            return ServiceResult.Failure("خطای داخلی سرور.");
         }
     }
 
     public async Task<ServiceResult<(string AccessToken, RefreshTokenResult RefreshToken, UserProfileDto User, bool IsNewUser)>>
         VerifyOtpAsync(
-        string phoneNumber,
-        string code,
-        string ipAddress,
+        PhoneNumber phoneNumber,
+        OtpCode code,
+        IpAddress ipAddress,
         string? userAgent,
         CancellationToken ct = default)
     {
@@ -134,13 +137,13 @@ public sealed class AuthService(
             var (phoneSuccess, phone, phoneError) = PhoneNumber.TryCreate(phoneNumber);
             if (!phoneSuccess)
                 return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
-                    .Unexpected(phoneError!);
+                    .Failure(phoneError!);
 
             var normalizedPhone = phone!.Value;
 
             if (string.IsNullOrWhiteSpace(code) || code.Length != 6)
                 return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
-                    .Unexpected("کد تأیید نامعتبر است.");
+                    .Failure("کد تأیید نامعتبر است.");
 
             var (isLimited, retryAfter) = await _rateLimitService.IsLimitedAsync(
                 $"otp_verify:{normalizedPhone}", MaxOtpAttempts, LockoutDurationMinutes);
@@ -175,7 +178,7 @@ public sealed class AuthService(
                     user.Id);
 
                 return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
-                    .Unexpected("کد تأیید نادرست یا منقضی شده است.");
+                    .Failure("کد تأیید نادرست یا منقضی شده است.");
             }
 
             var refreshTokenResult = _tokenService.GenerateRefreshToken();
@@ -214,14 +217,14 @@ public sealed class AuthService(
         {
             _logger.LogError(ex, "خطا در تأیید OTP برای شماره {PhoneNumber}", phoneNumber);
             return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
-                .Unexpected("خطای داخلی سرور.");
+                .Failure("خطای داخلی سرور.");
         }
     }
 
     public async Task<ServiceResult<(string AccessToken, RefreshTokenResult RefreshToken, UserProfileDto User, bool IsNewUser)>>
         RefreshTokenAsync(
-        string refreshToken,
-        string ipAddress,
+        RefreshToken refreshToken,
+        IpAddress ipAddress,
         string? userAgent,
         CancellationToken ct = default)
     {
@@ -230,7 +233,7 @@ public sealed class AuthService(
             var (selector, verifier) = _tokenService.ParseRefreshToken(refreshToken);
             if (selector == null || verifier == null)
                 return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
-                    .Unexpected("فرمت توکن نامعتبر است.");
+                    .Failure("فرمت توکن نامعتبر است.");
 
             var session = await _sessionRepository.GetBySelectorAsync(selector, ct);
             if (session == null)
@@ -307,13 +310,13 @@ public sealed class AuthService(
         {
             _logger.LogError(ex, "خطا در تمدید توکن");
             return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>
-                .Unexpected("خطای داخلی سرور.");
+                .Failure("خطای داخلی سرور.");
         }
     }
 
     public async Task<ServiceResult> LogoutAsync(
-        int userId,
-        string refreshToken,
+        UserId userId,
+        RefreshToken refreshToken,
         CancellationToken ct = default)
     {
         try
@@ -335,12 +338,12 @@ public sealed class AuthService(
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در خروج کاربر {UserId}", userId);
-            return ServiceResult.Unexpected("خطای داخلی سرور.");
+            return ServiceResult.Failure("خطای داخلی سرور.");
         }
     }
 
     public async Task<ServiceResult> LogoutAllAsync(
-        int userId,
+        UserId userId,
         CancellationToken ct = default)
     {
         try
@@ -360,7 +363,12 @@ public sealed class AuthService(
         catch (Exception ex)
         {
             _logger.LogError(ex, "خطا در خروج کاربر {UserId} از تمام دستگاه‌ها", userId);
-            return ServiceResult.Unexpected("خطای داخلی سرور.");
+            return ServiceResult.Failure("خطای داخلی سرور.");
         }
+    }
+
+    public Task<ServiceResult<(string AccessToken, RefreshTokenResult RefreshToken, UserProfileDto User, bool IsNewUser)>> VerifyOtpAsync(PhoneNumber phoneNumber, string code, IpAddress ipAddress, string? userAgent, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
     }
 }
