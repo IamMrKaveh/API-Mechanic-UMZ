@@ -1,4 +1,11 @@
+using Application.Common.Results;
+using Application.Media.Contracts;
 using Application.Media.Features.Shared;
+using Domain.Media.Services;
+using Domain.Media.ValueObjects;
+using MediatR;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Application.Media.Features.Commands.UploadMedia;
 
@@ -7,11 +14,19 @@ public class UploadMediaHandler(
 {
     public Task<ServiceResult<MediaDto>> Handle(UploadMediaCommand request, CancellationToken ct)
     {
+        var filePath = FilePath.CreateForUpload(request.EntityType, request.FileName);
+        var fileSize = FileSize.Create(request.FileSize);
+
+        var validationResult = MediaDomainService.ValidateFileTypeForEntity(request.EntityType, filePath);
+        if (validationResult.IsFailure)
+        {
+            return Task.FromResult(ServiceResult<MediaDto>.Validation(validationResult.Error.Message));
+        }
+
         return mediaService.UploadAsync(
             request.FileStream,
-            request.FileName,
-            request.ContentType,
-            request.FileSize,
+            filePath,
+            fileSize,
             request.EntityType,
             request.EntityId,
             request.IsPrimary,

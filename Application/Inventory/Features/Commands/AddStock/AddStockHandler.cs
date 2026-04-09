@@ -15,6 +15,10 @@ public class AddStockHandler(
     {
         var inventory = await inventoryRepository.GetByVariantIdAsync(VariantId.From(request.VariantId), ct);
 
+        var variantId = VariantId.From(request.VariantId);
+
+        var userId = UserId.From(request.UserId);
+
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");
 
@@ -31,10 +35,10 @@ public class AddStockHandler(
         await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogInventoryEventAsync(
-            request.VariantId,
+            variantId,
             "AddStock",
             $"Added {request.Quantity} units via AddStockCommand.",
-            request.UserId);
+            userId);
 
         return ServiceResult.Success();
     }

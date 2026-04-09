@@ -21,7 +21,11 @@ public class AdminReviewsController(IMediator mediator) : BaseApiController(medi
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var result = await _mediator.Send(new GetReviewsByStatusQuery(status, page, pageSize));
+        var query = new GetReviewsByStatusQuery(
+            status,
+            page,
+            pageSize);
+        var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
 

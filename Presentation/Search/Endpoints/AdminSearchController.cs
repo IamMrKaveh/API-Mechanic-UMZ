@@ -1,3 +1,7 @@
+using Application.Search.Features.Commands.RecreateSearchIndices;
+using Application.Search.Features.Commands.SyncSearchData;
+using Application.Search.Features.Queries.GetSearchIndexStats;
+
 namespace Presentation.Search.Endpoints;
 
 [ApiController]

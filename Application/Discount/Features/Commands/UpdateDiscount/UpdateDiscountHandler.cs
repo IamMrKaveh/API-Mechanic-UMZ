@@ -1,4 +1,6 @@
 using Application.Discount.Features.Shared;
+using Domain.Common.ValueObjects;
+using Domain.Discount.Enums;
 using Domain.Discount.Interfaces;
 using Domain.Discount.ValueObjects;
 
@@ -14,6 +16,20 @@ public class UpdateDiscountHandler(
         var discount = await discountRepository.GetByIdAsync(DiscountCodeId.From(request.Id), ct);
         if (discount is null)
             return ServiceResult<DiscountDto>.NotFound("کد تخفیف یافت نشد.");
+
+        DiscountValue discountValue = request.DiscountType switch
+        {
+            DiscountType.Percentage => DiscountValue.Percentage(request.DiscountValue),
+            DiscountType.FixedAmount => DiscountValue.Fixed(request.DiscountValue),
+            DiscountType.FreeShipping => DiscountValue.FreeShipping(),
+            _ => throw new ArgumentOutOfRangeException(nameof(request.DiscountType))
+        };
+
+        Money? maxDiscount = request.MaximumDiscountAmount.HasValue
+            ? Money.FromDecimal(request.MaximumDiscountAmount.Value)
+            : null;
+
+        discount.Update(discountValue, maxDiscount, request.UsageLimit, request.StartsAt, request.ExpiresAt);
 
         if (request.IsActive && !discount.IsActive)
             discount.Activate();

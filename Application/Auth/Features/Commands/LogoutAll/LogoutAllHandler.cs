@@ -1,7 +1,6 @@
-using Application.Audit.Contracts;
-using Application.Common.Results;
-using Domain.Common.Interfaces;
+using Domain.Common.ValueObjects;
 using Domain.Security.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.Auth.Features.Commands.LogoutAll;
 
@@ -17,14 +16,17 @@ public class LogoutAllHandler(
     {
         try
         {
-            await sessionRepository.RevokeAllByUserAsync(request.UserId, ct);
+            var userId = UserId.From(request.UserId);
+            var ipAddress = IpAddress.Unknown;
+
+            await sessionRepository.RevokeAllByUserAsync(userId, ct);
             await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogSecurityEventAsync(
                 "LogoutAll",
                 $"کاربر {request.UserId} از تمام دستگاه‌ها خارج شد.",
-                "system",
-                request.UserId);
+                ipAddress,
+                userId);
 
             logger.LogInformation("کاربر {UserId} از تمام دستگاه‌ها خارج شد.", request.UserId);
             return ServiceResult.Success();

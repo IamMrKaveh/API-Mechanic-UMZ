@@ -1,3 +1,5 @@
+using Application.Shipping.Features.Queries.GetShippings;
+
 namespace Presentation.Shipping.Endpoints;
 
 [ApiController]

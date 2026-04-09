@@ -22,7 +22,12 @@ public class TicketsController(IMediator mediator) : BaseApiController(mediator)
         [FromQuery] int pageSize = 20)
     {
         var result = await _mediator.Send(
-            new GetTicketsQuery(CurrentUser.UserId, status, priority, page, pageSize));
+            new GetTicketsQuery(
+                CurrentUser.UserId,
+                status,
+                priority,
+                page,
+                pageSize));
         return ToActionResult(result);
     }
 

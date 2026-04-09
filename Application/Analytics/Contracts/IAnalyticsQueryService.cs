@@ -9,19 +9,19 @@ public interface IAnalyticsQueryService
         DateTime? toDate,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<SalesChartDataPointDto>> GetSalesChartDataAsync(
+    Task<PaginatedResult<SalesChartDataPointDto>> GetSalesChartDataAsync(
         DateTime fromDate,
         DateTime toDate,
         string groupBy,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<TopSellingProductDto>> GetTopSellingProductsAsync(
+    Task<PaginatedResult<TopSellingProductDto>> GetTopSellingProductsAsync(
         int count,
         DateTime? fromDate,
         DateTime? toDate,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<CategoryPerformanceDto>> GetCategoryPerformanceAsync(
+    Task<PaginatedResult<CategoryPerformanceDto>> GetCategoryPerformanceAsync(
         DateTime? fromDate,
         DateTime? toDate,
         CancellationToken ct = default);

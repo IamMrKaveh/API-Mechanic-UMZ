@@ -7,9 +7,8 @@ public interface IMediaService
 {
     Task<ServiceResult<MediaDto>> UploadAsync(
         Stream fileStream,
-        string fileName,
-        string contentType,
-        long fileSize,
+        FilePath filePath,
+        FileSize fileSize,
         string entityType,
         int entityId,
         bool isPrimary = false,

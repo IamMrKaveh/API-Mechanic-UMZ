@@ -4,7 +4,6 @@ using Application.Category.Features.Commands.ReorderCategories;
 using Application.Category.Features.Commands.UpdateCategory;
 using Application.Category.Features.Queries.GetAdminCategories;
 using Application.Category.Features.Queries.GetCategoryWithGroups;
-using Domain.Category.ValueObjects;
 using Presentation.Category.Requests;
 
 namespace Presentation.Category.Endpoints;
@@ -69,19 +68,15 @@ public class AdminCategoryController(IMediator mediator) : BaseApiController(med
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCategory(Guid id)
     {
-        var command = new DeleteCategoryCommand(CategoryId.From(id));
+        var command = new DeleteCategoryCommand(id);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpPost("reorder")]
-    public async Task<IActionResult> ReorderCategories([FromBody] ReorderCategoriesRequest request)
+    public async Task<IActionResult> ReorderCategories([FromBody] ICollection<(Guid Id, int SortOrder)> request)
     {
-        var items = request.Items
-            .Select(item => new CategoryOrderItem(CategoryId.From(item.CategoryId), item.SortOrder))
-            .ToList();
-
-        var command = new ReorderCategoriesCommand(items);
+        var command = new ReorderCategoriesCommand(request);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

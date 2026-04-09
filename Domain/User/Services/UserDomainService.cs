@@ -1,5 +1,10 @@
-﻿using Domain.User.Results;
+﻿using Domain.Common.Exceptions;
+using Domain.Common.Guards;
+using Domain.User.Results;
 using Domain.User.ValueObjects;
+using SharedKernel.Results;
+using System;
+using System.Linq;
 
 namespace Domain.User.Services;
 
@@ -41,24 +46,16 @@ public sealed class UserDomainService
         Guard.Against.Null(user, nameof(user));
 
         if (!user.IsActive)
-            return Result.Failure(new Error(
-                "400",
-                "حساب کاربری غیرفعال است."));
+            return Result.Failure(new Error("User.Inactive", "حساب کاربری غیرفعال است.", ErrorType.Validation));
 
         if (string.IsNullOrWhiteSpace(firstName))
-            return Result.Failure((new Error(
-                "400",
-                "نام الزامی است.")));
+            return Result.Failure(new Error("User.InvalidFirstName", "نام الزامی است.", ErrorType.Validation));
 
         if (string.IsNullOrWhiteSpace(lastName))
-            return Result.Failure((new Error(
-                "400",
-                "نام خانوادگی الزامی است.")));
+            return Result.Failure(new Error("User.InvalidLastName", "نام خانوادگی الزامی است.", ErrorType.Validation));
 
         if (!string.IsNullOrWhiteSpace(phoneNumber) && phoneNumberExists)
-            return Result.Failure((new Error(
-                "400",
-                "این شماره تلفن قبلاً ثبت شده است.")));
+            return Result.Failure(new Error("User.DuplicatePhone", "این شماره تلفن قبلاً ثبت شده است.", ErrorType.Conflict));
 
         return Result.Success();
     }
@@ -71,19 +68,13 @@ public sealed class UserDomainService
         Guard.Against.Null(user, nameof(user));
 
         if (!user.IsActive)
-            return Result.Failure((new Error(
-                "400",
-                "حساب کاربری غیرفعال است.")));
+            return Result.Failure(new Error("User.Inactive", "حساب کاربری غیرفعال است.", ErrorType.Validation));
 
         if (string.IsNullOrWhiteSpace(newEmail))
-            return Result.Failure((new Error(
-                "400",
-                "ایمیل الزامی است.")));
+            return Result.Failure(new Error("User.InvalidEmail", "ایمیل الزامی است.", ErrorType.Validation));
 
         if (emailExists)
-            return Result.Failure((new Error(
-                "400",
-                "این ایمیل قبلاً ثبت شده است.")));
+            return Result.Failure(new Error("User.DuplicateEmail", "این ایمیل قبلاً ثبت شده است.", ErrorType.Conflict));
 
         return Result.Success();
     }
@@ -93,16 +84,12 @@ public sealed class UserDomainService
         Guard.Against.Null(user, nameof(user));
 
         if (!user.IsActive)
-            return Result.Failure((new Error(
-                "400",
-                "حساب کاربری غیرفعال است.")));
+            return Result.Failure(new Error("User.Inactive", "حساب کاربری غیرفعال است.", ErrorType.Validation));
 
         var activeAddressCount = user.Addresses.Count;
 
         if (activeAddressCount >= MaxAddressesPerUser)
-            return Result.Failure((new Error(
-                "400",
-                $"حداکثر تعداد آدرس مجاز {MaxAddressesPerUser} عدد است.")));
+            return Result.Failure(new Error("User.MaxAddressesExceeded", $"حداکثر تعداد آدرس مجاز {MaxAddressesPerUser} عدد است.", ErrorType.Validation));
 
         return Result.Success();
     }
@@ -113,7 +100,7 @@ public sealed class UserDomainService
         Guard.Against.Null(addressId, nameof(addressId));
 
         if (!user.HasAddress(addressId))
-            return Result.Failure((new Error("400", "آدرس یافت نشد.")));
+            return Result.Failure(new Error("User.AddressNotFound", "آدرس یافت نشد.", ErrorType.NotFound));
 
         return Result.Success();
     }
@@ -124,10 +111,10 @@ public sealed class UserDomainService
         Guard.Against.Null(addressId, nameof(addressId));
 
         if (!user.IsActive)
-            return Result.Failure((new Error("400", "حساب کاربری غیرفعال است.")));
+            return Result.Failure(new Error("User.Inactive", "حساب کاربری غیرفعال است.", ErrorType.Validation));
 
         if (!user.HasAddress(addressId))
-            return Result.Failure((new Error("400", "آدرس یافت نشد.")));
+            return Result.Failure(new Error("User.AddressNotFound", "آدرس یافت نشد.", ErrorType.NotFound));
 
         return Result.Success();
     }
@@ -138,13 +125,13 @@ public sealed class UserDomainService
         Guard.Against.Null(targetUser, nameof(targetUser));
 
         if (!requestingUser.IsAdmin)
-            return Result.Failure((new Error("400", "فقط مدیران می‌توانند کاربران را ارتقا دهند.")));
+            return Result.Failure(new Error("User.Unauthorized", "فقط مدیران می‌توانند کاربران را ارتقا دهند.", ErrorType.Forbidden));
 
         if (!targetUser.IsActive)
-            return Result.Failure((new Error("400", "کاربر هدف غیرفعال است.")));
+            return Result.Failure(new Error("User.TargetInactive", "کاربر هدف غیرفعال است.", ErrorType.Validation));
 
         if (targetUser.IsAdmin)
-            return Result.Failure((new Error("400", "کاربر قبلاً مدیر است.")));
+            return Result.Failure(new Error("User.AlreadyAdmin", "کاربر قبلاً مدیر است.", ErrorType.Conflict));
 
         return Result.Success();
     }
@@ -155,13 +142,13 @@ public sealed class UserDomainService
         Guard.Against.Null(targetUser, nameof(targetUser));
 
         if (!requestingUser.IsAdmin)
-            return Result.Failure((new Error("400", "فقط مدیران می‌توانند دسترسی ادمین را لغو کنند.")));
+            return Result.Failure(new Error("User.Unauthorized", "فقط مدیران می‌توانند دسترسی ادمین را لغو کنند.", ErrorType.Forbidden));
 
         if (requestingUser.Id == targetUser.Id)
-            return Result.Failure((new Error("400", "نمی‌توانید دسترسی ادمین خودتان را لغو کنید.")));
+            return Result.Failure(new Error("User.SelfDemotion", "نمی‌توانید دسترسی ادمین خودتان را لغو کنید.", ErrorType.Validation));
 
         if (!targetUser.IsAdmin)
-            return Result.Failure((new Error("400", "کاربر مدیر نیست.")));
+            return Result.Failure(new Error("User.NotAdmin", "کاربر مدیر نیست.", ErrorType.Validation));
 
         return Result.Success();
     }
@@ -172,10 +159,10 @@ public sealed class UserDomainService
         Guard.Against.Null(targetUser, nameof(targetUser));
 
         if (!requestingUser.IsAdmin)
-            return Result.Failure((new Error("400", "فقط مدیران می‌توانند کاربران را حذف کنند.")));
+            return Result.Failure(new Error("User.Unauthorized", "فقط مدیران می‌توانند کاربران را حذف کنند.", ErrorType.Forbidden));
 
         if (requestingUser.Id == targetUser.Id)
-            return Result.Failure((new Error("400", "نمی‌توانید حساب خودتان را حذف کنید.")));
+            return Result.Failure(new Error("User.SelfDeletion", "نمی‌توانید حساب خودتان را حذف کنید.", ErrorType.Validation));
 
         return Result.Success();
     }

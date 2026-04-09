@@ -1,7 +1,5 @@
-using Application.Common.Results;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
-using Domain.Common.Interfaces;
 
 namespace Application.Brand.Features.Commands.DeleteBrand;
 
@@ -12,10 +10,10 @@ public class DeleteBrandHandler(
 {
     public async Task<ServiceResult> Handle(DeleteBrandCommand request, CancellationToken ct)
     {
-        var brandId = BrandId.From(request.Id.Value);
+        var brandId = BrandId.From(request.Id);
         var brand = await brandRepository.GetByIdAsync(brandId, ct);
         if (brand is null)
-            return ServiceResult.NotFound("Brand not found.");
+            return ServiceResult.NotFound("برند یافت نشد.");
 
         if (brand.IsActive)
             brand.Deactivate();

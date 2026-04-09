@@ -50,7 +50,7 @@ public sealed class Brand : AggregateRoot<BrandId>
         ArgumentNullException.ThrowIfNull(categoryId);
         ArgumentNullException.ThrowIfNull(uniquenessChecker);
 
-        if (!uniquenessChecker.IsUnique(name.Value, slug.Value))
+        if (!uniquenessChecker.IsUnique(name, slug, categoryId))
             throw new BrandNameAlreadyExistsException(name);
 
         return new Brand(BrandId.NewId(), name, slug, categoryId, description, logoPath);
@@ -65,7 +65,7 @@ public sealed class Brand : AggregateRoot<BrandId>
     {
         ArgumentNullException.ThrowIfNull(uniquenessChecker);
 
-        if (!uniquenessChecker.IsUnique(name.Value, slug.Value, Id))
+        if (!uniquenessChecker.IsUnique(name, slug, CategoryId, Id))
             throw new BrandNameAlreadyExistsException(name);
 
         Name = name;

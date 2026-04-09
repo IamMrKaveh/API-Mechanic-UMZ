@@ -1,3 +1,5 @@
+using Application.User.Features.Queries.GetUserDashboard;
+
 namespace Presentation.User.Endpoints;
 
 [Route("api/[controller]")]

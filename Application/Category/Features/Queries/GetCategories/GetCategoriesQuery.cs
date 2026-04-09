@@ -5,4 +5,6 @@ namespace Application.Category.Features.Queries.GetCategories;
 public record GetCategoriesQuery(
     string? Search,
     bool? IsActive,
-    bool IncludeDeleted) : IRequest<ServiceResult<PaginatedResult<CategoryListItemDto>>>;
+    bool IncludeDeleted,
+    int Page,
+    int PageSize) : IRequest<ServiceResult<PaginatedResult<CategoryListItemDto>>>;

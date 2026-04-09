@@ -26,10 +26,16 @@ public class AdminWalletController(IMediator mediator) : BaseApiController(media
     public async Task<IActionResult> GetLedger(
         Guid userId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new GetWalletLedgerQuery(userId, page, pageSize), ct);
+        var command = new GetWalletLedgerQuery(
+            userId,
+            page,
+            pageSize);
+        var result = await _mediator.Send(
+            command,
+            ct);
         return ToActionResult(result);
     }
 

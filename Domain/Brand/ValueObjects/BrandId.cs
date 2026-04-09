@@ -17,6 +17,4 @@ public sealed record BrandId
     public static BrandId From(Guid value) => new(value);
 
     public override string ToString() => Value.ToString();
-
-    public bool HasValue => Value.ToString().Trim() is not null;
 }

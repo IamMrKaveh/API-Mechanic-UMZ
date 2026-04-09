@@ -91,9 +91,9 @@ public sealed record InventoryReportDto
     public decimal TotalStockValue { get; init; }
     public decimal TotalRetailValue { get; init; }
     public decimal PotentialProfit { get; init; }
-    public IReadOnlyList<InventoryCategoryBreakdownDto> ByCategory { get; init; } = [];
-    public IReadOnlyList<AnalyticsLowStockItemDto> LowStockItems { get; init; } = [];
-    public IReadOnlyList<AnalyticsOutOfStockItemDto> OutOfStockItems { get; init; } = [];
+    public ICollection<InventoryCategoryBreakdownDto> ByCategory { get; init; } = [];
+    public ICollection<AnalyticsLowStockItemDto> LowStockItems { get; init; } = [];
+    public ICollection<AnalyticsOutOfStockItemDto> OutOfStockItems { get; init; } = [];
 }
 
 public sealed record InventoryCategoryBreakdownDto

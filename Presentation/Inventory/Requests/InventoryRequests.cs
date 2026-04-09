@@ -13,7 +13,9 @@ public record AdjustStockRequest(
 );
 
 public record BulkAdjustStockRequest(
-    IReadOnlyList<StockAdjustmentItemRequest> Items,
+    ICollection<Guid> VariantId,
+    ICollection<int> QuantityChange,
+    Guid UserId,
     string Reason
 );
 
@@ -26,14 +28,17 @@ public record RecordDamageRequest(
 );
 
 public record BulkStockInRequest(
-    IReadOnlyList<StockInItemRequest> Items,
-    string? SupplierReference = null
+    ICollection<Guid> VariantIds,
+    ICollection<int> Quantities,
+    ICollection<string>? ReferenceNumbers,
+    Guid? UserId,
+    string Reason
 );
 
 public record StockInItemRequest(Guid VariantId, int Quantity, string? Notes);
 
 public record BatchAvailabilityRequest(IReadOnlyList<Guid> VariantIds);
 
-public record BatchAvailabilityIntRequest(IReadOnlyList<int> VariantIds);
+public record BatchAvailabilityIntRequest(ICollection<Guid> VariantIds);
 
 public record ApproveReturnRequest(string? Reason = null);

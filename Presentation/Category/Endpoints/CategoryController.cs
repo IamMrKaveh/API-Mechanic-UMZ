@@ -22,9 +22,15 @@ public class CategoryController(IMediator mediator) : BaseApiController(mediator
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetCategories()
+    public async Task<IActionResult> GetCategories(
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int pagesize = 10)
     {
-        var query = new GetPublicCategoriesQuery();
+        var query = new GetPublicCategoriesQuery(
+            search,
+            page,
+            pagesize);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
@@ -44,9 +50,9 @@ public class CategoryController(IMediator mediator) : BaseApiController(mediator
     [HttpGet("{id}/products")]
     [AllowAnonymous]
     public async Task<IActionResult> GetCategoryProducts(
-        int id,
+        Guid id,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 10)
     {
         var query = new GetCategoryProductsQuery(id, true, page, pageSize);
         var result = await _mediator.Send(query);

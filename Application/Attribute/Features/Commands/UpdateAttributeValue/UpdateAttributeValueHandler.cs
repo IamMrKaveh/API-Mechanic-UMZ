@@ -1,7 +1,5 @@
-using Application.Common.Results;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
-using Domain.Common.Interfaces;
 
 namespace Application.Attribute.Features.Commands.UpdateAttributeValue;
 
@@ -16,7 +14,7 @@ public class UpdateAttributeValueHandler(
         UpdateAttributeValueCommand request,
         CancellationToken ct)
     {
-        var attributeValueId = AttributeValueId.From(request.Id.Value);
+        var attributeValueId = AttributeValueId.From(request.Id);
 
         var attributeValue = await _repository.GetAttributeValueByIdAsync(attributeValueId, ct);
         if (attributeValue is null)
@@ -40,7 +38,7 @@ public class UpdateAttributeValueHandler(
 
         type.UpdateValue(
             attributeValueId,
-            request.Value ?? attributeValue,
+            attributeValue,
             request.DisplayValue ?? attributeValue.DisplayValue,
             request.HexCode ?? attributeValue.HexCode,
             request.SortOrder ?? attributeValue.SortOrder,

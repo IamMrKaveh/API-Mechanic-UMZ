@@ -1,6 +1,5 @@
 using Application.Brand.Features.Queries.GetBrand;
 using Application.Brand.Features.Queries.GetPublicBrands;
-using Domain.Brand.ValueObjects;
 
 namespace Presentation.Brand.Endpoints;
 
@@ -12,7 +11,7 @@ public class BrandController(IMediator mediator) : BaseApiController(mediator)
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetBrands([FromQuery] int? categoryId)
+    public async Task<IActionResult> GetBrands([FromQuery] Guid? categoryId)
     {
         var query = new GetPublicBrandsQuery(categoryId);
         var result = await _mediator.Send(query);
@@ -23,7 +22,7 @@ public class BrandController(IMediator mediator) : BaseApiController(mediator)
     [AllowAnonymous]
     public async Task<IActionResult> GetBrand(Guid id)
     {
-        var query = new GetBrandQuery(BrandId.From(id));
+        var query = new GetBrandQuery(id);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

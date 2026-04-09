@@ -9,5 +9,5 @@ public record DebitWalletCommand(
     WalletReferenceType ReferenceType,
     Guid ReferenceId,
     string IdempotencyKey,
-    Guid? CorrelationId = null,
+    string? CorrelationId = null,
     string? Description = null) : IRequest<ServiceResult<Unit>>;

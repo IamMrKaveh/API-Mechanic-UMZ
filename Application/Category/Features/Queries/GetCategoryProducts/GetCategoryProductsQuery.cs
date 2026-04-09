@@ -1,3 +1,5 @@
+using Application.Category.Features.Shared;
+
 namespace Application.Category.Features.Queries.GetCategoryProducts;
 
 public record GetCategoryProductsQuery(

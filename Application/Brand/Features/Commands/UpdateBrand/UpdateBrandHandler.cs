@@ -13,17 +13,18 @@ public class UpdateBrandHandler(
 {
     public async Task<ServiceResult<BrandDetailDto>> Handle(UpdateBrandCommand request, CancellationToken ct)
     {
-        var brandId = BrandId.From(request.BrandId.Value);
+        var brandId = BrandId.From(request.BrandId);
         var brand = await brandRepository.GetByIdAsync(brandId, ct);
         if (brand is null)
-            return ServiceResult<BrandDetailDto>.NotFound("Brand not found.");
+            return ServiceResult<BrandDetailDto>.NotFound("برند یافت نشد.");
 
         var rowVersion = request.RowVersion.FromBase64RowVersion();
         brandRepository.SetOriginalRowVersion(brand, rowVersion);
 
         var brandName = BrandName.Create(request.Name);
-        var slug = string.IsNullOrWhiteSpace(request.Slug?.Value)
-            ? Slug.GenerateFrom(request.Name.Value)
+
+        var slug = string.IsNullOrWhiteSpace(request.Slug)
+            ? Slug.GenerateFrom(request.Name)
             : Slug.FromString(request.Slug);
 
         var uniquenessChecker = new BrandUniquenessCheckerAdapter(brandRepository);

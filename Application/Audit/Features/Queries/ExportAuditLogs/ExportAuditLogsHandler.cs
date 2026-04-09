@@ -1,13 +1,11 @@
-using Application.Audit.Contracts;
+using Application.Audit.Features.Shared;
 
 namespace Application.Audit.Features.Queries.ExportAuditLogs;
 
 public sealed class ExportAuditLogsHandler(
-    IAuditService auditService) : IRequestHandler<ExportAuditLogsQuery, ExportAuditLogsResult>
+    IAuditQueryService auditQueryService) : IRequestHandler<ExportAuditLogsQuery, ServiceResult<PaginatedResult<ExportAuditLogsResult>>>
 {
-    private readonly IAuditService _auditService = auditService;
-
-    public async Task<ExportAuditLogsResult> Handle(
+    public async Task<ServiceResult<PaginatedResult<ExportAuditLogsResult>>> Handle(
         ExportAuditLogsQuery request,
         CancellationToken ct)
     {
@@ -29,17 +27,20 @@ public sealed class ExportAuditLogsHandler(
         byte[] content;
         if (request.Format == "json")
         {
-            var (logs, _) = await _auditService.GetAuditLogsAsync(
-                request.UserId, request.EventType,
-                request.From, request.To,
-                page: 1, pageSize: request.MaxRows);
+            var result = await auditQueryService.GetAuditLogsAsync(
+                request.UserId,
+                request.EventType,
+                request.From,
+                request.To,
+                page: 1,
+                pageSize: request.MaxRows);
 
             content = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(logs,
                 new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         }
         else
         {
-            content = await _auditService.ExportToCsvAsync(exportRequest, ct);
+            content = await auditQueryService.ExportToCsvAsync(exportRequest, ct);
         }
 
         var fileName = $"audit_logs_{DateTime.UtcNow:yyyyMMdd_HHmm}.{extension}";

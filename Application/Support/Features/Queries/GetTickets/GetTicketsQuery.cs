@@ -5,4 +5,6 @@ namespace Application.Support.Features.Queries.GetTickets;
 public record GetTicketsQuery(
     Guid? UserId,
     string? Status,
-    string? Priority) : IRequest<ServiceResult<PaginatedResult<TicketListItemDto>>>;
+    string? Priority,
+    int Page = 1,
+    int Pagesize = 10) : IRequest<ServiceResult<PaginatedResult<TicketListItemDto>>>;

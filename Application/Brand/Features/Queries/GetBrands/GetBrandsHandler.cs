@@ -1,4 +1,7 @@
+using Application.Brand.Contracts;
 using Application.Brand.Features.Shared;
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
 
 namespace Application.Brand.Features.Queries.GetBrands;
 
@@ -7,12 +10,14 @@ public class GetBrandsHandler(
 {
     private readonly IBrandQueryService _brandQueryService = brandQueryService;
 
-    public async Task<ServiceResult<PaginatedResult<BrandListItemDto>>> Handle(
-        GetBrandsQuery request,
-        CancellationToken ct)
+    public async Task<ServiceResult<PaginatedResult<BrandListItemDto>>> Handle(GetBrandsQuery request, CancellationToken ct)
     {
+        CategoryId? categoryId = request.CategoryId.HasValue
+            ? CategoryId.From(request.CategoryId.Value)
+            : null;
+
         var result = await _brandQueryService.GetBrandsPagedAsync(
-            request.CategoryId,
+            categoryId,
             request.Search,
             request.IsActive,
             request.IncludeDeleted,

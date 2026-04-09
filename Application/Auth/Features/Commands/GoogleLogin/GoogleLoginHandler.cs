@@ -1,8 +1,7 @@
-﻿using Application.Auth.Contracts;
-using Application.Auth.Features.Shared;
-using Application.Common.Results;
-using Domain.Common.Interfaces;
+﻿using Application.Auth.Features.Shared;
+using Domain.Common.ValueObjects;
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.Auth.Features.Commands.GoogleLogin;
 
@@ -17,15 +16,21 @@ public class GoogleLoginHandler(
 
     public async Task<ServiceResult<TokenResultDto>> Handle(GoogleLoginCommand request, CancellationToken ct)
     {
-        var user = await _userRepository.GetByEmailAsync(request.Email, ct);
+        var email = Email.Create(request.Email);
+        var user = await _userRepository.GetByEmailAsync(email, ct);
 
-        if (user == null)
+        if (user is null)
         {
-            user = Domain.User.Aggregates.User.Create(string.Empty);
-            user.UpdateProfile(
-                Domain.User.ValueObjects.FullName.Create(request.FirstName, request.LastName).Value,
+            user = Domain.User.Aggregates.User.Create(
+                UserId.NewId(),
+                FullName.Create(request.FirstName, request.LastName),
+                email,
+                null,
                 null);
-            user.SetEmail(request.Email);
+
+            user.UpdateProfile(
+                FullName.Create(request.FirstName, request.LastName),
+                null);
 
             await _userRepository.AddAsync(user, ct);
             await _unitOfWork.SaveChangesAsync(ct);

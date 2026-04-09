@@ -157,6 +157,47 @@ public static class MapsterConfig
             .Map(dest => dest.IsExpired, src => src.IsExpired)
             .Map(dest => dest.IsRedeemable, src => src.IsRedeemable)
             .Map(dest => dest.CreatedAt, src => src.CreatedAt);
+
+        TypeAdapterConfig<DiscountCode, DiscountCodeDto>.NewConfig()
+            .Map(dest => dest.Id, src => src.Id.Value)
+            .Map(dest => dest.Code, src => src.Code)
+            .Map(dest => dest.DiscountType, src => src.Value.Type.ToString())
+            .Map(dest => dest.DiscountValue, src => src.Value.Amount)
+            .Map(dest => dest.UsageLimit, src => src.UsageLimit)
+            .Map(dest => dest.UsageCount, src => src.UsageCount)
+            .Map(dest => dest.IsActive, src => src.IsActive)
+            .Map(dest => dest.IsRedeemable, src => src.IsRedeemable)
+            .Map(dest => dest.ExpiresAt, src => src.ExpiresAt)
+            .Map(dest => dest.CreatedAt, src => src.CreatedAt);
+
+        TypeAdapterConfig<DiscountCode, DiscountCodeDetailDto>.NewConfig()
+            .Map(dest => dest.Id, src => src.Id.Value)
+            .Map(dest => dest.Code, src => src.Code)
+            .Map(dest => dest.DiscountType, src => src.Value.Type.ToString())
+            .Map(dest => dest.DiscountValue, src => src.Value.Amount)
+            .Map(dest => dest.MaximumDiscountAmount, src => src.MaximumDiscountAmount != null ? src.MaximumDiscountAmount.Amount : (decimal?)null)
+            .Map(dest => dest.UsageLimit, src => src.UsageLimit)
+            .Map(dest => dest.UsageCount, src => src.UsageCount)
+            .Map(dest => dest.StartsAt, src => src.StartsAt)
+            .Map(dest => dest.ExpiresAt, src => src.ExpiresAt)
+            .Map(dest => dest.IsActive, src => src.IsActive)
+            .Map(dest => dest.IsExpired, src => src.IsExpired)
+            .Map(dest => dest.IsRedeemable, src => src.IsRedeemable)
+            .Map(dest => dest.CreatedAt, src => src.CreatedAt)
+            .Map(dest => dest.Restrictions, src => src.Restrictions.Adapt<List<DiscountRestrictionDto>>());
+
+        TypeAdapterConfig<Domain.Discount.Entities.DiscountRestriction, DiscountRestrictionDto>.NewConfig()
+            .Map(dest => dest.Id, src => src.Id.Value)
+            .Map(dest => dest.RestrictionType, src => src.RestrictionType.ToString())
+            .Map(dest => dest.RestrictionValue, src => src.RestrictionValue);
+
+        TypeAdapterConfig<DiscountCode, DiscountInfoDto>.NewConfig()
+            .Map(dest => dest.Code, src => src.Code)
+            .Map(dest => dest.DiscountType, src => src.Value.Type.ToString())
+            .Map(dest => dest.DiscountValue, src => src.Value.Amount)
+            .Map(dest => dest.MaximumDiscountAmount, src => src.MaximumDiscountAmount != null ? src.MaximumDiscountAmount.Amount : (decimal?)null)
+            .Map(dest => dest.ExpiresAt, src => src.ExpiresAt)
+            .Map(dest => dest.IsRedeemable, src => src.IsRedeemable);
     }
 
     private static void ConfigureInventoryMappings()

@@ -1,9 +1,11 @@
 using Application.Category.Contracts;
-using SharedKernel.Models;
+using Application.Category.Features.Shared;
+using Domain.Category.ValueObjects;
 
 namespace Application.Category.Features.Queries.GetCategoryProducts;
 
-public class GetCategoryProductsHandler(ICategoryQueryService queryService) : IRequestHandler<GetCategoryProductsQuery, ServiceResult<PaginatedResult<CategoryProductItemDto>>>
+public class GetCategoryProductsHandler(ICategoryQueryService queryService)
+    : IRequestHandler<GetCategoryProductsQuery, ServiceResult<PaginatedResult<CategoryProductItemDto>>>
 {
     private readonly ICategoryQueryService _queryService = queryService;
 
@@ -11,8 +13,10 @@ public class GetCategoryProductsHandler(ICategoryQueryService queryService) : IR
         GetCategoryProductsQuery request,
         CancellationToken ct)
     {
+        var categoryId = CategoryId.From(request.CategoryId);
+
         var result = await _queryService.GetCategoryProductsAsync(
-            request.CategoryId,
+            categoryId,
             request.ActiveOnly,
             request.Page,
             request.PageSize,

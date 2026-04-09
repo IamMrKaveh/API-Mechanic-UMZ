@@ -41,9 +41,10 @@ public class AdminInventoryController(IMediator mediator) : BaseApiController(me
     public async Task<IActionResult> GetStockLedger(
         [FromQuery] Guid variantId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50)
+        [FromQuery] int pageSize = 10)
     {
-        var result = await _mediator.Send(new GetStockLedgerByVariantQuery(variantId, page, pageSize));
+        var query = new GetStockLedgerByVariantQuery(variantId, page, pageSize);
+        var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
 
@@ -99,7 +100,8 @@ public class AdminInventoryController(IMediator mediator) : BaseApiController(me
     public async Task<IActionResult> BulkAdjustStock([FromBody] BulkAdjustStockRequest request)
     {
         var command = new BulkAdjustStockCommand(
-            request.Items.Select(i => new StockAdjustmentItem(i.VariantId, i.QuantityChange)).ToList(),
+            request.VariantId,
+            request.QuantityChange,
             CurrentUser.UserId,
             request.Reason);
 
@@ -136,7 +138,7 @@ public class AdminInventoryController(IMediator mediator) : BaseApiController(me
     }
 
     [HttpGet("status/{variantId}")]
-    public async Task<IActionResult> GetInventoryStatus(int variantId)
+    public async Task<IActionResult> GetInventoryStatus(Guid variantId)
     {
         var result = await _mediator.Send(new GetInventoryStatusQuery(variantId));
         return ToActionResult(result);
@@ -146,9 +148,11 @@ public class AdminInventoryController(IMediator mediator) : BaseApiController(me
     public async Task<IActionResult> BulkStockIn([FromBody] BulkStockInRequest request)
     {
         var command = new BulkStockInCommand(
-            request.Items.Select(i => new StockInItem(i.VariantId, i.Quantity, i.Notes)).ToList(),
+            request.VariantIds,
+            request.Quantities,
+            request.ReferenceNumbers,
             CurrentUser.UserId,
-            request.SupplierReference ?? string.Empty);
+            request.Reason);
 
         var result = await _mediator.Send(command);
         return ToActionResult(result);

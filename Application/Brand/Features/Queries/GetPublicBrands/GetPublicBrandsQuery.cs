@@ -2,4 +2,4 @@
 
 namespace Application.Brand.Features.Queries.GetPublicBrands;
 
-public sealed record GetPublicBrandsQuery(Guid? CategoryId) : IRequest<ServiceResult<PaginatedResult<BrandDto>>>;
+public sealed record GetPublicBrandsQuery(Guid? CategoryId) : IRequest<ServiceResult<IReadOnlyList<BrandListItemDto>>>;

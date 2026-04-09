@@ -1,6 +1,5 @@
-using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
-using Application.Common.Results;
+using Domain.Common.ValueObjects;
 
 namespace Application.Auth.Features.Commands.RefreshToken;
 
@@ -10,9 +9,12 @@ public class RefreshTokenHandler(IAuthService authService) : IRequestHandler<Ref
         RefreshTokenCommand request,
         CancellationToken ct)
     {
+        var refreshToken = Domain.Security.ValueObjects.RefreshToken.Create(request.RefreshToken);
+        var ipAddress = IpAddress.Create(request.IpAddress);
+
         var result = await authService.RefreshTokenAsync(
-            request.RefreshToken,
-            request.IpAddress,
+            refreshToken,
+            ipAddress,
             request.UserAgent,
             ct);
 

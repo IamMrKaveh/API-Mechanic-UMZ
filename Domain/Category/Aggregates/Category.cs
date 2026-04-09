@@ -28,7 +28,7 @@ public sealed class Category : AggregateRoot<CategoryId>
     {
         ArgumentNullException.ThrowIfNull(uniquenessChecker);
 
-        if (!uniquenessChecker.IsUnique(name, slug.Value))
+        if (!uniquenessChecker.IsUnique(name, slug, null))
             throw new DuplicateCategoryNameException(name);
 
         var category = new Category
@@ -56,7 +56,7 @@ public sealed class Category : AggregateRoot<CategoryId>
     {
         ArgumentNullException.ThrowIfNull(uniquenessChecker);
 
-        if (!uniquenessChecker.IsUnique(name, slug.Value, Id))
+        if (!uniquenessChecker.IsUnique(name, slug, Id))
             throw new DuplicateCategoryNameException(name);
 
         Name = name;

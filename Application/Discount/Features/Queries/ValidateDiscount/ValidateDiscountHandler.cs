@@ -3,18 +3,19 @@ using Application.Discount.Features.Shared;
 namespace Application.Discount.Features.Queries.ValidateDiscount;
 
 public class ValidateDiscountHandler(
-    IDiscountService discountService) : IRequestHandler<ValidateDiscountQuery, ServiceResult<DiscountValidationResult>>
+    IDiscountQueryService discountQueryService) : IRequestHandler<ValidateDiscountQuery, ServiceResult<DiscountValidationResult>>
 {
-    private readonly IDiscountService _discountService = discountService;
-
     public async Task<ServiceResult<DiscountValidationResult>> Handle(
-        ValidateDiscountQuery request,
-        CancellationToken ct)
+        ValidateDiscountQuery request, CancellationToken ct)
     {
-        return await _discountService.ValidateAndApplyDiscountAsync(
+        var result = await discountQueryService.ValidateDiscountAsync(
             request.Code,
             request.OrderAmount,
             request.UserId,
             ct);
+
+        return result.IsValid
+            ? ServiceResult<DiscountValidationResult>.Success(result)
+            : ServiceResult<DiscountValidationResult>.Failure(result.Error ?? "کد تخفیف نامعتبر است.");
     }
 }

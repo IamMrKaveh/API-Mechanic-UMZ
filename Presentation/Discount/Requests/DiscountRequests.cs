@@ -22,6 +22,9 @@ public record UpdateDiscountRequest(
 
 public record ValidateDiscountRequest(string Code, decimal OrderAmount);
 
-public record ApplyDiscountRequest(string Code, Guid OrderId, decimal OrderAmount);
+public record ApplyDiscountRequest(
+    string Code,
+    Guid OrderId,
+    decimal OrderAmount);
 
 public record CancelDiscountUsageRequest(Guid OrderId);

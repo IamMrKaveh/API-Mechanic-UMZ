@@ -14,7 +14,7 @@ public class DiscountsController(IMediator mediator) : BaseApiController(mediato
     [HttpPost("validate")]
     public async Task<IActionResult> Validate([FromBody] ValidateDiscountRequest request)
     {
-        var query = new ValidateDiscountQuery(request.Code, request.OrderTotal, CurrentUser.UserId);
+        var query = new ValidateDiscountQuery(request.Code, request.OrderAmount, CurrentUser.UserId);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }
@@ -22,7 +22,11 @@ public class DiscountsController(IMediator mediator) : BaseApiController(mediato
     [HttpPost("apply")]
     public async Task<IActionResult> Apply([FromBody] ApplyDiscountRequest request)
     {
-        var command = new ApplyDiscountCommand(request.Code, request.OrderTotal, CurrentUser.UserId);
+        var command = new ApplyDiscountCommand(
+            request.Code,
+            request.OrderAmount,
+            CurrentUser.UserId,
+            request.OrderId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

@@ -17,21 +17,19 @@ public class ReorderCategoriesHandler(
 
         foreach (var item in request.Items)
         {
-            var categoryId = CategoryId.From(item.Id.Value);
+            var categoryId = CategoryId.From(item.Id);
             var category = await categoryRepository.GetByIdAsync(categoryId, ct);
             if (category is null)
                 continue;
 
-            var slug = Slug.FromString(category.Slug);
-            var categoryName = CategoryName.Create(category.Name);
-
-            category.UpdateDetails(categoryName, slug, uniquenessChecker, category.Description, item.SortOrder);
+            var slug = Slug.FromString(category.Slug.Value);
+            category.UpdateDetails(category.Name, slug, uniquenessChecker, category.Description, item.SortOrder);
             categoryRepository.Update(category);
         }
 
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("Categories re-ordered successfuly");
+        logger.LogInformation("Categories reordered successfully");
         return ServiceResult.Success();
     }
 }

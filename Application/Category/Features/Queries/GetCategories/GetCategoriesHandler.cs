@@ -1,9 +1,11 @@
+using Application.Category.Contracts;
 using Application.Category.Features.Shared;
 
 namespace Application.Category.Features.Queries.GetCategories;
 
 public class GetCategoriesHandler(
-    ICategoryQueryService categoryQueryService) : IRequestHandler<GetCategoriesQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>
+    ICategoryQueryService categoryQueryService)
+    : IRequestHandler<GetCategoriesQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>
 {
     private readonly ICategoryQueryService _categoryQueryService = categoryQueryService;
 
@@ -12,7 +14,6 @@ public class GetCategoriesHandler(
         CancellationToken ct)
     {
         var result = await _categoryQueryService.GetCategoriesPagedAsync(
-            request.ParentId,
             request.Search,
             request.IsActive,
             request.IncludeDeleted,

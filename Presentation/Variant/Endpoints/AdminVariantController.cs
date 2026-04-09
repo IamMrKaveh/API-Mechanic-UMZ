@@ -1,10 +1,8 @@
-using Application.Variant.Features.Commands.AddStock;
+using Application.Inventory.Features.Commands.AddStock;
+using Application.Inventory.Features.Commands.RemoveStock;
 using Application.Variant.Features.Commands.AddVariant;
-using Application.Variant.Features.Commands.RemoveStock;
 using Application.Variant.Features.Commands.RemoveVariant;
 using Application.Variant.Features.Commands.UpdateVariant;
-using Domain.User.ValueObjects;
-using Domain.Variant.ValueObjects;
 using Presentation.Variant.Requests;
 
 namespace Presentation.Variant.Endpoints;
@@ -77,12 +75,12 @@ public class AdminVariantController(IMediator mediator) : BaseApiController(medi
     }
 
     [HttpPost("{id}/remove-stock")]
-    public async Task<IActionResult> RemoveStock(int id, [FromBody] RemoveStockRequest request)
+    public async Task<IActionResult> RemoveStock(Guid id, [FromBody] RemoveStockRequest request)
     {
         var command = new RemoveStockCommand(
-            VariantId.From(Guid.Empty),
+            id,
             request.Quantity,
-            UserId.From(CurrentUser.UserId),
+            CurrentUser.UserId,
             request.Notes);
 
         var result = await _mediator.Send(command);
