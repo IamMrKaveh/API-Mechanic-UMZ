@@ -1,4 +1,5 @@
 using Application.User.Features.Shared;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Queries.GetUserDashboard;
 
@@ -11,8 +12,11 @@ public class GetUserDashboardHandler(IUserQueryService userQueryService)
         GetUserDashboardQuery request,
         CancellationToken ct)
     {
+        var userId = UserId.From(request.UserId);
+
         var dashboard = await _userQueryService.GetUserDashboardAsync(
-            request.UserId, ct);
+            userId,
+            ct);
 
         if (dashboard is null)
             return ServiceResult<UserDashboardDto>.NotFound("کاربر یافت نشد.");

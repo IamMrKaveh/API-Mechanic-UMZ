@@ -1,7 +1,6 @@
-using System.Security.Claims;
 using Application.Common.Interfaces;
-using Microsoft.AspNetCore.Http;
 using SharedKernel.Models;
+using System.Security.Claims;
 
 namespace Presentation.Common.Services;
 
@@ -29,7 +28,7 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
     public string? UserAgent =>
         _httpContextAccessor.HttpContext?.Request?.Headers.UserAgent.FirstOrDefault();
 
-    public string? GuestId =>
+    public string? GuestToken =>
         _httpContextAccessor.HttpContext?.Request.Headers["X-Guest-Token"].FirstOrDefault();
 
     public CurrentUser CurrentUser => new()

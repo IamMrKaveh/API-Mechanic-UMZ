@@ -1,4 +1,5 @@
-﻿using Application.Category.Features.Shared;
+﻿using Application.Category.Contracts;
+using Application.Category.Features.Shared;
 
 namespace Application.Category.Features.Queries.GetPublicCategories;
 

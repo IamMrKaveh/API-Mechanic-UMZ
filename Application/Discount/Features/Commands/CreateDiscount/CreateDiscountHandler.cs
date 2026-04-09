@@ -1,6 +1,4 @@
-using Application.Common.Results;
 using Application.Discount.Features.Shared;
-using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
 using Domain.Discount.Aggregates;
 using Domain.Discount.Enums;

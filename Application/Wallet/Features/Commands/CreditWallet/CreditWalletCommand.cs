@@ -7,7 +7,7 @@ public record CreditWalletCommand(
     decimal Amount,
     WalletTransactionType TransactionType,
     WalletReferenceType ReferenceType,
-    Guid ReferenceId,
+    int ReferenceId,
     string IdempotencyKey,
     string? CorrelationId = null,
     string? Description = null) : IRequest<ServiceResult<Unit>>;

@@ -15,7 +15,7 @@ public class WishlistController(IMediator mediator) : BaseApiController(mediator
     [HttpGet]
     public async Task<IActionResult> GetMyWishlist(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 10)
     {
         var result = await _mediator.Send(
             new GetWishlistByIdQuery(CurrentUser.UserId, page, pageSize));

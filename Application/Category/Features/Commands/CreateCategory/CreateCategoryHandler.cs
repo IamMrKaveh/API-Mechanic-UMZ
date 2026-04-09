@@ -14,17 +14,18 @@ public class CreateCategoryHandler(
 {
     public async Task<ServiceResult<CategoryDto>> Handle(CreateCategoryCommand request, CancellationToken ct)
     {
-        if (await categoryRepository.ExistsByNameAsync(request.CategoryName, null, ct))
-            return ServiceResult<CategoryDto>.Conflict("Category name already exists.");
+        var categoryName = CategoryName.Create(request.CategoryName);
 
-        var slug = string.IsNullOrWhiteSpace(request.Slug?.Value)
+        if (await categoryRepository.ExistsByNameAsync(categoryName, null, ct))
+            return ServiceResult<CategoryDto>.Conflict("نام دسته‌بندی قبلاً ثبت شده است.");
+
+        var slug = string.IsNullOrWhiteSpace(request.Slug)
             ? Slug.GenerateFrom(request.CategoryName)
             : Slug.FromString(request.Slug);
 
         if (await categoryRepository.ExistsBySlugAsync(slug, null, ct))
-            return ServiceResult<CategoryDto>.Conflict("Slug already exists.");
+            return ServiceResult<CategoryDto>.Conflict("این اسلاگ قبلاً استفاده شده است.");
 
-        var categoryName = CategoryName.Create(request.CategoryName);
         var uniquenessChecker = new CategoryUniquenessCheckerAdapter(categoryRepository);
         var categoryId = CategoryId.NewId();
 

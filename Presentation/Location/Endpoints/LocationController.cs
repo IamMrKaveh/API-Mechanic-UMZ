@@ -1,3 +1,6 @@
+using Application.Location.Features.Queries.GetCities;
+using Application.Location.Features.Queries.GetStates;
+
 namespace Presentation.Location.Endpoints;
 
 [Route("api/[controller]")]

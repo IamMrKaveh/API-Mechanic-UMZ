@@ -155,7 +155,7 @@ public class BrandQueryService(
             .AsNoTracking()
             .Where(g => g.Name == name && g.CategoryId == categoryId && !g.IsDeleted);
 
-        if (excludeId.HasValue)
+        if (excludeId is not null)
             query = query.Where(g => g.Id != excludeId.Value);
 
         return await query.AnyAsync(ct);

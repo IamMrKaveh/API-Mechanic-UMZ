@@ -5,4 +5,6 @@ public record GetAdminProductsQuery(
     Guid? BrandId,
     string? Search,
     bool? IsActive,
-    bool IncludeDeleted) : IRequest<ServiceResult<PaginatedResult<AdminProductListItemDto>>>;
+    bool IncludeDeleted,
+    int Page = 1,
+    int PageSize = 10) : IRequest<ServiceResult<PaginatedResult<AdminProductListItemDto>>>;

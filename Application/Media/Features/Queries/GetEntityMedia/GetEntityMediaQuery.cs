@@ -4,4 +4,4 @@ namespace Application.Media.Features.Queries.GetEntityMedia;
 
 public record GetEntityMediaQuery(
     string EntityType,
-    Guid EntityId) : IRequest<ServiceResult<IReadOnlyList<MediaDto>>>;
+    int EntityId) : IRequest<ServiceResult<IReadOnlyList<MediaDto>>>;

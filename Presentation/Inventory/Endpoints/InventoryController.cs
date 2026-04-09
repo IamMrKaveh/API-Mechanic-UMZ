@@ -24,7 +24,7 @@ public class InventoryController(IMediator mediator) : BaseApiController(mediato
         [FromBody] BatchAvailabilityIntRequest request)
     {
         var query = new GetBatchVariantAvailabilityQuery(
-            request.VariantIds.Distinct().ToList().AsReadOnly());
+            request.VariantIds);
         var result = await _mediator.Send(query);
         return ToActionResult(result);
     }

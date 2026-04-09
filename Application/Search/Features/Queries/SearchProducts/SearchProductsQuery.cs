@@ -11,4 +11,6 @@ public sealed record SearchProductsQuery(
     string? Brand,
     bool InStockOnly,
     string? SortBy,
-    List<string>? Tags) : IRequest<ServiceResult<SearchResultDto<ProductSearchResultItemDto>>>
+    List<string>? Tags,
+    int Page = 1,
+    int PageSize = 10) : IRequest<ServiceResult<SearchResultDto<ProductSearchResultItemDto>>>;

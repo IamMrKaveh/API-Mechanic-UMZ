@@ -20,7 +20,7 @@ public class MediaController(IMediator mediator) : BaseApiController(mediator)
 
     [HttpGet("{id}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetMediaById(int id)
+    public async Task<IActionResult> GetMediaById(Guid id)
     {
         var query = new GetMediaByIdQuery(id);
         var result = await _mediator.Send(query);

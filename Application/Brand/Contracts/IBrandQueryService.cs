@@ -17,6 +17,7 @@ public interface IBrandQueryService
 
     Task<PaginatedResult<BrandListItemDto>> GetBrandsPagedAsync(
         CategoryId? categoryId,
+        string? search,
         bool? isActive,
         bool includeDeleted,
         int page,

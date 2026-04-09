@@ -26,7 +26,7 @@ public class CancelDiscountUsageHandler(
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to cancel discount usage for order {OrderId}", request.OrderId);
-            return ServiceResult.Unexpected("خطا در لغو استفاده از کد تخفیف.");
+            return ServiceResult.Failure("خطا در لغو استفاده از کد تخفیف.");
         }
     }
 }

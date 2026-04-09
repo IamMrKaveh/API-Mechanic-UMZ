@@ -1,29 +1,33 @@
 ﻿using Application.Discount.Features.Shared;
 using Domain.Common.ValueObjects;
 using Domain.Discount.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Application.Discount.Contracts;
 
 public interface IDiscountQueryService
 {
-    Task<DiscountDto?> GetByIdAsync(
-        DiscountCodeId discountCodeId,
+    Task<DiscountCodeDetailDto?> GetDetailByIdAsync(
+        DiscountCodeId id,
         CancellationToken ct = default);
 
-    Task<DiscountDto?> GetByCodeAsync(
+    Task<DiscountInfoDto?> GetDiscountInfoByCodeAsync(
         string code,
         CancellationToken ct = default);
 
     Task<DiscountValidationResult> ValidateDiscountAsync(
         string code,
         Money orderAmount,
-        UserId userId,
+        Guid userId,
         CancellationToken ct = default);
 
-    Task<PaginatedResult<DiscountDto>> GetDiscountsPagedAsync(
-        bool? isActive,
+    Task<(IReadOnlyList<DiscountCodeDto> Items, int Total)> GetPagedAsync(
+        bool includeExpired,
+        bool includeDeleted,
         int page,
         int pageSize,
+        CancellationToken ct = default);
+
+    Task<DiscountUsageReportDto?> GetUsageReportByIdAsync(
+        Guid discountCodeId,
         CancellationToken ct = default);
 }

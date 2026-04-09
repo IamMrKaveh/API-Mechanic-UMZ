@@ -1,10 +1,7 @@
-using Application.Brand.Features.Commands.DeleteBrand;
-using Application.Common.Results;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
-using Domain.Common.Interfaces;
 
 namespace Application.Brand.Features.Commands.MoveBrand;
 
@@ -12,25 +9,25 @@ public class MoveBrandHandler(
     IBrandRepository brandRepository,
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
-    ILogger<DeleteBrandHandler> logger) : IRequestHandler<MoveBrandCommand, ServiceResult>
+    ILogger<MoveBrandHandler> logger) : IRequestHandler<MoveBrandCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(MoveBrandCommand request, CancellationToken ct)
     {
-        var brandId = BrandId.From(request.BrandId.Value);
+        var brandId = BrandId.From(request.BrandId);
         var brand = await brandRepository.GetByIdAsync(brandId, ct);
         if (brand is null)
-            return ServiceResult.NotFound("Brand not found.");
+            return ServiceResult.NotFound("برند یافت نشد.");
 
-        var categoryId = CategoryId.From(request.TargetCategoryId.Value);
+        var categoryId = CategoryId.From(request.TargetCategoryId);
         var category = await categoryRepository.GetByIdAsync(categoryId, ct);
         if (category is null)
-            return ServiceResult.NotFound("Category not found.");
+            return ServiceResult.NotFound("دسته‌بندی مقصد یافت نشد.");
 
         brand.ChangeCategory(categoryId);
         brandRepository.Update(brand);
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("Brand {BrandId} move to {TargetCategoryId} Category successfully", request.BrandId, request.TargetCategoryId);
+        logger.LogInformation("Brand {BrandId} moved to category {CategoryId}", request.BrandId, request.TargetCategoryId);
         return ServiceResult.Success();
     }
 }

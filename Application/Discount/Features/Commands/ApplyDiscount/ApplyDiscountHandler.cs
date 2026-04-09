@@ -1,8 +1,7 @@
-using Application.Common.Results;
 using Application.Discount.Features.Shared;
-using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
 using Domain.Discount.Interfaces;
+using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Application.Discount.Features.Commands.ApplyDiscount;
@@ -25,8 +24,11 @@ public class ApplyDiscountHandler(
             return ServiceResult<DiscountApplicationResult>.Failure(validation.FailureReason!);
 
         var discountAmount = discount.CalculateDiscount(orderAmount);
-        var userId = UserId.From(request.UserId.Value);
-        discount.RecordUsage(userId, request.OrderId, discountAmount);
+        var finalAmount = orderAmount.Subtract(discountAmount);
+
+        var userId = UserId.From(request.UserId);
+        var orderId = OrderId.From(request.OrderId);
+        discount.RecordUsage(userId, orderId, discountAmount);
 
         discountRepository.Update(discount);
         await unitOfWork.SaveChangesAsync(ct);
@@ -34,7 +36,8 @@ public class ApplyDiscountHandler(
         return ServiceResult<DiscountApplicationResult>.Success(new DiscountApplicationResult
         {
             IsSuccess = true,
-            DiscountAmount = discountAmount.Amount
+            DiscountAmount = discountAmount.Amount,
+            FinalAmount = finalAmount.Amount
         });
     }
 }

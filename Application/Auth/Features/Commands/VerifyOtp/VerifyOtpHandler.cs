@@ -1,6 +1,13 @@
 using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
 using Application.Common.Results;
+using Domain.Common.ValueObjects;
+using Domain.Security.ValueObjects;
+using Domain.User.ValueObjects;
+using MediatR;
+using Microsoft.Extensions.Logging;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Application.Auth.Features.Commands.VerifyOtp;
 
@@ -14,10 +21,17 @@ public class VerifyOtpHandler(
     {
         logger.LogInformation("OTP verify for {Phone}", request.PhoneNumber);
 
+        var phoneNumberResult = PhoneNumber.TryCreate(request.PhoneNumber);
+        if (phoneNumberResult.IsFailure)
+            return ServiceResult<AuthResult>.Validation(phoneNumberResult.Error.Message);
+
+        var otpCode = OtpCode.Create(request.Code);
+        var ipAddress = IpAddress.Create(request.IpAddress);
+
         var result = await authService.VerifyOtpAsync(
-            request.PhoneNumber,
-            request.Code,
-            request.IpAddress,
+            phoneNumberResult.Value,
+            otpCode,
+            ipAddress,
             request.UserAgent,
             ct);
 

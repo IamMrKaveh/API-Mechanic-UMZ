@@ -71,6 +71,25 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
         return discountCode;
     }
 
+    public void Update(
+        DiscountValue discountValue,
+        Money? maximumDiscountAmount,
+        int? usageLimit,
+        DateTime? startsAt,
+        DateTime? expiresAt)
+    {
+        if (expiresAt.HasValue && startsAt.HasValue && expiresAt.Value <= startsAt.Value)
+            throw new InvalidDiscountException("تاریخ انقضا باید بعد از تاریخ شروع باشد.");
+
+        Value = discountValue;
+        MaximumDiscountAmount = maximumDiscountAmount;
+        UsageLimit = usageLimit;
+        StartsAt = startsAt;
+        ExpiresAt = expiresAt;
+        UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
+    }
+
     public DiscountValidation ValidateForApplication(Money orderAmount)
     {
         if (!IsActive)

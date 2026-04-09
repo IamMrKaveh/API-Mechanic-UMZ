@@ -13,5 +13,4 @@ public sealed record GetAuditLogsQuery(
     int Page = 1,
     int PageSize = 50,
     string SortBy = "Timestamp",
-    bool SortDesc = true
-) : IRequest<ServiceResult<PaginatedResult<GetAuditLogsResult>>>;
+    bool SortDesc = true) : IRequest<ServiceResult<PaginatedResult<GetAuditLogsResult>>>;

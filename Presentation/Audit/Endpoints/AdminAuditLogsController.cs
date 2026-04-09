@@ -1,7 +1,6 @@
 using Application.Audit.Features.Queries.ExportAuditLogs;
 using Application.Audit.Features.Queries.GetAuditLogs;
 using Application.Audit.Features.Queries.GetAuditStatistics;
-using Presentation.Base.Endpoints.v1;
 
 namespace Presentation.Audit.Endpoints;
 
@@ -15,7 +14,7 @@ public sealed class AdminAuditLogsController(IMediator mediator) : BaseApiContro
 
     [HttpGet]
     public async Task<IActionResult> GetAuditLogs(
-        [FromQuery] int? userId = null,
+        [FromQuery] Guid? userId = null,
         [FromQuery] string? eventType = null,
         [FromQuery] string? action = null,
         [FromQuery] string? keyword = null,
@@ -46,7 +45,7 @@ public sealed class AdminAuditLogsController(IMediator mediator) : BaseApiContro
 
     [HttpGet("export/csv")]
     public async Task<IActionResult> ExportCsv(
-        [FromQuery] int? userId = null,
+        [FromQuery] Guid? userId = null,
         [FromQuery] string? eventType = null,
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null,
@@ -60,7 +59,7 @@ public sealed class AdminAuditLogsController(IMediator mediator) : BaseApiContro
 
     [HttpGet("export/json")]
     public async Task<IActionResult> ExportJson(
-        [FromQuery] int? userId = null,
+        [FromQuery] Guid? userId = null,
         [FromQuery] string? eventType = null,
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null,

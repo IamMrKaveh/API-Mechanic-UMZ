@@ -1,7 +1,4 @@
-using Application.Analytics.Contracts;
 using Application.Analytics.Features.Shared;
-using Application.Cache.Contracts;
-using Application.Common.Results;
 
 namespace Application.Analytics.Features.Queries.GetDashboardStatistics;
 

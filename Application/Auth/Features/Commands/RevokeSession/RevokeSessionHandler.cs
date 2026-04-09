@@ -1,11 +1,10 @@
-using Application.Common.Results;
-using Domain.Common.Interfaces;
-using Domain.User.Interfaces;
+using Domain.Security.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.Auth.Features.Commands.RevokeSession;
 
 public class RevokeSessionHandler(
-    IUserRepository userRepository,
+    ISessionRepository sessionRepository,
     IUnitOfWork unitOfWork,
     ILogger<RevokeSessionHandler> logger) : IRequestHandler<RevokeSessionCommand, ServiceResult>
 {
@@ -15,18 +14,18 @@ public class RevokeSessionHandler(
     {
         try
         {
-            var user = await userRepository.GetWithSessionsAsync(request.UserId, ct);
+            var userId = UserId.From(request.UserId);
+            var user = await sessionRepository.GetActiveSessionCountAsync(userId, ct);
 
-            if (user == null)
+            if (user == 0)
                 return ServiceResult.NotFound("کاربر یافت نشد.");
 
-            var targetSession = user.GetActiveSessions()
-                .FirstOrDefault(s => s.Id == request.SessionId);
+            var targetSession = sessionRepository.GetActiveByUserIdAsync(userId, ct);
 
-            if (targetSession == null)
+            if (targetSession is null)
                 return ServiceResult.NotFound("نشست یافت نشد.");
 
-            user.RevokeSession(request.SessionId);
+            sessionRepository.RevokeAsync(targetSession.Result.FirstOrDefault(x => x.UserId == userId).Id);
 
             await unitOfWork.SaveChangesAsync(ct);
 

@@ -13,7 +13,7 @@ public class MediaDomainService
 {
     private const int MaxMediaPerEntity = 20;
 
-    public static Result ValidateAddMedia(IEnumerable<Aggregates.Media> existingMedias, string fileType)
+    public static Result ValidateAddMedia(IEnumerable<Aggregates.Media> existingMedias, FilePath filePath)
     {
         var mediaList = existingMedias.Where(m => m.IsActive).ToList();
 
@@ -26,30 +26,23 @@ public class MediaDomainService
         return Result.Success();
     }
 
-    public static Result ValidateFileTypeForEntity(string entityType, string fileExtension)
+    public static Result ValidateFileTypeForEntity(string entityType, FilePath filePath)
     {
-        var imageExtensions = new[] { "jpg", "jpeg", "png", "gif", "webp", "bmp", "svg" };
-        var documentExtensions = new[] { "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt" };
-        var videoExtensions = new[] { "mp4", "avi", "mkv", "mov", "wmv", "flv" };
-
-        var extension = fileExtension.ToLowerInvariant().TrimStart('.');
-
         if (entityType.Equals(MediaEntityTypes.Product, StringComparison.OrdinalIgnoreCase) ||
             entityType.Equals(MediaEntityTypes.Brand, StringComparison.OrdinalIgnoreCase) ||
             entityType.Equals(MediaEntityTypes.Category, StringComparison.OrdinalIgnoreCase))
         {
-            if (!imageExtensions.Contains(extension))
+            if (!filePath.IsImage())
                 return Result.Failure(new Error(
                     "Media.InvalidType",
                     "برای این موجودیت فقط فایل‌های تصویری مجاز هستند.",
                     ErrorType.Validation));
         }
 
-        var allAllowed = imageExtensions.Concat(documentExtensions).Concat(videoExtensions);
-        if (!allAllowed.Contains(extension))
+        if (!filePath.IsImage() && !filePath.IsDocument() && !filePath.IsVideo())
             return Result.Failure(new Error(
                 "Media.UnsupportedType",
-                $"نوع فایل '{extension}' پشتیبانی نمی‌شود.",
+                $"نوع فایل '{filePath.Extension}' پشتیبانی نمی‌شود.",
                 ErrorType.Validation));
 
         return Result.Success();

@@ -3,6 +3,7 @@ using Domain.Order.ValueObjects;
 using Domain.Payment.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Audit.Contracts;
 
@@ -44,6 +45,12 @@ public interface IAuditService
 
     Task LogInventoryEventAsync(
         ProductId productId,
+        string action,
+        string details,
+        UserId? userId = null);
+
+    Task LogInventoryEventAsync(
+        VariantId variantId,
         string action,
         string details,
         UserId? userId = null);

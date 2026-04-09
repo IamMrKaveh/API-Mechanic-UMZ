@@ -1,5 +1,6 @@
 using Application.Discount.Features.Shared;
 using Domain.Common.ValueObjects;
+using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Application.Discount.Contracts;
@@ -10,5 +11,6 @@ public interface IDiscountService
         string code,
         Money orderAmount,
         UserId userId,
+        OrderId orderId,
         CancellationToken ct = default);
 }

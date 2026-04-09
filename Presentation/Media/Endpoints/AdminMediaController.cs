@@ -21,14 +21,16 @@ public class AdminMediaController(IMediator mediator) : BaseApiController(mediat
         [FromQuery] int pageSize = 20,
         [FromQuery] string? entityType = null)
     {
-        var result = await _mediator.Send(new GetAllMediaQuery(entityType, page, pageSize));
+        var command = new GetAllMediaQuery(entityType, page, pageSize);
+        var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpPost("cleanup-orphaned")]
     public async Task<IActionResult> CleanupOrphaned()
     {
-        var result = await _mediator.Send(new CleanupOrphanedMediaCommand());
+        var command = new CleanupOrphanedMediaCommand();
+        var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
 
@@ -37,7 +39,7 @@ public class AdminMediaController(IMediator mediator) : BaseApiController(mediat
     public async Task<IActionResult> UploadMedia(
         [FromForm] IFormFile file,
         [FromForm] string entityType,
-        [FromForm] Guid entityId,
+        [FromForm] int entityId,
         [FromForm] bool isPrimary = false,
         [FromForm] string? altText = null)
     {
@@ -58,14 +60,16 @@ public class AdminMediaController(IMediator mediator) : BaseApiController(mediat
     [HttpDelete("{mediaId}")]
     public async Task<IActionResult> DeleteMedia(Guid mediaId)
     {
-        var result = await _mediator.Send(new DeleteMediaCommand(mediaId, CurrentUser.UserId));
+        var command = new DeleteMediaCommand(mediaId, CurrentUser.UserId);
+        var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpPatch("set-primary")]
     public async Task<IActionResult> SetPrimaryMedia([FromBody] SetPrimaryMediaRequest request)
     {
-        var result = await _mediator.Send(new SetPrimaryMediaCommand(request.MediaId));
+        var command = new SetPrimaryMediaCommand(request.MediaId);
+        var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
 

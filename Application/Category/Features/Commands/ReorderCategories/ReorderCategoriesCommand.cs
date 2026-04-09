@@ -1,5 +1,3 @@
-using Application.Category.Features.Shared;
-
 namespace Application.Category.Features.Commands.ReorderCategories;
 
-public record ReorderCategoriesCommand(List<CategoryOrderItemDto> Items) : IRequest<ServiceResult>;
+public record ReorderCategoriesCommand(ICollection<(Guid Id, int SortOrder)> Items) : IRequest<ServiceResult>;

@@ -1,8 +1,7 @@
+using Application.Attribute.Adapters;
 using Application.Attribute.Features.Shared;
-using Application.Common.Results;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Interfaces;
-using Domain.Common.Interfaces;
 
 namespace Application.Attribute.Features.Commands.CreateAttributeType;
 

@@ -1,6 +1,8 @@
 namespace Application.Product.Features.Queries.GetProductCatalog;
 
 public record GetProductCatalogQuery(
+    int Page = 1,
+    int PageSize = 10,
     string? Search = null,
     Guid? CategoryId = null,
     Guid? BrandId = null,

@@ -1,3 +1,8 @@
+using Application.Search.Features.Queries.FuzzySearch;
+using Application.Search.Features.Queries.GetSearchSuggestions;
+using Application.Search.Features.Queries.GlobalSearch;
+using Application.Search.Features.Queries.SearchProducts;
+
 namespace Presentation.Search.Endpoints;
 
 [ApiController]
@@ -9,8 +14,8 @@ public class SearchController(IMediator mediator) : BaseApiController(mediator)
     [HttpGet("products")]
     public async Task<IActionResult> SearchProducts(
         [FromQuery] string? q,
-        [FromQuery] int? categoryId,
-        [FromQuery] int? BrandId,
+        [FromQuery] Guid? categoryId,
+        [FromQuery] Guid? BrandId,
         [FromQuery] decimal? minPrice,
         [FromQuery] decimal? maxPrice,
         [FromQuery] string? brand,
@@ -21,20 +26,18 @@ public class SearchController(IMediator mediator) : BaseApiController(mediator)
         [FromQuery] string[]? tags = null,
         CancellationToken ct = default)
     {
-        var query = new SearchProductsQuery
-        {
-            Q = q,
-            CategoryId = categoryId,
-            BrandId = BrandId,
-            MinPrice = minPrice,
-            MaxPrice = maxPrice,
-            Brand = brand,
-            InStockOnly = inStockOnly,
-            SortBy = sortBy,
-            Page = page,
-            PageSize = pageSize,
-            Tags = tags?.ToList()
-        };
+        var query = new SearchProductsQuery(
+            q,
+            categoryId,
+            BrandId,
+            minPrice,
+            maxPrice,
+            brand,
+            inStockOnly,
+            sortBy,
+            tags?.ToList(),
+            page,
+            pageSize);
         var result = await _mediator.Send(query, ct);
         return ToActionResult(result);
     }
@@ -66,8 +69,10 @@ public class SearchController(IMediator mediator) : BaseApiController(mediator)
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
+        var query = new FuzzySearchQuery(q, page, pageSize);
         var result = await _mediator.Send(
-            new FuzzySearchQuery(q, page, pageSize), ct);
+            query,
+            ct);
         return ToActionResult(result);
     }
 }

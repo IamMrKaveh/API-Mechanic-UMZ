@@ -60,4 +60,31 @@ public record CategoryTreeDto
     public List<CategoryTreeDto> Children { get; init; } = [];
 }
 
-public record CategoryOrderItemDto(Guid Id, int SortOrder);
+public record CategoryWithBrandsDto
+{
+    public Guid Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? Description { get; init; }
+    public bool IsActive { get; init; }
+    public List<BrandInCategoryDto> Brands { get; init; } = [];
+}
+
+public record BrandInCategoryDto
+{
+    public Guid Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public string? LogoPath { get; init; }
+    public bool IsActive { get; init; }
+}
+
+public record CategoryProductItemDto
+{
+    public Guid Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? Slug { get; init; }
+    public decimal Price { get; init; }
+    public string? ImageUrl { get; init; }
+    public bool IsActive { get; init; }
+}

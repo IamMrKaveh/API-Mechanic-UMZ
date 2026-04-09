@@ -21,19 +21,20 @@ public class CreateBrandHandler(
 
         var category = await categoryRepository.GetByIdAsync(categoryId, ct);
         if (category is null)
-            return ServiceResult<BrandDetailDto>.NotFound("Category not found.");
+            return ServiceResult<BrandDetailDto>.NotFound("دسته‌بندی یافت نشد.");
 
-        if (await brandRepository.ExistsByNameInCategoryAsync(request.Name, categoryId, null, ct))
-            return ServiceResult<BrandDetailDto>.Conflict("Brand name already exists in this category.");
+        var brandName = BrandName.Create(request.Name);
+
+        if (await brandRepository.ExistsByNameInCategoryAsync(brandName, categoryId, null, ct))
+            return ServiceResult<BrandDetailDto>.Conflict("نام برند در این دسته‌بندی قبلاً ثبت شده است.");
 
         var slug = string.IsNullOrWhiteSpace(request.Slug)
             ? Slug.GenerateFrom(request.Name)
             : Slug.FromString(request.Slug);
 
         if (await brandRepository.ExistsBySlugAsync(slug, null, ct))
-            return ServiceResult<BrandDetailDto>.Conflict("Slug already exists.");
+            return ServiceResult<BrandDetailDto>.Conflict("این اسلاگ قبلاً استفاده شده است.");
 
-        var brandName = BrandName.Create(request.Name);
         var uniquenessChecker = new BrandUniquenessCheckerAdapter(brandRepository);
 
         var brand = Domain.Brand.Aggregates.Brand.Create(

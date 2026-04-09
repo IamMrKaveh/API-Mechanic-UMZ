@@ -1,17 +1,14 @@
-using Application.Discount.Contracts;
-using SharedKernel.Models;
+using Application.Discount.Features.Shared;
 
 namespace Application.Discount.Features.Queries.GetDiscounts;
 
-public class GetDiscountsHandler(IDiscountQueryService discountQueryService) : IRequestHandler<GetDiscountsQuery, ServiceResult<PaginatedResult<DiscountCodeDto>>>
+public class GetDiscountsHandler(
+    IDiscountQueryService discountQueryService) : IRequestHandler<GetDiscountsQuery, ServiceResult<PaginatedResult<DiscountCodeDto>>>
 {
-    private readonly IDiscountQueryService _discountQueryService = discountQueryService;
-
     public async Task<ServiceResult<PaginatedResult<DiscountCodeDto>>> Handle(
-        GetDiscountsQuery request,
-        CancellationToken ct)
+        GetDiscountsQuery request, CancellationToken ct)
     {
-        var (discounts, total) = await _discountQueryService.GetPagedAsync(
+        var (discounts, total) = await discountQueryService.GetPagedAsync(
             request.IncludeExpired,
             request.IncludeDeleted,
             request.Page,

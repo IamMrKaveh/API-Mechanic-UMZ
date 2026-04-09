@@ -1,16 +1,10 @@
-using Application.Audit.Contracts;
-using Application.Cache.Contracts;
-using Application.Common.Results;
-using Application.Inventory.Features.Commands.RemoveStock;
-using Domain.Common.Interfaces;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
 using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
-using MediatR;
 
-namespace Application.Variant.Features.Commands.RemoveStock;
+namespace Application.Inventory.Features.Commands.RemoveStock;
 
 public class RemoveStockHandler(
     IVariantRepository variantRepository,
@@ -45,7 +39,7 @@ public class RemoveStockHandler(
         await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogInventoryEventAsync(
-            variant.ProductId.Value,
+            variant.ProductId,
             "RemoveStock",
             $"Removed {request.Quantity} from stock for variant {request.VariantId}.",
             request.UserId);

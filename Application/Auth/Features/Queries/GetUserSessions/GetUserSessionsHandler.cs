@@ -1,11 +1,9 @@
-﻿using Application.Common.Results;
-using Application.User.Contracts;
-using Application.User.Features.Shared;
+﻿using Application.User.Features.Shared;
 
 namespace Application.Auth.Features.Queries.GetUserSessions;
 
 public class GetUserSessionsHandler(IUserQueryService userQueryService)
-    : IRequestHandler<GetUserSessionsQuery, ServiceResult<IEnumerable<UserSessionDto>>>
+    : IRequestHandler<GetUserSessionsQuery, ServiceResult<PaginatedResult<UserSessionDto>>>
 {
     public async Task<ServiceResult<IEnumerable<UserSessionDto>>> Handle(
         GetUserSessionsQuery request,
