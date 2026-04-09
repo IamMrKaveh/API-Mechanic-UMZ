@@ -1,5 +1,3 @@
-using Application.Common.Results;
-using Application.Order.Contracts;
 using Application.Order.Features.Shared;
 
 namespace Application.Order.Features.Queries.GetOrderDetails;

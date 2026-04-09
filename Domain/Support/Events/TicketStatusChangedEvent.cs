@@ -1,6 +1,5 @@
 ﻿using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
-using Domain.Common.Events;
 
 namespace Domain.Support.Events;
 

@@ -1,6 +1,4 @@
-﻿using Application.Common.Results;
-using Application.Review.Features.Shared;
-using Domain.Common.Interfaces;
+﻿using Application.Review.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
@@ -39,7 +37,7 @@ public class CreateReviewHandler(
             requirePurchaseVerification: false,
             hasExistingReviewCheck: async (uid, pid, oid, c) =>
                 await reviewRepository.UserHasReviewedProductAsync(
-                    (int)uid.Value.GetHashCode(), (int)pid.Value.GetHashCode(), null, c),
+                    uid.Value.GetHashCode(), pid.Value.GetHashCode(), null, c),
             ct);
 
         if (!result.IsSuccess)

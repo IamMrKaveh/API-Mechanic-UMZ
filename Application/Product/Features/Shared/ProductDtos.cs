@@ -2,13 +2,13 @@ namespace Application.Product.Features.Shared;
 
 public record ProductDetailDto
 {
-    public int Id { get; init; }
+    public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
     public string Slug { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
-    public int CategoryId { get; init; }
+    public Guid CategoryId { get; init; }
     public string CategoryName { get; init; } = string.Empty;
-    public int BrandId { get; init; }
+    public Guid BrandId { get; init; }
     public string BrandName { get; init; } = string.Empty;
     public bool IsActive { get; init; }
     public bool IsFeatured { get; init; }
@@ -22,12 +22,12 @@ public record ProductDetailDto
 
 public record ProductListItemDto
 {
-    public int Id { get; init; }
+    public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
     public string Slug { get; init; } = string.Empty;
-    public int CategoryId { get; init; }
+    public Guid CategoryId { get; init; }
     public string CategoryName { get; init; } = string.Empty;
-    public int BrandId { get; init; }
+    public Guid BrandId { get; init; }
     public string BrandName { get; init; } = string.Empty;
     public bool IsActive { get; init; }
     public bool IsFeatured { get; init; }
@@ -41,7 +41,7 @@ public record ProductListItemDto
 
 public record ProductVariantViewDto
 {
-    public int Id { get; init; }
+    public Guid Id { get; init; }
     public string? Sku { get; init; }
     public decimal Price { get; init; }
     public decimal? CompareAtPrice { get; init; }
@@ -56,8 +56,8 @@ public record CreateProductDto
     public string Name { get; init; } = string.Empty;
     public string? Slug { get; init; }
     public string Description { get; init; } = string.Empty;
-    public int CategoryId { get; init; }
-    public int BrandId { get; init; }
+    public Guid CategoryId { get; init; }
+    public Guid BrandId { get; init; }
 }
 
 public record UpdateProductDto
@@ -65,8 +65,21 @@ public record UpdateProductDto
     public string Name { get; init; } = string.Empty;
     public string? Slug { get; init; }
     public string Description { get; init; } = string.Empty;
-    public int CategoryId { get; init; }
-    public int BrandId { get; init; }
+    public Guid CategoryId { get; init; }
+    public Guid BrandId { get; init; }
     public bool IsActive { get; init; }
     public bool IsFeatured { get; init; }
+}
+
+public sealed record ProductCatalogSearchRequest
+{
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public string? Search { get; set; }
+    public Guid? CategoryId { get; set; }
+    public Guid? BrandId { get; set; }
+    public decimal? MinPrice { get; set; }
+    public decimal? MaxPrice { get; set; }
+    public bool InStockOnly { get; set; }
+    public string? SortBy { get; set; }
 }

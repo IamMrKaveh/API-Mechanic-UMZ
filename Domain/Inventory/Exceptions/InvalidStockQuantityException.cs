@@ -1,6 +1,4 @@
-﻿using Domain.Common.Exceptions;
-
-namespace Domain.Inventory.Exceptions;
+﻿namespace Domain.Inventory.Exceptions;
 
 public sealed class InvalidStockQuantityException : DomainException
 {

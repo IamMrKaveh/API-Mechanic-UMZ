@@ -1,5 +1,6 @@
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Order.Repositories;
 

@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Order.Configurations;
+﻿using Domain.Order.ValueObjects;
+
+namespace Infrastructure.Audit.Configurations;
 
 public class OrderProcessStateConfiguration : IEntityTypeConfiguration<OrderProcessState>
 {

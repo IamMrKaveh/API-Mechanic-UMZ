@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Inventory.Features.Queries.GetLowStockProducts;
 
 public class GetLowStockProductsHandler(IInventoryQueryService queryService)

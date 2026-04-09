@@ -1,5 +1,4 @@
 ﻿using Application.Audit.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Audit.Contracts;
 

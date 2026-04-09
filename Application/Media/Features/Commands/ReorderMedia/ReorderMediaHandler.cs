@@ -1,6 +1,3 @@
-using Application.Common.Results;
-using Application.Media.Contracts;
-
 namespace Application.Media.Features.Commands.ReorderMedia;
 
 public class ReorderMediaHandler(IMediaService mediaService) : IRequestHandler<ReorderMediaCommand, ServiceResult>

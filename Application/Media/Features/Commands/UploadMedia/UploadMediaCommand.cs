@@ -1,4 +1,3 @@
-using Application.Common.Results;
 using Application.Media.Features.Shared;
 
 namespace Application.Media.Features.Commands.UploadMedia;
@@ -9,6 +8,6 @@ public record UploadMediaCommand(
     string ContentType,
     long FileSize,
     string EntityType,
-    int EntityId,
+    Guid EntityId,
     bool IsPrimary = false,
     string? AltText = null) : IRequest<ServiceResult<MediaDto>>;

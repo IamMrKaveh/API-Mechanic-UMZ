@@ -1,3 +1,5 @@
+using Application.Review.Contracts;
+
 namespace Application.Review.Features.Queries.GetProductReviewSummary;
 
 public sealed class GetProductReviewSummaryHandler(IReviewQueryService reviewQueryService)

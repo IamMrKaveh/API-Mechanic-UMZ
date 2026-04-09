@@ -3,7 +3,7 @@ using Application.Common.Results;
 namespace Application.Order.Features.Commands.UpdateOrderStatus;
 
 public record UpdateOrderStatusCommand(
-    int OrderId,
-    string NewStatus,
+    Guid OrderId,
+    Guid OrderStatusId,
     string RowVersion,
-    int UpdatedByUserId) : IRequest<ServiceResult>;
+    Guid UpdatedByUserId) : IRequest<ServiceResult>;

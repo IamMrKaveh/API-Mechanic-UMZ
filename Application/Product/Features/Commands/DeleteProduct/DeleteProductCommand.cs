@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Product.Features.Commands.DeleteProduct;
 
-public record DeleteProductCommand(int Id, int DeletedByUserId) : IRequest<ServiceResult>;
+public record DeleteProductCommand(Guid Id, Guid DeletedByUserId) : IRequest<ServiceResult>;

@@ -1,5 +1,3 @@
-using System;
-
 namespace Domain.User.ValueObjects;
 
 public sealed record UserId

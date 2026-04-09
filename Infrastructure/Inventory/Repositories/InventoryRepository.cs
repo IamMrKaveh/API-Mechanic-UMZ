@@ -1,6 +1,6 @@
-using Domain.Inventory.Entities;
 using Domain.Inventory.Interfaces;
 using Domain.Variant.Aggregates;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Inventory.Repositories;
 

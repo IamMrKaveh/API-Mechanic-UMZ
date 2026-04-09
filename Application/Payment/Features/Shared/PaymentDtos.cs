@@ -1,17 +1,14 @@
-using Domain.Common.ValueObjects;
-
 namespace Application.Payment.Features.Shared;
 
-public record PaymentInitiationDto
-{
-    public int OrderId { get; set; }
-    public int UserId { get; set; }
-    public Money Amount { get; set; } = null!;
-    public string Description { get; set; } = string.Empty;
-    public string CallbackUrl { get; set; } = string.Empty;
-    public string? Mobile { get; set; }
-    public string? Email { get; set; }
-}
+public record PaymentInitiationDto(
+    Guid OrderId,
+    Guid UserId,
+    decimal Amount,
+    string Description,
+    string CallbackUrl,
+    string? Mobile,
+    string? Email
+);
 
 public record PaymentResultDto
 {
@@ -25,9 +22,10 @@ public record PaymentResultDto
 
 public record PaymentSearchParams
 {
-    public int? OrderId { get; init; }
-    public int? UserId { get; init; }
+    public Guid? OrderId { get; init; }
+    public Guid? UserId { get; init; }
     public string? Status { get; init; }
+    public string? Gateway { get; init; }
     public DateTime? FromDate { get; init; }
     public DateTime? ToDate { get; init; }
     public int Page { get; init; } = 1;
@@ -54,8 +52,8 @@ public sealed record SettlementReportDto(
     IEnumerable<DiscrepancyDto> Discrepancies);
 
 public sealed record DiscrepancyDto(
-    int TransactionId,
-    int OrderId,
+    Guid TransactionId,
+    Guid OrderId,
     string GatewayName,
     decimal Amount,
     string SystemStatus,

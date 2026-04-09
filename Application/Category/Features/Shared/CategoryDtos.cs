@@ -2,13 +2,11 @@ namespace Application.Category.Features.Shared;
 
 public record CategoryDetailDto
 {
-    public int Id { get; init; }
+    public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
     public string? Slug { get; init; }
     public string? Description { get; init; }
     public string? ImageUrl { get; init; }
-    public int? ParentId { get; init; }
-    public string? ParentName { get; init; }
     public bool IsActive { get; init; }
     public bool IsDeleted { get; init; }
     public int SortOrder { get; init; }
@@ -22,11 +20,9 @@ public record CategoryDetailDto
 
 public record CategoryListItemDto
 {
-    public int Id { get; init; }
+    public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
     public string? Slug { get; init; }
-    public int? ParentId { get; init; }
-    public string? ParentName { get; init; }
     public bool IsActive { get; init; }
     public bool IsDeleted { get; init; }
     public int SortOrder { get; init; }
@@ -37,8 +33,8 @@ public record CategoryListItemDto
 
 public record CategorySummaryDto
 {
-    public int Id { get; init; }
-    public string Name { get; init; } = string.Empty;
+    public Guid Id { get; init; }
+    public string Name { get; init; } = null!;
     public string? Slug { get; init; }
     public string? ImageUrl { get; init; }
 }
@@ -46,13 +42,11 @@ public record CategorySummaryDto
 public record CategoryDto
 {
     public Guid Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string Slug { get; init; } = string.Empty;
+    public string Name { get; init; } = null!;
+    public string Slug { get; init; } = null!;
     public string? Description { get; init; }
-    public Guid? ParentCategoryId { get; init; }
     public bool IsActive { get; init; }
     public int SortOrder { get; init; }
-    public bool IsRootCategory { get; init; }
     public DateTime CreatedAt { get; init; }
 }
 

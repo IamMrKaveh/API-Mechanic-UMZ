@@ -5,25 +5,25 @@ namespace Application.Order.Features.Shared;
 
 public sealed record CreateOrderItemDto
 {
-    public int VariantId { get; init; }
+    public Guid VariantId { get; init; }
     public int Quantity { get; init; }
 }
 
 public sealed record AdminOrderDto
 {
-    public int Id { get; init; }
-    public int UserId { get; init; }
+    public Guid Id { get; init; }
+    public Guid UserId { get; init; }
     public string OrderNumber { get; init; } = string.Empty;
     public string ReceiverName { get; init; } = string.Empty;
-    public int OrderStatusId { get; init; }
+    public Guid OrderStatusId { get; init; }
     public string Status { get; init; } = string.Empty;
     public decimal TotalAmount { get; init; }
     public decimal TotalProfit { get; init; }
     public decimal ShippingCost { get; init; }
     public decimal DiscountAmount { get; init; }
     public decimal FinalAmount { get; init; }
-    public int ShippingId { get; init; }
-    public int? DiscountCodeId { get; init; }
+    public Guid ShippingId { get; init; }
+    public Guid? DiscountCodeId { get; init; }
     public DateTime? PaymentDate { get; init; }
     public DateTime? ShippedDate { get; init; }
     public DateTime? DeliveryDate { get; init; }
@@ -44,7 +44,7 @@ public sealed record AdminOrderDto
 
 public sealed record AddressSnapshotDto
 {
-    public int OriginalAddressId { get; init; }
+    public Guid OriginalAddressId { get; init; }
     public string Title { get; init; } = string.Empty;
     public string ReceiverName { get; init; } = string.Empty;
     public string PhoneNumber { get; init; } = string.Empty;
@@ -56,7 +56,7 @@ public sealed record AddressSnapshotDto
 
 public sealed record UserSummaryDto
 {
-    public int Id { get; init; }
+    public Guid Id { get; init; }
     public string PhoneNumber { get; init; } = string.Empty;
     public string? FirstName { get; init; }
     public string? LastName { get; init; }
@@ -65,10 +65,10 @@ public sealed record UserSummaryDto
 
 public sealed record CreateOrderFromCartDto
 {
-    public int? UserAddressId { get; init; }
+    public Guid? UserAddressId { get; init; }
     public CreateUserAddressDto? NewAddress { get; init; }
     public bool SaveNewAddress { get; init; }
-    public int ShippingId { get; init; }
+    public Guid ShippingId { get; init; }
     public string? DiscountCode { get; init; }
     public List<CheckoutItemPriceDto> ExpectedItems { get; init; } = [];
     public string? CallbackUrl { get; init; }
@@ -76,19 +76,19 @@ public sealed record CreateOrderFromCartDto
 
 public sealed record CheckoutItemPriceDto
 {
-    public int VariantId { get; init; }
+    public Guid VariantId { get; init; }
     public decimal ExpectedPrice { get; init; }
 }
 
 public sealed record UpdateOrderDto
 {
-    public int? ShippingId { get; init; }
+    public Guid? ShippingId { get; init; }
     public string RowVersion { get; init; } = string.Empty;
 }
 
 public sealed record UpdateOrderItemDto
 {
-    public int OrderItemId { get; init; }
+    public Guid OrderItemId { get; init; }
     public int Quantity { get; init; }
 }
 
@@ -104,34 +104,34 @@ public sealed record UpdateOrderStatusDto
 
 public sealed record AdminCreateOrderDto
 {
-    public int UserId { get; init; }
+    public Guid UserId { get; init; }
     public string ReceiverName { get; init; } = string.Empty;
-    public int UserAddressId { get; init; }
-    public int ShippingId { get; init; }
+    public Guid UserAddressId { get; init; }
+    public Guid ShippingId { get; init; }
     public string? DiscountCode { get; init; }
     public List<AdminCreateOrderItemDto> OrderItems { get; init; } = [];
 }
 
 public sealed record AdminCreateOrderItemDto
 {
-    public int VariantId { get; init; }
+    public Guid VariantId { get; init; }
     public int Quantity { get; init; }
     public decimal SellingPrice { get; init; }
 }
 
 public sealed record CreateOrderDto
 {
-    public int UserId { get; init; }
+    public Guid UserId { get; init; }
     public string ReceiverName { get; init; } = string.Empty;
-    public int UserAddressId { get; init; }
-    public int ShippingId { get; init; }
+    public Guid UserAddressId { get; init; }
+    public Guid ShippingId { get; init; }
     public string? DiscountCode { get; init; }
     public List<CreateOrderItemDto> OrderItems { get; init; } = [];
 }
 
 public sealed record UpdateOrderStatusByIdDto
 {
-    public string OrderStatusId { get; init; } = string.Empty;
+    public Guid OrderStatusId { get; init; } = string.Empty;
     public string RowVersion { get; init; } = string.Empty;
     public int UpdatedByUserId { get; init; }
 }

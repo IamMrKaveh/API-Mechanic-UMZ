@@ -4,8 +4,8 @@ namespace Domain.Order.ValueObjects;
 
 public class OrderProcessState
 {
-    public int Id { get; private set; }
-    public int OrderId { get; private set; }
+    public Guid Id { get; private set; }
+    public OrderId OrderId { get; private set; }
     public ProcessStepEnum CurrentStep { get; private set; }
     public ProcessStatusEnum Status { get; private set; }
     public string? FailureReason { get; private set; }
@@ -17,7 +17,7 @@ public class OrderProcessState
     private OrderProcessState()
     { }
 
-    public static OrderProcessState Create(int orderId, string? correlationId = null)
+    public static OrderProcessState Create(OrderId orderId, string? correlationId = null)
     {
         return new OrderProcessState
         {

@@ -1,5 +1,4 @@
 using Application.Media.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Media.Contracts;
 

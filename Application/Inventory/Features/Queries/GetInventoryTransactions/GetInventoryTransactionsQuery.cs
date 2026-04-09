@@ -1,9 +1,11 @@
 using Application.Common.Results;
+using Application.Inventory.Features.Shared;
+using SharedKernel.Models;
 
 namespace Application.Inventory.Features.Queries.GetInventoryTransactions;
 
 public record GetInventoryTransactionsQuery(
-    int? VariantId,
+    Guid? VariantId,
     string? TransactionType,
     DateTime? FromDate,
     DateTime? ToDate,

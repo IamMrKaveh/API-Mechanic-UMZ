@@ -1,10 +1,9 @@
 using Application.Cart.Features.Shared;
-using Application.Common.Results;
 
 namespace Application.Cart.Features.Commands.UpdateCartItem;
 
 public record UpdateCartItemCommand(
-    int? UserId,
+    Guid? UserId,
     string? GuestToken,
-    int VariantId,
+    Guid VariantId,
     int Quantity) : IRequest<ServiceResult<CartDetailDto>>;

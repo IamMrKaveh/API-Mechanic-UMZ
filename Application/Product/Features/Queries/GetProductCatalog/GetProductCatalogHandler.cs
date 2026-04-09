@@ -1,16 +1,12 @@
-using Application.Common.Results;
+using Application.Product.Contracts;
+using SharedKernel.Models;
 
 namespace Application.Product.Features.Queries.GetProductCatalog;
 
-public class GetProductCatalogHandler
-    : IRequestHandler<GetProductCatalogQuery, ServiceResult<PaginatedResult<ProductCatalogItemDto>>>
+public class GetProductCatalogHandler(IProductQueryService productQueryService)
+        : IRequestHandler<GetProductCatalogQuery, ServiceResult<PaginatedResult<ProductCatalogItemDto>>>
 {
-    private readonly IProductQueryService _productQueryService;
-
-    public GetProductCatalogHandler(IProductQueryService productQueryService)
-    {
-        _productQueryService = productQueryService;
-    }
+    private readonly IProductQueryService _productQueryService = productQueryService;
 
     public async Task<ServiceResult<PaginatedResult<ProductCatalogItemDto>>> Handle(
         GetProductCatalogQuery request, CancellationToken ct)

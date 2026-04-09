@@ -1,18 +1,7 @@
+using Application.Audit.Contracts;
 using RegexOptions = System.Text.RegularExpressions.RegexOptions;
 
 namespace Infrastructure.Audit.Services;
-
-/// <summary>
-/// سرویس Masking اطلاعات حساس در لاگ‌های حسابرسی.
-///
-/// اطلاعاتی که Mask می‌شوند:
-/// - شماره کارت بانکی
-/// - شماره موبایل
-/// - رمز عبور
-/// - توکن‌های احراز هویت
-/// - ایمیل (اختیاری)
-/// - کد ملی
-/// </summary>
 
 public sealed class AuditMaskingService : IAuditMaskingService
 {

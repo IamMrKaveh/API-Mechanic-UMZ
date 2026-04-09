@@ -14,7 +14,7 @@ public record AttributeValueDto
 {
     public Guid Id { get; init; }
     public Guid AttributeTypeId { get; init; }
-    public string Value { get; init; } = string.Empty;
+    public string Value { get; init; } = null!;
     public string DisplayValue { get; init; } = string.Empty;
     public string? HexCode { get; init; }
     public int SortOrder { get; init; }

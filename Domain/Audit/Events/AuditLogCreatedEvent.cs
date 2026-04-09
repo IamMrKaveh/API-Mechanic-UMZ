@@ -1,5 +1,4 @@
 ﻿using Domain.Audit.ValueObjects;
-using Domain.Common.Events;
 
 namespace Domain.Audit.Events;
 

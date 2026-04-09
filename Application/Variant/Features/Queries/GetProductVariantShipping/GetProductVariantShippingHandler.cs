@@ -1,18 +1,16 @@
-using Application.Common.Results;
 using Application.Shipping.Features.Shared;
-using Application.Variant.Contracts;
 
 namespace Application.Variant.Features.Queries.GetProductVariantShipping;
 
 public class GetProductVariantShippingHandler(
     IVariantQueryService variantQueryService,
-    ILogger<GetProductVariantShippingHandler> logger) : IRequestHandler<GetProductVariantShippingQuery, ServiceResult<ProductVariantShippingInfoDto>>
+    ILogger<GetProductVariantShippingHandler> logger) : IRequestHandler<GetVariantShippingQuery, ServiceResult<ProductVariantShippingInfoDto>>
 {
     private readonly IVariantQueryService _variantQueryService = variantQueryService;
     private readonly ILogger<GetProductVariantShippingHandler> _logger = logger;
 
     public async Task<ServiceResult<ProductVariantShippingInfoDto>> Handle(
-        GetProductVariantShippingQuery request,
+        GetVariantShippingQuery request,
         CancellationToken ct)
     {
         try

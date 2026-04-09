@@ -1,4 +1,3 @@
-using Domain.Common.Exceptions;
 using Domain.Payment.ValueObjects;
 
 namespace Domain.Payment.Exceptions;

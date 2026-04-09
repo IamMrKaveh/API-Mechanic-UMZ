@@ -1,6 +1,5 @@
 ﻿using Domain.Shipping.Results;
 using Domain.Shipping.ValueObjects;
-using SharedKernel.Results;
 
 namespace Domain.Shipping.Services;
 

@@ -1,4 +1,3 @@
-using Domain.Common.Exceptions;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
 

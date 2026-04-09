@@ -1,4 +1,3 @@
-using Domain.Common.Exceptions;
 using Domain.Category.ValueObjects;
 
 namespace Domain.Category.Exceptions;

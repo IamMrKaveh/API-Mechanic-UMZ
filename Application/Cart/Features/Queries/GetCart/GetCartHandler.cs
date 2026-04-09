@@ -1,6 +1,4 @@
-using Application.Cart.Contracts;
 using Application.Cart.Features.Shared;
-using Application.Common.Results;
 using Domain.User.ValueObjects;
 
 namespace Application.Cart.Features.Queries.GetCart;

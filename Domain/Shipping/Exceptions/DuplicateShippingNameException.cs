@@ -1,6 +1,4 @@
-﻿using Domain.Common.Exceptions;
-
-namespace Domain.Shipping.Exceptions;
+﻿namespace Domain.Shipping.Exceptions;
 
 public sealed class DuplicateShippingNameException : DomainException
 {

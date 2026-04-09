@@ -1,3 +1,6 @@
+using Application.Cache.Contracts;
+using Domain.Product.Events;
+
 namespace Infrastructure.Cache.EventHandlers;
 
 public sealed class ProductCacheInvalidationHandler(ICacheInvalidationService invalidation) :

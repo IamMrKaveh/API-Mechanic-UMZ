@@ -1,6 +1,3 @@
-using Application.Audit.Contracts;
-using Application.Common.Results;
-using Domain.Common.Interfaces;
 using Domain.Shipping.Interfaces;
 using SharedKernel.Contracts;
 

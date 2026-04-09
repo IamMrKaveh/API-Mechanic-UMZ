@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Payment.Contracts;
 
 public interface IRefundableGateway : IPaymentGateway

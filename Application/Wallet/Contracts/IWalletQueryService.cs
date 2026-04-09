@@ -1,6 +1,4 @@
-﻿using Application.Common.Models;
-using Application.Wallet.Features.Shared;
-using SharedKernel.Models;
+﻿using Application.Wallet.Features.Shared;
 
 namespace Application.Wallet.Contracts;
 

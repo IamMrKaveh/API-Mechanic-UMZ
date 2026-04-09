@@ -2,4 +2,4 @@ using Application.Common.Results;
 
 namespace Application.Order.Features.Commands.DeleteOrderStatus;
 
-public record DeleteOrderStatusCommand(int Id, int DeletedByUserId) : IRequest<ServiceResult>;
+public record DeleteOrderStatusCommand(Guid Id, Guid DeletedByUserId) : IRequest<ServiceResult>;

@@ -1,7 +1,4 @@
-using Application.Brand.Contracts;
 using Application.Brand.Features.Shared;
-using Application.Common.Results;
-using SharedKernel.Models;
 
 namespace Application.Brand.Features.Queries.GetBrands;
 

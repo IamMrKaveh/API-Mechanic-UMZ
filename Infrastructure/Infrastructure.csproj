@@ -73,11 +73,6 @@
 		<PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
 		<PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
 
-
-		<!-- API & Minimal Framework -->
-		<PackageReference Include="Carter" Version="8.0.0" />
-		<PackageReference Include="Scalar.AspNetCore" Version="1.2.0" />
-
 		<!-- Error Handling -->
 		<PackageReference Include="Hellang.Middleware.ProblemDetails" Version="6.5.1" />
 

@@ -1,6 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Shipping.Features.Queries.GetAvailableShippings;
 
-public record GetAvailableShippingsQuery(int UserId)
-    : IRequest<ServiceResult<IEnumerable<AvailableShippingDto>>>;
+public record GetAvailableShippingsQuery(Guid UserId) : IRequest<ServiceResult<IEnumerable<AvailableShippingDto>>>;

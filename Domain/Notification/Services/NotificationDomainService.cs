@@ -1,5 +1,4 @@
 using Domain.User.ValueObjects;
-using SharedKernel.Results;
 
 namespace Domain.Notification.Services;
 

@@ -1,6 +1,4 @@
-﻿using Application.Common.Results;
-using Domain.Common.Interfaces;
-using Domain.Product.ValueObjects;
+﻿using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Wishlist.Interfaces;
 

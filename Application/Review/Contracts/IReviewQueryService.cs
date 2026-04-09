@@ -1,5 +1,4 @@
 using Application.Review.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Review.Contracts;
 

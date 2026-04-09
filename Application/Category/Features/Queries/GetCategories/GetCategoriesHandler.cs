@@ -1,7 +1,4 @@
-using Application.Category.Contracts;
 using Application.Category.Features.Shared;
-using Application.Common.Results;
-using SharedKernel.Models;
 
 namespace Application.Category.Features.Queries.GetCategories;
 

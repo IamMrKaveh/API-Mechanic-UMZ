@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Domain.Inventory.ValueObjects;
+﻿namespace Domain.Inventory.ValueObjects;
 
 public sealed record WarehouseId
 {

@@ -1,5 +1,3 @@
-using Application.Common.Behaviors;
-using Application.Common.Mapping;
 using Application.Order.Features.Commands.CheckoutFromCart.Services;
 using Domain.Cart.Services;
 using Domain.Inventory.Services;
@@ -7,7 +5,6 @@ using Domain.Media.Services;
 using Domain.Payment.Services;
 using Domain.Support.Services;
 using Mapster;
-using MapsterMapper;
 
 namespace Application;
 

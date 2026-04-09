@@ -1,7 +1,17 @@
 using Application.Common.Results;
-using Application.User.Features.Shared;
-using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.UpdateUserAddress;
 
-public record UpdateUserAddressCommand(UserId UserId, UserAddressId AddressId, UpdateUserAddressDto Dto) : IRequest<ServiceResult>;
+public record UpdateUserAddressCommand(
+    Guid UserId,
+    Guid AddressId,
+    string Title,
+    string ReceiverName,
+    string PhoneNumber,
+    string Province,
+    string City,
+    string Address,
+    string PostalCode,
+    bool IsDefault,
+    decimal? Latitude = null,
+    decimal? Longitude = null) : IRequest<ServiceResult>;

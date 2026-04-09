@@ -1,5 +1,4 @@
-﻿using Application.Common.Results;
-using Domain.Common.ValueObjects;
+﻿using Domain.Common.ValueObjects;
 using Domain.Discount.Interfaces;
 using Domain.User.ValueObjects;
 

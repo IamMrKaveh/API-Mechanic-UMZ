@@ -1,6 +1,4 @@
-﻿using Application.Common.Results;
-using Domain.Cart.Interfaces;
-using Domain.Cart.ValueObjects;
+﻿using Domain.Cart.Interfaces;
 using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.CheckoutFromCart.Services;

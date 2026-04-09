@@ -1,5 +1,3 @@
-using Application.Common.Results;
-using Application.Media.Contracts;
 using Domain.Media.Interfaces;
 
 namespace Application.Media.Features.Commands.CleanupOrphanedMedia;

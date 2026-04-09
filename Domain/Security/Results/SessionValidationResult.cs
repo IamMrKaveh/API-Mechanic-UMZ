@@ -1,6 +1,5 @@
 ﻿using Domain.Security.Aggregates;
 using Domain.Security.Enums;
-using SharedKernel.Results;
 
 namespace Domain.Security.Results;
 

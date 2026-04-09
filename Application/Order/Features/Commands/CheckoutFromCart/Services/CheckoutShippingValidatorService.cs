@@ -1,5 +1,4 @@
-﻿using Application.Common.Results;
-using Domain.Common.ValueObjects;
+﻿using Domain.Common.ValueObjects;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 

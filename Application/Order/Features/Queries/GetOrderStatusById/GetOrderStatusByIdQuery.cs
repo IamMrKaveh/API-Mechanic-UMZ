@@ -3,4 +3,4 @@ using Application.Order.Features.Shared;
 
 namespace Application.Order.Features.Queries.GetOrderStatusById;
 
-public record GetOrderStatusByIdQuery(int Id) : IRequest<ServiceResult<OrderStatusDto>>;
+public record GetOrderStatusByIdQuery(Guid Id) : IRequest<ServiceResult<OrderStatusDto>>;

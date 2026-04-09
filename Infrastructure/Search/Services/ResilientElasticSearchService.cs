@@ -1,20 +1,15 @@
+using Application.Search.Features.Shared;
+
 namespace Infrastructure.Search.Services;
 
-public class ResilientElasticSearchService : ISearchService
+public class ResilientElasticSearchService(
+    ElasticSearchService innerService,
+    ElasticsearchCircuitBreaker circuitBreaker,
+    ILogger<ResilientElasticSearchService> logger) : ISearchService
 {
-    private readonly ElasticSearchService _innerService;
-    private readonly ElasticsearchCircuitBreaker _circuitBreaker;
-    private readonly ILogger<ResilientElasticSearchService> _logger;
-
-    public ResilientElasticSearchService(
-        ElasticSearchService innerService,
-        ElasticsearchCircuitBreaker circuitBreaker,
-        ILogger<ResilientElasticSearchService> logger)
-    {
-        _innerService = innerService;
-        _circuitBreaker = circuitBreaker;
-        _logger = logger;
-    }
+    private readonly ElasticSearchService _innerService = innerService;
+    private readonly ElasticsearchCircuitBreaker _circuitBreaker = circuitBreaker;
+    private readonly ILogger<ResilientElasticSearchService> _logger = logger;
 
     public Task<SearchResultDto<ProductSearchResultItemDto>> SearchProductsAsync(
         SearchProductsParams searchParams, CancellationToken ct = default)

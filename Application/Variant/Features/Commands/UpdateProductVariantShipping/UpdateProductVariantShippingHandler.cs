@@ -1,6 +1,3 @@
-using Application.Audit.Contracts;
-using Application.Common.Results;
-using Domain.Common.Interfaces;
 using Domain.Shipping.Interfaces;
 using Domain.Variant.Interfaces;
 
@@ -11,7 +8,7 @@ public class UpdateProductVariantShippingHandler(
     IShippingRepository shippingRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ILogger<UpdateProductVariantShippingHandler> logger) : IRequestHandler<UpdateProductVariantShippingCommand, ServiceResult>
+    ILogger<UpdateProductVariantShippingHandler> logger) : IRequestHandler<UpdateVariantShippingCommand, ServiceResult>
 {
     private readonly IVariantRepository _variantRepository = variantRepository;
     private readonly IShippingRepository _shippingRepository = shippingRepository;
@@ -20,7 +17,7 @@ public class UpdateProductVariantShippingHandler(
     private readonly ILogger<UpdateProductVariantShippingHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(
-        UpdateProductVariantShippingCommand request,
+        UpdateVariantShippingCommand request,
         CancellationToken ct)
     {
         var variant = await _variantRepository.GetByIdForUpdateAsync(request.VariantId, ct);

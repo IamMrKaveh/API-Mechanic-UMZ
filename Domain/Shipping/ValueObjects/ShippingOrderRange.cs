@@ -1,6 +1,4 @@
-﻿using SharedKernel.Results;
-
-namespace Domain.Shipping.ValueObjects;
+﻿namespace Domain.Shipping.ValueObjects;
 
 public sealed class ShippingOrderRange : ValueObject
 {

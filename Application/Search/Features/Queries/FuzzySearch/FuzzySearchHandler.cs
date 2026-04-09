@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Search.Features.Queries.FuzzySearch;
 
 public class FuzzySearchHandler

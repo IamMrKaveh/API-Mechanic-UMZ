@@ -1,3 +1,5 @@
+using Application.Search.Events;
+
 namespace Application.Search.Contracts;
 
 /// <summary>

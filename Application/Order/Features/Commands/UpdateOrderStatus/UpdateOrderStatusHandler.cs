@@ -1,9 +1,4 @@
-using Application.Audit.Contracts;
-using Application.Common.Exceptions;
-using Application.Common.Results;
-using Application.Notification.Contracts;
 using Domain.Common.Exceptions;
-using Domain.Common.Interfaces;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 

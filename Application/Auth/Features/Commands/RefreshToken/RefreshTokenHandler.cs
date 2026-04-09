@@ -1,21 +1,15 @@
+using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
 
 namespace Application.Auth.Features.Commands.RefreshToken;
 
-public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, ServiceResult<AuthResult>>
+public class RefreshTokenHandler(IAuthService authService) : IRequestHandler<RefreshTokenCommand, ServiceResult<AuthResult>>
 {
-    private readonly IAuthService _authService;
-
-    public RefreshTokenHandler(IAuthService authService)
-    {
-        _authService = authService;
-    }
-
     public async Task<ServiceResult<AuthResult>> Handle(
         RefreshTokenCommand request,
         CancellationToken ct)
     {
-        var result = await _authService.RefreshTokenAsync(
+        var result = await authService.RefreshTokenAsync(
             request.RefreshToken,
             request.IpAddress,
             request.UserAgent,

@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Discount.Features.Queries.GetDiscounts;
 
 public record GetDiscountsQuery(

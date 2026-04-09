@@ -1,7 +1,4 @@
-﻿using Application.Common.Exceptions;
-using Application.Common.Results;
-using Domain.Common.Interfaces;
-using Domain.Wallet.Interfaces;
+﻿using Domain.Wallet.Interfaces;
 
 namespace Application.Wallet.Features.Commands.ReleaseWalletReservation;
 

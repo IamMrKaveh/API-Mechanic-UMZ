@@ -1,8 +1,6 @@
-using Application.Common.Results;
 using Application.Discount.Features.Shared;
 using Domain.Discount.Interfaces;
 using Domain.Discount.ValueObjects;
-using Domain.Common.Interfaces;
 
 namespace Application.Discount.Features.Commands.UpdateDiscount;
 

@@ -1,5 +1,4 @@
-﻿using Application.Common.Results;
-using Application.Review.Features.Shared;
+﻿using Application.Review.Features.Shared;
 
 namespace Application.Review.Features.Commands.CreateReview;
 

@@ -1,4 +1,5 @@
 ﻿using Domain.Brand.Interfaces;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Brand.Repositories;
 

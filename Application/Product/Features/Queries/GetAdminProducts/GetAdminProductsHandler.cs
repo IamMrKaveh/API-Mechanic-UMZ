@@ -1,16 +1,12 @@
-using Application.Common.Results;
+using Application.Product.Contracts;
+using SharedKernel.Models;
 
 namespace Application.Product.Features.Queries.GetAdminProducts;
 
-public class GetAdminProductsHandler
-    : IRequestHandler<GetAdminProductsQuery, ServiceResult<PaginatedResult<AdminProductListItemDto>>>
+public class GetAdminProductsHandler(IProductQueryService productQueryService)
+        : IRequestHandler<GetAdminProductsQuery, ServiceResult<PaginatedResult<AdminProductListItemDto>>>
 {
-    private readonly IProductQueryService _productQueryService;
-
-    public GetAdminProductsHandler(IProductQueryService productQueryService)
-    {
-        _productQueryService = productQueryService;
-    }
+    private readonly IProductQueryService _productQueryService = productQueryService;
 
     public async Task<ServiceResult<PaginatedResult<AdminProductListItemDto>>> Handle(
         GetAdminProductsQuery request, CancellationToken ct)

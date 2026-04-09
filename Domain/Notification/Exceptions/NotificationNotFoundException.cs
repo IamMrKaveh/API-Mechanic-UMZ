@@ -1,4 +1,3 @@
-using Domain.Common.Exceptions;
 using Domain.Notification.ValueObjects;
 
 namespace Domain.Notification.Exceptions;

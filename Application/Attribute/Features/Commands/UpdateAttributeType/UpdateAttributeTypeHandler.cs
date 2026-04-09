@@ -1,6 +1,7 @@
-using Application.Common.Exceptions;
+using Application.Attribute.Adapters;
 using Application.Common.Results;
 using Domain.Attribute.Interfaces;
+using Domain.Attribute.ValueObjects;
 using Domain.Common.Interfaces;
 
 namespace Application.Attribute.Features.Commands.UpdateAttributeType;
@@ -16,31 +17,24 @@ public class UpdateAttributeTypeHandler(
         UpdateAttributeTypeCommand request,
         CancellationToken ct)
     {
-        var attributeType = await _repository.GetAttributeTypeByIdAsync(request.Id);
-        if (attributeType is null)
-            return ServiceResult.Failure("Attribute type not found.");
+        var attributeTypeId = AttributeTypeId.From(request.Id);
 
-        if (request.Name is not null && await _repository.AttributeTypeExistsAsync(request.Name, request.Id))
-        {
-            return ServiceResult.Failure("Attribute type name already exists.");
-        }
+        var attributeType = await _repository.GetAttributeTypeByIdAsync(attributeTypeId, ct);
+        if (attributeType is null)
+            return ServiceResult.NotFound("Attribute type not found.");
+
+        var uniquenessChecker = new AttributeTypeUniquenessCheckerAdapter(_repository);
 
         attributeType.Update(
-                    request.Name ?? attributeType.Name,
-                    request.DisplayName ?? attributeType.DisplayName,
-                    request.SortOrder ?? attributeType.SortOrder,
-                    request.IsActive ?? attributeType.IsActive
-                );
+            request.Name ?? attributeType.Name,
+            request.DisplayName ?? attributeType.DisplayName,
+            request.SortOrder ?? attributeType.SortOrder,
+            request.IsActive ?? attributeType.IsActive,
+            uniquenessChecker);
 
-        try
-        {
-            await _repository.UpdateAttributeTypeAsync(attributeType);
-            await _unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult.Success();
-        }
-        catch (ConcurrencyException)
-        {
-            return ServiceResult.Failure("Concurrency conflict occurred.");
-        }
+        await _repository.UpdateAttributeTypeAsync(attributeType);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return ServiceResult.Success();
     }
 }

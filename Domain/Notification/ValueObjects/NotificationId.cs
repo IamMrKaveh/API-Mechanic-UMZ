@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Domain.Notification.ValueObjects;
+﻿namespace Domain.Notification.ValueObjects;
 
 public sealed record NotificationId
 {

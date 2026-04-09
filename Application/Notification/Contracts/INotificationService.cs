@@ -1,4 +1,3 @@
-using Domain.Notification.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Application.Notification.Contracts;

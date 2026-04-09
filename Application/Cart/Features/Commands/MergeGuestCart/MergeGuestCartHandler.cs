@@ -1,7 +1,5 @@
-using Application.Common.Results;
 using Domain.Cart.Interfaces;
 using Domain.Cart.Services;
-using Domain.Common.Interfaces;
 using SharedKernel.Contracts;
 
 namespace Application.Cart.Features.Commands.MergeGuestCart;

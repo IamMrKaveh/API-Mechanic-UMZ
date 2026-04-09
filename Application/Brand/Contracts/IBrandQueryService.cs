@@ -1,16 +1,19 @@
 ﻿using Application.Brand.Features.Shared;
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
+using Domain.Common.ValueObjects;
 using SharedKernel.Models;
 
 namespace Application.Brand.Contracts;
 
 public interface IBrandQueryService
 {
-    Task<BrandDetailDto?> GetBrandDetailAsync(Guid brandId, CancellationToken ct = default);
+    Task<BrandDetailDto?> GetBrandDetailAsync(BrandId brandId, CancellationToken ct = default);
 
-    Task<BrandDto?> GetBrandBySlugAsync(string slug, CancellationToken ct = default);
+    Task<BrandDto?> GetBrandBySlugAsync(Slug slug, CancellationToken ct = default);
 
     Task<PaginatedResult<BrandListItemDto>> GetBrandsPagedAsync(
-        Guid? categoryId,
+        CategoryId? categoryId,
         bool? isActive,
         bool includeDeleted,
         int page,
@@ -18,6 +21,6 @@ public interface IBrandQueryService
         CancellationToken ct = default);
 
     Task<IReadOnlyList<BrandListItemDto>> GetPublicBrandsAsync(
-        Guid? categoryId = null,
+        CategoryId? categoryId = null,
         CancellationToken ct = default);
 }

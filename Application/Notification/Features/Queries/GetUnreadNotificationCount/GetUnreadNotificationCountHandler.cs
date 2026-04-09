@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Notification.Features.Queries.GetUnreadNotificationCount;
 
 public sealed class GetUnreadNotificationCountHandler(INotificationQueryService notificationQueryService)

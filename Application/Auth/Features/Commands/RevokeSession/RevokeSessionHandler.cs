@@ -9,17 +9,13 @@ public class RevokeSessionHandler(
     IUnitOfWork unitOfWork,
     ILogger<RevokeSessionHandler> logger) : IRequestHandler<RevokeSessionCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository = userRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ILogger<RevokeSessionHandler> _logger = logger;
-
     public async Task<ServiceResult> Handle(
         RevokeSessionCommand request,
         CancellationToken ct)
     {
         try
         {
-            var user = await _userRepository.GetWithSessionsAsync(request.UserId, ct);
+            var user = await userRepository.GetWithSessionsAsync(request.UserId, ct);
 
             if (user == null)
                 return ServiceResult.NotFound("کاربر یافت نشد.");
@@ -32,9 +28,9 @@ public class RevokeSessionHandler(
 
             user.RevokeSession(request.SessionId);
 
-            await _unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.SaveChangesAsync(ct);
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "نشست {SessionId} برای کاربر {UserId} ابطال شد.",
                 request.SessionId, request.UserId);
 
@@ -42,9 +38,9 @@ public class RevokeSessionHandler(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "خطا در ابطال نشست {SessionId} برای کاربر {UserId}",
+            logger.LogError(ex, "خطا در ابطال نشست {SessionId} برای کاربر {UserId}",
                 request.SessionId, request.UserId);
-            return ServiceResult.Unexpected("خطای داخلی سرور.");
+            return ServiceResult.Failure("خطای داخلی سرور.");
         }
     }
 }

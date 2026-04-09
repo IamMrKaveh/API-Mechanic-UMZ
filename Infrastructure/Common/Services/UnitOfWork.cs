@@ -1,5 +1,4 @@
 using Application.Common.Exceptions;
-using Domain.Common.Abstractions;
 using Domain.Common.Interfaces;
 using Infrastructure.Persistence.Context;
 using Infrastructure.Persistence.Outbox;

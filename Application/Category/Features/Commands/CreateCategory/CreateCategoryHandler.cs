@@ -1,9 +1,7 @@
+using Application.Category.Adapters;
 using Application.Category.Features.Shared;
-using Application.Common.Results;
-using Domain.Category.Aggregates;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
-using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
 
 namespace Application.Category.Features.Commands.CreateCategory;
@@ -17,30 +15,25 @@ public class CreateCategoryHandler(
     public async Task<ServiceResult<CategoryDto>> Handle(CreateCategoryCommand request, CancellationToken ct)
     {
         if (await categoryRepository.ExistsByNameAsync(request.CategoryName, null, ct))
-            return ServiceResult<CategoryDto>.Conflict("دسته‌بندی با این نام قبلاً ثبت شده است.");
+            return ServiceResult<CategoryDto>.Conflict("Category name already exists.");
 
-        var slug = string.IsNullOrWhiteSpace(request.Slug)
+        var slug = string.IsNullOrWhiteSpace(request.Slug?.Value)
             ? Slug.GenerateFrom(request.CategoryName)
             : Slug.FromString(request.Slug);
 
-        if (await categoryRepository.ExistsBySlugAsync(slug.Value, null, ct))
-            return ServiceResult<CategoryDto>.Conflict("دسته‌بندی با این Slug قبلاً ثبت شده است.");
+        if (await categoryRepository.ExistsBySlugAsync(slug, null, ct))
+            return ServiceResult<CategoryDto>.Conflict("Slug already exists.");
 
-        CategoryId? parentId = null;
-        if (request.ParentCategoryId is not null)
-        {
-            parentId = CategoryId.From(request.ParentCategoryId.Value);
-            var parent = await categoryRepository.GetByIdAsync(parentId, ct);
-            if (parent is null)
-                return ServiceResult<CategoryDto>.NotFound("دسته‌بندی والد یافت نشد.");
-        }
+        var categoryName = CategoryName.Create(request.CategoryName);
+        var uniquenessChecker = new CategoryUniquenessCheckerAdapter(categoryRepository);
+        var categoryId = CategoryId.NewId();
 
         var category = Domain.Category.Aggregates.Category.Create(
-            CategoryId.NewId(),
-            request.CategoryName,
+            categoryId,
+            categoryName,
             slug,
+            uniquenessChecker,
             request.Description,
-            parentId,
             request.SortOrder);
 
         await categoryRepository.AddAsync(category, ct);

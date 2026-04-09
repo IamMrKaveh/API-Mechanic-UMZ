@@ -1,3 +1,5 @@
+using Application.Notification.Contracts;
+using Domain.Support.Events;
 using Domain.Support.Interfaces;
 
 namespace Application.Support.EventHandlers;
@@ -12,7 +14,7 @@ public sealed class TicketAnsweredEventHandler(
     private readonly ILogger<TicketAnsweredEventHandler> _logger = logger;
 
     public async Task Handle(
-        Domain.Support.Events.TicketAnsweredEvent notification,
+        TicketAnsweredEvent notification,
         CancellationToken ct)
     {
         try

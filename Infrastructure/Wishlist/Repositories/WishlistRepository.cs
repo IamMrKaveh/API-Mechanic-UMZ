@@ -1,4 +1,5 @@
 ﻿using Domain.Wishlist.Interfaces;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Wishlist.Repositories;
 

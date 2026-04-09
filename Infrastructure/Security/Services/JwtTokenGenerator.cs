@@ -1,12 +1,6 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using Application.Auth.Contracts;
-using Domain.User.Aggregates;
+﻿using Application.Auth.Contracts;
 using Infrastructure.Security.Settings;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Infrastructure.Security.Services;
 

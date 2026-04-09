@@ -1,5 +1,3 @@
-using Application.Common.Results;
-using Domain.Common.Interfaces;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
 

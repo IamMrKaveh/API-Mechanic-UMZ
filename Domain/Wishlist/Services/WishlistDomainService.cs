@@ -1,6 +1,5 @@
 ﻿using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
-using SharedKernel.Results;
 
 namespace Domain.Wishlist.Services;
 

@@ -1,6 +1,4 @@
-using Application.Brand.Contracts;
 using Application.Brand.Features.Shared;
-using Application.Common.Results;
 
 namespace Application.Brand.Features.Queries.GetBrandDetail;
 
@@ -12,7 +10,7 @@ public class GetBrandDetailHandler(IBrandQueryService brandQueryService) : IRequ
         GetBrandDetailQuery request,
         CancellationToken ct)
     {
-        var result = await _brandQueryService.GetBrandDetailAsync(request.GroupId, ct);
+        var result = await _brandQueryService.GetBrandDetailAsync(request.BrandId, ct);
 
         if (result == null)
             return ServiceResult<BrandDetailDto?>.NotFound("گروه یافت نشد.");

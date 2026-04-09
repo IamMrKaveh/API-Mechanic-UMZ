@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Variant.Features.Queries.GetProductVariants;
 
 public record GetProductVariantsQuery(int ProductId, bool ActiveOnly = true)

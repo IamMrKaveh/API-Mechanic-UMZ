@@ -24,13 +24,13 @@ public interface IBrandRepository
         CancellationToken ct = default);
 
     Task<bool> ExistsByNameInCategoryAsync(
-        string name,
+        BrandName brandName,
         CategoryId categoryId,
         BrandId? excludeId = null,
         CancellationToken ct = default);
 
     Task<bool> ExistsBySlugAsync(
-        string slug,
+        Slug slug,
         BrandId? excludeId = null,
         CancellationToken ct = default);
 }

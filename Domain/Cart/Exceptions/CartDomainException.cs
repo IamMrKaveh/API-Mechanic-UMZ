@@ -1,5 +1,4 @@
 ﻿using Domain.Cart.ValueObjects;
-using Domain.Common.Exceptions;
 using Domain.Variant.ValueObjects;
 
 namespace Domain.Cart.Exceptions;

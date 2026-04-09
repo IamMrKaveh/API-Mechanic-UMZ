@@ -1,5 +1,4 @@
-﻿using Domain.Common.Exceptions;
-using Domain.Security.ValueObjects;
+﻿using Domain.Security.ValueObjects;
 
 namespace Domain.Security.Exceptions;
 

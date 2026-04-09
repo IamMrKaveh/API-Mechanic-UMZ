@@ -1,6 +1,4 @@
-﻿using Domain.Common.Exceptions;
-
-namespace Domain.Attribute.Exceptions;
+﻿namespace Domain.Attribute.Exceptions;
 
 public sealed class DuplicateAttributeException : DomainException
 {

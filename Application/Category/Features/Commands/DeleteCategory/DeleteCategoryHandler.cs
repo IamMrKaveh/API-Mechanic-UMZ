@@ -12,18 +12,19 @@ public class DeleteCategoryHandler(
 {
     public async Task<ServiceResult> Handle(DeleteCategoryCommand request, CancellationToken ct)
     {
-        var category = await categoryRepository.GetByIdAsync(CategoryId.From(request.Id), ct);
+        var categoryId = CategoryId.From(request.Id.Value);
+        var category = await categoryRepository.GetByIdAsync(categoryId, ct);
         if (category is null)
-            return ServiceResult.NotFound("دسته‌بندی یافت نشد.");
+            return ServiceResult.NotFound("Category not found.");
 
-        if (await categoryRepository.HasChildrenAsync(CategoryId.From(request.Id), ct))
-            return ServiceResult.Conflict("امکان حذف دسته‌بندی که زیردسته دارد وجود ندارد.");
+        if (await categoryRepository.HasChildrenAsync(categoryId, ct))
+            return ServiceResult.Conflict("Cannot delete category with children.");
 
         category.Deactivate();
         categoryRepository.Update(category);
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("Category {Id} deactivated/deleted", request.Id);
+        logger.LogInformation("Category {Id} Deleted", request.Id);
         return ServiceResult.Success();
     }
 }

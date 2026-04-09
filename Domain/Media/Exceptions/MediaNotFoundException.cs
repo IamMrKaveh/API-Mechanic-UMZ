@@ -1,4 +1,3 @@
-using Domain.Common.Exceptions;
 using Domain.Media.ValueObjects;
 
 namespace Domain.Media.Exceptions;

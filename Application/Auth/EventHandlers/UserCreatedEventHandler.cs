@@ -1,4 +1,3 @@
-using Domain.Common.Interfaces;
 using Domain.User.Events;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;

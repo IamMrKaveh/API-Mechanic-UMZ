@@ -1,5 +1,4 @@
 ﻿using Application.Payment.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Payment.Contracts;
 

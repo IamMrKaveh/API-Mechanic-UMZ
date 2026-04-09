@@ -1,6 +1,3 @@
-using Application.Common.Results;
-using Application.User.Contracts;
-
 namespace Application.User.Features.Queries.GetUserDashboard;
 
 public class GetUserDashboardHandler(IUserQueryService userQueryService)

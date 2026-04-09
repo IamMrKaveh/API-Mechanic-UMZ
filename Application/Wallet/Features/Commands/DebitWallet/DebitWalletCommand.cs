@@ -1,16 +1,13 @@
-﻿using Application.Common.Results;
-using Domain.User.ValueObjects;
-using Domain.Wallet.Enums;
+﻿using Domain.Wallet.Enums;
 
 namespace Application.Wallet.Features.Commands.DebitWallet;
 
 public record DebitWalletCommand(
-    UserId UserId,
+    Guid UserId,
     decimal Amount,
     WalletTransactionType TransactionType,
     WalletReferenceType ReferenceType,
-    int ReferenceId,
+    Guid ReferenceId,
     string IdempotencyKey,
     string? CorrelationId = null,
-    string? Description = null
-) : IRequest<ServiceResult<Unit>>;
+    string? Description = null) : IRequest<ServiceResult<Unit>>;

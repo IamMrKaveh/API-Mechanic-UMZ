@@ -5,8 +5,8 @@ namespace Application.Variant.Features.Shared;
 
 public record ProductVariantDto
 {
-    public int Id { get; init; }
-    public int ProductId { get; init; }
+    public Guid Id { get; init; }
+    public Guid ProductId { get; init; }
     public string Sku { get; init; } = string.Empty;
     public decimal Price { get; init; }
     public decimal FinalPrice { get; init; }
@@ -15,8 +15,8 @@ public record ProductVariantDto
 
 public record VariantStockChangedApplicationNotification : INotification
 {
-    public int VariantId { get; init; }
-    public int ProductId { get; init; }
+    public Guid VariantId { get; init; }
+    public Guid ProductId { get; init; }
     public int QuantityChanged { get; init; }
     public int NewOnHand { get; init; }
     public int NewReserved { get; init; }
@@ -26,7 +26,7 @@ public record VariantStockChangedApplicationNotification : INotification
 
 public sealed record ProductVariantViewDto
 {
-    public int Id { get; init; }
+    public Guid Id { get; init; }
     public string? Sku { get; init; }
     public decimal PurchasePrice { get; init; }
     public decimal OriginalPrice { get; init; }
@@ -45,7 +45,7 @@ public sealed record ProductVariantViewDto
 }
 
 public sealed record CreateProductVariantInput(
-    int? Id,
+    Guid? Id,
     string? Sku,
     decimal PurchasePrice,
     decimal SellingPrice,
@@ -59,7 +59,7 @@ public sealed record CreateProductVariantInput(
 );
 
 public sealed record ProductVariantResponseDto(
-    int Id,
+    Guid Id,
     string? Sku,
     decimal PurchasePrice,
     decimal SellingPrice,
@@ -78,7 +78,7 @@ public sealed record ProductVariantResponseDto(
 );
 
 public sealed record CreateProductVariantDto(
-    int? Id,
+    Guid? Id,
     string? Sku,
     decimal PurchasePrice,
     decimal SellingPrice,

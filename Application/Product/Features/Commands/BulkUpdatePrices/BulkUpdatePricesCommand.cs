@@ -1,17 +1,10 @@
-using Application.Common.Results;
-
 namespace Application.Product.Features.Commands.BulkUpdatePrices;
 
-public record BulkUpdatePricesCommand : IRequest<ServiceResult>
-{
-    public List<VariantPriceUpdateInput> Updates { get; init; } = new();
-}
+public record BulkUpdatePricesCommand(ICollection<VariantPriceUpdateInput> Updates) : IRequest<ServiceResult>;
 
-public record VariantPriceUpdateInput
-{
-    public int ProductId { get; init; }
-    public int VariantId { get; init; }
-    public decimal PurchasePrice { get; init; }
-    public decimal SellingPrice { get; init; }
-    public decimal OriginalPrice { get; init; }
-}
+public sealed record VariantPriceUpdateInput(
+    Guid ProductId,
+    Guid VariantId,
+    decimal PurchasePrice,
+    decimal SellingPrice,
+    decimal OriginalPrice);

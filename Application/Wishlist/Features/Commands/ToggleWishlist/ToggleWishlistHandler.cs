@@ -1,6 +1,3 @@
-using Application.Common.Results;
-using Application.Wishlist.Contracts;
-using Domain.Common.Interfaces;
 using Domain.Wishlist.Interfaces;
 
 namespace Application.Wishlist.Features.Commands.ToggleWishlist;

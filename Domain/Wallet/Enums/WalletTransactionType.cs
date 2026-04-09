@@ -2,7 +2,7 @@
 
 public enum WalletTransactionType
 {
-    Credit = 1,
-    Debit = 2,
-    ReservationConfirmed = 3
+    Credit,
+    Debit,
+    ReservationConfirmed,
 }

@@ -1,8 +1,3 @@
-using Application.Audit.Contracts;
-using Application.Cache.Contracts;
-using Application.Common.Results;
-using Application.Inventory.Contracts;
-using Domain.Common.Interfaces;
 using Domain.Variant.Interfaces;
 
 namespace Application.Variant.Features.Commands.RemoveStock;

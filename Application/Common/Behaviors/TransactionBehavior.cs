@@ -1,5 +1,3 @@
-using Domain.Common.Interfaces;
-
 namespace Application.Common.Behaviors;
 
 public sealed class TransactionBehavior<TRequest, TResponse>(

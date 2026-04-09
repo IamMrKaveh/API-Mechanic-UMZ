@@ -1,5 +1,4 @@
 using Domain.Attribute.ValueObjects;
-using Domain.Common.Exceptions;
 
 namespace Domain.Attribute.Exceptions;
 

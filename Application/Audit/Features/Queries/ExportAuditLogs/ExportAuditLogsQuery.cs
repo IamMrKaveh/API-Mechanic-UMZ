@@ -6,8 +6,7 @@ public sealed record ExportAuditLogsQuery(
     DateTime? From,
     DateTime? To,
     string Format = "csv",
-    int MaxRows = 10_000
-) : IRequest<ExportAuditLogsResult>;
+    int MaxRows = 10_000) : IRequest<ExportAuditLogsResult>;
 
 public sealed record ExportAuditLogsResult(
     byte[] FileContent,

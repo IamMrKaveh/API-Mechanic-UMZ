@@ -1,10 +1,7 @@
-using Application.Common.Results;
-using Domain.User.ValueObjects;
-
 namespace Application.Cart.Features.Commands.AddToCart;
 
 public record AddToCartCommand(
-    UserId? UserId,
+    Guid? UserId,
     string? GuestToken,
-    int VariantId,
+    Guid VariantId,
     int Quantity) : IRequest<ServiceResult>;

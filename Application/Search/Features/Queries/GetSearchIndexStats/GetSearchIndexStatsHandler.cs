@@ -1,14 +1,11 @@
+using Application.Search.Contracts;
+
 namespace Application.Search.Features.Queries.GetSearchIndexStats;
 
-public sealed class GetSearchIndexStatsHandler
-    : IRequestHandler<GetSearchIndexStatsQuery, ServiceResult<SearchIndexStatsDto>>
+public sealed class GetSearchIndexStatsHandler(ISearchService searchService)
+        : IRequestHandler<GetSearchIndexStatsQuery, ServiceResult<SearchIndexStatsDto>>
 {
-    private readonly ISearchService _searchService;
-
-    public GetSearchIndexStatsHandler(ISearchService searchService)
-    {
-        _searchService = searchService;
-    }
+    private readonly ISearchService _searchService = searchService;
 
     public async Task<ServiceResult<SearchIndexStatsDto>> Handle(
         GetSearchIndexStatsQuery request,

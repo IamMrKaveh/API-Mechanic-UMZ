@@ -1,3 +1,6 @@
+using Application.Media.Contracts;
+using Infrastructure.Persistence.Context;
+
 namespace Infrastructure.Media.QueryServices;
 
 public class MediaQueryService(DBContext context, IStorageService storageService) : IMediaQueryService

@@ -1,5 +1,3 @@
-using System.Linq.Expressions;
-
 namespace Domain.Common.Specifications;
 
 public abstract class Specification<T> : ISpecification<T>

@@ -1,6 +1,5 @@
 ﻿using Domain.Audit.Entities;
 using Domain.Audit.Interfaces;
-using SharedKernel.Results;
 
 namespace Domain.Audit.Services;
 

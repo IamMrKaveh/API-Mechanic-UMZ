@@ -17,24 +17,20 @@ namespace Infrastructure.Audit.BackgroundServices;
 /// </summary>
 public sealed class AuditRetentionService : BackgroundService
 {
-    
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
 
     private static readonly TimeSpan InitialDelay = TimeSpan.FromMinutes(5);
 
-    
-    private static readonly int FinancialRetentionDays = 7 * 365; 
+    private static readonly int FinancialRetentionDays = 7 * 365;
 
-    private static readonly int SecurityRetentionDays = 2 * 365; 
-    private static readonly int DefaultRetentionDays = 90;       
+    private static readonly int SecurityRetentionDays = 2 * 365;
+    private static readonly int DefaultRetentionDays = 90;
 
-    
     private static readonly HashSet<string> FinancialEventTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "PaymentEvent", "OrderEvent", "RefundEvent", "FinancialEvent", "TransactionEvent"
     };
 
-    
     private static readonly HashSet<string> SecurityEventTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "SecurityEvent", "UserAction", "AdminEvent", "AuthEvent", "LoginEvent"
@@ -55,7 +51,6 @@ public sealed class AuditRetentionService : BackgroundService
     {
         _logger.LogInformation("Audit Retention Service started.");
 
-        
         await Task.Delay(InitialDelay, stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
@@ -87,7 +82,6 @@ public sealed class AuditRetentionService : BackgroundService
 
         var now = DateTime.UtcNow;
 
-        
         var defaultCutoff = now.AddDays(-DefaultRetentionDays);
 
         await ArchiveAndDeleteAsync(
@@ -98,7 +92,6 @@ public sealed class AuditRetentionService : BackgroundService
             batchLabel: "default",
             ct: ct);
 
-        
         var securityCutoff = now.AddDays(-SecurityRetentionDays);
         await ArchiveAndDeleteAsync(context, archiveFolder,
             securityCutoff,
@@ -107,8 +100,6 @@ public sealed class AuditRetentionService : BackgroundService
             batchLabel: "security",
             ct);
 
-        
-        
         var financialCutoff = now.AddDays(-FinancialRetentionDays);
         await ArchiveOnlyAsync(context, archiveFolder,
             financialCutoff,
@@ -139,15 +130,13 @@ public sealed class AuditRetentionService : BackgroundService
 
         var logsToArchive = await query
             .OrderBy(a => a.CreatedAt)
-            .Take(1000) 
+            .Take(1000)
             .ToListAsync(ct);
 
         if (!logsToArchive.Any()) return;
 
-        
         await ExportToArchiveFileAsync(archiveFolder, logsToArchive, batchLabel, ct);
 
-        
         context.AuditLogs.RemoveRange(logsToArchive);
         await context.SaveChangesAsync(ct);
 
@@ -179,7 +168,6 @@ public sealed class AuditRetentionService : BackgroundService
 
         await ExportToArchiveFileAsync(archiveFolder, logsToArchive, batchLabel, ct);
 
-        
         foreach (var log in logsToArchive)
             log.MarkAsArchived();
 

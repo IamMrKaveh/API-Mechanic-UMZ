@@ -1,7 +1,3 @@
-using Application.Audit.Contracts;
-using Application.Cache.Contracts;
-using Application.Common.Results;
-using Domain.Common.Interfaces;
 using Domain.Product.Interfaces;
 
 namespace Application.Product.Features.Commands.RestoreProduct;

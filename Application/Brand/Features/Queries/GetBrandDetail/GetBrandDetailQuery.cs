@@ -1,7 +1,5 @@
-using Application.Common.Results;
+using Application.Brand.Features.Shared;
 
 namespace Application.Brand.Features.Queries.GetBrandDetail;
 
-public record GetBrandDetailQuery(
-    int GroupId
-    ) : IRequest<ServiceResult<BrandDetailDto?>>;
+public record GetBrandDetailQuery(Guid BrandId) : IRequest<ServiceResult<BrandDetailDto?>>;

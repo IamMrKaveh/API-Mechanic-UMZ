@@ -1,6 +1,5 @@
 ﻿using Domain.User.Results;
 using Domain.User.ValueObjects;
-using SharedKernel.Results;
 
 namespace Domain.User.Services;
 

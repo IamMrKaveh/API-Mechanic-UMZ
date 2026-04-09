@@ -1,5 +1,4 @@
 using Application.Product.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Product.Contracts;
 

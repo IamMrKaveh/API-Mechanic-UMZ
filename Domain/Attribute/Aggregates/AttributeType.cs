@@ -97,15 +97,21 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         return attributeValue;
     }
 
-    public void UpdateValue(AttributeValueId valueId, string value, string displayValue, string? hexCode, int sortOrder, bool isActive)
+    public void UpdateValue(
+        AttributeValueId valueId,
+        AttributeValue value,
+        string displayValue,
+        string? hexCode,
+        int sortOrder,
+        bool isActive)
     {
-        Guard.Against.NullOrWhiteSpace(value, nameof(value));
+        Guard.Against.NullOrWhiteSpace(value.Value, nameof(value));
         Guard.Against.Negative(sortOrder, nameof(sortOrder));
 
         var attrValue = _values.FirstOrDefault(v => v.Id == valueId)
             ?? throw new AttributeValueNotFoundException(valueId);
 
-        var trimmedValue = value.Trim();
+        var trimmedValue = value.Value.Trim();
 
         if (!attrValue.Value.Equals(trimmedValue, StringComparison.OrdinalIgnoreCase))
         {

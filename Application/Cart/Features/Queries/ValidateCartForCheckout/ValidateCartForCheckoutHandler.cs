@@ -1,21 +1,16 @@
-using Application.Common.Results;
+using Application.Cart.Contracts;
+using Application.Cart.Features.Shared;
+using SharedKernel.Contracts;
 
 namespace Application.Cart.Features.Queries.ValidateCartForCheckout;
 
-public class ValidateCartForCheckoutHandler
-    : IRequestHandler<ValidateCartForCheckoutQuery, ServiceResult<CartCheckoutValidationDto>>
+public class ValidateCartForCheckoutHandler(
+    ICartQueryService cartQueryService,
+    ICurrentUserService currentUser)
+        : IRequestHandler<ValidateCartForCheckoutQuery, ServiceResult<CartCheckoutValidationDto>>
 {
-    private readonly ICartQueryService _cartQueryService;
-    private readonly ICurrentUserService _currentUser;
-
-    public ValidateCartForCheckoutHandler(
-        ICartQueryService cartQueryService,
-        ICurrentUserService currentUser
-        )
-    {
-        _cartQueryService = cartQueryService;
-        _currentUser = currentUser;
-    }
+    private readonly ICartQueryService _cartQueryService = cartQueryService;
+    private readonly ICurrentUserService _currentUser = currentUser;
 
     public async Task<ServiceResult<CartCheckoutValidationDto>> Handle(
         ValidateCartForCheckoutQuery request,

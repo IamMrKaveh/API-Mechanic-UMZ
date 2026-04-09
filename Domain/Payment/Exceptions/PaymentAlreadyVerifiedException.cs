@@ -1,5 +1,3 @@
-using Domain.Common.Exceptions;
-
 namespace Domain.Payment.Exceptions;
 
 public sealed class PaymentAlreadyVerifiedException : DomainException

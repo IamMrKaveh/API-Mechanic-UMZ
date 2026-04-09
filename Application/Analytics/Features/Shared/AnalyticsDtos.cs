@@ -33,7 +33,7 @@ public sealed record SalesChartDataPointDto
 
 public sealed record TopSellingProductDto
 {
-    public int ProductId { get; init; }
+    public Guid ProductId { get; init; }
     public string ProductName { get; init; } = string.Empty;
     public string? Sku { get; init; }
     public int TotalQuantitySold { get; init; }
@@ -45,7 +45,7 @@ public sealed record TopSellingProductDto
 
 public sealed record CategoryPerformanceDto
 {
-    public int CategoryId { get; init; }
+    public Guid CategoryId { get; init; }
     public string CategoryName { get; init; } = string.Empty;
     public int TotalGroups { get; init; }
     public int TotalProducts { get; init; }
@@ -98,7 +98,7 @@ public sealed record InventoryReportDto
 
 public sealed record InventoryCategoryBreakdownDto
 {
-    public int CategoryId { get; init; }
+    public Guid CategoryId { get; init; }
     public string CategoryName { get; init; } = string.Empty;
     public int VariantCount { get; init; }
     public int TotalStock { get; init; }
@@ -106,19 +106,17 @@ public sealed record InventoryCategoryBreakdownDto
 }
 
 public sealed record AnalyticsLowStockItemDto(
-    int VariantId,
-    int ProductId,
+    Guid VariantId,
+    Guid ProductId,
     string ProductName,
     string? Sku,
     int AvailableStock,
     int LowStockThreshold
 );
 
-public sealed record AnalyticsOutOfStockItemDto
-{
-    public int VariantId { get; init; }
-    public int ProductId { get; init; }
-    public string ProductName { get; init; } = string.Empty;
-    public string? Sku { get; init; }
-    public DateTime? LastStockDate { get; init; }
-}
+public sealed record AnalyticsOutOfStockItemDto(
+    Guid VariantId,
+    Guid ProductId,
+    string ProductName,
+    string? Sku,
+    DateTime? LastStockDate);

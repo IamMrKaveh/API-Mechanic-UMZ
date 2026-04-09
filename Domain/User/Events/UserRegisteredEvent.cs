@@ -1,6 +1,4 @@
 ﻿using Domain.User.ValueObjects;
-using Domain.Common.ValueObjects;
-using Domain.Common.Events;
 
 namespace Domain.User.Events;
 

@@ -1,5 +1,4 @@
-﻿using Application.Common.Results;
-using Application.Support.Features.Shared;
+﻿using Application.Support.Features.Shared;
 
 namespace Application.Support.Features.Queries.GetTicket;
 

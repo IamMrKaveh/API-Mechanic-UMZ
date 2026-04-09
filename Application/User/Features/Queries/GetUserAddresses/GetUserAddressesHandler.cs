@@ -1,5 +1,3 @@
-using Application.Common.Results;
-using Application.User.Contracts;
 using Application.User.Features.Shared;
 
 namespace Application.User.Features.Queries.GetUserAddresses;

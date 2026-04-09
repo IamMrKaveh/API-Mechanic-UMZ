@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Domain.User.Events;
 
 namespace Application.Auth.EventHandlers;

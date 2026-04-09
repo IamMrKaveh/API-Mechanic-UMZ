@@ -1,6 +1,4 @@
-﻿using Application.Common.Results;
-using Application.Wallet.Features.Shared;
-using Domain.Common.Interfaces;
+﻿using Application.Wallet.Features.Shared;
 using Domain.Wallet.Interfaces;
 
 namespace Application.Wallet.Features.Queries.GetWalletBalance;

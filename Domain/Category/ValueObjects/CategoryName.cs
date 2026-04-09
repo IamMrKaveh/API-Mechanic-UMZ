@@ -1,5 +1,3 @@
-using SharedKernel.Extensions;
-
 namespace Domain.Category.ValueObjects;
 
 public sealed class CategoryName : ValueObject
@@ -9,37 +7,33 @@ public sealed class CategoryName : ValueObject
     private const int MinLength = 2;
     public const int MaxLength = 100;
 
-    private CategoryName(string value)
-    {
-        Value = value;
-    }
+    private CategoryName(string value) => Value = value;
 
-    public static CategoryName Create(string name)
+    public static CategoryName Create(CategoryName name)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("نام دسته‌بندی الزامی است.");
 
-        var normalized = PersianTextNormalizer.Normalize(name);
-        Validate(normalized);
+        Validate(name);
 
-        return new CategoryName(normalized);
+        return new CategoryName(name);
     }
 
-    private static void Validate(string name)
+    private static void Validate(CategoryName name)
     {
-        if (name.Length < MinLength)
+        if (name.Value.Length < MinLength)
             throw new DomainException($"نام دسته‌بندی باید حداقل {MinLength} کاراکتر باشد.");
 
-        if (name.Length > MaxLength)
+        if (name.Value.Length > MaxLength)
             throw new DomainException($"نام دسته‌بندی نمی‌تواند بیش از {MaxLength} کاراکتر باشد.");
     }
 
-    public bool IsSameAs(string other)
+    public bool IsSameAs(CategoryName other)
     {
         if (string.IsNullOrWhiteSpace(other))
             return false;
 
-        return Value.Equals(other.Trim(), StringComparison.OrdinalIgnoreCase);
+        return Value.Equals(other.Value.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
     protected override IEnumerable<object> GetEqualityComponents()

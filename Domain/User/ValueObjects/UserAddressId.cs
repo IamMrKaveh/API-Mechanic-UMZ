@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Domain.User.ValueObjects;
+﻿namespace Domain.User.ValueObjects;
 
 public sealed record UserAddressId
 {

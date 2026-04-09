@@ -1,5 +1,3 @@
-using Domain.Common.Exceptions;
-
 namespace Domain.Discount.Exceptions;
 
 public sealed class MinimumOrderAmountNotMetException : DomainException

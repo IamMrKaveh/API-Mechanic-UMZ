@@ -4,7 +4,7 @@ using Application.Common.Results;
 namespace Application.Attribute.Features.Commands.UpdateAttributeType;
 
 public record UpdateAttributeTypeCommand(
-    int Id,
+    Guid Id,
     string? Name,
     string? DisplayName,
     int? SortOrder,

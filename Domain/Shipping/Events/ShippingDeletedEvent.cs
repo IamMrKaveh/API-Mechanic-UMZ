@@ -1,6 +1,5 @@
 ﻿using Domain.Shipping.ValueObjects;
 using Domain.User.ValueObjects;
-using Domain.Common.Events;
 
 namespace Domain.Shipping.Events;
 

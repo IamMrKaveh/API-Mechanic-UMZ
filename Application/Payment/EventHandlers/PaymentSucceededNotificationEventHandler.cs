@@ -1,6 +1,5 @@
 using Application.Notification.Contracts;
 using Domain.Payment.Events;
-using Domain.User.ValueObjects;
 
 namespace Application.Payment.EventHandlers;
 
@@ -12,10 +11,14 @@ public class PaymentSucceededNotificationEventHandler(
     {
         try
         {
-            if (notification.UserId == 0) return;
+            if (notification.UserId is null)
+                return;
+
+            if (notification is null)
+                return;
 
             await notificationService.CreateNotificationAsync(
-                UserId.From(Guid.Empty),
+                notification.UserId,
                 "پرداخت موفق",
                 $"پرداخت سفارش شما با موفقیت انجام شد. کد پیگیری: {notification.RefId}",
                 "PaymentSuccess",

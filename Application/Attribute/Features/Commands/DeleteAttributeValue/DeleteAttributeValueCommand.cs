@@ -2,4 +2,4 @@ using Application.Common.Results;
 
 namespace Application.Attribute.Features.Commands.DeleteAttributeValue;
 
-public record DeleteAttributeValueCommand(int Id) : IRequest<ServiceResult>;
+public record DeleteAttributeValueCommand(Guid Id) : IRequest<ServiceResult>;

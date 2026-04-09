@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Domain.Discount.ValueObjects;
+﻿namespace Domain.Discount.ValueObjects;
 
 public sealed record DiscountCodeId
 {

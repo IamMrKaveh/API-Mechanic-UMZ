@@ -1,5 +1,4 @@
-﻿using Application.Common.Results;
-using Domain.Order.ValueObjects;
+﻿using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
 

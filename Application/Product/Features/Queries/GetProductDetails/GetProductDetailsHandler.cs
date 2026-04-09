@@ -1,7 +1,3 @@
-using Application.Common.Results;
-using Application.Product.Contracts;
-using Application.Product.Features.Shared;
-
 namespace Application.Product.Features.Queries.GetProductDetails;
 
 public class GetProductDetailsHandler(IProductQueryService productQueryService) : IRequestHandler<GetProductDetailsQuery, ServiceResult<PublicProductDetailDto?>>

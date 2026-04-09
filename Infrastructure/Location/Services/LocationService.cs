@@ -1,3 +1,6 @@
+using Application.Location.Contracts;
+using Application.Location.Features.Shared;
+
 namespace Infrastructure.Location.Services;
 
 public class LocationService : ILocationService

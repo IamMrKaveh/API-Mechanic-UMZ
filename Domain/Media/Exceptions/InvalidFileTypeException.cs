@@ -1,5 +1,3 @@
-using Domain.Common.Exceptions;
-
 namespace Domain.Media.Exceptions;
 
 public sealed class InvalidFileTypeException : DomainException

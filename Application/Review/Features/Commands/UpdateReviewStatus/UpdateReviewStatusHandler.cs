@@ -1,5 +1,3 @@
-using Application.Common.Results;
-using Domain.Common.Interfaces;
 using Domain.Review.Interfaces;
 
 namespace Application.Review.Features.Commands.UpdateReviewStatus;

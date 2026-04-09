@@ -1,16 +1,13 @@
-using Application.Common.Results;
+using Application.Payment.Contracts;
+using Application.Payment.Features.Shared;
+using SharedKernel.Models;
 
 namespace Application.Payment.Features.Queries.GetAdminPayments;
 
-public class GetAdminPaymentsHandler
-    : IRequestHandler<GetAdminPaymentsQuery, ServiceResult<PaginatedResult<PaymentTransactionDto>>>
+public class GetAdminPaymentsHandler(IPaymentQueryService paymentQueryService)
+        : IRequestHandler<GetAdminPaymentsQuery, ServiceResult<PaginatedResult<PaymentTransactionDto>>>
 {
-    private readonly IPaymentQueryService _paymentQueryService;
-
-    public GetAdminPaymentsHandler(IPaymentQueryService paymentQueryService)
-    {
-        _paymentQueryService = paymentQueryService;
-    }
+    private readonly IPaymentQueryService _paymentQueryService = paymentQueryService;
 
     public async Task<ServiceResult<PaginatedResult<PaymentTransactionDto>>> Handle(
         GetAdminPaymentsQuery request,

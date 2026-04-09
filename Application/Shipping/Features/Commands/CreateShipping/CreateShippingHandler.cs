@@ -1,8 +1,5 @@
-using Application.Common.Results;
 using Application.Shipping.Features.Shared;
-using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
-using Domain.Shipping.Aggregates;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 
@@ -18,7 +15,7 @@ public class CreateShippingHandler(
         if (await shippingRepository.ExistsByNameAsync(request.Name, null, ct))
             return ServiceResult<ShippingDto>.Conflict("روش ارسال با این نام قبلاً ثبت شده است.");
 
-        var shipping = Shipping.Create(
+        var shipping = Domain.Shipping.Aggregates.Shipping.Create(
             ShippingName.Create(request.Name),
             Money.FromDecimal(request.BaseCost),
             request.Description,

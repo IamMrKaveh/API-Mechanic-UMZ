@@ -1,5 +1,4 @@
-﻿using Domain.Common.Exceptions;
-using Domain.Wallet.ValueObjects;
+﻿using Domain.Wallet.ValueObjects;
 
 namespace Domain.Wallet.Exceptions;
 

@@ -1,3 +1,7 @@
+using Application.Category.Contracts;
+using Application.Category.Features.Shared;
+using SharedKernel.Models;
+
 namespace Application.Category.Features.Queries.GetAdminCategories;
 
 public class GetAdminCategoriesHandler(
@@ -9,8 +13,7 @@ public class GetAdminCategoriesHandler(
 
     public async Task<ServiceResult<PaginatedResult<CategoryListItemDto>>> Handle(
         GetAdminCategoriesQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var (categories, totalCount) = await _categoryQueryService.GetPagedAsync(
             request.Search,

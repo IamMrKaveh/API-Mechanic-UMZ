@@ -8,11 +8,13 @@ public record DiscountValidationResult
     public decimal FinalAmount { get; init; }
     public string DiscountType { get; init; } = string.Empty;
     public decimal DiscountValue { get; init; }
+    public bool IsValid { get; init; }
+    public string? Error { get; init; }
 }
 
 public record DiscountDetailDto
 {
-    public int Id { get; init; }
+    public Guid Id { get; init; }
     public string Code { get; init; } = string.Empty;
     public string DiscountType { get; init; } = string.Empty;
     public decimal Value { get; init; }
@@ -29,7 +31,7 @@ public record DiscountDetailDto
 
 public record DiscountListItemDto
 {
-    public int Id { get; init; }
+    public Guid Id { get; init; }
     public string Code { get; init; } = string.Empty;
     public string DiscountType { get; init; } = string.Empty;
     public decimal Value { get; init; }
@@ -57,22 +59,9 @@ public record DiscountDto
     public DateTime CreatedAt { get; init; }
 }
 
-public record DiscountValidationResultDto
-{
-    public bool IsValid { get; init; }
-    public string? Error { get; init; }
-    public decimal? DiscountAmount { get; init; }
-}
-
-public record DiscountApplicationResultDto
+public record DiscountApplicationResult
 {
     public bool IsSuccess { get; init; }
     public decimal DiscountAmount { get; init; }
     public string? Error { get; init; }
-}
-
-public record ApplyDiscountDto
-{
-    public string Code { get; init; } = string.Empty;
-    public decimal OrderAmount { get; init; }
 }

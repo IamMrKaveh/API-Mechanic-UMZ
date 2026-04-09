@@ -1,6 +1,6 @@
 using Application.Brand.Features.Shared;
-using Application.Common.Results;
+using Domain.Brand.ValueObjects;
 
 namespace Application.Brand.Features.Queries.GetBrand;
 
-public record GetBrandQuery(int Id) : IRequest<ServiceResult<BrandDetailDto>>;
+public record GetBrandQuery(BrandId Id) : IRequest<ServiceResult<BrandDetailDto>>;

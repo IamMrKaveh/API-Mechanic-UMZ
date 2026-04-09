@@ -1,5 +1,3 @@
-using Domain.Common.Exceptions;
-
 namespace Domain.Product.Exceptions;
 
 public sealed class InvalidPriceException : DomainException

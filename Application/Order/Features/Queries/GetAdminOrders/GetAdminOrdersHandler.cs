@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Order.Features.Queries.GetAdminOrders;
 
 public class GetAdminOrdersHandler : IRequestHandler<GetAdminOrdersQuery, ServiceResult<PaginatedResult<AdminOrderDto>>>
