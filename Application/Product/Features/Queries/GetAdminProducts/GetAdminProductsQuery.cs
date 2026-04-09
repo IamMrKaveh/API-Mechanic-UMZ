@@ -1,5 +1,3 @@
-using SharedKernel.Models;
-
 namespace Application.Product.Features.Queries.GetAdminProducts;
 
 public record GetAdminProductsQuery(
@@ -7,6 +5,4 @@ public record GetAdminProductsQuery(
     Guid? BrandId,
     string? Search,
     bool? IsActive,
-    bool IncludeDeleted,
-    int Page,
-    int PageSize) : IRequest<ServiceResult<PaginatedResult<AdminProductListItemDto>>>;
+    bool IncludeDeleted) : IRequest<ServiceResult<PaginatedResult<AdminProductListItemDto>>>;

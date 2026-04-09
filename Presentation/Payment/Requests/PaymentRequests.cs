@@ -1,13 +1,12 @@
 ﻿namespace Presentation.Payment.Requests;
 
 public record AdminPaymentSearchRequest(
-    int Page = 1,
-    int PageSize = 20,
-    string? Status = null,
-    Guid? UserId = null,
-    DateTime? FromDate = null,
-    DateTime? ToDate = null,
-    string? Gateway = null
+    Guid? OrderId,
+    Guid? UserId,
+    string? Status,
+    string? Gateway,
+    DateTime? FromDate,
+    DateTime? ToDate
 );
 
 public record RefundPaymentRequest(string Reason);

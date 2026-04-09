@@ -11,7 +11,7 @@ public interface ISessionRepository
         CancellationToken ct = default);
 
     Task<UserSession?> GetByRefreshTokenAsync(
-        string refreshToken,
+        RefreshToken refreshToken,
         CancellationToken ct = default);
 
     Task<IReadOnlyList<UserSession>> GetActiveByUserIdAsync(

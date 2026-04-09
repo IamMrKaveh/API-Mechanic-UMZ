@@ -2,6 +2,6 @@ namespace Application.Cart.Features.Commands.AddToCart;
 
 public record AddToCartCommand(
     Guid? UserId,
-    string? GuestToken,
     Guid VariantId,
+    string? GuestToken,
     int Quantity) : IRequest<ServiceResult>;

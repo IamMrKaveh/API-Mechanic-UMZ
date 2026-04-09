@@ -33,6 +33,9 @@ public class ServiceResult
     public static ServiceResult Forbidden(string error = "دسترسی ممنوع.") =>
         new() { IsSuccess = false, Error = error, Type = ErrorType.Forbidden };
 
+    public static ServiceResult RateLimitExceeded(string error = "درخواست بیش از حد") =>
+        new() { IsSuccess = false, Error = error, Type = ErrorType.RateLimitExceeded };
+
     public static ServiceResult FromResult(Result result) =>
         result.IsSuccess ? Success() : Failure(result.Error.Message, result.Error.Type);
 }
@@ -61,6 +64,9 @@ public class ServiceResult<T> : ServiceResult
 
     public new static ServiceResult<T> Forbidden(string error = "دسترسی ممنوع.") =>
         new() { IsSuccess = false, Error = error, Type = ErrorType.Forbidden };
+
+    public new static ServiceResult<T> RateLimitExceeded(string error = "درخواست بیش از حد") =>
+        new() { IsSuccess = false, Error = error, Type = ErrorType.RateLimitExceeded };
 
     public static ServiceResult<T> FromResult(Result<T> result) =>
         result.IsSuccess

@@ -1,14 +1,9 @@
 namespace Application.Media.Features.Queries.GetAllMedia;
 
-public class GetAllMediaHandler
-    : IRequestHandler<GetAllMediaQuery, ServiceResult<PaginatedResult<MediaListItemDto>>>
+public class GetAllMediaHandler(IMediaQueryService mediaQueryService)
+        : IRequestHandler<GetAllMediaQuery, ServiceResult<PaginatedResult<MediaListItemDto>>>
 {
-    private readonly IMediaQueryService _mediaQueryService;
-
-    public GetAllMediaHandler(IMediaQueryService mediaQueryService)
-    {
-        _mediaQueryService = mediaQueryService;
-    }
+    private readonly IMediaQueryService _mediaQueryService = mediaQueryService;
 
     public async Task<ServiceResult<PaginatedResult<MediaListItemDto>>> Handle(
         GetAllMediaQuery request, CancellationToken cancellationToken)

@@ -1,5 +1,6 @@
 using Domain.Discount.Aggregates;
 using Domain.Discount.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Discount.Interfaces;
 
@@ -24,7 +25,7 @@ public interface IDiscountRepository
 
     Task<int> CountUserUsageAsync(
         DiscountCodeId discountId,
-        Guid userId,
+        UserId userId,
         CancellationToken ct = default);
 
     Task AddAsync(

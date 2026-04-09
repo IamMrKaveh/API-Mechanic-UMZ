@@ -1,60 +1,70 @@
-using AngleSharp.Common;
 using Application.Cart.Features.Shared;
+using Application.Common.Interfaces;
 using Domain.Cart.Interfaces;
-using Domain.Product.Interfaces;
-using SharedKernel.Contracts;
+using Domain.Cart.ValueObjects;
+using Domain.User.ValueObjects;
+using Domain.Variant.Interfaces;
 
 namespace Application.Cart.Features.Commands.SyncCartPrices;
 
 public class SyncCartPricesHandler(
     ICartRepository cartRepository,
-    IProductRepository productRepository,
+    IVariantRepository variantRepository,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
     ILogger<SyncCartPricesHandler> logger) : IRequestHandler<SyncCartPricesCommand, ServiceResult<SyncCartPricesResult>>
 {
     private readonly ICartRepository _cartRepository = cartRepository;
-    private readonly IProductRepository _productRepository = productRepository;
+    private readonly IVariantRepository _variantRepository = variantRepository;
     private readonly ICurrentUserService _currentUser = currentUser;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly ILogger<SyncCartPricesHandler> _logger = logger;
 
     public async Task<ServiceResult<SyncCartPricesResult>> Handle(
         SyncCartPricesCommand request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
-        var cart = await _cartRepository.GetCartAsync(
-            _currentUser.UserId, _currentUser.GuestId, ct);
-
-        if (cart == null || cart.IsEmpty)
+        Domain.Cart.Aggregates.Cart? cart;
+        if (_currentUser.UserId is not null)
+            cart = await _cartRepository.FindByUserIdAsync(UserId.From(_currentUser.UserId.Value), ct);
+        else if (_currentUser.GuestToken is not null)
+            cart = await _cartRepository.FindByGuestTokenAsync(GuestToken.Create(_currentUser.GuestToken), ct);
+        else
             return ServiceResult<SyncCartPricesResult>.Success(new SyncCartPricesResult { HasChanges = false });
 
-        var variantIds = cart.GetVariantIds().ToList();
-        var variants = await _productRepository.GetVariantsByIdsAsync(variantIds, ct);
-        var variantLookup = variants.ToDictionary(v => v.Id);
-        var priceChanges = new List<CartPriceChangeDto>();
-        var removedVariantIds = new List<int>();
+        if (cart is null || cart.IsEmpty)
+            return ServiceResult<SyncCartPricesResult>.Success(new SyncCartPricesResult { HasChanges = false });
 
-        foreach (var item in cart.CartItems.ToList())
+        var variantIds = cart.Items.Select(i => i.VariantId).ToList();
+        var variants = await _variantRepository.GetByIdsAsync(variantIds, ct);
+        var variantLookup = variants.ToDictionary(v => v.Id);
+
+        var priceChanges = new List<CartPriceChangeDto>();
+        var removedVariantIds = new List<Guid>();
+
+        foreach (var item in cart.Items.ToList())
         {
             if (!variantLookup.TryGetValue(item.VariantId, out var variant)
-                || !variant.IsActive || variant.IsDeleted)
+                || !variant.IsActive
+                || variant.IsDeleted)
             {
                 cart.RemoveItem(item.VariantId);
-                removedVariantIds.Add(item.VariantId);
+                removedVariantIds.Add(item.VariantId.Value);
                 continue;
             }
 
-            if (item.SellingPrice != variant.SellingPrice)
+            var currentUnitPrice = variant.Price;
+            var currentOriginalPrice = variant.CompareAtPrice ?? variant.Price;
+
+            if (item.UnitPrice.Amount != currentUnitPrice.Amount)
             {
                 priceChanges.Add(new CartPriceChangeDto(
-                    item.VariantId,
-                    variant.Product?.Name ?? "نامشخص",
-                    item.SellingPrice,
-                    variant.SellingPrice));
+                    item.VariantId.Value,
+                    item.ProductName.Value,
+                    item.UnitPrice.Amount,
+                    currentUnitPrice.Amount));
 
-                cart.UpdateItemPrice(item.VariantId, variant.SellingPrice);
+                cart.RefreshItemPrice(item.VariantId, currentUnitPrice, currentOriginalPrice);
             }
         }
 
@@ -62,6 +72,7 @@ public class SyncCartPricesHandler(
 
         if (hasChanges)
         {
+            _cartRepository.Update(cart);
             await _unitOfWork.SaveChangesAsync(ct);
 
             _logger.LogInformation(

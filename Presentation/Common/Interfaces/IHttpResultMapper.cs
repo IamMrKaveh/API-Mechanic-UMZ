@@ -1,7 +1,6 @@
 ﻿using Application.Common.Results;
-using Microsoft.AspNetCore.Mvc;
 
-namespace Application.Common.Interfaces;
+namespace Presentation.Common.Interfaces;
 
 public interface IHttpResultMapper
 {

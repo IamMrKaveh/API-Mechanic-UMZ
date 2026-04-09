@@ -11,8 +11,6 @@ public interface IAuditRepository
 
     Task<IEnumerable<AuditLog>> GetByUserIdAsync(
         UserId userId,
-        int page,
-        int pageSize,
         CancellationToken ct = default);
 
     Task<IEnumerable<AuditLog>> GetByEntityAsync(

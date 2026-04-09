@@ -1,20 +1,17 @@
+using Application.Search.Features.Shared;
+
 namespace Application.Search.Features.Queries.FuzzySearch;
 
-public class FuzzySearchHandler
-    : IRequestHandler<FuzzySearchQuery, ServiceResult<SearchResultDto<ProductSearchResultItemDto>>>
+public class FuzzySearchHandler(ISearchService searchService)
+        : IRequestHandler<FuzzySearchQuery, ServiceResult<SearchResultDto<ProductSearchResultItemDto>>>
 {
-    private readonly ISearchService _searchService;
-
-    public FuzzySearchHandler(ISearchService searchService)
-    {
-        _searchService = searchService;
-    }
+    private readonly ISearchService _searchService = searchService;
 
     public async Task<ServiceResult<SearchResultDto<ProductSearchResultItemDto>>> Handle(
-        FuzzySearchQuery request, CancellationToken cancellationToken)
+        FuzzySearchQuery request, CancellationToken ct)
     {
         var result = await _searchService.SearchWithFuzzyAsync(
-            request.Q, request.Page, request.PageSize, cancellationToken);
+            request.Q, request.Page, request.PageSize, ct);
 
         return ServiceResult<SearchResultDto<ProductSearchResultItemDto>>.Success(result);
     }

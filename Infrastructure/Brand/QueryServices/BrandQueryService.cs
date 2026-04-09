@@ -1,4 +1,12 @@
-﻿namespace Infrastructure.Brand.QueryServices;
+﻿using Application.Brand.Contracts;
+using Application.Brand.Features.Shared;
+using Application.Common.Contracts;
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
+using Infrastructure.Persistence.Context;
+using SharedKernel.Models;
+
+namespace Infrastructure.Brand.QueryServices;
 
 public class BrandQueryService(
     DBContext context,
@@ -8,7 +16,7 @@ public class BrandQueryService(
     private readonly IUrlResolverService _urlResolver = urlResolver;
 
     public async Task<BrandDetailDto?> GetBrandDetailAsync(
-        int brandId,
+        BrandId brandId,
         CancellationToken ct = default)
     {
         var brand = await _context.Brands
@@ -62,7 +70,7 @@ public class BrandQueryService(
     }
 
     public async Task<PaginatedResult<BrandListItemDto>> GetBrandsPagedAsync(
-        int? categoryId,
+        CategoryId? categoryId,
         string? search,
         bool? isActive,
         bool includeDeleted,
@@ -138,14 +146,14 @@ public class BrandQueryService(
     }
 
     public async Task<bool> ExistsByNameInCategoryAsync(
-        string name,
-        int categoryId,
-        int? excludeId = null,
+        BrandName name,
+        CategoryId categoryId,
+        BrandId? excludeId = null,
         CancellationToken ct = default)
     {
         var query = _context.Brands
             .AsNoTracking()
-            .Where(g => g.Name.Value == name && g.CategoryId == categoryId && !g.IsDeleted);
+            .Where(g => g.Name == name && g.CategoryId == categoryId && !g.IsDeleted);
 
         if (excludeId.HasValue)
             query = query.Where(g => g.Id != excludeId.Value);

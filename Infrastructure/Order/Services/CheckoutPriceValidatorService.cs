@@ -1,8 +1,9 @@
-﻿using Domain.Order.ValueObjects;
+﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+using Domain.Order.ValueObjects;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
 
-namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+namespace Infrastructure.Order.Services;
 
 public class CheckoutPriceValidatorService(IVariantRepository variantRepository)
     : ICheckoutPriceValidatorService

@@ -1,6 +1,11 @@
 using Application.Payment.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Payment.Features.Queries.GetAdminPayments;
 
-public record GetAdminPaymentsQuery(PaymentSearchParams Params) : IRequest<ServiceResult<PaginatedResult<PaymentTransactionDto>>>;
+public record GetAdminPaymentsQuery(
+    Guid? OrderId,
+    Guid? UserId,
+    string? Status,
+    string? Gateway,
+    DateTime? FromDate,
+    DateTime? ToDate) : IRequest<ServiceResult<PaginatedResult<PaymentTransactionDto>>>;

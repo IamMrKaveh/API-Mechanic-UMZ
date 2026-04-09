@@ -1,4 +1,5 @@
-﻿namespace Application.Brand.Features.Queries.GetPublicBrands;
+﻿using Application.Brand.Features.Shared;
 
-public sealed record GetPublicBrandsQuery(int? CategoryId = null)
-    : IRequest<ServiceResult<IReadOnlyList<BrandDto>>>;
+namespace Application.Brand.Features.Queries.GetPublicBrands;
+
+public sealed record GetPublicBrandsQuery(Guid? CategoryId) : IRequest<ServiceResult<PaginatedResult<BrandDto>>>;

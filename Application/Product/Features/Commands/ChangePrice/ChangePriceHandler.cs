@@ -1,6 +1,6 @@
+using Application.Common.Interfaces;
 using Domain.Common.Exceptions;
 using Domain.Variant.Interfaces;
-using SharedKernel.Contracts;
 
 namespace Application.Product.Features.Commands.ChangePrice;
 

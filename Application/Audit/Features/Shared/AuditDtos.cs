@@ -13,6 +13,7 @@ public record AuditLogDto
     public Guid? EntityId { get; init; }
     public DateTime CreatedAt { get; init; }
     public bool IsArchived { get; init; }
+    public DateTime? Timestamp { get; init; }
 }
 
 public sealed record AuditStatisticsDto(
@@ -30,3 +31,15 @@ public sealed record EventTypeCountDto(
 public sealed record HourlyCountDto(
     int Hour,
     int Count);
+
+public sealed record ExportAuditLogsResult(
+    byte[] FileContent,
+    string ContentType,
+    string FileName);
+
+public sealed record GetAuditLogsResult(
+    IEnumerable<AuditLogDto> Items,
+    int Total,
+    int Page,
+    int PageSize,
+    int TotalPages);

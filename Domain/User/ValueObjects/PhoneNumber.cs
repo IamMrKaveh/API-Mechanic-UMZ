@@ -9,10 +9,7 @@ public sealed class PhoneNumber : ValueObject
     private const int IranPhoneNumberLength = 11;
     private const string IranMobilePrefix = "09";
 
-    private PhoneNumber(string value)
-    {
-        Value = value;
-    }
+    private PhoneNumber(string value) => Value = value;
 
     public static PhoneNumber Create(string value)
     {

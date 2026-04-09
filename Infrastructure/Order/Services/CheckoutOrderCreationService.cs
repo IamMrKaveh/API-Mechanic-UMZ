@@ -1,9 +1,10 @@
-﻿using Application.Order.Features.Shared;
+﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+using Application.Order.Features.Shared;
 using Domain.Common.ValueObjects;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 
-namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+namespace Infrastructure.Order.Services;
 
 public class CheckoutOrderCreationService(
     IOrderRepository orderRepository,

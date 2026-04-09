@@ -1,5 +1,6 @@
 using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
+using Domain.Security.ValueObjects;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace Infrastructure.Auth.Services;
@@ -147,7 +148,7 @@ public class TokenService(IConfiguration configuration) : ITokenService
     /// <summary>
     /// تجزیه Refresh Token به Selector و Verifier
     /// </summary>
-    public (string? Selector, string? Verifier) ParseRefreshToken(string refreshToken)
+    public static (string? Selector, string? Verifier) ParseRefreshToken(RefreshToken refreshToken)
     {
         if (string.IsNullOrWhiteSpace(refreshToken))
             return (null, null);
@@ -173,5 +174,10 @@ public class TokenService(IConfiguration configuration) : ITokenService
     public DateTime GetRefreshTokenExpiration()
     {
         return DateTime.UtcNow.AddDays(_refreshTokenExpirationDays);
+    }
+
+    public Task<RefreshTokenResult?> GetByTokenAsync(RefreshToken refreshToken, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
     }
 }

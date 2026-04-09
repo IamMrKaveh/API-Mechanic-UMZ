@@ -3,7 +3,7 @@ using Application.Brand.Features.Shared;
 namespace Application.Brand.Features.Queries.GetBrands;
 
 public record GetBrandsQuery(
-    int? CategoryId,
+    Guid? CategoryId,
     string? Search,
     bool? IsActive,
     bool IncludeDeleted,

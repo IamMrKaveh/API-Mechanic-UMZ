@@ -1,6 +1,10 @@
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
 using Domain.Variant.ValueObjects;
+using Domain.User.ValueObjects;
+using MediatR;
 
 namespace Application.Inventory.Features.Commands.RecordDamage;
 
@@ -11,17 +15,19 @@ public class RecordDamageHandler(
 {
     public async Task<ServiceResult> Handle(RecordDamageCommand request, CancellationToken ct)
     {
-        var inventory = await inventoryRepository.GetByVariantIdAsync(
-            VariantId.From(request.VariantId), ct);
+        var inventory = await inventoryRepository.GetByVariantIdAsync(VariantId.From(request.VariantId), ct);
 
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");
 
         var result = inventoryDomainService.RecordDamage(
-            inventory, request.Quantity, request.UserId, request.Reason);
+            inventory,
+            request.Quantity,
+            UserId.From(request.UserId),
+            request.Reason);
 
-        if (!result.IsSuccess)
-            return ServiceResult.Failure(result.Error!);
+        if (result.IsFailure)
+            return ServiceResult.Failure(result.Error.Message);
 
         inventoryRepository.Update(inventory);
         await unitOfWork.SaveChangesAsync(ct);

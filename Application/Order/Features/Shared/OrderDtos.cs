@@ -102,16 +102,6 @@ public sealed record UpdateOrderStatusDto
     public bool? AllowEdit { get; init; }
 }
 
-public sealed record AdminCreateOrderDto
-{
-    public Guid UserId { get; init; }
-    public string ReceiverName { get; init; } = string.Empty;
-    public Guid UserAddressId { get; init; }
-    public Guid ShippingId { get; init; }
-    public string? DiscountCode { get; init; }
-    public List<AdminCreateOrderItemDto> OrderItems { get; init; } = [];
-}
-
 public sealed record AdminCreateOrderItemDto
 {
     public Guid VariantId { get; init; }

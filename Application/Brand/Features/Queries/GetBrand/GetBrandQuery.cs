@@ -3,4 +3,4 @@ using Domain.Brand.ValueObjects;
 
 namespace Application.Brand.Features.Queries.GetBrand;
 
-public record GetBrandQuery(BrandId Id) : IRequest<ServiceResult<BrandDetailDto>>;
+public record GetBrandQuery(BrandId Id) : IRequest<ServiceResult<PaginatedResult<BrandDetailDto>>>;

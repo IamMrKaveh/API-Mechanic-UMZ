@@ -1,8 +1,9 @@
-﻿using Domain.Inventory.Interfaces;
+﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+using Domain.Inventory.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.Variant.ValueObjects;
 
-namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+namespace Infrastructure.Order.Services;
 
 public class CheckoutStockValidatorService(IInventoryRepository inventoryRepository)
     : ICheckoutStockValidatorService

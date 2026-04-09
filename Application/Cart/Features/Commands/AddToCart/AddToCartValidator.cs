@@ -8,7 +8,8 @@ public class AddToCartValidator : AbstractValidator<AddToCartCommand>
             .Must(x => x.UserId.HasValue || !string.IsNullOrWhiteSpace(x.GuestToken))
             .WithMessage("UserId یا GuestToken الزامی است.");
 
-        RuleFor(x => x.VariantId).GreaterThan(0).WithMessage("محصول الزامی است.");
+        RuleFor(x => x.VariantId)
+            .NotEmpty().WithMessage("شناسه محصول الزامی است.");
 
         RuleFor(x => x.Quantity)
             .GreaterThan(0).WithMessage("تعداد باید بزرگتر از صفر باشد.")

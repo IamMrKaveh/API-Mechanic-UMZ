@@ -3,9 +3,9 @@ using Application.Brand.Features.Shared;
 namespace Application.Brand.Features.Commands.UpdateBrand;
 
 public record UpdateBrandCommand(
-    Guid Id,
-    string Name,
+    Guid BrandId,
     Guid CategoryId,
+    string Name,
     string? Slug,
     string? Description,
     string? LogoPath,

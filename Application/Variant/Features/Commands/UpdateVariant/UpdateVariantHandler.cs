@@ -1,8 +1,8 @@
+using Application.Common.Interfaces;
 using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
 using Domain.Product.Interfaces;
 using Domain.Shipping.Interfaces;
-using SharedKernel.Contracts;
 
 namespace Application.Variant.Features.Commands.UpdateVariant;
 

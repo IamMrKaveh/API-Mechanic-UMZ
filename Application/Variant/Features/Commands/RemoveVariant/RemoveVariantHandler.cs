@@ -1,6 +1,6 @@
+using Application.Common.Interfaces;
 using Domain.Common.Exceptions;
 using Domain.Product.Interfaces;
-using SharedKernel.Contracts;
 
 namespace Application.Variant.Features.Commands.RemoveVariant;
 

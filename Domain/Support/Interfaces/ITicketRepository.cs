@@ -6,13 +6,19 @@ namespace Domain.Support.Interfaces;
 
 public interface ITicketRepository
 {
-    Task AddAsync(Ticket ticket, CancellationToken ct = default);
+    Task AddAsync(
+        Ticket ticket,
+        CancellationToken ct = default);
 
     void Update(Ticket ticket);
 
-    Task<Ticket?> GetByIdAsync(TicketId id, CancellationToken ct = default);
+    Task<Ticket?> GetByIdAsync(
+        TicketId id,
+        CancellationToken ct = default);
 
-    Task<Ticket?> GetByIdWithMessagesAsync(TicketId id, CancellationToken ct = default);
+    Task<Ticket?> GetByIdWithMessagesAsync(
+        TicketId id,
+        CancellationToken ct = default);
 
     Task<IReadOnlyList<Ticket>> GetByCustomerIdAsync(
         UserId customerId,
@@ -22,21 +28,26 @@ public interface ITicketRepository
         UserId agentId,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<Ticket>> GetOpenTicketsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Ticket>> GetOpenTicketsAsync(
+        CancellationToken ct = default);
 
     Task<IReadOnlyList<Ticket>> GetByStatusAsync(
-        ValueObjects.TicketStatus status,
+        TicketStatus status,
         CancellationToken ct = default);
 
     Task<IReadOnlyList<Ticket>> GetByPriorityAsync(
-        ValueObjects.TicketPriority priority,
+        TicketPriority priority,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<Ticket>> GetUnassignedTicketsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Ticket>> GetUnassignedTicketsAsync(
+        CancellationToken ct = default);
 
-    Task<IReadOnlyList<Ticket>> GetTicketsRequiringAttentionAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Ticket>> GetTicketsRequiringAttentionAsync(
+        CancellationToken ct = default);
 
-    Task<int> CountByStatusAsync(ValueObjects.TicketStatus status, CancellationToken ct = default);
+    Task<int> CountByStatusAsync(
+        TicketStatus status,
+        CancellationToken ct = default);
 
     Task<int> CountByCustomerIdAsync(
         UserId customerId,

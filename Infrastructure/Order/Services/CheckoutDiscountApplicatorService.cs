@@ -1,8 +1,9 @@
-﻿using Domain.Common.ValueObjects;
+﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+using Domain.Common.ValueObjects;
 using Domain.Discount.Interfaces;
 using Domain.User.ValueObjects;
 
-namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+namespace Infrastructure.Order.Services;
 
 public class CheckoutDiscountApplicatorService(IDiscountRepository discountRepository)
     : ICheckoutDiscountApplicatorService

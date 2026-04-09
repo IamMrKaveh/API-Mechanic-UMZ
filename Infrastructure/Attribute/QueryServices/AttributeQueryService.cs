@@ -1,4 +1,10 @@
-﻿namespace Infrastructure.Attribute.QueryServices;
+﻿using Application.Attribute.Contracts;
+using Application.Attribute.Features.Shared;
+using Domain.Attribute.ValueObjects;
+using Infrastructure.Persistence.Context;
+using MapsterMapper;
+
+namespace Infrastructure.Attribute.QueryServices;
 
 public class AttributeQueryService(DBContext context, IMapper mapper) : IAttributeQueryService
 {
@@ -23,8 +29,13 @@ public class AttributeQueryService(DBContext context, IMapper mapper) : IAttribu
         return _mapper.Map<IEnumerable<AttributeTypeDto>>(types);
     }
 
+    public Task<AttributeTypeDto?> GetAttributeTypeByIdAsync(AttributeTypeId attributeTypeId, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<AttributeTypeWithValuesDto?> GetAttributeTypeWithValuesDtoAsync(
-        int id,
+        AttributeTypeId id,
         CancellationToken ct = default)
     {
         var attributeType = await _context.AttributeTypes
@@ -35,7 +46,7 @@ public class AttributeQueryService(DBContext context, IMapper mapper) : IAttribu
     }
 
     public async Task<IEnumerable<AttributeValueDto>> GetAttributeValuesByTypeIdAsync(
-        int typeId,
+        AttributeTypeId typeId,
         CancellationToken ct = default)
     {
         var values = await _context.AttributeValues
@@ -45,5 +56,10 @@ public class AttributeQueryService(DBContext context, IMapper mapper) : IAttribu
             .ToListAsync(ct);
 
         return _mapper.Map<IEnumerable<AttributeValueDto>>(values);
+    }
+
+    Task<IReadOnlyList<AttributeValueDto>> IAttributeQueryService.GetAttributeValuesByTypeIdAsync(AttributeTypeId attributeTypeId, CancellationToken ct)
+    {
+        throw new NotImplementedException();
     }
 }

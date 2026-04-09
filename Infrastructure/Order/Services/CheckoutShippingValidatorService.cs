@@ -1,8 +1,9 @@
-﻿using Domain.Common.ValueObjects;
+﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+using Domain.Common.ValueObjects;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 
-namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+namespace Infrastructure.Order.Services;
 
 public class CheckoutShippingValidatorService(IShippingRepository shippingRepository)
     : ICheckoutShippingValidatorService

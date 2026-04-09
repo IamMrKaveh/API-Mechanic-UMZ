@@ -1,18 +1,22 @@
 using Application.Category.Features.Shared;
+using Domain.Category.ValueObjects;
+using Domain.Common.ValueObjects;
 
 namespace Application.Category.Contracts;
 
 public interface ICategoryQueryService
 {
-    Task<CategoryDto?> GetCategoryByIdAsync(Guid id, CancellationToken ct = default);
+    Task<CategoryDto?> GetCategoryByIdAsync(
+        CategoryId categoryId,
+        CancellationToken ct = default);
 
-    Task<CategoryDto?> GetCategoryBySlugAsync(string slug, CancellationToken ct = default);
+    Task<CategoryDto?> GetCategoryBySlugAsync(
+        Slug slug,
+        CancellationToken ct = default);
 
     Task<IReadOnlyList<CategoryDto>> GetAllActiveAsync(CancellationToken ct = default);
 
     Task<IReadOnlyList<CategoryTreeDto>> GetCategoryTreeAsync(CancellationToken ct = default);
-
-    Task<IReadOnlyList<CategoryDto>> GetByParentIdAsync(Guid? parentId, CancellationToken ct = default);
 
     Task<PaginatedResult<CategoryDto>> GetCategoriesPagedAsync(
         bool? isActive,

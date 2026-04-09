@@ -1,7 +1,8 @@
-﻿using Domain.Cart.Interfaces;
+﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+using Domain.Cart.Interfaces;
 using Domain.Order.ValueObjects;
 
-namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+namespace Infrastructure.Order.Services;
 
 public class CheckoutCartItemBuilderService(ICartRepository cartRepository)
     : ICheckoutCartItemBuilderService

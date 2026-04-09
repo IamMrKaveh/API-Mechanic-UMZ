@@ -12,8 +12,8 @@ public sealed class CartItem : Entity<CartItemId>
     public ProductId ProductId { get; private init; } = default!;
     public ProductName ProductName { get; private init; } = null!;
     public Sku Sku { get; private init; } = null!;
-    public Money UnitPrice { get; private init; } = null!;
-    public Money OriginalPrice { get; private init; } = null!;
+    public Money UnitPrice { get; private set; } = null!;
+    public Money OriginalPrice { get; private set; } = null!;
     public int Quantity { get; private set; }
     public DateTime AddedAt { get; private init; }
 
@@ -79,6 +79,14 @@ public sealed class CartItem : Entity<CartItemId>
         if (additionalQuantity <= 0)
             throw new InvalidCartQuantityException(additionalQuantity);
         Quantity += additionalQuantity;
+    }
+
+    internal void RefreshPrice(Money newUnitPrice, Money newOriginalPrice)
+    {
+        ArgumentNullException.ThrowIfNull(newUnitPrice);
+        ArgumentNullException.ThrowIfNull(newOriginalPrice);
+        UnitPrice = newUnitPrice;
+        OriginalPrice = newOriginalPrice;
     }
 
     public Money TotalPrice => UnitPrice.Multiply(Quantity);

@@ -1,10 +1,13 @@
 using Application.Media.Features.Shared;
+using Domain.Media.ValueObjects;
 
 namespace Application.Media.Contracts;
 
 public interface IMediaQueryService
 {
-    Task<MediaDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<MediaDto?> GetByIdAsync(
+        MediaId id,
+        CancellationToken ct = default);
 
     Task<IReadOnlyList<MediaDto>> GetByEntityAsync(
         string entityType,

@@ -1,8 +1,5 @@
-using Application.Common.Results;
-using Domain.Category.ValueObjects;
+using Application.Category.Features.Shared;
 
 namespace Application.Category.Features.Commands.ReorderCategories;
 
-public record ReorderCategoriesCommand(List<CategoryOrderItem> Items) : IRequest<ServiceResult>;
-
-public record CategoryOrderItem(CategoryId Id, int SortOrder);
+public record ReorderCategoriesCommand(List<CategoryOrderItemDto> Items) : IRequest<ServiceResult>;

@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Product.Features.Commands.ChangePrice;
 
 public record ChangePriceCommand(

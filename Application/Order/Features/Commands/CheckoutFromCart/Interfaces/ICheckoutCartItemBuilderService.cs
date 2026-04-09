@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+﻿namespace Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 
 public interface ICheckoutCartItemBuilderService
 {

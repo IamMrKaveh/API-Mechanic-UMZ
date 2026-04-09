@@ -1,6 +1,11 @@
+using Application.Common.Results;
+using Domain.Common.Interfaces;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
 using Domain.Variant.ValueObjects;
+using MediatR;
+using Microsoft.Extensions.Logging;
+using Domain.User.ValueObjects;
 
 namespace Application.Inventory.Features.Commands.BulkAdjustStock;
 
@@ -14,23 +19,25 @@ public class BulkAdjustStockHandler(
     {
         var errors = new List<string>();
 
-        foreach (var item in request.Items)
+        foreach (var variantId in request.VariantId.Zip(request.QuantityChange, (v, q) => new { Variant = v, Quantity = q }))
         {
-            var inventory = await inventoryRepository.GetByVariantIdAsync(
-                VariantId.From(item.VariantId), ct);
+            var inventory = await inventoryRepository.GetByVariantIdAsync(VariantId.From(variantId.Variant), ct);
 
             if (inventory is null)
             {
-                errors.Add($"موجودی برای واریانت {item.VariantId} یافت نشد.");
+                errors.Add($"موجودی برای واریانت {variantId.Variant} یافت نشد.");
                 continue;
             }
 
             var result = inventoryDomainService.AdjustStock(
-                inventory, item.QuantityChange, request.UserId, request.Reason);
+                inventory,
+                variantId.Quantity,
+                UserId.From(request.UserId),
+                request.Reason);
 
-            if (!result.IsSuccess)
+            if (result.IsFailure)
             {
-                errors.Add($"واریانت {item.VariantId}: {result.Error}");
+                errors.Add($"واریانت {variantId.Variant}: {result.Error.Message}");
                 continue;
             }
 
@@ -41,7 +48,7 @@ public class BulkAdjustStockHandler(
             return ServiceResult.Failure(string.Join(" | ", errors));
 
         await unitOfWork.SaveChangesAsync(ct);
-        logger.LogInformation("Bulk stock adjustment completed for {Count} variants", request.Items.Count);
+        logger.LogInformation("Bulk stock adjustment completed for {Count} variants", request.VariantId.Count);
 
         return ServiceResult.Success();
     }

@@ -2,4 +2,4 @@
 
 namespace Application.Inventory.Features.Queries.GetInventory;
 
-public record GetInventoryQuery(int VariantId) : IRequest<ServiceResult<InventoryDto>>;
+public record GetInventoryQuery(Guid VariantId) : IRequest<ServiceResult<InventoryDto>>;

@@ -11,7 +11,7 @@ public sealed class Money : ValueObject
         Currency = currency;
     }
 
-    public static Money Create(decimal amount, string currency = "IRR")
+    public static Money Create(decimal amount, string currency = "IRT")
     {
         if (amount < 0)
             throw new ArgumentException("Money amount cannot be negative.", nameof(amount));
@@ -20,9 +20,9 @@ public sealed class Money : ValueObject
         return new Money(amount, currency.ToUpperInvariant().Trim());
     }
 
-    public static Money FromDecimal(decimal amount, string currency = "IRR") => Create(amount, currency);
+    public static Money FromDecimal(decimal amount, string currency = "IRT") => Create(amount, currency);
 
-    public static Money Zero(string currency = "IRR") => new(0, currency);
+    public static Money Zero(string currency = "IRT") => new(0, currency);
 
     public Money Add(Money other)
     {
@@ -88,6 +88,24 @@ public sealed class Money : ValueObject
     {
         var tomanAmount = Currency == "IRR" ? Amount / 10 : Amount;
         return $"{tomanAmount:N0} تومان";
+    }
+
+    public decimal ToTomanDecimal()
+    {
+        var tomanAmount = Currency == "IRR" ? Amount / 10 : Amount;
+        return tomanAmount;
+    }
+
+    public string ToRialString()
+    {
+        var rialAmount = Currency == "IRT" ? Amount * 10 : Amount;
+        return $"{rialAmount:N0} ریال";
+    }
+
+    public decimal ToRialDecimal()
+    {
+        var rialAmount = Currency == "IRT" ? Amount * 10 : Amount;
+        return rialAmount;
     }
 
     protected override IEnumerable<object> GetEqualityComponents()

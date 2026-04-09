@@ -1,8 +1,8 @@
 namespace Application.Inventory.Features.Commands.BulkStockIn;
 
 public record BulkStockInCommand(
-    List<StockInItem> Items,
+    ICollection<Guid> VariantIds,
+    ICollection<int> Quantities,
+    ICollection<string>? ReferenceNumbers,
     Guid? UserId,
     string Reason) : IRequest<ServiceResult>;
-
-public record StockInItem(Guid VariantId, int Quantity, string? ReferenceNumber);

@@ -6,5 +6,7 @@ public interface ILocationService
 {
     Task<IReadOnlyList<ProvinceDto>> GetProvincesAsync(CancellationToken ct = default);
 
-    Task<IReadOnlyList<CityDto>> GetCitiesByProvinceAsync(string province, CancellationToken ct = default);
+    Task<IReadOnlyList<CityDto>> GetCitiesByProvinceAsync(
+        string province,
+        CancellationToken ct = default);
 }

@@ -1,47 +1,51 @@
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Application.Inventory.Contracts;
 
 public interface IInventoryService
 {
     Task<ServiceResult> ReserveStockAsync(
-        Guid variantId,
+        VariantId variantId,
         int quantity,
         string referenceNumber,
-        Guid? orderItemId = null,
+        OrderItemId? orderItemId = null,
         CancellationToken ct = default);
 
     Task<ServiceResult> ReleaseReservationAsync(
-        Guid variantId,
+        VariantId variantId,
         int quantity,
         string referenceNumber,
         string? reason = null,
         CancellationToken ct = default);
 
     Task<ServiceResult> CommitReservationAsync(
-        Guid variantId,
+        VariantId variantId,
         int quantity,
         string referenceNumber,
         Guid? orderItemId = null,
         CancellationToken ct = default);
 
     Task<ServiceResult> IncreaseStockAsync(
-        Guid variantId,
+        VariantId variantId,
         int quantity,
         string reason,
-        Guid? userId = null,
+        UserId? userId = null,
         CancellationToken ct = default);
 
     Task<ServiceResult> AdjustStockAsync(
-        Guid variantId,
+        VariantId variantId,
         int quantityChange,
-        Guid userId,
+        UserId userId,
         string reason,
         CancellationToken ct = default);
 
     Task<ServiceResult> ReturnStockAsync(
-        Guid variantId,
+        VariantId variantId,
         int quantity,
         string reason,
-        Guid? orderItemId = null,
-        Guid? userId = null,
+        OrderItemId? orderItemId = null,
+        UserId? userId = null,
         CancellationToken ct = default);
 }

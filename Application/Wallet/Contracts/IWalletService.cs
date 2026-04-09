@@ -1,4 +1,7 @@
 ﻿using Application.Wallet.Features.Shared;
+using Domain.Common.ValueObjects;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
 
 namespace Application.Wallet.Contracts;
@@ -6,18 +9,18 @@ namespace Application.Wallet.Contracts;
 public interface IWalletService
 {
     Task<ServiceResult<WalletDto>> GetBalanceAsync(
-        int userId,
+        UserId userId,
         CancellationToken ct = default);
 
     Task<ServiceResult<PaginatedResult<WalletLedgerEntryDto>>> GetLedgerAsync(
-        int userId,
+        UserId userId,
         int page,
         int pageSize,
         CancellationToken ct = default);
 
     Task<ServiceResult<Unit>> CreditAsync(
-        int userId,
-        decimal amount,
+        UserId userId,
+        Money amount,
         WalletTransactionType transactionType,
         WalletReferenceType referenceType,
         int referenceId,
@@ -27,8 +30,8 @@ public interface IWalletService
         CancellationToken ct = default);
 
     Task<ServiceResult<Unit>> DebitAsync(
-        int userId,
-        decimal amount,
+        UserId userId,
+        Money amount,
         WalletTransactionType transactionType,
         WalletReferenceType referenceType,
         int referenceId,
@@ -38,14 +41,14 @@ public interface IWalletService
         CancellationToken ct = default);
 
     Task<ServiceResult<Unit>> ReserveAsync(
-        int userId,
-        decimal amount,
-        int orderId,
+        UserId userId,
+        Money amount,
+        OrderId orderId,
         DateTime? expiresAt = null,
         CancellationToken ct = default);
 
     Task<ServiceResult<Unit>> ReleaseReservationAsync(
-        int userId,
-        int orderId,
+        UserId userId,
+        OrderId orderId,
         CancellationToken ct = default);
 }

@@ -1,10 +1,5 @@
-﻿using Application.Common.Results;
-using Application.Wallet.Features.Shared;
-using SharedKernel.Models;
+﻿using Application.Wallet.Features.Shared;
 
 namespace Application.Wallet.Features.Queries.GetWalletLedger;
 
-public record GetWalletLedgerQuery(
-    Guid UserId,
-    int Page = 1,
-    int PageSize = 20) : IRequest<ServiceResult<PaginatedResult<WalletLedgerEntryDto>>>;
+public record GetWalletLedgerQuery(Guid UserId) : IRequest<ServiceResult<PaginatedResult<WalletLedgerEntryDto>>>;

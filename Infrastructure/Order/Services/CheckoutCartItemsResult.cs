@@ -1,6 +1,6 @@
 ﻿using Domain.Order.ValueObjects;
 
-namespace Application.Order.Features.Commands.CheckoutFromCart.Services;
+namespace Infrastructure.Order.Services;
 
 public record CheckoutCartItemsResult(
     List<OrderItemSnapshot> Items,

@@ -1,5 +1,3 @@
-using Application.Search.Contracts;
-
 namespace Application.Search.Features.Queries.GetSearchIndexStats;
 
 public sealed class GetSearchIndexStatsHandler(ISearchService searchService)
@@ -9,9 +7,9 @@ public sealed class GetSearchIndexStatsHandler(ISearchService searchService)
 
     public async Task<ServiceResult<SearchIndexStatsDto>> Handle(
         GetSearchIndexStatsQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var stats = await _searchService.GetIndexStatsAsync(cancellationToken);
+        var stats = await _searchService.GetIndexStatsAsync(ct);
 
         var dto = new SearchIndexStatsDto(
             stats.ProductsCount,

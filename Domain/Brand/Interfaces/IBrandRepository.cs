@@ -6,21 +6,21 @@ namespace Domain.Brand.Interfaces;
 public interface IBrandRepository
 {
     Task AddAsync(
-        Domain.Brand.Aggregates.Brand brand,
+        Aggregates.Brand brand,
         CancellationToken ct = default);
 
-    void Update(Domain.Brand.Aggregates.Brand brand);
+    void Update(Aggregates.Brand brand);
 
     void SetOriginalRowVersion(
-        Domain.Brand.Aggregates.Brand entity,
+        Aggregates.Brand entity,
         byte[] rowVersion);
 
-    Task<Domain.Brand.Aggregates.Brand?> GetByIdAsync(
+    Task<Aggregates.Brand?> GetByIdAsync(
         BrandId id,
         CancellationToken ct = default);
 
-    Task<Domain.Brand.Aggregates.Brand?> GetBySlugAsync(
-        string slug,
+    Task<Aggregates.Brand?> GetBySlugAsync(
+        Slug slug,
         CancellationToken ct = default);
 
     Task<bool> ExistsByNameInCategoryAsync(

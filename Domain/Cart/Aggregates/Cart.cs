@@ -101,6 +101,18 @@ public sealed class Cart : AggregateRoot<CartId>
         IncrementVersion();
     }
 
+    public void RefreshItemPrice(VariantId variantId, Money newUnitPrice, Money newOriginalPrice)
+    {
+        EnsureNotCheckedOut();
+
+        var item = _items.FirstOrDefault(i => i.VariantId == variantId)
+            ?? throw new CartItemNotFoundException(variantId);
+
+        item.RefreshPrice(newUnitPrice, newOriginalPrice);
+        UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
+    }
+
     public void Clear()
     {
         EnsureNotCheckedOut();

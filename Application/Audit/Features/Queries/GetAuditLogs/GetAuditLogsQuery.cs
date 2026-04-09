@@ -3,7 +3,7 @@ using Application.Audit.Features.Shared;
 namespace Application.Audit.Features.Queries.GetAuditLogs;
 
 public sealed record GetAuditLogsQuery(
-    int? UserId,
+    Guid? UserId,
     string? EventType,
     string? Action,
     string? Keyword,
@@ -14,11 +14,4 @@ public sealed record GetAuditLogsQuery(
     int PageSize = 50,
     string SortBy = "Timestamp",
     bool SortDesc = true
-) : IRequest<GetAuditLogsResult>;
-
-public sealed record GetAuditLogsResult(
-    IEnumerable<AuditLogDto> Items,
-    int Total,
-    int Page,
-    int PageSize,
-    int TotalPages);
+) : IRequest<ServiceResult<PaginatedResult<GetAuditLogsResult>>>;

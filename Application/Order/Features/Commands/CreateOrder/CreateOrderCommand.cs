@@ -2,4 +2,12 @@ using Application.Order.Features.Shared;
 
 namespace Application.Order.Features.Commands.CreateOrder;
 
-public record CreateOrderCommand(AdminCreateOrderDto Dto, string IdempotencyKey, int AdminUserId) : IRequest<ServiceResult<int>>;
+public record CreateOrderCommand(
+    Guid UserId,
+    string ReceiverName,
+    Guid UserAddressId,
+    Guid ShippingId,
+    string? DiscountCode,
+    ICollection<AdminCreateOrderItemDto> OrderItems,
+    string IdempotencyKey,
+    Guid AdminUserId) : IRequest<ServiceResult<int>>;

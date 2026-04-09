@@ -1,11 +1,11 @@
 namespace Application.Category.Features.Queries.GetCategoryWithGroups;
 
-public class GetCategoryWithGroupsHandler(ICategoryQueryService queryService) : IRequestHandler<GetCategoryWithGroupsQuery, ServiceResult<CategoryWithBrandsDto?>>
+public class GetCategoryWithGroupsHandler(ICategoryQueryService queryService) : IRequestHandler<GetCategoryWithBrandsQuery, ServiceResult<CategoryWithBrandsDto?>>
 {
     private readonly ICategoryQueryService _queryService = queryService;
 
     public async Task<ServiceResult<CategoryWithBrandsDto?>> Handle(
-        GetCategoryWithGroupsQuery request,
+        GetCategoryWithBrandsQuery request,
         CancellationToken ct
         )
     {

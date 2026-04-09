@@ -4,4 +4,4 @@ namespace Application.Audit.Features.Queries.GetAuditStatistics;
 
 public sealed record GetAuditStatisticsQuery(
     DateTime? From,
-    DateTime? To) : IRequest<AuditStatisticsDto>;
+    DateTime? To) : IRequest<ServiceResult<PaginatedResult<AuditStatisticsDto>>>;

@@ -1,6 +1,10 @@
+using Application.Common.Interfaces;
+using Application.Common.Results;
 using Domain.Cart.Interfaces;
 using Domain.Cart.Services;
-using SharedKernel.Contracts;
+using Domain.Cart.ValueObjects;
+using Domain.Common.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.Cart.Features.Commands.MergeGuestCart;
 
@@ -17,35 +21,36 @@ public class MergeGuestCartHandler(
     private readonly CartDomainService _cartDomainService = cartDomainService;
     private readonly ILogger<MergeGuestCartHandler> _logger = logger;
 
-    public async Task<ServiceResult> Handle(
-        MergeGuestCartCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(MergeGuestCartCommand request, CancellationToken ct)
     {
-        if (_currentUser.IsAuthenticated)
+        if (!_currentUser.IsAuthenticated || !_currentUser.UserId.HasValue)
             return ServiceResult.Unauthorized("کاربر باید وارد شده باشد.");
 
-        var guestCart = await _cartRepository.GetByGuestTokenAsync(request.GuestToken, ct);
-        if (guestCart == null || guestCart.IsEmpty)
+        var guestToken = GuestToken.Create(request.GuestToken);
+        var guestCart = await _cartRepository.FindByGuestTokenAsync(guestToken, ct);
+        if (guestCart is null || guestCart.IsEmpty)
             return ServiceResult.Success();
 
-        var userCart = await _cartRepository.GetByUserIdAsync(_currentUser.CurrentUser.UserId, ct);
+        var userId = UserId.From(_currentUser.UserId.Value);
+        var userCart = await _cartRepository.FindByUserIdAsync(userId, ct);
 
-        if (userCart == null)
+        if (userCart is null)
         {
-            guestCart.AssignToUser(_currentUser.CurrentUser.UserId);
+            guestCart.AssignToUser(userId);
+            _cartRepository.Update(guestCart);
         }
         else
         {
-            var strategy = _cartDomainService.DetermineMergeStrategy(userCart, guestCart);
-            userCart.MergeWith(guestCart, strategy);
-            _cartRepository.Delete(guestCart);
+            _cartDomainService.MergeCarts(userCart, guestCart);
+            _cartRepository.Update(userCart);
+            _cartRepository.Remove(guestCart);
         }
 
         await _unitOfWork.SaveChangesAsync(ct);
 
         _logger.LogInformation(
             "سبد مهمان {GuestToken} با سبد کاربر {UserId} ادغام شد.",
-            request.GuestToken, _currentUser.CurrentUser.UserId);
+            request.GuestToken, userId.Value);
 
         return ServiceResult.Success();
     }

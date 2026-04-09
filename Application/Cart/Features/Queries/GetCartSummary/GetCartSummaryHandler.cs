@@ -1,6 +1,6 @@
 using Application.Cart.Contracts;
 using Application.Cart.Features.Shared;
-using SharedKernel.Contracts;
+using Application.Common.Interfaces;
 
 namespace Application.Cart.Features.Queries.GetCartSummary;
 
@@ -16,7 +16,7 @@ public class GetCartSummaryHandler(
         CancellationToken ct)
     {
         var summary = await _cartQueryService.GetCartSummaryAsync(
-            _currentUser.UserId, _currentUser.GuestId, ct);
+            _currentUser.UserId, _currentUser.GuestToken, ct);
 
         return ServiceResult<CartSummaryDto>.Success(summary);
     }

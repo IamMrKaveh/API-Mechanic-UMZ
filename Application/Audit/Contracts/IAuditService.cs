@@ -1,3 +1,9 @@
+using Domain.Common.ValueObjects;
+using Domain.Order.ValueObjects;
+using Domain.Payment.ValueObjects;
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Application.Audit.Contracts;
 
 public interface IAuditService
@@ -5,8 +11,8 @@ public interface IAuditService
     Task LogAsync(
         string eventType,
         string action,
-        string ipAddress,
-        Guid? userId = null,
+        IpAddress ipAddress,
+        UserId? userId = null,
         string? entityType = null,
         string? entityId = null,
         string? details = null,
@@ -16,23 +22,29 @@ public interface IAuditService
     Task LogSecurityEventAsync(
         string action,
         string details,
-        string ipAddress,
-        Guid? userId = null,
+        IpAddress ipAddress,
+        UserId? userId = null,
         CancellationToken ct = default);
 
     Task LogOrderEventAsync(
-        Guid orderId,
+        OrderId orderId,
         string action,
-        string ipAddress,
-        Guid? userId = null,
+        IpAddress ipAddress,
+        UserId? userId = null,
         string? details = null,
         CancellationToken ct = default);
 
     Task LogPaymentEventAsync(
-        Guid paymentId,
+        PaymentTransactionId paymentId,
         string action,
-        string ipAddress,
+        IpAddress ipAddress,
         Guid? userId = null,
         string? details = null,
         CancellationToken ct = default);
+
+    Task LogInventoryEventAsync(
+        ProductId productId,
+        string action,
+        string details,
+        UserId? userId = null);
 }

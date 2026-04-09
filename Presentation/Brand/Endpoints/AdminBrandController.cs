@@ -33,8 +33,8 @@ public class AdminBrandController(IMediator mediator) : BaseApiController(mediat
     public async Task<IActionResult> CreateBrand([FromForm] CreateBrandRequest request)
     {
         var command = new CreateBrandCommand(
-            request.Name,
             request.CategoryId,
+            request.Name,
             request.Slug,
             request.Description,
             null);
@@ -57,8 +57,8 @@ public class AdminBrandController(IMediator mediator) : BaseApiController(mediat
     {
         var command = new UpdateBrandCommand(
             id,
-            request.Name,
             request.CategoryId,
+            request.Name,
             request.Slug,
             request.Description,
             null,

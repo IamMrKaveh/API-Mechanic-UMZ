@@ -4,5 +4,8 @@ namespace Domain.Category.Interfaces;
 
 public interface ICategoryUniquenessChecker
 {
-    bool IsUnique(string name, string slug, CategoryId? excludeId = null);
+    bool IsUnique(
+        CategoryName name,
+        Slug slug,
+        CategoryId? excludeId = null);
 }

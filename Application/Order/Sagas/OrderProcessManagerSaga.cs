@@ -1,6 +1,3 @@
-using Application.Inventory.Contracts;
-using Application.Order.Contracts;
-using Domain.Common.Interfaces;
 using Domain.Order.Events;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;

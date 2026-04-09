@@ -1,6 +1,9 @@
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
+using Domain.Attribute.ValueObjects;
+using Domain.User.ValueObjects;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Attribute.Repositories;
 
@@ -9,7 +12,7 @@ public class AttributeRepository(DBContext context) : IAttributeRepository
     private readonly DBContext _context = context;
 
     public async Task<AttributeType?> GetAttributeTypeByIdAsync(
-        int id,
+        AttributeTypeId id,
         CancellationToken ct = default)
     {
         return await _context.AttributeTypes
@@ -17,7 +20,7 @@ public class AttributeRepository(DBContext context) : IAttributeRepository
     }
 
     public async Task<AttributeType?> GetAttributeTypeWithValuesAsync(
-        int id,
+        AttributeTypeId id,
         CancellationToken ct = default)
     {
         return await _context.AttributeTypes
@@ -26,7 +29,7 @@ public class AttributeRepository(DBContext context) : IAttributeRepository
     }
 
     public async Task<AttributeValue?> GetAttributeValueByIdAsync(
-        int id,
+        AttributeValueId id,
         CancellationToken ct = default)
     {
         return await _context.AttributeValues
@@ -35,7 +38,7 @@ public class AttributeRepository(DBContext context) : IAttributeRepository
     }
 
     public async Task<IEnumerable<AttributeValue>> GetAttributeValuesByIdsAsync(
-        IEnumerable<int> ids,
+        IEnumerable<AttributeValueId> ids,
         CancellationToken ct = default)
     {
         var idList = ids.ToList();
@@ -47,29 +50,29 @@ public class AttributeRepository(DBContext context) : IAttributeRepository
 
     public async Task<bool> AttributeTypeExistsAsync(
         string name,
-        int? excludeId = null,
+        AttributeTypeId? excludeId = null,
         CancellationToken ct = default)
     {
         var query = _context.AttributeTypes
             .Where(at => at.Name == name && !at.IsDeleted);
 
-        if (excludeId.HasValue)
-            query = query.Where(at => at.Id != excludeId.Value);
+        if (excludeId is not null)
+            query = query.Where(at => at.Id != excludeId);
 
         return await query.AnyAsync(ct);
     }
 
     public async Task<bool> AttributeValueExistsAsync(
-    int typeId,
+    AttributeTypeId typeId,
     string value,
-    int? excludeId = null,
+    AttributeValueId? excludeId = null,
     CancellationToken ct = default)
     {
         var query = _context.AttributeValues
             .Where(av => av.AttributeTypeId == typeId && av.Value == value && !av.IsDeleted);
 
-        if (excludeId.HasValue)
-            query = query.Where(av => av.Id != excludeId.Value);
+        if (excludeId is not null)
+            query = query.Where(av => av.Id != excludeId);
 
         return await query.AnyAsync(ct);
     }
@@ -101,8 +104,8 @@ public class AttributeRepository(DBContext context) : IAttributeRepository
     }
 
     public async Task DeleteAttributeTypeAsync(
-        int id,
-        int? deletedBy = null,
+        AttributeTypeId id,
+        UserId? deletedBy = null,
         CancellationToken ct = default)
     {
         var attributeType = await _context.AttributeTypes
@@ -113,8 +116,8 @@ public class AttributeRepository(DBContext context) : IAttributeRepository
     }
 
     public async Task DeleteAttributeValueAsync(
-        int id,
-        int? deletedBy = null,
+        AttributeValueId id,
+        UserId? deletedBy = null,
         CancellationToken ct = default)
     {
         var attributeValue = await _context.AttributeValues

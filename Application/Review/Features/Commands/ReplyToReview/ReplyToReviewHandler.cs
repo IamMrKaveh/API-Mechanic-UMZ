@@ -1,6 +1,6 @@
+using Application.Common.Interfaces;
 using Domain.Common.Exceptions;
 using Domain.Review.Interfaces;
-using SharedKernel.Contracts;
 
 namespace Application.Review.Features.Commands.ReplyToReview;
 

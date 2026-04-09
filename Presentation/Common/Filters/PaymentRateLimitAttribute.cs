@@ -1,5 +1,5 @@
+using Application.Common.Interfaces;
 using Application.Security.Contracts;
-using SharedKernel.Contracts;
 
 namespace Presentation.Common.Filters;
 

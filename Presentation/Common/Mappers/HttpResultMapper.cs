@@ -1,6 +1,6 @@
-﻿using Application.Common.Interfaces;
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Presentation.Base.Responses;
+using Presentation.Common.Interfaces;
 using SharedKernel.Results;
 
 namespace Presentation.Common.Mappers;

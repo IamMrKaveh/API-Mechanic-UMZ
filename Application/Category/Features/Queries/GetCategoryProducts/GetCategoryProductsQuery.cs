@@ -1,12 +1,7 @@
-using SharedKernel.Models;
-
 namespace Application.Category.Features.Queries.GetCategoryProducts;
 
-/// <summary>
-/// محصولات یک دسته‌بندی با صفحه‌بندی
-/// </summary>
 public record GetCategoryProductsQuery(
-    int CategoryId,
+    Guid CategoryId,
     bool ActiveOnly,
     int Page,
     int PageSize) : IRequest<ServiceResult<PaginatedResult<CategoryProductItemDto>>>;

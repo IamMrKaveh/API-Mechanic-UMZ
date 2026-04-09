@@ -4,13 +4,7 @@ public sealed record UserId
 {
     public Guid Value { get; }
 
-    private UserId(Guid value)
-    {
-        if (value == Guid.Empty)
-            throw new ArgumentException("UserId cannot be empty.", nameof(value));
-
-        Value = value;
-    }
+    private UserId(Guid value) => Value = value;
 
     public static UserId NewId() => new(Guid.NewGuid());
 

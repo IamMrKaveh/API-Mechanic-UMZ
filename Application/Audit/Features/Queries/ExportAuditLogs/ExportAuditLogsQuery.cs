@@ -1,14 +1,11 @@
+using Application.Audit.Features.Shared;
+
 namespace Application.Audit.Features.Queries.ExportAuditLogs;
 
 public sealed record ExportAuditLogsQuery(
-    int? UserId,
+    Guid? UserId,
     string? EventType,
     DateTime? From,
     DateTime? To,
     string Format = "csv",
-    int MaxRows = 10_000) : IRequest<ExportAuditLogsResult>;
-
-public sealed record ExportAuditLogsResult(
-    byte[] FileContent,
-    string ContentType,
-    string FileName);
+    int MaxRows = 10_000) : IRequest<ServiceResult<PaginatedResult<ExportAuditLogsResult>>>;

@@ -6,6 +6,7 @@ using Application.Cache.Contracts;
 using Application.Cart.Contracts;
 using Application.Category.Contracts;
 using Application.Common.Contracts;
+using Application.Common.Interfaces;
 using Application.Communication.Contracts;
 using Application.Discount.Contracts;
 using Application.Inventory.Contracts;
@@ -114,7 +115,6 @@ using Infrastructure.Variant.Repositories;
 using Infrastructure.Wallet.QueryServices;
 using Infrastructure.Wallet.Repositories;
 using Infrastructure.Wallet.Services;
-using SharedKernel.Contracts;
 using HealthStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus;
 
 namespace Infrastructure;

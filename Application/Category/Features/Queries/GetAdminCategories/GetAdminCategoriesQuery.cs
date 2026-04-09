@@ -1,3 +1,5 @@
+using Application.Category.Features.Shared;
+
 namespace Application.Category.Features.Queries.GetAdminCategories;
 
 public record GetAdminCategoriesQuery(
@@ -5,5 +7,4 @@ public record GetAdminCategoriesQuery(
     bool? IsActive,
     bool IncludeDeleted,
     int Page,
-    int PageSize
-    ) : IRequest<ServiceResult<PaginatedResult<CategoryListItemDto>>>;
+    int PageSize) : IRequest<ServiceResult<PaginatedResult<CategoryListItemDto>>>;

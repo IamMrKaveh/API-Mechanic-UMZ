@@ -1,10 +1,10 @@
+using Application.Common.Interfaces;
 using Application.Product.Features.Shared;
 using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
 using Domain.Common.Exceptions;
 using Domain.Product.Interfaces;
 using Domain.Shipping.Interfaces;
-using SharedKernel.Contracts;
 
 namespace Application.Variant.Features.Commands.AddVariant;
 

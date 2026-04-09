@@ -1,14 +1,11 @@
+using Application.Review.Features.Shared;
+
 namespace Application.Review.Features.Queries.GetProductReviews;
 
-public class GetProductReviewsHandler
-    : IRequestHandler<GetProductReviewsQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>
+public class GetProductReviewsHandler(IReviewQueryService reviewQueryService)
+        : IRequestHandler<GetProductReviewsQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>
 {
-    private readonly IReviewQueryService _reviewQueryService;
-
-    public GetProductReviewsHandler(IReviewQueryService reviewQueryService)
-    {
-        _reviewQueryService = reviewQueryService;
-    }
+    private readonly IReviewQueryService _reviewQueryService = reviewQueryService;
 
     public async Task<ServiceResult<PaginatedResult<ProductReviewDto>>> Handle(
         GetProductReviewsQuery request, CancellationToken ct)

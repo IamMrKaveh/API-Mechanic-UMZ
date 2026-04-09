@@ -127,6 +127,7 @@ public static class MapsterConfig
 
         TypeAdapterConfig<CartItem, CartItemDto>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
+            .Map(dest => dest.CartId, src => src.CartId.Value)
             .Map(dest => dest.VariantId, src => src.VariantId.Value)
             .Map(dest => dest.ProductId, src => src.ProductId.Value)
             .Map(dest => dest.ProductName, src => src.ProductName.Value)
@@ -135,9 +136,9 @@ public static class MapsterConfig
             .Map(dest => dest.OriginalPrice, src => src.OriginalPrice.Amount)
             .Map(dest => dest.Quantity, src => src.Quantity)
             .Map(dest => dest.TotalPrice, src => src.TotalPrice.Amount)
+            .Map(dest => dest.AddedAt, src => src.AddedAt)
             .Ignore(dest => dest.ProductIcon)
-            .Ignore(dest => dest.Attributes)
-            .Ignore(dest => dest.RowVersion);
+            .Ignore(dest => dest.Attributes);
     }
 
     private static void ConfigureDiscountMappings()

@@ -8,10 +8,7 @@ public sealed class OtpCode : ValueObject
     private const int MinLength = 4;
     private const int MaxLength = 8;
 
-    private OtpCode(string value)
-    {
-        Value = value;
-    }
+    private OtpCode(string value) => Value = value;
 
     public static OtpCode Create(string value)
     {
