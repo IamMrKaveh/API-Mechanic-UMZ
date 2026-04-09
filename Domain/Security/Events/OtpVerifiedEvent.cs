@@ -1,7 +1,6 @@
 ﻿using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
-using Domain.Common.Events;
 
 namespace Domain.Security.Events;
 

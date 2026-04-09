@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Inventory.Features.Commands.BulkAdjustStock;
 
 public record BulkAdjustStockCommand(

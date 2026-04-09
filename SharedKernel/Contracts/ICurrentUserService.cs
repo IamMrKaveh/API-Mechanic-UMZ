@@ -8,4 +8,5 @@ public interface ICurrentUserService
     bool IsAuthenticated { get; }
     string? UserAgent { get; }
     string? GuestId { get; }
+    Guid? UserId => IsAuthenticated ? CurrentUser.UserId : null;
 }

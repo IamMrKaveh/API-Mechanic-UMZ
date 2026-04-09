@@ -1,5 +1,6 @@
 using Application.Common.Results;
 using Domain.Attribute.Interfaces;
+using Domain.Attribute.ValueObjects;
 using Domain.Common.Interfaces;
 
 namespace Application.Attribute.Features.Commands.DeleteAttributeValue;
@@ -15,12 +16,15 @@ public class DeleteAttributeValueHandler(
         DeleteAttributeValueCommand request,
         CancellationToken ct)
     {
-        var attributeValue = await _repository.GetAttributeValueByIdAsync(request.Id, ct);
-        if (attributeValue == null)
+        var attributeValueId = AttributeValueId.From(request.Id);
+
+        var attributeValue = await _repository.GetAttributeValueByIdAsync(attributeValueId, ct);
+        if (attributeValue is null)
             return ServiceResult.NotFound("Attribute value not found.");
 
-        await _repository.DeleteAttributeValueAsync(attributeValue.Id);
+        await _repository.DeleteAttributeValueAsync(attributeValue.Id, null, ct);
         await _unitOfWork.SaveChangesAsync(ct);
+
         return ServiceResult.Success();
     }
 }

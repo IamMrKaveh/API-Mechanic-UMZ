@@ -4,7 +4,7 @@ using Application.Common.Results;
 namespace Application.Attribute.Features.Commands.CreateAttributeValue;
 
 public record CreateAttributeValueCommand(
-    int TypeId,
+    Guid TypeId,
     string Value,
     string DisplayValue,
     string? HexCode,

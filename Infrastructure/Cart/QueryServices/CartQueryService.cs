@@ -1,3 +1,8 @@
+using Application.Cart.Contracts;
+using Application.Cart.Features.Shared;
+using Application.Media.Contracts;
+using Infrastructure.Persistence.Context;
+
 namespace Infrastructure.Cart.QueryServices;
 
 public class CartQueryService(

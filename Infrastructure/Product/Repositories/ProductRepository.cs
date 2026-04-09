@@ -1,5 +1,6 @@
 using Domain.Product.Interfaces;
 using Domain.Variant.Aggregates;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Product.Repositories;
 
@@ -7,28 +8,28 @@ public class ProductRepository(DBContext context) : IProductRepository
 {
     private readonly DBContext _context = context;
 
-    public async Task AddAsync(Domain.Product.Product product, CancellationToken ct = default)
+    public async Task AddAsync(Domain.Product.Aggregates.Product product, CancellationToken ct = default)
     {
         await _context.Products.AddAsync(product, ct);
     }
 
-    public void Update(Domain.Product.Product product)
+    public void Update(Domain.Product.Aggregates.Product product)
     {
         _context.Products.Update(product);
     }
 
-    public void SetOriginalRowVersion(Domain.Product.Product entity, byte[] rowVersion)
+    public void SetOriginalRowVersion(Domain.Product.Aggregates.Product entity, byte[] rowVersion)
     {
         _context.Entry(entity).Property(p => p.RowVersion).OriginalValue = rowVersion;
     }
 
-    public async Task<Domain.Product.Product?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Domain.Product.Aggregates.Product?> GetByIdAsync(int id, CancellationToken ct = default)
     {
         return await _context.Products
             .FirstOrDefaultAsync(p => p.Id == id, ct);
     }
 
-    public async Task<Domain.Product.Product?> GetByIdWithAllDetailsAsync(int id, CancellationToken ct = default)
+    public async Task<Domain.Product.Aggregates.Product?> GetByIdWithAllDetailsAsync(int id, CancellationToken ct = default)
     {
         return await _context.Products
             .AsSplitQuery()
@@ -39,14 +40,14 @@ public class ProductRepository(DBContext context) : IProductRepository
             .FirstOrDefaultAsync(p => p.Id == id, ct);
     }
 
-    public async Task<Domain.Product.Product?> GetByIdWithVariantsAsync(int id, CancellationToken ct = default)
+    public async Task<Domain.Product.Aggregates.Product?> GetByIdWithVariantsAsync(int id, CancellationToken ct = default)
     {
         return await _context.Products
             .Include(p => p.Variants)
             .FirstOrDefaultAsync(p => p.Id == id, ct);
     }
 
-    public async Task<Domain.Product.Product?> GetByIdIncludingDeletedAsync(int id, CancellationToken ct = default)
+    public async Task<Domain.Product.Aggregates.Product?> GetByIdIncludingDeletedAsync(int id, CancellationToken ct = default)
     {
         return await _context.Products
             .IgnoreQueryFilters()

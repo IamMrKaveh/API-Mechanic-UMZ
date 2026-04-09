@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Domain.Product.ValueObjects;
+﻿namespace Domain.Product.ValueObjects;
 
 public sealed record ProductId
 {

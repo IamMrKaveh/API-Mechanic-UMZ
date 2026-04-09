@@ -1,6 +1,4 @@
-﻿using System.Linq.Expressions;
-using Domain.Attribute.Aggregates;
-using Domain.Common.Specifications;
+﻿using Domain.Attribute.Aggregates;
 
 namespace Domain.Attribute.Specifications;
 

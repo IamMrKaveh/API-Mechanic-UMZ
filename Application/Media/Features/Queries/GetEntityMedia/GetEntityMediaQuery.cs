@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Media.Features.Queries.GetEntityMedia;
 
 public record GetEntityMediaQuery(

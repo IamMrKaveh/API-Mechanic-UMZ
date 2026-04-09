@@ -1,5 +1,4 @@
-﻿using Application.Cache.Contracts;
-using Application.Cache.Interfaces;
+﻿using Application.Cache.Interfaces;
 
 namespace Application.Common.Behaviors;
 

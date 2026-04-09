@@ -1,7 +1,4 @@
-﻿using Application.Common.Results;
-using Application.Product.Contracts;
-using Application.Product.Features.Shared;
-using SharedKernel.Models;
+﻿using Application.Product.Features.Shared;
 
 namespace Application.Product.Features.Queries.GetProducts;
 

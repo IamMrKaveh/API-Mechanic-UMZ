@@ -3,9 +3,9 @@ using Application.Discount.Features.Shared;
 using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
 using Domain.Discount.Aggregates;
+using Domain.Discount.Enums;
 using Domain.Discount.Interfaces;
 using Domain.Discount.ValueObjects;
-using Mapster;
 
 namespace Application.Discount.Features.Commands.CreateDiscount;
 
@@ -16,7 +16,14 @@ public class CreateDiscountHandler(
 {
     public async Task<ServiceResult<DiscountDto>> Handle(CreateDiscountCommand request, CancellationToken ct)
     {
-        var discountValue = DiscountValue.Create(request.DiscountType, request.DiscountValue);
+        DiscountValue discountValue = request.DiscountType switch
+        {
+            DiscountType.Percentage => DiscountValue.Percentage(request.DiscountValue),
+            DiscountType.FixedAmount => DiscountValue.Fixed(request.DiscountValue),
+            DiscountType.FreeShipping => DiscountValue.FreeShipping(),
+            _ => throw new ArgumentOutOfRangeException(nameof(request.DiscountType))
+        };
+
         Money? maxDiscount = request.MaximumDiscountAmount.HasValue
             ? Money.FromDecimal(request.MaximumDiscountAmount.Value)
             : null;

@@ -1,4 +1,4 @@
-using Application.Common.Results;
+using SharedKernel.Models;
 
 namespace Application.Category.Features.Queries.GetCategoryProducts;
 
@@ -9,5 +9,4 @@ public record GetCategoryProductsQuery(
     int CategoryId,
     bool ActiveOnly,
     int Page,
-    int PageSize
-    ) : IRequest<ServiceResult<PaginatedResult<CategoryProductItemDto>>>;
+    int PageSize) : IRequest<ServiceResult<PaginatedResult<CategoryProductItemDto>>>;

@@ -1,5 +1,5 @@
-using Application.Common.Results;
+using Application.Payment.Features.Shared;
 
 namespace Application.Payment.Features.Queries.GetPaymentsByOrder;
 
-public record GetPaymentsByOrderQuery(int OrderId) : IRequest<ServiceResult<IEnumerable<PaymentTransactionDto>>>;
+public record GetPaymentsByOrderQuery(Guid OrderId) : IRequest<ServiceResult<IEnumerable<PaymentTransactionDto>>>;

@@ -1,6 +1,4 @@
-using Application.Common.Results;
 using Application.User.Features.Shared;
-using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
 
 namespace Application.User.Features.Commands.CreateUser;

@@ -1,9 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Category.Features.Queries.GetCategoryWithGroups;
 
-/// <summary>
-/// جزئیات یک Category به همراه گروه‌ها (Admin)
-/// </summary>
-public record GetCategoryWithGroupsQuery(int CategoryId)
-    : IRequest<ServiceResult<CategoryWithBrandsDto?>>;
+public record GetCategoryWithGroupsQuery(Guid CategoryId) : IRequest<ServiceResult<CategoryWithBrandsDto?>>;

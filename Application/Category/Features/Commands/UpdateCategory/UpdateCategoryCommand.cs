@@ -1,15 +1,12 @@
 using Application.Category.Features.Shared;
-using Application.Common.Results;
-using Domain.Category.ValueObjects;
-using Domain.Common.ValueObjects;
 
 namespace Application.Category.Features.Commands.UpdateCategory;
 
 public record UpdateCategoryCommand(
-    CategoryId Id,
-    CategoryName Name,
+    Guid Id,
+    string Name,
     bool IsActive,
-    Slug? Slug,
+    string? Slug,
     string? Description,
     int SortOrder,
     string RowVersion) : IRequest<ServiceResult<CategoryDto>>;

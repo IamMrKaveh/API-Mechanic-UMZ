@@ -1,23 +1,15 @@
-using Application.Common.Results;
+using Application.Category.Contracts;
+using SharedKernel.Models;
 
 namespace Application.Category.Features.Queries.GetCategoryProducts;
 
-public class GetCategoryProductsHandler
-    : IRequestHandler<GetCategoryProductsQuery, ServiceResult<PaginatedResult<CategoryProductItemDto>>>
+public class GetCategoryProductsHandler(ICategoryQueryService queryService) : IRequestHandler<GetCategoryProductsQuery, ServiceResult<PaginatedResult<CategoryProductItemDto>>>
 {
-    private readonly ICategoryQueryService _queryService;
-
-    public GetCategoryProductsHandler(
-        ICategoryQueryService queryService
-        )
-    {
-        _queryService = queryService;
-    }
+    private readonly ICategoryQueryService _queryService = queryService;
 
     public async Task<ServiceResult<PaginatedResult<CategoryProductItemDto>>> Handle(
         GetCategoryProductsQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
         var result = await _queryService.GetCategoryProductsAsync(
             request.CategoryId,

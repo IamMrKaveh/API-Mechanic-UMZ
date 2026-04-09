@@ -1,7 +1,6 @@
 ﻿using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Wishlist.ValueObjects;
-using Domain.Common.Events;
 
 namespace Domain.Wishlist.Events;
 

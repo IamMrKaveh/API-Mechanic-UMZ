@@ -1,4 +1,6 @@
-﻿namespace Application.Search.Contracts;
+﻿using Application.Search.Features.Shared;
+
+namespace Application.Search.Contracts;
 
 public interface ISearchBulkIndexingService
 {

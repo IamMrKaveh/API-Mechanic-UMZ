@@ -1,46 +1,36 @@
+using Application.Inventory.Contracts;
+using Application.Order.Contracts;
+using Domain.Common.Interfaces;
+using Domain.Order.Events;
+using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
+using Domain.Payment.Events;
 using Domain.Payment.Interfaces;
+using Domain.Payment.Services;
 
 namespace Application.Order.Sagas;
 
-/// <summary>
-/// Saga با وضعیت پایا (Persistent State)
-/// وضعیت Saga در دیتابیس ذخیره می‌شود تا در crash/restart از بین نرود
-/// از IOrderProcessStateRepository برای ذخیره وضعیت استفاده می‌شود
-/// </summary>
-public sealed class OrderProcessManagerSaga :
+public sealed class OrderProcessManagerSaga(
+    IOrderRepository orderRepository,
+    IInventoryService inventoryService,
+    IPaymentTransactionRepository paymentRepository,
+    IOrderProcessStateRepository processStateRepository,
+    IUnitOfWork unitOfWork,
+    PaymentSettlementService paymentSettlementService,
+    ILogger<OrderProcessManagerSaga> logger) :
     INotificationHandler<OrderCreatedEvent>,
     INotificationHandler<PaymentSucceededEvent>,
     INotificationHandler<PaymentFailedEvent>,
     INotificationHandler<OrderCancelledEvent>,
     INotificationHandler<OrderExpiredEvent>
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IInventoryService _inventoryService;
-    private readonly IPaymentTransactionRepository _paymentRepository;
-    private readonly IOrderProcessStateRepository _processStateRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly PaymentSettlementService _paymentSettlementService;
-    private readonly ILogger<OrderProcessManagerSaga> _logger;
-
-    public OrderProcessManagerSaga(
-        IOrderRepository orderRepository,
-        IInventoryService inventoryService,
-        IPaymentTransactionRepository paymentRepository,
-        IOrderProcessStateRepository processStateRepository,
-        IUnitOfWork unitOfWork,
-        PaymentSettlementService paymentSettlementService,
-        ILogger<OrderProcessManagerSaga> logger)
-    {
-        _orderRepository = orderRepository;
-        _inventoryService = inventoryService;
-        _paymentRepository = paymentRepository;
-        _processStateRepository = processStateRepository;
-        _unitOfWork = unitOfWork;
-        _paymentSettlementService = paymentSettlementService;
-        _logger = logger;
-    }
-
-    
+    private readonly IOrderRepository _orderRepository = orderRepository;
+    private readonly IInventoryService _inventoryService = inventoryService;
+    private readonly IPaymentTransactionRepository _paymentRepository = paymentRepository;
+    private readonly IOrderProcessStateRepository _processStateRepository = processStateRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly PaymentSettlementService _paymentSettlementService = paymentSettlementService;
+    private readonly ILogger<OrderProcessManagerSaga> _logger = logger;
 
     public async Task Handle(OrderCreatedEvent notification, CancellationToken ct)
     {
@@ -48,7 +38,6 @@ public sealed class OrderProcessManagerSaga :
             "[Saga] OrderCreated: OrderId={OrderId} → Starting inventory reservation",
             notification.OrderId);
 
-        
         var processState = OrderProcessState.Create(
             notification.OrderId,
             correlationId: notification.OrderId.ToString());
@@ -101,15 +90,12 @@ public sealed class OrderProcessManagerSaga :
             "[Saga] Inventory reserved successfully for Order {OrderId}", order.Id);
     }
 
-    
-
     public async Task Handle(PaymentSucceededEvent notification, CancellationToken ct)
     {
         _logger.LogInformation(
             "[Saga] PaymentSucceeded: OrderId={OrderId}, RefId={RefId}",
             notification.OrderId, notification.RefId);
 
-        
         var processState = await _processStateRepository.GetByOrderIdAsync(notification.OrderId, ct);
         if (processState is null)
         {
@@ -158,8 +144,6 @@ public sealed class OrderProcessManagerSaga :
         _logger.LogInformation("[Saga] Order {OrderId} settled: Paid + Processing", order.Id);
     }
 
-    
-
     public async Task Handle(PaymentFailedEvent notification, CancellationToken ct)
     {
         _logger.LogWarning(
@@ -179,8 +163,6 @@ public sealed class OrderProcessManagerSaga :
             notification.OrderId);
     }
 
-    
-
     public async Task Handle(OrderCancelledEvent notification, CancellationToken ct)
     {
         _logger.LogInformation(
@@ -197,8 +179,6 @@ public sealed class OrderProcessManagerSaga :
         await ReleaseInventoryForOrderAsync(notification.OrderId, "لغو سفارش", processState, ct);
     }
 
-    
-
     public async Task Handle(OrderExpiredEvent notification, CancellationToken ct)
     {
         _logger.LogInformation(
@@ -214,8 +194,6 @@ public sealed class OrderProcessManagerSaga :
         await ReleaseInventoryForOrderAsync(notification.OrderId, "انقضای سفارش", processState, ct);
     }
 
-    
-
     private async Task CompensateOrderAsync(
         Domain.Order.Aggregates.Order order,
         string reason,
@@ -227,8 +205,8 @@ public sealed class OrderProcessManagerSaga :
             var referenceNumber = $"ORDER-{order.Id}";
             await _inventoryService.RollbackReservationsAsync(referenceNumber, ct);
 
-            order.Cancel(0, reason);
-            await _orderRepository.UpdateAsync(order, ct);
+            order.Cancel(reason);
+            _orderRepository.Update(order);
 
             processState?.MarkCompensated();
             await _unitOfWork.SaveChangesAsync(ct);
@@ -244,7 +222,7 @@ public sealed class OrderProcessManagerSaga :
     }
 
     private async Task ReleaseInventoryForOrderAsync(
-        int orderId,
+        OrderId orderId,
         string reason,
         OrderProcessState? processState,
         CancellationToken ct)

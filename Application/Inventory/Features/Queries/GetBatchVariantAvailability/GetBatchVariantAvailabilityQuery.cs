@@ -1,5 +1,4 @@
-﻿using Application.Common.Results;
-using Application.Inventory.Features.Queries.GetVariantAvailability;
+﻿using Application.Inventory.Features.Queries.GetVariantAvailability;
 
 namespace Application.Inventory.Features.Queries.GetBatchVariantAvailability;
 

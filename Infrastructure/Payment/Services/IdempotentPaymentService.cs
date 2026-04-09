@@ -1,4 +1,8 @@
+using Application.Cache.Contracts;
 using Application.Common.Results;
+using Application.Payment.Contracts;
+using Application.Payment.Features.Shared;
+using Domain.Common.Interfaces;
 using Domain.Payment.Aggregates;
 using Domain.Payment.Interfaces;
 
@@ -11,14 +15,14 @@ public sealed class PaymentService(
     IUnitOfWork unitOfWork,
     ILogger<PaymentService> logger) : IPaymentService
 {
-    private static readonly TimeSpan IdempotencyWindow = TimeSpan.FromHours(24);
-    private static readonly TimeSpan GatewayTimeout = TimeSpan.FromSeconds(10);
-
     private readonly IPaymentGatewayFactory _gatewayFactory = gatewayFactory;
     private readonly IPaymentTransactionRepository _transactionRepo = transactionRepo;
     private readonly ICacheService _cache = cache;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly ILogger<PaymentService> _logger = logger;
+
+    private static readonly TimeSpan IdempotencyWindow = TimeSpan.FromHours(24);
+    private static readonly TimeSpan GatewayTimeout = TimeSpan.FromSeconds(10);
 
     private record CachedPaymentInitiation(bool IsSuccess, string? Authority, string? PaymentUrl, string? Message);
     private record CachedPaymentVerification(bool IsVerified, long? RefId, string? CardPan, string? Message);

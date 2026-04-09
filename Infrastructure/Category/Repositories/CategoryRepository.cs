@@ -1,4 +1,5 @@
 using Domain.Category.Interfaces;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Category.Repositories;
 

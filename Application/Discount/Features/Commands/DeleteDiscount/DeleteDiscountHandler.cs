@@ -1,7 +1,5 @@
-using Application.Common.Results;
 using Domain.Discount.Interfaces;
 using Domain.Discount.ValueObjects;
-using Domain.Common.Interfaces;
 
 namespace Application.Discount.Features.Commands.DeleteDiscount;
 

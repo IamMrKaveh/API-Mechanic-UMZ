@@ -3,4 +3,4 @@ using Application.User.Features.Shared;
 
 namespace Application.Auth.Features.Queries.GetUserSessions;
 
-public record GetUserSessionsQuery(int UserId) : IRequest<ServiceResult<IEnumerable<UserSessionDto>>>;
+public record GetUserSessionsQuery(Guid UserId) : IRequest<ServiceResult<IEnumerable<UserSessionDto>>>;

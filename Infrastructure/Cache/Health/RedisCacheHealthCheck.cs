@@ -1,3 +1,5 @@
+using Infrastructure.Cache.Options;
+
 namespace Infrastructure.Cache.Health;
 
 public sealed class RedisCacheHealthCheck(

@@ -1,7 +1,3 @@
-using Application.Common.Results;
-using Application.Inventory.Contracts;
-using Application.Inventory.Features.Shared;
-
 namespace Application.Inventory.Features.Queries.GetInventoryStatus;
 
 public class GetInventoryStatusHandler(IInventoryQueryService queryService) : IRequestHandler<GetInventoryStatusQuery, ServiceResult<InventoryStatusDto>>

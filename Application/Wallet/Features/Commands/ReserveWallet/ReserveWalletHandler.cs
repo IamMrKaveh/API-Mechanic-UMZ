@@ -1,7 +1,4 @@
-﻿using Application.Common.Exceptions;
-using Application.Common.Results;
-using Domain.Common.Exceptions;
-using Domain.Common.Interfaces;
+﻿using Domain.Common.Exceptions;
 using Domain.Common.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;

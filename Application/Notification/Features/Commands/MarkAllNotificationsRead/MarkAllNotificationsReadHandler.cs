@@ -1,6 +1,3 @@
-using Application.Common.Results;
-using Application.Notification.Contracts;
-
 namespace Application.Notification.Features.Commands.MarkAllNotificationsRead;
 
 public class MarkAllNotificationsReadHandler(INotificationService notificationService) : IRequestHandler<MarkAllNotificationsReadCommand, ServiceResult>

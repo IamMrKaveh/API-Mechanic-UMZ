@@ -1,4 +1,3 @@
-using Application.Common.Results;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 

@@ -1,5 +1,4 @@
 ﻿using Application.Notification.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Notification.Contracts;
 

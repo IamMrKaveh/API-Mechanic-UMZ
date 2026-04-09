@@ -1,4 +1,3 @@
-using Application.Common.Results;
 using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Queries.GetUserDashboard;

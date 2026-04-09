@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Inventory.Features.Queries.GetVariantAvailability;
 
 public record GetVariantAvailabilityQuery(int VariantId) : IRequest<ServiceResult<VariantAvailabilityDto>>;

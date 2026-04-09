@@ -1,12 +1,9 @@
-using Application.Common.Results;
 using Application.Product.Features.Shared;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
-using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
-using Domain.Product.Aggregates;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
 

@@ -1,10 +1,9 @@
-using Application.Common.Results;
 using Application.Product.Features.Shared;
 
 namespace Application.Variant.Features.Commands.AddVariant;
 
 public record AddVariantCommand(
-    int ProductId,
+    Guid ProductId,
     string? Sku,
     decimal PurchasePrice,
     decimal SellingPrice,
@@ -12,5 +11,5 @@ public record AddVariantCommand(
     int Stock,
     bool IsUnlimited,
     decimal ShippingMultiplier,
-    List<int> AttributeValueIds,
-    List<int>? EnabledShippingMethodIds) : IRequest<ServiceResult<ProductVariantViewDto>>;
+    ICollection<Guid> AttributeValueIds,
+    ICollection<Guid>? EnabledShippingMethodIds) : IRequest<ServiceResult<ProductVariantViewDto>>;

@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Payment.Features.Commands.AtomicRefundPayment;
 
 public record AtomicRefundPaymentCommand(

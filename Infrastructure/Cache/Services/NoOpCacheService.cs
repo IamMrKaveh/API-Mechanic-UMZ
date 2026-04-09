@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Cache.Services;
+﻿using Application.Cache.Contracts;
+
+namespace Infrastructure.Cache.Services;
 
 /// <summary>
 /// سرویس Cache No-Op که زمانی استفاده می‌شود که Redis/Cache غیرفعال است

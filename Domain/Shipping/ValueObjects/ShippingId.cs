@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Domain.Shipping.ValueObjects;
+﻿namespace Domain.Shipping.ValueObjects;
 
 public sealed record ShippingId
 {

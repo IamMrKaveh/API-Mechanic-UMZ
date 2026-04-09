@@ -1,5 +1,3 @@
-using Application.Common.Results;
-using Application.Shipping.Contracts;
 using Application.Shipping.Features.Shared;
 
 namespace Application.Shipping.Features.Queries.GetShippings;

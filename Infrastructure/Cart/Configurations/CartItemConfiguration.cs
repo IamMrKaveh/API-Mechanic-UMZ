@@ -1,4 +1,4 @@
-using Domain.Cart.Entity;
+using Domain.Cart.Entities;
 
 namespace Infrastructure.Cart.Configurations;
 

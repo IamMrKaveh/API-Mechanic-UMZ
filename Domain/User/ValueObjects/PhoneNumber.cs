@@ -1,5 +1,4 @@
 using Domain.User.Exceptions;
-using SharedKernel.Results;
 
 namespace Domain.User.ValueObjects;
 

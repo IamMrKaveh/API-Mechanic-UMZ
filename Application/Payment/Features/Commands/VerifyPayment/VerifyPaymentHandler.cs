@@ -1,5 +1,3 @@
-using Application.Common.Results;
-using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
 
 namespace Application.Payment.Features.Commands.VerifyPayment;

@@ -1,7 +1,3 @@
-using Application.Common.Results;
-using Application.Discount.Contracts;
-using Application.Discount.Features.Shared;
-
 namespace Application.Discount.Features.Queries.GetDiscountUsageReport;
 
 public class GetDiscountUsageReportHandler(IDiscountQueryService discountQueryService) : IRequestHandler<GetDiscountUsageReportQuery, ServiceResult<DiscountUsageReportDto?>>

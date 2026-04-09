@@ -1,8 +1,4 @@
-using Application.Audit.Contracts;
-using Application.Common.Results;
-using Application.Features.Orders.Commands.DeleteOrder;
 using Domain.Common.Exceptions;
-using Domain.Common.Interfaces;
 using Domain.Order.Interfaces;
 
 namespace Application.Order.Features.Commands.DeleteOrder;

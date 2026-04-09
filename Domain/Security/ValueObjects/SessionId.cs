@@ -7,7 +7,7 @@ public sealed record SessionId
     private SessionId(Guid value)
     {
         if (value == Guid.Empty)
-            throw new ArgumentException("UserSessionId cannot be empty.", nameof(value));
+            throw new ArgumentException("SessionId cannot be empty.", nameof(value));
 
         Value = value;
     }

@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Inventory.Contracts;
 
 public interface IInventoryService

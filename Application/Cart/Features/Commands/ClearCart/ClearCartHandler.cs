@@ -1,6 +1,4 @@
-using Application.Common.Results;
 using Domain.Cart.Interfaces;
-using Domain.Common.Interfaces;
 using Domain.User.ValueObjects;
 
 namespace Application.Cart.Features.Commands.ClearCart;

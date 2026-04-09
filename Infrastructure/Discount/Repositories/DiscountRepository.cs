@@ -1,5 +1,6 @@
 using Domain.Discount.Aggregates;
 using Domain.Discount.Interfaces;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Discount.Repositories;
 

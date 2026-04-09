@@ -1,5 +1,4 @@
 using Application.Audit.Contracts;
-using Application.Audit.Features.Shared;
 
 namespace Application.Audit.Features.Queries.ExportAuditLogs;
 

@@ -1,7 +1,5 @@
-using Application.Common.Results;
 using Domain.Payment.Interfaces;
 using Domain.Payment.Services;
-using Domain.Common.Interfaces;
 
 namespace Application.Payment.Features.Commands.ExpireStalePayments;
 

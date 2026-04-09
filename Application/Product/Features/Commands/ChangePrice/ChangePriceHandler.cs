@@ -1,8 +1,4 @@
-using Application.Audit.Contracts;
-using Application.Cache.Contracts;
-using Application.Common.Results;
 using Domain.Common.Exceptions;
-using Domain.Common.Interfaces;
 using Domain.Variant.Interfaces;
 using SharedKernel.Contracts;
 

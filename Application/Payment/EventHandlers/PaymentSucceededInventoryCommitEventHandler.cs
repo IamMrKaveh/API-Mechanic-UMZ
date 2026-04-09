@@ -3,7 +3,6 @@ using Domain.Inventory.Services;
 using Domain.Order.Interfaces;
 using Domain.Payment.Events;
 using Domain.Variant.ValueObjects;
-using Domain.Common.Interfaces;
 
 namespace Application.Payment.EventHandlers;
 

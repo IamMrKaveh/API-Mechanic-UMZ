@@ -9,7 +9,7 @@ public interface IDiscountQueryService
 
     Task<DiscountDto?> GetByCodeAsync(string code, CancellationToken ct = default);
 
-    Task<DiscountValidationResultDto> ValidateDiscountAsync(string code, decimal orderAmount, Guid userId, CancellationToken ct = default);
+    Task<DiscountValidationResult> ValidateDiscountAsync(string code, decimal orderAmount, Guid userId, CancellationToken ct = default);
 
     Task<PaginatedResult<DiscountDto>> GetDiscountsPagedAsync(
         bool? isActive,

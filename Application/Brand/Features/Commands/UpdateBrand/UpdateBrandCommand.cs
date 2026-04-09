@@ -1,5 +1,4 @@
 using Application.Brand.Features.Shared;
-using Application.Common.Results;
 
 namespace Application.Brand.Features.Commands.UpdateBrand;
 

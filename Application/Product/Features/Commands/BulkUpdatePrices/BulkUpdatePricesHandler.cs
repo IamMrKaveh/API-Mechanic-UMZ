@@ -1,32 +1,25 @@
-using Application.Common.Results;
+using Application.Audit.Contracts;
+using Application.Cache.Contracts;
+using Domain.Common.Interfaces;
 using Domain.Variant.Interfaces;
+using SharedKernel.Contracts;
 
 namespace Application.Product.Features.Commands.BulkUpdatePrices;
 
-public class BulkUpdatePricesHandler : IRequestHandler<BulkUpdatePricesCommand, ServiceResult>
+public class BulkUpdatePricesHandler(
+    IVariantRepository variantRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICurrentUserService currentUserService,
+    ICacheService cacheService,
+    ILogger<BulkUpdatePricesHandler> logger) : IRequestHandler<BulkUpdatePricesCommand, ServiceResult>
 {
-    private readonly IVariantRepository _variantRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditService _auditService;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ICacheService _cacheService;
-    private readonly ILogger<BulkUpdatePricesHandler> _logger;
-
-    public BulkUpdatePricesHandler(
-        IVariantRepository variantRepository,
-        IUnitOfWork unitOfWork,
-        IAuditService auditService,
-        ICurrentUserService currentUserService,
-        ICacheService cacheService,
-        ILogger<BulkUpdatePricesHandler> logger)
-    {
-        _variantRepository = variantRepository;
-        _unitOfWork = unitOfWork;
-        _auditService = auditService;
-        _currentUserService = currentUserService;
-        _cacheService = cacheService;
-        _logger = logger;
-    }
+    private readonly IVariantRepository _variantRepository = variantRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAuditService _auditService = auditService;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
+    private readonly ICacheService _cacheService = cacheService;
+    private readonly ILogger<BulkUpdatePricesHandler> _logger = logger;
 
     public async Task<ServiceResult> Handle(BulkUpdatePricesCommand request, CancellationToken ct)
     {

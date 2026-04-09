@@ -1,6 +1,4 @@
-﻿using System.Linq.Expressions;
-
-namespace Domain.Common.Specifications;
+﻿namespace Domain.Common.Specifications;
 
 internal sealed class ParameterReplacer(ParameterExpression source, ParameterExpression target) : ExpressionVisitor
 {

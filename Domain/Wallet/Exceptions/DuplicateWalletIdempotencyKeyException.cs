@@ -1,6 +1,4 @@
-﻿using Domain.Common.Exceptions;
-
-namespace Domain.Wallet.Exceptions;
+﻿namespace Domain.Wallet.Exceptions;
 
 public sealed class DuplicateWalletIdempotencyKeyException : DomainException
 {

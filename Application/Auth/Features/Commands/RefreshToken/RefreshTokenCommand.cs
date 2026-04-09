@@ -3,9 +3,7 @@ using Application.Common.Results;
 
 namespace Application.Auth.Features.Commands.RefreshToken;
 
-public record RefreshTokenCommand : IRequest<ServiceResult<AuthResult>>
-{
-    public required string RefreshToken { get; init; }
-    public required string IpAddress { get; init; }
-    public string? UserAgent { get; init; }
-}
+public record RefreshTokenCommand(
+    string RefreshToken,
+    string IpAddress,
+    string? UserAgent) : IRequest<ServiceResult<AuthResult>>;

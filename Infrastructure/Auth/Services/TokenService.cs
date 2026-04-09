@@ -1,3 +1,7 @@
+using Application.Auth.Contracts;
+using Application.Auth.Features.Shared;
+using System.IdentityModel.Tokens.Jwt;
+
 namespace Infrastructure.Auth.Services;
 
 public class TokenService(IConfiguration configuration) : ITokenService

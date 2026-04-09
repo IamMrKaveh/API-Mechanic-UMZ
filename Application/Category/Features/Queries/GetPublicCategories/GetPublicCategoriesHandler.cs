@@ -1,6 +1,4 @@
-﻿using Application.Common.Results;
-
-namespace Application.Category.Features.Queries.GetPublicCategories;
+﻿namespace Application.Category.Features.Queries.GetPublicCategories;
 
 public class GetPublicCategoriesHandler(ICategoryQueryService categoryQueryService)
     : IRequestHandler<GetPublicCategoriesQuery, ServiceResult<PaginatedResult<CategoryDto>>>

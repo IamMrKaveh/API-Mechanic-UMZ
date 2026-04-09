@@ -1,6 +1,4 @@
-using Application.Cart.Features.Commands.UpdateCartItem;
-
-namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
+namespace Application.Cart.Features.Commands.UpdateCartItem;
 
 public class UpdateCartItemValidator : AbstractValidator<UpdateCartItemCommand>
 {

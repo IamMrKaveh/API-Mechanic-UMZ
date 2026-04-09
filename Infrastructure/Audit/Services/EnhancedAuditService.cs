@@ -1,5 +1,8 @@
+using Application.Audit.Contracts;
+using Application.Audit.Features.Shared;
 using Domain.Audit.Entities;
 using Domain.Audit.Interfaces;
+using Domain.Common.Interfaces;
 
 namespace Infrastructure.Audit.Services;
 
@@ -16,8 +19,7 @@ public sealed class EnhancedAuditService(
     IAuditQueryService auditQueryService,
     IAuditMaskingService masking,
     IUnitOfWork unitOfWork,
-    ILogger<EnhancedAuditService> logger
-        ) : IAuditService
+    ILogger<EnhancedAuditService> logger) : IAuditService
 {
     private readonly IAuditRepository _auditRepository = auditRepository;
     private readonly IAuditQueryService _auditQueryService = auditQueryService;
@@ -60,7 +62,7 @@ public sealed class EnhancedAuditService(
         }
     }
 
-    public async Task<(IEnumerable<AuditDtos> Logs, int TotalItems)> GetAuditLogsAsync(
+    public async Task<(IEnumerable<AuditLogDto> Logs, int TotalItems)> GetAuditLogsAsync(
         int? userId,
         string? eventType,
         DateTime? fromDate,
@@ -71,7 +73,7 @@ public sealed class EnhancedAuditService(
         var (logs, totalCount) = await _auditQueryService.GetAuditLogsAsync(
             fromDate, toDate, userId, eventType, page, pageSize);
 
-        var dtos = logs.Select(l => new AuditDtos
+        var dtos = logs.Select(l => new AuditLogDto
         {
             Id = l.Id,
             UserId = l.UserId,
@@ -89,7 +91,7 @@ public sealed class EnhancedAuditService(
     /// <summary>
     /// جستجوی پیشرفته با فیلترهای متعدد.
     /// </summary>
-    public async Task<(IEnumerable<AuditDtos> Logs, int Total)> SearchAuditLogsAsync(
+    public async Task<(IEnumerable<AuditLogDto> Logs, int Total)> SearchAuditLogsAsync(
        AuditSearchRequest request,
        CancellationToken ct = default)
     {

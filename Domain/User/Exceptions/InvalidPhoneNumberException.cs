@@ -1,5 +1,3 @@
-using Domain.Common.Exceptions;
-
 namespace Domain.User.Exceptions;
 
 public sealed class InvalidPhoneNumberException : DomainException

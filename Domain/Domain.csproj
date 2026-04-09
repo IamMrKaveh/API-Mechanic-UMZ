@@ -64,10 +64,6 @@
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
 		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 
-		<!-- API & Minimal Framework -->
-		<PackageReference Include="Carter" Version="8.0.0" />
-		<PackageReference Include="Scalar.AspNetCore" Version="1.2.0" />
-
 		<!-- Error Handling -->
 		<PackageReference Include="Hellang.Middleware.ProblemDetails" Version="6.5.1" />
 

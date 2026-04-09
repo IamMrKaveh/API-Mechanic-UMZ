@@ -1,9 +1,11 @@
+using Application.Attribute.Features.Shared;
+
 namespace Application.Cart.Features.Shared;
 
 public record CartDetailDto
 {
-    public int Id { get; init; }
-    public int? UserId { get; init; }
+    public Guid Id { get; init; }
+    public Guid? UserId { get; init; }
     public string? GuestToken { get; init; }
     public List<CartItemDetailDto> Items { get; init; } = [];
     public decimal TotalPrice { get; init; }
@@ -12,9 +14,9 @@ public record CartDetailDto
 }
 
 public record CartItemDto(
-    int Id,
-    int CartId,
-    int VariantId,
+    Guid Id,
+    Guid CartId,
+    Guid VariantId,
     int Quantity,
     string? ProductName,
     decimal SellingPrice,
@@ -26,8 +28,8 @@ public record CartItemDto(
 
 public record CartItemDetailDto
 {
-    public int VariantId { get; init; }
-    public int ProductId { get; init; }
+    public Guid VariantId { get; init; }
+    public Guid ProductId { get; init; }
     public string ProductName { get; init; } = string.Empty;
     public string? VariantSku { get; init; }
     public string? ProductImage { get; init; }
@@ -42,7 +44,7 @@ public record CartItemDetailDto
 }
 
 public record CartPriceChangeDto(
-    int VariantId,
+    Guid VariantId,
     string ProductName,
     decimal OldPrice,
     decimal NewPrice
@@ -65,8 +67,8 @@ public record CartCheckoutValidationDto
 
 public record CartStockIssueDto
 {
-    public int VariantId { get; init; }
-    public string ProductName { get; init; }
+    public Guid VariantId { get; init; }
+    public string ProductName { get; init; } = null!;
     public int RequestedQuantity { get; init; }
     public int AvailableStock { get; init; }
 }

@@ -1,12 +1,8 @@
 using Application.Common.Results;
-using Domain.Cart.Aggregates;
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
 using Domain.Common.Interfaces;
-using Domain.Product.ValueObjects;
-using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
-using Domain.Variant.ValueObjects;
 
 namespace Application.Cart.Features.Commands.AddToCart;
 

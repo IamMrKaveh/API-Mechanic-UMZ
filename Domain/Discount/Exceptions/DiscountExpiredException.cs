@@ -1,6 +1,3 @@
-using System;
-using Domain.Common.Exceptions;
-
 namespace Domain.Discount.Exceptions;
 
 public sealed class DiscountExpiredException : DomainException

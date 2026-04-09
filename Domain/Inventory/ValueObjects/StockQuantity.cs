@@ -1,5 +1,3 @@
-using SharedKernel.Results;
-
 namespace Domain.Inventory.ValueObjects;
 
 public sealed class StockQuantity : ValueObject, IComparable<StockQuantity>

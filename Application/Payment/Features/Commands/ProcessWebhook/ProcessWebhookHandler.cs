@@ -1,6 +1,3 @@
-using Application.Common.Results;
-using Application.Payment.Contracts;
-
 namespace Application.Payment.Features.Commands.ProcessWebhook;
 
 public class ProcessWebhookHandler(

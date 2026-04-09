@@ -1,22 +1,19 @@
+using Application.Notification.Contracts;
+using Domain.Order.Events;
+
 namespace Application.Order.EventHandlers;
 
 /// <summary>
 /// وقتی سفارش ثبت شد، نوتیفیکیشن ارسال می‌شود
 /// </summary>
-public sealed class OrderPlacedNotificationEventHandler : INotificationHandler<OrderCreatedEvent>
+public sealed class OrderPlacedNotificationEventHandler(
+    INotificationService notificationService,
+    ILogger<OrderPlacedNotificationEventHandler> logger) : INotificationHandler<OrderCreatedEvent>
 {
-    private readonly INotificationService _notificationService;
-    private readonly ILogger<OrderPlacedNotificationEventHandler> _logger;
+    private readonly INotificationService _notificationService = notificationService;
+    private readonly ILogger<OrderPlacedNotificationEventHandler> _logger = logger;
 
-    public OrderPlacedNotificationEventHandler(
-        INotificationService notificationService,
-        ILogger<OrderPlacedNotificationEventHandler> logger)
-    {
-        _notificationService = notificationService;
-        _logger = logger;
-    }
-
-    public async Task Handle(OrderCreatedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(OrderCreatedEvent notification, CancellationToken ct)
     {
         try
         {
@@ -28,7 +25,7 @@ public sealed class OrderPlacedNotificationEventHandler : INotificationHandler<O
                 $"/dashboard/orders/{notification.OrderId}",
                 notification.OrderId,
                 "Order",
-                cancellationToken);
+                ct);
 
             _logger.LogInformation("Order placed notification sent for order {OrderId}", notification.OrderId);
         }

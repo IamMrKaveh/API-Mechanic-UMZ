@@ -1,3 +1,7 @@
+using Application.Common.Contracts;
+using Application.Search.Contracts;
+using Application.Search.Features.Shared;
+
 namespace Infrastructure.Search.Services;
 
 /// <summary>
@@ -5,24 +9,16 @@ namespace Infrastructure.Search.Services;
 /// داده‌ها با کوئری‌های flat و paginated خوانده می‌شوند
 /// هر batch در scope جداگانه پردازش می‌شود تا Change Tracker بلوت نشود
 /// </summary>
-public class ElasticsearchDatabaseSyncService : ISearchDatabaseSyncService
+public class ElasticsearchDatabaseSyncService(
+    ISqlConnectionFactory sqlConnectionFactory,
+    ISearchService searchService,
+    IElasticBulkService bulkService,
+    ILogger<ElasticsearchDatabaseSyncService> logger) : ISearchDatabaseSyncService
 {
-    private readonly ISqlConnectionFactory _sqlConnectionFactory;
-    private readonly ISearchService _searchService;
-    private readonly IElasticBulkService _bulkService;
-    private readonly ILogger<ElasticsearchDatabaseSyncService> _logger;
-
-    public ElasticsearchDatabaseSyncService(
-        ISqlConnectionFactory sqlConnectionFactory,
-        ISearchService searchService,
-        IElasticBulkService bulkService,
-        ILogger<ElasticsearchDatabaseSyncService> logger)
-    {
-        _sqlConnectionFactory = sqlConnectionFactory;
-        _searchService = searchService;
-        _bulkService = bulkService;
-        _logger = logger;
-    }
+    private readonly ISqlConnectionFactory _sqlConnectionFactory = sqlConnectionFactory;
+    private readonly ISearchService _searchService = searchService;
+    private readonly IElasticBulkService _bulkService = bulkService;
+    private readonly ILogger<ElasticsearchDatabaseSyncService> _logger = logger;
 
     public async Task SyncAsync(CancellationToken ct = default)
     {

@@ -1,5 +1,4 @@
 using Domain.Attribute.ValueObjects;
-using Domain.Common.Events;
 
 namespace Domain.Attribute.Events;
 

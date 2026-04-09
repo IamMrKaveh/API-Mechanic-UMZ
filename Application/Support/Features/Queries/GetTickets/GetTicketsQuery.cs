@@ -5,7 +5,7 @@ using SharedKernel.Models;
 namespace Application.Support.Features.Queries.GetTickets;
 
 public record GetTicketsQuery(
-    int? UserId,
+    Guid? UserId,
     string? Status,
     string? Priority,
     int Page,

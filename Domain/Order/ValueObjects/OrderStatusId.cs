@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Domain.Order.ValueObjects;
+﻿namespace Domain.Order.ValueObjects;
 
 public sealed record OrderStatusId
 {

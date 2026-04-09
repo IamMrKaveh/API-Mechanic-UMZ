@@ -1,5 +1,4 @@
 ﻿using Domain.Variant.ValueObjects;
-using SharedKernel.Results;
 
 namespace Domain.Inventory.Services.Results;
 

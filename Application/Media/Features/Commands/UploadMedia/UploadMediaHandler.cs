@@ -1,5 +1,3 @@
-using Application.Common.Results;
-using Application.Media.Contracts;
 using Application.Media.Features.Shared;
 
 namespace Application.Media.Features.Commands.UploadMedia;

@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Support.Features.Commands.ReplyToTicket;
 
 public record ReplyToTicketCommand(

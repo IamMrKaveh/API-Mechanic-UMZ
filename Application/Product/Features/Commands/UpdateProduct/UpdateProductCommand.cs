@@ -1,16 +1,16 @@
-using Application.Common.Results;
 using Application.Product.Features.Shared;
 
 namespace Application.Product.Features.Commands.UpdateProduct;
 
 public record UpdateProductCommand(
-    int Id,
+    Guid Id,
     string Name,
+    decimal Price,
     string? Slug,
-    string Description,
-    int CategoryId,
-    int BrandId,
+    string? Description,
+    Guid CategoryId,
+    Guid BrandId,
     bool IsActive,
     bool IsFeatured,
     string RowVersion,
-    int UpdatedByUserId) : IRequest<ServiceResult<ProductDetailDto>>;
+    Guid UpdatedByUserId) : IRequest<ServiceResult<ProductDetailDto>>;

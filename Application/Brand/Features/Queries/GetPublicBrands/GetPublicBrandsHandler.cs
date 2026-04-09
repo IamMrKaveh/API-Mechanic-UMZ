@@ -1,4 +1,7 @@
-﻿namespace Application.Brand.Features.Queries.GetPublicBrands;
+﻿using Application.Brand.Contracts;
+using Application.Brand.Features.Shared;
+
+namespace Application.Brand.Features.Queries.GetPublicBrands;
 
 public sealed class GetPublicBrandsHandler(IBrandQueryService brandQueryService) : IRequestHandler<GetPublicBrandsQuery, ServiceResult<IReadOnlyList<BrandDto>>>
 {
@@ -9,6 +12,6 @@ public sealed class GetPublicBrandsHandler(IBrandQueryService brandQueryService)
         CancellationToken ct)
     {
         var brands = await _brandQueryService.GetPublicBrandsAsync(request.CategoryId, ct);
-        return ServiceResult<IReadOnlyList<BrandDto>>.Ok(brands);
+        return ServiceResult<IReadOnlyList<BrandDto>>.Success(brands);
     }
 }

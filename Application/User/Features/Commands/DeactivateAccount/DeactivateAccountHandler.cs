@@ -1,8 +1,4 @@
-using Application.Audit.Contracts;
-using Application.Auth.Contracts;
-using Application.Common.Results;
 using Domain.Common.Exceptions;
-using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
 
 namespace Application.User.Features.Commands.DeactivateAccount;

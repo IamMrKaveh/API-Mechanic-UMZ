@@ -2,4 +2,4 @@ using Application.Common.Results;
 
 namespace Application.Auth.Features.Commands.LogoutAll;
 
-public record LogoutAllCommand(int UserId) : IRequest<ServiceResult>;
+public record LogoutAllCommand(Guid UserId) : IRequest<ServiceResult>;

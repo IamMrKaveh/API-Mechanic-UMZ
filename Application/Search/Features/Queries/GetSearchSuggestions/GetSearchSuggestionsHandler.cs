@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Search.Features.Queries.GetSearchSuggestions;
 
 public class GetSearchSuggestionsHandler

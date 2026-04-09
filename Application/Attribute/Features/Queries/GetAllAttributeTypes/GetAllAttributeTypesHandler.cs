@@ -1,6 +1,4 @@
 using Application.Attribute.Features.Shared;
-using Application.Cache.Contracts;
-using Application.Common.Results;
 using Domain.Attribute.Interfaces;
 
 namespace Application.Attribute.Features.Queries.GetAllAttributeTypes;

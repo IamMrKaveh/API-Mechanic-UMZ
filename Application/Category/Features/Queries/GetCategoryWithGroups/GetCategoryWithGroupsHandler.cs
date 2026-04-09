@@ -1,7 +1,3 @@
-using Application.Category.Contracts;
-using Application.Category.Features.Shared;
-using Application.Common.Results;
-
 namespace Application.Category.Features.Queries.GetCategoryWithGroups;
 
 public class GetCategoryWithGroupsHandler(ICategoryQueryService queryService) : IRequestHandler<GetCategoryWithGroupsQuery, ServiceResult<CategoryWithBrandsDto?>>

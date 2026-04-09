@@ -1,6 +1,5 @@
 ﻿using Domain.Security.Aggregates;
 using Domain.User.ValueObjects;
-using SharedKernel.Results;
 
 namespace Domain.Security.Results;
 

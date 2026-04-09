@@ -1,3 +1,5 @@
+using Application.Search.Features.Shared;
+
 namespace Application.Search.Contracts;
 
 public interface IElasticBulkService

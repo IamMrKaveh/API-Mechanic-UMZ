@@ -1,3 +1,5 @@
+using Application.Search.Features.Shared;
+
 namespace Infrastructure.Search;
 
 public class ElasticIndexManager(

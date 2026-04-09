@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.User.Features.Queries.GetUserReviews;
 
 public class GetUserReviewsHandler

@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Variant.Features.Queries.GetProductVariants;
 
 public class GetProductVariantsHandler(IVariantQueryService variantQueryService)

@@ -1,9 +1,4 @@
-using Application.Audit.Contracts;
-using Application.Common.Results;
-using Application.Discount.Contracts;
-using Application.Inventory.Contracts;
 using Domain.Common.Exceptions;
-using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
 using Domain.Discount.Results;
 using Domain.Order.Interfaces;

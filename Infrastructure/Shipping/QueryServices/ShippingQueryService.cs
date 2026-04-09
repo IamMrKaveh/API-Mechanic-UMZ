@@ -1,4 +1,7 @@
-using Application.Cart;
+using Application.Shipping.Contracts;
+using Application.Shipping.Features.Shared;
+using Domain.Cart.Interfaces;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Shipping.QueryServices;
 

@@ -1,8 +1,5 @@
-using Application.Audit.Contracts;
-using Application.Common.Results;
 using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
-using Domain.Common.Interfaces;
 using Domain.Product.Interfaces;
 using Domain.Shipping.Interfaces;
 using SharedKernel.Contracts;

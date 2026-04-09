@@ -1,9 +1,11 @@
 using Application.Common.Results;
+using Application.Order.Features.Shared;
+using SharedKernel.Models;
 
 namespace Application.Order.Features.Queries.GetAdminOrders;
 
 public record GetAdminOrdersQuery(
-    int? UserId,
+    Guid? UserId,
     string? Status,
     DateTime? FromDate,
     DateTime? ToDate,

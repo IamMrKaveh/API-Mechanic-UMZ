@@ -1,8 +1,4 @@
-﻿using Application.Common.Results;
-using Application.Inventory.Contracts;
-using Application.Inventory.Features.Shared;
-
-namespace Application.Inventory.Features.Queries.GetWarehouseStock;
+﻿namespace Application.Inventory.Features.Queries.GetWarehouseStock;
 
 public class GetWarehouseStockHandler(IInventoryQueryService inventoryQueryService)
         : IRequestHandler<GetWarehouseStockQuery, ServiceResult<IEnumerable<WarehouseStockDto>>>

@@ -2,8 +2,8 @@ namespace Application.Inventory.Features.Shared;
 
 public record InventoryTransactionDto
 {
-    public int Id { get; init; }
-    public int VariantId { get; init; }
+    public Guid Id { get; init; }
+    public Guid VariantId { get; init; }
     public string? ProductName { get; init; }
     public string? VariantSku { get; init; }
     public string? Sku { get; init; }

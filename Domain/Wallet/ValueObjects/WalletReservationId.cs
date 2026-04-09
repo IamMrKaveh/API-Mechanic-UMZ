@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Domain.Wallet.ValueObjects;
+﻿namespace Domain.Wallet.ValueObjects;
 
 public sealed record WalletReservationId
 {

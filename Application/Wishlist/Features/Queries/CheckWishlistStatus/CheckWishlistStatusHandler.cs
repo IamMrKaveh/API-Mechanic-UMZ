@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Wishlist.Features.Queries.CheckWishlistStatus;
 
 public class CheckWishlistStatusHandler : IRequestHandler<CheckWishlistStatusQuery, ServiceResult<bool>>

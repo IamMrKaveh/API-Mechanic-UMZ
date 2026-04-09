@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Support.Features.Queries.GetAdminTickets;
 
 public sealed class GetAdminTicketsHandler(ITicketQueryService ticketQueryService)

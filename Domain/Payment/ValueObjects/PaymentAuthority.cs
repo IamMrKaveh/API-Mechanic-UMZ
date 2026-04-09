@@ -1,5 +1,3 @@
-using SharedKernel.Results;
-
 namespace Domain.Payment.ValueObjects;
 
 public sealed class PaymentAuthority : ValueObject

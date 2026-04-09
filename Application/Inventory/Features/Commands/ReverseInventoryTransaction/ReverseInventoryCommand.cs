@@ -1,6 +1,4 @@
-﻿using Application.Common.Results;
-
-namespace Application.Inventory.Features.Commands.ReverseInventoryTransaction;
+﻿namespace Application.Inventory.Features.Commands.ReverseInventoryTransaction;
 
 public record ReverseInventoryCommand(
     Guid VariantId,

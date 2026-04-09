@@ -1,10 +1,4 @@
 using Domain.Media.ValueObjects;
-using SharedKernel.Results;
-using Domain.Common.Exceptions;
-using Domain.Common.Guards;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Domain.Media.Services;
 

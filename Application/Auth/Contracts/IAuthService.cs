@@ -1,5 +1,4 @@
 using Application.Auth.Features.Shared;
-using Application.Common.Results;
 using Application.User.Features.Shared;
 
 namespace Application.Auth.Contracts;

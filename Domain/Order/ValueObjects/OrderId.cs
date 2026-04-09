@@ -1,5 +1,3 @@
-using System;
-
 namespace Domain.Order.ValueObjects;
 
 public sealed record OrderId

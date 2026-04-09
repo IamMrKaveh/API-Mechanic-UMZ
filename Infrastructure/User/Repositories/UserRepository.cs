@@ -1,5 +1,6 @@
 using Domain.User.Entities;
 using Domain.User.Interfaces;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.User.Repositories;
 

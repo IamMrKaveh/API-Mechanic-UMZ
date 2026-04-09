@@ -1,16 +1,12 @@
-using Application.Common.Results;
+using Application.Payment.Contracts;
+using Application.Payment.Features.Shared;
 
 namespace Application.Payment.Features.Queries.GetPaymentsByOrder;
 
-public class GetPaymentsByOrderHandler
-    : IRequestHandler<GetPaymentsByOrderQuery, ServiceResult<IEnumerable<PaymentTransactionDto>>>
+public class GetPaymentsByOrderHandler(IPaymentQueryService paymentQueryService)
+        : IRequestHandler<GetPaymentsByOrderQuery, ServiceResult<IEnumerable<PaymentTransactionDto>>>
 {
-    private readonly IPaymentQueryService _paymentQueryService;
-
-    public GetPaymentsByOrderHandler(IPaymentQueryService paymentQueryService)
-    {
-        _paymentQueryService = paymentQueryService;
-    }
+    private readonly IPaymentQueryService _paymentQueryService = paymentQueryService;
 
     public async Task<ServiceResult<IEnumerable<PaymentTransactionDto>>> Handle(
         GetPaymentsByOrderQuery request,

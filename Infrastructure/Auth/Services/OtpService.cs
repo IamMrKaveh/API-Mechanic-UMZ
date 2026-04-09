@@ -1,3 +1,5 @@
+using Application.Auth.Contracts;
+
 namespace Infrastructure.Auth.Services;
 
 public class OtpService : IOtpService

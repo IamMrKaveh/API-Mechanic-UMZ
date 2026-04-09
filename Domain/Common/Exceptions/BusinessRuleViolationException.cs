@@ -1,5 +1,3 @@
-using Domain.Common.Interfaces;
-
 namespace Domain.Common.Exceptions;
 
 public sealed class BusinessRuleViolationException : DomainException

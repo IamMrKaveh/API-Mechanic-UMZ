@@ -1,6 +1,4 @@
-﻿using SharedKernel.Results;
-
-namespace Domain.Inventory.Services.Results;
+﻿namespace Domain.Inventory.Services.Results;
 
 public sealed class BatchReservationResult
 {

@@ -1,12 +1,12 @@
-using Application.Common.Results;
+using Application.Brand.Features.Shared;
+using SharedKernel.Models;
 
 namespace Application.Brand.Features.Queries.GetAdminBrands;
 
 public record GetAdminBrandsQuery(
-    int? CategoryId,
+    Guid? CategoryId,
     string? Search,
     bool? IsActive,
     bool IncludeDeleted,
     int Page,
-    int PageSize
-    ) : IRequest<ServiceResult<PaginatedResult<BrandListItemDto>>>;
+    int PageSize) : IRequest<ServiceResult<PaginatedResult<BrandListItemDto>>>;

@@ -19,12 +19,16 @@ public class CreateAttributeTypeHandler(
         CreateAttributeTypeCommand request,
         CancellationToken ct)
     {
-        if (await _repository.AttributeTypeExistsAsync(request.Name, ct: ct))
-        {
-            return ServiceResult<AttributeTypeDto>.Failure("Attribute type already exists.");
-        }
+        if (await _repository.AttributeTypeExistsAsync(request.Name, null, ct))
+            return ServiceResult<AttributeTypeDto>.Conflict("Attribute type already exists.");
 
-        var attributeType = AttributeType.Create(request.Name, request.DisplayName, request.SortOrder, true);
+        var uniquenessChecker = new AttributeTypeUniquenessCheckerAdapter(_repository);
+        var attributeType = AttributeType.Create(
+            request.Name,
+            request.DisplayName,
+            request.SortOrder,
+            true,
+            uniquenessChecker);
 
         await _repository.AddAttributeTypeAsync(attributeType, ct);
         await _unitOfWork.SaveChangesAsync(ct);

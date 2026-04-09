@@ -1,7 +1,4 @@
-﻿using Application.Common.Results;
-using Application.Wallet.Contracts;
-using Application.Wallet.Features.Shared;
-using SharedKernel.Models;
+﻿using Application.Wallet.Features.Shared;
 
 namespace Application.Wallet.Features.Queries.GetWalletLedger;
 

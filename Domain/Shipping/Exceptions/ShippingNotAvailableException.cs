@@ -1,5 +1,4 @@
-﻿using Domain.Common.Exceptions;
-using Domain.Shipping.ValueObjects;
+﻿using Domain.Shipping.ValueObjects;
 
 namespace Domain.Shipping.Exceptions;
 

@@ -1,8 +1,6 @@
-using Application.Common.Results;
 using Domain.Order.Interfaces;
 using Domain.Payment.Interfaces;
 using Domain.Payment.Services;
-using Domain.Common.Interfaces;
 
 namespace Application.Payment.Features.Commands.AtomicRefundPayment;
 

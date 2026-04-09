@@ -1,7 +1,4 @@
-using Application.Common.Results;
-using Application.Notification.Contracts;
 using Application.Notification.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Notification.Features.Queries.GetNotifications;
 

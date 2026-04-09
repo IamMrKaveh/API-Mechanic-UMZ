@@ -2,4 +2,10 @@ using Application.Common.Results;
 
 namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
-public record UpdateOrderStatusDefinitionCommand(int Id, UpdateOrderStatusDto Dto) : IRequest<ServiceResult>;
+public record UpdateOrderStatusDefinitionCommand(
+    Guid Id,
+    string Name,
+    string DisplayName,
+    string? Description,
+    int SortOrder,
+    bool IsDefault) : IRequest<ServiceResult>;

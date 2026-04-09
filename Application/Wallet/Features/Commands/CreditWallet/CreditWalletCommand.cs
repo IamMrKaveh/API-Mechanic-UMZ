@@ -1,11 +1,9 @@
-﻿using Application.Common.Results;
-using Domain.User.ValueObjects;
-using Domain.Wallet.Enums;
+﻿using Domain.Wallet.Enums;
 
 namespace Application.Wallet.Features.Commands.CreditWallet;
 
 public record CreditWalletCommand(
-    UserId UserId,
+    Guid UserId,
     decimal Amount,
     WalletTransactionType TransactionType,
     WalletReferenceType ReferenceType,

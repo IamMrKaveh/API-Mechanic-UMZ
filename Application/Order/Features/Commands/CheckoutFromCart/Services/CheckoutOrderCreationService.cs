@@ -1,8 +1,5 @@
-﻿using Application.Common.Results;
-using Application.Order.Features.Shared;
-using Domain.Common.Interfaces;
+﻿using Application.Order.Features.Shared;
 using Domain.Common.ValueObjects;
-using Domain.Order.Aggregates;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 

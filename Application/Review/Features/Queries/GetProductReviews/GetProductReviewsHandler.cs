@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Application.Review.Features.Queries.GetProductReviews;
 
 public class GetProductReviewsHandler

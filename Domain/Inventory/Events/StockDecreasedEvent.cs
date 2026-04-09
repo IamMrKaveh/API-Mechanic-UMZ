@@ -1,5 +1,4 @@
-﻿using Domain.Common.Abstractions;
-using Domain.Inventory.ValueObjects;
+﻿using Domain.Inventory.ValueObjects;
 using Domain.Variant.ValueObjects;
 
 namespace Domain.Inventory.Events;

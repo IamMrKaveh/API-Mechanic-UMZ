@@ -1,19 +1,16 @@
-using Application.Common.Results;
+using Application.Search.Contracts;
+using Application.Search.Features.Shared;
 
 namespace Application.Search.Features.Queries.SearchProducts;
 
-public class SearchProductsHandler
-    : IRequestHandler<SearchProductsQuery, ServiceResult<SearchResultDto<ProductSearchResultItemDto>>>
+public class SearchProductsHandler(ISearchService searchService)
+        : IRequestHandler<SearchProductsQuery, ServiceResult<SearchResultDto<ProductSearchResultItemDto>>>
 {
-    private readonly ISearchService _searchService;
-
-    public SearchProductsHandler(ISearchService searchService)
-    {
-        _searchService = searchService;
-    }
+    private readonly ISearchService _searchService = searchService;
 
     public async Task<ServiceResult<SearchResultDto<ProductSearchResultItemDto>>> Handle(
-        SearchProductsQuery request, CancellationToken cancellationToken)
+        SearchProductsQuery request,
+        CancellationToken ct)
     {
         var searchParams = new SearchProductsParams
         {
@@ -30,7 +27,7 @@ public class SearchProductsHandler
             Tags = request.Tags
         };
 
-        var result = await _searchService.SearchProductsAsync(searchParams, cancellationToken);
+        var result = await _searchService.SearchProductsAsync(searchParams, ct);
 
         return ServiceResult<SearchResultDto<ProductSearchResultItemDto>>.Success(result);
     }

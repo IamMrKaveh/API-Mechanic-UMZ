@@ -1,5 +1,4 @@
 ﻿using Domain.Security.Aggregates;
-using SharedKernel.Results;
 
 namespace Domain.Security.Results;
 

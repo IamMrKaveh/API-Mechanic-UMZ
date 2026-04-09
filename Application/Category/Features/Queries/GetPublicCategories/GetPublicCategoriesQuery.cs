@@ -1,4 +1,5 @@
-﻿using Application.Common.Results;
+﻿using Application.Category.Features.Shared;
+using SharedKernel.Models;
 
 namespace Application.Category.Features.Queries.GetPublicCategories;
 

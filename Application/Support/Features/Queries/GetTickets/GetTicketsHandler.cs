@@ -1,7 +1,4 @@
-using Application.Common.Results;
-using Application.Support.Contracts;
 using Application.Support.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Support.Features.Queries.GetTickets;
 

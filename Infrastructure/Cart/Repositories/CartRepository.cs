@@ -1,4 +1,5 @@
-﻿using Application.Cart;
+﻿using Domain.Cart.Interfaces;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Cart.Repositories;
 

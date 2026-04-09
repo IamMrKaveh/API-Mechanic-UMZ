@@ -1,5 +1,4 @@
 ﻿using Domain.Brand.ValueObjects;
-using Domain.Common.Exceptions;
 
 namespace Domain.Brand.Exceptions;
 

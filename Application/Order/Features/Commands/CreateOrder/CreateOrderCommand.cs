@@ -1,4 +1,4 @@
-using Application.Common.Results;
+using Application.Order.Features.Shared;
 
 namespace Application.Order.Features.Commands.CreateOrder;
 

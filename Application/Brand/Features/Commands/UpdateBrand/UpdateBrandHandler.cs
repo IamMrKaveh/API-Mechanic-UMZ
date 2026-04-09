@@ -1,10 +1,7 @@
+using Application.Brand.Adapters;
 using Application.Brand.Features.Shared;
-using Application.Common.Extensions;
-using Application.Common.Results;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
-using Domain.Category.ValueObjects;
-using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
 
 namespace Application.Brand.Features.Commands.UpdateBrand;
@@ -16,17 +13,17 @@ public class UpdateBrandHandler(
 {
     public async Task<ServiceResult<BrandDetailDto>> Handle(UpdateBrandCommand request, CancellationToken ct)
     {
-        var brandId = BrandId.From(request.Id);
+        var brandId = BrandId.From(request.Id.Value);
         var brand = await brandRepository.GetByIdAsync(brandId, ct);
         if (brand is null)
-            return ServiceResult<BrandDetailDto>.NotFound("برند یافت نشد.");
+            return ServiceResult<BrandDetailDto>.NotFound("Brand not found.");
 
         var rowVersion = request.RowVersion.FromBase64RowVersion();
         brandRepository.SetOriginalRowVersion(brand, rowVersion);
 
         var brandName = BrandName.Create(request.Name);
-        var slug = string.IsNullOrWhiteSpace(request.Slug)
-            ? Slug.GenerateFrom(request.Name)
+        var slug = string.IsNullOrWhiteSpace(request.Slug?.Value)
+            ? Slug.GenerateFrom(request.Name.Value)
             : Slug.FromString(request.Slug);
 
         var uniquenessChecker = new BrandUniquenessCheckerAdapter(brandRepository);

@@ -7,7 +7,7 @@ public sealed record OtpId
     private OtpId(Guid value)
     {
         if (value == Guid.Empty)
-            throw new ArgumentException("UserOtpId cannot be empty.", nameof(value));
+            throw new ArgumentException("OtpId cannot be empty.", nameof(value));
 
         Value = value;
     }

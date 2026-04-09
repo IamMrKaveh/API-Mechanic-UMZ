@@ -1,4 +1,4 @@
-using Application.Common.Results;
+using Application.Shipping.Contracts;
 
 namespace Application.Shipping.Features.Queries.CalculateShippingCost;
 

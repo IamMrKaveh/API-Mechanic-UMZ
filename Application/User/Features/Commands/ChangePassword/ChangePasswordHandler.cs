@@ -1,6 +1,4 @@
-using Application.Common.Results;
 using Application.Security.Interfaces;
-using Domain.Common.Interfaces;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 

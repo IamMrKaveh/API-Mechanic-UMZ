@@ -1,4 +1,6 @@
-using Application.Common.Results;
+using Application.Inventory.Contracts;
+using Application.Inventory.Features.Shared;
+using SharedKernel.Models;
 
 namespace Application.Inventory.Features.Queries.GetInventoryTransactions;
 

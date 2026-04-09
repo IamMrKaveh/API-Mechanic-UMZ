@@ -1,5 +1,4 @@
 using Application.Attribute.Features.Shared;
-using Application.Common.Results;
 using Domain.Attribute.Interfaces;
 
 namespace Application.Attribute.Features.Queries.GetAttributeTypeById;

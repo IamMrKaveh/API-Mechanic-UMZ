@@ -1,3 +1,6 @@
+using Application.Common.Results;
+using Application.Search.Contracts;
+using Application.Search.Features.Shared;
 using SortOrder = Elastic.Clients.Elasticsearch.SortOrder;
 
 namespace Infrastructure.Search.Services;
@@ -205,13 +208,13 @@ public sealed class ElasticsearchService : ISearchService
         };
     }
 
-    public async Task<SearchResult<ProductSearchDocument>> SearchAsync(string query, CancellationToken ct)
+    public async Task<ServiceResult<ProductSearchDocument>> SearchAsync(string query, CancellationToken ct)
     {
         var response = await _client.SearchAsync<ProductSearchDocument>(s => s
             .Index(_indexes.Products)
             .Query(q => q.MultiMatch(m => m.Query(query))), ct);
 
-        return MapToSearchResult(response);
+        return ServiceResult.Success(response);
     }
 
     public async Task<List<string>> GetSuggestionsAsync(

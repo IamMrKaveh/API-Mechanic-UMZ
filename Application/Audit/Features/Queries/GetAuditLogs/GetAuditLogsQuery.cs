@@ -17,7 +17,7 @@ public sealed record GetAuditLogsQuery(
 ) : IRequest<GetAuditLogsResult>;
 
 public sealed record GetAuditLogsResult(
-    IEnumerable<AuditDtos> Items,
+    IEnumerable<AuditLogDto> Items,
     int Total,
     int Page,
     int PageSize,

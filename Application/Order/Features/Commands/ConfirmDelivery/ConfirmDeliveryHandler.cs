@@ -1,6 +1,4 @@
-using Application.Common.Results;
 using Domain.Common.Exceptions;
-using Domain.Common.Interfaces;
 using Domain.Order.Interfaces;
 
 namespace Application.Order.Features.Commands.ConfirmDelivery;

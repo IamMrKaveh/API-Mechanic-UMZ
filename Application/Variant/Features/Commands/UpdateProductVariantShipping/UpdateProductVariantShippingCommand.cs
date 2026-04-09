@@ -1,11 +1,7 @@
-using Application.Common.Results;
-using Domain.User.ValueObjects;
-using Domain.Variant.ValueObjects;
-
 namespace Application.Variant.Features.Commands.UpdateProductVariantShipping;
 
-public record UpdateProductVariantShippingCommand(
-    VariantId VariantId,
+public record UpdateVariantShippingCommand(
+    Guid VariantId,
     decimal ShippingMultiplier,
-    List<int> EnabledShippingIds,
-    UserId UserId) : IRequest<ServiceResult>;
+    ICollection<Guid> EnabledShippingIds,
+    Guid UserId) : IRequest<ServiceResult>;

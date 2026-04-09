@@ -1,7 +1,5 @@
 ﻿using Domain.User.ValueObjects;
 using Domain.Wallet.ValueObjects;
-using Domain.Common.ValueObjects;
-using Domain.Common.Events;
 
 namespace Domain.Wallet.Events;
 

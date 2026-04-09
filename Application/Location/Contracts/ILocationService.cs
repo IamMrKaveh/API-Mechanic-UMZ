@@ -1,3 +1,5 @@
+using Application.Location.Features.Shared;
+
 namespace Application.Location.Contracts;
 
 public interface ILocationService
@@ -6,6 +8,3 @@ public interface ILocationService
 
     Task<IReadOnlyList<CityDto>> GetCitiesByProvinceAsync(string province, CancellationToken ct = default);
 }
-
-public record ProvinceDto(string Name, string Code);
-public record CityDto(string Name, string Province);

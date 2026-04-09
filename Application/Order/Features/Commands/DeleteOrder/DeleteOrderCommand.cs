@@ -1,5 +1,5 @@
 using Application.Common.Results;
 
-namespace Application.Features.Orders.Commands.DeleteOrder;
+namespace Application.Order.Features.Commands.DeleteOrder;
 
-public record DeleteOrderCommand(int OrderId, int UserId) : IRequest<ServiceResult>;
+public record DeleteOrderCommand(Guid OrderId, Guid UserId) : IRequest<ServiceResult>;

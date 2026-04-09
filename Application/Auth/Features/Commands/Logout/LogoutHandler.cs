@@ -1,4 +1,3 @@
-using Application.Common.Results;
 using Domain.Security.Interfaces;
 
 namespace Application.Auth.Features.Commands.Logout;

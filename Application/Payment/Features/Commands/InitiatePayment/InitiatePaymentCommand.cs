@@ -1,4 +1,3 @@
-using Application.Common.Results;
 using Application.Payment.Features.Shared;
 
 namespace Application.Payment.Features.Commands.InitiatePayment;

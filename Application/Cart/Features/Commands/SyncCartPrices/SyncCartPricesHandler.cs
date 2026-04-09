@@ -1,31 +1,23 @@
 using AngleSharp.Common;
-using Application.Common.Results;
+using Application.Cart.Features.Shared;
+using Domain.Cart.Interfaces;
 using Domain.Product.Interfaces;
+using SharedKernel.Contracts;
 
 namespace Application.Cart.Features.Commands.SyncCartPrices;
 
-public class SyncCartPricesHandler : IRequestHandler<SyncCartPricesCommand, ServiceResult<SyncCartPricesResult>>
+public class SyncCartPricesHandler(
+    ICartRepository cartRepository,
+    IProductRepository productRepository,
+    ICurrentUserService currentUser,
+    IUnitOfWork unitOfWork,
+    ILogger<SyncCartPricesHandler> logger) : IRequestHandler<SyncCartPricesCommand, ServiceResult<SyncCartPricesResult>>
 {
-    private readonly ICartRepository _cartRepository;
-    private readonly IProductRepository _productRepository;
-    private readonly ICurrentUserService _currentUser;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<SyncCartPricesHandler> _logger;
-
-    public SyncCartPricesHandler(
-        ICartRepository cartRepository,
-        IProductRepository productRepository,
-        ICurrentUserService currentUser,
-        IUnitOfWork unitOfWork,
-        ILogger<SyncCartPricesHandler> logger
-        )
-    {
-        _cartRepository = cartRepository;
-        _productRepository = productRepository;
-        _currentUser = currentUser;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+    private readonly ICartRepository _cartRepository = cartRepository;
+    private readonly IProductRepository _productRepository = productRepository;
+    private readonly ICurrentUserService _currentUser = currentUser;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly ILogger<SyncCartPricesHandler> _logger = logger;
 
     public async Task<ServiceResult<SyncCartPricesResult>> Handle(
         SyncCartPricesCommand request,
@@ -49,7 +41,6 @@ public class SyncCartPricesHandler : IRequestHandler<SyncCartPricesCommand, Serv
             if (!variantLookup.TryGetValue(item.VariantId, out var variant)
                 || !variant.IsActive || variant.IsDeleted)
             {
-                
                 cart.RemoveItem(item.VariantId);
                 removedVariantIds.Add(item.VariantId);
                 continue;

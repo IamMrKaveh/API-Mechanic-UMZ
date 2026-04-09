@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Domain.Media.ValueObjects;
+﻿namespace Domain.Media.ValueObjects;
 
 public sealed record MediaId
 {
