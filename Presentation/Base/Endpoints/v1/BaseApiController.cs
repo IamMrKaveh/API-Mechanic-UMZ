@@ -20,7 +20,7 @@ public abstract class BaseApiController(ISender mediator) : ControllerBase
         HttpContext.RequestServices.GetRequiredService<IHttpResultMapper>();
 
     protected CurrentUser CurrentUser => CurrentUserService.CurrentUser;
-    protected string? GuestId => CurrentUserService.GuestToken;
+    protected string? GuestToken => CurrentUserService.GuestToken;
     protected bool IsAuthenticated => CurrentUserService.IsAuthenticated;
 
     protected IActionResult ToActionResult<T>(ServiceResult<T> result) =>

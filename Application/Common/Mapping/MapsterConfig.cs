@@ -106,10 +106,8 @@ public static class MapsterConfig
             .Map(dest => dest.Name, src => src.Name)
             .Map(dest => dest.Slug, src => src.Slug.Value)
             .Map(dest => dest.Description, src => src.Description)
-            .Map(dest => dest.ParentCategoryId, src => src.ParentCategoryId != null ? src.ParentCategoryId.Value : (Guid?)null)
             .Map(dest => dest.IsActive, src => src.IsActive)
             .Map(dest => dest.SortOrder, src => src.SortOrder)
-            .Map(dest => dest.IsRootCategory, src => src.IsRootCategory)
             .Map(dest => dest.CreatedAt, src => src.CreatedAt);
     }
 

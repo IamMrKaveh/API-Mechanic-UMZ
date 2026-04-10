@@ -1,3 +1,5 @@
+using Application.Discount.Features.Shared;
+
 namespace Application.Discount.Features.Queries.GetDiscountInfo;
 
 public class GetDiscountInfoHandler(IDiscountQueryService discountQueryService) : IRequestHandler<GetDiscountInfoQuery, ServiceResult<DiscountInfoDto>>

@@ -121,7 +121,7 @@ public sealed record CreateOrderDto
 
 public sealed record UpdateOrderStatusByIdDto
 {
-    public Guid OrderStatusId { get; init; } = string.Empty;
+    public Guid OrderStatusId { get; init; }
     public string RowVersion { get; init; } = string.Empty;
     public int UpdatedByUserId { get; init; }
 }

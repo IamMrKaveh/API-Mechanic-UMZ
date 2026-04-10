@@ -14,6 +14,7 @@ using Application.Location.Contracts;
 using Application.Media.Contracts;
 using Application.Notification.Contracts;
 using Application.Order.Contracts;
+using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Payment.Contracts;
 using Application.Product.Contracts;
 using Application.Review.Contracts;
@@ -84,6 +85,7 @@ using Infrastructure.Notification.Services;
 using Infrastructure.Order.BackgroundServices;
 using Infrastructure.Order.QueryServices;
 using Infrastructure.Order.Repositories;
+using Infrastructure.Order.Services;
 using Infrastructure.Payment.BackgroundServices;
 using Infrastructure.Payment.Factory;
 using Infrastructure.Payment.QueryServices;
@@ -134,6 +136,7 @@ public static class InfrastructureServiceCollection
         AddAuthServices(services, configuration);
         AddRepositories(services);
         AddDomainAndApplicationServices(services, configuration);
+        RegisterCheckoutServices(services);
         AddPaymentServices(services, configuration);
         AddWalletServices(services);
         AddBackgroundServices(services, configuration);
@@ -285,6 +288,19 @@ public static class InfrastructureServiceCollection
         {
             services.AddScoped<ICacheService, InMemoryCacheService>();
         }
+    }
+
+    private static void RegisterCheckoutServices(IServiceCollection services)
+    {
+        services.AddScoped<ICheckoutAddressResolverService, CheckoutAddressResolverService>();
+        services.AddScoped<ICheckoutShippingValidatorService, CheckoutShippingValidatorService>();
+        services.AddScoped<ICheckoutCartItemBuilderService, CheckoutCartItemBuilderService>();
+        services.AddScoped<ICheckoutPriceValidatorService, CheckoutPriceValidatorService>();
+        services.AddScoped<ICheckoutStockValidatorService, CheckoutStockValidatorService>();
+        services.AddScoped<ICheckoutOrderCreationService, CheckoutOrderCreationService>();
+        services.AddScoped<ICheckoutDiscountApplicatorService, CheckoutDiscountApplicatorService>();
+        services.AddScoped<ICheckoutPaymentProcessorService, CheckoutPaymentProcessorService>();
+        services.AddScoped<ICheckoutOrchestrationService, CheckoutOrchestrationService>();
     }
 
     private static void AddPaymentServices(IServiceCollection services, IConfiguration configuration)

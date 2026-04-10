@@ -8,4 +8,5 @@ public sealed class CurrentUser
     public string IpAddress { get; init; } = string.Empty;
     public string? Email { get; init; }
     public string? Username { get; init; }
+    public string? GuestToken { get; init; }
 }

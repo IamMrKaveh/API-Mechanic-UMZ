@@ -18,14 +18,17 @@ public class CartController(ISender mediator) : BaseApiController(mediator)
     [HttpGet]
     public async Task<IActionResult> GetCart()
     {
-        var result = await Mediator.Send(new GetCartQuery(CurrentUser.UserId, GuestId));
+        var result = await Mediator.Send(new GetCartQuery(CurrentUser.UserId, GuestToken));
         return ToActionResult(result);
     }
 
     [HttpGet("summary")]
     public async Task<IActionResult> GetCartSummary()
     {
-        var result = await Mediator.Send(new GetCartSummaryQuery());
+        var query = new GetCartSummaryQuery(
+            CurrentUser.UserId,
+            CurrentUser.GuestToken);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
@@ -33,7 +36,10 @@ public class CartController(ISender mediator) : BaseApiController(mediator)
     [Authorize]
     public async Task<IActionResult> ValidateCartForCheckout()
     {
-        var result = await Mediator.Send(new ValidateCartForCheckoutQuery());
+        var query = new ValidateCartForCheckoutQuery(
+            CurrentUser.UserId,
+            CurrentUser.GuestToken);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
@@ -43,7 +49,7 @@ public class CartController(ISender mediator) : BaseApiController(mediator)
         var command = new AddToCartCommand(
             CurrentUser.UserId,
             request.VariantId,
-            GuestId,
+            GuestToken,
             request.Quantity);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
@@ -54,7 +60,7 @@ public class CartController(ISender mediator) : BaseApiController(mediator)
         Guid variantId,
         [FromBody] UpdateCartItemRequest request)
     {
-        var command = new UpdateCartItemCommand(CurrentUser.UserId, GuestId, variantId, request.Quantity);
+        var command = new UpdateCartItemCommand(CurrentUser.UserId, GuestToken, variantId, request.Quantity);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -62,7 +68,7 @@ public class CartController(ISender mediator) : BaseApiController(mediator)
     [HttpDelete("items/{variantId}")]
     public async Task<IActionResult> RemoveItem(Guid variantId)
     {
-        var command = new RemoveFromCartCommand(CurrentUser.UserId, GuestId, variantId);
+        var command = new RemoveFromCartCommand(CurrentUser.UserId, GuestToken, variantId);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -70,7 +76,7 @@ public class CartController(ISender mediator) : BaseApiController(mediator)
     [HttpDelete]
     public async Task<IActionResult> ClearCart()
     {
-        var command = new ClearCartCommand(CurrentUser.UserId, GuestId);
+        var command = new ClearCartCommand(CurrentUser.UserId, GuestToken);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -79,7 +85,7 @@ public class CartController(ISender mediator) : BaseApiController(mediator)
     [Authorize]
     public async Task<IActionResult> MergeCart()
     {
-        var result = await Mediator.Send(new MergeGuestCartCommand(GuestId!));
+        var result = await Mediator.Send(new MergeGuestCartCommand(GuestToken!));
         return ToActionResult(result);
     }
 

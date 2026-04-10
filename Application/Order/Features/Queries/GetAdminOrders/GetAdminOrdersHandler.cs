@@ -1,17 +1,14 @@
+using Application.Order.Features.Shared;
+
 namespace Application.Order.Features.Queries.GetAdminOrders;
 
-public class GetAdminOrdersHandler : IRequestHandler<GetAdminOrdersQuery, ServiceResult<PaginatedResult<AdminOrderDto>>>
+public class GetAdminOrdersHandler(IOrderQueryService orderQueryService) : IRequestHandler<GetAdminOrdersQuery, ServiceResult<PaginatedResult<AdminOrderDto>>>
 {
-    private readonly IOrderQueryService _orderQueryService;
-
-    public GetAdminOrdersHandler(IOrderQueryService orderQueryService)
-    {
-        _orderQueryService = orderQueryService;
-    }
+    private readonly IOrderQueryService _orderQueryService = orderQueryService;
 
     public async Task<ServiceResult<PaginatedResult<AdminOrderDto>>> Handle(
         GetAdminOrdersQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
         var result = await _orderQueryService.GetAdminOrdersAsync(
             request.UserId,
@@ -21,7 +18,7 @@ public class GetAdminOrdersHandler : IRequestHandler<GetAdminOrdersQuery, Servic
             request.IsPaid,
             request.Page,
             request.PageSize,
-            cancellationToken);
+            ct);
 
         return ServiceResult<PaginatedResult<AdminOrderDto>>.Success(result);
     }

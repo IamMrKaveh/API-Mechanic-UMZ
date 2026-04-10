@@ -19,7 +19,7 @@ public class UpdateProductDetailsHandler(
     public async Task<ServiceResult> Handle(UpdateProductDetailsCommand request, CancellationToken ct)
     {
         var product = await _productRepository.GetByIdAsync(request.Id, ct);
-        if (product == null) return ServiceResult.NotFound("Product not found.");
+        if (product is null) return ServiceResult.NotFound("Product not found.");
 
         _productRepository.SetOriginalRowVersion(product, Convert.FromBase64String(request.RowVersion));
 

@@ -1,4 +1,5 @@
 using Domain.Product.Interfaces;
+using Domain.Review.Events;
 using Domain.Review.Interfaces;
 
 namespace Application.Product.EventHandlers;

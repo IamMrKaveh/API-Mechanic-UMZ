@@ -1,3 +1,6 @@
+using Domain.Notification.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Application.Notification.Features.Commands.MarkNotificationRead;
 
 public class MarkNotificationReadHandler(
@@ -5,7 +8,9 @@ public class MarkNotificationReadHandler(
 {
     public async Task<ServiceResult> Handle(MarkNotificationReadCommand request, CancellationToken ct)
     {
-        await notificationService.MarkAsReadAsync(request.NotificationId, request.UserId, ct);
+        var notificationId = NotificationId.From(request.NotificationId);
+        var userId = UserId.From(request.UserId);
+        await notificationService.MarkAsReadAsync(notificationId, userId, ct);
         return ServiceResult.Success();
     }
 }

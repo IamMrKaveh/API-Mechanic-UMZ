@@ -1,9 +1,6 @@
-using Application.Cart.Contracts;
 using Application.Cart.Features.Shared;
-using Application.Common.Results;
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
-using Domain.Common.Interfaces;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 
@@ -37,7 +34,10 @@ public class RemoveFromCartHandler(
         await _unitOfWork.SaveChangesAsync(ct);
 
         UserId? userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
-        var cartDetail = await _cartQueryService.GetCartDetailAsync(userId, request.GuestToken, ct);
+
+        var guestToken = GuestToken.Create(request.GuestToken);
+
+        var cartDetail = await _cartQueryService.GetCartDetailAsync(userId, guestToken, ct);
 
         return ServiceResult<CartDetailDto>.Success(cartDetail ?? new CartDetailDto());
     }

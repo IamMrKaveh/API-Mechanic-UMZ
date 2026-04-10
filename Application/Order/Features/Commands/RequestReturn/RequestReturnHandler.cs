@@ -38,7 +38,7 @@ public class RequestReturnHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Unexpected(ex.Message);
+            return ServiceResult.Failure(ex.Message);
         }
 
         await _orderRepository.UpdateAsync(order, ct);

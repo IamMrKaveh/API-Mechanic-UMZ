@@ -1,4 +1,5 @@
 using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
 using Domain.Payment.Interfaces;
 using Domain.Payment.Services;
 
@@ -12,14 +13,15 @@ public class AtomicRefundPaymentHandler(
 {
     public async Task<ServiceResult> Handle(AtomicRefundPaymentCommand request, CancellationToken ct)
     {
-        var order = await orderRepository.FindByIdAsync(request.OrderId, ct);
+        var orderId = OrderId.From(request.OrderId);
+        var order = await orderRepository.FindByIdAsync(orderId, ct);
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
         if (!order.IsPaid)
             return ServiceResult.Failure("سفارش پرداخت نشده است.");
 
-        var payment = await paymentRepository.GetVerifiedByOrderIdAsync(request.OrderId, ct);
+        var payment = await paymentRepository.GetVerifiedByOrderIdAsync(orderId, ct);
         if (payment is null)
             return ServiceResult.NotFound("تراکنش پرداخت یافت نشد.");
 
@@ -45,7 +47,7 @@ public class AtomicRefundPaymentHandler(
 }
 
 internal sealed class OrderPaymentContextAdapter(Domain.Order.Aggregates.Order order)
-    : Domain.Payment.Interfaces.IOrderPaymentContext
+    : IOrderPaymentContext
 {
     public Guid Id => order.Id.Value;
     public bool IsPaid => order.IsPaid;
