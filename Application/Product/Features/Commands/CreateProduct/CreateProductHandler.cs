@@ -30,7 +30,8 @@ public class CreateProductHandler(
         if (category is null)
             return ServiceResult<ProductDetailDto>.NotFound("دسته‌بندی یافت نشد.");
 
-        var brand = await _brandRepository.GetByIdAsync(request.BrandId, ct);
+        var brandId = BrandId.From(request.BrandId);
+        var brand = await _brandRepository.GetByIdAsync(brandId, ct);
         if (brand is null)
             return ServiceResult<ProductDetailDto>.NotFound("برند یافت نشد.");
 
@@ -38,14 +39,14 @@ public class CreateProductHandler(
             ? Slug.GenerateFrom(request.Name)
             : Slug.FromString(request.Slug);
 
-        if (await _productRepository.ExistsBySlugAsync(slug.Value, ct: ct))
+        if (await _productRepository.ExistsBySlugAsync(slug, ct: ct))
             return ServiceResult<ProductDetailDto>.Conflict("محصولی با این Slug قبلاً ثبت شده است.");
 
         var productId = ProductId.NewId();
         var product = Domain.Product.Aggregates.Product.Create(
             productId,
-            request.Name,
-            slug.Value,
+            ProductName.Create(request.Name),
+            slug,
             request.Description,
             CategoryId.From(request.CategoryId),
             BrandId.From(request.BrandId));
@@ -57,13 +58,13 @@ public class CreateProductHandler(
 
         var dto = new ProductDetailDto
         {
-            Id = product.Id,
+            Id = product.Id.Value,
             Name = product.Name,
             Slug = product.Slug,
             Description = product.Description,
-            CategoryId = product.CategoryId,
+            CategoryId = product.CategoryId.Value,
             CategoryName = category.Name.Value,
-            BrandId = product.BrandId,
+            BrandId = product.BrandId.Value,
             BrandName = brand.Name.Value,
             IsActive = product.IsActive,
             IsFeatured = product.IsFeatured,

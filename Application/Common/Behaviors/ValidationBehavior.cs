@@ -1,3 +1,5 @@
+using ValidationException = FluentValidation.ValidationException;
+
 namespace Application.Common.Behaviors;
 
 public sealed class ValidationBehavior<TRequest, TResponse>(

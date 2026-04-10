@@ -88,13 +88,13 @@ public class AddVariantHandler(
             catch (DomainException ex)
             {
                 await _unitOfWork.RollbackTransactionAsync(ct);
-                return ServiceResult<ProductVariantViewDto>.Unexpected(ex.Message);
+                return ServiceResult<ProductVariantViewDto>.Failure(ex.Message);
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync(ct);
                 _logger.LogError(ex, "Error occurred while adding variant to product {ProductId}", request.ProductId);
-                return ServiceResult<ProductVariantViewDto>.Unexpected("An error occurred while adding the variant.");
+                return ServiceResult<ProductVariantViewDto>.Failure("An error occurred while adding the variant.");
             }
         }, ct);
     }

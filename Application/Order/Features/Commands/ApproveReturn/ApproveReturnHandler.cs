@@ -1,4 +1,5 @@
 using Domain.Common.Exceptions;
+using Domain.Common.ValueObjects;
 using Domain.Order.Interfaces;
 
 namespace Application.Order.Features.Commands.ApproveReturn;
@@ -52,12 +53,13 @@ public class ApproveReturnHandler(
                     _logger.LogError(
                         "Failed to return stock for Order {OrderId}: {Error}",
                         request.OrderId, result.Error);
-                    return ServiceResult.Unexpected($"خطا در بازگشت موجودی: {result.Error}");
+                    return ServiceResult.Failure($"خطا در بازگشت موجودی: {result.Error}");
                 }
 
                 await _auditService.LogOrderEventAsync(
                     order.Id,
                     "ApproveReturn",
+                    IpAddress.Create(request.IpAddress),
                     request.AdminUserId,
                     $"مرجوعی سفارش تأیید و موجودی به انبار بازگشت داده شد. دلیل: {request.Reason}");
 
@@ -70,7 +72,7 @@ public class ApproveReturnHandler(
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error approving return for order {OrderId}", request.OrderId);
-                return ServiceResult.Unexpected("خطایی در تأیید مرجوعی رخ داد.");
+                return ServiceResult.Failure("خطایی در تأیید مرجوعی رخ داد.");
             }
         }, ct);
     }

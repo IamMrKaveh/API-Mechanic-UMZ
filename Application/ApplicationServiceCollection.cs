@@ -1,4 +1,3 @@
-using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Domain.Cart.Services;
 using Domain.Inventory.Services;
 using Domain.Media.Services;
@@ -48,20 +47,6 @@ public static class ApplicationServiceCollection
     {
         services.AddScoped<InventoryReservationService>();
         services.AddScoped<PaymentSettlementService>();
-        RegisterCheckoutServices(services);
-    }
-
-    private static void RegisterCheckoutServices(IServiceCollection services)
-    {
-        services.AddScoped<ICheckoutAddressResolverService, CheckoutAddressResolverService>();
-        services.AddScoped<ICheckoutShippingValidatorService, CheckoutShippingValidatorService>();
-        services.AddScoped<ICheckoutCartItemBuilderService, CheckoutCartItemBuilderService>();
-        services.AddScoped<ICheckoutPriceValidatorService, CheckoutPriceValidatorService>();
-        services.AddScoped<ICheckoutStockValidatorService, CheckoutStockValidatorService>();
-        services.AddScoped<ICheckoutOrderCreationService, CheckoutOrderCreationService>();
-        services.AddScoped<ICheckoutDiscountApplicatorService, CheckoutDiscountApplicatorService>();
-        services.AddScoped<ICheckoutPaymentProcessorService, CheckoutPaymentProcessorService>();
-        services.AddScoped<ICheckoutOrchestrationService, CheckoutOrchestrationService>();
     }
 
     private static void RegisterMapster(IServiceCollection services)

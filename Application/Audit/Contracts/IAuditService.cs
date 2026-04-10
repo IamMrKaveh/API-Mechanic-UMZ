@@ -54,4 +54,10 @@ public interface IAuditService
         string action,
         string details,
         UserId? userId = null);
+
+    Task LogProductEventAsync(
+        ProductId productId,
+        string action,
+        string details,
+        UserId userId);
 }

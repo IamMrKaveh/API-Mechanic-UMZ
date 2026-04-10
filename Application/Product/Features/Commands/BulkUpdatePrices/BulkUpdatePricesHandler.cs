@@ -1,7 +1,5 @@
-using Application.Audit.Contracts;
-using Application.Cache.Contracts;
 using Application.Common.Interfaces;
-using Domain.Common.Interfaces;
+using Domain.Common.Exceptions;
 using Domain.Variant.Interfaces;
 
 namespace Application.Product.Features.Commands.BulkUpdatePrices;
@@ -61,7 +59,7 @@ public class BulkUpdatePricesHandler(
             $"User {_currentUserService.UserId} updated prices. Changes: {string.Join("; ", changesLog)}. Errors: {string.Join("; ", errors)}",
             _currentUserService.UserId);
 
-        if (errors.Any())
+        if (errors.Count != 0)
         {
             _logger.LogWarning("Bulk price update had errors: {Errors}", string.Join("; ", errors));
         }

@@ -122,12 +122,12 @@ public class CreateOrderHandler(
             }
             catch (DomainException ex)
             {
-                return ServiceResult<int>.Unexpected(ex.Message);
+                return ServiceResult<int>.Failure(ex.Message);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating admin order");
-                return ServiceResult<int>.Unexpected("خطایی در ایجاد سفارش رخ داد.");
+                return ServiceResult<int>.Failure("خطایی در ایجاد سفارش رخ داد.");
             }
         }, ct);
     }

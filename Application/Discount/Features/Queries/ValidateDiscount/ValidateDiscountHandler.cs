@@ -1,4 +1,5 @@
 using Application.Discount.Features.Shared;
+using Domain.Common.ValueObjects;
 
 namespace Application.Discount.Features.Queries.ValidateDiscount;
 
@@ -10,7 +11,7 @@ public class ValidateDiscountHandler(
     {
         var result = await discountQueryService.ValidateDiscountAsync(
             request.Code,
-            request.OrderAmount,
+            Money.FromDecimal(request.OrderAmount),
             request.UserId,
             ct);
 

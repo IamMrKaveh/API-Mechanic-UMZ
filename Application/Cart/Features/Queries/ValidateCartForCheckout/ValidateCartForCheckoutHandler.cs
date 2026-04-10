@@ -1,24 +1,23 @@
-using Application.Cart.Contracts;
 using Application.Cart.Features.Shared;
-using Application.Common.Interfaces;
+using Domain.Cart.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Cart.Features.Queries.ValidateCartForCheckout;
 
-public class ValidateCartForCheckoutHandler(
-    ICartQueryService cartQueryService,
-    ICurrentUserService currentUser)
-        : IRequestHandler<ValidateCartForCheckoutQuery, ServiceResult<CartCheckoutValidationDto>>
+public class ValidateCartForCheckoutHandler(ICartQueryService cartQueryService) : IRequestHandler<ValidateCartForCheckoutQuery, ServiceResult<CartCheckoutValidationDto>>
 {
     private readonly ICartQueryService _cartQueryService = cartQueryService;
-    private readonly ICurrentUserService _currentUser = currentUser;
 
     public async Task<ServiceResult<CartCheckoutValidationDto>> Handle(
         ValidateCartForCheckoutQuery request,
-        CancellationToken ct
-        )
+        CancellationToken ct)
     {
+        var userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
+
+        var guestToken = GuestToken.Create(request.GuestToken);
+
         var validation = await _cartQueryService.ValidateCartForCheckoutAsync(
-            _currentUser.UserId, _currentUser.GuestToken, ct);
+            userId, guestToken, ct);
 
         return ServiceResult<CartCheckoutValidationDto>.Success(validation);
     }

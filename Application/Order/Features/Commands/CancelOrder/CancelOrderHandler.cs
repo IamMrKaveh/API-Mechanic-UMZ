@@ -1,5 +1,7 @@
 using Domain.Common.Exceptions;
 using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Order.Features.Commands.CancelOrder;
 
@@ -10,11 +12,12 @@ public class CancelOrderHandler(
 {
     public async Task<ServiceResult> Handle(CancelOrderCommand request, CancellationToken ct)
     {
-        var order = await orderRepository.FindByIdAsync(request.OrderId, ct);
+        var orderId = OrderId.From(request.OrderId);
+        var order = await orderRepository.FindByIdAsync(orderId, ct);
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
-        if (!request.IsAdmin && order.UserId != request.UserId)
+        if (!request.IsAdmin && order.UserId != UserId.From(request.UserId))
             return ServiceResult.Forbidden("دسترسی ممنوع.");
 
         if (!order.CanBeCancelled())

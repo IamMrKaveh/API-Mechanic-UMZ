@@ -1,6 +1,9 @@
 using Application.Common.Interfaces;
 using Domain.Common.Exceptions;
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Product.Features.Commands.ChangePrice;
 
@@ -21,8 +24,12 @@ public class ChangePriceHandler(
         ChangePriceCommand request,
         CancellationToken ct)
     {
-        var variant = await _variantRepository.GetByIdAsync(request.VariantId, ct);
-        if (variant == null || variant.ProductId != request.ProductId)
+        var variantId = VariantId.From(request.VariantId);
+        var productId = ProductId.From(request.ProductId);
+        var userId = UserId.From(request.ProductId);
+
+        var variant = await _variantRepository.GetByIdAsync(variantId, ct);
+        if (variant is null || variant.ProductId != productId)
             return ServiceResult.NotFound("Variant not found.");
 
         try
@@ -31,19 +38,20 @@ public class ChangePriceHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Unexpected(ex.Message);
+            return ServiceResult.Failure(ex.Message);
         }
 
         _variantRepository.Update(variant);
         await _unitOfWork.SaveChangesAsync(ct);
 
         await _auditService.LogProductEventAsync(
-            request.ProductId, "ChangePrice",
+            productId,
+            "ChangePrice",
             $"Variant {request.VariantId} prices changed. Selling: {request.SellingPrice}, Original: {request.OriginalPrice}",
-            _currentUserService.CurrentUser.UserId);
+            userId);
 
-        await _cacheService.ClearAsync($"product:{request.ProductId}");
-        await _cacheService.ClearAsync($"variant:{request.VariantId}");
+        await _cacheService.RemoveAsync($"product:{request.ProductId}", ct);
+        await _cacheService.RemoveAsync($"variant:{request.VariantId}", ct);
 
         return ServiceResult.Success();
     }
