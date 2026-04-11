@@ -3,8 +3,8 @@
 namespace Application.Review.Features.Commands.CreateReview;
 
 public record CreateReviewCommand(
-    Guid ProductId,
     Guid UserId,
+    Guid ProductId,
     Guid? OrderId,
     int Rating,
     string? Title,

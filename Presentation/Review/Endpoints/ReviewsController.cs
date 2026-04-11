@@ -1,19 +1,19 @@
-using Application.Review.Features.Commands.SubmitReview;
+using Application.Review.Features.Commands.CreateReview;
 using Application.Review.Features.Queries.GetProductReviews;
 using Application.Review.Features.Queries.GetUserReviews;
+using MapsterMapper;
+using Presentation.Review.Mapping;
 using Presentation.Review.Requests;
 
 namespace Presentation.Review.Endpoints;
 
 [Route("api/[controller]")]
 [ApiController]
-public class ReviewsController(IMediator mediator) : BaseApiController(mediator)
+public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet("product/{productId}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetProductReviews(
+    public async Task<IActionResult> GetReviews(
         Guid productId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
@@ -28,24 +28,16 @@ public class ReviewsController(IMediator mediator) : BaseApiController(mediator)
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> SubmitReview([FromBody] SubmitReviewRequest request)
+    public async Task<IActionResult> CreateReview(
+        [FromBody] CreateReviewRequest request)
     {
-        var command = new SubmitReviewCommand(
-            request.ProductId,
-            CurrentUser.UserId,
-            request.OrderId,
-            request.Rating,
-            request.Title,
-            request.Comment);
+        var command = Mapper
+            .Map<CreateReviewCommand>(request)
+            .Enrich(CurrentUser.UserId);
 
-        var result = await _mediator.Send(command);
-        if (!result.IsSuccess)
-            return ToActionResult(result);
+        var result = await Mediator.Send(command);
 
-        return CreatedAtAction(
-            nameof(GetProductReviews),
-            new { productId = request.ProductId },
-            result);
+        return ToActionResult(result);
     }
 
     [HttpGet("my")]

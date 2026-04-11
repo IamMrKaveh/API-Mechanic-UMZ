@@ -10,7 +10,6 @@ using Application.Product.Features.Queries.GetAdminProductById;
 using Application.Product.Features.Queries.GetAdminProductDetail;
 using Application.Product.Features.Queries.GetAdminProducts;
 using MapsterMapper;
-using Presentation.Product.Mapping;
 using Presentation.Product.Requests;
 using SharedKernel.Models;
 
@@ -24,149 +23,140 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
     [HttpGet]
     public async Task<IActionResult> GetProducts([FromQuery] GetAdminProductsRequest request)
     {
-        var query = Mapper
-            .Map<GetAdminProductsQuery>(request)
-            .Enrich(CurrentUser.UserId);
+        var query = new GetAdminProductsQuery(
+            request.CategoryId,
+            request.BrandId,
+            CurrentUser.UserId,
+            request.Search,
+            request.IsActive,
+            request.IncludeDeleted,
+            request.Page,
+            request.PageSize
+        );
 
         var result = await Mediator.Send(query);
-
         return ToActionResult(result);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetProduct(
-        Guid id,
-        [FromBody] GetAdminProductByIdRequest request)
+    public async Task<IActionResult> GetProduct(Guid id)
     {
-        var query = Mapper
-            .Map<GetAdminProductByIdQuery>(request)
-            .Enrich(id, CurrentUser.UserId);
+        var query = new GetAdminProductByIdQuery(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(query);
-
         return ToActionResult(result);
     }
 
-    [HttpGet("/detail/{id:guid}")]
-    public async Task<IActionResult> GetProductDetail(
-    Guid id,
-    [FromBody] GetAdminProductDetailRequest request)
+    [HttpGet("detail/{id:guid}")]
+    public async Task<IActionResult> GetProductDetail(Guid id)
     {
-        var query = Mapper
-            .Map<GetAdminProductDetailQuery>(request)
-            .Enrich(id, CurrentUser.UserId);
+        var query = new GetAdminProductDetailQuery(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(query);
-
         return ToActionResult(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
     {
-        var command = Mapper
-            .Map<CreateProductCommand>(request)
-            .Enrich(CurrentUser.UserId);
+        var command = new CreateProductCommand(
+            request.CategoryId,
+            request.BrandId,
+            CurrentUser.UserId,
+            request.Name,
+            request.Description,
+            request.Price,
+            request.Slug
+        );
 
         var result = await Mediator.Send(command);
-
         return ToActionResult(result);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateProduct(
-        Guid id,
-        [FromBody] UpdateProductRequest request)
+    public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
     {
-        var command = Mapper
-            .Map<UpdateProductCommand>(request)
-            .Enrich(id, CurrentUser.UserId);
+        var command = new UpdateProductCommand(
+            id,
+            request.CategoryId,
+            request.BrandId,
+            request.Name,
+            request.Price,
+            request.Slug,
+            request.Description,
+            request.IsActive,
+            request.IsFeatured,
+            request.RowVersion,
+            CurrentUser.UserId
+        );
 
         var result = await Mediator.Send(command);
-
         return ToActionResult(result);
     }
 
-    [HttpPut("/bulkupdateprices")]
-    public async Task<IActionResult> BulkUpdatePrices(
-    [FromBody] BulkUpdatePricesRequest request)
+    [HttpPut("bulkupdateprices")]
+    public async Task<IActionResult> BulkUpdatePrices([FromBody] BulkUpdatePricesRequest request)
     {
-        var command = Mapper
-            .Map<BulkUpdatePricesCommand>(request)
-            .Enrich(CurrentUser.UserId);
+        var command = new BulkUpdatePricesCommand(
+            request.Updates,
+            CurrentUser.UserId
+        );
 
         var result = await Mediator.Send(command);
-
         return ToActionResult(result);
     }
 
-    [HttpPut("/details/{id:guid}")]
-    public async Task<IActionResult> UpdateProductDetails(
-        Guid id,
-        [FromBody] UpdateProductDetailsRequest request)
+    [HttpPut("details/{id:guid}")]
+    public async Task<IActionResult> UpdateProductDetails(Guid id, [FromBody] UpdateProductDetailsRequest request)
     {
-        var command = Mapper
-            .Map<UpdateProductDetailsCommand>(request)
-            .Enrich(id, CurrentUser.UserId);
+        var command = new UpdateProductDetailsCommand(
+            id,
+            request.Name,
+            request.Description,
+            request.BrandId,
+            request.IsActive,
+            request.Sku,
+            request.RowVersion,
+            CurrentUser.UserId
+        );
 
         var result = await Mediator.Send(command);
-
         return ToActionResult(result);
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeleteProduct(
-        Guid id,
-        [FromBody] DeleteProductRequest request)
+    public async Task<IActionResult> DeleteProduct(Guid id)
     {
-        var command = Mapper
-            .Map<DeleteProductCommand>(request)
-            .Enrich(id, CurrentUser.UserId);
+        var command = new DeleteProductCommand(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(command);
-
         return ToActionResult(result);
     }
 
     [HttpPatch("{id:guid}/activate")]
-    public async Task<IActionResult> ActivateProduct(
-        Guid id,
-        [FromBody] ActiveProductRequest request)
+    public async Task<IActionResult> ActivateProduct(Guid id)
     {
-        var command = Mapper
-            .Map<ActivateProductCommand>(request)
-            .Enrich(id, CurrentUser.UserId);
+        var command = new ActivateProductCommand(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(command);
-
         return ToActionResult(result);
     }
 
     [HttpPatch("{id:guid}/deactivate")]
-    public async Task<IActionResult> DeactivateProduct(
-        Guid id,
-        [FromBody] DeactiveProductRequest request)
+    public async Task<IActionResult> DeactivateProduct(Guid id)
     {
-        var command = Mapper
-            .Map<DeactivateProductCommand>(request)
-            .Enrich(id, CurrentUser.UserId);
+        var command = new DeactivateProductCommand(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(command);
-
         return ToActionResult(result);
     }
 
     [HttpPatch("{id:guid}/restore")]
-    public async Task<IActionResult> RestoreProduct(
-    Guid id,
-    [FromBody] RestoreProductRequest request)
+    public async Task<IActionResult> RestoreProduct(Guid id)
     {
-        var command = Mapper
-            .Map<RestoreProductCommand>(request)
-            .Enrich(id, CurrentUser.UserId);
+        var command = new RestoreProductCommand(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(command);
-
         return ToActionResult(result);
     }
 }
