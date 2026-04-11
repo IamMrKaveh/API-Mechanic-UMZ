@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Application.Product.Features.Shared;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
@@ -6,32 +7,33 @@ using Domain.Category.ValueObjects;
 using Domain.Common.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+using MapsterMapper;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Product.Features.Commands.CreateProduct;
 
-public class CreateProductHandler(
+public sealed class CreateProductHandler(
     IProductRepository productRepository,
     ICategoryRepository categoryRepository,
     IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICurrentUserService currentUserService,
+    IMapper mapper,
     ILogger<CreateProductHandler> logger) : IRequestHandler<CreateProductCommand, ServiceResult<ProductDetailDto>>
 {
-    private readonly IProductRepository _productRepository = productRepository;
-    private readonly ICategoryRepository _categoryRepository = categoryRepository;
-    private readonly IBrandRepository _brandRepository = brandRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ILogger<CreateProductHandler> _logger = logger;
-
     public async Task<ServiceResult<ProductDetailDto>> Handle(
         CreateProductCommand request,
         CancellationToken ct)
     {
-        var category = await _categoryRepository.GetByIdAsync(CategoryId.From(request.CategoryId), ct);
+        var categoryId = CategoryId.From(request.CategoryId);
+        var category = await categoryRepository.GetByIdAsync(categoryId, ct);
         if (category is null)
             return ServiceResult<ProductDetailDto>.NotFound("دسته‌بندی یافت نشد.");
 
         var brandId = BrandId.From(request.BrandId);
-        var brand = await _brandRepository.GetByIdAsync(brandId, ct);
+        var brand = await brandRepository.GetByIdAsync(brandId, ct);
         if (brand is null)
             return ServiceResult<ProductDetailDto>.NotFound("برند یافت نشد.");
 
@@ -39,38 +41,32 @@ public class CreateProductHandler(
             ? Slug.GenerateFrom(request.Name)
             : Slug.FromString(request.Slug);
 
-        if (await _productRepository.ExistsBySlugAsync(slug, ct: ct))
+        if (await productRepository.ExistsBySlugAsync(slug, null, ct))
             return ServiceResult<ProductDetailDto>.Conflict("محصولی با این Slug قبلاً ثبت شده است.");
 
-        var productId = ProductId.NewId();
         var product = Domain.Product.Aggregates.Product.Create(
-            productId,
+            ProductId.NewId(),
             ProductName.Create(request.Name),
             slug,
             request.Description,
-            CategoryId.From(request.CategoryId),
-            BrandId.From(request.BrandId));
+            categoryId,
+            brandId);
 
-        await _productRepository.AddAsync(product, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
+        await productRepository.AddAsync(product, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        _logger.LogInformation("Product {ProductName} created with ID {ProductId}", product.Name, product.Id);
+        logger.LogInformation("Product {ProductName} created with ID {ProductId}", product.Name, product.Id.Value);
 
-        var dto = new ProductDetailDto
+        await auditService.LogProductEventAsync(
+            product.Id,
+            "CreateProduct",
+            $"Product '{product.Name}' created.",
+            UserId.From(request.CreatedByUserId));
+
+        var dto = mapper.Map<ProductDetailDto>(product) with
         {
-            Id = product.Id.Value,
-            Name = product.Name,
-            Slug = product.Slug,
-            Description = product.Description,
-            CategoryId = product.CategoryId.Value,
             CategoryName = category.Name.Value,
-            BrandId = product.BrandId.Value,
-            BrandName = brand.Name.Value,
-            IsActive = product.IsActive,
-            IsFeatured = product.IsFeatured,
-            IsDeleted = false,
-            CreatedAt = product.CreatedAt,
-            UpdatedAt = product.UpdatedAt
+            BrandName = brand.Name.Value
         };
 
         return ServiceResult<ProductDetailDto>.Success(dto);

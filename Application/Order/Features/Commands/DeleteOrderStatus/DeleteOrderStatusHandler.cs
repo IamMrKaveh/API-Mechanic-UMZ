@@ -8,17 +8,13 @@ public class DeleteOrderStatusHandler(
     IUnitOfWork unitOfWork,
     ILogger<DeleteOrderStatusHandler> logger) : IRequestHandler<DeleteOrderStatusCommand, ServiceResult>
 {
-    private readonly IOrderStatusRepository _orderStatusRepository = orderStatusRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ILogger<DeleteOrderStatusHandler> _logger = logger;
-
     public async Task<ServiceResult> Handle(DeleteOrderStatusCommand request, CancellationToken cancellationToken)
     {
-        var status = await _orderStatusRepository.GetByIdAsync(request.Id, cancellationToken);
-        if (status == null)
+        var status = await orderStatusRepository.GetByIdAsync(request.Id, cancellationToken);
+        if (status is null)
             return ServiceResult.NotFound("وضعیت سفارش یافت نشد.");
 
-        var isUsed = await _orderStatusRepository.IsInUseAsync(request.Id, cancellationToken);
+        var isUsed = await orderStatusRepository.IsInUseAsync(request.Id, cancellationToken);
         if (isUsed)
             return ServiceResult.Forbidden("امکان حذف وضعیتی که به سفارشات اختصاص داده شده وجود ندارد.");
 
@@ -28,13 +24,13 @@ public class DeleteOrderStatusHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Unexpected(ex.Message);
+            return ServiceResult.Failure(ex.Message);
         }
 
-        _orderStatusRepository.Update(status);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        orderStatusRepository.Update(status);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Order status {StatusId} deleted by user {UserId}", request.Id, request.DeletedByUserId);
+        logger.LogInformation("Order status {StatusId} deleted by user {UserId}", request.Id, request.DeletedByUserId);
 
         return ServiceResult.Success();
     }

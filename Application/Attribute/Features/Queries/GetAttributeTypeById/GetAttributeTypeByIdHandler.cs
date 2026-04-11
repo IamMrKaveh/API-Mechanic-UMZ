@@ -8,20 +8,17 @@ public class GetAttributeTypeByIdHandler(
     IAttributeRepository repository,
     IMapper mapper) : IRequestHandler<GetAttributeTypeByIdQuery, ServiceResult<AttributeTypeDto>>
 {
-    private readonly IAttributeRepository _repository = repository;
-    private readonly IMapper _mapper = mapper;
-
     public async Task<ServiceResult<AttributeTypeDto>> Handle(
         GetAttributeTypeByIdQuery request,
         CancellationToken ct)
     {
         var attributeTypeId = AttributeTypeId.From(request.Id);
 
-        var type = await _repository.GetAttributeTypeByIdAsync(attributeTypeId, ct);
+        var type = await repository.GetAttributeTypeByIdAsync(attributeTypeId, ct);
 
         if (type is null)
             return ServiceResult<AttributeTypeDto>.NotFound("Attribute type not found.");
 
-        return ServiceResult<AttributeTypeDto>.Success(_mapper.Map<AttributeTypeDto>(type));
+        return ServiceResult<AttributeTypeDto>.Success(mapper.Map<AttributeTypeDto>(type));
     }
 }

@@ -1,3 +1,5 @@
+using Application.Product.Features.Shared;
+
 namespace Application.Product.Features.Queries.GetAdminProducts;
 
 public record GetAdminProductsQuery(
@@ -7,4 +9,4 @@ public record GetAdminProductsQuery(
     bool? IsActive,
     bool IncludeDeleted,
     int Page = 1,
-    int PageSize = 10) : IRequest<ServiceResult<PaginatedResult<AdminProductListItemDto>>>;
+    int PageSize = 20) : IRequest<ServiceResult<PaginatedResult<ProductListItemDto>>>, IQuery;

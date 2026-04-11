@@ -7,17 +7,17 @@ namespace Application.Cart.Features.Queries.GetCart;
 public class GetCartHandler(
     ICartQueryService cartQueryService) : IRequestHandler<GetCartQuery, ServiceResult<CartDetailDto>>
 {
-    private readonly ICartQueryService _cartQueryService = cartQueryService;
-
     public async Task<ServiceResult<CartDetailDto>> Handle(
         GetCartQuery request,
         CancellationToken ct)
     {
-        var userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
+        UserId? userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
+        GuestToken? guestToken = GuestToken.TryCreate(request.GuestToken);
 
-        var guestToken = GuestToken.Create(request.GuestToken);
+        if (userId is null && guestToken is null)
+            return ServiceResult<CartDetailDto>.Validation("UserId یا GuestToken الزامی است.");
 
-        var cart = await _cartQueryService.GetCartDetailAsync(userId, guestToken, ct);
+        var cart = await cartQueryService.GetCartDetailAsync(userId, guestToken, ct);
 
         return ServiceResult<CartDetailDto>.Success(cart ?? new CartDetailDto());
     }

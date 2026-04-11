@@ -1,13 +1,7 @@
-using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
-using Application.Common.Results;
 using Domain.Common.ValueObjects;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
-using MediatR;
-using Microsoft.Extensions.Logging;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Application.Auth.Features.Commands.VerifyOtp;
 

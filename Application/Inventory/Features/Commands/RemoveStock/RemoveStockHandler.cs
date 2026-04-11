@@ -1,5 +1,6 @@
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
+using Domain.Inventory.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
@@ -9,28 +10,25 @@ namespace Application.Inventory.Features.Commands.RemoveStock;
 public class RemoveStockHandler(
     IVariantRepository variantRepository,
     IInventoryRepository inventoryRepository,
-    InventoryDomainService inventoryDomainService,
     IAuditService auditService,
     IUnitOfWork unitOfWork,
     ICacheService cacheService) : IRequestHandler<RemoveStockCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(RemoveStockCommand request, CancellationToken ct)
     {
-        var variant = await variantRepository.GetByIdAsync(VariantId.From(request.VariantId), ct);
+        var variantId = VariantId.From(request.VariantId);
+        var userId = UserId.From(request.UserId);
+        var stock = StockQuantity.Create(request.Quantity);
 
-        if (variant == null)
-            return ServiceResult.NotFound("Variant not found.");
+        var variant = await variantRepository.GetByIdAsync(variantId, ct);
+        if (variant is null)
+            return ServiceResult.NotFound("واریانت یافت نشد.");
 
-        var inventory = await inventoryRepository.GetByVariantIdAsync(VariantId.From(request.VariantId), ct);
-
+        var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");
 
-        var result = inventoryDomainService.DecreaseStock(
-            inventory,
-            request.Quantity,
-            request.Notes ?? "کاهش موجودی",
-            UserId.From(request.UserId));
+        var result = InventoryDomainService.DecreaseStock(inventory, stock, request.Notes, userId);
 
         if (result.IsFailure)
             return ServiceResult.Failure(result.Error.Message);
@@ -39,10 +37,10 @@ public class RemoveStockHandler(
         await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogInventoryEventAsync(
-            variant.ProductId,
+            variantId,
             "RemoveStock",
-            $"Removed {request.Quantity} from stock for variant {request.VariantId}.",
-            request.UserId);
+            $"Removed {stock} units from variant {request.VariantId}.",
+            userId);
 
         await cacheService.RemoveAsync($"product:{variant.ProductId.Value}", ct);
         await cacheService.RemoveAsync($"variant:{request.VariantId}", ct);

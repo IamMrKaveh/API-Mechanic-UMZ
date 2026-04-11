@@ -216,3 +216,21 @@ public record CheckoutResultDto
     public string? PaymentUrl { get; init; }
     public string? PaymentAuthority { get; init; }
 }
+
+public sealed record CheckoutDto(
+    Guid CartId,
+    Guid ShippingId,
+    Guid AddressId,
+    string? DiscountCode,
+    string? PaymentMethod,
+    Guid IdempotencyKey
+);
+
+public sealed record CancelOrderDto(
+    string Reason
+);
+
+public sealed record InitiatePaymentDto(
+    Guid OrderId,
+    string? GatewayName = null
+);

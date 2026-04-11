@@ -15,15 +15,15 @@ public class ReorderCategoriesHandler(
     {
         var uniquenessChecker = new CategoryUniquenessCheckerAdapter(categoryRepository);
 
-        foreach (var item in request.Items)
+        foreach (var (Id, SortOrder) in request.Items)
         {
-            var categoryId = CategoryId.From(item.Id);
+            var categoryId = CategoryId.From(Id);
             var category = await categoryRepository.GetByIdAsync(categoryId, ct);
             if (category is null)
                 continue;
 
             var slug = Slug.FromString(category.Slug.Value);
-            category.UpdateDetails(category.Name, slug, uniquenessChecker, category.Description, item.SortOrder);
+            category.UpdateDetails(category.Name, slug, uniquenessChecker, category.Description, SortOrder);
             categoryRepository.Update(category);
         }
 

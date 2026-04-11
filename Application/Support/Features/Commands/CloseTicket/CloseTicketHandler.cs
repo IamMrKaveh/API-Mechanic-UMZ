@@ -1,5 +1,6 @@
 using Domain.Support.Interfaces;
 using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Support.Features.Commands.CloseTicket;
 
@@ -9,11 +10,14 @@ public class CloseTicketHandler(
 {
     public async Task<ServiceResult> Handle(CloseTicketCommand request, CancellationToken ct)
     {
-        var ticket = await ticketRepository.GetByIdAsync(TicketId.From(request.TicketId), ct);
+        var ticketId = TicketId.From(request.TicketId);
+        var userId = UserId.From(request.UserId);
+
+        var ticket = await ticketRepository.GetByIdAsync(ticketId, ct);
         if (ticket is null)
             return ServiceResult.NotFound("تیکت یافت نشد.");
 
-        if (!request.IsAdmin && ticket.CustomerId.Value != request.UserId)
+        if (!request.IsAdmin && ticket.CustomerId != userId)
             return ServiceResult.Forbidden("دسترسی ممنوع.");
 
         ticket.Close();

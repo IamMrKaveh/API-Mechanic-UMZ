@@ -1,15 +1,14 @@
-using Domain.Inventory.Aggregates;
+using Domain.Inventory.ValueObjects;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
-using SharedKernel.Results;
 
 namespace Domain.Inventory.Services;
 
 public sealed class InventoryDomainService
 {
-    public Result Reserve(
+    public static Result Reserve(
         Aggregates.Inventory inventory,
-        int quantity,
+        StockQuantity quantity,
         string referenceNumber,
         OrderItemId? orderItemId = null,
         UserId? userId = null,
@@ -18,27 +17,27 @@ public sealed class InventoryDomainService
         return inventory.ReserveStock(quantity, referenceNumber, orderItemId, userId, correlationId);
     }
 
-    public Result ConfirmReservation(
+    public static Result ConfirmReservation(
         Aggregates.Inventory inventory,
-        int quantity,
+        StockQuantity quantity,
         string referenceNumber,
         OrderItemId? orderItemId = null)
     {
         return inventory.ConfirmReservation(quantity, referenceNumber, orderItemId);
     }
 
-    public Result RollbackReservation(
+    public static Result RollbackReservation(
         Aggregates.Inventory inventory,
-        int quantity,
+        StockQuantity quantity,
         string referenceNumber,
         string? reason = null)
     {
         return inventory.ReleaseReservation(quantity, referenceNumber, reason);
     }
 
-    public Result ReturnStock(
+    public static Result ReturnStock(
         Aggregates.Inventory inventory,
-        int quantity,
+        StockQuantity quantity,
         string reason,
         OrderItemId? orderItemId = null,
         UserId? userId = null)
@@ -46,44 +45,44 @@ public sealed class InventoryDomainService
         return inventory.ReturnStock(quantity, reason, orderItemId, userId);
     }
 
-    public Result AdjustStock(
+    public static Result AdjustStock(
         Aggregates.Inventory inventory,
-        int quantityChange,
+        StockQuantity quantityChange,
         UserId userId,
         string reason)
     {
         return inventory.AdjustStock(quantityChange, userId, reason);
     }
 
-    public Result RecordDamage(
+    public static Result RecordDamage(
         Aggregates.Inventory inventory,
-        int quantity,
+        StockQuantity quantity,
         UserId userId,
         string reason)
     {
         return inventory.RecordDamage(quantity, userId, reason);
     }
 
-    public Result Reconcile(
+    public static Result Reconcile(
         Aggregates.Inventory inventory,
-        int calculatedStockFromTransactions,
+        StockQuantity calculatedStockFromTransactions,
         UserId userId)
     {
         return inventory.Reconcile(calculatedStockFromTransactions, userId);
     }
 
-    public Result IncreaseStock(
+    public static Result IncreaseStock(
         Aggregates.Inventory inventory,
-        int quantity,
+        StockQuantity quantity,
         string reason,
         UserId userId)
     {
         return inventory.IncreaseStock(quantity, reason, userId);
     }
 
-    public Result DecreaseStock(
+    public static Result DecreaseStock(
         Aggregates.Inventory inventory,
-        int quantity,
+        StockQuantity quantity,
         string reason,
         UserId userId)
     {

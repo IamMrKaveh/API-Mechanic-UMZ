@@ -1,4 +1,3 @@
-using Application.Search.Contracts;
 using Application.Search.Features.Shared;
 
 namespace Application.Search.Features.Queries.SearchProducts;
@@ -6,8 +5,6 @@ namespace Application.Search.Features.Queries.SearchProducts;
 public class SearchProductsHandler(ISearchService searchService)
         : IRequestHandler<SearchProductsQuery, ServiceResult<SearchResultDto<ProductSearchResultItemDto>>>
 {
-    private readonly ISearchService _searchService = searchService;
-
     public async Task<ServiceResult<SearchResultDto<ProductSearchResultItemDto>>> Handle(
         SearchProductsQuery request,
         CancellationToken ct)
@@ -27,7 +24,7 @@ public class SearchProductsHandler(ISearchService searchService)
             Tags = request.Tags
         };
 
-        var result = await _searchService.SearchProductsAsync(searchParams, ct);
+        var result = await searchService.SearchProductsAsync(searchParams, ct);
 
         return ServiceResult<SearchResultDto<ProductSearchResultItemDto>>.Success(result);
     }

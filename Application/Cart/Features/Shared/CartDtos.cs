@@ -84,3 +84,12 @@ public sealed record SyncCartPricesResult
     public List<CartPriceChangeDto> PriceChanges { get; init; } = [];
     public List<Guid> RemovedVariantIds { get; init; } = [];
 }
+
+public sealed record AddToCartDto(
+    Guid VariantId,
+    int Quantity
+);
+
+public sealed record UpdateCartItemDto(
+    int Quantity
+);

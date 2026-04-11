@@ -1,20 +1,21 @@
-using Application.Review.Contracts;
+using Application.Review.Features.Shared;
+using Domain.Product.ValueObjects;
 
 namespace Application.Review.Features.Queries.GetProductReviewSummary;
 
 public sealed class GetProductReviewSummaryHandler(IReviewQueryService reviewQueryService)
-        : IRequestHandler<GetProductReviewSummaryQuery, ServiceResult<ProductReviewSummaryDto>>
+        : IRequestHandler<GetProductReviewSummaryQuery, ServiceResult<ReviewSummaryDto>>
 {
-    private readonly IReviewQueryService _reviewQueryService = reviewQueryService;
-
-    public async Task<ServiceResult<ProductReviewSummaryDto>> Handle(
+    public async Task<ServiceResult<ReviewSummaryDto>> Handle(
         GetProductReviewSummaryQuery request,
         CancellationToken ct)
     {
-        var summary = await _reviewQueryService.GetSummaryAsync(request.ProductId, ct);
+        var productId = ProductId.From(request.ProductId);
+
+        var summary = await reviewQueryService.GetProductReviewSummaryAsync(productId, ct);
 
         return summary is null
-            ? ServiceResult<ProductReviewSummaryDto>.Failure("Review summary not found.")
-            : ServiceResult<ProductReviewSummaryDto>.Success(summary);
+            ? ServiceResult<ReviewSummaryDto>.Failure("Review summary not found.")
+            : ServiceResult<ReviewSummaryDto>.Success(summary);
     }
 }

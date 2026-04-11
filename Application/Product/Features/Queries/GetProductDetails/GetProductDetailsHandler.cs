@@ -1,3 +1,5 @@
+using Domain.Product.ValueObjects;
+
 namespace Application.Product.Features.Queries.GetProductDetails;
 
 public class GetProductDetailsHandler(IProductQueryService productQueryService) : IRequestHandler<GetProductDetailsQuery, ServiceResult<PublicProductDetailDto?>>
@@ -8,7 +10,9 @@ public class GetProductDetailsHandler(IProductQueryService productQueryService) 
         GetProductDetailsQuery request,
         CancellationToken ct)
     {
-        var result = await _productQueryService.GetPublicProductDetailAsync(request.ProductId, ct);
+        var productId = ProductId.From(request.ProductId);
+
+        var result = await _productQueryService.GetPublicProductDetailAsync(productId, ct);
         if (result is null)
             return ServiceResult<PublicProductDetailDto?>.NotFound("Product not found.");
 

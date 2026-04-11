@@ -1,6 +1,4 @@
-using Application.Common.Results;
 using Application.Order.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Order.Features.Queries.GetAdminOrders;
 

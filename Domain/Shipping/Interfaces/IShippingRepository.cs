@@ -23,7 +23,7 @@ public interface IShippingRepository
         CancellationToken ct = default);
 
     Task<bool> ExistsByNameAsync(
-        string name,
+        ShippingName shippingName,
         ShippingId? excludeId = null,
         CancellationToken ct = default);
 

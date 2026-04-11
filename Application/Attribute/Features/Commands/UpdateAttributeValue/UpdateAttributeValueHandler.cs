@@ -7,22 +7,19 @@ public class UpdateAttributeValueHandler(
     IAttributeRepository repository,
     IUnitOfWork unitOfWork) : IRequestHandler<UpdateAttributeValueCommand, ServiceResult>
 {
-    private readonly IAttributeRepository _repository = repository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
     public async Task<ServiceResult> Handle(
         UpdateAttributeValueCommand request,
         CancellationToken ct)
     {
         var attributeValueId = AttributeValueId.From(request.Id);
 
-        var attributeValue = await _repository.GetAttributeValueByIdAsync(attributeValueId, ct);
+        var attributeValue = await repository.GetAttributeValueByIdAsync(attributeValueId, ct);
         if (attributeValue is null)
             return ServiceResult.NotFound("Attribute value not found.");
 
         if (request.Value is not null)
         {
-            var isDuplicate = await _repository.AttributeValueExistsAsync(
+            var isDuplicate = await repository.AttributeValueExistsAsync(
                 attributeValue.AttributeTypeId,
                 request.Value,
                 attributeValueId,
@@ -32,7 +29,7 @@ public class UpdateAttributeValueHandler(
                 return ServiceResult.Conflict("Attribute value already exists.");
         }
 
-        var type = await _repository.GetAttributeTypeWithValuesAsync(attributeValue.AttributeTypeId, ct);
+        var type = await repository.GetAttributeTypeWithValuesAsync(attributeValue.AttributeTypeId, ct);
         if (type is null)
             return ServiceResult.NotFound("Attribute type not found.");
 
@@ -44,8 +41,8 @@ public class UpdateAttributeValueHandler(
             request.SortOrder ?? attributeValue.SortOrder,
             request.IsActive ?? attributeValue.IsActive);
 
-        await _repository.UpdateAttributeTypeAsync(type);
-        await _unitOfWork.SaveChangesAsync(ct);
+        await repository.UpdateAttributeTypeAsync(type, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

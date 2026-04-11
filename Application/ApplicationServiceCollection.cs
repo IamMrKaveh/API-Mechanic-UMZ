@@ -51,12 +51,12 @@ public static class ApplicationServiceCollection
 
     private static void RegisterMapster(IServiceCollection services)
     {
-        MapsterConfig.Configure();
-
         var config = TypeAdapterConfig.GlobalSettings;
         config.Scan(Assembly.GetExecutingAssembly());
 
         services.AddSingleton(config);
         services.AddScoped<IMapper, ServiceMapper>();
+
+        services.AddApplicationMappings();
     }
 }

@@ -5,7 +5,7 @@ using Domain.Product.ValueObjects;
 
 namespace Domain.Product.Aggregates;
 
-public sealed class Product : AggregateRoot<ProductId>
+public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
 {
     private Product()
     { }
@@ -19,6 +19,12 @@ public sealed class Product : AggregateRoot<ProductId>
     public bool IsFeatured { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
+
+    public bool IsDeleted { get; private set; }
+
+    public DateTime? DeletedAt { get; private set; }
+
+    public Guid? DeletedBy { get; private set; }
 
     public static Product Create(
         ProductId id,
@@ -107,5 +113,10 @@ public sealed class Product : AggregateRoot<ProductId>
 
         IsFeatured = false;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Restore()
+    {
+        throw new NotImplementedException();
     }
 }

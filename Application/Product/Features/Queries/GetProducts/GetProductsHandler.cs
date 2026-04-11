@@ -1,4 +1,6 @@
 ﻿using Application.Product.Features.Shared;
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
 
 namespace Application.Product.Features.Queries.GetProducts;
 
@@ -11,9 +13,12 @@ public class GetProductsHandler(
         GetProductsQuery request,
         CancellationToken ct)
     {
+        var categoryId = CategoryId.From(request.CategoryId.Value);
+        var brandId = BrandId.From(request.BrandId.Value);
+
         var result = await _productQueryService.GetProductsPagedAsync(
-            request.CategoryId,
-            request.BrandId,
+            categoryId,
+            brandId,
             request.Search,
             request.IsActive,
             request.IncludeDeleted,

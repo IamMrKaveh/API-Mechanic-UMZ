@@ -11,7 +11,9 @@ public class UpdateProfileHandler(
 {
     public async Task<ServiceResult<UserProfileDto>> Handle(UpdateProfileCommand request, CancellationToken ct)
     {
-        var user = await userRepository.GetByIdAsync(UserId.From(request.UserId), ct);
+        var userId = UserId.From(request.UserId);
+
+        var user = await userRepository.GetByIdAsync(userId, ct);
         if (user is null)
             return ServiceResult<UserProfileDto>.NotFound("کاربر یافت نشد.");
 

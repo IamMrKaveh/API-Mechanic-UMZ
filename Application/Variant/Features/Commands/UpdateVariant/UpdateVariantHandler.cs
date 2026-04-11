@@ -1,8 +1,10 @@
-using Application.Common.Interfaces;
 using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
 using Domain.Product.Interfaces;
+using Domain.Product.ValueObjects;
 using Domain.Shipping.Interfaces;
+using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Variant.Features.Commands.UpdateVariant;
 
@@ -11,32 +13,28 @@ public class UpdateVariantHandler(
     IAttributeRepository attributeRepository,
     IShippingRepository shippingMethodRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<UpdateVariantCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<UpdateVariantCommand, ServiceResult>
 {
-    private readonly IProductRepository _productRepository = productRepository;
-    private readonly IAttributeRepository _attributeRepository = attributeRepository;
-    private readonly IShippingRepository _shippingMethodRepository = shippingMethodRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
-
     public async Task<ServiceResult> Handle(
         UpdateVariantCommand request,
         CancellationToken ct)
     {
-        var product = await _productRepository.GetByIdWithVariantsAsync(request.ProductId, ct);
-        if (product == null)
+        var productId = ProductId.From(request.ProductId);
+        var userId = UserId.From(request.UserId);
+        var variantId = VariantId.From(request.VariantId);
+
+        var product = await productRepository.GetByIdAsync(productId, ct);
+        if (product is null)
             return ServiceResult.NotFound("Product not found.");
 
-        var variant = product.FindVariant(request.VariantId);
+        var variant = product.FindVariant(variantId);
         if (variant == null)
             return ServiceResult.NotFound("Variant not found.");
 
-        product.UpdateVariantDetails(request.VariantId, request.Sku, request.ShippingMultiplier);
+        product.UpdateVariantDetails(variantId, request.Sku, request.ShippingMultiplier);
 
         product.ChangeVariantPrices(
-            request.VariantId,
+            variantId,
             request.PurchasePrice,
             request.SellingPrice,
             request.OriginalPrice);
@@ -45,42 +43,42 @@ public class UpdateVariantHandler(
         {
             var stockDiff = request.Stock - variant.StockQuantity;
             if (stockDiff > 0)
-                product.IncreaseStock(request.VariantId, stockDiff);
+                product.IncreaseStock(variantId, stockDiff);
             else if (stockDiff < 0)
-                product.DecreaseStock(request.VariantId, Math.Abs(stockDiff));
+                product.DecreaseStock(variantId, Math.Abs(stockDiff));
         }
 
-        product.SetVariantUnlimited(request.VariantId, request.IsUnlimited);
+        product.SetVariantUnlimited(variantId, request.IsUnlimited);
 
-        var attributeValues = request.AttributeValueIds.Any()
-            ? await _attributeRepository.GetAttributeValuesByIdsAsync(request.AttributeValueIds, ct)
+        var attributeValues = request.AttributeValueIds.Count != 0
+            ? await attributeRepository.GetAttributeValuesByIdsAsync(request.AttributeValueIds, ct)
             : new List<AttributeValue>();
 
         if (request.AttributeValueIds.Count != 0)
         {
             var missingIds = request.AttributeValueIds.Except(attributeValues.Select(av => av.Id)).ToList();
             if (missingIds.Any())
-                return ServiceResult.Unexpected($"Invalid attribute values: {string.Join(", ", missingIds)}");
+                return ServiceResult.Failure($"Invalid attribute values: {string.Join(", ", missingIds)}");
         }
 
-        product.SetVariantAttributes(request.VariantId, attributeValues);
+        product.SetVariantAttributes(variantId, attributeValues);
 
         if (request.EnabledShippingMethodIds != null)
         {
-            var shippingMethods = request.EnabledShippingMethodIds.Any()
-                ? await _shippingMethodRepository.GetByIdsAsync(request.EnabledShippingMethodIds, ct)
+            var shippings = request.EnabledShippingMethodIds.Count != 0
+                ? await shippingMethodRepository.GetByIdsAsync(request.EnabledShippingMethodIds, ct)
                 : new List<Domain.Shipping.Aggregates.Shipping>();
 
-            product.SetVariantShippingMethods(request.VariantId, shippingMethods);
+            product.SetVariantShippingMethods(variantId, shippings);
         }
 
-        _productRepository.Update(product);
-        await _unitOfWork.SaveChangesAsync(ct);
+        productRepository.Update(product);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        await _auditService.LogProductEventAsync(
+        await auditService.LogProductEventAsync(
             product.Id, "UpdateVariant",
-            $"Variant {request.VariantId} updated on product '{product.Name}'.",
-            _currentUserService.CurrentUser.UserId);
+            $"Variant {variant} updated on product '{product.Name}'.",
+            userId);
 
         return ServiceResult.Success();
     }

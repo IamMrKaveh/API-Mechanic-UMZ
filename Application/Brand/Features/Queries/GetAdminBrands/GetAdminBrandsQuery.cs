@@ -1,5 +1,4 @@
 using Application.Brand.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Brand.Features.Queries.GetAdminBrands;
 

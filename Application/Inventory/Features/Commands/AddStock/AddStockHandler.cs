@@ -1,5 +1,6 @@
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
+using Domain.Inventory.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 
@@ -7,26 +8,24 @@ namespace Application.Inventory.Features.Commands.AddStock;
 
 public class AddStockHandler(
     IInventoryRepository inventoryRepository,
-    InventoryDomainService inventoryDomainService,
     IUnitOfWork unitOfWork,
     IAuditService auditService) : IRequestHandler<AddStockCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(AddStockCommand request, CancellationToken ct)
     {
-        var inventory = await inventoryRepository.GetByVariantIdAsync(VariantId.From(request.VariantId), ct);
-
         var variantId = VariantId.From(request.VariantId);
-
         var userId = UserId.From(request.UserId);
+        var stockQuantity = StockQuantity.Create(request.Quantity);
 
+        var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");
 
-        var result = inventoryDomainService.IncreaseStock(
+        var result = InventoryDomainService.IncreaseStock(
             inventory,
-            request.Quantity,
-            request.Notes ?? "افزایش موجودی",
-            UserId.From(request.UserId));
+            stockQuantity,
+            request.Notes,
+            userId);
 
         if (result.IsFailure)
             return ServiceResult.Failure(result.Error.Message);
@@ -37,7 +36,7 @@ public class AddStockHandler(
         await auditService.LogInventoryEventAsync(
             variantId,
             "AddStock",
-            $"Added {request.Quantity} units via AddStockCommand.",
+            $"Added {stockQuantity} units.",
             userId);
 
         return ServiceResult.Success();

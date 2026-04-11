@@ -1,4 +1,3 @@
-using Application.Notification.Contracts;
 using Domain.Order.Events;
 
 namespace Application.Order.EventHandlers;
@@ -10,14 +9,11 @@ public sealed class OrderPlacedNotificationEventHandler(
     INotificationService notificationService,
     ILogger<OrderPlacedNotificationEventHandler> logger) : INotificationHandler<OrderCreatedEvent>
 {
-    private readonly INotificationService _notificationService = notificationService;
-    private readonly ILogger<OrderPlacedNotificationEventHandler> _logger = logger;
-
     public async Task Handle(OrderCreatedEvent notification, CancellationToken ct)
     {
         try
         {
-            await _notificationService.CreateNotificationAsync(
+            await notificationService.CreateNotificationAsync(
                 notification.UserId,
                 "سفارش ثبت شد",
                 $"سفارش شماره {notification.OrderNumber} با موفقیت ثبت شد.",
@@ -27,11 +23,11 @@ public sealed class OrderPlacedNotificationEventHandler(
                 "Order",
                 ct);
 
-            _logger.LogInformation("Order placed notification sent for order {OrderId}", notification.OrderId);
+            logger.LogInformation("Order placed notification sent for order {OrderId}", notification.OrderId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to handle OrderPlacedEvent for order {OrderId}", notification.OrderId);
+            logger.LogError(ex, "Failed to handle OrderPlacedEvent for order {OrderId}", notification.OrderId);
         }
     }
 }

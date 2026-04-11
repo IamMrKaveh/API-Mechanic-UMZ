@@ -1,4 +1,3 @@
-using Application.Common.Results;
 using Application.Search.Contracts;
 using Application.Search.Features.Shared;
 using SortOrder = Elastic.Clients.Elasticsearch.SortOrder;

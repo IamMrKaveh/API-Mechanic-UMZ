@@ -10,7 +10,7 @@ public class BulkAdjustStockValidator : AbstractValidator<BulkAdjustStockCommand
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(x => x.VariantId).NotEmpty();
-            item.RuleFor(x => x.QuantityChange).NotEqual(0);
+            item.RuleFor(x => x.QuantityChange).NotEqual(0).WithMessage("تغییر موجودی نمی‌تواند صفر باشد.");
         });
     }
 }

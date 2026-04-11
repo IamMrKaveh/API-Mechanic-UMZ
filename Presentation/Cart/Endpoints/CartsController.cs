@@ -7,13 +7,14 @@ using Application.Cart.Features.Commands.UpdateCartItem;
 using Application.Cart.Features.Queries.GetCart;
 using Application.Cart.Features.Queries.GetCartSummary;
 using Application.Cart.Features.Queries.ValidateCartForCheckout;
-using Presentation.Cart.Requests;
+using Application.Cart.Features.Shared;
+using MapsterMapper;
 
 namespace Presentation.Cart.Endpoints;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CartController(ISender mediator) : BaseApiController(mediator)
+public class CartController(ISender mediator, IMapper mapper) : BaseApiController(mediator)
 {
     [HttpGet]
     public async Task<IActionResult> GetCart()
@@ -25,10 +26,7 @@ public class CartController(ISender mediator) : BaseApiController(mediator)
     [HttpGet("summary")]
     public async Task<IActionResult> GetCartSummary()
     {
-        var query = new GetCartSummaryQuery(
-            CurrentUser.UserId,
-            CurrentUser.GuestToken);
-        var result = await Mediator.Send(query);
+        var result = await Mediator.Send(new GetCartSummaryQuery(CurrentUser.UserId, CurrentUser.GuestToken));
         return ToActionResult(result);
     }
 
@@ -36,31 +34,23 @@ public class CartController(ISender mediator) : BaseApiController(mediator)
     [Authorize]
     public async Task<IActionResult> ValidateCartForCheckout()
     {
-        var query = new ValidateCartForCheckoutQuery(
-            CurrentUser.UserId,
-            CurrentUser.GuestToken);
-        var result = await Mediator.Send(query);
+        var result = await Mediator.Send(
+            new ValidateCartForCheckoutQuery(CurrentUser.UserId, CurrentUser.GuestToken));
         return ToActionResult(result);
     }
 
     [HttpPost("items")]
-    public async Task<IActionResult> AddItem([FromBody] AddToCartRequest request)
+    public async Task<IActionResult> AddItem([FromBody] AddToCartDto dto)
     {
-        var command = new AddToCartCommand(
-            CurrentUser.UserId,
-            request.VariantId,
-            GuestToken,
-            request.Quantity);
+        var command = new AddToCartCommand(CurrentUser.UserId, dto.VariantId, GuestToken, dto.Quantity);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpPut("items/{variantId}")]
-    public async Task<IActionResult> UpdateItemQuantity(
-        Guid variantId,
-        [FromBody] UpdateCartItemRequest request)
+    public async Task<IActionResult> UpdateItemQuantity(Guid variantId, [FromBody] UpdateCartItemDto dto)
     {
-        var command = new UpdateCartItemCommand(CurrentUser.UserId, GuestToken, variantId, request.Quantity);
+        var command = new UpdateCartItemCommand(CurrentUser.UserId, GuestToken, variantId, dto.Quantity);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -93,7 +83,8 @@ public class CartController(ISender mediator) : BaseApiController(mediator)
     [Authorize]
     public async Task<IActionResult> SyncCartPrices()
     {
-        var result = await Mediator.Send(new SyncCartPricesCommand());
+        var command = new SyncCartPricesCommand(CurrentUser.UserId, CurrentUser.GuestToken ?? "");
+        var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 }

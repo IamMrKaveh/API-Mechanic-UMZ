@@ -5,17 +5,20 @@ using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
 using Domain.Common.ValueObjects;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Brand.Features.Commands.CreateBrand;
 
-public class CreateBrandHandler(
+public sealed class CreateBrandHandler(
     IBrandRepository brandRepository,
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
     IMapper mapper,
     ILogger<CreateBrandHandler> logger) : IRequestHandler<CreateBrandCommand, ServiceResult<BrandDetailDto>>
 {
-    public async Task<ServiceResult<BrandDetailDto>> Handle(CreateBrandCommand request, CancellationToken ct)
+    public async Task<ServiceResult<BrandDetailDto>> Handle(
+        CreateBrandCommand request,
+        CancellationToken ct)
     {
         var categoryId = CategoryId.From(request.CategoryId);
 

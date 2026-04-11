@@ -8,16 +8,12 @@ public class DeleteOrderHandler(
     IUnitOfWork unitOfWork,
     IAuditService auditService) : IRequestHandler<DeleteOrderCommand, ServiceResult>
 {
-    private readonly IOrderRepository _orderRepository = orderRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-
     public async Task<ServiceResult> Handle(
         DeleteOrderCommand request,
         CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdAsync(request.OrderId, ct);
-        if (order == null)
+        var order = await orderRepository.GetByIdAsync(request.OrderId, ct);
+        if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
         try
@@ -26,13 +22,13 @@ public class DeleteOrderHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Unexpected(ex.Message);
+            return ServiceResult.Failure(ex.Message);
         }
 
-        await _orderRepository.UpdateAsync(order, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
+        await orderRepository.UpdateAsync(order, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        await _auditService.LogOrderEventAsync(
+        await auditService.LogOrderEventAsync(
             order.Id,
             "DeleteOrder",
             request.UserId,

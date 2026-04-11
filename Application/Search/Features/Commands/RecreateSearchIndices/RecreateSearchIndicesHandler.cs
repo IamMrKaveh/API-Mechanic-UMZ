@@ -1,17 +1,13 @@
 namespace Application.Search.Features.Commands.RecreateSearchIndices;
 
-public class RecreateSearchIndicesHandler : IRequestHandler<RecreateSearchIndicesCommand, ServiceResult>
+public class RecreateSearchIndicesHandler(IElasticIndexManager indexManager) : IRequestHandler<RecreateSearchIndicesCommand, ServiceResult>
 {
-    private readonly IElasticIndexManager _indexManager;
-
-    public RecreateSearchIndicesHandler(IElasticIndexManager indexManager) => _indexManager = indexManager;
-
     public async Task<ServiceResult> Handle(RecreateSearchIndicesCommand request, CancellationToken ct)
     {
-        await _indexManager.DeleteIndexAsync("products_v1", ct);
-        await _indexManager.DeleteIndexAsync("categories_v1", ct);
-        await _indexManager.DeleteIndexAsync("brands_v1", ct);
-        await _indexManager.CreateAllIndicesAsync(ct);
+        await indexManager.DeleteIndexAsync("products_v1", ct);
+        await indexManager.DeleteIndexAsync("categories_v1", ct);
+        await indexManager.DeleteIndexAsync("brands_v1", ct);
+        await indexManager.CreateAllIndicesAsync(ct);
         return ServiceResult.Success();
     }
 }

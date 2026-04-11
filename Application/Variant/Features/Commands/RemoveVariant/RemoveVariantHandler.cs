@@ -1,44 +1,44 @@
-using Application.Common.Interfaces;
 using Domain.Common.Exceptions;
 using Domain.Product.Interfaces;
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Variant.Features.Commands.RemoveVariant;
 
 public class RemoveVariantHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<RemoveVariantCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<RemoveVariantCommand, ServiceResult>
 {
-    private readonly IProductRepository _productRepository = productRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
-
     public async Task<ServiceResult> Handle(
         RemoveVariantCommand request,
         CancellationToken ct)
     {
-        var product = await _productRepository.GetByIdWithVariantsAsync(request.ProductId, ct);
-        if (product == null)
+        var productId = ProductId.From(request.ProductId);
+        var userId = UserId.From(request.UserId);
+        var variantId = VariantId.From(request.VariantId);
+
+        var product = await productRepository.GetByIdAsync(productId, ct);
+        if (product is null)
             return ServiceResult.NotFound("Product not found.");
 
         try
         {
-            product.RemoveVariant(request.VariantId, _currentUserService.UserId);
+            product.RemoveVariant(variantId, userId);
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Unexpected(ex.Message);
+            return ServiceResult.Failure(ex.Message);
         }
 
-        _productRepository.Update(product);
-        await _unitOfWork.SaveChangesAsync(ct);
+        productRepository.Update(product);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        await _auditService.LogProductEventAsync(
+        await auditService.LogProductEventAsync(
             product.Id, "RemoveVariant",
-            $"Variant {request.VariantId} soft-deleted from product '{product.Name}'.",
-            _currentUserService.UserId);
+            $"Variant {variantId} soft-deleted from product '{product.Name}'.",
+            userId);
 
         return ServiceResult.Success();
     }

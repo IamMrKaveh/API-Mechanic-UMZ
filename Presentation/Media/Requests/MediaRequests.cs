@@ -5,5 +5,5 @@ public record SetPrimaryMediaRequest(Guid MediaId);
 public record ReorderMediaRequest(
     string EntityType,
     int EntityId,
-    ICollection<Guid> OrderedMediaIds
+    ICollection<int> OrderedMediaIds
 );

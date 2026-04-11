@@ -88,3 +88,28 @@ public record CategoryProductItemDto
     public string? ImageUrl { get; init; }
     public bool IsActive { get; init; }
 }
+
+public sealed record CreateCategoryDto(
+    string Name,
+    string? Slug,
+    string? Description,
+    int SortOrder = 0
+);
+
+public sealed record UpdateCategoryDto(
+    string Name,
+    string? Slug,
+    string? Description,
+    int SortOrder,
+    bool IsActive,
+    string RowVersion
+);
+
+public sealed record ReorderCategoriesDto(
+    IReadOnlyList<CategoryOrderItemDto> Items
+);
+
+public sealed record CategoryOrderItemDto(
+    Guid CategoryId,
+    int SortOrder
+);

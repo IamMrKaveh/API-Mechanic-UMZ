@@ -11,15 +11,18 @@ public sealed class TicketDomainService
     private static readonly string[] UrgentKeywords = ["فوری", "اورژانسی", "urgent", "بحرانی", "حیاتی", "critical"];
     private static readonly string[] HighKeywords = ["مهم", "ضروری", "سریع", "important", "asap"];
 
-    public TicketAccessResult ValidateUserAccess(Ticket ticket, UserId userId, bool isAdmin)
+    public TicketAccessResult ValidateUserAccess(
+        Ticket ticketId,
+        UserId userId,
+        bool isAdmin)
     {
-        Guard.Against.Null(ticket, nameof(ticket));
+        Guard.Against.Null(ticketId, nameof(ticketId));
         Guard.Against.Null(userId, nameof(userId));
 
         if (isAdmin)
             return TicketAccessResult.Allowed();
 
-        if (ticket.CustomerId != userId && ticket.AssignedAgentId != userId)
+        if (ticketId.CustomerId != userId && ticketId.AssignedAgentId != userId)
             return TicketAccessResult.Denied("شما دسترسی به این تیکت را ندارید.");
 
         return TicketAccessResult.Allowed();

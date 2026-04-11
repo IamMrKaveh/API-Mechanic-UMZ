@@ -7,4 +7,4 @@ public record GetTicketsQuery(
     string? Status,
     string? Priority,
     int Page = 1,
-    int Pagesize = 10) : IRequest<ServiceResult<PaginatedResult<TicketListItemDto>>>;
+    int PageSize = 10) : IRequest<ServiceResult<PaginatedResult<TicketListItemDto>>>;

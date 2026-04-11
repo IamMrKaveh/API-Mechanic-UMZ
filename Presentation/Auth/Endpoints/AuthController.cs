@@ -4,9 +4,9 @@ using Application.Auth.Features.Commands.LogoutAll;
 using Application.Auth.Features.Commands.RefreshToken;
 using Application.Auth.Features.Commands.SendOtp;
 using Application.Auth.Features.Commands.VerifyOtp;
+using Application.Auth.Features.Shared;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
-using Presentation.Auth.Requests;
 using Presentation.Common.Extensions;
 using System.Security.Claims;
 
@@ -16,61 +16,49 @@ namespace Presentation.Auth.Endpoints;
 [ApiController]
 public class AuthController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpPost("request-otp")]
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> RequestOtp(
-        [FromBody] SendOtpRequest request,
-        CancellationToken ct)
+    public async Task<IActionResult> RequestOtp([FromBody] SendOtpDto dto, CancellationToken ct)
     {
-        var command = new SendOtpCommand(
-            request.PhoneNumber,
-            HttpContextHelper.GetClientIpAddress(HttpContext));
-
-        var result = await _mediator.Send(command, ct);
+        var command = new SendOtpCommand(dto.PhoneNumber, HttpContextHelper.GetClientIpAddress(HttpContext));
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("verify-otp")]
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest request)
+    public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDto dto)
     {
         var command = new VerifyOtpCommand(
-            request.PhoneNumber,
-            request.Code,
+            dto.PhoneNumber,
+            dto.Code,
             HttpContextHelper.GetClientIpAddress(HttpContext),
             Request.Headers.UserAgent.ToString());
-
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpPost("refresh-token")]
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshRequest request)
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto dto)
     {
         var command = new RefreshTokenCommand(
-            request.RefreshToken,
+            dto.RefreshToken,
             HttpContextHelper.GetClientIpAddress(HttpContext),
             Request.Headers.UserAgent.ToString());
-
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> Logout([FromBody] RefreshRequest request)
+    public async Task<IActionResult> Logout([FromBody] RefreshTokenDto dto)
     {
-        var command = new LogoutCommand(
-            CurrentUser.UserId,
-            request.RefreshToken);
-
-        var result = await _mediator.Send(command);
+        var command = new LogoutCommand(CurrentUser.UserId, dto.RefreshToken);
+        var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
@@ -78,8 +66,7 @@ public class AuthController(IMediator mediator) : BaseApiController(mediator)
     [Authorize]
     public async Task<IActionResult> LogoutAll()
     {
-        var command = new LogoutAllCommand(CurrentUser.UserId);
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(new LogoutAllCommand(CurrentUser.UserId));
         return ToActionResult(result);
     }
 
@@ -109,7 +96,7 @@ public class AuthController(IMediator mediator) : BaseApiController(mediator)
             return BadRequest("Incomplete profile data from Google.");
 
         var command = new GoogleLoginCommand(email, firstName ?? "", lastName ?? "", providerKey);
-        var result = await _mediator.Send(command, ct);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 }

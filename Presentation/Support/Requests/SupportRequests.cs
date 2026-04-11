@@ -2,6 +2,7 @@
 
 public record CreateTicketRequest(
     string Subject,
+    string Category,
     string Priority,
     string Message
 );

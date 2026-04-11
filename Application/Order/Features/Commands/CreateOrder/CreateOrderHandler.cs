@@ -1,132 +1,145 @@
+using Application.Audit.Contracts;
+using Application.Common.Results;
+using Application.Discount.Contracts;
+using Application.Inventory.Contracts;
+using Application.Order.Features.Shared;
 using Domain.Common.Exceptions;
+using Domain.Common.Interfaces;
 using Domain.Common.ValueObjects;
-using Domain.Discount.Results;
 using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
 using Domain.Shipping.Interfaces;
+using Domain.Shipping.ValueObjects;
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
+using MediatR;
 
 namespace Application.Order.Features.Commands.CreateOrder;
 
 public class CreateOrderHandler(
-    IOrderRepository orderRepository,
-    IUserRepository userRepository,
-    IShippingRepository shippingRepository,
-    IDiscountService discountService,
-    IInventoryService inventoryService,
-    IUnitOfWork unitOfWork,
-    OrderDomainService orderDomainService,
-    IAuditService auditService,
-    ILogger<CreateOrderHandler> logger) : IRequestHandler<CreateOrderCommand, ServiceResult<int>>
+IOrderRepository orderRepository,
+IUserRepository userRepository,
+IShippingRepository shippingRepository,
+IDiscountService discountService,
+IInventoryService inventoryService,
+IUnitOfWork unitOfWork,
+IAuditService auditService) : IRequestHandler<CreateOrderCommand, ServiceResult>
 {
-    private readonly IOrderRepository _orderRepository = orderRepository;
-    private readonly IUserRepository _userRepository = userRepository;
-    private readonly IShippingRepository _shippingRepository = shippingRepository;
-    private readonly IDiscountService _discountService = discountService;
-    private readonly IInventoryService _inventoryService = inventoryService;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly OrderDomainService _orderDomainService = orderDomainService;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ILogger<CreateOrderHandler> _logger = logger;
-
-    public async Task<ServiceResult<int>> Handle(
-        CreateOrderCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(
+    CreateOrderCommand request,
+    CancellationToken ct)
     {
-        if (await _orderRepository.ExistsByIdempotencyKeyAsync(request.IdempotencyKey, ct))
+        var userAddressId = UserAddressId.From(request.UserAddressId);
+        var userId = UserId.From(request.UserId);
+        var shippingId = ShippingId.From(request.ShippingId);
+
+        if (await orderRepository.ExistsByIdempotencyKeyAsync(request.IdempotencyKey, ct))
             return ServiceResult<int>.Conflict("درخواست تکراری. سفارش قبلاً ثبت شده است.");
 
-        return await _unitOfWork.ExecuteStrategyAsync(async () =>
+        return await unitOfWork.ExecuteStrategyAsync(async () =>
         {
+            using var transaction = await unitOfWork.BeginTransactionAsync(ct);
             try
             {
-                var userAddress = await _userRepository.GetUserAddressAsync(
-                    request.Dto.UserAddressId, ct);
-                if (userAddress == null || userAddress.UserId != request.Dto.UserId)
-                    return ServiceResult<int>.Validation("آدرس کاربر نامعتبر است.");
-
-                var shipping = await _shippingRepository.GetByIdAsync(
-                    request.Dto.ShippingId, ct);
-                if (shipping == null || !shipping.IsActive)
-                    return ServiceResult<int>.Validation("روش ارسال انتخاب شده معتبر نیست.");
-
-                var orderItemSnapshots = new List<OrderItemSnapshot>();
-
-                foreach (var itemDto in request.Dto.OrderItems)
+                var userAddress = await userRepository.GetUserAddressAsync(userAddressId.Value.GetHashCode(), ct);
+                if (userAddress is null || userAddress.UserId.Value != userId.Value)
                 {
-                    orderItemSnapshots.Add(OrderItemSnapshot.Create(
-                        variantId: itemDto.VariantId,
-                        productId: 0,
-                        productName: "محصول",
-                        variantSku: null,
-                        variantAttributes: null,
-                        quantity: itemDto.Quantity,
-                        purchasePrice: 0,
-                        sellingPrice: itemDto.SellingPrice));
+                    await unitOfWork.RollbackTransactionAsync(ct);
+                    return ServiceResult<int>.Validation("آدرس کاربر نامعتبر است.");
                 }
 
-                DiscountApplicationResult? discountResult = null;
-                if (!string.IsNullOrEmpty(request.Dto.DiscountCode))
+                var shipping = await shippingRepository.GetByIdAsync(shippingId.Value.GetHashCode(), ct);
+                if (shipping is null || !shipping.IsActive)
                 {
-                    var totalAmount = orderItemSnapshots.Sum(x => x.SellingPrice.Amount * x.Quantity);
-                    var discountServiceResult = await _discountService.ValidateAndApplyDiscountAsync(
-                        request.Dto.DiscountCode, totalAmount, request.Dto.UserId);
+                    await unitOfWork.RollbackTransactionAsync(ct);
+                    return ServiceResult<int>.Validation("روش ارسال انتخاب شده معتبر نیست.");
+                }
+
+                var orderItemSnapshots = new List<OrderItemSnapshot>();
+                foreach (var item in request.OrderItems)
+                {
+                    orderItemSnapshots.Add(OrderItemSnapshot.Create(
+                        VariantId.From(item.VariantId),
+                        Domain.Product.ValueObjects.ProductId.NewId(),
+                        Domain.Product.ValueObjects.ProductName.Create("محصول نامشخص"),
+                        Domain.Variant.ValueObjects.Sku.Create("SKU-001"),
+                        Money.FromDecimal(item.SellingPrice, "IRT"),
+                        item.Quantity));
+                }
+
+                var totalAmount = orderItemSnapshots.Aggregate(Money.Zero("IRT"), (acc, x) => acc.Add(x.UnitPrice.Multiply(x.Quantity)));
+                var orderId = OrderId.NewId();
+                var discountAmountToApply = Money.Zero("IRT");
+                Domain.Discount.ValueObjects.DiscountCodeId? discountCodeIdToApply = null;
+
+                if (!string.IsNullOrEmpty(request.DiscountCode))
+                {
+                    var discountServiceResult = await discountService.ApplyDiscountAsync(
+                        request.DiscountCode, totalAmount, userId, orderId, ct);
 
                     if (discountServiceResult.IsSuccess && discountServiceResult.Value != null)
                     {
-                        discountResult = DiscountApplicationResult.Success(
-                            discountServiceResult.Value.DiscountCodeId,
-                            Money.FromDecimal(discountServiceResult.Value.DiscountAmount));
+                        discountAmountToApply = Money.FromDecimal(discountServiceResult.Value.DiscountAmount, "IRT");
+                        discountCodeIdToApply = Domain.Discount.ValueObjects.DiscountCodeId.NewId();
+                    }
+                    else
+                    {
+                        await unitOfWork.RollbackTransactionAsync(ct);
+                        return ServiceResult<int>.Validation(discountServiceResult.Error ?? "کد تخفیف نامعتبر است.");
                     }
                 }
 
-                var order = _orderDomainService.PlaceOrder(
-                    request.Dto.UserId,
-                    userAddress,
-                    request.Dto.ReceiverName,
-                    shipping,
-                    request.IdempotencyKey,
+                var receiverInfo = ReceiverInfo.Create(request.ReceiverName, userAddress.PhoneNumber.Value);
+                var deliveryAddress = DeliveryAddress.Create(userAddress.Province, userAddress.City, userAddress.Address, userAddress.PostalCode);
+                var shippingCost = shipping.CalculateCost(totalAmount);
+
+                var order = Domain.Order.Aggregates.Order.Place(
+                    orderId,
+                    userId,
+                    receiverInfo,
+                    deliveryAddress,
+                    shippingCost,
+                    discountAmountToApply,
+                    discountCodeIdToApply,
                     orderItemSnapshots,
-                    discountResult);
+                    Guid.Parse(request.IdempotencyKey));
 
-                await _orderRepository.AddAsync(order, ct);
-                await _unitOfWork.SaveChangesAsync(ct);
+                await orderRepository.AddAsync(order, ct);
+                await unitOfWork.SaveChangesAsync(ct);
 
-                foreach (var oi in order.OrderItems)
+                foreach (var oi in order.Items)
                 {
-                    await _inventoryService.LogTransactionAsync(
+                    await inventoryService.AdjustStockAsync(
                         oi.VariantId,
-                        "Sale",
-                        -oi.Quantity,
-                        oi.Id,
-                        order.UserId,
+                        Domain.Inventory.ValueObjects.StockQuantity.Create(oi.Quantity),
+                        UserId.From(request.AdminUserId),
                         "Admin Created Order",
-                        $"ORDER-{order.Id}",
-                        null,
-                        false,
                         ct);
                 }
 
-                await _unitOfWork.SaveChangesAsync(ct);
+                await unitOfWork.SaveChangesAsync(ct);
+                await unitOfWork.CommitTransactionAsync(ct);
 
-                await _auditService.LogOrderEventAsync(
+                await auditService.LogOrderEventAsync(
                     order.Id,
                     "AdminCreateOrder",
-                    request.AdminUserId,
-                    $"سفارش توسط مدیر ایجاد شد. شماره سفارش: {order.OrderNumber.Value}");
+                    IpAddress.Unknown,
+                    UserId.From(request.AdminUserId),
+                    $"سفارش توسط مدیر ایجاد شد. شماره سفارش: {order.OrderNumber.Value}",
+                    ct);
 
-                _logger.LogInformation(
-                    "Admin {AdminId} created order {OrderId} for user {UserId}",
-                    request.AdminUserId, order.Id, request.Dto.UserId);
-
-                return ServiceResult<int>.Success(order.Id);
+                return ServiceResult<int>.Success(order.Id.Value.GetHashCode());
             }
             catch (DomainException ex)
             {
+                await unitOfWork.RollbackTransactionAsync(ct);
                 return ServiceResult<int>.Failure(ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating admin order");
+                await unitOfWork.RollbackTransactionAsync(ct);
+                await auditService.LogSystemEventAsync("CreateOrderError", ex.Message);
                 return ServiceResult<int>.Failure("خطایی در ایجاد سفارش رخ داد.");
             }
         }, ct);

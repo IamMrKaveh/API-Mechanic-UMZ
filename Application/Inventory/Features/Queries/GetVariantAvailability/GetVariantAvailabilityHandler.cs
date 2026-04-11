@@ -6,32 +6,29 @@ public class GetVariantAvailabilityHandler(
     ILogger<GetVariantAvailabilityHandler> logger)
         : IRequestHandler<GetVariantAvailabilityQuery, ServiceResult<VariantAvailabilityDto>>
 {
-    private readonly ICacheService _cacheService = cacheService;
-    private readonly IInventoryQueryService _inventoryQueryService = inventoryQueryService;
-    private readonly ILogger<GetVariantAvailabilityHandler> _logger = logger;
-
     private static string CacheKey(int variantId) => $"inventory:availability:{variantId}";
 
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(2);
 
     public async Task<ServiceResult<VariantAvailabilityDto>> Handle(
-        GetVariantAvailabilityQuery request, CancellationToken cancellationToken)
+        GetVariantAvailabilityQuery request,
+        CancellationToken ct)
     {
         var key = CacheKey(request.VariantId);
 
         try
         {
-            var cached = await _cacheService.GetAsync<VariantAvailabilityDto>(key);
-            if (cached != null)
+            var cached = await cacheService.GetAsync<VariantAvailabilityDto>(key);
+            if (cached is not null)
                 return ServiceResult<VariantAvailabilityDto>.Success(cached);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Cache read failed for variant {VariantId}, falling back to DB", request.VariantId);
+            logger.LogWarning(ex, "Cache read failed for variant {VariantId}, falling back to DB", request.VariantId);
         }
 
-        var status = await _inventoryQueryService.GetVariantStatusAsync(request.VariantId, cancellationToken);
-        if (status == null)
+        var status = await inventoryQueryService.GetVariantStatusAsync(request.VariantId, ct);
+        if (status is null)
             return ServiceResult<VariantAvailabilityDto>.NotFound("واریانت یافت نشد.");
 
         var dto = new VariantAvailabilityDto
@@ -47,11 +44,11 @@ public class GetVariantAvailabilityHandler(
 
         try
         {
-            await _cacheService.SetAsync(key, dto, CacheTtl);
+            await cacheService.SetAsync(key, dto, CacheTtl, ct);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Cache write failed for variant {VariantId}", request.VariantId);
+            logger.LogWarning(ex, "Cache write failed for variant {VariantId}", request.VariantId);
         }
 
         return ServiceResult<VariantAvailabilityDto>.Success(dto);

@@ -1,20 +1,31 @@
 using Application.Support.Features.Shared;
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
+using Quartz.Util;
 
 namespace Application.Support.Features.Queries.GetTickets;
 
 public class GetTicketsHandler(
     ISupportQueryService supportQueryService) : IRequestHandler<GetTicketsQuery, ServiceResult<PaginatedResult<TicketListItemDto>>>
 {
-    private readonly ISupportQueryService _supportQueryService = supportQueryService;
-
     public async Task<ServiceResult<PaginatedResult<TicketListItemDto>>> Handle(
         GetTicketsQuery request,
         CancellationToken ct)
     {
-        var result = await _supportQueryService.GetTicketsPagedAsync(
-            request.UserId,
-            request.Status,
-            request.Priority,
+        var ticketPriority = request.Priority.IsNullOrWhiteSpace()
+            ? TicketPriority.Normal
+            : TicketPriority.FromString(request.Priority);
+
+        var ticketStatus = request.Status.IsNullOrWhiteSpace()
+            ? TicketStatus.Open
+            : TicketStatus.FromString(request.Status);
+
+        var userId = UserId.From(request.UserId.Value);
+
+        var result = await supportQueryService.GetTicketsPagedAsync(
+            userId,
+            ticketStatus,
+            ticketPriority,
             request.Page,
             request.PageSize,
             ct);

@@ -36,3 +36,18 @@ public record TicketMessageDto
     public string Content { get; init; } = string.Empty;
     public DateTime CreatedAt { get; init; }
 }
+
+public sealed record CreateTicketDto(
+    string Subject,
+    string Category,
+    string Message,
+    string Priority
+);
+
+public sealed record ReplyToTicketDto(
+    string Message
+);
+
+public sealed record CloseTicketDto(
+    bool IsAdmin = false
+);

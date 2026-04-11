@@ -1,32 +1,25 @@
-using Application.Common.Results;
-using Domain.Common.Interfaces;
+using Application.Audit.Contracts;
 using Domain.Inventory.Interfaces;
-using Domain.Inventory.Services;
-using Domain.Variant.ValueObjects;
-using MediatR;
-using Microsoft.Extensions.Logging;
 using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Features.Commands.AdjustStock;
 
 public class AdjustStockHandler(
     IInventoryRepository inventoryRepository,
-    InventoryDomainService inventoryDomainService,
     IUnitOfWork unitOfWork,
-    ILogger<AdjustStockHandler> logger) : IRequestHandler<AdjustStockCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<AdjustStockCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(AdjustStockCommand request, CancellationToken ct)
     {
-        var inventory = await inventoryRepository.GetByVariantIdAsync(VariantId.From(request.VariantId), ct);
+        var variantId = VariantId.From(request.VariantId);
+        var userId = UserId.From(request.UserId);
 
+        var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");
 
-        var result = inventoryDomainService.AdjustStock(
-            inventory,
-            request.QuantityChange,
-            UserId.From(request.UserId),
-            request.Reason);
+        var result = inventory.AdjustStock(request.QuantityChange, userId, request.Reason);
 
         if (result.IsFailure)
             return ServiceResult.Failure(result.Error.Message);
@@ -34,7 +27,11 @@ public class AdjustStockHandler(
         inventoryRepository.Update(inventory);
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("Stock adjusted for variant {VariantId} by {Change}", request.VariantId, request.QuantityChange);
+        await auditService.LogInventoryEventAsync(
+            variantId,
+            "AdjustStock",
+            $"تعدیل موجودی به مقدار {request.QuantityChange} واحد. دلیل: {request.Reason}",
+            userId);
 
         return ServiceResult.Success();
     }

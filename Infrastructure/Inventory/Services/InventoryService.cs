@@ -1,4 +1,3 @@
-using Application.Common.Results;
 using Application.Inventory.Contracts;
 using Domain.Common.Interfaces;
 using Domain.Inventory.Interfaces;

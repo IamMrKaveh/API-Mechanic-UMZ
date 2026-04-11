@@ -3,13 +3,11 @@ namespace Application.Media.Features.Queries.GetMediaById;
 public class GetMediaByIdHandler(IMediaQueryService mediaQueryService)
         : IRequestHandler<GetMediaByIdQuery, ServiceResult<MediaDetailDto?>>
 {
-    private readonly IMediaQueryService _mediaQueryService = mediaQueryService;
-
     public async Task<ServiceResult<MediaDetailDto?>> Handle(
         GetMediaByIdQuery request,
         CancellationToken ct)
     {
-        var result = await _mediaQueryService.GetMediaByIdAsync(
+        var result = await mediaQueryService.GetMediaByIdAsync(
             request.MediaId, ct);
 
         if (result is null)

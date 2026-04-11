@@ -1,43 +1,44 @@
 using Application.Common.Interfaces;
-using Domain.Common.Exceptions;
 using Domain.Product.Interfaces;
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Product.Features.Commands.ActivateProduct;
 
-public class ActivateProductHandler(
+public sealed class ActivateProductHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<ActivateProductCommand, ServiceResult>
+    ICurrentUserService currentUserService,
+    ILogger<ActivateProductHandler> logger) : IRequestHandler<ActivateProductCommand, ServiceResult>
 {
-    private readonly IProductRepository _productRepository = productRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
-
-    public async Task<ServiceResult> Handle(ActivateProductCommand request, CancellationToken ct)
+    public async Task<ServiceResult> Handle(
+        ActivateProductCommand request,
+        CancellationToken ct)
     {
-        var product = await _productRepository.GetByIdWithVariantsAsync(request.ProductId, ct);
-        if (product == null)
-            return ServiceResult.NotFound("Product not found.");
+        var productId = ProductId.From(request.ProductId);
+        var product = await productRepository.GetByIdAsync(productId, ct);
+        if (product is null)
+            return ServiceResult.NotFound("محصول یافت نشد.");
 
-        try
-        {
-            product.Activate();
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult.Unexpected(ex.Message);
-        }
+        if (product.IsActive)
+            return ServiceResult.Conflict("محصول از قبل فعال است.");
 
-        _productRepository.Update(product);
-        await _unitOfWork.SaveChangesAsync(ct);
+        product.Activate();
+        productRepository.Update(product);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        await _auditService.LogProductEventAsync(
+        logger.LogInformation(
+            "Product {ProductId} activated by user {UserId}",
+            request.ProductId,
+            request.ActivatedByUserId);
+
+        await auditService.LogProductEventAsync(
             product.Id,
             "ActivateProduct",
             $"Product '{product.Name}' activated.",
-            _currentUserService.CurrentUser.UserId);
+            UserId.From(request.ActivatedByUserId));
 
         return ServiceResult.Success();
     }

@@ -12,11 +12,14 @@ public class UpdateShippingHandler(
 {
     public async Task<ServiceResult<ShippingDto>> Handle(UpdateShippingCommand request, CancellationToken ct)
     {
-        var shipping = await shippingRepository.GetByIdAsync(ShippingId.From(request.Id), ct);
+        var shippingId = ShippingId.From(request.Id);
+        var shippingName = ShippingName.Create(request.Name);
+
+        var shipping = await shippingRepository.GetByIdAsync(shippingId, ct);
         if (shipping is null)
             return ServiceResult<ShippingDto>.NotFound("روش ارسال یافت نشد.");
 
-        if (await shippingRepository.ExistsByNameAsync(request.Name, request.Id, ct))
+        if (await shippingRepository.ExistsByNameAsync(shippingName, shippingId, ct))
             return ServiceResult<ShippingDto>.Conflict("روش ارسال با این نام قبلاً ثبت شده است.");
 
         shipping.Update(

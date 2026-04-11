@@ -6,15 +6,13 @@ namespace Application.User.Features.Queries.GetUserDashboard;
 public class GetUserDashboardHandler(IUserQueryService userQueryService)
         : IRequestHandler<GetUserDashboardQuery, ServiceResult<UserDashboardDto>>
 {
-    private readonly IUserQueryService _userQueryService = userQueryService;
-
     public async Task<ServiceResult<UserDashboardDto>> Handle(
         GetUserDashboardQuery request,
         CancellationToken ct)
     {
         var userId = UserId.From(request.UserId);
 
-        var dashboard = await _userQueryService.GetUserDashboardAsync(
+        var dashboard = await userQueryService.GetUserDashboardAsync(
             userId,
             ct);
 

@@ -4,8 +4,6 @@ public class GetInventoryStatusValidator : AbstractValidator<GetInventoryStatusQ
 {
     public GetInventoryStatusValidator()
     {
-        RuleFor(x => x.VariantId)
-            .GreaterThan(0)
-            .WithMessage("شناسه واریانت باید بزرگتر از صفر باشد.");
+        RuleFor(x => x.VariantId).NotEmpty().WithMessage("شناسه واریانت الزامی است.");
     }
 }

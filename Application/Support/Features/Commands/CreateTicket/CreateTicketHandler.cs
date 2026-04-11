@@ -14,7 +14,7 @@ public class CreateTicketHandler(
 {
     public async Task<ServiceResult<TicketDto>> Handle(CreateTicketCommand request, CancellationToken ct)
     {
-        var category = TicketCategory.FromString(request.Category);
+        var category = TicketCategory.Create(request.Category);
         var priority = string.IsNullOrWhiteSpace(request.Priority)
             ? TicketPriority.Normal
             : TicketPriority.FromString(request.Priority);

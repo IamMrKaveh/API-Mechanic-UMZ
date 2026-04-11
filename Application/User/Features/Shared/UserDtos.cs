@@ -11,18 +11,6 @@ public record UserActivityDto
     public string IpAddress { get; init; } = string.Empty;
 }
 
-public record UpdateUserAddressDto
-{
-    public string Title { get; init; } = string.Empty;
-    public string ReceiverName { get; init; } = string.Empty;
-    public string PhoneNumber { get; init; } = null!;
-    public string Province { get; init; } = string.Empty;
-    public string City { get; init; } = string.Empty;
-    public string Address { get; init; } = null!;
-    public string PostalCode { get; init; } = string.Empty;
-    public bool IsDefault { get; init; }
-}
-
 public record ChangeUserStatusDto
 {
     public bool IsActive { get; init; }
@@ -95,13 +83,6 @@ public record UserDashboardDto
     public DateTime MemberSince { get; set; }
 }
 
-public record UpdateProfileDto
-{
-    public string? FirstName { get; init; }
-    public string? LastName { get; init; }
-    public string? Email { get; init; }
-}
-
 public record ChangePasswordDto
 {
     public string CurrentPassword { get; init; } = string.Empty;
@@ -122,3 +103,35 @@ public record CreateUserAddressDto
     public decimal? Latitude { get; init; }
     public decimal? Longitude { get; init; }
 }
+
+public sealed record UpdateProfileDto(
+    string? FirstName,
+    string? LastName,
+    string? PhoneNumber
+);
+
+public sealed record AddUserAddressDto(
+    string Title,
+    string ReceiverName,
+    string PhoneNumber,
+    string Province,
+    string City,
+    string Address,
+    string PostalCode,
+    bool IsDefault = false,
+    decimal? Latitude = null,
+    decimal? Longitude = null
+);
+
+public sealed record UpdateUserAddressDto(
+    string Title,
+    string ReceiverName,
+    string PhoneNumber,
+    string Province,
+    string City,
+    string Address,
+    string PostalCode,
+    bool IsDefault,
+    decimal? Latitude = null,
+    decimal? Longitude = null
+);

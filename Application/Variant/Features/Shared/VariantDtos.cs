@@ -91,3 +91,42 @@ public sealed record CreateProductVariantDto(
     List<int> AttributeValueIds,
     List<int>? EnabledShippingIds
 );
+
+public sealed record AddVariantDto(
+    string? Sku,
+    decimal PurchasePrice,
+    decimal SellingPrice,
+    decimal OriginalPrice,
+    int Stock = 0,
+    bool IsUnlimited = false,
+    decimal ShippingMultiplier = 1,
+    ICollection<Guid>? AttributeValueIds = null,
+    ICollection<Guid>? EnabledShippingIds = null
+);
+
+public sealed record UpdateVariantDto(
+    string? Sku,
+    decimal PurchasePrice,
+    decimal SellingPrice,
+    decimal OriginalPrice,
+    int Stock = 0,
+    bool IsUnlimited = false,
+    decimal ShippingMultiplier = 1,
+    ICollection<Guid>? AttributeValueIds = null,
+    ICollection<Guid>? EnabledShippingIds = null
+);
+
+public sealed record AddStockDto(
+    int Quantity,
+    string Notes
+);
+
+public sealed record RemoveStockDto(
+    int Quantity,
+    string Notes
+);
+
+public sealed record UpdateVariantShippingDto(
+    decimal ShippingMultiplier,
+    ICollection<Guid> EnabledShippingIds
+);

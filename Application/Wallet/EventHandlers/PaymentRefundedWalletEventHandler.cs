@@ -1,52 +1,45 @@
-﻿using Domain.Wallet.Enums;
+﻿using Application.Wallet.Features.Commands.CreditWallet;
+using Domain.Payment.Events;
+using Domain.Wallet.Enums;
 
 namespace Application.Wallet.EventHandlers;
 
 /// <summary>
 /// هنگام استرداد وجه، مستقیماً کیف پول کاربر را شارژ می‌کند.
 /// </summary>
-public class PaymentRefundedWalletEventHandler : INotificationHandler<PaymentRefundedEvent>
+public class PaymentRefundedWalletEventHandler(
+    IMediator mediator,
+    ILogger<PaymentRefundedWalletEventHandler> logger) : INotificationHandler<PaymentRefundedEvent>
 {
-    private readonly IMediator _mediator;
-    private readonly ILogger<PaymentRefundedWalletEventHandler> _logger;
-
-    public PaymentRefundedWalletEventHandler(
-        IMediator mediator,
-        ILogger<PaymentRefundedWalletEventHandler> logger)
-    {
-        _mediator = mediator;
-        _logger = logger;
-    }
-
     public async Task Handle(PaymentRefundedEvent notification, CancellationToken cancellationToken)
     {
         try
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "[WalletRefund] PaymentRefunded: TransactionId={TxId}, OrderId={OrderId}, UserId={UserId}, Amount={Amount}",
                 notification.TransactionId, notification.OrderId, notification.UserId, notification.Amount);
 
             var command = new CreditWalletCommand(
-                UserId: notification.UserId,
-                Amount: notification.Amount,
-                TransactionType: WalletTransactionType.Refund,
-                ReferenceType: WalletReferenceType.Payment,
-                ReferenceId: notification.TransactionId,
-                IdempotencyKey: $"refund-payment-{notification.TransactionId}",
-                Description: "استرداد وجه به کیف پول"
+                notification.UserId,
+                notification.Amount,
+                WalletTransactionType.Refund,
+                WalletReferenceType.Payment,
+                notification.TransactionId,
+                $"refund-payment-{notification.TransactionId}",
+                "استرداد وجه به کیف پول"
             );
 
-            var result = await _mediator.Send(command, cancellationToken);
+            var result = await mediator.Send(command, cancellationToken);
             if (result.IsFailed)
             {
-                _logger.LogError(
+                logger.LogError(
                     "[WalletRefund] CreditWalletCommand failed for TransactionId={TxId}: {Error}",
                     notification.TransactionId, result.Error);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            logger.LogError(ex,
                 "Error handling PaymentRefundedEvent for wallet, TransactionId={TxId}",
                 notification.TransactionId);
         }

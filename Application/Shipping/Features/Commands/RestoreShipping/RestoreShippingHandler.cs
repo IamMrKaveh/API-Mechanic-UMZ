@@ -1,38 +1,34 @@
-using Application.Common.Interfaces;
 using Domain.Shipping.Interfaces;
+using Domain.Shipping.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Shipping.Features.Commands.RestoreShipping;
 
 public class RestoreShippingHandler(
     IShippingRepository shippingMethodRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<RestoreShippingCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<RestoreShippingCommand, ServiceResult>
 {
-    private readonly IShippingRepository _shippingMethodRepository = shippingMethodRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
-
     public async Task<ServiceResult> Handle(
         RestoreShippingCommand request,
         CancellationToken ct)
     {
-        var method = await _shippingMethodRepository.GetByIdAsync(request.Id, ct);
-        if (method == null)
+        var shippingId = ShippingId.From(request.Id);
+        var adminId = UserId.From(request.CurrentUserId);
+
+        var shipping = await shippingMethodRepository.GetByIdAsync(shippingId, ct);
+        if (shipping is null)
             return ServiceResult.NotFound("روش ارسال یافت نشد.");
 
-        method.Restore();
+        shipping.Restore();
 
-        _shippingMethodRepository.Update(method);
-        await _unitOfWork.SaveChangesAsync(ct);
+        shippingMethodRepository.Update(shipping);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        await _auditService.LogAdminEventAsync(
+        await auditService.LogAdminEventAsync(
             "RestoreShippingMethod",
-            request.CurrentUserId,
-            $"Restored shipping method ID: {request.Id}",
-            _currentUserService.CurrentUser.IpAddress,
-            _currentUserService.UserAgent);
+            adminId,
+            $"Restored shipping method ID: {request.Id}");
 
         return ServiceResult.Success();
     }

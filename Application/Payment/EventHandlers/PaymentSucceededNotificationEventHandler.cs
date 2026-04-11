@@ -1,4 +1,3 @@
-using Application.Notification.Contracts;
 using Domain.Payment.Events;
 
 namespace Application.Payment.EventHandlers;

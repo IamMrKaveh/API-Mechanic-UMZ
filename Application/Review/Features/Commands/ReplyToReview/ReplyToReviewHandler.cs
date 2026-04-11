@@ -1,51 +1,44 @@
-using Application.Common.Interfaces;
 using Domain.Common.Exceptions;
 using Domain.Review.Interfaces;
+using Domain.Review.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Review.Features.Commands.ReplyToReview;
 
 public class ReplyToReviewHandler(
     IReviewRepository reviewRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService,
-    ILogger<ReplyToReviewHandler> logger) : IRequestHandler<ReplyToReviewCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<ReplyToReviewCommand, ServiceResult>
 {
-    private readonly IReviewRepository _reviewRepository = reviewRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
-    private readonly ILogger<ReplyToReviewHandler> _logger = logger;
-
     public async Task<ServiceResult> Handle(
         ReplyToReviewCommand request,
         CancellationToken ct)
     {
-        var review = await _reviewRepository.GetByIdAsync(request.ReviewId, ct);
-        if (review == null)
+        var reviewId = ReviewId.From(request.ReviewId);
+        var userId = UserId.From(request.UserId);
+
+        var review = await reviewRepository.GetByIdAsync(reviewId, ct);
+        if (review is null)
             return ServiceResult.NotFound("نظر یافت نشد.");
 
         try
         {
             review.AddAdminReply(request.Reply);
 
-            _reviewRepository.Update(review);
-            await _unitOfWork.SaveChangesAsync(ct);
+            reviewRepository.Update(review);
+            await unitOfWork.SaveChangesAsync(ct);
 
-            await _auditService.LogProductEventAsync(
+            await auditService.LogProductEventAsync(
                 review.ProductId,
                 "ReplyToReview",
                 $"Admin replied to review {request.ReviewId}.",
-                _currentUserService.CurrentUser.UserId);
-
-            _logger.LogInformation("Admin {UserId} replied to review {ReviewId}",
-                _currentUserService.CurrentUser.UserId, request.ReviewId);
+                userId);
 
             return ServiceResult.Success();
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Unexpected(ex.Message);
+            return ServiceResult.Failure(ex.Message);
         }
     }
 }

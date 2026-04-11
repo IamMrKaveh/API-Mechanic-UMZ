@@ -1,6 +1,8 @@
-using Domain.Support.Exceptions;
+using Application.Support.Features.Shared;
 using Domain.Support.Interfaces;
 using Domain.Support.Services;
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Support.Features.Queries.GetTicketDetails;
 
@@ -8,31 +10,29 @@ public sealed class GetTicketDetailsHandler(
     ITicketRepository ticketRepository,
     ISupportQueryService ticketQueryService,
     TicketDomainService ticketDomainService)
-        : IRequestHandler<GetTicketDetailsQuery, ServiceResult<TicketDetailDto>>
+        : IRequestHandler<GetTicketDetailsQuery, ServiceResult<TicketDto>>
 {
-    private readonly ITicketRepository _ticketRepository = ticketRepository;
-    private readonly ISupportQueryService _ticketQueryService = ticketQueryService;
-    private readonly TicketDomainService _ticketDomainService = ticketDomainService;
-
-    public async Task<ServiceResult<TicketDetailDto>> Handle(
+    public async Task<ServiceResult<TicketDto>> Handle(
         GetTicketDetailsQuery request,
         CancellationToken ct)
     {
-        var ticket = await _ticketRepository.GetByIdWithMessagesAsync(request.Ticket, ct)
-            ?? throw new TicketNotFoundException(request.Ticket);
+        var ticketId = TicketId.From(request.TicketId);
+        var userId = UserId.From(request.UserId);
+
+        var ticket = await ticketRepository.GetByIdWithMessagesAsync(ticketId, ct);
 
         if (ticket is null)
-            return ServiceResult<TicketDetailDto>.NotFound("تیکت یافت نشد.");
+            return ServiceResult<TicketDto>.NotFound("تیکت یافت نشد.");
 
-        var (HasAccess, _) = _ticketDomainService.ValidateUserAccess(ticket, request.UserId, request.IsAdmin);
-        if (!HasAccess)
-            throw new TicketAccessDeniedException(request.Ticket, request.UserId);
+        var result = ticketDomainService.ValidateUserAccess(ticket, userId, request.IsAdmin);
+        if (!result.HasAccess)
+            return ServiceResult<TicketDto>.Forbidden("شما دسترسی به این تیکت را ندارید");
 
-        var dto = await _ticketQueryService.GetTicketDetailAsync(request.Ticket, ct);
+        var dto = await ticketQueryService.GetTicketDetailAsync(ticketId, ct);
 
         if (dto is null)
-            return ServiceResult<TicketDetailDto>.NotFound("تیکت یافت نشد.");
+            return ServiceResult<TicketDto>.NotFound("تیکت یافت نشد.");
 
-        return ServiceResult<TicketDetailDto>.Success(dto);
+        return ServiceResult<TicketDto>.Success(dto);
     }
 }

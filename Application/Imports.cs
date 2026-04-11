@@ -29,7 +29,6 @@ global using FluentValidation;
 global using MapsterMapper;
 global using MediatR;
 global using Microsoft.Extensions.DependencyInjection;
-global using Microsoft.Extensions.Logging;
 global using SharedKernel.Models;
 global using System.ComponentModel.DataAnnotations;
 global using System.Data;

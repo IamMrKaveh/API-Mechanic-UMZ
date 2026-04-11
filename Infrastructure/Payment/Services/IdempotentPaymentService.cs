@@ -1,5 +1,4 @@
 using Application.Cache.Contracts;
-using Application.Common.Results;
 using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
 using Domain.Common.Interfaces;

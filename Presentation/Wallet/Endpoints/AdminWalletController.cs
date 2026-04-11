@@ -2,8 +2,8 @@
 using Application.Wallet.Features.Commands.DebitWallet;
 using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
+using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
-using Presentation.Wallet.Requests;
 
 namespace Presentation.Wallet.Endpoints;
 
@@ -13,12 +13,10 @@ namespace Presentation.Wallet.Endpoints;
 [EnableRateLimiting("admin-wallet")]
 public class AdminWalletController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet("{userId}/balance")]
     public async Task<IActionResult> GetBalance(Guid userId, CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetWalletBalanceQuery(userId), ct);
+        var result = await Mediator.Send(new GetWalletBalanceQuery(userId), ct);
         return ToActionResult(result);
     }
 
@@ -29,67 +27,43 @@ public class AdminWalletController(IMediator mediator) : BaseApiController(media
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var command = new GetWalletLedgerQuery(
-            userId,
-            page,
-            pageSize);
-        var result = await _mediator.Send(
-            command,
-            ct);
+        var result = await Mediator.Send(new GetWalletLedgerQuery(userId, page, pageSize), ct);
         return ToActionResult(result);
     }
 
     [HttpPost("{userId}/credit")]
-    public async Task<IActionResult> Credit(
-        Guid userId,
-        [FromBody] AdminWalletAdjustmentRequest request,
-        CancellationToken ct)
+    public async Task<IActionResult> Credit(Guid userId, [FromBody] AdminWalletAdjustmentDto dto, CancellationToken ct)
     {
-        var adminId = CurrentUser.UserId;
-        var correlationId = HttpContext.TraceIdentifier;
-
         var command = new CreditWalletCommand(
-            UserId: userId,
-            Amount: request.Amount,
-            TransactionType: WalletTransactionType.Credit,
-            ReferenceType: WalletReferenceType.Admin,
-            ReferenceId: 0,
-            IdempotencyKey: $"admin-credit-{userId}-{correlationId}",
-            CorrelationId: correlationId,
-            Description: BuildAuditDescription("CREDIT", adminId, request.Reason, request.Description));
-
-        var result = await _mediator.Send(command, ct);
+            userId,
+            dto.Amount,
+            WalletTransactionType.Credit,
+            WalletReferenceType.Admin,
+            "0",
+            $"admin-credit-{userId}-{HttpContext.TraceIdentifier}",
+            HttpContext.TraceIdentifier,
+            BuildAuditDescription("CREDIT", CurrentUser.UserId, dto.Reason, dto.Description));
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("{userId}/debit")]
-    public async Task<IActionResult> Debit(
-        Guid userId,
-        [FromBody] AdminWalletAdjustmentRequest request,
-        CancellationToken ct)
+    public async Task<IActionResult> Debit(Guid userId, [FromBody] AdminWalletAdjustmentDto dto, CancellationToken ct)
     {
-        var adminId = CurrentUser.UserId;
-        var correlationId = HttpContext.TraceIdentifier;
-
         var command = new DebitWalletCommand(
             userId,
-            request.Amount,
+            dto.Amount,
             WalletTransactionType.Debit,
             WalletReferenceType.Admin,
-            ReferenceId: adminId,
-            IdempotencyKey: $"admin-debit-{userId}-{correlationId}",
-            CorrelationId: correlationId,
-            Description: BuildAuditDescription("DEBIT", adminId, request.Reason, request.Description));
-
-        var result = await _mediator.Send(command, ct);
+            CurrentUser.UserId.ToString(),
+            $"admin-debit-{userId}-{HttpContext.TraceIdentifier}",
+            HttpContext.TraceIdentifier,
+            BuildAuditDescription("DEBIT", CurrentUser.UserId, dto.Reason, dto.Description));
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    private static string BuildAuditDescription(
-        string operation,
-        Guid adminId,
-        string reason,
-        string? extraNote)
+    private static string BuildAuditDescription(string operation, Guid adminId, string reason, string? extraNote)
     {
         var sb = new StringBuilder();
         sb.Append($"[ADMIN-{operation}] AdminId={adminId} | Reason={reason}");

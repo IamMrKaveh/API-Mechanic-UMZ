@@ -1,59 +1,74 @@
-using Application.Common.Results;
-using Domain.Common.Interfaces;
+using Application.Audit.Contracts;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
-using Domain.Variant.ValueObjects;
-using MediatR;
-using Microsoft.Extensions.Logging;
+using Domain.Inventory.ValueObjects;
 using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Features.Commands.BulkStockIn;
 
 public class BulkStockInHandler(
     IInventoryRepository inventoryRepository,
-    InventoryDomainService inventoryDomainService,
     IUnitOfWork unitOfWork,
-    ILogger<BulkStockInHandler> logger) : IRequestHandler<BulkStockInCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<BulkStockInCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(BulkStockInCommand request, CancellationToken ct)
     {
-        var errors = new List<string>();
+        var userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
 
-        var items = request.VariantIds
-            .Zip(request.Quantities, (v, q) => new { VariantId = v, Quantity = q })
-            .Zip(request.ReferenceNumbers ?? Enumerable.Repeat((string?)null, request.VariantIds.Count),
-                 (vq, r) => new { vq.VariantId, vq.Quantity, Reference = r })
-            .ToList();
+        using var transaction = await unitOfWork.BeginTransactionAsync(ct);
 
-        foreach (var item in items)
+        try
         {
-            var inventory = await inventoryRepository.GetByVariantIdAsync(VariantId.From(item.VariantId), ct);
+            var errors = new List<string>();
 
-            if (inventory is null)
+            foreach (var item in request.Items)
             {
-                errors.Add($"موجودی برای واریانت {item.VariantId} یافت نشد.");
-                continue;
+                var variantId = VariantId.From(item.VariantId);
+                var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
+
+                if (inventory is null)
+                {
+                    errors.Add($"موجودی برای واریانت {item.VariantId} یافت نشد.");
+                    continue;
+                }
+
+                var stockQuantity = StockQuantity.Create(item.Quantity);
+                var result = InventoryDomainService.IncreaseStock(inventory, stockQuantity, request.Reason, userId);
+
+                if (result.IsFailure)
+                {
+                    errors.Add($"واریانت {item.VariantId}: {result.Error.Message}");
+                    continue;
+                }
+
+                inventoryRepository.Update(inventory);
             }
 
-            var userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
-
-            var result = inventory.IncreaseStock(item.Quantity, request.Reason, userId, item.Reference);
-
-            if (result.IsFailure)
+            if (errors.Count > 0)
             {
-                errors.Add($"واریانت {item.VariantId}: {result.Error.Message}");
-                continue;
+                await unitOfWork.RollbackTransactionAsync(ct);
+                return ServiceResult.Failure(string.Join(" | ", errors));
             }
 
-            inventoryRepository.Update(inventory);
+            await unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.CommitTransactionAsync(ct);
+
+            if (userId is not null && request.Items.Count > 0)
+            {
+                await auditService.LogInventoryEventAsync(
+                    VariantId.From(request.Items[0].VariantId),
+                    "BulkStockIn",
+                    $"ورود دسته‌ای موجودی برای {request.Items.Count} واریانت. دلیل: {request.Reason}",
+                    userId);
+            }
+
+            return ServiceResult.Success();
         }
-
-        if (errors.Count > 0)
-            return ServiceResult.Failure(string.Join(" | ", errors));
-
-        await unitOfWork.SaveChangesAsync(ct);
-        logger.LogInformation("Bulk stock in completed for {Count} variants", request.VariantIds.Count);
-
-        return ServiceResult.Success();
+        catch
+        {
+            await unitOfWork.RollbackTransactionAsync(ct);
+            throw;
+        }
     }
 }

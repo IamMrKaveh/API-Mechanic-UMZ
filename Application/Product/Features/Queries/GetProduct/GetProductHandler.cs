@@ -1,19 +1,21 @@
+using Application.Product.Contracts;
 using Application.Product.Features.Shared;
+using Domain.Product.ValueObjects;
 
 namespace Application.Product.Features.Queries.GetProduct;
 
-public class GetProductHandler(
+public sealed class GetProductHandler(
     IProductQueryService productQueryService) : IRequestHandler<GetProductQuery, ServiceResult<ProductDetailDto>>
 {
-    private readonly IProductQueryService _productQueryService = productQueryService;
-
     public async Task<ServiceResult<ProductDetailDto>> Handle(
         GetProductQuery request,
         CancellationToken ct)
     {
-        var product = await _productQueryService.GetProductDetailAsync(request.Id, ct);
-        return product is null
+        var productId = ProductId.From(request.Id);
+        var dto = await productQueryService.GetProductDetailAsync(productId, ct);
+
+        return dto is null
             ? ServiceResult<ProductDetailDto>.NotFound("محصول یافت نشد.")
-            : ServiceResult<ProductDetailDto>.Success(product);
+            : ServiceResult<ProductDetailDto>.Success(dto);
     }
 }

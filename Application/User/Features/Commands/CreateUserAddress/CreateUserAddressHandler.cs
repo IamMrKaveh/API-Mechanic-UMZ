@@ -12,7 +12,9 @@ public class CreateUserAddressHandler(
     public async Task<ServiceResult<UserAddressDto>> Handle(
         CreateUserAddressCommand request, CancellationToken ct)
     {
-        var user = await userRepository.GetWithAddressesAsync(UserId.From(request.UserId), ct);
+        var userId = UserId.From(request.UserId);
+
+        var user = await userRepository.GetWithAddressesAsync(userId, ct);
         if (user is null)
             return ServiceResult<UserAddressDto>.NotFound("کاربر یافت نشد.");
 

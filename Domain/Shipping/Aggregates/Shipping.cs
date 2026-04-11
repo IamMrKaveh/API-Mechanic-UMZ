@@ -238,4 +238,9 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
     {
         return FreeShipping.QualifiesForFreeShipping(orderTotal);
     }
+
+    public void Restore()
+    {
+        throw new NotImplementedException();
+    }
 }

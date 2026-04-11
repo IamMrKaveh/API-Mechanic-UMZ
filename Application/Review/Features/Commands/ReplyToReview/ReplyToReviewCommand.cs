@@ -1,5 +1,6 @@
-using Application.Common.Results;
-
 namespace Application.Review.Features.Commands.ReplyToReview;
 
-public record ReplyToReviewCommand(Guid ReviewId, string Reply) : IRequest<ServiceResult>;
+public record ReplyToReviewCommand(
+    Guid ReviewId,
+    string Reply,
+    Guid UserId) : IRequest<ServiceResult>;

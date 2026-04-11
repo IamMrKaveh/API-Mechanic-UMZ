@@ -8,6 +8,11 @@ public class AddToCartValidator : AbstractValidator<AddToCartCommand>
             .Must(x => x.UserId.HasValue || !string.IsNullOrWhiteSpace(x.GuestToken))
             .WithMessage("UserId یا GuestToken الزامی است.");
 
+        RuleFor(x => x.GuestToken)
+            .MinimumLength(8)
+            .When(x => !string.IsNullOrWhiteSpace(x.GuestToken))
+            .WithMessage("توکن مهمان باید حداقل ۸ کاراکتر باشد.");
+
         RuleFor(x => x.VariantId)
             .NotEmpty().WithMessage("شناسه محصول الزامی است.");
 

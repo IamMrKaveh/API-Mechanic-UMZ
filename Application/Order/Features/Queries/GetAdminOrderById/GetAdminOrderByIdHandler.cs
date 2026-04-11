@@ -4,13 +4,11 @@ namespace Application.Order.Features.Queries.GetAdminOrderById;
 
 public class GetAdminOrderByIdHandler(IOrderQueryService orderQueryService) : IRequestHandler<GetAdminOrderByIdQuery, ServiceResult<AdminOrderDto>>
 {
-    private readonly IOrderQueryService _orderQueryService = orderQueryService;
-
     public async Task<ServiceResult<AdminOrderDto>> Handle(
         GetAdminOrderByIdQuery request,
         CancellationToken ct)
     {
-        var order = await _orderQueryService.GetAdminOrderDetailsAsync(
+        var order = await orderQueryService.GetAdminOrderDetailsAsync(
             request.OrderId,
             ct);
 

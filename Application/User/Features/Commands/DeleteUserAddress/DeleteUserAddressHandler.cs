@@ -10,13 +10,16 @@ public class DeleteUserAddressHandler(
 {
     public async Task<ServiceResult> Handle(DeleteUserAddressCommand request, CancellationToken ct)
     {
-        var user = await userRepository.GetWithAddressesAsync(UserId.From(request.UserId), ct);
+        var userId = UserId.From(request.UserId);
+        var addressId = UserAddressId.From(request.AddressId);
+
+        var user = await userRepository.GetWithAddressesAsync(userId, ct);
         if (user is null)
             return ServiceResult.NotFound("کاربر یافت نشد.");
 
         try
         {
-            user.RemoveAddress(UserAddressId.From(request.AddressId));
+            user.RemoveAddress(addressId);
             userRepository.Update(user);
             await unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();

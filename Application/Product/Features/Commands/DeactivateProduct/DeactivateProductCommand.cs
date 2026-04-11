@@ -1,3 +1,5 @@
 namespace Application.Product.Features.Commands.DeactivateProduct;
 
-public record DeactivateProductCommand(Guid ProductId) : IRequest<ServiceResult>;
+public record DeactivateProductCommand(
+    Guid ProductId,
+    Guid DeactivatedByUserId) : IRequest<ServiceResult>;

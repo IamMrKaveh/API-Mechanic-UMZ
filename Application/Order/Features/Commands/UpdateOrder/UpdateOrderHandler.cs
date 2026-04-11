@@ -7,22 +7,16 @@ namespace Application.Order.Features.Commands.UpdateOrder;
 public class UpdateOrderHandler(
     IOrderRepository orderRepository,
     IShippingRepository shippingRepository,
-    IUnitOfWork unitOfWork,
-    ILogger<UpdateOrderHandler> logger) : IRequestHandler<UpdateOrderCommand, ServiceResult>
+    IUnitOfWork unitOfWork) : IRequestHandler<UpdateOrderCommand, ServiceResult>
 {
-    private readonly IOrderRepository _orderRepository = orderRepository;
-    private readonly IShippingRepository _shippingRepository = shippingRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ILogger<UpdateOrderHandler> _logger = logger;
-
     public async Task<ServiceResult> Handle(UpdateOrderCommand request, CancellationToken ct)
     {
-        var order = await _orderRepository.FindByIdAsync(request.OrderId, ct);
-        if (order == null)
+        var order = await orderRepository.FindByIdAsync(request.OrderId, ct);
+        if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
         if (!string.IsNullOrEmpty(request.Dto.RowVersion))
-            _orderRepository.SetOriginalRowVersion(order, Convert.FromBase64String(request.Dto.RowVersion));
+            orderRepository.SetOriginalRowVersion(order, Convert.FromBase64String(request.Dto.RowVersion));
 
         if (!order.CanBeModified())
             return ServiceResult.Forbidden("این سفارش قابل ویرایش نیست.");
@@ -31,24 +25,24 @@ public class UpdateOrderHandler(
         {
             if (request.Dto.ShippingId.HasValue)
             {
-                var shipping = await _shippingRepository.GetByIdAsync(
+                var shipping = await shippingRepository.GetByIdAsync(
                     request.Dto.ShippingId.Value, ct);
 
                 if (shipping == null || !shipping.IsActive)
-                    return ServiceResult.Unexpected("روش ارسال نامعتبر است.");
+                    return ServiceResult.Failure("روش ارسال نامعتبر است.");
 
                 var shippingCost = shipping.CalculateCost(order.TotalAmount);
                 order.UpdateShipping(shipping.Id, shippingCost);
             }
 
-            await _orderRepository.UpdateAsync(order, ct);
-            await _unitOfWork.SaveChangesAsync(ct);
+            await orderRepository.Update(order);
+            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult.Success();
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Unexpected(ex.Message);
+            return ServiceResult.Failure(ex.Message);
         }
         catch (ConcurrencyException)
         {

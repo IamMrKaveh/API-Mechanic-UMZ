@@ -2,12 +2,16 @@ namespace Domain.Inventory.ValueObjects;
 
 public sealed class InventoryStatistics : ValueObject
 {
-    public int TotalQuantity { get; }
-    public int ReservedQuantity { get; }
-    public int SoldQuantity { get; }
+    public StockQuantity TotalQuantity { get; }
+    public StockQuantity ReservedQuantity { get; }
+    public StockQuantity SoldQuantity { get; }
     public int LowStockThreshold { get; }
 
-    private InventoryStatistics(int totalQuantity, int reservedQuantity, int soldQuantity, int lowStockThreshold)
+    private InventoryStatistics(
+        StockQuantity totalQuantity,
+        StockQuantity reservedQuantity,
+        StockQuantity soldQuantity,
+        int lowStockThreshold)
     {
         TotalQuantity = totalQuantity;
         ReservedQuantity = reservedQuantity;
@@ -15,26 +19,26 @@ public sealed class InventoryStatistics : ValueObject
         LowStockThreshold = lowStockThreshold;
     }
 
-    public static InventoryStatistics Create(int totalQuantity, int reservedQuantity, int soldQuantity, int lowStockThreshold)
+    public static InventoryStatistics Create(
+        int totalQuantity,
+        int reservedQuantity,
+        int soldQuantity,
+        int lowStockThreshold)
     {
-        if (totalQuantity < 0)
-            throw new DomainException("Total quantity cannot be negative.");
-
-        if (reservedQuantity < 0)
-            throw new DomainException("Reserved quantity cannot be negative.");
-
-        if (soldQuantity < 0)
-            throw new DomainException("Sold quantity cannot be negative.");
-
         if (lowStockThreshold <= 0)
             throw new DomainException("Low stock threshold must be greater than zero.");
 
-        return new InventoryStatistics(totalQuantity, reservedQuantity, soldQuantity, lowStockThreshold);
+        return new InventoryStatistics(
+            StockQuantity.Create(totalQuantity),
+            StockQuantity.Create(reservedQuantity),
+            StockQuantity.Create(soldQuantity),
+            lowStockThreshold);
     }
 
-    public int AvailableQuantity => TotalQuantity - ReservedQuantity;
+    public StockQuantity AvailableQuantity =>
+        StockQuantity.Create(Math.Max(0, TotalQuantity.Value - ReservedQuantity.Value));
 
-    public bool IsLowStock => AvailableQuantity <= LowStockThreshold;
+    public bool IsLowStock => AvailableQuantity.Value <= LowStockThreshold;
 
     protected override IEnumerable<object> GetEqualityComponents()
     {

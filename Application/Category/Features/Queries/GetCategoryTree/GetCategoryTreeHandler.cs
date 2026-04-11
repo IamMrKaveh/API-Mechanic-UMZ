@@ -5,13 +5,11 @@ namespace Application.Category.Features.Queries.GetCategoryTree;
 public class GetCategoryTreeHandler(
     ICategoryQueryService categoryQueryService) : IRequestHandler<GetCategoryTreeQuery, ServiceResult<IReadOnlyList<CategoryTreeDto>>>
 {
-    private readonly ICategoryQueryService _categoryQueryService = categoryQueryService;
-
     public async Task<ServiceResult<IReadOnlyList<CategoryTreeDto>>> Handle(
         GetCategoryTreeQuery request,
         CancellationToken ct)
     {
-        var tree = await _categoryQueryService.GetCategoryTreeAsync(ct);
+        var tree = await categoryQueryService.GetCategoryTreeAsync(ct);
         return ServiceResult<IReadOnlyList<CategoryTreeDto>>.Success(tree);
     }
 }

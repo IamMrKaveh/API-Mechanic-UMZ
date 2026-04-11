@@ -6,19 +6,16 @@ public class GetBatchVariantAvailabilityHandler(
     IInventoryQueryService inventoryQueryService)
     : IRequestHandler<GetBatchVariantAvailabilityQuery, ServiceResult<IReadOnlyList<VariantAvailabilityDto>>>
 {
-    private readonly IInventoryQueryService _inventoryQueryService = inventoryQueryService;
-
     public async Task<ServiceResult<IReadOnlyList<VariantAvailabilityDto>>> Handle(
         GetBatchVariantAvailabilityQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
         if (request.VariantIds == null || request.VariantIds.Count == 0)
-            return ServiceResult<IReadOnlyList<VariantAvailabilityDto>>.Success(
-                Array.Empty<VariantAvailabilityDto>());
+            return ServiceResult<IReadOnlyList<VariantAvailabilityDto>>.Success([]);
 
-        var result = await _inventoryQueryService.GetBatchAvailabilityAsync(
+        var result = await inventoryQueryService.GetBatchAvailabilityAsync(
             request.VariantIds.Distinct().ToList(),
-            cancellationToken);
+            ct);
 
         return ServiceResult<IReadOnlyList<VariantAvailabilityDto>>.Success(result);
     }

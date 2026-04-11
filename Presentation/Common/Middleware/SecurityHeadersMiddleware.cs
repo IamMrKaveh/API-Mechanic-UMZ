@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Presentation.Common.Options;
 
 namespace Presentation.Common.Middleware;

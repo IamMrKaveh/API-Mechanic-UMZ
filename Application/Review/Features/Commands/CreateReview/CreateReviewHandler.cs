@@ -40,7 +40,7 @@ public class CreateReviewHandler(
                     uid.Value.GetHashCode(), pid.Value.GetHashCode(), null, c),
             ct);
 
-        if (!result.IsSuccess)
+        if (result.IsFailed)
             return ServiceResult<ProductReviewDto>.Failure(result.Error.Message);
 
         await reviewRepository.AddAsync(result.Value, ct);

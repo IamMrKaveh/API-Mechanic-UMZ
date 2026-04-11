@@ -1,4 +1,5 @@
 using Application.Shipping.Features.Shared;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Variant.Features.Queries.GetProductVariantShipping;
 
@@ -6,16 +7,15 @@ public class GetProductVariantShippingHandler(
     IVariantQueryService variantQueryService,
     ILogger<GetProductVariantShippingHandler> logger) : IRequestHandler<GetVariantShippingQuery, ServiceResult<ProductVariantShippingInfoDto>>
 {
-    private readonly IVariantQueryService _variantQueryService = variantQueryService;
-    private readonly ILogger<GetProductVariantShippingHandler> _logger = logger;
-
     public async Task<ServiceResult<ProductVariantShippingInfoDto>> Handle(
         GetVariantShippingQuery request,
         CancellationToken ct)
     {
         try
         {
-            var result = await _variantQueryService.GetVariantShippingInfoAsync(request.VariantId, ct);
+            var variantId = VariantId.From(request.VariantId);
+
+            var result = await variantQueryService.GetVariantShippingInfoAsync(variantId, ct);
 
             return result is null
                 ? ServiceResult<ProductVariantShippingInfoDto>.NotFound("محصول یافت نشد.")
@@ -23,8 +23,8 @@ public class GetProductVariantShippingHandler(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "خطا در دریافت روش‌های ارسال variant {VariantId}", request.VariantId);
-            return ServiceResult<ProductVariantShippingInfoDto>.Unexpected("خطا در دریافت اطلاعات.");
+            logger.LogError(ex, "خطا در دریافت روش‌های ارسال variant {VariantId}", request.VariantId);
+            return ServiceResult<ProductVariantShippingInfoDto>.Failure("خطا در دریافت اطلاعات.");
         }
     }
 }

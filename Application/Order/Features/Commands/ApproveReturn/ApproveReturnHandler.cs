@@ -11,18 +11,12 @@ public class ApproveReturnHandler(
     IAuditService auditService,
     ILogger<ApproveReturnHandler> logger) : IRequestHandler<ApproveReturnCommand, ServiceResult>
 {
-    private readonly IOrderRepository _orderRepository = orderRepository;
-    private readonly IInventoryService _inventoryService = inventoryService;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ILogger<ApproveReturnHandler> _logger = logger;
-
     public async Task<ServiceResult> Handle(
         ApproveReturnCommand request,
         CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
-        if (order == null)
+        var order = await orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
+        if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
         try
@@ -34,15 +28,15 @@ public class ApproveReturnHandler(
             return ServiceResult.Forbidden(ex.Message);
         }
 
-        return await _unitOfWork.ExecuteStrategyAsync(async () =>
+        return await unitOfWork.ExecuteStrategyAsync(async () =>
         {
             try
             {
                 order.ApproveReturn();
-                await _orderRepository.UpdateAsync(order, ct);
-                await _unitOfWork.SaveChangesAsync(ct);
+                await orderRepository.UpdateAsync(order, ct);
+                await unitOfWork.SaveChangesAsync(ct);
 
-                var result = await _inventoryService.ReturnStockForOrderAsync(
+                var result = await inventoryService.ReturnStockForOrderAsync(
                     request.OrderId,
                     request.AdminUserId,
                     request.Reason,
@@ -50,20 +44,20 @@ public class ApproveReturnHandler(
 
                 if (result.IsFailure)
                 {
-                    _logger.LogError(
+                    logger.LogError(
                         "Failed to return stock for Order {OrderId}: {Error}",
                         request.OrderId, result.Error);
                     return ServiceResult.Failure($"خطا در بازگشت موجودی: {result.Error}");
                 }
 
-                await _auditService.LogOrderEventAsync(
+                await auditService.LogOrderEventAsync(
                     order.Id,
                     "ApproveReturn",
                     IpAddress.Create(request.IpAddress),
                     request.AdminUserId,
                     $"مرجوعی سفارش تأیید و موجودی به انبار بازگشت داده شد. دلیل: {request.Reason}");
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Return approved for Order {OrderId} by Admin {AdminId}. Stock returned.",
                     request.OrderId, request.AdminUserId);
 
@@ -71,7 +65,7 @@ public class ApproveReturnHandler(
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error approving return for order {OrderId}", request.OrderId);
+                logger.LogError(ex, "Error approving return for order {OrderId}", request.OrderId);
                 return ServiceResult.Failure("خطایی در تأیید مرجوعی رخ داد.");
             }
         }, ct);
