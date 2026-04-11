@@ -12,10 +12,6 @@ public record GetAdminProductsRequest(
     bool IncludeDeleted = false
 );
 
-public record GetAdminProductByIdRequest();
-
-public record GetAdminProductDetailRequest();
-
 public record GetProductCatalogRequest(
     int Page = 1,
     int PageSize = 10,
@@ -27,8 +23,6 @@ public record GetProductCatalogRequest(
     bool InStockOnly = false,
     string? SortBy = null);
 
-public record GetProductDetailsRequest();
-
 public record CreateProductRequest(
     string Name,
     string Slug,
@@ -39,18 +33,20 @@ public record CreateProductRequest(
 );
 
 public record UpdateProductRequest(
+    Guid ProductId,
+    Guid CategoryId,
+    Guid BrandId,
     string Name,
     decimal Price,
     string Slug,
     string? Description,
-    Guid CategoryId,
-    Guid BrandId,
     bool IsActive,
     bool IsFeatured,
     string RowVersion
 );
 
 public record UpdateProductDetailsRequest(
+    Guid ProductId,
     string Name,
     string? Description,
     Guid BrandId,
@@ -61,11 +57,3 @@ public record UpdateProductDetailsRequest(
 
 public record BulkUpdatePricesRequest(
     ICollection<VariantPriceUpdateInput> Updates);
-
-public record DeleteProductRequest();
-
-public record ActiveProductRequest();
-
-public record DeactiveProductRequest();
-
-public record RestoreProductRequest();

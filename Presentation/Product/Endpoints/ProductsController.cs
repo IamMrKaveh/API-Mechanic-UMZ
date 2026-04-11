@@ -3,7 +3,6 @@ using Application.Product.Features.Queries.GetProductCatalog;
 using Application.Product.Features.Queries.GetProductDetails;
 using Application.Product.Features.Queries.GetProducts;
 using MapsterMapper;
-using Presentation.Product.Mapping;
 using Presentation.Product.Requests;
 
 namespace Presentation.Product.Endpoints;
@@ -14,57 +13,37 @@ public class ProductsController(IMediator mediator, IMapper mapper) : BaseApiCon
 {
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetProducts(
-        [FromQuery] GetProductsRequest request)
+    public async Task<IActionResult> GetProducts([FromQuery] GetProductsRequest request)
     {
-        var query = Mapper
-            .Map<GetProductsQuery>(request);
-
+        var query = Mapper.Map<GetProductsQuery>(request);
         var result = await Mediator.Send(query);
-
         return ToActionResult(result);
     }
 
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetProduct(
-        Guid id,
-        [FromBody] GetProductRequest request)
+    public async Task<IActionResult> GetProduct(Guid id)
     {
-        var query = Mapper
-            .Map<GetProductQuery>(request)
-            .Enrich(id);
-
+        var query = new GetProductQuery(id);
         var result = await Mediator.Send(query);
-
         return ToActionResult(result);
     }
 
-    [HttpGet("/catalog")]
+    [HttpGet("catalog")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetProductCatalog(
-        [FromBody] GetProductCatalogRequest request)
+    public async Task<IActionResult> GetProductCatalog([FromQuery] GetProductCatalogRequest request)
     {
-        var query = Mapper
-            .Map<GetProductCatalogQuery>(request);
-
+        var query = Mapper.Map<GetProductCatalogQuery>(request);
         var result = await Mediator.Send(query);
-
         return ToActionResult(result);
     }
 
-    [HttpGet("/details")]
+    [HttpGet("details/{id:guid}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetProductDetails(
-        Guid id,
-        [FromBody] GetProductDetailsRequest request)
+    public async Task<IActionResult> GetProductDetails(Guid id)
     {
-        var query = Mapper
-            .Map<GetProductDetailsQuery>(request)
-            .Enrich(id);
-
+        var query = new GetProductDetailsQuery(id);
         var result = await Mediator.Send(query);
-
         return ToActionResult(result);
     }
 }

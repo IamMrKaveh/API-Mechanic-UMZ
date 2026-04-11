@@ -10,5 +10,3 @@ public record GetProductsRequest(
     decimal? MaxPrice = null,
     bool InStockOnly = false,
     string? SortBy = null);
-
-public record GetProductRequest();
