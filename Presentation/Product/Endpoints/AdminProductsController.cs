@@ -7,6 +7,7 @@ using Application.Product.Features.Commands.RestoreProduct;
 using Application.Product.Features.Commands.UpdateProduct;
 using Application.Product.Features.Commands.UpdateProductDetails;
 using Application.Product.Features.Queries.GetAdminProductById;
+using Application.Product.Features.Queries.GetAdminProductDetail;
 using Application.Product.Features.Queries.GetAdminProducts;
 using MapsterMapper;
 using Presentation.Product.Mapping;
@@ -39,6 +40,20 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
     {
         var query = Mapper
             .Map<GetAdminProductByIdQuery>(request)
+            .Enrich(id, CurrentUser.UserId);
+
+        var result = await Mediator.Send(query);
+
+        return ToActionResult(result);
+    }
+
+    [HttpGet("/detail/{id:guid}")]
+    public async Task<IActionResult> GetProductDetail(
+    Guid id,
+    [FromBody] GetAdminProductDetailRequest request)
+    {
+        var query = Mapper
+            .Map<GetAdminProductDetailQuery>(request)
             .Enrich(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(query);
