@@ -1,5 +1,4 @@
-﻿using Application.Brand.Contracts;
-using Application.Brand.Features.Shared;
+﻿using Application.Brand.Features.Shared;
 using Domain.Category.ValueObjects;
 
 namespace Application.Brand.Features.Queries.GetPublicBrands;
@@ -7,8 +6,6 @@ namespace Application.Brand.Features.Queries.GetPublicBrands;
 public sealed class GetPublicBrandsHandler(IBrandQueryService brandQueryService)
     : IRequestHandler<GetPublicBrandsQuery, ServiceResult<IReadOnlyList<BrandListItemDto>>>
 {
-    private readonly IBrandQueryService _brandQueryService = brandQueryService;
-
     public async Task<ServiceResult<IReadOnlyList<BrandListItemDto>>> Handle(
         GetPublicBrandsQuery request,
         CancellationToken ct)
@@ -17,7 +14,7 @@ public sealed class GetPublicBrandsHandler(IBrandQueryService brandQueryService)
             ? CategoryId.From(request.CategoryId.Value)
             : null;
 
-        var brands = await _brandQueryService.GetPublicBrandsAsync(categoryId, ct);
+        var brands = await brandQueryService.GetPublicBrandsAsync(categoryId, ct);
         return ServiceResult<IReadOnlyList<BrandListItemDto>>.Success(brands);
     }
 }

@@ -39,6 +39,7 @@ public class AdminVariantController(IMediator mediator) : BaseApiController(medi
         var command = new UpdateVariantCommand(
             request.ProductId,
             request.VariantId,
+            CurrentUser.UserId,
             request.Sku,
             request.PurchasePrice,
             request.SellingPrice,
@@ -56,7 +57,10 @@ public class AdminVariantController(IMediator mediator) : BaseApiController(medi
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid productId, Guid variantId)
     {
-        var command = new RemoveVariantCommand(productId, variantId);
+        var command = new RemoveVariantCommand(
+            productId,
+            variantId,
+            CurrentUser.UserId);
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }

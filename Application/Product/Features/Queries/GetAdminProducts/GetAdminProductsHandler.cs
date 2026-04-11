@@ -1,17 +1,25 @@
 using Application.Product.Contracts;
-using SharedKernel.Models;
+using Application.Product.Features.Shared;
 
 namespace Application.Product.Features.Queries.GetAdminProducts;
 
-public class GetAdminProductsHandler(IProductQueryService productQueryService)
-        : IRequestHandler<GetAdminProductsQuery, ServiceResult<PaginatedResult<AdminProductListItemDto>>>
+public sealed class GetAdminProductsHandler(
+    IProductQueryService productQueryService) : IRequestHandler<GetAdminProductsQuery, ServiceResult<PaginatedResult<ProductListItemDto>>>
 {
-    private readonly IProductQueryService _productQueryService = productQueryService;
-
-    public async Task<ServiceResult<PaginatedResult<AdminProductListItemDto>>> Handle(
-        GetAdminProductsQuery request, CancellationToken ct)
+    public async Task<ServiceResult<PaginatedResult<ProductListItemDto>>> Handle(
+        GetAdminProductsQuery request,
+        CancellationToken ct)
     {
-        var result = await _productQueryService.GetAdminProductsAsync(request.SearchParams, ct);
-        return ServiceResult<PaginatedResult<AdminProductListItemDto>>.Success(result);
+        var result = await productQueryService.GetAdminProductsAsync(
+            categoryId: request.CategoryId,
+            brandId: request.BrandId,
+            search: request.Search,
+            isActive: request.IsActive,
+            includeDeleted: request.IncludeDeleted,
+            page: request.Page,
+            pageSize: request.PageSize,
+            ct: ct);
+
+        return ServiceResult<PaginatedResult<ProductListItemDto>>.Success(result);
     }
 }

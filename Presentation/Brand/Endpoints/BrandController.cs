@@ -1,29 +1,30 @@
 using Application.Brand.Features.Queries.GetBrand;
 using Application.Brand.Features.Queries.GetPublicBrands;
+using MapsterMapper;
+using Presentation.Brand.Requests;
 
 namespace Presentation.Brand.Endpoints;
 
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/brand")]
 [ApiController]
-public class BrandController(IMediator mediator) : BaseApiController(mediator)
+public sealed class BrandController(IMediator mediator, IMapper mapper) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetBrands([FromQuery] Guid? categoryId)
+    public async Task<IActionResult> GetBrands(
+        [FromQuery] GetPublicBrandsRequest request,
+        CancellationToken ct)
     {
-        var query = new GetPublicBrandsQuery(categoryId);
-        var result = await _mediator.Send(query);
+        var query = mapper.Map<GetPublicBrandsQuery>(request);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetBrand(Guid id)
+    public async Task<IActionResult> GetBrand(Guid id, CancellationToken ct)
     {
-        var query = new GetBrandQuery(id);
-        var result = await _mediator.Send(query);
+        var result = await Mediator.Send(new GetBrandQuery(id), ct);
         return ToActionResult(result);
     }
 }

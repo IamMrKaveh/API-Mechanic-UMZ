@@ -6,7 +6,7 @@ public class RecordDamageValidator : AbstractValidator<RecordDamageCommand>
     {
         RuleFor(x => x.VariantId).NotEmpty();
         RuleFor(x => x.Quantity).GreaterThan(0).WithMessage("مقدار باید بیشتر از صفر باشد.");
-        RuleFor(x => x.Reason).NotEmpty();
+        RuleFor(x => x.Reason).NotEmpty().WithMessage("دلیل ثبت ضایعات الزامی است.");
         RuleFor(x => x.UserId).NotEmpty();
     }
 }

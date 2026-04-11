@@ -4,7 +4,6 @@ using Application.Analytics.Features.Queries.GetInventoryReport;
 using Application.Analytics.Features.Queries.GetRevenueReport;
 using Application.Analytics.Features.Queries.GetSalesChartData;
 using Application.Analytics.Features.Queries.GetTopSellingProducts;
-using Presentation.Base.Endpoints.v1;
 
 namespace Presentation.Analytic.Endpoints;
 

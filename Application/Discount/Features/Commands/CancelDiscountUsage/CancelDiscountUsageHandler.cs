@@ -1,32 +1,56 @@
+using Application.Audit.Contracts;
+using Application.Common.Interfaces;
+using Application.Common.Results;
+using Domain.Common.ValueObjects;
 using Domain.Discount.Interfaces;
 using Domain.Discount.ValueObjects;
+using Domain.Order.ValueObjects;
+using MediatR;
 
 namespace Application.Discount.Features.Commands.CancelDiscountUsage;
 
 public class CancelDiscountUsageHandler(
     IDiscountRepository discountRepository,
     IUnitOfWork unitOfWork,
-    ILogger<CancelDiscountUsageHandler> logger) : IRequestHandler<CancelDiscountUsageCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<CancelDiscountUsageCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(CancelDiscountUsageCommand request, CancellationToken ct)
     {
-        try
+        return await unitOfWork.ExecuteStrategyAsync(async () =>
         {
-            var discount = await discountRepository.GetByIdWithUsagesAsync(
-                DiscountCodeId.From(request.DiscountCodeId), ct);
+            using var transaction = await unitOfWork.BeginTransactionAsync(ct);
+            try
+            {
+                var discountCodeId = DiscountCodeId.From(request.DiscountCodeId);
+                var orderId = OrderId.From(request.OrderId);
 
-            if (discount is null)
-                return ServiceResult.NotFound("کد تخفیف یافت نشد.");
+                var discount = await discountRepository.GetByIdWithUsagesAsync(discountCodeId, ct);
+                if (discount is null)
+                {
+                    await unitOfWork.RollbackTransactionAsync(ct);
+                    return ServiceResult.NotFound("کد تخفیف یافت نشد.");
+                }
 
-            discountRepository.Update(discount);
-            await unitOfWork.SaveChangesAsync(ct);
+                discount.CancelUsage(orderId);
 
-            return ServiceResult.Success();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to cancel discount usage for order {OrderId}", request.OrderId);
-            return ServiceResult.Failure("خطا در لغو استفاده از کد تخفیف.");
-        }
+                discountRepository.Update(discount);
+                await unitOfWork.SaveChangesAsync(ct);
+                await unitOfWork.CommitTransactionAsync(ct);
+
+                await auditService.LogAsync(
+                    "DiscountUsage",
+                    "CancelDiscountUsage",
+                    IpAddress.Unknown,
+                    details: $"Discount usage cancelled for order {request.OrderId}",
+                    ct: ct);
+
+                return ServiceResult.Success();
+            }
+            catch (Exception)
+            {
+                await unitOfWork.RollbackTransactionAsync(ct);
+                return ServiceResult.Failure("خطا در لغو استفاده از کد تخفیف.");
+            }
+        }, ct);
     }
 }

@@ -11,7 +11,9 @@ public class ChangePasswordHandler(
 {
     public async Task<ServiceResult> Handle(ChangePasswordCommand request, CancellationToken ct)
     {
-        var user = await userRepository.GetByIdAsync(UserId.From(request.UserId), ct);
+        var userId = UserId.From(request.UserId);
+
+        var user = await userRepository.GetByIdAsync(userId, ct);
         if (user is null)
             return ServiceResult.NotFound("کاربر یافت نشد.");
 

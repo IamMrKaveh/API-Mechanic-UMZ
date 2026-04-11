@@ -1,5 +1,4 @@
-﻿using Application.Common.Results;
-using Application.Wallet.Contracts;
+﻿using Application.Wallet.Contracts;
 using Application.Wallet.Features.Commands.CreditWallet;
 using Application.Wallet.Features.Commands.DebitWallet;
 using Application.Wallet.Features.Commands.ReleaseWalletReservation;

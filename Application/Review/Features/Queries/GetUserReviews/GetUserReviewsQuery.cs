@@ -1,6 +1,4 @@
-using Application.Common.Results;
 using Application.Review.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Review.Features.Queries.GetUserReviews;
 

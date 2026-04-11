@@ -1,7 +1,5 @@
-using Application.Common.Results;
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
-using Domain.Common.Interfaces;
 using Domain.Inventory.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
@@ -39,6 +37,7 @@ public class AddToCartHandler(
         var originalPrice = variant.CompareAtPrice ?? variant.Price;
 
         Domain.Cart.Aggregates.Cart? cart;
+
         if (request.UserId.HasValue)
         {
             var userId = UserId.From(request.UserId.Value);
@@ -51,7 +50,10 @@ public class AddToCartHandler(
         }
         else
         {
-            var guestToken = GuestToken.Create(request.GuestToken!);
+            var guestToken = GuestToken.TryCreate(request.GuestToken);
+            if (guestToken is null)
+                return ServiceResult.Failure("توکن مهمان نامعتبر است.", SharedKernel.Results.ErrorType.Validation);
+
             cart = await cartRepository.FindByGuestTokenAsync(guestToken, ct);
             if (cart is null)
             {

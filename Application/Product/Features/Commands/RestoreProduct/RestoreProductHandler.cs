@@ -1,4 +1,6 @@
 using Domain.Product.Interfaces;
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Product.Features.Commands.RestoreProduct;
 
@@ -8,28 +10,29 @@ public class RestoreProductHandler(
     IAuditService auditService,
     ICacheService cacheService) : IRequestHandler<RestoreProductCommand, ServiceResult>
 {
-    private readonly IProductRepository _productRepository = productRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICacheService _cacheService = cacheService;
-
     public async Task<ServiceResult> Handle(
         RestoreProductCommand request,
         CancellationToken ct)
     {
-        var product = await _productRepository.GetByIdIncludingDeletedAsync(request.Id);
-        if (product == null)
+        var productId = ProductId.From(request.Id);
+        var userId = UserId.From(request.UserId);
+
+        var product = await productRepository.GetByIdAsync(productId, ct);
+        if (product is null)
             return ServiceResult.NotFound("Product not found.");
 
         product.Restore();
 
-        _productRepository.Update(product);
-        await _unitOfWork.SaveChangesAsync(ct);
+        productRepository.Update(product);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        await _auditService.LogProductEventAsync(request.Id, "RestoreProduct", $"Product '{product.Name}' restored.", request.UserId);
+        await auditService.LogProductEventAsync(
+            productId,
+            "RestoreProduct", $"Product '{product.Name}' restored.",
+            userId);
 
-        await _cacheService.ClearAsync($"product:{request.Id}");
-        await _cacheService.ClearAsync($"brand:{product.BrandId}");
+        await cacheService.ClearAsync($"product:{request.Id}", ct);
+        await cacheService.ClearAsync($"brand:{product.BrandId}", ct);
 
         return ServiceResult.Success();
     }

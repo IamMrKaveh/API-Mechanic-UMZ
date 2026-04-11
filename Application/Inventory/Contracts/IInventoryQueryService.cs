@@ -1,4 +1,5 @@
 using Application.Inventory.Features.Shared;
+using Domain.Inventory.ValueObjects;
 using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Contracts;
@@ -10,7 +11,7 @@ public interface IInventoryQueryService
         CancellationToken ct = default);
 
     Task<PaginatedResult<InventoryDto>> GetLowStockAsync(
-        int threshold,
+        StockQuantity threshold,
         int page,
         int pageSize,
         CancellationToken ct = default);

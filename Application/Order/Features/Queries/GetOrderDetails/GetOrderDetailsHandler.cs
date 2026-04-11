@@ -4,13 +4,11 @@ namespace Application.Order.Features.Queries.GetOrderDetails;
 
 public class GetOrderDetailsHandler(IOrderQueryService orderQueryService) : IRequestHandler<GetOrderDetailsQuery, ServiceResult<OrderDto>>
 {
-    private readonly IOrderQueryService _orderQueryService = orderQueryService;
-
     public async Task<ServiceResult<OrderDto>> Handle(
         GetOrderDetailsQuery request,
         CancellationToken ct)
     {
-        var order = await _orderQueryService.GetOrderDetailsAsync(
+        var order = await orderQueryService.GetOrderDetailsAsync(
             request.OrderId,
             request.UserId,
             ct);

@@ -19,6 +19,12 @@ public class UpdateCartItemHandler(
         UpdateCartItemCommand request,
         CancellationToken ct)
     {
+        UserId? userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
+        GuestToken? guestToken = GuestToken.TryCreate(request.GuestToken);
+
+        if (userId is null && guestToken is null)
+            return ServiceResult<CartDetailDto>.Validation("UserId یا GuestToken الزامی است.");
+
         var variantId = VariantId.From(request.VariantId);
 
         var variant = await variantRepository.GetByIdAsync(variantId, ct);
@@ -32,11 +38,9 @@ public class UpdateCartItemHandler(
         if (!inventory.CanFulfill(request.Quantity))
             return ServiceResult<CartDetailDto>.Validation($"موجودی کافی نیست. موجود: {inventory.AvailableQuantity}");
 
-        Domain.Cart.Aggregates.Cart? cart;
-        if (request.UserId.HasValue)
-            cart = await cartRepository.FindByUserIdAsync(UserId.From(request.UserId.Value), ct);
-        else
-            cart = await cartRepository.FindByGuestTokenAsync(GuestToken.Create(request.GuestToken!), ct);
+        Domain.Cart.Aggregates.Cart? cart = userId is not null
+            ? await cartRepository.FindByUserIdAsync(userId, ct)
+            : await cartRepository.FindByGuestTokenAsync(guestToken!, ct);
 
         if (cart is null)
             return ServiceResult<CartDetailDto>.NotFound("سبد خرید یافت نشد.");
@@ -44,10 +48,6 @@ public class UpdateCartItemHandler(
         cart.UpdateItemQuantity(variantId, request.Quantity);
         cartRepository.Update(cart);
         await unitOfWork.SaveChangesAsync(ct);
-
-        UserId? userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
-
-        var guestToken = GuestToken.Create(request.GuestToken);
 
         var cartDetail = await cartQueryService.GetCartDetailAsync(userId, guestToken, ct);
 

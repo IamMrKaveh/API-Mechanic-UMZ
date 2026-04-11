@@ -31,7 +31,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
     public Money AvailableBalance => Balance.Subtract(ReservedBalance);
 
-    public static Wallet Create(WalletId id, UserId ownerId, string currency)
+    public static Wallet Create(WalletId id, UserId ownerId, string currency = "IRT")
     {
         Guard.Against.Null(id, nameof(id));
         Guard.Against.Null(ownerId, nameof(ownerId));

@@ -1,4 +1,6 @@
-﻿using Domain.Wallet.Interfaces;
+﻿using Domain.User.ValueObjects;
+using Domain.Wallet.Interfaces;
+using Domain.Wallet.ValueObjects;
 
 namespace Application.Wallet.Features.Commands.ReleaseWalletReservation;
 
@@ -7,40 +9,40 @@ public class ReleaseWalletReservationHandler(
     IUnitOfWork unitOfWork,
     ILogger<ReleaseWalletReservationHandler> logger) : IRequestHandler<ReleaseWalletReservationCommand, ServiceResult<Unit>>
 {
-    private readonly IWalletRepository _walletRepository = walletRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ILogger<ReleaseWalletReservationHandler> _logger = logger;
-
     public async Task<ServiceResult<Unit>> Handle(
         ReleaseWalletReservationCommand request,
         CancellationToken ct)
     {
         try
         {
-            var wallet = await _walletRepository.GetByUserIdForUpdateAsync(request.UserId, ct);
+            var userId = UserId.From(request.UserId);
+
+            var walletReservationId = WalletReservationId.From(request.WalletReservationId);
+
+            var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)
                 return ServiceResult<Unit>.Success(Unit.Value);
 
-            wallet.ReleaseReservation(request.WalletReservationId);
-            _walletRepository.Update(wallet);
-            await _unitOfWork.SaveChangesAsync(ct);
+            wallet.ReleaseReservation(walletReservationId);
+            walletRepository.Update(wallet);
+            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }
         catch (ConcurrencyException)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Concurrency conflict releasing wallet reservation for order {OrderId}.",
                 request.WalletReservationId);
             return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            logger.LogError(
                 ex,
                 "Error releasing wallet reservation for order {OrderId}",
                 request.WalletReservationId);
-            return ServiceResult<Unit>.Unexpected("خطا در آزادسازی رزرو کیف پول.");
+            return ServiceResult<Unit>.Failure("خطا در آزادسازی رزرو کیف پول.");
         }
     }
 }

@@ -9,17 +9,13 @@ public class VariantStockChangedDomainEventHandler(
     IPublisher publisher,
     ILogger<VariantStockChangedDomainEventHandler> logger) : INotificationHandler<VariantStockChangedEvent>
 {
-    private readonly IVariantRepository _variantRepository = variantRepository;
-    private readonly IPublisher _publisher = publisher;
-    private readonly ILogger<VariantStockChangedDomainEventHandler> _logger = logger;
-
     public async Task Handle(VariantStockChangedEvent notification, CancellationToken ct)
     {
-        var variant = await _variantRepository.GetWithProductAsync(notification.VariantId, ct);
+        var variant = await variantRepository.GetWithProductAsync(notification.VariantId, ct);
 
-        if (variant == null)
+        if (variant is null)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Variant {VariantId} not found when handling VariantStockChangedEvent",
                 notification.VariantId);
             return;
@@ -36,6 +32,6 @@ public class VariantStockChangedDomainEventHandler(
             IsInStock = variant.IsInStock
         };
 
-        await _publisher.Publish(appNotification, ct);
+        await publisher.Publish(appNotification, ct);
     }
 }

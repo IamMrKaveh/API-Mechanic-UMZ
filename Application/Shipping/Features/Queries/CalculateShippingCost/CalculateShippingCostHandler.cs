@@ -1,23 +1,22 @@
-using Application.Shipping.Contracts;
+using Domain.Shipping.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Shipping.Features.Queries.CalculateShippingCost;
 
-public class CalculateShippingCostHandler
-    : IRequestHandler<CalculateShippingCostQuery, ServiceResult<ShippingCostResultDto>>
+public class CalculateShippingCostHandler(IShippingQueryService shippingQueryService)
+        : IRequestHandler<CalculateShippingCostQuery, ServiceResult<ShippingCostResultDto>>
 {
-    private readonly IShippingQueryService _shippingQueryService;
-
-    public CalculateShippingCostHandler(IShippingQueryService shippingQueryService)
-    {
-        _shippingQueryService = shippingQueryService;
-    }
-
     public async Task<ServiceResult<ShippingCostResultDto>> Handle(
         CalculateShippingCostQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var result = await _shippingQueryService.CalculateShippingCostAsync(
-            request.UserId, request.ShippingMethodId, cancellationToken);
+        var shippingId = ShippingId.From(request.ShippingId);
+        var userId = UserId.From(request.UserId);
+
+        var result = await shippingQueryService.CalculateShippingCostAsync(
+            userId,
+            shippingId,
+            ct);
 
         return ServiceResult<ShippingCostResultDto>.Success(result);
     }

@@ -1,6 +1,7 @@
 using Application.Common.Interfaces;
 using Application.Common.Results;
 using Asp.Versioning;
+using MapsterMapper;
 using Presentation.Common.Interfaces;
 using SharedKernel.Models;
 
@@ -9,9 +10,10 @@ namespace Presentation.Base.Endpoints.v1;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public abstract class BaseApiController(ISender mediator) : ControllerBase
+public abstract class BaseApiController(ISender mediator, IMapper mapper) : ControllerBase
 {
     protected readonly ISender Mediator = mediator;
+    protected readonly IMapper Mapper = mapper;
 
     private ICurrentUserService CurrentUserService =>
         HttpContext.RequestServices.GetRequiredService<ICurrentUserService>();

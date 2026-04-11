@@ -17,6 +17,13 @@ public sealed class GuestToken : ValueObject
         return new GuestToken(value.Trim());
     }
 
+    public static GuestToken? TryCreate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Trim().Length < 8)
+            return null;
+        return new GuestToken(value.Trim());
+    }
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;

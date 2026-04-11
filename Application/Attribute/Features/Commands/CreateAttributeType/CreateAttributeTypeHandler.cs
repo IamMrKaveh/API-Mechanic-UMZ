@@ -10,18 +10,14 @@ public class CreateAttributeTypeHandler(
     IMapper mapper,
     IUnitOfWork unitOfWork) : IRequestHandler<CreateAttributeTypeCommand, ServiceResult<AttributeTypeDto>>
 {
-    private readonly IAttributeRepository _repository = repository;
-    private readonly IMapper _mapper = mapper;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
     public async Task<ServiceResult<AttributeTypeDto>> Handle(
         CreateAttributeTypeCommand request,
         CancellationToken ct)
     {
-        if (await _repository.AttributeTypeExistsAsync(request.Name, null, ct))
+        if (await repository.AttributeTypeExistsAsync(request.Name, null, ct))
             return ServiceResult<AttributeTypeDto>.Conflict("Attribute type already exists.");
 
-        var uniquenessChecker = new AttributeTypeUniquenessCheckerAdapter(_repository);
+        var uniquenessChecker = new AttributeTypeUniquenessCheckerAdapter(repository);
         var attributeType = AttributeType.Create(
             request.Name,
             request.DisplayName,
@@ -29,9 +25,9 @@ public class CreateAttributeTypeHandler(
             true,
             uniquenessChecker);
 
-        await _repository.AddAttributeTypeAsync(attributeType, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
+        await repository.AddAttributeTypeAsync(attributeType, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        return ServiceResult<AttributeTypeDto>.Success(_mapper.Map<AttributeTypeDto>(attributeType));
+        return ServiceResult<AttributeTypeDto>.Success(mapper.Map<AttributeTypeDto>(attributeType));
     }
 }

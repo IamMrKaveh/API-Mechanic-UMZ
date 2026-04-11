@@ -2,13 +2,8 @@ using Application.Audit.Features.Shared;
 
 namespace Application.Audit.Features.Queries.GetAuditLogs;
 
-public sealed class GetAuditLogsHandler(
-    IAuditQueryService auditQueryService,
-    ILogger<GetAuditLogsHandler> logger) : IRequestHandler<GetAuditLogsQuery, GetAuditLogsResult>
+public sealed class GetAuditLogsHandler(IAuditQueryService auditQueryService) : IRequestHandler<GetAuditLogsQuery, GetAuditLogsResult>
 {
-    private readonly IAuditQueryService _auditQueryService = auditQueryService;
-    private readonly ILogger<GetAuditLogsHandler> _logger = logger;
-
     public async Task<GetAuditLogsResult> Handle(
         GetAuditLogsQuery request,
         CancellationToken ct)
@@ -27,7 +22,7 @@ public sealed class GetAuditLogsHandler(
             SortDesc = request.SortDesc
         };
 
-        var (logs, total) = await _auditQueryService.SearchAsync(searchRequest, ct);
+        var (logs, total) = await auditQueryService.SearchAsync(searchRequest, ct);
 
         var totalPages = (int)Math.Ceiling((double)total / request.PageSize);
 

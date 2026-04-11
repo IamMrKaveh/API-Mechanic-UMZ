@@ -1,10 +1,5 @@
-﻿using Domain.Common.Exceptions;
-using Domain.Common.Guards;
-using Domain.User.Results;
+﻿using Domain.User.Results;
 using Domain.User.ValueObjects;
-using SharedKernel.Results;
-using System;
-using System.Linq;
 
 namespace Domain.User.Services;
 

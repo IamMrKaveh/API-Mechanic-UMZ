@@ -1,38 +1,37 @@
-﻿using Application.Common.Results;
-using Domain.Common.Interfaces;
+﻿using Application.Audit.Contracts;
 using Domain.Inventory.Interfaces;
-using Domain.Variant.ValueObjects;
 using Domain.User.ValueObjects;
-using MediatR;
-using Microsoft.Extensions.Logging;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Features.Commands.ReverseInventoryTransaction;
 
 public class ReverseInventoryHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
-    ILogger<ReverseInventoryHandler> logger) : IRequestHandler<ReverseInventoryCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<ReverseInventoryCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(ReverseInventoryCommand request, CancellationToken ct)
     {
-        var inventory = await inventoryRepository.GetByVariantIdAsync(VariantId.From(request.VariantId), ct);
+        var variantId = VariantId.From(request.VariantId);
+        var userId = UserId.From(request.UserId);
 
+        var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");
 
-        var result = inventory.ReverseStockChange(
-            request.IdempotencyKey,
-            request.Reason,
-            UserId.From(request.UserId));
+        var result = inventory.ReverseStockChange(request.IdempotencyKey, request.Reason, userId);
 
         if (result.IsFailure)
-        {
-            logger.LogWarning("Failed to reverse transaction {Key}. Reason: {Reason}", request.IdempotencyKey, result.Error.Message);
             return ServiceResult.Failure(result.Error.Message);
-        }
 
         inventoryRepository.Update(inventory);
         await unitOfWork.SaveChangesAsync(ct);
+
+        await auditService.LogInventoryEventAsync(
+            variantId,
+            "ReverseInventoryTransaction",
+            $"برگشت تراکنش با کلید {request.IdempotencyKey}. دلیل: {request.Reason}",
+            userId);
 
         return ServiceResult.Success();
     }

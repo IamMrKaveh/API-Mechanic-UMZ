@@ -6,6 +6,6 @@ public class MergeGuestCartValidator : AbstractValidator<MergeGuestCartCommand>
     {
         RuleFor(x => x.GuestToken)
             .NotEmpty().WithMessage("توکن مهمان الزامی است.")
-            .MaximumLength(256).WithMessage("توکن مهمان نامعتبر است.");
+            .MinimumLength(8).WithMessage("توکن مهمان باید حداقل ۸ کاراکتر باشد.");
     }
 }

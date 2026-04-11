@@ -1,17 +1,19 @@
 ﻿using Application.Support.Features.Shared;
+using Domain.Support.ValueObjects;
 
 namespace Application.Support.Features.Queries.GetTicket;
 
 public class GetTicketHandler(
     ISupportQueryService supportQueryService) : IRequestHandler<GetTicketQuery, ServiceResult<TicketDto>>
 {
-    private readonly ISupportQueryService _supportQueryService = supportQueryService;
-
     public async Task<ServiceResult<TicketDto>> Handle(
         GetTicketQuery request,
         CancellationToken ct)
     {
-        var ticket = await _supportQueryService.GetTicketDetailAsync(request.TicketId, ct);
+        var ticketId = TicketId.From(request.TicketId);
+
+        var ticket = await supportQueryService.GetTicketDetailAsync(ticketId, ct);
+
         if (ticket is null)
             return ServiceResult<TicketDto>.NotFound("تیکت یافت نشد.");
 

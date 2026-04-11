@@ -1,60 +1,74 @@
-using Application.Common.Results;
-using Domain.Common.Interfaces;
+using Application.Audit.Contracts;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
-using Domain.Variant.ValueObjects;
+using Domain.Inventory.ValueObjects;
 using Domain.Order.ValueObjects;
-using MediatR;
-using Microsoft.Extensions.Logging;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Features.Commands.CommitStockForOrder;
 
 public class CommitStockForOrderHandler(
     IInventoryRepository inventoryRepository,
-    InventoryDomainService inventoryDomainService,
     IUnitOfWork unitOfWork,
-    ILogger<CommitStockForOrderHandler> logger) : IRequestHandler<CommitStockForOrderCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<CommitStockForOrderCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(CommitStockForOrderCommand request, CancellationToken ct)
     {
-        var errors = new List<string>();
+        using var transaction = await unitOfWork.BeginTransactionAsync(ct);
 
-        foreach (var item in request.Items)
+        try
         {
-            var inventory = await inventoryRepository.GetByVariantIdAsync(VariantId.From(item.VariantId), ct);
+            var errors = new List<string>();
 
-            if (inventory is null)
+            foreach (var item in request.Items)
             {
-                errors.Add($"موجودی واریانت {item.VariantId} یافت نشد.");
-                continue;
+                var variantId = VariantId.From(item.VariantId);
+                var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
+
+                if (inventory is null)
+                {
+                    errors.Add($"موجودی واریانت {item.VariantId} یافت نشد.");
+                    continue;
+                }
+
+                var stock = StockQuantity.Create(item.Quantity);
+                var orderItemId = item.OrderItemId.HasValue ? OrderItemId.From(item.OrderItemId.Value) : null;
+
+                var result = InventoryDomainService.ConfirmReservation(
+                    inventory,
+                    stock,
+                    request.OrderNumber,
+                    orderItemId);
+
+                if (result.IsFailure)
+                {
+                    errors.Add($"واریانت {item.VariantId}: {result.Error.Message}");
+                    continue;
+                }
+
+                inventoryRepository.Update(inventory);
             }
 
-            var orderItemId = item.OrderItemId.HasValue ? OrderItemId.From(item.OrderItemId.Value) : null;
-
-            var result = inventoryDomainService.ConfirmReservation(
-                inventory,
-                item.Quantity,
-                request.OrderNumber,
-                orderItemId);
-
-            if (result.IsFailure)
+            if (errors.Count > 0)
             {
-                errors.Add($"واریانت {item.VariantId}: {result.Error.Message}");
-                continue;
+                await unitOfWork.RollbackTransactionAsync(ct);
+                return ServiceResult.Failure(string.Join(" | ", errors));
             }
 
-            inventoryRepository.Update(inventory);
-        }
+            await unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.CommitTransactionAsync(ct);
 
-        if (errors.Count > 0)
+            await auditService.LogInventoryEventAsync(
+                VariantId.From(request.Items[0].VariantId),
+                "CommitStockForOrder",
+                $"تأیید رزرو موجودی برای سفارش {request.OrderNumber}، {request.Items.Count} قلم");
+
+            return ServiceResult.Success();
+        }
+        catch
         {
-            logger.LogError("Stock commit failed for order {OrderNumber}: {Errors}", request.OrderNumber, string.Join(", ", errors));
-            return ServiceResult.Failure(string.Join(" | ", errors));
+            await unitOfWork.RollbackTransactionAsync(ct);
+            throw;
         }
-
-        await unitOfWork.SaveChangesAsync(ct);
-        logger.LogInformation("Stock committed for order {OrderNumber}", request.OrderNumber);
-
-        return ServiceResult.Success();
     }
 }

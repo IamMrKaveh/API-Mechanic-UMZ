@@ -1,34 +1,36 @@
 using Application.Cart.Features.Shared;
-using Application.Common.Interfaces;
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
+using Quartz.Util;
 
 namespace Application.Cart.Features.Commands.SyncCartPrices;
 
 public class SyncCartPricesHandler(
     ICartRepository cartRepository,
     IVariantRepository variantRepository,
-    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
     ILogger<SyncCartPricesHandler> logger) : IRequestHandler<SyncCartPricesCommand, ServiceResult<SyncCartPricesResult>>
 {
-    private readonly ICartRepository _cartRepository = cartRepository;
-    private readonly IVariantRepository _variantRepository = variantRepository;
-    private readonly ICurrentUserService _currentUser = currentUser;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ILogger<SyncCartPricesHandler> _logger = logger;
-
     public async Task<ServiceResult<SyncCartPricesResult>> Handle(
         SyncCartPricesCommand request,
         CancellationToken ct)
     {
         Domain.Cart.Aggregates.Cart? cart;
-        if (_currentUser.UserId is not null)
-            cart = await _cartRepository.FindByUserIdAsync(UserId.From(_currentUser.UserId.Value), ct);
-        else if (_currentUser.GuestToken is not null)
-            cart = await _cartRepository.FindByGuestTokenAsync(GuestToken.Create(_currentUser.GuestToken), ct);
+        GuestToken? guestToken;
+        UserId? userId;
+
+        if (request.UserId.HasValue)
+        {
+            userId = UserId.From(request.UserId.Value);
+            cart = await cartRepository.FindByUserIdAsync(userId, ct);
+        }
+        else if (!request.GuestToken.IsNullOrWhiteSpace())
+        {
+            guestToken = GuestToken.Create(request.GuestToken);
+            cart = await cartRepository.FindByGuestTokenAsync(guestToken, ct);
+        }
         else
             return ServiceResult<SyncCartPricesResult>.Success(new SyncCartPricesResult { HasChanges = false });
 
@@ -36,7 +38,7 @@ public class SyncCartPricesHandler(
             return ServiceResult<SyncCartPricesResult>.Success(new SyncCartPricesResult { HasChanges = false });
 
         var variantIds = cart.Items.Select(i => i.VariantId).ToList();
-        var variants = await _variantRepository.GetByIdsAsync(variantIds, ct);
+        var variants = await variantRepository.GetByIdsAsync(variantIds, ct);
         var variantLookup = variants.ToDictionary(v => v.Id);
 
         var priceChanges = new List<CartPriceChangeDto>();
@@ -72,10 +74,10 @@ public class SyncCartPricesHandler(
 
         if (hasChanges)
         {
-            _cartRepository.Update(cart);
-            await _unitOfWork.SaveChangesAsync(ct);
+            cartRepository.Update(cart);
+            await unitOfWork.SaveChangesAsync(ct);
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "قیمت‌های سبد {CartId} همگام‌سازی شد. تغییر قیمت: {PriceChangeCount}، حذف شده: {RemovedCount}",
                 cart.Id, priceChanges.Count, removedVariantIds.Count);
         }

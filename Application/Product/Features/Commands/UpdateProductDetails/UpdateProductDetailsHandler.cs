@@ -1,49 +1,47 @@
 using Application.Common.Interfaces;
 using Domain.Product.Interfaces;
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Product.Features.Commands.UpdateProductDetails;
 
 public class UpdateProductDetailsHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
-    IHtmlSanitizer htmlSanitizer,
     IAuditService auditService,
     ICurrentUserService currentUserService) : IRequestHandler<UpdateProductDetailsCommand, ServiceResult>
 {
-    private readonly IProductRepository _productRepository = productRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IHtmlSanitizer _htmlSanitizer = htmlSanitizer;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
-
     public async Task<ServiceResult> Handle(UpdateProductDetailsCommand request, CancellationToken ct)
     {
-        var product = await _productRepository.GetByIdAsync(request.Id, ct);
+        var productId = ProductId.From(request.Id);
+        var userId = UserId.From(currentUserService.CurrentUser.UserId);
+
+        var product = await productRepository.GetByIdAsync(productId, ct);
         if (product is null) return ServiceResult.NotFound("Product not found.");
 
-        _productRepository.SetOriginalRowVersion(product, Convert.FromBase64String(request.RowVersion));
+        productRepository.SetOriginalRowVersion(product, Convert.FromBase64String(request.RowVersion));
 
         if (!string.IsNullOrEmpty(request.Sku)
-            && await _productRepository.ExistsBySkuAsync(request.Sku, request.Id, ct))
+            && await productRepository.ExistsBySkuAsync(request.Sku, productId, ct))
             return ServiceResult.Conflict("Product SKU already exists.");
 
         product.UpdateDetails(
-            _htmlSanitizer.Sanitize(request.Name),
-            request.Description != null ? _htmlSanitizer.Sanitize(request.Description) : null,
+            request.Name,
+            request.Description != null ? request.Description : null,
             request.Sku,
             request.BrandId,
             request.IsActive);
 
-        _productRepository.Update(product);
+        productRepository.Update(product);
 
         try
         {
-            await _unitOfWork.SaveChangesAsync(ct);
-            await _auditService.LogProductEventAsync(
-                request.Id,
+            await unitOfWork.SaveChangesAsync(ct);
+            await auditService.LogProductEventAsync(
+                productId,
                 "UpdateProductDetails",
                 "Product details updated.",
-                _currentUserService.CurrentUser.UserId);
+                userId);
             return ServiceResult.Success();
         }
         catch (ConcurrencyException)

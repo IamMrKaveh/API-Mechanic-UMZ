@@ -10,7 +10,9 @@ public class SetDefaultShippingHandler(
 {
     public async Task<ServiceResult> Handle(SetDefaultShippingCommand request, CancellationToken ct)
     {
-        var shipping = await shippingRepository.GetByIdAsync(ShippingId.From(request.Id), ct);
+        var shippingId = ShippingId.From(request.Id);
+
+        var shipping = await shippingRepository.GetByIdAsync(shippingId, ct);
         if (shipping is null)
             return ServiceResult.NotFound("روش ارسال یافت نشد.");
 

@@ -1,23 +1,21 @@
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.UpdateUser;
 
 public class UpdateUserHandler(
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    IHtmlSanitizer htmlSanitizer) : IRequestHandler<UpdateUserCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<UpdateUserCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository = userRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly IHtmlSanitizer _htmlSanitizer = htmlSanitizer;
-
     public async Task<ServiceResult> Handle(
         UpdateUserCommand request,
         CancellationToken ct)
     {
-        var user = await _userRepository.GetByIdAsync(request.Id, ct);
+        var userId = UserId.From(request.Id);
+        var adminId = UserId.From(request.CurrentUserId);
+
+        var user = await userRepository.GetByIdAsync(userId, ct);
         if (user == null)
             return ServiceResult.NotFound("NotFound");
 
@@ -25,22 +23,22 @@ public class UpdateUserHandler(
             return ServiceResult.Forbidden("User account is deleted and cannot be modified.");
 
         user.UpdateName(
-            !string.IsNullOrEmpty(request.UpdateRequest.FirstName)
-                ? _htmlSanitizer.Sanitize(request.UpdateRequest.FirstName)
+            !string.IsNullOrEmpty(request.FirstName)
+                ? request.FirstName
                 : user.FirstName!,
-            !string.IsNullOrEmpty(request.UpdateRequest.LastName)
-                ? _htmlSanitizer.Sanitize(request.UpdateRequest.LastName)
+            !string.IsNullOrEmpty(request.LastName)
+                ? request.LastName
                 : user.LastName!
         );
 
-        _userRepository.Update(user);
+        userRepository.Update(user);
 
         try
         {
-            await _unitOfWork.SaveChangesAsync(ct);
-            await _auditService.LogAdminEventAsync(
+            await unitOfWork.SaveChangesAsync(ct);
+            await auditService.LogAdminEventAsync(
                 "UpdateUser",
-                request.CurrentUserId,
+                adminId,
                 $"Updated profile for user {request.Id}");
             return ServiceResult.Success();
         }

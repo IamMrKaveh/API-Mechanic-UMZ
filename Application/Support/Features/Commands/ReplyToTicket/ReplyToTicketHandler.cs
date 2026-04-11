@@ -1,3 +1,4 @@
+using Domain.Common.Exceptions;
 using Domain.Support.Enums;
 using Domain.Support.Interfaces;
 using Domain.Support.ValueObjects;
@@ -11,17 +12,19 @@ public class ReplyToTicketHandler(
 {
     public async Task<ServiceResult> Handle(ReplyToTicketCommand request, CancellationToken ct)
     {
-        var ticket = await ticketRepository.GetByIdWithMessagesAsync(TicketId.From(request.TicketId), ct);
+        var ticketId = TicketId.From(request.TicketId);
+        var senderId = UserId.From(request.SenderId);
+
+        var ticket = await ticketRepository.GetByIdWithMessagesAsync(ticketId, ct);
         if (ticket is null)
             return ServiceResult.NotFound("تیکت یافت نشد.");
 
-        if (!request.IsAdmin && ticket.CustomerId.Value != request.SenderId)
+        if (!request.IsAdmin && ticket.CustomerId != senderId)
             return ServiceResult.Forbidden("دسترسی ممنوع.");
 
         try
         {
             var messageId = TicketMessageId.NewId();
-            var senderId = UserId.From(request.SenderId);
             var senderType = request.IsAdmin
                 ? TicketMessageSenderType.Agent
                 : TicketMessageSenderType.Customer;

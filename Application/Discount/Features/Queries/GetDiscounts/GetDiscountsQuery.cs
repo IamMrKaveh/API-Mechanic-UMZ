@@ -1,5 +1,4 @@
 using Application.Discount.Features.Shared;
-using SharedKernel.Models;
 
 namespace Application.Discount.Features.Queries.GetDiscounts;
 

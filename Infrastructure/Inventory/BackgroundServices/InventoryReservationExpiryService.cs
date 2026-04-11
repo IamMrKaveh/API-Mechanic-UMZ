@@ -1,5 +1,3 @@
-using Application.Common.Results;
-
 namespace Infrastructure.Inventory.BackgroundServices;
 
 /// <summary>

@@ -3,13 +3,11 @@ namespace Application.Search.Features.Queries.GetSearchIndexStats;
 public sealed class GetSearchIndexStatsHandler(ISearchService searchService)
         : IRequestHandler<GetSearchIndexStatsQuery, ServiceResult<SearchIndexStatsDto>>
 {
-    private readonly ISearchService _searchService = searchService;
-
     public async Task<ServiceResult<SearchIndexStatsDto>> Handle(
         GetSearchIndexStatsQuery request,
         CancellationToken ct)
     {
-        var stats = await _searchService.GetIndexStatsAsync(ct);
+        var stats = await searchService.GetIndexStatsAsync(ct);
 
         var dto = new SearchIndexStatsDto(
             stats.ProductsCount,

@@ -1,6 +1,6 @@
 namespace Application.Brand.Features.Commands.CreateBrand;
 
-public class CreateBrandValidator : AbstractValidator<CreateBrandCommand>
+public sealed class CreateBrandValidator : AbstractValidator<CreateBrandCommand>
 {
     public CreateBrandValidator()
     {

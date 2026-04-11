@@ -1,21 +1,21 @@
+using Domain.User.ValueObjects;
+
 namespace Application.Shipping.Features.Queries.GetAvailableShippings;
 
-public class GetAvailableShippingsHandler
-    : IRequestHandler<GetAvailableShippingsQuery, ServiceResult<IEnumerable<AvailableShippingDto>>>
+public class GetAvailableShippingsHandler(IShippingQueryService shippingQueryService)
+        : IRequestHandler<GetAvailableShippingsQuery, ServiceResult<IEnumerable<AvailableShippingDto>>>
 {
-    private readonly IShippingQueryService _shippingQueryService;
-
-    public GetAvailableShippingsHandler(IShippingQueryService shippingQueryService)
-    {
-        _shippingQueryService = shippingQueryService;
-    }
+    private readonly IShippingQueryService _shippingQueryService = shippingQueryService;
 
     public async Task<ServiceResult<IEnumerable<AvailableShippingDto>>> Handle(
         GetAvailableShippingsQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var result = await _shippingQueryService.GetAvailableShippingsForCartAsync(
-            request.UserId, cancellationToken);
+        var userId = UserId.From(request.UserId);
+
+        var result = await shippingQueryService.GetAvailableShippingsForCartAsync(
+            userId,
+            ct);
 
         return ServiceResult<IEnumerable<AvailableShippingDto>>.Success(result);
     }

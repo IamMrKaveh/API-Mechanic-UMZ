@@ -1,21 +1,17 @@
 using Application.User.Features.Shared;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Queries.GetUserAddresses;
 
-public class GetUserAddressesHandler
-    : IRequestHandler<GetUserAddressesQuery, ServiceResult<IEnumerable<UserAddressDto>>>
+public class GetUserAddressesHandler(IUserQueryService userQueryService)
+        : IRequestHandler<GetUserAddressesQuery, ServiceResult<IEnumerable<UserAddressDto>>>
 {
-    private readonly IUserQueryService _userQueryService;
-
-    public GetUserAddressesHandler(IUserQueryService userQueryService)
-    {
-        _userQueryService = userQueryService;
-    }
-
     public async Task<ServiceResult<IEnumerable<UserAddressDto>>> Handle(
-        GetUserAddressesQuery request, CancellationToken cancellationToken)
+        GetUserAddressesQuery request, CancellationToken ct)
     {
-        var addresses = await _userQueryService.GetUserAddressesAsync(request.UserId, cancellationToken);
+        var userId = UserId.From(request.UserId);
+
+        var addresses = await userQueryService.GetUserAddressesAsync(userId, ct);
         return ServiceResult<IEnumerable<UserAddressDto>>.Success(addresses);
     }
 }

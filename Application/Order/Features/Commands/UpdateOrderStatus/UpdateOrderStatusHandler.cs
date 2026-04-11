@@ -1,4 +1,5 @@
 using Domain.Common.Exceptions;
+using Domain.Common.ValueObjects;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 
@@ -12,23 +13,16 @@ public class UpdateOrderStatusHandler(
     OrderDomainService orderDomainService,
     ILogger<UpdateOrderStatusHandler> logger) : IRequestHandler<UpdateOrderStatusCommand, ServiceResult>
 {
-    private readonly IOrderRepository _orderRepository = orderRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly INotificationService _notificationService = notificationService;
-    private readonly IAuditService _auditService = auditService;
-    private readonly OrderDomainService _orderDomainService = orderDomainService;
-    private readonly ILogger<UpdateOrderStatusHandler> _logger = logger;
-
     public async Task<ServiceResult> Handle(
         UpdateOrderStatusCommand request,
         CancellationToken ct)
     {
-        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
-        if (order == null)
+        var order = await orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
+        if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
         if (!string.IsNullOrEmpty(request.RowVersion))
-            _orderRepository.SetOriginalRowVersion(order, Convert.FromBase64String(request.RowVersion));
+            orderRepository.SetOriginalRowVersion(order, Convert.FromBase64String(request.RowVersion));
 
         OrderStatusValue newStatus;
         try
@@ -37,10 +31,10 @@ public class UpdateOrderStatusHandler(
         }
         catch (DomainException)
         {
-            return ServiceResult.Unexpected("وضعیت سفارش نامعتبر است.");
+            return ServiceResult.Failure("وضعیت سفارش نامعتبر است.");
         }
 
-        var validation = _orderDomainService.ValidateStatusTransition(order, newStatus);
+        var validation = orderDomainService.ValidateStatusTransition(order, newStatus);
         if (!validation.IsValid)
             return ServiceResult.Validation(validation.Error!);
 
@@ -64,25 +58,26 @@ public class UpdateOrderStatusHandler(
                 return ServiceResult.Forbidden($"تغییر مستقیم به وضعیت '{newStatus.DisplayName}' از این مسیر مجاز نیست.");
         }
 
-        await _orderRepository.UpdateAsync(order, ct);
+        await orderRepository.Update(order);
 
         try
         {
-            await _unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.SaveChangesAsync(ct);
 
-            await _notificationService.SendOrderStatusNotificationAsync(
+            await notificationService.SendOrderStatusNotificationAsync(
                 order.UserId,
                 order.Id,
                 oldStatusName,
                 newStatus.DisplayName);
 
-            await _auditService.LogOrderEventAsync(
+            await auditService.LogOrderEventAsync(
                 order.Id,
                 "UpdateOrderStatus",
+                IpAddress.Unknown,
                 request.UpdatedByUserId,
                 $"وضعیت سفارش از {oldStatusName} به {newStatus.DisplayName} تغییر کرد.");
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Order {OrderId} status updated from {OldStatus} to {NewStatus}",
                 order.Id, oldStatusName, newStatus.DisplayName);
 
@@ -90,7 +85,7 @@ public class UpdateOrderStatusHandler(
         }
         catch (ConcurrencyException)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Concurrency conflict updating order {OrderId} status",
                 request.OrderId);
 

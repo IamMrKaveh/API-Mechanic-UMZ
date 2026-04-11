@@ -319,4 +319,9 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
         if (!IsActive)
             throw new DomainException("حساب کاربری غیرفعال است.");
     }
+
+    public void ChangePhoneNumber(PhoneNumber phoneNumber)
+    {
+        throw new NotImplementedException();
+    }
 }

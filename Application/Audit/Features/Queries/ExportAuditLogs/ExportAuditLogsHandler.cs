@@ -1,4 +1,5 @@
 using Application.Audit.Features.Shared;
+using Domain.User.ValueObjects;
 
 namespace Application.Audit.Features.Queries.ExportAuditLogs;
 
@@ -9,6 +10,8 @@ public sealed class ExportAuditLogsHandler(
         ExportAuditLogsQuery request,
         CancellationToken ct)
     {
+        var userId = UserId.From(request.UserId.Value);
+
         var exportRequest = new AuditExportRequest
         {
             UserId = request.UserId,
@@ -28,14 +31,16 @@ public sealed class ExportAuditLogsHandler(
         if (request.Format == "json")
         {
             var result = await auditQueryService.GetAuditLogsAsync(
-                request.UserId,
+                userId,
                 request.EventType,
+                request.EntityType,
                 request.From,
                 request.To,
-                page: 1,
-                pageSize: request.MaxRows);
+                1,
+                request.MaxRows,
+                ct);
 
-            content = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(logs,
+            content = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(result,
                 new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         }
         else
@@ -45,6 +50,6 @@ public sealed class ExportAuditLogsHandler(
 
         var fileName = $"audit_logs_{DateTime.UtcNow:yyyyMMdd_HHmm}.{extension}";
 
-        return new ExportAuditLogsResult(content, contentType, fileName);
+        return ServiceResult<PaginatedResult<ExportAuditLogsResult>>.Success(new ExportAuditLogsResult(content, fileName, contentType));
     }
 }

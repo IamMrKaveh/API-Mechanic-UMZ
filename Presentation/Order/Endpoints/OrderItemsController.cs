@@ -1,5 +1,4 @@
 using Application.Order.Features.Commands.DeleteOrderItem;
-using Presentation.Base.Endpoints.v1;
 
 namespace Presentation.Order.Endpoints;
 

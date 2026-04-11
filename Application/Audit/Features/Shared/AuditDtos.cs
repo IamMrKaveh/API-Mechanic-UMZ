@@ -32,12 +32,10 @@ public sealed record HourlyCountDto(
     int Hour,
     int Count);
 
-public sealed record ExportAuditLogsResult
-{
-    public byte[] FileContent { get; init; } = [];
-    public string FileName { get; init; } = string.Empty;
-    public string ContentType { get; init; } = "text/csv";
-}
+public sealed record ExportAuditLogsResult(
+    byte[] FileContent,
+    string FileName = "",
+    string ContentType = "text/csv");
 
 public sealed record GetAuditLogsResult
 {

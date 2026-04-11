@@ -1,3 +1,6 @@
+using Application.Inventory.Features.Commands.BulkAdjustStock;
+using Application.Inventory.Features.Commands.BulkStockIn;
+
 namespace Application.Inventory.Features.Shared;
 
 public record InventoryTransactionDto
@@ -50,3 +53,39 @@ public record VariantAvailabilityDto
     public bool IsUnlimited { get; init; }
     public bool IsLowStock { get; init; }
 }
+
+public sealed record ReverseInventoryDto(
+    Guid VariantId,
+    string IdempotencyKey,
+    string Reason
+);
+
+public sealed record AdjustStockDto(
+    Guid VariantId,
+    int QuantityChange,
+    string Reason
+);
+
+public sealed record BulkAdjustStockDto(
+    IReadOnlyList<BulkAdjustStockItem> Items,
+    string Reason
+);
+
+public sealed record RecordDamageDto(
+    Guid VariantId,
+    int Quantity,
+    string Reason
+);
+
+public sealed record BulkStockInDto(
+    IReadOnlyList<BulkStockInItem> Items,
+    string Reason
+);
+
+public sealed record BatchAvailabilityDto(
+    ICollection<Guid> VariantIds
+);
+
+public sealed record ApproveReturnDto(
+    string? Reason = null
+);

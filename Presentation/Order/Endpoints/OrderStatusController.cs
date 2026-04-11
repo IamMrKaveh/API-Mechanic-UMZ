@@ -1,6 +1,5 @@
 using Application.Order.Features.Queries.GetOrderStatusById;
 using Application.Order.Features.Queries.GetOrderStatuses;
-using Presentation.Base.Endpoints.v1;
 
 namespace Presentation.Order.Endpoints;
 

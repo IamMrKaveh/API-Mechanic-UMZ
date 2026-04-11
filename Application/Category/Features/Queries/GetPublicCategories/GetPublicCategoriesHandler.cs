@@ -1,22 +1,19 @@
-﻿using Application.Category.Contracts;
-using Application.Category.Features.Shared;
+﻿using Application.Category.Features.Shared;
 
 namespace Application.Category.Features.Queries.GetPublicCategories;
 
 public class GetPublicCategoriesHandler(ICategoryQueryService categoryQueryService)
     : IRequestHandler<GetPublicCategoriesQuery, ServiceResult<PaginatedResult<CategoryDto>>>
 {
-    private readonly ICategoryQueryService _categoryQueryService = categoryQueryService;
-
     public async Task<ServiceResult<PaginatedResult<CategoryDto>>> Handle(
         GetPublicCategoriesQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var result = await _categoryQueryService.GetPublicCategoriesAsync(
+        var result = await categoryQueryService.GetPublicCategoriesAsync(
             request.Search,
             request.Page,
             request.PageSize,
-            cancellationToken);
+            ct);
 
         return ServiceResult<PaginatedResult<CategoryDto>>.Success(result);
     }

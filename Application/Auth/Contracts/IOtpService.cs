@@ -18,4 +18,6 @@ public interface IOtpService
         UserId userId,
         OtpPurpose purpose,
         CancellationToken ct = default);
+
+    bool VerifyOtpAsync(string otpCode, CancellationToken ct);
 }

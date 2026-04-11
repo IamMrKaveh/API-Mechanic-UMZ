@@ -1,4 +1,5 @@
 using Domain.Common.Exceptions;
+using Domain.Common.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
@@ -8,40 +9,33 @@ public class DeactivateAccountHandler(
     IUserRepository userRepository,
     ISessionService sessionService,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ILogger<DeactivateAccountHandler> logger) : IRequestHandler<DeactivateAccountCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<DeactivateAccountCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository = userRepository;
-    private readonly ISessionService _sessionService = sessionService;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IAuditService _auditService = auditService;
-    private readonly ILogger<DeactivateAccountHandler> _logger = logger;
-
     public async Task<ServiceResult> Handle(
         DeactivateAccountCommand request,
         CancellationToken ct)
     {
         var userId = UserId.From(request.UserId);
-        var user = await _userRepository.GetByIdAsync(userId, ct);
-        if (user == null)
+        var user = await userRepository.GetByIdAsync(userId, ct);
+        if (user is null)
             return ServiceResult.NotFound("کاربر یافت نشد.");
 
         try
         {
             user.Deactivate();
 
-            _userRepository.Update(user);
-            await _unitOfWork.SaveChangesAsync(ct);
+            userRepository.Update(user);
+            await unitOfWork.SaveChangesAsync(ct);
 
-            await _sessionService.RevokeAllUserSessionsAsync(request.UserId, ct);
+            await sessionService.RevokeAllSessionsAsync(userId, ct);
 
-            await _auditService.LogSecurityEventAsync(
+            await auditService.LogSecurityEventAsync(
                 "AccountDeactivated",
-                $"حساب کاربر {request.UserId} غیرفعال شد.",
-                "system",
-                request.UserId);
+                $"حساب کاربر {userId} غیرفعال شد.",
+                IpAddress.Unknown,
+                userId,
+                ct);
 
-            _logger.LogInformation("حساب کاربر {UserId} غیرفعال شد.", request.UserId);
             return ServiceResult.Success();
         }
         catch (DomainException ex)

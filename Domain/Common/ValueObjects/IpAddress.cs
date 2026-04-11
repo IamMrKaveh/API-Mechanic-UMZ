@@ -18,6 +18,7 @@ public sealed class IpAddress : ValueObject
     }
 
     public static IpAddress Unknown => new("0.0.0.0");
+    public static IpAddress SystemIp => new("192.168.1.1");
 
     protected override IEnumerable<object> GetEqualityComponents()
     {

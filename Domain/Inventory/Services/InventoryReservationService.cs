@@ -5,7 +5,8 @@ namespace Domain.Inventory.Services;
 
 public sealed class InventoryReservationService : IInventoryReservationService
 {
-    public BatchReservationValidation ValidateBatchAvailability(IReadOnlyList<BatchReservationItem> items)
+    public BatchReservationValidation ValidateBatchAvailability(
+        IReadOnlyList<BatchReservationItem> items)
     {
         var errors = new List<string>();
 
@@ -20,7 +21,8 @@ public sealed class InventoryReservationService : IInventoryReservationService
             : BatchReservationValidation.Valid();
     }
 
-    public BatchReservationResult ReserveBatch(IReadOnlyList<BatchReservationItem> items)
+    public BatchReservationResult ReserveBatch(
+        IReadOnlyList<BatchReservationItem> items)
     {
         var validation = ValidateBatchAvailability(items);
         return validation.IsValid
@@ -28,7 +30,8 @@ public sealed class InventoryReservationService : IInventoryReservationService
             : BatchReservationResult.Fail(validation.Errors);
     }
 
-    public BatchReleaseResult ReleaseBatch(IReadOnlyList<BatchReservationItem> items)
+    public BatchReleaseResult ReleaseBatch(
+        IReadOnlyList<BatchReservationItem> items)
     {
         if (items.Count == 0)
             return BatchReleaseResult.Fail("No items provided for release.");

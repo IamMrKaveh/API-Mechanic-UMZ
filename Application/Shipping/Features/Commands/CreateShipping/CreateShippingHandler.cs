@@ -12,7 +12,9 @@ public class CreateShippingHandler(
 {
     public async Task<ServiceResult<ShippingDto>> Handle(CreateShippingCommand request, CancellationToken ct)
     {
-        if (await shippingRepository.ExistsByNameAsync(request.Name, null, ct))
+        var shippingName = ShippingName.Create(request.Name);
+
+        if (await shippingRepository.ExistsByNameAsync(shippingName, null, ct))
             return ServiceResult<ShippingDto>.Conflict("روش ارسال با این نام قبلاً ثبت شده است.");
 
         var shipping = Domain.Shipping.Aggregates.Shipping.Create(

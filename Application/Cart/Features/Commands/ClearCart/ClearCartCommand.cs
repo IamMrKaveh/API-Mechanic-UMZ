@@ -1,3 +1,5 @@
 namespace Application.Cart.Features.Commands.ClearCart;
 
-public record ClearCartCommand(Guid? UserId, string? GuestToken) : IRequest<ServiceResult>;
+public record ClearCartCommand(
+    Guid? UserId,
+    string? GuestToken) : IRequest<ServiceResult>;

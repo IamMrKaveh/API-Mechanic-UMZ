@@ -7,6 +7,7 @@ public record SearchProductsParams
     public int PageSize { get; init; } = 20;
     public Guid? CategoryId { get; init; }
     public Guid? BrandId { get; init; }
+    public string? Brand { get; init; }
     public decimal? MinPrice { get; init; }
     public decimal? MaxPrice { get; init; }
     public bool InStockOnly { get; init; }

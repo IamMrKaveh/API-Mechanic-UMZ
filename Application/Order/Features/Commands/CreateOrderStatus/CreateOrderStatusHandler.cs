@@ -9,10 +9,6 @@ public class CreateOrderStatusHandler(
     IUnitOfWork unitOfWork,
     ILogger<CreateOrderStatusHandler> logger) : IRequestHandler<CreateOrderStatusCommand, ServiceResult<OrderStatusDto>>
 {
-    private readonly IOrderStatusRepository _orderStatusRepository = orderStatusRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ILogger<CreateOrderStatusHandler> _logger = logger;
-
     public async Task<ServiceResult<OrderStatusDto>> Handle(
         CreateOrderStatusCommand request,
         CancellationToken ct)
@@ -30,10 +26,10 @@ public class CreateOrderStatusHandler(
             request.AllowCancel,
             request.AllowEdit);
 
-        await _orderStatusRepository.AddAsync(status, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
+        await orderStatusRepository.AddAsync(status, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        _logger.LogInformation(
+        logger.LogInformation(
             "New order status created: {StatusName} (ID: {StatusId})",
             status.Name, status.Id);
 

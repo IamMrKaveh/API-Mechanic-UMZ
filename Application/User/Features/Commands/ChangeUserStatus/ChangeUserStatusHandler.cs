@@ -1,24 +1,24 @@
 using Domain.User.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.ChangeUserStatus;
 
 public class ChangeUserStatusHandler(IUserRepository userRepository, IUnitOfWork unitOfWork) : IRequestHandler<ChangeUserStatusCommand, ServiceResult>
 {
-    private readonly IUserRepository _userRepository = userRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
     public async Task<ServiceResult> Handle(
         ChangeUserStatusCommand request,
         CancellationToken ct)
     {
-        var user = await _userRepository.GetByIdAsync(request.Id);
+        var userId = UserId.From(request.UserId);
+
+        var user = await userRepository.GetByIdAsync(userId);
         if (user == null)
             return ServiceResult.NotFound("NotFound");
 
         user.SetIsActive(request.IsActive);
-        _userRepository.Update(user);
+        userRepository.Update(user);
 
-        await _unitOfWork.SaveChangesAsync(ct);
+        await unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
     }
 }

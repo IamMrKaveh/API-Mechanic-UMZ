@@ -29,4 +29,8 @@ public interface IPaymentQueryService
     Task<IReadOnlyList<PaymentTransactionDto>> GetByOrderIdAsync(
         OrderId orderId,
         CancellationToken ct = default);
+
+    Task<PaymentStatusDto?> GetStatusByAuthorityAsync(
+        string authority,
+        CancellationToken ct);
 }

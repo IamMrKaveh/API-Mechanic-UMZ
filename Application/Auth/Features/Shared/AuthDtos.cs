@@ -19,3 +19,21 @@ public record RefreshTokenResult
     public string FullToken { get; init; } = string.Empty;
     public DateTime ExpiresAt { get; init; }
 }
+
+public sealed record SendOtpDto(
+    string PhoneNumber
+);
+
+public sealed record VerifyOtpDto(
+    string PhoneNumber,
+    string Code,
+    string? DeviceInfo = null
+);
+
+public sealed record RefreshTokenDto(
+    string RefreshToken
+);
+
+public sealed record RevokeSessionDto(
+    Guid SessionId
+);

@@ -1,7 +1,4 @@
 using Application.Product.Features.Shared;
-using Domain.Brand.ValueObjects;
-using Domain.Category.ValueObjects;
-using Domain.Common.ValueObjects;
 using Domain.Product.ValueObjects;
 
 namespace Application.Product.Contracts;
@@ -12,13 +9,17 @@ public interface IProductQueryService
         ProductId productId,
         CancellationToken ct = default);
 
-    Task<ProductDetailDto?> GetProductBySlugAsync(
-        Slug slug,
+    Task<AdminProductDetailDto?> GetAdminProductDetailAsync(
+        ProductId productId,
         CancellationToken ct = default);
 
-    Task<PaginatedResult<ProductListItemDto>> GetProductsPagedAsync(
-        CategoryId? categoryId,
-        BrandId? brandId,
+    Task<PublicProductDetailDto?> GetPublicProductDetailAsync(
+        ProductId productId,
+        CancellationToken ct = default);
+
+    Task<PaginatedResult<ProductListItemDto>> GetAdminProductsAsync(
+        Guid? categoryId,
+        Guid? brandId,
         string? search,
         bool? isActive,
         bool includeDeleted,
@@ -26,7 +27,7 @@ public interface IProductQueryService
         int pageSize,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<ProductListItemDto>> GetFeaturedProductsAsync(
-        int count = 10,
+    Task<PaginatedResult<ProductCatalogItemDto>> GetProductCatalogAsync(
+        ProductCatalogSearchParams searchParams,
         CancellationToken ct = default);
 }

@@ -59,7 +59,11 @@ public class AdminReviewsController(IMediator mediator) : BaseApiController(medi
         Guid reviewId,
         [FromBody] ReplyToReviewRequest request)
     {
-        var result = await _mediator.Send(new ReplyToReviewCommand(reviewId, request.Reply));
+        var command = new ReplyToReviewCommand(
+            reviewId,
+            request.Reply,
+            CurrentUser.UserId);
+        var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
 

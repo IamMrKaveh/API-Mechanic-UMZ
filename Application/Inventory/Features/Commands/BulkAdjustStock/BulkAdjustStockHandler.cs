@@ -1,55 +1,69 @@
-using Application.Common.Results;
-using Domain.Common.Interfaces;
+using Application.Audit.Contracts;
 using Domain.Inventory.Interfaces;
-using Domain.Inventory.Services;
-using Domain.Variant.ValueObjects;
-using MediatR;
-using Microsoft.Extensions.Logging;
+using Domain.Inventory.ValueObjects;
 using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Features.Commands.BulkAdjustStock;
 
 public class BulkAdjustStockHandler(
     IInventoryRepository inventoryRepository,
-    InventoryDomainService inventoryDomainService,
     IUnitOfWork unitOfWork,
-    ILogger<BulkAdjustStockHandler> logger) : IRequestHandler<BulkAdjustStockCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<BulkAdjustStockCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(BulkAdjustStockCommand request, CancellationToken ct)
     {
-        var errors = new List<string>();
+        var userId = UserId.From(request.UserId);
 
-        foreach (var variantId in request.VariantId.Zip(request.QuantityChange, (v, q) => new { Variant = v, Quantity = q }))
+        using var transaction = await unitOfWork.BeginTransactionAsync(ct);
+
+        try
         {
-            var inventory = await inventoryRepository.GetByVariantIdAsync(VariantId.From(variantId.Variant), ct);
+            var errors = new List<string>();
 
-            if (inventory is null)
+            foreach (var item in request.Items)
             {
-                errors.Add($"موجودی برای واریانت {variantId.Variant} یافت نشد.");
-                continue;
+                var variantId = VariantId.From(item.VariantId);
+                var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
+
+                if (inventory is null)
+                {
+                    errors.Add($"موجودی برای واریانت {item.VariantId} یافت نشد.");
+                    continue;
+                }
+
+                var result = inventory.AdjustStock(item.QuantityChange, userId, request.Reason);
+
+                if (result.IsFailure)
+                {
+                    errors.Add($"واریانت {item.VariantId}: {result.Error.Message}");
+                    continue;
+                }
+
+                inventoryRepository.Update(inventory);
             }
 
-            var result = inventoryDomainService.AdjustStock(
-                inventory,
-                variantId.Quantity,
-                UserId.From(request.UserId),
-                request.Reason);
-
-            if (result.IsFailure)
+            if (errors.Count > 0)
             {
-                errors.Add($"واریانت {variantId.Variant}: {result.Error.Message}");
-                continue;
+                await unitOfWork.RollbackTransactionAsync(ct);
+                return ServiceResult.Failure(string.Join(" | ", errors));
             }
 
-            inventoryRepository.Update(inventory);
+            await unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.CommitTransactionAsync(ct);
+
+            await auditService.LogInventoryEventAsync(
+                VariantId.From(request.Items[0].VariantId),
+                "BulkAdjustStock",
+                $"تعدیل دسته‌ای موجودی برای {request.Items.Count} واریانت. دلیل: {request.Reason}",
+                userId);
+
+            return ServiceResult.Success();
         }
-
-        if (errors.Count > 0)
-            return ServiceResult.Failure(string.Join(" | ", errors));
-
-        await unitOfWork.SaveChangesAsync(ct);
-        logger.LogInformation("Bulk stock adjustment completed for {Count} variants", request.VariantId.Count);
-
-        return ServiceResult.Success();
+        catch
+        {
+            await unitOfWork.RollbackTransactionAsync(ct);
+            throw;
+        }
     }
 }

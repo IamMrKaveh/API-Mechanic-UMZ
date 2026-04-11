@@ -60,4 +60,6 @@ public interface IAuditService
         string action,
         string details,
         UserId userId);
+
+    Task LogAdminEventAsync(string title, UserId adminId, string detail);
 }

@@ -1,4 +1,3 @@
-using Application.Notification.Contracts;
 using Domain.Support.Events;
 using Domain.Support.Interfaces;
 
@@ -9,21 +8,17 @@ public sealed class TicketAnsweredEventHandler(
     INotificationService notificationService,
     ILogger<TicketAnsweredEventHandler> logger) : INotificationHandler<Domain.Support.Events.TicketAnsweredEvent>
 {
-    private readonly ITicketRepository _ticketRepository = ticketRepository;
-    private readonly INotificationService _notificationService = notificationService;
-    private readonly ILogger<TicketAnsweredEventHandler> _logger = logger;
-
     public async Task Handle(
         TicketAnsweredEvent notification,
         CancellationToken ct)
     {
         try
         {
-            var ticket = await _ticketRepository.GetByIdWithMessagesAsync(notification.TicketId, ct);
+            var ticket = await ticketRepository.GetByIdWithMessagesAsync(notification.TicketId, ct);
 
             if (ticket is null) return;
 
-            await _notificationService.CreateNotificationAsync(
+            await notificationService.CreateNotificationAsync(
                 ticket.UserId,
                 "پاسخ جدید به تیکت",
                 $"تیکت «{ticket.Subject}» پاسخ داده شد.",
@@ -33,14 +28,14 @@ public sealed class TicketAnsweredEventHandler(
                 "Ticket",
                 ct);
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Notification sent for ticket {TicketId} answered by admin {AdminId}",
                 notification.TicketId,
                 notification.AdminId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to handle TicketAnsweredEvent for ticket {TicketId}", notification.TicketId);
+            logger.LogError(ex, "Failed to handle TicketAnsweredEvent for ticket {TicketId}", notification.TicketId);
         }
     }
 }

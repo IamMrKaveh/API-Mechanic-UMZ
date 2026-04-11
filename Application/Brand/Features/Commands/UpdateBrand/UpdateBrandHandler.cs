@@ -6,12 +6,14 @@ using Domain.Common.ValueObjects;
 
 namespace Application.Brand.Features.Commands.UpdateBrand;
 
-public class UpdateBrandHandler(
+public sealed class UpdateBrandHandler(
     IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
     IMapper mapper) : IRequestHandler<UpdateBrandCommand, ServiceResult<BrandDetailDto>>
 {
-    public async Task<ServiceResult<BrandDetailDto>> Handle(UpdateBrandCommand request, CancellationToken ct)
+    public async Task<ServiceResult<BrandDetailDto>> Handle(
+        UpdateBrandCommand request,
+        CancellationToken ct)
     {
         var brandId = BrandId.From(request.BrandId);
         var brand = await brandRepository.GetByIdAsync(brandId, ct);
@@ -22,7 +24,6 @@ public class UpdateBrandHandler(
         brandRepository.SetOriginalRowVersion(brand, rowVersion);
 
         var brandName = BrandName.Create(request.Name);
-
         var slug = string.IsNullOrWhiteSpace(request.Slug)
             ? Slug.GenerateFrom(request.Name)
             : Slug.FromString(request.Slug);

@@ -1,6 +1,8 @@
 ﻿using Domain.Common.Exceptions;
 using Domain.Common.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
+using Domain.Wallet.ValueObjects;
 
 namespace Application.Wallet.Features.Commands.CreditWallet;
 
@@ -9,46 +11,42 @@ public class CreditWalletHandler(
     IUnitOfWork unitOfWork,
     ILogger<CreditWalletHandler> logger) : IRequestHandler<CreditWalletCommand, ServiceResult<Unit>>
 {
-    private readonly IWalletRepository _walletRepository = walletRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ILogger<CreditWalletHandler> _logger = logger;
-
     public async Task<ServiceResult<Unit>> Handle(
         CreditWalletCommand request,
         CancellationToken ct)
     {
         try
         {
-            var alreadyProcessed = await _walletRepository.HasIdempotencyKeyAsync(request.UserId, request.IdempotencyKey, ct);
+            var userId = UserId.From(request.UserId);
+
+            var alreadyProcessed = await walletRepository.HasIdempotencyKeyAsync(userId, request.IdempotencyKey, ct);
             if (alreadyProcessed)
             {
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Wallet credit idempotency key {Key} already processed for user {UserId}",
                     request.IdempotencyKey, request.UserId);
                 return ServiceResult<Unit>.Success(Unit.Value);
             }
 
-            var wallet = await _walletRepository.GetByUserIdForUpdateAsync(request.UserId, ct);
-            if (wallet == null)
+            var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
+            if (wallet is null)
             {
-                wallet = Domain.Wallet.Aggregates.Wallet.Create(request.UserId);
-                await _walletRepository.AddAsync(wallet, ct);
+                wallet = Domain.Wallet.Aggregates.Wallet.Create(
+                    WalletId.NewId(),
+                    userId);
+                await walletRepository.AddAsync(wallet, ct);
             }
 
             wallet.Credit(
                 Money.FromDecimal(request.Amount),
-                request.TransactionType,
-                request.ReferenceType,
-                request.ReferenceId,
-                request.IdempotencyKey,
-                request.CorrelationId,
-                request.Description);
+                request.Description,
+                request.ReferenceId);
 
-            _walletRepository.Update(wallet);
+            walletRepository.Update(wallet);
 
-            await _unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.SaveChangesAsync(ct);
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Wallet credited {Amount} for user {UserId} via {RefType}/{RefId}",
                 request.Amount, request.UserId, request.ReferenceType, request.ReferenceId);
 
@@ -56,21 +54,21 @@ public class CreditWalletHandler(
         }
         catch (DbUpdateException)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Duplicate idempotency key (DB constraint) on credit: {Key} for user {UserId}",
                 request.IdempotencyKey, request.UserId);
             return ServiceResult<Unit>.Success(Unit.Value);
         }
         catch (ConcurrencyException)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Concurrency conflict crediting wallet for user {UserId}. Retry recommended.",
                 request.UserId);
             return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
         {
-            return ServiceResult<Unit>.Unexpected(ex.Message);
+            return ServiceResult<Unit>.Failure(ex.Message);
         }
     }
 }

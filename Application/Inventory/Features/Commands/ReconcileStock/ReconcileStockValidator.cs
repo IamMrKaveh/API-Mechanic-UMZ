@@ -5,7 +5,7 @@ public class ReconcileStockValidator : AbstractValidator<ReconcileStockCommand>
     public ReconcileStockValidator()
     {
         RuleFor(x => x.VariantId).NotEmpty();
-        RuleFor(x => x.CalculatedStock).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.CalculatedStock).GreaterThanOrEqualTo(0).WithMessage("موجودی محاسبه‌شده نمی‌تواند منفی باشد.");
         RuleFor(x => x.UserId).NotEmpty();
     }
 }

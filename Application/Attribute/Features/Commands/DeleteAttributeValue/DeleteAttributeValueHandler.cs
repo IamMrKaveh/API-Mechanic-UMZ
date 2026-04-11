@@ -1,7 +1,5 @@
-using Application.Common.Results;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
-using Domain.Common.Interfaces;
 
 namespace Application.Attribute.Features.Commands.DeleteAttributeValue;
 
@@ -9,21 +7,18 @@ public class DeleteAttributeValueHandler(
     IAttributeRepository repository,
     IUnitOfWork unitOfWork) : IRequestHandler<DeleteAttributeValueCommand, ServiceResult>
 {
-    private readonly IAttributeRepository _repository = repository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
     public async Task<ServiceResult> Handle(
         DeleteAttributeValueCommand request,
         CancellationToken ct)
     {
         var attributeValueId = AttributeValueId.From(request.Id);
 
-        var attributeValue = await _repository.GetAttributeValueByIdAsync(attributeValueId, ct);
+        var attributeValue = await repository.GetAttributeValueByIdAsync(attributeValueId, ct);
         if (attributeValue is null)
             return ServiceResult.NotFound("Attribute value not found.");
 
-        await _repository.DeleteAttributeValueAsync(attributeValue.Id, null, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
+        await repository.DeleteAttributeValueAsync(attributeValue.Id, null, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

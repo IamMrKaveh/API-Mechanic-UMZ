@@ -4,7 +4,6 @@ using Domain.Inventory.ValueObjects;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
-using SharedKernel.Results;
 
 namespace Domain.Inventory.Aggregates;
 

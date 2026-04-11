@@ -1,4 +1,7 @@
-﻿namespace Presentation.Inventory.Requests;
+﻿using Application.Inventory.Features.Commands.BulkAdjustStock;
+using Application.Inventory.Features.Commands.BulkStockIn;
+
+namespace Presentation.Inventory.Requests;
 
 public record ReverseInventoryTransactionRequest(
     Guid VariantId,
@@ -13,8 +16,7 @@ public record AdjustStockRequest(
 );
 
 public record BulkAdjustStockRequest(
-    ICollection<Guid> VariantId,
-    ICollection<int> QuantityChange,
+    IReadOnlyList<BulkAdjustStockItem> Items,
     Guid UserId,
     string Reason
 );
@@ -28,9 +30,7 @@ public record RecordDamageRequest(
 );
 
 public record BulkStockInRequest(
-    ICollection<Guid> VariantIds,
-    ICollection<int> Quantities,
-    ICollection<string>? ReferenceNumbers,
+    IReadOnlyList<BulkStockInItem> Items,
     Guid? UserId,
     string Reason
 );

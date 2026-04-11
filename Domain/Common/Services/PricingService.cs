@@ -1,18 +1,15 @@
+using Domain.Common.ValueObjects;
+using Domain.Discount.ValueObjects;
+
 namespace Domain.Common.Services;
 
 public class PricingService : IPricingService
 {
-    public decimal CalculateFinalPrice(decimal basePrice, decimal? discountAmount, bool isPercentage)
+    public Money CalculateFinalPrice(Money basePrice, DiscountValue? discount)
     {
-        if (!discountAmount.HasValue || discountAmount.Value == 0)
+        if (discount is null)
             return basePrice;
 
-        if (isPercentage)
-        {
-            var discountValue = basePrice * (discountAmount.Value / 100);
-            return basePrice - discountValue;
-        }
-
-        return basePrice - discountAmount.Value;
+        return discount.Apply(basePrice);
     }
 }

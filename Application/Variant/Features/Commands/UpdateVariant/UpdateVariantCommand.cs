@@ -3,6 +3,7 @@ namespace Application.Variant.Features.Commands.UpdateVariant;
 public record UpdateVariantCommand(
     Guid ProductId,
     Guid VariantId,
+    Guid UserId,
     string? Sku,
     decimal PurchasePrice,
     decimal SellingPrice,

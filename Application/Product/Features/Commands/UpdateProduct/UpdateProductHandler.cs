@@ -1,3 +1,5 @@
+using Application.Common.Extensions;
+using Application.Common.Interfaces;
 using Application.Product.Features.Shared;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
@@ -6,36 +8,39 @@ using Domain.Category.ValueObjects;
 using Domain.Common.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Product.Features.Commands.UpdateProduct;
 
-public class UpdateProductHandler(
+public sealed class UpdateProductHandler(
     IProductRepository productRepository,
     ICategoryRepository categoryRepository,
     IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICurrentUserService currentUserService,
+    IMapper mapper,
     ILogger<UpdateProductHandler> logger) : IRequestHandler<UpdateProductCommand, ServiceResult<ProductDetailDto>>
 {
-    private readonly IProductRepository _productRepository = productRepository;
-    private readonly ICategoryRepository _categoryRepository = categoryRepository;
-    private readonly IBrandRepository _brandRepository = brandRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ILogger<UpdateProductHandler> _logger = logger;
-
     public async Task<ServiceResult<ProductDetailDto>> Handle(
         UpdateProductCommand request,
         CancellationToken ct)
     {
-        var product = await _productRepository.GetByIdAsync(ProductId.From(request.Id), ct);
+        var productId = ProductId.From(request.Id);
+        var product = await productRepository.GetByIdAsync(productId, ct);
         if (product is null)
             return ServiceResult<ProductDetailDto>.NotFound("محصول یافت نشد.");
 
-        var category = await _categoryRepository.GetByIdAsync(CategoryId.From(request.CategoryId), ct);
+        var categoryId = CategoryId.From(request.CategoryId);
+        var category = await categoryRepository.GetByIdAsync(categoryId, ct);
         if (category is null)
             return ServiceResult<ProductDetailDto>.NotFound("دسته‌بندی یافت نشد.");
 
-        var brand = await _brandRepository.GetByIdAsync(request.BrandId, ct);
+        var brandId = BrandId.From(request.BrandId);
+        var brand = await brandRepository.GetByIdAsync(brandId, ct);
         if (brand is null)
             return ServiceResult<ProductDetailDto>.NotFound("برند یافت نشد.");
 
@@ -43,21 +48,20 @@ public class UpdateProductHandler(
             ? Slug.GenerateFrom(request.Name)
             : Slug.FromString(request.Slug);
 
-        if (await _productRepository.ExistsBySlugAsync(slug.Value, ProductId.From(request.Id), ct))
+        if (await productRepository.ExistsBySlugAsync(slug, productId, ct))
             return ServiceResult<ProductDetailDto>.Conflict("محصولی با این Slug قبلاً ثبت شده است.");
 
         try
         {
-            var rowVersion = Convert.FromBase64String(request.RowVersion);
-            _productRepository.SetOriginalRowVersion(product, rowVersion);
+            productRepository.SetOriginalRowVersion(product, request.RowVersion.FromBase64RowVersion());
 
-            product.UpdateDetails(request.Name, slug.Value, request.Description);
+            product.UpdateDetails(ProductName.Create(request.Name), slug, request.Description ?? string.Empty);
 
-            if (product.CategoryId != request.CategoryId)
-                product.ChangeCategory(CategoryId.From(request.CategoryId));
+            if (product.CategoryId != categoryId)
+                product.ChangeCategory(categoryId);
 
-            if (product.BrandId != request.BrandId)
-                product.ChangeBrand(BrandId.From(request.BrandId));
+            if (product.BrandId != brandId)
+                product.ChangeBrand(brandId);
 
             if (request.IsActive && !product.IsActive) product.Activate();
             else if (!request.IsActive && product.IsActive) product.Deactivate();
@@ -65,31 +69,29 @@ public class UpdateProductHandler(
             if (request.IsFeatured && !product.IsFeatured) product.MarkAsFeatured();
             else if (!request.IsFeatured && product.IsFeatured) product.UnmarkAsFeatured();
 
-            _productRepository.Update(product);
-            await _unitOfWork.SaveChangesAsync(ct);
+            productRepository.Update(product);
+            await unitOfWork.SaveChangesAsync(ct);
         }
         catch (DbUpdateConcurrencyException)
         {
             throw new ConcurrencyException("اطلاعات محصول توسط کاربر دیگری تغییر کرده است.");
         }
 
-        _logger.LogInformation("Product {ProductId} updated", product.Id);
+        logger.LogInformation(
+            "Product {ProductId} updated by user {UserId}",
+            product.Id.Value,
+            request.UpdatedByUserId);
 
-        var dto = new ProductDetailDto
+        await auditService.LogProductEventAsync(
+            product.Id,
+            "UpdateProduct",
+            $"Product '{product.Name}' updated. Slug='{product.Slug}', IsActive={product.IsActive}, IsFeatured={product.IsFeatured}.",
+            UserId.From(request.UpdatedByUserId));
+
+        var dto = mapper.Map<ProductDetailDto>(product) with
         {
-            Id = product.Id,
-            Name = product.Name,
-            Slug = product.Slug,
-            Description = product.Description,
-            CategoryId = product.CategoryId,
             CategoryName = category.Name.Value,
-            BrandId = product.BrandId,
-            BrandName = brand.Name.Value,
-            IsActive = product.IsActive,
-            IsFeatured = product.IsFeatured,
-            IsDeleted = false,
-            CreatedAt = product.CreatedAt,
-            UpdatedAt = product.UpdatedAt
+            BrandName = brand.Name.Value
         };
 
         return ServiceResult<ProductDetailDto>.Success(dto);

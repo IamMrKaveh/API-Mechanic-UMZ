@@ -1,14 +1,10 @@
-using Application.Search.Contracts;
-
 namespace Application.Search.Features.Commands.SyncSearchData;
 
 public class SyncSearchDataHandler(ISearchDatabaseSyncService syncService) : IRequestHandler<SyncSearchDataCommand, ServiceResult>
 {
-    private readonly ISearchDatabaseSyncService _syncService = syncService;
-
     public async Task<ServiceResult> Handle(SyncSearchDataCommand request, CancellationToken ct)
     {
-        await _syncService.FullSyncAsync(ct);
+        await syncService.FullSyncAsync(ct);
         return ServiceResult.Success();
     }
 }

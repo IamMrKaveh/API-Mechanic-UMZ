@@ -1,11 +1,6 @@
-using Application.Common.Results;
-using Application.Media.Contracts;
 using Application.Media.Features.Shared;
 using Domain.Media.Services;
 using Domain.Media.ValueObjects;
-using MediatR;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Application.Media.Features.Commands.UploadMedia;
 
