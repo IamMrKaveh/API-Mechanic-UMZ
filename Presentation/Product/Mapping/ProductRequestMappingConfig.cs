@@ -1,5 +1,5 @@
-﻿using Application.Product.Features.Commands.CreateProduct;
-using Application.Product.Features.Commands.UpdateProduct;
+﻿using Application.Product.Features.Queries.GetProduct;
+using Application.Product.Features.Queries.GetProducts;
 using Mapster;
 using Presentation.Product.Requests;
 
@@ -9,11 +9,9 @@ public sealed class ProductRequestMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<CreateProductRequest, CreateProductCommand>()
-            .Ignore(dest => dest.CreatedByUserId);
+        config.NewConfig<GetProductsRequest, GetProductsQuery>();
 
-        config.NewConfig<UpdateProductRequest, UpdateProductCommand>()
-            .Ignore(dest => dest.Id)
-            .Ignore(dest => dest.UpdatedByUserId);
+        config.NewConfig<GetProductRequest, GetProductQuery>()
+            .Ignore(dest => dest.Id);
     }
 }

@@ -5,7 +5,7 @@ namespace Application.Product.Features.Queries.GetAdminProducts;
 public record GetAdminProductsQuery(
     Guid? CategoryId,
     Guid? BrandId,
-    Guid AdminId,
+    Guid UserId,
     string? Search,
     bool? IsActive,
     bool IncludeDeleted,
