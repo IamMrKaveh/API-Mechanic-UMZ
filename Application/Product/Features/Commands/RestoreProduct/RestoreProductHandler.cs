@@ -14,7 +14,7 @@ public class RestoreProductHandler(
         RestoreProductCommand request,
         CancellationToken ct)
     {
-        var productId = ProductId.From(request.Id);
+        var productId = ProductId.From(request.ProductId);
         var userId = UserId.From(request.UserId);
 
         var product = await productRepository.GetByIdAsync(productId, ct);
@@ -31,7 +31,7 @@ public class RestoreProductHandler(
             "RestoreProduct", $"Product '{product.Name}' restored.",
             userId);
 
-        await cacheService.ClearAsync($"product:{request.Id}", ct);
+        await cacheService.ClearAsync($"product:{request.ProductId}", ct);
         await cacheService.ClearAsync($"brand:{product.BrandId}", ct);
 
         return ServiceResult.Success();

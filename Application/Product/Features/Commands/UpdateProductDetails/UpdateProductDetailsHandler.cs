@@ -13,7 +13,7 @@ public class UpdateProductDetailsHandler(
 {
     public async Task<ServiceResult> Handle(UpdateProductDetailsCommand request, CancellationToken ct)
     {
-        var productId = ProductId.From(request.Id);
+        var productId = ProductId.From(request.ProductId);
         var userId = UserId.From(currentUserService.CurrentUser.UserId);
 
         var product = await productRepository.GetByIdAsync(productId, ct);

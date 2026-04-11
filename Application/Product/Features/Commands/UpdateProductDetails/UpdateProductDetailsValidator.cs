@@ -4,7 +4,7 @@ public class UpdateProductDetailsValidator : AbstractValidator<UpdateProductDeta
 {
     public UpdateProductDetailsValidator()
     {
-        RuleFor(x => x.Id).GreaterThan(0);
+        RuleFor(x => x.ProductId).GreaterThan(0);
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.BrandId).GreaterThan(0);
         RuleFor(x => x.RowVersion).NotEmpty();

@@ -1,49 +1,70 @@
 using Application.Product.Features.Queries.GetProduct;
 using Application.Product.Features.Queries.GetProductCatalog;
-using Application.Review.Features.Queries.GetProductReviewSummary;
+using Application.Product.Features.Queries.GetProductDetails;
+using Application.Product.Features.Queries.GetProducts;
+using MapsterMapper;
+using Presentation.Product.Mapping;
 using Presentation.Product.Requests;
 
 namespace Presentation.Product.Endpoints;
 
 [Route("api/[controller]")]
 [ApiController]
-public class ProductsController(IMediator mediator) : BaseApiController(mediator)
+public class ProductsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetProducts([FromQuery] ProductCatalogSearchRequest request)
+    public async Task<IActionResult> GetProducts(
+        [FromQuery] GetProductsRequest request)
     {
-        var query = new GetProductCatalogQuery(
-            request.Page,
-            request.PageSize,
-            request.Search,
-            request.CategoryId,
-            request.BrandId,
-            request.MinPrice,
-            request.MaxPrice,
-            request.InStockOnly,
-            request.SortBy);
-        var result = await _mediator.Send(query);
+        var query = Mapper
+            .Map<GetProductsQuery>(request);
+
+        var result = await Mediator.Send(query);
+
         return ToActionResult(result);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetProduct(Guid id)
+    public async Task<IActionResult> GetProduct(
+        Guid id,
+        [FromBody] GetProductRequest request)
     {
-        var query = new GetProductQuery(id);
-        var result = await _mediator.Send(query);
+        var query = Mapper
+            .Map<GetProductQuery>(request)
+            .Enrich(id);
+
+        var result = await Mediator.Send(query);
+
         return ToActionResult(result);
     }
 
-    [HttpGet("{id}/reviews/summary")]
+    [HttpGet("/catalog")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetReviewSummary(Guid id)
+    public async Task<IActionResult> GetProductCatalog(
+        [FromBody] GetProductCatalogRequest request)
     {
-        var query = new GetProductReviewSummaryQuery(id);
-        var result = await _mediator.Send(query);
+        var query = Mapper
+            .Map<GetProductCatalogQuery>(request);
+
+        var result = await Mediator.Send(query);
+
+        return ToActionResult(result);
+    }
+
+    [HttpGet("/details")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetProductDetails(
+        Guid id,
+        [FromBody] GetProductDetailsRequest request)
+    {
+        var query = Mapper
+            .Map<GetProductDetailsQuery>(request)
+            .Enrich(id);
+
+        var result = await Mediator.Send(query);
+
         return ToActionResult(result);
     }
 }
