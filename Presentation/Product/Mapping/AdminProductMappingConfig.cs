@@ -4,7 +4,7 @@ using Presentation.Product.Requests;
 
 namespace Presentation.Product.Mapping;
 
-public sealed class AdminProductRequestMappingConfig : IRegister
+public sealed class AdminProductMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {

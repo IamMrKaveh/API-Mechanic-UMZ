@@ -5,6 +5,7 @@ using Application.Order.Features.Commands.UpdateOrderStatus;
 using Application.Order.Features.Queries.GetAdminOrderById;
 using Application.Order.Features.Queries.GetAdminOrders;
 using Application.Order.Features.Queries.GetOrderStatistics;
+using MapsterMapper;
 using Presentation.Order.Requests;
 
 namespace Presentation.Order.Endpoints;
@@ -12,36 +13,30 @@ namespace Presentation.Order.Endpoints;
 [ApiController]
 [Route("api/admin/orders")]
 [Authorize(Roles = "Admin")]
-public class AdminOrdersController(IMediator mediator) : BaseApiController(mediator)
+public class AdminOrdersController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet]
     public async Task<IActionResult> GetOrders(
-        [FromQuery] Guid? userId,
-        [FromQuery] string? status,
-        [FromQuery] bool? isPaid,
-        [FromQuery] DateTime? fromDate,
-        [FromQuery] DateTime? toDate,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] GetAdminOrdersRequest request,
+        CancellationToken ct)
     {
-        var query = new GetAdminOrdersQuery(userId, status, fromDate, toDate, isPaid, page, pageSize);
-        var result = await _mediator.Send(query);
+        var query = Mapper.Map<GetAdminOrdersQuery>(request);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetOrderById(Guid id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetOrderById(Guid id, CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetAdminOrderByIdQuery(id));
+        var result = await Mediator.Send(new GetAdminOrderByIdQuery(id), ct);
         return ToActionResult(result);
     }
 
-    [HttpPatch("{id}/status")]
+    [HttpPatch("{id:guid}/status")]
     public async Task<IActionResult> UpdateOrderStatus(
         Guid id,
-        [FromBody] UpdateOrderStatusByIdRequest request)
+        [FromBody] UpdateOrderStatusByIdRequest request,
+        CancellationToken ct)
     {
         var command = new UpdateOrderStatusCommand(
             id,
@@ -49,41 +44,40 @@ public class AdminOrdersController(IMediator mediator) : BaseApiController(media
             request.RowVersion,
             CurrentUser.UserId);
 
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteOrder(Guid id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteOrder(Guid id, CancellationToken ct)
     {
         var command = new DeleteOrderCommand(id, CurrentUser.UserId);
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("statistics")]
     public async Task<IActionResult> GetStatistics(
-        [FromQuery] DateTime? fromDate,
-        [FromQuery] DateTime? toDate)
+        [FromQuery] GetOrderStatisticsRequest request,
+        CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetOrderStatisticsQuery(fromDate, toDate));
+        var query = Mapper.Map<GetOrderStatisticsQuery>(request);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
-    [HttpPatch("{id}/ship")]
-    public async Task<IActionResult> MarkAsShipped(
-        Guid orderId)
+    [HttpPatch("{id:guid}/ship")]
+    public async Task<IActionResult> MarkAsShipped(Guid id, CancellationToken ct)
     {
-        var command = new MarkOrderAsShippedCommand(orderId);
-
-        var result = await _mediator.Send(command);
+        var command = new MarkOrderAsShippedCommand(id);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("expire")]
-    public async Task<IActionResult> ExpireOrders()
+    public async Task<IActionResult> ExpireOrders(CancellationToken ct)
     {
-        var result = await _mediator.Send(new ExpireOrdersCommand());
+        var result = await Mediator.Send(new ExpireOrdersCommand(), ct);
         return ToActionResult(result);
     }
 }

@@ -1,16 +1,19 @@
+using MapsterMapper;
+
 namespace Presentation.Security.Endpoints;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SecurityController(IAntiforgery antiforgery, IMediator mediator) : BaseApiController(mediator)
+public class SecurityController(
+    IAntiforgery antiforgery,
+    IMediator mediator,
+    IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    private readonly IAntiforgery _antiforgery = antiforgery;
-
     [HttpGet("csrf-token")]
     [IgnoreAntiforgeryToken]
     public IActionResult GetCsrfToken()
     {
-        var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
+        var tokens = antiforgery.GetAndStoreTokens(HttpContext);
         return Ok(new { token = tokens.RequestToken });
     }
 }

@@ -10,12 +10,10 @@ public record CreateShippingRequest(
 );
 
 public record UpdateShippingRequest(
-    Guid Id,
     string Name,
     decimal BaseCost,
     string? Description,
     string? EstimatedDeliveryTime,
     int MinDeliveryDays,
-    int MaxDeliveryDays,
-    string RowVersion
+    int MaxDeliveryDays
 );

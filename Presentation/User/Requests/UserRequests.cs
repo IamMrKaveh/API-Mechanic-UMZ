@@ -28,8 +28,7 @@ public record UpdateUserAddressRequest(
 
 public record UpdateProfileRequest(
     string FirstName,
-    string LastName,
-    string? Email
+    string LastName
 );
 
 public record ChangePasswordRequest(

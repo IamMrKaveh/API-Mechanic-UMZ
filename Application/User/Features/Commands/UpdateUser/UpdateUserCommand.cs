@@ -4,5 +4,4 @@ public record UpdateUserCommand(
     Guid Id,
     Guid CurrentUserId,
     string FirstName,
-    string LastName,
-    string? Email) : IRequest<ServiceResult>;
+    string LastName) : IRequest<ServiceResult>;

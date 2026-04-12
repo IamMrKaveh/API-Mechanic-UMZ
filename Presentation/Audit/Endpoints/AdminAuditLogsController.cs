@@ -1,6 +1,8 @@
 using Application.Audit.Features.Queries.ExportAuditLogs;
 using Application.Audit.Features.Queries.GetAuditLogs;
 using Application.Audit.Features.Queries.GetAuditStatistics;
+using MapsterMapper;
+using Presentation.Audit.Requests;
 
 namespace Presentation.Audit.Endpoints;
 
@@ -8,66 +10,62 @@ namespace Presentation.Audit.Endpoints;
 [Route("api/admin/audit-logs")]
 [Authorize(Roles = "Admin")]
 [Tags("Admin - Audit Logs")]
-public sealed class AdminAuditLogsController(IMediator mediator) : BaseApiController(mediator)
+public sealed class AdminAuditLogsController(IMediator mediator, IMapper mapper)
+    : BaseApiController(mediator, mapper)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet]
     public async Task<IActionResult> GetAuditLogs(
-        [FromQuery] Guid? userId = null,
-        [FromQuery] string? eventType = null,
-        [FromQuery] string? action = null,
-        [FromQuery] string? keyword = null,
-        [FromQuery] string? ipAddress = null,
-        [FromQuery] DateTime? from = null,
-        [FromQuery] DateTime? to = null,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50,
-        [FromQuery] string sortBy = "Timestamp",
-        [FromQuery] bool sortDesc = true,
-        CancellationToken ct = default)
+        [FromQuery] GetAuditLogsRequest request,
+        CancellationToken ct)
     {
-        var query = new GetAuditLogsQuery(userId, eventType, action, keyword, ipAddress, from, to, page, pageSize, sortBy, sortDesc);
-        var result = await _mediator.Send(query, ct);
-        return Ok(result);
+        var query = Mapper.Map<GetAuditLogsQuery>(request);
+        var result = await Mediator.Send(query, ct);
+        return ToActionResult(result);
     }
 
     [HttpGet("statistics")]
     public async Task<IActionResult> GetStatistics(
-        [FromQuery] DateTime? from = null,
-        [FromQuery] DateTime? to = null,
-        CancellationToken ct = default)
+        [FromQuery] GetAuditStatisticsRequest request,
+        CancellationToken ct)
     {
-        var query = new GetAuditStatisticsQuery(from, to);
-        var result = await _mediator.Send(query, ct);
-        return Ok(result);
+        var query = Mapper.Map<GetAuditStatisticsQuery>(request);
+        var result = await Mediator.Send(query, ct);
+        return ToActionResult(result);
     }
 
     [HttpGet("export/csv")]
     public async Task<IActionResult> ExportCsv(
-        [FromQuery] Guid? userId = null,
-        [FromQuery] string? eventType = null,
-        [FromQuery] DateTime? from = null,
-        [FromQuery] DateTime? to = null,
-        [FromQuery] int maxRows = 10_000,
-        CancellationToken ct = default)
+        [FromQuery] ExportAuditLogsRequest request,
+        CancellationToken ct)
     {
-        var query = new ExportAuditLogsQuery(userId, eventType, from, to, "csv", maxRows);
-        var result = await _mediator.Send(query, ct);
-        return Ok(result);
+        var query = new ExportAuditLogsQuery(
+            request.UserId,
+            request.EventType,
+            request.EntityType,
+            request.From,
+            request.To,
+            "csv",
+            request.MaxRows ?? 10_000);
+
+        var result = await Mediator.Send(query, ct);
+        return ToActionResult(result);
     }
 
     [HttpGet("export/json")]
     public async Task<IActionResult> ExportJson(
-        [FromQuery] Guid? userId = null,
-        [FromQuery] string? eventType = null,
-        [FromQuery] DateTime? from = null,
-        [FromQuery] DateTime? to = null,
-        [FromQuery] int maxRows = 5_000,
-        CancellationToken ct = default)
+        [FromQuery] ExportAuditLogsRequest request,
+        CancellationToken ct)
     {
-        var query = new ExportAuditLogsQuery(userId, eventType, from, to, "json", maxRows);
-        var result = await _mediator.Send(query, ct);
-        return Ok(result);
+        var query = new ExportAuditLogsQuery(
+            request.UserId,
+            request.EventType,
+            request.EntityType,
+            request.From,
+            request.To,
+            "json",
+            request.MaxRows ?? 5_000);
+
+        var result = await Mediator.Send(query, ct);
+        return ToActionResult(result);
     }
 }

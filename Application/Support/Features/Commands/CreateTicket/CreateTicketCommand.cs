@@ -7,4 +7,4 @@ public record CreateTicketCommand(
     string Subject,
     string Category,
     string? Priority,
-    string InitialMessage) : IRequest<ServiceResult<TicketDto>>;
+    string Message) : IRequest<ServiceResult<TicketDto>>;

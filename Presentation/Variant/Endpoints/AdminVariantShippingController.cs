@@ -8,29 +8,27 @@ namespace Presentation.Variant.Endpoints;
 [ApiController]
 [Route("api/admin/products/variants/shipping")]
 [Authorize(Roles = "Admin")]
-public class AdminVariantShippingController(IMediator mediator) : BaseApiController(mediator)
+public sealed class AdminVariantShippingController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet]
-    public async Task<IActionResult> GetShippings()
+    public async Task<IActionResult> GetShippings(CancellationToken ct)
     {
-        var query = new GetShippingsQuery();
-        var result = await _mediator.Send(query);
+        var result = await Mediator.Send(new GetShippingsQuery(false), ct);
         return ToActionResult(result);
     }
 
-    [HttpGet("{variantId}")]
-    public async Task<IActionResult> GetVariantShipping(Guid variantId)
+    [HttpGet("{variantId:guid}")]
+    public async Task<IActionResult> GetVariantShipping(Guid variantId, CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetVariantShippingQuery(variantId));
+        var result = await Mediator.Send(new GetVariantShippingQuery(variantId), ct);
         return ToActionResult(result);
     }
 
-    [HttpPut("{variantId}")]
+    [HttpPut("{variantId:guid}")]
     public async Task<IActionResult> UpdateShippings(
         Guid variantId,
-        [FromBody] UpdateVariantShippingRequest request)
+        [FromBody] UpdateVariantShippingRequest request,
+        CancellationToken ct)
     {
         var command = new UpdateVariantShippingCommand(
             variantId,
@@ -38,7 +36,7 @@ public class AdminVariantShippingController(IMediator mediator) : BaseApiControl
             request.EnabledShippingIds,
             CurrentUser.UserId);
 
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 }

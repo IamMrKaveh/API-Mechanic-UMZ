@@ -4,6 +4,7 @@ using Application.Media.Features.Commands.ReorderMedia;
 using Application.Media.Features.Commands.SetPrimaryMedia;
 using Application.Media.Features.Commands.UploadMedia;
 using Application.Media.Features.Queries.GetAllMedia;
+using MapsterMapper;
 using Presentation.Media.Requests;
 
 namespace Presentation.Media.Endpoints;
@@ -11,26 +12,22 @@ namespace Presentation.Media.Endpoints;
 [Route("api/admin/media")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminMediaController(IMediator mediator) : BaseApiController(mediator)
+public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet]
     public async Task<IActionResult> GetAllMedia(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
-        [FromQuery] string? entityType = null)
+        [FromQuery] GetAllMediaRequest request,
+        CancellationToken ct)
     {
-        var command = new GetAllMediaQuery(entityType, page, pageSize);
-        var result = await _mediator.Send(command);
+        var query = Mapper.Map<GetAllMediaQuery>(request);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("cleanup-orphaned")]
-    public async Task<IActionResult> CleanupOrphaned()
+    public async Task<IActionResult> CleanupOrphaned(CancellationToken ct)
     {
-        var command = new CleanupOrphanedMediaCommand();
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(new CleanupOrphanedMediaCommand(), ct);
         return ToActionResult(result);
     }
 
@@ -41,7 +38,8 @@ public class AdminMediaController(IMediator mediator) : BaseApiController(mediat
         [FromForm] string entityType,
         [FromForm] int entityId,
         [FromForm] bool isPrimary = false,
-        [FromForm] string? altText = null)
+        [FromForm] string? altText = null,
+        CancellationToken ct = default)
     {
         var command = new UploadMediaCommand(
             file.OpenReadStream(),
@@ -53,35 +51,39 @@ public class AdminMediaController(IMediator mediator) : BaseApiController(mediat
             isPrimary,
             altText);
 
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpDelete("{mediaId}")]
-    public async Task<IActionResult> DeleteMedia(Guid mediaId)
+    [HttpDelete("{mediaId:guid}")]
+    public async Task<IActionResult> DeleteMedia(Guid mediaId, CancellationToken ct)
     {
         var command = new DeleteMediaCommand(mediaId, CurrentUser.UserId);
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPatch("set-primary")]
-    public async Task<IActionResult> SetPrimaryMedia([FromBody] SetPrimaryMediaRequest request)
+    public async Task<IActionResult> SetPrimaryMedia(
+        [FromBody] SetPrimaryMediaRequest request,
+        CancellationToken ct)
     {
         var command = new SetPrimaryMediaCommand(request.MediaId);
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("reorder")]
-    public async Task<IActionResult> ReorderMedia([FromBody] ReorderMediaRequest request)
+    public async Task<IActionResult> ReorderMedia(
+        [FromBody] ReorderMediaRequest request,
+        CancellationToken ct)
     {
         var command = new ReorderMediaCommand(
             request.EntityType,
             request.EntityId,
             request.OrderedMediaIds);
 
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 }

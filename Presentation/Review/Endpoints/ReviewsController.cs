@@ -11,32 +11,30 @@ namespace Presentation.Review.Endpoints;
 [ApiController]
 public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    [HttpGet("product/{productId}")]
+    [HttpGet("product/{productId:guid}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetReviews(
         Guid productId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        var query = new GetProductReviewsQuery(
-            productId,
-            page,
-            pageSize);
-        var result = await _mediator.Send(query);
+        var query = new GetProductReviewsQuery(productId, page, pageSize);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> CreateReview(
-        [FromBody] CreateReviewRequest request)
+        [FromBody] CreateReviewRequest request,
+        CancellationToken ct)
     {
         var command = Mapper
             .Map<CreateReviewCommand>(request)
             .Enrich(CurrentUser.UserId);
 
-        var result = await Mediator.Send(command);
-
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
@@ -44,9 +42,12 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
     [Authorize]
     public async Task<IActionResult> GetMyReviews(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new GetUserReviewsQuery(CurrentUser.UserId, page, pageSize));
+        var result = await Mediator.Send(
+            new GetUserReviewsQuery(CurrentUser.UserId, page, pageSize), ct);
+
         return ToActionResult(result);
     }
 }

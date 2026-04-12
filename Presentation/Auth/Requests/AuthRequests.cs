@@ -5,8 +5,7 @@ public record SendOtpRequest(string PhoneNumber);
 public record VerifyOtpRequest(
     string PhoneNumber,
     string Code,
-    string? DeviceInfo = null
-);
+    string? DeviceInfo = null);
 
 public record RefreshRequest(string RefreshToken);
 

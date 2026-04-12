@@ -6,7 +6,7 @@ using Presentation.Brand.Requests;
 
 namespace Presentation.Brand.Mapping;
 
-public sealed class BrandPresentationMappingConfig : IRegister
+public sealed class BrandMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {

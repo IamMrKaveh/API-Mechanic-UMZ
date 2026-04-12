@@ -20,7 +20,10 @@ public record UpdateDiscountRequest(
     bool IsActive
 );
 
-public record ValidateDiscountRequest(string Code, decimal OrderAmount);
+public record ValidateDiscountRequest(
+    string Code,
+    decimal OrderAmount,
+    string Currency = "IRT");
 
 public record ApplyDiscountRequest(
     string Code,

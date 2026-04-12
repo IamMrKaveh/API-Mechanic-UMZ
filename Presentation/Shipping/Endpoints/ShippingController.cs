@@ -3,16 +3,14 @@ using Application.Shipping.Features.Queries.GetShippings;
 namespace Presentation.Shipping.Endpoints;
 
 [ApiController]
-[Route("api/[controller]")]
-public class ShippingController(IMediator mediator) : BaseApiController(mediator)
+[Route("api/shipping")]
+[AllowAnonymous]
+public sealed class ShippingController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet]
-    public async Task<IActionResult> GetActiveShippings()
+    public async Task<IActionResult> GetActiveShippings(CancellationToken ct)
     {
-        var query = new GetShippingsQuery(false);
-        var result = await _mediator.Send(query);
+        var result = await Mediator.Send(new GetShippingsQuery(false), ct);
         return ToActionResult(result);
     }
 }

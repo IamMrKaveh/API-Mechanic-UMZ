@@ -4,9 +4,10 @@ using Application.Auth.Features.Commands.LogoutAll;
 using Application.Auth.Features.Commands.RefreshToken;
 using Application.Auth.Features.Commands.SendOtp;
 using Application.Auth.Features.Commands.VerifyOtp;
-using Application.Auth.Features.Shared;
+using MapsterMapper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
+using Presentation.Auth.Requests;
 using Presentation.Common.Extensions;
 using System.Security.Claims;
 
@@ -14,14 +15,20 @@ namespace Presentation.Auth.Endpoints;
 
 [Route("api/auth")]
 [ApiController]
-public class AuthController(IMediator mediator) : BaseApiController(mediator)
+public class AuthController(IMediator mediator, IMapper mapper)
+    : BaseApiController(mediator, mapper)
 {
     [HttpPost("request-otp")]
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> RequestOtp([FromBody] SendOtpDto dto, CancellationToken ct)
+    public async Task<IActionResult> RequestOtp(
+        [FromBody] SendOtpRequest request,
+        CancellationToken ct)
     {
-        var command = new SendOtpCommand(dto.PhoneNumber, HttpContextHelper.GetClientIpAddress(HttpContext));
+        var command = new SendOtpCommand(
+            request.PhoneNumber,
+            HttpContextHelper.GetClientIpAddress(HttpContext));
+
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
@@ -29,44 +36,52 @@ public class AuthController(IMediator mediator) : BaseApiController(mediator)
     [HttpPost("verify-otp")]
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDto dto)
+    public async Task<IActionResult> VerifyOtp(
+        [FromBody] VerifyOtpRequest request,
+        CancellationToken ct)
     {
         var command = new VerifyOtpCommand(
-            dto.PhoneNumber,
-            dto.Code,
+            request.PhoneNumber,
+            request.Code,
             HttpContextHelper.GetClientIpAddress(HttpContext),
             Request.Headers.UserAgent.ToString());
-        var result = await Mediator.Send(command);
+
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("refresh-token")]
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto dto)
+    public async Task<IActionResult> RefreshToken(
+        [FromBody] RefreshRequest request,
+        CancellationToken ct)
     {
         var command = new RefreshTokenCommand(
-            dto.RefreshToken,
+            request.RefreshToken,
             HttpContextHelper.GetClientIpAddress(HttpContext),
             Request.Headers.UserAgent.ToString());
-        var result = await Mediator.Send(command);
+
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> Logout([FromBody] RefreshTokenDto dto)
+    public async Task<IActionResult> Logout(
+        [FromBody] RefreshRequest request,
+        CancellationToken ct)
     {
-        var command = new LogoutCommand(CurrentUser.UserId, dto.RefreshToken);
-        var result = await Mediator.Send(command);
+        var command = new LogoutCommand(CurrentUser.UserId, request.RefreshToken);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("logout-all")]
     [Authorize]
-    public async Task<IActionResult> LogoutAll()
+    public async Task<IActionResult> LogoutAll(CancellationToken ct)
     {
-        var result = await Mediator.Send(new LogoutAllCommand(CurrentUser.UserId));
+        var result = await Mediator.Send(new LogoutAllCommand(CurrentUser.UserId), ct);
         return ToActionResult(result);
     }
 
@@ -74,7 +89,11 @@ public class AuthController(IMediator mediator) : BaseApiController(mediator)
     [AllowAnonymous]
     public IActionResult GoogleLogin()
     {
-        var properties = new AuthenticationProperties { RedirectUri = Url.Action("GoogleCallback") };
+        var properties = new AuthenticationProperties
+        {
+            RedirectUri = Url.Action(nameof(GoogleCallback))
+        };
+
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
@@ -83,6 +102,7 @@ public class AuthController(IMediator mediator) : BaseApiController(mediator)
     public async Task<IActionResult> GoogleCallback(CancellationToken ct)
     {
         var authenticateResult = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+
         if (!authenticateResult.Succeeded)
             return BadRequest("Google authentication failed.");
 
@@ -95,7 +115,7 @@ public class AuthController(IMediator mediator) : BaseApiController(mediator)
         if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(providerKey))
             return BadRequest("Incomplete profile data from Google.");
 
-        var command = new GoogleLoginCommand(email, firstName ?? "", lastName ?? "", providerKey);
+        var command = new GoogleLoginCommand(email, firstName ?? string.Empty, lastName ?? string.Empty, providerKey);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
