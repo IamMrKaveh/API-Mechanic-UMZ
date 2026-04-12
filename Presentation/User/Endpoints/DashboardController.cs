@@ -2,18 +2,15 @@ using Application.User.Features.Queries.GetUserDashboard;
 
 namespace Presentation.User.Endpoints;
 
-[Route("api/[controller]")]
+[Route("api/dashboard")]
 [ApiController]
 [Authorize]
-public class DashboardController(IMediator mediator) : BaseApiController(mediator)
+public sealed class DashboardController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet("summary")]
-    public async Task<IActionResult> GetDashboardSummary()
+    public async Task<IActionResult> GetDashboardSummary(CancellationToken ct)
     {
-        var query = new GetUserDashboardQuery(CurrentUser.UserId);
-        var result = await _mediator.Send(query);
+        var result = await Mediator.Send(new GetUserDashboardQuery(CurrentUser.UserId), ct);
         return ToActionResult(result);
     }
 }

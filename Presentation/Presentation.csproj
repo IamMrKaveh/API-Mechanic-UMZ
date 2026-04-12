@@ -104,6 +104,8 @@
 
   <ItemGroup>
     <Folder Include="logs\" />
+    <Folder Include="Notification\Mapping\" />
+    <Folder Include="Search\Mapping\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

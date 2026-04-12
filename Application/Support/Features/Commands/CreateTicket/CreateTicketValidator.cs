@@ -7,6 +7,6 @@ public class CreateTicketValidator : AbstractValidator<CreateTicketCommand>
         RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.Subject).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Category).NotEmpty();
-        RuleFor(x => x.InitialMessage).NotEmpty().MaximumLength(5000);
+        RuleFor(x => x.Message).NotEmpty().MaximumLength(5000);
     }
 }

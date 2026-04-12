@@ -8,14 +8,15 @@ using Presentation.Variant.Requests;
 namespace Presentation.Variant.Endpoints;
 
 [ApiController]
-[Route("api/admin/products/{productId}/variants")]
+[Route("api/admin/products/{productId:guid}/variants")]
 [Authorize(Roles = "Admin")]
-public class AdminVariantController(IMediator mediator) : BaseApiController(mediator)
+public sealed class AdminVariantController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpPost]
-    public async Task<IActionResult> Add(Guid productId, [FromBody] AddVariantRequest request)
+    public async Task<IActionResult> Add(
+        Guid productId,
+        [FromBody] AddVariantRequest request,
+        CancellationToken ct)
     {
         var command = new AddVariantCommand(
             productId,
@@ -26,19 +27,23 @@ public class AdminVariantController(IMediator mediator) : BaseApiController(medi
             request.Stock,
             request.IsUnlimited,
             request.ShippingMultiplier,
-            request.AttributeValueIds?.Select(a => a).ToList() ?? [],
-            request.EnabledShippingMethodIds);
+            request.AttributeValueIds?.ToList() ?? [],
+            request.EnabledShippingIds);
 
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update([FromBody] UpdateVariantRequest request)
+    [HttpPut("{variantId:guid}")]
+    public async Task<IActionResult> Update(
+        Guid productId,
+        Guid variantId,
+        [FromBody] UpdateVariantRequest request,
+        CancellationToken ct)
     {
         var command = new UpdateVariantCommand(
-            request.ProductId,
-            request.VariantId,
+            productId,
+            variantId,
             CurrentUser.UserId,
             request.Sku,
             request.PurchasePrice,
@@ -50,44 +55,50 @@ public class AdminVariantController(IMediator mediator) : BaseApiController(medi
             request.AttributeValueIds,
             request.EnabledShippingMethodIds);
 
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid productId, Guid variantId)
+    [HttpDelete("{variantId:guid}")]
+    public async Task<IActionResult> Delete(
+        Guid productId,
+        Guid variantId,
+        CancellationToken ct)
     {
-        var command = new RemoveVariantCommand(
-            productId,
-            variantId,
-            CurrentUser.UserId);
-        var result = await _mediator.Send(command);
+        var command = new RemoveVariantCommand(productId, variantId, CurrentUser.UserId);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpPost("{id}/stock")]
-    public async Task<IActionResult> AddStock(Guid id, [FromBody] AddStockRequest request)
+    [HttpPost("{variantId:guid}/stock")]
+    public async Task<IActionResult> AddStock(
+        Guid variantId,
+        [FromBody] AddStockRequest request,
+        CancellationToken ct)
     {
         var command = new AddStockCommand(
-            id,
+            variantId,
             request.Quantity,
             CurrentUser.UserId,
             request.Notes);
 
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpPost("{id}/remove-stock")]
-    public async Task<IActionResult> RemoveStock(Guid id, [FromBody] RemoveStockRequest request)
+    [HttpPost("{variantId:guid}/remove-stock")]
+    public async Task<IActionResult> RemoveStock(
+        Guid variantId,
+        [FromBody] RemoveStockRequest request,
+        CancellationToken ct)
     {
         var command = new RemoveStockCommand(
-            id,
+            variantId,
             request.Quantity,
             CurrentUser.UserId,
             request.Notes);
 
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 }

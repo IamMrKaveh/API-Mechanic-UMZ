@@ -1,9 +1,9 @@
 using Application.Category.Features.Shared;
 using Domain.Category.ValueObjects;
 
-namespace Application.Category.Features.Queries.GetCategoryWithGroups;
+namespace Application.Category.Features.Queries.GetCategoryWithBrands;
 
-public class GetCategoryWithGroupsHandler(ICategoryQueryService queryService)
+public class GetCategoryWithBrandsHandler(ICategoryQueryService queryService)
     : IRequestHandler<GetCategoryWithBrandsQuery, ServiceResult<CategoryWithBrandsDto?>>
 {
     public async Task<ServiceResult<CategoryWithBrandsDto?>> Handle(

@@ -7,16 +7,13 @@ namespace Presentation.Category.Endpoints;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CategoryController(IMediator mediator) : BaseApiController(mediator)
+public sealed class CategoryController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet("hierarchy")]
     [AllowAnonymous]
     public async Task<IActionResult> GetCategoryHierarchy()
     {
-        var query = new GetCategoryTreeQuery();
-        var result = await _mediator.Send(query);
+        var result = await Mediator.Send(new GetCategoryTreeQuery());
         return ToActionResult(result);
     }
 
@@ -25,37 +22,28 @@ public class CategoryController(IMediator mediator) : BaseApiController(mediator
     public async Task<IActionResult> GetCategories(
         [FromQuery] string? search,
         [FromQuery] int page = 1,
-        [FromQuery] int pagesize = 10)
+        [FromQuery] int pageSize = 10)
     {
-        var query = new GetPublicCategoriesQuery(
-            search,
-            page,
-            pagesize);
-        var result = await _mediator.Send(query);
+        var result = await Mediator.Send(new GetPublicCategoriesQuery(search, page, pageSize));
         return ToActionResult(result);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetCategoryById(
-        Guid id,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetCategoryById(Guid id)
     {
-        var query = new GetCategoryQuery(id);
-        var result = await _mediator.Send(query);
+        var result = await Mediator.Send(new GetCategoryQuery(id));
         return ToActionResult(result);
     }
 
-    [HttpGet("{id}/products")]
+    [HttpGet("{id:guid}/products")]
     [AllowAnonymous]
     public async Task<IActionResult> GetCategoryProducts(
         Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var query = new GetCategoryProductsQuery(id, true, page, pageSize);
-        var result = await _mediator.Send(query);
+        var result = await Mediator.Send(new GetCategoryProductsQuery(id, true, page, pageSize));
         return ToActionResult(result);
     }
 }

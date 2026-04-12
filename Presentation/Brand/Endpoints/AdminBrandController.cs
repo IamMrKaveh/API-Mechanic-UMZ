@@ -17,14 +17,14 @@ namespace Presentation.Brand.Endpoints;
 public sealed class AdminBrandController(
     IMediator mediator,
     IMapper mapper,
-    IStorageService storageService) : BaseApiController(mediator)
+    IStorageService storageService) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
     public async Task<IActionResult> GetBrands(
         [FromQuery] GetAdminBrandsRequest request,
         CancellationToken ct)
     {
-        var query = mapper.Map<GetAdminBrandsQuery>(request);
+        var query = Mapper.Map<GetAdminBrandsQuery>(request);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
@@ -42,7 +42,7 @@ public sealed class AdminBrandController(
         CancellationToken ct)
     {
         var logoPath = await UploadLogoIfPresentAsync(request.LogoFile, ct);
-        if (logoPath.IsFailure)
+        if (logoPath.IsFailed)
             return ToActionResult(logoPath);
 
         var command = new CreateBrandCommand(
@@ -66,7 +66,7 @@ public sealed class AdminBrandController(
         CancellationToken ct)
     {
         var logoPath = await UploadLogoIfPresentAsync(request.LogoFile, ct);
-        if (logoPath.IsFailure)
+        if (logoPath.IsFailed)
             return ToActionResult(logoPath);
 
         var command = new UpdateBrandCommand(
@@ -94,7 +94,7 @@ public sealed class AdminBrandController(
         [FromBody] MoveBrandRequest request,
         CancellationToken ct)
     {
-        var command = mapper.Map<MoveBrandCommand>(request);
+        var command = Mapper.Map<MoveBrandCommand>(request);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }

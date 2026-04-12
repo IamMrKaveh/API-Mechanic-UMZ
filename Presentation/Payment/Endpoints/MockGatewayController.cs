@@ -1,15 +1,18 @@
+using MapsterMapper;
+
 namespace Presentation.Payment.Endpoints;
 
 [ApiController]
 [Route("api/mock-gateway")]
-public sealed class MockGatewayController(IWebHostEnvironment env, IMediator mediator) : BaseApiController(mediator)
+public sealed class MockGatewayController(
+    IWebHostEnvironment env,
+    IMediator mediator,
+    IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    private readonly IWebHostEnvironment _env = env;
-
     [HttpGet]
     public IActionResult Index([FromQuery] string orderId, [FromQuery] decimal amount)
     {
-        if (!_env.IsDevelopment())
+        if (!env.IsDevelopment())
             return NotFound();
 
         var html = $"""

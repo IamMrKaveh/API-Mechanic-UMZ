@@ -5,4 +5,7 @@ public record BulkStockInCommand(
     Guid? UserId,
     string Reason) : IRequest<ServiceResult>;
 
-public record BulkStockInItem(Guid VariantId, int Quantity, string? ReferenceNumber);
+public record BulkStockInItem(
+    Guid VariantId,
+    int Quantity,
+    string? ReferenceNumber);

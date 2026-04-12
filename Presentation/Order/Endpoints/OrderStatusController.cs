@@ -1,26 +1,25 @@
 using Application.Order.Features.Queries.GetOrderStatusById;
 using Application.Order.Features.Queries.GetOrderStatuses;
+using MapsterMapper;
 
 namespace Presentation.Order.Endpoints;
 
 [Route("api/order-statuses")]
 [ApiController]
 [AllowAnonymous]
-public class OrderStatusController(IMediator mediator) : BaseApiController(mediator)
+public class OrderStatusController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet]
-    public async Task<IActionResult> GetOrderStatuses()
+    public async Task<IActionResult> GetOrderStatuses(CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetOrderStatusesQuery());
+        var result = await Mediator.Send(new GetOrderStatusesQuery(), ct);
         return ToActionResult(result);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetOrderStatusById(Guid id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetOrderStatusById(Guid id, CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetOrderStatusByIdQuery(id));
+        var result = await Mediator.Send(new GetOrderStatusByIdQuery(id), ct);
         return ToActionResult(result);
     }
 }

@@ -7,25 +7,19 @@ namespace Presentation.Inventory.Endpoints;
 [ApiController]
 [Route("api/inventory")]
 [AllowAnonymous]
-public class InventoryController(IMediator mediator) : BaseApiController(mediator)
+public sealed class InventoryController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator = mediator;
-
-    [HttpGet("availability/{variantId:int}")]
-    public async Task<IActionResult> GetVariantAvailability(int variantId)
+    [HttpGet("availability/{variantId:guid}")]
+    public async Task<IActionResult> GetVariantAvailability(Guid variantId)
     {
-        var query = new GetVariantAvailabilityQuery(variantId);
-        var result = await _mediator.Send(query);
+        var result = await Mediator.Send(new GetVariantAvailabilityQuery(variantId));
         return ToActionResult(result);
     }
 
     [HttpPost("availability/batch")]
-    public async Task<IActionResult> GetBatchAvailability(
-        [FromBody] BatchAvailabilityIntRequest request)
+    public async Task<IActionResult> GetBatchAvailability([FromBody] BatchAvailabilityRequest request)
     {
-        var query = new GetBatchVariantAvailabilityQuery(
-            request.VariantIds);
-        var result = await _mediator.Send(query);
+        var result = await Mediator.Send(new GetBatchVariantAvailabilityQuery(request.VariantIds));
         return ToActionResult(result);
     }
 }

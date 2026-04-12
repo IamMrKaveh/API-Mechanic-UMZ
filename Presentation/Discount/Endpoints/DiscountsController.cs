@@ -7,15 +7,17 @@ namespace Presentation.Discount.Endpoints;
 [ApiController]
 [Route("api/discounts")]
 [Authorize]
-public class DiscountsController(IMediator mediator) : BaseApiController(mediator)
+public sealed class DiscountsController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpPost("validate")]
     public async Task<IActionResult> Validate([FromBody] ValidateDiscountRequest request)
     {
-        var query = new ValidateDiscountQuery(request.Code, request.OrderAmount, CurrentUser.UserId);
-        var result = await _mediator.Send(query);
+        var query = new ValidateDiscountQuery(
+            request.Code,
+            request.OrderAmount,
+            CurrentUser.UserId,
+            request.Currency);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
@@ -27,7 +29,8 @@ public class DiscountsController(IMediator mediator) : BaseApiController(mediato
             request.OrderAmount,
             CurrentUser.UserId,
             request.OrderId);
-        var result = await _mediator.Send(command);
+
+        var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 }

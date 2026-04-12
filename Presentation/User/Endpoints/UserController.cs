@@ -4,33 +4,31 @@ using Presentation.User.Requests;
 
 namespace Presentation.User.Endpoints;
 
-[Route("api/[controller]")]
+[Route("api/users")]
 [ApiController]
-public class UserController(IMediator mediator) : BaseApiController(mediator)
+[Authorize]
+public sealed class UserController(IMediator mediator) : BaseApiController(mediator)
 {
-    private readonly IMediator _mediator = mediator;
-
-    [HttpGet("{id}")]
-    [Authorize]
-    public async Task<IActionResult> GetUser(Guid id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetUser(Guid id, CancellationToken ct)
     {
-        var query = new GetUserByIdQuery(id);
-        var result = await _mediator.Send(query);
+        var result = await Mediator.Send(new GetUserByIdQuery(id), ct);
         return ToActionResult(result);
     }
 
-    [HttpPut("{id}")]
-    [Authorize]
-    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateProfileRequest request)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateUser(
+        Guid id,
+        [FromBody] UpdateProfileRequest request,
+        CancellationToken ct)
     {
         var command = new UpdateUserCommand(
             id,
             CurrentUser.UserId,
             request.FirstName,
-            request.LastName,
-            request.Email);
+            request.LastName);
 
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 }

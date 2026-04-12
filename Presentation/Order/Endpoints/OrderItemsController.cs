@@ -1,18 +1,17 @@
 using Application.Order.Features.Commands.DeleteOrderItem;
+using MapsterMapper;
 
 namespace Presentation.Order.Endpoints;
 
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class OrderItemsController(IMediator mediator) : BaseApiController(mediator)
+public class OrderItemsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    private readonly IMediator _mediator = mediator;
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteOrderItem(Guid id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteOrderItem(Guid id, CancellationToken ct)
     {
-        var result = await _mediator.Send(new DeleteOrderItemCommand(id));
+        var result = await Mediator.Send(new DeleteOrderItemCommand(id), ct);
         return ToActionResult(result);
     }
 }

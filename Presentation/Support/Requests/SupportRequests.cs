@@ -8,3 +8,5 @@ public record CreateTicketRequest(
 );
 
 public record ReplyToTicketRequest(string Message);
+
+public record CloseTicketRequest(bool IsAdmin = false);

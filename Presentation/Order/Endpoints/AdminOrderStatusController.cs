@@ -3,6 +3,7 @@ using Application.Order.Features.Commands.DeleteOrderStatus;
 using Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 using Application.Order.Features.Queries.GetOrderStatusById;
 using Application.Order.Features.Queries.GetOrderStatuses;
+using MapsterMapper;
 using Presentation.Order.Requests;
 
 namespace Presentation.Order.Endpoints;
@@ -10,15 +11,13 @@ namespace Presentation.Order.Endpoints;
 [Route("api/admin/order-statuses")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminOrderStatusController(IMediator mediator) : BaseApiController(mediator)
+public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetOrderStatuses()
+    public async Task<IActionResult> GetOrderStatuses(CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetOrderStatusesQuery());
+        var result = await Mediator.Send(new GetOrderStatusesQuery(), ct);
         return ToActionResult(result);
     }
 
@@ -36,19 +35,19 @@ public class AdminOrderStatusController(IMediator mediator) : BaseApiController(
             request.AllowCancel,
             request.AllowEdit);
 
-        var result = await _mediator.Send(command, ct);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetOrderStatus(Guid id)
+    public async Task<IActionResult> GetOrderStatus(Guid id, CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetOrderStatusByIdQuery(id));
+        var result = await Mediator.Send(new GetOrderStatusByIdQuery(id), ct);
         return ToActionResult(result);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateOrderStatus(
         Guid id,
         [FromBody] UpdateOrderStatusRequest request,
@@ -62,15 +61,15 @@ public class AdminOrderStatusController(IMediator mediator) : BaseApiController(
             request.SortOrder,
             request.IsDefault);
 
-        var result = await _mediator.Send(command, ct);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteOrderStatus(Guid id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteOrderStatus(Guid id, CancellationToken ct)
     {
         var command = new DeleteOrderStatusCommand(id, CurrentUser.UserId);
-        var result = await _mediator.Send(command);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 }

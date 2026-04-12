@@ -35,6 +35,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         );
 
         var result = await Mediator.Send(query);
+
         return ToActionResult(result);
     }
 
@@ -44,6 +45,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         var query = new GetAdminProductByIdQuery(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(query);
+
         return ToActionResult(result);
     }
 
@@ -53,6 +55,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         var query = new GetAdminProductDetailQuery(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(query);
+
         return ToActionResult(result);
     }
 
@@ -70,6 +73,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         );
 
         var result = await Mediator.Send(command);
+
         return ToActionResult(result);
     }
 
@@ -91,6 +95,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         );
 
         var result = await Mediator.Send(command);
+
         return ToActionResult(result);
     }
 
@@ -103,6 +108,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         );
 
         var result = await Mediator.Send(command);
+
         return ToActionResult(result);
     }
 
@@ -121,6 +127,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         );
 
         var result = await Mediator.Send(command);
+
         return ToActionResult(result);
     }
 
@@ -130,6 +137,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         var command = new DeleteProductCommand(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(command);
+
         return ToActionResult(result);
     }
 
@@ -139,6 +147,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         var command = new ActivateProductCommand(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(command);
+
         return ToActionResult(result);
     }
 
@@ -148,6 +157,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         var command = new DeactivateProductCommand(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(command);
+
         return ToActionResult(result);
     }
 
@@ -157,6 +167,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         var command = new RestoreProductCommand(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(command);
+
         return ToActionResult(result);
     }
 }

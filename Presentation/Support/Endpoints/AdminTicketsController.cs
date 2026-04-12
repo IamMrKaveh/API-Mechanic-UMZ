@@ -2,14 +2,14 @@ using Application.Support.Features.Commands.CloseTicket;
 using Application.Support.Features.Commands.ReplyToTicket;
 using Application.Support.Features.Queries.GetAdminTickets;
 using Application.Support.Features.Queries.GetTicketDetails;
-using Application.Support.Features.Shared;
+using Presentation.Support.Requests;
 
 namespace Presentation.Support.Endpoints;
 
 [Route("api/admin/tickets")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminTicketsController(IMediator mediator) : BaseApiController(mediator)
+public sealed class AdminTicketsController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet]
     public async Task<IActionResult> GetTickets(
@@ -17,34 +17,41 @@ public class AdminTicketsController(IMediator mediator) : BaseApiController(medi
         [FromQuery] string? priority,
         [FromQuery] Guid? userId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
     {
         var query = new GetAdminTicketsQuery(status, priority, userId, page, pageSize);
-        var result = await Mediator.Send(query);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetTicketDetails(Guid id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetTicketDetails(Guid id, CancellationToken ct)
     {
         var query = new GetTicketDetailsQuery(id, CurrentUser.UserId, true);
-        var result = await Mediator.Send(query);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
-    [HttpPost("{id}/reply")]
-    public async Task<IActionResult> ReplyToTicket(Guid id, [FromBody] ReplyToTicketDto dto)
+    [HttpPost("{id:guid}/reply")]
+    public async Task<IActionResult> ReplyToTicket(
+        Guid id,
+        [FromBody] ReplyToTicketRequest request,
+        CancellationToken ct)
     {
-        var command = new ReplyToTicketCommand(id, CurrentUser.UserId, dto.Message, true);
-        var result = await Mediator.Send(command);
+        var command = new ReplyToTicketCommand(id, CurrentUser.UserId, request.Message, true);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
-    [HttpPost("{id}/close")]
-    public async Task<IActionResult> CloseTicket(Guid id, [FromBody] CloseTicketDto dto)
+    [HttpPost("{id:guid}/close")]
+    public async Task<IActionResult> CloseTicket(
+        Guid id,
+        [FromBody] CloseTicketRequest request,
+        CancellationToken ct)
     {
-        var command = new CloseTicketCommand(id, CurrentUser.UserId, dto.IsAdmin);
-        var result = await Mediator.Send(command);
+        var command = new CloseTicketCommand(id, CurrentUser.UserId, request.IsAdmin);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 }

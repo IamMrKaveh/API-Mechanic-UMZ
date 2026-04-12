@@ -11,16 +11,16 @@ using Application.Inventory.Features.Queries.GetLowStockProducts;
 using Application.Inventory.Features.Queries.GetOutOfStockProducts;
 using Application.Inventory.Features.Queries.GetStockLedgerByVariant;
 using Application.Inventory.Features.Queries.GetWarehouseStock;
-using Application.Inventory.Features.Shared;
 using Application.Order.Features.Commands.ApproveReturn;
 using MapsterMapper;
+using Presentation.Inventory.Requests;
 
 namespace Presentation.Inventory.Endpoints;
 
 [ApiController]
 [Route("api/admin/inventory")]
 [Authorize(Roles = "Admin")]
-public class AdminInventoryController(IMediator mediator, IMapper mapper) : BaseApiController(mediator)
+public sealed class AdminInventoryController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet("transactions")]
     public async Task<IActionResult> GetInventoryTransactions(
@@ -46,7 +46,7 @@ public class AdminInventoryController(IMediator mediator, IMapper mapper) : Base
         return ToActionResult(result);
     }
 
-    [HttpGet("warehouse-stock/{variantId}")]
+    [HttpGet("warehouse-stock/{variantId:guid}")]
     public async Task<IActionResult> GetWarehouseStock(Guid variantId)
     {
         var result = await Mediator.Send(new GetWarehouseStockQuery(variantId));
@@ -54,13 +54,14 @@ public class AdminInventoryController(IMediator mediator, IMapper mapper) : Base
     }
 
     [HttpPost("reverse")]
-    public async Task<IActionResult> ReverseTransaction([FromBody] ReverseInventoryDto dto)
+    public async Task<IActionResult> ReverseTransaction([FromBody] ReverseInventoryTransactionRequest request)
     {
         var command = new ReverseInventoryCommand(
-            dto.VariantId,
-            dto.IdempotencyKey,
-            dto.Reason,
+            request.VariantId,
+            request.IdempotencyKey,
+            request.Reason,
             CurrentUser.UserId);
+
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -68,34 +69,45 @@ public class AdminInventoryController(IMediator mediator, IMapper mapper) : Base
     [HttpGet("low-stock")]
     public async Task<IActionResult> GetLowStockItems([FromQuery] int threshold = 5)
     {
-        var result = await Mediator.Send(new GetLowStockProductsQuery(threshold));
+        var query = new GetLowStockProductsQuery(threshold);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpGet("out-of-stock")]
     public async Task<IActionResult> GetOutOfStockItems()
     {
-        var result = await Mediator.Send(new GetOutOfStockProductsQuery());
+        var query = new GetOutOfStockProductsQuery();
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpPost("adjust")]
-    public async Task<IActionResult> AdjustStock([FromBody] AdjustStockDto dto)
+    public async Task<IActionResult> AdjustStock([FromBody] AdjustStockRequest request)
     {
-        var command = new AdjustStockCommand(dto.VariantId, dto.QuantityChange, CurrentUser.UserId, dto.Reason);
+        var command = new AdjustStockCommand(
+            request.VariantId,
+            request.QuantityChange,
+            CurrentUser.UserId,
+            request.Reason);
+
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpPost("bulk-adjust")]
-    public async Task<IActionResult> BulkAdjustStock([FromBody] BulkAdjustStockDto dto)
+    public async Task<IActionResult> BulkAdjustStock([FromBody] BulkAdjustStockRequest request)
     {
-        var command = new BulkAdjustStockCommand(dto.Items, CurrentUser.UserId, dto.Reason);
+        var items = request.Items
+            .Select(x => new BulkAdjustStockItem(x.VariantId, x.QuantityChange))
+            .ToList();
+
+        var command = new BulkAdjustStockCommand(items, CurrentUser.UserId, request.Reason);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
-    [HttpPost("reconcile/{variantId}")]
+    [HttpPost("reconcile/{variantId:guid}")]
     public async Task<IActionResult> ReconcileStock(Guid variantId)
     {
         var command = new ReconcileStockCommand(variantId, 0, CurrentUser.UserId);
@@ -104,9 +116,14 @@ public class AdminInventoryController(IMediator mediator, IMapper mapper) : Base
     }
 
     [HttpPost("damage")]
-    public async Task<IActionResult> RecordDamage([FromBody] RecordDamageDto dto)
+    public async Task<IActionResult> RecordDamage([FromBody] RecordDamageRequest request)
     {
-        var command = new RecordDamageCommand(dto.VariantId, dto.Quantity, CurrentUser.UserId, dto.Reason);
+        var command = new RecordDamageCommand(
+            request.VariantId,
+            request.Quantity,
+            CurrentUser.UserId,
+            request.Reason);
+
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -114,11 +131,12 @@ public class AdminInventoryController(IMediator mediator, IMapper mapper) : Base
     [HttpGet("statistics")]
     public async Task<IActionResult> GetStatistics()
     {
-        var result = await Mediator.Send(new GetInventoryStatisticsQuery());
+        var query = new GetInventoryStatisticsQuery();
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
-    [HttpGet("status/{variantId}")]
+    [HttpGet("status/{variantId:guid}")]
     public async Task<IActionResult> GetInventoryStatus(Guid variantId)
     {
         var result = await Mediator.Send(new GetInventoryStatusQuery(variantId));
@@ -126,20 +144,25 @@ public class AdminInventoryController(IMediator mediator, IMapper mapper) : Base
     }
 
     [HttpPost("import")]
-    public async Task<IActionResult> BulkStockIn([FromBody] BulkStockInDto dto)
+    public async Task<IActionResult> BulkStockIn([FromBody] BulkStockInRequest request)
     {
-        var command = new BulkStockInCommand(dto.Items, CurrentUser.UserId, dto.Reason);
+        var items = request.Items
+            .Select(x => new BulkStockInItem(x.VariantId, x.Quantity, x.Notes))
+            .ToList();
+
+        var command = new BulkStockInCommand(items, CurrentUser.UserId, request.Reason);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
-    [HttpPost("approve-return/{orderId}")]
-    public async Task<IActionResult> ApproveReturn(Guid orderId, [FromBody] ApproveReturnDto? dto = null)
+    [HttpPost("approve-return/{orderId:guid}")]
+    public async Task<IActionResult> ApproveReturn(Guid orderId, [FromBody] ApproveReturnRequest? request = null)
     {
         var command = new ApproveReturnCommand(
             orderId,
             CurrentUser.UserId,
-            dto?.Reason ?? "تأیید مرجوعی توسط ادمین");
+            request?.Reason ?? "تأیید مرجوعی توسط ادمین");
+
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }

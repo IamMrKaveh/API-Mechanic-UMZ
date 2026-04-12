@@ -6,7 +6,7 @@ using Application.Discount.Features.Queries.GetDiscountById;
 using Application.Discount.Features.Queries.GetDiscountInfo;
 using Application.Discount.Features.Queries.GetDiscounts;
 using Application.Discount.Features.Queries.GetDiscountUsageReport;
-using Domain.Discount.Enums;
+using MapsterMapper;
 using Presentation.Discount.Requests;
 
 namespace Presentation.Discount.Endpoints;
@@ -14,10 +14,8 @@ namespace Presentation.Discount.Endpoints;
 [ApiController]
 [Route("api/admin/discounts")]
 [Authorize(Roles = "Admin")]
-public class AdminDiscountsController(IMediator mediator) : BaseApiController(mediator)
+public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    private readonly IMediator _mediator = mediator;
-
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] bool includeExpired = false,
@@ -25,21 +23,21 @@ public class AdminDiscountsController(IMediator mediator) : BaseApiController(me
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var result = await _mediator.Send(new GetDiscountsQuery(includeExpired, includeDeleted, page, pageSize));
+        var result = await Mediator.Send(new GetDiscountsQuery(includeExpired, includeDeleted, page, pageSize));
         return ToActionResult(result);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var result = await _mediator.Send(new GetDiscountByIdQuery(id));
+        var result = await Mediator.Send(new GetDiscountByIdQuery(id));
         return ToActionResult(result);
     }
 
-    [HttpGet("{id}/usage-report")]
+    [HttpGet("{id:guid}/usage-report")]
     public async Task<IActionResult> GetUsageReport(Guid id)
     {
-        var result = await _mediator.Send(new GetDiscountUsageReportQuery(id));
+        var result = await Mediator.Send(new GetDiscountUsageReportQuery(id));
         return ToActionResult(result);
     }
 
@@ -47,61 +45,38 @@ public class AdminDiscountsController(IMediator mediator) : BaseApiController(me
     [AllowAnonymous]
     public async Task<IActionResult> GetDiscountInfo(string code)
     {
-        var result = await _mediator.Send(new GetDiscountInfoQuery(code));
+        var result = await Mediator.Send(new GetDiscountInfoQuery(code));
         return ToActionResult(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateDiscountRequest request)
     {
-        if (!Enum.TryParse<DiscountType>(request.DiscountType, true, out var discountType))
-            return BadRequest("Invalid discount type.");
-
-        var command = new CreateDiscountCommand(
-            request.Code,
-            discountType,
-            request.DiscountValue,
-            request.MaximumDiscountAmount,
-            request.UsageLimit,
-            request.StartsAt,
-            request.ExpiresAt);
-
-        var result = await _mediator.Send(command);
+        var command = Mapper.Map<CreateDiscountCommand>(request);
+        var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateDiscountRequest request)
     {
-        if (!Enum.TryParse<DiscountType>(request.DiscountType, true, out var discountType))
-            return BadRequest("Invalid discount type.");
-
-        var command = new UpdateDiscountCommand(
-            id,
-            discountType,
-            request.DiscountValue,
-            request.MaximumDiscountAmount,
-            request.UsageLimit,
-            request.StartsAt,
-            request.ExpiresAt,
-            request.IsActive);
-
-        var result = await _mediator.Send(command);
+        var command = Mapper.Map<UpdateDiscountCommand>(request) with { Id = id };
+        var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var result = await _mediator.Send(new DeleteDiscountCommand(id));
+        var result = await Mediator.Send(new DeleteDiscountCommand(id));
         return ToActionResult(result);
     }
 
-    [HttpPost("{id}/cancel-usage")]
+    [HttpPost("{id:guid}/cancel-usage")]
     public async Task<IActionResult> CancelDiscountUsage(Guid id, [FromBody] CancelDiscountUsageRequest request)
     {
-        var command = new CancelDiscountUsageCommand(request.OrderId, id);
-        var result = await _mediator.Send(command);
+        var command = new CancelDiscountUsageCommand(id, request.OrderId);
+        var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 }

@@ -5,5 +5,4 @@ namespace Application.User.Features.Commands.UpdateProfile;
 public record UpdateProfileCommand(
     Guid UserId,
     string? FirstName,
-    string? LastName,
-    string? PhoneNumber) : IRequest<ServiceResult<UserProfileDto>>;
+    string? LastName) : IRequest<ServiceResult<UserProfileDto>>;

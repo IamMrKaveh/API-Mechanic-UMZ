@@ -7,26 +7,27 @@ using Application.Cart.Features.Commands.UpdateCartItem;
 using Application.Cart.Features.Queries.GetCart;
 using Application.Cart.Features.Queries.GetCartSummary;
 using Application.Cart.Features.Queries.ValidateCartForCheckout;
-using Application.Cart.Features.Shared;
-using MapsterMapper;
+using Presentation.Cart.Requests;
 
 namespace Presentation.Cart.Endpoints;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CartController(ISender mediator, IMapper mapper) : BaseApiController(mediator)
+public sealed class CartController(ISender mediator) : BaseApiController(mediator)
 {
     [HttpGet]
     public async Task<IActionResult> GetCart()
     {
-        var result = await Mediator.Send(new GetCartQuery(CurrentUser.UserId, GuestToken));
+        var query = new GetCartQuery(CurrentUser.UserId, GuestToken);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpGet("summary")]
     public async Task<IActionResult> GetCartSummary()
     {
-        var result = await Mediator.Send(new GetCartSummaryQuery(CurrentUser.UserId, CurrentUser.GuestToken));
+        var query = new GetCartSummaryQuery(CurrentUser.UserId, CurrentUser.GuestToken);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
@@ -34,28 +35,28 @@ public class CartController(ISender mediator, IMapper mapper) : BaseApiControlle
     [Authorize]
     public async Task<IActionResult> ValidateCartForCheckout()
     {
-        var result = await Mediator.Send(
-            new ValidateCartForCheckoutQuery(CurrentUser.UserId, CurrentUser.GuestToken));
+        var query = new ValidateCartForCheckoutQuery(CurrentUser.UserId, CurrentUser.GuestToken);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpPost("items")]
-    public async Task<IActionResult> AddItem([FromBody] AddToCartDto dto)
+    public async Task<IActionResult> AddItem([FromBody] AddToCartRequest request)
     {
-        var command = new AddToCartCommand(CurrentUser.UserId, dto.VariantId, GuestToken, dto.Quantity);
+        var command = new AddToCartCommand(CurrentUser.UserId, request.VariantId, GuestToken, request.Quantity);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
-    [HttpPut("items/{variantId}")]
-    public async Task<IActionResult> UpdateItemQuantity(Guid variantId, [FromBody] UpdateCartItemDto dto)
+    [HttpPut("items/{variantId:guid}")]
+    public async Task<IActionResult> UpdateItemQuantity(Guid variantId, [FromBody] UpdateCartItemRequest request)
     {
-        var command = new UpdateCartItemCommand(CurrentUser.UserId, GuestToken, variantId, dto.Quantity);
+        var command = new UpdateCartItemCommand(CurrentUser.UserId, GuestToken, variantId, request.Quantity);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
-    [HttpDelete("items/{variantId}")]
+    [HttpDelete("items/{variantId:guid}")]
     public async Task<IActionResult> RemoveItem(Guid variantId)
     {
         var command = new RemoveFromCartCommand(CurrentUser.UserId, GuestToken, variantId);
@@ -75,7 +76,8 @@ public class CartController(ISender mediator, IMapper mapper) : BaseApiControlle
     [Authorize]
     public async Task<IActionResult> MergeCart()
     {
-        var result = await Mediator.Send(new MergeGuestCartCommand(GuestToken!));
+        var command = new MergeGuestCartCommand(GuestToken!);
+        var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
@@ -83,7 +85,7 @@ public class CartController(ISender mediator, IMapper mapper) : BaseApiControlle
     [Authorize]
     public async Task<IActionResult> SyncCartPrices()
     {
-        var command = new SyncCartPricesCommand(CurrentUser.UserId, CurrentUser.GuestToken ?? "");
+        var command = new SyncCartPricesCommand(CurrentUser.UserId, CurrentUser.GuestToken ?? string.Empty);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
