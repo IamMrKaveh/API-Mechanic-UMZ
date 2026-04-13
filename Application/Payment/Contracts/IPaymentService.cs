@@ -1,5 +1,4 @@
 using Application.Payment.Features.Shared;
-using Domain.Common.ValueObjects;
 using Domain.Order.ValueObjects;
 
 namespace Application.Payment.Contracts;

@@ -1,5 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Domain.Inventory.Interfaces;
+﻿using Domain.Inventory.Interfaces;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 

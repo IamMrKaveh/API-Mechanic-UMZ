@@ -4,7 +4,6 @@ using Application.Common.Contracts;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Infrastructure.Persistence.Context;
-using SharedKernel.Models;
 
 namespace Infrastructure.Brand.QueryServices;
 

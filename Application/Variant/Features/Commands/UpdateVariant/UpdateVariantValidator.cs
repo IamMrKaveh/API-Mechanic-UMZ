@@ -4,8 +4,8 @@ public class UpdateVariantValidator : AbstractValidator<UpdateVariantCommand>
 {
     public UpdateVariantValidator()
     {
-        RuleFor(x => x.ProductId).GreaterThan(0);
-        RuleFor(x => x.VariantId).GreaterThan(0);
+        RuleFor(x => x.ProductId).NotEmpty();
+        RuleFor(x => x.VariantId).NotEmpty();
         RuleFor(x => x.SellingPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.OriginalPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.PurchasePrice).GreaterThanOrEqualTo(0);

@@ -5,7 +5,6 @@ using Application.Communication.Contracts;
 using Application.Security.Contracts;
 using Application.User.Features.Shared;
 using Domain.Common.Interfaces;
-using Domain.Common.ValueObjects;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;

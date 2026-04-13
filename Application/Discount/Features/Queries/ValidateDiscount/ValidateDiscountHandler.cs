@@ -1,5 +1,4 @@
 using Application.Discount.Features.Shared;
-using Domain.Common.ValueObjects;
 
 namespace Application.Discount.Features.Queries.ValidateDiscount;
 

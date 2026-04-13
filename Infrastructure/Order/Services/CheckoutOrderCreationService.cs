@@ -1,6 +1,5 @@
 ﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Order.Features.Shared;
-using Domain.Common.ValueObjects;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 

@@ -1,4 +1,4 @@
-using Application.Order.Features.Queries.GetOrderStatusById;
+using Application.Order.Features.Queries.GetOrderStatus;
 using Application.Order.Features.Queries.GetOrderStatuses;
 using MapsterMapper;
 

@@ -1,15 +1,11 @@
-using Application.Audit.Contracts;
-using Application.Common.Interfaces;
 using Application.Product.Features.Shared;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
-using Domain.Common.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
-using MapsterMapper;
 
 namespace Application.Product.Features.Commands.CreateProduct;
 

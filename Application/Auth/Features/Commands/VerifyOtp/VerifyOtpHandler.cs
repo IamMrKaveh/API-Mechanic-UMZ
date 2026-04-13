@@ -1,5 +1,5 @@
+using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
-using Domain.Common.ValueObjects;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -16,9 +16,9 @@ public class VerifyOtpHandler(
         var ipAddress = IpAddress.Create(request.IpAddress);
         var otpCode = OtpCode.Create(request.Code);
 
-        var verifyResult = await otpService.VerifyOtpAsync(phoneNumber, otpCode, request.Purpose, ct);
-        if (!verifyResult.IsSuccess)
-            return ServiceResult<AuthResult>.Failure(verifyResult.Error.Message);
+        var isValid = await otpService.VerifyOtpAsync(phoneNumber, otpCode, request.Purpose, ct);
+        if (!isValid)
+            return ServiceResult<AuthResult>.Failure("کد OTP نامعتبر یا منقضی شده است.");
 
         var authResult = await authService.VerifyOtpAsync(phoneNumber, otpCode, ipAddress, request.UserAgent, ct);
         if (!authResult.IsSuccess)
@@ -28,9 +28,16 @@ public class VerifyOtpHandler(
             "VerifyOtp",
             $"OTP برای شماره {request.PhoneNumber} تأیید شد.",
             ipAddress,
-            ct);
+            ct: ct);
 
         var (accessToken, refreshToken, user, _) = authResult.Value;
-        return ServiceResult<AuthResult>.Success(new AuthResult(accessToken, refreshToken, user));
+
+        return ServiceResult<AuthResult>.Success(new AuthResult
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken.FullToken,
+            RefreshTokenExpiresAt = refreshToken.ExpiresAt,
+            User = user
+        });
     }
 }

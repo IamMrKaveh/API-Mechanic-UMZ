@@ -86,7 +86,7 @@ public sealed class SecurityDomainService
         var sessionId = SessionId.NewId();
         var refreshToken = RefreshToken.Generate();
         var deviceInfoVo = DeviceInfo.Create(deviceInfo);
-        var ipAddressVo = Common.ValueObjects.IpAddress.Create(ipAddress);
+        var ipAddressVo = IpAddress.Create(ipAddress);
         var expiresAt = DateTime.UtcNow.Add(sessionDuration);
 
         var session = UserSession.Create(

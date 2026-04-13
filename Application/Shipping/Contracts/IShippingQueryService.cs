@@ -1,5 +1,4 @@
 using Application.Shipping.Features.Shared;
-using Domain.Common.ValueObjects;
 using Domain.Shipping.ValueObjects;
 
 namespace Application.Shipping.Contracts;
@@ -16,5 +15,18 @@ public interface IShippingQueryService
 
     Task<IReadOnlyList<ShippingListItemDto>> GetAvailableShippingsForOrderAsync(
         Money orderAmount,
+        CancellationToken ct = default);
+
+    Task<ShippingCostResultDto> CalculateShippingCostAsync(
+        ShippingId shippingId,
+        Money orderAmount,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<AvailableShippingDto>> GetAvailableShippingsAsync(
+        Money orderAmount,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<AvailableShippingDto>> GetAvailableShippingsForVariantsAsync(
+        IEnumerable<Guid> variantIds,
         CancellationToken ct = default);
 }

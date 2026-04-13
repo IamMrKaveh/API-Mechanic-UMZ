@@ -1,5 +1,3 @@
-using Domain.Common.ValueObjects;
-
 namespace Infrastructure.Product.Configurations;
 
 public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Product.Product>

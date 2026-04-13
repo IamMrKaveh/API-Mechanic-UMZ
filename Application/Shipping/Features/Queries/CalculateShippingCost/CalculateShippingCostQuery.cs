@@ -1,5 +1,7 @@
+using Application.Shipping.Features.Shared;
+
 namespace Application.Shipping.Features.Queries.CalculateShippingCost;
 
-public record CalculateShippingCostQuery(
-    Guid UserId,
-    Guid ShippingId) : IRequest<ServiceResult<ShippingCostResultDto>>;
+public sealed record CalculateShippingCostQuery(
+    Guid ShippingId,
+    decimal OrderAmount) : IRequest<ServiceResult<ShippingCostResultDto>>;

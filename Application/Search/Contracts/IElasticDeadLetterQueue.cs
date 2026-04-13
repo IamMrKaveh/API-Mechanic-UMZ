@@ -1,12 +1,14 @@
+using Application.Search.Features.Shared;
+
 namespace Application.Search.Contracts;
 
 public interface IElasticDeadLetterQueue
 {
     Task EnqueueAsync(
-        FailedIndexOperation operation,
+        FailedElasticOperation operation,
         CancellationToken ct);
 
-    Task<IEnumerable<FailedIndexOperation>> DequeueAsync(
+    Task<IEnumerable<FailedElasticOperation>> DequeueAsync(
         int count,
         CancellationToken ct);
 }

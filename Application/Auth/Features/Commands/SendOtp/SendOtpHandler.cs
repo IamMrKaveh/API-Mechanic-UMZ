@@ -1,4 +1,3 @@
-using Domain.Common.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Application.Auth.Features.Commands.SendOtp;
@@ -18,7 +17,8 @@ public class SendOtpHandler(
         await auditService.LogSecurityEventAsync(
             "SendOtp",
             $"OTP برای شماره {request.PhoneNumber} ارسال شد.",
-            IpAddress.Unknown);
+            IpAddress.Unknown,
+            ct: ct);
 
         return ServiceResult.Success();
     }

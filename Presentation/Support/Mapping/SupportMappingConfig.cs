@@ -1,5 +1,4 @@
 ﻿using Application.Support.Features.Commands.CreateTicket;
-using Application.Support.Features.Commands.ReplyToTicket;
 using Mapster;
 using Presentation.Support.Requests;
 

@@ -9,7 +9,11 @@ public record ProductVariantDto
     public Guid ProductId { get; init; }
     public string Sku { get; init; } = string.Empty;
     public decimal Price { get; init; }
+    public decimal? CompareAtPrice { get; init; }
     public decimal FinalPrice { get; init; }
+    public bool IsActive { get; init; }
+    public bool IsDiscounted { get; init; }
+    public decimal? DiscountPercentage { get; init; }
     public int StockQuantity { get; init; }
 }
 
@@ -41,8 +45,16 @@ public sealed record ProductVariantViewDto
     public IEnumerable<MediaDto> Images { get; init; } = [];
     public string? RowVersion { get; init; }
     public decimal ShippingMultiplier { get; init; }
-    public List<int> EnabledShippingIds { get; init; } = [];
+    public List<Guid> EnabledShippingIds { get; init; } = [];
 }
+
+public sealed record VariantAvailabilityDto(
+    Guid VariantId,
+    bool IsInStock,
+    bool IsUnlimited,
+    int AvailableQuantity,
+    int StockQuantity,
+    int ReservedQuantity);
 
 public sealed record CreateProductVariantInput(
     Guid? Id,
@@ -53,9 +65,9 @@ public sealed record CreateProductVariantInput(
     int Stock,
     bool IsUnlimited,
     bool IsActive,
-    List<int> AttributeValueIds,
+    List<Guid> AttributeValueIds,
     decimal ShippingMultiplier,
-    List<int>? EnabledShippingIds
+    List<Guid>? EnabledShippingIds
 );
 
 public sealed record ProductVariantResponseDto(
@@ -68,7 +80,7 @@ public sealed record ProductVariantResponseDto(
     bool IsUnlimited,
     bool IsActive,
     decimal ShippingMultiplier,
-    List<int> EnabledShippingIds,
+    List<Guid> EnabledShippingIds,
     Dictionary<string, AttributeValueDto> Attributes,
     IEnumerable<MediaDto> Images,
     string? RowVersion,
@@ -88,8 +100,8 @@ public sealed record CreateProductVariantDto(
     int? LowStockThreshold,
     bool IsActive,
     decimal ShippingMultiplier,
-    List<int> AttributeValueIds,
-    List<int>? EnabledShippingIds
+    List<Guid> AttributeValueIds,
+    List<Guid>? EnabledShippingIds
 );
 
 public sealed record AddVariantDto(

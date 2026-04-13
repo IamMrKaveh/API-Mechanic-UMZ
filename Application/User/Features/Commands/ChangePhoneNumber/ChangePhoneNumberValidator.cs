@@ -4,7 +4,7 @@ public class ChangePhoneNumberValidator : AbstractValidator<ChangePhoneNumberCom
 {
     public ChangePhoneNumberValidator()
     {
-        RuleFor(x => x.UserId).GreaterThan(0);
+        RuleFor(x => x.UserId).NotEmpty();
 
         RuleFor(x => x.NewPhoneNumber)
             .NotEmpty().WithMessage("شماره تلفن جدید الزامی است.")

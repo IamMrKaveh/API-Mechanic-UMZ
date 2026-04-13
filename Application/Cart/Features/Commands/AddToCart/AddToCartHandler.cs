@@ -1,6 +1,5 @@
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
-using Domain.Common.ValueObjects;
 using Domain.Inventory.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;

@@ -1,5 +1,4 @@
-﻿using Application.Shipping.Features.Shared;
-using Application.Variant.Features.Commands.AddVariant;
+﻿using Application.Variant.Features.Commands.AddVariant;
 using Application.Variant.Features.Commands.UpdateProductVariantShipping;
 using Application.Variant.Features.Commands.UpdateVariant;
 using Application.Variant.Features.Shared;
@@ -56,7 +55,19 @@ public class VariantMappingConfig : IRegister
         config.NewConfig<ProductVariant, ProductVariantViewDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.Sku, src => src.Sku.Value)
-            .Map(dest => dest.Price, src => src.Price.Amount)
-            .Map(dest => dest.StockQuantity, src => src.Stock.Quantity.Value);
+            .Map(dest => dest.SellingPrice, src => src.Price.Amount)
+            .Map(dest => dest.OriginalPrice, src => src.CompareAtPrice != null ? src.CompareAtPrice.Amount : src.Price.Amount)
+            .Map(dest => dest.HasDiscount, src => src.IsDiscounted)
+            .Map(dest => dest.DiscountPercentage, src => src.DiscountPercentage ?? 0m)
+            .Map(dest => dest.IsActive, src => src.IsActive)
+            .Ignore(dest => dest.Stock)
+            .Ignore(dest => dest.IsUnlimited)
+            .Ignore(dest => dest.IsInStock)
+            .Ignore(dest => dest.PurchasePrice)
+            .Ignore(dest => dest.EnabledShippingIds)
+            .Ignore(dest => dest.ShippingMultiplier)
+            .Ignore(dest => dest.Attributes)
+            .Ignore(dest => dest.Images)
+            .Ignore(dest => dest.RowVersion);
     }
 }

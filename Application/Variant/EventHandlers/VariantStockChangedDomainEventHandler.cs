@@ -1,35 +1,38 @@
 using Application.Variant.Features.Shared;
 using Domain.Variant.Events;
-using Domain.Variant.Interfaces;
 
 namespace Application.Variant.EventHandlers;
 
 public class VariantStockChangedDomainEventHandler(
-    IVariantRepository variantRepository,
+    IInventoryQueryService inventoryQueryService,
     IPublisher publisher,
-    ILogger<VariantStockChangedDomainEventHandler> logger) : INotificationHandler<VariantStockChangedEvent>
+    IAuditService auditService) : INotificationHandler<VariantStockChangedEvent>
 {
     public async Task Handle(VariantStockChangedEvent notification, CancellationToken ct)
     {
-        var variant = await variantRepository.GetWithProductAsync(notification.VariantId, ct);
+        var variantId = notification.VariantId;
+        var productId = notification.ProductId;
 
-        if (variant is null)
+        var availability = await inventoryQueryService.GetVariantAvailabilityAsync(variantId, ct);
+
+        if (availability is null)
         {
-            logger.LogWarning(
-                "Variant {VariantId} not found when handling VariantStockChangedEvent",
-                notification.VariantId);
+            await auditService.LogInventoryEventAsync(
+                variantId,
+                "VariantStockChangedEventHandlerWarning",
+                $"Inventory not found for variant {variantId.Value} when handling VariantStockChangedEvent");
             return;
         }
 
         var appNotification = new VariantStockChangedApplicationNotification
         {
-            VariantId = notification.VariantId,
-            ProductId = notification.ProductId,
+            VariantId = variantId.Value,
+            ProductId = productId.Value,
             QuantityChanged = notification.QuantityChanged,
-            NewOnHand = variant.StockQuantity,
-            NewReserved = variant.ReservedQuantity,
-            NewAvailable = variant.AvailableStock,
-            IsInStock = variant.IsInStock
+            NewOnHand = availability.StockQuantity,
+            NewReserved = availability.ReservedQuantity,
+            NewAvailable = availability.AvailableQuantity,
+            IsInStock = availability.IsInStock
         };
 
         await publisher.Publish(appNotification, ct);

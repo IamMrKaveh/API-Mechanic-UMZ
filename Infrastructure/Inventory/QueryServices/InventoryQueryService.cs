@@ -3,7 +3,6 @@ using Application.Inventory.Features.Shared;
 using Domain.Inventory.ValueObjects;
 using Domain.Variant.Aggregates;
 using Infrastructure.Persistence.Context;
-using SharedKernel.Models;
 
 namespace Infrastructure.Inventory.QueryServices;
 

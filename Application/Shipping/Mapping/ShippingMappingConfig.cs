@@ -10,7 +10,7 @@ public class ShippingMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<Shipping, ShippingDto>()
+        config.NewConfig<Domain.Shipping.Aggregates.Shipping, ShippingDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.Name, src => src.Name.Value)
             .Map(dest => dest.Description, src => src.Description)
@@ -28,7 +28,7 @@ public class ShippingMappingConfig : IRegister
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .Map(dest => dest.UpdatedAt, src => src.UpdatedAt);
 
-        config.NewConfig<Shipping, ShippingListItemDto>()
+        config.NewConfig<Domain.Shipping.Aggregates.Shipping, ShippingListItemDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.Name, src => src.Name.Value)
             .Map(dest => dest.BaseCost, src => src.BaseCost.Amount)

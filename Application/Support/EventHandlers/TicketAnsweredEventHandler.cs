@@ -1,12 +1,13 @@
 using Domain.Support.Events;
 using Domain.Support.Interfaces;
+using Domain.Support.ValueObjects;
 
 namespace Application.Support.EventHandlers;
 
 public sealed class TicketAnsweredEventHandler(
     ITicketRepository ticketRepository,
     INotificationService notificationService,
-    ILogger<TicketAnsweredEventHandler> logger) : INotificationHandler<Domain.Support.Events.TicketAnsweredEvent>
+    IAuditService auditService) : INotificationHandler<TicketAnsweredEvent>
 {
     public async Task Handle(
         TicketAnsweredEvent notification,
@@ -14,28 +15,33 @@ public sealed class TicketAnsweredEventHandler(
     {
         try
         {
-            var ticket = await ticketRepository.GetByIdWithMessagesAsync(notification.TicketId, ct);
+            var ticketId = TicketId.From(notification.TicketId.Value);
+
+            var ticket = await ticketRepository.GetByIdWithMessagesAsync(ticketId, ct);
 
             if (ticket is null) return;
 
             await notificationService.CreateNotificationAsync(
-                ticket.UserId,
+                notification.AdminId,
                 "پاسخ جدید به تیکت",
                 $"تیکت «{ticket.Subject}» پاسخ داده شد.",
                 "TicketReply",
                 $"/dashboard/tickets/{ticket.Id}",
-                ticket.Id,
+                ticketId.Value,
                 "Ticket",
                 ct);
 
-            logger.LogInformation(
+            await auditService.LogSystemEventAsync(
+                "Notification Answered",
                 "Notification sent for ticket {TicketId} answered by admin {AdminId}",
-                notification.TicketId,
-                notification.AdminId);
+                ct);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to handle TicketAnsweredEvent for ticket {TicketId}", notification.TicketId);
+            await auditService.LogSystemEventAsync(
+                ex.Message,
+                $"Failed to handle TicketAnsweredEvent for ticket {notification.TicketId}",
+                ct);
         }
     }
 }

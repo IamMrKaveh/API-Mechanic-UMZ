@@ -7,7 +7,7 @@ namespace Application.Wishlist.Features.Commands.RemoveFromWishlist;
 public class RemoveFromWishlistHandler(
     IWishlistRepository wishlistRepository,
     IUnitOfWork unitOfWork,
-    ILogger<RemoveFromWishlistHandler> logger) : IRequestHandler<RemoveFromWishlistCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<RemoveFromWishlistCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         RemoveFromWishlistCommand request,
@@ -23,7 +23,6 @@ public class RemoveFromWishlistHandler(
         await wishlistRepository.RemoveAsync(userId, productId, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("Product {ProductId} removed from wishlist for user {UserId}", request.ProductId, request.UserId);
         return ServiceResult.Success();
     }
 }

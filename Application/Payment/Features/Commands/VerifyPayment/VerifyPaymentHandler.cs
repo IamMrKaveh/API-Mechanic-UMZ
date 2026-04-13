@@ -1,7 +1,8 @@
+using Application.Audit.Contracts;
 using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
-using Domain.Common.ValueObjects;
 using Domain.Payment.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Payment.Features.Commands.VerifyPayment;
 
@@ -19,10 +20,11 @@ public class VerifyPaymentHandler(
             return ServiceResult<PaymentVerificationResult>.Failure(result.Error);
 
         await auditService.LogPaymentEventAsync(
-            result.Value.PaymentId,
+            PaymentTransactionId.From(result.Value.TransactionId),
             "VerifyPayment",
             IpAddress.Unknown,
-            details: $"Authority: {request.Authority}");
+            details: $"Authority: {request.Authority}",
+            ct: ct);
 
         return ServiceResult<PaymentVerificationResult>.Success(result.Value);
     }

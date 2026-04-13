@@ -1,7 +1,6 @@
 using Application.Order.Features.Commands.CreateOrderStatus;
 using Application.Order.Features.Commands.DeleteOrderStatus;
 using Application.Order.Features.Commands.UpdateOrderStatusDefinition;
-using Application.Order.Features.Queries.GetOrderStatusById;
 using Application.Order.Features.Queries.GetOrderStatuses;
 using MapsterMapper;
 using Presentation.Order.Requests;

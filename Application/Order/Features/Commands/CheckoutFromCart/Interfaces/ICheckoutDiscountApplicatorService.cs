@@ -1,6 +1,4 @@
-﻿using Domain.Common.ValueObjects;
-
-namespace Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+﻿namespace Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 
 public interface ICheckoutDiscountApplicatorService
 {

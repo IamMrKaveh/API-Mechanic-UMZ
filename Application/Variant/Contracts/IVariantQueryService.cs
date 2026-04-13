@@ -1,6 +1,6 @@
-﻿using Application.Inventory.Features.Queries.GetVariantAvailability;
-using Application.Product.Features.Shared;
+﻿using Application.Inventory.Features.Shared;
 using Application.Shipping.Features.Shared;
+using Application.Variant.Features.Shared;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
 

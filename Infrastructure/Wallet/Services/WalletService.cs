@@ -7,7 +7,6 @@ using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
 using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
-using SharedKernel.Models;
 
 namespace Infrastructure.Wallet.Services;
 

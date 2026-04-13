@@ -6,7 +6,7 @@ using Application.Product.Features.Commands.DeleteProduct;
 using Application.Product.Features.Commands.RestoreProduct;
 using Application.Product.Features.Commands.UpdateProduct;
 using Application.Product.Features.Commands.UpdateProductDetails;
-using Application.Product.Features.Queries.GetAdminProductById;
+using Application.Product.Features.Queries.GetAdminProduct;
 using Application.Product.Features.Queries.GetAdminProductDetail;
 using Application.Product.Features.Queries.GetAdminProducts;
 using MapsterMapper;

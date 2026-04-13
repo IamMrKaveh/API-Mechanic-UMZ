@@ -1,7 +1,4 @@
-using Application.Audit.Contracts;
-using Application.Cache.Contracts;
 using Application.Inventory.Features.Shared;
-using Domain.Common.ValueObjects;
 using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Features.Queries.GetVariantAvailability;

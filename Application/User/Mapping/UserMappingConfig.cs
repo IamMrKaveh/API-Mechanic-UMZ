@@ -1,8 +1,8 @@
-﻿using Application.User.Features.Commands.UpdateProfile;
+﻿using Application.User.Features.Commands.CreateUserAddress;
+using Application.User.Features.Commands.UpdateProfile;
 using Application.User.Features.Commands.UpdateUserAddress;
 using Application.User.Features.Shared;
 using Domain.Security.Aggregates;
-using Domain.User.Aggregates;
 using Domain.User.Entities;
 using Mapster;
 
@@ -12,7 +12,7 @@ public class UserMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<User, UserProfileDto>()
+        config.NewConfig<Domain.User.Aggregates.User, UserProfileDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.PhoneNumber, src => src.PhoneNumber != null ? src.PhoneNumber.Value : string.Empty)
             .Map(dest => dest.FirstName, src => src.FullName.FirstName)
@@ -51,10 +51,9 @@ public class UserMappingConfig : IRegister
         config.NewConfig<UpdateProfileDto, UpdateProfileCommand>()
             .Map(dest => dest.FirstName, src => src.FirstName)
             .Map(dest => dest.LastName, src => src.LastName)
-            .Map(dest => dest.PhoneNumber, src => src.PhoneNumber)
             .IgnoreNonMapped(true);
 
-        config.NewConfig<AddUserAddressDto, AddUserAddressCommand>()
+        config.NewConfig<AddUserAddressDto, CreateUserAddressCommand>()
             .Map(dest => dest.Title, src => src.Title)
             .Map(dest => dest.ReceiverName, src => src.ReceiverName)
             .Map(dest => dest.PhoneNumber, src => src.PhoneNumber)

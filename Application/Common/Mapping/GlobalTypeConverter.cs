@@ -1,7 +1,6 @@
 using Application.Common.Mapping.Shared;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
-using Domain.Common.ValueObjects;
 using Domain.Product.ValueObjects;
 using Mapster;
 

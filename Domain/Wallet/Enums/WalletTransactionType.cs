@@ -5,4 +5,5 @@ public enum WalletTransactionType
     Credit,
     Debit,
     ReservationConfirmed,
+    Refund,
 }

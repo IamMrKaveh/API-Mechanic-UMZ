@@ -1,4 +1,3 @@
-using Domain.Common.ValueObjects;
 using Domain.Order.ValueObjects;
 using Domain.Payment.ValueObjects;
 using Domain.Product.ValueObjects;

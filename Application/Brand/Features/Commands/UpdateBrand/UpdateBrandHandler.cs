@@ -2,7 +2,6 @@ using Application.Brand.Adapters;
 using Application.Brand.Features.Shared;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
-using Domain.Common.ValueObjects;
 using Mapster;
 
 namespace Application.Brand.Features.Commands.UpdateBrand;

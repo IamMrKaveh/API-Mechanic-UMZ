@@ -32,6 +32,26 @@ public record ShippingListItemDto
     public string DeliveryTimeDisplay { get; init; } = string.Empty;
 }
 
+public record ShippingCostResultDto
+{
+    public Guid ShippingId { get; init; }
+    public string ShippingName { get; init; } = string.Empty;
+    public decimal Cost { get; init; }
+    public bool IsFree { get; init; }
+    public int MinDeliveryDays { get; init; }
+    public int MaxDeliveryDays { get; init; }
+}
+
+public record AvailableShippingDto
+{
+    public Guid Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public decimal Cost { get; init; }
+    public bool IsFree { get; init; }
+    public string DeliveryTimeDisplay { get; init; } = string.Empty;
+    public bool IsDefault { get; init; }
+}
+
 public record ProductVariantShippingInfoDto
 {
     public Guid VariantId { get; init; }

@@ -1,9 +1,7 @@
 using Application.Audit.Contracts;
-using Application.Common.Results;
 using Application.Discount.Contracts;
 using Application.Discount.Features.Shared;
 using Domain.Common.Interfaces;
-using Domain.Common.ValueObjects;
 using Domain.Discount.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;

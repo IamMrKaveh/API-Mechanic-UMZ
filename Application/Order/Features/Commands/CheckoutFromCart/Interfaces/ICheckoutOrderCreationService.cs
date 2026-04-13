@@ -1,5 +1,4 @@
 ﻿using Application.Order.Features.Shared;
-using Domain.Common.ValueObjects;
 using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.CheckoutFromCart.Interfaces;

@@ -1,5 +1,4 @@
-﻿using Domain.Common.Exceptions;
-using Domain.Shipping.Interfaces;
+﻿using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 
 namespace Application.Shipping.Features.Commands.SetDefaultShipping;

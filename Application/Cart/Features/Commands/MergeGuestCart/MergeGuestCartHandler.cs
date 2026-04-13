@@ -1,7 +1,5 @@
-using Domain.Cart.Enum;
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
-using Domain.Common.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Application.Cart.Features.Commands.MergeGuestCart;

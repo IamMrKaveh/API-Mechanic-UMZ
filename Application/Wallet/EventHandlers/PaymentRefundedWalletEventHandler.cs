@@ -4,44 +4,37 @@ using Domain.Wallet.Enums;
 
 namespace Application.Wallet.EventHandlers;
 
-/// <summary>
-/// هنگام استرداد وجه، مستقیماً کیف پول کاربر را شارژ می‌کند.
-/// </summary>
 public class PaymentRefundedWalletEventHandler(
     IMediator mediator,
-    ILogger<PaymentRefundedWalletEventHandler> logger) : INotificationHandler<PaymentRefundedEvent>
+    IAuditService auditService) : INotificationHandler<PaymentRefundedEvent>
 {
     public async Task Handle(PaymentRefundedEvent notification, CancellationToken cancellationToken)
     {
         try
         {
-            logger.LogInformation(
-                "[WalletRefund] PaymentRefunded: TransactionId={TxId}, OrderId={OrderId}, UserId={UserId}, Amount={Amount}",
-                notification.TransactionId, notification.OrderId, notification.UserId, notification.Amount);
-
             var command = new CreditWalletCommand(
-                notification.UserId,
-                notification.Amount,
+                notification.UserId.Value,
+                notification.Amount.Amount,
                 WalletTransactionType.Refund,
                 WalletReferenceType.Payment,
-                notification.TransactionId,
-                $"refund-payment-{notification.TransactionId}",
-                "استرداد وجه به کیف پول"
+                notification.TransactionId.Value.ToString(),
+                $"refund-payment-{notification.TransactionId.Value}",
+                Description: "استرداد وجه به کیف پول"
             );
 
             var result = await mediator.Send(command, cancellationToken);
             if (result.IsFailed)
             {
-                logger.LogError(
-                    "[WalletRefund] CreditWalletCommand failed for TransactionId={TxId}: {Error}",
-                    notification.TransactionId, result.Error);
+                await auditService.LogSystemEventAsync(
+                    "WalletRefundFailed",
+                    $"شارژ کیف پول برای استرداد تراکنش {notification.TransactionId.Value} ناموفق بود: {result.Error}");
             }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Error handling PaymentRefundedEvent for wallet, TransactionId={TxId}",
-                notification.TransactionId);
+            await auditService.LogSystemEventAsync(
+                "WalletPaymentRefundedHandlerError",
+                $"خطا در پردازش استرداد پرداخت {notification.TransactionId.Value}: {ex.Message}");
         }
     }
 }

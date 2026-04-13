@@ -9,13 +9,12 @@ public class WalletMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<Wallet, WalletDto>()
+        config.NewConfig<Domain.Wallet.Aggregates.Wallet, WalletDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.UserId, src => src.OwnerId.Value)
             .Map(dest => dest.CurrentBalance, src => src.Balance.Amount)
             .Map(dest => dest.ReservedBalance, src => src.ReservedBalance.Amount)
             .Map(dest => dest.AvailableBalance, src => src.AvailableBalance.Amount)
-            .Map(dest => dest.IsActive, src => src.IsActive)
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .Map(dest => dest.UpdatedAt, src => src.UpdatedAt);
 

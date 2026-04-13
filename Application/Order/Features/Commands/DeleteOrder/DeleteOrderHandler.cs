@@ -1,4 +1,3 @@
-using Domain.Common.Exceptions;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
@@ -34,7 +33,7 @@ public class DeleteOrderHandler(
         await auditService.LogOrderEventAsync(
             order.Id,
             "DeleteOrder",
-            Domain.Common.ValueObjects.IpAddress.Unknown,
+            IpAddress.Unknown,
             UserId.From(request.UserId),
             $"سفارش {order.Id.Value} حذف شد.");
 

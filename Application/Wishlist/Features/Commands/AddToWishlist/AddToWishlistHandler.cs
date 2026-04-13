@@ -9,7 +9,7 @@ public class AddToWishlistHandler(
     IWishlistRepository wishlistRepository,
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
-    ILogger<AddToWishlistHandler> logger) : IRequestHandler<AddToWishlistCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<AddToWishlistCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         AddToWishlistCommand request,
@@ -29,7 +29,6 @@ public class AddToWishlistHandler(
         await wishlistRepository.AddAsync(wishlistItem, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("Product {ProductId} added to wishlist for user {UserId}", request.ProductId, request.UserId);
         return ServiceResult.Success();
     }
 }
