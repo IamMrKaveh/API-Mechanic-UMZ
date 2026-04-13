@@ -1,6 +1,8 @@
 using Domain.Common.Exceptions;
 using Domain.Common.ValueObjects;
 using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Order.Features.Commands.ApproveReturn;
 
@@ -8,20 +10,20 @@ public class ApproveReturnHandler(
     IOrderRepository orderRepository,
     IInventoryService inventoryService,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ILogger<ApproveReturnHandler> logger) : IRequestHandler<ApproveReturnCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<ApproveReturnCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         ApproveReturnCommand request,
         CancellationToken ct)
     {
-        var order = await orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
+        var orderId = OrderId.From(request.OrderId);
+        var order = await orderRepository.FindWithItemsByIdAsync(orderId, ct);
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
         try
         {
-            order.ValidateCanApproveReturn();
+            order.MarkAsReturned();
         }
         catch (DomainException ex)
         {
@@ -32,41 +34,30 @@ public class ApproveReturnHandler(
         {
             try
             {
-                order.ApproveReturn();
-                await orderRepository.UpdateAsync(order, ct);
+                orderRepository.Update(order);
                 await unitOfWork.SaveChangesAsync(ct);
 
                 var result = await inventoryService.ReturnStockForOrderAsync(
-                    request.OrderId,
+                    orderId,
                     request.AdminUserId,
                     request.Reason,
                     ct);
 
-                if (result.IsFailure)
-                {
-                    logger.LogError(
-                        "Failed to return stock for Order {OrderId}: {Error}",
-                        request.OrderId, result.Error);
+                if (!result.IsSuccess)
                     return ServiceResult.Failure($"خطا در بازگشت موجودی: {result.Error}");
-                }
 
                 await auditService.LogOrderEventAsync(
                     order.Id,
                     "ApproveReturn",
-                    IpAddress.Create(request.IpAddress),
-                    request.AdminUserId,
-                    $"مرجوعی سفارش تأیید و موجودی به انبار بازگشت داده شد. دلیل: {request.Reason}");
-
-                logger.LogInformation(
-                    "Return approved for Order {OrderId} by Admin {AdminId}. Stock returned.",
-                    request.OrderId, request.AdminUserId);
+                    IpAddress.Create(request.IpAddress ?? "0.0.0.0"),
+                    UserId.From(request.AdminUserId),
+                    $"مرجوعی سفارش تأیید شد. دلیل: {request.Reason}");
 
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error approving return for order {OrderId}", request.OrderId);
-                return ServiceResult.Failure("خطایی در تأیید مرجوعی رخ داد.");
+                return ServiceResult.Failure(ex.Message);
             }
         }, ct);
     }

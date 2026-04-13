@@ -8,3 +8,4 @@ global using Domain.Common.Specifications;
 global using Domain.Common.ValueObjects;
 global using SharedKernel.Results;
 global using System.Linq.Expressions;
+global using MediatR;

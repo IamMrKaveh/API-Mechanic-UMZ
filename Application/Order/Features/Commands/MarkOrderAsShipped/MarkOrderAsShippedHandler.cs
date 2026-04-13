@@ -1,5 +1,6 @@
 using Domain.Common.Exceptions;
 using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.MarkOrderAsShipped;
 
@@ -9,7 +10,8 @@ public class MarkOrderAsShippedHandler(
 {
     public async Task<ServiceResult> Handle(MarkOrderAsShippedCommand request, CancellationToken ct)
     {
-        var order = await orderRepository.FindByIdAsync(request.OrderId, ct);
+        var orderId = OrderId.From(request.OrderId);
+        var order = await orderRepository.FindByIdAsync(orderId, ct);
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 

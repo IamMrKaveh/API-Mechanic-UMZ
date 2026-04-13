@@ -19,4 +19,12 @@ public interface IAuditQueryService
         string entityType,
         string entityId,
         CancellationToken ct = default);
+
+    Task<(IReadOnlyList<AuditLogDto> Logs, int Total)> SearchAsync(
+        AuditSearchRequest request,
+        CancellationToken ct = default);
+
+    Task<byte[]> ExportToCsvAsync(
+        AuditExportRequest request,
+        CancellationToken ct = default);
 }

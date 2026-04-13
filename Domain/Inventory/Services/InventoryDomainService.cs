@@ -39,10 +39,9 @@ public sealed class InventoryDomainService
         Aggregates.Inventory inventory,
         StockQuantity quantity,
         string reason,
-        OrderItemId? orderItemId = null,
         UserId? userId = null)
     {
-        return inventory.ReturnStock(quantity, reason, orderItemId, userId);
+        return inventory.ReturnStock(quantity, reason, userId);
     }
 
     public static Result AdjustStock(

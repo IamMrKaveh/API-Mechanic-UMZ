@@ -3,7 +3,9 @@ using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
-public class UpdateOrderStatusDefinitionHandler(IOrderStatusRepository orderStatusRepository, IUnitOfWork unitOfWork) : IRequestHandler<UpdateOrderStatusDefinitionCommand, ServiceResult>
+public class UpdateOrderStatusDefinitionHandler(
+    IOrderStatusRepository orderStatusRepository,
+    IUnitOfWork unitOfWork) : IRequestHandler<UpdateOrderStatusDefinitionCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         UpdateOrderStatusDefinitionCommand request,
@@ -15,13 +17,12 @@ public class UpdateOrderStatusDefinitionHandler(IOrderStatusRepository orderStat
             return ServiceResult.NotFound("وضعیت یافت نشد.");
 
         status.Update(
-            request.DisplayName ?? status.DisplayName,
-            request.Icon ?? status.Icon,
-            request.Color ?? status.Color,
-            request.SortOrder ?? status.SortOrder,
-            request.AllowCancel ?? status.AllowCancel,
-            request.AllowEdit ?? status.AllowEdit
-        );
+            request.DisplayName,
+            request.Icon,
+            request.Color,
+            request.SortOrder,
+            request.AllowCancel,
+            request.AllowEdit);
 
         orderStatusRepository.Update(status);
         await unitOfWork.SaveChangesAsync(ct);

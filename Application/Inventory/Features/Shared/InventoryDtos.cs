@@ -24,12 +24,16 @@ public record InventoryDto
     public Guid Id { get; init; }
     public Guid VariantId { get; init; }
     public int StockQuantity { get; init; }
+    public int OnHand { get; init; }
+    public int Reserved { get; init; }
+    public int Available { get; init; }
     public int ReservedQuantity { get; init; }
     public int AvailableQuantity { get; init; }
     public bool IsUnlimited { get; init; }
     public bool IsInStock { get; init; }
     public bool IsLowStock { get; init; }
     public int LowStockThreshold { get; init; }
+    public int AvailableStock { get; init; }
     public DateTime? UpdatedAt { get; init; }
 }
 
@@ -54,6 +58,51 @@ public record VariantAvailabilityDto
     public bool IsLowStock { get; init; }
 }
 
+public record LowStockItemDto
+{
+    public Guid VariantId { get; init; }
+    public string? ProductName { get; init; }
+    public string? Sku { get; init; }
+    public int StockQuantity { get; init; }
+    public int LowStockThreshold { get; init; }
+}
+
+public record OutOfStockItemDto
+{
+    public Guid VariantId { get; init; }
+    public string? ProductName { get; init; }
+    public string? Sku { get; init; }
+}
+
+public record InventoryStatisticsDto
+{
+    public int TotalVariants { get; init; }
+    public int InStockVariants { get; init; }
+    public int OutOfStockVariants { get; init; }
+    public int LowStockVariants { get; init; }
+    public int UnlimitedVariants { get; init; }
+}
+
+public record InventoryStatusDto
+{
+    public Guid VariantId { get; init; }
+    public int StockQuantity { get; init; }
+    public int ReservedQuantity { get; init; }
+    public int AvailableStock { get; init; }
+    public bool IsInStock { get; init; }
+    public bool IsUnlimited { get; init; }
+    public bool IsLowStock { get; init; }
+}
+
+public record WarehouseStockDto
+{
+    public Guid WarehouseId { get; init; }
+    public string? WarehouseName { get; init; }
+    public Guid VariantId { get; init; }
+    public int Quantity { get; init; }
+    public int ReservedQuantity { get; init; }
+}
+
 public sealed record ReverseInventoryDto(
     Guid VariantId,
     string IdempotencyKey,
@@ -75,17 +124,4 @@ public sealed record RecordDamageDto(
     Guid VariantId,
     int Quantity,
     string Reason
-);
-
-public sealed record BulkStockInDto(
-    IReadOnlyList<BulkStockInItem> Items,
-    string Reason
-);
-
-public sealed record BatchAvailabilityDto(
-    ICollection<Guid> VariantIds
-);
-
-public sealed record ApproveReturnDto(
-    string? Reason = null
 );

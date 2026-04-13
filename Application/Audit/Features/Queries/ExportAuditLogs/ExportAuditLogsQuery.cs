@@ -9,4 +9,4 @@ public sealed record ExportAuditLogsQuery(
     DateTime? From,
     DateTime? To,
     string Format = "csv",
-    int MaxRows = 10_000) : IRequest<ServiceResult<PaginatedResult<ExportAuditLogsResult>>>;
+    int MaxRows = 10_000) : IRequest<ServiceResult<ExportAuditLogsResult>>;

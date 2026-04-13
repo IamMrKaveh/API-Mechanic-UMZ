@@ -2,6 +2,7 @@ using Domain.Common.Exceptions;
 using Domain.Common.ValueObjects;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Order.Features.Commands.UpdateOrderStatus;
 
@@ -9,15 +10,14 @@ public class UpdateOrderStatusHandler(
     IOrderRepository orderRepository,
     IUnitOfWork unitOfWork,
     INotificationService notificationService,
-    IAuditService auditService,
-    OrderDomainService orderDomainService,
-    ILogger<UpdateOrderStatusHandler> logger) : IRequestHandler<UpdateOrderStatusCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<UpdateOrderStatusCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         UpdateOrderStatusCommand request,
         CancellationToken ct)
     {
-        var order = await orderRepository.GetByIdWithItemsAsync(request.OrderId, ct);
+        var orderId = OrderId.From(request.OrderId);
+        var order = await orderRepository.FindWithItemsByIdAsync(orderId, ct);
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
@@ -34,31 +34,37 @@ public class UpdateOrderStatusHandler(
             return ServiceResult.Failure("وضعیت سفارش نامعتبر است.");
         }
 
-        var validation = orderDomainService.ValidateStatusTransition(order, newStatus);
-        if (!validation.IsValid)
-            return ServiceResult.Validation(validation.Error!);
+        if (!order.Status.CanTransitionTo(newStatus))
+            return ServiceResult.Validation($"انتقال به وضعیت '{newStatus.DisplayName}' مجاز نیست.");
 
         var oldStatusName = order.Status.DisplayName;
 
-        switch (newStatus.Value)
+        try
         {
-            case "Processing":
-                order.StartProcessing();
-                break;
+            switch (newStatus.Value)
+            {
+                case "Processing":
+                    order.StartProcessing();
+                    break;
 
-            case "Shipped":
-                order.Ship();
-                break;
+                case "Shipped":
+                    order.MarkAsShipped();
+                    break;
 
-            case "Delivered":
-                order.MarkAsDelivered();
-                break;
+                case "Delivered":
+                    order.MarkAsDelivered();
+                    break;
 
-            default:
-                return ServiceResult.Forbidden($"تغییر مستقیم به وضعیت '{newStatus.DisplayName}' از این مسیر مجاز نیست.");
+                default:
+                    return ServiceResult.Forbidden($"تغییر مستقیم به وضعیت '{newStatus.DisplayName}' مجاز نیست.");
+            }
+        }
+        catch (DomainException ex)
+        {
+            return ServiceResult.Failure(ex.Message);
         }
 
-        await orderRepository.Update(order);
+        orderRepository.Update(order);
 
         try
         {
@@ -68,28 +74,22 @@ public class UpdateOrderStatusHandler(
                 order.UserId,
                 order.Id,
                 oldStatusName,
-                newStatus.DisplayName);
+                newStatus.DisplayName,
+                ct);
 
             await auditService.LogOrderEventAsync(
                 order.Id,
                 "UpdateOrderStatus",
                 IpAddress.Unknown,
-                request.UpdatedByUserId,
-                $"وضعیت سفارش از {oldStatusName} به {newStatus.DisplayName} تغییر کرد.");
-
-            logger.LogInformation(
-                "Order {OrderId} status updated from {OldStatus} to {NewStatus}",
-                order.Id, oldStatusName, newStatus.DisplayName);
+                UserId.From(request.UpdatedByUserId),
+                $"وضعیت سفارش از {oldStatusName} به {newStatus.DisplayName} تغییر کرد.",
+                ct);
 
             return ServiceResult.Success();
         }
         catch (ConcurrencyException)
         {
-            logger.LogWarning(
-                "Concurrency conflict updating order {OrderId} status",
-                request.OrderId);
-
-            return ServiceResult.Conflict("این سفارش توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.");
+            return ServiceResult.Conflict("این سفارش توسط کاربر دیگری تغییر کرده است.");
         }
     }
 }

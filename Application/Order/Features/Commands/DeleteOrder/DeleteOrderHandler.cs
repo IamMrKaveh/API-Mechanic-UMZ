@@ -1,5 +1,7 @@
 using Domain.Common.Exceptions;
 using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Order.Features.Commands.DeleteOrder;
 
@@ -12,27 +14,29 @@ public class DeleteOrderHandler(
         DeleteOrderCommand request,
         CancellationToken ct)
     {
-        var order = await orderRepository.GetByIdAsync(request.OrderId, ct);
+        var orderId = OrderId.From(request.OrderId);
+        var order = await orderRepository.FindByIdAsync(orderId, ct);
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
         try
         {
-            order.Delete(request.UserId);
+            order.MarkAsDeleted();
         }
         catch (DomainException ex)
         {
             return ServiceResult.Failure(ex.Message);
         }
 
-        await orderRepository.UpdateAsync(order, ct);
+        orderRepository.Update(order);
         await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogOrderEventAsync(
             order.Id,
             "DeleteOrder",
-            request.UserId,
-            $"سفارش {order.Id} حذف شد.");
+            Domain.Common.ValueObjects.IpAddress.Unknown,
+            UserId.From(request.UserId),
+            $"سفارش {order.Id.Value} حذف شد.");
 
         return ServiceResult.Success();
     }

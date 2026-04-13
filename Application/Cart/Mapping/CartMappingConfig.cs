@@ -1,7 +1,6 @@
 ﻿using Application.Cart.Features.Commands.AddToCart;
 using Application.Cart.Features.Commands.UpdateCartItem;
 using Application.Cart.Features.Shared;
-using Domain.Cart.Aggregates;
 using Domain.Cart.Entities;
 using Mapster;
 
@@ -11,7 +10,7 @@ public class CartMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<Cart, CartDetailDto>()
+        config.NewConfig<Domain.Cart.Aggregates.Cart, CartDetailDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.UserId, src => src.UserId != null ? src.UserId.Value : (Guid?)null)
             .Map(dest => dest.GuestToken, src => src.GuestToken != null ? src.GuestToken.Value : null)

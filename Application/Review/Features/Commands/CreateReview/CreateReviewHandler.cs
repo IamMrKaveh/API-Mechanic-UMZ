@@ -9,7 +9,7 @@ using Domain.User.ValueObjects;
 
 namespace Application.Review.Features.Commands.CreateReview;
 
-public class CreateReviewHandler(
+public sealed class CreateReviewHandler(
     ReviewDomainService reviewDomainService,
     IReviewRepository reviewRepository,
     IProductRepository productRepository,
@@ -36,11 +36,10 @@ public class CreateReviewHandler(
             orderId,
             requirePurchaseVerification: false,
             hasExistingReviewCheck: async (uid, pid, oid, c) =>
-                await reviewRepository.UserHasReviewedProductAsync(
-                    uid.Value.GetHashCode(), pid.Value.GetHashCode(), null, c),
+                await reviewRepository.UserHasReviewedProductAsync(uid, pid, oid, c),
             ct);
 
-        if (result.IsFailed)
+        if (result.IsFailure)
             return ServiceResult<ProductReviewDto>.Failure(result.Error.Message);
 
         await reviewRepository.AddAsync(result.Value, ct);

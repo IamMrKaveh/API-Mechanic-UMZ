@@ -1,30 +1,24 @@
-﻿using Application.Product.Features.Shared;
-using Domain.Brand.ValueObjects;
-using Domain.Category.ValueObjects;
+﻿using Application.Product.Contracts;
+using Application.Product.Features.Shared;
 
 namespace Application.Product.Features.Queries.GetProducts;
 
-public class GetProductsHandler(
+public sealed class GetProductsHandler(
     IProductQueryService productQueryService) : IRequestHandler<GetProductsQuery, ServiceResult<PaginatedResult<ProductListItemDto>>>
 {
-    private readonly IProductQueryService _productQueryService = productQueryService;
-
     public async Task<ServiceResult<PaginatedResult<ProductListItemDto>>> Handle(
         GetProductsQuery request,
         CancellationToken ct)
     {
-        var categoryId = CategoryId.From(request.CategoryId.Value);
-        var brandId = BrandId.From(request.BrandId.Value);
-
-        var result = await _productQueryService.GetProductsPagedAsync(
-            categoryId,
-            brandId,
-            request.Search,
-            request.IsActive,
-            request.IncludeDeleted,
-            request.Page,
-            request.PageSize,
-            ct);
+        var result = await productQueryService.GetAdminProductsAsync(
+            categoryId: request.CategoryId,
+            brandId: request.BrandId,
+            search: request.Search,
+            isActive: request.IsActive,
+            includeDeleted: request.IncludeDeleted,
+            page: request.Page,
+            pageSize: request.PageSize,
+            ct: ct);
 
         return ServiceResult<PaginatedResult<ProductListItemDto>>.Success(result);
     }

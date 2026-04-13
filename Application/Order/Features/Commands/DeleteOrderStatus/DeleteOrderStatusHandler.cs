@@ -1,36 +1,26 @@
 using Domain.Common.Exceptions;
 using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.DeleteOrderStatus;
 
 public class DeleteOrderStatusHandler(
     IOrderStatusRepository orderStatusRepository,
-    IUnitOfWork unitOfWork,
-    ILogger<DeleteOrderStatusHandler> logger) : IRequestHandler<DeleteOrderStatusCommand, ServiceResult>
+    IUnitOfWork unitOfWork) : IRequestHandler<DeleteOrderStatusCommand, ServiceResult>
 {
-    public async Task<ServiceResult> Handle(DeleteOrderStatusCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult> Handle(DeleteOrderStatusCommand request, CancellationToken ct)
     {
-        var status = await orderStatusRepository.GetByIdAsync(request.Id, cancellationToken);
+        var statusId = OrderStatusId.From(request.Id);
+        var status = await orderStatusRepository.GetByIdAsync(statusId, ct);
         if (status is null)
             return ServiceResult.NotFound("وضعیت سفارش یافت نشد.");
 
-        var isUsed = await orderStatusRepository.IsInUseAsync(request.Id, cancellationToken);
+        var isUsed = await orderStatusRepository.IsInUseAsync(statusId, ct);
         if (isUsed)
             return ServiceResult.Forbidden("امکان حذف وضعیتی که به سفارشات اختصاص داده شده وجود ندارد.");
 
-        try
-        {
-            status.Delete(request.DeletedByUserId);
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult.Failure(ex.Message);
-        }
-
-        orderStatusRepository.Update(status);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        logger.LogInformation("Order status {StatusId} deleted by user {UserId}", request.Id, request.DeletedByUserId);
+        orderStatusRepository.Remove(status);
+        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

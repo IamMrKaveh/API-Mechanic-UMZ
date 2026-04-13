@@ -103,5 +103,10 @@ public sealed class PhoneNumber : ValueObject
 
     public override string ToString() => Value;
 
+    public static string Create(object receiverPhone)
+    {
+        throw new NotImplementedException();
+    }
+
     public static implicit operator string(PhoneNumber phoneNumber) => phoneNumber.Value;
 }

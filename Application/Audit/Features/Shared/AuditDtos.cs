@@ -41,6 +41,9 @@ public sealed record GetAuditLogsResult
 {
     public IReadOnlyList<AuditLogDto> Logs { get; init; } = [];
     public int TotalCount { get; init; }
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalPages { get; init; }
 }
 
 public sealed record AuditExportRequest

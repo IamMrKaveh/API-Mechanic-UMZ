@@ -13,7 +13,7 @@ public sealed class DiscountMappingConfig : IRegister
         config.NewConfig<CreateDiscountRequest, CreateDiscountCommand>()
             .Map(dest => dest.Code, src => src.Code)
             .Map(dest => dest.DiscountType, src => Enum.Parse<DiscountType>(src.DiscountType, true))
-            .Map(dest => dest.DiscountValue, src => src.DiscountValue)
+            .Map(dest => dest.Value, src => src.DiscountValue)
             .Map(dest => dest.MaximumDiscountAmount, src => src.MaximumDiscountAmount)
             .Map(dest => dest.UsageLimit, src => src.UsageLimit)
             .Map(dest => dest.StartsAt, src => src.StartsAt)
@@ -22,7 +22,7 @@ public sealed class DiscountMappingConfig : IRegister
 
         config.NewConfig<UpdateDiscountRequest, UpdateDiscountCommand>()
             .Map(dest => dest.DiscountType, src => Enum.Parse<DiscountType>(src.DiscountType, true))
-            .Map(dest => dest.DiscountValue, src => src.DiscountValue)
+            .Map(dest => dest.Value, src => src.DiscountValue)
             .Map(dest => dest.MaximumDiscountAmount, src => src.MaximumDiscountAmount)
             .Map(dest => dest.UsageLimit, src => src.UsageLimit)
             .Map(dest => dest.StartsAt, src => src.StartsAt)

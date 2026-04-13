@@ -5,8 +5,7 @@ namespace Application.Order.Features.Commands.ExpireOrders;
 
 public class ExpireOrdersHandler(
     IOrderRepository orderRepository,
-    IUnitOfWork unitOfWork,
-    ILogger<ExpireOrdersHandler> logger) : IRequestHandler<ExpireOrdersCommand, ServiceResult<int>>
+    IUnitOfWork unitOfWork) : IRequestHandler<ExpireOrdersCommand, ServiceResult<int>>
 {
     public async Task<ServiceResult<int>> Handle(ExpireOrdersCommand request, CancellationToken ct)
     {
@@ -17,20 +16,18 @@ public class ExpireOrdersHandler(
         {
             try
             {
-                order.Expire();
+                order.Expire(Domain.Order.ValueObjects.OrderStatusValue.Expired);
                 orderRepository.Update(order);
                 expiredCount++;
             }
-            catch (DomainException ex)
+            catch (DomainException)
             {
-                logger.LogWarning(ex, "Could not expire order {OrderId}", order.Id.Value);
             }
         }
 
         if (expiredCount > 0)
             await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("{Count} orders expired", expiredCount);
         return ServiceResult<int>.Success(expiredCount);
     }
 }

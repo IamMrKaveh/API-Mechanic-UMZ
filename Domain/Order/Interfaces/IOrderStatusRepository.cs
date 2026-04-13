@@ -15,6 +15,10 @@ public interface IOrderStatusRepository
     Task<IReadOnlyList<OrderStatus>> GetActiveStatusesAsync(
         CancellationToken ct = default);
 
+    Task<bool> IsInUseAsync(
+        OrderStatusId id,
+        CancellationToken ct = default);
+
     Task AddAsync(
         OrderStatus orderStatus,
         CancellationToken ct = default);

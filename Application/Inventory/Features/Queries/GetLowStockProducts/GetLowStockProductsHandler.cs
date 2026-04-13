@@ -1,7 +1,9 @@
+using Application.Inventory.Features.Shared;
+
 namespace Application.Inventory.Features.Queries.GetLowStockProducts;
 
 public class GetLowStockProductsHandler(IInventoryQueryService queryService)
-        : IRequestHandler<GetLowStockProductsQuery, ServiceResult<IEnumerable<LowStockItemDto>>>
+    : IRequestHandler<GetLowStockProductsQuery, ServiceResult<IEnumerable<LowStockItemDto>>>
 {
     public async Task<ServiceResult<IEnumerable<LowStockItemDto>>> Handle(
         GetLowStockProductsQuery request,

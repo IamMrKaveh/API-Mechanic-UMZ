@@ -21,6 +21,7 @@ public class OrderProcessState
     {
         return new OrderProcessState
         {
+            Id = Guid.NewGuid(),
             OrderId = orderId,
             CurrentStep = ProcessStepEnum.Created,
             Status = ProcessStatusEnum.InProgress,

@@ -1,7 +1,9 @@
-﻿namespace Application.Inventory.Features.Queries.GetWarehouseStock;
+﻿using Application.Inventory.Features.Shared;
+
+namespace Application.Inventory.Features.Queries.GetWarehouseStock;
 
 public class GetWarehouseStockHandler(IInventoryQueryService inventoryQueryService)
-        : IRequestHandler<GetWarehouseStockQuery, ServiceResult<IEnumerable<WarehouseStockDto>>>
+    : IRequestHandler<GetWarehouseStockQuery, ServiceResult<IEnumerable<WarehouseStockDto>>>
 {
     public async Task<ServiceResult<IEnumerable<WarehouseStockDto>>> Handle(
         GetWarehouseStockQuery request,

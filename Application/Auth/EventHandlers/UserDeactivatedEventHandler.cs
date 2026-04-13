@@ -1,16 +1,22 @@
+using Application.Common.Events;
 using Domain.User.Events;
 
 namespace Application.Auth.EventHandlers;
 
 public sealed class UserDeactivatedEventHandler(
     ICacheInvalidationService cacheInvalidation,
-    ILogger<UserDeactivatedEventHandler> logger) : INotificationHandler<UserDeactivatedEvent>
+    IAuditService auditService)
+    : INotificationHandler<DomainEventNotification<UserDeactivatedEvent>>
 {
     public async Task Handle(
-        UserDeactivatedEvent notification,
+        DomainEventNotification<UserDeactivatedEvent> notification,
         CancellationToken ct)
     {
-        await cacheInvalidation.InvalidateUserCacheAsync(notification.UserId.Value, ct);
-        logger.LogInformation("User {UserId} deactivated", notification.UserId.Value);
+        var domainEvent = notification.DomainEvent;
+        await cacheInvalidation.InvalidateUserCacheAsync(domainEvent.UserId, ct);
+        await auditService.LogSystemEventAsync(
+            "Deactive User",
+            $"User {domainEvent.UserId} deactivated",
+            ct);
     }
 }

@@ -1,6 +1,8 @@
 using Domain.Common.Exceptions;
 using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
 using Domain.Shipping.Interfaces;
+using Domain.Shipping.ValueObjects;
 
 namespace Application.Order.Features.Commands.UpdateOrder;
 
@@ -11,7 +13,8 @@ public class UpdateOrderHandler(
 {
     public async Task<ServiceResult> Handle(UpdateOrderCommand request, CancellationToken ct)
     {
-        var order = await orderRepository.FindByIdAsync(request.OrderId, ct);
+        var orderId = OrderId.From(request.OrderId);
+        var order = await orderRepository.FindByIdAsync(orderId, ct);
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
@@ -25,17 +28,14 @@ public class UpdateOrderHandler(
         {
             if (request.Dto.ShippingId.HasValue)
             {
-                var shipping = await shippingRepository.GetByIdAsync(
-                    request.Dto.ShippingId.Value, ct);
+                var shippingId = ShippingId.From(request.Dto.ShippingId.Value);
+                var shipping = await shippingRepository.GetByIdAsync(shippingId, ct);
 
-                if (shipping == null || !shipping.IsActive)
+                if (shipping is null || !shipping.IsActive)
                     return ServiceResult.Failure("روش ارسال نامعتبر است.");
-
-                var shippingCost = shipping.CalculateCost(order.TotalAmount);
-                order.UpdateShipping(shipping.Id, shippingCost);
             }
 
-            await orderRepository.Update(order);
+            orderRepository.Update(order);
             await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult.Success();
@@ -46,7 +46,7 @@ public class UpdateOrderHandler(
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Conflict("این سفارش توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.");
+            return ServiceResult.Conflict("این سفارش توسط کاربر دیگری تغییر کرده است.");
         }
     }
 }

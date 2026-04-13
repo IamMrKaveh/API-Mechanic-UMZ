@@ -1,4 +1,6 @@
-﻿using Application.Discount.Features.Shared;
+﻿using Application.Discount.Features.Commands.CreateDiscount;
+using Application.Discount.Features.Commands.UpdateDiscount;
+using Application.Discount.Features.Shared;
 using Domain.Discount.Aggregates;
 using Domain.Discount.Entities;
 using Mapster;
@@ -65,7 +67,7 @@ public class DiscountMappingConfig : IRegister
             .Map(dest => dest.ExpiresAt, src => src.ExpiresAt)
             .Map(dest => dest.IsRedeemable, src => src.IsRedeemable);
 
-        config.NewConfig<CreateDiscountDto, CreateDiscountCodeCommand>()
+        config.NewConfig<CreateDiscountDto, CreateDiscountCommand>()
            .Map(dest => dest.Code, src => src.Code)
            .Map(dest => dest.DiscountType, src => src.DiscountType)
            .Map(dest => dest.Value, src => src.Value)
@@ -74,7 +76,7 @@ public class DiscountMappingConfig : IRegister
            .Map(dest => dest.ExpiresAt, src => src.ExpiresAt)
            .Map(dest => dest.IsActive, src => src.IsActive);
 
-        config.NewConfig<UpdateDiscountDto, UpdateDiscountCodeCommand>()
+        config.NewConfig<UpdateDiscountDto, UpdateDiscountCommand>()
             .Map(dest => dest.Value, src => src.Value)
             .Map(dest => dest.UsageLimit, src => src.UsageLimit)
             .Map(dest => dest.StartsAt, src => src.StartsAt)

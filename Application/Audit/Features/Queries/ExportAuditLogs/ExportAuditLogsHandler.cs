@@ -4,13 +4,13 @@ using Domain.User.ValueObjects;
 namespace Application.Audit.Features.Queries.ExportAuditLogs;
 
 public sealed class ExportAuditLogsHandler(
-    IAuditQueryService auditQueryService) : IRequestHandler<ExportAuditLogsQuery, ServiceResult<PaginatedResult<ExportAuditLogsResult>>>
+    IAuditQueryService auditQueryService) : IRequestHandler<ExportAuditLogsQuery, ServiceResult<ExportAuditLogsResult>>
 {
-    public async Task<ServiceResult<PaginatedResult<ExportAuditLogsResult>>> Handle(
+    public async Task<ServiceResult<ExportAuditLogsResult>> Handle(
         ExportAuditLogsQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId.Value);
+        var userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
 
         var exportRequest = new AuditExportRequest
         {
@@ -28,7 +28,7 @@ public sealed class ExportAuditLogsHandler(
         };
 
         byte[] content;
-        if (request.Format == "json")
+        if (request.Format.Equals("json", StringComparison.OrdinalIgnoreCase))
         {
             var result = await auditQueryService.GetAuditLogsAsync(
                 userId,
@@ -49,7 +49,6 @@ public sealed class ExportAuditLogsHandler(
         }
 
         var fileName = $"audit_logs_{DateTime.UtcNow:yyyyMMdd_HHmm}.{extension}";
-
-        return ServiceResult<PaginatedResult<ExportAuditLogsResult>>.Success(new ExportAuditLogsResult(content, fileName, contentType));
+        return ServiceResult<ExportAuditLogsResult>.Success(new ExportAuditLogsResult(content, fileName, contentType));
     }
 }

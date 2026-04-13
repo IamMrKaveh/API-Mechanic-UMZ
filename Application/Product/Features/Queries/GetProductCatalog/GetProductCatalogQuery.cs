@@ -1,3 +1,5 @@
+using Application.Product.Features.Shared;
+
 namespace Application.Product.Features.Queries.GetProductCatalog;
 
 public record GetProductCatalogQuery(
@@ -9,4 +11,4 @@ public record GetProductCatalogQuery(
     decimal? MinPrice = null,
     decimal? MaxPrice = null,
     bool InStockOnly = false,
-    string? SortBy = null) : IRequest<ServiceResult<PaginatedResult<ProductCatalogItemsDto>>>;
+    string? SortBy = null) : IRequest<ServiceResult<PaginatedResult<ProductCatalogItemDto>>>;

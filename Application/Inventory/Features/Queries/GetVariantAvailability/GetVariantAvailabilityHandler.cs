@@ -1,12 +1,18 @@
+using Application.Audit.Contracts;
+using Application.Cache.Contracts;
+using Application.Inventory.Features.Shared;
+using Domain.Common.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Application.Inventory.Features.Queries.GetVariantAvailability;
 
 public class GetVariantAvailabilityHandler(
     ICacheService cacheService,
     IInventoryQueryService inventoryQueryService,
-    ILogger<GetVariantAvailabilityHandler> logger)
-        : IRequestHandler<GetVariantAvailabilityQuery, ServiceResult<VariantAvailabilityDto>>
+    IAuditService auditService)
+    : IRequestHandler<GetVariantAvailabilityQuery, ServiceResult<VariantAvailabilityDto>>
 {
-    private static string CacheKey(int variantId) => $"inventory:availability:{variantId}";
+    private static string CacheKey(Guid variantId) => $"inventory:availability:{variantId}";
 
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(2);
 
@@ -14,7 +20,8 @@ public class GetVariantAvailabilityHandler(
         GetVariantAvailabilityQuery request,
         CancellationToken ct)
     {
-        var key = CacheKey(request.VariantId);
+        var variantId = VariantId.From(request.VariantId);
+        var key = CacheKey(variantId.Value);
 
         try
         {
@@ -22,9 +29,8 @@ public class GetVariantAvailabilityHandler(
             if (cached is not null)
                 return ServiceResult<VariantAvailabilityDto>.Success(cached);
         }
-        catch (Exception ex)
+        catch
         {
-            logger.LogWarning(ex, "Cache read failed for variant {VariantId}, falling back to DB", request.VariantId);
         }
 
         var status = await inventoryQueryService.GetVariantStatusAsync(request.VariantId, ct);
@@ -34,21 +40,18 @@ public class GetVariantAvailabilityHandler(
         var dto = new VariantAvailabilityDto
         {
             VariantId = status.VariantId,
-            OnHand = status.StockQuantity,
-            Reserved = status.ReservedQuantity,
-            Available = status.AvailableStock,
-            IsInStock = status.IsInStock,
+            IsAvailable = status.IsInStock || status.IsUnlimited,
+            AvailableQuantity = status.AvailableStock,
             IsUnlimited = status.IsUnlimited,
-            LastUpdated = DateTime.UtcNow
+            IsLowStock = status.IsLowStock
         };
 
         try
         {
             await cacheService.SetAsync(key, dto, CacheTtl, ct);
         }
-        catch (Exception ex)
+        catch
         {
-            logger.LogWarning(ex, "Cache write failed for variant {VariantId}", request.VariantId);
         }
 
         return ServiceResult<VariantAvailabilityDto>.Success(dto);

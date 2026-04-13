@@ -10,10 +10,10 @@ public class CreateDiscountValidator : AbstractValidator<CreateDiscountCommand>
             .NotEmpty().WithMessage("کد تخفیف الزامی است.")
             .MaximumLength(50);
 
-        RuleFor(x => x.DiscountValue)
+        RuleFor(x => x.Value)
             .GreaterThan(0).WithMessage("مقدار تخفیف باید بزرگتر از صفر باشد.");
 
-        RuleFor(x => x.DiscountValue)
+        RuleFor(x => x.Value)
             .LessThanOrEqualTo(100)
             .When(x => x.DiscountType == DiscountType.Percentage)
             .WithMessage("درصد تخفیف نمی‌تواند بیش از ۱۰۰ باشد.");

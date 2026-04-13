@@ -49,4 +49,14 @@ public interface IInventoryService
         OrderItemId? orderItemId = null,
         UserId? userId = null,
         CancellationToken ct = default);
+
+    Task<ServiceResult> ReturnStockForOrderAsync(
+        OrderId orderId,
+        Guid adminUserId,
+        string reason,
+        CancellationToken ct = default);
+
+    Task<ServiceResult> RollbackReservationsAsync(
+        string referenceNumber,
+        CancellationToken ct = default);
 }

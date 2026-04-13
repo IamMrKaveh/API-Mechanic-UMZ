@@ -9,12 +9,12 @@ public class UpdateDiscountValidator : AbstractValidator<UpdateDiscountCommand>
         RuleFor(x => x.Id)
             .NotEmpty().WithMessage("شناسه کد تخفیف الزامی است.");
 
-        RuleFor(x => x.DiscountValue)
+        RuleFor(x => x.Value)
             .GreaterThan(0)
             .When(x => x.DiscountType != DiscountType.FreeShipping)
             .WithMessage("مقدار تخفیف باید بزرگتر از صفر باشد.");
 
-        RuleFor(x => x.DiscountValue)
+        RuleFor(x => x.Value)
             .LessThanOrEqualTo(100)
             .When(x => x.DiscountType == DiscountType.Percentage)
             .WithMessage("درصد تخفیف نمی‌تواند بیش از ۱۰۰ باشد.");

@@ -4,7 +4,7 @@ namespace Application.Common.Behaviors;
 
 public sealed class CachingBehavior<TRequest, TResponse>(
     ICacheService cacheService,
-    ILogger<CachingBehavior<TRequest, TResponse>> logger) : IPipelineBehavior<TRequest, TResponse>
+    IAuditService auditService) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
     public async Task<TResponse> Handle(
@@ -12,20 +12,23 @@ public sealed class CachingBehavior<TRequest, TResponse>(
         RequestHandlerDelegate<TResponse> next,
         CancellationToken ct)
     {
-        if (request is not ICacheableQuery cacheable)
-            return await next();
+        if (request is not ICacheableQuery cacheableQuery)
+            return await next(ct);
 
-        var cached = await cacheService.GetAsync<TResponse>(cacheable.CacheKey, ct);
+        var cached = await cacheService.GetAsync<TResponse>(cacheableQuery.CacheKey, ct);
         if (cached is not null)
         {
-            logger.LogDebug("Cache hit for {Key}", cacheable.CacheKey);
+            await auditService.LogSystemEventAsync(
+                "Cache hit",
+                $"Cache hit for {cacheableQuery.CacheKey}",
+                ct);
             return cached;
         }
 
-        var response = await next();
+        var response = await next(ct);
 
         if (response is not null)
-            await cacheService.SetAsync(cacheable.CacheKey, response, cacheable.Expiry, ct);
+            await cacheService.SetAsync(cacheableQuery.CacheKey, response, cacheableQuery.Expiry, ct);
 
         return response;
     }

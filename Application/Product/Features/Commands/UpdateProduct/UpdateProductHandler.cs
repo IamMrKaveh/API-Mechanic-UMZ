@@ -11,7 +11,6 @@ using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Application.Product.Features.Commands.UpdateProduct;
 
@@ -21,9 +20,7 @@ public sealed class UpdateProductHandler(
     IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService,
-    IMapper mapper,
-    ILogger<UpdateProductHandler> logger) : IRequestHandler<UpdateProductCommand, ServiceResult<ProductDetailDto>>
+    IMapper mapper) : IRequestHandler<UpdateProductCommand, ServiceResult<ProductDetailDto>>
 {
     public async Task<ServiceResult<ProductDetailDto>> Handle(
         UpdateProductCommand request,
@@ -77,15 +74,10 @@ public sealed class UpdateProductHandler(
             throw new ConcurrencyException("اطلاعات محصول توسط کاربر دیگری تغییر کرده است.");
         }
 
-        logger.LogInformation(
-            "Product {ProductId} updated by user {UserId}",
-            product.Id.Value,
-            request.UpdatedByUserId);
-
         await auditService.LogProductEventAsync(
             product.Id,
             "UpdateProduct",
-            $"Product '{product.Name}' updated. Slug='{product.Slug}', IsActive={product.IsActive}, IsFeatured={product.IsFeatured}.",
+            $"محصول '{product.Name}' ویرایش شد. Slug='{product.Slug}', IsActive={product.IsActive}, IsFeatured={product.IsFeatured}.",
             UserId.From(request.UpdatedByUserId));
 
         var dto = mapper.Map<ProductDetailDto>(product) with

@@ -1,4 +1,5 @@
 using Application.Inventory.Features.Shared;
+using Application.Inventory.Features.Queries.GetVariantAvailability;
 using Domain.Inventory.ValueObjects;
 using Domain.Variant.ValueObjects;
 
@@ -23,5 +24,44 @@ public interface IInventoryQueryService
 
     Task<IReadOnlyList<InventoryDto>> GetByVariantIdsAsync(
         IEnumerable<VariantId> variantIds,
+        CancellationToken ct = default);
+
+    Task<InventoryDto?> GetVariantAvailabilityAsync(
+        Guid variantId,
+        CancellationToken ct = default);
+
+    Task<InventoryDto?> GetVariantStatusAsync(
+        Guid variantId,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<VariantAvailabilityDto>> GetBatchAvailabilityAsync(
+        IList<Guid> variantIds,
+        CancellationToken ct = default);
+
+    Task<PaginatedResult<InventoryTransactionDto>> GetTransactionsPagedAsync(
+        Guid? variantId,
+        string? transactionType,
+        DateTime? fromDate,
+        DateTime? toDate,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
+
+    Task<IEnumerable<LowStockItemDto>> GetLowStockProductsAsync(
+        int threshold,
+        CancellationToken ct = default);
+
+    Task<IEnumerable<OutOfStockItemDto>> GetOutOfStockProductsAsync(
+        CancellationToken ct = default);
+
+    Task<InventoryStatisticsDto?> GetStatisticsAsync(
+        CancellationToken ct = default);
+
+    Task<InventoryStatusDto?> GetInventoryStatusAsync(
+        Guid variantId,
+        CancellationToken ct = default);
+
+    Task<IEnumerable<WarehouseStockDto>> GetWarehouseStockByVariantAsync(
+        Guid variantId,
         CancellationToken ct = default);
 }

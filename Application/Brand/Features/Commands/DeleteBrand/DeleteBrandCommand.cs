@@ -1,3 +1,3 @@
 namespace Application.Brand.Features.Commands.DeleteBrand;
 
-public record DeleteBrandCommand(Guid Id, Guid DeletedBy) : IRequest<ServiceResult>;
+public record DeleteBrandCommand(Guid BrandId, Guid DeletedBy) : IRequest<ServiceResult>;

@@ -1,16 +1,19 @@
+using Application.Common.Events;
 using Domain.Security.Events;
 
 namespace Application.Auth.EventHandlers;
 
-public sealed class AllSessionsRevokedEventHandler(ILogger<AllSessionsRevokedEventHandler> logger) : INotificationHandler<AllSessionsRevokedEvent>
+public sealed class AllSessionsRevokedEventHandler(IAuditService auditService)
+    : INotificationHandler<DomainEventNotification<AllSessionsRevokedEvent>>
 {
-    public Task Handle(
-        AllSessionsRevokedEvent notification,
+    public async Task Handle(
+        DomainEventNotification<AllSessionsRevokedEvent> notification,
         CancellationToken ct)
     {
-        logger.LogInformation(
-            "All sessions revoked for user {UserId}. Count: {Count}, Reason: {Reason}",
-            notification.UserId.Value, notification.RevokedCount, notification.Reason);
-        return Task.CompletedTask;
+        var domainEvent = notification.DomainEvent;
+        await auditService.LogSystemEventAsync(
+            "All Session Revoked",
+            $"All sessions revoked for user {domainEvent.UserId}. Count: {domainEvent.RevokedCount}, Reason: {domainEvent.Reason}",
+            ct);
     }
 }

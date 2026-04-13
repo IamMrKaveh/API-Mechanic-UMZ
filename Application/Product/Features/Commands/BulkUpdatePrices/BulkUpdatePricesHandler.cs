@@ -1,41 +1,50 @@
+using Application.Audit.Contracts;
+using Application.Cache.Contracts;
 using Application.Common.Interfaces;
 using Domain.Common.Exceptions;
+using Domain.Common.ValueObjects;
 using Domain.Variant.Interfaces;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Product.Features.Commands.BulkUpdatePrices;
 
-public class BulkUpdatePricesHandler(
+public sealed class BulkUpdatePricesHandler(
     IVariantRepository variantRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService,
-    ICacheService cacheService,
-    ILogger<BulkUpdatePricesHandler> logger) : IRequestHandler<BulkUpdatePricesCommand, ServiceResult>
+    ICacheService cacheService) : IRequestHandler<BulkUpdatePricesCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(BulkUpdatePricesCommand request, CancellationToken ct)
     {
         var updatesDict = request.Updates.ToDictionary(u => u.VariantId);
-        var variants = await variantRepository.GetByIdsAsync(updatesDict.Keys, ct);
+        var variantIds = updatesDict.Keys.Select(k => VariantId.From(k)).ToList();
+        var variants = await variantRepository.GetByIdsAsync(variantIds, ct);
 
         var errors = new List<string>();
-        var affectedProductIds = new HashSet<int>();
+        var affectedProductIds = new HashSet<Guid>();
         var changesLog = new List<string>();
 
         foreach (var variant in variants)
         {
-            if (updatesDict.TryGetValue(variant.Id, out var update))
+            if (updatesDict.TryGetValue(variant.Id.Value, out var update))
             {
                 try
                 {
-                    variant.SetPricing(update.PurchasePrice, update.SellingPrice, update.OriginalPrice);
+                    var newPrice = Money.Create(update.SellingPrice);
+                    var compareAtPrice = update.OriginalPrice > update.SellingPrice
+                        ? Money.Create(update.OriginalPrice)
+                        : null;
+
+                    variant.ChangePrice(newPrice, compareAtPrice);
                     variantRepository.Update(variant);
 
-                    changesLog.Add($"Variant {variant.Id}: Selling={update.SellingPrice}");
-                    affectedProductIds.Add(variant.ProductId);
+                    changesLog.Add($"Variant {variant.Id.Value}: Selling={update.SellingPrice}");
+                    affectedProductIds.Add(variant.ProductId.Value);
                 }
                 catch (DomainException ex)
                 {
-                    errors.Add($"Variant {variant.Id}: {ex.Message}");
+                    errors.Add($"Variant {variant.Id.Value}: {ex.Message}");
                 }
             }
         }
@@ -49,13 +58,8 @@ public class BulkUpdatePricesHandler(
 
         await auditService.LogSystemEventAsync(
             "BulkPriceUpdate",
-            $"User {currentUserService.UserId} updated prices. Changes: {string.Join("; ", changesLog)}. Errors: {string.Join("; ", errors)}",
-            currentUserService.UserId);
-
-        if (errors.Count != 0)
-        {
-            logger.LogWarning("Bulk price update had errors: {Errors}", string.Join("; ", errors));
-        }
+            $"بروزرسانی گروهی قیمت‌ها. تغییرات: {string.Join("; ", changesLog)}. خطاها: {string.Join("; ", errors)}",
+            ct);
 
         return ServiceResult.Success();
     }

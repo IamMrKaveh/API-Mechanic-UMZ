@@ -4,23 +4,17 @@ namespace Application.Inventory.Features.Queries.GetStockLedgerByVariant;
 
 public class GetStockLedgerByVariantHandler(
     IStockLedgerQueryService ledgerQueryService)
-        : IRequestHandler<GetStockLedgerByVariantQuery, ServiceResult<PaginatedResult<StockLedgerEntryDto>>>
+    : IRequestHandler<GetStockLedgerByVariantQuery, ServiceResult<PaginatedResult<StockLedgerEntryDto>>>
 {
     public async Task<ServiceResult<PaginatedResult<StockLedgerEntryDto>>> Handle(
         GetStockLedgerByVariantQuery request,
         CancellationToken ct)
     {
-        var totalCount = await ledgerQueryService.GetStockLedgerTotalCountAsync(
-            request.VariantId, ct);
-
-        var entries = await ledgerQueryService.GetLedgerAsync(
-            request.VariantId,
-            page: request.Page,
-            pageSize: request.PageSize,
-            ct: ct);
-
-        var result = PaginatedResult<StockLedgerEntryDto>.Create(
-            entries.ToList(), totalCount, request.Page, request.PageSize);
+        var result = await ledgerQueryService.GetByVariantIdAsync(
+            Domain.Variant.ValueObjects.VariantId.From(request.VariantId),
+            request.Page,
+            request.PageSize,
+            ct);
 
         return ServiceResult<PaginatedResult<StockLedgerEntryDto>>.Success(result);
     }

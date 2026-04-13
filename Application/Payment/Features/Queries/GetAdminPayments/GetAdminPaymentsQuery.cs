@@ -8,4 +8,6 @@ public record GetAdminPaymentsQuery(
     string? Status,
     string? Gateway,
     DateTime? FromDate,
-    DateTime? ToDate) : IRequest<ServiceResult<PaginatedResult<PaymentTransactionDto>>>;
+    DateTime? ToDate,
+    int Page = 1,
+    int PageSize = 10) : IRequest<ServiceResult<PaginatedResult<PaymentTransactionDto>>>;

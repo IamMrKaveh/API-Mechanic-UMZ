@@ -4,16 +4,8 @@ public class UpdateOrderStatusValidator : AbstractValidator<UpdateOrderStatusCom
 {
     public UpdateOrderStatusValidator()
     {
-        RuleFor(x => x.OrderId)
-            .GreaterThan(0)
-            .WithMessage("OrderId is required.");
-
-        RuleFor(x => x.NewStatus)
-            .NotEmpty()
-            .WithMessage("New status is required.");
-
-        RuleFor(x => x.RowVersion)
-            .NotEmpty()
-            .WithMessage("RowVersion is required for concurrency control.");
+        RuleFor(x => x.OrderId).NotEmpty().WithMessage("OrderId is required.");
+        RuleFor(x => x.NewStatus).NotEmpty().WithMessage("New status is required.");
+        RuleFor(x => x.RowVersion).NotEmpty().WithMessage("RowVersion is required.");
     }
 }

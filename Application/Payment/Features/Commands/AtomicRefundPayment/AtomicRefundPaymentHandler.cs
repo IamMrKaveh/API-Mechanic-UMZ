@@ -1,3 +1,4 @@
+using Application.Payment.Features.Adapters;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.Payment.Interfaces;
@@ -8,8 +9,7 @@ namespace Application.Payment.Features.Commands.AtomicRefundPayment;
 public class AtomicRefundPaymentHandler(
     IOrderRepository orderRepository,
     IPaymentTransactionRepository paymentRepository,
-    IUnitOfWork unitOfWork,
-    ILogger<AtomicRefundPaymentHandler> logger) : IRequestHandler<AtomicRefundPaymentCommand, ServiceResult>
+    IUnitOfWork unitOfWork) : IRequestHandler<AtomicRefundPaymentCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(AtomicRefundPaymentCommand request, CancellationToken ct)
     {
@@ -41,22 +41,6 @@ public class AtomicRefundPaymentHandler(
         paymentRepository.Update(payment);
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("Refund processed for order {OrderId}", request.OrderId);
         return ServiceResult.Success();
     }
-}
-
-internal sealed class OrderPaymentContextAdapter(Domain.Order.Aggregates.Order order)
-    : IOrderPaymentContext
-{
-    public Guid Id => order.Id.Value;
-    public bool IsPaid => order.IsPaid;
-    public bool IsDelivered => order.IsDelivered;
-    public string StatusDisplayName => order.Status.DisplayName;
-
-    public void Refund() => order.Refund();
-
-    public void MarkAsPaid(Guid paymentTransactionId) => order.MarkAsPaid(paymentTransactionId);
-
-    public void StartProcessing() => order.StartProcessing();
 }

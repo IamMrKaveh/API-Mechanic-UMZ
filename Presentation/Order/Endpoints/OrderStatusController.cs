@@ -19,7 +19,7 @@ public class OrderStatusController(IMediator mediator, IMapper mapper) : BaseApi
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetOrderStatusById(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetOrderStatusByIdQuery(id), ct);
+        var result = await Mediator.Send(new GetOrderStatusQuery(id), ct);
         return ToActionResult(result);
     }
 }

@@ -2,9 +2,10 @@ using Application.Audit.Features.Shared;
 
 namespace Application.Audit.Features.Queries.GetAuditLogs;
 
-public sealed class GetAuditLogsHandler(IAuditQueryService auditQueryService) : IRequestHandler<GetAuditLogsQuery, GetAuditLogsResult>
+public sealed class GetAuditLogsHandler(IAuditQueryService auditQueryService)
+    : IRequestHandler<GetAuditLogsQuery, ServiceResult<PaginatedResult<GetAuditLogsResult>>>
 {
-    public async Task<GetAuditLogsResult> Handle(
+    public async Task<ServiceResult<PaginatedResult<GetAuditLogsResult>>> Handle(
         GetAuditLogsQuery request,
         CancellationToken ct)
     {
@@ -24,13 +25,17 @@ public sealed class GetAuditLogsHandler(IAuditQueryService auditQueryService) : 
 
         var (logs, total) = await auditQueryService.SearchAsync(searchRequest, ct);
 
-        var totalPages = (int)Math.Ceiling((double)total / request.PageSize);
+        var resultItems = logs.Select(log => new GetAuditLogsResult
+        {
+            Logs = [log],
+            TotalCount = total,
+            Page = request.Page,
+            PageSize = request.PageSize,
+            TotalPages = (int)Math.Ceiling((double)total / request.PageSize)
+        }).ToList();
 
-        return new GetAuditLogsResult(
-            logs,
-            total,
-            request.Page,
-            request.PageSize,
-            totalPages);
+        var paginated = PaginatedResult<GetAuditLogsResult>.Create(resultItems, total, request.Page, request.PageSize);
+
+        return ServiceResult<PaginatedResult<GetAuditLogsResult>>.Success(paginated);
     }
 }

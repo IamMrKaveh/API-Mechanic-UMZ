@@ -1,5 +1,6 @@
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
+using Domain.Inventory.ValueObjects;
 using Domain.Order.Interfaces;
 using Domain.Payment.Events;
 
@@ -8,9 +9,7 @@ namespace Application.Payment.EventHandlers;
 public class PaymentSucceededInventoryCommitEventHandler(
     IOrderRepository orderRepository,
     IInventoryRepository inventoryRepository,
-    InventoryDomainService inventoryDomainService,
-    IUnitOfWork unitOfWork,
-    ILogger<PaymentSucceededInventoryCommitEventHandler> logger) : INotificationHandler<PaymentSucceededEvent>
+    IUnitOfWork unitOfWork) : INotificationHandler<PaymentSucceededEvent>
 {
     public async Task Handle(PaymentSucceededEvent notification, CancellationToken ct)
     {
@@ -22,34 +21,23 @@ public class PaymentSucceededInventoryCommitEventHandler(
             foreach (var item in order.Items)
             {
                 var inventory = await inventoryRepository.GetByVariantIdAsync(item.VariantId, ct);
+                if (inventory is null) continue;
 
-                if (inventory is null)
-                {
-                    logger.LogWarning("Inventory not found for variant {VariantId}", item.VariantId);
-                    continue;
-                }
-
-                var result = inventoryDomainService.ConfirmReservation(
+                var quantity = StockQuantity.Create(item.Quantity);
+                var result = InventoryDomainService.ConfirmReservation(
                     inventory,
-                    item.Quantity,
+                    quantity,
                     order.OrderNumber.Value,
                     item.Id);
 
                 if (result.IsSuccess)
                     inventoryRepository.Update(inventory);
-                else
-                    logger.LogWarning("Failed to commit stock for variant {VariantId}: {Error}",
-                        item.VariantId, result.Error.Message);
             }
 
             await unitOfWork.SaveChangesAsync(ct);
         }
-        catch (Exception ex)
+        catch
         {
-            logger.LogError(
-                ex,
-                "Error committing inventory for order {OrderId}",
-                notification.OrderId);
         }
     }
 }

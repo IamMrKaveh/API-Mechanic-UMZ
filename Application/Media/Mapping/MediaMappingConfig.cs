@@ -1,5 +1,4 @@
 ﻿using Application.Media.Features.Shared;
-using Domain.Media.Aggregates;
 using Mapster;
 
 namespace Application.Media.Mapping;
@@ -8,7 +7,7 @@ public class MediaMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<Media, MediaDto>()
+        config.NewConfig<Domain.Media.Aggregates.Media, MediaDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.FilePath, src => src.FilePath)
             .Map(dest => dest.FileName, src => src.FileName)

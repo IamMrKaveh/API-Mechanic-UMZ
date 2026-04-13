@@ -1,5 +1,6 @@
 using Domain.Common.Exceptions;
 using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.DeleteOrderItem;
 
@@ -12,14 +13,17 @@ public class DeleteOrderItemHandler(
         DeleteOrderItemCommand request,
         CancellationToken ct)
     {
-        var order = await orderRepository.GetByOrderItemIdAsync(request.Id, ct);
+        var orderItemId = OrderItemId.From(request.Id);
+        var order = await orderRepository.FindByOrderItemIdAsync(orderItemId, ct);
         if (order is null)
             return ServiceResult.NotFound("سفارش یا آیتم یافت نشد.");
 
         try
         {
-            order.RemoveItem(request.Id);
-            await orderRepository.UpdateAsync(order, ct);
+            order.Items
+                .FirstOrDefault(i => i.Id == orderItemId);
+
+            orderRepository.Update(order);
             await unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }

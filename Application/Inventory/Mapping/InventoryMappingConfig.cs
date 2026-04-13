@@ -1,10 +1,6 @@
-﻿using Application.Inventory.Features.Commands.AdjustStock;
-using Application.Inventory.Features.Commands.BulkAdjustStock;
-using Application.Inventory.Features.Commands.BulkStockIn;
-using Application.Inventory.Features.Commands.RecordDamage;
-using Application.Inventory.Features.Commands.ReverseInventoryTransaction;
-using Application.Inventory.Features.Shared;
+﻿using Application.Inventory.Features.Shared;
 using Domain.Inventory.Aggregates;
+using Domain.Inventory.Entities;
 using Mapster;
 
 namespace Application.Inventory.Mapping;
@@ -13,44 +9,30 @@ public class InventoryMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<Inventory, InventoryDto>()
+        config.NewConfig<Domain.Inventory.Aggregates.Inventory, InventoryDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.VariantId, src => src.VariantId.Value)
-            .Map(dest => dest.StockQuantity, src => src.StockQuantity)
-            .Map(dest => dest.ReservedQuantity, src => src.ReservedQuantity)
+            .Map(dest => dest.StockQuantity, src => src.StockQuantity.Value)
+            .Map(dest => dest.OnHand, src => src.StockQuantity.Value)
+            .Map(dest => dest.ReservedQuantity, src => src.ReservedQuantity.Value)
+            .Map(dest => dest.Reserved, src => src.ReservedQuantity.Value)
             .Map(dest => dest.AvailableQuantity, src => src.AvailableQuantity)
+            .Map(dest => dest.Available, src => src.AvailableQuantity)
+            .Map(dest => dest.AvailableStock, src => src.AvailableQuantity)
             .Map(dest => dest.IsUnlimited, src => src.IsUnlimited)
             .Map(dest => dest.IsInStock, src => src.IsInStock)
             .Map(dest => dest.IsLowStock, src => src.IsLowStock)
-            .Map(dest => dest.LowStockThreshold, src => src.LowStockThreshold)
-            .Map(dest => dest.UpdatedAt, src => src.UpdatedAt);
-
-        config.NewConfig<ReverseInventoryDto, ReverseInventoryCommand>()
-            .Map(dest => dest.VariantId, src => src.VariantId)
-            .Map(dest => dest.IdempotencyKey, src => src.IdempotencyKey)
-            .Map(dest => dest.Reason, src => src.Reason)
             .IgnoreNonMapped(true);
 
-        config.NewConfig<AdjustStockDto, AdjustStockCommand>()
-            .Map(dest => dest.VariantId, src => src.VariantId)
-            .Map(dest => dest.QuantityChange, src => src.QuantityChange)
-            .Map(dest => dest.Reason, src => src.Reason)
-            .IgnoreNonMapped(true);
-
-        config.NewConfig<BulkAdjustStockDto, BulkAdjustStockCommand>()
-            .Map(dest => dest.Items, src => src.Items)
-            .Map(dest => dest.Reason, src => src.Reason)
-            .IgnoreNonMapped(true);
-
-        config.NewConfig<RecordDamageDto, RecordDamageCommand>()
-            .Map(dest => dest.VariantId, src => src.VariantId)
-            .Map(dest => dest.Quantity, src => src.Quantity)
-            .Map(dest => dest.Reason, src => src.Reason)
-            .IgnoreNonMapped(true);
-
-        config.NewConfig<BulkStockInDto, BulkStockInCommand>()
-            .Map(dest => dest.Items, src => src.Items)
-            .Map(dest => dest.Reason, src => src.Reason)
+        config.NewConfig<StockLedgerEntry, StockLedgerEntryDto>()
+            .Map(dest => dest.Id, src => src.Id.Value)
+            .Map(dest => dest.VariantId, src => src.VariantId.Value)
+            .Map(dest => dest.EventType, src => src.EventType.ToString())
+            .Map(dest => dest.QuantityDelta, src => src.QuantityDelta)
+            .Map(dest => dest.BalanceAfter, src => src.BalanceAfter)
+            .Map(dest => dest.Note, src => src.Note)
+            .Map(dest => dest.ReferenceNumber, src => src.ReferenceNumber)
+            .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .IgnoreNonMapped(true);
     }
 }
