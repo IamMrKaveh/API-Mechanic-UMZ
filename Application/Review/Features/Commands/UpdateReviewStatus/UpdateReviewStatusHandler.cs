@@ -1,9 +1,13 @@
+using Application.Audit.Contracts;
 using Domain.Review.Interfaces;
 using Domain.Review.ValueObjects;
 
 namespace Application.Review.Features.Commands.UpdateReviewStatus;
 
-public class UpdateReviewStatusHandler(IReviewRepository reviewRepository, IUnitOfWork unitOfWork, ILogger<UpdateReviewStatusHandler> logger) : IRequestHandler<UpdateReviewStatusCommand, ServiceResult>
+public sealed class UpdateReviewStatusHandler(
+    IReviewRepository reviewRepository,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService) : IRequestHandler<UpdateReviewStatusCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         UpdateReviewStatusCommand request,
@@ -13,9 +17,7 @@ public class UpdateReviewStatusHandler(IReviewRepository reviewRepository, IUnit
 
         var review = await reviewRepository.GetByIdAsync(reviewId, ct);
         if (review is null)
-        {
-            return ServiceResult.NotFound("Review not found");
-        }
+            return ServiceResult.NotFound("نظر یافت نشد.");
 
         if (request.Status == "Approved")
             review.Approve();
@@ -25,7 +27,11 @@ public class UpdateReviewStatusHandler(IReviewRepository reviewRepository, IUnit
         reviewRepository.Update(review);
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("Review {ReviewId} status updated to {Status}", request.ReviewId, request.Status);
+        await auditService.LogSystemEventAsync(
+            "UpdateReviewStatus",
+            $"وضعیت نظر {request.ReviewId} به '{request.Status}' تغییر کرد.",
+            ct);
+
         return ServiceResult.Success();
     }
 }

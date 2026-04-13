@@ -16,8 +16,8 @@ public class CreateDiscountHandler(
     {
         DiscountValue discountValue = request.DiscountType switch
         {
-            DiscountType.Percentage => DiscountValue.Percentage(request.DiscountValue),
-            DiscountType.FixedAmount => DiscountValue.Fixed(request.DiscountValue),
+            DiscountType.Percentage => DiscountValue.Percentage(request.Value),
+            DiscountType.FixedAmount => DiscountValue.Fixed(request.Value),
             DiscountType.FreeShipping => DiscountValue.FreeShipping(),
             _ => throw new ArgumentOutOfRangeException(nameof(request.DiscountType))
         };

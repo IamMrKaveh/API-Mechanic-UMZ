@@ -1,7 +1,7 @@
 ﻿using Application.Common.Extensions;
 using Application.Product.Features.Shared;
-using Domain.Product.Aggregates;
 using Mapster;
+using DomainProduct = Domain.Product.Aggregates.Product;
 
 namespace Application.Product.Mapping;
 
@@ -9,7 +9,7 @@ public sealed class ProductMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<Product, ProductDetailDto>()
+        config.NewConfig<DomainProduct, ProductDetailDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.Name, src => src.Name)
             .Map(dest => dest.Slug, src => src.Slug)
@@ -28,7 +28,7 @@ public sealed class ProductMappingConfig : IRegister
             .Ignore(dest => dest.Variants)
             .IgnoreNonMapped(true);
 
-        config.NewConfig<Product, ProductListItemDto>()
+        config.NewConfig<DomainProduct, ProductListItemDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.Name, src => src.Name)
             .Map(dest => dest.Slug, src => src.Slug)

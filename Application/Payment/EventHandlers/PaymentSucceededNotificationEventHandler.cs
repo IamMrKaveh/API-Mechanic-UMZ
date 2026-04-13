@@ -3,19 +3,12 @@ using Domain.Payment.Events;
 namespace Application.Payment.EventHandlers;
 
 public class PaymentSucceededNotificationEventHandler(
-    INotificationService notificationService,
-    ILogger<PaymentSucceededNotificationEventHandler> logger) : INotificationHandler<PaymentSucceededEvent>
+    INotificationService notificationService) : INotificationHandler<PaymentSucceededEvent>
 {
     public async Task Handle(PaymentSucceededEvent notification, CancellationToken ct)
     {
         try
         {
-            if (notification.UserId is null)
-                return;
-
-            if (notification is null)
-                return;
-
             await notificationService.CreateNotificationAsync(
                 notification.UserId,
                 "پرداخت موفق",
@@ -23,10 +16,8 @@ public class PaymentSucceededNotificationEventHandler(
                 "PaymentSuccess",
                 ct: ct);
         }
-        catch (Exception ex)
+        catch
         {
-            logger.LogError(ex, "Failed to send payment success notification for order {OrderId}",
-                notification.OrderId);
         }
     }
 }

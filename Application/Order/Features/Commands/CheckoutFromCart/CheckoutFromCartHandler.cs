@@ -4,16 +4,13 @@ using Application.Order.Features.Shared;
 namespace Application.Order.Features.Commands.CheckoutFromCart;
 
 public class CheckoutFromCartHandler(
-    ICheckoutOrchestrationService orchestrationService,
-    ILogger<CheckoutFromCartHandler> logger) : IRequestHandler<CheckoutFromCartCommand, ServiceResult<CheckoutResultDto>>
+    ICheckoutOrchestrationService checkoutOrchestrationService)
+    : IRequestHandler<CheckoutFromCartCommand, ServiceResult<CheckoutResultDto>>
 {
     public async Task<ServiceResult<CheckoutResultDto>> Handle(
-        CheckoutFromCartCommand request, CancellationToken ct)
+        CheckoutFromCartCommand request,
+        CancellationToken ct)
     {
-        logger.LogInformation(
-            "Checkout initiated for user {UserId}, cart {CartId}",
-            request.UserId, request.CartId);
-
-        return await orchestrationService.ProcessCheckoutAsync(request, ct);
+        return await checkoutOrchestrationService.ProcessCheckoutAsync(request, ct);
     }
 }

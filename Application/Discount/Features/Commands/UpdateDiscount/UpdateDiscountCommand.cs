@@ -6,7 +6,7 @@ namespace Application.Discount.Features.Commands.UpdateDiscount;
 public record UpdateDiscountCommand(
     Guid Id,
     DiscountType DiscountType,
-    decimal DiscountValue,
+    decimal Value,
     decimal? MaximumDiscountAmount,
     int? UsageLimit,
     DateTime? StartsAt,

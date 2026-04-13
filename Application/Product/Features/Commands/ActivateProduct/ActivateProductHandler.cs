@@ -1,17 +1,15 @@
+using Application.Audit.Contracts;
 using Application.Common.Interfaces;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
-using Microsoft.Extensions.Logging;
 
 namespace Application.Product.Features.Commands.ActivateProduct;
 
 public sealed class ActivateProductHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService,
-    ILogger<ActivateProductHandler> logger) : IRequestHandler<ActivateProductCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<ActivateProductCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         ActivateProductCommand request,
@@ -29,15 +27,10 @@ public sealed class ActivateProductHandler(
         productRepository.Update(product);
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation(
-            "Product {ProductId} activated by user {UserId}",
-            request.ProductId,
-            request.ActivatedByUserId);
-
         await auditService.LogProductEventAsync(
             product.Id,
             "ActivateProduct",
-            $"Product '{product.Name}' activated.",
+            $"محصول '{product.Name}' فعال شد.",
             UserId.From(request.ActivatedByUserId));
 
         return ServiceResult.Success();

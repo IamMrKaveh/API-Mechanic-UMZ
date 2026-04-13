@@ -4,21 +4,22 @@ using Domain.User.ValueObjects;
 namespace Application.Auth.Features.Commands.SendOtp;
 
 public class SendOtpHandler(
-    IAuthService authService,
-    ILogger<SendOtpHandler> logger) : IRequestHandler<SendOtpCommand, ServiceResult>
+    IOtpService otpService,
+    IAuditService auditService) : IRequestHandler<SendOtpCommand, ServiceResult>
 {
-    public async Task<ServiceResult> Handle(
-        SendOtpCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(SendOtpCommand request, CancellationToken ct)
     {
-        logger.LogInformation("OTP request for {Phone}", request.PhoneNumber);
+        var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
+        var result = await otpService.SendOtpAsync(phoneNumber, request.Purpose, ct);
 
-        var phoneNumberResult = PhoneNumber.TryCreate(request.PhoneNumber);
-        if (phoneNumberResult.IsFailure)
-            return ServiceResult.Validation(phoneNumberResult.Error.Message);
+        if (!result.IsSuccess)
+            return ServiceResult.Failure(result.Error.Message);
 
-        var ipAddress = IpAddress.Create(request.IpAddress);
+        await auditService.LogSecurityEventAsync(
+            "SendOtp",
+            $"OTP برای شماره {request.PhoneNumber} ارسال شد.",
+            IpAddress.Unknown);
 
-        return await authService.RequestOtpAsync(phoneNumberResult.Value, ipAddress, ct);
+        return ServiceResult.Success();
     }
 }

@@ -6,40 +6,31 @@ using Domain.User.ValueObjects;
 namespace Application.Auth.Features.Commands.VerifyOtp;
 
 public class VerifyOtpHandler(
+    IOtpService otpService,
     IAuthService authService,
-    ILogger<VerifyOtpHandler> logger) : IRequestHandler<VerifyOtpCommand, ServiceResult<AuthResult>>
+    IAuditService auditService) : IRequestHandler<VerifyOtpCommand, ServiceResult<AuthResult>>
 {
-    public async Task<ServiceResult<AuthResult>> Handle(
-        VerifyOtpCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult<AuthResult>> Handle(VerifyOtpCommand request, CancellationToken ct)
     {
-        logger.LogInformation("OTP verify for {Phone}", request.PhoneNumber);
-
-        var phoneNumberResult = PhoneNumber.TryCreate(request.PhoneNumber);
-        if (phoneNumberResult.IsFailure)
-            return ServiceResult<AuthResult>.Validation(phoneNumberResult.Error.Message);
-
-        var otpCode = OtpCode.Create(request.Code);
+        var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
         var ipAddress = IpAddress.Create(request.IpAddress);
+        var otpCode = OtpCode.Create(request.Code);
 
-        var result = await authService.VerifyOtpAsync(
-            phoneNumberResult.Value,
-            otpCode,
+        var verifyResult = await otpService.VerifyOtpAsync(phoneNumber, otpCode, request.Purpose, ct);
+        if (!verifyResult.IsSuccess)
+            return ServiceResult<AuthResult>.Failure(verifyResult.Error.Message);
+
+        var authResult = await authService.VerifyOtpAsync(phoneNumber, otpCode, ipAddress, request.UserAgent, ct);
+        if (!authResult.IsSuccess)
+            return ServiceResult<AuthResult>.Failure(authResult.Error);
+
+        await auditService.LogSecurityEventAsync(
+            "VerifyOtp",
+            $"OTP برای شماره {request.PhoneNumber} تأیید شد.",
             ipAddress,
-            request.UserAgent,
             ct);
 
-        if (result.IsFailed)
-            return ServiceResult<AuthResult>.Failure(result.Error ?? "");
-
-        var (accessToken, refreshToken, user, isNewUser) = result.Value;
-
-        return ServiceResult<AuthResult>.Success(new AuthResult
-        {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken.FullToken,
-            User = user,
-            IsNewUser = isNewUser
-        });
+        var (accessToken, refreshToken, user, _) = authResult.Value;
+        return ServiceResult<AuthResult>.Success(new AuthResult(accessToken, refreshToken, user));
     }
 }

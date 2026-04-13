@@ -1,14 +1,18 @@
+using Application.Common.Events;
 using Domain.Security.Events;
 
 namespace Application.Auth.EventHandlers;
 
-public sealed class UserLoggedInEventHandler(ILogger<UserLoggedInEventHandler> logger) : INotificationHandler<UserLoggedInEvent>
+public sealed class UserLoggedInEventHandler(IAuditService auditService)
+    : INotificationHandler<DomainEventNotification<UserLoggedInEvent>>
 {
-    public Task Handle(
-        UserLoggedInEvent notification,
+    public async Task Handle(
+        DomainEventNotification<UserLoggedInEvent> notification,
         CancellationToken ct)
     {
-        logger.LogInformation("User {UserId} logged in", notification.UserId.Value);
-        return Task.CompletedTask;
+        await auditService.LogSystemEventAsync(
+            "User login",
+            $"User {notification.DomainEvent.UserId} logged in",
+            ct);
     }
 }

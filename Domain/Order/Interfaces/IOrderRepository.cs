@@ -21,7 +21,22 @@ public interface IOrderRepository
         UserId userId,
         CancellationToken ct = default);
 
+    Task<IReadOnlyList<Aggregates.Order>> FindPendingExpiredAsync(
+        CancellationToken ct = default);
+
+    Task<Aggregates.Order?> FindWithItemsByIdAsync(
+        OrderId orderId,
+        CancellationToken ct = default);
+
+    Task<Aggregates.Order?> FindByOrderItemIdAsync(
+        OrderItemId orderItemId,
+        CancellationToken ct = default);
+
     void Add(Aggregates.Order order);
 
     void Update(Aggregates.Order order);
+
+    void SetOriginalRowVersion(
+        Aggregates.Order entity,
+        byte[] rowVersion);
 }

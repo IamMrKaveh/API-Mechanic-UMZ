@@ -1,4 +1,7 @@
+using Domain.Common.ValueObjects;
+using Domain.Security.Enums;
 using Domain.Security.Interfaces;
+using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Application.Auth.Features.Commands.RevokeSession;
@@ -6,40 +9,31 @@ namespace Application.Auth.Features.Commands.RevokeSession;
 public class RevokeSessionHandler(
     ISessionRepository sessionRepository,
     IUnitOfWork unitOfWork,
-    ILogger<RevokeSessionHandler> logger) : IRequestHandler<RevokeSessionCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<RevokeSessionCommand, ServiceResult>
 {
-    public async Task<ServiceResult> Handle(
-        RevokeSessionCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(RevokeSessionCommand request, CancellationToken ct)
     {
-        try
-        {
-            var userId = UserId.From(request.UserId);
-            var user = await sessionRepository.GetActiveSessionCountAsync(userId, ct);
+        var sessionId = SessionId.From(request.SessionId);
+        var session = await sessionRepository.GetByIdAsync(sessionId, ct);
 
-            if (user == 0)
-                return ServiceResult.NotFound("کاربر یافت نشد.");
+        if (session is null)
+            return ServiceResult.NotFound("جلسه یافت نشد.");
 
-            var targetSession = sessionRepository.GetActiveByUserIdAsync(userId, ct);
+        var userId = UserId.From(request.UserId);
 
-            if (targetSession is null)
-                return ServiceResult.NotFound("نشست یافت نشد.");
+        if (session.UserId != userId)
+            return ServiceResult.Forbidden("دسترسی غیرمجاز.");
 
-            sessionRepository.RevokeAsync(targetSession.Result.FirstOrDefault(x => x.UserId == userId).Id);
+        session.Revoke(SessionRevocationReason.AdminRevoked);
+        sessionRepository.Update(session);
+        await unitOfWork.SaveChangesAsync(ct);
 
-            await unitOfWork.SaveChangesAsync(ct);
+        await auditService.LogSecurityEventAsync(
+            "RevokeSession",
+            $"جلسه {request.SessionId} توسط کاربر {request.UserId} لغو شد.",
+            IpAddress.Unknown,
+            userId);
 
-            logger.LogInformation(
-                "نشست {SessionId} برای کاربر {UserId} ابطال شد.",
-                request.SessionId, request.UserId);
-
-            return ServiceResult.Success();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "خطا در ابطال نشست {SessionId} برای کاربر {UserId}",
-                request.SessionId, request.UserId);
-            return ServiceResult.Failure("خطای داخلی سرور.");
-        }
+        return ServiceResult.Success();
     }
 }

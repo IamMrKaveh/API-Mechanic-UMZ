@@ -1,4 +1,7 @@
+using Domain.Common.ValueObjects;
+using Domain.Security.Enums;
 using Domain.Security.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Application.Auth.Features.Commands.Logout;
 
@@ -6,38 +9,34 @@ public class LogoutHandler(
     ITokenService tokenService,
     ISessionRepository sessionRepository,
     IUnitOfWork unitOfWork,
-    ILogger<LogoutHandler> logger) : IRequestHandler<LogoutCommand, ServiceResult>
+    IAuditService auditService) : IRequestHandler<LogoutCommand, ServiceResult>
 {
-    public async Task<ServiceResult> Handle(
-        LogoutCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(LogoutCommand request, CancellationToken ct)
     {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(request.RefreshToken))
-                return ServiceResult.Success();
-
-            var refreshToken = Domain.Security.ValueObjects.RefreshToken.Create(request.RefreshToken);
-
-            var (selector, _) = tokenService.ParseRefreshToken(refreshToken);
-            if (selector is null)
-                return ServiceResult.Success();
-
-            var session = await sessionRepository.GetBySelectorAsync(selector, ct);
-
-            if (session is not null && session.UserId == request.UserId)
-            {
-                await sessionRepository.RevokeAsync(session.Id, ct);
-                await unitOfWork.SaveChangesAsync(ct);
-                logger.LogInformation("کاربر {UserId} از سیستم خارج شد.", request.UserId);
-            }
-
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
             return ServiceResult.Success();
-        }
-        catch (Exception ex)
+
+        var refreshToken = Domain.Security.ValueObjects.RefreshToken.Create(request.RefreshToken);
+        var (selector, _) = tokenService.ParseRefreshToken(refreshToken);
+
+        if (selector is null)
+            return ServiceResult.Success();
+
+        var session = await sessionRepository.GetByRefreshTokenAsync(refreshToken, ct);
+
+        if (session is not null && session.UserId == UserId.From(request.UserId))
         {
-            logger.LogError(ex, "خطا در خروج کاربر {UserId}", request.UserId);
-            return ServiceResult.Failure("خطای داخلی سرور.");
+            session.Revoke(SessionRevocationReason.UserRequested);
+            sessionRepository.Update(session);
+            await unitOfWork.SaveChangesAsync(ct);
+
+            await auditService.LogSecurityEventAsync(
+                "Logout",
+                $"کاربر {request.UserId} از سیستم خارج شد.",
+                IpAddress.Unknown,
+                UserId.From(request.UserId));
         }
+
+        return ServiceResult.Success();
     }
 }

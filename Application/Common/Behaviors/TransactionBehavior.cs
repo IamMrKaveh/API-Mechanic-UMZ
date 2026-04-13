@@ -1,8 +1,10 @@
+using Application.Audit.Contracts;
+
 namespace Application.Common.Behaviors;
 
 public sealed class TransactionBehavior<TRequest, TResponse>(
     IUnitOfWork unitOfWork,
-    ILogger<TransactionBehavior<TRequest, TResponse>> logger) : IPipelineBehavior<TRequest, TResponse>
+    IAuditService auditService) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
     public async Task<TResponse> Handle(
@@ -11,13 +13,13 @@ public sealed class TransactionBehavior<TRequest, TResponse>(
         CancellationToken ct)
     {
         if (request is IQuery)
-            return await next();
+            return await next(ct);
 
         try
         {
             return await unitOfWork.ExecuteStrategyAsync(async () =>
             {
-                await using var transaction = await unitOfWork.BeginTransactionAsync(ct);
+                var transaction = await unitOfWork.BeginTransactionAsync(ct);
                 try
                 {
                     var response = await next();
@@ -33,7 +35,7 @@ public sealed class TransactionBehavior<TRequest, TResponse>(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Transaction failed for {RequestType}", typeof(TRequest).Name);
+            await auditService.LogSystemEventAsync("TransactionFailed", $"Transaction failed for {typeof(TRequest).Name}: {ex.Message}", ct);
             throw;
         }
     }

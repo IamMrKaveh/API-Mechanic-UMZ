@@ -1,18 +1,21 @@
+using Application.Media.Features.Shared;
+using Domain.Media.ValueObjects;
+
 namespace Application.Media.Features.Queries.GetMediaById;
 
 public class GetMediaByIdHandler(IMediaQueryService mediaQueryService)
-        : IRequestHandler<GetMediaByIdQuery, ServiceResult<MediaDetailDto?>>
+    : IRequestHandler<GetMediaByIdQuery, ServiceResult<MediaDto>>
 {
-    public async Task<ServiceResult<MediaDetailDto?>> Handle(
+    public async Task<ServiceResult<MediaDto>> Handle(
         GetMediaByIdQuery request,
         CancellationToken ct)
     {
-        var result = await mediaQueryService.GetMediaByIdAsync(
-            request.MediaId, ct);
+        var mediaId = MediaId.From(request.MediaId);
+        var result = await mediaQueryService.GetByIdAsync(mediaId, ct);
 
         if (result is null)
-            return ServiceResult<MediaDetailDto?>.NotFound("رسانه یافت نشد.");
+            return ServiceResult<MediaDto>.NotFound("رسانه یافت نشد.");
 
-        return ServiceResult<MediaDetailDto?>.Success(result);
+        return ServiceResult<MediaDto>.Success(result);
     }
 }

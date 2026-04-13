@@ -2,8 +2,9 @@ namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
 public record UpdateOrderStatusDefinitionCommand(
     Guid Id,
-    string Name,
     string DisplayName,
-    string? Description,
+    string? Icon,
+    string? Color,
     int SortOrder,
-    bool IsDefault) : IRequest<ServiceResult>;
+    bool AllowCancel,
+    bool AllowEdit) : IRequest<ServiceResult>;

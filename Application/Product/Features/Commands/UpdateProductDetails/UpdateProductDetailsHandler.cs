@@ -1,11 +1,13 @@
+using Application.Audit.Contracts;
 using Application.Common.Interfaces;
+using Domain.Common.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Application.Product.Features.Commands.UpdateProductDetails;
 
-public class UpdateProductDetailsHandler(
+public sealed class UpdateProductDetailsHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
@@ -17,20 +19,25 @@ public class UpdateProductDetailsHandler(
         var userId = UserId.From(currentUserService.CurrentUser.UserId);
 
         var product = await productRepository.GetByIdAsync(productId, ct);
-        if (product is null) return ServiceResult.NotFound("Product not found.");
+        if (product is null)
+            return ServiceResult.NotFound("محصول یافت نشد.");
 
         productRepository.SetOriginalRowVersion(product, Convert.FromBase64String(request.RowVersion));
 
-        if (!string.IsNullOrEmpty(request.Sku)
-            && await productRepository.ExistsBySkuAsync(request.Sku, productId, ct))
-            return ServiceResult.Conflict("Product SKU already exists.");
+        var slug = Slug.GenerateFrom(request.Name);
+
+        if (await productRepository.ExistsBySlugAsync(slug, productId, ct))
+            return ServiceResult.Conflict("محصولی با این نام قبلاً ثبت شده است.");
 
         product.UpdateDetails(
-            request.Name,
-            request.Description != null ? request.Description : null,
-            request.Sku,
-            request.BrandId,
-            request.IsActive);
+            ProductName.Create(request.Name),
+            slug,
+            request.Description ?? string.Empty);
+
+        if (request.IsActive && !product.IsActive)
+            product.Activate();
+        else if (!request.IsActive && product.IsActive)
+            product.Deactivate();
 
         productRepository.Update(product);
 
@@ -40,13 +47,13 @@ public class UpdateProductDetailsHandler(
             await auditService.LogProductEventAsync(
                 productId,
                 "UpdateProductDetails",
-                "Product details updated.",
+                "جزئیات محصول ویرایش شد.",
                 userId);
             return ServiceResult.Success();
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Conflict("This product was modified by another user. Please refresh and try again.");
+            return ServiceResult.Conflict("این محصول توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.");
         }
     }
 }

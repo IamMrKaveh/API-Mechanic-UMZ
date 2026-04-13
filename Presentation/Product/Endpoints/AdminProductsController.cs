@@ -42,7 +42,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetProduct(Guid id)
     {
-        var query = new GetAdminProductByIdQuery(id, CurrentUser.UserId);
+        var query = new GetAdminProductQuery(id, CurrentUser.UserId);
 
         var result = await Mediator.Send(query);
 

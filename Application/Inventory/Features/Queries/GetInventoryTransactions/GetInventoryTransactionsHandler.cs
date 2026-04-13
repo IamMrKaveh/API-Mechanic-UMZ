@@ -3,7 +3,7 @@ using Application.Inventory.Features.Shared;
 namespace Application.Inventory.Features.Queries.GetInventoryTransactions;
 
 public class GetInventoryTransactionsHandler(IInventoryQueryService queryService)
-        : IRequestHandler<GetInventoryTransactionsQuery, ServiceResult<PaginatedResult<InventoryTransactionDto>>>
+    : IRequestHandler<GetInventoryTransactionsQuery, ServiceResult<PaginatedResult<InventoryTransactionDto>>>
 {
     public async Task<ServiceResult<PaginatedResult<InventoryTransactionDto>>> Handle(
         GetInventoryTransactionsQuery request,

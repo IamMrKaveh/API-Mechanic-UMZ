@@ -26,11 +26,22 @@ public interface IPaymentQueryService
         int pageSize,
         CancellationToken ct = default);
 
+    Task<PaginatedResult<PaymentTransactionDto>> GetPagedAsync(
+        Guid? orderId,
+        Guid? userId,
+        string? status,
+        string? gateway,
+        DateTime? fromDate,
+        DateTime? toDate,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
+
     Task<IReadOnlyList<PaymentTransactionDto>> GetByOrderIdAsync(
         OrderId orderId,
         CancellationToken ct = default);
 
     Task<PaymentStatusDto?> GetStatusByAuthorityAsync(
         string authority,
-        CancellationToken ct);
+        CancellationToken ct = default);
 }

@@ -6,7 +6,8 @@ namespace Application.Attribute.Features.Commands.CreateAttributeValue;
 
 public class CreateAttributeValueHandler(
     IAttributeRepository repository,
-    IUnitOfWork unitOfWork) : IRequestHandler<CreateAttributeValueCommand, ServiceResult<AttributeValueDto>>
+    IUnitOfWork unitOfWork,
+    IMapper mapper) : IRequestHandler<CreateAttributeValueCommand, ServiceResult<AttributeValueDto>>
 {
     public async Task<ServiceResult<AttributeValueDto>> Handle(
         CreateAttributeValueCommand request,
@@ -30,6 +31,6 @@ public class CreateAttributeValueHandler(
         await repository.UpdateAttributeTypeAsync(type, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return ServiceResult<AttributeValueDto>.Success(_mapper.Map<AttributeValueDto>(attributeValue));
+        return ServiceResult<AttributeValueDto>.Success(mapper.Map<AttributeValueDto>(attributeValue));
     }
 }

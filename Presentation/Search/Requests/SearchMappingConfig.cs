@@ -2,9 +2,8 @@
 using Application.Search.Features.Queries.GetSearchSuggestions;
 using Application.Search.Features.Queries.SearchProducts;
 using Mapster;
-using Presentation.Search.Requests;
 
-namespace Presentation.Search.Mapping;
+namespace Presentation.Search.Requests;
 
 public sealed class SearchMappingConfig : IRegister
 {

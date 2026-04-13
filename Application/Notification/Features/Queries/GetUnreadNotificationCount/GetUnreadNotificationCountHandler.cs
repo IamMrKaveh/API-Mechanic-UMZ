@@ -1,15 +1,16 @@
+using Domain.User.ValueObjects;
+
 namespace Application.Notification.Features.Queries.GetUnreadNotificationCount;
 
-public sealed class GetUnreadNotificationCountHandler(INotificationQueryService notificationQueryService)
-        : IRequestHandler<GetUnreadNotificationCountQuery, ServiceResult<int>>
+public class GetUnreadNotificationCountHandler(INotificationQueryService notificationQueryService)
+    : IRequestHandler<GetUnreadNotificationCountQuery, ServiceResult<int>>
 {
     public async Task<ServiceResult<int>> Handle(
         GetUnreadNotificationCountQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var count = await notificationQueryService.CountUnreadByUserIdAsync(
-            request.UserId, cancellationToken);
-
+        var userId = UserId.From(request.UserId);
+        var count = await notificationQueryService.GetUnreadCountAsync(userId, ct);
         return ServiceResult<int>.Success(count);
     }
 }

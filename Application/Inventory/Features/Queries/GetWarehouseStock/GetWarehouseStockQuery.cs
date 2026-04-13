@@ -1,3 +1,6 @@
-﻿namespace Application.Inventory.Features.Queries.GetWarehouseStock;
+﻿using Application.Inventory.Features.Shared;
 
-public record GetWarehouseStockQuery(Guid VariantId) : IRequest<ServiceResult<IEnumerable<WarehouseStockDto>>>;
+namespace Application.Inventory.Features.Queries.GetWarehouseStock;
+
+public record GetWarehouseStockQuery(Guid VariantId)
+    : IRequest<ServiceResult<IEnumerable<WarehouseStockDto>>>;

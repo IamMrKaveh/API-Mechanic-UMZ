@@ -26,4 +26,10 @@ public interface IReviewQueryService
     Task<ReviewSummaryDto> GetProductReviewSummaryAsync(
         ProductId productId,
         CancellationToken ct = default);
+
+    Task<PaginatedResult<ProductReviewDto>> GetReviewsByStatusAsync(
+        string status,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 }

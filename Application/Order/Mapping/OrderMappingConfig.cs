@@ -1,7 +1,6 @@
 ﻿using Application.Order.Features.Commands.CancelOrder;
 using Application.Order.Features.Commands.CheckoutFromCart;
 using Application.Order.Features.Shared;
-using Domain.Order.Aggregates;
 using Domain.Order.Entities;
 using Mapster;
 
@@ -11,7 +10,7 @@ public class OrderMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<Order, OrderDto>()
+        config.NewConfig<Domain.Order.Aggregates.Order, OrderDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.OrderNumber, src => src.OrderNumber.Value)
             .Map(dest => dest.UserId, src => src.UserId.Value)

@@ -8,7 +8,7 @@ public interface IOrderProcessStateRepository
         OrderId orderId,
         CancellationToken ct = default);
 
-    Task SaveAsync(
+    Task AddAsync(
         OrderProcessState state,
         CancellationToken ct = default);
 

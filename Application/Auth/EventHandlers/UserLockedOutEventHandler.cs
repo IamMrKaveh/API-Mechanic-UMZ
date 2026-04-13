@@ -1,16 +1,19 @@
+using Application.Common.Events;
 using Domain.Security.Events;
 
 namespace Application.Auth.EventHandlers;
 
-public sealed class UserLockedOutEventHandler(ILogger<UserLockedOutEventHandler> logger) : INotificationHandler<UserLockedOutEvent>
+public sealed class UserLockedOutEventHandler(IAuditService auditService)
+    : INotificationHandler<DomainEventNotification<UserLockedOutEvent>>
 {
-    public Task Handle(
-        UserLockedOutEvent notification,
+    public async Task Handle(
+        DomainEventNotification<UserLockedOutEvent> notification,
         CancellationToken ct)
     {
-        logger.LogWarning(
-            "User {UserId} locked out after {FailedAttempts} failed attempts. Lockout ends at {LockoutEnd}",
-            notification.UserId.Value, notification.FailedAttempts, notification.LockoutEnd);
-        return Task.CompletedTask;
+        var domainEvent = notification.DomainEvent;
+        await auditService.LogSystemEventAsync(
+            "User Locked out",
+            $"User {domainEvent.UserId} locked out after {domainEvent.FailedAttempts} failed attempts. Lockout ends at {domainEvent.LockoutEnd}",
+            ct);
     }
 }

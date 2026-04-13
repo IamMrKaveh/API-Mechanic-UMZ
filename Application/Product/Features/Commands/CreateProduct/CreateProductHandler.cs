@@ -1,3 +1,4 @@
+using Application.Audit.Contracts;
 using Application.Common.Interfaces;
 using Application.Product.Features.Shared;
 using Domain.Brand.Interfaces;
@@ -9,7 +10,6 @@ using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using MapsterMapper;
-using Microsoft.Extensions.Logging;
 
 namespace Application.Product.Features.Commands.CreateProduct;
 
@@ -19,9 +19,7 @@ public sealed class CreateProductHandler(
     IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService,
-    IMapper mapper,
-    ILogger<CreateProductHandler> logger) : IRequestHandler<CreateProductCommand, ServiceResult<ProductDetailDto>>
+    IMapper mapper) : IRequestHandler<CreateProductCommand, ServiceResult<ProductDetailDto>>
 {
     public async Task<ServiceResult<ProductDetailDto>> Handle(
         CreateProductCommand request,
@@ -55,12 +53,10 @@ public sealed class CreateProductHandler(
         await productRepository.AddAsync(product, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("Product {ProductName} created with ID {ProductId}", product.Name, product.Id.Value);
-
         await auditService.LogProductEventAsync(
             product.Id,
             "CreateProduct",
-            $"Product '{product.Name}' created.",
+            $"محصول '{product.Name}' ایجاد شد.",
             UserId.From(request.CreatedByUserId));
 
         var dto = mapper.Map<ProductDetailDto>(product) with

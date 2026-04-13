@@ -27,6 +27,11 @@ public interface IAuditService
         UserId? userId = null,
         CancellationToken ct = default);
 
+    Task LogSystemEventAsync(
+        string action,
+        string details,
+        CancellationToken ct = default);
+
     Task LogOrderEventAsync(
         OrderId orderId,
         string action,

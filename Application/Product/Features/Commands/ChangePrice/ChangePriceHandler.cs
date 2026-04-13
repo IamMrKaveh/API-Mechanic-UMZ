@@ -1,4 +1,7 @@
+using Application.Audit.Contracts;
+using Application.Cache.Contracts;
 using Domain.Common.Exceptions;
+using Domain.Common.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
@@ -6,7 +9,7 @@ using Domain.Variant.ValueObjects;
 
 namespace Application.Product.Features.Commands.ChangePrice;
 
-public class ChangePriceHandler(
+public sealed class ChangePriceHandler(
     IVariantRepository variantRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
@@ -18,15 +21,20 @@ public class ChangePriceHandler(
     {
         var variantId = VariantId.From(request.VariantId);
         var productId = ProductId.From(request.ProductId);
-        var userId = UserId.From(request.ProductId);
+        var userId = UserId.From(request.UserId);
 
         var variant = await variantRepository.GetByIdAsync(variantId, ct);
         if (variant is null || variant.ProductId != productId)
-            return ServiceResult.NotFound("Variant not found.");
+            return ServiceResult.NotFound("واریانت یافت نشد.");
 
         try
         {
-            variant.SetPricing(request.PurchasePrice, request.SellingPrice, request.OriginalPrice);
+            var newPrice = Money.Create(request.SellingPrice);
+            var compareAtPrice = request.OriginalPrice > request.SellingPrice
+                ? Money.Create(request.OriginalPrice)
+                : null;
+
+            variant.ChangePrice(newPrice, compareAtPrice);
         }
         catch (DomainException ex)
         {
@@ -39,7 +47,7 @@ public class ChangePriceHandler(
         await auditService.LogProductEventAsync(
             productId,
             "ChangePrice",
-            $"Variant {request.VariantId} prices changed. Selling: {request.SellingPrice}, Original: {request.OriginalPrice}",
+            $"قیمت واریانت {request.VariantId} تغییر کرد. قیمت فروش: {request.SellingPrice}, قیمت اصلی: {request.OriginalPrice}",
             userId);
 
         await cacheService.RemoveAsync($"product:{request.ProductId}", ct);

@@ -1,20 +1,23 @@
 using Application.Order.Features.Shared;
+using Domain.User.ValueObjects;
 
 namespace Application.Order.Features.Queries.GetUserOrders;
 
-public class GetUserOrdersHandler(IOrderQueryService orderQueryService) : IRequestHandler<GetUserOrdersQuery, ServiceResult<PaginatedResult<OrderDto>>>
+public class GetUserOrdersHandler(IOrderQueryService orderQueryService)
+    : IRequestHandler<GetUserOrdersQuery, ServiceResult<PaginatedResult<OrderListItemDto>>>
 {
-    public async Task<ServiceResult<PaginatedResult<OrderDto>>> Handle(
+    public async Task<ServiceResult<PaginatedResult<OrderListItemDto>>> Handle(
         GetUserOrdersQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
+        var userId = UserId.From(request.UserId);
+
         var result = await orderQueryService.GetUserOrdersAsync(
-            request.UserId,
-            request.Status,
+            userId,
             request.Page,
             request.PageSize,
-            cancellationToken);
+            ct);
 
-        return ServiceResult<PaginatedResult<OrderDto>>.Success(result);
+        return ServiceResult<PaginatedResult<OrderListItemDto>>.Success(result);
     }
 }

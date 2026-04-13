@@ -15,9 +15,9 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     { }
 
     public VariantId VariantId { get; private set; } = default!;
-    public int StockQuantity { get; private set; }
+    public StockQuantity StockQuantity { get; private set; }
     public bool IsUnlimited { get; private set; }
-    public int ReservedQuantity { get; private set; }
+    public StockQuantity ReservedQuantity { get; private set; }
     public int LowStockThreshold { get; private set; } = 5;
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
@@ -38,7 +38,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         int initialStock = 0,
         int lowStockThreshold = 5)
     {
-        var stock = ValueObjects.StockQuantity.Create(initialStock);
+        var stock = StockQuantity.Create(initialStock);
 
         if (lowStockThreshold < 0)
             throw new ArgumentOutOfRangeException(nameof(lowStockThreshold));
@@ -47,9 +47,9 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         {
             Id = id,
             VariantId = variantId,
-            StockQuantity = stock.Value,
+            StockQuantity = stock,
             IsUnlimited = false,
-            ReservedQuantity = 0,
+            ReservedQuantity = StockQuantity.Create(0),
             LowStockThreshold = lowStockThreshold,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -71,7 +71,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         if (quantity <= 0) return Result.Failure(new Error("Inventory.InvalidQuantity", "مقدار باید بزرگتر از صفر باشد."));
 
         var currentStock = ValueObjects.StockQuantity.Create(StockQuantity);
-        StockQuantity = currentStock.Add(quantity).Value;
+        StockQuantity = currentStock.Add(quantity);
 
         IsUnlimited = false;
         UpdatedAt = DateTime.UtcNow;
@@ -100,7 +100,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             var subtractResult = currentStock.TrySubtract(quantity);
             if (subtractResult.IsFailure) return Result.Failure(subtractResult.Error);
 
-            StockQuantity = subtractResult.Value.Value;
+            StockQuantity = subtractResult.Value;
         }
 
         UpdatedAt = DateTime.UtcNow;
@@ -124,7 +124,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         RaiseDomainEvent(new StockSetUnlimitedEvent(Id, VariantId));
     }
 
-    public Result RemoveUnlimited(int currentStock)
+    public Result RemoveUnlimited(StockQuantity currentStock)
     {
         if (!IsUnlimited) return Result.Success();
 
@@ -139,7 +139,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     }
 
     public Result ReserveStock(
-        int quantity,
+        StockQuantity quantity,
         string referenceNumber,
         OrderItemId? orderItemId = null,
         UserId? userId = null,
@@ -154,7 +154,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
 
             if (reserveResult.IsFailure) return Result.Failure(reserveResult.Error);
 
-            ReservedQuantity += quantity;
+            ReservedQuantity = ReservedQuantity.Add(quantity);
         }
 
         UpdatedAt = DateTime.UtcNow;
@@ -170,15 +170,18 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         return Result.Success();
     }
 
-    public Result ReleaseReservation(int quantity, string referenceNumber, string? reason = null)
+    public Result ReleaseReservation(StockQuantity quantity, string referenceNumber, string? reason = null)
     {
-        if (quantity <= 0) return Result.Failure(new Error("Inventory.InvalidQuantity", "مقدار باید بزرگتر از صفر باشد."));
-        if (IsUnlimited) return Result.Success();
+        if (quantity <= 0)
+            return Result.Failure(new Error("Inventory.InvalidQuantity", "مقدار باید بزرگتر از صفر باشد."));
+        if (IsUnlimited)
+            return Result.Success();
 
         var actualRelease = Math.Min(quantity, ReservedQuantity);
-        if (actualRelease == 0) return Result.Success();
+        if (actualRelease == 0)
+            return Result.Success();
 
-        ReservedQuantity -= actualRelease;
+        ReservedQuantity = ReservedQuantity.Subtract(actualRelease);
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
 
@@ -193,7 +196,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     }
 
     public Result ConfirmReservation(
-        int quantity,
+        StockQuantity quantity,
         string referenceNumber,
         OrderItemId? orderItemId = null)
     {
@@ -203,8 +206,9 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         if (ReservedQuantity < quantity)
             return Result.Failure(new Error("Inventory.InsufficientReservation", $"موجودی رزرو شده کافی نیست. رزرو شده: {ReservedQuantity}، درخواستی: {quantity}"));
 
-        ReservedQuantity -= quantity;
-        StockQuantity -= quantity;
+        ReservedQuantity = ReservedQuantity.Subtract(quantity.Value);
+        StockQuantity = StockQuantity.Subtract(quantity.Value);
+
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
 
@@ -234,11 +238,11 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         {
             var subtractResult = currentStock.TrySubtract(Math.Abs(reversalDelta));
             if (subtractResult.IsFailure) return Result.Failure(subtractResult.Error);
-            StockQuantity = subtractResult.Value.Value;
+            StockQuantity = subtractResult.Value;
         }
         else
         {
-            StockQuantity = currentStock.Add(reversalDelta).Value;
+            StockQuantity = currentStock.Add(reversalDelta);
         }
 
         UpdatedAt = DateTime.UtcNow;
@@ -255,16 +259,15 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     }
 
     public Result ReturnStock(
-        int quantity,
+        StockQuantity quantity,
         string reason,
-        OrderItemId? orderItemId = null,
         UserId? userId = null)
     {
         if (quantity <= 0) return Result.Failure(new Error("Inventory.InvalidQuantity", "مقدار باید بزرگتر از صفر باشد."));
         if (IsUnlimited) return Result.Success();
 
         var currentStock = ValueObjects.StockQuantity.Create(StockQuantity);
-        StockQuantity = currentStock.Add(quantity).Value;
+        StockQuantity = currentStock.Add(quantity);
 
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
@@ -288,11 +291,11 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         {
             var subtractResult = currentStock.TrySubtract(Math.Abs(quantityChange));
             if (subtractResult.IsFailure) return Result.Failure(subtractResult.Error);
-            StockQuantity = subtractResult.Value.Value;
+            StockQuantity = subtractResult.Value;
         }
         else
         {
-            StockQuantity = currentStock.Add(quantityChange).Value;
+            StockQuantity = currentStock.Add(quantityChange);
         }
 
         UpdatedAt = DateTime.UtcNow;
@@ -318,7 +321,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         var subtractResult = currentStock.TrySubtract(quantity);
         if (subtractResult.IsFailure) return Result.Failure(subtractResult.Error);
 
-        StockQuantity = subtractResult.Value.Value;
+        StockQuantity = subtractResult.Value;
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
 
@@ -330,7 +333,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         return Result.Success();
     }
 
-    public Result Reconcile(int calculatedStockFromLedger, UserId userId)
+    public Result Reconcile(StockQuantity calculatedStockFromLedger, UserId userId)
     {
         if (IsUnlimited) return Result.Success();
 

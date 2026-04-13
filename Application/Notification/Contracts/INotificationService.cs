@@ -1,4 +1,5 @@
 using Domain.Notification.ValueObjects;
+using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Application.Notification.Contracts;
@@ -27,5 +28,12 @@ public interface INotificationService
     Task DeleteAsync(
         NotificationId notificationId,
         UserId userId,
+        CancellationToken ct = default);
+
+    Task SendOrderStatusNotificationAsync(
+        UserId userId,
+        OrderId orderId,
+        string oldStatusName,
+        string newStatusName,
         CancellationToken ct = default);
 }
