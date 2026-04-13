@@ -33,7 +33,7 @@ public sealed class VariantMappingConfig : IRegister
             .Map(dest => dest.IsUnlimited, src => src.IsUnlimited)
             .Map(dest => dest.ShippingMultiplier, src => src.ShippingMultiplier)
             .Map(dest => dest.AttributeValueIds, src => src.AttributeValueIds)
-            .Map(dest => dest.EnabledShippingMethodIds, src => src.EnabledShippingMethodIds)
+            .Map(dest => dest.EnabledShippingIds, src => src.EnabledShippingIds)
             .Map(dest => dest.ProductId, src => src.ProductId)
             .Map(dest => dest.VariantId, src => src.VariantId)
             .Map(dest => dest.UserId, src => src.UserId)

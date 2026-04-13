@@ -11,13 +11,16 @@ public class ChangeUserStatusHandler(IUserRepository userRepository, IUnitOfWork
     {
         var userId = UserId.From(request.UserId);
 
-        var user = await userRepository.GetByIdAsync(userId);
-        if (user == null)
-            return ServiceResult.NotFound("NotFound");
+        var user = await userRepository.GetByIdAsync(userId, ct);
+        if (user is null)
+            return ServiceResult.NotFound("کاربر یافت نشد.");
 
-        user.SetIsActive(request.IsActive);
+        if (request.IsActive)
+            user.Activate();
+        else
+            user.Deactivate();
+
         userRepository.Update(user);
-
         await unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
     }

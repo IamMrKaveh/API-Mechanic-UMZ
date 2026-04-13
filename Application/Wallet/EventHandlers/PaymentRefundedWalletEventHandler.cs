@@ -17,8 +17,8 @@ public class PaymentRefundedWalletEventHandler(
                 notification.Amount.Amount,
                 WalletTransactionType.Refund,
                 WalletReferenceType.Payment,
-                notification.TransactionId.Value.ToString(),
-                $"refund-payment-{notification.TransactionId.Value}",
+                notification.PaymentTransactionId.Value.ToString(),
+                $"refund-payment-{notification.PaymentTransactionId.Value}",
                 Description: "استرداد وجه به کیف پول"
             );
 
@@ -27,14 +27,14 @@ public class PaymentRefundedWalletEventHandler(
             {
                 await auditService.LogSystemEventAsync(
                     "WalletRefundFailed",
-                    $"شارژ کیف پول برای استرداد تراکنش {notification.TransactionId.Value} ناموفق بود: {result.Error}");
+                    $"شارژ کیف پول برای استرداد تراکنش {notification.PaymentTransactionId.Value} ناموفق بود: {result.Error}");
             }
         }
         catch (Exception ex)
         {
             await auditService.LogSystemEventAsync(
                 "WalletPaymentRefundedHandlerError",
-                $"خطا در پردازش استرداد پرداخت {notification.TransactionId.Value}: {ex.Message}");
+                $"خطا در پردازش استرداد پرداخت {notification.PaymentTransactionId.Value}: {ex.Message}");
         }
     }
 }

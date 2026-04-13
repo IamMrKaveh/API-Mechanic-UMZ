@@ -20,7 +20,10 @@ public class ChangeUserRoleHandler(IUserRepository userRepository, IUnitOfWork u
         if (user.Id == adminId)
             return ServiceResult.Forbidden("امکان تغییر نقش خود وجود ندارد");
 
-        user.SetAdminRole(request.IsAdmin);
+        if (request.IsAdmin)
+            user.PromoteToAdmin();
+        else
+            user.DemoteFromAdmin();
 
         userRepository.Update(user);
         await unitOfWork.SaveChangesAsync(ct);

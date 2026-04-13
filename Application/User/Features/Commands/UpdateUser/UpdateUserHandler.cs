@@ -16,20 +16,22 @@ public class UpdateUserHandler(
         var adminId = UserId.From(request.CurrentUserId);
 
         var user = await userRepository.GetByIdAsync(userId, ct);
-        if (user == null)
-            return ServiceResult.NotFound("NotFound");
+        if (user is null)
+            return ServiceResult.NotFound("کاربر یافت نشد.");
 
-        if (user.IsDeleted)
-            return ServiceResult.Forbidden("User account is deleted and cannot be modified.");
+        if (!user.IsActive)
+            return ServiceResult.Forbidden("حساب کاربری غیرفعال است و قابل ویرایش نیست.");
 
-        user.UpdateName(
-            !string.IsNullOrEmpty(request.FirstName)
-                ? request.FirstName
-                : user.FirstName!,
-            !string.IsNullOrEmpty(request.LastName)
-                ? request.LastName
-                : user.LastName!
-        );
+        var firstName = !string.IsNullOrEmpty(request.FirstName)
+            ? request.FirstName
+            : user.FullName.FirstName;
+
+        var lastName = !string.IsNullOrEmpty(request.LastName)
+            ? request.LastName
+            : user.FullName.LastName;
+
+        var fullName = FullName.Create(firstName, lastName);
+        user.UpdateProfile(fullName, user.PhoneNumber);
 
         userRepository.Update(user);
 
@@ -44,7 +46,7 @@ public class UpdateUserHandler(
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Conflict("User was modified by another process");
+            return ServiceResult.Conflict("اطلاعات کاربر توسط فرآیند دیگری تغییر کرده است.");
         }
     }
 }

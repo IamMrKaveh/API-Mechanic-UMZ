@@ -34,7 +34,7 @@ public interface IInventoryQueryService
         CancellationToken ct = default);
 
     Task<IReadOnlyList<VariantAvailabilityDto>> GetBatchAvailabilityAsync(
-        IList<VariantId> variantIds,
+        ICollection<VariantId> variantIds,
         CancellationToken ct = default);
 
     Task<PaginatedResult<InventoryTransactionDto>> GetTransactionsPagedAsync(

@@ -24,7 +24,7 @@ public record UpdateVariantRequest(
     bool IsUnlimited = false,
     decimal ShippingMultiplier = 1,
     ICollection<Guid>? AttributeValueIds = null,
-    ICollection<Guid>? EnabledShippingMethodIds = null
+    ICollection<Guid>? EnabledShippingIds = null
 );
 
 public record AddStockRequest(int Quantity, string Notes);

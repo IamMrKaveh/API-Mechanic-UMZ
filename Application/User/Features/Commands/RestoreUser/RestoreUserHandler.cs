@@ -11,11 +11,11 @@ public class RestoreUserHandler(IUserRepository userRepository, IUnitOfWork unit
     {
         var userId = UserId.From(request.Id);
 
-        var user = await userRepository.GetByIdAsync(userId);
+        var user = await userRepository.GetByIdAsync(userId, ct);
         if (user is null)
-            return ServiceResult.NotFound("User Not Found");
+            return ServiceResult.NotFound("کاربر یافت نشد.");
 
-        user.Restore();
+        user.Activate();
 
         userRepository.Update(user);
         await unitOfWork.SaveChangesAsync(ct);

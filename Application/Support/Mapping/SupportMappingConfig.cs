@@ -44,17 +44,17 @@ public class SupportMappingConfig : IRegister
             .Ignore(dest => dest.SenderName);
 
         config.NewConfig<CreateTicketDto, CreateTicketCommand>()
-           .Map(dest => dest.Subject, src => src.Subject)
-           .Map(dest => dest.Message, src => src.Message)
-           .Map(dest => dest.Priority, src => src.Priority)
-           .IgnoreNonMapped(true);
+            .Map(dest => dest.Subject, src => src.Subject)
+            .Map(dest => dest.Message, src => src.Message)
+            .Map(dest => dest.Priority, src => src.Priority)
+            .IgnoreNonMapped(true);
 
         config.NewConfig<ReplyToTicketDto, ReplyToTicketCommand>()
-            .Map(dest => dest.Message, src => src.Message)
+            .Map(dest => dest.Content, src => src.Message)
             .IgnoreNonMapped(true);
 
         config.NewConfig<CloseTicketDto, CloseTicketCommand>()
-            .Map(dest => dest.Resolution, src => src.Resolution)
+            .Map(dest => dest.IsAdmin, src => src.IsAdmin)
             .IgnoreNonMapped(true);
     }
 }

@@ -26,7 +26,7 @@ public sealed class Result<T> : Result
         return new Result<T>(value);
     }
 
-    public static Result<T> Failure(Error error)
+    public new static Result<T> Failure(Error error)
         => new(error);
 
     public Result<TOut> Map<TOut>(Func<T, TOut> mapper)

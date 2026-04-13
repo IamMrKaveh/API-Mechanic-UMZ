@@ -8,7 +8,7 @@ public interface IOtpService
 {
     string HashOtp(OtpCode otp);
 
-    Task<bool> SendOtpAsync(
+    Task<ServiceResult<bool>> SendOtpAsync(
         PhoneNumber phoneNumber,
         OtpCode code,
         OtpPurpose purpose,

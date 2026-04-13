@@ -40,7 +40,7 @@ public class AdminOrdersController(IMediator mediator, IMapper mapper) : BaseApi
     {
         var command = new UpdateOrderStatusCommand(
             id,
-            request.OrderStatusId,
+            request.NewStatus,
             request.RowVersion,
             CurrentUser.UserId);
 

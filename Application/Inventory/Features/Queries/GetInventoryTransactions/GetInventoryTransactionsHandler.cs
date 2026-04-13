@@ -1,4 +1,5 @@
 using Application.Inventory.Features.Shared;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Features.Queries.GetInventoryTransactions;
 
@@ -9,8 +10,9 @@ public class GetInventoryTransactionsHandler(IInventoryQueryService queryService
         GetInventoryTransactionsQuery request,
         CancellationToken ct)
     {
+        var variantId = VariantId.From(request.VariantId.Value);
         var result = await queryService.GetTransactionsPagedAsync(
-            request.VariantId,
+            variantId,
             request.TransactionType,
             request.FromDate,
             request.ToDate,

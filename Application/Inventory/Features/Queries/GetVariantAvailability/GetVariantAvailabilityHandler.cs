@@ -30,7 +30,7 @@ public class GetVariantAvailabilityHandler(
         {
         }
 
-        var status = await inventoryQueryService.GetVariantStatusAsync(request.VariantId, ct);
+        var status = await inventoryQueryService.GetVariantStatusAsync(variantId, ct);
         if (status is null)
             return ServiceResult<VariantAvailabilityDto>.NotFound("واریانت یافت نشد.");
 

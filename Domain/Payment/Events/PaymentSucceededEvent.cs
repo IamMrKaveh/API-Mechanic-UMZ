@@ -9,11 +9,11 @@ public sealed class PaymentSucceededEvent(
     OrderId orderId,
     long refId,
     UserId userId,
-    decimal amount) : DomainEvent
+    Money amount) : DomainEvent
 {
     public PaymentTransactionId PaymentTransactionId { get; } = paymentTransactionId;
     public OrderId OrderId { get; } = orderId;
     public long RefId { get; } = refId;
     public UserId UserId { get; } = userId;
-    public decimal Amount { get; } = amount;
+    public Money Amount { get; } = amount;
 }
