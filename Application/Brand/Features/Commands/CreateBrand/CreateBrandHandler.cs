@@ -4,7 +4,6 @@ using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
-using Domain.Common.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Brand.Features.Commands.CreateBrand;

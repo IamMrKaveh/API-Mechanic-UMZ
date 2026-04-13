@@ -1,6 +1,5 @@
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
-using Domain.Common.ValueObjects;
 
 namespace Application.Category.Features.Commands.DeleteCategory;
 

@@ -4,7 +4,7 @@ namespace Domain.Shipping.Interfaces;
 
 public interface IShippingRepository
 {
-    Task<IReadOnlyList<Aggregates.Shipping>> GetAllAsync(
+    Task<ICollection<Aggregates.Shipping>> GetAllAsync(
         bool includeInactive = false,
         CancellationToken ct = default);
 
@@ -12,11 +12,11 @@ public interface IShippingRepository
         ShippingId id,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<Aggregates.Shipping>> GetByIdsAsync(
+    Task<ICollection<Aggregates.Shipping>> GetByIdsAsync(
         IEnumerable<ShippingId> ids,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<Aggregates.Shipping>> GetAllActiveAsync(
+    Task<ICollection<Aggregates.Shipping>> GetAllActiveAsync(
         CancellationToken ct = default);
 
     Task<Aggregates.Shipping?> GetDefaultAsync(

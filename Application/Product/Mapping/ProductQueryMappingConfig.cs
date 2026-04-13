@@ -1,5 +1,4 @@
-﻿using Application.Product.Features.Queries.GetAdminProducts;
-using Application.Product.Features.Queries.GetProductCatalog;
+﻿using Application.Product.Features.Queries.GetProductCatalog;
 using Application.Product.Features.Shared;
 using Mapster;
 

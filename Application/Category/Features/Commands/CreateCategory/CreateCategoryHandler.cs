@@ -2,7 +2,6 @@ using Application.Category.Adapters;
 using Application.Category.Features.Shared;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
-using Domain.Common.ValueObjects;
 using Mapster;
 
 namespace Application.Category.Features.Commands.CreateCategory;

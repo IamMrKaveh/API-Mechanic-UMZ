@@ -1,4 +1,3 @@
-using Domain.Common.ValueObjects;
 using Domain.Order.Entities;
 
 namespace Infrastructure.Order.Configurations;

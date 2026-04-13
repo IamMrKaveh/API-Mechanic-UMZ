@@ -30,8 +30,8 @@ public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable
 
     private Media(
         MediaId id,
-        ValueObjects.FilePath path,
-        ValueObjects.FileSize size,
+        FilePath path,
+        FileSize size,
         string fileType,
         string entityType,
         int entityId,
@@ -74,10 +74,10 @@ public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable
 
         var normalizedFileType = fileType.Trim().ToLowerInvariant();
 
-        var path = ValueObjects.FilePath.CreateForUpload(
+        var path = SharedKernel.ValueObjects.FilePath.CreateForUpload(
             GetDirectoryFromPath(filePath),
             fileName);
-        var size = ValueObjects.FileSize.Create(fileSize);
+        var size = SharedKernel.ValueObjects.FileSize.Create(fileSize);
 
         return new Media(
             MediaId.NewId(),

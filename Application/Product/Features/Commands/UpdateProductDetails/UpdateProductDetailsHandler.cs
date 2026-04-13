@@ -1,6 +1,4 @@
-using Application.Audit.Contracts;
 using Application.Common.Interfaces;
-using Domain.Common.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;

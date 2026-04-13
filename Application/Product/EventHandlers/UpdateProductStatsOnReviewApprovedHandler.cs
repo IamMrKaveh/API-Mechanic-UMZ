@@ -1,4 +1,3 @@
-using Application.Audit.Contracts;
 using Domain.Product.Interfaces;
 using Domain.Review.Events;
 

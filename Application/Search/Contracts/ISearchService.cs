@@ -1,10 +1,8 @@
+using Application.Search.Features.Queries.GetSearchIndexStats;
 using Application.Search.Features.Shared;
 
 namespace Application.Search.Contracts;
 
-/// <summary>
-/// قرارداد سرویس جستجو - بدون وابستگی به Elasticsearch
-/// </summary>
 public interface ISearchService
 {
     Task<SearchResultDto<ProductSearchResultItemDto>> SearchProductsAsync(
@@ -31,4 +29,6 @@ public interface ISearchService
     Task IndexCategoryAsync(CategorySearchDocument document, CancellationToken ct = default);
 
     Task IndexBrandAsync(BrandSearchDocument document, CancellationToken ct = default);
+
+    Task<SearchIndexStatsDto?> GetIndexStatsAsync(CancellationToken ct = default);
 }

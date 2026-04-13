@@ -2,7 +2,6 @@
 using Application.Audit.Features.Shared;
 using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
-using SharedKernel.Models;
 
 namespace Infrastructure.Audit.QueryServices;
 

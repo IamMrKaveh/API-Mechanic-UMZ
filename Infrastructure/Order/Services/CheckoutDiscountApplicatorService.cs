@@ -1,8 +1,6 @@
 ﻿using Application.Audit.Contracts;
-using Application.Common.Results;
 using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Domain.Common.Interfaces;
-using Domain.Common.ValueObjects;
 using Domain.Discount.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;

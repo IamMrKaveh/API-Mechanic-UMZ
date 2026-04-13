@@ -1,3 +1,5 @@
+using SharedKernel.Exceptions;
+
 namespace Presentation.Common.Middleware;
 
 public class CustomExceptionHandlerMiddleware
@@ -30,7 +32,7 @@ public class CustomExceptionHandlerMiddleware
         var (statusCode, body) = exception switch
         {
             ValidationException ve => MapValidationException(ve),
-            Domain.Common.Exceptions.DomainException de => MapDomainException(de),
+            DomainException de => MapDomainException(de),
             KeyNotFoundException => MapNotFoundException(exception),
             UnauthorizedAccessException => MapUnauthorizedException(),
             _ => MapUnhandledException(exception)
@@ -57,7 +59,7 @@ public class CustomExceptionHandlerMiddleware
     }
 
     private static (HttpStatusCode, object) MapDomainException(
-        Domain.Common.Exceptions.DomainException exception)
+        DomainException exception)
         => (HttpStatusCode.BadRequest, new
         {
             StatusCode = (int)HttpStatusCode.BadRequest,

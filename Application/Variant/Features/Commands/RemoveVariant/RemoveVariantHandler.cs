@@ -1,13 +1,12 @@
-using Domain.Common.Exceptions;
-using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
+using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
 
 namespace Application.Variant.Features.Commands.RemoveVariant;
 
 public class RemoveVariantHandler(
-    IProductRepository productRepository,
+    IVariantRepository variantRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService) : IRequestHandler<RemoveVariantCommand, ServiceResult>
 {
@@ -15,29 +14,29 @@ public class RemoveVariantHandler(
         RemoveVariantCommand request,
         CancellationToken ct)
     {
-        var productId = ProductId.From(request.ProductId);
-        var userId = UserId.From(request.UserId);
         var variantId = VariantId.From(request.VariantId);
+        var userId = UserId.From(request.UserId);
 
-        var product = await productRepository.GetByIdAsync(productId, ct);
-        if (product is null)
-            return ServiceResult.NotFound("Product not found.");
+        var variant = await variantRepository.GetByIdAsync(variantId, ct);
+        if (variant is null)
+            return ServiceResult.NotFound("واریانت یافت نشد.");
 
         try
         {
-            product.RemoveVariant(variantId, userId);
+            variant.Remove(userId.Value);
         }
         catch (DomainException ex)
         {
             return ServiceResult.Failure(ex.Message);
         }
 
-        productRepository.Update(product);
+        variantRepository.Update(variant);
         await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogProductEventAsync(
-            product.Id, "RemoveVariant",
-            $"Variant {variantId} soft-deleted from product '{product.Name}'.",
+            variant.ProductId,
+            "RemoveVariant",
+            $"واریانت {variantId.Value} حذف شد.",
             userId);
 
         return ServiceResult.Success();

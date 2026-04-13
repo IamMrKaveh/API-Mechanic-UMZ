@@ -1,5 +1,4 @@
 ﻿using Application.Attribute.Features.Shared;
-using Application.Inventory.Features.Queries.GetVariantAvailability;
 using Application.Media.Features.Shared;
 using Application.Product.Features.Shared;
 using Application.Shipping.Features.Shared;

@@ -1,3 +1,6 @@
 namespace Application.Support.Features.Commands.CloseTicket;
 
-public record CloseTicketCommand(Guid TicketId, Guid UserId, bool IsAdmin = false) : IRequest<ServiceResult>;
+public record CloseTicketCommand(
+    Guid TicketId,
+    Guid AdminId,
+    string Resolution) : IRequest<ServiceResult>;

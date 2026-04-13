@@ -1,4 +1,3 @@
-using Application.Product.Contracts;
 using Application.Product.Features.Shared;
 using Domain.Product.ValueObjects;
 

@@ -1,15 +1,12 @@
 using Application.Common.Extensions;
-using Application.Common.Interfaces;
 using Application.Product.Features.Shared;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
-using Domain.Common.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
-using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Product.Features.Commands.UpdateProduct;

@@ -1,4 +1,3 @@
-using Domain.Common.Exceptions;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 

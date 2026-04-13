@@ -1,3 +1,6 @@
+using Application.Shipping.Features.Shared;
+
 namespace Application.Shipping.Features.Queries.GetAvailableShippings;
 
-public record GetAvailableShippingsQuery(Guid UserId) : IRequest<ServiceResult<IEnumerable<AvailableShippingDto>>>;
+public sealed record GetAvailableShippingsQuery(
+    decimal OrderAmount) : IRequest<ServiceResult<IReadOnlyList<AvailableShippingDto>>>;

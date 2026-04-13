@@ -4,7 +4,6 @@ using Domain.Payment.Aggregates;
 using Domain.Payment.ValueObjects;
 using Infrastructure.Persistence.Context;
 using MapsterMapper;
-using SharedKernel.Models;
 
 namespace Infrastructure.Payment.QueryServices;
 

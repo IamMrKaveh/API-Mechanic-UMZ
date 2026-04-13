@@ -1,10 +1,8 @@
+using Application.Search.Contracts;
 using Application.Search.Features.Shared;
 
 namespace Application.Search.Events;
 
-/// <summary>
-/// Product change event
-/// </summary>
 public record ProductChangedEvent(int EntityId, EntityChangeType ChangeType, ProductSearchDocument? Document = null)
     : IEntityChangeEvent
 {

@@ -4,8 +4,6 @@ public class GetAvailableShippingsValidator : AbstractValidator<GetAvailableShip
 {
     public GetAvailableShippingsValidator()
     {
-        RuleFor(x => x.UserId)
-            .GreaterThan(0)
-            .WithMessage("UserId is required.");
+        RuleFor(x => x.OrderAmount).GreaterThanOrEqualTo(0);
     }
 }

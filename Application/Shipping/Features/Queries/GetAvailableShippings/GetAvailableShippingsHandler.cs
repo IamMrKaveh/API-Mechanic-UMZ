@@ -1,22 +1,17 @@
-using Domain.User.ValueObjects;
+using Application.Shipping.Contracts;
+using Application.Shipping.Features.Shared;
 
 namespace Application.Shipping.Features.Queries.GetAvailableShippings;
 
 public class GetAvailableShippingsHandler(IShippingQueryService shippingQueryService)
-        : IRequestHandler<GetAvailableShippingsQuery, ServiceResult<IEnumerable<AvailableShippingDto>>>
+    : IRequestHandler<GetAvailableShippingsQuery, ServiceResult<IReadOnlyList<AvailableShippingDto>>>
 {
-    private readonly IShippingQueryService _shippingQueryService = shippingQueryService;
-
-    public async Task<ServiceResult<IEnumerable<AvailableShippingDto>>> Handle(
+    public async Task<ServiceResult<IReadOnlyList<AvailableShippingDto>>> Handle(
         GetAvailableShippingsQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
-
-        var result = await shippingQueryService.GetAvailableShippingsForCartAsync(
-            userId,
-            ct);
-
-        return ServiceResult<IEnumerable<AvailableShippingDto>>.Success(result);
+        var orderAmount = Money.Create(request.OrderAmount);
+        var result = await shippingQueryService.GetAvailableShippingsAsync(orderAmount, ct);
+        return ServiceResult<IReadOnlyList<AvailableShippingDto>>.Success(result);
     }
 }

@@ -2,7 +2,6 @@ using Application.Review.Features.Shared;
 using Application.User.Contracts;
 using Application.User.Features.Shared;
 using Infrastructure.Persistence.Context;
-using SharedKernel.Models;
 
 namespace Infrastructure.User.QueryServices;
 

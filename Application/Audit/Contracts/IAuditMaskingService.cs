@@ -1,4 +1,3 @@
-using Domain.Common.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Application.Audit.Contracts;

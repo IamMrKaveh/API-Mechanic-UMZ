@@ -1,13 +1,13 @@
 using Application.User.Features.Shared;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
+using Mapster;
 
 namespace Application.User.Features.Commands.UpdateProfile;
 
 public class UpdateProfileHandler(
     IUserRepository userRepository,
-    IUnitOfWork unitOfWork,
-    IMapper mapper) : IRequestHandler<UpdateProfileCommand, ServiceResult<UserProfileDto>>
+    IUnitOfWork unitOfWork) : IRequestHandler<UpdateProfileCommand, ServiceResult<UserProfileDto>>
 {
     public async Task<ServiceResult<UserProfileDto>> Handle(UpdateProfileCommand request, CancellationToken ct)
     {
@@ -21,15 +21,11 @@ public class UpdateProfileHandler(
             request.FirstName ?? user.FullName.FirstName,
             request.LastName ?? user.FullName.LastName);
 
-        PhoneNumber? phoneNumber = null;
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
-            phoneNumber = PhoneNumber.Create(request.PhoneNumber);
-
-        user.UpdateProfile(fullName, phoneNumber);
+        user.UpdateProfile(fullName, user.PhoneNumber);
 
         userRepository.Update(user);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return ServiceResult<UserProfileDto>.Success(mapper.Map<UserProfileDto>(user));
+        return ServiceResult<UserProfileDto>.Success(user.Adapt<UserProfileDto>());
     }
 }

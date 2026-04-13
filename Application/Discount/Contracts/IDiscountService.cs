@@ -1,6 +1,3 @@
-using Application.Common.Results;
-using Application.Discount.Features.Shared;
-using Domain.Common.ValueObjects;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 

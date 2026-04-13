@@ -1,6 +1,5 @@
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
-using Domain.Common.ValueObjects;
 
 namespace Application.Brand.Features.Commands.DeleteBrand;
 

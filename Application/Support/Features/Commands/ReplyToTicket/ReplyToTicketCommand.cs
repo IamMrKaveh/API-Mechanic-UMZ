@@ -2,6 +2,5 @@ namespace Application.Support.Features.Commands.ReplyToTicket;
 
 public record ReplyToTicketCommand(
     Guid TicketId,
-    Guid SenderId,
-    string Content,
-    bool IsAdmin = false) : IRequest<ServiceResult>;
+    Guid AdminId,
+    string Message) : IRequest<ServiceResult>;

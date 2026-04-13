@@ -1,6 +1,5 @@
 ﻿using Application.Wishlist.Contracts;
 using Infrastructure.Persistence.Context;
-using SharedKernel.Models;
 
 namespace Infrastructure.Wishlist.QueryServices;
 

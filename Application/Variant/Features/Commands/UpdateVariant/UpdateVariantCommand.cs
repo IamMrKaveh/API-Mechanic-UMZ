@@ -12,4 +12,4 @@ public record UpdateVariantCommand(
     bool IsUnlimited,
     decimal ShippingMultiplier,
     ICollection<Guid>? AttributeValueIds,
-    ICollection<Guid>? EnabledShippingMethodIds) : IRequest<ServiceResult>;
+    ICollection<Guid>? EnabledShippingIds) : IRequest<ServiceResult>;

@@ -1,5 +1,3 @@
-using Domain.Common.ValueObjects;
-
 namespace Infrastructure.Shipping.Configurations;
 
 public sealed class ShippingConfiguration : IEntityTypeConfiguration<Domain.Shipping.Aggregates.Shipping>

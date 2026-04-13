@@ -1,4 +1,4 @@
-using Application.Product.Features.Shared;
+using Application.Variant.Features.Shared;
 
 namespace Application.Variant.Features.Commands.AddVariant;
 

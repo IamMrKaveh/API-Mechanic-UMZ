@@ -1,5 +1,3 @@
-using Domain.Common.ValueObjects;
-
 namespace Application.Payment.Contracts;
 
 public interface IRefundableGateway : IPaymentGateway

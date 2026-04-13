@@ -1,5 +1,3 @@
-using SharedKernel.Results;
-
 namespace Application.Common.Results;
 
 public class ServiceResult

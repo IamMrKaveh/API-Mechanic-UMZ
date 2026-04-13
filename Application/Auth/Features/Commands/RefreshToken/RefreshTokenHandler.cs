@@ -1,5 +1,4 @@
 using Application.Auth.Features.Shared;
-using Domain.Common.ValueObjects;
 
 namespace Application.Auth.Features.Commands.RefreshToken;
 

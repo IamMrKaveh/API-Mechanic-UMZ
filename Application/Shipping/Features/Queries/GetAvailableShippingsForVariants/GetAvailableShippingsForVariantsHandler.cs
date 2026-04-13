@@ -1,22 +1,16 @@
+using Application.Shipping.Contracts;
+using Application.Shipping.Features.Shared;
+
 namespace Application.Shipping.Features.Queries.GetAvailableShippingsForVariants;
 
 public class GetAvailableShippingsForVariantsHandler(IShippingQueryService shippingQueryService)
-        : IRequestHandler<GetAvailableShippingsForVariantsQuery, ServiceResult<IEnumerable<AvailableShippingDto>>>
+    : IRequestHandler<GetAvailableShippingsForVariantsQuery, ServiceResult<IReadOnlyList<AvailableShippingDto>>>
 {
-    public async Task<ServiceResult<IEnumerable<AvailableShippingDto>>> Handle(
+    public async Task<ServiceResult<IReadOnlyList<AvailableShippingDto>>> Handle(
         GetAvailableShippingsForVariantsQuery request,
         CancellationToken ct)
     {
-        if (request.VariantIds == null || request.VariantIds.Count == 0)
-            return ServiceResult<IEnumerable<AvailableShippingDto>>
-                .Success([]);
-
-        var result = await shippingQueryService
-            .GetAvailableShippingsForVariantsAsync(
-                request.VariantIds,
-                ct);
-
-        return ServiceResult<IEnumerable<AvailableShippingDto>>
-            .Success(result);
+        var result = await shippingQueryService.GetAvailableShippingsForVariantsAsync(request.VariantIds, ct);
+        return ServiceResult<IReadOnlyList<AvailableShippingDto>>.Success(result);
     }
 }

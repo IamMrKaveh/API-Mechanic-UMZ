@@ -1,15 +1,14 @@
-﻿using Domain.Common.Exceptions;
-using Domain.Common.ValueObjects;
-using Domain.User.ValueObjects;
+﻿using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
+using Domain.Wallet.ValueObjects;
 
 namespace Application.Wallet.Features.Commands.ReserveWallet;
 
 public class ReserveWalletHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
-    ILogger<ReserveWalletHandler> logger) : IRequestHandler<ReserveWalletCommand, ServiceResult<Unit>>
+    IAuditService auditService) : IRequestHandler<ReserveWalletCommand, ServiceResult<Unit>>
 {
     public async Task<ServiceResult<Unit>> Handle(
         ReserveWalletCommand request,
@@ -23,13 +22,14 @@ public class ReserveWalletHandler(
             if (wallet is null)
                 return ServiceResult<Unit>.NotFound("کیف پول یافت نشد.");
 
-            wallet.Reserve(
+            var reservationId = WalletReservationId.NewId();
+
+            wallet.CreateReservation(
+                reservationId,
                 Money.FromDecimal(request.Amount),
-                request.WalletId,
-                request.ExpiresAt);
+                $"reservation-{request.WalletId}");
 
             walletRepository.Update(wallet);
-
             await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
@@ -40,18 +40,18 @@ public class ReserveWalletHandler(
         }
         catch (ConcurrencyException)
         {
-            logger.LogWarning(
-                "Concurrency conflict reserving wallet for user {UserId}. Retry recommended.",
-                request.UserId);
+            await auditService.LogSystemEventAsync(
+                "WalletReserveConcurrencyConflict",
+                $"تعارض همزمانی در رزرو کیف پول کاربر {userId.Value}",
+                ct);
             return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
         {
             return ServiceResult<Unit>.Failure(ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            logger.LogError(ex, "Error reserving wallet for user {UserId}", userId);
             return ServiceResult<Unit>.Failure("خطا در رزرو کیف پول.");
         }
     }

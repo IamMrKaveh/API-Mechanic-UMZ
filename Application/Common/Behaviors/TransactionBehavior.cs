@@ -1,5 +1,3 @@
-using Application.Audit.Contracts;
-
 namespace Application.Common.Behaviors;
 
 public sealed class TransactionBehavior<TRequest, TResponse>(

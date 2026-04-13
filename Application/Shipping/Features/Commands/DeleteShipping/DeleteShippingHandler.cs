@@ -1,4 +1,3 @@
-using Domain.Common.Exceptions;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 using Domain.User.ValueObjects;

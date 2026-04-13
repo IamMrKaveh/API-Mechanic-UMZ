@@ -1,12 +1,7 @@
-using Application.Audit.Contracts;
-using Application.Common.Interfaces;
-using Application.Common.Results;
 using Application.Discount.Features.Shared;
-using Domain.Common.ValueObjects;
 using Domain.Discount.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
-using MediatR;
 
 namespace Application.Discount.Features.Commands.ApplyDiscount;
 

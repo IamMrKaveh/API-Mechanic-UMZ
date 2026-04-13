@@ -1,7 +1,10 @@
+using Application.Search.Contracts;
+using Application.Search.Features.Shared;
+
 namespace Application.Search.Features.Queries.GetSearchIndexStats;
 
 public sealed class GetSearchIndexStatsHandler(ISearchService searchService)
-        : IRequestHandler<GetSearchIndexStatsQuery, ServiceResult<SearchIndexStatsDto>>
+    : IRequestHandler<GetSearchIndexStatsQuery, ServiceResult<SearchIndexStatsDto>>
 {
     public async Task<ServiceResult<SearchIndexStatsDto>> Handle(
         GetSearchIndexStatsQuery request,
@@ -9,12 +12,9 @@ public sealed class GetSearchIndexStatsHandler(ISearchService searchService)
     {
         var stats = await searchService.GetIndexStatsAsync(ct);
 
-        var dto = new SearchIndexStatsDto(
-            stats.ProductsCount,
-            stats.CategoriesCount,
-            stats.BrandsCount,
-            stats.ProductsCount + stats.CategoriesCount + stats.BrandsCount);
+        if (stats is null)
+            return ServiceResult<SearchIndexStatsDto>.Failure("اطلاعات آماری جستجو در دسترس نیست.");
 
-        return ServiceResult<SearchIndexStatsDto>.Success(dto);
+        return ServiceResult<SearchIndexStatsDto>.Success(stats);
     }
 }

@@ -1,5 +1,3 @@
-using Domain.Common.ValueObjects;
-
 namespace Application.Communication.Contracts;
 
 public interface IEmailService

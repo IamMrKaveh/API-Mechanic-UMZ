@@ -1,5 +1,4 @@
 ﻿using Application.Wallet.Features.Shared;
-using Domain.Common.ValueObjects;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;

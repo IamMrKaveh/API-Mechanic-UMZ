@@ -1,4 +1,3 @@
-using Domain.Common.Exceptions;
 using Domain.Support.Enums;
 using Domain.Support.Interfaces;
 using Domain.Support.ValueObjects;

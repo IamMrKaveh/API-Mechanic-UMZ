@@ -1,6 +1,5 @@
 using Application.Media.Features.Shared;
 using Domain.Media.Services;
-using Domain.Media.ValueObjects;
 
 namespace Application.Media.Features.Commands.UploadMedia;
 

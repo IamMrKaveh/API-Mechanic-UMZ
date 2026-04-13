@@ -1,5 +1,4 @@
-﻿using Application.Common.Extensions;
-using Application.Product.Features.Shared;
+﻿using Application.Product.Features.Shared;
 using Mapster;
 using DomainProduct = Domain.Product.Aggregates.Product;
 

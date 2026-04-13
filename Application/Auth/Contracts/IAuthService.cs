@@ -1,6 +1,5 @@
 using Application.Auth.Features.Shared;
 using Application.User.Features.Shared;
-using Domain.Common.ValueObjects;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 

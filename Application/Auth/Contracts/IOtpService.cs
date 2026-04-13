@@ -19,5 +19,9 @@ public interface IOtpService
         OtpPurpose purpose,
         CancellationToken ct = default);
 
-    bool VerifyOtpAsync(string otpCode, CancellationToken ct);
+    Task<bool> VerifyOtpAsync(
+        PhoneNumber phoneNumber,
+        OtpCode otpCode,
+        OtpPurpose purpose,
+        CancellationToken ct = default);
 }

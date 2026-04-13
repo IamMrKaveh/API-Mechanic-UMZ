@@ -3,7 +3,6 @@ using Domain.Attribute.Aggregates;
 using Domain.Attribute.Entities;
 using Domain.Audit.Entities;
 using Domain.Common.Events;
-using Domain.Common.ValueObjects;
 using Domain.Discount.Aggregates;
 using Domain.Inventory.Aggregates;
 using Domain.Inventory.Entities;

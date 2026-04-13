@@ -1,7 +1,6 @@
 ﻿using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
 using Domain.Common.Interfaces;
-using Domain.Common.ValueObjects;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;

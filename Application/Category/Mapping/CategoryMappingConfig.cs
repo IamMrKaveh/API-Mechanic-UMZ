@@ -1,6 +1,4 @@
 ﻿using Application.Category.Features.Shared;
-using Domain.Category.Aggregates;
-using Domain.Category.ValueObjects;
 using Mapster;
 
 namespace Application.Category.Mapping;

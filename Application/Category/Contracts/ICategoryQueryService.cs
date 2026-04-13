@@ -1,6 +1,5 @@
 using Application.Category.Features.Shared;
 using Domain.Category.ValueObjects;
-using Domain.Common.ValueObjects;
 
 namespace Application.Category.Contracts;
 

@@ -16,7 +16,7 @@ public sealed class UserSession : AggregateRoot<SessionId>
     public UserId UserId { get; private set; } = default!;
     public RefreshToken RefreshToken { get; private set; } = default!;
     public DeviceInfo DeviceInfo { get; private set; } = default!;
-    public Common.ValueObjects.IpAddress IpAddress { get; private set; } = default!;
+    public IpAddress IpAddress { get; private set; } = default!;
     public bool IsRevoked { get; private set; }
     public SessionRevocationReason? RevocationReason { get; private set; }
     public DateTime ExpiresAt { get; private set; }
@@ -45,7 +45,7 @@ public sealed class UserSession : AggregateRoot<SessionId>
         UserId userId,
         RefreshToken refreshToken,
         DeviceInfo deviceInfo,
-        Common.ValueObjects.IpAddress ipAddress,
+        IpAddress ipAddress,
         DateTime expiresAt)
     {
         Guard.Against.Null(id, nameof(id));

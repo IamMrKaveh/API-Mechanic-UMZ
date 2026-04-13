@@ -26,7 +26,7 @@ public class InitiatePaymentHandler(
         return await paymentService.InitiatePaymentAsync(
             orderId,
             order.FinalAmount,
-            Domain.Common.ValueObjects.IpAddress.Create(request.IpAddress),
+            IpAddress.Create(request.IpAddress),
             ct);
     }
 }
