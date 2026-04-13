@@ -116,7 +116,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
             OrderId,
             refId,
             userId: UserId.NewId(),
-            Amount.Amount));
+            Amount));
     }
 
     public void MarkAsFailed(string? errorMessage = null)
@@ -176,7 +176,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
             Id,
             OrderId,
             UserId.NewId(),
-            Amount.Amount,
+            Amount,
             ErrorMessage));
     }
 

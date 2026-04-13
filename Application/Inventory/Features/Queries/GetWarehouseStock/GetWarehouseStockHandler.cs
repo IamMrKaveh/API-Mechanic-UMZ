@@ -1,4 +1,5 @@
 ﻿using Application.Inventory.Features.Shared;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Features.Queries.GetWarehouseStock;
 
@@ -7,10 +8,11 @@ public class GetWarehouseStockHandler(IInventoryQueryService inventoryQueryServi
 {
     public async Task<ServiceResult<IEnumerable<WarehouseStockDto>>> Handle(
         GetWarehouseStockQuery request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
+        var variantId = VariantId.From(request.VariantId);
         var stocks = await inventoryQueryService.GetWarehouseStockByVariantAsync(
-            request.VariantId, cancellationToken);
+            variantId, ct);
 
         return ServiceResult<IEnumerable<WarehouseStockDto>>.Success(stocks);
     }

@@ -1,4 +1,5 @@
 ﻿using Application.Inventory.Features.Shared;
+using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Features.Queries.GetBatchVariantAvailability;
 
@@ -13,8 +14,9 @@ public class GetBatchVariantAvailabilityHandler(
         if (request.VariantIds == null || request.VariantIds.Count == 0)
             return ServiceResult<IReadOnlyList<VariantAvailabilityDto>>.Success([]);
 
+        var newVariantIds = request.VariantIds.Select(VariantId.From).ToList();
         var result = await inventoryQueryService.GetBatchAvailabilityAsync(
-            request.VariantIds.Distinct().ToList(),
+            newVariantIds,
             ct);
 
         return ServiceResult<IReadOnlyList<VariantAvailabilityDto>>.Success(result);

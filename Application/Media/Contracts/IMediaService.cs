@@ -26,6 +26,6 @@ public interface IMediaService
     Task<ServiceResult> ReorderAsync(
         string entityType,
         int entityId,
-        ICollection<Guid> orderedIds,
+        ICollection<int> orderedIds,
         CancellationToken ct = default);
 }

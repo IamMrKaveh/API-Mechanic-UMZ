@@ -1,6 +1,6 @@
 using Application.Shipping.Features.Queries.GetShippings;
 using Application.Variant.Features.Commands.UpdateProductVariantShipping;
-using Application.Variant.Features.Queries.GetProductVariantShipping;
+using Application.Variant.Features.Queries.GetVariantShipping;
 using Presentation.Variant.Requests;
 
 namespace Presentation.Variant.Endpoints;

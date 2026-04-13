@@ -4,4 +4,4 @@ namespace Application.Order.Features.Queries.GetOrderStatus;
 
 public record GetOrderStatusQuery(
     Guid OrderId,
-    Guid UserId) : IRequest<ServiceResult<OrderStatusDto>>;
+    Guid UserId) : IRequest<ServiceResult<OrderDto>>;

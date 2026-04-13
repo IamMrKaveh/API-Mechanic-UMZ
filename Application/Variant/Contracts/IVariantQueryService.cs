@@ -1,5 +1,4 @@
-﻿using Application.Inventory.Features.Shared;
-using Application.Shipping.Features.Shared;
+﻿using Application.Shipping.Features.Shared;
 using Application.Variant.Features.Shared;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
@@ -17,7 +16,7 @@ public interface IVariantQueryService
         VariantId variantId,
         CancellationToken ct = default);
 
-    Task<VariantAvailabilityDto?> GetVariantAvailabilityAsync(
+    Task<Features.Shared.VariantAvailabilityDto?> GetVariantAvailabilityAsync(
         VariantId variantId,
         CancellationToken ct = default);
 }

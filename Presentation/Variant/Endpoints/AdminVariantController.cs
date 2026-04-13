@@ -53,7 +53,7 @@ public sealed class AdminVariantController(IMediator mediator) : BaseApiControll
             request.IsUnlimited,
             request.ShippingMultiplier,
             request.AttributeValueIds,
-            request.EnabledShippingMethodIds);
+            request.EnabledShippingIds);
 
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);

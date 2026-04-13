@@ -34,7 +34,7 @@ public record MarkAsShippedRequest(
     string? RowVersion = null);
 
 public record UpdateOrderStatusByIdRequest(
-    Guid OrderStatusId,
+    string NewStatus,
     string RowVersion);
 
 public record AdminCreateOrderRequest(

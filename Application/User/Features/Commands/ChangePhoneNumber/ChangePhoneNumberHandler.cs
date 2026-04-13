@@ -1,3 +1,4 @@
+using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -26,12 +27,12 @@ public class ChangePhoneNumberHandler(
             return ServiceResult.Conflict("این شماره تلفن قبلاً ثبت شده است.");
 
         var user = await userRepository.GetByIdAsync(userId, ct);
-        if (user == null)
+        if (user is null)
             return ServiceResult.NotFound("کاربر یافت نشد.");
 
         var otpCode = OtpCode.Create(request.OtpCode);
-        var otpHash = otpService.HashOtp(otpCode);
-        if (!otpService.VerifyOtpAsync(request.OtpCode, ct))
+        otpService.HashOtp(otpCode);
+        if (otpService.VerifyOtpAsync(phoneNumber, otpCode, OtpPurpose.PhoneVerification, ct).Result is not true)
         {
             userRepository.Update(user);
             await unitOfWork.SaveChangesAsync(ct);

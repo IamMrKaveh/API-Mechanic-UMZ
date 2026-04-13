@@ -8,12 +8,12 @@ public sealed class PaymentRefundedEvent(
     PaymentTransactionId paymentTransactionId,
     OrderId orderId,
     UserId userId,
-    decimal amount,
+    Money amount,
     string? reason) : DomainEvent
 {
     public PaymentTransactionId PaymentTransactionId { get; } = paymentTransactionId;
     public OrderId OrderId { get; } = orderId;
     public UserId UserId { get; } = userId;
-    public decimal Amount { get; } = amount;
+    public Money Amount { get; } = amount;
     public string? Reason { get; } = reason;
 }
