@@ -1,5 +1,4 @@
 using Domain.Brand.ValueObjects;
-using Domain.Category.ValueObjects;
 using Domain.Product.Events;
 using Domain.Product.ValueObjects;
 using Domain.Variant.Aggregates;
@@ -17,8 +16,8 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
     public string Name { get; private set; } = default!;
     public string Slug { get; private set; } = default!;
     public string Description { get; private set; } = default!;
-    public CategoryId CategoryId { get; private set; } = default!;
     public BrandId BrandId { get; private set; } = default!;
+    public Brand.Aggregates.Brand Brand { get; private set; } = default!;
     public bool IsActive { get; private set; }
     public bool IsFeatured { get; private set; }
     public DateTime CreatedAt { get; private set; }
@@ -33,7 +32,6 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
         ProductName name,
         Slug slug,
         string description,
-        CategoryId categoryId,
         BrandId brandId)
     {
         var product = new Product
@@ -42,7 +40,6 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
             Name = name,
             Slug = slug,
             Description = description,
-            CategoryId = categoryId,
             BrandId = brandId,
             IsActive = true,
             IsFeatured = false,
@@ -50,7 +47,7 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
             UpdatedAt = DateTime.UtcNow
         };
 
-        product.RaiseDomainEvent(new ProductCreatedEvent(id, name, categoryId, brandId));
+        product.RaiseDomainEvent(new ProductCreatedEvent(id, name, brandId));
         return product;
     }
 
@@ -61,14 +58,6 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
         Description = description;
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new ProductUpdatedEvent(Id, name, slug, description));
-    }
-
-    public void ChangeCategory(CategoryId categoryId)
-    {
-        var previous = CategoryId;
-        CategoryId = categoryId;
-        UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new ProductCategoryChangedEvent(Id, previous, categoryId));
     }
 
     public void ChangeBrand(BrandId brandId)

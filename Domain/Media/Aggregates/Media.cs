@@ -4,7 +4,7 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Media.Aggregates;
 
-public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable
+public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable, ISoftDeletable
 {
     private const int MaxAltTextLength = 500;
 
@@ -24,6 +24,10 @@ public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable
     public string FileName => Path.FileName;
     public string Extension => Path.Extension;
     public long FileSize => Size.Bytes;
+
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public Guid? DeletedBy { get; private set; }
 
     private Media()
     { }
