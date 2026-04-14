@@ -1,11 +1,9 @@
 using Infrastructure.Persistence.Outbox;
-using Microsoft.Extensions.Logging;
 
-namespace Infrastructure.BackgroundServices;
+namespace Infrastructure.BackgroundJobs;
 
-public sealed class OutboxProcessorBackgroundJob(
-    IServiceScopeFactory scopeFactory,
-    ILogger<OutboxProcessorBackgroundJob> logger) : BackgroundService
+public sealed class OutboxProcessorJob(
+    IServiceScopeFactory scopeFactory) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromSeconds(10);
 

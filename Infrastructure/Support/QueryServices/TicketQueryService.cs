@@ -1,191 +1,126 @@
-﻿namespace Infrastructure.Support.QueryServices;
+﻿using Application.Support.Contracts;
+using Application.Support.Features.Shared;
+using Domain.Support.ValueObjects;
+using Domain.User.ValueObjects;
+using Infrastructure.Persistence.Context;
 
-public class TicketQueryService(DBContext context) : ITicketQueryService
+namespace Infrastructure.Support.QueryServices;
+
+public sealed class TicketQueryService(DBContext context) : ITicketQueryService
 {
-    private readonly DBContext _context = context;
-
-    public async Task<int> CountOpenByUserIdAsync(int userId, CancellationToken ct = default)
-    {
-        return await _context.Tickets
-            .AsNoTracking()
-            .CountAsync(t => t.UserId == userId && t.Status == "Open", ct);
-    }
-
-    public async Task<int> CountAwaitingReplyAsync(CancellationToken ct = default)
-    {
-        return await _context.Tickets
-            .AsNoTracking()
-            .CountAsync(t => t.Status == "AwaitingReply", ct);
-    }
-
-    public async Task<bool> UserHasAccessAsync(int ticketId, int userId, CancellationToken ct = default)
-    {
-        return await _context.Tickets
-            .AsNoTracking()
-            .AnyAsync(t => t.Id == ticketId && t.UserId == userId, ct);
-    }
-
-    public async Task<PaginatedResult<TicketDto>> GetUserTicketsPagedAsync(
-        int userId,
-        string? status,
+    public async Task<PaginatedResult<TicketDto>> GetCustomerTicketsAsync(
+        UserId customerId,
         int page,
         int pageSize,
         CancellationToken ct = default)
     {
-        var query = _context.Tickets
+        var query = context.Tickets
             .AsNoTracking()
-            .Where(t => t.UserId == userId);
-
-        if (!string.IsNullOrEmpty(status))
-            query = query.Where(t => t.Status == status);
+            .Where(t => t.CustomerId == customerId)
+            .OrderByDescending(t => t.CreatedAt);
 
         var total = await query.CountAsync(ct);
 
         var items = await query
-            .OrderByDescending(t => t.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(t => new TicketDto
             {
-                Id = t.Id,
-                UserId = t.UserId,
+                Id = t.Id.Value,
                 Subject = t.Subject,
-                Status = t.Status,
-                Priority = t.Priority,
+                Status = t.Status.Value,
+                StatusDisplayName = t.Status.DisplayName,
+                Priority = t.Priority.Value,
+                PriorityDisplayName = t.Priority.DisplayName,
+                Category = t.Category.Value,
+                CustomerId = t.CustomerId.Value,
+                AssignedAgentId = t.AssignedAgentId != null ? t.AssignedAgentId.Value : (Guid?)null,
+                MessageCount = t.Messages.Count(),
                 CreatedAt = t.CreatedAt,
-                UpdatedAt = t.UpdatedAt
+                UpdatedAt = t.UpdatedAt,
+                LastActivityAt = t.LastActivityAt,
+                ResolvedAt = t.ResolvedAt
             })
             .ToListAsync(ct);
 
         return PaginatedResult<TicketDto>.Create(items, total, page, pageSize);
     }
 
-    public async Task<PaginatedResult<TicketDto>> GetAdminTicketsPagedAsync(
-        string? status,
-        string? priority,
-        int? userId,
+    public async Task<PaginatedResult<TicketDto>> GetAllTicketsAsync(
         int page,
         int pageSize,
+        string? status = null,
         CancellationToken ct = default)
     {
-        var query = _context.Tickets.AsNoTracking();
+        var query = context.Tickets.AsNoTracking().AsQueryable();
 
-        if (!string.IsNullOrEmpty(status))
-            query = query.Where(t => t.Status == status);
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(t => t.Status.Value == status);
 
-        if (!string.IsNullOrEmpty(priority))
-            query = query.Where(t => t.Priority == priority);
-
-        if (userId.HasValue)
-            query = query.Where(t => t.UserId == userId.Value);
-
+        query = query.OrderByDescending(t => t.CreatedAt);
         var total = await query.CountAsync(ct);
 
         var items = await query
-            .OrderByDescending(t => t.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(t => new TicketDto
             {
-                Id = t.Id,
-                UserId = t.UserId,
+                Id = t.Id.Value,
                 Subject = t.Subject,
-                Status = t.Status,
-                Priority = t.Priority,
+                Status = t.Status.Value,
+                StatusDisplayName = t.Status.DisplayName,
+                Priority = t.Priority.Value,
+                PriorityDisplayName = t.Priority.DisplayName,
+                Category = t.Category.Value,
+                CustomerId = t.CustomerId.Value,
+                AssignedAgentId = t.AssignedAgentId != null ? t.AssignedAgentId.Value : (Guid?)null,
+                MessageCount = t.Messages.Count(),
                 CreatedAt = t.CreatedAt,
-                UpdatedAt = t.UpdatedAt
+                UpdatedAt = t.UpdatedAt,
+                LastActivityAt = t.LastActivityAt,
+                ResolvedAt = t.ResolvedAt
             })
             .ToListAsync(ct);
 
         return PaginatedResult<TicketDto>.Create(items, total, page, pageSize);
     }
 
-    public async Task<TicketDetailDto?> GetTicketDetailAsync(int ticketId, CancellationToken ct = default)
+    public async Task<TicketDetailDto?> GetTicketDetailAsync(
+        TicketId ticketId,
+        CancellationToken ct = default)
     {
-        var ticket = await _context.Tickets
+        var ticket = await context.Tickets
             .AsNoTracking()
-            .Include(t => t.Messages)
-            .FirstOrDefaultAsync(t => t.Id == ticketId, ct);
-
-        if (ticket == null) return null;
-
-        return new TicketDetailDto
-        {
-            Id = ticket.Id,
-            UserId = ticket.UserId,
-            Subject = ticket.Subject,
-            Status = ticket.Status,
-            Priority = ticket.Priority,
-            CreatedAt = ticket.CreatedAt,
-            UpdatedAt = ticket.UpdatedAt,
-            Messages = ticket.Messages
-                .OrderBy(m => m.CreatedAt)
-                .Select(m => new TicketMessageDto
+            .Where(t => t.Id == ticketId)
+            .Select(t => new TicketDetailDto
+            {
+                Id = t.Id.Value,
+                Subject = t.Subject,
+                Status = t.Status.Value,
+                StatusDisplayName = t.Status.DisplayName,
+                Priority = t.Priority.Value,
+                PriorityDisplayName = t.Priority.DisplayName,
+                Category = t.Category.Value,
+                CustomerId = t.CustomerId.Value,
+                AssignedAgentId = t.AssignedAgentId != null ? t.AssignedAgentId.Value : (Guid?)null,
+                CreatedAt = t.CreatedAt,
+                UpdatedAt = t.UpdatedAt,
+                LastActivityAt = t.LastActivityAt,
+                ResolvedAt = t.ResolvedAt,
+                Messages = t.Messages.OrderBy(m => m.SentAt).Select(m => new TicketMessageDto
                 {
-                    Id = m.Id,
-                    Message = m.Message,
-                    IsAdminResponse = m.IsAdminResponse,
-                    CreatedAt = m.CreatedAt
-                })
-                .ToList()
-        };
-    }
-
-    public async Task<IEnumerable<TicketDto>> GetOpenTicketsAsync(CancellationToken ct = default)
-    {
-        return await _context.Tickets
-            .AsNoTracking()
-            .Where(t => t.Status == "Open")
-            .OrderByDescending(t => t.CreatedAt)
-            .Select(t => new TicketDto
-            {
-                Id = t.Id,
-                UserId = t.UserId,
-                Subject = t.Subject,
-                Status = t.Status,
-                Priority = t.Priority,
-                CreatedAt = t.CreatedAt,
-                UpdatedAt = t.UpdatedAt
+                    Id = m.Id.Value,
+                    TicketId = m.TicketId.Value,
+                    SenderId = m.SenderId.Value,
+                    SenderType = m.SenderType.ToString(),
+                    Content = m.Content,
+                    IsEdited = m.IsEdited,
+                    EditedAt = m.EditedAt,
+                    SentAt = m.SentAt
+                }).ToList()
             })
-            .ToListAsync(ct);
-    }
+            .FirstOrDefaultAsync(ct);
 
-    public async Task<IEnumerable<TicketDto>> GetAwaitingReplyAsync(CancellationToken ct = default)
-    {
-        return await _context.Tickets
-            .AsNoTracking()
-            .Where(t => t.Status == "AwaitingReply")
-            .OrderByDescending(t => t.CreatedAt)
-            .Select(t => new TicketDto
-            {
-                Id = t.Id,
-                UserId = t.UserId,
-                Subject = t.Subject,
-                Status = t.Status,
-                Priority = t.Priority,
-                CreatedAt = t.CreatedAt,
-                UpdatedAt = t.UpdatedAt
-            })
-            .ToListAsync(ct);
-    }
-
-    public async Task<IEnumerable<TicketDto>> GetHighPriorityTicketsAsync(CancellationToken ct = default)
-    {
-        return await _context.Tickets
-            .AsNoTracking()
-            .Where(t => t.Priority == "High" || t.Priority == "Urgent")
-            .Where(t => t.Status != "Closed")
-            .OrderByDescending(t => t.CreatedAt)
-            .Select(t => new TicketDto
-            {
-                Id = t.Id,
-                UserId = t.UserId,
-                Subject = t.Subject,
-                Status = t.Status,
-                Priority = t.Priority,
-                CreatedAt = t.CreatedAt,
-                UpdatedAt = t.UpdatedAt
-            })
-            .ToListAsync(ct);
+        return ticket;
     }
 }

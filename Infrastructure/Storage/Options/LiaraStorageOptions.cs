@@ -1,6 +1,6 @@
 ﻿namespace Infrastructure.Storage.Options;
 
-public sealed class LiaraStorageSettings
+public sealed class LiaraStorageOptions
 {
     public const string SectionName = "Liara";
 

@@ -1,5 +1,3 @@
-using Application.Security.Contracts;
-using StackExchange.Redis;
 using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace Infrastructure.Security.Services;
@@ -8,11 +6,10 @@ public sealed class RateLimitService(IConnectionMultiplexer redis) : IRateLimitS
 {
     private readonly IDatabase _db = redis.GetDatabase();
 
-    public async Task<(bool IsLimited, TimeSpan? RetryAfter)> IsLimitedAsync(
+    public async Task<(bool IsLimited, TimeSpan? RetryAfterSeconds)> IsLimitedAsync(
         string key,
         int maxRequests,
-        int windowSeconds,
-        CancellationToken ct = default)
+        int windowSeconds)
     {
         var redisKey = $"ratelimit:{key}";
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

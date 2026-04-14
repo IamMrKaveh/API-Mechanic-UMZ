@@ -32,8 +32,4 @@ public interface IShippingRepository
         CancellationToken ct = default);
 
     void Update(Aggregates.Shipping shipping);
-
-    void SetOriginalRowVersion(
-        Aggregates.Shipping shipping,
-        byte[] rowVersion);
 }

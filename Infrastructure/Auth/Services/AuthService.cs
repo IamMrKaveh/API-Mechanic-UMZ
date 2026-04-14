@@ -1,7 +1,6 @@
 using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
 using Application.User.Features.Shared;
-using Domain.Common.Interfaces;
 using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
@@ -16,13 +15,14 @@ namespace Infrastructure.Auth.Services;
 public sealed class AuthService(
     IUserRepository userRepository,
     IOtpRepository otpRepository,
+    ISessionRepository sessionRepository,
     ISessionService sessionService,
     IJwtTokenGenerator jwtTokenGenerator,
     IOtpService otpService,
     IUnitOfWork unitOfWork,
     IOptions<AuthOptions> authOptions,
     IMapper mapper,
-    ILogger<AuthService> logger) : IAuthService
+    IAuditService auditService) : IAuthService
 {
     private readonly AuthOptions _authOptions = authOptions.Value;
 
@@ -35,10 +35,7 @@ public sealed class AuthService(
 
         if (user is null)
         {
-            user = User.Register(
-                UserId.NewId(),
-                phoneNumber,
-                null, null, null);
+            user = Domain.User.Aggregates.User.RegisterByPhone(phoneNumber);
 
             await userRepository.AddAsync(user, ct);
             await unitOfWork.SaveChangesAsync(ct);
@@ -47,25 +44,19 @@ public sealed class AuthService(
         if (!await otpService.ValidateRateLimitAsync(user.Id, OtpPurpose.Login, ct))
             return ServiceResult.Failure("تعداد درخواست‌های شما بیش از حد مجاز است. لطفاً بعداً تلاش کنید.");
 
-        await otpRepository.InvalidatePreviousOtpsAsync(user.Id, OtpPurpose.Login, ct);
+        await otpRepository.InvalidateAllActiveByUserIdAsync(user.Id, OtpPurpose.Login, ct);
 
         var otpCode = OtpCode.Generate(_authOptions.OtpLength);
-        var expiresAt = DateTime.UtcNow.AddMinutes(_authOptions.OtpExpirationMinutes);
-        var codeHash = otpService.HashOtp(otpCode);
+        var validity = TimeSpan.FromMinutes(_authOptions.OtpExpirationMinutes);
 
-        var otp = UserOtp.Create(
-            OtpId.NewId(),
-            user.Id,
-            phoneNumber,
-            codeHash,
-            OtpPurpose.Login,
-            expiresAt,
-            _authOptions.MaxFailedOtpAttempts);
+        var otp = UserOtp.Create(user.Id, otpCode, OtpPurpose.Login, validity);
 
         await otpRepository.AddAsync(otp, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
         await otpService.SendOtpAsync(phoneNumber, otpCode, OtpPurpose.Login, ct);
+
+        await auditService.LogSecurityEventAsync("RequestOtp", $"OTP requested for {phoneNumber.Value}", ipAddress, user.Id, ct);
 
         return ServiceResult.Success();
     }
@@ -81,25 +72,28 @@ public sealed class AuthService(
         if (user is null)
             return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.NotFound("کاربر یافت نشد.");
 
-        var otp = await otpRepository.GetActiveOtpAsync(user.Id, OtpPurpose.Login, ct);
+        var otp = await otpRepository.GetLatestActiveByUserIdAsync(user.Id, OtpPurpose.Login, ct);
         if (otp is null)
             return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Validation("کد تأیید نامعتبر یا منقضی شده است.");
 
-        var codeHash = otpService.HashOtp(code);
-        var verificationResult = otp.Verify(codeHash);
-
-        if (!verificationResult.IsVerified)
+        try
+        {
+            otp.Verify(code.Value);
+        }
+        catch
         {
             otpRepository.Update(otp);
             await unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Validation(
-                verificationResult.FailureReason ?? "کد تأیید نادرست است.");
+            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Validation("کد تأیید نادرست است.");
         }
 
         otpRepository.Update(otp);
 
         var isNewUser = !user.IsEmailVerified && user.CreatedAt > DateTime.UtcNow.AddMinutes(-5);
-        user.MarkPhoneVerified();
+
+        if (!user.IsEmailVerified)
+            user.VerifyEmail();
+
         userRepository.Update(user);
         await unitOfWork.SaveChangesAsync(ct);
 
@@ -111,6 +105,8 @@ public sealed class AuthService(
 
         var userDto = mapper.Map<UserProfileDto>(user);
 
+        await auditService.LogSecurityEventAsync("VerifyOtp", "OTP verified successfully", ipAddress, user.Id, ct);
+
         return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Success(
             (accessToken, sessionResult.Value!, userDto, isNewUser));
     }
@@ -121,14 +117,17 @@ public sealed class AuthService(
         string? userAgent,
         CancellationToken ct = default)
     {
-        var sessionResult = await sessionService.RefreshSessionAsync(refreshToken, ipAddress, ct);
+        var existingSession = await sessionRepository.GetByRefreshTokenAsync(refreshToken, ct);
+        if (existingSession is null || !existingSession.IsActive)
+            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Unauthorized("جلسه نامعتبر است.");
 
+        var userId = existingSession.UserId;
+
+        var sessionResult = await sessionService.RefreshSessionAsync(refreshToken, ipAddress, ct);
         if (!sessionResult.IsSuccess)
             return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Unauthorized(sessionResult.Error!);
 
-        var userId = UserId.From(sessionResult.Value!.UserId);
         var user = await userRepository.GetByIdAsync(userId, ct);
-
         if (user is null)
             return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.NotFound("کاربر یافت نشد.");
 
@@ -149,15 +148,13 @@ public sealed class AuthService(
     {
         if (refreshToken is not null)
         {
-            var parts = refreshToken.Value.Split('.');
-            if (parts.Length == 2)
+            var session = await sessionRepository.GetByRefreshTokenAsync(refreshToken, ct);
+            if (session is not null && session.IsActive)
             {
-                var session = await ((ISessionRepository)sessionService).GetBySelectorAsync(parts[0], ct)
-                    .ConfigureAwait(false);
-                if (session is not null)
-                    await sessionService.RevokeSessionAsync(session.Id, ct);
+                await sessionService.RevokeSessionAsync(session.Id, ct);
             }
         }
+
         return ServiceResult.Success();
     }
 

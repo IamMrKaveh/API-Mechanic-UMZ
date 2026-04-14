@@ -35,13 +35,11 @@ public sealed class UserOtp : AggregateRoot<OtpId>
     }
 
     public static UserOtp Create(
-        OtpId id,
         UserId userId,
         OtpCode code,
         OtpPurpose purpose,
         TimeSpan validity)
     {
-        Guard.Against.Null(id, nameof(id));
         Guard.Against.Null(userId, nameof(userId));
         Guard.Against.Null(code, nameof(code));
 
@@ -53,7 +51,7 @@ public sealed class UserOtp : AggregateRoot<OtpId>
 
         var otp = new UserOtp
         {
-            Id = id,
+            Id = OtpId.NewId(),
             UserId = userId,
             Code = code,
             Purpose = purpose,
@@ -63,7 +61,7 @@ public sealed class UserOtp : AggregateRoot<OtpId>
             CreatedAt = DateTime.UtcNow
         };
 
-        otp.RaiseDomainEvent(new OtpGeneratedEvent(id, userId, purpose, otp.ExpiresAt));
+        otp.RaiseDomainEvent(new OtpGeneratedEvent(otp.Id, userId, purpose, otp.ExpiresAt));
         return otp;
     }
 

@@ -14,7 +14,6 @@ public class CreateUserHandler(
         CancellationToken ct)
     {
         var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
-        var userId = UserId.NewId();
         var fullName = FullName.Create(request.FirstName, request.LastName);
         var email = Email.Create(request.Email);
 
@@ -22,7 +21,6 @@ public class CreateUserHandler(
             return ServiceResult<UserProfileDto>.Conflict("User with this phone number already exists.");
 
         var user = Domain.User.Aggregates.User.Create(
-            userId,
             fullName,
             email,
             phoneNumber);

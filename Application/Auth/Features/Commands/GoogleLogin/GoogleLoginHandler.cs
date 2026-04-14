@@ -17,7 +17,6 @@ public class GoogleLoginHandler(
         if (user is null)
         {
             user = Domain.User.Aggregates.User.Create(
-                UserId.NewId(),
                 FullName.Create(request.FirstName, request.LastName),
                 email,
                 null,

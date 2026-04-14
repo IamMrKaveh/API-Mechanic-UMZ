@@ -4,7 +4,7 @@ using Domain.User.ValueObjects;
 
 namespace Application.Support.Contracts;
 
-public interface ISupportQueryService
+public interface ITicketQueryService
 {
     Task<PaginatedResult<TicketDto>> GetAdminTicketsPagedAsync(
         TicketStatus ticketStatus,

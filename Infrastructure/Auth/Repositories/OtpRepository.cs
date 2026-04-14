@@ -4,12 +4,18 @@ using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Auth.Repositories;
 
 public sealed class OtpRepository(DBContext context) : IOtpRepository
 {
-    public async Task<UserOtp?> GetActiveOtpAsync(
+    public async Task<UserOtp?> GetByIdAsync(OtpId otpId, CancellationToken ct = default)
+    {
+        return await context.UserOtps.FirstOrDefaultAsync(o => o.Id == otpId, ct);
+    }
+
+    public async Task<UserOtp?> GetLatestActiveByUserIdAsync(
         UserId userId,
         OtpPurpose purpose,
         CancellationToken ct = default)
@@ -18,24 +24,13 @@ public sealed class OtpRepository(DBContext context) : IOtpRepository
         return await context.UserOtps
             .Where(o => o.UserId == userId
                      && o.Purpose == purpose
-                     && !o.IsUsed
+                     && !o.IsVerified
                      && o.ExpiresAt > now)
             .OrderByDescending(o => o.CreatedAt)
             .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<UserOtp?> GetLatestOtpAsync(
-        UserId userId,
-        OtpPurpose purpose,
-        CancellationToken ct = default)
-    {
-        return await context.UserOtps
-            .Where(o => o.UserId == userId && o.Purpose == purpose)
-            .OrderByDescending(o => o.CreatedAt)
-            .FirstOrDefaultAsync(ct);
-    }
-
-    public async Task<int> CountRecentOtpsAsync(
+    public async Task<int> CountRecentByUserIdAsync(
         UserId userId,
         OtpPurpose purpose,
         TimeSpan window,
@@ -58,38 +53,20 @@ public sealed class OtpRepository(DBContext context) : IOtpRepository
         context.UserOtps.Update(otp);
     }
 
-    public async Task InvalidatePreviousOtpsAsync(
+    public async Task InvalidateAllActiveByUserIdAsync(
         UserId userId,
         OtpPurpose purpose,
         CancellationToken ct = default)
     {
+        var now = DateTime.UtcNow;
         var activeOtps = await context.UserOtps
             .Where(o => o.UserId == userId
                      && o.Purpose == purpose
-                     && !o.IsUsed)
+                     && !o.IsVerified
+                     && o.ExpiresAt > now)
             .ToListAsync(ct);
 
         foreach (var otp in activeOtps)
-            otp.MarkAsUsed();
-    }
-
-    public async Task<UserOtp?> GetByIdAsync(OtpId id, CancellationToken ct = default)
-    {
-        return await context.UserOtps.FirstOrDefaultAsync(o => o.Id == id, ct);
-    }
-
-    public Task<UserOtp?> GetLatestActiveByUserIdAsync(UserId userId, OtpPurpose purpose, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<int> CountRecentByUserIdAsync(UserId userId, OtpPurpose purpose, TimeSpan window, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task InvalidateAllActiveByUserIdAsync(UserId userId, OtpPurpose purpose, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
+            otp.MarkExpired();
     }
 }

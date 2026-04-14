@@ -8,7 +8,7 @@ namespace Application.Support.Features.Queries.GetTicketDetails;
 
 public sealed class GetTicketDetailsHandler(
     ITicketRepository ticketRepository,
-    ISupportQueryService ticketQueryService,
+    ITicketQueryService ticketQueryService,
     TicketDomainService ticketDomainService)
         : IRequestHandler<GetTicketDetailsQuery, ServiceResult<TicketDto>>
 {

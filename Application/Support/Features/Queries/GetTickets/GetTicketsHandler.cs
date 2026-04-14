@@ -6,7 +6,7 @@ using Quartz.Util;
 namespace Application.Support.Features.Queries.GetTickets;
 
 public class GetTicketsHandler(
-    ISupportQueryService supportQueryService) : IRequestHandler<GetTicketsQuery, ServiceResult<PaginatedResult<TicketListItemDto>>>
+    ITicketQueryService supportQueryService) : IRequestHandler<GetTicketsQuery, ServiceResult<PaginatedResult<TicketListItemDto>>>
 {
     public async Task<ServiceResult<PaginatedResult<TicketListItemDto>>> Handle(
         GetTicketsQuery request,

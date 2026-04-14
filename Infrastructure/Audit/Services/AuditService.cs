@@ -12,8 +12,7 @@ public sealed class AuditService(
     IAuditRepository auditRepository,
     IAuditMaskingService maskingService,
     IHttpContextAccessor httpContextAccessor,
-    IUnitOfWork unitOfWork,
-    ILogger<AuditService> logger) : IAuditService
+    IUnitOfWork unitOfWork) : IAuditService
 {
     public async Task LogAsync(
         string eventType,

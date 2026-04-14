@@ -5,7 +5,7 @@ using Quartz.Util;
 
 namespace Application.Support.Features.Queries.GetAdminTickets;
 
-public sealed class GetAdminTicketsHandler(ISupportQueryService supportQueryService)
+public sealed class GetAdminTicketsHandler(ITicketQueryService supportQueryService)
         : IRequestHandler<GetAdminTicketsQuery, ServiceResult<PaginatedResult<TicketDto>>>
 {
     public async Task<ServiceResult<PaginatedResult<TicketDto>>> Handle(

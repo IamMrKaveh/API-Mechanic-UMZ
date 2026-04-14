@@ -1,6 +1,6 @@
 using Domain.Audit.Entities;
 
-namespace Infrastructure.Audit.BackgroundServices;
+namespace Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// سرویس Retention لاگ‌های حسابرسی.
@@ -15,7 +15,9 @@ namespace Infrastructure.Audit.BackgroundServices;
 /// 2. یا به فایل JSON Export می‌کند
 /// 3. از جدول اصلی حذف می‌کند (برای عملکرد)
 /// </summary>
-public sealed class AuditRetentionService : BackgroundService
+public sealed class AuditRetentionJob(
+    IServiceProvider serviceProvider,
+    ILogger<AuditRetentionJob> logger) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
 
@@ -35,17 +37,6 @@ public sealed class AuditRetentionService : BackgroundService
     {
         "SecurityEvent", "UserAction", "AdminEvent", "AuthEvent", "LoginEvent"
     };
-
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<AuditRetentionService> _logger;
-
-    public AuditRetentionService(
-        IServiceProvider serviceProvider,
-        ILogger<AuditRetentionService> logger)
-    {
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

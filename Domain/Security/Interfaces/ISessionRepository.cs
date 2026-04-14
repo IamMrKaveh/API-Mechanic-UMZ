@@ -32,7 +32,7 @@ public interface ISessionRepository
         SessionId sessionId,
         CancellationToken ct = default);
 
-    Task RevokeAllByUserAsync(
+    Task RevokeAllByUserIdAsync(
         UserId userId,
         CancellationToken ct = default);
 

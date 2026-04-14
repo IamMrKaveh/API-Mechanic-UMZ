@@ -1,49 +1,53 @@
+using Application.Search.Contracts;
+using Application.Search.Features.Queries.GetSearchIndexStats;
 using Application.Search.Features.Shared;
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
+using Domain.Product.ValueObjects;
 
 namespace Infrastructure.Search.Services;
 
-public class ResilientElasticSearchService(
-    ElasticSearchService innerService,
+public sealed class ResilientElasticSearchService(
+    ElasticsearchService inner,
     ElasticsearchCircuitBreaker circuitBreaker,
-    ILogger<ResilientElasticSearchService> logger) : ISearchService
+    IAuditService auditService) : ISearchService
 {
-    private readonly ElasticSearchService _innerService = innerService;
-    private readonly ElasticsearchCircuitBreaker _circuitBreaker = circuitBreaker;
-    private readonly ILogger<ResilientElasticSearchService> _logger = logger;
-
     public Task<SearchResultDto<ProductSearchResultItemDto>> SearchProductsAsync(
         SearchProductsParams searchParams, CancellationToken ct = default)
-    {
-        return _circuitBreaker.ExecuteAsync(() =>
-            _innerService.SearchProductsAsync(searchParams, ct));
-    }
-
-    public Task<GlobalSearchResultDto> SearchGlobalAsync(string query, CancellationToken ct = default)
-    {
-        return _circuitBreaker.ExecuteAsync(() =>
-            _innerService.SearchGlobalAsync(query, ct));
-    }
-
-    public Task<List<string>> GetSuggestionsAsync(
-        string query, int maxSuggestions = 10, CancellationToken ct = default)
-    {
-        return _circuitBreaker.ExecuteAsync(() =>
-            _innerService.GetSuggestionsAsync(query, maxSuggestions, ct));
-    }
+        => circuitBreaker.ExecuteAsync<SearchResultDto<ProductSearchResultItemDto>>(
+            () => inner.SearchProductsAsync(searchParams, ct));
 
     public Task<SearchResultDto<ProductSearchResultItemDto>> SearchWithFuzzyAsync(
-        string searchQuery, int page = 1, int pageSize = 20, CancellationToken ct = default)
-    {
-        return _circuitBreaker.ExecuteAsync(() =>
-            _innerService.SearchWithFuzzyAsync(searchQuery, page, pageSize, ct));
-    }
+        string query, int page, int pageSize, CancellationToken ct = default)
+        => circuitBreaker.ExecuteAsync<SearchResultDto<ProductSearchResultItemDto>>(
+            () => inner.SearchWithFuzzyAsync(query, page, pageSize, ct));
 
-    public Task IndexProductAsync(ProductSearchDocument doc, CancellationToken ct = default)
-        => _innerService.IndexProductAsync(doc, ct);
+    public Task<GlobalSearchResultDto> SearchGlobalAsync(string query, CancellationToken ct = default)
+        => circuitBreaker.ExecuteAsync<GlobalSearchResultDto>(
+            () => inner.SearchGlobalAsync(query, ct));
 
-    public Task IndexCategoryAsync(CategorySearchDocument doc, CancellationToken ct = default)
-        => _innerService.IndexCategoryAsync(doc, ct);
+    public Task IndexProductAsync(ProductSearchDocument document, CancellationToken ct = default)
+        => circuitBreaker.ExecuteAsync<bool>(async () =>
+        {
+            await inner.IndexProductAsync(document, ct);
+            return true;
+        });
 
-    public Task IndexBrandAsync(BrandSearchDocument doc, CancellationToken ct = default)
-        => _innerService.IndexBrandAsync(doc, ct);
+    public Task IndexCategoryAsync(CategorySearchDocument document, CancellationToken ct = default)
+        => circuitBreaker.ExecuteAsync<bool>(async () =>
+        {
+            await inner.IndexCategoryAsync(document, ct);
+            return true;
+        });
+
+    public Task IndexBrandAsync(BrandSearchDocument document, CancellationToken ct = default)
+        => circuitBreaker.ExecuteAsync<bool>(async () =>
+        {
+            await inner.IndexBrandAsync(document, ct);
+            return true;
+        });
+
+    public Task<SearchIndexStatsDto> GetIndexStatsAsync(CancellationToken ct = default)
+        => circuitBreaker.ExecuteAsync<SearchIndexStatsDto>(
+            () => inner.GetIndexStatsAsync(ct));
 }

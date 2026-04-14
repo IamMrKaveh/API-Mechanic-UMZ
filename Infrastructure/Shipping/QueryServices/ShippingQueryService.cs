@@ -1,306 +1,171 @@
 using Application.Shipping.Contracts;
 using Application.Shipping.Features.Shared;
-using Domain.Cart.Interfaces;
+using Domain.Shipping.Services;
+using Domain.Shipping.ValueObjects;
+using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Shipping.QueryServices;
 
-public class ShippingQueryService(
+public sealed class ShippingQueryService(
     DBContext context,
-    ICartRepository cartRepository) : IShippingQueryService
+    ShippingDomainService shippingDomainService) : IShippingQueryService
 {
-    private readonly DBContext _context = context;
-    private readonly ICartRepository _cartRepository = cartRepository;
-
-    public async Task<IEnumerable<AvailableShippingDto>> GetAvailableShippingsForCartAsync(
-        int userId,
-        CancellationToken ct = default)
+    public async Task<ShippingDetailDto?> GetShippingDetailAsync(
+        ShippingId shippingId, CancellationToken ct = default)
     {
-        var cart = await _cartRepository.GetByUserIdAsync(userId, ct);
-        if (cart == null || cart.CartItems.Count == 0)
-            return [];
-
-        var variantIds = cart.CartItems.Select(ci => ci.VariantId).ToList();
-
-        var variants = await _context.ProductVariants
-            .Where(v => variantIds.Contains(v.Id) && !v.IsDeleted)
-            .Include(v => v.Product)
-            .Include(v => v.ProductVariantShippings)
+        var shipping = await context.Shippings
             .AsNoTracking()
+            .Where(s => s.Id == shippingId)
+            .Select(s => new ShippingDetailDto
+            {
+                Id = s.Id.Value,
+                Name = s.Name.Value,
+                Description = s.Description,
+                Cost = s.Cost.Amount,
+                IsActive = s.IsActive,
+                IsDefault = s.IsDefault,
+                IsFreeShippingEnabled = s.FreeShipping.IsEnabled,
+                FreeShippingThreshold = s.FreeShipping.ThresholdAmount != null
+                    ? s.FreeShipping.ThresholdAmount.Amount : (decimal?)null,
+                MinDeliveryDays = s.MinDeliveryDays,
+                MaxDeliveryDays = s.MaxDeliveryDays,
+                SortOrder = s.SortOrder,
+                RowVersion = s.RowVersion.ToBase64(),
+                CreatedAt = s.CreatedAt,
+                UpdatedAt = s.UpdatedAt
+            })
+            .FirstOrDefaultAsync(ct);
+
+        return shipping;
+    }
+
+    public async Task<IReadOnlyList<ShippingListItemDto>> GetAllShippingsAsync(
+        bool includeInactive = false, CancellationToken ct = default)
+    {
+        var query = context.Shippings.AsNoTracking().AsQueryable();
+
+        if (!includeInactive)
+            query = query.Where(s => s.IsActive);
+
+        var items = await query
+            .OrderBy(s => s.SortOrder)
+            .Select(s => new ShippingListItemDto
+            {
+                Id = s.Id.Value,
+                Name = s.Name.Value,
+                Description = s.Description,
+                Cost = s.Cost.Amount,
+                IsActive = s.IsActive,
+                IsDefault = s.IsDefault,
+                IsFreeShippingEnabled = s.FreeShipping.IsEnabled,
+                FreeShippingThreshold = s.FreeShipping.ThresholdAmount != null
+                    ? s.FreeShipping.ThresholdAmount.Amount : (decimal?)null,
+                SortOrder = s.SortOrder
+            })
             .ToListAsync(ct);
 
-        var orderSubtotal = 0m;
-        var cartItemDetails = new List<(int VariantId, decimal ShippingMultiplier, int Quantity)>();
+        return items.AsReadOnly();
+    }
 
-        foreach (var cartItem in cart.CartItems)
-        {
-            var variant = variants.FirstOrDefault(v => v.Id == cartItem.VariantId);
-            if (variant == null) continue;
-
-            orderSubtotal += variant.SellingPrice.Amount * cartItem.Quantity;
-            cartItemDetails.Add((variant.Id, variant.ShippingMultiplier, cartItem.Quantity));
-        }
-
-        var orderTotal = Money.FromDecimal(orderSubtotal);
-
-        var allShippings = await _context.Shippings
-            .Where(sm => sm.IsActive && !sm.IsDeleted)
-            .OrderBy(sm => sm.SortOrder)
+    public async Task<IReadOnlyList<AvailableShippingDto>> GetAvailableShippingsForOrderAsync(
+        Money orderAmount, CancellationToken ct = default)
+    {
+        var activeShippings = await context.Shippings
             .AsNoTracking()
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.SortOrder)
             .ToListAsync(ct);
-
-        var enabledIdSets = variants
-            .Select(v => v.ProductVariantShippings
-                .Where(pvsm => pvsm.IsActive)
-                .Select(pvsm => pvsm.ShippingId)
-                .ToHashSet())
-            .ToList();
-
-        HashSet<int>? commonIds = null;
-        foreach (var IdSet in enabledIdSets)
-        {
-            if (IdSet.Count == 0) continue;
-
-            if (commonIds == null)
-                commonIds = [.. IdSet];
-            else
-                commonIds.IntersectWith(IdSet);
-        }
-
-        var availables = commonIds != null
-            ? allShippings.Where(sm => commonIds.Contains(sm.Id)).ToList()
-            : allShippings;
 
         var result = new List<AvailableShippingDto>();
 
-        foreach (var method in availables)
+        foreach (var shipping in activeShippings)
         {
-            if (!method.IsAvailableForOrder(orderTotal))
-                continue;
+            var calcResult = shippingDomainService.CalculateCost(shipping, orderAmount);
+            if (!calcResult.IsSuccess) continue;
 
-            var cost = method.CalculateCostForCart(
-                orderTotal,
-                cartItemDetails.Select(ci => (ci.VariantId, ci.ShippingMultiplier, ci.Quantity)));
-
-            var totalMultiplier = CalculateTotalMultiplier(cartItemDetails);
+            var isFree = calcResult.IsFreeShipping;
+            var finalCost = calcResult.Cost?.Amount ?? 0;
 
             result.Add(new AvailableShippingDto
             {
-                Id = method.Id,
-                Name = method.Name,
-                BaseCost = method.BaseCost.Amount,
-                TotalMultiplier = totalMultiplier,
-                FinalCost = cost.Amount,
-                IsFreeShipping = cost.Amount == 0,
-                Description = method.Description,
-                EstimatedDeliveryTime = method.GetDeliveryTimeDisplay(),
-                MinDeliveryDays = method.MinDeliveryDays,
-                MaxDeliveryDays = method.MaxDeliveryDays
+                Id = shipping.Id.Value,
+                Name = shipping.Name.Value,
+                Description = shipping.Description,
+                Cost = finalCost,
+                IsFree = isFree,
+                IsDefault = shipping.IsDefault,
+                DeliveryTimeDisplay = GetDeliveryTimeDisplay(shipping)
             });
         }
 
-        return result;
+        return result.AsReadOnly();
     }
 
-    public async Task<ShippingCostResultDto> CalculateShippingCostAsync(
-        int userId,
-        int shippingId,
-        CancellationToken ct = default)
+    public async Task<AvailableShippingDto?> CalculateShippingCostAsync(
+        ShippingId shippingId, Money orderAmount, CancellationToken ct = default)
     {
-        var shipping = await _context.Shippings
+        var shipping = await context.Shippings
             .AsNoTracking()
-            .FirstOrDefaultAsync(sm => sm.Id == shippingId && !sm.IsDeleted, ct);
+            .FirstOrDefaultAsync(s => s.Id == shippingId && s.IsActive, ct);
 
-        if (shipping == null)
-            throw new DomainException("روش ارسال یافت نشد.");
+        if (shipping is null) return null;
 
-        if (!shipping.IsActive)
-            throw new DomainException("روش ارسال غیرفعال است.");
+        var calcResult = shippingDomainService.CalculateCost(shipping, orderAmount);
+        if (!calcResult.IsSuccess) return null;
 
-        var cart = await _cartRepository.GetByUserIdAsync(userId, ct);
-        if (cart == null || cart.CartItems.Count == 0)
-            throw new DomainException("سبد خرید خالی است.");
-
-        var variantIds = cart.CartItems.Select(ci => ci.VariantId).ToList();
-
-        var variants = await _context.ProductVariants
-            .Where(v => variantIds.Contains(v.Id) && !v.IsDeleted)
-            .Include(v => v.Product)
-            .AsNoTracking()
-            .ToListAsync(ct);
-
-        var orderSubtotal = 0m;
-        var cartItemDetails = new List<(int VariantId, decimal ShippingMultiplier, int Quantity)>();
-        var itemDetailDtos = new List<ShippingCostItemDetailDto>();
-
-        foreach (var cartItem in cart.CartItems)
+        return new AvailableShippingDto
         {
-            var variant = variants.FirstOrDefault(v => v.Id == cartItem.VariantId);
-            if (variant == null) continue;
-
-            orderSubtotal += variant.SellingPrice.Amount * cartItem.Quantity;
-            cartItemDetails.Add((variant.Id, variant.ShippingMultiplier, cartItem.Quantity));
-
-            itemDetailDtos.Add(new ShippingCostItemDetailDto
-            {
-                VariantId = variant.Id,
-                ProductName = variant.Product?.Name.Value ?? "محصول",
-                Quantity = cartItem.Quantity,
-                ShippingMultiplier = variant.ShippingMultiplier
-            });
-        }
-
-        var orderTotal = Money.FromDecimal(orderSubtotal);
-
-        var (isValid, error) = shipping.ValidateForOrder(orderTotal);
-        if (!isValid)
-            throw new DomainException(error!);
-
-        var cost = shipping.CalculateCostForCart(
-            orderTotal,
-            cartItemDetails.Select(ci => (ci.VariantId, ci.ShippingMultiplier, ci.Quantity)));
-
-        var totalMultiplier = CalculateTotalMultiplier(cartItemDetails);
-        var isFree = cost.Amount == 0;
-
-        decimal? remainingForFree = null;
-        if (shipping.IsFreeAboveAmount && shipping.FreeShippingThreshold.HasValue && !isFree)
-        {
-            remainingForFree = shipping.FreeShippingThreshold.Value - orderSubtotal;
-            if (remainingForFree < 0) remainingForFree = 0;
-        }
-
-        return new ShippingCostResultDto
-        {
-            ShippingId = shipping.Id,
-            ShippingName = shipping.Name,
-            BaseCost = shipping.BaseCost.Amount,
-            TotalMultiplier = totalMultiplier,
-            FinalCost = cost.Amount,
-            IsFreeShipping = isFree,
-            OrderSubtotal = orderSubtotal,
-            FreeShippingThreshold = shipping.FreeShippingThreshold,
-            RemainingForFreeShipping = remainingForFree,
-            EstimatedDeliveryTime = shipping.GetDeliveryTimeDisplay(),
-            ItemDetails = itemDetailDtos
+            Id = shipping.Id.Value,
+            Name = shipping.Name.Value,
+            Description = shipping.Description,
+            Cost = calcResult.Cost?.Amount ?? 0,
+            IsFree = calcResult.IsFreeShipping,
+            IsDefault = shipping.IsDefault,
+            DeliveryTimeDisplay = GetDeliveryTimeDisplay(shipping)
         };
     }
 
-    private static decimal CalculateTotalMultiplier(
-        List<(int VariantId, decimal ShippingMultiplier, int Quantity)> items)
+    public async Task<IReadOnlyList<AvailableShippingDto>> GetAvailableShippingsAsync(
+        Money orderAmount, CancellationToken ct = default)
+        => await GetAvailableShippingsForOrderAsync(orderAmount, ct);
+
+    public async Task<IReadOnlyList<AvailableShippingDto>> GetAvailableShippingsForVariantsAsync(
+        IEnumerable<Guid> variantIds, CancellationToken ct = default)
     {
-        if (items.Count == 0) return 1m;
+        var variantIdList = variantIds.ToList();
 
-        var totalMultiplier = 0m;
-        var totalQuantity = 0;
-
-        foreach (var item in items)
-        {
-            totalMultiplier += item.ShippingMultiplier * item.Quantity;
-            totalQuantity += item.Quantity;
-        }
-
-        return totalQuantity > 0
-            ? Math.Round(totalMultiplier / totalQuantity, 4)
-            : 1m;
-    }
-
-    public async Task<IEnumerable<ShippingDto>> GetActiveShippingsAsync(CancellationToken ct = default)
-    {
-        var s = await _context.Shippings
-            .Where(m => m.IsActive && !m.IsDeleted)
-            .OrderBy(m => m.SortOrder)
-            .ToListAsync(ct);
-
-        return s.Select(m => new ShippingDto
-        {
-            Id = m.Id,
-            Name = m.Name,
-            Cost = m.BaseCost.Amount,
-            Description = m.Description,
-            EstimatedDeliveryTime = m.EstimatedDeliveryTime,
-            IsActive = m.IsActive
-        });
-    }
-
-    public async Task<ShippingDto?> GetShippingByIdAsync(
-        int id,
-        CancellationToken ct = default)
-    {
-        var m = await _context.Shippings
-            .FirstOrDefaultAsync(x => x.Id == id, ct);
-
-        return m == null
-            ? null
-            : new ShippingDto
-            {
-                Id = m.Id,
-                Name = m.Name,
-                Cost = m.BaseCost.Amount,
-                Description = m.Description,
-                EstimatedDeliveryTime = m.EstimatedDeliveryTime,
-                IsActive = m.IsActive
-            };
-    }
-
-    public async Task<IEnumerable<AvailableShippingDto>> GetAvailableShippingsForVariantsAsync(
-        IReadOnlyCollection<int> variantIds,
-        CancellationToken ct = default)
-    {
-        if (variantIds == null || variantIds.Count == 0)
-            return Enumerable.Empty<AvailableShippingDto>();
-
-        var variants = await _context.ProductVariants
-            .Where(v => variantIds.Contains(v.Id) && !v.IsDeleted)
-            .Include(v => v.ProductVariantShippings)
+        var enabledShippingIds = await context.ProductVariantShippings
             .AsNoTracking()
+            .Where(pvs => variantIdList.Contains(pvs.ProductVariantId.Value))
+            .Select(pvs => pvs.ShippingId.Value)
+            .Distinct()
             .ToListAsync(ct);
 
-        if (variants.Count == 0)
-            return Enumerable.Empty<AvailableShippingDto>();
-
-        var allShippings = await _context.Shippings
-            .Where(sm => sm.IsActive && !sm.IsDeleted)
-            .OrderBy(sm => sm.SortOrder)
+        var shippings = await context.Shippings
             .AsNoTracking()
+            .Where(s => s.IsActive && enabledShippingIds.Contains(s.Id.Value))
+            .OrderBy(s => s.SortOrder)
             .ToListAsync(ct);
 
-        var enabledIdSets = variants
-            .Select(v => v.ProductVariantShippings
-                .Where(pvsm => pvsm.IsActive)
-                .Select(pvsm => pvsm.ShippingId)
-                .ToHashSet())
-            .ToList();
-
-        HashSet<int>? commonIds = null;
-
-        foreach (var IdSet in enabledIdSets)
+        return shippings.Select(s => new AvailableShippingDto
         {
-            if (IdSet.Count == 0)
-                continue;
+            Id = s.Id.Value,
+            Name = s.Name.Value,
+            Description = s.Description,
+            Cost = s.Cost.Amount,
+            IsFree = false,
+            IsDefault = s.IsDefault,
+            DeliveryTimeDisplay = GetDeliveryTimeDisplay(s)
+        }).ToList().AsReadOnly();
+    }
 
-            if (commonIds == null)
-                commonIds = [.. IdSet];
-            else
-                commonIds.IntersectWith(IdSet);
-        }
-
-        var availables = commonIds != null
-            ? allShippings.Where(sm => commonIds.Contains(sm.Id))
-            : allShippings;
-
-        return availables.Select(m => new AvailableShippingDto
-        {
-            Id = m.Id,
-            Name = m.Name,
-            BaseCost = m.BaseCost.Amount,
-            TotalMultiplier = 1m,
-            FinalCost = m.BaseCost.Amount,
-            IsFreeShipping = m.BaseCost.Amount == 0,
-            Description = m.Description,
-            EstimatedDeliveryTime = m.GetDeliveryTimeDisplay(),
-            MinDeliveryDays = m.MinDeliveryDays,
-            MaxDeliveryDays = m.MaxDeliveryDays
-        }).ToList();
+    private static string GetDeliveryTimeDisplay(Domain.Shipping.Aggregates.Shipping shipping)
+    {
+        if (shipping.MinDeliveryDays.HasValue && shipping.MaxDeliveryDays.HasValue)
+            return $"{shipping.MinDeliveryDays} تا {shipping.MaxDeliveryDays} روز کاری";
+        if (shipping.MinDeliveryDays.HasValue)
+            return $"از {shipping.MinDeliveryDays} روز کاری";
+        return "زمان تحویل متغیر";
     }
 }
