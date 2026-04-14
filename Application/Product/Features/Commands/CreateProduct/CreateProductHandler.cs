@@ -39,11 +39,9 @@ public sealed class CreateProductHandler(
             return ServiceResult<ProductDetailDto>.Conflict("محصولی با این Slug قبلاً ثبت شده است.");
 
         var product = Domain.Product.Aggregates.Product.Create(
-            ProductId.NewId(),
             ProductName.Create(request.Name),
             slug,
             request.Description,
-            categoryId,
             brandId);
 
         await productRepository.AddAsync(product, ct);

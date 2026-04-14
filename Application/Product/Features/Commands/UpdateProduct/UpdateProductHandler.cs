@@ -51,9 +51,6 @@ public sealed class UpdateProductHandler(
 
             product.UpdateDetails(ProductName.Create(request.Name), slug, request.Description ?? string.Empty);
 
-            if (product.CategoryId != categoryId)
-                product.ChangeCategory(categoryId);
-
             if (product.BrandId != brandId)
                 product.ChangeBrand(brandId);
 

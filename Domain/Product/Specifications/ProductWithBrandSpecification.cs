@@ -2,14 +2,9 @@
 
 namespace Domain.Product.Specifications;
 
-public class ProductWithBrandSpecification : Specification<Aggregates.Product>
+public class ProductWithBrandSpecification(BrandId brandId) : Specification<Aggregates.Product>
 {
-    private readonly BrandId _brandId;
-
-    public ProductWithBrandSpecification(BrandId brandId)
-    {
-        _brandId = brandId;
-    }
+    private readonly BrandId _brandId = brandId;
 
     public override Expression<Func<Aggregates.Product, bool>> ToExpression()
     {
