@@ -1,4 +1,9 @@
 using Domain.Security.Aggregates;
+using Domain.Security.Enums;
+using Domain.Security.ValueObjects;
+using Domain.User.ValueObjects;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Auth.Configurations;
 
@@ -7,20 +12,48 @@ public sealed class SessionConfiguration : IEntityTypeConfiguration<UserSession>
     public void Configure(EntityTypeBuilder<UserSession> builder)
     {
         builder.HasKey(e => e.Id);
-        builder.Property(e => e.RowVersion).IsRowVersion();
 
-        builder.Property(e => e.Selector).IsRequired().HasMaxLength(100);
-        builder.Property(e => e.HashedVerifier).IsRequired().HasMaxLength(200);
-        builder.Property(e => e.IpAddress).IsRequired().HasMaxLength(45);
-        builder.Property(e => e.UserAgent).HasMaxLength(500);
-        builder.Property(e => e.RevocationReason).HasConversion<string>().HasMaxLength(50);
+        builder.Property(e => e.Id)
+            .HasConversion(v => v.Value, v => SessionId.From(v));
 
-        builder.HasOne(e => e.User)
-            .WithMany(u => u.Sessions)
-            .HasForeignKey(e => e.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property<byte[]>("RowVersion").IsRowVersion();
 
-        builder.HasIndex(e => e.Selector).IsUnique();
+        builder.Property(e => e.UserId)
+            .HasConversion(v => v.Value, v => UserId.From(v))
+            .IsRequired();
+
+        builder.Property(e => e.RefreshToken)
+            .HasConversion(v => v.Value, v => RefreshToken.Create(v))
+            .HasColumnName("RefreshToken")
+            .HasMaxLength(512)
+            .IsRequired();
+
+        builder.Property(e => e.DeviceInfo)
+            .HasConversion(v => v.Value, v => DeviceInfo.Create(v))
+            .HasColumnName("DeviceInfo")
+            .HasMaxLength(500);
+
+        builder.Property(e => e.IpAddress)
+            .HasConversion(v => v.Value, v => IpAddress.Create(v))
+            .HasColumnName("IpAddress")
+            .HasMaxLength(45)
+            .IsRequired();
+
+        builder.Property(e => e.IsRevoked).IsRequired();
+
+        builder.Property(e => e.RevocationReason)
+            .HasConversion<string>()
+            .HasMaxLength(50);
+
+        builder.Property(e => e.ExpiresAt).IsRequired();
+        builder.Property(e => e.CreatedAt).IsRequired();
+        builder.Property(e => e.RevokedAt);
+        builder.Property(e => e.LastActivityAt);
+
+        builder.HasIndex(e => e.RefreshToken)
+            .HasDatabaseName("IX_UserSessions_RefreshToken")
+            .IsUnique();
+
         builder.HasIndex(e => new { e.UserId, e.IsRevoked, e.ExpiresAt });
     }
 }

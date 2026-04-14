@@ -1,244 +1,83 @@
-using Application.Review.Features.Shared;
 using Application.User.Contracts;
 using Application.User.Features.Shared;
+using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.User.QueryServices;
 
-public class UserQueryService(DBContext context) : IUserQueryService
+public sealed class UserQueryService(DBContext context) : IUserQueryService
 {
-    private readonly DBContext _context = context;
-
-    public async Task<UserProfileDto?> GetUserProfileAsync(
-        int userId,
-        CancellationToken ct = default)
+    public async Task<UserProfileDto?> GetUserProfileAsync(UserId userId, CancellationToken ct = default)
     {
-        return await _context.Users
+        var user = await context.Users
             .AsNoTracking()
-            .Where(u => u.Id == userId && !u.IsDeleted)
+            .Where(u => u.Id == userId)
             .Select(u => new UserProfileDto
             {
-                Id = u.Id,
-                PhoneNumber = u.PhoneNumber,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
+                Id = u.Id.Value,
+                FirstName = u.FullName.FirstName,
+                LastName = u.FullName.LastName,
+                Email = u.Email.Value,
+                PhoneNumber = u.PhoneNumber != null ? u.PhoneNumber.Value : null,
                 IsActive = u.IsActive,
                 IsAdmin = u.IsAdmin,
+                IsEmailVerified = u.IsEmailVerified,
+                LastLoginAt = u.LastLoginAt,
                 CreatedAt = u.CreatedAt,
-                UserAddresses = u.UserAddresses
-                    .Where(a => !a.IsDeleted)
-                    .Select(a => new UserAddressDto
-                    {
-                        Id = a.Id,
-                        Title = a.Title,
-                        ReceiverName = a.ReceiverName,
-                        PhoneNumber = a.PhoneNumber,
-                        Province = a.Province,
-                        City = a.City,
-                        Address = a.Address,
-                        PostalCode = a.PostalCode,
-                        IsDefault = a.IsDefault
-                    }).ToList()
+                UpdatedAt = u.UpdatedAt
             })
             .FirstOrDefaultAsync(ct);
+
+        return user;
     }
 
-    public async Task<PaginatedResult<UserProfileDto>> GetUsersPagedAsync(
-        string? search,
-        bool? isActive,
-        bool? isAdmin,
-        bool includeDeleted,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+    public async Task<IReadOnlyList<UserAddressDto>> GetUserAddressesAsync(
+        UserId userId, CancellationToken ct = default)
     {
-        var query = _context.Users.AsNoTracking().AsQueryable();
-
-        if (!includeDeleted)
-            query = query.Where(u => !u.IsDeleted);
-
-        if (isActive.HasValue)
-            query = query.Where(u => u.IsActive == isActive.Value);
-
-        if (isAdmin.HasValue)
-            query = query.Where(u => u.IsAdmin == isAdmin.Value);
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var searchTerm = search.Trim().ToLower();
-            query = query.Where(u =>
-                u.PhoneNumber.Contains(searchTerm) ||
-                (u.FirstName != null && u.FirstName.ToLower().Contains(searchTerm)) ||
-                (u.LastName != null && u.LastName.ToLower().Contains(searchTerm)));
-        }
-
-        var totalCount = await query.CountAsync(ct);
-
-        var users = await query
-            .OrderByDescending(u => u.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(u => new UserProfileDto
-            {
-                Id = u.Id,
-                PhoneNumber = u.PhoneNumber,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                IsActive = u.IsActive,
-                IsAdmin = u.IsAdmin,
-                CreatedAt = u.CreatedAt,
-                UserAddresses = u.UserAddresses
-                    .Where(a => !a.IsDeleted)
-                    .Select(a => new UserAddressDto
-                    {
-                        Id = a.Id,
-                        Title = a.Title,
-                        ReceiverName = a.ReceiverName,
-                        PhoneNumber = a.PhoneNumber,
-                        Province = a.Province,
-                        City = a.City,
-                        Address = a.Address,
-                        PostalCode = a.PostalCode,
-                        IsDefault = a.IsDefault
-                    }).ToList()
-            })
-            .ToListAsync(ct);
-
-        return PaginatedResult<UserProfileDto>.Create(users, totalCount, page, pageSize);
-    }
-
-    public async Task<IEnumerable<UserAddressDto>> GetUserAddressesAsync(
-        int userId,
-        CancellationToken ct = default)
-    {
-        return await _context.UserAddresses
+        var addresses = await context.UserAddresses
             .AsNoTracking()
-            .Where(a => a.UserId == userId && !a.IsDeleted)
-            .OrderByDescending(a => a.IsDefault)
-            .ThenByDescending(a => a.CreatedAt)
+            .Where(a => EF.Property<Guid>(a, "UserId") == userId.Value)
             .Select(a => new UserAddressDto
             {
-                Id = a.Id,
+                Id = a.Id.Value,
                 Title = a.Title,
                 ReceiverName = a.ReceiverName,
                 PhoneNumber = a.PhoneNumber,
-                Province = a.Province,
-                City = a.City,
-                Address = a.Address,
-                PostalCode = a.PostalCode,
+                Province = a.Address.Province,
+                City = a.Address.City,
+                PostalCode = a.Address.PostalCode,
                 IsDefault = a.IsDefault
             })
             .ToListAsync(ct);
+
+        return addresses.AsReadOnly();
     }
 
-    public async Task<IEnumerable<UserSessionDto>> GetActiveSessionsAsync(
-        int userId,
-        CancellationToken ct = default)
+    public async Task<UserDashboardDto> GetUserDashboardAsync(
+        UserId userId, CancellationToken ct = default)
     {
-        return await _context.UserSessions
+        var orderCount = await context.Orders
             .AsNoTracking()
-            .Where(s =>
-                s.UserId == userId &&
-                s.RevokedAt == null &&
-                s.ExpiresAt > DateTime.UtcNow)
-            .OrderByDescending(s => s.LastActivityAt ?? s.CreatedAt)
-            .Select(s => new UserSessionDto
-            {
-                Id = s.Id,
-                SessionType = s.SessionType ?? "Web",
-                CreatedByIp = s.CreatedByIp,
-                DeviceInfo = UserAgentHelper.GetDeviceInfo(s.UserAgent),
-                BrowserInfo = UserAgentHelper.GetBrowserInfo(s.UserAgent),
-                CreatedAt = s.CreatedAt,
-                LastActivityAt = s.LastActivityAt,
-                ExpiresAt = s.ExpiresAt,
-                IsCurrent = false
-            })
-            .ToListAsync(ct);
-    }
+            .CountAsync(o => o.UserId == userId, ct);
 
-    public async Task<UserDashboardDto?> GetUserDashboardAsync(
-        int userId,
-        CancellationToken ct = default)
-    {
-        var user = await GetUserProfileAsync(userId, ct);
-        if (user == null) return null;
-
-        var totalOrders = await _context.Orders
-            .CountAsync(o => o.UserId == userId && !o.IsDeleted, ct);
-
-        var totalSpent = await _context.Orders
-            .Where(o => o.UserId == userId && o.PaymentDate != null && !o.IsDeleted)
-            .SumAsync(o => o.FinalAmount.Amount, ct);
-
-        var recentOrders = await _context.Orders
+        var completedOrderCount = await context.Orders
             .AsNoTracking()
-            .Where(o => o.UserId == userId && !o.IsDeleted)
-            .OrderByDescending(o => o.CreatedAt)
-            .Take(5)
-            .Select(o => new OrderDto
-            {
-                Id = o.Id,
-                TotalAmount = o.TotalAmount.Amount,
-                FinalAmount = o.FinalAmount.Amount,
-                CreatedAt = o.CreatedAt,
-                IsPaid = o.PaymentDate != null
-            })
-            .ToListAsync(ct);
+            .CountAsync(o => o.UserId == userId && o.Status == Domain.Order.ValueObjects.OrderStatusValue.Delivered, ct);
 
-        var wishlistCount = await _context.Wishlists
+        var wishlistCount = await context.Wishlists
+            .AsNoTracking()
             .CountAsync(w => w.UserId == userId, ct);
 
-        var openTicketsCount = await _context.Tickets
-            .CountAsync(t => t.UserId == userId && t.Status != "Closed", ct);
-
-        var unreadNotifications = await _context.Notifications
-            .CountAsync(n => n.UserId == userId && !n.IsRead, ct);
+        var ticketCount = await context.Tickets
+            .AsNoTracking()
+            .CountAsync(t => t.CustomerId == userId, ct);
 
         return new UserDashboardDto
         {
-            UserProfile = user,
-            RecentOrders = recentOrders,
-            TotalOrders = totalOrders,
-            TotalSpent = totalSpent,
+            TotalOrders = orderCount,
+            CompletedOrders = completedOrderCount,
             WishlistCount = wishlistCount,
-            OpenTicketsCount = openTicketsCount,
-            UnreadNotifications = unreadNotifications
+            OpenTickets = ticketCount
         };
-    }
-
-    public async Task<PaginatedResult<ProductReviewDto>> GetUserReviewsPagedAsync(
-        int userId,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
-    {
-        var query = _context.ProductReviews
-            .AsNoTracking()
-            .Where(r => r.UserId == userId && !r.IsDeleted);
-
-        var totalCount = await query.CountAsync(ct);
-
-        var reviews = await query
-            .OrderByDescending(r => r.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(r => new ProductReviewDto
-            {
-                Id = r.Id,
-                ProductId = r.ProductId,
-                Rating = r.Rating,
-                Title = r.Title,
-                Comment = r.Comment,
-                Status = r.Status,
-                AdminReply = r.AdminReply,
-                CreatedAt = r.CreatedAt,
-                UserName = r.User != null
-                    ? (r.User.FirstName + " " + r.User.LastName).Trim()
-                    : "کاربر ناشناس"
-            })
-            .ToListAsync(ct);
-
-        return PaginatedResult<ProductReviewDto>.Create(reviews, totalCount, page, pageSize);
     }
 }

@@ -36,20 +36,18 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
     public bool IsLockedOut => LockoutEnd.HasValue && LockoutEnd.Value > DateTime.UtcNow;
 
     public static User Create(
-        UserId id,
         FullName fullName,
         Email email,
         string passwordHash,
         PhoneNumber? phoneNumber = null)
     {
-        Guard.Against.Null(id, nameof(id));
         Guard.Against.Null(fullName, nameof(fullName));
         Guard.Against.Null(email, nameof(email));
         Guard.Against.NullOrWhiteSpace(passwordHash, nameof(passwordHash));
 
         var user = new User
         {
-            Id = id,
+            Id = UserId.NewId(),
             FullName = fullName,
             Email = email,
             PasswordHash = passwordHash,
@@ -62,7 +60,35 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
             UpdatedAt = DateTime.UtcNow
         };
 
-        user.RaiseDomainEvent(new UserRegisteredEvent(id, email, fullName.FirstName, fullName.LastName));
+        user.RaiseDomainEvent(new UserRegisteredEvent(user.Id, email, fullName.FirstName, fullName.LastName));
+        return user;
+    }
+
+    public static User RegisterByPhone(PhoneNumber phoneNumber)
+    {
+        Guard.Against.Null(phoneNumber, nameof(phoneNumber));
+
+        var user = new User
+        {
+            Id = UserId.NewId(),
+            PhoneNumber = phoneNumber,
+            FullName = FullName.Empty(),
+            Email = Email.CreateTemp(phoneNumber),
+            PasswordHash = string.Empty,
+            IsActive = true,
+            IsAdmin = false,
+            IsEmailVerified = false,
+            FailedLoginAttempts = 0,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        user.RaiseDomainEvent(new UserRegisteredEvent(
+            user.Id,
+            user.Email,
+            string.Empty,
+            string.Empty));
+
         return user;
     }
 

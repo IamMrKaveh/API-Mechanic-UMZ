@@ -2,19 +2,24 @@
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Brand.Repositories;
 
 public sealed class BrandRepository(DBContext context) : IBrandRepository
 {
-    public async Task<Domain.Brand.Aggregates.Brand?> GetByIdAsync(BrandId brandId, CancellationToken ct = default)
+    public async Task<Domain.Brand.Aggregates.Brand?> GetByIdAsync(
+        BrandId brandId,
+        CancellationToken ct = default)
     {
         return await context.Brands.FirstOrDefaultAsync(b => b.Id == brandId, ct);
     }
 
-    public async Task<Domain.Brand.Aggregates.Brand?> GetBySlugAsync(Slug slug, CancellationToken ct = default)
+    public async Task<Domain.Brand.Aggregates.Brand?> GetBySlugAsync(
+        Slug slug,
+        CancellationToken ct = default)
     {
-        return await context.Brands.FirstOrDefaultAsync(b => b.Slug == slug.Value, ct);
+        return await context.Brands.FirstOrDefaultAsync(b => b.Slug == slug, ct);
     }
 
     public async Task<bool> ExistsByNameInCategoryAsync(
@@ -24,15 +29,18 @@ public sealed class BrandRepository(DBContext context) : IBrandRepository
         CancellationToken ct = default)
     {
         var query = context.Brands
-            .Where(b => b.Name == name.Value && b.CategoryId == categoryId);
+            .Where(b => b.Name.Value == name.Value && b.CategoryId == categoryId);
         if (excludeId is not null)
             query = query.Where(b => b.Id != excludeId);
         return await query.AnyAsync(ct);
     }
 
-    public async Task<bool> ExistsBySlugAsync(Slug slug, BrandId? excludeId = null, CancellationToken ct = default)
+    public async Task<bool> ExistsBySlugAsync(
+        Slug slug,
+        BrandId? excludeId = null,
+        CancellationToken ct = default)
     {
-        var query = context.Brands.Where(b => b.Slug == slug.Value);
+        var query = context.Brands.Where(b => b.Slug == slug);
         if (excludeId is not null)
             query = query.Where(b => b.Id != excludeId);
         return await query.AnyAsync(ct);
@@ -46,5 +54,10 @@ public sealed class BrandRepository(DBContext context) : IBrandRepository
     public void Update(Domain.Brand.Aggregates.Brand brand)
     {
         context.Brands.Update(brand);
+    }
+
+    public void SetOriginalRowVersion(Domain.Brand.Aggregates.Brand entity, byte[] rowVersion)
+    {
+        context.Entry(entity).Property("RowVersion").OriginalValue = rowVersion;
     }
 }

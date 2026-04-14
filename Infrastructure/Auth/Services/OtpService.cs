@@ -1,10 +1,12 @@
 using Application.Auth.Contracts;
+using Application.Audit.Contracts;
 using Application.Communication.Contracts;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Auth.Options;
+using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Auth.Services;
 
@@ -12,14 +14,14 @@ public sealed class OtpService(
     IOtpRepository otpRepository,
     ISmsService smsService,
     IOptions<AuthOptions> authOptions,
-    ILogger<OtpService> logger) : IOtpService
+    IAuditService auditService) : IOtpService
 {
     private readonly AuthOptions _authOptions = authOptions.Value;
 
     public string HashOtp(OtpCode otp)
     {
         using var sha = System.Security.Cryptography.SHA256.Create();
-        var bytes = Encoding.UTF8.GetBytes(otp.Value);
+        var bytes = System.Text.Encoding.UTF8.GetBytes(otp.Value);
         var hash = sha.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
     }
@@ -39,7 +41,7 @@ public sealed class OtpService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to send OTP to {PhoneNumber}", phoneNumber.Value);
+            await auditService.LogSystemEventAsync("SendOtpFailed", $"Failed to send OTP to {phoneNumber.Value}: {ex.Message}", ct);
             return ServiceResult<bool>.Failure("خطا در ارسال پیامک.");
         }
     }
@@ -50,7 +52,7 @@ public sealed class OtpService(
         CancellationToken ct = default)
     {
         var window = TimeSpan.FromMinutes(_authOptions.OtpRateLimitWindowMinutes);
-        var count = await otpRepository.CountRecentOtpsAsync(userId, purpose, window, ct);
+        var count = await otpRepository.CountRecentByUserIdAsync(userId, purpose, window, ct);
         return count < _authOptions.MaxOtpPerWindow;
     }
 
@@ -60,7 +62,6 @@ public sealed class OtpService(
         OtpPurpose purpose,
         CancellationToken ct = default)
     {
-        logger.LogDebug("Verifying OTP for {PhoneNumber}", phoneNumber.Value);
         return await Task.FromResult(true);
     }
 }

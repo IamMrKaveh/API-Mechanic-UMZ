@@ -2,7 +2,9 @@ using Domain.Attribute.Aggregates;
 using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
+using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Attribute.Repositories;
 
@@ -12,8 +14,7 @@ public sealed class AttributeRepository(DBContext context) : IAttributeRepositor
         AttributeTypeId id,
         CancellationToken ct = default)
     {
-        return await context.AttributeTypes
-            .FirstOrDefaultAsync(a => a.Id == id, ct);
+        return await context.AttributeTypes.FirstOrDefaultAsync(a => a.Id == id, ct);
     }
 
     public async Task<AttributeType?> GetAttributeTypeWithValuesAsync(
@@ -32,6 +33,16 @@ public sealed class AttributeRepository(DBContext context) : IAttributeRepositor
         return await context.AttributeValues
             .Include(v => v.AttributeType)
             .FirstOrDefaultAsync(v => v.Id == id, ct);
+    }
+
+    public async Task<IEnumerable<AttributeValue>> GetAttributeValuesByIdsAsync(
+        IEnumerable<AttributeValueId> ids,
+        CancellationToken ct = default)
+    {
+        var idList = ids.ToList();
+        return await context.AttributeValues
+            .Where(v => idList.Contains(v.Id))
+            .ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<AttributeType>> GetAllAttributeTypesAsync(
@@ -74,29 +85,44 @@ public sealed class AttributeRepository(DBContext context) : IAttributeRepositor
         await context.AttributeTypes.AddAsync(attributeType, ct);
     }
 
-    public async Task UpdateAttributeTypeAsync(AttributeType attributeType, CancellationToken ct = default)
+    public Task UpdateAttributeTypeAsync(AttributeType attributeType, CancellationToken ct = default)
     {
         context.AttributeTypes.Update(attributeType);
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     public async Task DeleteAttributeTypeAsync(
         AttributeTypeId id,
-        AttributeTypeId? replacementId,
+        UserId? deletedBy = null,
         CancellationToken ct = default)
     {
         var entity = await context.AttributeTypes.FindAsync([id], ct);
-        if (entity is not null)
-            context.AttributeTypes.Remove(entity);
+        if (entity is null) return;
+
+        entity.Update(
+            entity.Name,
+            entity.DisplayName,
+            entity.SortOrder,
+            false,
+            new AlwaysTrueUniquenessChecker());
+
+        context.AttributeTypes.Update(entity);
     }
 
     public async Task DeleteAttributeValueAsync(
         AttributeValueId id,
-        AttributeValueId? replacementId,
+        UserId? deletedBy = null,
         CancellationToken ct = default)
     {
         var entity = await context.AttributeValues.FindAsync([id], ct);
-        if (entity is not null)
-            context.AttributeValues.Remove(entity);
+        if (entity is null) return;
+
+        entity.Update(entity.Value, entity.DisplayValue, entity.HexCode, entity.SortOrder, false);
+        context.AttributeValues.Update(entity);
+    }
+
+    private sealed class AlwaysTrueUniquenessChecker : Domain.Attribute.Interfaces.IAttributeTypeUniquenessChecker
+    {
+        public bool IsUnique(string name, AttributeTypeId? excludeId = null) => true;
     }
 }

@@ -3,6 +3,7 @@ using Application.Attribute.Features.Shared;
 using Domain.Attribute.ValueObjects;
 using Infrastructure.Persistence.Context;
 using MapsterMapper;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Attribute.QueryServices;
 
@@ -37,18 +38,6 @@ public sealed class AttributeQueryService(DBContext context, IMapper mapper) : I
             .FirstOrDefaultAsync(at => at.Id == attributeTypeId && !at.IsDeleted, ct);
 
         return attributeType is null ? null : mapper.Map<AttributeTypeDto>(attributeType);
-    }
-
-    public async Task<AttributeTypeWithValuesDto?> GetAttributeTypeWithValuesDtoAsync(
-        AttributeTypeId id,
-        CancellationToken ct = default)
-    {
-        var attributeType = await context.AttributeTypes
-            .Include(at => at.Values.Where(v => !v.IsDeleted))
-            .AsNoTracking()
-            .FirstOrDefaultAsync(at => at.Id == id && !at.IsDeleted, ct);
-
-        return attributeType is null ? null : mapper.Map<AttributeTypeWithValuesDto>(attributeType);
     }
 
     public async Task<IReadOnlyList<AttributeValueDto>> GetAttributeValuesByTypeIdAsync(

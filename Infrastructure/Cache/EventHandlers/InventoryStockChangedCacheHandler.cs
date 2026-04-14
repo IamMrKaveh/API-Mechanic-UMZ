@@ -3,17 +3,14 @@ namespace Infrastructure.Cache.EventHandlers;
 /// <summary>
 /// هنگام تغییر موجودی، کش Variant مربوطه را Invalidate می‌کند.
 /// </summary>
-public sealed class InventoryStockChangedCacheHandler(
-    ICacheInvalidationService invalidation,
-    ILogger<InventoryStockChangedCacheHandler> logger) :
-INotificationHandler<StockReservedEvent>,
+public sealed class InventoryStockChangedCacheHandler(ICacheInvalidationService invalidation,) :
+    INotificationHandler<StockReservedEvent>,
     INotificationHandler<StockReleasedEvent>,
     INotificationHandler<StockCommittedEvent>,
     INotificationHandler<AdjustStockEvent>,
     INotificationHandler<StockReturnedEvent>
 {
     private readonly ICacheInvalidationService _invalidation = invalidation;
-    private readonly ILogger<InventoryStockChangedCacheHandler> _logger = logger;
 
     public Task Handle(StockReservedEvent n, CancellationToken ct) => Invalidate(n.VariantId, ct);
 

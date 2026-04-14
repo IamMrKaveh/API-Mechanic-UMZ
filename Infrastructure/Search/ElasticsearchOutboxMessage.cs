@@ -2,58 +2,43 @@ namespace Infrastructure.Search;
 
 public sealed class ElasticsearchOutboxMessage
 {
-    public int Id { get; private set; }
-    public string IndexName { get; private set; } = string.Empty;
-    public string DocumentId { get; private set; } = string.Empty;
-    public string OperationType { get; private set; } = string.Empty;
-    public string Payload { get; private set; } = string.Empty;
+    public Guid Id { get; private set; }
+    public string EntityType { get; private set; } = string.Empty;
+    public Guid EntityId { get; private set; }
+    public string Document { get; private set; } = string.Empty;
+    public string ChangeType { get; private set; } = string.Empty;
     public DateTime CreatedAt { get; private set; }
+    public int RetryCount { get; private set; }
     public DateTime? ProcessedAt { get; private set; }
     public string? Error { get; private set; }
-    public int RetryCount { get; private set; }
 
     private ElasticsearchOutboxMessage()
     { }
 
-    public static ElasticsearchOutboxMessage Create(string indexName, string documentId, string operationType, string payload)
-    {
-        if (string.IsNullOrWhiteSpace(indexName))
-            throw new ArgumentException("Index name is required.", nameof(indexName));
-
-        if (string.IsNullOrWhiteSpace(documentId))
-            throw new ArgumentException("Document ID is required.", nameof(documentId));
-
-        if (string.IsNullOrWhiteSpace(operationType))
-            throw new ArgumentException("Operation type is required.", nameof(operationType));
-
-        if (string.IsNullOrWhiteSpace(payload))
-            throw new ArgumentException("Payload is required.", nameof(payload));
-
-        return new ElasticsearchOutboxMessage
+    public static ElasticsearchOutboxMessage Create(
+        string entityType,
+        Guid entityId,
+        string document,
+        string changeType)
+        => new()
         {
-            IndexName = indexName.Trim(),
-            DocumentId = documentId.Trim(),
-            OperationType = operationType.Trim(),
-            Payload = payload,
-            CreatedAt = DateTime.UtcNow
+            Id = Guid.NewGuid(),
+            EntityType = entityType,
+            EntityId = entityId,
+            Document = document,
+            ChangeType = changeType,
+            CreatedAt = DateTime.UtcNow,
+            RetryCount = 0
         };
-    }
 
     public void MarkProcessed()
     {
         ProcessedAt = DateTime.UtcNow;
     }
 
-    public void MarkFailed(string error)
+    public void IncrementRetry(string? error = null)
     {
-        if (string.IsNullOrWhiteSpace(error))
-            throw new ArgumentException("Error message is required.", nameof(error));
-
-        Error = error;
         RetryCount++;
+        Error = error;
     }
-
-    public bool IsProcessed => ProcessedAt.HasValue;
-
-    public bool HasExceededMaxRetries(int maxRetries) => RetryCount >= maxRetries;
 }

@@ -13,10 +13,6 @@ public interface IVariantRepository
     void Update(
         ProductVariant variant);
 
-    void SetOriginalRowVersion(
-        ProductVariant entity,
-        byte[] rowVersion);
-
     Task<ProductVariant?> GetByIdAsync(
         VariantId id,
         CancellationToken ct = default);
@@ -35,10 +31,6 @@ public interface IVariantRepository
 
     Task<ProductVariant?> GetBySkuAsync(
         Sku sku,
-        CancellationToken ct = default);
-
-    Task<IReadOnlyList<ProductVariant>> GetByProductIdAsync(
-        ProductId productId,
         CancellationToken ct = default);
 
     Task<IReadOnlyList<ProductVariant>> GetActiveByProductIdAsync(

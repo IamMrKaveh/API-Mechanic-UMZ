@@ -30,10 +30,9 @@ public sealed class SecurityDomainService
                 OtpRateLimitWindow);
         }
 
-        var otpId = OtpId.NewId();
         var code = OtpCode.Generate(codeLength);
 
-        var otp = UserOtp.Create(otpId, userId, code, purpose, DefaultOtpValidity);
+        var otp = UserOtp.Create(userId, code, purpose, DefaultOtpValidity);
 
         return OtpGenerationResult.Success(otp);
     }

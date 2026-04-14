@@ -24,6 +24,18 @@ public sealed class Email : ValueObject
         return new Email(normalized);
     }
 
+    public static Email CreateTemp(string phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            throw new ArgumentException("Phone number cannot be empty.", nameof(phoneNumber));
+
+        var normalizedPhone = phoneNumber.Trim();
+
+        var tempEmail = $"{normalizedPhone}@temp.local";
+
+        return new Email(tempEmail);
+    }
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;

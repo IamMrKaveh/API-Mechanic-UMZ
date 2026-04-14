@@ -1,116 +1,74 @@
+using Application.Search.Contracts;
+using Application.Search.Events;
+using Application.Search.Features.Shared;
+using Domain.Brand.Events;
+using Domain.Category.Events;
+using Domain.Product.Events;
+using Infrastructure.Persistence.Context;
+
 namespace Infrastructure.Search.EventHandlers;
 
-public class ElasticsearchEventHandler(
-    ISearchService searchService,
-    ILogger<ElasticsearchEventHandler> logger,
+public sealed class ElasticsearchEventHandler(
     DBContext context,
-    ElasticsearchClient elasticClient) : IElasticsearchEventHandler
+    IAuditService auditService) : IElasticsearchEventHandler
 {
-    private readonly ISearchService _searchService = searchService;
-    private readonly ILogger<ElasticsearchEventHandler> _logger = logger;
-    private readonly DBContext _context = context;
-    private readonly ElasticsearchClient _elasticClient = elasticClient;
-
-    public void HandleProductChangedAsync(
-        ProductChangedEvent @event,
-        CancellationToken ct = default)
+    public async Task HandleProductChangedAsync(
+        ProductChangedEvent domainEvent, CancellationToken ct = default)
     {
-        try
+        var document = new ProductSearchDocument
         {
-            var outboxMessage = new ElasticsearchOutboxMessage
-            {
-                EntityType = "Product",
-                EntityId = @event.EntityId.ToString(),
-                ChangeType = @event.ChangeType.ToString(),
-                Document = JsonSerializer.Serialize(@event.Document),
-                CreatedAt = DateTime.UtcNow,
-                RetryCount = 0
-            };
+            ProductId = domainEvent.ProductId.Value,
+            Name = domainEvent.Name,
+            ChangeType = domainEvent.ChangeType
+        };
 
-            _context.ElasticsearchOutboxMessages.Add(outboxMessage);
+        var message = ElasticsearchOutboxMessage.Create(
+            "Product",
+            domainEvent.ProductId.Value,
+            System.Text.Json.JsonSerializer.Serialize(document),
+            domainEvent.ChangeType);
 
-            _logger.LogInformation(
-                "Product {ProductId} change event saved to outbox for indexing",
-                @event.EntityId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to save product change event to outbox");
-            throw;
-        }
+        await context.ElasticsearchOutboxMessages.AddAsync(message, ct);
+
+        await auditService.LogSystemEventAsync(
+            "ElasticsearchProductChanged",
+            $"محصول {domainEvent.ProductId.Value} در صف ایندکس‌گذاری قرار گرفت.",
+            ct);
     }
 
     public async Task HandleCategoryChangedAsync(
-        CategoryChangedEvent @event,
-        CancellationToken ct = default)
+        CategoryChangedEvent domainEvent, CancellationToken ct = default)
     {
-        try
+        var document = new CategorySearchDocument
         {
-            switch (@event.ChangeType)
-            {
-                case EntityChangeType.Created:
-                case EntityChangeType.Updated:
-                    if (@event.Document == null)
-                    {
-                        _logger.LogWarning("Category document is null for {ChangeType} event of category {CategoryId}",
-                            @event.ChangeType, @event.EntityId);
-                        return;
-                    }
-                    await _searchService.IndexCategoryAsync(@event.Document, ct);
-                    _logger.LogInformation("Category {CategoryId} indexed successfully after {ChangeType}",
-                        @event.EntityId, @event.ChangeType);
-                    break;
+            CategoryId = domainEvent.CategoryId.Value,
+            Name = domainEvent.Name
+        };
 
-                case EntityChangeType.Deleted:
-                    var deleteResponse = await _elasticClient.DeleteAsync<CategorySearchDocument>(@event.EntityId.ToString(), d => d.Index("categories_v1"), ct);
-                    if (!deleteResponse.IsValidResponse)
-                        _logger.LogWarning("Failed to delete Category {CategoryId} from index: {Error}", @event.EntityId, deleteResponse.DebugInformation);
-                    else
-                        _logger.LogInformation("Category {CategoryId} deleted from index", @event.EntityId);
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to handle category changed event for category {CategoryId}", @event.EntityId);
-            throw;
-        }
+        var message = ElasticsearchOutboxMessage.Create(
+            "Category",
+            domainEvent.CategoryId.Value,
+            System.Text.Json.JsonSerializer.Serialize(document),
+            domainEvent.ChangeType);
+
+        await context.ElasticsearchOutboxMessages.AddAsync(message, ct);
     }
 
     public async Task HandleBrandChangedAsync(
-        BrandChangedEvent @event,
-        CancellationToken ct = default)
+        BrandChangedEvent domainEvent, CancellationToken ct = default)
     {
-        try
+        var document = new BrandSearchDocument
         {
-            switch (@event.ChangeType)
-            {
-                case EntityChangeType.Created:
-                case EntityChangeType.Updated:
-                    if (@event.Document == null)
-                    {
-                        _logger.LogWarning("Brand document is null for {ChangeType} event of group {GroupId}",
-                            @event.ChangeType, @event.EntityId);
-                        return;
-                    }
-                    await _searchService.IndexBrandAsync(@event.Document, ct);
-                    _logger.LogInformation("Brand {GroupId} indexed successfully after {ChangeType}",
-                        @event.EntityId, @event.ChangeType);
-                    break;
+            BrandId = domainEvent.BrandId.Value,
+            Name = domainEvent.Name
+        };
 
-                case EntityChangeType.Deleted:
-                    var deleteResponse = await _elasticClient.DeleteAsync<BrandSearchDocument>(@event.EntityId.ToString(), d => d.Index("Brands_v1"), ct);
-                    if (!deleteResponse.IsValidResponse)
-                        _logger.LogWarning("Failed to delete Brand {GroupId} from index: {Error}", @event.EntityId, deleteResponse.DebugInformation);
-                    else
-                        _logger.LogInformation("Brand {GroupId} deleted from index", @event.EntityId);
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to handle category group changed event for group {GroupId}", @event.EntityId);
-            throw;
-        }
+        var message = ElasticsearchOutboxMessage.Create(
+            "Brand",
+            domainEvent.BrandId.Value,
+            System.Text.Json.JsonSerializer.Serialize(document),
+            domainEvent.ChangeType);
+
+        await context.ElasticsearchOutboxMessages.AddAsync(message, ct);
     }
 }

@@ -1,69 +1,52 @@
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
-using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Shipping.Repositories;
 
-public class ShippingRepository(DBContext context) : IShippingRepository
+public sealed class ShippingRepository(DBContext context) : IShippingRepository
 {
-    private readonly DBContext _context = context;
-
-    public async Task<IEnumerable<Domain.Shipping.Aggregates.Shipping>> GetAllAsync(
-        bool includeDeleted = false,
-        CancellationToken ct = default)
+    public async Task<ICollection<Domain.Shipping.Aggregates.Shipping>> GetAllAsync(
+        bool includeInactive = false, CancellationToken ct = default)
     {
-        var query = includeDeleted
-            ? _context.Shippings.IgnoreQueryFilters()
-            : _context.Shippings.AsQueryable();
+        var query = context.Shippings.AsQueryable();
+        if (!includeInactive)
+            query = query.Where(s => s.IsActive);
+        return await query.OrderBy(s => s.SortOrder).ToListAsync(ct);
+    }
 
-        return await query
-            .OrderBy(m => m.SortOrder)
+    public async Task<Domain.Shipping.Aggregates.Shipping?> GetByIdAsync(ShippingId id, CancellationToken ct = default)
+        => await context.Shippings.FirstOrDefaultAsync(s => s.Id == id, ct);
+
+    public async Task<ICollection<Domain.Shipping.Aggregates.Shipping>> GetByIdsAsync(
+        IEnumerable<ShippingId> ids, CancellationToken ct = default)
+    {
+        var idValues = ids.Select(id => id.Value).ToList();
+        return await context.Shippings
+            .Where(s => idValues.Contains(s.Id.Value))
             .ToListAsync(ct);
     }
 
-    public async Task<Domain.Shipping.Aggregates.Shipping?> GetByIdAsync(
-        ShippingId id,
-        CancellationToken ct = default)
-    {
-        return await _context.Shippings
-            .FirstOrDefaultAsync(m => m.Id == id, ct);
-    }
-
-    public async Task<IEnumerable<Domain.Shipping.Aggregates.Shipping>> GetByIdsAsync(
-        IEnumerable<ShippingId> ids,
-        CancellationToken ct = default)
-    {
-        return await _context.Shippings
-            .Where(m => ids.Contains(m.Id))
+    public async Task<ICollection<Domain.Shipping.Aggregates.Shipping>> GetAllActiveAsync(CancellationToken ct = default)
+        => await context.Shippings
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.SortOrder)
             .ToListAsync(ct);
-    }
-
-    public async Task<IEnumerable<Domain.Shipping.Aggregates.Shipping>> GetAllActiveAsync(CancellationToken ct = default)
-    {
-        return await _context.Shippings.Where(m => m.IsActive && !m.IsDeleted).OrderBy(m => m.SortOrder).ToListAsync(ct);
-    }
 
     public async Task<Domain.Shipping.Aggregates.Shipping?> GetDefaultAsync(CancellationToken ct = default)
+        => await context.Shippings.FirstOrDefaultAsync(s => s.IsDefault && s.IsActive, ct);
+
+    public async Task<bool> ExistsByNameAsync(
+        ShippingName shippingName, ShippingId? excludeId = null, CancellationToken ct = default)
     {
-        return await _context.Shippings.FirstOrDefaultAsync(m => m.IsDefault && !m.IsDeleted, ct);
+        var query = context.Shippings.Where(s => s.Name == shippingName);
+        if (excludeId is not null)
+            query = query.Where(s => s.Id != excludeId);
+        return await query.AnyAsync(ct);
     }
 
-    public async Task AddAsync(
-        Domain.Shipping.Aggregates.Shipping shipping,
-        CancellationToken ct = default)
-    {
-        await _context.Shippings.AddAsync(shipping, ct);
-    }
+    public async Task AddAsync(Domain.Shipping.Aggregates.Shipping shipping, CancellationToken ct = default)
+        => await context.Shippings.AddAsync(shipping, ct);
 
     public void Update(Domain.Shipping.Aggregates.Shipping shipping)
-    {
-        _context.Shippings.Update(shipping);
-    }
-
-    public void SetOriginalRowVersion(
-        Domain.Shipping.Aggregates.Shipping shipping,
-        byte[] rowVersion)
-    {
-        _context.Entry(shipping).Property(e => e.RowVersion).OriginalValue = rowVersion;
-    }
+        => context.Shippings.Update(shipping);
 }

@@ -15,7 +15,7 @@ public class LogoutAllHandler(
         var userId = UserId.From(request.UserId);
         var ipAddress = IpAddress.Unknown;
 
-        await sessionRepository.RevokeAllByUserAsync(userId, ct);
+        await sessionRepository.RevokeAllByUserIdAsync(userId, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogSecurityEventAsync(

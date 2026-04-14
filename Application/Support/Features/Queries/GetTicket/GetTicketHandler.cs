@@ -4,7 +4,7 @@ using Domain.Support.ValueObjects;
 namespace Application.Support.Features.Queries.GetTicket;
 
 public class GetTicketHandler(
-    ISupportQueryService supportQueryService) : IRequestHandler<GetTicketQuery, ServiceResult<TicketDto>>
+    ITicketQueryService supportQueryService) : IRequestHandler<GetTicketQuery, ServiceResult<TicketDto>>
 {
     public async Task<ServiceResult<TicketDto>> Handle(
         GetTicketQuery request,

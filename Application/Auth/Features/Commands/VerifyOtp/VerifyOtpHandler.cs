@@ -35,7 +35,7 @@ public class VerifyOtpHandler(
         return ServiceResult<AuthResult>.Success(new AuthResult
         {
             AccessToken = accessToken,
-            RefreshToken = refreshToken.FullToken,
+            RefreshToken = refreshToken.RefreshToken,
             RefreshTokenExpiresAt = refreshToken.ExpiresAt,
             User = user
         });

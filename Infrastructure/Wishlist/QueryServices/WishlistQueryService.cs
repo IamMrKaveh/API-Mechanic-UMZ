@@ -1,50 +1,49 @@
 ﻿using Application.Wishlist.Contracts;
+using Application.Wishlist.Features.Shared;
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Wishlist.QueryServices;
 
-public class WishlistQueryService(DBContext context) : IWishlistQueryService
+public sealed class WishlistQueryService(DBContext context) : IWishlistQueryService
 {
-    private readonly DBContext _context = context;
-
     public async Task<PaginatedResult<WishlistItemDto>> GetPagedAsync(
-        int userId,
+        UserId userId,
         int page,
         int pageSize,
         CancellationToken ct = default)
     {
-        var query = _context.Wishlists
+        var query = context.Wishlists
             .AsNoTracking()
             .Where(w => w.UserId == userId);
 
-        var totalCount = await query.CountAsync(ct);
+        var total = await query.CountAsync(ct);
 
         var items = await query
             .OrderByDescending(w => w.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(w => new WishlistItemDto
-            {
-                Id = w.Id,
-                ProductId = w.ProductId,
-                ProductName = w.Product.Name.Value,
-                MinPrice = w.Product.Stats.MinPrice.Amount,
-                IsInStock = w.Product.Stats.TotalStock > 0 || w.Product.Variants.Any(v => v.IsUnlimited),
-                IconUrl = null,
-                AddedAt = w.CreatedAt
-            })
+            .Join(context.Products.AsNoTracking(),
+                w => w.ProductId,
+                p => p.Id,
+                (w, p) => new WishlistItemDto
+                {
+                    Id = w.Id.Value,
+                    ProductId = p.Id.Value,
+                    ProductName = p.Name.Value,
+                    Slug = p.Slug != null ? p.Slug.Value : string.Empty,
+                    AddedAt = w.CreatedAt
+                })
             .ToListAsync(ct);
 
-        return PaginatedResult<WishlistItemDto>.Create(items, totalCount, page, pageSize);
+        return PaginatedResult<WishlistItemDto>.Create(items, total, page, pageSize);
     }
 
     public async Task<bool> IsInWishlistAsync(
-        int userId,
-        int productId,
+        UserId userId,
+        ProductId productId,
         CancellationToken ct = default)
-    {
-        return await _context.Wishlists
-            .AsNoTracking()
-            .AnyAsync(w => w.UserId == userId && w.ProductId == productId, ct);
-    }
+        => await context.Wishlists.AnyAsync(
+            w => w.UserId == userId && w.ProductId == productId, ct);
 }

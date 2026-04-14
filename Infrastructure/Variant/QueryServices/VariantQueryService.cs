@@ -1,24 +1,19 @@
 ﻿using Application.Attribute.Features.Shared;
-using Application.Media.Features.Shared;
-using Application.Product.Features.Shared;
 using Application.Shipping.Features.Shared;
 using Application.Variant.Contracts;
-using Domain.Shipping.Interfaces;
+using Application.Variant.Features.Shared;
+using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
 using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Variant.QueryServices;
 
-public class VariantQueryService(DBContext context, IShippingRepository shippingRepository) : IVariantQueryService
+public sealed class VariantQueryService(DBContext context) : IVariantQueryService
 {
-    private readonly DBContext _context = context;
-    private readonly IShippingRepository _shippingRepository = shippingRepository;
-
-    public async Task<IEnumerable<ProductVariantViewDto>> GetProductVariantsAsync(
-        int productId,
-        bool activeOnly,
-        CancellationToken ct = default)
+    public async Task<IReadOnlyList<ProductVariantViewDto>> GetProductVariantsAsync(
+        ProductId productId, bool activeOnly, CancellationToken ct = default)
     {
-        var query = _context.ProductVariants
+        var query = context.ProductVariants
             .AsNoTracking()
             .Include(v => v.VariantAttributes)
                 .ThenInclude(va => va.AttributeValue)
@@ -33,93 +28,78 @@ public class VariantQueryService(DBContext context, IShippingRepository shipping
 
         return variants.Select(v => new ProductVariantViewDto
         {
-            Id = v.Id,
-            Sku = v.Sku?.Value,
+            Id = v.Id.Value,
+            ProductId = v.ProductId.Value,
+            Sku = v.Sku.Value,
             PurchasePrice = v.PurchasePrice.Amount,
             SellingPrice = v.SellingPrice.Amount,
             OriginalPrice = v.OriginalPrice.Amount,
             Stock = v.StockQuantity,
             IsUnlimited = v.IsUnlimited,
             IsActive = v.IsActive,
-            IsInStock = v.IsInStock,
-            HasDiscount = v.HasDiscount,
-            DiscountPercentage = v.DiscountPercentage,
-            ShippingMultiplier = v.ShippingMultiplier,
-            RowVersion = v.RowVersion != null ? Convert.ToBase64String(v.RowVersion) : null,
-            EnabledShippingIds = v.ProductVariantShippings
-                .Where(pvsm => pvsm.IsActive)
-                .Select(pvsm => pvsm.ShippingId)
-                .ToList(),
-            Attributes = v.VariantAttributes
-                .Where(va => va.AttributeValue?.AttributeType != null)
-                .ToDictionary(
-                    va => va.AttributeValue!.AttributeType!.Name,
-                    va => new AttributeValueDto(
-                        va.AttributeValue!.Id,
-                        va.AttributeValue.AttributeType!.Name,
-                        va.AttributeValue.AttributeType.DisplayName,
-                        va.AttributeValue.Value,
-                        va.AttributeValue.DisplayValue,
-                        va.AttributeValue.HexCode)),
-            Images = new List<MediaDto>()
-        });
+            IsInStock = v.IsUnlimited || v.StockQuantity > 0,
+            HasDiscount = v.OriginalPrice.Amount > v.SellingPrice.Amount,
+            DiscountPercentage = v.OriginalPrice.Amount > 0
+                ? Math.Round((v.OriginalPrice.Amount - v.SellingPrice.Amount) / v.OriginalPrice.Amount * 100, 2)
+                : 0,
+            RowVersion = v.RowVersion.ToBase64(),
+            EnabledShippingIds = v.ProductVariantShippings.Select(pvs => pvs.ShippingId.Value).ToList(),
+            Attributes = v.VariantAttributes.Select(va => new AttributeValueDto(
+                va.AttributeValue.Id.Value,
+                va.AttributeValue.AttributeTypeId.Value,
+                va.AttributeValue.AttributeType.Name,
+                va.AttributeValue.Value,
+                va.AttributeValue.DisplayName,
+                va.AttributeValue.SortOrder
+            )).ToList()
+        }).ToList().AsReadOnly();
     }
 
     public async Task<ProductVariantShippingInfoDto?> GetVariantShippingInfoAsync(
-        int variantId,
-        CancellationToken ct = default)
+        VariantId variantId, CancellationToken ct = default)
     {
-        var variant = await _context.ProductVariants
+        var variant = await context.ProductVariants
             .AsNoTracking()
             .Include(v => v.Product)
             .Include(v => v.ProductVariantShippings)
-            .FirstOrDefaultAsync(v => v.Id == variantId && !v.IsDeleted, ct);
+                .ThenInclude(pvs => pvs.Shipping)
+            .FirstOrDefaultAsync(v => v.Id == variantId, ct);
 
-        if (variant == null) return null;
-
-        var allShippings = await _shippingRepository.GetAllAsync(false, ct);
-
-        var enabledIds = variant.ProductVariantShippings
-            .Where(pvsm => pvsm.IsActive)
-            .Select(pvsm => pvsm.ShippingId)
-            .ToHashSet();
+        if (variant is null) return null;
 
         return new ProductVariantShippingInfoDto
         {
-            VariantId = variant.Id,
-            ProductName = variant.Product?.Name,
-            VariantDisplayName = variant.Sku?.Value ?? "N/A",
-            ShippingMultiplier = variant.ShippingMultiplier,
-            AvailableShippings = allShippings.Select(sm => new ShippingSelectionDto
-            {
-                ShippingId = sm.Id,
-                Name = sm.Name,
-                BaseCost = sm.Cost,
-                Description = sm.Description,
-                IsEnabled = enabledIds.Contains(sm.Id)
-            }).ToList()
+            VariantId = variant.Id.Value,
+            ProductName = variant.Product?.Name.Value ?? string.Empty,
+            VariantDisplayName = variant.Sku.Value,
+            AvailableShippings = variant.ProductVariantShippings
+                .Where(pvs => pvs.Shipping.IsActive)
+                .Select(pvs => new ShippingSelectionDto
+                {
+                    Id = pvs.Shipping.Id.Value,
+                    Name = pvs.Shipping.Name.Value,
+                    Cost = pvs.Shipping.Cost.Amount,
+                    IsDefault = pvs.Shipping.IsDefault
+                }).ToList()
         };
     }
 
     public async Task<VariantAvailabilityDto?> GetVariantAvailabilityAsync(
-        int variantId,
-        CancellationToken ct = default)
+        VariantId variantId, CancellationToken ct = default)
     {
-        var variant = await _context.ProductVariants
+        var variant = await context.ProductVariants
             .AsNoTracking()
-            .FirstOrDefaultAsync(v => v.Id == variantId && !v.IsDeleted, ct);
+            .Where(v => v.Id == variantId && !v.IsDeleted)
+            .Select(v => new VariantAvailabilityDto
+            {
+                VariantId = v.Id.Value,
+                IsActive = v.IsActive,
+                IsInStock = v.IsUnlimited || v.StockQuantity > 0,
+                StockQuantity = v.StockQuantity,
+                IsUnlimited = v.IsUnlimited
+            })
+            .FirstOrDefaultAsync(ct);
 
-        if (variant == null) return null;
-
-        return new VariantAvailabilityDto
-        {
-            VariantId = variant.Id,
-            OnHand = variant.StockQuantity,
-            Reserved = variant.ReservedQuantity,
-            Available = variant.AvailableStock,
-            IsInStock = variant.IsInStock,
-            IsUnlimited = variant.IsUnlimited,
-            LastUpdated = DateTime.UtcNow
-        };
+        return variant;
     }
 }
