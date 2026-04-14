@@ -16,7 +16,7 @@ public class DeleteCategoryHandler(
         if (category is null)
             return ServiceResult.NotFound("دسته‌بندی یافت نشد.");
 
-        var hasChildren = await categoryRepository.HasChildrenAsync(categoryId, ct);
+        var hasChildren = await categoryRepository.HasBrandAsync(categoryId, ct);
         if (hasChildren)
             return ServiceResult.Failure("دسته‌بندی دارای زیرمجموعه است و قابل حذف نیست.");
 

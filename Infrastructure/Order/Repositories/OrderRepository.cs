@@ -1,138 +1,65 @@
-using Domain.Order.Entities;
+using Domain.Order.Aggregates;
+using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Order.Repositories;
 
-public class OrderRepository(DBContext context) : IOrderRepository
+public sealed class OrderRepository(DBContext context) : IOrderRepository
 {
-    private readonly DBContext _context = context;
-
-    public async Task<bool> ExistsByIdempotencyKeyAsync(
-        string key,
-        CancellationToken ct = default)
-    {
-        return await _context.Orders
-            .AnyAsync(o => o.IdempotencyKey == key, ct);
-    }
-
-    public async Task AddAsync(
-        Domain.Order.Aggregates.Order order,
-        CancellationToken ct = default)
-    {
-        await _context.Orders.AddAsync(order, ct);
-    }
-
-    public async Task UpdateAsync(
-        Domain.Order.Aggregates.Order order,
-        CancellationToken ct = default)
-    {
-        ct.ThrowIfCancellationRequested();
-        _context.Orders.Update(order);
-        await _context.SaveChangesAsync(ct);
-    }
-
-    public void SetOriginalRowVersion(
-        Domain.Order.Aggregates.Order entity,
-        byte[] rowVersion)
-    {
-        _context.Entry(entity).Property(e => e.RowVersion).OriginalValue = rowVersion;
-    }
-
-    public async Task<bool> HasActiveOrdersAsync(
-        int userId,
-        CancellationToken ct)
-    {
-        return await _context.Orders
-            .AnyAsync(
-                o => o.UserId == userId &&
-                     o.Status != OrderStatus.Statuses.Delivered &&
-                     o.Status != OrderStatus.Statuses.Cancelled,
-                ct);
-    }
-
     public async Task<Domain.Order.Aggregates.Order?> GetByIdAsync(
-        int id,
+        OrderId orderId,
         CancellationToken ct = default)
     {
-        return await _context.Orders
-            .FirstOrDefaultAsync(o => o.Id == id, ct);
-    }
-
-    public async Task<Domain.Order.Aggregates.Order?> GetByIdWithItemsAsync(
-        int id,
-        CancellationToken ct = default)
-    {
-        return await _context.Orders
+        return await context.Orders
             .Include(o => o.OrderItems)
-            .Include(o => o.Shipping)
-            .FirstOrDefaultAsync(o => o.Id == id, ct);
-    }
-
-    public async Task<Domain.Order.Aggregates.Order?> GetByIdempotencyKeyAsync(
-        string key,
-        int userId,
-        CancellationToken ct = default)
-    {
-        return await _context.Orders
-            .FirstOrDefaultAsync(o => o.IdempotencyKey == key && o.UserId == userId, ct);
-    }
-
-    public async Task<Domain.Order.Aggregates.Order?> GetByIdempotencyKeyAsync(
-        string key,
-        CancellationToken ct)
-    {
-        return await _context.Orders
-            .Include(o => o.OrderItems)
-            .Include(o => o.PaymentTransactions)
-            .FirstOrDefaultAsync(o => o.IdempotencyKey == key, ct);
-    }
-
-    public async Task<IEnumerable<Domain.Order.Aggregates.Order>> GetExpiredUnpaidOrdersAsync(
-        DateTime cutoffTime,
-        int maxCount,
-        CancellationToken ct = default)
-    {
-        return await _context.Orders
-            .Where(o => o.Status == OrderStatusValue.Pending
-                        && o.CreatedAt < cutoffTime
-                        && !o.IsDeleted)
-            .OrderBy(o => o.CreatedAt)
-            .Take(maxCount)
-            .Include(o => o.OrderItems)
-            .ToListAsync(ct);
+            .Include(o => o.StatusHistory)
+            .FirstOrDefaultAsync(o => o.Id == orderId, ct);
     }
 
     public async Task<Domain.Order.Aggregates.Order?> GetByOrderNumberAsync(
-        string orderNumber,
-        CancellationToken ct)
+        OrderNumber orderNumber,
+        CancellationToken ct = default)
     {
-        return await _context.Orders
+        return await context.Orders
             .Include(o => o.OrderItems)
-            .Include(o => o.PaymentTransactions)
             .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, ct);
     }
 
-    public async Task<Domain.Order.Aggregates.Order?> GetByOrderItemIdAsync(
-        int orderItemId,
+    public async Task<IReadOnlyList<Domain.Order.Aggregates.Order>> GetByUserIdAsync(
+        UserId userId,
+        int page,
+        int pageSize,
         CancellationToken ct = default)
     {
-        return await _context.Orders
-            .Include(o => o.OrderItems)
-            .FirstOrDefaultAsync(o => o.OrderItems.Any(oi => oi.Id == orderItemId), ct);
+        var results = await context.Orders
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return results.AsReadOnly();
     }
 
-    public async Task<IEnumerable<Domain.Order.Aggregates.Order>> GetExpirableOrdersAsync(
-        DateTime expiryThreshold,
-        IEnumerable<string> statuses,
-        CancellationToken ct)
+    public async Task<bool> ExistsByIdempotencyKeyAsync(Guid key, CancellationToken ct = default)
     {
-        var statusList = statuses.ToList();
+        return await context.Orders.AnyAsync(o => o.IdempotencyKey == key, ct);
+    }
 
-        return await _context.Orders
-            .Include(o => o.OrderItems)
-            .Where(o =>
-                !o.IsDeleted &&
-                statusList.Contains(o.Status) &&
-                o.CreatedAt <= expiryThreshold)
-            .ToListAsync(ct);
+    public async Task AddAsync(Domain.Order.Aggregates.Order order, CancellationToken ct = default)
+    {
+        await context.Orders.AddAsync(order, ct);
+    }
+
+    public void Update(Domain.Order.Aggregates.Order order)
+    {
+        context.Orders.Update(order);
+    }
+
+    public void SetOriginalRowVersion(Domain.Order.Aggregates.Order order, byte[] rowVersion)
+    {
+        context.Entry(order).Property(e => e.RowVersion).OriginalValue = rowVersion;
     }
 }

@@ -11,7 +11,7 @@ namespace Domain.Cart.Aggregates;
 
 public sealed class Cart : AggregateRoot<CartId>
 {
-    private readonly List<CartItem> _items = [];
+    private readonly List<CartItem> _cartItems = [];
 
     public UserId? UserId { get; private set; }
     public GuestToken? GuestToken { get; private set; }
@@ -19,7 +19,7 @@ public sealed class Cart : AggregateRoot<CartId>
     public DateTime CreatedAt { get; private init; }
     public DateTime? UpdatedAt { get; private set; }
 
-    public IReadOnlyCollection<CartItem> Items => _items.AsReadOnly();
+    public IReadOnlyCollection<CartItem> CartItems => _cartItems.AsReadOnly();
 
     private Cart()
     { }
@@ -57,7 +57,7 @@ public sealed class Cart : AggregateRoot<CartId>
     {
         EnsureNotCheckedOut();
 
-        var existing = _items.FirstOrDefault(i => i.VariantId == variantId);
+        var existing = _cartItems.FirstOrDefault(i => i.VariantId == variantId);
 
         if (existing is not null)
         {
@@ -66,7 +66,7 @@ public sealed class Cart : AggregateRoot<CartId>
         else
         {
             var item = CartItem.Create(Id, variantId, productId, productName, sku, unitPrice, originalPrice, quantity);
-            _items.Add(item);
+            _cartItems.Add(item);
         }
 
         UpdatedAt = DateTime.UtcNow;
@@ -79,10 +79,10 @@ public sealed class Cart : AggregateRoot<CartId>
     {
         EnsureNotCheckedOut();
 
-        var item = _items.FirstOrDefault(i => i.VariantId == variantId)
+        var item = _cartItems.FirstOrDefault(i => i.VariantId == variantId)
             ?? throw new CartItemNotFoundException(variantId);
 
-        _items.Remove(item);
+        _cartItems.Remove(item);
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
 
@@ -93,7 +93,7 @@ public sealed class Cart : AggregateRoot<CartId>
     {
         EnsureNotCheckedOut();
 
-        var item = _items.FirstOrDefault(i => i.VariantId == variantId)
+        var item = _cartItems.FirstOrDefault(i => i.VariantId == variantId)
             ?? throw new CartItemNotFoundException(variantId);
 
         item.UpdateQuantity(quantity);
@@ -105,7 +105,7 @@ public sealed class Cart : AggregateRoot<CartId>
     {
         EnsureNotCheckedOut();
 
-        var item = _items.FirstOrDefault(i => i.VariantId == variantId)
+        var item = _cartItems.FirstOrDefault(i => i.VariantId == variantId)
             ?? throw new CartItemNotFoundException(variantId);
 
         item.RefreshPrice(newUnitPrice, newOriginalPrice);
@@ -116,7 +116,7 @@ public sealed class Cart : AggregateRoot<CartId>
     public void Clear()
     {
         EnsureNotCheckedOut();
-        _items.Clear();
+        _cartItems.Clear();
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
     }
@@ -125,15 +125,15 @@ public sealed class Cart : AggregateRoot<CartId>
     {
         EnsureNotCheckedOut();
 
-        if (_items.Count == 0)
+        if (_cartItems.Count == 0)
             throw new InvalidOperationException(string.Empty);
 
         IsCheckedOut = true;
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
 
-        var total = _items.Sum(i => i.TotalPrice.Amount);
-        RaiseDomainEvent(new CartCheckedOutEvent(Id, UserId, _items.Count, total));
+        var total = _cartItems.Sum(i => i.TotalPrice.Amount);
+        RaiseDomainEvent(new CartCheckedOutEvent(Id, UserId, _cartItems.Count, total));
     }
 
     public void AssignToUser(UserId userId)
@@ -160,10 +160,10 @@ public sealed class Cart : AggregateRoot<CartId>
                 break;
 
             case CartMergeStrategy.KeepGuestCart:
-                _items.Clear();
-                foreach (var sourceItem in sourceCart.Items)
+                _cartItems.Clear();
+                foreach (var sourceItem in sourceCart.CartItems)
                 {
-                    _items.Add(CartItem.Create(
+                    _cartItems.Add(CartItem.Create(
                         Id,
                         sourceItem.VariantId,
                         sourceItem.ProductId,
@@ -176,9 +176,9 @@ public sealed class Cart : AggregateRoot<CartId>
                 break;
 
             case CartMergeStrategy.KeepHigherQuantity:
-                foreach (var sourceItem in sourceCart.Items)
+                foreach (var sourceItem in sourceCart.CartItems)
                 {
-                    var existing = _items.FirstOrDefault(i => i.VariantId == sourceItem.VariantId);
+                    var existing = _cartItems.FirstOrDefault(i => i.VariantId == sourceItem.VariantId);
                     if (existing is not null)
                     {
                         if (sourceItem.Quantity > existing.Quantity)
@@ -186,7 +186,7 @@ public sealed class Cart : AggregateRoot<CartId>
                     }
                     else
                     {
-                        _items.Add(CartItem.Create(
+                        _cartItems.Add(CartItem.Create(
                             Id,
                             sourceItem.VariantId,
                             sourceItem.ProductId,
@@ -201,7 +201,7 @@ public sealed class Cart : AggregateRoot<CartId>
 
             case CartMergeStrategy.SumQuantities:
             default:
-                foreach (var sourceItem in sourceCart.Items)
+                foreach (var sourceItem in sourceCart.CartItems)
                 {
                     AddItem(
                         sourceItem.VariantId,
@@ -218,7 +218,7 @@ public sealed class Cart : AggregateRoot<CartId>
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
 
-        RaiseDomainEvent(new CartMergedEvent(Id, sourceCart.Id, UserId!, sourceCart.Items.Count));
+        RaiseDomainEvent(new CartMergedEvent(Id, sourceCart.Id, UserId!, sourceCart.CartItems.Count));
     }
 
     public void ValidateStockAvailability(
@@ -234,12 +234,12 @@ public sealed class Cart : AggregateRoot<CartId>
             throw new InsufficientStockForCartException(variantId, requestedQuantity, availableStock);
     }
 
-    public bool HasItem(VariantId variantId) => _items.Any(i => i.VariantId == variantId);
+    public bool HasItem(VariantId variantId) => _cartItems.Any(i => i.VariantId == variantId);
 
-    public bool IsEmpty => _items.Count == 0;
+    public bool IsEmpty => _cartItems.Count == 0;
 
     public Money TotalAmount =>
-        _items.Aggregate(
+        _cartItems.Aggregate(
             Money.Zero(),
             (acc, item) => acc.Add(item.TotalPrice));
 

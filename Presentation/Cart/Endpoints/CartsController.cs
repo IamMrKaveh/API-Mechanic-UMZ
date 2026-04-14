@@ -76,7 +76,9 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     [Authorize]
     public async Task<IActionResult> MergeCart()
     {
-        var command = new MergeGuestCartCommand(GuestToken!);
+        var command = new MergeGuestCartCommand(
+            CurrentUser.UserId,
+            GuestToken);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }

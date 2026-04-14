@@ -1,56 +1,43 @@
+using Application.Security.Contracts;
+using StackExchange.Redis;
+using IDatabase = StackExchange.Redis.IDatabase;
+
 namespace Infrastructure.Security.Services;
 
-public class RateLimitService(IConnectionMultiplexer redis, ILogger<RateLimitService> logger) : IRateLimitService
+public sealed class RateLimitService(IConnectionMultiplexer redis) : IRateLimitService
 {
-    private readonly IConnectionMultiplexer _redis = redis;
-    private readonly ILogger<RateLimitService> _logger = logger;
+    private readonly IDatabase _db = redis.GetDatabase();
 
-    public async Task<(bool IsLimited, int RetryAfterSeconds)> IsLimitedAsync(
+    public async Task<(bool IsLimited, TimeSpan? RetryAfter)> IsLimitedAsync(
         string key,
-        int maxAttempts = 5,
-        int windowMinutes = 15)
+        int maxRequests,
+        int windowSeconds,
+        CancellationToken ct = default)
     {
-        if (!_redis.IsConnected)
+        var redisKey = $"ratelimit:{key}";
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var windowStart = now - windowSeconds;
+
+        var transaction = _db.CreateTransaction();
+        _ = transaction.SortedSetRemoveRangeByScoreAsync(redisKey, 0, windowStart);
+        var countTask = transaction.SortedSetLengthAsync(redisKey);
+        _ = transaction.SortedSetAddAsync(redisKey, now.ToString(), now);
+        _ = transaction.KeyExpireAsync(redisKey, TimeSpan.FromSeconds(windowSeconds));
+        await transaction.ExecuteAsync();
+
+        var count = await countTask;
+
+        if (count >= maxRequests)
         {
-            _logger.LogWarning("Redis is not connected. Rate limiting is bypassed.");
-            return (false, 0);
+            var ttl = await _db.KeyTimeToLiveAsync(redisKey);
+            return (true, ttl ?? TimeSpan.FromSeconds(windowSeconds));
         }
 
-        try
-        {
-            var db = _redis.GetDatabase();
-            var now = DateTimeOffset.UtcNow;
-            var window = TimeSpan.FromMinutes(windowMinutes);
-            var windowStart = (now - window).ToUnixTimeSeconds();
+        return (false, null);
+    }
 
-            var transaction = db.CreateTransaction();
-
-            var keyExpiryTask = transaction.KeyTimeToLiveAsync(key);
-
-            _ = transaction.SortedSetRemoveRangeByScoreAsync(key, 0, windowStart);
-            var countTask = transaction.SortedSetLengthAsync(key);
-            _ = transaction.SortedSetAddAsync(key, now.ToUnixTimeSeconds().ToString(), now.ToUnixTimeSeconds());
-            _ = transaction.KeyExpireAsync(key, window.Add(TimeSpan.FromSeconds(10)), ExpireWhen.Always);
-
-            if (await transaction.ExecuteAsync())
-            {
-                var count = await countTask;
-                if (count >= maxAttempts)
-                {
-                    var ttl = await keyExpiryTask;
-                    var retryAfter = ttl.HasValue ? (int)ttl.Value.TotalSeconds : (int)window.TotalSeconds;
-                    return (true, retryAfter);
-                }
-                return (false, 0);
-            }
-
-            _logger.LogWarning("Redis transaction for rate limiting failed to execute for key: {Key}", key);
-            return (false, 0);
-        }
-        catch (RedisException ex)
-        {
-            _logger.LogError(ex, "Redis error during rate limiting for key: {Key}", key);
-            return (false, 0);
-        }
+    public async Task ResetAsync(string key, CancellationToken ct = default)
+    {
+        await _db.KeyDeleteAsync($"ratelimit:{key}");
     }
 }

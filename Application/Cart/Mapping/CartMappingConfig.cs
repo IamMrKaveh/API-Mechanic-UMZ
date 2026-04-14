@@ -16,7 +16,7 @@ public class CartMappingConfig : IRegister
             .Map(dest => dest.GuestToken, src => src.GuestToken != null ? src.GuestToken.Value : null)
             .Map(dest => dest.IsCheckedOut, src => src.IsCheckedOut)
             .Map(dest => dest.TotalPrice, src => src.TotalAmount.Amount)
-            .Map(dest => dest.TotalItems, src => src.Items.Sum(i => i.Quantity))
+            .Map(dest => dest.TotalItems, src => src.CartItems.Sum(i => i.Quantity))
             .Ignore(dest => dest.Items)
             .Ignore(dest => dest.PriceChanges);
 

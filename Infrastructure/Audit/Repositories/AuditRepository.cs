@@ -5,28 +5,36 @@ using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Audit.Repositories;
 
-public class AuditRepository(DBContext context) : IAuditRepository
+public sealed class AuditRepository(DBContext context) : IAuditRepository
 {
-    private readonly DBContext _context = context;
-
-    public async Task AddAuditLogAsync(AuditLog log)
+    public async Task AddAuditLogAsync(AuditLog auditLog, CancellationToken ct = default)
     {
-        await _context.AuditLogs.AddAsync(log);
-        await _context.SaveChangesAsync();
+        await context.AuditLogs.AddAsync(auditLog, ct);
+        await context.SaveChangesAsync(ct);
     }
 
-    public Task AddAuditLogAsync(AuditLog auditLog, CancellationToken ct = default)
+    public async Task<IEnumerable<AuditLog>> GetByEntityAsync(
+        string entityType,
+        string entityId,
+        CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        return await context.AuditLogs
+            .AsNoTracking()
+            .Where(l => l.EventType == entityType && l.Details.Contains(entityId))
+            .OrderByDescending(l => l.CreatedAt)
+            .Take(100)
+            .ToListAsync(ct);
     }
 
-    public Task<IEnumerable<AuditLog>> GetByEntityAsync(string entityType, string entityId, CancellationToken ct = default)
+    public async Task<IEnumerable<AuditLog>> GetByUserIdAsync(
+        UserId userId,
+        CancellationToken ct = default)
     {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<AuditLog>> GetByUserIdAsync(UserId userId, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
+        return await context.AuditLogs
+            .AsNoTracking()
+            .Where(l => l.UserId == userId)
+            .OrderByDescending(l => l.CreatedAt)
+            .Take(100)
+            .ToListAsync(ct);
     }
 }

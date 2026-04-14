@@ -1,92 +1,61 @@
 using Domain.Inventory.Interfaces;
-using Domain.Variant.Aggregates;
+using Domain.Inventory.ValueObjects;
+using Domain.Variant.ValueObjects;
 using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Inventory.Repositories;
 
-public class InventoryRepository(DBContext context) : IInventoryRepository
+public sealed class InventoryRepository(DBContext context) : IInventoryRepository
 {
-    private readonly DBContext _context = context;
-
-    public async Task AddTransactionAsync(InventoryTransaction transaction, CancellationToken ct = default)
+    public async Task<Domain.Inventory.Aggregates.Inventory?> GetByIdAsync(InventoryId id, CancellationToken ct = default)
     {
-        await _context.InventoryTransactions.AddAsync(transaction, ct);
+        return await context.Set<Domain.Inventory.Aggregates.Inventory>()
+            .Include(i => i.LedgerEntries)
+            .FirstOrDefaultAsync(i => i.Id == id, ct);
     }
 
-    public async Task AddTransactionsAsync(IEnumerable<InventoryTransaction> transactions, CancellationToken ct = default)
+    public async Task<Domain.Inventory.Aggregates.Inventory?> GetByVariantIdAsync(VariantId variantId, CancellationToken ct = default)
     {
-        await _context.InventoryTransactions.AddRangeAsync(transactions, ct);
+        return await context.Set<Domain.Inventory.Aggregates.Inventory>()
+            .Include(i => i.LedgerEntries)
+            .FirstOrDefaultAsync(i => i.VariantId == variantId, ct);
     }
 
-    public void Update(InventoryTransaction transaction)
+    public async Task<IReadOnlyList<Domain.Inventory.Aggregates.Inventory>> GetByVariantIdsAsync(
+        IEnumerable<VariantId> variantIds,
+        CancellationToken ct = default)
     {
-        _context.InventoryTransactions.Update(transaction);
-    }
-
-    public async Task<ProductVariant?> ReverseTransactionAsync(int transactionId, int adminUserId, string reason, CancellationToken ct = default)
-    {
-        var transaction = await _context.InventoryTransactions
-            .Include(t => t.Variant)
-            .FirstOrDefaultAsync(t => t.Id == transactionId, ct);
-
-        if (transaction == null) return null;
-
-        transaction.MarkAsReversed();
-
-        var variant = transaction.Variant;
-        if (variant != null && !variant.IsUnlimited)
-        {
-            var reversalQty = -transaction.QuantityChange;
-            variant.SetStock(variant.StockQuantity + reversalQty);
-        }
-
-        return variant;
-    }
-
-    public async Task<InventoryTransaction?> GetByIdAsync(int id, CancellationToken ct = default)
-    {
-        return await _context.InventoryTransactions
-            .Include(t => t.Variant)
-                .ThenInclude(v => v!.Product)
-            .FirstOrDefaultAsync(t => t.Id == id, ct);
-    }
-
-    public async Task<IEnumerable<InventoryTransaction>> GetByVariantIdAsync(int variantId, CancellationToken ct = default)
-    {
-        return await _context.InventoryTransactions
-            .Where(t => t.VariantId == variantId)
-            .OrderByDescending(t => t.CreatedAt)
+        var ids = variantIds.Select(v => v.Value).ToList();
+        var results = await context.Set<Domain.Inventory.Aggregates.Inventory>()
+            .Include(i => i.LedgerEntries)
+            .Where(i => ids.Contains(i.VariantId.Value))
             .ToListAsync(ct);
+
+        return results.AsReadOnly();
     }
 
-    public async Task<int> CalculateStockFromTransactionsAsync(int variantId, CancellationToken ct = default)
+    public async Task<bool> ExistsByVariantIdAsync(VariantId variantId, CancellationToken ct = default)
     {
-        return await _context.InventoryTransactions
-            .Where(t => t.VariantId == variantId && !t.IsReversed)
-            .SumAsync(t => t.QuantityChange, ct);
+        return await context.Set<Domain.Inventory.Aggregates.Inventory>()
+            .AnyAsync(i => i.VariantId == variantId, ct);
     }
 
-    public async Task<InventoryTransaction?> GetLastTransactionAsync(int variantId, CancellationToken ct = default)
+    public async Task AddAsync(Domain.Inventory.Aggregates.Inventory inventory, CancellationToken ct = default)
     {
-        return await _context.InventoryTransactions
-            .Where(t => t.VariantId == variantId)
-            .OrderByDescending(t => t.CreatedAt)
-            .FirstOrDefaultAsync(ct);
+        await context.Set<Domain.Inventory.Aggregates.Inventory>().AddAsync(inventory, ct);
     }
 
-    public async Task<IEnumerable<InventoryTransaction>> GetByOrderItemIdAsync(int orderItemId, CancellationToken ct = default)
+    public void Update(Domain.Inventory.Aggregates.Inventory inventory)
     {
-        return await _context.InventoryTransactions
-            .Where(t => t.OrderItemId == orderItemId)
+        context.Set<Domain.Inventory.Aggregates.Inventory>().Update(inventory);
+    }
+
+    public async Task<IReadOnlyList<Domain.Inventory.Aggregates.Inventory>> GetLowStockAsync(CancellationToken ct = default)
+    {
+        var results = await context.Set<Domain.Inventory.Aggregates.Inventory>()
+            .Where(i => !i.IsUnlimited && i.AvailableStock.Value <= i.LowStockThreshold)
             .ToListAsync(ct);
-    }
 
-    public async Task<ProductVariant?> GetVariantWithLockAsync(int variantId, CancellationToken ct = default)
-    {
-        return await _context.ProductVariants
-            .FromSqlRaw(
-                "SELECT * FROM \"ProductVariants\" WHERE \"Id\" = {0} FOR UPDATE",
-                variantId)
-            .FirstOrDefaultAsync(ct);
+        return results.AsReadOnly();
     }
 }

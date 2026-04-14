@@ -1,4 +1,5 @@
 using Domain.Media.Interfaces;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Media.Repositories;
 

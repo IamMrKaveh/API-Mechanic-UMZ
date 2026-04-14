@@ -1,96 +1,47 @@
+using Application.Cache.Contracts;
+using Application.Cache.Features.Shared;
+using Domain.Brand.ValueObjects;
+using Domain.Cart.ValueObjects;
+using Domain.Category.ValueObjects;
+using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+using Domain.Variant.ValueObjects;
+
 namespace Infrastructure.Cache.Services;
 
-public sealed class CacheInvalidationService(
-    ICacheService cache,
-    ILogger<CacheInvalidationService> logger,
-    IOptions<CacheOptions> cacheOptions) : ICacheInvalidationService
+public sealed class CacheInvalidationService(ICacheService cache) : ICacheInvalidationService
 {
-    private readonly ICacheService _cache = cache;
-    private readonly ILogger<CacheInvalidationService> _logger = logger;
-    private readonly CacheOptions _cacheOptions = cacheOptions.Value;
-
-    public async Task InvalidateProductAsync(int productId, CancellationToken ct = default)
+    public async Task InvalidateProductCacheAsync(ProductId productId, CancellationToken ct = default)
     {
-        if (!_cacheOptions.IsEnabled)
-        {
-            _logger.LogDebug("Cache is disabled. Skipping product cache invalidation for Product {ProductId}", productId);
-            return;
-        }
-
-        var keysToInvalidate = new[]
-        {
-            CacheKeys.Product(productId),
-            CacheKeys.CategoryProducts(productId),
-        };
-
-        foreach (var key in keysToInvalidate)
-            await _cache.ClearAsync(key);
-
-        await _cache.ClearByPrefixAsync($"product:{productId}:");
-        _logger.LogDebug("[CacheInvalidation] Product {ProductId} invalidated.", productId);
+        await cache.RemoveAsync(CacheKeys.Product(productId.Value), ct);
+        await cache.RemoveByPrefixAsync("products:", ct);
     }
 
-    public async Task InvalidateCategoryAsync(int categoryId, CancellationToken ct = default)
+    public async Task InvalidateCategoryCacheAsync(CategoryId categoryId, CancellationToken ct = default)
     {
-        if (!_cacheOptions.IsEnabled)
-        {
-            _logger.LogDebug("Cache is disabled. Skipping category cache invalidation for Category {CategoryId}", categoryId);
-            return;
-        }
-
-        await _cache.ClearAsync(CacheKeys.Category(categoryId));
-        await _cache.ClearAsync(CacheKeys.CategoryTree());
-        await _cache.ClearByPrefixAsync($"category:{categoryId}:");
-        _logger.LogDebug("[CacheInvalidation] Category {CategoryId} invalidated.", categoryId);
+        await cache.RemoveAsync(CacheKeys.Category(categoryId.Value), ct);
+        await cache.RemoveAsync(CacheKeys.CategoryTree(), ct);
+        await cache.RemoveAsync(CacheKeys.CategoryList(), ct);
     }
 
-    public async Task InvalidateInventoryAsync(int variantId, CancellationToken ct = default)
+    public async Task InvalidateBrandCacheAsync(BrandId brandId, CancellationToken ct = default)
     {
-        if (!_cacheOptions.IsEnabled)
-        {
-            _logger.LogDebug("Cache is disabled. Skipping inventory cache invalidation for Variant {VariantId}", variantId);
-            return;
-        }
-
-        await _cache.ClearAsync(CacheKeys.Inventory(variantId));
-        await _cache.ClearAsync(CacheKeys.InventoryStatus(variantId));
-        _logger.LogDebug("[CacheInvalidation] Inventory for Variant {VariantId} invalidated.", variantId);
+        await cache.RemoveAsync(CacheKeys.Brand(brandId.Value), ct);
+        await cache.RemoveAsync(CacheKeys.BrandList(), ct);
     }
 
-    public async Task InvalidateCartAsync(string cartKey, CancellationToken ct = default)
+    public async Task InvalidateUserCacheAsync(UserId userId, CancellationToken ct = default)
     {
-        if (!_cacheOptions.IsEnabled)
-        {
-            _logger.LogDebug("Cache is disabled. Skipping cart cache invalidation for Cart {CartKey}", cartKey);
-            return;
-        }
-
-        await _cache.ClearAsync(CacheKeys.Cart(cartKey));
-        _logger.LogDebug("[CacheInvalidation] Cart {CartKey} invalidated.", cartKey);
+        await cache.RemoveAsync(CacheKeys.UserProfile(userId.Value), ct);
     }
 
-    public async Task InvalidateUserOrdersAsync(int userId, CancellationToken ct = default)
+    public async Task InvalidateCartCacheAsync(CartId cartId, CancellationToken ct = default)
     {
-        if (!_cacheOptions.IsEnabled)
-        {
-            _logger.LogDebug("Cache is disabled. Skipping user orders cache invalidation for User {UserId}", userId);
-            return;
-        }
-
-        await _cache.ClearAsync(CacheKeys.UserOrders(userId));
-        await _cache.ClearByPrefixAsync($"orders:user:{userId}:");
-        _logger.LogDebug("[CacheInvalidation] User {UserId} orders cache invalidated.", userId);
+        await cache.RemoveAsync(CacheKeys.Cart(cartId.Value), ct);
     }
 
-    public async Task InvalidateByPatternAsync(string pattern, CancellationToken ct = default)
+    public async Task InvalidateInventoryCacheAsync(VariantId variantId, CancellationToken ct = default)
     {
-        if (!_cacheOptions.IsEnabled)
-        {
-            _logger.LogDebug("Cache is disabled. Skipping pattern cache invalidation for Pattern '{Pattern}'", pattern);
-            return;
-        }
-
-        await _cache.ClearByPrefixAsync(pattern);
-        _logger.LogDebug("[CacheInvalidation] Pattern '{Pattern}' invalidated.", pattern);
+        await cache.RemoveAsync(CacheKeys.Inventory(variantId.Value), ct);
     }
 }

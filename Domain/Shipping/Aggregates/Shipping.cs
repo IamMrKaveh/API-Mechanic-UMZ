@@ -5,7 +5,7 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Shipping.Aggregates;
 
-public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditable
+public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditable, ISoftDeletable
 {
     public ShippingName Name { get; private set; } = null!;
     public string? Description { get; private set; }
@@ -22,6 +22,10 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
     public DateTime? UpdatedAt { get; private set; }
 
     public Money Cost => BaseCost;
+
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public Guid? DeletedBy { get; private set; }
 
     private Shipping()
     { }

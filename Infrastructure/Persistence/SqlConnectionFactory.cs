@@ -1,9 +1,13 @@
+using Application.Common.Contracts;
+using System.Data;
+
 namespace Infrastructure.Persistence;
 
-public class SqlConnectionFactory(IConfiguration configuration) : ISqlConnectionFactory
+public sealed class SqlConnectionFactory(IConfiguration configuration) : ISqlConnectionFactory
 {
-    private readonly string _connectionString = configuration.GetConnectionString("PoolerConnection")
-            ?? throw new InvalidOperationException("Connection string 'PoolerConnection' not found.");
+    private readonly string _connectionString =
+        configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
     public IDbConnection CreateConnection()
     {

@@ -1,99 +1,111 @@
+using Application.Communication.Contracts;
+using Domain.Security.ValueObjects;
+using Domain.User.ValueObjects;
+using Infrastructure.Communication.Options;
+using Microsoft.Extensions.Logging;
+
 namespace Infrastructure.Communication.Services;
 
-internal class SmsService : ISmsService
+public sealed class SmsService(
+    IOptions<KavenegarOptions> options,
+    ILogger<SmsService> logger) : ISmsService
 {
-    private readonly ILogger<SmsService> _logger;
-    private readonly KavenegarOptions _options;
+    private readonly KavenegarOptions _options = options.Value;
 
-    public SmsService(
-        ILogger<SmsService> logger,
-        IOptions<KavenegarOptions> options)
+    public async Task<bool> SendOtpSMSAsync(
+        PhoneNumber phoneNumber,
+        OtpCode code,
+        CancellationToken ct = default)
     {
-        _logger = logger;
-        _options = options.Value;
+        try
+        {
+            using var client = new HttpClient();
+            var url = $"https://api.kavenegar.com/v1/{_options.ApiKey}/verify/lookup.json";
+            var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["receptor"] = phoneNumber.Value,
+                ["token"] = code.Value,
+                ["template"] = _options.OtpTemplate
+            });
 
-        if (string.IsNullOrWhiteSpace(_options.ApiKey))
-            throw new InvalidOperationException(
-                "Kavenegar ApiKey is not configured. " +
-                "Please set the 'Kavenegar:ApiKey' configuration value via environment variables or secrets manager.");
+            var response = await client.PostAsync(url, content, ct);
+            response.EnsureSuccessStatusCode();
+
+            logger.LogInformation("OTP sent to {PhoneNumber}", phoneNumber.Value);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send OTP to {PhoneNumber}", phoneNumber.Value);
+            return false;
+        }
     }
 
-    public async Task<SmsResult> SendSmsAsync(
-        string phoneNumber,
+    public async Task<bool> SendSMSAsync(
+        PhoneNumber phoneNumber,
         string message,
         CancellationToken ct = default)
     {
         try
         {
-            var apiKey = _options.ApiKey;
-
-            var isVerifyTemplate = message.All(char.IsDigit) && message.Length >= 4 && message.Length <= 6;
-            var url = isVerifyTemplate
-                ? $"https://api.kavenegar.com/v1/{apiKey}/verify/lookup.json"
-                : $"https://api.kavenegar.com/v1/{apiKey}/sms/send.json";
-
-            using var http = new HttpClient();
-
-            var data = new Dictionary<string, string>();
-            if (isVerifyTemplate)
+            using var client = new HttpClient();
+            var url = $"https://api.kavenegar.com/v1/{_options.ApiKey}/sms/send.json";
+            var content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                data.Add("receptor", phoneNumber);
-                data.Add("token", message);
-                data.Add("template", "verify");
-            }
-            else
-            {
-                data.Add("receptor", phoneNumber);
-                data.Add("message", message);
-                data.Add("sender", _options.SenderNumber);
-            }
+                ["receptor"] = phoneNumber.Value,
+                ["sender"] = _options.Sender,
+                ["message"] = message
+            });
 
-            var response = await http.PostAsync(url, new FormUrlEncodedContent(data), ct);
+            var response = await client.PostAsync(url, content, ct);
+            response.EnsureSuccessStatusCode();
 
-            if (response.IsSuccessStatusCode)
-            {
-                _logger.LogInformation("SMS sent to {PhoneNumber} via Kavenegar.", MaskPhoneNumber(phoneNumber));
-                return SmsResult.Success(Guid.NewGuid().ToString());
-            }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync(ct);
-                _logger.LogError("Kavenegar failed. Status: {Status}, Content: {Content}", response.StatusCode, errorContent);
-                return SmsResult.Failed($"خطا در ارسال پیامک: {response.StatusCode}");
-            }
+            logger.LogInformation("SMS sent to {PhoneNumber}", phoneNumber.Value);
+            return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send SMS to {PhoneNumber}", MaskPhoneNumber(phoneNumber));
-            return SmsResult.Failed($"خطا در ارسال پیامک: {ex.Message}");
+            logger.LogError(ex, "Failed to send SMS to {PhoneNumber}", phoneNumber.Value);
+            return false;
         }
     }
 
-    public async Task SendOrderConfirmationSmsAsync(
-        string phoneNumber,
-        string orderNumber,
-        decimal totalAmount,
+    public async Task<bool> SendTemplateSMSAsync(
+        PhoneNumber phoneNumber,
+        string templateName,
+        Dictionary<string, string> parameters,
         CancellationToken ct = default)
     {
-        var message = $"سفارش شماره {orderNumber} به مبلغ {totalAmount:N0} تومان با موفقیت ثبت شد. - فروشگاه لدکا";
-        await SendSmsAsync(phoneNumber, message, ct);
-    }
+        try
+        {
+            using var client = new HttpClient();
+            var url = $"https://api.kavenegar.com/v1/{_options.ApiKey}/verify/lookup.json";
 
-    public async Task SendPaymentSuccessSmsAsync(
-        string phoneNumber,
-        string orderNumber,
-        string refId,
-        CancellationToken ct = default)
-    {
-        var message = $"پرداخت سفارش {orderNumber} موفق بود. کد پیگیری: {refId} - فروشگاه لدکا";
-        await SendSmsAsync(phoneNumber, message, ct);
-    }
+            var formData = new Dictionary<string, string>
+            {
+                ["receptor"] = phoneNumber.Value,
+                ["template"] = templateName
+            };
 
-    private static string MaskPhoneNumber(string phoneNumber)
-    {
-        if (string.IsNullOrEmpty(phoneNumber) || phoneNumber.Length < 7)
-            return "***";
+            var tokenIndex = 1;
+            foreach (var (_, value) in parameters)
+            {
+                var tokenKey = tokenIndex == 1 ? "token" : $"token{tokenIndex}";
+                formData[tokenKey] = value;
+                tokenIndex++;
+            }
 
-        return phoneNumber[..4] + "***" + phoneNumber[^3..];
+            var content = new FormUrlEncodedContent(formData);
+            var response = await client.PostAsync(url, content, ct);
+            response.EnsureSuccessStatusCode();
+
+            logger.LogInformation("Template SMS sent to {PhoneNumber} with template {Template}", phoneNumber.Value, templateName);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send template SMS to {PhoneNumber}", phoneNumber.Value);
+            return false;
+        }
     }
 }

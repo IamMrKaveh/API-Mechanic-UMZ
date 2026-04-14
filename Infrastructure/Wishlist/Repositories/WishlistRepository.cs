@@ -1,37 +1,49 @@
-﻿using Domain.Wishlist.Interfaces;
+﻿using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
+using Domain.Wishlist.Interfaces;
 using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Wishlist.Repositories;
 
-public class WishlistRepository(DBContext context) : IWishlistRepository
+public sealed class WishlistRepository(DBContext context) : IWishlistRepository
 {
-    private readonly DBContext _context = context;
-
-    public async Task AddAsync(
-        Domain.Wishlist.Aggregates.Wishlist wishlist,
+    public async Task<Domain.Wishlist.Aggregates.Wishlist?> GetByUserAndProductAsync(
+        UserId userId,
+        ProductId productId,
         CancellationToken ct = default)
     {
-        await _context.Wishlists.AddAsync(wishlist, ct);
+        return await context.Wishlists
+            .FirstOrDefaultAsync(w => w.UserId == userId && w.ProductId == productId, ct);
     }
 
-    public async Task RemoveAsync(
-        int userId,
-        int productId,
+    public async Task<bool> ExistsAsync(UserId userId, ProductId productId, CancellationToken ct = default)
+    {
+        return await context.Wishlists
+            .AnyAsync(w => w.UserId == userId && w.ProductId == productId, ct);
+    }
+
+    public async Task<IReadOnlyList<Domain.Wishlist.Aggregates.Wishlist>> GetByUserIdAsync(
+        UserId userId,
         CancellationToken ct = default)
     {
-        var entry = await _context.Wishlists
+        var results = await context.Wishlists
+            .Where(w => w.UserId == userId)
+            .ToListAsync(ct);
+
+        return results.AsReadOnly();
+    }
+
+    public async Task AddAsync(Domain.Wishlist.Aggregates.Wishlist wishlist, CancellationToken ct = default)
+    {
+        await context.Wishlists.AddAsync(wishlist, ct);
+    }
+
+    public async Task RemoveAsync(UserId userId, ProductId productId, CancellationToken ct = default)
+    {
+        var wishlist = await context.Wishlists
             .FirstOrDefaultAsync(w => w.UserId == userId && w.ProductId == productId, ct);
 
-        if (entry != null)
-            _context.Wishlists.Remove(entry);
-    }
-
-    public async Task<bool> ExistsAsync(
-        int userId,
-        int productId,
-        CancellationToken ct = default)
-    {
-        return await _context.Wishlists
-            .AnyAsync(w => w.UserId == userId && w.ProductId == productId, ct);
+        if (wishlist is not null)
+            context.Wishlists.Remove(wishlist);
     }
 }

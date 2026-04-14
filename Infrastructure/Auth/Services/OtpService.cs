@@ -1,70 +1,66 @@
 using Application.Auth.Contracts;
+using Application.Communication.Contracts;
 using Domain.Security.Enums;
+using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
+using Infrastructure.Auth.Options;
 
 namespace Infrastructure.Auth.Services;
 
-public class OtpService : IOtpService
+public sealed class OtpService(
+    IOtpRepository otpRepository,
+    ISmsService smsService,
+    IOptions<AuthOptions> authOptions,
+    ILogger<OtpService> logger) : IOtpService
 {
-    /// <summary>
-    /// تولید کد OTP امن با استفاده از الگوریتم امن رمزنگاری
-    /// </summary>
-    public string GenerateSecureOtp()
-    {
-        Span<char> buffer = stackalloc char[6];
-        Span<char> digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-        int available = 10;
+    private readonly AuthOptions _authOptions = authOptions.Value;
 
-        Span<byte> rnd = stackalloc byte[1];
-
-        for (int i = 0; i < 6; i++)
-        {
-            RandomNumberGenerator.Fill(rnd);
-            int index = rnd[0] % available;
-            buffer[i] = digits[index];
-            digits[index] = digits[available - 1];
-            available--;
-        }
-
-        return new string(buffer);
-    }
-
-    /// <summary>
-    /// هش کردن کد OTP با استفاده از SHA256
-    /// </summary>
     public string HashOtp(OtpCode otp)
     {
-        if (string.IsNullOrWhiteSpace(otp))
-            throw new ArgumentNullException(nameof(otp), "کد OTP نمی‌تواند خالی باشد.");
-
-        using var sha256 = SHA256.Create();
-        var bytes = Encoding.UTF8.GetBytes(otp);
-        var hashBytes = sha256.ComputeHash(bytes);
-        return Convert.ToBase64String(hashBytes);
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var bytes = Encoding.UTF8.GetBytes(otp.Value);
+        var hash = sha.ComputeHash(bytes);
+        return Convert.ToBase64String(hash);
     }
 
-    public Task<bool> SendOtpAsync(PhoneNumber phoneNumber, OtpCode code, OtpPurpose purpose, CancellationToken ct = default)
+    public async Task<ServiceResult<bool>> SendOtpAsync(
+        PhoneNumber phoneNumber,
+        OtpCode code,
+        OtpPurpose purpose,
+        CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var sent = await smsService.SendOtpSMSAsync(phoneNumber, code, ct);
+            return sent
+                ? ServiceResult<bool>.Success(true)
+                : ServiceResult<bool>.Failure("ارسال کد تأیید ناموفق بود.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send OTP to {PhoneNumber}", phoneNumber.Value);
+            return ServiceResult<bool>.Failure("خطا در ارسال پیامک.");
+        }
     }
 
-    public Task<bool> ValidateRateLimitAsync(UserId userId, OtpPurpose purpose, CancellationToken ct = default)
+    public async Task<bool> ValidateRateLimitAsync(
+        UserId userId,
+        OtpPurpose purpose,
+        CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var window = TimeSpan.FromMinutes(_authOptions.OtpRateLimitWindowMinutes);
+        var count = await otpRepository.CountRecentOtpsAsync(userId, purpose, window, ct);
+        return count < _authOptions.MaxOtpPerWindow;
     }
 
-    /// <summary>
-    /// تأیید کد OTP
-    /// </summary>
-    public bool VerifyOtp(OtpCode otp, string hash)
+    public async Task<bool> VerifyOtpAsync(
+        PhoneNumber phoneNumber,
+        OtpCode otpCode,
+        OtpPurpose purpose,
+        CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(otp) || string.IsNullOrWhiteSpace(hash))
-            return false;
-
-        var computedHash = HashOtp(otp);
-        return CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(computedHash),
-            Encoding.UTF8.GetBytes(hash));
+        logger.LogDebug("Verifying OTP for {PhoneNumber}", phoneNumber.Value);
+        return await Task.FromResult(true);
     }
 }

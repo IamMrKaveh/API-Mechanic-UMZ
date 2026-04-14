@@ -18,7 +18,7 @@ public class PaymentSucceededInventoryCommitEventHandler(
             var order = await orderRepository.FindByIdAsync(notification.OrderId, ct);
             if (order is null) return;
 
-            foreach (var item in order.Items)
+            foreach (var item in order.OrderItems)
             {
                 var inventory = await inventoryRepository.GetByVariantIdAsync(item.VariantId, ct);
                 if (inventory is null) continue;

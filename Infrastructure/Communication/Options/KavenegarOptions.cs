@@ -1,9 +1,10 @@
 ﻿namespace Infrastructure.Communication.Options;
 
-internal class KavenegarOptions
+public sealed class KavenegarOptions
 {
     public const string SectionName = "Kavenegar";
 
-    public string ApiKey { get; set; } = string.Empty;
-    public string SenderNumber { get; set; } = string.Empty;
+    public string ApiKey { get; init; } = string.Empty;
+    public string Sender { get; init; } = string.Empty;
+    public string OtpTemplate { get; init; } = "otp";
 }

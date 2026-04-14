@@ -33,7 +33,7 @@ public class SyncCartPricesHandler(
         if (cart is null)
             return ServiceResult.NotFound("سبد خرید یافت نشد.");
 
-        foreach (var item in cart.Items)
+        foreach (var item in cart.CartItems)
         {
             var variant = await variantRepository.GetByIdAsync(item.VariantId, ct);
             if (variant is not null)

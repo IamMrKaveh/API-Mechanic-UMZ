@@ -10,7 +10,7 @@ namespace Domain.Order.Aggregates;
 
 public sealed class Order : AggregateRoot<OrderId>
 {
-    private readonly List<OrderItem> _items = [];
+    private readonly List<OrderItem> _orderItems = [];
 
     public OrderNumber OrderNumber { get; private init; } = null!;
     public UserId UserId { get; private init; } = default!;
@@ -29,7 +29,7 @@ public sealed class Order : AggregateRoot<OrderId>
     public DateTime CreatedAt { get; private init; }
     public DateTime? UpdatedAt { get; private set; }
 
-    public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
+    public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
 
     public bool IsPaid => Status.IsPaid;
     public bool IsCancelled => Status == OrderStatusValue.Cancelled;
@@ -63,7 +63,7 @@ public sealed class Order : AggregateRoot<OrderId>
         CreatedAt = DateTime.UtcNow;
 
         foreach (var snapshot in itemSnapshots)
-            _items.Add(OrderItem.FromSnapshot(id, snapshot));
+            _orderItems.Add(OrderItem.FromSnapshot(id, snapshot));
 
         RecalculateTotals();
 
@@ -73,7 +73,7 @@ public sealed class Order : AggregateRoot<OrderId>
             orderNumber,
             FinalAmount.Amount,
             FinalAmount.Currency,
-            _items.Count,
+            _orderItems.Count,
             idempotencyKey));
     }
 
@@ -111,7 +111,7 @@ public sealed class Order : AggregateRoot<OrderId>
             idempotencyKey);
     }
 
-    public bool HasItems() => _items.Any();
+    public bool HasItems() => _orderItems.Any();
 
     public bool CanBeCancelled() => Status.CanBeCancelled();
 
@@ -227,7 +227,7 @@ public sealed class Order : AggregateRoot<OrderId>
 
     private void RecalculateTotals()
     {
-        SubTotal = _items.Aggregate(
+        SubTotal = _orderItems.Aggregate(
             Money.Zero(),
             (acc, item) => acc.Add(item.TotalPrice));
 

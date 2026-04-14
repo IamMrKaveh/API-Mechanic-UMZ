@@ -22,7 +22,7 @@ public static class ConfigurationValidationExtension
             .Where(key => string.IsNullOrWhiteSpace(builder.Configuration[key]))
             .ToList();
 
-        if (missing.Any())
+        if (missing.Count != 0)
         {
             throw new InvalidOperationException(
                 $"Required configuration keys are missing or empty: {string.Join(", ", missing)}. " +

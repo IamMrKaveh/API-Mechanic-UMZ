@@ -1,14 +1,13 @@
 ﻿namespace Infrastructure.Cache.Options;
 
-public class CacheOptions
+public sealed class CacheOptions
 {
     public const string SectionName = "Cache";
 
-    /// <summary>
-    /// آیا سرویس Cache (Redis) فعال است
-    /// </summary>
-    public bool IsEnabled { get; set; } = false;
-
-    public int DefaultTtlMinutes { get; set; } = 5;
-    public int LockTtlSeconds { get; set; } = 30;
+    public bool UseRedis { get; init; } = true;
+    public string RedisConnectionString { get; init; } = string.Empty;
+    public int DefaultExpirationMinutes { get; init; } = 30;
+    public int ShortExpirationMinutes { get; init; } = 5;
+    public int LongExpirationMinutes { get; init; } = 120;
+    public string KeyPrefix { get; init; } = "shop";
 }

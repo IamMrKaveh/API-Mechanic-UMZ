@@ -19,7 +19,7 @@ public class DeleteOrderItemHandler(
 
         try
         {
-            order.Items
+            order.OrderItems
                 .FirstOrDefault(i => i.Id == orderItemId);
 
             orderRepository.Update(order);
