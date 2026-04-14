@@ -1,5 +1,7 @@
 using Domain.Support.Aggregates;
 using Domain.Support.Interfaces;
+using Domain.Support.ValueObjects;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Support.Repositories;
 
@@ -17,7 +19,7 @@ public class TicketRepository(DBContext context) : ITicketRepository
         _context.Tickets.Update(ticket);
     }
 
-    public async Task<Ticket?> GetByIdWithMessagesAsync(int id, CancellationToken ct = default)
+    public async Task<Ticket?> GetByIdWithMessagesAsync(TicketId id, CancellationToken ct = default)
     {
         return await _context.Tickets
             .Include(t => t.Messages)

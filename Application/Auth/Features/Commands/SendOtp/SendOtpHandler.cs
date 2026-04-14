@@ -10,7 +10,7 @@ public class SendOtpHandler(
     public async Task<ServiceResult> Handle(SendOtpCommand request, CancellationToken ct)
     {
         var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
-        var otpCode = OtpCode.Create(request.otpCode);
+        var otpCode = OtpCode.Generate(6);
         var result = await otpService.SendOtpAsync(phoneNumber, otpCode, request.Purpose, ct);
 
         if (result.IsFailed)

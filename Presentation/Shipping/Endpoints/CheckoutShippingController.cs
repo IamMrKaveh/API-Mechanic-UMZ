@@ -32,7 +32,7 @@ public sealed class CheckoutShippingController(IMediator mediator) : BaseApiCont
         [FromQuery] Guid shippingMethodId,
         CancellationToken ct)
     {
-        var query = new CalculateShippingCostQuery(CurrentUser.UserId, shippingMethodId);
+        var query = new CalculateShippingCostQuery(shippingMethodId);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }

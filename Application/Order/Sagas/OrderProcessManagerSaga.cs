@@ -39,7 +39,7 @@ public sealed class OrderProcessManagerSaga(
 
         var referenceNumber = $"ORDER-{order.Id.Value}";
 
-        foreach (var item in order.Items)
+        foreach (var item in order.OrderItems)
         {
             var result = await inventoryService.ReserveStockAsync(
                 item.VariantId,

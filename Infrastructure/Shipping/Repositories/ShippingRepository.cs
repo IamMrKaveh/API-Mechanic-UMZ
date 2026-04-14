@@ -1,4 +1,6 @@
 using Domain.Shipping.Interfaces;
+using Domain.Shipping.ValueObjects;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Shipping.Repositories;
 
@@ -20,7 +22,7 @@ public class ShippingRepository(DBContext context) : IShippingRepository
     }
 
     public async Task<Domain.Shipping.Aggregates.Shipping?> GetByIdAsync(
-        int id,
+        ShippingId id,
         CancellationToken ct = default)
     {
         return await _context.Shippings
@@ -28,7 +30,7 @@ public class ShippingRepository(DBContext context) : IShippingRepository
     }
 
     public async Task<IEnumerable<Domain.Shipping.Aggregates.Shipping>> GetByIdsAsync(
-        IEnumerable<int> ids,
+        IEnumerable<ShippingId> ids,
         CancellationToken ct = default)
     {
         return await _context.Shippings
@@ -44,20 +46,6 @@ public class ShippingRepository(DBContext context) : IShippingRepository
     public async Task<Domain.Shipping.Aggregates.Shipping?> GetDefaultAsync(CancellationToken ct = default)
     {
         return await _context.Shippings.FirstOrDefaultAsync(m => m.IsDefault && !m.IsDeleted, ct);
-    }
-
-    public async Task<bool> ExistsByNameAsync(
-        string name,
-        int? excludeId = null,
-        CancellationToken ct = default)
-    {
-        var query = _context.Shippings
-            .Where(m => m.Name == name.Trim() && !m.IsDeleted);
-
-        if (excludeId.HasValue)
-            query = query.Where(m => m.Id != excludeId.Value);
-
-        return await query.AnyAsync(ct);
     }
 
     public async Task AddAsync(

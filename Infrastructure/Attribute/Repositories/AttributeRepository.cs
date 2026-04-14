@@ -2,127 +2,101 @@ using Domain.Attribute.Aggregates;
 using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
-using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Attribute.Repositories;
 
-public class AttributeRepository(DBContext context) : IAttributeRepository
+public sealed class AttributeRepository(DBContext context) : IAttributeRepository
 {
-    private readonly DBContext _context = context;
-
     public async Task<AttributeType?> GetAttributeTypeByIdAsync(
         AttributeTypeId id,
         CancellationToken ct = default)
     {
-        return await _context.AttributeTypes
-            .FirstOrDefaultAsync(at => at.Id == id && !at.IsDeleted, ct);
+        return await context.AttributeTypes
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
     }
 
     public async Task<AttributeType?> GetAttributeTypeWithValuesAsync(
         AttributeTypeId id,
         CancellationToken ct = default)
     {
-        return await _context.AttributeTypes
-            .Include(at => at.Values.Where(v => !v.IsDeleted))
-            .FirstOrDefaultAsync(at => at.Id == id && !at.IsDeleted, ct);
+        return await context.AttributeTypes
+            .Include(a => a.Values)
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
     }
 
     public async Task<AttributeValue?> GetAttributeValueByIdAsync(
         AttributeValueId id,
         CancellationToken ct = default)
     {
-        return await _context.AttributeValues
-            .Include(av => av.AttributeType)
-            .FirstOrDefaultAsync(av => av.Id == id && !av.IsDeleted, ct);
+        return await context.AttributeValues
+            .Include(v => v.AttributeType)
+            .FirstOrDefaultAsync(v => v.Id == id, ct);
     }
 
-    public async Task<IEnumerable<AttributeValue>> GetAttributeValuesByIdsAsync(
-        IEnumerable<AttributeValueId> ids,
+    public async Task<IReadOnlyList<AttributeType>> GetAllAttributeTypesAsync(
         CancellationToken ct = default)
     {
-        var idList = ids.ToList();
-        return await _context.AttributeValues
-            .Include(av => av.AttributeType)
-            .Where(av => idList.Contains(av.Id) && !av.IsDeleted && av.IsActive)
+        var results = await context.AttributeTypes
+            .Include(a => a.Values)
+            .OrderBy(a => a.SortOrder)
             .ToListAsync(ct);
+
+        return results.AsReadOnly();
     }
 
     public async Task<bool> AttributeTypeExistsAsync(
         string name,
-        AttributeTypeId? excludeId = null,
+        AttributeTypeId? excludeId,
         CancellationToken ct = default)
     {
-        var query = _context.AttributeTypes
-            .Where(at => at.Name == name && !at.IsDeleted);
-
+        var query = context.AttributeTypes.Where(a => a.Name == name);
         if (excludeId is not null)
-            query = query.Where(at => at.Id != excludeId);
-
+            query = query.Where(a => a.Id != excludeId);
         return await query.AnyAsync(ct);
     }
 
     public async Task<bool> AttributeValueExistsAsync(
-    AttributeTypeId typeId,
-    string value,
-    AttributeValueId? excludeId = null,
-    CancellationToken ct = default)
+        AttributeTypeId typeId,
+        string value,
+        AttributeValueId? excludeId,
+        CancellationToken ct = default)
     {
-        var query = _context.AttributeValues
-            .Where(av => av.AttributeTypeId == typeId && av.Value == value && !av.IsDeleted);
-
+        var query = context.AttributeValues
+            .Where(v => v.AttributeTypeId == typeId && v.Value == value);
         if (excludeId is not null)
-            query = query.Where(av => av.Id != excludeId);
-
+            query = query.Where(v => v.Id != excludeId);
         return await query.AnyAsync(ct);
     }
 
-    public async Task AddAttributeTypeAsync(
-        AttributeType attributeType,
-        CancellationToken ct = default)
+    public async Task AddAttributeTypeAsync(AttributeType attributeType, CancellationToken ct = default)
     {
-        await _context.AttributeTypes.AddAsync(attributeType, ct);
+        await context.AttributeTypes.AddAsync(attributeType, ct);
     }
 
-    public async Task AddAttributeValueAsync(
-        AttributeValue attributeValue,
-        CancellationToken ct = default)
+    public async Task UpdateAttributeTypeAsync(AttributeType attributeType, CancellationToken ct = default)
     {
-        await _context.AttributeValues.AddAsync(attributeValue, ct);
-    }
-
-    public async Task UpdateAttributeValueAsync(AttributeValue attributeValue)
-    {
-        _context.AttributeValues.Update(attributeValue);
-        await Task.CompletedTask;
-    }
-
-    public async Task UpdateAttributeTypeAsync(AttributeType attributeType)
-    {
-        _context.AttributeTypes.Update(attributeType);
+        context.AttributeTypes.Update(attributeType);
         await Task.CompletedTask;
     }
 
     public async Task DeleteAttributeTypeAsync(
         AttributeTypeId id,
-        UserId? deletedBy = null,
+        AttributeTypeId? replacementId,
         CancellationToken ct = default)
     {
-        var attributeType = await _context.AttributeTypes
-            .Include(at => at.Values)
-            .FirstOrDefaultAsync(at => at.Id == id, ct);
-
-        attributeType?.Delete(deletedBy);
+        var entity = await context.AttributeTypes.FindAsync([id], ct);
+        if (entity is not null)
+            context.AttributeTypes.Remove(entity);
     }
 
     public async Task DeleteAttributeValueAsync(
         AttributeValueId id,
-        UserId? deletedBy = null,
+        AttributeValueId? replacementId,
         CancellationToken ct = default)
     {
-        var attributeValue = await _context.AttributeValues
-            .FirstOrDefaultAsync(av => av.Id == id, ct);
-
-        attributeValue?.Delete(deletedBy);
+        var entity = await context.AttributeValues.FindAsync([id], ct);
+        if (entity is not null)
+            context.AttributeValues.Remove(entity);
     }
 }

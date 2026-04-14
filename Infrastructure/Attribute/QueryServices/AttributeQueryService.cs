@@ -6,16 +6,13 @@ using MapsterMapper;
 
 namespace Infrastructure.Attribute.QueryServices;
 
-public class AttributeQueryService(DBContext context, IMapper mapper) : IAttributeQueryService
+public sealed class AttributeQueryService(DBContext context, IMapper mapper) : IAttributeQueryService
 {
-    private readonly DBContext _context = context;
-    private readonly IMapper _mapper = mapper;
-
     public async Task<IEnumerable<AttributeTypeDto>> GetAllAttributeTypesAsync(
         bool includeInactive = false,
         CancellationToken ct = default)
     {
-        var query = _context.AttributeTypes
+        var query = context.AttributeTypes
             .Include(at => at.Values.Where(v => !v.IsDeleted))
             .Where(at => !at.IsDeleted);
 
@@ -24,42 +21,47 @@ public class AttributeQueryService(DBContext context, IMapper mapper) : IAttribu
 
         var types = await query
             .OrderBy(at => at.SortOrder)
+            .AsNoTracking()
             .ToListAsync(ct);
 
-        return _mapper.Map<IEnumerable<AttributeTypeDto>>(types);
+        return mapper.Map<IEnumerable<AttributeTypeDto>>(types);
     }
 
-    public Task<AttributeTypeDto?> GetAttributeTypeByIdAsync(AttributeTypeId attributeTypeId, CancellationToken ct = default)
+    public async Task<AttributeTypeDto?> GetAttributeTypeByIdAsync(
+        AttributeTypeId attributeTypeId,
+        CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var attributeType = await context.AttributeTypes
+            .Include(at => at.Values.Where(v => !v.IsDeleted))
+            .AsNoTracking()
+            .FirstOrDefaultAsync(at => at.Id == attributeTypeId && !at.IsDeleted, ct);
+
+        return attributeType is null ? null : mapper.Map<AttributeTypeDto>(attributeType);
     }
 
     public async Task<AttributeTypeWithValuesDto?> GetAttributeTypeWithValuesDtoAsync(
         AttributeTypeId id,
         CancellationToken ct = default)
     {
-        var attributeType = await _context.AttributeTypes
+        var attributeType = await context.AttributeTypes
             .Include(at => at.Values.Where(v => !v.IsDeleted))
+            .AsNoTracking()
             .FirstOrDefaultAsync(at => at.Id == id && !at.IsDeleted, ct);
 
-        return attributeType == null ? null : _mapper.Map<AttributeTypeWithValuesDto>(attributeType);
+        return attributeType is null ? null : mapper.Map<AttributeTypeWithValuesDto>(attributeType);
     }
 
-    public async Task<IEnumerable<AttributeValueDto>> GetAttributeValuesByTypeIdAsync(
-        AttributeTypeId typeId,
+    public async Task<IReadOnlyList<AttributeValueDto>> GetAttributeValuesByTypeIdAsync(
+        AttributeTypeId attributeTypeId,
         CancellationToken ct = default)
     {
-        var values = await _context.AttributeValues
+        var values = await context.AttributeValues
             .Include(av => av.AttributeType)
-            .Where(av => av.AttributeTypeId == typeId && !av.IsDeleted)
+            .Where(av => av.AttributeTypeId == attributeTypeId && !av.IsDeleted && av.IsActive)
             .OrderBy(av => av.SortOrder)
+            .AsNoTracking()
             .ToListAsync(ct);
 
-        return _mapper.Map<IEnumerable<AttributeValueDto>>(values);
-    }
-
-    Task<IReadOnlyList<AttributeValueDto>> IAttributeQueryService.GetAttributeValuesByTypeIdAsync(AttributeTypeId attributeTypeId, CancellationToken ct)
-    {
-        throw new NotImplementedException();
+        return mapper.Map<IReadOnlyList<AttributeValueDto>>(values);
     }
 }

@@ -49,7 +49,7 @@ public class ChangePhoneNumberHandler(
             await auditService.LogSecurityEventAsync(
                 "PhoneNumberChanged",
                 $"شماره تلفن کاربر {userId} تغییر کرد.",
-                IpAddress.SystemIp,
+                IpAddress.System,
                 userId,
                 ct);
 

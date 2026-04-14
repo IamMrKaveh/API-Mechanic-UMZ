@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Notification.QueryServices;
+﻿using Infrastructure.Persistence.Context;
+
+namespace Infrastructure.Notification.QueryServices;
 
 public class NotificationQueryService(DBContext context) : INotificationQueryService
 {

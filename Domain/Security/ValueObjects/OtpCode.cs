@@ -31,8 +31,23 @@ public sealed class OtpCode : ValueObject
         if (length < MinLength || length > MaxLength)
             throw new DomainException($"طول کد OTP باید بین {MinLength} تا {MaxLength} باشد.");
 
-        var random = new Random();
-        var code = string.Concat(Enumerable.Range(0, length).Select(_ => random.Next(0, 10)));
+        if (length > 10)
+            throw new DomainException("برای جلوگیری از تکرار، طول OTP نمی‌تواند بیشتر از 10 باشد.");
+
+        var digits = Enumerable.Range(0, 10).ToList();
+
+        using var rng = RandomNumberGenerator.Create();
+        for (int i = digits.Count - 1; i > 0; i--)
+        {
+            var box = new byte[4];
+            rng.GetBytes(box);
+            int j = BitConverter.ToInt32(box, 0) & int.MaxValue % (i + 1);
+
+            (digits[i], digits[j]) = (digits[j], digits[i]);
+        }
+
+        var code = string.Concat(digits.Take(length));
+
         return new OtpCode(code);
     }
 

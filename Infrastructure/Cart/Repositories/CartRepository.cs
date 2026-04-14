@@ -1,76 +1,50 @@
 ﻿using Domain.Cart.Interfaces;
+using Domain.Cart.ValueObjects;
+using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Cart.Repositories;
 
-public class CartRepository(DBContext context) : ICartRepository
+public sealed class CartRepository(DBContext context) : ICartRepository
 {
-    private readonly DBContext _context = context;
-
-    public async Task<Domain.Cart.Aggregates.Cart?> GetByUserIdAsync(
-        int userId,
-        CancellationToken ct = default)
+    public async Task<Domain.Cart.Aggregates.Cart?> GetByUserIdAsync(UserId userId, CancellationToken ct = default)
     {
-        return await _context.Carts
+        return await context.Carts
             .Include(c => c.CartItems)
-            .FirstOrDefaultAsync(c => c.UserId == userId && !c.IsDeleted, ct);
+            .FirstOrDefaultAsync(c => c.UserId == userId, ct);
     }
 
-    public async Task<Domain.Cart.Aggregates.Cart?> GetByGuestTokenAsync(
-        string guestToken,
-        CancellationToken ct = default)
+    public async Task<Domain.Cart.Aggregates.Cart?> GetByGuestTokenAsync(GuestToken token, CancellationToken ct = default)
     {
-        return await _context.Carts
+        return await context.Carts
             .Include(c => c.CartItems)
-            .FirstOrDefaultAsync(c => c.GuestToken == guestToken && !c.IsDeleted, ct);
+            .FirstOrDefaultAsync(c => c.GuestToken == token, ct);
     }
 
-    public async Task<Domain.Cart.Aggregates.Cart?> GetCartAsync(
-        int? userId,
-        string? guestToken,
-        CancellationToken ct = default)
+    public async Task<Domain.Cart.Aggregates.Cart?> GetByIdAsync(CartId cartId, CancellationToken ct = default)
     {
-        if (userId.HasValue)
-            return await GetByUserIdAsync(userId.Value, ct);
-
-        if (!string.IsNullOrEmpty(guestToken))
-            return await GetByGuestTokenAsync(guestToken, ct);
-
-        return null;
+        return await context.Carts
+            .Include(c => c.CartItems)
+            .FirstOrDefaultAsync(c => c.Id == cartId, ct);
     }
 
-    public async Task AddAsync(
-        Domain.Cart.Aggregates.Cart cart,
-        CancellationToken ct = default)
+    public async Task AddAsync(Domain.Cart.Aggregates.Cart cart, CancellationToken ct = default)
     {
-        await _context.Carts.AddAsync(cart, ct);
+        await context.Carts.AddAsync(cart, ct);
     }
 
-    public void Delete(Domain.Cart.Aggregates.Cart cart)
+    public void Update(Domain.Cart.Aggregates.Cart cart)
     {
-        _context.Carts.Remove(cart);
+        context.Carts.Update(cart);
     }
 
-    public async Task<int> DeleteExpiredGuestCartsAsync(
-        DateTime olderThan,
-        CancellationToken ct = default)
+    public async Task<bool> ExistsByUserIdAsync(UserId userId, CancellationToken ct = default)
     {
-        var expired = await _context.Carts
-            .Where(c => c.GuestToken != null && c.LastUpdated < olderThan && !c.IsDeleted)
-            .ToListAsync(ct);
-
-        _context.Carts.RemoveRange(expired);
-        return expired.Count;
+        return await context.Carts.AnyAsync(c => c.UserId == userId, ct);
     }
 
-    public async Task ClearCartAsync(
-        int userId,
-        CancellationToken ct = default)
+    public async Task<bool> ExistsByGuestTokenAsync(GuestToken token, CancellationToken ct = default)
     {
-        var cart = await GetByUserIdAsync(userId, ct);
-        if (cart is null) return;
-
-        _context.Carts.Remove(cart);
-        await _context.SaveChangesAsync(ct);
+        return await context.Carts.AnyAsync(c => c.GuestToken == token, ct);
     }
 }

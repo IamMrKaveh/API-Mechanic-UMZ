@@ -12,10 +12,6 @@ public interface ICategoryRepository
         Slug slug,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<Aggregates.Category>> GetByParentIdAsync(
-        CategoryId? parentId,
-        CancellationToken ct = default);
-
     Task<IReadOnlyList<Aggregates.Category>> GetAllActiveAsync(
         CancellationToken ct = default);
 
@@ -29,7 +25,7 @@ public interface ICategoryRepository
         CategoryId? excludeId = null,
         CancellationToken ct = default);
 
-    Task<bool> HasChildrenAsync(
+    Task<bool> HasBrandAsync(
         CategoryId id,
         CancellationToken ct = default);
 

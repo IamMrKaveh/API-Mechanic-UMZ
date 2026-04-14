@@ -6,7 +6,7 @@ global using SharedKernel.Abstractions.Interfaces;
 global using SharedKernel.Exceptions;
 global using SharedKernel.Guard;
 global using SharedKernel.Results;
-global using SharedKernel.Enums;
 global using SharedKernel.Specifications;
 global using SharedKernel.ValueObjects;
 global using System.Linq.Expressions;
+global using System.Security.Cryptography;

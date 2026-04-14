@@ -4,5 +4,5 @@ namespace Application.Cart.Features.Commands.MergeGuestCart;
 
 public record MergeGuestCartCommand(
     Guid? UserId,
-    string GuestToken,
+    string? GuestToken,
     CartMergeStrategy Strategy = CartMergeStrategy.SumQuantities) : IRequest<ServiceResult>;

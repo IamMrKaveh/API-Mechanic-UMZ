@@ -9,7 +9,7 @@ namespace Domain.Wallet.Aggregates;
 
 public sealed class Wallet : AggregateRoot<WalletId>
 {
-    private readonly List<WalletReservation> _activeReservations = new();
+    private readonly List<WalletReservation> _activeReservations = [];
 
     private Wallet()
     {

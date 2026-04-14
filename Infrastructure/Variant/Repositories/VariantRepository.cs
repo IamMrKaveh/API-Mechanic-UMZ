@@ -1,85 +1,49 @@
 using Domain.Variant.Aggregates;
 using Domain.Variant.Interfaces;
+using Domain.Variant.ValueObjects;
+using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Variant.Repositories;
 
-public class VariantRepository(DBContext context) : IVariantRepository
+public sealed class VariantRepository(DBContext context) : IVariantRepository
 {
-    private readonly DBContext _context = context;
+    public async Task<ProductVariant?> GetByIdAsync(VariantId variantId, CancellationToken ct = default)
+    {
+        return await context.ProductVariants
+            .Include(v => v.Attributes)
+            .ThenInclude(va => va.AttributeValue)
+            .ThenInclude(av => av!.AttributeType)
+            .FirstOrDefaultAsync(v => v.Id == variantId, ct);
+    }
 
-    public async Task AddAsync(
-        ProductVariant variant,
+    public async Task<IReadOnlyList<ProductVariant>> GetByProductIdAsync(
+        Domain.Product.ValueObjects.ProductId productId,
         CancellationToken ct = default)
     {
-        await _context.ProductVariants.AddAsync(variant, ct);
+        var results = await context.ProductVariants
+            .Include(v => v.Attributes)
+            .ThenInclude(va => va.AttributeValue)
+            .Where(v => v.ProductId == productId && !v.IsDeleted)
+            .ToListAsync(ct);
+
+        return results.AsReadOnly();
+    }
+
+    public async Task<bool> ExistsBySkuAsync(Sku sku, VariantId? excludeId = null, CancellationToken ct = default)
+    {
+        var query = context.ProductVariants.Where(v => v.Sku == sku.Value && !v.IsDeleted);
+        if (excludeId is not null)
+            query = query.Where(v => v.Id != excludeId);
+        return await query.AnyAsync(ct);
+    }
+
+    public async Task AddAsync(ProductVariant variant, CancellationToken ct = default)
+    {
+        await context.ProductVariants.AddAsync(variant, ct);
     }
 
     public void Update(ProductVariant variant)
     {
-        _context.ProductVariants.Update(variant);
-    }
-
-    public void SetOriginalRowVersion(
-        ProductVariant entity,
-        byte[] rowVersion)
-    {
-        _context.Entry(entity).Property(v => v.RowVersion).OriginalValue = rowVersion;
-    }
-
-    public async Task<ProductVariant?> GetByIdAsync(
-        int id,
-        CancellationToken ct = default)
-    {
-        return await _context.ProductVariants
-            .Include(v => v.VariantAttributes)
-                .ThenInclude(va => va.AttributeValue)
-            .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted, ct);
-    }
-
-    public async Task<ProductVariant?> GetByIdForUpdateAsync(
-        int id,
-        CancellationToken ct = default)
-    {
-        return await _context.ProductVariants
-            .Include(v => v.VariantAttributes)
-            .Include(v => v.ProductVariantShippings)
-            .FirstOrDefaultAsync(v => v.Id == id, ct);
-    }
-
-    public async Task<ProductVariant?> GetWithProductAsync(
-        int id,
-        CancellationToken ct = default)
-    {
-        return await _context.ProductVariants
-            .Include(v => v.Product)
-            .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted, ct);
-    }
-
-    public async Task<ProductVariant?> GetVariantWithShippingsAsync(
-        int id,
-        CancellationToken ct = default)
-    {
-        return await _context.ProductVariants
-            .Include(v => v.Product)
-            .Include(v => v.ProductVariantShippings)
-            .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted, ct);
-    }
-
-    public async Task<IReadOnlyList<ProductVariant>> GetByProductIdAsync(
-        int productId,
-        CancellationToken ct = default)
-    {
-        return await _context.ProductVariants
-            .Where(v => v.ProductId == productId && !v.IsDeleted)
-            .ToListAsync(ct);
-    }
-
-    public async Task<IReadOnlyList<ProductVariant>> GetByIdsAsync(
-        IEnumerable<int> ids,
-        CancellationToken ct = default)
-    {
-        return await _context.ProductVariants
-            .Where(v => ids.Contains(v.Id) && !v.IsDeleted)
-            .ToListAsync(ct);
+        context.ProductVariants.Update(variant);
     }
 }

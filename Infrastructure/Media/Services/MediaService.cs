@@ -1,4 +1,7 @@
+using Application.Media.Contracts;
+using Domain.Common.Interfaces;
 using Domain.Media.Interfaces;
+using Domain.Media.Services;
 
 namespace Infrastructure.Media.Services;
 
@@ -15,7 +18,7 @@ public class MediaService(
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly ILogger<MediaService> _logger = logger;
 
-    public async Task<MediaFile> AttachFileToEntityAsync(
+    public async Task<Domain.Media.Aggregates.Media> AttachFileToEntityAsync(
         int entityId,
         string entityType,
         IFormFile file,
@@ -28,7 +31,7 @@ public class MediaService(
             "directory",
             ct);
 
-        var mediaFile = MediaFile.Create(entityId, entityType, filePath, file.ContentType, file.FileName);
+        var mediaFile = Domain.Media.Aggregates.Media.Create(entityId, entityType, filePath, file.ContentType, file.FileName);
 
         await _mediaRepository.AddAsync(mediaFile, ct);
 

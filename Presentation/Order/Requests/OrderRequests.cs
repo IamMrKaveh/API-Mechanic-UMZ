@@ -62,4 +62,5 @@ public record UpdateOrderStatusRequest(
     string DisplayName,
     string? Description,
     int SortOrder,
-    bool IsDefault);
+    bool AllowCancel,
+    bool AllowEdit);

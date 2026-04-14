@@ -94,7 +94,7 @@ public class CreateOrderHandler(
                 orderRepository.Add(order);
                 await unitOfWork.SaveChangesAsync(ct);
 
-                foreach (var oi in order.Items)
+                foreach (var oi in order.OrderItems)
                 {
                     await inventoryService.AdjustStockAsync(
                         oi.VariantId,

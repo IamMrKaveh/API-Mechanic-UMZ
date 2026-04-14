@@ -1,93 +1,97 @@
+using Application.Cache.Contracts;
+using Infrastructure.Cache.Options;
+using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
+using System.Text.Json;
 using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace Infrastructure.Cache.Redis.Services;
 
-public class RedisCacheService(IConnectionMultiplexer redis, ILogger<RedisCacheService> logger) : ICacheService
+public sealed class RedisCacheService(
+    IConnectionMultiplexer redis,
+    IOptions<CacheOptions> options,
+    ILogger<RedisCacheService> logger) : ICacheService
 {
     private readonly IDatabase _db = redis.GetDatabase();
-    private readonly ILogger<RedisCacheService> _logger = logger;
-    private static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(5);
+    private readonly CacheOptions _options = options.Value;
 
-    public async Task<T?> GetAsync<T>(string key) where T : class
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
+    private string PrefixKey(string key) => $"{_options.KeyPrefix}:{key}";
+
+    public async Task<T?> GetAsync<T>(string key, CancellationToken ct = default)
     {
         try
         {
-            var value = await _db.StringGetAsync(key);
-
-            if (!value.HasValue)
-                return null;
-
-            return JsonSerializer.Deserialize<T>((string)value!);
+            var value = await _db.StringGetAsync(PrefixKey(key));
+            if (!value.HasValue) return default;
+            return JsonSerializer.Deserialize<T>(value!, SerializerOptions);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Redis GET failed for key {Key}", key);
-            return null;
+            logger.LogWarning(ex, "Cache get failed for key {Key}", key);
+            return default;
         }
     }
 
-    /// <summary>
-    /// ذخیره مقدار در Cache با TTL
-    /// </summary>
-    public async Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null) where T : class
+    public async Task SetAsync<T>(string key, T value, TimeSpan? expiry = null, CancellationToken ct = default)
     {
         try
         {
-            var serialized = JsonSerializer.Serialize(value);
-            return await _db.StringSetAsync(key, serialized, expiry ?? DefaultTtl);
+            var serialized = JsonSerializer.Serialize(value, SerializerOptions);
+            var exp = expiry ?? TimeSpan.FromMinutes(_options.DefaultExpirationMinutes);
+            await _db.StringSetAsync(PrefixKey(key), serialized, exp);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Redis SET failed for key {Key}", key);
-            return false;
+            logger.LogWarning(ex, "Cache set failed for key {Key}", key);
         }
     }
 
-    public async Task ClearAsync(string key)
+    public async Task RemoveAsync(string key, CancellationToken ct = default)
     {
         try
         {
-            await _db.KeyDeleteAsync(key);
+            await _db.KeyDeleteAsync(PrefixKey(key));
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Redis DELETE failed for key {Key}", key);
+            logger.LogWarning(ex, "Cache remove failed for key {Key}", key);
         }
     }
 
-    public async Task ClearByPrefixAsync(string prefix)
+    public async Task RemoveByPrefixAsync(string prefix, CancellationToken ct = default)
     {
         try
         {
-            var server = _db.Multiplexer.GetServer(_db.Multiplexer.GetEndPoints().First());
-            var keys = server.Keys(pattern: $"{prefix}*").ToArray();
+            var server = redis.GetServer(redis.GetEndPoints().First());
+            var keys = server.Keys(pattern: $"{_options.KeyPrefix}:{prefix}*").ToArray();
             if (keys.Length > 0)
                 await _db.KeyDeleteAsync(keys);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Redis DELETE by prefix failed for {Prefix}", prefix);
+            logger.LogWarning(ex, "Cache remove by prefix failed for prefix {Prefix}", prefix);
         }
     }
 
-    public async Task<bool> AcquireLockAsync(string key, TimeSpan expiry)
+    public async Task<bool> ExistsAsync(string key, CancellationToken ct = default)
     {
-        return await _db.StringSetAsync(key, "1", expiry, When.NotExists);
-    }
-
-    public async Task ReleaseLockAsync(string key)
-    {
-        await _db.KeyDeleteAsync(key);
-    }
-
-    public async Task<bool> AcquireLockWithRetryAsync(
-        string key, TimeSpan expiry, int retryCount = 3, int retryDelayMs = 500)
-    {
-        for (var i = 0; i < retryCount; i++)
+        try
         {
-            if (await AcquireLockAsync(key, expiry)) return true;
-            await Task.Delay(retryDelayMs);
+            return await _db.KeyExistsAsync(PrefixKey(key));
         }
-        return false;
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task ClearAsync(string key, CancellationToken ct)
+    {
+        await RemoveAsync(key, ct);
     }
 }

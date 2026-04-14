@@ -25,7 +25,7 @@ public class OrderMappingConfig : IRegister
             .Map(dest => dest.CancellationReason, src => src.CancellationReason)
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .Map(dest => dest.UpdatedAt, src => src.UpdatedAt)
-            .Map(dest => dest.Items, src => src.Items.Adapt<List<OrderItemDto>>());
+            .Map(dest => dest.Items, src => src.OrderItems.Adapt<List<OrderItemDto>>());
 
         config.NewConfig<OrderItem, OrderItemDto>()
             .Map(dest => dest.Id, src => src.Id.Value)

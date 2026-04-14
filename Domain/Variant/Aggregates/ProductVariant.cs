@@ -11,7 +11,7 @@ namespace Domain.Variant.Aggregates;
 public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
 {
     private readonly List<ProductVariantAttribute> _attributes = [];
-    private readonly List<ProductVariantShipping> _shippingMethods = [];
+    private readonly List<ProductVariantShipping> _shippings = [];
 
     private ProductVariant()
     { }
@@ -29,7 +29,7 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
     public Guid? DeletedBy { get; private set; }
 
     public IReadOnlyList<ProductVariantAttribute> Attributes => _attributes.AsReadOnly();
-    public IReadOnlyList<ProductVariantShipping> ShippingMethods => _shippingMethods.AsReadOnly();
+    public IReadOnlyList<ProductVariantShipping> Shippings => _shippings.AsReadOnly();
 
     public static ProductVariant Create(
         VariantId id,
@@ -106,10 +106,10 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
     public void SetShippingMethods(IEnumerable<ShippingAssignment> assignments)
     {
         EnsureActive();
-        _shippingMethods.Clear();
+        _shippings.Clear();
         foreach (var assignment in assignments)
         {
-            _shippingMethods.Add(ProductVariantShipping.Create(
+            _shippings.Add(ProductVariantShipping.Create(
                 Id, assignment.ShippingId,
                 assignment.Weight, assignment.Width,
                 assignment.Height, assignment.Length));

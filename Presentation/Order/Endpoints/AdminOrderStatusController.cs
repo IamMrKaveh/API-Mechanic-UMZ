@@ -43,7 +43,8 @@ public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : Ba
     [AllowAnonymous]
     public async Task<IActionResult> GetOrderStatus(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetOrderStatusQuery(id), ct);
+        var query = new GetOrderStatusQuery(id, CurrentUser.UserId);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
@@ -59,7 +60,8 @@ public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : Ba
             request.DisplayName,
             request.Description,
             request.SortOrder,
-            request.IsDefault);
+            request.AllowCancel,
+            request.AllowEdit);
 
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);

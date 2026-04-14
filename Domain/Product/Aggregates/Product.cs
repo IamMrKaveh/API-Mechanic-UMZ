@@ -2,11 +2,15 @@ using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Domain.Product.Events;
 using Domain.Product.ValueObjects;
+using Domain.Variant.Aggregates;
 
 namespace Domain.Product.Aggregates;
 
 public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
 {
+    private readonly List<ProductVariant> _variants = [];
+    public IReadOnlyCollection<ProductVariant> ProductVariants => _variants.AsReadOnly();
+
     private Product()
     { }
 
@@ -21,9 +25,7 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
     public DateTime UpdatedAt { get; private set; }
 
     public bool IsDeleted { get; private set; }
-
     public DateTime? DeletedAt { get; private set; }
-
     public Guid? DeletedBy { get; private set; }
 
     public static Product Create(

@@ -1,20 +1,19 @@
-﻿namespace Infrastructure.Common.Extensions;
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace Infrastructure.Common.Extensions;
 
 public static class DbUpdateExceptionExtensions
 {
-    /// <summary>
-    /// Returns true when the <see cref="DbUpdateException"/> was caused by a unique
-    /// constraint violation, regardless of the underlying database provider.
-    /// </summary>
     public static bool IsUniqueConstraintViolation(this DbUpdateException ex)
     {
-        if (ex.InnerException is PostgresException pgEx)
-            return pgEx.SqlState == "23505";
+        return ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true
+            || ex.InnerException?.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase) == true
+            || ex.InnerException?.Message.Contains("23505") == true;
+    }
 
-        //if (ex.InnerException is SqlException sqlEx)
-        //    return sqlEx.Number == 2627 || sqlEx.Number == 2601;
-
-        return ex.InnerException?.Message.Contains("UNIQUE constraint failed",
-            StringComparison.OrdinalIgnoreCase) == true;
+    public static bool IsForeignKeyViolation(this DbUpdateException ex)
+    {
+        return ex.InnerException?.Message.Contains("foreign key", StringComparison.OrdinalIgnoreCase) == true
+            || ex.InnerException?.Message.Contains("23503") == true;
     }
 }

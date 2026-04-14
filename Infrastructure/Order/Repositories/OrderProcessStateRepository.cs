@@ -1,26 +1,28 @@
-﻿namespace Infrastructure.Order.Repositories;
+﻿using Application.Order.Contracts;
+using Domain.Order.Enums;
+using Domain.Order.ValueObjects;
+using Infrastructure.Persistence.Context;
 
-public class OrderProcessStateRepository(DBContext context) : IOrderProcessStateRepository
+namespace Infrastructure.Order.Repositories;
+
+public sealed class OrderProcessStateRepository(DBContext context) : IOrderProcessStateRepository
 {
-    private readonly DBContext _context = context;
-
     public async Task<OrderProcessState?> GetByOrderIdAsync(
-        int orderId,
+        OrderId orderId,
         CancellationToken ct = default)
     {
-        return await _context.Set<OrderProcessState>()
+        return await context.OrderProcessStates
             .FirstOrDefaultAsync(s => s.OrderId == orderId, ct);
     }
 
-    public async Task AddAsync(
-        OrderProcessState state,
-        CancellationToken ct = default)
+    public async Task AddAsync(OrderProcessState state, CancellationToken ct = default)
     {
-        await _context.Set<OrderProcessState>().AddAsync(state, ct);
+        await context.OrderProcessStates.AddAsync(state, ct);
     }
 
-    public void Update(OrderProcessState state)
+    public Task UpdateAsync(OrderProcessState state, CancellationToken ct = default)
     {
-        _context.Set<OrderProcessState>().Update(state);
+        context.OrderProcessStates.Update(state);
+        return Task.CompletedTask;
     }
 }
