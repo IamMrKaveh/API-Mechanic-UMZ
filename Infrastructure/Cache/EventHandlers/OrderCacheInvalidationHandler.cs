@@ -1,3 +1,5 @@
+using Domain.Order.Events;
+
 namespace Infrastructure.Cache.EventHandlers;
 
 public sealed class OrderCacheInvalidationHandler(ICacheInvalidationService invalidation) :

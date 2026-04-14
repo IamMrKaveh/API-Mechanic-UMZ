@@ -28,7 +28,6 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
     public Guid? DeletedBy { get; private set; }
 
     public static Product Create(
-        ProductId id,
         ProductName name,
         Slug slug,
         string description,
@@ -36,7 +35,7 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
     {
         var product = new Product
         {
-            Id = id,
+            Id = ProductId.NewId(),
             Name = name,
             Slug = slug,
             Description = description,
@@ -47,7 +46,7 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
             UpdatedAt = DateTime.UtcNow
         };
 
-        product.RaiseDomainEvent(new ProductCreatedEvent(id, name, brandId));
+        product.RaiseDomainEvent(new ProductCreatedEvent(product.Id, name, brandId));
         return product;
     }
 

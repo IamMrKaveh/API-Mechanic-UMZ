@@ -1,9 +1,11 @@
+using Domain.Inventory.Events;
+
 namespace Infrastructure.Cache.EventHandlers;
 
 /// <summary>
 /// هنگام تغییر موجودی، کش Variant مربوطه را Invalidate می‌کند.
 /// </summary>
-public sealed class InventoryStockChangedCacheHandler(ICacheInvalidationService invalidation,) :
+public sealed class InventoryStockChangedCacheHandler(ICacheInvalidationService invalidation) :
     INotificationHandler<StockReservedEvent>,
     INotificationHandler<StockReleasedEvent>,
     INotificationHandler<StockCommittedEvent>,
