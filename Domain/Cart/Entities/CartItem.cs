@@ -12,7 +12,7 @@ public sealed class CartItem : Entity<CartItemId>
     public ProductId ProductId { get; private init; } = default!;
     public ProductName ProductName { get; private init; } = null!;
     public Sku Sku { get; private init; } = null!;
-    public Money UnitPrice { get; private set; } = null!;
+    public Money SellingPrice { get; private set; } = null!;
     public Money OriginalPrice { get; private set; } = null!;
     public int Quantity { get; private set; }
     public DateTime AddedAt { get; private init; }
@@ -36,7 +36,7 @@ public sealed class CartItem : Entity<CartItemId>
         ProductId = productId;
         ProductName = productName;
         Sku = sku;
-        UnitPrice = unitPrice;
+        SellingPrice = unitPrice;
         OriginalPrice = originalPrice;
         Quantity = quantity;
         AddedAt = DateTime.UtcNow;
@@ -85,9 +85,9 @@ public sealed class CartItem : Entity<CartItemId>
     {
         ArgumentNullException.ThrowIfNull(newUnitPrice);
         ArgumentNullException.ThrowIfNull(newOriginalPrice);
-        UnitPrice = newUnitPrice;
+        SellingPrice = newUnitPrice;
         OriginalPrice = newOriginalPrice;
     }
 
-    public Money TotalPrice => UnitPrice.Multiply(Quantity);
+    public Money TotalPrice => SellingPrice.Multiply(Quantity);
 }

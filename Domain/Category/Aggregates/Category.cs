@@ -1,3 +1,4 @@
+using Domain.Brand.ValueObjects;
 using Domain.Category.Events;
 using Domain.Category.Exceptions;
 using Domain.Category.Interfaces;
@@ -14,6 +15,9 @@ public sealed class Category : AggregateRoot<CategoryId>
     public int SortOrder { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
+
+    private readonly List<BrandId> _brands = [];
+    public IReadOnlyCollection<BrandId> Brands => _brands;
 
     private Category()
     { }
