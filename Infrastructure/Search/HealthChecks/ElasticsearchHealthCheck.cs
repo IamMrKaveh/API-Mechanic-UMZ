@@ -1,74 +1,35 @@
+using Application.Audit.Contracts;
+using Elastic.Clients.Elasticsearch;
+using Infrastructure.Search.Options;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
+
 namespace Infrastructure.Search.HealthChecks;
 
-public class ElasticsearchHealthCheck(
+public sealed class ElasticsearchHealthCheck(
     ElasticsearchClient client,
-    ILogger<ElasticsearchHealthCheck> logger,
-    IOptions<ElasticsearchOptions> options) : IHealthCheck
+    IOptions<ElasticsearchOptions> options,
+    IAuditService auditService) : IHealthCheck
 {
-    private readonly ElasticsearchClient _client = client;
-    private readonly ILogger<ElasticsearchHealthCheck> _logger = logger;
     private readonly ElasticsearchOptions _options = options.Value;
 
     public async Task<HealthCheckResult> CheckHealthAsync(
-        HealthCheckContext context,
+        HealthCheckContext healthContext,
         CancellationToken ct = default)
     {
-        // اگر Elasticsearch غیرفعال است، Healthy برگردان
-        if (!_options.IsEnabled)
-        {
-            return HealthCheckResult.Healthy("Elasticsearch is disabled in configuration");
-        }
-
         try
         {
-            var pingResponse = await _client.PingAsync(cancellationToken: ct);
-            if (!pingResponse.IsValidResponse)
-            {
-                _logger.LogError("Elasticsearch ping failed: {Error}", pingResponse.DebugInformation);
-                return HealthCheckResult.Unhealthy(
-                    "Elasticsearch ping failed",
-                    exception: null,
-                    data: new Dictionary<string, object>
-                    {
-                        { "error", pingResponse.DebugInformation ?? "Unknown error" }
-                    });
-            }
+            var response = await client.PingAsync(ct);
 
-            var healthResponse = await _client.Cluster.HealthAsync(cancellationToken: ct);
-            if (!healthResponse.IsValidResponse)
-            {
-                return HealthCheckResult.Degraded(
-                    "Elasticsearch is responding but cluster health check failed");
-            }
-
-            var clusterStatus = healthResponse.Status.ToString().ToLower();
-            var data = new Dictionary<string, object>
-            {
-                { "cluster_name", healthResponse.ClusterName ?? "unknown" },
-                { "status", clusterStatus },
-                { "number_of_nodes", healthResponse.NumberOfNodes.ToString() },
-                { "number_of_data_nodes", healthResponse.NumberOfDataNodes.ToString() },
-                { "active_primary_shards", healthResponse.ActivePrimaryShards.ToString() },
-                { "active_shards", healthResponse.ActiveShards.ToString() },
-                { "relocating_shards", healthResponse.RelocatingShards.ToString() },
-                { "initializing_shards", healthResponse.InitializingShards.ToString() },
-                { "unassigned_shards", healthResponse.UnassignedShards.ToString() }
-            };
-
-            return clusterStatus switch
-            {
-                "green" => HealthCheckResult.Healthy("Elasticsearch cluster is healthy", data),
-                "yellow" => HealthCheckResult.Degraded("Elasticsearch cluster status is yellow", null, data),
-                "red" => HealthCheckResult.Unhealthy("Elasticsearch cluster status is red", null, data),
-                _ => HealthCheckResult.Unhealthy($"Unknown Elasticsearch cluster status: {clusterStatus}", null, data)
-            };
+            return response.IsValidResponse
+                ? HealthCheckResult.Healthy("Elasticsearch is reachable")
+                : HealthCheckResult.Unhealthy("Elasticsearch ping failed");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception occurred while checking Elasticsearch health");
-            return HealthCheckResult.Unhealthy(
-                "Exception occurred while checking Elasticsearch",
-                exception: ex);
+            await auditService.LogErrorAsync(
+                $"Elasticsearch health check failed: {ex.Message}", ct);
+            return HealthCheckResult.Unhealthy(ex.Message, ex);
         }
     }
 }

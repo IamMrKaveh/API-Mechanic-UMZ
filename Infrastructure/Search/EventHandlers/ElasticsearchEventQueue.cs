@@ -1,9 +1,10 @@
+using Application.Audit.Contracts;
+using Application.Search.Contracts;
+using System.Collections.Concurrent;
+
 namespace Infrastructure.Search.EventHandlers;
 
-/// <summary>
-/// Queue-based event processor for batching Elasticsearch updates
-/// </summary>
-public class ElasticsearchEventQueue(
+public sealed class ElasticsearchEventQueue(
     IConfiguration configuration,
     IAuditService auditService)
 {
@@ -19,7 +20,6 @@ public class ElasticsearchEventQueue(
             auditService.LogWarningAsync(
                 $"Event queue is full ({_currentSize}/{_maxQueueSize}).",
                 CancellationToken.None);
-
             return false;
         }
 
@@ -40,7 +40,8 @@ public class ElasticsearchEventQueue(
                 Interlocked.Decrement(ref _currentSize);
             }
 
-            _logger.LogInformation("Dequeued {Count} events from queue", events.Count);
+            await auditService.LogInformationAsync(
+                $"Dequeued {events.Count} events from queue", CancellationToken.None);
             return events;
         }
         finally

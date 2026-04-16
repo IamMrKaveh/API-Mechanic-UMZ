@@ -1,6 +1,8 @@
-namespace Infrastructure.Payment.BackgroundServices;
+using Application.Payment.Features.Commands.ExpireStalePayments;
 
-public class PaymentCleanupService(
+namespace Infrastructure.BackgroundJobs;
+
+public class PaymentCleanupJob(
     IServiceProvider serviceProvider,
     IAuditService auditService) : BackgroundService
 {

@@ -4,22 +4,15 @@ namespace Infrastructure.Search.Services;
 /// استفاده از Dapper به‌جای EF Core Include برای initial sync
 /// هر batch در connection جداگانه پردازش می‌شود
 /// </summary>
-public class ElasticsearchInitialSyncService
-{
-    private readonly ISqlConnectionFactory _sqlConnectionFactory;
-    private readonly IElasticBulkService _bulkService;
-    private readonly ILogger<ElasticsearchInitialSyncService> _logger;
-
-    public ElasticsearchInitialSyncService(
-        ISqlConnectionFactory sqlConnectionFactory,
-        IElasticBulkService bulkService,
-        ILogger<ElasticsearchInitialSyncService> logger
+public class ElasticsearchInitialSyncService(
+    ISqlConnectionFactory sqlConnectionFactory,
+    IElasticBulkService bulkService,
+    ILogger<ElasticsearchInitialSyncService> logger
         )
-    {
-        _sqlConnectionFactory = sqlConnectionFactory;
-        _bulkService = bulkService;
-        _logger = logger;
-    }
+{
+    private readonly ISqlConnectionFactory _sqlConnectionFactory = sqlConnectionFactory;
+    private readonly IElasticBulkService _bulkService = bulkService;
+    private readonly ILogger<ElasticsearchInitialSyncService> _logger = logger;
 
     public async Task SyncAllDataAsync(
         CancellationToken ct = default

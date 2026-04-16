@@ -1,17 +1,11 @@
 ﻿namespace Infrastructure.Search.Services;
 
-public class ElasticsearchStatsService : ISearchStatsService
+public class ElasticsearchStatsService(
+    ElasticsearchClient client,
+    ILogger<ElasticsearchStatsService> logger) : ISearchStatsService
 {
-    private readonly ElasticsearchClient _client;
-    private readonly ILogger<ElasticsearchStatsService> _logger;
-
-    public ElasticsearchStatsService(
-        ElasticsearchClient client,
-        ILogger<ElasticsearchStatsService> logger)
-    {
-        _client = client;
-        _logger = logger;
-    }
+    private readonly ElasticsearchClient _client = client;
+    private readonly ILogger<ElasticsearchStatsService> _logger = logger;
 
     public async Task<SearchStatsResult> GetStatsAsync(CancellationToken ct = default)
     {

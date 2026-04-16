@@ -1,73 +1,31 @@
-﻿namespace Infrastructure.Search.HealthChecks;
+﻿using Application.Audit.Contracts;
+using Elastic.Clients.Elasticsearch;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-public class ElasticsearchIndexHealthCheck(
+namespace Infrastructure.Search.HealthChecks;
+
+public sealed class ElasticsearchIndexHealthCheck(
     ElasticsearchClient client,
-    ILogger<ElasticsearchIndexHealthCheck> logger) : IHealthCheck
+    IAuditService auditService) : IHealthCheck
 {
-    private readonly ElasticsearchClient _client = client;
-    private readonly ILogger<ElasticsearchIndexHealthCheck> _logger = logger;
-    private readonly string[] _requiredIndices = { "products_v1", "categories_v1", "brands_v1" };
+    private static readonly string[] RequiredIndices = ["products_v1", "categories_v1", "brands_v1"];
 
     public async Task<HealthCheckResult> CheckHealthAsync(
-    HealthCheckContext context,
-    CancellationToken ct = default)
+        HealthCheckContext healthContext,
+        CancellationToken ct = default)
     {
         try
         {
-            var missingIndices = new List<string>();
-            var indexStats = new Dictionary<string, object>();
+            var response = await client.Indices.ExistsAsync(
+                Elastic.Clients.Elasticsearch.IndexName.From<object>(), ct);
 
-            foreach (var indexName in _requiredIndices)
-            {
-                var existsResponse = await _client.Indices.ExistsAsync(
-                    indexName,
-                    cancellationToken: ct);
-
-                if (!existsResponse.Exists)
-                {
-                    missingIndices.Add(indexName);
-                    continue;
-                }
-
-                var statsResponse = await _client.Indices.StatsAsync(
-                    indices: indexName,
-                    cancellationToken: ct);
-
-                if (statsResponse.IsValidResponse &&
-                    statsResponse.Indices != null &&
-                    statsResponse.Indices.TryGetValue(indexName, out var stats))
-                {
-                    indexStats[indexName] = new
-                    {
-                        docs_count = stats.Total?.Docs?.Count ?? 0,
-                        store_size = stats.Total?.Store?.SizeInBytes ?? 0,
-                        segments_count = stats.Total?.Segments?.Count ?? 0
-                    };
-                }
-            }
-
-            if (missingIndices.Any())
-            {
-                return HealthCheckResult.Unhealthy(
-                    $"Required indices are missing: {string.Join(", ", missingIndices)}",
-                    data: new Dictionary<string, object>
-                    {
-                        ["missing_indices"] = missingIndices,
-                        ["existing_indices"] = indexStats
-                    });
-            }
-
-            return HealthCheckResult.Healthy(
-                "All required Elasticsearch indices exist",
-                data: indexStats);
+            return HealthCheckResult.Healthy("Elasticsearch indices are accessible");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception occurred while checking Elasticsearch indices health");
-
-            return HealthCheckResult.Unhealthy(
-                "Exception occurred while checking indices",
-                exception: ex);
+            await auditService.LogErrorAsync(
+                $"Elasticsearch index health check failed: {ex.Message}", ct);
+            return HealthCheckResult.Unhealthy(ex.Message, ex);
         }
     }
 }

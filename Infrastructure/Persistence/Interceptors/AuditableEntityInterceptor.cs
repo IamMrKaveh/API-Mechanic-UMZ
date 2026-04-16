@@ -1,3 +1,7 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using SharedKernel.Abstractions.Interfaces;
+
 namespace Infrastructure.Persistence.Interceptors;
 
 public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
@@ -23,16 +27,15 @@ public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
     {
         if (context is null) return;
 
-        foreach (var entry in context.ChangeTracker.Entries())
-        {
-            if (entry.Entity is IAuditableEntity auditable)
-            {
-                if (entry.State == EntityState.Added)
-                    auditable.SetCreatedAt(DateTime.UtcNow);
+        var now = DateTime.UtcNow;
 
-                if (entry.State is EntityState.Added or EntityState.Modified)
-                    auditable.SetUpdatedAt(DateTime.UtcNow);
-            }
+        foreach (var entry in context.ChangeTracker.Entries<IAuditable>())
+        {
+            if (entry.State == EntityState.Added)
+                entry.Property(nameof(IAuditable.CreatedAt)).CurrentValue = now;
+
+            if (entry.State is EntityState.Added or EntityState.Modified)
+                entry.Property(nameof(IAuditable.UpdatedAt)).CurrentValue = now;
         }
     }
 }

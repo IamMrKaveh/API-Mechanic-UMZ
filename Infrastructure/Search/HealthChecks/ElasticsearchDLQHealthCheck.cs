@@ -1,73 +1,52 @@
+using Application.Audit.Contracts;
+using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+
 namespace Infrastructure.Search.HealthChecks;
 
-public class ElasticsearchDLQHealthCheck(
+public sealed class ElasticsearchDLQHealthCheck(
     DBContext context,
-    ILogger<ElasticsearchDLQHealthCheck> logger,
-    IConfiguration configuration) : IHealthCheck
+    IAuditService auditService) : IHealthCheck
 {
-    private readonly DBContext _context = context;
-    private readonly ILogger<ElasticsearchDLQHealthCheck> _logger = logger;
-    private readonly IConfiguration _configuration = configuration;
-
     public async Task<HealthCheckResult> CheckHealthAsync(
-        HealthCheckContext context,
+        HealthCheckContext healthContext,
         CancellationToken ct = default)
     {
         try
         {
-            var warningThreshold = _configuration.GetValue("Elasticsearch:DLQWarningThreshold", 100);
-            var criticalThreshold = _configuration.GetValue("Elasticsearch:DLQCriticalThreshold", 500);
+            var pendingCount = await context.FailedElasticOperations
+                .CountAsync(o => o.Status == "Pending", ct);
 
-            var pendingCount = await _context.FailedElasticOperations
-                .CountAsync(o => o.Status == "Pending" && o.RetryCount < 5, ct);
+            var failedCount = await context.FailedElasticOperations
+                .CountAsync(o => o.Status == "Failed", ct);
 
-            var failedCount = await _context.FailedElasticOperations
-                .CountAsync(o => o.RetryCount >= 5, ct);
-
-            var oldestPending = await _context.FailedElasticOperations
-                .Where(o => o.Status == "Pending" && o.RetryCount < 5)
+            var oldestPending = await context.FailedElasticOperations
+                .Where(o => o.Status == "Pending")
                 .OrderBy(o => o.CreatedAt)
                 .Select(o => o.CreatedAt)
                 .FirstOrDefaultAsync(ct);
 
             var data = new Dictionary<string, object>
             {
-                { "pending_operations", pendingCount },
-                { "permanently_failed_operations", failedCount },
-                { "oldest_pending_age_minutes", oldestPending != default
-                    ? (DateTime.UtcNow - oldestPending).TotalMinutes
-                    : 0 }
+                ["pending_count"] = pendingCount,
+                ["failed_count"] = failedCount,
+                ["oldest_pending"] = oldestPending
             };
 
-            if (pendingCount >= criticalThreshold)
-            {
-                return HealthCheckResult.Unhealthy(
-                    $"Dead Letter Queue has {pendingCount} pending operations (critical threshold: {criticalThreshold})",
-                    data: data);
-            }
+            if (failedCount > 100)
+                return HealthCheckResult.Unhealthy("Too many permanently failed operations", data: data);
 
-            if (pendingCount >= warningThreshold)
-            {
-                return HealthCheckResult.Degraded(
-                    $"Dead Letter Queue has {pendingCount} pending operations (warning threshold: {warningThreshold})",
-                    data: data);
-            }
+            if (pendingCount > 1000)
+                return HealthCheckResult.Degraded("High number of pending operations", data: data);
 
-            if (failedCount > 0)
-            {
-                _logger.LogWarning("Dead Letter Queue has {Count} permanently failed operations", failedCount);
-            }
-
-            return HealthCheckResult.Healthy(
-                "Dead Letter Queue is healthy",
-                data: data);
+            return HealthCheckResult.Healthy(data: data);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception occurred while checking Dead Letter Queue health");
-            return HealthCheckResult.Unhealthy(
-                "Exception occurred while checking Dead Letter Queue",
-                exception: ex);
+            await auditService.LogErrorAsync(
+                $"DLQ health check failed: {ex.Message}", ct);
+            return HealthCheckResult.Unhealthy(ex.Message, ex);
         }
     }
 }

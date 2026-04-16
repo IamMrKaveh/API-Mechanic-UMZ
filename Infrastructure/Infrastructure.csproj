@@ -58,9 +58,12 @@
 
 	<ItemGroup>
 	  <Folder Include="Category\Services\" />
+	  <Folder Include="Inventory\BackgroundServices\" />
 	  <Folder Include="Media\BackgroundServices\" />
+	  <Folder Include="Payment\BackgroundServices\" />
 	  <Folder Include="Product\Services\" />
 	  <Folder Include="Review\Services\" />
+	  <Folder Include="Search\BackgroundServices\" />
 	  <Folder Include="Shipping\Services\" />
 	  <Folder Include="User\Services\" />
 	</ItemGroup>

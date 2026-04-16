@@ -58,6 +58,7 @@ public record PaymentTransactionDto
 {
     public Guid Id { get; init; }
     public Guid OrderId { get; init; }
+    public Guid UserId { get; init; }
     public string Authority { get; init; } = string.Empty;
     public string Gateway { get; init; } = string.Empty;
     public decimal Amount { get; init; }
@@ -68,30 +69,23 @@ public record PaymentTransactionDto
     public DateTime? VerifiedAt { get; init; }
     public DateTime ExpiresAt { get; init; }
     public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
 }
 
-public record PaymentInitiationResult
-{
-    public string Authority { get; init; } = string.Empty;
-    public string PaymentUrl { get; init; } = string.Empty;
-    public Guid TransactionId { get; init; }
-}
+public sealed record PaymentInitiationResult(string Authority, string PaymentUrl);
 
-public record PaymentVerificationResult
-{
-    public bool IsSuccess { get; init; }
-    public long? RefId { get; init; }
-    public string? Error { get; init; }
-    public Guid TransactionId { get; init; }
-    public Guid OrderId { get; init; }
-    public decimal Amount { get; init; }
-}
+public sealed record PaymentVerificationResult(
+    Guid? TransactionId,
+    bool IsVerified,
+    long? RefId,
+    string? CardPan,
+    decimal Fee);
 
 public record PaymentStatusDto
 {
-    public Guid TransactionId { get; init; }
+    public string Authority { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
-    public string StatusDisplayName { get; init; } = string.Empty;
-    public TimeSpan? TimeUntilExpiry { get; init; }
-    public bool CanPay { get; init; }
+    public bool IsSuccess { get; init; }
+    public long? RefId { get; init; }
+    public decimal Amount { get; init; }
 }

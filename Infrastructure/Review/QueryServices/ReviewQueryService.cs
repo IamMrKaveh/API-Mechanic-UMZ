@@ -1,176 +1,139 @@
+using Application.Audit.Contracts;
 using Application.Review.Contracts;
 using Application.Review.Features.Shared;
+using Domain.Order.ValueObjects;
+using Domain.Product.ValueObjects;
+using Domain.Review.Aggregates;
+using Domain.Review.ValueObjects;
+using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Review.QueryServices;
 
-public class ReviewQueryService(DBContext context) : IReviewQueryService
+public sealed class ReviewQueryService(
+    DBContext context,
+    IAuditService auditService) : IReviewQueryService
 {
-    private readonly DBContext _context = context;
-
     public async Task<PaginatedResult<ProductReviewDto>> GetApprovedProductReviewsAsync(
-        int productId,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+        ProductId productId, int page, int pageSize, CancellationToken ct = default)
     {
-        var query = _context.ProductReviews
+        var query = context.ProductReviews
             .AsNoTracking()
             .Where(r => r.ProductId == productId
-                     && r.Status == "Approved"
-                     && !r.IsDeleted);
+                && r.Status == ReviewStatus.Approved
+                && !r.IsDeleted);
 
-        var totalCount = await query.CountAsync(ct);
+        var total = await query.CountAsync(ct);
 
-        var reviews = await query
+        var items = await query
             .OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(r => new ProductReviewDto
             {
-                Id = r.Id,
-                ProductId = r.ProductId,
-                UserId = r.UserId,
-                UserName = r.User != null
-                    ? ((r.User.FirstName ?? "") + " " + (r.User.LastName ?? "")).Trim()
-                    : "کاربر",
-                OrderId = r.OrderId,
-                Rating = r.Rating,
+                Id = r.Id.Value,
+                ProductId = r.ProductId.Value,
+                UserId = r.UserId.Value,
+                Rating = r.Rating.Value,
                 Title = r.Title,
                 Comment = r.Comment,
-                Status = r.Status,
-                IsVerifiedPurchase = r.IsVerifiedPurchase,
-                LikeCount = r.LikeCount,
-                DislikeCount = r.DislikeCount,
                 AdminReply = r.AdminReply,
-                RepliedAt = r.RepliedAt,
+                IsVerifiedPurchase = r.IsVerifiedPurchase,
                 CreatedAt = r.CreatedAt
             })
             .ToListAsync(ct);
 
-        return PaginatedResult<ProductReviewDto>.Create(reviews, totalCount, page, pageSize);
+        return new PaginatedResult<ProductReviewDto>(items, total, page, pageSize);
     }
 
-    public async Task<PaginatedResult<ProductReviewDto>> GetReviewsByStatusAsync(
-        string status,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+    public async Task<PaginatedResult<ProductReviewDto>> GetPendingReviewsAsync(
+        int page, int pageSize, CancellationToken ct = default)
     {
-        var query = _context.ProductReviews
+        var query = context.ProductReviews
             .AsNoTracking()
-            .Where(r => r.Status == status && !r.IsDeleted);
+            .Where(r => r.Status == ReviewStatus.Pending && !r.IsDeleted);
 
-        var totalCount = await query.CountAsync(ct);
+        var total = await query.CountAsync(ct);
 
-        var reviews = await query
-            .OrderByDescending(r => r.CreatedAt)
+        var items = await query
+            .OrderBy(r => r.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(r => new ProductReviewDto
             {
-                Id = r.Id,
-                ProductId = r.ProductId,
-                UserId = r.UserId,
-                UserName = r.User != null
-                    ? ((r.User.FirstName ?? "") + " " + (r.User.LastName ?? "")).Trim()
-                    : "کاربر",
-                OrderId = r.OrderId,
-                Rating = r.Rating,
+                Id = r.Id.Value,
+                ProductId = r.ProductId.Value,
+                UserId = r.UserId.Value,
+                Rating = r.Rating.Value,
                 Title = r.Title,
                 Comment = r.Comment,
-                Status = r.Status,
-                IsVerifiedPurchase = r.IsVerifiedPurchase,
-                LikeCount = r.LikeCount,
-                DislikeCount = r.DislikeCount,
-                AdminReply = r.AdminReply,
-                RepliedAt = r.RepliedAt,
                 RejectionReason = r.RejectionReason,
+                IsVerifiedPurchase = r.IsVerifiedPurchase,
                 CreatedAt = r.CreatedAt
             })
             .ToListAsync(ct);
 
-        return PaginatedResult<ProductReviewDto>.Create(reviews, totalCount, page, pageSize);
+        return new PaginatedResult<ProductReviewDto>(items, total, page, pageSize);
     }
 
     public async Task<PaginatedResult<ProductReviewDto>> GetUserReviewsAsync(
-        int userId,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+        UserId userId, int page, int pageSize, CancellationToken ct = default)
     {
-        var query = _context.ProductReviews
+        var query = context.ProductReviews
             .AsNoTracking()
             .Where(r => r.UserId == userId && !r.IsDeleted);
 
-        var totalCount = await query.CountAsync(ct);
+        var total = await query.CountAsync(ct);
 
-        var reviews = await query
+        var items = await query
             .OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(r => new ProductReviewDto
             {
-                Id = r.Id,
-                ProductId = r.ProductId,
-                UserId = r.UserId,
-                OrderId = r.OrderId,
-                Rating = r.Rating,
+                Id = r.Id.Value,
+                ProductId = r.ProductId.Value,
+                UserId = r.UserId.Value,
+                Rating = r.Rating.Value,
                 Title = r.Title,
                 Comment = r.Comment,
-                Status = r.Status,
-                IsVerifiedPurchase = r.IsVerifiedPurchase,
-                LikeCount = r.LikeCount,
-                DislikeCount = r.DislikeCount,
-                AdminReply = r.AdminReply,
-                RepliedAt = r.RepliedAt,
                 RejectionReason = r.RejectionReason,
+                IsVerifiedPurchase = r.IsVerifiedPurchase,
                 CreatedAt = r.CreatedAt
             })
             .ToListAsync(ct);
 
-        return PaginatedResult<ProductReviewDto>.Create(reviews, totalCount, page, pageSize);
+        return new PaginatedResult<ProductReviewDto>(items, total, page, pageSize);
     }
 
-    public async Task<ReviewSummaryDto> GetProductReviewSummaryAsync(
-        int productId,
-        CancellationToken ct = default)
+    public async Task<ReviewSummaryDto?> GetProductReviewSummaryAsync(
+        ProductId productId, CancellationToken ct = default)
     {
-        var approvedReviews = _context.ProductReviews
+        var reviews = await context.ProductReviews
             .AsNoTracking()
             .Where(r => r.ProductId == productId
-                     && r.Status == "Approved"
-                     && !r.IsDeleted);
-
-        var totalCount = await approvedReviews.CountAsync(ct);
-
-        if (totalCount == 0)
-        {
-            return new ReviewSummaryDto
-            {
-                ProductId = productId,
-                AverageRating = 0,
-                TotalCount = 0
-            };
-        }
-
-        var avgRating = await approvedReviews.AverageAsync(r => (decimal)r.Rating, ct);
-
-        var ratingCounts = await approvedReviews
-            .GroupBy(r => r.Rating)
-            .Select(g => new { Rating = g.Key, Count = g.Count() })
+                && r.Status == ReviewStatus.Approved
+                && !r.IsDeleted)
             .ToListAsync(ct);
+
+        if (reviews.Count == 0) return null;
 
         return new ReviewSummaryDto
         {
-            ProductId = productId,
-            AverageRating = Math.Round(avgRating, 1),
-            TotalCount = totalCount,
-            FiveStarCount = ratingCounts.FirstOrDefault(r => r.Rating == 5)?.Count ?? 0,
-            FourStarCount = ratingCounts.FirstOrDefault(r => r.Rating == 4)?.Count ?? 0,
-            ThreeStarCount = ratingCounts.FirstOrDefault(r => r.Rating == 3)?.Count ?? 0,
-            TwoStarCount = ratingCounts.FirstOrDefault(r => r.Rating == 2)?.Count ?? 0,
-            OneStarCount = ratingCounts.FirstOrDefault(r => r.Rating == 1)?.Count ?? 0
+            ProductId = productId.Value,
+            TotalCount = reviews.Count,
+            AverageRating = reviews.Average(r => r.Rating.Value),
+            FiveStarCount = reviews.Count(r => r.Rating.Value == 5),
+            FourStarCount = reviews.Count(r => r.Rating.Value == 4),
+            ThreeStarCount = reviews.Count(r => r.Rating.Value == 3),
+            TwoStarCount = reviews.Count(r => r.Rating.Value == 2),
+            OneStarCount = reviews.Count(r => r.Rating.Value == 1)
         };
+    }
+
+    public Task<PaginatedResult<ProductReviewDto>> GetReviewsByStatusAsync(string status, int page, int pageSize, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
     }
 }

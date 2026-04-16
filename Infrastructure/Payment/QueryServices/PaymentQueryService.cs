@@ -1,191 +1,76 @@
 ﻿using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
-using Domain.Payment.Aggregates;
+using Domain.Order.ValueObjects;
 using Domain.Payment.ValueObjects;
-using Infrastructure.Persistence.Context;
-using MapsterMapper;
+using Domain.User.ValueObjects;
 
 namespace Infrastructure.Payment.QueryServices;
 
-public sealed class PaymentQueryService(DBContext context, IMapper mapper) : IPaymentQueryService
+public sealed class PaymentQueryService(DBContext context) : IPaymentQueryService
 {
-    private readonly DBContext _context = context;
-    private readonly IMapper _mapper = mapper;
-
-    public async Task<PaginatedResult<PaymentTransactionDto>> GetPagedAsync(
-        PaymentSearchParams searchParams,
-        CancellationToken ct = default)
-    {
-        var query = _context.PaymentTransactions
+    public async Task<PaymentTransactionDto?> GetTransactionByIdAsync(
+        PaymentTransactionId paymentTransactionId, CancellationToken ct = default)
+        => await context.PaymentTransactions
             .AsNoTracking()
-            .Where(t => !t.IsDeleted);
-
-        if (searchParams.OrderId.HasValue)
-            query = query.Where(t => t.OrderId == searchParams.OrderId.Value);
-
-        if (searchParams.UserId.HasValue)
-            query = query.Where(t => t.UserId == searchParams.UserId.Value);
-
-        if (!string.IsNullOrWhiteSpace(searchParams.Status))
-            query = query.Where(t => t.Status.Value == searchParams.Status);
-
-        if (searchParams.FromDate.HasValue)
-            query = query.Where(t => t.CreatedAt >= searchParams.FromDate.Value);
-
-        if (searchParams.ToDate.HasValue)
-            query = query.Where(t => t.CreatedAt <= searchParams.ToDate.Value);
-
-        var total = await query.CountAsync(ct);
-
-        var items = await query
-            .OrderByDescending(t => t.CreatedAt)
-            .Skip((searchParams.Page - 1) * searchParams.PageSize)
-            .Take(searchParams.PageSize)
-            .ToListAsync(ct);
-
-        var dtos = _mapper.Map<IEnumerable<PaymentTransactionDto>>(items);
-
-        return PaginatedResult<PaymentTransactionDto>.Create(
-            [.. dtos], total, searchParams.Page, searchParams.PageSize);
-    }
-
-    public async Task<PaymentTransactionDto?> GetByAuthorityAsync(
-        string authority,
-        CancellationToken ct = default)
-    {
-        var transaction = await _context.PaymentTransactions
-            .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Authority.Value == authority, ct);
-
-        return transaction is null ? null : _mapper.Map<PaymentTransactionDto>(transaction);
-    }
-
-    public async Task<IEnumerable<PaymentTransactionDto>> GetByOrderIdAsync(
-        int orderId,
-        CancellationToken ct = default)
-    {
-        var transactions = await _context.PaymentTransactions
-            .AsNoTracking()
-            .Where(t => t.OrderId == orderId && !t.IsDeleted)
-            .OrderByDescending(t => t.CreatedAt)
-            .ToListAsync(ct);
-
-        return _mapper.Map<IEnumerable<PaymentTransactionDto>>(transactions);
-    }
-
-    public async Task<PaymentStatusDto?> GetStatusByAuthorityAsync(
-        string authority,
-        CancellationToken ct = default)
-    {
-        var transaction = await _context.PaymentTransactions
-            .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Authority.Value == authority, ct);
-
-        return transaction is null ? null : _mapper.Map<PaymentStatusDto>(transaction);
-    }
-
-    public async Task<PaymentStatistics> GetStatisticsAsync(
-        DateTime? fromDate,
-        DateTime? toDate,
-        CancellationToken ct = default)
-    {
-        var query = _context.PaymentTransactions
-            .AsNoTracking()
-            .Where(t => !t.IsDeleted);
-
-        if (fromDate.HasValue)
-            query = query.Where(t => t.CreatedAt >= fromDate.Value);
-
-        if (toDate.HasValue)
-            query = query.Where(t => t.CreatedAt <= toDate.Value);
-
-        var stats = await query
-            .GroupBy(t => 1)
-            .Select(g => new
-            {
-                Total = g.Count(),
-                Successful = g.Count(t => t.Status.Value == "Success"),
-                Failed = g.Count(t => t.Status.Value == "Failed"),
-                Pending = g.Count(t => t.Status.Value == "Pending"),
-                Expired = g.Count(t => t.Status.Value == "Expired"),
-                Refunded = g.Count(t => t.Status.Value == "Refunded"),
-                TotalSuccessAmount = g
-                    .Where(t => t.Status.Value == "Success")
-                    .Sum(t => t.Amount.Amount),
-                TotalRefundedAmount = g
-                    .Where(t => t.Status.Value == "Refunded")
-                    .Sum(t => t.Amount.Amount),
-                TotalFees = g.Sum(t => t.Fee)
-            })
+            .Where(t => t.Id == paymentTransactionId)
+            .Select(MapToDto())
             .FirstOrDefaultAsync(ct);
 
-        if (stats is null)
-            return PaymentStatistics.Create(0, 0, 0, 0, 0, 0, 0, 0, 0);
+    public async Task<PaymentTransactionDto?> GetByAuthorityAsync(
+        string authority, CancellationToken ct = default)
+        => await context.PaymentTransactions
+            .AsNoTracking()
+            .Where(t => t.Authority.Value == authority)
+            .Select(MapToDto())
+            .FirstOrDefaultAsync(ct);
 
-        return PaymentStatistics.Create(
-            totalTransactions: stats.Total,
-            successfulTransactions: stats.Successful,
-            failedTransactions: stats.Failed,
-            pendingTransactions: stats.Pending,
-            expiredTransactions: stats.Expired,
-            refundedTransactions: stats.Refunded,
-            totalSuccessfulAmount: stats.TotalSuccessAmount,
-            totalRefundedAmount: stats.TotalRefundedAmount,
-            totalFees: stats.TotalFees);
-    }
+    public async Task<PaymentTransactionDto?> GetLatestByOrderIdAsync(
+        OrderId orderId, CancellationToken ct = default)
+        => await context.PaymentTransactions
+            .AsNoTracking()
+            .Where(t => t.OrderId == orderId)
+            .OrderByDescending(t => t.CreatedAt)
+            .Select(MapToDto())
+            .FirstOrDefaultAsync(ct);
 
-    public async Task<PaymentTransaction?> GetByIdAsync(
-        int id,
-        CancellationToken ct = default)
+    public async Task<PaginatedResult<PaymentTransactionDto>> GetAllAsync(
+        UserId? userId, string? status, int page, int pageSize, CancellationToken ct = default)
     {
-        return await _context.PaymentTransactions
-            .FirstOrDefaultAsync(t => t.Id == id, ct);
-    }
+        var query = context.PaymentTransactions.AsNoTracking().AsQueryable();
 
-    public async Task<PaymentTransaction?> GetByAuthorityWithOrderAsync(
-        string authority,
-        CancellationToken ct = default)
-    {
-        return await _context.PaymentTransactions
-            .Include(t => t.Order)
-            .FirstOrDefaultAsync(t => t.Authority.Value == authority, ct);
-    }
-
-    public async Task<IEnumerable<PaymentTransaction>> GetPendingExpiredTransactionsAsync(
-        DateTime cutoffTime,
-        CancellationToken ct = default)
-    {
-        return await _context.PaymentTransactions
-            .Where(t => t.Status.Value == "Pending" && t.ExpiresAt < cutoffTime && !t.IsDeleted)
-            .ToListAsync(ct);
-    }
-
-    public async Task<(IEnumerable<PaymentTransaction> Transactions, int TotalCount)> GetPagedAsync(
-        int? orderId = null,
-        int? userId = null,
-        string? status = null,
-        DateTime? fromDate = null,
-        DateTime? toDate = null,
-        int page = 1,
-        int pageSize = 20,
-        CancellationToken ct = default)
-    {
-        var query = _context.PaymentTransactions
-            .Where(t => !t.IsDeleted)
-            .AsQueryable();
-
-        if (orderId.HasValue)
-            query = query.Where(t => t.OrderId == orderId.Value);
-
-        if (userId.HasValue)
-            query = query.Where(t => t.UserId == userId.Value);
-
-        if (!string.IsNullOrEmpty(status))
+        if (userId is not null)
+            query = query.Where(t => t.UserId == userId);
+        if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(t => t.Status.Value == status);
 
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .OrderByDescending(t => t.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(MapToDto())
+            .ToListAsync(ct);
+
+        return PaginatedResult<PaymentTransactionDto>.Create(items, total, page, pageSize);
+    }
+
+    public async Task<PaginatedResult<PaymentTransactionDto>> GetPagedAsync(
+        Guid? orderId, Guid? userId, string? status, string? gateway,
+        DateTime? fromDate, DateTime? toDate,
+        int page, int pageSize, CancellationToken ct = default)
+    {
+        var query = context.PaymentTransactions.AsNoTracking().AsQueryable();
+
+        if (orderId.HasValue)
+            query = query.Where(t => t.OrderId.Value == orderId.Value);
+        if (userId.HasValue)
+            query = query.Where(t => t.UserId.Value == userId.Value);
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(t => t.Status.Value == status);
+        if (!string.IsNullOrWhiteSpace(gateway))
+            query = query.Where(t => t.Gateway.Value == gateway);
         if (fromDate.HasValue)
             query = query.Where(t => t.CreatedAt >= fromDate.Value);
-
         if (toDate.HasValue)
             query = query.Where(t => t.CreatedAt <= toDate.Value);
 
@@ -194,49 +79,58 @@ public sealed class PaymentQueryService(DBContext context, IMapper mapper) : IPa
             .OrderByDescending(t => t.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(MapToDto())
             .ToListAsync(ct);
 
-        return (items, total);
+        return PaginatedResult<PaymentTransactionDto>.Create(items, total, page, pageSize);
     }
 
-    public async Task<IEnumerable<PaymentTransaction>> GetSuccessfulByOrderIdAsync(
-        int orderId,
-        CancellationToken ct = default)
+    public async Task<IReadOnlyList<PaymentTransactionDto>> GetByOrderIdAsync(
+        OrderId orderId, CancellationToken ct = default)
     {
-        return await _context.PaymentTransactions
-            .Where(t => t.OrderId == orderId && t.Status.Value == "Success" && !t.IsDeleted)
+        var items = await context.PaymentTransactions
+            .AsNoTracking()
+            .Where(t => t.OrderId == orderId)
+            .OrderByDescending(t => t.CreatedAt)
+            .Select(MapToDto())
             .ToListAsync(ct);
+        return items.AsReadOnly();
     }
 
-    public async Task<PaymentTransaction?> GetLatestByOrderIdAsync(
-        int orderId,
-        CancellationToken ct = default)
+    public async Task<PaymentStatusDto?> GetStatusByAuthorityAsync(
+        string authority, CancellationToken ct = default)
     {
-        return await _context.PaymentTransactions
-            .Where(t => t.OrderId == orderId && !t.IsDeleted)
-            .OrderByDescending(t => t.CreatedAt)
-            .FirstOrDefaultAsync(ct);
+        var tx = await context.PaymentTransactions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Authority.Value == authority, ct);
+
+        if (tx is null) return null;
+
+        return new PaymentStatusDto
+        {
+            Authority = tx.Authority.Value,
+            Status = tx.Status.Value,
+            IsSuccess = tx.IsSuccessful(),
+            RefId = tx.RefId,
+            Amount = tx.Amount.Amount
+        };
     }
 
-    public async Task<PaymentTransaction?> GetVerifiedByOrderIdAsync(
-        int orderId,
-        CancellationToken ct = default)
-    {
-        return await _context.PaymentTransactions
-            .Where(t => t.OrderId == orderId && t.Status.Value == "Success" && !t.IsDeleted)
-            .OrderByDescending(t => t.CreatedAt)
-            .FirstOrDefaultAsync(ct);
-    }
-
-    public async Task<PaymentTransaction?> GetActiveByOrderIdAsync(
-        int orderId,
-        CancellationToken ct = default)
-    {
-        return await _context.PaymentTransactions
-            .Where(t => t.OrderId == orderId
-                        && (t.Status.Value == "Pending" || t.Status.Value == "Processing")
-                        && !t.IsDeleted)
-            .OrderByDescending(t => t.CreatedAt)
-            .FirstOrDefaultAsync(ct);
-    }
+    private static System.Linq.Expressions.Expression<Func<Domain.Payment.Aggregates.PaymentTransaction, PaymentTransactionDto>>
+        MapToDto()
+        => t => new PaymentTransactionDto
+        {
+            Id = t.Id.Value,
+            OrderId = t.OrderId.Value,
+            UserId = t.UserId.Value,
+            Authority = t.Authority.Value,
+            Gateway = t.Gateway.Value,
+            Amount = t.Amount.Amount,
+            Status = t.Status.Value,
+            RefId = t.RefId,
+            VerifiedAt = t.VerifiedAt,
+            ExpiresAt = t.ExpiresAt,
+            CreatedAt = t.CreatedAt,
+            UpdatedAt = t.UpdatedAt
+        };
 }

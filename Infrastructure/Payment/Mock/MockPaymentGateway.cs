@@ -1,41 +1,41 @@
+using Application.Payment.Contracts;
+using Application.Payment.Features.Shared;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Infrastructure.Payment.Mock;
 
-public class MockPaymentGateway : IPaymentGateway
+public sealed class MockPaymentGateway : IPaymentGateway
 {
     public string GatewayName => "MockGateway";
 
-    public Task<PaymentRequestResultDto> RequestPaymentAsync(
-        decimal amount,
+    public Task<ServiceResult<PaymentInitiationResult>> InitiateAsync(
+        OrderId orderId,
+        Money amount,
         string description,
         string callbackUrl,
-        string? mobile = null,
-        string? email = null)
+        Email? email = null,
+        PhoneNumber? phoneNumber = null,
+        CancellationToken ct = default)
     {
-        var authority = Guid.NewGuid().ToString();
+        var authority = Guid.NewGuid().ToString("N");
+        var paymentUrl = $"/mock/pay?authority={authority}&amount={amount.Amount}";
 
-        var paymentUrl = $"/api/mock-gateway/pay?amount={amount}&authority={authority}&callback={System.Net.WebUtility.UrlEncode(callbackUrl)}";
-
-        return Task.FromResult(new PaymentRequestResultDto
-        {
-            IsSuccess = true,
-            Authority = authority,
-            PaymentUrl = paymentUrl,
-            RawResponse = "Mock Request Success",
-            RedirectUrl = paymentUrl
-        });
+        var result = new PaymentInitiationResult(authority, paymentUrl);
+        return Task.FromResult(ServiceResult<PaymentInitiationResult>.Success(result));
     }
 
-    public Task<GatewayVerificationResultDto> VerifyPaymentAsync(string authority, int amount)
+    public Task<ServiceResult<PaymentVerificationResult>> VerifyAsync(
+        string authority,
+        Money expectedAmount,
+        CancellationToken ct = default)
     {
-        return Task.FromResult(new GatewayVerificationResultDto
-        {
-            IsVerified = true,
-            RefId = DateTime.UtcNow.Ticks,
-            CardPan = "6037********1234",
-            CardHash = "mock-hash-123456",
-            Fee = 0,
-            Message = "پرداخت تستی با موفقیت تایید شد.",
-            RawResponse = "{\"status\": \"success\", \"mock\": true}"
-        });
+        var result = new PaymentVerificationResult(
+            true,
+            DateTime.UtcNow.Ticks,
+            "6037********1234",
+            0);
+
+        return Task.FromResult(ServiceResult<PaymentVerificationResult>.Success(result));
     }
 }
