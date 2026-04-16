@@ -1,22 +1,70 @@
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
+using Domain.Order.ValueObjects;
 using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Order.Repositories;
 
-public class OrderStatusRepository(DBContext context) : IOrderStatusRepository
+public sealed class OrderStatusRepository(DBContext context) : IOrderStatusRepository
 {
-    private readonly DBContext _context = context;
-
-    public async Task AddAsync(
-        OrderStatus status,
+    public async Task<OrderStatus?> GetByIdAsync(
+        OrderStatusId id,
         CancellationToken ct = default)
     {
-        await _context.Set<OrderStatus>().AddAsync(status, ct);
+        return await context.OrderStatuses
+            .FirstOrDefaultAsync(s => s.Id == id, ct);
     }
 
-    public void Update(OrderStatus status)
+    public async Task<IReadOnlyList<OrderStatus>> GetAllAsync(
+        CancellationToken ct = default)
     {
-        _context.Set<OrderStatus>().Update(status);
+        var results = await context.OrderStatuses
+            .OrderBy(s => s.SortOrder)
+            .ToListAsync(ct);
+
+        return results.AsReadOnly();
+    }
+
+    public async Task<IReadOnlyList<OrderStatus>> GetActiveStatusesAsync(
+        CancellationToken ct = default)
+    {
+        var results = await context.OrderStatuses
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.SortOrder)
+            .ToListAsync(ct);
+
+        return results.AsReadOnly();
+    }
+
+    public async Task<bool> IsInUseAsync(
+        OrderStatusId id,
+        CancellationToken ct = default)
+    {
+        var status = await context.OrderStatuses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == id, ct);
+
+        if (status is null) return false;
+
+        return await context.Orders
+            .AnyAsync(o => o.Status.Value == status.Name, ct);
+    }
+
+    public async Task AddAsync(
+        OrderStatus orderStatus,
+        CancellationToken ct = default)
+    {
+        await context.OrderStatuses.AddAsync(orderStatus, ct);
+    }
+
+    public void Update(OrderStatus orderStatus)
+    {
+        context.OrderStatuses.Update(orderStatus);
+    }
+
+    public void Remove(OrderStatus orderStatus)
+    {
+        context.OrderStatuses.Remove(orderStatus);
     }
 }

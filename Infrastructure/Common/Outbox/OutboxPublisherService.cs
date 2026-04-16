@@ -9,16 +9,14 @@ namespace Infrastructure.Common.Outbox;
 /// </summary>
 public class OutboxPublisherService(
     IServiceScopeFactory scopeFactory,
-    ILogger<OutboxPublisherService> logger) : BackgroundService
+    IAuditService auditService) : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
-    private readonly ILogger<OutboxPublisherService> _logger = logger;
     private readonly TimeSpan _interval = TimeSpan.FromSeconds(15);
     private const int BatchSize = 100;
 
     protected override async Task ExecuteAsync(CancellationToken st)
     {
-        _logger.LogInformation("OutboxPublisherService started.");
+        await auditService.LogInformationAsync("OutboxPublisherService started.", st);
 
         while (!st.IsCancellationRequested)
         {
@@ -26,9 +24,9 @@ public class OutboxPublisherService(
             {
                 await ProcessBatchAsync(st);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "OutboxPublisherService error.");
+                await auditService.LogErrorAsync("OutboxPublisherService error.", st);
             }
 
             await Task.Delay(_interval, st);
@@ -37,7 +35,7 @@ public class OutboxPublisherService(
 
     private async Task ProcessBatchAsync(CancellationToken ct)
     {
-        using var scope = _scopeFactory.CreateScope();
+        using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
@@ -54,7 +52,7 @@ public class OutboxPublisherService(
                 var eventType = Type.GetType(message.Type);
                 if (eventType == null)
                 {
-                    _logger.LogWarning("Outbox: unknown event type {Type}", message.Type);
+                    await auditService.LogWarningAsync("Outbox: unknown event type {Type}", message.Type);
                     message.MarkFailed($"Unknown type: {message.Type}");
                 }
                 else
@@ -66,7 +64,7 @@ public class OutboxPublisherService(
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Outbox: failed to publish message {Id}", message.Id);
+                await auditService.LogErrorAsync("Outbox: failed to publish message {Id}", message.Id);
                 message.MarkFailed(ex.Message);
             }
         }

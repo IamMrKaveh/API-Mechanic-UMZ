@@ -1,11 +1,9 @@
-using Application.Inventory.Contracts;
-using Domain.Common.Interfaces;
+using Application.Common.Exceptions;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
 using Domain.Order.Entities;
 using Domain.Variant.Aggregates;
 using Domain.Variant.ValueObjects;
-using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Inventory.Services;
 
@@ -14,14 +12,8 @@ public class InventoryService(
     IInventoryRepository inventoryRepository,
     InventoryDomainService domainService,
     IUnitOfWork unitOfWork,
-    ILogger<InventoryService> logger) : IInventoryService
+    IAuditService auditService) : IInventoryService
 {
-    private readonly DBContext _context = context;
-    private readonly IInventoryRepository _inventoryRepository = inventoryRepository;
-    private readonly InventoryDomainService _domainService = domainService;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ILogger<InventoryService> _logger = logger;
-
     public async Task<ServiceResult> ReserveStockAsync(
         int variantId,
         int quantity,
@@ -37,7 +29,7 @@ public class InventoryService(
         {
             if (!string.IsNullOrEmpty(correlationId))
             {
-                var existing = await _context.InventoryTransactions
+                var existing = await context.InventoryTransactions
                     .AnyAsync(t =>
                         t.VariantId == variantId &&
                         t.TransactionType == TransactionType.Reservation.Value &&
@@ -46,22 +38,22 @@ public class InventoryService(
 
                 if (existing)
                 {
-                    _logger.LogWarning(
+                    await auditService.LogWarningAsync(
                         "Duplicate reserve request for variant {VariantId} with correlation {CorrelationId}. Skipping.",
-                        variantId, correlationId);
+                        ct);
                     return ServiceResult.Success();
                 }
             }
 
-            var result = _domainService.Reserve(
+            var result = domainService.Reserve(
                 variant, quantity, orderItemId, userId, referenceNumber,
                 correlationId, cartId, expiresAt);
 
             if (!result.IsSuccess)
-                return ServiceResult.Unexpected(result.Error!);
+                return ServiceResult.Failure(result.Error.Message!);
 
             if (result.Transaction is not null)
-                await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
+                await inventoryRepository.AddTransactionAsync(result.Transaction, ct);
 
             return ServiceResult.Success();
         }, ct);
@@ -80,7 +72,7 @@ public class InventoryService(
         {
             if (!string.IsNullOrEmpty(correlationId))
             {
-                var existing = await _context.InventoryTransactions
+                var existing = await context.InventoryTransactions
                     .AnyAsync(t =>
                         t.VariantId == variantId &&
                         t.TransactionType == TransactionType.Commit.Value &&
@@ -88,21 +80,21 @@ public class InventoryService(
 
                 if (existing)
                 {
-                    _logger.LogWarning(
+                    await auditService.LogWarningAsync(
                         "Duplicate commit for variant {VariantId} with correlation {CorrelationId}. Skipping.",
-                        variantId, correlationId);
+                        ct);
                     return ServiceResult.Success();
                 }
             }
 
-            var result = _domainService.ConfirmReservation(
+            var result = domainService.ConfirmReservation(
                 variant, quantity, orderItemId, userId, referenceNumber, correlationId);
 
             if (!result.IsSuccess)
-                return ServiceResult.Unexpected(result.Error!);
+                return ServiceResult.Failure(result.Error.Message);
 
             if (result.Transaction is not null)
-                await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
+                await inventoryRepository.AddTransactionAsync(result.Transaction, ct);
 
             return ServiceResult.Success();
         }, ct);
@@ -112,16 +104,16 @@ public class InventoryService(
         int orderId,
         CancellationToken ct = default)
     {
-        var strategy = _context.Database.CreateExecutionStrategy();
+        var strategy = context.Database.CreateExecutionStrategy();
 
         return await strategy.ExecuteAsync(async () =>
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync(
+            await using var transaction = await context.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, ct);
 
             try
             {
-                var orderItems = await _context.Set<OrderItem>()
+                var orderItems = await context.Set<OrderItem>()
                     .Where(oi => oi.OrderId == orderId)
                     .ToListAsync(ct);
 
@@ -136,17 +128,17 @@ public class InventoryService(
                     var correlationId = $"COMMIT-ORDER-{orderId}-ITEM-{item.Id}";
                     var referenceNumber = $"ORDER-{orderId}";
 
-                    var variant = await _inventoryRepository.GetVariantWithLockAsync(item.VariantId, ct);
+                    var variant = await inventoryRepository.GetVariantWithLockAsync(item.VariantId, ct);
 
                     if (variant == null)
                     {
-                        _logger.LogWarning(
+                        await auditService.LogWarningAsync(
                             "Variant {VariantId} not found while committing order {OrderId}",
-                            item.VariantId, orderId);
+                            ct);
                         continue;
                     }
 
-                    var alreadyCommitted = await _context.InventoryTransactions
+                    var alreadyCommitted = await context.InventoryTransactions
                         .AnyAsync(t =>
                             t.VariantId == item.VariantId &&
                             t.TransactionType == TransactionType.Commit.Value &&
@@ -154,32 +146,32 @@ public class InventoryService(
 
                     if (alreadyCommitted) continue;
 
-                    var result = _domainService.ConfirmReservation(
+                    var result = domainService.ConfirmReservation(
                         variant, item.Quantity, item.Id, null, referenceNumber, correlationId);
 
                     if (!result.IsSuccess)
                     {
-                        _logger.LogWarning(
+                        await auditService.LogWarningAsync(
                             "Could not confirm reservation for variant {VariantId} in order {OrderId}: {Error}",
-                            item.VariantId, orderId, result.Error);
+                            ct);
                         continue;
                     }
 
                     if (result.Transaction is not null)
-                        await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
+                        await inventoryRepository.AddTransactionAsync(result.Transaction, ct);
                 }
 
-                await _context.SaveChangesAsync(ct);
+                await context.SaveChangesAsync(ct);
                 await transaction.CommitAsync(ct);
 
-                _logger.LogInformation("Committed inventory for all items of Order {OrderId}", orderId);
+                await auditService.LogInformationAsync("Committed inventory for all items of Order {OrderId}", ct);
                 return ServiceResult.Success();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync(ct);
-                _logger.LogError(ex, "Failed to commit stock for order {OrderId}", orderId);
-                return ServiceResult.Unexpected("خطا در Commit موجودی سفارش.");
+                await auditService.LogErrorAsync("Failed to commit stock for order {OrderId}", ct);
+                return ServiceResult.Failure("خطا در Commit موجودی سفارش.");
             }
         });
     }
@@ -193,13 +185,13 @@ public class InventoryService(
     {
         return await ExecuteWithSerializableLockAsync(variantId, async variant =>
         {
-            var result = _domainService.RollbackReservation(variant, quantity, userId, reason);
+            var result = domainService.RollbackReservation(variant, quantity, userId, reason);
 
             if (!result.IsSuccess)
-                return ServiceResult.Unexpected(result.Message ?? "خطا در آزادسازی موجودی.");
+                return ServiceResult.Failure(result.Error.Message ?? "خطا در آزادسازی موجودی.");
 
             if (result.Transaction is not null)
-                await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
+                await inventoryRepository.AddTransactionAsync(result.Transaction, ct);
 
             return ServiceResult.Success();
         }, ct);
@@ -209,7 +201,7 @@ public class InventoryService(
         string referenceNumber,
         CancellationToken ct = default)
     {
-        var transactions = await _context.InventoryTransactions
+        var transactions = await context.InventoryTransactions
             .Where(t => t.ReferenceNumber == referenceNumber &&
                         t.TransactionType == TransactionType.Reservation.Value &&
                         !t.IsReversed)
@@ -217,7 +209,7 @@ public class InventoryService(
 
         foreach (var tx in transactions)
         {
-            var variant = await _context.Set<ProductVariant>()
+            var variant = await context.Set<ProductVariant>()
                 .FindAsync(new object[] { tx.VariantId }, ct);
 
             if (variant != null && !variant.IsUnlimited)
@@ -233,11 +225,11 @@ public class InventoryService(
                     notes: $"آزادسازی خودکار رزرو - مرجع: {referenceNumber}",
                     referenceNumber: referenceNumber);
 
-                await _inventoryRepository.AddTransactionAsync(rollbackTx, ct);
+                await inventoryRepository.AddTransactionAsync(rollbackTx, ct);
             }
         }
 
-        await _unitOfWork.SaveChangesAsync(ct);
+        await unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
     }
 
@@ -252,17 +244,17 @@ public class InventoryService(
     {
         return await ExecuteWithSerializableLockAsync(variantId, async variant =>
         {
-            var result = _domainService.ReturnStock(variant, quantity, orderId, orderItemId, userId, reason);
+            var result = domainService.ReturnStock(variant, quantity, orderId, orderItemId, userId, reason);
 
             if (!result.IsSuccess)
-                return ServiceResult.Unexpected(result.Error!);
+                return ServiceResult.Failure(result.Error.Message!);
 
             if (result.Transaction is not null)
-                await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
+                await inventoryRepository.AddTransactionAsync(result.Transaction, ct);
 
-            _logger.LogInformation(
+            await auditService.LogInformationAsync(
                 "Stock returned for variant {VariantId}: +{Quantity} (Order {OrderId})",
-                variantId, quantity, orderId);
+                ct);
 
             return ServiceResult.Success();
         }, ct);
@@ -274,54 +266,54 @@ public class InventoryService(
         string reason,
         CancellationToken ct = default)
     {
-        var strategy = _context.Database.CreateExecutionStrategy();
+        var strategy = context.Database.CreateExecutionStrategy();
 
         return await strategy.ExecuteAsync(async () =>
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync(
+            await using var transaction = await context.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, ct);
 
             try
             {
-                var orderItems = await _context.Set<OrderItem>()
+                var orderItems = await context.Set<OrderItem>()
                     .Where(oi => oi.OrderId == orderId)
                     .ToListAsync(ct);
 
                 foreach (var item in orderItems)
                 {
-                    var variant = await _context.Set<ProductVariant>()
+                    var variant = await context.Set<ProductVariant>()
                         .FromSqlRaw("SELECT * FROM \"ProductVariants\" WHERE \"Id\" = {0} FOR UPDATE", item.VariantId)
                         .Include(v => v.Product)
                         .FirstOrDefaultAsync(ct);
 
                     if (variant == null || variant.IsUnlimited) continue;
 
-                    var result = _domainService.ReturnStock(
+                    var result = domainService.ReturnStock(
                         variant, item.Quantity, orderId, item.Id, userId, reason);
 
                     if (!result.IsSuccess)
                     {
-                        _logger.LogWarning(
+                        await auditService.LogWarningAsync(
                             "Return stock failed for variant {VariantId}: {Error}",
-                            item.VariantId, result.Error);
+                            ct);
                         continue;
                     }
 
                     if (result.Transaction is not null)
-                        await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
+                        await inventoryRepository.AddTransactionAsync(result.Transaction, ct);
                 }
 
-                await _context.SaveChangesAsync(ct);
+                await context.SaveChangesAsync(ct);
                 await transaction.CommitAsync(ct);
 
-                _logger.LogInformation("Stock returned for all items of Order {OrderId}", orderId);
+                await auditService.LogInformationAsync("Stock returned for all items of Order {OrderId}", ct);
                 return ServiceResult.Success();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync(ct);
-                _logger.LogError(ex, "Failed to return stock for order {OrderId}", orderId);
-                return ServiceResult.Unexpected("خطا در مرجوعی موجودی سفارش.");
+                await auditService.LogErrorAsync("Failed to return stock for order {OrderId}", ct);
+                return ServiceResult.Failure("خطا در مرجوعی موجودی سفارش.");
             }
         });
     }
@@ -337,20 +329,20 @@ public class InventoryService(
         {
             var variant = await GetVariantWithTrackingAsync(variantId, ct);
             if (variant is null)
-                return ServiceResult.Unexpected("واریانت مورد نظر یافت نشد.");
+                return ServiceResult.Failure("واریانت مورد نظر یافت نشد.");
 
-            var result = _domainService.AdjustStock(variant, quantityChange, userId, notes);
+            var result = domainService.AdjustStock(variant, quantityChange, userId, notes);
             if (!result.IsSuccess) return ServiceResult.Unexpected(result.Error!);
 
             if (result.Transaction is not null)
-                await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
+                await inventoryRepository.AddTransactionAsync(result.Transaction, ct);
 
-            await _unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Unexpected("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
+            return ServiceResult.Failure("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
         }
     }
 
@@ -364,20 +356,21 @@ public class InventoryService(
         try
         {
             var variant = await GetVariantWithTrackingAsync(variantId, ct);
-            if (variant is null) return ServiceResult.Unexpected("واریانت مورد نظر یافت نشد.");
+            if (variant is null) return ServiceResult.Failure("واریانت مورد نظر یافت نشد.");
 
-            var result = _domainService.RecordDamage(variant, quantity, userId, notes);
-            if (!result.IsSuccess) return ServiceResult.Unexpected(result.Error!);
+            var result = domainService.RecordDamage(variant, quantity, userId, notes);
+            if (result.IsFailure)
+                return ServiceResult.Failure(result.Error!);
 
             if (result.Transaction is not null)
-                await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
+                await inventoryRepository.AddTransactionAsync(result.Transaction, ct);
 
-            await _unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }
         catch (ConcurrencyException)
         {
-            return ServiceResult.Unexpected("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
+            return ServiceResult.Failure("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
         }
     }
 
@@ -389,15 +382,15 @@ public class InventoryService(
         return await ExecuteWithSerializableLockAsync<ServiceResult<(int, int, int, bool, string)>>(variantId,
             async variant =>
             {
-                var calculatedStock = await _inventoryRepository.CalculateStockFromTransactionsAsync(variantId, ct);
-                var result = _domainService.Reconcile(variant, calculatedStock, userId);
+                var calculatedStock = await inventoryRepository.CalculateStockFromTransactionsAsync(variantId, ct);
+                var result = domainService.Reconcile(variant, calculatedStock, userId);
 
                 if (result.IsFailure)
                     return ServiceResult<(VariantId, int, int, bool, string)>
-                    .Validation(result.Message!);
+                    .Validation(result.Error.Message);
 
                 if (result.Transaction is not null)
-                    await _inventoryRepository.AddTransactionAsync(result.Transaction, ct);
+                    await inventoryRepository.AddTransactionAsync(result.Transaction, ct);
 
                 return ServiceResult<(VariantId, int, int, bool, string)>
                 .Success((
@@ -419,7 +412,7 @@ public class InventoryService(
         var results = new List<(int, bool, string?, int?)>();
         var successCount = 0; var failedCount = 0;
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, ct);
+        await using var transaction = await context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, ct);
 
         try
         {
@@ -434,7 +427,7 @@ public class InventoryService(
                         failedCount++; continue;
                     }
 
-                    var adjustResult = _domainService.AdjustStock(variant, item.QuantityChange, userId, item.Notes);
+                    var adjustResult = domainService.AdjustStock(variant, item.QuantityChange, userId, item.Notes);
                     if (!adjustResult.IsSuccess)
                     {
                         results.Add((item.VariantId, false, adjustResult.Error, null));
@@ -442,20 +435,20 @@ public class InventoryService(
                     }
 
                     if (adjustResult.Transaction is not null)
-                        await _inventoryRepository.AddTransactionAsync(adjustResult.Transaction, ct);
+                        await inventoryRepository.AddTransactionAsync(adjustResult.Transaction, ct);
 
                     results.Add((item.VariantId, true, null, adjustResult.NewStock));
                     successCount++;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error adjusting stock for variant {VariantId}", item.VariantId);
+                    await auditService.LogErrorAsync("Error adjusting stock for variant {VariantId}", ct);
                     results.Add((item.VariantId, false, ex.Message, null));
                     failedCount++;
                 }
             }
 
-            await _context.SaveChangesAsync(ct);
+            await context.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
 
             return ServiceResult<(int, int, int, IEnumerable<(int, bool, string?, int?)>)>.Success((
@@ -465,12 +458,12 @@ public class InventoryService(
                 results
             ));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await transaction.RollbackAsync(ct);
-            _logger.LogError(ex, "Bulk stock adjustment failed.");
+            await auditService.LogErrorAsync("Bulk stock adjustment failed.", ct);
             return ServiceResult<(int, int, int, IEnumerable<(int, bool, string?, int?)>)>
-                .Unexpected("خطا در تنظیم دسته‌ای موجودی.");
+                .Failure("خطا در تنظیم دسته‌ای موجودی.");
         }
     }
 
@@ -484,7 +477,7 @@ public class InventoryService(
         var results = new List<(int, bool, string?, int?)>();
         var successCount = 0; var failedCount = 0;
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, ct);
+        await using var transaction = await context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, ct);
 
         try
         {
@@ -503,7 +496,7 @@ public class InventoryService(
 
                     if (!string.IsNullOrEmpty(supplierReference))
                     {
-                        var alreadyProcessed = await _context.InventoryTransactions
+                        var alreadyProcessed = await context.InventoryTransactions
                             .AnyAsync(t =>
                                 t.VariantId == item.VariantId &&
                                 t.TransactionType == TransactionType.StockIn.Value &&
@@ -527,19 +520,19 @@ public class InventoryService(
                         supplierReference,
                         correlationId: correlationId);
 
-                    await _inventoryRepository.AddTransactionAsync(tx, ct);
+                    await inventoryRepository.AddTransactionAsync(tx, ct);
                     results.Add((item.VariantId, true, null, variant.StockQuantity));
                     successCount++;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error in StockIn for variant {VariantId}", item.VariantId);
+                    await auditService.LogErrorAsync("Error in StockIn for variant {VariantId}", ct);
                     results.Add((item.VariantId, false, ex.Message, null));
                     failedCount++;
                 }
             }
 
-            await _context.SaveChangesAsync(ct);
+            await context.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
 
             return ServiceResult<(int, int, int, IEnumerable<(int, bool, string?, int?)>)>.Success((
@@ -549,10 +542,10 @@ public class InventoryService(
                 results
             ));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await transaction.RollbackAsync(ct);
-            _logger.LogError(ex, "Bulk StockIn failed.");
+            await auditService.LogErrorAsync("Bulk StockIn failed.", ct);
             return ServiceResult<(int, int, int, IEnumerable<(int, bool, string?, int?)>)>.Unexpected("خطا در Import دسته‌ای موجودی.");
         }
     }
@@ -576,10 +569,10 @@ public class InventoryService(
         var transaction = InventoryTransaction.Create(
             variantId, txType, quantityChange, currentStock, userId, notes, referenceNumber, orderItemId);
 
-        await _inventoryRepository.AddTransactionAsync(transaction, ct);
+        await inventoryRepository.AddTransactionAsync(transaction, ct);
         variant?.AdjustStock(quantityChange);
 
-        if (saveChanges) await _unitOfWork.SaveChangesAsync(ct);
+        if (saveChanges) await unitOfWork.SaveChangesAsync(ct);
     }
 
     private async Task<ServiceResult> ExecuteWithSerializableLockAsync(
@@ -587,16 +580,16 @@ public class InventoryService(
         Func<ProductVariant, Task<ServiceResult>> operation,
         CancellationToken ct = default)
     {
-        var strategy = _context.Database.CreateExecutionStrategy();
+        var strategy = context.Database.CreateExecutionStrategy();
 
         return await strategy.ExecuteAsync(async () =>
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync(
+            await using var transaction = await context.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, ct);
 
             try
             {
-                var variant = await _context.Set<ProductVariant>()
+                var variant = await context.Set<ProductVariant>()
                     .FromSqlRaw("SELECT * FROM \"ProductVariants\" WHERE \"Id\" = {0} FOR UPDATE", variantId)
                     .Include(v => v.Product)
                     .FirstOrDefaultAsync(ct);
@@ -604,14 +597,14 @@ public class InventoryService(
                 if (variant is null)
                 {
                     await transaction.RollbackAsync(ct);
-                    return ServiceResult.Unexpected("واریانت مورد نظر یافت نشد.");
+                    return ServiceResult.Failure("واریانت مورد نظر یافت نشد.");
                 }
 
                 var result = await operation(variant);
 
                 if (result.IsSuccess)
                 {
-                    await _context.SaveChangesAsync(ct);
+                    await context.SaveChangesAsync(ct);
                     await transaction.CommitAsync(ct);
                 }
                 else
@@ -621,11 +614,11 @@ public class InventoryService(
 
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync(ct);
-                _logger.LogError(ex, "Error in serializable lock for variant {VariantId}", variantId);
-                return ServiceResult.Unexpected("خطا در عملیات موجودی. لطفاً دوباره تلاش کنید.");
+                await auditService.LogErrorAsync("Error in serializable lock for variant {VariantId}", ct);
+                return ServiceResult.Failure("خطا در عملیات موجودی. لطفاً دوباره تلاش کنید.");
             }
         });
     }
@@ -636,16 +629,16 @@ public class InventoryService(
         CancellationToken ct
         ) where TResult : class
     {
-        var strategy = _context.Database.CreateExecutionStrategy();
+        var strategy = context.Database.CreateExecutionStrategy();
 
         return await strategy.ExecuteAsync(async () =>
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync(
+            await using var transaction = await context.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, ct);
 
             try
             {
-                var variant = await _context.Set<ProductVariant>()
+                var variant = await context.Set<ProductVariant>()
                     .FromSqlRaw("SELECT * FROM \"ProductVariants\" WHERE \"Id\" = {0} FOR UPDATE", variantId)
                     .Include(v => v.Product)
                     .FirstOrDefaultAsync(ct);
@@ -664,14 +657,14 @@ public class InventoryService(
                 }
 
                 var result = await operation(variant);
-                await _context.SaveChangesAsync(ct);
+                await context.SaveChangesAsync(ct);
                 await transaction.CommitAsync(ct);
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync(ct);
-                _logger.LogError(ex, "Error in serializable lock for variant {VariantId}", variantId);
+                await auditService.LogErrorAsync("Error in serializable lock for variant {VariantId}", ct);
                 throw;
             }
         });
@@ -681,7 +674,7 @@ public class InventoryService(
         int variantId,
         CancellationToken ct = default)
     {
-        return await _context.Set<ProductVariant>()
+        return await context.Set<ProductVariant>()
             .Include(v => v.Product)
             .FirstOrDefaultAsync(v => v.Id == variantId, ct);
     }
@@ -700,14 +693,14 @@ public class InventoryService(
 
             if (difference == 0)
             {
-                _logger.LogInformation(
-                    "[InventoryService] Reconcile: Variant={VariantId} - No discrepancy.", variantId);
+                await auditService.LogInformationAsync(
+                    "[InventoryService] Reconcile: Variant={VariantId} - No discrepancy.", ct);
                 return ServiceResult.Success();
             }
 
-            _logger.LogWarning(
+            await auditService.LogWarningAsync(
                 "[InventoryService] Reconcile discrepancy: Variant={VariantId}, System={System}, Physical={Physical}, Delta={Delta}",
-                variantId, variant.StockQuantity, physicalCount, difference);
+                ct);
 
             var transaction = InventoryTransaction.CreateAdjustment(
                 variantId,
@@ -718,7 +711,7 @@ public class InventoryService(
 
             variant.AdjustStock(difference);
 
-            await _inventoryRepository.AddTransactionAsync(transaction, ct);
+            await inventoryRepository.AddTransactionAsync(transaction, ct);
 
             return ServiceResult.Success();
         }, ct);

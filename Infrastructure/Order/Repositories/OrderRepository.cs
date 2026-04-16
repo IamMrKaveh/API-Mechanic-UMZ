@@ -1,24 +1,21 @@
-using Domain.Order.Aggregates;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Order.Repositories;
 
 public sealed class OrderRepository(DBContext context) : IOrderRepository
 {
-    public async Task<Domain.Order.Aggregates.Order?> GetByIdAsync(
+    public async Task<Domain.Order.Aggregates.Order?> FindByIdAsync(
         OrderId orderId,
         CancellationToken ct = default)
     {
         return await context.Orders
             .Include(o => o.OrderItems)
-            .Include(o => o.StatusHistory)
             .FirstOrDefaultAsync(o => o.Id == orderId, ct);
     }
 
-    public async Task<Domain.Order.Aggregates.Order?> GetByOrderNumberAsync(
+    public async Task<Domain.Order.Aggregates.Order?> FindByOrderNumberAsync(
         OrderNumber orderNumber,
         CancellationToken ct = default)
     {
@@ -27,30 +24,63 @@ public sealed class OrderRepository(DBContext context) : IOrderRepository
             .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, ct);
     }
 
-    public async Task<IReadOnlyList<Domain.Order.Aggregates.Order>> GetByUserIdAsync(
+    public async Task<bool> ExistsByIdempotencyKeyAsync(
+        Guid idempotencyKey,
+        CancellationToken ct = default)
+    {
+        return await context.Orders
+            .AnyAsync(o => o.IdempotencyKey == idempotencyKey, ct);
+    }
+
+    public async Task<IReadOnlyList<Domain.Order.Aggregates.Order>> FindByUserIdAsync(
         UserId userId,
-        int page,
-        int pageSize,
         CancellationToken ct = default)
     {
         var results = await context.Orders
-            .Where(o => o.UserId == userId)
+            .Include(o => o.OrderItems)
+            .Where(o => o.UserId.Value == userId.Value)
             .OrderByDescending(o => o.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
             .ToListAsync(ct);
 
         return results.AsReadOnly();
     }
 
-    public async Task<bool> ExistsByIdempotencyKeyAsync(Guid key, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Domain.Order.Aggregates.Order>> FindPendingExpiredAsync(
+        CancellationToken ct = default)
     {
-        return await context.Orders.AnyAsync(o => o.IdempotencyKey == key, ct);
+        var expiredBefore = DateTime.UtcNow.AddMinutes(-30);
+        var expirableStatuses = new[] { "Created", "Reserved", "Pending" };
+
+        var results = await context.Orders
+            .Where(o => expirableStatuses.Contains(o.Status.Value)
+                        && o.CreatedAt < expiredBefore)
+            .ToListAsync(ct);
+
+        return results.AsReadOnly();
     }
 
-    public async Task AddAsync(Domain.Order.Aggregates.Order order, CancellationToken ct = default)
+    public async Task<Domain.Order.Aggregates.Order?> FindWithItemsByIdAsync(
+        OrderId orderId,
+        CancellationToken ct = default)
     {
-        await context.Orders.AddAsync(order, ct);
+        return await context.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(o => o.Id == orderId, ct);
+    }
+
+    public async Task<Domain.Order.Aggregates.Order?> FindByOrderItemIdAsync(
+        OrderItemId orderItemId,
+        CancellationToken ct = default)
+    {
+        return await context.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(
+                o => o.OrderItems.Any(i => i.Id == orderItemId), ct);
+    }
+
+    public void Add(Domain.Order.Aggregates.Order order)
+    {
+        context.Orders.Add(order);
     }
 
     public void Update(Domain.Order.Aggregates.Order order)
@@ -58,8 +88,8 @@ public sealed class OrderRepository(DBContext context) : IOrderRepository
         context.Orders.Update(order);
     }
 
-    public void SetOriginalRowVersion(Domain.Order.Aggregates.Order order, byte[] rowVersion)
+    public void SetOriginalRowVersion(Domain.Order.Aggregates.Order entity, byte[] rowVersion)
     {
-        context.Entry(order).Property(e => e.RowVersion).OriginalValue = rowVersion;
+        context.Entry(entity).Property("RowVersion").OriginalValue = rowVersion;
     }
 }

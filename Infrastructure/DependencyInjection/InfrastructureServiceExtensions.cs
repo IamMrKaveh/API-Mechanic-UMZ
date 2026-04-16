@@ -35,6 +35,7 @@ using Domain.User.Interfaces;
 using Domain.Variant.Interfaces;
 using Domain.Wallet.Interfaces;
 using Domain.Wishlist.Interfaces;
+using Infrastructure.Analytics.QueryServices;
 using Infrastructure.Attribute.QueryServices;
 using Infrastructure.Attribute.Repositories;
 using Infrastructure.Audit.QueryServices;
@@ -63,7 +64,6 @@ using Infrastructure.Inventory.QueryServices;
 using Infrastructure.Inventory.Repositories;
 using Infrastructure.Inventory.Services;
 using Infrastructure.Location.Services;
-using Infrastructure.Media.BackgroundServices;
 using Infrastructure.Media.QueryServices;
 using Infrastructure.Media.Repositories;
 using Infrastructure.Media.Services;
@@ -74,6 +74,7 @@ using Infrastructure.Order.QueryServices;
 using Infrastructure.Order.Repositories;
 using Infrastructure.Payment.BackgroundServices;
 using Infrastructure.Payment.QueryServices;
+using Infrastructure.Payment.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
@@ -194,7 +195,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
         services.AddScoped<IOrderProcessStateRepository, OrderProcessStateRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
-        services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+        services.AddScoped<IPaymentTransactionRepository, PaymentRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddScoped<IDiscountRepository, DiscountRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
@@ -346,7 +347,7 @@ public static class InfrastructureServiceExtensions
         services.AddHostedService<WalletReservationExpiryJob>();
         services.AddHostedService<WalletReconciliationJob>();
         services.AddHostedService<InventoryReservationExpiryService>();
-        services.AddHostedService<OrphanedFileCleanupService>();
+        services.AddHostedService<OrphanedFileCleanupJob>();
         services.AddHostedService<PaymentCleanupService>();
 
         var elasticOptions = configuration.GetSection(ElasticsearchOptions.SectionName).Get<ElasticsearchOptions>()

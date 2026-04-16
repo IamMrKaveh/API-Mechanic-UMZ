@@ -1,130 +1,110 @@
+using Domain.Notification.Interfaces;
+using Domain.Notification.ValueObjects;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
+
 namespace Infrastructure.Notification.Services;
 
-public class NotificationService(
-    DBContext context,
-    ILogger<NotificationService> logger,
-    IUnitOfWork unitOfWork) : INotificationService
+public sealed class NotificationService(
+    INotificationRepository notificationRepository,
+    IAuditService auditService,
+    IUnitOfWork unitOfWork,
+    DBContext context) : INotificationService
 {
-    private readonly DBContext _context = context;
-    private readonly ILogger<NotificationService> _logger = logger;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
     public async Task CreateNotificationAsync(
-        int userId,
+        UserId userId,
         string title,
         string message,
-        string type,
+        string typeName,
         string? actionUrl = null,
-        int? relatedEntityId = null,
-        string? relatedEntityType = null,
+        Guid? referenceId = null,
+        string? referenceType = null,
         CancellationToken ct = default)
     {
-        try
-        {
-            var notification = Domain.Notification.Aggregates.Notification.Create(
-                userId,
-                title,
-                message,
-                type,
-                actionUrl,
-                relatedEntityId,
-                relatedEntityType);
+        var notificationType = NotificationType.FromString(typeName);
+        var notification = Domain.Notification.Aggregates.Notification.Create(
+            NotificationId.NewId(),
+            userId,
+            notificationType);
 
-            await _context.Notifications.AddAsync(notification, ct);
-            await _unitOfWork.SaveChangesAsync(ct);
+        await notificationRepository.AddAsync(notification, ct);
 
-            _logger.LogInformation(
-                "Notification created for user {UserId}: {Title} (Type: {Type})",
-                userId, title, type);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to create notification for user {UserId}: {Title}", userId, title);
-        }
+        context.Entry(notification).Property("Title").CurrentValue = title;
+        context.Entry(notification).Property("Message").CurrentValue = message;
+        context.Entry(notification).Property("Type").CurrentValue = typeName;
+        context.Entry(notification).Property("ActionUrl").CurrentValue = actionUrl;
+        context.Entry(notification).Property("RelatedEntityType").CurrentValue = referenceType;
+        context.Entry(notification).Property("RelatedEntityId").CurrentValue = referenceId;
+
+        await unitOfWork.SaveChangesAsync(ct);
+
+        await auditService.LogSystemEventAsync(
+            "NotificationCreated",
+            $"Notification '{typeName}' created for user {userId.Value}", ct);
+    }
+
+    public async Task MarkAsReadAsync(
+        NotificationId notificationId,
+        UserId userId,
+        CancellationToken ct = default)
+    {
+        var notification = await notificationRepository.GetByIdAsync(notificationId, ct);
+        if (notification is null) return;
+
+        notification.EnsureUserAccess(userId);
+        notification.MarkAsRead();
+        notificationRepository.Update(notification);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    public async Task MarkAllAsReadAsync(
+        UserId userId,
+        CancellationToken ct = default)
+    {
+        var unread = await notificationRepository.GetUnreadByUserIdAsync(userId, ct);
+        foreach (var n in unread)
+            n.MarkAsRead();
+
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    public async Task DeleteAsync(
+        NotificationId notificationId,
+        UserId userId,
+        CancellationToken ct = default)
+    {
+        var notification = await notificationRepository.GetByIdAsync(notificationId, ct);
+        if (notification is null) return;
+
+        notification.EnsureUserAccess(userId);
+        notificationRepository.Remove(notification);
+        await unitOfWork.SaveChangesAsync(ct);
     }
 
     public async Task SendOrderStatusNotificationAsync(
-        int userId,
-        int orderId,
-        string oldStatus,
-        string newStatus,
+        UserId userId,
+        OrderId orderId,
+        string oldStatusName,
+        string newStatusName,
         CancellationToken ct = default)
     {
-        var notificationType = newStatus switch
+        var typeName = newStatusName switch
         {
             "Paid" => "OrderPaid",
             "Shipped" => "OrderShipped",
             "Delivered" => "OrderDelivered",
             "Cancelled" => "OrderCancelled",
-            _ => "OrderStatus"
+            _ => "OrderCreated"
         };
 
         await CreateNotificationAsync(
             userId,
-            "تغییر وضعیت سفارش",
-            $"وضعیت سفارش #{orderId} از {oldStatus} به {newStatus} تغییر کرد.",
-            notificationType,
-            $"/dashboard/orders/{orderId}",
-            orderId,
+            "وضعیت سفارش تغییر کرد",
+            $"وضعیت سفارش از '{oldStatusName}' به '{newStatusName}' تغییر یافت.",
+            typeName,
+            $"/dashboard/orders/{orderId.Value}",
+            orderId.Value,
             "Order",
             ct);
-    }
-
-    public async Task SendPaymentNotificationAsync(
-        int userId,
-        int orderId,
-        bool isSuccess,
-        string? refId = null,
-        CancellationToken ct = default)
-    {
-        if (isSuccess)
-        {
-            await CreateNotificationAsync(
-                userId,
-                "پرداخت موفق",
-                $"پرداخت سفارش #{orderId} با موفقیت انجام شد. کد پیگیری: {refId}",
-                "PaymentSuccess",
-                $"/dashboard/orders/{orderId}",
-                orderId,
-                "Order",
-                ct);
-        }
-        else
-        {
-            await CreateNotificationAsync(
-                userId,
-                "پرداخت ناموفق",
-                $"پرداخت سفارش #{orderId} ناموفق بود. لطفاً مجدداً تلاش کنید.",
-                "PaymentFailed",
-                "/checkout",
-                orderId,
-                "Order",
-                ct);
-        }
-    }
-
-    public async Task SendLowStockNotificationAsync(
-        int productId,
-        string productName,
-        int currentStock,
-        CancellationToken ct = default)
-    {
-        var admins = await _context.Users
-            .Where(u => u.IsAdmin && !u.IsDeleted)
-            .Select(u => u.Id)
-            .ToListAsync(ct);
-
-        foreach (var adminId in admins)
-        {
-            await CreateNotificationAsync(
-                adminId,
-                "هشدار موجودی کم",
-                $"موجودی محصول «{productName}» به {currentStock} عدد رسیده است.",
-                "StockAlert",
-                $"/admin/products/{productId}",
-                productId,
-                "Product",
-                ct);
-        }
     }
 }

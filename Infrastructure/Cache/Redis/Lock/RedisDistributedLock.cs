@@ -13,10 +13,9 @@ namespace Infrastructure.Cache.Redis.Lock;
 /// </summary>
 public sealed class RedisDistributedLock(
     IConnectionMultiplexer redis,
-    ILogger<RedisDistributedLock> logger) : IDistributedLock
+    IAuditService auditService) : IDistributedLock
 {
     private readonly IDatabase _db = redis.GetDatabase();
-    private readonly ILogger<RedisDistributedLock> _logger = logger;
 
     private static readonly TimeSpan DefaultLockTtl = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan DefaultRetryDelay = TimeSpan.FromMilliseconds(200);
@@ -27,17 +26,13 @@ public sealed class RedisDistributedLock(
     /// </summary>
     public async Task<ILockHandle?> TryAcquireAsync(
         string resource,
-        TimeSpan? ttl = null,
-        TimeSpan? retryDelay = null,
-        int retryCount = DefaultRetryCount,
+        TimeSpan expiry,
         CancellationToken ct = default)
     {
         var lockKey = $"lock:{resource}";
         var lockValue = Guid.NewGuid().ToString("N");
-        var expiry = ttl ?? DefaultLockTtl;
-        var delay = retryDelay ?? DefaultRetryDelay;
 
-        for (var attempt = 0; attempt <= retryCount; attempt++)
+        for (var attempt = 0; expiry; attempt++)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -46,11 +41,9 @@ public sealed class RedisDistributedLock(
 
             if (acquired)
             {
-                _logger.LogDebug(
-                    "[DistributedLock] Acquired lock '{Resource}' (attempt {Attempt}/{Max})",
-                    resource, attempt + 1, retryCount + 1);
+                await auditService.LogDebugAsync("[DistributedLock] Acquired lock '{Reresourcesource}' (attempt {attempt + 1}/{retryCount + 1})", ct);
 
-                return new RedisLockHandle(_db, lockKey, lockValue, _logger);
+                return new RedisLockHandle(_db, lockKey, lockValue, auditService);
             }
 
             if (attempt < retryCount)
@@ -58,17 +51,13 @@ public sealed class RedisDistributedLock(
                 var waitTime = TimeSpan.FromMilliseconds(
                     delay.TotalMilliseconds * Math.Pow(1.5, attempt));
 
-                _logger.LogDebug(
-                    "[DistributedLock] Lock '{Resource}' busy. Retry {Attempt}/{Max} after {Wait}ms",
-                    resource, attempt + 1, retryCount, waitTime.TotalMilliseconds);
+                await auditService.LogDebugAsync("[DistributedLock] Lock '{resource}' busy. Retry {attempt + 1}/{retryCount} after {waitTime.TotalMilliseconds}ms", ct);
 
                 await Task.Delay(waitTime, ct);
             }
         }
 
-        _logger.LogWarning(
-            "[DistributedLock] Failed to acquire lock '{Resource}' after {Retries} attempts.",
-            resource, retryCount + 1);
+        await auditService.LogWarningAsync("[DistributedLock] Failed to acquire lock '{resource}' after {retryCount + 1} attempts.", ct);
 
         return null;
     }
@@ -76,14 +65,12 @@ public sealed class RedisDistributedLock(
     /// <summary>
     /// گرفتن قفل با اطمینان (در صورت عدم موفقیت استثنا می‌دهد).
     /// </summary>
-    public async Task<ILockHandle> AcquireAsync(
+    public async Task<ILockHandle?> AcquireAsync(
         string resource,
-        TimeSpan? ttl = null,
-        TimeSpan? retryDelay = null,
-        int retryCount = DefaultRetryCount,
+        TimeSpan expiry,
         CancellationToken ct = default)
     {
-        var handle = await TryAcquireAsync(resource, ttl, retryDelay, retryCount, ct);
+        var handle = await TryAcquireAsync(resource, expiry, ct);
         if (handle is null)
             throw new DistributedLockException(
                 $"امکان گرفتن قفل '{resource}' وجود ندارد. لطفاً دوباره تلاش کنید.");

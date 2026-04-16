@@ -12,7 +12,8 @@ public sealed class AuditService(
     IAuditRepository auditRepository,
     IAuditMaskingService maskingService,
     IHttpContextAccessor httpContextAccessor,
-    IUnitOfWork unitOfWork) : IAuditService
+    IUnitOfWork unitOfWork,
+    IAuditService auditService) : IAuditService
 {
     public async Task LogAsync(
         string eventType,
@@ -44,27 +45,40 @@ public sealed class AuditService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to write audit log: EventType={EventType}, Action={Action}", eventType, action);
+            await auditService.LogSystemEventAsync(
+                ex.Message,
+                "Failed to write audit log: EventType={eventType}, Action={action}",
+                ct);
         }
     }
+
+    public async Task LogInformationAsync(
+    string details,
+    CancellationToken ct = default) => await LogAsync("Information", "", IpAddress.System, null, null, null, details, null, ct);
+
+    public async Task LogDebugAsync(
+    string details,
+    CancellationToken ct = default) => await LogAsync("Debug", "", IpAddress.System, null, null, null, details, null, ct);
+
+    public async Task LogWarningAsync(
+    string details,
+    CancellationToken ct = default) => await LogAsync("Warning", "", IpAddress.System, null, null, null, details, null, ct);
+
+    public async Task LogErrorAsync(
+    string details,
+    CancellationToken ct = default) => await LogAsync("Error", "", IpAddress.System, null, null, null, details, null, ct);
 
     public async Task LogSecurityEventAsync(
         string action,
         string details,
         IpAddress ipAddress,
         UserId? userId = null,
-        CancellationToken ct = default)
-    {
-        await LogAsync("SecurityEvent", action, ipAddress, userId, null, null, details, null, ct);
-    }
+        CancellationToken ct = default) => await LogAsync("SecurityEvent", action, ipAddress, userId, null, null, details, null, ct);
 
     public async Task LogSystemEventAsync(
         string action,
         string details,
-        CancellationToken ct = default)
-    {
-        await LogAsync("SystemEvent", action, IpAddress.System, null, null, null, details, null, ct);
-    }
+        CancellationToken ct = default) => await LogAsync("SystemEvent", action, IpAddress.System, null, null, null, details, null, ct);
 
     public async Task LogOrderEventAsync(
         OrderId orderId,
@@ -72,57 +86,35 @@ public sealed class AuditService(
         IpAddress ipAddress,
         UserId? userId = null,
         string? details = null,
-        CancellationToken ct = default)
-    {
-        await LogAsync("OrderEvent", action, ipAddress, userId, "Order", orderId.Value.ToString(), details, null, ct);
-    }
+        CancellationToken ct = default) => await LogAsync("OrderEvent", action, ipAddress, userId, "Order", orderId.Value.ToString(), details, null, ct);
 
     public async Task LogPaymentEventAsync(
         PaymentTransactionId paymentId,
         string action,
         IpAddress ipAddress,
-        Guid? userId = null,
+        UserId? userId = null,
         string? details = null,
-        CancellationToken ct = default)
-    {
-        var uid = userId.HasValue ? UserId.From(userId.Value) : null;
-        await LogAsync("PaymentEvent", action, ipAddress, uid, "Payment", paymentId.Value.ToString(), details, null, ct);
-    }
+        CancellationToken ct = default) => await LogAsync("PaymentEvent", action, ipAddress, userId, "Payment", paymentId.Value.ToString(), details, null, ct);
 
     public async Task LogInventoryEventAsync(
         ProductId productId,
         string action,
         string details,
-        UserId? userId = null)
-    {
-        await LogAsync("InventoryEvent", action, IpAddress.System, userId, "Product", productId.Value.ToString(), details);
-    }
+        UserId? userId = null) => await LogAsync("InventoryEvent", action, IpAddress.System, userId, "Product", productId.Value.ToString(), details);
 
     public async Task LogInventoryEventAsync(
         VariantId variantId,
         string action,
         string details,
-        UserId? userId = null)
-    {
-        await LogAsync("InventoryEvent", action, IpAddress.System, userId, "Variant", variantId.Value.ToString(), details);
-    }
+        UserId? userId = null) => await LogAsync("InventoryEvent", action, IpAddress.System, userId, "Variant", variantId.Value.ToString(), details);
 
     public async Task LogProductEventAsync(
         ProductId productId,
         string action,
         string details,
-        UserId userId)
-    {
-        await LogAsync("ProductEvent", action, IpAddress.System, userId, "Product", productId.Value.ToString(), details);
-    }
+        UserId userId) => await LogAsync("ProductEvent", action, IpAddress.System, userId, "Product", productId.Value.ToString(), details);
 
-    public async Task LogAdminEventAsync(string title, UserId adminId, string detail)
-    {
-        await LogAsync("AdminEvent", title, IpAddress.System, adminId, null, null, detail);
-    }
+    public async Task LogAdminEventAsync(string title, UserId adminId, string detail) => await LogAsync("AdminEvent", title, IpAddress.System, adminId, null, null, detail);
 
-    private string GetUserAgent()
-    {
-        return httpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString() ?? string.Empty;
-    }
+    private string GetUserAgent() => httpContextAccessor.HttpContext?.Request.Headers.UserAgent.ToString() ?? string.Empty;
 }

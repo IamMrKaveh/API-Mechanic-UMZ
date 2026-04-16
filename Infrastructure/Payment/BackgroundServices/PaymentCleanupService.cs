@@ -1,14 +1,15 @@
 namespace Infrastructure.Payment.BackgroundServices;
 
-public class PaymentCleanupService(IServiceProvider serviceProvider, ILogger<PaymentCleanupService> logger) : BackgroundService
+public class PaymentCleanupService(
+    IServiceProvider serviceProvider,
+    IAuditService auditService) : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider;
-    private readonly ILogger<PaymentCleanupService> _logger = logger;
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        _logger.LogInformation("Payment Cleanup Service started.");
+        await auditService.LogInformationAsync("Payment Cleanup Service started.", ct);
 
         while (!ct.IsCancellationRequested)
         {
@@ -18,13 +19,11 @@ public class PaymentCleanupService(IServiceProvider serviceProvider, ILogger<Pay
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while cleaning up abandoned payments.");
+                await auditService.LogErrorAsync(ex.Message, ct);
             }
 
             await Task.Delay(_interval, ct);
         }
-
-        _logger.LogInformation("Payment Cleanup Service stopped.");
     }
 
     private async Task ProcessCleanupAsync(CancellationToken ct)
@@ -40,7 +39,7 @@ public class PaymentCleanupService(IServiceProvider serviceProvider, ILogger<Pay
 
         if (result.IsSuccess && result.Value > 0)
         {
-            _logger.LogInformation("Payment cleanup: Expired {Count} stale transactions.", result.Value);
+            await auditService.LogInformationAsync("Payment cleanup: Expired {Count} stale transactions.", ct);
         }
     }
 }

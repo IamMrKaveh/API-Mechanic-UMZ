@@ -6,15 +6,13 @@ namespace Infrastructure.Inventory.BackgroundServices;
 /// </summary>
 public class InventoryReservationExpiryService(
     IServiceProvider serviceProvider,
-    ILogger<InventoryReservationExpiryService> logger) : BackgroundService
+    IAuditService auditService) : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider = serviceProvider;
-    private readonly ILogger<InventoryReservationExpiryService> _logger = logger;
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        _logger.LogInformation("Inventory Reservation Expiry Service started.");
+        await auditService.LogInformationAsync("Inventory Reservation Expiry Service started.", ct);
 
         while (!ct.IsCancellationRequested)
         {
@@ -24,18 +22,18 @@ public class InventoryReservationExpiryService(
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger.LogError(ex, "Error processing expired inventory reservations.");
+                await auditService.LogErrorAsync("Error processing expired inventory reservations.", ct);
             }
 
             await Task.Delay(_interval, ct);
         }
 
-        _logger.LogInformation("Inventory Reservation Expiry Service stopped.");
+        await auditService.LogInformationAsync("Inventory Reservation Expiry Service stopped.", ct);
     }
 
     private async Task ProcessExpiredReservationsAsync(CancellationToken ct)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
         var inventoryService = scope.ServiceProvider.GetRequiredService<IInventoryService>();
 
@@ -58,9 +56,9 @@ public class InventoryReservationExpiryService(
 
         if (!expiredReservations.Any()) return;
 
-        _logger.LogInformation(
-            "Found {Count} expired reservation groups to release.",
-            expiredReservations.Count);
+        await auditService.LogInformationAsync(
+            $"Found {expiredReservations.Count} expired reservation groups to release.",
+            ct);
 
         foreach (var reservation in expiredReservations)
         {
@@ -85,20 +83,20 @@ public class InventoryReservationExpiryService(
 
                 if (result.IsSuccess)
                 {
-                    _logger.LogInformation(
+                    await auditService.LogInformationAsync(
                         "Released expired reservation: Variant {VariantId}, Qty {Qty}, Ref {Ref}",
                         reservation.VariantId, reservation.TotalQuantity, reservation.ReferenceNumber);
                 }
                 else
                 {
-                    _logger.LogWarning(
+                    await auditService.LogWarningAsync(
                         "Failed to release expired reservation for Variant {VariantId}: {Error}",
                         reservation.VariantId, result.Error);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex,
+                await auditService.LogErrorAsync(
                     "Error releasing expired reservation for Variant {VariantId}",
                     reservation.VariantId);
             }

@@ -2,6 +2,7 @@
 using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Order.Features.Shared;
 using Domain.Cart.Interfaces;
+using Domain.Cart.ValueObjects;
 
 namespace Infrastructure.Order.Services;
 
@@ -14,8 +15,7 @@ public class CheckoutOrchestrationService(
     ICheckoutPriceValidatorService priceValidator,
     ICheckoutOrderCreationService orderCreation,
     ICheckoutPaymentProcessorService paymentProcessor,
-    ICartRepository cartRepository,
-    ILogger<CheckoutOrchestrationService> logger) : ICheckoutOrchestrationService
+    ICartRepository cartRepository) : ICheckoutOrchestrationService
 {
     public async Task<ServiceResult<CheckoutResultDto>> ProcessCheckoutAsync(
         CheckoutFromCartCommand command, CancellationToken ct)
@@ -37,12 +37,12 @@ public class CheckoutOrchestrationService(
             return ServiceResult<CheckoutResultDto>.Failure(priceResult.Error!);
 
         var shippingResult = await shippingValidator.ValidateAndCalculateCostAsync(
-            command.ShippingId, cartItemsResult.Value!.Subtotal, ct);
+            command.ShippingId, cartItemsResult.Value!.SubTotal, ct);
         if (!shippingResult.IsSuccess)
             return ServiceResult<CheckoutResultDto>.Failure(shippingResult.Error!);
 
         var discountResult = await discountApplicator.ApplyAsync(
-            command.DiscountCode, cartItemsResult.Value!.Subtotal, command.UserId, ct);
+            command.DiscountCode, Money.FromDecimal(cartItemsResult.Value!.SubTotal), command.UserId, ct);
         if (!discountResult.IsSuccess)
             return ServiceResult<CheckoutResultDto>.Failure(discountResult.Error!);
 
@@ -63,7 +63,7 @@ public class CheckoutOrchestrationService(
         if (!orderResult.IsSuccess)
             return ServiceResult<CheckoutResultDto>.Failure(orderResult.Error!);
 
-        var cart = await cartRepository.FindByIdAsync(command.CartId, ct);
+        var cart = await cartRepository.FindByIdAsync(CartId.From(command.CartId), ct);
         if (cart is not null)
         {
             cart.Checkout();

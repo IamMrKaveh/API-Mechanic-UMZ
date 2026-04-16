@@ -3,59 +3,40 @@
 /// <summary>
 /// قفل توزیع‌شده No-Op که زمانی استفاده می‌شود که Redis غیرفعال است
 /// </summary>
-public sealed class NoOpDistributedLock(ILogger<NoOpDistributedLock> logger) : IDistributedLock
+public sealed class NoOpDistributedLock(IAuditService auditService) : IDistributedLock
 {
-    private readonly ILogger<NoOpDistributedLock> _logger = logger;
-
-    public Task<ILockHandle?> TryAcquireAsync(
-        string resource,
-        TimeSpan? ttl = null,
-        TimeSpan? retryDelay = null,
-        int retryCount = 5,
-        CancellationToken ct = default)
+    public async Task<ILockHandle?> TryAcquireAsync(
+        string resource)
     {
-        _logger.LogDebug("Distributed locks are disabled. Acquiring no-op lock for resource: {Resource}", resource);
-        return Task.FromResult<ILockHandle?>(new NoOpLockHandle(resource, _logger));
+        await auditService.LogDebugAsync($"Distributed locks are disabled. Acquiring no-op lock for resource: {resource}");
+        return await Task.FromResult<ILockHandle?>(new NoOpLockHandle(resource, auditService));
     }
 
-    public Task<ILockHandle> AcquireAsync(
+    public async Task<ILockHandle?> AcquireAsync(
         string resource,
-        TimeSpan? ttl = null,
-        TimeSpan? retryDelay = null,
-        int retryCount = 5,
+        TimeSpan expiry,
         CancellationToken ct = default)
     {
-        _logger.LogDebug("Distributed locks are disabled. Acquiring no-op lock for resource: {Resource}", resource);
-        return Task.FromResult<ILockHandle>(new NoOpLockHandle(resource, _logger));
+        await auditService.LogDebugAsync($"Distributed locks are disabled. Acquiring no-op lock for resource: {resource}", ct);
+        return await Task.FromResult<ILockHandle>(new NoOpLockHandle(resource, auditService));
     }
 }
 
-public sealed class NoOpLockHandle : ILockHandle
+public sealed class NoOpLockHandle(string resource, IAuditService auditService) : ILockHandle
 {
-    private readonly string _resource;
-    private readonly ILogger _logger;
-    private bool _released;
+    private bool _released = false;
 
-    public NoOpLockHandle(string resource, ILogger logger)
-    {
-        _resource = resource;
-        _logger = logger;
-        _released = false;
-    }
-
-    public string Resource => _resource;
+    public string Resource => resource;
     public bool IsAcquired => !_released;
 
-    public ValueTask DisposeAsync()
-    {
-        return new ValueTask(ReleaseAsync());
-    }
+    public ValueTask DisposeAsync() => new(ReleaseAsync());
 
-    public Task ReleaseAsync()
+    public async Task ReleaseAsync()
     {
-        if (_released) return Task.CompletedTask;
+        if (_released)
+            await Task.CompletedTask;
         _released = true;
-        _logger.LogDebug("Releasing no-op lock for resource: {Resource}", _resource);
-        return Task.CompletedTask;
+        await auditService.LogInformationAsync($"Releasing no-op lock for resource: {resource}");
+        await Task.CompletedTask;
     }
 }
