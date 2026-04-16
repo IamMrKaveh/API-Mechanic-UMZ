@@ -59,7 +59,6 @@ using Infrastructure.Communication.Services;
 using Infrastructure.Discount.QueryServices;
 using Infrastructure.Discount.Repositories;
 using Infrastructure.Discount.Services;
-using Infrastructure.Inventory.BackgroundServices;
 using Infrastructure.Inventory.QueryServices;
 using Infrastructure.Inventory.Repositories;
 using Infrastructure.Inventory.Services;
@@ -72,7 +71,6 @@ using Infrastructure.Notification.Repositories;
 using Infrastructure.Notification.Services;
 using Infrastructure.Order.QueryServices;
 using Infrastructure.Order.Repositories;
-using Infrastructure.Payment.BackgroundServices;
 using Infrastructure.Payment.QueryServices;
 using Infrastructure.Payment.Repositories;
 using Infrastructure.Persistence;
@@ -83,7 +81,6 @@ using Infrastructure.Product.Repositories;
 using Infrastructure.Review.QueryServices;
 using Infrastructure.Review.Repositories;
 using Infrastructure.Search;
-using Infrastructure.Search.BackgroundServices;
 using Infrastructure.Search.Options;
 using Infrastructure.Search.Services;
 using Infrastructure.Security.Options;
@@ -346,17 +343,17 @@ public static class InfrastructureServiceExtensions
         services.AddHostedService<ExpiredOrderCleanupJob>();
         services.AddHostedService<WalletReservationExpiryJob>();
         services.AddHostedService<WalletReconciliationJob>();
-        services.AddHostedService<InventoryReservationExpiryService>();
+        services.AddHostedService<InventoryReservationExpiryJob>();
         services.AddHostedService<OrphanedFileCleanupJob>();
-        services.AddHostedService<PaymentCleanupService>();
+        services.AddHostedService<PaymentCleanupJob>();
 
         var elasticOptions = configuration.GetSection(ElasticsearchOptions.SectionName).Get<ElasticsearchOptions>()
             ?? new ElasticsearchOptions();
 
         if (elasticOptions.IsEnabled && elasticOptions.EnableBackgroundSync)
         {
-            services.AddHostedService<ElasticsearchSyncBackgroundService>();
-            services.AddHostedService<ElasticsearchOutboxProcessor>();
+            services.AddHostedService<ElasticsearchSyncJob>();
+            services.AddHostedService<ElasticsearchOutboxJob>();
         }
     }
 

@@ -1,4 +1,8 @@
-﻿using Infrastructure.Persistence.Outbox;
+﻿using Domain.Common.Abstractions;
+using Infrastructure.Persistence.Outbox;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Text.Json;
 
 namespace Infrastructure.Persistence.Interceptors;
 
@@ -18,13 +22,41 @@ public sealed class DomainEventInterceptor : SaveChangesInterceptor
     private static async Task DispatchDomainEventsToOutboxAsync(DbContext context, CancellationToken ct)
     {
         var aggregates = context.ChangeTracker
-            .Entries<AggregateRoot>()
-            .Where(e => e.Entity.DomainEvents.Count != 0)
+            .Entries()
+            .Where(e => e.Entity is not null)
             .Select(e => e.Entity)
+            .OfType<AggregateRoot<object>>()
             .ToList();
 
-        var outboxMessages = aggregates
-            .SelectMany(a => a.DomainEvents)
+        var allAggregateRoots = context.ChangeTracker
+            .Entries()
+            .Where(e => e.Entity is not null)
+            .Select(e => e.Entity)
+            .Where(e =>
+            {
+                var type = e.GetType();
+                while (type != null)
+                {
+                    if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(AggregateRoot<>))
+                        return true;
+                    type = type.BaseType;
+                }
+                return false;
+            })
+            .ToList();
+
+        var domainEvents = new List<IDomainEvent>();
+
+        foreach (var entity in allAggregateRoots)
+        {
+            var prop = entity.GetType().GetProperty(nameof(AggregateRoot<object>.DomainEvents));
+            if (prop?.GetValue(entity) is IEnumerable<IDomainEvent> events)
+                domainEvents.AddRange(events);
+        }
+
+        if (!domainEvents.Any()) return;
+
+        var outboxMessages = domainEvents
             .Select(e => new OutboxMessage
             {
                 Id = OutboxMessageId.NewId(),
@@ -34,13 +66,13 @@ public sealed class DomainEventInterceptor : SaveChangesInterceptor
             })
             .ToList();
 
-        foreach (var aggregate in aggregates)
-            aggregate.ClearDomainEvents();
-
-        if (outboxMessages.Count > 0)
+        foreach (var entity in allAggregateRoots)
         {
-            await context.Set<OutboxMessage>().AddRangeAsync(outboxMessages, ct);
-            await context.SaveChangesAsync(ct);
+            var method = entity.GetType().GetMethod(nameof(AggregateRoot<object>.ClearDomainEvents));
+            method?.Invoke(entity, null);
         }
+
+        await context.Set<OutboxMessage>().AddRangeAsync(outboxMessages, ct);
+        await context.SaveChangesAsync(ct);
     }
 }

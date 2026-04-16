@@ -1,20 +1,15 @@
-namespace Infrastructure.Search.BackgroundServices;
+using Application.Search.Features.Shared;
+using Infrastructure.Search.Services;
 
-/// <summary>
-/// هر batch پردازش در scope جداگانه انجام می‌شود
-/// این از بلوت‌شدن EF Core Change Tracker جلوگیری می‌کند
-/// </summary>
-public class DeadLetterQueueProcessor(
+namespace Infrastructure.BackgroundJobs;
+
+public sealed class DeadLetterQueueJob(
     IServiceProvider serviceProvider,
-    ILogger<DeadLetterQueueProcessor> logger) : BackgroundService
+    IAuditService auditService) : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider = serviceProvider;
-    private readonly ILogger<DeadLetterQueueProcessor> _logger = logger;
-
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        _logger.LogInformation("Dead Letter Queue Processor is starting");
-
+        await auditService.LogInformationAsync("Dead Letter Queue Processor is starting", ct);
         await Task.Delay(TimeSpan.FromMinutes(1), ct);
 
         while (!ct.IsCancellationRequested)
@@ -25,7 +20,8 @@ public class DeadLetterQueueProcessor(
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing dead letter queue");
+                await auditService.LogErrorAsync(
+                    $"Error processing dead letter queue: {ex.Message}", ct);
             }
 
             await Task.Delay(TimeSpan.FromMinutes(5), ct);
@@ -34,10 +30,10 @@ public class DeadLetterQueueProcessor(
 
     private async Task ProcessFailedOperationsAsync(CancellationToken ct)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var dlq = scope.ServiceProvider.GetRequiredService<IElasticDeadLetterQueue>();
-        var searchService = scope.ServiceProvider.GetRequiredService<ElasticSearchService>();
-        var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
+        var searchService = scope.ServiceProvider.GetRequiredService<ElasticsearchService>();
+        var context = scope.ServiceProvider.GetRequiredService<DBContext>();
 
         var operations = await dlq.DequeueAsync(10, ct);
 
@@ -45,10 +41,8 @@ public class DeadLetterQueueProcessor(
         {
             try
             {
-                _logger.LogInformation(
-                    "Retrying failed operation: {EntityType} {EntityId}",
-                    operation.EntityType,
-                    operation.EntityId);
+                await auditService.LogInformationAsync(
+                    $"Retrying failed operation: {operation.EntityType} {operation.EntityId}", ct);
 
                 switch (operation.EntityType)
                 {
@@ -65,9 +59,9 @@ public class DeadLetterQueueProcessor(
                         break;
 
                     case "Brand":
-                        var group = JsonSerializer.Deserialize<BrandSearchDocument>(operation.Document);
-                        if (group != null)
-                            await searchService.IndexBrandAsync(group, ct);
+                        var brand = JsonSerializer.Deserialize<BrandSearchDocument>(operation.Document);
+                        if (brand != null)
+                            await searchService.IndexBrandAsync(brand, ct);
                         break;
                 }
 
@@ -84,17 +78,13 @@ public class DeadLetterQueueProcessor(
                     await context.SaveChangesAsync(ct);
                 }
 
-                _logger.LogInformation(
-                    "Successfully processed failed operation: {EntityType} {EntityId}",
-                    operation.EntityType,
-                    operation.EntityId);
+                await auditService.LogInformationAsync(
+                    $"Successfully processed failed operation: {operation.EntityType} {operation.EntityId}", ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,
-                    "Failed to process operation after retry: {EntityType} {EntityId}",
-                    operation.EntityType,
-                    operation.EntityId);
+                await auditService.LogErrorAsync(
+                    $"Failed to process operation after retry: {operation.EntityType} {operation.EntityId}: {ex.Message}", ct);
 
                 var entity = await context.FailedElasticOperations
                     .FirstOrDefaultAsync(o =>
@@ -110,11 +100,8 @@ public class DeadLetterQueueProcessor(
                     if (entity.RetryCount >= 5)
                     {
                         entity.Status = "Failed";
-                        _logger.LogError(
-                            "Operation permanently failed after {RetryCount} retries: {EntityType} {EntityId}",
-                            entity.RetryCount,
-                            operation.EntityType,
-                            operation.EntityId);
+                        await auditService.LogErrorAsync(
+                            $"Operation permanently failed after {entity.RetryCount} retries: {operation.EntityType} {operation.EntityId}", ct);
                     }
 
                     await context.SaveChangesAsync(ct);
@@ -123,9 +110,9 @@ public class DeadLetterQueueProcessor(
         }
     }
 
-    public override Task StopAsync(CancellationToken ct)
+    public override async Task StopAsync(CancellationToken ct)
     {
-        _logger.LogInformation("Dead Letter Queue Processor is stopping");
-        return base.StopAsync(ct);
+        await auditService.LogInformationAsync("Dead Letter Queue Processor is stopping", ct);
+        await base.StopAsync(ct);
     }
 }

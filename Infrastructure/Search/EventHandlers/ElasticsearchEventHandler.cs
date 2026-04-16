@@ -1,10 +1,9 @@
+using Application.Audit.Contracts;
 using Application.Search.Contracts;
 using Application.Search.Events;
 using Application.Search.Features.Shared;
-using Domain.Brand.Events;
-using Domain.Category.Events;
-using Domain.Product.Events;
 using Infrastructure.Persistence.Context;
+using System.Text.Json;
 
 namespace Infrastructure.Search.EventHandlers;
 
@@ -17,22 +16,23 @@ public sealed class ElasticsearchEventHandler(
     {
         var document = new ProductSearchDocument
         {
-            ProductId = domainEvent.ProductId.Value,
-            Name = domainEvent.Name,
-            ChangeType = domainEvent.ChangeType
+            ProductId = Guid.Parse(domainEvent.EntityId.ToString()),
+            Name = domainEvent.Document?.Name ?? string.Empty,
+            ChangeType = domainEvent.ChangeType.ToString()
         };
 
         var message = ElasticsearchOutboxMessage.Create(
             "Product",
-            domainEvent.ProductId.Value,
-            System.Text.Json.JsonSerializer.Serialize(document),
-            domainEvent.ChangeType);
+            document.ProductId,
+            JsonSerializer.Serialize(document),
+            domainEvent.ChangeType.ToString());
 
         await context.ElasticsearchOutboxMessages.AddAsync(message, ct);
+        await context.SaveChangesAsync(ct);
 
         await auditService.LogSystemEventAsync(
             "ElasticsearchProductChanged",
-            $"محصول {domainEvent.ProductId.Value} در صف ایندکس‌گذاری قرار گرفت.",
+            $"محصول {document.ProductId} در صف ایندکس‌گذاری قرار گرفت.",
             ct);
     }
 
@@ -41,17 +41,18 @@ public sealed class ElasticsearchEventHandler(
     {
         var document = new CategorySearchDocument
         {
-            CategoryId = domainEvent.CategoryId.Value,
-            Name = domainEvent.Name
+            CategoryId = Guid.Parse(domainEvent.EntityId.ToString()),
+            Name = domainEvent.Document?.Name ?? string.Empty
         };
 
         var message = ElasticsearchOutboxMessage.Create(
             "Category",
-            domainEvent.CategoryId.Value,
-            System.Text.Json.JsonSerializer.Serialize(document),
-            domainEvent.ChangeType);
+            document.CategoryId,
+            JsonSerializer.Serialize(document),
+            domainEvent.ChangeType.ToString());
 
         await context.ElasticsearchOutboxMessages.AddAsync(message, ct);
+        await context.SaveChangesAsync(ct);
     }
 
     public async Task HandleBrandChangedAsync(
@@ -59,16 +60,22 @@ public sealed class ElasticsearchEventHandler(
     {
         var document = new BrandSearchDocument
         {
-            BrandId = domainEvent.BrandId.Value,
-            Name = domainEvent.Name
+            BrandId = Guid.Parse(domainEvent.EntityId.ToString()),
+            Name = domainEvent.Document?.Name ?? string.Empty
         };
 
         var message = ElasticsearchOutboxMessage.Create(
             "Brand",
-            domainEvent.BrandId.Value,
-            System.Text.Json.JsonSerializer.Serialize(document),
-            domainEvent.ChangeType);
+            document.BrandId,
+            JsonSerializer.Serialize(document),
+            domainEvent.ChangeType.ToString());
 
         await context.ElasticsearchOutboxMessages.AddAsync(message, ct);
+        await context.SaveChangesAsync(ct);
+    }
+
+    void IElasticsearchEventHandler.HandleProductChangedAsync(ProductChangedEvent @event, CancellationToken ct)
+    {
+        throw new NotImplementedException();
     }
 }

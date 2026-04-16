@@ -1,3 +1,8 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
+using Infrastructure.Persistence.Interceptors;
+
 namespace Infrastructure.Persistence.Context;
 
 public sealed class DBContextFactory : IDesignTimeDbContextFactory<DBContext>
@@ -17,26 +22,21 @@ public sealed class DBContextFactory : IDesignTimeDbContextFactory<DBContext>
             .AddEnvironmentVariables()
             .Build();
 
-        var connectionString =
-            configuration.GetConnectionString("MigrationConnection");
+        var connectionString = configuration.GetConnectionString("MigrationConnection");
 
         if (string.IsNullOrWhiteSpace(connectionString))
-        {
             throw new InvalidOperationException(
-                @"Connection string 'MigrationConnection' was not found.
-                  EF Core migrations must NOT use Supabase Pooler."
-            );
-        }
+                "Connection string 'MigrationConnection' was not found.");
 
         var optionsBuilder = new DbContextOptionsBuilder<DBContext>();
+        optionsBuilder.UseNpgsql(connectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(0);
+        });
 
-        optionsBuilder.UseNpgsql(
-            connectionString,
-            npgsqlOptions =>
-            {
-                npgsqlOptions.EnableRetryOnFailure(0);
-            });
-
-        return new DBContext(optionsBuilder.Options);
+        return new DBContext(
+            optionsBuilder.Options,
+            new AuditableEntityInterceptor(),
+            new DomainEventInterceptor());
     }
 }

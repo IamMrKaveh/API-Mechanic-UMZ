@@ -88,7 +88,7 @@ public sealed class MediaService(
         if (wasPrimary)
         {
             var remaining = await mediaRepository.GetByEntityAsync(entityType, entityId, ct);
-            var newPrimary = mediaDomainService.SelectNewPrimaryAfterDeletion(
+            var newPrimary = MediaDomainService.SelectNewPrimaryAfterDeletion(
                 remaining.Where(m => m.Id != mediaId).ToList());
 
             if (newPrimary is not null)

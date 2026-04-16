@@ -1,62 +1,44 @@
+using Application.Audit.Contracts;
+using Application.Search.Contracts;
+using Application.Search.Features.Shared;
+using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
+
 namespace Infrastructure.Search;
 
-public class ElasticDeadLetterQueue(
+public sealed class ElasticDeadLetterQueue(
     DBContext context,
-    ILogger<ElasticDeadLetterQueue> logger) : IElasticDeadLetterQueue
+    IAuditService auditService) : IElasticDeadLetterQueue
 {
-    private readonly DBContext _context = context;
-    private readonly ILogger<ElasticDeadLetterQueue> _logger = logger;
-
-    public async Task EnqueueAsync(
-        FailedIndexOperation operation,
-        CancellationToken ct)
+    public async Task EnqueueAsync(FailedElasticOperation operation, CancellationToken ct)
     {
         try
         {
-            var entity = new FailedElasticOperation
+            var existing = await context.FailedElasticOperations
+                .AnyAsync(o =>
+                    o.EntityType == operation.EntityType &&
+                    o.EntityId == operation.EntityId &&
+                    o.Status == "Pending", ct);
+
+            if (!existing)
             {
-                EntityType = operation.EntityType,
-                EntityId = operation.EntityId,
-                Document = operation.Document,
-                Error = operation.Error,
-                CreatedAt = operation.Timestamp,
-                RetryCount = 0,
-                LastRetryAt = null,
-                Status = "Pending"
-            };
-
-            _context.FailedElasticOperations.Add(entity);
-            await _context.SaveChangesAsync(ct);
-
-            _logger.LogWarning(
-                "Enqueued failed operation to DLQ: {EntityType} {EntityId}",
-                operation.EntityType,
-                operation.EntityId);
+                context.FailedElasticOperations.Add(operation);
+                await context.SaveChangesAsync(ct);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to enqueue to dead letter queue");
+            await auditService.LogErrorAsync(
+                $"Failed to enqueue operation to dead letter queue: {ex.Message}", ct);
         }
     }
 
-    public async Task<IEnumerable<FailedIndexOperation>> DequeueAsync(
-        int count,
-        CancellationToken ct)
+    public async Task<IEnumerable<FailedElasticOperation>> DequeueAsync(int count, CancellationToken ct)
     {
-        var operations = await _context.FailedElasticOperations
-            .Where(o => o.Status == "Pending" && o.RetryCount < 5)
+        return await context.FailedElasticOperations
+            .Where(o => o.Status == "Pending")
             .OrderBy(o => o.CreatedAt)
             .Take(count)
             .ToListAsync(ct);
-
-        return operations.Select(o => new FailedIndexOperation
-        {
-            EntityType = o.EntityType,
-            EntityId = o.EntityId,
-            Document = o.Document,
-            Error = o.Error,
-            Timestamp = o.CreatedAt,
-            RetryCount = o.RetryCount
-        });
     }
 }

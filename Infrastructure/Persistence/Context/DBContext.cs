@@ -22,6 +22,7 @@ using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
 using Infrastructure.Search;
 using Infrastructure.Security.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Context;
 
@@ -67,7 +68,6 @@ public sealed class DBContext(
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<ElasticsearchOutboxMessage> ElasticsearchOutboxMessages => Set<ElasticsearchOutboxMessage>();
     public DbSet<FailedElasticOperation> FailedElasticOperations => Set<FailedElasticOperation>();
-    public DbSet<WalletReconciliationAudit> WalletReconciliationAudits => Set<WalletReconciliationAudit>();
     public DbSet<OrderProcessState> OrderProcessStates => Set<OrderProcessState>();
     public DbSet<RateLimitEntry> RateLimitEntries => Set<RateLimitEntry>();
 
