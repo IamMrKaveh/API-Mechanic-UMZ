@@ -17,7 +17,7 @@ namespace Infrastructure.BackgroundJobs;
 /// </summary>
 public sealed class AuditRetentionJob(
     IServiceProvider serviceProvider,
-    ILogger<AuditRetentionJob> logger) : BackgroundService
+    IAuditService auditService) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
 
@@ -38,17 +38,20 @@ public sealed class AuditRetentionJob(
         "SecurityEvent", "UserAction", "AdminEvent", "AuthEvent", "LoginEvent"
     };
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        _logger.LogInformation("Audit Retention Service started.");
+        await auditService.LogSystemEventAsync(
+            "Audit Retention",
+            "Audit Retention Service started.",
+            ct);
 
-        await Task.Delay(InitialDelay, stoppingToken);
+        await Task.Delay(InitialDelay, ct);
 
-        while (!stoppingToken.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
             try
             {
-                await RunRetentionAsync(stoppingToken);
+                await RunRetentionAsync(ct);
             }
             catch (OperationCanceledException)
             {
@@ -56,18 +59,24 @@ public sealed class AuditRetentionJob(
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during audit retention process.");
+                await auditService.LogSystemEventAsync(
+                    ex.Message,
+                    "Error during audit retention process.",
+                    ct);
             }
 
-            await Task.Delay(CheckInterval, stoppingToken);
+            await Task.Delay(CheckInterval, ct);
         }
 
-        _logger.LogInformation("Audit Retention Service stopped.");
+        await auditService.LogSystemEventAsync(
+            "Audit Retention",
+            "Audit Retention Service stopped.",
+            ct);
     }
 
     private async Task RunRetentionAsync(CancellationToken ct)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
         var archiveFolder = GetArchiveFolder();
 
@@ -98,7 +107,10 @@ public sealed class AuditRetentionJob(
             batchLabel: "financial",
             ct);
 
-        _logger.LogInformation("[AuditRetention] Retention cycle completed.");
+        await auditService.LogSystemEventAsync(
+            "AuditRetention",
+            "Retention cycle completed.",
+            ct);
     }
 
     private async Task ArchiveAndDeleteAsync(
@@ -113,10 +125,10 @@ public sealed class AuditRetentionJob(
         var query = context.AuditLogs
             .Where(a => a.CreatedAt < cutoff);
 
-        if (includeEventTypes?.Any() == true)
+        if (includeEventTypes?.Count != 0)
             query = query.Where(a => includeEventTypes.Contains(a.EventType));
 
-        if (excludeEventTypes?.Any() == true)
+        if (excludeEventTypes?.Count != 0)
             query = query.Where(a => !excludeEventTypes.Contains(a.EventType));
 
         var logsToArchive = await query
@@ -124,16 +136,17 @@ public sealed class AuditRetentionJob(
             .Take(1000)
             .ToListAsync(ct);
 
-        if (!logsToArchive.Any()) return;
+        if (logsToArchive.Count != 0) return;
 
         await ExportToArchiveFileAsync(archiveFolder, logsToArchive, batchLabel, ct);
 
         context.AuditLogs.RemoveRange(logsToArchive);
         await context.SaveChangesAsync(ct);
 
-        _logger.LogInformation(
-            "[AuditRetention] Archived and deleted {Count} {Label} audit logs older than {Cutoff:yyyy-MM-dd}",
-            logsToArchive.Count, batchLabel, cutoff);
+        await auditService.LogSystemEventAsync(
+            "AuditRetention",
+            $"Archived and deleted {logsToArchive.Count} {batchLabel} audit logs older than {cutoff}",
+            ct);
     }
 
     private async Task ArchiveOnlyAsync(
@@ -155,7 +168,7 @@ public sealed class AuditRetentionJob(
             .Take(500)
             .ToListAsync(ct);
 
-        if (!logsToArchive.Any()) return;
+        if (logsToArchive.Count == 0) return;
 
         await ExportToArchiveFileAsync(archiveFolder, logsToArchive, batchLabel, ct);
 
@@ -164,9 +177,10 @@ public sealed class AuditRetentionJob(
 
         await context.SaveChangesAsync(ct);
 
-        _logger.LogInformation(
-            "[AuditRetention] Archived {Count} {Label} audit logs (preserved in DB).",
-            logsToArchive.Count, batchLabel);
+        await auditService.LogSystemEventAsync(
+            "AuditRetention",
+            $"Archived {logsToArchive.Count} {batchLabel} audit logs (preserved in DB).",
+            ct);
     }
 
     private static async Task ExportToArchiveFileAsync(

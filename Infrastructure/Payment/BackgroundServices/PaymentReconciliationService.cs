@@ -1,14 +1,14 @@
+using Application.Payment.Contracts;
+
 namespace Infrastructure.Payment.BackgroundServices;
 
 public sealed class PaymentReconciliationService(
+    DBContext dbContext,
     IServiceProvider serviceProvider,
-    ILogger<PaymentReconciliationService> logger) : BackgroundService
+    IAuditService auditService) : BackgroundService
 {
     private static readonly TimeSpan ReconciliationInterval = TimeSpan.FromHours(6);
     private static readonly TimeSpan ReconciliationWindow = TimeSpan.FromHours(12);
-
-    private readonly IServiceProvider _serviceProvider = serviceProvider;
-    private readonly ILogger<PaymentReconciliationService> _logger = logger;
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -37,9 +37,8 @@ public sealed class PaymentReconciliationService(
 
     private async Task RunReconciliationAsync(CancellationToken ct)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
 
-        var dbContext = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
         var gatewayFactory = scope.ServiceProvider.GetRequiredService<IPaymentGatewayFactory>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
@@ -56,9 +55,9 @@ public sealed class PaymentReconciliationService(
         {
             try
             {
-                _logger.LogInformation(
+                await auditService.LogInformationAsync(
                     "[Reconciliation] Checking stale pending transaction {TxId} for Order {OrderId}",
-                    tx.Id, tx.OrderId);
+                    ct);
 
                 var gateway = gatewayFactory.GetGateway(tx.Gateway);
                 var result = await gateway.VerifyPaymentAsync(
@@ -70,9 +69,9 @@ public sealed class PaymentReconciliationService(
                     tx.MarkAsSuccess(result.RefId!.Value, result.CardPan);
                     reconciledCount++;
 
-                    _logger.LogWarning(
+                    await auditService.LogWarningAsync(
                         "[Reconciliation] ⚠ Transaction {TxId} was actually PAID but system showed Pending. Fixed.",
-                        tx.Id);
+                        ct);
                 }
                 else
                 {
@@ -80,9 +79,9 @@ public sealed class PaymentReconciliationService(
                     failedCount++;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "[Reconciliation] Failed to check transaction {TxId}", tx.Id);
+                await auditService.LogErrorAsync("[Reconciliation] Failed to check transaction {TxId}", ct);
             }
         }
 
@@ -92,9 +91,9 @@ public sealed class PaymentReconciliationService(
 
         var totalSystemAmount = verifiedTransactions.Sum(t => t.Amount.Amount);
 
-        _logger.LogInformation(
+        await auditService.LogInformationAsync(
             "[Reconciliation] Daily settlement summary: Verified={Verified}, TotalAmount={TotalAmount:N0} Toman, Reconciled={Reconciled}, Failed={Failed}",
-            verifiedTransactions.Count, totalSystemAmount, reconciledCount, failedCount);
+            ct);
 
         if (reconciledCount > 0 || failedCount > 0)
             await unitOfWork.SaveChangesAsync(ct);

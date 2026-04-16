@@ -1,5 +1,4 @@
-﻿using Application.Cache.Contracts;
-using StackExchange.Redis;
+﻿using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace Infrastructure.Cache.Services;
 

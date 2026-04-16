@@ -1,3 +1,5 @@
+using Application.Order.Features.Commands.ExpireOrders;
+
 namespace Infrastructure.Order.BackgroundServices;
 
 /// <summary>
@@ -6,16 +8,13 @@ namespace Infrastructure.Order.BackgroundServices;
 /// </summary>
 public sealed class OrderExpiryBackgroundService(
     IServiceProvider serviceProvider,
-    ILogger<OrderExpiryBackgroundService> logger) : BackgroundService
+    IAuditService auditService) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(1);
 
-    private readonly IServiceProvider _serviceProvider = serviceProvider;
-    private readonly ILogger<OrderExpiryBackgroundService> _logger = logger;
-
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        _logger.LogInformation("Order Expiry Service started.");
+        await auditService.LogInformationAsync("Order Expiry Service started.", ct);
 
         while (!ct.IsCancellationRequested)
         {
@@ -27,30 +26,29 @@ public sealed class OrderExpiryBackgroundService(
             {
                 break;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Unhandled error in Order Expiry Service.");
+                await auditService.LogErrorAsync("Unhandled error in Order Expiry Service.", ct);
             }
 
             await Task.Delay(CheckInterval, ct);
         }
 
-        _logger.LogInformation("Order Expiry Service stopped.");
+        await auditService.LogInformationAsync("Order Expiry Service stopped.", ct);
     }
 
     private async Task RunExpiryCheckAsync(CancellationToken ct)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         var result = await mediator.Send(new ExpireOrdersCommand(), ct);
 
-        if (result.ExpiredCount > 0)
+        if (result.IsSuccess)
         {
-            _logger.LogInformation(
+            await auditService.LogInformationAsync(
                 "Order Expiry Service: {Count} orders expired. IDs: [{Ids}]",
-                result.ExpiredCount,
-                string.Join(", ", result.ExpiredOrderIds));
+                ct);
         }
     }
 }

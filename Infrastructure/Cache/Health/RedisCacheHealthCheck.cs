@@ -1,31 +1,26 @@
-using Infrastructure.Cache.Options;
-
 namespace Infrastructure.Cache.Health;
 
 public sealed class RedisCacheHealthCheck(
     IConnectionMultiplexer redis,
-    ILogger<RedisCacheHealthCheck> logger,
+    IAuditService auditService,
     IOptions<CacheOptions> cacheOptions) : IHealthCheck
 {
     private static readonly TimeSpan MaxAcceptableLatency = TimeSpan.FromMilliseconds(100);
     private static readonly string PingKey = "health:ping";
-    private readonly IConnectionMultiplexer _redis = redis;
-    private readonly ILogger<RedisCacheHealthCheck> _logger = logger;
-    private readonly CacheOptions _cacheOptions = cacheOptions.Value;
 
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
-        CancellationToken cancellationToken = default)
+        CancellationToken ct = default)
     {
         // اگر Cache غیرفعال است، Healthy برگردان
-        if (!_cacheOptions.IsEnabled)
+        if (!cacheOptions.Value.IsEnabled)
         {
             return HealthCheckResult.Healthy("Cache is disabled in configuration");
         }
 
         try
         {
-            var db = _redis.GetDatabase();
+            var db = redis.GetDatabase();
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var pong = await db.PingAsync();
             sw.Stop();
@@ -35,8 +30,8 @@ public sealed class RedisCacheHealthCheck(
             {
                 ["PingLatency"] = $"{pong.TotalMilliseconds:F1}ms",
                 ["CheckLatency"] = $"{latency.TotalMilliseconds:F1}ms",
-                ["ConnectedEndpoints"] = _redis.GetEndPoints().Length,
-                ["IsConnected"] = _redis.IsConnected,
+                ["ConnectedEndpoints"] = redis.GetEndPoints().Length,
+                ["IsConnected"] = redis.IsConnected,
             };
 
             var testValue = $"ok-{DateTime.UtcNow:HHmmss}";
@@ -52,8 +47,8 @@ public sealed class RedisCacheHealthCheck(
 
             if (latency > MaxAcceptableLatency)
             {
-                _logger.LogWarning(
-                    "[RedisHealth] High latency: {Latency}ms", latency.TotalMilliseconds);
+                await auditService.LogWarningAsync(
+                    $"[RedisHealth] High latency: {latency.TotalMilliseconds}ms", ct);
                 return HealthCheckResult.Degraded(
                     $"Redis latency is high: {latency.TotalMilliseconds:F1}ms",
                     data: data);
@@ -63,7 +58,7 @@ public sealed class RedisCacheHealthCheck(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[RedisHealth] Redis health check failed.");
+            await auditService.LogErrorAsync("Redis health check failed.", ct);
             return HealthCheckResult.Unhealthy(
                 "Redis is unreachable",
                 exception: ex,

@@ -1,10 +1,12 @@
+using Infrastructure.Search.Options;
+
 namespace Infrastructure.Search;
 
 public static class ElasticClientFactory
 {
-    public static ElasticsearchClient Create(
+    public static async Task<ElasticsearchClient> Create(
         IConfiguration configuration,
-        ILogger logger)
+        IAuditService auditService)
     {
         var elasticOptions = configuration.GetSection(ElasticsearchOptions.SectionName)
             .Get<ElasticsearchOptions>() ?? new ElasticsearchOptions();
@@ -12,7 +14,7 @@ public static class ElasticClientFactory
         // بررسی فعال بودن Elasticsearch
         if (!elasticOptions.IsEnabled)
         {
-            logger.LogWarning("Elasticsearch is disabled in configuration. Client will not be functional.");
+            await auditService.LogWarningAsync("Elasticsearch is disabled in configuration. Client will not be functional.");
         }
 
         var url = elasticOptions.Url;
@@ -50,15 +52,11 @@ public static class ElasticClientFactory
                 .PrettyJson();
         }
 
-        settings = settings.OnRequestCompleted(details =>
+        settings = settings.OnRequestCompleted(async details =>
         {
             if (details.HttpStatusCode >= 400)
             {
-                logger.LogWarning(
-                    "Elasticsearch request failed: {Method} {Uri} - {Status}",
-                    details.HttpMethod,
-                    details.Uri,
-                    details.HttpStatusCode);
+                await auditService.LogErrorAsync("Elasticsearch request failed: {details.HttpMethod} {details.Uri} - {details.HttpStatusCode}");
             }
         });
 

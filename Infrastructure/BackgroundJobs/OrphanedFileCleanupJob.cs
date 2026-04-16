@@ -1,17 +1,12 @@
-namespace Infrastructure.Media.BackgroundServices;
+namespace Infrastructure.BackgroundJobs;
 
-/// <summary>
-/// scope در داخل حلقه while ایجاد می‌شود
-/// این از بلوت‌شدن EF Core Change Tracker در طول اجرای طولانی جلوگیری می‌کند
-/// </summary>
-public class OrphanedFileCleanupService(IServiceProvider serviceProvider, ILogger<OrphanedFileCleanupService> logger) : BackgroundService
+public sealed class OrphanedFileCleanupJob(
+    IServiceProvider serviceProvider,
+    IAuditService auditService) : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider = serviceProvider;
-    private readonly ILogger<OrphanedFileCleanupService> _logger = logger;
-
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        _logger.LogInformation("Media Cleanup Service started.");
+        await auditService.LogInformationAsync("Media Cleanup Service started.", ct);
 
         while (!ct.IsCancellationRequested)
         {
@@ -20,19 +15,25 @@ public class OrphanedFileCleanupService(IServiceProvider serviceProvider, ILogge
                 await ProcessCleanupAsync(ct);
                 await Task.Delay(TimeSpan.FromHours(12), ct);
             }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in Media Cleanup Service");
+                await auditService.LogErrorAsync($"Media cleanup error: {ex.Message}", ct);
                 await Task.Delay(TimeSpan.FromHours(1), ct);
             }
         }
+
+        await auditService.LogInformationAsync("Media Cleanup Service stopped.", ct);
     }
 
     private async Task ProcessCleanupAsync(CancellationToken ct)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var storageService = scope.ServiceProvider.GetRequiredService<IStorageService>();
-        var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
+        var context = scope.ServiceProvider.GetRequiredService<DBContext>();
 
         var cutoffDate = DateTime.UtcNow.AddHours(-24);
 
@@ -48,20 +49,17 @@ public class OrphanedFileCleanupService(IServiceProvider serviceProvider, ILogge
 
             try
             {
-                _logger.LogInformation("Deleting physical file for media: {Id}", media.Id);
-                await storageService.DeleteFileAsync(media.FilePath);
-
+                await storageService.DeleteAsync(media.Path.Value, ct);
                 context.Medias.Remove(media);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to delete file {FilePath}", media.FilePath);
+                await auditService.LogErrorAsync(
+                    $"Failed to delete file {media.Path.Value}: {ex.Message}", ct);
             }
         }
 
-        if (deletedMedias.Any())
-        {
+        if (deletedMedias.Count > 0)
             await context.SaveChangesAsync(ct);
-        }
     }
 }

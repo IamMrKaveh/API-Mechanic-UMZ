@@ -2,74 +2,106 @@ using Application.Order.Contracts;
 using Application.Order.Features.Shared;
 using Domain.Order.Entities;
 using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Order.QueryServices;
 
-public class OrderQueryService(DBContext context) : IOrderQueryService
+public sealed class OrderQueryService(DBContext context) : IOrderQueryService
 {
-    private readonly DBContext _context = context;
-
-    public async Task<OrderDto?> GetOrderDetailsAsync(
-        int orderId,
-        int userId,
+    public async Task<OrderDto?> GetOrderByIdAsync(
+        OrderId orderId,
         CancellationToken ct = default)
     {
-        var order = await _context.Orders
+        var order = await context.Orders
             .AsNoTracking()
             .Include(o => o.OrderItems)
-            .ThenInclude(oi => oi.Variant)
-            .ThenInclude(v => v!.Product)
-            .Include(o => o.Shipping)
-            .Where(o => o.Id == orderId && o.UserId == userId && !o.IsDeleted)
-            .FirstOrDefaultAsync(ct);
-
-        return order == null ? null : MapToOrderDto(order);
-    }
-
-    public async Task<AdminOrderDetailsDto?> GetAdminOrderDetailsAsync(int orderId, CancellationToken ct)
-    {
-        var result = await _context.Orders
-            .AsNoTracking()
             .Where(o => o.Id == orderId)
-            .Select(o => new AdminOrderDetailsDto(
-                o.Id,
-                o.Status,
-                o.CreatedAt,
-                new UserSummaryDto(o.User.Id, o.User.FullName, o.User.Email),
-                o.OrderItems.Select(i => new OrderItemDto(
-                    i.Id,
-                    i.ProductName,
-                    i.VariantName,
-                    i.Quantity,
-                    i.UnitPrice,
-                    i.TotalPrice)).ToList(),
-                o.TotalAmount,
-                o.ShippingAddress))
             .FirstOrDefaultAsync(ct);
 
-        return result;
+        return order is null ? null : MapToOrderDto(order);
     }
 
-    public async Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(
-        int userId,
-        string? status,
+    public async Task<OrderDto?> GetOrderByNumberAsync(
+        OrderNumber orderNumber,
+        CancellationToken ct = default)
+    {
+        var order = await context.Orders
+            .AsNoTracking()
+            .Include(o => o.OrderItems)
+            .Where(o => o.OrderNumber == orderNumber)
+            .FirstOrDefaultAsync(ct);
+
+        return order is null ? null : MapToOrderDto(order);
+    }
+
+    public async Task<PaginatedResult<OrderListItemDto>> GetUserOrdersAsync(
+        UserId userId,
         int page,
         int pageSize,
         CancellationToken ct = default)
     {
-        var query = _context.Orders
+        var query = context.Orders
             .AsNoTracking()
+            .Where(o => o.UserId.Value == userId.Value);
+
+        var totalItems = await query.CountAsync(ct);
+
+        var orders = await query
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        var dtos = orders.Select(o => new OrderListItemDto
+        {
+            Id = o.Id.Value,
+            OrderNumber = o.OrderNumber.Value,
+            Status = o.Status.Value,
+            StatusDisplayName = o.Status.DisplayName,
+            FinalAmount = o.FinalAmount.Amount,
+            ItemCount = o.OrderItems.Count,
+            CreatedAt = o.CreatedAt
+        }).ToList();
+
+        return PaginatedResult<OrderListItemDto>.Create(dtos, totalItems, page, pageSize);
+    }
+
+    public async Task<PaginatedResult<AdminOrderDto>> GetAdminOrdersAsync(
+        UserId? userId,
+        string? status,
+        DateTime? from,
+        DateTime? to,
+        bool? isPaid,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
+    {
+        var query = context.Orders
+            .AsNoTracking()
+            .IgnoreQueryFilters()
             .Include(o => o.OrderItems)
-            .ThenInclude(oi => oi.Variant)
-            .ThenInclude(v => v!.Product)
-            .Include(o => o.Shipping)
-            .Where(o => o.UserId == userId && !o.IsDeleted);
+            .Where(o => !o.IsDeleted);
+
+        if (userId is not null)
+            query = query.Where(o => o.UserId.Value == userId.Value);
 
         if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(o => o.Status.Value == status);
+
+        if (from.HasValue)
+            query = query.Where(o => o.CreatedAt >= from.Value);
+
+        if (to.HasValue)
+            query = query.Where(o => o.CreatedAt <= to.Value);
+
+        if (isPaid.HasValue)
         {
-            var statusValue = OrderStatusValue.FromString(status);
-            query = query.Where(o => o.Status.Value == statusValue.Value);
+            var paidStatuses = new[] { "Paid", "Processing", "Shipped", "Delivered" };
+            query = isPaid.Value
+                ? query.Where(o => paidStatuses.Contains(o.Status.Value))
+                : query.Where(o => !paidStatuses.Contains(o.Status.Value));
         }
 
         var totalItems = await query.CountAsync(ct);
@@ -80,260 +112,134 @@ public class OrderQueryService(DBContext context) : IOrderQueryService
             .Take(pageSize)
             .ToListAsync(ct);
 
-        var dtos = orders.Select(MapToOrderDto).ToList();
-
-        return PaginatedResult<OrderDto>.Create(dtos, totalItems, page, pageSize);
-    }
-
-    public async Task<PaginatedResult<AdminOrderDto>> GetAdminOrdersAsync(
-        int? userId,
-        string? status,
-        DateTime? fromDate,
-        DateTime? toDate,
-        bool? isPaid,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
-    {
-        var query = _context.Orders
-            .AsNoTracking()
-            .IgnoreQueryFilters()
-            .Where(o => !o.IsDeleted);
-
-        if (userId.HasValue)
-            query = query.Where(o => o.UserId == userId.Value);
-
-        if (!string.IsNullOrWhiteSpace(status))
-        {
-            var statusValue = OrderStatusValue.FromString(status);
-            query = query.Where(o => o.Status.Value == statusValue.Value);
-        }
-
-        if (fromDate.HasValue)
-            query = query.Where(o => o.CreatedAt >= fromDate.Value);
-
-        if (toDate.HasValue)
-            query = query.Where(o => o.CreatedAt <= toDate.Value);
-
-        if (isPaid.HasValue)
-        {
-            if (isPaid.Value)
-                query = query.Where(o => o.PaymentDate != null);
-            else
-                query = query.Where(o => o.PaymentDate == null);
-        }
-
-        var totalItems = await query.CountAsync(ct);
-
-        var dtos = await query
-            .OrderByDescending(o => o.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(o => new AdminOrderDto
-            {
-                Id = o.Id,
-                OrderNumber = o.OrderNumber.Value,
-                UserId = o.UserId,
-                Status = o.Status.Value,
-                StatusDisplayName = o.Status.DisplayName,
-                TotalAmount = o.TotalAmount.Amount,
-                FinalAmount = o.FinalAmount.Amount,
-                ShippingCost = o.ShippingCost.Amount,
-                DiscountAmount = o.DiscountAmount.Amount,
-                PaymentDate = o.PaymentDate,
-                CreatedAt = o.CreatedAt,
-                UpdatedAt = o.UpdatedAt,
-                IsDeleted = o.IsDeleted,
-                User = new UserSummaryDto
-                {
-                    Id = o.User!.Id,
-                    PhoneNumber = o.User.PhoneNumber,
-                    FirstName = o.User.FirstName,
-                    LastName = o.User.LastName,
-                    IsAdmin = o.User.IsAdmin
-                },
-                OrderItems = o.OrderItems.Select(oi => new OrderItemDto
-                {
-                    Id = oi.Id,
-                    ProductId = oi.ProductId,
-                    ProductName = oi.ProductName,
-                    VariantId = oi.VariantId,
-                    Quantity = oi.Quantity,
-                    UnitPrice = oi.SellingPriceAtOrder.Amount,
-                    TotalPrice = oi.Amount.Amount
-                })
-                .ToList()
-            })
-            .ToListAsync(ct);
-
+        var dtos = orders.Select(MapToAdminOrderDto).ToList();
         return PaginatedResult<AdminOrderDto>.Create(dtos, totalItems, page, pageSize);
     }
 
-    public async Task<OrderStatisticsDto> GetOrderStatisticsAsync(
-        DateTime? fromDate,
-        DateTime? toDate,
+    public async Task<AdminOrderDto?> GetAdminOrderDetailsAsync(
+        OrderId orderId,
         CancellationToken ct = default)
     {
-        var query = _context.Orders
+        var order = await context.Orders
             .AsNoTracking()
-            .Where(o => !o.IsDeleted);
+            .IgnoreQueryFilters()
+            .Include(o => o.OrderItems)
+            .Where(o => o.Id == orderId)
+            .FirstOrDefaultAsync(ct);
 
-        if (fromDate.HasValue)
-            query = query.Where(o => o.CreatedAt >= fromDate.Value);
+        return order is null ? null : MapToAdminOrderDto(order);
+    }
 
-        if (toDate.HasValue)
-            query = query.Where(o => o.CreatedAt <= toDate.Value);
+    public async Task<OrderDto?> GetOrderDetailsAsync(
+        OrderId orderId,
+        UserId userId,
+        CancellationToken ct = default)
+    {
+        var order = await context.Orders
+            .AsNoTracking()
+            .Include(o => o.OrderItems)
+            .Where(o => o.Id == orderId && o.UserId.Value == userId.Value)
+            .FirstOrDefaultAsync(ct);
 
-        var stats = await query
-            .GroupBy(o => 1)
+        return order is null ? null : MapToOrderDto(order);
+    }
+
+    public async Task<OrderStatisticsDto> GetOrderStatisticsAsync(
+        CancellationToken ct = default)
+    {
+        var paidStatuses = new[] { "Paid", "Processing", "Shipped", "Delivered" };
+
+        var stats = await context.Orders
+            .AsNoTracking()
+            .GroupBy(_ => 1)
             .Select(g => new
             {
                 TotalOrders = g.Count(),
-                PaidOrders = g.Count(o => o.PaymentDate != null),
                 PendingOrders = g.Count(o => o.Status.Value == "Pending"),
-                CancelledOrders = g.Count(o => o.Status.Value == "Cancelled"),
                 ProcessingOrders = g.Count(o => o.Status.Value == "Processing"),
-                ShippedOrders = g.Count(o => o.Status.Value == "Shipped"),
-                DeliveredOrders = g.Count(o => o.Status.Value == "Delivered"),
-                TotalRevenue = g.Where(o => o.PaymentDate != null)
+                CompletedOrders = g.Count(o => o.Status.Value == "Delivered"),
+                CancelledOrders = g.Count(o => o.Status.Value == "Cancelled"),
+                TotalRevenue = g
+                    .Where(o => paidStatuses.Contains(o.Status.Value))
                     .Sum(o => o.FinalAmount.Amount),
-                TotalProfit = g.Where(o => o.PaymentDate != null)
-                    .Sum(o => o.TotalProfit.Amount)
+                PaidCount = g.Count(o => paidStatuses.Contains(o.Status.Value))
             })
             .FirstOrDefaultAsync(ct);
 
-        if (stats == null)
+        if (stats is null)
             return new OrderStatisticsDto();
-
-        var avgOrderValue = stats.PaidOrders > 0 ? stats.TotalRevenue / stats.PaidOrders : 0;
 
         return new OrderStatisticsDto
         {
             TotalOrders = stats.TotalOrders,
-            PaidOrders = stats.PaidOrders,
             PendingOrders = stats.PendingOrders,
-            CancelledOrders = stats.CancelledOrders,
             ProcessingOrders = stats.ProcessingOrders,
-            ShippedOrders = stats.ShippedOrders,
-            DeliveredOrders = stats.DeliveredOrders,
+            CompletedOrders = stats.CompletedOrders,
+            CancelledOrders = stats.CancelledOrders,
             TotalRevenue = stats.TotalRevenue,
-            TotalProfit = stats.TotalProfit,
-            AverageOrderValue = avgOrderValue,
-            PaidOrdersPercentage = stats.TotalOrders > 0 ? Math.Round(Convert.ToDecimal(stats.PaidOrders) / stats.TotalOrders * 100, 2) : 0,
-            CancellationRate = stats.TotalOrders > 0 ? Math.Round(Convert.ToDecimal(stats.CancelledOrders) / stats.TotalOrders * 100, 2) : 0,
-            ProfitMargin = stats.TotalRevenue > 0 ? Math.Round(stats.TotalProfit / stats.TotalRevenue * 100, 2) : 0
+            AverageOrderValue = stats.PaidCount > 0
+                ? Math.Round(stats.TotalRevenue / stats.PaidCount, 2)
+                : 0
         };
-    }
-
-    public async Task<bool> HasUserPurchasedProductAsync(
-        int userId,
-        int productId,
-        CancellationToken ct = default)
-    {
-        return await _context.Orders
-            .AsNoTracking()
-            .Where(o => o.UserId == userId && !o.IsDeleted && o.PaymentDate != null)
-            .SelectMany(o => o.OrderItems)
-            .AnyAsync(oi => oi.ProductId == productId, ct);
-    }
-
-    public async Task<int> CountByUserIdAsync(
-        int userId,
-        CancellationToken ct = default)
-    {
-        return await _context.Orders
-            .AsNoTracking()
-            .CountAsync(o => o.UserId == userId && !o.IsDeleted, ct);
-    }
-
-    public async Task<decimal> GetTotalSpentByUserIdAsync(
-        int userId,
-        CancellationToken ct = default)
-    {
-        return await _context.Orders
-            .AsNoTracking()
-            .Where(o => o.UserId == userId && !o.IsDeleted && o.PaymentDate != null)
-            .SumAsync(o => o.FinalAmount.Amount, ct);
-    }
-
-    public async Task<OrderDto?> GetOrderByIdAsync(
-        int orderId,
-        CancellationToken ct = default)
-    {
-        var order = await _context.Orders.AsNoTracking()
-            .Include(o => o.OrderItems).ThenInclude(oi => oi.Variant).ThenInclude(v => v!.Product)
-            .Include(o => o.Shipping)
-            .FirstOrDefaultAsync(o => o.Id == orderId, ct);
-
-        return order == null ? null : MapToOrderDto(order);
-    }
-
-    public async Task<PaginatedResult<OrderDto>> GetUserOrdersAsync(
-        int userId,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
-    {
-        return await GetUserOrdersAsync(userId, null, page, pageSize, ct);
     }
 
     private static OrderDto MapToOrderDto(Domain.Order.Aggregates.Order order)
     {
         return new OrderDto
         {
-            Id = order.Id,
-            UserId = order.UserId,
+            Id = order.Id.Value,
             OrderNumber = order.OrderNumber.Value,
-            ReceiverName = order.AddressSnapshot?.ReceiverName ?? string.Empty,
+            UserId = order.UserId.Value,
             Status = order.Status.Value,
             StatusDisplayName = order.Status.DisplayName,
-            TotalAmount = order.TotalAmount.Amount,
-            TotalProfit = order.TotalProfit.Amount,
+            SubTotal = order.SubTotal.Amount,
             ShippingCost = order.ShippingCost.Amount,
             DiscountAmount = order.DiscountAmount.Amount,
             FinalAmount = order.FinalAmount.Amount,
-            ShippingId = order.ShippingId,
-            DiscountCodeId = order.DiscountCodeId,
-            PaymentDate = order.PaymentDate,
-            ShippedDate = order.ShippedDate,
-            DeliveryDate = order.DeliveryDate,
-            CancellationReason = order.CancellationReason,
             IsPaid = order.IsPaid,
             IsCancelled = order.IsCancelled,
-            RowVersion = order.RowVersion != null ? Convert.ToBase64String(order.RowVersion) : null,
+            CancellationReason = order.CancellationReason,
+            ReceiverInfo = new ReceiverInfoDto
+            {
+                FullName = order.ReceiverInfo.FullName,
+                PhoneNumber = order.ReceiverInfo.PhoneNumber
+            },
+            DeliveryAddress = new DeliveryAddressDto
+            {
+                Province = order.DeliveryAddress.Province,
+                City = order.DeliveryAddress.City,
+                AddressLine = order.DeliveryAddress.Street,
+                PostalCode = order.DeliveryAddress.PostalCode
+            },
+            Items = order.OrderItems.Select(MapToOrderItemDto).ToList(),
             CreatedAt = order.CreatedAt,
-            OrderItems = order.OrderItems.Select(MapToOrderItemDto).ToList()
+            UpdatedAt = order.UpdatedAt
         };
     }
 
     private static AdminOrderDto MapToAdminOrderDto(Domain.Order.Aggregates.Order order)
     {
-        var baseDto = MapToOrderDto(order);
         return new AdminOrderDto
         {
-            Id = baseDto.Id,
-            UserId = baseDto.UserId,
-            OrderNumber = baseDto.OrderNumber,
-            ReceiverName = baseDto.ReceiverName,
-            Status = baseDto.Status,
-            StatusDisplayName = baseDto.StatusDisplayName,
-            TotalAmount = baseDto.TotalAmount,
-            TotalProfit = order.TotalProfit.Amount,
-            ShippingCost = baseDto.ShippingCost,
-            DiscountAmount = baseDto.DiscountAmount,
-            FinalAmount = baseDto.FinalAmount,
-            ShippingId = baseDto.ShippingId,
-            DiscountCodeId = baseDto.DiscountCodeId,
-            PaymentDate = baseDto.PaymentDate,
-            ShippedDate = baseDto.ShippedDate,
-            DeliveryDate = baseDto.DeliveryDate,
-            CancellationReason = baseDto.CancellationReason,
-            IsPaid = baseDto.IsPaid,
-            IsCancelled = baseDto.IsCancelled,
-            RowVersion = baseDto.RowVersion,
-            CreatedAt = baseDto.CreatedAt,
-            OrderItems = baseDto.OrderItems,
-            OrderItemsCount = order.OrderItems.Count
+            Id = order.Id.Value,
+            UserId = order.UserId.Value,
+            OrderNumber = order.OrderNumber.Value,
+            ReceiverName = order.ReceiverInfo.FullName,
+            Status = order.Status.Value,
+            StatusDisplayName = order.Status.DisplayName,
+            TotalAmount = order.SubTotal.Amount,
+            ShippingCost = order.ShippingCost.Amount,
+            DiscountAmount = order.DiscountAmount.Amount,
+            FinalAmount = order.FinalAmount.Amount,
+            DiscountCodeId = order.AppliedDiscountCodeId?.Value,
+            CancellationReason = order.CancellationReason,
+            IsPaid = order.IsPaid,
+            IsCancelled = order.IsCancelled,
+            IsDeleted = order.IsDeleted,
+            OrderItems = order.OrderItems.Select(MapToOrderItemDto).ToList(),
+            OrderItemsCount = order.OrderItems.Count,
+            CreatedAt = order.CreatedAt,
+            UpdatedAt = order.UpdatedAt
         };
     }
 
@@ -341,19 +247,14 @@ public class OrderQueryService(DBContext context) : IOrderQueryService
     {
         return new OrderItemDto
         {
-            Id = item.Id,
-            OrderId = item.OrderId,
-            VariantId = item.VariantId,
-            ProductId = item.ProductId,
+            Id = item.Id.Value,
+            VariantId = item.VariantId.Value,
+            ProductId = item.ProductId.Value,
             ProductName = item.ProductName,
-            VariantSku = item.VariantSku,
+            Sku = item.Sku,
+            UnitPrice = item.UnitPrice.Amount,
             Quantity = item.Quantity,
-            PurchasePriceAtOrder = item.PurchasePriceAtOrder.Amount,
-            SellingPriceAtOrder = item.SellingPriceAtOrder.Amount,
-            OriginalPriceAtOrder = item.OriginalPriceAtOrder.Amount,
-            DiscountAtOrder = item.DiscountAtOrder.Amount,
-            Amount = item.Amount.Amount,
-            Profit = item.Profit.Amount
+            TotalPrice = item.TotalPrice.Amount
         };
     }
 }

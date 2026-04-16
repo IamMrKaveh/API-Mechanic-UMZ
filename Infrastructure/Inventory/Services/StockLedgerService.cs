@@ -1,4 +1,5 @@
 using Domain.Inventory.Entities;
+using Infrastructure.Inventory.QueryServices;
 
 namespace Infrastructure.Inventory.Services;
 
@@ -6,11 +7,10 @@ namespace Infrastructure.Inventory.Services;
 /// سرویس دفتر کل موجودی (Stock Ledger).
 /// تمام تغییرات موجودی را به صورت Append-Only ثبت می‌کند.
 /// </summary>
-public sealed class StockLedgerService(DBContext context, ILogger<StockLedgerService> logger) : IStockLedgerService
+public sealed class StockLedgerService(
+    DBContext context,
+    IAuditService auditService) : IStockLedgerService
 {
-    private readonly DBContext _context = context;
-    private readonly ILogger<StockLedgerService> _logger = logger;
-
     public async Task RecordStockInAsync(
         int variantId,
         int quantity,
@@ -21,7 +21,7 @@ public sealed class StockLedgerService(DBContext context, ILogger<StockLedgerSer
         int? userId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context)
+        var balance = await new StockLedgerQueryService(context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var entry = StockLedgerEntry.StockIn(
             variantId, quantity, balance + quantity,
@@ -44,7 +44,7 @@ public sealed class StockLedgerService(DBContext context, ILogger<StockLedgerSer
         int? orderItemId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context)
+        var balance = await new StockLedgerQueryService(context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
 
         if (balance < quantity)
@@ -65,7 +65,7 @@ public sealed class StockLedgerService(DBContext context, ILogger<StockLedgerSer
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context)
+        var balance = await new StockLedgerQueryService(context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var entry = StockLedgerEntry.ReleaseReservation(
             variantId, quantity, balance + quantity,
@@ -82,7 +82,7 @@ public sealed class StockLedgerService(DBContext context, ILogger<StockLedgerSer
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context)
+        var balance = await new StockLedgerQueryService(context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var entry = StockLedgerEntry.CommitReservation(
             variantId, quantity, balance, referenceNumber, orderItemId, warehouseId);
@@ -98,7 +98,7 @@ public sealed class StockLedgerService(DBContext context, ILogger<StockLedgerSer
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var balance = await new StockLedgerQueryService(_context)
+        var balance = await new StockLedgerQueryService(context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
         var newBalance = balance + delta;
 
@@ -120,31 +120,37 @@ public sealed class StockLedgerService(DBContext context, ILogger<StockLedgerSer
         int? warehouseId = null,
         CancellationToken ct = default)
     {
-        var systemBalance = await new StockLedgerQueryService(_context)
+        var systemBalance = await new StockLedgerQueryService(context)
             .GetCurrentBalanceAsync(variantId, warehouseId, ct);
+
         var delta = physicalCount - systemBalance;
 
         if (delta == 0)
         {
-            _logger.LogInformation(
-                "[StockLedger] Reconcile: Variant={VariantId} - No discrepancy.", variantId);
+            await auditService.LogInformationAsync(
+                $"[StockLedger] Reconcile: Variant={variantId} - No discrepancy.",
+                ct);
             return;
         }
 
-        _logger.LogWarning(
-            "[StockLedger] ⚠ Reconcile discrepancy: Variant={VariantId}, System={System}, Physical={Physical}, Delta={Delta}",
-            variantId, systemBalance, physicalCount, delta);
+        await auditService.LogWarningAsync(
+            $"[StockLedger] Reconcile discrepancy: Variant={variantId}, System={systemBalance}, Physical={physicalCount}, Delta={delta}",
+            ct);
 
-        await RecordAdjustmentAsync(variantId, delta,
+        await RecordAdjustmentAsync(
+            variantId,
+            delta,
             $"[Reconcile] {reason} | System:{systemBalance}, Physical:{physicalCount}",
-            userId, warehouseId, ct);
+            userId,
+            warehouseId,
+            ct);
     }
 
     private async Task AppendEntryAsync(
         StockLedgerEntry entry,
         CancellationToken ct)
     {
-        await _context.StockLedgerEntries.AddAsync(entry, ct);
-        await _context.SaveChangesAsync(ct);
+        await context.StockLedgerEntries.AddAsync(entry, ct);
+        await context.SaveChangesAsync(ct);
     }
 }

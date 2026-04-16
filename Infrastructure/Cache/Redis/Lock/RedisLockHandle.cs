@@ -2,12 +2,12 @@ using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace Infrastructure.Cache.Redis.Lock;
 
-public sealed class RedisLockHandle(IDatabase db, string key, string value, ILogger logger) : ILockHandle
+public sealed class RedisLockHandle(
+    IDatabase db,
+    string key,
+    string value,
+    IAuditService auditService) : ILockHandle
 {
-    private readonly IDatabase _db = db;
-    private readonly string _key = key;
-    private readonly string _value = value;
-    private readonly ILogger _logger = logger;
     private bool _released;
 
     private static readonly string LuaRelease = @"
@@ -17,7 +17,7 @@ public sealed class RedisLockHandle(IDatabase db, string key, string value, ILog
             return 0
         end";
 
-    public string Resource => _key;
+    public string Resource => key;
     public bool IsAcquired => !_released;
 
     public async ValueTask DisposeAsync()
@@ -32,16 +32,16 @@ public sealed class RedisLockHandle(IDatabase db, string key, string value, ILog
 
         try
         {
-            await _db.ScriptEvaluateAsync(
+            await db.ScriptEvaluateAsync(
                 LuaRelease,
-                new RedisKey[] { _key },
-                new RedisValue[] { _value });
+                [key],
+                [value]);
 
-            _logger.LogDebug("[DistributedLock] Released lock '{Key}'", _key);
+            await auditService.LogDebugAsync($"Released lock '{key}'");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(ex, "[DistributedLock] Failed to release lock '{Key}'", _key);
+            await auditService.LogErrorAsync($"Failed to release lock '{key}'");
         }
     }
 }

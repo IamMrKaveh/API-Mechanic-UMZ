@@ -1,6 +1,7 @@
-using Application.Cache.Contracts;
 using Application.Cache.Features.Shared;
 using Application.Variant.Features.Shared;
+using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Infrastructure.Cache.EventHandlers;
 
@@ -10,25 +11,22 @@ namespace Infrastructure.Cache.EventHandlers;
 /// </summary>
 public class VariantStockCacheInvalidationHandler(
     ICacheService cacheService,
-    ILogger<VariantStockCacheInvalidationHandler> logger)
+    IAuditService auditService)
         : INotificationHandler<VariantStockChangedApplicationNotification>
 {
-    private readonly ICacheService _cacheService = cacheService;
-    private readonly ILogger<VariantStockCacheInvalidationHandler> _logger = logger;
-
-    private static string VariantAvailabilityCacheKey(int variantId) =>
+    private static string VariantAvailabilityCacheKey(VariantId variantId) =>
         $"inventory:availability:{variantId}";
 
-    private static string ProductAvailabilityCacheKey(int productId) =>
+    private static string ProductAvailabilityCacheKey(ProductId productId) =>
         $"inventory:product-availability:{productId}";
 
-    public async Task Handle(VariantStockChangedApplicationNotification notification, CancellationToken cancellationToken)
+    public async Task Handle(VariantStockChangedApplicationNotification notification, CancellationToken ct)
     {
         try
         {
-            await _cacheService.ClearAsync(VariantAvailabilityCacheKey(notification.VariantId));
+            await cacheService.ClearAsync(VariantAvailabilityCacheKey(VariantId.From(notification.VariantId)), ct);
 
-            await _cacheService.ClearAsync(ProductAvailabilityCacheKey(notification.ProductId));
+            await cacheService.ClearAsync(ProductAvailabilityCacheKey(ProductId.From(notification.ProductId)), ct);
 
             if (notification.NewOnHand > 0 || notification.NewAvailable >= 0)
             {
@@ -42,21 +40,22 @@ public class VariantStockCacheInvalidationHandler(
                     LastUpdated = DateTime.UtcNow
                 };
 
-                await _cacheService.SetAsync(
-                    VariantAvailabilityCacheKey(notification.VariantId),
+                await cacheService.SetAsync(
+                    VariantAvailabilityCacheKey(VariantId.From(notification.VariantId)),
                     cacheDto,
-                    TimeSpan.FromMinutes(2));
+                    TimeSpan.FromMinutes(2),
+                    ct);
             }
 
-            _logger.LogDebug(
-                "Cache invalidated for Variant {VariantId} (Product {ProductId})",
-                notification.VariantId, notification.ProductId);
+            await auditService.LogDebugAsync(
+                "Cache invalidated for Variant {notification.VariantId} (Product {notification.ProductId})",
+                ct);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(ex,
-                "Failed to invalidate cache for Variant {VariantId}",
-                notification.VariantId);
+            await auditService.LogErrorAsync(
+                $"Failed to invalidate cache for Variant {notification.VariantId}",
+                ct);
         }
     }
 }

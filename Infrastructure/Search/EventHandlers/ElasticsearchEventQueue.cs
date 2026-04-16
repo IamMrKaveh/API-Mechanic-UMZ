@@ -4,12 +4,11 @@ namespace Infrastructure.Search.EventHandlers;
 /// Queue-based event processor for batching Elasticsearch updates
 /// </summary>
 public class ElasticsearchEventQueue(
-    ILogger<ElasticsearchEventQueue> logger,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    IAuditService auditService)
 {
     private readonly ConcurrentQueue<IEntityChangeEvent> _eventQueue = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
-    private readonly ILogger<ElasticsearchEventQueue> _logger = logger;
     private readonly int _maxQueueSize = configuration.GetValue("Elasticsearch:MaxEventQueueSize", 10000);
     private int _currentSize = 0;
 
@@ -17,19 +16,15 @@ public class ElasticsearchEventQueue(
     {
         if (Interlocked.CompareExchange(ref _currentSize, 0, 0) >= _maxQueueSize)
         {
-            _logger.LogWarning(
-                "Event queue is full ({CurrentSize}/{MaxSize}). Dropping event: {EntityType} {EntityId}",
-                _currentSize, _maxQueueSize, @event.EntityType, @event.EntityId);
+            auditService.LogWarningAsync(
+                $"Event queue is full ({_currentSize}/{_maxQueueSize}).",
+                CancellationToken.None);
+
             return false;
         }
 
         _eventQueue.Enqueue(@event);
         Interlocked.Increment(ref _currentSize);
-
-        _logger.LogDebug(
-            "Event enqueued: {EntityType} {EntityId} {ChangeType}. Queue size: {QueueSize}",
-            @event.EntityType, @event.EntityId, @event.ChangeType, _currentSize);
-
         return true;
     }
 

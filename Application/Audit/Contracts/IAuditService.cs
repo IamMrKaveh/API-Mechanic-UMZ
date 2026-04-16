@@ -19,6 +19,22 @@ public interface IAuditService
         string? userAgent = null,
         CancellationToken ct = default);
 
+    Task LogInformationAsync(
+        string details,
+        CancellationToken ct = default);
+
+    Task LogDebugAsync(
+        string details,
+        CancellationToken ct = default);
+
+    Task LogWarningAsync(
+        string details,
+        CancellationToken ct = default);
+
+    Task LogErrorAsync(
+        string details,
+        CancellationToken ct = default);
+
     Task LogSecurityEventAsync(
         string action,
         string details,
@@ -43,7 +59,7 @@ public interface IAuditService
         PaymentTransactionId paymentId,
         string action,
         IpAddress ipAddress,
-        Guid? userId = null,
+        UserId? userId = null,
         string? details = null,
         CancellationToken ct = default);
 

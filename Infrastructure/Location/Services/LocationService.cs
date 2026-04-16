@@ -3,42 +3,38 @@ using Application.Location.Features.Shared;
 
 namespace Infrastructure.Location.Services;
 
-public class LocationService : ILocationService
+public class LocationService(
+    HttpClient httpClient,
+    IAuditService auditService) : ILocationService
 {
-    private readonly HttpClient _httpClient;
-    private readonly ILogger<LocationService> _logger;
+    private readonly HttpClient _httpClient = httpClient;
 
-    public LocationService(HttpClient httpClient, ILogger<LocationService> logger)
+    public async Task<IReadOnlyList<ProvinceDto>> GetProvincesAsync(CancellationToken ct = default)
     {
-        _httpClient = httpClient;
         _httpClient.BaseAddress = new Uri("https://iran-locations-api.ir/api/v1/fa/");
-        _logger = logger;
-    }
-
-    public async Task<IEnumerable<StateDto>> GetStatesAsync(CancellationToken ct = default)
-    {
         try
         {
-            var response = await _httpClient.GetFromJsonAsync<IEnumerable<StateDto>>("states");
-            return response ?? Enumerable.Empty<StateDto>();
+            var response = await _httpClient.GetFromJsonAsync<IReadOnlyList<ProvinceDto>>("states", cancellationToken: ct);
+            return response ?? [];
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(ex, "Failed to fetch states from the location API.");
+            await auditService.LogErrorAsync("Failed to fetch provinces from the location API.", ct);
             throw;
         }
     }
 
-    public async Task<IEnumerable<CityDto>> GetCitiesByStateAsync(int stateId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<CityDto>> GetCitiesByProvinceAsync(string provinceId, CancellationToken ct = default)
     {
+        _httpClient.BaseAddress = new Uri("https://iran-locations-api.ir/api/v1/fa/");
         try
         {
-            var response = await _httpClient.GetFromJsonAsync<IEnumerable<CityDto>>($"cities?state_id={stateId}");
-            return response ?? Enumerable.Empty<CityDto>();
+            var response = await _httpClient.GetFromJsonAsync<IReadOnlyList<CityDto>>($"cities?state_id={provinceId}", cancellationToken: ct);
+            return response ?? [];
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(ex, "Failed to fetch cities for state {StateId} from the location API.", stateId);
+            await auditService.LogErrorAsync("Failed to fetch cities for province {StateId} from the location API.", ct);
             throw;
         }
     }

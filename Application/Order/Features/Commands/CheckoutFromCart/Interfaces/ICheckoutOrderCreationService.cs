@@ -9,7 +9,7 @@ public interface ICheckoutOrderCreationService
         Guid userId,
         ReceiverInfo receiverInfo,
         DeliveryAddress deliveryAddress,
-        List<OrderItemSnapshot> items,
+        IReadOnlyCollection<OrderItemSnapshot> items,
         Money shippingCost,
         Money discountAmount,
         Guid? discountCodeId,

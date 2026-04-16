@@ -1,89 +1,51 @@
-﻿using Infrastructure.Persistence.Context;
+﻿using Application.Notification.Contracts;
+using Application.Notification.Features.Shared;
+using Domain.User.ValueObjects;
+using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Notification.QueryServices;
 
-public class NotificationQueryService(DBContext context) : INotificationQueryService
+public sealed class NotificationQueryService(DBContext context) : INotificationQueryService
 {
-    private readonly DBContext _context = context;
-
-    public async Task<Domain.Notification.Aggregates.Notification?> GetByIdAsync(
-        int id,
-        CancellationToken ct = default)
-    {
-        return await _context.Notifications.FindAsync([id], ct);
-    }
-
-    public async Task<(IEnumerable<Domain.Notification.Aggregates.Notification> Items, int TotalCount)> GetByUserIdAsync(
-        int userId,
-        bool? isRead,
+    public async Task<PaginatedResult<NotificationDto>> GetByUserIdAsync(
+        UserId userId,
         int page,
         int pageSize,
         CancellationToken ct = default)
     {
-        var query = _context.Notifications
-            .Where(n => n.UserId == userId);
+        var query = context.Notifications
+            .AsNoTracking()
+            .Where(n => n.UserId.Value == userId.Value);
 
-        if (isRead.HasValue)
-        {
-            query = query.Where(n => n.IsRead == isRead.Value);
-        }
+        var totalItems = await query.CountAsync(ct);
 
-        var totalCount = await query.CountAsync(ct);
-
-        var items = await query
+        var dtos = await query
             .OrderByDescending(n => n.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(n => new NotificationDto
+            {
+                Id = n.Id.Value,
+                UserId = n.UserId.Value,
+                Title = EF.Property<string>(n, "Title"),
+                Message = EF.Property<string>(n, "Message"),
+                Type = EF.Property<string>(n, "Type"),
+                ActionUrl = EF.Property<string?>(n, "ActionUrl"),
+                IsRead = n.IsRead,
+                CreatedAt = n.CreatedAt
+            })
             .ToListAsync(ct);
 
-        return (items, totalCount);
+        return PaginatedResult<NotificationDto>.Create(dtos, totalItems, page, pageSize);
     }
 
-    public async Task<IEnumerable<Domain.Notification.Aggregates.Notification>> GetUnreadByUserIdAsync(
-        int userId,
-        int? limit = null,
+    public async Task<int> GetUnreadCountAsync(
+        UserId userId,
         CancellationToken ct = default)
     {
-        var query = _context.Notifications
-            .Where(n => n.UserId == userId && !n.IsRead)
-            .OrderByDescending(n => n.CreatedAt);
-
-        if (limit.HasValue)
-        {
-            return await query.Take(limit.Value).ToListAsync(ct);
-        }
-
-        return await query.ToListAsync(ct);
-    }
-
-    public async Task<int> CountUnreadByUserIdAsync(
-        int userId,
-        CancellationToken ct = default)
-    {
-        return await _context.Notifications
-            .CountAsync(n => n.UserId == userId && !n.IsRead, ct);
-    }
-
-    public async Task<IEnumerable<Domain.Notification.Aggregates.Notification>> GetByRelatedEntityAsync(
-        string entityType,
-        int entityId,
-        CancellationToken ct = default)
-    {
-        return await _context.Notifications
-            .Where(n => n.RelatedEntityType == entityType && n.RelatedEntityId == entityId)
-            .OrderByDescending(n => n.CreatedAt)
-            .ToListAsync(ct);
-    }
-
-    public async Task<IEnumerable<Domain.Notification.Aggregates.Notification>> GetRecentByUserIdAsync(
-        int userId,
-        int count,
-        CancellationToken ct = default)
-    {
-        return await _context.Notifications
-            .Where(n => n.UserId == userId)
-            .OrderByDescending(n => n.CreatedAt)
-            .Take(count)
-            .ToListAsync(ct);
+        return await context.Notifications
+            .AsNoTracking()
+            .CountAsync(n => n.UserId.Value == userId.Value && !n.IsRead, ct);
     }
 }

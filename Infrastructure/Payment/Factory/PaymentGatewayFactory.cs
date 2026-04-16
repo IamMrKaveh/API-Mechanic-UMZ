@@ -1,3 +1,5 @@
+using Application.Payment.Contracts;
+
 namespace Infrastructure.Payment.Factory;
 
 /// <summary>
@@ -7,20 +9,18 @@ namespace Infrastructure.Payment.Factory;
 public sealed class PaymentGatewayFactory(
     IEnumerable<IPaymentGateway> gateways,
     IOptions<PaymentGatewayOptions> options,
-    ILogger<PaymentGatewayFactory> logger) : IPaymentGatewayFactory
+    IAuditService auditService) : IPaymentGatewayFactory
 {
-    private readonly IEnumerable<IPaymentGateway> _gateways = gateways;
     private readonly PaymentGatewayOptions _options = options.Value;
-    private readonly ILogger<PaymentGatewayFactory> _logger = logger;
 
-    public IPaymentGateway GetGateway(string gatewayName)
+    public async Task<IPaymentGateway> GetGateway(string gatewayName)
     {
-        var gateway = _gateways.FirstOrDefault(g =>
+        var gateway = gateways.FirstOrDefault(g =>
             g.GatewayName.Equals(gatewayName, StringComparison.OrdinalIgnoreCase));
 
         if (gateway is null)
         {
-            _logger.LogError("Payment gateway '{Gateway}' not found.", gatewayName);
+            await auditService.LogErrorAsync("Payment gateway '{Gateway}' not found.");
             throw new InvalidOperationException(
                 $"درگاه پرداخت '{gatewayName}' پیدا نشد. درگاه‌های موجود: {string.Join(", ", GetAvailableGateways())}");
         }
@@ -35,6 +35,6 @@ public sealed class PaymentGatewayFactory(
 
     public IEnumerable<string> GetAvailableGateways()
     {
-        return _gateways.Select(g => g.GatewayName);
+        return gateways.Select(g => g.GatewayName);
     }
 }
