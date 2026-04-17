@@ -6,16 +6,22 @@ using Domain.Category.ValueObjects;
 
 namespace Domain.Brand.Aggregates;
 
-public sealed class Brand : AggregateRoot<BrandId>
+public sealed class Brand : AggregateRoot<BrandId>, ISoftDeletable
 {
     public BrandName Name { get; private set; } = null!;
     public Slug Slug { get; private set; } = null!;
     public string? Description { get; private set; }
     public string? LogoPath { get; private set; }
-    public CategoryId CategoryId { get; private set; } = default!;
     public bool IsActive { get; private set; }
     public DateTime CreatedAt { get; private init; }
     public DateTime? UpdatedAt { get; private set; }
+
+    public CategoryId CategoryId { get; private set; } = default!;
+    public Category.Aggregates.Category Category { get; private set; } = default!;
+
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public Guid? DeletedBy { get; private set; }
 
     private Brand()
     { }

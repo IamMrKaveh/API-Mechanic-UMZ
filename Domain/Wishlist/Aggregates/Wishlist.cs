@@ -10,8 +10,11 @@ public sealed class Wishlist : AggregateRoot<WishlistId>, IAuditable
     private Wishlist()
     { }
 
+    public User.Aggregates.User User { get; private set; } = default!;
     public UserId UserId { get; private set; } = default!;
+    public Product.Aggregates.Product Product { get; private set; } = default!;
     public ProductId ProductId { get; private set; } = default!;
+
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 

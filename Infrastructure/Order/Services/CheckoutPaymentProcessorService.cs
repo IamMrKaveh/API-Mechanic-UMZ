@@ -1,9 +1,11 @@
 ﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Order.Features.Shared;
+using Application.Payment.Contracts;
+using Domain.Order.ValueObjects;
 
 namespace Infrastructure.Order.Services;
 
-public class CheckoutPaymentProcessorService(IPaymentService paymentService)
+public sealed class CheckoutPaymentProcessorService(IPaymentService paymentService)
     : ICheckoutPaymentProcessorService
 {
     public async Task<ServiceResult<CheckoutResultDto>> ProcessAsync(
@@ -17,7 +19,10 @@ public class CheckoutPaymentProcessorService(IPaymentService paymentService)
             return ServiceResult<CheckoutResultDto>.Success(orderResult);
 
         var paymentResult = await paymentService.InitiatePaymentAsync(
-            orderResult.OrderId, orderResult.FinalAmount, ipAddress, ct);
+            OrderId.From(orderResult.OrderId),
+            Money.Create(orderResult.FinalAmount),
+            IpAddress.Create(ipAddress),
+            ct);
 
         if (!paymentResult.IsSuccess)
             return ServiceResult<CheckoutResultDto>.Failure(paymentResult.Error ?? "خطا در ایجاد پرداخت.");

@@ -8,11 +8,12 @@ namespace Domain.Support.Aggregates;
 
 public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
 {
-    private readonly List<TicketMessage> _messages = [];
-
     private Ticket()
     { }
 
+    private readonly List<TicketMessage> _messages = [];
+    public IReadOnlyList<TicketMessage> Messages => _messages.AsReadOnly();
+    public User.Aggregates.User User { get; private set; } = default!;
     public UserId CustomerId { get; private set; } = default!;
     public UserId? AssignedAgentId { get; private set; }
     public string Subject { get; private set; } = default!;
@@ -23,8 +24,6 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
     public DateTime? LastActivityAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
-
-    public IReadOnlyList<TicketMessage> Messages => _messages.AsReadOnly();
 
     public int MessageCount => _messages.Count;
 

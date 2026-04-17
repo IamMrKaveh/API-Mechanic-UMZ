@@ -9,4 +9,30 @@ public sealed class OutboxMessage
     public DateTime? ProcessedAt { get; set; }
     public string? Error { get; set; }
     public int RetryCount { get; set; }
+
+    private OutboxMessage()
+    { }
+
+    public static OutboxMessage Create(string type, string payload)
+    {
+        return new OutboxMessage
+        {
+            Id = OutboxMessageId.NewId(),
+            Type = type,
+            Payload = payload,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
+
+    public void MarkProcessed()
+    {
+        ProcessedAt = DateTime.UtcNow;
+        Error = null;
+    }
+
+    public void MarkFailed(string error)
+    {
+        RetryCount++;
+        Error = error;
+    }
 }

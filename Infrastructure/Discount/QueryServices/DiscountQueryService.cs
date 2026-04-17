@@ -1,11 +1,18 @@
-﻿namespace Infrastructure.Discount.QueryServices;
+﻿using Application.Discount.Contracts;
+using Application.Discount.Features.Shared;
+using Domain.Discount.Aggregates;
+using Domain.Discount.ValueObjects;
+using Domain.User.ValueObjects;
+using Mapster;
+using MapsterMapper;
 
-public class DiscountQueryService(DBContext context, IMapper mapper) : IDiscountQueryService
+namespace Infrastructure.Discount.QueryServices;
+
+public sealed class DiscountQueryService(
+    DBContext context,
+    IMapper mapper) : IDiscountQueryService
 {
-    private readonly DBContext _context = context;
-    private readonly IMapper _mapper = mapper;
-
-    public async Task<(IEnumerable<DiscountCodeDto> Discounts, int TotalCount)> GetPagedAsync(
+    public async Task<(IReadOnlyCollection<DiscountCodeDto> Items, int Total)> GetPagedAsync(
         bool includeExpired,
         bool includeDeleted,
         int page,
@@ -13,8 +20,8 @@ public class DiscountQueryService(DBContext context, IMapper mapper) : IDiscount
         CancellationToken ct = default)
     {
         var query = includeDeleted
-            ? _context.DiscountCodes.AsNoTracking().IgnoreQueryFilters()
-            : _context.DiscountCodes.AsNoTracking().AsQueryable();
+            ? context.DiscountCodes.AsNoTracking().IgnoreQueryFilters()
+            : context.DiscountCodes.AsNoTracking().AsQueryable();
 
         if (!includeExpired)
         {
@@ -30,47 +37,62 @@ public class DiscountQueryService(DBContext context, IMapper mapper) : IDiscount
             .Take(pageSize)
             .ToListAsync(ct);
 
-        return (_mapper.Map<IEnumerable<DiscountCodeDto>>(discounts), total);
+        IReadOnlyCollection<DiscountCodeDto> items = discounts
+            .Select(d => new DiscountCodeDto
+            {
+                Id = d.Id.Value,
+                Code = d.Code,
+                DiscountType = d.Value.Type.ToString(),
+                DiscountValue = d.Value.Amount,
+                UsageLimit = d.UsageLimit,
+                UsageCount = d.UsageCount,
+                IsActive = d.IsActive,
+                IsRedeemable = d.IsRedeemable,
+                ExpiresAt = d.ExpiresAt,
+                CreatedAt = d.CreatedAt
+            })
+            .ToList()
+            .AsReadOnly();
+
+        return (items, total);
     }
 
     public async Task<DiscountCodeDetailDto?> GetDetailByIdAsync(
-        int id,
+        DiscountCodeId id,
         CancellationToken ct = default)
     {
-        var discount = await _context.DiscountCodes
+        var discount = await context.DiscountCodes
             .AsNoTracking()
             .Include(d => d.Restrictions)
             .Include(d => d.Usages)
-                .ThenInclude(u => u.User)
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(d => d.Id == id, ct);
 
-        return discount == null ? null : _mapper.Map<DiscountCodeDetailDto>(discount);
-    }
+        if (discount == null)
+            return null;
 
-    public async Task<IEnumerable<DiscountCodeDto>> GetActiveDiscountsAsync(
-        CancellationToken ct = default)
-    {
-        var discounts = await _context.DiscountCodes
-            .AsNoTracking()
-            .Where(d => d.IsActive &&
-                        (!d.ExpiresAt.HasValue || d.ExpiresAt > DateTime.UtcNow) &&
-                        (!d.StartsAt.HasValue || d.StartsAt <= DateTime.UtcNow))
-            .ToListAsync(ct);
-
-        return _mapper.Map<IEnumerable<DiscountCodeDto>>(discounts);
-    }
-
-    public async Task<IEnumerable<DiscountCodeDto>> GetExpiringDiscountsAsync(
-        DateTime beforeDate,
-        CancellationToken ct = default)
-    {
-        var discounts = await _context.DiscountCodes
-            .AsNoTracking()
-            .Where(d => d.IsActive && d.ExpiresAt.HasValue && d.ExpiresAt <= beforeDate)
-            .ToListAsync(ct);
-
-        return _mapper.Map<IEnumerable<DiscountCodeDto>>(discounts);
+        return new DiscountCodeDetailDto
+        {
+            Id = discount.Id.Value,
+            Code = discount.Code,
+            DiscountType = discount.Value.Type.ToString(),
+            DiscountValue = discount.Value.Amount,
+            MaximumDiscountAmount = discount.MaximumDiscountAmount?.Amount,
+            UsageLimit = discount.UsageLimit,
+            UsageCount = discount.UsageCount,
+            StartsAt = discount.StartsAt,
+            ExpiresAt = discount.ExpiresAt,
+            IsActive = discount.IsActive,
+            IsExpired = discount.IsExpired,
+            IsRedeemable = discount.IsRedeemable,
+            CreatedAt = discount.CreatedAt,
+            Restrictions = discount.Restrictions.Select(r => new DiscountRestrictionDto
+            {
+                Id = r.Id.Value,
+                RestrictionType = r.RestrictionType.ToString(),
+                RestrictionValue = r.RestrictionValue
+            }).ToList()
+        };
     }
 
     public async Task<DiscountInfoDto?> GetDiscountInfoByCodeAsync(
@@ -79,32 +101,74 @@ public class DiscountQueryService(DBContext context, IMapper mapper) : IDiscount
     {
         var normalizedCode = code.Trim().ToUpperInvariant();
 
-        var discount = await _context.DiscountCodes
+        var discount = await context.DiscountCodes
             .AsNoTracking()
             .Include(d => d.Restrictions)
-            .FirstOrDefaultAsync(d => d.Code.Value == normalizedCode, ct);
+            .FirstOrDefaultAsync(d => d.Code == normalizedCode, ct);
 
         if (discount == null)
             return null;
 
         return new DiscountInfoDto
         {
-            Code = discount.Code.Value,
-            Percentage = discount.Percentage,
-            MaxDiscountAmount = discount.MaxDiscountAmount,
-            MinOrderAmount = discount.MinOrderAmount,
-            IsActive = discount.IsCurrentlyValid(),
+            Code = discount.Code,
+            DiscountType = discount.Value.Type.ToString(),
+            DiscountValue = discount.Value.Amount,
+            MaximumDiscountAmount = discount.MaximumDiscountAmount?.Amount,
             ExpiresAt = discount.ExpiresAt,
-            StartsAt = discount.StartsAt,
-            RemainingUsage = discount.RemainingUsage()
+            IsRedeemable = discount.IsRedeemable
+        };
+    }
+
+    public async Task<DiscountValidationResult> ValidateDiscountAsync(
+        string code,
+        Money orderAmount,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        var normalizedCode = code.Trim().ToUpperInvariant();
+
+        var discount = await context.DiscountCodes
+            .AsNoTracking()
+            .Include(d => d.Restrictions)
+            .FirstOrDefaultAsync(d => d.Code == normalizedCode, ct);
+
+        if (discount == null)
+            return new DiscountValidationResult
+            {
+                IsValid = false,
+                Error = "کد تخفیف یافت نشد."
+            };
+
+        var validation = discount.ValidateForApplication(orderAmount);
+
+        if (!validation.IsValid)
+            return new DiscountValidationResult
+            {
+                IsValid = false,
+                Error = validation.FailureReason
+            };
+
+        var discountAmount = discount.CalculateDiscount(orderAmount);
+        var finalAmount = orderAmount.Subtract(discountAmount);
+
+        return new DiscountValidationResult
+        {
+            DiscountCodeId = discount.Id.Value,
+            Code = discount.Code,
+            DiscountType = discount.Value.Type.ToString(),
+            DiscountValue = discount.Value.Amount,
+            DiscountAmount = discountAmount.Amount,
+            FinalAmount = finalAmount.Amount,
+            IsValid = true
         };
     }
 
     public async Task<DiscountUsageReportDto?> GetUsageReportByIdAsync(
-        int id,
+        DiscountCodeId id,
         CancellationToken ct = default)
     {
-        var discount = await _context.DiscountCodes
+        var discount = await context.DiscountCodes
             .AsNoTracking()
             .Include(d => d.Usages)
                 .ThenInclude(u => u.User)
@@ -116,23 +180,18 @@ public class DiscountQueryService(DBContext context, IMapper mapper) : IDiscount
 
         return new DiscountUsageReportDto
         {
-            DiscountCodeId = discount.Id,
-            Code = discount.Code.Value,
-            TotalUsageCount = discount.UsageCount,
+            DiscountCodeId = discount.Id.Value,
+            Code = discount.Code,
             UsageLimit = discount.UsageLimit,
-            RemainingUsage = discount.RemainingUsage(),
-            IsCurrentlyValid = discount.IsCurrentlyValid(),
+            TotalUsages = discount.UsageCount,
+            TotalDiscountedAmount = discount.Usages.Sum(u => u.DiscountedAmount),
             Usages = discount.Usages.Select(u => new DiscountUsageItemDto
             {
-                Id = u.Id,
-                UserId = u.UserId,
-                UserName = u.User != null ? $"{u.User.FirstName} {u.User.LastName}" : null,
-                OrderId = u.OrderId,
-                DiscountAmount = u.DiscountAmount.Amount,
-                UsedAt = u.UsedAt,
-                IsConfirmed = u.IsConfirmed,
-                IsCancelled = u.IsCancelled
-            })
+                UserId = u.UserId.Value,
+                OrderId = u.OrderId.Value,
+                DiscountedAmount = u.DiscountedAmount,
+                UsedAt = u.UsedAt
+            }).ToList()
         };
     }
 }

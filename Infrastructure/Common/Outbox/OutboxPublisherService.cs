@@ -36,12 +36,12 @@ public class OutboxPublisherService(
     private async Task ProcessBatchAsync(CancellationToken ct)
     {
         using var scope = scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<DBContext>();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         var messages = await dbContext.OutboxMessages
             .Where(m => m.ProcessedAt == null)
-            .OrderBy(m => m.OccurredAt)
+            .OrderBy(m => m.ProcessedAt)
             .Take(BatchSize)
             .ToListAsync(ct);
 
@@ -52,7 +52,7 @@ public class OutboxPublisherService(
                 var eventType = Type.GetType(message.Type);
                 if (eventType == null)
                 {
-                    await auditService.LogWarningAsync("Outbox: unknown event type {Type}", message.Type);
+                    await auditService.LogWarningAsync("Outbox: unknown event type {Type}", ct);
                     message.MarkFailed($"Unknown type: {message.Type}");
                 }
                 else
@@ -64,7 +64,7 @@ public class OutboxPublisherService(
             }
             catch (Exception ex)
             {
-                await auditService.LogErrorAsync("Outbox: failed to publish message {Id}", message.Id);
+                await auditService.LogErrorAsync("Outbox: failed to publish message {Id}", ct);
                 message.MarkFailed(ex.Message);
             }
         }

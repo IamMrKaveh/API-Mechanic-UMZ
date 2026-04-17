@@ -1,7 +1,7 @@
 using Domain.Discount.Aggregates;
 using Domain.Discount.Interfaces;
 using Domain.Discount.ValueObjects;
-using Infrastructure.Persistence.Context;
+using Domain.User.ValueObjects;
 
 namespace Infrastructure.Discount.Repositories;
 
@@ -11,29 +11,49 @@ public sealed class DiscountRepository(DBContext context) : IDiscountRepository
     {
         return await context.DiscountCodes
             .Include(d => d.Restrictions)
-            .Include(d => d.UsageRecords)
+            .Include(d => d.Usages)
             .FirstOrDefaultAsync(d => d.Id == id, ct);
     }
 
-    public async Task<DiscountCode?> GetByCodeAsync(
-        DiscountCodeValue code,
-        CancellationToken ct = default)
+    public async Task<DiscountCode?> GetByCodeAsync(string code, CancellationToken ct = default)
+    {
+        var normalizedCode = code.Trim().ToUpperInvariant();
+        return await context.DiscountCodes
+            .Include(d => d.Restrictions)
+            .Include(d => d.Usages)
+            .FirstOrDefaultAsync(d => d.Code == normalizedCode, ct);
+    }
+
+    public async Task<DiscountCode?> GetByIdWithUsagesAsync(DiscountCodeId id, CancellationToken ct = default)
     {
         return await context.DiscountCodes
             .Include(d => d.Restrictions)
-            .Include(d => d.UsageRecords)
-            .FirstOrDefaultAsync(d => d.Code == code.Value, ct);
+            .Include(d => d.Usages)
+                .ThenInclude(u => u.User)
+            .FirstOrDefaultAsync(d => d.Id == id, ct);
     }
 
     public async Task<bool> ExistsByCodeAsync(
-        DiscountCodeValue code,
+        DiscountCode code,
         DiscountCodeId? excludeId = null,
         CancellationToken ct = default)
     {
-        var query = context.DiscountCodes.Where(d => d.Code == code.Value);
+        var query = context.DiscountCodes.Where(d => d.Code == code.Code);
         if (excludeId is not null)
             query = query.Where(d => d.Id != excludeId);
         return await query.AnyAsync(ct);
+    }
+
+    public async Task<int> CountUserUsageAsync(
+        DiscountCodeId discountId,
+        UserId userId,
+        CancellationToken ct = default)
+    {
+        return await context.DiscountCodes
+            .Where(d => d.Id == discountId)
+            .SelectMany(d => d.Usages)
+            .Where(u => u.UserId == userId)
+            .CountAsync(ct);
     }
 
     public async Task AddAsync(DiscountCode discountCode, CancellationToken ct = default)
@@ -44,5 +64,10 @@ public sealed class DiscountRepository(DBContext context) : IDiscountRepository
     public void Update(DiscountCode discountCode)
     {
         context.DiscountCodes.Update(discountCode);
+    }
+
+    public void SetOriginalRowVersion(DiscountCode entity, byte[] rowVersion)
+    {
+        context.Entry(entity).Property<byte[]>("RowVersion").OriginalValue = rowVersion;
     }
 }

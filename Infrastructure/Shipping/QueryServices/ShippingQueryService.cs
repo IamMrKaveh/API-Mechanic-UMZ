@@ -2,8 +2,8 @@ using Application.Shipping.Contracts;
 using Application.Shipping.Features.Shared;
 using Domain.Shipping.Services;
 using Domain.Shipping.ValueObjects;
-using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Shipping.QueryServices;
 
@@ -11,33 +11,37 @@ public sealed class ShippingQueryService(
     DBContext context,
     ShippingDomainService shippingDomainService) : IShippingQueryService
 {
-    public async Task<ShippingDetailDto?> GetShippingDetailAsync(
+    public async Task<ShippingDto?> GetShippingDetailAsync(
         ShippingId shippingId, CancellationToken ct = default)
     {
         var shipping = await context.Shippings
             .AsNoTracking()
-            .Where(s => s.Id == shippingId)
-            .Select(s => new ShippingDetailDto
-            {
-                Id = s.Id.Value,
-                Name = s.Name.Value,
-                Description = s.Description,
-                Cost = s.Cost.Amount,
-                IsActive = s.IsActive,
-                IsDefault = s.IsDefault,
-                IsFreeShippingEnabled = s.FreeShipping.IsEnabled,
-                FreeShippingThreshold = s.FreeShipping.ThresholdAmount != null
-                    ? s.FreeShipping.ThresholdAmount.Amount : (decimal?)null,
-                MinDeliveryDays = s.MinDeliveryDays,
-                MaxDeliveryDays = s.MaxDeliveryDays,
-                SortOrder = s.SortOrder,
-                RowVersion = s.RowVersion.ToBase64(),
-                CreatedAt = s.CreatedAt,
-                UpdatedAt = s.UpdatedAt
-            })
-            .FirstOrDefaultAsync(ct);
+            .FirstOrDefaultAsync(s => s.Id == shippingId, ct);
 
-        return shipping;
+        if (shipping is null) return null;
+
+        return new ShippingDto
+        {
+            Id = shipping.Id.Value,
+            Name = shipping.Name.Value,
+            Description = shipping.Description,
+            BaseCost = shipping.BaseCost.Amount,
+            EstimatedDeliveryTime = shipping.EstimatedDeliveryTime,
+            MinDeliveryDays = shipping.DeliveryTime.MinDays,
+            MaxDeliveryDays = shipping.DeliveryTime.MaxDays,
+            IsActive = shipping.IsActive,
+            IsDefault = shipping.IsDefault,
+            SortOrder = shipping.SortOrder,
+            FreeShippingThreshold = shipping.FreeShipping.IsEnabled
+                ? shipping.FreeShipping.ThresholdAmount?.Amount
+                : null,
+            MinOrderAmount = shipping.OrderRange.MinOrderAmount?.Amount,
+            MaxOrderAmount = shipping.OrderRange.MaxOrderAmount?.Amount,
+            MaxWeight = shipping.MaxWeight,
+            CreatedAt = shipping.CreatedAt,
+            UpdatedAt = shipping.UpdatedAt,
+            RowVersion = null
+        };
     }
 
     public async Task<IReadOnlyList<ShippingListItemDto>> GetAllShippingsAsync(
@@ -48,27 +52,70 @@ public sealed class ShippingQueryService(
         if (!includeInactive)
             query = query.Where(s => s.IsActive);
 
-        var items = await query
+        var shippings = await query
             .OrderBy(s => s.SortOrder)
+            .ToListAsync(ct);
+
+        return shippings.Select(s => new ShippingListItemDto
+        {
+            Id = s.Id.Value,
+            Name = s.Name.Value,
+            BaseCost = s.BaseCost.Amount,
+            IsActive = s.IsActive,
+            IsDefault = s.IsDefault,
+            SortOrder = s.SortOrder,
+            DeliveryTimeDisplay = s.GetDeliveryTimeDisplay()
+        }).ToList().AsReadOnly();
+    }
+
+    public async Task<IReadOnlyList<ShippingListItemDto>> GetAvailableShippingsForOrderAsync(
+        Money orderAmount, CancellationToken ct = default)
+    {
+        var activeShippings = await context.Shippings
+            .AsNoTracking()
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.SortOrder)
+            .ToListAsync(ct);
+
+        return activeShippings
+            .Where(s => s.IsAvailableForOrder(orderAmount))
             .Select(s => new ShippingListItemDto
             {
                 Id = s.Id.Value,
                 Name = s.Name.Value,
-                Description = s.Description,
-                Cost = s.Cost.Amount,
+                BaseCost = s.BaseCost.Amount,
                 IsActive = s.IsActive,
                 IsDefault = s.IsDefault,
-                IsFreeShippingEnabled = s.FreeShipping.IsEnabled,
-                FreeShippingThreshold = s.FreeShipping.ThresholdAmount != null
-                    ? s.FreeShipping.ThresholdAmount.Amount : (decimal?)null,
-                SortOrder = s.SortOrder
-            })
-            .ToListAsync(ct);
-
-        return items.AsReadOnly();
+                SortOrder = s.SortOrder,
+                DeliveryTimeDisplay = s.GetDeliveryTimeDisplay()
+            }).ToList().AsReadOnly();
     }
 
-    public async Task<IReadOnlyList<AvailableShippingDto>> GetAvailableShippingsForOrderAsync(
+    public async Task<ShippingCostResultDto> CalculateShippingCostAsync(
+        ShippingId shippingId, Money orderAmount, CancellationToken ct = default)
+    {
+        var shipping = await context.Shippings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == shippingId && s.IsActive, ct);
+
+        if (shipping is null)
+            return new ShippingCostResultDto();
+
+        var cost = shipping.CalculateCost(orderAmount);
+        var isFree = cost.IsZero();
+
+        return new ShippingCostResultDto
+        {
+            ShippingId = shipping.Id.Value,
+            ShippingName = shipping.Name.Value,
+            Cost = cost.Amount,
+            IsFree = isFree,
+            MinDeliveryDays = shipping.DeliveryTime.MinDays,
+            MaxDeliveryDays = shipping.DeliveryTime.MaxDays
+        };
+    }
+
+    public async Task<IReadOnlyList<AvailableShippingDto>> GetAvailableShippingsAsync(
         Money orderAmount, CancellationToken ct = default)
     {
         var activeShippings = await context.Shippings
@@ -81,54 +128,22 @@ public sealed class ShippingQueryService(
 
         foreach (var shipping in activeShippings)
         {
-            var calcResult = shippingDomainService.CalculateCost(shipping, orderAmount);
-            if (!calcResult.IsSuccess) continue;
-
-            var isFree = calcResult.IsFreeShipping;
-            var finalCost = calcResult.Cost?.Amount ?? 0;
+            var calcResult = shippingDomainService.CalculateShippingCost(shipping, orderAmount);
+            if (calcResult.IsSuccess is false) continue;
 
             result.Add(new AvailableShippingDto
             {
                 Id = shipping.Id.Value,
                 Name = shipping.Name.Value,
-                Description = shipping.Description,
-                Cost = finalCost,
-                IsFree = isFree,
+                Cost = calcResult.Cost?.Amount ?? 0,
+                IsFree = calcResult.IsFreeShipping,
                 IsDefault = shipping.IsDefault,
-                DeliveryTimeDisplay = GetDeliveryTimeDisplay(shipping)
+                DeliveryTimeDisplay = shipping.GetDeliveryTimeDisplay()
             });
         }
 
         return result.AsReadOnly();
     }
-
-    public async Task<AvailableShippingDto?> CalculateShippingCostAsync(
-        ShippingId shippingId, Money orderAmount, CancellationToken ct = default)
-    {
-        var shipping = await context.Shippings
-            .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == shippingId && s.IsActive, ct);
-
-        if (shipping is null) return null;
-
-        var calcResult = shippingDomainService.CalculateCost(shipping, orderAmount);
-        if (!calcResult.IsSuccess) return null;
-
-        return new AvailableShippingDto
-        {
-            Id = shipping.Id.Value,
-            Name = shipping.Name.Value,
-            Description = shipping.Description,
-            Cost = calcResult.Cost?.Amount ?? 0,
-            IsFree = calcResult.IsFreeShipping,
-            IsDefault = shipping.IsDefault,
-            DeliveryTimeDisplay = GetDeliveryTimeDisplay(shipping)
-        };
-    }
-
-    public async Task<IReadOnlyList<AvailableShippingDto>> GetAvailableShippingsAsync(
-        Money orderAmount, CancellationToken ct = default)
-        => await GetAvailableShippingsForOrderAsync(orderAmount, ct);
 
     public async Task<IReadOnlyList<AvailableShippingDto>> GetAvailableShippingsForVariantsAsync(
         IEnumerable<Guid> variantIds, CancellationToken ct = default)
@@ -137,7 +152,7 @@ public sealed class ShippingQueryService(
 
         var enabledShippingIds = await context.ProductVariantShippings
             .AsNoTracking()
-            .Where(pvs => variantIdList.Contains(pvs.ProductVariantId.Value))
+            .Where(pvs => variantIdList.Contains(pvs.ShippingId.Value))
             .Select(pvs => pvs.ShippingId.Value)
             .Distinct()
             .ToListAsync(ct);
@@ -152,20 +167,10 @@ public sealed class ShippingQueryService(
         {
             Id = s.Id.Value,
             Name = s.Name.Value,
-            Description = s.Description,
-            Cost = s.Cost.Amount,
+            Cost = s.BaseCost.Amount,
             IsFree = false,
             IsDefault = s.IsDefault,
-            DeliveryTimeDisplay = GetDeliveryTimeDisplay(s)
+            DeliveryTimeDisplay = s.GetDeliveryTimeDisplay()
         }).ToList().AsReadOnly();
-    }
-
-    private static string GetDeliveryTimeDisplay(Domain.Shipping.Aggregates.Shipping shipping)
-    {
-        if (shipping.MinDeliveryDays.HasValue && shipping.MaxDeliveryDays.HasValue)
-            return $"{shipping.MinDeliveryDays} تا {shipping.MaxDeliveryDays} روز کاری";
-        if (shipping.MinDeliveryDays.HasValue)
-            return $"از {shipping.MinDeliveryDays} روز کاری";
-        return "زمان تحویل متغیر";
     }
 }

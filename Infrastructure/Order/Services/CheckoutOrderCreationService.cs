@@ -1,11 +1,13 @@
 ﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Order.Features.Shared;
+using Domain.Discount.ValueObjects;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Infrastructure.Order.Services;
 
-public class CheckoutOrderCreationService(
+public sealed class CheckoutOrderCreationService(
     IOrderRepository orderRepository,
     IUnitOfWork unitOfWork) : ICheckoutOrderCreationService
 {
@@ -13,7 +15,7 @@ public class CheckoutOrderCreationService(
         Guid userId,
         ReceiverInfo receiverInfo,
         DeliveryAddress deliveryAddress,
-        List<OrderItemSnapshot> items,
+        IReadOnlyCollection<OrderItemSnapshot> items,
         Money shippingCost,
         Money discountAmount,
         Guid? discountCodeId,
@@ -24,15 +26,15 @@ public class CheckoutOrderCreationService(
             return ServiceResult<CheckoutResultDto>.Conflict("سفارش قبلاً ثبت شده است.");
 
         var orderId = OrderId.NewId();
-        var order = Order.Place(
+        var order = Domain.Order.Aggregates.Order.Place(
             orderId,
-            userId,
+            UserId.From(userId),
             receiverInfo,
             deliveryAddress,
             shippingCost,
             discountAmount,
-            discountCodeId,
-            items,
+            DiscountCodeId.From(discountCodeId.Value),
+            items.ToList(),
             idempotencyKey);
 
         orderRepository.Add(order);

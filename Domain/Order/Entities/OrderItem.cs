@@ -6,13 +6,17 @@ namespace Domain.Order.Entities;
 
 public sealed class OrderItem : Entity<OrderItemId>
 {
-    public OrderId OrderId { get; private init; } = default!;
-    public VariantId VariantId { get; private init; } = default!;
-    public ProductId ProductId { get; private init; } = default!;
     public string ProductName { get; private init; } = null!;
     public string Sku { get; private init; } = null!;
     public Money UnitPrice { get; private init; } = null!;
     public int Quantity { get; private init; }
+
+    public Order.Aggregates.Order Order { get; private init; } = default!;
+    public OrderId OrderId { get; private init; } = default!;
+    public Variant.Aggregates.ProductVariant Variant { get; private init; } = default!;
+    public VariantId VariantId { get; private init; } = default!;
+    public Product.Aggregates.Product Product { get; private init; } = default!;
+    public ProductId ProductId { get; private init; } = default!;
 
     private OrderItem()
     { }

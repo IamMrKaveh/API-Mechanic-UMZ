@@ -1,10 +1,6 @@
-using Application.Common.Contracts;
 using Application.Product.Contracts;
 using Application.Product.Features.Shared;
 using Domain.Product.ValueObjects;
-using Domain.Variant.Entities;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Product.QueryServices;
 
@@ -18,7 +14,7 @@ public sealed class ProductQueryService(
         var product = await context.Products
             .AsNoTracking()
             .Include(p => p.Brand)
-            .Include(p => p.ProductVariants)
+            .Include(p => p.Variants)
             .FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted, ct);
 
         if (product is null) return null;
@@ -36,9 +32,9 @@ public sealed class ProductQueryService(
             IsDeleted = product.IsDeleted,
             CreatedAt = product.CreatedAt,
             UpdatedAt = product.UpdatedAt,
-            Variants = product.ProductVariants
+            Variants = product.Variants
                 .Where(v => !v.IsDeleted)
-                .Select(v => MapToVariantDto(v))
+                .Select(MapToVariantDto)
                 .ToList()
         };
     }
@@ -49,8 +45,8 @@ public sealed class ProductQueryService(
         var product = await context.Products
             .AsNoTracking()
             .Include(p => p.Brand)
-            .Include(p => p.ProductVariants)
-                .ThenInclude(v => v.VariantAttributes)
+            .Include(p => p.Variants)
+                .ThenInclude(v => v.Attributes)
             .FirstOrDefaultAsync(p => p.Id == productId, ct);
 
         if (product is null) return null;
@@ -77,10 +73,10 @@ public sealed class ProductQueryService(
             UpdatedAt = product.UpdatedAt,
             DeletedAt = product.DeletedAt,
             PrimaryImageUrl = primaryImage is not null
-                ? urlResolver.GetFileUrl(primaryImage)
+                ? urlResolver.ResolveMediaUrl(primaryImage)
                 : null,
-            Variants = product.ProductVariants
-                .Select(v => MapToVariantDto(v))
+            Variants = product.Variants
+                .Select(MapToVariantDto)
                 .ToList()
         };
     }
@@ -91,8 +87,8 @@ public sealed class ProductQueryService(
         var product = await context.Products
             .AsNoTracking()
             .Include(p => p.Brand)
-            .Include(p => p.ProductVariants)
-                .ThenInclude(v => v.VariantAttributes)
+            .Include(p => p.Variants)
+                .ThenInclude(v => v.Attributes)
             .FirstOrDefaultAsync(p => p.Id == productId && p.IsActive && !p.IsDeleted, ct);
 
         if (product is null) return null;
@@ -114,11 +110,11 @@ public sealed class ProductQueryService(
             CategoryId = product.Brand.CategoryId.Value,
             IsFeatured = product.IsFeatured,
             PrimaryImageUrl = primaryImage is not null
-                ? urlResolver.GetFileUrl(primaryImage)
+                ? urlResolver.ResolveMediaUrl(primaryImage)
                 : null,
-            Variants = product.ProductVariants
+            Variants = product.Variants
                 .Where(v => v.IsActive && !v.IsDeleted)
-                .Select(v => MapToVariantDto(v))
+                .Select(MapToVariantDto)
                 .ToList()
         };
     }
@@ -185,7 +181,7 @@ public sealed class ProductQueryService(
         var query = context.Products
             .AsNoTracking()
             .Include(p => p.Brand)
-            .Include(p => p.ProductVariants)
+            .Include(p => p.Variants)
             .Where(p => p.IsActive && !p.IsDeleted)
             .AsQueryable();
 
@@ -200,15 +196,17 @@ public sealed class ProductQueryService(
 
         if (searchParams.MinPrice.HasValue)
             query = query.Where(p =>
-                p.ProductVariants.Any(v => v.IsActive && !v.IsDeleted && v.Price.Amount >= searchParams.MinPrice.Value));
+                p.Variants.Any(v => v.IsActive && !v.IsDeleted
+                    && v.Price.Amount >= searchParams.MinPrice.Value));
 
         if (searchParams.MaxPrice.HasValue)
             query = query.Where(p =>
-                p.ProductVariants.Any(v => v.IsActive && !v.IsDeleted && v.Price.Amount <= searchParams.MaxPrice.Value));
+                p.Variants.Any(v => v.IsActive && !v.IsDeleted
+                    && v.Price.Amount <= searchParams.MaxPrice.Value));
 
         if (searchParams.InStockOnly)
             query = query.Where(p =>
-                p.ProductVariants.Any(v => v.IsActive && !v.IsDeleted && (v.IsUnlimited || v.StockQuantity > 0)));
+                p.Variants.Any(v => v.IsActive && !v.IsDeleted));
 
         var total = await query.CountAsync(ct);
 
@@ -225,30 +223,29 @@ public sealed class ProductQueryService(
                 BrandName = p.Brand.Name.Value,
                 CategoryId = p.Brand.CategoryId.Value,
                 IsFeatured = p.IsFeatured,
-                HasStock = p.ProductVariants.Any(v =>
-                    v.IsActive && !v.IsDeleted && (v.IsUnlimited || v.StockQuantity > 0)),
-                MinPrice = p.ProductVariants
+                HasStock = p.Variants.Any(v => v.IsActive && !v.IsDeleted),
+                MinPrice = p.Variants
                     .Where(v => v.IsActive && !v.IsDeleted)
                     .Min(v => (decimal?)v.Price.Amount)
             })
             .ToListAsync(ct);
 
-        return new PaginatedResult<ProductCatalogItemDto>(items, total, searchParams.Page, searchParams.PageSize);
+        return new PaginatedResult<ProductCatalogItemDto>(
+            items, total, searchParams.Page, searchParams.PageSize);
     }
 
-    private static ProductVariantViewDto MapToVariantDto(Domain.Variant.Aggregates.ProductVariant variant)
+    private static ProductVariantViewDto MapToVariantDto(
+        Domain.Variant.Aggregates.ProductVariant variant)
         => new()
         {
             Id = variant.Id.Value,
             Sku = variant.Sku?.Value,
             Price = variant.Price.Amount,
             CompareAtPrice = variant.CompareAtPrice?.Amount,
-            StockQuantity = variant.StockQuantity,
-            IsUnlimited = variant.IsUnlimited,
             IsActive = variant.IsActive,
-            Attributes = variant.VariantAttributes
+            Attributes = variant.Attributes
                 .ToDictionary(
-                    a => a.AttributeTypeName,
-                    a => a.AttributeValueName)
+                    a => a.AttributeType.Name,
+                    a => a.Value.Value)
         };
 }

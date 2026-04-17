@@ -12,6 +12,7 @@ public record ProductReviewDto
     public string? Title { get; init; }
     public string? Comment { get; init; }
     public string Status { get; init; } = string.Empty;
+    public string? RejectionReason { get; init; }
     public bool IsVerifiedPurchase { get; init; }
     public int LikeCount { get; init; }
     public int DislikeCount { get; init; }
@@ -26,6 +27,12 @@ public record ReviewSummaryDto
     public Guid ProductId { get; init; }
     public double AverageRating { get; init; }
     public int TotalReviews { get; init; }
+    public int TotalCount { get; init; }
+    public int FiveStarCount { get; init; }
+    public int FourStarCount { get; init; }
+    public int ThreeStarCount { get; init; }
+    public int TwoStarCount { get; init; }
+    public int OneStarCount { get; init; }
     public Dictionary<int, int> RatingDistribution { get; init; } = [];
 }
 

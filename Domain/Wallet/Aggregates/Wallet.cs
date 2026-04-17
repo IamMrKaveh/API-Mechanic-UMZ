@@ -9,18 +9,18 @@ namespace Domain.Wallet.Aggregates;
 
 public sealed class Wallet : AggregateRoot<WalletId>
 {
-    private readonly List<WalletReservation> _activeReservations = [];
-
     private Wallet()
     {
     }
 
-    public UserId OwnerId { get; private set; } = default!;
     public Money Balance { get; private set; } = default!;
     public bool IsActive { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
+    public User.Aggregates.User Owner { get; private set; } = default!;
+    public UserId OwnerId { get; private set; } = default!;
+    private readonly List<WalletReservation> _activeReservations = [];
     public IReadOnlyList<WalletReservation> ActiveReservations => _activeReservations.AsReadOnly();
 
     public Money ReservedBalance => Money.Create(

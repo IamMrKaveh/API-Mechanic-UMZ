@@ -1,9 +1,7 @@
 ﻿using Domain.User.ValueObjects;
 using Domain.Wallet.Entities;
 using Domain.Wallet.Interfaces;
-using Domain.Wallet.Projections;
 using Domain.Wallet.ValueObjects;
-using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Wallet.Repositories;
 
@@ -49,7 +47,6 @@ public sealed class WalletRepository(DBContext context) : IWalletRepository
     {
         var result = await context.WalletLedgerEntries
             .Where(e => e.WalletId == walletId)
-            .OrderByDescending(e => e.CreatedAt)
             .ToListAsync(ct);
         return result.AsReadOnly();
     }
@@ -67,42 +64,6 @@ public sealed class WalletRepository(DBContext context) : IWalletRepository
         WalletLedgerEntry entry, CancellationToken ct = default)
         => await context.WalletLedgerEntries.AddAsync(entry, ct);
 
-    public async Task<IReadOnlyList<ExpiredReservationProjection>> GetExpiredReservationBatchAsync(
-        int batchSize, CancellationToken ct = default)
-    {
-        var now = DateTime.UtcNow;
-        var result = await context.WalletReservations
-            .AsNoTracking()
-            .Where(r => r.Status == Domain.Wallet.Enums.WalletReservationStatus.Pending
-                        && r.ExpiresAt.HasValue && r.ExpiresAt.Value <= now)
-            .Take(batchSize)
-            .Select(r => new ExpiredReservationProjection
-            {
-                ReservationId = r.Id.Value,
-                WalletId = r.Wallet.Id.Value,
-                Amount = r.Amount.Amount,
-                OrderId = r.OrderId.Value,
-                UserId = r.Wallet.OwnerId.Value
-            })
-            .ToListAsync(ct);
-        return result.AsReadOnly();
-    }
-
-    public async Task ExpireReservationAsync(
-        WalletReservationId reservationId,
-        WalletId walletId,
-        Money amount,
-        CancellationToken ct = default)
-    {
-        var reservation = await context.WalletReservations
-            .FirstOrDefaultAsync(r => r.Id == reservationId, ct);
-
-        if (reservation is null) return;
-
-        reservation.Expire();
-        context.WalletReservations.Update(reservation);
-    }
-
     public async Task<WalletReservation?> GetReservationByIdAsync(
         WalletReservationId id, CancellationToken ct = default)
         => await context.WalletReservations.FirstOrDefaultAsync(r => r.Id == id, ct);
@@ -113,7 +74,4 @@ public sealed class WalletRepository(DBContext context) : IWalletRepository
 
     public void Update(Domain.Wallet.Aggregates.Wallet wallet)
         => context.Wallets.Update(wallet);
-
-    public void SetOriginalRowVersion(Domain.Wallet.Aggregates.Wallet wallet, byte[] rowVersion)
-        => context.Entry(wallet).Property(e => e.RowVersion).OriginalValue = rowVersion;
 }

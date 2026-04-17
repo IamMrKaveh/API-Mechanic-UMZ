@@ -12,7 +12,7 @@ public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable, ISoftDele
     public FileSize Size { get; private set; } = null!;
     public string FileType { get; private set; } = null!;
     public string EntityType { get; private set; } = null!;
-    public int EntityId { get; private set; }
+    public Guid EntityId { get; private set; }
     public int SortOrder { get; private set; }
     public bool IsPrimary { get; private set; }
     public string? AltText { get; private set; }
@@ -38,7 +38,7 @@ public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable, ISoftDele
         FileSize size,
         string fileType,
         string entityType,
-        int entityId,
+        Guid entityId,
         int sortOrder,
         bool isPrimary,
         string? altText) : base(id)
@@ -63,14 +63,14 @@ public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable, ISoftDele
         string fileType,
         long fileSize,
         string entityType,
-        int entityId,
+        Guid entityId,
         int sortOrder = 0,
         bool isPrimary = false,
         string? altText = null)
     {
         Guard.Against.NullOrWhiteSpace(fileType, nameof(fileType));
         Guard.Against.NullOrWhiteSpace(entityType, nameof(entityType));
-        Guard.Against.NegativeOrZero(entityId, nameof(entityId));
+        Guard.Against.NullOrWhiteSpace(entityId.ToString(), nameof(entityId));
 
         ValidateFileType(fileType);
         ValidateSortOrder(sortOrder);

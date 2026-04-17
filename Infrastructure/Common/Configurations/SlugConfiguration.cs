@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Category.Configurations;
+﻿namespace Infrastructure.Common.Configurations;
 
 public sealed class SlugConfiguration : IEntityTypeConfiguration<Slug>
 {

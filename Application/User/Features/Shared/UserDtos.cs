@@ -35,8 +35,10 @@ public record UserProfileDto
     public bool IsActive { get; init; }
     public bool IsAdmin { get; init; }
     public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
     public DateTime? LastLoginAt { get; init; }
     public List<UserAddressDto> UserAddresses { get; init; } = [];
+    public bool IsEmailVerified { get; init; }
 }
 
 public record UserAddressDto
@@ -76,11 +78,13 @@ public record UserDashboardDto
     public int UnreadNotifications { get; init; }
     public int TotalOrders { get; init; }
     public decimal TotalSpent { get; init; }
-    public int PendingOrders { get; set; }
-    public int DeliveredOrders { get; set; }
-    public int ActiveAddresses { get; set; }
-    public DateTime? LastLoginAt { get; set; }
-    public DateTime MemberSince { get; set; }
+    public int PendingOrders { get; init; }
+    public int DeliveredOrders { get; init; }
+    public int ActiveAddresses { get; init; }
+    public DateTime? LastLoginAt { get; init; }
+    public DateTime MemberSince { get; init; }
+    public int CompletedOrders { get; init; }
+    public int OpenTickets { get; init; }
 }
 
 public record ChangePasswordDto

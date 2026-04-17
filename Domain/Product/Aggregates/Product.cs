@@ -7,25 +7,24 @@ namespace Domain.Product.Aggregates;
 
 public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
 {
-    private readonly List<ProductVariant> _variants = [];
-    public IReadOnlyCollection<ProductVariant> ProductVariants => _variants.AsReadOnly();
-
     private Product()
     { }
 
     public string Name { get; private set; } = default!;
     public string Slug { get; private set; } = default!;
     public string Description { get; private set; } = default!;
-    public BrandId BrandId { get; private set; } = default!;
-    public Brand.Aggregates.Brand Brand { get; private set; } = default!;
     public bool IsActive { get; private set; }
     public bool IsFeatured { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
-
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
     public Guid? DeletedBy { get; private set; }
+
+    public Brand.Aggregates.Brand Brand { get; private set; } = default!;
+    public BrandId BrandId { get; private set; } = default!;
+    private readonly List<ProductVariant> _variants = [];
+    public IReadOnlyCollection<ProductVariant> Variants => _variants.AsReadOnly();
 
     public static Product Create(
         ProductName name,

@@ -21,8 +21,6 @@ using Domain.Wallet.Entities;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
 using Infrastructure.Search;
-using Infrastructure.Security.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Context;
 
@@ -56,14 +54,15 @@ public sealed class DBContext(
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
     public DbSet<Domain.Product.Aggregates.Product> Products => Set<Domain.Product.Aggregates.Product>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
-    public DbSet<ProductVariantAttribute> ProductVariantAttributes => Set<ProductVariantAttribute>();
-    public DbSet<ProductVariantShipping> ProductVariantShippings => Set<ProductVariantShipping>();
+    public DbSet<VariantAttribute> ProductVariantAttributes => Set<VariantAttribute>();
+    public DbSet<VariantShipping> ProductVariantShippings => Set<VariantShipping>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
     public DbSet<Domain.Shipping.Aggregates.Shipping> Shippings => Set<Domain.Shipping.Aggregates.Shipping>();
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<TicketMessage> TicketMessages => Set<TicketMessage>();
     public DbSet<Domain.Wallet.Aggregates.Wallet> Wallets => Set<Domain.Wallet.Aggregates.Wallet>();
     public DbSet<WalletLedgerEntry> WalletLedgerEntries => Set<WalletLedgerEntry>();
+    public DbSet<WalletReservation> WalletReservations => Set<WalletReservation>();
     public DbSet<Domain.Wishlist.Aggregates.Wishlist> Wishlists => Set<Domain.Wishlist.Aggregates.Wishlist>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<ElasticsearchOutboxMessage> ElasticsearchOutboxMessages => Set<ElasticsearchOutboxMessage>();

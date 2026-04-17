@@ -6,7 +6,6 @@ namespace Domain.Attribute.Entities;
 
 public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActivatable, ISoftDeletable
 {
-    public AttributeTypeId AttributeTypeId { get; private set; } = null!;
     public string Value { get; private set; } = null!;
     public string DisplayValue { get; private set; } = null!;
     public string? HexCode { get; private set; }
@@ -15,8 +14,9 @@ public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActi
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
+    public AttributeTypeId AttributeTypeId { get; private set; } = null!;
     public AttributeType AttributeType { get; private set; } = null!;
-    public ICollection<ProductVariantAttribute> VariantAttributes { get; private set; } = new List<ProductVariantAttribute>();
+    public ICollection<VariantAttribute> VariantAttributes { get; private set; } = [];
 
     public bool IsDeleted { get; private set; }
 

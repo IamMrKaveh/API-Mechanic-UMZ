@@ -1,7 +1,6 @@
 using Domain.Audit.Events;
 using Domain.Audit.ValueObjects;
 using Domain.User.ValueObjects;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Domain.Audit.Entities;
@@ -9,6 +8,7 @@ namespace Domain.Audit.Entities;
 public sealed class AuditLog : AggregateRoot<AuditLogId>
 {
     public UserId? UserId { get; private set; }
+    public User.Aggregates.User? User { get; private set; }
     public string EventType { get; private set; } = null!;
     public string Action { get; private set; } = null!;
     public string? Details { get; private set; }

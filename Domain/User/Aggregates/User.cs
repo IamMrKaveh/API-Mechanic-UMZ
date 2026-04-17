@@ -13,6 +13,7 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
     private const int MaxAddresses = 10;
 
     private readonly List<UserAddress> _addresses = [];
+    public IReadOnlyList<UserAddress> Addresses => _addresses.AsReadOnly();
 
     private User()
     { }
@@ -27,11 +28,10 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
     public int FailedLoginAttempts { get; private set; }
     public DateTime? LockoutEnd { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
-    public UserAddressId? DefaultAddressId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    public IReadOnlyList<UserAddress> Addresses => _addresses.AsReadOnly();
+    public UserAddressId? DefaultAddressId { get; private set; }
 
     public bool IsLockedOut => LockoutEnd.HasValue && LockoutEnd.Value > DateTime.UtcNow;
 

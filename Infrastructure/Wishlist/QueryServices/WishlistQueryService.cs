@@ -2,7 +2,6 @@
 using Application.Wishlist.Features.Shared;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Wishlist.QueryServices;
 
@@ -38,6 +37,11 @@ public sealed class WishlistQueryService(DBContext context) : IWishlistQueryServ
             .ToListAsync(ct);
 
         return PaginatedResult<WishlistItemDto>.Create(items, total, page, pageSize);
+    }
+
+    public Task<PaginatedResult<WishlistItemDto>> GetPagedAsync(UserId userId, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
     }
 
     public async Task<bool> IsInWishlistAsync(

@@ -1,5 +1,7 @@
 using Application.Analytics.Contracts;
 using Application.Analytics.Features.Shared;
+using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Analytics.QueryServices;
 
@@ -83,11 +85,7 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
         DateTime? toDate,
         CancellationToken ct = default)
     {
-        var from = fromDate ?? DateTime.UtcNow.AddDays(-30);
-        var to = toDate ?? DateTime.UtcNow;
-
         var data = await context.OrderItems
-            .Where(oi => oi.OrderId != null)
             .GroupBy(oi => new { oi.ProductId, oi.ProductName, oi.Sku })
             .Select(g => new TopSellingProductDto
             {
@@ -124,9 +122,10 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
             .Join(context.Products,
                 oi => oi.ProductId,
                 p => p.Id,
-                (oi, p) => new { oi, p.CategoryId })
+                (oi, p) => new { oi, p.Brand })
+            .Where(x => x.Brand != null)
             .Join(context.Categories,
-                x => x.CategoryId,
+                x => x.Brand!.CategoryId,
                 c => c.Id,
                 (x, c) => new
                 {
@@ -175,7 +174,7 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
             .AsNoTracking()
             .ToListAsync(ct);
 
-        var grouped = groupBy.ToLower() switch
+        var grouped = groupBy.ToLowerInvariant() switch
         {
             "month" => orders.GroupBy(o => new DateTime(o.CreatedAt.Year, o.CreatedAt.Month, 1)),
             "week" => orders.GroupBy(o => o.CreatedAt.Date.AddDays(-(int)o.CreatedAt.DayOfWeek)),

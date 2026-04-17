@@ -17,8 +17,7 @@ public sealed class ElasticsearchEventHandler(
         var document = new ProductSearchDocument
         {
             ProductId = Guid.Parse(domainEvent.EntityId.ToString()),
-            Name = domainEvent.Document?.Name ?? string.Empty,
-            ChangeType = domainEvent.ChangeType.ToString()
+            Name = domainEvent.Document?.Name ?? string.Empty
         };
 
         var message = ElasticsearchOutboxMessage.Create(
@@ -75,7 +74,5 @@ public sealed class ElasticsearchEventHandler(
     }
 
     void IElasticsearchEventHandler.HandleProductChangedAsync(ProductChangedEvent @event, CancellationToken ct)
-    {
-        throw new NotImplementedException();
-    }
+        => _ = HandleProductChangedAsync(@event, ct);
 }

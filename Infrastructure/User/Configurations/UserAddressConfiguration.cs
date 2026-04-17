@@ -12,24 +12,51 @@ internal sealed class UserAddressConfiguration : IEntityTypeConfiguration<UserAd
         builder.Property(e => e.Id)
             .HasConversion(id => id.Value, value => UserAddressId.From(value));
 
-        builder.Property("UserId")
+        builder.Property(e => e.UserId)
+            .HasConversion(id => id.Value, value => UserId.From(value))
             .IsRequired();
 
-        builder.OwnsOne(e => e.Address, addr =>
+        builder.Property(e => e.Title)
+            .HasMaxLength(100);
+
+        builder.Property(e => e.ReceiverName)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.OwnsOne(e => e.PhoneNumber, pn =>
         {
-            addr.Property(a => a.Province).HasColumnName("Province").IsRequired().HasMaxLength(100);
-            addr.Property(a => a.City).HasColumnName("City").IsRequired().HasMaxLength(100);
-            addr.Property(a => a.Street).HasColumnName("Street").IsRequired().HasMaxLength(500);
-            addr.Property(a => a.PostalCode).HasColumnName("PostalCode").IsRequired().HasMaxLength(20);
-            addr.Property(a => a.Latitude).HasColumnName("Latitude");
-            addr.Property(a => a.Longitude).HasColumnName("Longitude");
+            pn.Property(p => p.Value)
+                .HasColumnName("ReceiverPhoneNumber")
+                .IsRequired()
+                .HasMaxLength(20);
         });
 
-        builder.Property(e => e.Title).HasMaxLength(100);
-        builder.Property(e => e.ReceiverName).IsRequired().HasMaxLength(100);
-        builder.Property(e => e.ReceiverPhoneNumber).IsRequired().HasMaxLength(20);
+        builder.Property(e => e.Province)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(e => e.City)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(e => e.Address)
+            .IsRequired()
+            .HasMaxLength(500);
+
+        builder.Property(e => e.PostalCode)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        builder.Property(e => e.Latitude)
+            .HasColumnType("decimal(9,6)");
+
+        builder.Property(e => e.Longitude)
+            .HasColumnType("decimal(9,6)");
+
         builder.Property(e => e.IsDefault).IsRequired();
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.UpdatedAt);
+
+        builder.HasIndex(e => e.UserId);
     }
 }

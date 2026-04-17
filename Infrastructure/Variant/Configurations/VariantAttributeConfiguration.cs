@@ -5,9 +5,9 @@ using Domain.Variant.ValueObjects;
 namespace Infrastructure.Variant.Configurations;
 
 internal sealed class VariantAttributeConfiguration
-    : IEntityTypeConfiguration<ProductVariantAttribute>
+    : IEntityTypeConfiguration<VariantAttribute>
 {
-    public void Configure(EntityTypeBuilder<ProductVariantAttribute> builder)
+    public void Configure(EntityTypeBuilder<VariantAttribute> builder)
     {
         builder.HasKey(e => e.Id);
 
@@ -17,17 +17,15 @@ internal sealed class VariantAttributeConfiguration
             .HasConversion(id => id.Value, value => VariantId.From(value))
             .IsRequired();
 
-        builder.Property(e => e.AttributeValueId)
+        builder.Property(e => e.ValueId)
             .HasConversion(id => id.Value, value => AttributeValueId.From(value))
             .IsRequired();
 
-        builder.Property(e => e.CreatedAt).IsRequired();
+        builder.HasIndex(["VariantId", "AttributeValueId"]).IsUnique();
 
-        builder.HasIndex(new[] { "VariantId", "AttributeValueId" }).IsUnique();
-
-        builder.HasOne(e => e.AttributeValue)
+        builder.HasOne(e => e.Value)
             .WithMany()
-            .HasForeignKey(e => e.AttributeValueId)
+            .HasForeignKey(e => e.ValueId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

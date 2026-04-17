@@ -9,7 +9,9 @@ public sealed class WalletReservation : Entity<WalletReservationId>
     {
     }
 
+    public Wallet.Aggregates.Wallet Wallet { get; private set; } = default!;
     public WalletId WalletId { get; private set; } = default!;
+
     public Money Amount { get; private set; } = default!;
     public string Purpose { get; private set; } = default!;
     public WalletReservationStatus Status { get; private set; }

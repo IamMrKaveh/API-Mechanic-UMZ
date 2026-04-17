@@ -1,78 +1,55 @@
 ﻿using Domain.Common.Abstractions;
+using Infrastructure.Persistence.Context;
 using Infrastructure.Persistence.Outbox;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using System.Text.Json;
 
 namespace Infrastructure.Persistence.Interceptors;
 
 public sealed class DomainEventInterceptor : SaveChangesInterceptor
 {
-    public override async ValueTask<int> SavedChangesAsync(
-        SaveChangesCompletedEventData eventData,
-        int result,
-        CancellationToken ct = default)
+    public override InterceptionResult<int> SavingChanges(
+        DbContextEventData eventData,
+        InterceptionResult<int> result)
     {
-        if (eventData.Context is not null)
-            await DispatchDomainEventsToOutboxAsync(eventData.Context, ct);
-
-        return await base.SavedChangesAsync(eventData, result, ct);
+        DispatchDomainEvents(eventData.Context).GetAwaiter().GetResult();
+        return base.SavingChanges(eventData, result);
     }
 
-    private static async Task DispatchDomainEventsToOutboxAsync(DbContext context, CancellationToken ct)
+    public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
     {
+        await DispatchDomainEvents(eventData.Context);
+        return await base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+
+    private static async Task DispatchDomainEvents(DbContext? context)
+    {
+        if (context is null) return;
+
         var aggregates = context.ChangeTracker
-            .Entries()
-            .Where(e => e.Entity is not null)
+            .Entries<IHasDomainEvents>()
+            .Where(e => e.Entity.DomainEvents.Any())
             .Select(e => e.Entity)
-            .OfType<AggregateRoot<object>>()
             .ToList();
 
-        var allAggregateRoots = context.ChangeTracker
-            .Entries()
-            .Where(e => e.Entity is not null)
-            .Select(e => e.Entity)
-            .Where(e =>
-            {
-                var type = e.GetType();
-                while (type != null)
-                {
-                    if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(AggregateRoot<>))
-                        return true;
-                    type = type.BaseType;
-                }
-                return false;
-            })
+        var domainEvents = aggregates
+            .SelectMany(a => a.DomainEvents)
             .ToList();
 
-        var domainEvents = new List<IDomainEvent>();
+        foreach (var aggregate in aggregates)
+            aggregate.ClearDomainEvents();
 
-        foreach (var entity in allAggregateRoots)
+        var outboxMessages = domainEvents.Select(domainEvent =>
         {
-            var prop = entity.GetType().GetProperty(nameof(AggregateRoot<object>.DomainEvents));
-            if (prop?.GetValue(entity) is IEnumerable<IDomainEvent> events)
-                domainEvents.AddRange(events);
-        }
+            var type = domainEvent.GetType().AssemblyQualifiedName!;
+            var payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType());
 
-        if (!domainEvents.Any()) return;
+            return OutboxMessage.Create(type, payload);
+        }).ToList();
 
-        var outboxMessages = domainEvents
-            .Select(e => new OutboxMessage
-            {
-                Id = OutboxMessageId.NewId(),
-                Type = e.GetType().FullName ?? e.GetType().Name,
-                Payload = JsonSerializer.Serialize(e, e.GetType()),
-                CreatedAt = DateTime.UtcNow
-            })
-            .ToList();
-
-        foreach (var entity in allAggregateRoots)
-        {
-            var method = entity.GetType().GetMethod(nameof(AggregateRoot<object>.ClearDomainEvents));
-            method?.Invoke(entity, null);
-        }
-
-        await context.Set<OutboxMessage>().AddRangeAsync(outboxMessages, ct);
-        await context.SaveChangesAsync(ct);
+        if (context is DBContext dbContext)
+            await dbContext.OutboxMessages.AddRangeAsync(outboxMessages);
     }
 }

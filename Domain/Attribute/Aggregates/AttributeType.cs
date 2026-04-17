@@ -9,6 +9,7 @@ namespace Domain.Attribute.Aggregates;
 public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, IActivatable, ISoftDeletable
 {
     private readonly List<AttributeValue> _values = [];
+    public IReadOnlyCollection<AttributeValue> Values => _values.AsReadOnly();
 
     public string Name { get; private set; } = null!;
     public string DisplayName { get; private set; } = null!;
@@ -17,12 +18,8 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    public IReadOnlyCollection<AttributeValue> Values => _values.AsReadOnly();
-
     public bool IsDeleted { get; private set; }
-
     public DateTime? DeletedAt { get; private set; }
-
     public Guid? DeletedBy { get; private set; }
 
     private AttributeType()

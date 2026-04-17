@@ -10,10 +10,14 @@ public sealed class DiscountUsage : AggregateRoot<DiscountUsageId>
     private DiscountUsage()
     { }
 
+    public DiscountCode DiscountCode { get; private set; } = default!;
     public DiscountCodeId DiscountCodeId { get; private set; } = default!;
-    public string Code { get; private set; } = default!;
+    public User.Aggregates.User User { get; private set; } = default!;
     public UserId UserId { get; private set; } = default!;
+    public Order.Aggregates.Order Order { get; private set; } = default!;
     public OrderId OrderId { get; private set; } = default!;
+
+    public string Code { get; private set; } = default!;
     public decimal DiscountedAmount { get; private set; }
     public int UsageCountAtTime { get; private set; }
     public DateTime UsedAt { get; private set; }

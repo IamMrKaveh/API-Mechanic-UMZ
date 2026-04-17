@@ -6,7 +6,7 @@ using Domain.Payment.Interfaces;
 
 namespace Infrastructure.Payment.Services;
 
-public sealed class IdempotentPaymentService(
+public sealed class PaymentService(
     IPaymentTransactionRepository paymentRepository,
     IPaymentGatewayFactory gatewayFactory,
     IUnitOfWork unitOfWork,

@@ -1,5 +1,6 @@
 using Application.Cache.Contracts;
 using Domain.Product.Events;
+using Domain.Product.ValueObjects;
 
 namespace Infrastructure.Cache.EventHandlers;
 
@@ -9,13 +10,15 @@ public sealed class ProductCacheInvalidationHandler(ICacheInvalidationService in
     INotificationHandler<ProductActivatedEvent>,
     INotificationHandler<ProductDeactivatedEvent>
 {
-    private readonly ICacheInvalidationService _invalidation = invalidation;
+    public Task Handle(ProductUpdatedEvent n, CancellationToken ct)
+        => invalidation.InvalidateProductCacheAsync(n.ProductId, ct);
 
-    public Task Handle(ProductUpdatedEvent n, CancellationToken ct) => _invalidation.InvalidateProductAsync(n.ProductId, ct);
+    public Task Handle(PriceChangedEvent n, CancellationToken ct)
+        => invalidation.InvalidateProductCacheAsync(n.ProductId, ct);
 
-    public Task Handle(PriceChangedEvent n, CancellationToken ct) => _invalidation.InvalidateProductAsync(n.ProductId, ct);
+    public Task Handle(ProductActivatedEvent n, CancellationToken ct)
+        => invalidation.InvalidateProductCacheAsync(n.ProductId, ct);
 
-    public Task Handle(ProductActivatedEvent n, CancellationToken ct) => _invalidation.InvalidateProductAsync(n.ProductId, ct);
-
-    public Task Handle(ProductDeactivatedEvent n, CancellationToken ct) => _invalidation.InvalidateProductAsync(n.ProductId, ct);
+    public Task Handle(ProductDeactivatedEvent n, CancellationToken ct)
+        => invalidation.InvalidateProductCacheAsync(n.ProductId, ct);
 }

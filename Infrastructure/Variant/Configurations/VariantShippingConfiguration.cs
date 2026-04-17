@@ -5,9 +5,9 @@ using Domain.Shipping.ValueObjects;
 namespace Infrastructure.Variant.Configurations;
 
 internal sealed class VariantShippingConfiguration
-    : IEntityTypeConfiguration<ProductVariantShipping>
+    : IEntityTypeConfiguration<VariantShipping>
 {
-    public void Configure(EntityTypeBuilder<ProductVariantShipping> builder)
+    public void Configure(EntityTypeBuilder<VariantShipping> builder)
     {
         builder.HasKey(e => new { e.ProductVariantId, e.ShippingId });
 

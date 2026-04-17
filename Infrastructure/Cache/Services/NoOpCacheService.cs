@@ -1,53 +1,39 @@
-﻿namespace Infrastructure.Cache.Services;
+﻿using Application.Cache.Contracts;
+using Application.Audit.Contracts;
 
-/// <summary>
-/// سرویس Cache No-Op که زمانی استفاده می‌شود که Redis/Cache غیرفعال است
-/// </summary>
-public class NoOpCacheService(IAuditService auditService) : ICacheService
+namespace Infrastructure.Cache.Services;
+
+public sealed class NoOpCacheService(IAuditService auditService) : ICacheService
 {
-    public async Task<T?> GetAsync<T>(string key) where T : class
+    public async Task<T?> GetAsync<T>(string key, CancellationToken ct = default)
     {
-        await auditService.LogDebugAsync($"Cache is disabled. Cache miss for key: {key}");
-        return await Task.FromResult<T?>(null);
+        await auditService.LogDebugAsync($"[NoOpCache] GetAsync skipped for key: {key}", ct);
+        return default;
     }
 
-    public async Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiry = null) where T : class
+    public async Task SetAsync<T>(string key, T value, TimeSpan? expiry = null, CancellationToken ct = default)
     {
-        await auditService.LogDebugAsync($"Cache is disabled. Skipping set for key: {key}");
-        return await Task.FromResult(false);
+        await auditService.LogDebugAsync($"[NoOpCache] SetAsync skipped for key: {key}", ct);
     }
 
-    public async Task ClearAsync(string key)
+    public async Task RemoveAsync(string key, CancellationToken ct = default)
     {
-        await auditService.LogDebugAsync("Cache is disabled. Skipping clear for key: {Key}");
-        await Task.CompletedTask;
+        await auditService.LogDebugAsync($"[NoOpCache] RemoveAsync skipped for key: {key}", ct);
     }
 
-    public async Task ClearByPrefixAsync(string prefix)
+    public async Task RemoveByPrefixAsync(string prefix, CancellationToken ct = default)
     {
-        await auditService.LogDebugAsync("Cache is disabled. Skipping clear by prefix: {Prefix}");
-        await Task.CompletedTask;
+        await auditService.LogDebugAsync($"[NoOpCache] RemoveByPrefixAsync skipped for prefix: {prefix}", ct);
     }
 
-    public async Task<bool> AcquireLockAsync(string key, TimeSpan expiry)
+    public async Task<bool> ExistsAsync(string key, CancellationToken ct = default)
     {
-        await auditService.LogDebugAsync("Cache locks are disabled. Acquiring no-op lock for key: {Key}");
-        return await Task.FromResult(true);
+        await auditService.LogDebugAsync($"[NoOpCache] ExistsAsync skipped for key: {key}", ct);
+        return false;
     }
 
-    public async Task ReleaseLockAsync(string key)
+    public async Task ClearAsync(string key, CancellationToken ct)
     {
-        await auditService.LogDebugAsync("Cache locks are disabled. Releasing no-op lock for key: {Key}");
-        await Task.CompletedTask;
-    }
-
-    public async Task<bool> AcquireLockWithRetryAsync(
-        string key,
-        TimeSpan expiry,
-        int retryCount = 3,
-        int retryDelayMs = 500)
-    {
-        await auditService.LogDebugAsync("Cache locks are disabled. Acquiring no-op lock with retry for key: {Key}");
-        return await Task.FromResult(true);
+        await auditService.LogDebugAsync($"[NoOpCache] ClearAsync skipped for key: {key}", ct);
     }
 }

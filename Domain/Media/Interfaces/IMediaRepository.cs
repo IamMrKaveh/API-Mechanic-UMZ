@@ -18,12 +18,12 @@ public interface IMediaRepository
 
     Task<IReadOnlyList<Aggregates.Media>> GetByEntityAsync(
         string entityType,
-        int entityId,
+        Guid entityId,
         CancellationToken ct = default);
 
     Task<Aggregates.Media?> GetPrimaryByEntityAsync(
         string entityType,
-        int entityId,
+        Guid entityId,
         CancellationToken ct = default);
 
     Task<IReadOnlySet<string>> GetAllFilePathsAsync(CancellationToken ct = default);

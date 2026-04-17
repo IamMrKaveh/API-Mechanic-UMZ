@@ -6,6 +6,8 @@ using Application.Cart.Contracts;
 using Application.Category.Contracts;
 using Application.Discount.Contracts;
 using Application.Location.Contracts;
+using Application.Media.Contracts;
+using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Payment.Contracts;
 using Application.Product.Contracts;
 using Application.Review.Contracts;
@@ -71,8 +73,10 @@ using Infrastructure.Notification.Repositories;
 using Infrastructure.Notification.Services;
 using Infrastructure.Order.QueryServices;
 using Infrastructure.Order.Repositories;
+using Infrastructure.Order.Services;
 using Infrastructure.Payment.QueryServices;
 using Infrastructure.Payment.Repositories;
+using Infrastructure.Payment.Services;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
@@ -80,7 +84,6 @@ using Infrastructure.Product.QueryServices;
 using Infrastructure.Product.Repositories;
 using Infrastructure.Review.QueryServices;
 using Infrastructure.Review.Repositories;
-using Infrastructure.Search;
 using Infrastructure.Search.Options;
 using Infrastructure.Search.Services;
 using Infrastructure.Security.Options;
@@ -102,6 +105,7 @@ using Infrastructure.Wallet.Services;
 using Infrastructure.Wishlist.QueryServices;
 using Infrastructure.Wishlist.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace Infrastructure.DependencyInjection;
@@ -203,199 +207,165 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IAttributeRepository, AttributeRepository>();
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<IMediaRepository, MediaRepository>();
+        services.AddScoped<ISecurityRepository, SecurityRepository>();
+        services.AddScoped<IWarehouseRepository, WarehouseRepository>();
     }
 
     private static void AddQueryServices(this IServiceCollection services)
     {
-        services.AddScoped<IUserQueryService, UserQueryService>();
         services.AddScoped<IProductQueryService, ProductQueryService>();
+        services.AddScoped<IVariantQueryService, VariantQueryService>();
         services.AddScoped<ICategoryQueryService, CategoryQueryService>();
         services.AddScoped<IBrandQueryService, BrandQueryService>();
-        services.AddScoped<IInventoryQueryService, InventoryQueryService>();
-        services.AddScoped<IStockLedgerQueryService, StockLedgerQueryService>();
         services.AddScoped<IOrderQueryService, OrderQueryService>();
-        services.AddScoped<IOrderStatusQueryService, OrderStatusQueryService>();
         services.AddScoped<ICartQueryService, CartQueryService>();
         services.AddScoped<IPaymentQueryService, PaymentQueryService>();
-        services.AddScoped<IShippingQueryService, ShippingQueryService>();
-        services.AddScoped<ITicketQueryService, TicketQueryService>();
-        services.AddScoped<IWishlistQueryService, WishlistQueryService>();
-        services.AddScoped<IAuditQueryService, AuditQueryService>();
-        services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
-        services.AddScoped<IVariantQueryService, VariantQueryService>();
+        services.AddScoped<IWalletQueryService, WalletQueryService>();
         services.AddScoped<IDiscountQueryService, DiscountQueryService>();
         services.AddScoped<IReviewQueryService, ReviewQueryService>();
         services.AddScoped<INotificationQueryService, NotificationQueryService>();
-        services.AddScoped<IWalletQueryService, WalletQueryService>();
+        services.AddScoped<IWishlistQueryService, WishlistQueryService>();
+        services.AddScoped<IUserQueryService, UserQueryService>();
+        services.AddScoped<IInventoryQueryService, InventoryQueryService>();
+        services.AddScoped<IShippingQueryService, ShippingQueryService>();
+        services.AddScoped<ITicketQueryService, TicketQueryService>();
         services.AddScoped<IAttributeQueryService, AttributeQueryService>();
+        services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IMediaQueryService, MediaQueryService>();
+        services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
     }
 
     private static void AddDomainServices(this IServiceCollection services)
     {
         services.AddScoped<IAuditService, AuditService>();
-        services.AddScoped<IAuditMaskingService, AuditMaskingService>();
         services.AddScoped<IDiscountService, DiscountService>();
         services.AddScoped<IInventoryService, InventoryService>();
-        services.AddScoped<IStockLedgerService, StockLedgerService>();
-        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IWalletService, WalletService>();
-        services.AddScoped<IMediaService, MediaService>();
+        services.AddScoped<IPaymentService, PaymentService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<ICheckoutOrchestrationService, CheckoutOrchestrationService>();
+        services.AddScoped<ICheckoutAddressResolverService, CheckoutAddressResolverService>();
+        services.AddScoped<ICheckoutCartItemBuilderService, CheckoutCartItemBuilderService>();
+        services.AddScoped<ICheckoutDiscountApplicatorService, CheckoutDiscountApplicatorService>();
+        services.AddScoped<ICheckoutOrderCreationService, CheckoutOrderCreationService>();
+        services.AddScoped<ICheckoutPaymentProcessorService, CheckoutPaymentProcessorService>();
+        services.AddScoped<ICheckoutPriceValidatorService, CheckoutPriceValidatorService>();
+        services.AddScoped<ICheckoutShippingValidatorService, CheckoutShippingValidatorService>();
+        services.AddScoped<ICheckoutStockValidatorService, CheckoutStockValidatorService>();
         services.AddScoped<ILocationService, LocationService>();
-        services.AddHttpClient<LocationService>();
+        services.AddScoped<ISecurityService, SecurityService>();
     }
 
     private static void AddAuthServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
-        services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
-        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
-
-        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.Configure<OtpOptions>(configuration.GetSection(OtpOptions.SectionName));
+        services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IOtpService, OtpService>();
-        services.AddScoped<IPasswordHasher, PasswordHasher>();
-        services.AddScoped<IRateLimitService, RateLimitService>();
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<ISessionService, SessionService>();
     }
 
     private static void AddStorageServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<LiaraStorageOptions>(configuration.GetSection(LiaraStorageOptions.SectionName));
-        services.Configure<S3Options>(configuration.GetSection(S3Options.SectionName));
+        services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));
 
-        var storageProvider = configuration["Storage:Provider"] ?? "Liara";
-
-        if (storageProvider.Equals("S3", StringComparison.OrdinalIgnoreCase))
-        {
-            services.AddSingleton<IAmazonS3>(_ =>
-            {
-                var options = configuration.GetSection(S3Options.SectionName).Get<S3Options>()!;
-                var awsOptions = new Amazon.Runtime.BasicAWSCredentials(options.AccessKey, options.SecretKey);
-                var config = new Amazon.S3.AmazonS3Config { RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(options.Region) };
-                return new Amazon.S3.AmazonS3Client(awsOptions, config);
-            });
-            services.AddScoped<IStorageService, S3FileStorageService>();
-        }
-        else
-        {
-            services.AddScoped<IStorageService, LiaraStorageService>();
-        }
+        services.AddScoped<IStorageService, S3FileStorageService>();
     }
 
     private static void AddCommunicationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<KavenegarOptions>(configuration.GetSection(KavenegarOptions.SectionName));
-        services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
-
+        services.Configure<SmsOptions>(configuration.GetSection(SmsOptions.SectionName));
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
         services.AddScoped<ISmsService, SmsService>();
         services.AddScoped<IEmailService, EmailService>();
     }
 
     private static void AddSearchServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<ElasticsearchOptions>(configuration.GetSection(ElasticsearchOptions.SectionName));
+        var elasticsearchSection = configuration.GetSection(ElasticsearchOptions.SectionName);
+        services.Configure<ElasticsearchOptions>(elasticsearchSection);
 
-        var elasticOptions = configuration.GetSection(ElasticsearchOptions.SectionName).Get<ElasticsearchOptions>()
-            ?? new ElasticsearchOptions();
+        var options = elasticsearchSection.Get<ElasticsearchOptions>();
 
-        if (elasticOptions.IsEnabled)
+        if (options is not null && options.IsEnabled)
         {
             services.AddSingleton<ElasticsearchClient>(_ =>
             {
-                var settings = new ElasticsearchClientSettings(new Uri(elasticOptions.Uri));
-                if (!string.IsNullOrEmpty(elasticOptions.Username))
-                    settings = settings.Authentication(new BasicAuthentication(elasticOptions.Username, elasticOptions.Password ?? string.Empty));
+                var settings = new ElasticsearchClientSettings(new Uri(options.Url))
+                    .DefaultIndex(options.DefaultIndex);
                 return new ElasticsearchClient(settings);
             });
 
-            services.AddSingleton<ElasticsearchCircuitBreaker>();
-            services.AddSingleton<ElasticsearchMetrics>();
-            services.AddScoped<ElasticSearchService>();
             services.AddScoped<ISearchService, ResilientElasticSearchService>();
-            services.AddScoped<IElasticBulkService, ElasticBulkService>();
-            services.AddScoped<IElasticIndexManager, ElasticIndexManager>();
-            services.AddScoped<ISearchDatabaseSyncService, ElasticsearchDatabaseSyncService>();
-            services.AddScoped<ISearchStatsService, ElasticsearchStatsService>();
-            services.AddScoped<ElasticsearchDatabaseSyncService>();
         }
         else
         {
-            services.AddSingleton<ElasticsearchClient>(_ =>
-            {
-                var settings = new ElasticsearchClientSettings(new Uri("http://localhost:9200"));
-                return new ElasticsearchClient(settings);
-            });
-
-            services.AddScoped<ISearchService, NoOpSearchService>();
-            services.AddScoped<IElasticBulkService, NoOpElasticBulkService>();
-            services.AddScoped<IElasticIndexManager, NoOpElasticIndexManager>();
-            services.AddScoped<ISearchDatabaseSyncService, NoOpSearchDatabaseSyncService>();
-            services.AddScoped<ISearchStatsService, NoOpSearchStatsService>();
+            services.AddScoped<ISearchService, NullSearchService>();
         }
     }
 
     private static void AddBackgroundServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHostedService<OutboxProcessorBackgroundService>();
-        services.AddHostedService<ExpiredSessionCleanupJob>();
-        services.AddHostedService<ExpiredOrderCleanupJob>();
-        services.AddHostedService<WalletReservationExpiryJob>();
-        services.AddHostedService<WalletReconciliationJob>();
-        services.AddHostedService<InventoryReservationExpiryJob>();
-        services.AddHostedService<OrphanedFileCleanupJob>();
-        services.AddHostedService<PaymentCleanupJob>();
+        services.AddHostedService<OutboxProcessorJob>();
 
-        var elasticOptions = configuration.GetSection(ElasticsearchOptions.SectionName).Get<ElasticsearchOptions>()
-            ?? new ElasticsearchOptions();
+        var elasticsearchSection = configuration.GetSection(ElasticsearchOptions.SectionName);
+        var options = elasticsearchSection.Get<ElasticsearchOptions>();
 
-        if (elasticOptions.IsEnabled && elasticOptions.EnableBackgroundSync)
+        if (options is not null && options.IsEnabled && options.EnableBackgroundSync)
         {
             services.AddHostedService<ElasticsearchSyncJob>();
-            services.AddHostedService<ElasticsearchOutboxJob>();
         }
     }
 
     private static void AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHealthChecks()
-            .AddDbContextCheck<DBContext>("database")
+            .AddNpgSql(
+                configuration.GetConnectionString("DefaultConnection")!,
+                name: "postgresql",
+                tags: ["db", "sql", "postgresql"])
             .AddRedis(
                 configuration.GetConnectionString("Redis") ?? "localhost:6379",
-                name: "redis");
+                name: "redis",
+                tags: ["cache", "redis"]);
     }
 
-    private static void AddDataProtectionWithRedis(this IServiceCollection services, IConfiguration configuration)
+    private static void AddDataProtectionWithRedis(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        var redisConnectionString = configuration.GetConnectionString("Redis") ?? "localhost:6379";
-
         services.AddDataProtection()
             .PersistKeysToStackExchangeRedis(
-                () => ConnectionMultiplexer.Connect(redisConnectionString).GetDatabase(),
-                "DataProtection-Keys")
-            .SetApplicationName(configuration["App:Name"] ?? "ShopApp");
+                sp => sp.GetRequiredService<IConnectionMultiplexer>(),
+                "DataProtection-Keys");
     }
 
-    private static void AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    private static void AddJwtAuthentication(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
-            ?? new JwtSettings();
+        var jwtOptions = configuration
+            .GetSection(JwtOptions.SectionName)
+            .Get<JwtOptions>();
 
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
             {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
-                    ValidateIssuer = true,
-                    ValidIssuer = jwtSettings.Issuer,
-                    ValidateAudience = true,
-                    ValidAudience = jwtSettings.Audience,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
-            });
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtOptions?.Issuer,
+                ValidAudience = jwtOptions?.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(jwtOptions?.Secret ?? string.Empty))
+            };
+        });
     }
 }

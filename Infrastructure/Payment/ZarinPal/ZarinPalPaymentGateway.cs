@@ -44,7 +44,8 @@ public sealed class ZarinPalPaymentGateway(
 
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content.ReadFromJsonAsync<ZarinPalRequestResponse>(cancellationToken: ct);
+            var result = await response.Content.ReadFromJsonAsync<ZarinPalRequestResponse>(
+                cancellationToken: ct);
 
             if (result?.Data?.Code == 100 && result.Data.Authority is not null)
             {
@@ -84,12 +85,14 @@ public sealed class ZarinPalPaymentGateway(
 
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content.ReadFromJsonAsync<ZarinPalVerifyResponse>(cancellationToken: ct);
+            var result = await response.Content.ReadFromJsonAsync<ZarinPalVerifyResponse>(
+                cancellationToken: ct);
 
             if (result?.Data?.Code is 100 or 101)
             {
                 return ServiceResult<PaymentVerificationResult>.Success(
                     new PaymentVerificationResult(
+                        TransactionId: null,
                         IsVerified: true,
                         RefId: result.Data.RefId,
                         CardPan: result.Data.CardPan,

@@ -5,16 +5,15 @@ using Domain.Variant.ValueObjects;
 
 namespace Infrastructure.Order.Services;
 
-public class CheckoutPriceValidatorService(IVariantRepository variantRepository)
+public sealed class CheckoutPriceValidatorService(IVariantRepository variantRepository)
     : ICheckoutPriceValidatorService
 {
-    public async Task<ServiceResult> ValidateAsync(List<OrderItemSnapshot> items, CancellationToken ct)
+    public async Task<ServiceResult> ValidateAsync(
+        IReadOnlyCollection<OrderItemSnapshot> items, CancellationToken ct)
     {
         foreach (var item in items)
         {
-            var variant = await variantRepository.GetByIdAsync(
-                VariantId.From(item.VariantId), ct);
-
+            var variant = await variantRepository.GetByIdAsync(item.VariantId, ct);
             if (variant is null) continue;
 
             if (Math.Abs(variant.Price.Amount - item.UnitPrice.Amount) > 1)

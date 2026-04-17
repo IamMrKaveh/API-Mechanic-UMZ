@@ -11,14 +11,15 @@ namespace Domain.Cart.Aggregates;
 
 public sealed class Cart : AggregateRoot<CartId>
 {
-    private readonly List<CartItem> _cartItems = [];
-
-    public UserId? UserId { get; private set; }
     public GuestToken? GuestToken { get; private set; }
     public bool IsCheckedOut { get; private set; }
     public DateTime CreatedAt { get; private init; }
     public DateTime? UpdatedAt { get; private set; }
 
+    public UserId? UserId { get; private set; }
+    public User.Aggregates.User? User { get; private set; }
+
+    private readonly List<CartItem> _cartItems = [];
     public IReadOnlyCollection<CartItem> CartItems => _cartItems.AsReadOnly();
 
     private Cart()

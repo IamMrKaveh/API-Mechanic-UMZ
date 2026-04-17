@@ -1,5 +1,9 @@
+using Application.Audit.Contracts;
+using Application.Search.Contracts;
 using Application.Search.Features.Queries.GetSearchIndexStats;
 using Application.Search.Features.Shared;
+using Elastic.Clients.Elasticsearch;
+using Elastic.Clients.Elasticsearch.QueryDsl;
 using Infrastructure.Search.Options;
 
 namespace Infrastructure.Search.Services;
@@ -51,20 +55,54 @@ public sealed class ElasticsearchService(
         SearchProductsParams searchParams, CancellationToken ct = default)
     {
         var response = await client.SearchAsync<ProductSearchResultItemDto>(s => s
-            .Index("products_v1")
+            .Indices("products_v1")
             .From((searchParams.Page - 1) * searchParams.PageSize)
             .Size(searchParams.PageSize)
-            .Query(q => q.Bool(b =>
+            .Query(q =>
             {
+                var queries = new List<Query>();
+
                 if (!string.IsNullOrWhiteSpace(searchParams.Q))
-                    b.Must(m => m.MultiMatch(mm => mm
+                {
+                    queries.Add(Query.MultiMatch(mm => mm
+                        .Fields(new[] { "name", "description", "categoryName", "brandName" })
                         .Query(searchParams.Q)
-                        .Fields(["name^3", "description"])));
-                return b;
-            })), ct);
+                        .Fuzziness(new Fuzziness("AUTO"))
+                    ));
+                }
+
+                if (searchParams.CategoryId.HasValue)
+                    queries.Add(Query.Term(t => t.Field("categoryId").Value(searchParams.CategoryId.Value)));
+
+                if (searchParams.BrandId.HasValue)
+                    queries.Add(Query.Term(t => t.Field("brandId").Value(searchParams.BrandId.Value)));
+
+                if (searchParams.InStockOnly)
+                    queries.Add(Query.Term(t => t.Field("inStock").Value(true)));
+
+                if (searchParams.MinPrice.HasValue || searchParams.MaxPrice.HasValue)
+                {
+                    queries.Add(Query.Range(r => r
+                        .NumberRange(nr =>
+                        {
+                            nr.Field("price");
+                            if (searchParams.MinPrice.HasValue) nr.Gte((double)searchParams.MinPrice.Value);
+                            if (searchParams.MaxPrice.HasValue) nr.Lte((double)searchParams.MaxPrice.Value);
+                        })
+                    ));
+                }
+
+                return queries.Count == 0
+                    ? Query.MatchAll(new MatchAllQuery())
+                    : Query.Bool(b => b.Must(queries.ToArray()));
+            })
+        , ct);
 
         if (!response.IsValidResponse)
+        {
+            await auditService.LogErrorAsync($"SearchProductsAsync failed: {response.DebugInformation}", ct);
             return new SearchResultDto<ProductSearchResultItemDto>();
+        }
 
         return new SearchResultDto<ProductSearchResultItemDto>
         {
@@ -75,53 +113,90 @@ public sealed class ElasticsearchService(
         };
     }
 
+    public async Task<GlobalSearchResultDto> SearchGlobalAsync(string query, CancellationToken ct = default)
+    {
+        var products = await SearchProductsAsync(new SearchProductsParams { Q = query, Page = 1, PageSize = 5 }, ct);
+
+        return new GlobalSearchResultDto
+        {
+            Query = query,
+            Products = products.Items
+        };
+    }
+
+    public async Task<List<string>> GetSuggestionsAsync(
+        string query, int maxSuggestions = 10, CancellationToken ct = default)
+    {
+        var response = await client.SearchAsync<ProductSearchDocument>(s => s
+            .Indices("products_v1")
+            .Size(maxSuggestions)
+            .Query(q => q
+                .MatchPhrasePrefix(mpp => mpp
+                    .Field("name")
+                    .Query(query)
+                )
+            )
+        , ct);
+
+        if (!response.IsValidResponse)
+            return [];
+
+        return response.Documents
+            .Select(d => d.Name)
+            .Where(n => !string.IsNullOrEmpty(n))
+            .Distinct()
+            .Take(maxSuggestions)
+            .ToList();
+    }
+
+    public async Task<SearchResultDto<ProductSearchResultItemDto>> SearchWithFuzzyAsync(
+        string searchQuery, int page = 1, int pageSize = 20, CancellationToken ct = default)
+    {
+        var response = await client.SearchAsync<ProductSearchResultItemDto>(s => s
+            .Indices("products_v1")
+            .From((page - 1) * pageSize)
+            .Size(pageSize)
+            .Query(q => q
+                .MultiMatch(mm => mm
+                    .Fields(new[] { "name", "description", "brandName" })
+                    .Query(searchQuery)
+                    .Fuzziness(new Fuzziness("AUTO"))
+                )
+            )
+        , ct);
+
+        if (!response.IsValidResponse)
+        {
+            await auditService.LogErrorAsync($"SearchWithFuzzyAsync failed: {response.DebugInformation}", ct);
+            return new SearchResultDto<ProductSearchResultItemDto>();
+        }
+
+        return new SearchResultDto<ProductSearchResultItemDto>
+        {
+            Items = response.Documents.ToList(),
+            Total = response.Total,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
     public async Task<SearchIndexStatsDto?> GetIndexStatsAsync(CancellationToken ct = default)
     {
         try
         {
-            var statsResponse = await client.Indices.StatsAsync(ct: ct);
-            if (!statsResponse.IsValidResponse) return null;
+            var response = await client.Indices.StatsAsync(r => r
+                .Indices(new[] { "products_v1", "categories_v1", "brands_v1" })
+            , ct);
 
-            return new SearchIndexStatsDto(
-                ProductsCount: 0,
-                CategoriesCount: 0,
-                BrandsCount: 0,
-                TotalDocuments: statsResponse.All.Total.Docs?.Count ?? 0);
+            if (!response.IsValidResponse)
+                return null;
+
+            var total = response.Indices?.Values.Sum(i => i.Total?.Docs?.Count ?? 0) ?? 0;
+            return new SearchIndexStatsDto((int)total, 0, 0, 0);
         }
         catch
         {
             return null;
         }
-    }
-
-    public async Task<IEnumerable<string>> GetSuggestionsAsync(
-        string query, int size = 5, CancellationToken ct = default)
-    {
-        var response = await client.SearchAsync<ProductSearchDocument>(s => s
-            .Index("products_v1")
-            .Size(size)
-            .Query(q => q.Prefix(p => p
-                .Field(f => f.Name)
-                .Value(query))), ct);
-
-        if (!response.IsValidResponse)
-            return [];
-
-        return response.Documents.Select(d => d.Name).Take(size);
-    }
-
-    public Task<GlobalSearchResultDto> SearchGlobalAsync(string query, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    Task<List<string>> ISearchService.GetSuggestionsAsync(string query, int maxSuggestions, CancellationToken ct)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<SearchResultDto<ProductSearchResultItemDto>> SearchWithFuzzyAsync(string searchQuery, int page = 1, int pageSize = 20, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
     }
 }
