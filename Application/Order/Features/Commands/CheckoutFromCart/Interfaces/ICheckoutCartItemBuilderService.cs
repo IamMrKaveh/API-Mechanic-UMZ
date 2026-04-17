@@ -8,5 +8,8 @@ public sealed record CheckoutCartItemsResult(
 
 public interface ICheckoutCartItemBuilderService
 {
-    Task<ServiceResult<CheckoutCartItemsResult>> BuildAsync(Guid cartId, Guid userId, CancellationToken ct);
+    Task<ServiceResult<CheckoutCartItemsResult>> BuildAsync(
+        Guid cartId,
+        Guid userId,
+        CancellationToken ct);
 }

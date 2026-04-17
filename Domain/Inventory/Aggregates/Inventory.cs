@@ -9,12 +9,9 @@ namespace Domain.Inventory.Aggregates;
 
 public sealed class Inventory : AggregateRoot<InventoryId>
 {
-    private readonly List<StockLedgerEntry> _ledgerEntries = new();
-
     private Inventory()
     { }
 
-    public VariantId VariantId { get; private set; } = default!;
     public StockQuantity StockQuantity { get; private set; }
     public bool IsUnlimited { get; private set; }
     public StockQuantity ReservedQuantity { get; private set; }
@@ -22,6 +19,9 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
+    public VariantId VariantId { get; private set; } = default!;
+    public Variant.Aggregates.ProductVariant Variant { get; private set; } = default!;
+    private readonly List<StockLedgerEntry> _ledgerEntries = [];
     public IReadOnlyCollection<StockLedgerEntry> LedgerEntries => _ledgerEntries.AsReadOnly();
 
     public int AvailableQuantity => IsUnlimited ? int.MaxValue : StockQuantity - ReservedQuantity;

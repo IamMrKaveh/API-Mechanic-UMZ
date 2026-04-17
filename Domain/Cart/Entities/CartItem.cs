@@ -7,15 +7,19 @@ namespace Domain.Cart.Entities;
 
 public sealed class CartItem : Entity<CartItemId>
 {
-    public CartId CartId { get; private init; } = default!;
-    public VariantId VariantId { get; private init; } = default!;
-    public ProductId ProductId { get; private init; } = default!;
     public ProductName ProductName { get; private init; } = null!;
     public Sku Sku { get; private init; } = null!;
     public Money SellingPrice { get; private set; } = null!;
     public Money OriginalPrice { get; private set; } = null!;
     public int Quantity { get; private set; }
     public DateTime AddedAt { get; private init; }
+
+    public CartId CartId { get; private init; } = default!;
+    public Cart.Aggregates.Cart Cart { get; private init; } = default!;
+    public VariantId VariantId { get; private init; } = default!;
+    public Variant.Aggregates.ProductVariant Variant { get; private init; } = default!;
+    public ProductId ProductId { get; private init; } = default!;
+    public Product.Aggregates.Product Product { get; private init; } = default!;
 
     private CartItem()
     { }

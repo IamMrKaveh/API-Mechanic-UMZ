@@ -10,15 +10,15 @@ namespace Domain.Variant.Aggregates;
 
 public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
 {
-    private readonly List<ProductVariantAttribute> _attributes = [];
-    private readonly List<ProductVariantShipping> _shippings = [];
-
     private ProductVariant()
     { }
 
+    public Product.Aggregates.Product Product { get; private set; } = default!;
     public ProductId ProductId { get; private set; } = default!;
+
     public Sku Sku { get; private set; } = default!;
     public Money Price { get; private set; } = default!;
+    public Money SellingPrice { get; private set; } = default!;
     public Money? CompareAtPrice { get; private set; }
     public bool IsActive { get; private set; }
     public DateTime CreatedAt { get; private set; }
@@ -28,8 +28,10 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
     public DateTime? DeletedAt { get; private set; }
     public Guid? DeletedBy { get; private set; }
 
-    public IReadOnlyList<ProductVariantAttribute> Attributes => _attributes.AsReadOnly();
-    public IReadOnlyList<ProductVariantShipping> Shippings => _shippings.AsReadOnly();
+    public IReadOnlyList<VariantAttribute> Attributes => _attributes.AsReadOnly();
+    private readonly List<VariantAttribute> _attributes = [];
+    public IReadOnlyList<VariantShipping> Shippings => _shippings.AsReadOnly();
+    private readonly List<VariantShipping> _shippings = [];
 
     public static ProductVariant Create(
         VariantId id,
@@ -96,7 +98,7 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
         _attributes.Clear();
         foreach (var assignment in assignments)
         {
-            _attributes.Add(ProductVariantAttribute.Create(
+            _attributes.Add(VariantAttribute.Create(
                 Id, assignment.AttributeId, assignment.ValueId, assignment.DisplayValue));
         }
         UpdatedAt = DateTime.UtcNow;
@@ -109,7 +111,7 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
         _shippings.Clear();
         foreach (var assignment in assignments)
         {
-            _shippings.Add(ProductVariantShipping.Create(
+            _shippings.Add(VariantShipping.Create(
                 Id, assignment.ShippingId,
                 assignment.Weight, assignment.Width,
                 assignment.Height, assignment.Length));

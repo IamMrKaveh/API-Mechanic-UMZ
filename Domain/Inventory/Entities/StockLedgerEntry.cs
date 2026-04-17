@@ -9,12 +9,13 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
 {
     public Variant.Aggregates.ProductVariant ProductVariant { get; private set; }
     public VariantId VariantId { get; private set; } = default!;
-    public WarehouseId? WarehouseId { get; private set; }
     public Aggregates.Warehouse Warehouse { get; private set; }
+    public WarehouseId? WarehouseId { get; private set; }
     public Order.Entities.OrderItem? OrderItem { get; private set; }
     public OrderItemId? OrderItemId { get; private set; }
     public User.Aggregates.User? User { get; private set; }
     public UserId? UserId { get; private set; }
+
     public StockEventType EventType { get; private set; }
     public string EventTypeName => EventType.ToString();
     public int QuantityDelta { get; private set; }

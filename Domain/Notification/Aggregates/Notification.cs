@@ -6,10 +6,12 @@ namespace Domain.Notification.Aggregates;
 
 public sealed class Notification : AggregateRoot<NotificationId>, IAuditable
 {
-    public UserId UserId { get; private set; }
     public bool IsRead { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
+
+    public User.Aggregates.User User { get; private set; }
+    public UserId UserId { get; private set; }
 
     private Notification()
     { }

@@ -8,7 +8,7 @@ public record MediaDto
     public string FileType { get; init; } = string.Empty;
     public long FileSize { get; init; }
     public string EntityType { get; init; } = string.Empty;
-    public int EntityId { get; init; }
+    public Guid EntityId { get; init; }
     public int SortOrder { get; init; }
     public bool IsPrimary { get; init; }
     public string? AltText { get; init; }

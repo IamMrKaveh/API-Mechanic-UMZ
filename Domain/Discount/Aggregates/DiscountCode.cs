@@ -9,10 +9,13 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Discount.Aggregates;
 
-public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
+public sealed class DiscountCode : AggregateRoot<DiscountCodeId>, ISoftDeletable
 {
-    private readonly List<DiscountRestriction> _restrictions = new();
-    private readonly List<DiscountUsageRecord> _usages = new();
+    private readonly List<DiscountRestriction> _restrictions = [];
+    public IReadOnlyList<DiscountRestriction> Restrictions => _restrictions.AsReadOnly();
+
+    private readonly List<DiscountUsageRecord> _usages = [];
+    public IReadOnlyList<DiscountUsageRecord> Usages => _usages.AsReadOnly();
 
     private DiscountCode()
     { }
@@ -33,8 +36,9 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>
     public bool HasReachedUsageLimit => UsageLimit.HasValue && UsageCount >= UsageLimit.Value;
     public bool IsRedeemable => IsActive && HasStarted && !IsExpired && !HasReachedUsageLimit;
 
-    public IReadOnlyList<DiscountRestriction> Restrictions => _restrictions.AsReadOnly();
-    public IReadOnlyList<DiscountUsageRecord> Usages => _usages.AsReadOnly();
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public Guid? DeletedBy { get; private set; }
 
     public static DiscountCode Create(
         DiscountCodeId id,

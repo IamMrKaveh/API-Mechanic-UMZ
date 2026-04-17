@@ -4,7 +4,6 @@ using Application.Variant.Contracts;
 using Application.Variant.Features.Shared;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
-using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Variant.QueryServices;
 
@@ -101,5 +100,10 @@ public sealed class VariantQueryService(DBContext context) : IVariantQueryServic
             .FirstOrDefaultAsync(ct);
 
         return variant;
+    }
+
+    Task<IEnumerable<ProductVariantViewDto>> IVariantQueryService.GetProductVariantsAsync(ProductId productId, bool activeOnly, CancellationToken ct)
+    {
+        throw new NotImplementedException();
     }
 }

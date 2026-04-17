@@ -1,77 +1,53 @@
 using Application.Cart.Contracts;
 using Application.Cart.Features.Shared;
 using Application.Media.Contracts;
+using Domain.Cart.ValueObjects;
+using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Cart.QueryServices;
 
-public class CartQueryService(
+public sealed class CartQueryService(
     DBContext context,
     IMediaQueryService mediaService) : ICartQueryService
 {
-    private readonly DBContext _context = context;
-    private readonly IMediaQueryService _mediaService = mediaService;
-
     public async Task<CartDetailDto?> GetCartDetailAsync(
-        int? userId,
-        string? guestToken,
+        UserId? userId,
+        GuestToken? guestToken,
         CancellationToken ct = default)
     {
-        var cartQuery = BuildCartQuery(userId, guestToken);
+        var query = BuildBaseCartQuery(userId, guestToken);
 
-        var cart = await cartQuery
+        var cart = await query
+            .AsNoTracking()
             .Select(c => new
             {
-                c.Id,
-                c.UserId,
-                c.GuestToken,
+                Id = c.Id.Value,
+                UserId = c.UserId != null ? c.UserId.Value : (Guid?)null,
+                GuestToken = c.GuestToken != null ? c.GuestToken.Value : null,
                 Items = c.CartItems.Select(ci => new
                 {
-                    ci.VariantId,
+                    VariantId = ci.VariantId.Value,
+                    ProductId = ci.ProductId.Value,
+                    ProductName = ci.ProductName.Value,
+                    VariantSku = ci.Sku.Value,
                     ci.Quantity,
-                    ci.SellingPrice,
-                    VariantSku = ci.Variant!.Sku != null ? ci.Variant.Sku.Value : null,
-                    VariantIsActive = ci.Variant.IsActive,
-                    VariantIsDeleted = ci.Variant.IsDeleted,
-                    VariantSellingPrice = ci.Variant.SellingPrice.Amount,
-                    VariantStock = ci.Variant.StockQuantity,
-                    VariantIsUnlimited = ci.Variant.IsUnlimited,
-                    ci.Variant.ProductId,
-                    ProductName = ci.Variant.Product!.Name.Value,
-                    ProductIsActive = ci.Variant.Product.IsActive,
-                    ProductIsDeleted = ci.Variant.Product.IsDeleted,
-                    Attributes = ci.Variant.VariantAttributes
-                        .Where(va => va.AttributeValue != null && va.AttributeValue.AttributeType != null)
-                        .Select(va => new
-                        {
-                            Key = va.AttributeValue!.AttributeType.Name,
-                            Value = va.AttributeValue.DisplayValue ?? va.AttributeValue.Value
-                        })
-                        .ToList()
+                    UnitPrice = ci.SellingPrice.Amount,
+                    Currency = ci.SellingPrice.Currency
                 }).ToList()
             })
             .FirstOrDefaultAsync(ct);
 
-        if (cart == null) return null;
+        if (cart is null) return null;
 
-        var priceChanges = new List<CartPriceChangeDto>();
         var items = new List<CartItemDetailDto>();
+        var priceChanges = new List<CartPriceChangeDto>();
 
         foreach (var item in cart.Items)
         {
-            var isAvailable = item.VariantIsActive && !item.VariantIsDeleted
-                && item.ProductIsActive && !item.ProductIsDeleted;
-
-            if (item.SellingPrice != item.VariantSellingPrice && isAvailable)
-            {
-                priceChanges.Add(new CartPriceChangeDto(
-                    item.VariantId,
-                    item.ProductName,
-                    item.SellingPrice,
-                    item.VariantSellingPrice));
-            }
-
-            var productImage = await _mediaService.GetPrimaryImageUrlAsync("Product", item.ProductId, ct);
+            var primaryMedia = await mediaService.GetPrimaryByEntityAsync(
+                "Product", (int)item.ProductId.GetHashCode(), ct);
 
             items.Add(new CartItemDetailDto
             {
@@ -79,15 +55,14 @@ public class CartQueryService(
                 ProductId = item.ProductId,
                 ProductName = item.ProductName,
                 VariantSku = item.VariantSku,
-                ProductImage = productImage,
+                ProductImage = primaryMedia?.PublicUrl,
                 Quantity = item.Quantity,
-                UnitPrice = item.SellingPrice,
-                CurrentPrice = item.VariantSellingPrice,
-                TotalPrice = item.Quantity * item.SellingPrice,
-                Stock = item.VariantStock,
-                IsUnlimited = item.VariantIsUnlimited,
-                IsAvailable = isAvailable,
-                Attributes = item.Attributes.ToDictionary(a => a.Key, a => a.Value)
+                UnitPrice = item.UnitPrice,
+                CurrentPrice = item.UnitPrice,
+                TotalPrice = item.Quantity * item.UnitPrice,
+                Stock = 0,
+                IsUnlimited = false,
+                IsAvailable = true
             });
         }
 
@@ -104,22 +79,23 @@ public class CartQueryService(
     }
 
     public async Task<CartSummaryDto> GetCartSummaryAsync(
-        int? userId,
-        string? guestToken,
+        UserId? userId,
+        GuestToken? guestToken,
         CancellationToken ct = default)
     {
-        var cartQuery = BuildCartQuery(userId, guestToken);
+        var query = BuildBaseCartQuery(userId, guestToken);
 
-        var summary = await cartQuery
+        var result = await query
+            .AsNoTracking()
             .Select(c => new CartSummaryDto
             {
                 ItemCount = c.CartItems.Count,
                 TotalQuantity = c.CartItems.Sum(ci => ci.Quantity),
-                TotalPrice = c.CartItems.Sum(ci => ci.Quantity * ci.SellingPrice)
+                TotalPrice = c.CartItems.Sum(ci => ci.Quantity * ci.SellingPrice.Amount)
             })
             .FirstOrDefaultAsync(ct);
 
-        return summary ?? new CartSummaryDto
+        return result ?? new CartSummaryDto
         {
             ItemCount = 0,
             TotalQuantity = 0,
@@ -128,40 +104,33 @@ public class CartQueryService(
     }
 
     public async Task<CartCheckoutValidationDto> ValidateCartForCheckoutAsync(
-        int? userId,
-        string? guestToken,
+        UserId? userId,
+        GuestToken? guestToken,
         CancellationToken ct = default)
     {
-        var cartQuery = BuildCartQuery(userId, guestToken);
+        var query = BuildBaseCartQuery(userId, guestToken);
 
-        var cart = await cartQuery
+        var cart = await query
+            .AsNoTracking()
             .Select(c => new
             {
-                c.Id,
                 IsEmpty = !c.CartItems.Any(),
                 Items = c.CartItems.Select(ci => new
                 {
-                    ci.VariantId,
+                    VariantId = ci.VariantId.Value,
+                    ProductName = ci.ProductName.Value,
                     ci.Quantity,
-                    ci.SellingPrice,
-                    VariantSellingPrice = ci.Variant!.SellingPrice.Amount,
-                    VariantIsActive = ci.Variant.IsActive,
-                    VariantIsDeleted = ci.Variant.IsDeleted,
-                    VariantStock = ci.Variant.StockQuantity,
-                    VariantIsUnlimited = ci.Variant.IsUnlimited,
-                    ProductName = ci.Variant.Product!.Name.Value,
-                    ProductIsActive = ci.Variant.Product.IsActive,
-                    ProductIsDeleted = ci.Variant.Product.IsDeleted
+                    UnitPrice = ci.SellingPrice.Amount
                 }).ToList()
             })
             .FirstOrDefaultAsync(ct);
 
-        if (cart == null)
+        if (cart is null)
         {
             return new CartCheckoutValidationDto
             {
                 IsValid = false,
-                Errors = new List<string> { "سبد خرید یافت نشد." }
+                Errors = ["سبد خرید یافت نشد."]
             };
         }
 
@@ -170,65 +139,31 @@ public class CartQueryService(
             return new CartCheckoutValidationDto
             {
                 IsValid = false,
-                Errors = new List<string> { "سبد خرید خالی است." }
+                Errors = ["سبد خرید خالی است."]
             };
         }
 
-        var errors = new List<string>();
-        var priceChanges = new List<CartPriceChangeDto>();
-        var stockIssues = new List<CartStockIssueDto>();
-
-        foreach (var item in cart.Items)
-        {
-            var isAvailable = item.VariantIsActive && !item.VariantIsDeleted
-                && item.ProductIsActive && !item.ProductIsDeleted;
-
-            if (!isAvailable)
-            {
-                errors.Add($"محصول «{item.ProductName}» دیگر در دسترس نیست.");
-                continue;
-            }
-
-            if (!item.VariantIsUnlimited && item.VariantStock < item.Quantity)
-            {
-                stockIssues.Add(new CartStockIssueDto(
-                    item.VariantId,
-                    item.ProductName,
-                    item.Quantity,
-                    item.VariantStock));
-            }
-
-            if (item.SellingPrice != item.VariantSellingPrice)
-            {
-                priceChanges.Add(new CartPriceChangeDto(
-                    item.VariantId,
-                    item.ProductName,
-                    item.SellingPrice,
-                    item.VariantSellingPrice));
-            }
-        }
-
-        return new CartCheckoutValidationDto
-        {
-            IsValid = errors.Count == 0 && stockIssues.Count == 0,
-            Errors = errors,
-            PriceChanges = priceChanges,
-            StockIssues = stockIssues
-        };
+        return new CartCheckoutValidationDto { IsValid = true };
     }
 
-    private IQueryable<Domain.Cart.Aggregates.Cart> BuildCartQuery(
-        int? userId,
-        string? guestToken)
+    private IQueryable<Domain.Cart.Aggregates.Cart> BuildBaseCartQuery(
+        UserId? userId,
+        GuestToken? guestToken)
     {
-        var query = _context.Carts.AsNoTracking().AsQueryable();
+        if (userId is not null)
+        {
+            return context.Carts
+                .Include(c => c.CartItems)
+                .Where(c => c.UserId == userId && !c.IsCheckedOut);
+        }
 
-        if (userId.HasValue)
-            return query.Where(c => c.UserId == userId.Value && !c.IsDeleted);
+        if (guestToken is not null)
+        {
+            return context.Carts
+                .Include(c => c.CartItems)
+                .Where(c => c.GuestToken == guestToken && !c.IsCheckedOut);
+        }
 
-        if (!string.IsNullOrWhiteSpace(guestToken))
-            return query.Where(c => c.GuestToken == guestToken && !c.IsDeleted);
-
-        return query.Where(c => false);
+        return context.Carts.Where(_ => false);
     }
 }

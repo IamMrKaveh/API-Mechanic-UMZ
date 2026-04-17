@@ -19,7 +19,7 @@ public interface IDiscountQueryService
         Guid userId,
         CancellationToken ct = default);
 
-    Task<(IReadOnlyList<DiscountCodeDto> Items, int Total)> GetPagedAsync(
+    Task<(IReadOnlyCollection<DiscountCodeDto> Items, int Total)> GetPagedAsync(
         bool includeExpired,
         bool includeDeleted,
         int page,
@@ -27,6 +27,6 @@ public interface IDiscountQueryService
         CancellationToken ct = default);
 
     Task<DiscountUsageReportDto?> GetUsageReportByIdAsync(
-        Guid discountCodeId,
+        DiscountCodeId discountCodeId,
         CancellationToken ct = default);
 }

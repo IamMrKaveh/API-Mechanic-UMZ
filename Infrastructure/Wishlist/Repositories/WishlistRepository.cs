@@ -2,7 +2,6 @@
 using Domain.User.ValueObjects;
 using Domain.Wishlist.Interfaces;
 using Domain.Wishlist.ValueObjects;
-using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Wishlist.Repositories;
 
@@ -44,4 +43,19 @@ public sealed class WishlistRepository(DBContext context) : IWishlistRepository
 
     public async Task<int> CountByUserIdAsync(UserId userId, CancellationToken ct = default)
         => await context.Wishlists.CountAsync(w => w.UserId == userId, ct);
+
+    public Task RemoveAsync(UserId userId, ProductId productId, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    Task<IReadOnlyList<Domain.Wishlist.Aggregates.Wishlist>> IWishlistRepository.GetByProductIdAsync(ProductId productId, CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> ExistsAsync(UserId userId, ProductId productId, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
 }

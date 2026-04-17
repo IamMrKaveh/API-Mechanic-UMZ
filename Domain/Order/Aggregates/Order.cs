@@ -1,8 +1,10 @@
+using Domain.Discount.Aggregates;
 using Domain.Discount.ValueObjects;
 using Domain.Order.Entities;
 using Domain.Order.Events;
 using Domain.Order.Exceptions;
 using Domain.Order.ValueObjects;
+using Domain.Payment.Aggregates;
 using Domain.Payment.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -10,10 +12,7 @@ namespace Domain.Order.Aggregates;
 
 public sealed class Order : AggregateRoot<OrderId>
 {
-    private readonly List<OrderItem> _orderItems = [];
-
     public OrderNumber OrderNumber { get; private init; } = null!;
-    public UserId UserId { get; private init; } = default!;
     public OrderStatusValue Status { get; private set; } = null!;
     public ReceiverInfo ReceiverInfo { get; private set; } = null!;
     public DeliveryAddress DeliveryAddress { get; private set; } = null!;
@@ -21,14 +20,20 @@ public sealed class Order : AggregateRoot<OrderId>
     public Money ShippingCost { get; private set; } = null!;
     public Money DiscountAmount { get; private set; } = null!;
     public Money FinalAmount { get; private set; } = null!;
-    public DiscountCodeId? AppliedDiscountCodeId { get; private set; }
-    public PaymentTransactionId? PaymentTransactionId { get; private set; }
     public Guid IdempotencyKey { get; private init; }
     public string? CancellationReason { get; private set; }
     public bool IsDeleted { get; private set; }
     public DateTime CreatedAt { get; private init; }
     public DateTime? UpdatedAt { get; private set; }
 
+    public UserId UserId { get; private init; } = default!;
+    public User.Aggregates.User User { get; private init; } = default!;
+    public DiscountCodeId? AppliedDiscountCodeId { get; private set; }
+    public DiscountCode? AppliedDiscountCode { get; private set; }
+    public PaymentTransactionId? PaymentTransactionId { get; private set; }
+    public PaymentTransaction? PaymentTransaction { get; private set; }
+
+    private readonly List<OrderItem> _orderItems = [];
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
 
     public bool IsPaid => Status.IsPaid;

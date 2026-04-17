@@ -6,7 +6,7 @@ public record CategoryDetailDto
     public string Name { get; init; } = string.Empty;
     public string? Slug { get; init; }
     public string? Description { get; init; }
-    public string? ImageUrl { get; init; }
+    public string? IconUrl { get; init; }
     public bool IsActive { get; init; }
     public bool IsDeleted { get; init; }
     public int SortOrder { get; init; }
@@ -28,6 +28,7 @@ public record CategoryListItemDto
     public int SortOrder { get; init; }
     public int ProductCount { get; init; }
     public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
     public string? RowVersion { get; init; }
 }
 
@@ -48,6 +49,7 @@ public record CategoryDto
     public bool IsActive { get; init; }
     public int SortOrder { get; init; }
     public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
 }
 
 public record CategoryTreeDto
@@ -83,10 +85,11 @@ public record CategoryProductItemDto
 {
     public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
-    public string? Slug { get; init; }
-    public decimal Price { get; init; }
-    public string? ImageUrl { get; init; }
+    public string BrandName { get; init; } = string.Empty;
+    public decimal MaxPrice { get; init; }
+    public decimal MinPrice { get; init; }
     public bool IsActive { get; init; }
+    public DateTime CreatedAt { get; init; }
 }
 
 public sealed record CreateCategoryDto(

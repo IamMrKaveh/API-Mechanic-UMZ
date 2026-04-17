@@ -1,7 +1,7 @@
+using Application.Review.Features.Shared;
 using Application.User.Contracts;
 using Application.User.Features.Shared;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.User.QueryServices;
 
@@ -18,7 +18,7 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
                 FirstName = u.FullName.FirstName,
                 LastName = u.FullName.LastName,
                 Email = u.Email.Value,
-                PhoneNumber = u.PhoneNumber != null ? u.PhoneNumber.Value : null,
+                PhoneNumber = u.PhoneNumber != null ? u.PhoneNumber.Value : "",
                 IsActive = u.IsActive,
                 IsAdmin = u.IsAdmin,
                 IsEmailVerified = u.IsEmailVerified,
@@ -43,9 +43,9 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
                 Title = a.Title,
                 ReceiverName = a.ReceiverName,
                 PhoneNumber = a.PhoneNumber,
-                Province = a.Address.Province,
-                City = a.Address.City,
-                PostalCode = a.Address.PostalCode,
+                Province = a.Province,
+                City = a.City,
+                PostalCode = a.PostalCode,
                 IsDefault = a.IsDefault
             })
             .ToListAsync(ct);
@@ -79,5 +79,25 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
             WishlistCount = wishlistCount,
             OpenTickets = ticketCount
         };
+    }
+
+    public Task<PaginatedResult<UserProfileDto>> GetUsersPagedAsync(string? search, bool? isActive, bool? isAdmin, bool includeDeleted, int page, int pageSize, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    Task<IEnumerable<UserAddressDto>> IUserQueryService.GetUserAddressesAsync(UserId userId, CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<UserSessionDto>> GetActiveSessionsAsync(UserId userId, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<PaginatedResult<ProductReviewDto>> GetUserReviewsPagedAsync(UserId userId, int page, int pageSize, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
     }
 }

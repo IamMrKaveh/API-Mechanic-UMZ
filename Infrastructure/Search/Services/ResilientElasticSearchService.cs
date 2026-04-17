@@ -70,10 +70,65 @@ public sealed class ResilientElasticSearchService(
         SearchProductsParams searchParams, CancellationToken ct = default)
         => innerService.SearchProductsAsync(searchParams, ct);
 
+    public async Task<GlobalSearchResultDto> SearchGlobalAsync(string query, CancellationToken ct = default)
+    {
+        if (!circuitBreaker.IsAllowed())
+            return new GlobalSearchResultDto { Query = query };
+
+        try
+        {
+            var result = await innerService.SearchGlobalAsync(query, ct);
+            circuitBreaker.RecordSuccess();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            circuitBreaker.RecordFailure();
+            await auditService.LogErrorAsync($"SearchGlobalAsync failed: {ex.Message}", ct);
+            return new GlobalSearchResultDto { Query = query };
+        }
+    }
+
+    public async Task<List<string>> GetSuggestionsAsync(
+        string query, int maxSuggestions = 10, CancellationToken ct = default)
+    {
+        if (!circuitBreaker.IsAllowed())
+            return [];
+
+        try
+        {
+            var result = await innerService.GetSuggestionsAsync(query, maxSuggestions, ct);
+            circuitBreaker.RecordSuccess();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            circuitBreaker.RecordFailure();
+            await auditService.LogErrorAsync($"GetSuggestionsAsync failed: {ex.Message}", ct);
+            return [];
+        }
+    }
+
+    public async Task<SearchResultDto<ProductSearchResultItemDto>> SearchWithFuzzyAsync(
+        string searchQuery, int page = 1, int pageSize = 20, CancellationToken ct = default)
+    {
+        if (!circuitBreaker.IsAllowed())
+            return new SearchResultDto<ProductSearchResultItemDto>();
+
+        try
+        {
+            var result = await innerService.SearchWithFuzzyAsync(searchQuery, page, pageSize, ct);
+            circuitBreaker.RecordSuccess();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            circuitBreaker.RecordFailure();
+            await auditService.LogErrorAsync($"SearchWithFuzzyAsync failed: {ex.Message}", ct);
+            return new SearchResultDto<ProductSearchResultItemDto>();
+        }
+    }
+
     public Task<SearchIndexStatsDto?> GetIndexStatsAsync(CancellationToken ct = default)
         => innerService.GetIndexStatsAsync(ct);
-
-    public Task<IEnumerable<string>> GetSuggestionsAsync(
-        string query, int size = 5, CancellationToken ct = default)
-        => innerService.GetSuggestionsAsync(query, size, ct);
 }

@@ -14,6 +14,7 @@ public sealed class UserAddress : Entity<UserAddressId>, IAuditable
     private UserAddress()
     { }
 
+    public User.Aggregates.User User { get; private set; } = default!;
     public UserId UserId { get; private set; } = default!;
     public string Title { get; private set; } = default!;
     public string ReceiverName { get; private set; } = default!;

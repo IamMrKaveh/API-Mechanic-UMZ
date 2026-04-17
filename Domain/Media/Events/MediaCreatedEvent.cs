@@ -2,9 +2,9 @@ using Domain.Media.ValueObjects;
 
 namespace Domain.Media.Events;
 
-public sealed class MediaCreatedEvent(MediaId mediaId, string entityType, int entityId) : DomainEvent
+public sealed class MediaCreatedEvent(MediaId mediaId, string entityType, Guid entityId) : DomainEvent
 {
     public MediaId MediaId { get; } = mediaId;
     public string EntityType { get; } = entityType;
-    public int EntityId { get; } = entityId;
+    public Guid EntityId { get; } = entityId;
 }

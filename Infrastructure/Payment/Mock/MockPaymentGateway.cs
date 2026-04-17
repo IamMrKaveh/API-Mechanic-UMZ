@@ -31,10 +31,11 @@ public sealed class MockPaymentGateway : IPaymentGateway
         CancellationToken ct = default)
     {
         var result = new PaymentVerificationResult(
-            true,
-            DateTime.UtcNow.Ticks,
-            "6037********1234",
-            0);
+            TransactionId: null,
+            IsVerified: true,
+            RefId: DateTime.UtcNow.Ticks,
+            CardPan: "6037********1234",
+            Fee: 0);
 
         return Task.FromResult(ServiceResult<PaymentVerificationResult>.Success(result));
     }

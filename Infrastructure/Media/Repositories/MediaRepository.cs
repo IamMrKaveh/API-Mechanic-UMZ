@@ -32,7 +32,7 @@ public sealed class MediaRepository(DBContext context) : IMediaRepository
 
     public async Task<IReadOnlyList<Domain.Media.Aggregates.Media>> GetByEntityAsync(
         string entityType,
-        int entityId,
+        Guid entityId,
         CancellationToken ct = default)
     {
         var results = await context.Medias
@@ -46,7 +46,7 @@ public sealed class MediaRepository(DBContext context) : IMediaRepository
 
     public async Task<Domain.Media.Aggregates.Media?> GetPrimaryByEntityAsync(
         string entityType,
-        int entityId,
+        Guid entityId,
         CancellationToken ct = default)
     {
         return await context.Medias

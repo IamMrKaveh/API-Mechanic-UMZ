@@ -1,11 +1,12 @@
-﻿using Application.Wallet.Contracts;
-using Application.Wallet.Features.Commands.CreditWallet;
+﻿using Application.Wallet.Features.Commands.CreditWallet;
 using Application.Wallet.Features.Commands.DebitWallet;
 using Application.Wallet.Features.Commands.ReleaseWalletReservation;
 using Application.Wallet.Features.Commands.ReserveWallet;
 using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
 using Application.Wallet.Features.Shared;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
 
 namespace Infrastructure.Wallet.Services;
@@ -15,27 +16,27 @@ public sealed class WalletService(IMediator mediator) : IWalletService
     private readonly IMediator _mediator = mediator;
 
     public async Task<ServiceResult<WalletDto>> GetBalanceAsync(
-        int userId,
+        UserId userId,
         CancellationToken ct = default)
     {
-        return await _mediator.Send(new GetWalletBalanceQuery(userId), ct);
+        return await _mediator.Send(new GetWalletBalanceQuery(userId.Value), ct);
     }
 
     public async Task<ServiceResult<PaginatedResult<WalletLedgerEntryDto>>> GetLedgerAsync(
-        int userId,
+        UserId userId,
         int page,
         int pageSize,
         CancellationToken ct = default)
     {
-        return await _mediator.Send(new GetWalletLedgerQuery(userId, page, pageSize), ct);
+        return await _mediator.Send(new GetWalletLedgerQuery(userId.Value, page, pageSize), ct);
     }
 
     public async Task<ServiceResult<Unit>> CreditAsync(
-        int userId,
-        decimal amount,
+        UserId userId,
+        Money amount,
         WalletTransactionType transactionType,
         WalletReferenceType referenceType,
-        int referenceId,
+        string referenceId,
         string idempotencyKey,
         string? correlationId = null,
         string? description = null,
@@ -43,8 +44,8 @@ public sealed class WalletService(IMediator mediator) : IWalletService
     {
         return await _mediator.Send(
             new CreditWalletCommand(
-                userId,
-                amount,
+                userId.Value,
+                amount.Amount,
                 transactionType,
                 referenceType,
                 referenceId,
@@ -55,11 +56,11 @@ public sealed class WalletService(IMediator mediator) : IWalletService
     }
 
     public async Task<ServiceResult<Unit>> DebitAsync(
-        int userId,
-        decimal amount,
+        UserId userId,
+        Money amount,
         WalletTransactionType transactionType,
         WalletReferenceType referenceType,
-        int referenceId,
+        string referenceId,
         string idempotencyKey,
         string? correlationId = null,
         string? description = null,
@@ -67,8 +68,8 @@ public sealed class WalletService(IMediator mediator) : IWalletService
     {
         return await _mediator.Send(
             new DebitWalletCommand(
-                userId,
-                amount,
+                userId.Value,
+                amount.Amount,
                 transactionType,
                 referenceType,
                 referenceId,
@@ -79,22 +80,27 @@ public sealed class WalletService(IMediator mediator) : IWalletService
     }
 
     public async Task<ServiceResult<Unit>> ReserveAsync(
-        int userId,
+        UserId userId,
         decimal amount,
-        int orderId,
+        OrderId orderId,
         DateTime? expiresAt = null,
         CancellationToken ct = default)
     {
         return await _mediator.Send(
-            new ReserveWalletCommand(userId, amount, orderId, expiresAt), ct);
+            new ReserveWalletCommand(userId.Value, amount, orderId.Value, expiresAt), ct);
     }
 
     public async Task<ServiceResult<Unit>> ReleaseReservationAsync(
-        int userId,
-        int orderId,
+        UserId userId,
+        OrderId orderId,
         CancellationToken ct = default)
     {
         return await _mediator.Send(
-            new ReleaseWalletReservationCommand(userId, orderId), ct);
+            new ReleaseWalletReservationCommand(userId.Value, orderId.Value), ct);
+    }
+
+    public Task<ServiceResult<Unit>> ReserveAsync(UserId userId, Money amount, OrderId orderId, DateTime? expiresAt = null, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
     }
 }

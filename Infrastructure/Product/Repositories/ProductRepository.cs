@@ -22,13 +22,13 @@ public sealed class ProductRepository(DBContext context) : IProductRepository
     public async Task<Domain.Product.Aggregates.Product?> GetByIdAsync(ProductId id, CancellationToken ct = default)
         => await context.Products
             .Include(p => p.Brand)
-            .Include(p => p.ProductVariants)
+            .Include(p => p.Variants)
             .FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public async Task<Domain.Product.Aggregates.Product?> GetBySlugAsync(Slug slug, CancellationToken ct = default)
         => await context.Products
             .Include(p => p.Brand)
-            .Include(p => p.ProductVariants)
+            .Include(p => p.Variants)
             .FirstOrDefaultAsync(p => p.Slug == slug.Value, ct);
 
     public async Task<bool> ExistsAsync(ProductId id, CancellationToken ct = default)

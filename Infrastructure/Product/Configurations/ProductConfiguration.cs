@@ -45,7 +45,7 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
             .HasForeignKey(e => e.BrandId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(e => e.ProductVariants)
+        builder.HasMany(e => e.Variants)
             .WithOne()
             .HasForeignKey("ProductId")
             .OnDelete(DeleteBehavior.Cascade);

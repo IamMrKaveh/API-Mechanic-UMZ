@@ -1,4 +1,11 @@
-﻿using Application.Wallet.Features.Commands.ReleaseWalletReservation;
+﻿using Application.Audit.Contracts;
+using Application.Wallet.Features.Commands.ReleaseWalletReservation;
+using Domain.Wallet.Enums;
+using Infrastructure.Persistence.Context;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Infrastructure.BackgroundJobs;
 
@@ -40,15 +47,18 @@ public sealed class WalletReservationExpiryJob(
         var context = scope.ServiceProvider.GetRequiredService<DBContext>();
 
         var now = DateTime.UtcNow;
-        var expiredReservations = await context.WalletReservations
+
+        var expiredReservations = await context.WalletLedgerEntries
             .AsNoTracking()
-            .Where(r => r.Status == Domain.Wallet.Enums.WalletReservationStatus.Pending
-                        && r.ExpiresAt.HasValue && r.ExpiresAt.Value <= now)
+            .Join(context.Wallets,
+                le => le.WalletId,
+                w => w.Id,
+                (le, w) => new { LedgerEntry = le, Wallet = w })
+            .Where(x => x.Wallet.OwnerId != null)
             .Take(BatchSize)
-            .Select(r => new
+            .Select(x => new
             {
-                UserId = r.Wallet.OwnerId.Value,
-                OrderId = r.OrderId.Value
+                UserId = x.Wallet.OwnerId.Value
             })
             .ToListAsync(ct);
 
@@ -58,7 +68,7 @@ public sealed class WalletReservationExpiryJob(
             {
                 var command = new ReleaseWalletReservationCommand(
                     reservation.UserId,
-                    reservation.OrderId);
+                    Guid.Empty);
 
                 await mediator.Send(command, ct);
             }
@@ -66,7 +76,7 @@ public sealed class WalletReservationExpiryJob(
             {
                 await auditService.LogSystemEventAsync(
                     "WalletReservationExpiryItemError",
-                    $"خطا در انقضای رزرو کیف پول برای سفارش {reservation.OrderId}: {ex.Message}",
+                    $"خطا در انقضای رزرو کیف پول: {ex.Message}",
                     ct);
             }
         }

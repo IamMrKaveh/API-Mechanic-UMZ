@@ -14,10 +14,10 @@ public sealed class MediaService(
 {
     public async Task<ServiceResult<MediaDto>> UploadAsync(
         Stream fileStream,
-        SharedKernel.ValueObjects.FilePath filePath,
-        SharedKernel.ValueObjects.FileSize fileSize,
+        FilePath filePath,
+        FileSize fileSize,
         string entityType,
-        int entityId,
+        Guid entityId,
         bool isPrimary = false,
         string? altText = null,
         CancellationToken ct = default)
@@ -128,8 +128,8 @@ public sealed class MediaService(
 
     public async Task<ServiceResult> ReorderAsync(
         string entityType,
-        int entityId,
-        ICollection<int> orderedIds,
+        Guid entityId,
+        ICollection<Guid> orderedIds,
         CancellationToken ct = default)
     {
         var medias = await mediaRepository.GetByEntityAsync(entityType, entityId, ct);

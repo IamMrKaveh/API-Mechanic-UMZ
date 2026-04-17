@@ -1,6 +1,5 @@
 ﻿using Domain.User.ValueObjects;
 using Domain.Wallet.Entities;
-using Domain.Wallet.Projections;
 using Domain.Wallet.ValueObjects;
 
 namespace Domain.Wallet.Interfaces;
@@ -29,10 +28,6 @@ public interface IWalletRepository
     void Update(
         Aggregates.Wallet wallet);
 
-    void SetOriginalRowVersion(
-        Aggregates.Wallet entity,
-        byte[] rowVersion);
-
     Task<bool> ExistsForUserAsync(
         UserId ownerId,
         CancellationToken ct = default);
@@ -57,16 +52,6 @@ public interface IWalletRepository
 
     Task AddLedgerEntryAsync(
         WalletLedgerEntry entry,
-        CancellationToken ct = default);
-
-    Task<List<ExpiredReservationProjection>> GetExpiredReservationBatchAsync(
-        int batchSize,
-        CancellationToken ct = default);
-
-    Task<bool> ExpireReservationAsync(
-        WalletReservationId reservationId,
-        WalletId walletId,
-        Money amount,
         CancellationToken ct = default);
 
     Task<WalletReservation?> GetReservationByIdAsync(

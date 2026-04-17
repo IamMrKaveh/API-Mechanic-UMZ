@@ -1,48 +1,66 @@
+using Application.Audit.Contracts;
+
 namespace Infrastructure.Search;
 
-public class ElasticsearchCircuitBreaker
+public sealed class ElasticsearchCircuitBreaker
 {
-    private readonly AsyncCircuitBreakerPolicy _policy;
-    private readonly ILogger<ElasticsearchCircuitBreaker> _logger;
+    private readonly IAuditService _auditService;
+    private readonly int _failureThreshold;
+    private readonly TimeSpan _breakDuration;
 
-    public ElasticsearchCircuitBreaker(ILogger<ElasticsearchCircuitBreaker> logger)
+    private int _failureCount;
+    private DateTime? _openedAt;
+    private CircuitState _state = CircuitState.Closed;
+
+    private enum CircuitState
+    { Closed, Open, HalfOpen }
+
+    public ElasticsearchCircuitBreaker(IAuditService auditService, IConfiguration configuration)
     {
-        _logger = logger;
-
-        _policy = Policy
-            .Handle<HttpRequestException>()
-            .Or<TimeoutException>()
-            .Or<TaskCanceledException>()
-            .CircuitBreakerAsync(
-                exceptionsAllowedBeforeBreaking: 5,
-                durationOfBreak: TimeSpan.FromMinutes(1),
-                onBreak: (exception, duration) =>
-                {
-                    _logger.LogError(
-                        exception,
-                        "Circuit breaker opened for Elasticsearch. Duration: {Duration}",
-                        duration);
-                },
-                onReset: () =>
-                {
-                    _logger.LogInformation("Circuit breaker reset for Elasticsearch");
-                },
-                onHalfOpen: () =>
-                {
-                    _logger.LogInformation("Circuit breaker half-open for Elasticsearch");
-                });
+        _auditService = auditService;
+        _failureThreshold = configuration.GetValue("Elasticsearch:CircuitBreaker:FailureThreshold", 5);
+        _breakDuration = TimeSpan.FromSeconds(
+            configuration.GetValue("Elasticsearch:CircuitBreaker:BreakDurationSeconds", 60));
     }
 
-    public async Task<T> ExecuteAsync<T>(Func<Task<T>> operation)
+    public bool IsAllowed()
     {
-        try
+        if (_state == CircuitState.Closed)
+            return true;
+
+        if (_state == CircuitState.Open)
         {
-            return await _policy.ExecuteAsync(operation);
+            if (_openedAt.HasValue && DateTime.UtcNow - _openedAt.Value >= _breakDuration)
+            {
+                _state = CircuitState.HalfOpen;
+                _ = _auditService.LogWarningAsync("Circuit breaker half-open for Elasticsearch", CancellationToken.None);
+                return true;
+            }
+
+            return false;
         }
-        catch (BrokenCircuitException)
+
+        return true;
+    }
+
+    public void RecordSuccess()
+    {
+        _failureCount = 0;
+        _openedAt = null;
+        _state = CircuitState.Closed;
+    }
+
+    public void RecordFailure()
+    {
+        _failureCount++;
+
+        if (_failureCount >= _failureThreshold && _state != CircuitState.Open)
         {
-            _logger.LogWarning("Request blocked by circuit breaker - Elasticsearch is unavailable");
-            throw new InvalidOperationException("Search service temporarily unavailable");
+            _state = CircuitState.Open;
+            _openedAt = DateTime.UtcNow;
+            _ = _auditService.LogErrorAsync(
+                $"Circuit breaker opened for Elasticsearch after {_failureCount} failures",
+                CancellationToken.None);
         }
     }
 }

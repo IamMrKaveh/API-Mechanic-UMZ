@@ -5,17 +5,18 @@ using Domain.Variant.ValueObjects;
 
 namespace Infrastructure.Order.Services;
 
-public class CheckoutStockValidatorService(IInventoryRepository inventoryRepository)
+public sealed class CheckoutStockValidatorService(IInventoryRepository inventoryRepository)
     : ICheckoutStockValidatorService
 {
-    public async Task<ServiceResult> ValidateAsync(List<OrderItemSnapshot> items, CancellationToken ct)
+    public async Task<ServiceResult> ValidateAsync(
+        IReadOnlyCollection<OrderItemSnapshot> items, CancellationToken ct)
     {
         var errors = new List<string>();
 
         foreach (var item in items)
         {
             var inventory = await inventoryRepository.GetByVariantIdAsync(
-                VariantId.From(item.VariantId), ct);
+                item.VariantId, ct);
 
             if (inventory is null)
             {

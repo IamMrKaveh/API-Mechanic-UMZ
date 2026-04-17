@@ -1,8 +1,5 @@
-using Application.Media.Contracts;
 using Application.Media.Features.Shared;
 using Domain.Media.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Media.QueryServices;
 
@@ -24,7 +21,7 @@ public sealed class MediaQueryService(
 
     public async Task<IReadOnlyList<MediaDto>> GetByEntityAsync(
         string entityType,
-        int entityId,
+        Guid entityId,
         CancellationToken ct = default)
     {
         var medias = await context.Medias
@@ -39,7 +36,7 @@ public sealed class MediaQueryService(
 
     public async Task<MediaDto?> GetPrimaryByEntityAsync(
         string entityType,
-        int entityId,
+        Guid entityId,
         CancellationToken ct = default)
     {
         var media = await context.Medias

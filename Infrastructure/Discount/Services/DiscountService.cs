@@ -1,6 +1,4 @@
-using Application.Audit.Contracts;
 using Application.Discount.Contracts;
-using Application.Discount.Features.Shared;
 using Domain.Common.Interfaces;
 using Domain.Discount.Interfaces;
 using Domain.Order.ValueObjects;
@@ -8,12 +6,13 @@ using Domain.User.ValueObjects;
 
 namespace Infrastructure.Discount.Services;
 
-public class DiscountService(
-IDiscountRepository discountRepository,
-IUnitOfWork unitOfWork,
-IAuditService auditService) : IDiscountService
+public sealed class DiscountService(
+    IDiscountRepository discountRepository,
+    DBContext context,
+    IUnitOfWork unitOfWork,
+    IAuditService auditService) : IDiscountService
 {
-    public async Task<ServiceResult<DiscountApplicationResult>> ApplyDiscountAsync(
+    public async Task<ServiceResult> ApplyDiscountAsync(
         string code,
         Money orderAmount,
         UserId userId,
@@ -29,20 +28,17 @@ IAuditService auditService) : IDiscountService
                 if (discount == null)
                 {
                     await unitOfWork.RollbackTransactionAsync(ct);
-                    return ServiceResult<DiscountApplicationResult>.Failure("کد تخفیف نامعتبر است.");
+                    return ServiceResult.Failure("کد تخفیف نامعتبر است.");
                 }
 
                 var validation = discount.ValidateForApplication(orderAmount);
-
                 if (!validation.IsValid)
                 {
                     await unitOfWork.RollbackTransactionAsync(ct);
-                    return ServiceResult<DiscountApplicationResult>.Failure(validation.FailureReason!);
+                    return ServiceResult.Failure(validation.FailureReason!);
                 }
 
                 var discountAmount = discount.CalculateDiscount(orderAmount);
-                var finalAmount = orderAmount.Subtract(discountAmount);
-
                 discount.RecordUsage(userId, orderId, discountAmount);
                 discountRepository.Update(discount);
 
@@ -57,17 +53,12 @@ IAuditService auditService) : IDiscountService
                     $"Discount {code} applied. Amount: {discountAmount.Amount}",
                     ct);
 
-                return ServiceResult<DiscountApplicationResult>.Success(new DiscountApplicationResult
-                {
-                    IsSuccess = true,
-                    DiscountAmount = discountAmount.Amount,
-                    FinalAmount = finalAmount.Amount
-                });
+                return ServiceResult.Success();
             }
             catch (Exception ex)
             {
                 await unitOfWork.RollbackTransactionAsync(ct);
-                await auditService.LogSystemEventAsync("DiscountApplyFailed", ex.Message, userId.Value);
+                await auditService.LogSystemEventAsync("DiscountApplyFailed", ex.Message, ct);
                 throw;
             }
         }, ct);
@@ -82,26 +73,23 @@ IAuditService auditService) : IDiscountService
             using var transaction = await unitOfWork.BeginTransactionAsync(ct);
             try
             {
-                var usage = await discountRepository.GetUsageByOrderIdAsync(orderId.Value.GetHashCode(), ct);
-                if (usage == null)
+                var discount = await context.DiscountCodes
+                    .Include(d => d.Usages)
+                    .FirstOrDefaultAsync(d => d.Usages.Any(u => u.OrderId == orderId), ct);
+
+                if (discount == null)
                 {
                     await unitOfWork.RollbackTransactionAsync(ct);
                     return ServiceResult.Success();
                 }
 
-                var discount = await discountRepository.GetByIdWithUsagesAsync(usage.DiscountCodeId.Value.GetHashCode(), ct);
-                if (discount == null)
-                {
-                    await unitOfWork.RollbackTransactionAsync(ct);
-                    return ServiceResult.Failure("کد تخفیف یافت نشد.");
-                }
-
-                discount.RemoveRestriction(Domain.Discount.ValueObjects.DiscountRestrictionId.From(usage.Id.Value));
                 discountRepository.Update(discount);
                 await unitOfWork.SaveChangesAsync(ct);
                 await unitOfWork.CommitTransactionAsync(ct);
 
-                await auditService.LogSystemEventAsync("DiscountUsageCancelled", $"Discount usage cancelled for order {orderId.Value}");
+                await auditService.LogSystemEventAsync(
+                    "DiscountUsageCancelled",
+                    $"Discount usage cancelled for order {orderId.Value}");
 
                 return ServiceResult.Success();
             }
@@ -123,25 +111,23 @@ IAuditService auditService) : IDiscountService
             using var transaction = await unitOfWork.BeginTransactionAsync(ct);
             try
             {
-                var usage = await discountRepository.GetUsageByOrderIdAsync(orderId.Value.GetHashCode(), ct);
-                if (usage == null)
-                {
-                    await unitOfWork.RollbackTransactionAsync(ct);
-                    return ServiceResult.Success();
-                }
+                var discount = await context.DiscountCodes
+                    .Include(d => d.Usages)
+                    .FirstOrDefaultAsync(d => d.Usages.Any(u => u.OrderId == orderId), ct);
 
-                var discount = await discountRepository.GetByIdWithUsagesAsync(usage.DiscountCodeId.Value.GetHashCode(), ct);
                 if (discount == null)
                 {
                     await unitOfWork.RollbackTransactionAsync(ct);
-                    return ServiceResult.Failure("کد تخفیف یافت نشد.");
+                    return ServiceResult.Success();
                 }
 
                 discountRepository.Update(discount);
                 await unitOfWork.SaveChangesAsync(ct);
                 await unitOfWork.CommitTransactionAsync(ct);
 
-                await auditService.LogSystemEventAsync("DiscountUsageConfirmed", $"Discount usage confirmed for order {orderId.Value}");
+                await auditService.LogSystemEventAsync(
+                    "DiscountUsageConfirmed",
+                    $"Discount usage confirmed for order {orderId.Value}");
 
                 return ServiceResult.Success();
             }

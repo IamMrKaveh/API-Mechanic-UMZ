@@ -8,8 +8,11 @@ namespace Domain.Review.Aggregates;
 
 public class ProductReview : AggregateRoot<ReviewId>, IAuditable
 {
+    public Product.Aggregates.Product Product { get; private set; } = default!;
     public ProductId ProductId { get; private set; } = default!;
+    public User.Aggregates.User User { get; private set; } = default!;
     public UserId UserId { get; private set; } = default!;
+    public Order.Aggregates.Order? Order { get; private set; }
     public OrderId? OrderId { get; private set; }
 
     public Rating Rating { get; private set; } = default!;
@@ -25,8 +28,8 @@ public class ProductReview : AggregateRoot<ReviewId>, IAuditable
     public string? AdminReply { get; private set; }
     public DateTime? RepliedAt { get; private set; }
     public string? RejectionReason { get; private set; }
-    public bool IsDeleted { get; private set; }
 
+    public bool IsDeleted { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 

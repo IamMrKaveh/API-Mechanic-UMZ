@@ -7,8 +7,6 @@ namespace Domain.Payment.Aggregates;
 
 public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IAuditable
 {
-    public OrderId OrderId { get; private set; } = default!;
-    public UserId UserId { get; private set; } = default!;
     public PaymentAuthority Authority { get; private set; } = null!;
     public PaymentGateway Gateway { get; private set; } = null!;
     public Money Amount { get; private set; } = null!;
@@ -17,12 +15,16 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
     public decimal Fee { get; private set; }
     public string? ErrorMessage { get; private set; }
     public string? Description { get; private set; }
-    public DateTime? VerifiedAt { get; private set; }
     public bool IsVerificationInProgress { get; private set; }
+    public DateTime? VerifiedAt { get; private set; }
     public DateTime ExpiresAt { get; private set; }
-
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
+
+    public Order.Aggregates.Order Order { get; private set; } = default!;
+    public OrderId OrderId { get; private set; } = default!;
+    public User.Aggregates.User User { get; private set; } = default!;
+    public UserId UserId { get; private set; } = default!;
 
     private const int DefaultExpiryMinutes = 20;
     private const int MaxExpiryMinutes = 60;

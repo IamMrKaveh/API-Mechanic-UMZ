@@ -3,19 +3,22 @@ using Domain.Variant.ValueObjects;
 
 namespace Domain.Variant.Entities;
 
-public sealed class ProductVariantShipping : Entity<VariantShippingId>
+public sealed class VariantShipping : Entity<VariantShippingId>
 {
-    private ProductVariantShipping()
+    private VariantShipping()
     { }
 
+    public Variant.Aggregates.ProductVariant Variant { get; private set; } = default!;
     public VariantId VariantId { get; private set; } = default!;
+    public Shipping.Aggregates.Shipping Shipping { get; private set; } = default!;
     public ShippingId ShippingId { get; private set; } = default!;
+
     public decimal Weight { get; private set; }
     public decimal Width { get; private set; }
     public decimal Height { get; private set; }
     public decimal Length { get; private set; }
 
-    internal static ProductVariantShipping Create(
+    internal static VariantShipping Create(
         VariantId variantId,
         ShippingId shippingId,
         decimal weight,
@@ -32,7 +35,7 @@ public sealed class ProductVariantShipping : Entity<VariantShippingId>
         if (length < 0)
             throw new DomainException("طول نمی‌تواند منفی باشد.");
 
-        return new ProductVariantShipping
+        return new VariantShipping
         {
             Id = VariantShippingId.NewId(),
             VariantId = variantId,
