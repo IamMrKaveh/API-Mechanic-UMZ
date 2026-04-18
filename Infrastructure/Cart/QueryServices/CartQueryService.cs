@@ -1,10 +1,7 @@
 using Application.Cart.Contracts;
 using Application.Cart.Features.Shared;
-using Application.Media.Contracts;
 using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Cart.QueryServices;
 
@@ -47,7 +44,7 @@ public sealed class CartQueryService(
         foreach (var item in cart.Items)
         {
             var primaryMedia = await mediaService.GetPrimaryByEntityAsync(
-                "Product", (int)item.ProductId.GetHashCode(), ct);
+                "Product", item.ProductId, ct);
 
             items.Add(new CartItemDetailDto
             {

@@ -10,9 +10,11 @@ namespace Presentation.Shipping.Endpoints;
 public sealed class CheckoutShippingController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet("available-methods")]
-    public async Task<IActionResult> GetAvailableShippings(CancellationToken ct)
+    public async Task<IActionResult> GetAvailableShippings(
+        [FromQuery] decimal orderAmount,
+        CancellationToken ct)
     {
-        var query = new GetAvailableShippingsQuery(CurrentUser.UserId);
+        var query = new GetAvailableShippingsQuery(orderAmount);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
@@ -29,10 +31,11 @@ public sealed class CheckoutShippingController(IMediator mediator) : BaseApiCont
 
     [HttpGet("calculate")]
     public async Task<IActionResult> CalculateShippingCost(
-        [FromQuery] Guid shippingMethodId,
+        [FromQuery] Guid shippingId,
+        [FromQuery] decimal orderAmount,
         CancellationToken ct)
     {
-        var query = new CalculateShippingCostQuery(shippingMethodId);
+        var query = new CalculateShippingCostQuery(shippingId, orderAmount);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }

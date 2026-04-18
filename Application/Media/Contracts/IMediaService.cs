@@ -10,7 +10,7 @@ public interface IMediaService
         FilePath filePath,
         FileSize fileSize,
         string entityType,
-        int entityId,
+        Guid entityId,
         bool isPrimary = false,
         string? altText = null,
         CancellationToken ct = default);
@@ -25,7 +25,7 @@ public interface IMediaService
 
     Task<ServiceResult> ReorderAsync(
         string entityType,
-        int entityId,
-        ICollection<int> orderedIds,
+        Guid entityId,
+        ICollection<Guid> orderedIds,
         CancellationToken ct = default);
 }

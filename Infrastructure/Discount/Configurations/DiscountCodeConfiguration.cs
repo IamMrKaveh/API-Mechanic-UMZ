@@ -33,7 +33,7 @@ public sealed class DiscountCodeConfiguration : IEntityTypeConfiguration<Discoun
         builder.Property(e => e.MaximumDiscountAmount)
             .HasConversion(
                 v => v == null ? (decimal?)null : v.Amount,
-                v => v == null ? null : Money.Create(v.Value))
+                v => v == null ? null : Money.Create(v.Value, "IRT"))
             .HasColumnName("MaximumDiscountAmount")
             .HasColumnType("decimal(18,4)");
 

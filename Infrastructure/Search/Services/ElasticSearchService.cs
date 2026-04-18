@@ -1,9 +1,5 @@
-using Application.Audit.Contracts;
-using Application.Search.Contracts;
 using Application.Search.Features.Queries.GetSearchIndexStats;
 using Application.Search.Features.Shared;
-using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.QueryDsl;
 using Infrastructure.Search.Options;
 
 namespace Infrastructure.Search.Services;
@@ -54,47 +50,43 @@ public sealed class ElasticsearchService(
     public async Task<SearchResultDto<ProductSearchResultItemDto>> SearchProductsAsync(
         SearchProductsParams searchParams, CancellationToken ct = default)
     {
+        var queries = new List<Query>();
+
+        if (!string.IsNullOrWhiteSpace(searchParams.Q))
+            queries.Add(new MultiMatchQuery
+            {
+                Fields = new[] { "name", "description", "categoryName", "brandName" },
+                Query = searchParams.Q,
+                Fuzziness = new Fuzziness("AUTO")
+            });
+
+        if (searchParams.CategoryId.HasValue)
+            queries.Add(Term("categoryId", searchParams.CategoryId.Value));
+
+        if (searchParams.BrandId.HasValue)
+            queries.Add(Term("brandId", searchParams.BrandId.Value));
+
+        if (searchParams.InStockOnly)
+            queries.Add(Term("inStock", true));
+
+        if (searchParams.MinPrice.HasValue || searchParams.MaxPrice.HasValue)
+        {
+            var rangeQuery = new NumberRangeQuery("price");
+            if (searchParams.MinPrice.HasValue) rangeQuery.Gte = (double)searchParams.MinPrice.Value;
+            if (searchParams.MaxPrice.HasValue) rangeQuery.Lte = (double)searchParams.MaxPrice.Value;
+            queries.Add(rangeQuery);
+        }
+
         var response = await client.SearchAsync<ProductSearchResultItemDto>(s => s
             .Indices("products_v1")
             .From((searchParams.Page - 1) * searchParams.PageSize)
             .Size(searchParams.PageSize)
             .Query(q =>
             {
-                var queries = new List<Query>();
-
-                if (!string.IsNullOrWhiteSpace(searchParams.Q))
-                {
-                    queries.Add(Query.MultiMatch(mm => mm
-                        .Fields(new[] { "name", "description", "categoryName", "brandName" })
-                        .Query(searchParams.Q)
-                        .Fuzziness(new Fuzziness("AUTO"))
-                    ));
-                }
-
-                if (searchParams.CategoryId.HasValue)
-                    queries.Add(Query.Term(t => t.Field("categoryId").Value(searchParams.CategoryId.Value)));
-
-                if (searchParams.BrandId.HasValue)
-                    queries.Add(Query.Term(t => t.Field("brandId").Value(searchParams.BrandId.Value)));
-
-                if (searchParams.InStockOnly)
-                    queries.Add(Query.Term(t => t.Field("inStock").Value(true)));
-
-                if (searchParams.MinPrice.HasValue || searchParams.MaxPrice.HasValue)
-                {
-                    queries.Add(Query.Range(r => r
-                        .NumberRange(nr =>
-                        {
-                            nr.Field("price");
-                            if (searchParams.MinPrice.HasValue) nr.Gte((double)searchParams.MinPrice.Value);
-                            if (searchParams.MaxPrice.HasValue) nr.Lte((double)searchParams.MaxPrice.Value);
-                        })
-                    ));
-                }
-
-                return queries.Count == 0
-                    ? Query.MatchAll(new MatchAllQuery())
-                    : Query.Bool(b => b.Must(queries.ToArray()));
+                if (queries.Count == 0)
+                    q.MatchAll(new MatchAllQuery());
+                else
+                    q.Bool(b => b.Must(queries.ToArray()));
             })
         , ct);
 
@@ -199,4 +191,18 @@ public sealed class ElasticsearchService(
             return null;
         }
     }
+
+    private static TermQuery Term(string field, object value) => new()
+    {
+        Field = field,
+        Value = value switch
+        {
+            Guid g => FieldValue.String(g.ToString()),
+            bool b => FieldValue.Boolean(b),
+            string s => FieldValue.String(s),
+            int i => FieldValue.Long(i),
+            double d => FieldValue.Double(d),
+            _ => FieldValue.String(value.ToString()!)
+        }
+    };
 }

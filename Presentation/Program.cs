@@ -1,5 +1,5 @@
 using Application.Media.Features.Shared;
-using Infrastructure;
+using Infrastructure.DependencyInjection;
 using Infrastructure.Security.Settings;
 using Presentation.Common.Extensions;
 using Presentation.Common.Filters;
@@ -111,7 +111,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
         configuration.GetSection("LiaraStorage"));
 
     builder.Services.AddApplicationServices();
-    builder.Services.AddInfrastructureServices(configuration);
+    builder.Services.AddInfrastructure(configuration);
     builder.Services.AddCustomCors(configuration);
 }
 

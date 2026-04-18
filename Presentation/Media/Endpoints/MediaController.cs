@@ -12,7 +12,7 @@ public class MediaController(IMediator mediator, IMapper mapper) : BaseApiContro
     [AllowAnonymous]
     public async Task<IActionResult> GetMediaForEntity(
         string entityType,
-        int entityId,
+        Guid entityId,
         CancellationToken ct)
     {
         var query = new GetEntityMediaQuery(entityType, entityId);

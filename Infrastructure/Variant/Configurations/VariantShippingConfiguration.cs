@@ -1,17 +1,19 @@
+using Domain.Shipping.ValueObjects;
 using Domain.Variant.Entities;
 using Domain.Variant.ValueObjects;
-using Domain.Shipping.ValueObjects;
 
 namespace Infrastructure.Variant.Configurations;
 
-internal sealed class VariantShippingConfiguration
-    : IEntityTypeConfiguration<VariantShipping>
+internal sealed class VariantShippingConfiguration : IEntityTypeConfiguration<VariantShipping>
 {
     public void Configure(EntityTypeBuilder<VariantShipping> builder)
     {
-        builder.HasKey(e => new { e.ProductVariantId, e.ShippingId });
+        builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.ProductVariantId)
+        builder.Property(e => e.Id)
+            .HasConversion(id => id.Value, value => VariantShippingId.From(value));
+
+        builder.Property(e => e.VariantId)
             .HasConversion(id => id.Value, value => VariantId.From(value))
             .IsRequired();
 
@@ -19,16 +21,17 @@ internal sealed class VariantShippingConfiguration
             .HasConversion(id => id.Value, value => ShippingId.From(value))
             .IsRequired();
 
-        builder.Property(e => e.CreatedAt).IsRequired();
-
-        builder.HasOne(e => e.ProductVariant)
-            .WithMany(v => v.ProductVariantShippings)
-            .HasForeignKey(e => e.ProductVariantId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(e => e.Weight).HasColumnType("decimal(10,3)").IsRequired();
+        builder.Property(e => e.Width).HasColumnType("decimal(10,3)").IsRequired();
+        builder.Property(e => e.Height).HasColumnType("decimal(10,3)").IsRequired();
+        builder.Property(e => e.Length).HasColumnType("decimal(10,3)").IsRequired();
 
         builder.HasOne(e => e.Shipping)
             .WithMany()
             .HasForeignKey(e => e.ShippingId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(e => e.VariantId);
+        builder.HasIndex(e => e.ShippingId);
     }
 }

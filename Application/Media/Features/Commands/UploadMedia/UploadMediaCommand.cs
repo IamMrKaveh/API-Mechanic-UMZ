@@ -8,6 +8,6 @@ public record UploadMediaCommand(
     string ContentType,
     long FileSize,
     string EntityType,
-    int EntityId,
+    Guid EntityId,
     bool IsPrimary = false,
     string? AltText = null) : IRequest<ServiceResult<MediaDto>>;

@@ -8,6 +8,6 @@ public class GetEntityMediaValidator : AbstractValidator<GetEntityMediaQuery>
             .NotEmpty().WithMessage("نوع موجودیت الزامی است.");
 
         RuleFor(x => x.EntityId)
-            .GreaterThan(0).WithMessage("شناسه موجودیت الزامی است.");
+            .NotEmpty().WithMessage("شناسه موجودیت الزامی است.");
     }
 }

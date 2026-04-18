@@ -11,12 +11,12 @@ public interface IMediaQueryService
 
     Task<IReadOnlyList<MediaDto>> GetByEntityAsync(
         string entityType,
-        int entityId,
+        Guid entityId,
         CancellationToken ct = default);
 
     Task<MediaDto?> GetPrimaryByEntityAsync(
         string entityType,
-        int entityId,
+        Guid entityId,
         CancellationToken ct = default);
 
     Task<PaginatedResult<MediaDto>> GetAllAsync(

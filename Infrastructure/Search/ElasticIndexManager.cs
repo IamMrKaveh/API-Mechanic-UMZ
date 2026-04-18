@@ -261,7 +261,7 @@ public class ElasticIndexManager(
         try
         {
             var response = await client.ReindexAsync(r => r
-                .Source(s => s.Index(sourceIndex))
+                .Source(s => s.Indices(sourceIndex))
                 .Dest(d => d.Index(destinationIndex)), ct);
 
             if (response.IsValidResponse)

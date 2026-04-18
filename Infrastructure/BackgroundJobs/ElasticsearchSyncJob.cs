@@ -11,7 +11,7 @@ public sealed class ElasticsearchSyncJob(
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        if (!ElasticsearchOptions.IsEnabled)
+        if (_options.IsEnabled is false)
         {
             await auditService.LogInformationAsync("Elasticsearch sync is disabled", ct);
             return;

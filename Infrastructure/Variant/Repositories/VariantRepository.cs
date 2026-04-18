@@ -2,6 +2,8 @@ using Domain.Product.ValueObjects;
 using Domain.Variant.Aggregates;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
+using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Variant.Repositories;
 
@@ -21,7 +23,7 @@ public sealed class VariantRepository(DBContext context) : IVariantRepository
     public async Task<ProductVariant?> GetVariantWithShippingsAsync(
         VariantId id, CancellationToken ct = default)
         => await context.ProductVariants
-            .Include(v => v.ProductVariantShippings)
+            .Include(v => v.Shippings)
                 .ThenInclude(pvs => pvs.Shipping)
             .FirstOrDefaultAsync(v => v.Id == id, ct);
 
@@ -46,6 +48,18 @@ public sealed class VariantRepository(DBContext context) : IVariantRepository
             .Where(v => idValues.Contains(v.Id.Value))
             .ToListAsync(ct);
         return result.AsReadOnly();
+    }
+
+    public async Task<bool> ExistsBySkuAsync(
+        Sku sku, VariantId? excludeId = null, CancellationToken ct = default)
+    {
+        var query = context.ProductVariants
+            .Where(v => v.Sku.Value == sku.Value && !v.IsDeleted);
+
+        if (excludeId is not null)
+            query = query.Where(v => v.Id != excludeId);
+
+        return await query.AnyAsync(ct);
     }
 
     public async Task<bool> ExistsAsync(VariantId id, CancellationToken ct = default)
