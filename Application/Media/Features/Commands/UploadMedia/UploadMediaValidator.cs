@@ -13,6 +13,6 @@ public class UploadMediaValidator : AbstractValidator<UploadMediaCommand>
         RuleFor(x => x.FileSize).LessThanOrEqualTo(MaxFileSize)
             .WithMessage("حجم فایل نمی‌تواند بیش از ۱۰ مگابایت باشد.");
         RuleFor(x => x.EntityType).NotEmpty();
-        RuleFor(x => x.EntityId).GreaterThan(0);
+        RuleFor(x => x.EntityId).NotEmpty();
     }
 }

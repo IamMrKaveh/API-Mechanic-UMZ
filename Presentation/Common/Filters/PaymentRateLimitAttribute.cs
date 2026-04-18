@@ -34,7 +34,7 @@ public class PaymentRateLimitAttribute : ActionFilterAttribute
             ? $"payment_limit_user_{currentUserService.CurrentUser.UserId}"
             : $"payment_limit_ip_{httpContext.Connection.RemoteIpAddress}";
 
-    private static ObjectResult BuildTooManyRequestsResult(int retryAfter)
+    private static ObjectResult BuildTooManyRequestsResult(TimeSpan? retryAfter)
         => new(new { message = $"Too many payment attempts. Try again in {retryAfter} seconds." })
         {
             StatusCode = StatusCodes.Status429TooManyRequests

@@ -6,12 +6,10 @@ using Application.Cart.Contracts;
 using Application.Category.Contracts;
 using Application.Discount.Contracts;
 using Application.Location.Contracts;
-using Application.Media.Contracts;
 using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Payment.Contracts;
 using Application.Product.Contracts;
 using Application.Review.Contracts;
-using Application.Security.Interfaces;
 using Application.Shipping.Contracts;
 using Application.Support.Contracts;
 using Application.User.Contracts;
@@ -67,7 +65,6 @@ using Infrastructure.Inventory.Services;
 using Infrastructure.Location.Services;
 using Infrastructure.Media.QueryServices;
 using Infrastructure.Media.Repositories;
-using Infrastructure.Media.Services;
 using Infrastructure.Notification.QueryServices;
 using Infrastructure.Notification.Repositories;
 using Infrastructure.Notification.Services;
@@ -87,8 +84,6 @@ using Infrastructure.Review.Repositories;
 using Infrastructure.Search.Options;
 using Infrastructure.Search.Services;
 using Infrastructure.Security.Options;
-using Infrastructure.Security.Services;
-using Infrastructure.Security.Settings;
 using Infrastructure.Shipping.QueryServices;
 using Infrastructure.Shipping.Repositories;
 using Infrastructure.Storage.Options;
@@ -105,8 +100,8 @@ using Infrastructure.Wallet.Services;
 using Infrastructure.Wishlist.QueryServices;
 using Infrastructure.Wishlist.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Infrastructure.DependencyInjection;
 
@@ -207,8 +202,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IAttributeRepository, AttributeRepository>();
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<IMediaRepository, MediaRepository>();
-        services.AddScoped<ISecurityRepository, SecurityRepository>();
-        services.AddScoped<IWarehouseRepository, WarehouseRepository>();
     }
 
     private static void AddQueryServices(this IServiceCollection services)
@@ -253,7 +246,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ICheckoutShippingValidatorService, CheckoutShippingValidatorService>();
         services.AddScoped<ICheckoutStockValidatorService, CheckoutStockValidatorService>();
         services.AddScoped<ILocationService, LocationService>();
-        services.AddScoped<ISecurityService, SecurityService>();
     }
 
     private static void AddAuthServices(this IServiceCollection services, IConfiguration configuration)
@@ -268,7 +260,6 @@ public static class InfrastructureServiceExtensions
     private static void AddStorageServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));
-
         services.AddScoped<IStorageService, S3FileStorageService>();
     }
 
@@ -300,7 +291,7 @@ public static class InfrastructureServiceExtensions
         }
         else
         {
-            services.AddScoped<ISearchService, NullSearchService>();
+            services.AddScoped<ISearchService, NoOpSearchService>();
         }
     }
 
@@ -319,10 +310,10 @@ public static class InfrastructureServiceExtensions
 
     private static void AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
+        var connectionString = configuration.GetConnectionString("DefaultConnection")!;
+
         services.AddHealthChecks()
-            .AddNpgSql(
-                configuration.GetConnectionString("DefaultConnection")!,
-                name: "postgresql",
+            .AddCheck("postgresql", new NpgsqlHealthCheck(connectionString),
                 tags: ["db", "sql", "postgresql"])
             .AddRedis(
                 configuration.GetConnectionString("Redis") ?? "localhost:6379",
@@ -330,13 +321,39 @@ public static class InfrastructureServiceExtensions
                 tags: ["cache", "redis"]);
     }
 
+    private sealed class NpgsqlHealthCheck(string connectionString) : IHealthCheck
+    {
+        public async Task<HealthCheckResult> CheckHealthAsync(
+            HealthCheckContext context,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await using var connection = new NpgsqlConnection(connectionString);
+                await connection.OpenAsync(cancellationToken);
+                await using var command = connection.CreateCommand();
+                command.CommandText = "SELECT 1";
+                await command.ExecuteScalarAsync(cancellationToken);
+                return HealthCheckResult.Healthy();
+            }
+            catch (Exception ex)
+            {
+                return HealthCheckResult.Unhealthy(ex.Message);
+            }
+        }
+    }
+
     private static void AddDataProtectionWithRedis(
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        var redisConnectionString = configuration.GetConnectionString("Redis")
+            ?? configuration["Cache:RedisConnectionString"]
+            ?? "localhost:6379";
+
         services.AddDataProtection()
             .PersistKeysToStackExchangeRedis(
-                sp => sp.GetRequiredService<IConnectionMultiplexer>(),
+                ConnectionMultiplexer.Connect(redisConnectionString),
                 "DataProtection-Keys");
     }
 

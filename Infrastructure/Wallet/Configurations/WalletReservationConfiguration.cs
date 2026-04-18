@@ -1,5 +1,4 @@
 ﻿using Domain.Wallet.Entities;
-using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
@@ -31,7 +30,7 @@ public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<Wa
 
         builder.Property(e => e.ExpiresAt);
         builder.Property(e => e.CreatedAt).IsRequired();
-        builder.Property(e => e.UpdatedAt);
+        builder.Property(e => e.ResolvedAt);
 
         builder.HasOne(e => e.Wallet)
             .WithMany(w => w.ActiveReservations)

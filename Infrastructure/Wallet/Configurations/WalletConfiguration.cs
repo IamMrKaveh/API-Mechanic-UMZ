@@ -26,16 +26,9 @@ public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet
             b.Property(m => m.Currency).HasColumnName("BalanceCurrency").HasMaxLength(10).IsRequired();
         });
 
-        builder.OwnsOne(e => e.ReservedBalance, rb =>
-        {
-            rb.Property(m => m.Amount).HasColumnName("ReservedBalance").HasColumnType("decimal(18,2)").IsRequired();
-            rb.Property(m => m.Currency).HasColumnName("ReservedCurrency").HasMaxLength(10).IsRequired();
-        });
-
         builder.Property(e => e.IsActive).IsRequired();
-        builder.Property(e => e.RowVersion).IsRowVersion();
         builder.Property(e => e.CreatedAt).IsRequired();
-        builder.Property(e => e.UpdatedAt);
+        builder.Property(e => e.UpdatedAt).IsRequired();
 
         builder.HasIndex(e => e.OwnerId).IsUnique().HasDatabaseName("IX_Wallets_UserId");
 

@@ -25,12 +25,15 @@ internal sealed class ShippingConfiguration : IEntityTypeConfiguration<Domain.Sh
         builder.OwnsOne(e => e.FreeShipping, fs =>
         {
             fs.Property(f => f.IsEnabled).HasColumnName("FreeShippingEnabled").IsRequired();
-            fs.Property(f => f.ThresholdAmount)
-                .HasConversion(
-                    m => Money.Create(m.Amount),
-                    v => v.Amount)
-                .HasColumnName("FreeShippingThreshold")
-                .HasColumnType("decimal(18,2)");
+            fs.OwnsOne(f => f.ThresholdAmount, ta =>
+            {
+                ta.Property(m => m.Amount)
+                    .HasColumnName("FreeShippingThreshold")
+                    .HasColumnType("decimal(18,2)");
+                ta.Property(m => m.Currency)
+                    .HasColumnName("FreeShippingThresholdCurrency")
+                    .HasMaxLength(10);
+            });
         });
 
         builder.OwnsOne(e => e.DeliveryTime, dt =>

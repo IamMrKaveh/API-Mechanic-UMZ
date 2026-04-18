@@ -23,6 +23,6 @@ public sealed record SetPrimaryMediaDto(
 
 public sealed record ReorderMediaDto(
     string EntityType,
-    int EntityId,
-    ICollection<int> OrderedMediaIds
+    Guid EntityId,
+    ICollection<Guid> OrderedMediaIds
 );

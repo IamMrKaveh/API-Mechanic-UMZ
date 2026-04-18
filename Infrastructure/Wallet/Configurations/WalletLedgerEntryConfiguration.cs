@@ -1,5 +1,4 @@
 ﻿using Domain.Wallet.Entities;
-using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
@@ -43,7 +42,7 @@ public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<Wa
         builder.Property(e => e.Description).HasMaxLength(500);
         builder.Property(e => e.ReferenceId).IsRequired().HasMaxLength(200);
         builder.Property(e => e.IdempotencyKey).HasMaxLength(200);
-        builder.Property(e => e.CreatedAt).IsRequired();
+        builder.Property(e => e.OccurredAt).HasColumnName("CreatedAt").IsRequired();
 
         builder.HasIndex(e => e.WalletId).HasDatabaseName("IX_WalletLedgerEntries_WalletId");
         builder.HasIndex(e => e.OwnerId).HasDatabaseName("IX_WalletLedgerEntries_UserId");

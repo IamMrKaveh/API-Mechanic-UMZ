@@ -2,6 +2,8 @@
 using Application.Wishlist.Features.Shared;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
+using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Wishlist.QueryServices;
 
@@ -9,8 +11,6 @@ public sealed class WishlistQueryService(DBContext context) : IWishlistQueryServ
 {
     public async Task<PaginatedResult<WishlistItemDto>> GetPagedAsync(
         UserId userId,
-        int page,
-        int pageSize,
         CancellationToken ct = default)
     {
         var query = context.Wishlists
@@ -21,27 +21,23 @@ public sealed class WishlistQueryService(DBContext context) : IWishlistQueryServ
 
         var items = await query
             .OrderByDescending(w => w.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
             .Join(context.Products.AsNoTracking(),
                 w => w.ProductId,
                 p => p.Id,
-                (w, p) => new WishlistItemDto
-                {
-                    Id = w.Id.Value,
-                    ProductId = p.Id.Value,
-                    ProductName = p.Name.Value,
-                    Slug = p.Slug != null ? p.Slug.Value : string.Empty,
-                    AddedAt = w.CreatedAt
-                })
+                (w, p) => new { w, p })
             .ToListAsync(ct);
 
-        return PaginatedResult<WishlistItemDto>.Create(items, total, page, pageSize);
-    }
+        var dtos = items.Select(x => new WishlistItemDto(
+            Id: x.w.Id.Value,
+            ProductId: x.p.Id.Value,
+            ProductName: x.p.Name,
+            MinPrice: 0m,
+            IsInStock: false,
+            IconUrl: null,
+            AddedAt: x.w.CreatedAt
+        )).ToList();
 
-    public Task<PaginatedResult<WishlistItemDto>> GetPagedAsync(UserId userId, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
+        return PaginatedResult<WishlistItemDto>.Create(dtos, total, 1, total);
     }
 
     public async Task<bool> IsInWishlistAsync(

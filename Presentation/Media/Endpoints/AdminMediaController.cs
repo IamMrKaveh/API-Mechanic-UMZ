@@ -36,7 +36,7 @@ public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiC
     public async Task<IActionResult> UploadMedia(
         [FromForm] IFormFile file,
         [FromForm] string entityType,
-        [FromForm] int entityId,
+        [FromForm] Guid entityId,
         [FromForm] bool isPrimary = false,
         [FromForm] string? altText = null,
         CancellationToken ct = default)
