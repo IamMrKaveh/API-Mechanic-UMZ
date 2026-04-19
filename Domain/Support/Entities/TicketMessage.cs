@@ -22,7 +22,8 @@ public sealed class TicketMessage : Entity<TicketMessageId>
         TicketId ticketId,
         UserId senderId,
         TicketMessageSenderType senderType,
-        string content)
+        string content,
+        DateTime now)
     {
         return new TicketMessage
         {
@@ -32,15 +33,15 @@ public sealed class TicketMessage : Entity<TicketMessageId>
             SenderType = senderType,
             Content = content,
             IsEdited = false,
-            SentAt = DateTime.UtcNow
+            SentAt = now
         };
     }
 
-    internal void EditContent(string newContent)
+    internal void EditContent(string newContent, DateTime now)
     {
         Content = newContent;
         IsEdited = true;
-        EditedAt = DateTime.UtcNow;
+        EditedAt = now;
     }
 
     public bool IsFromCustomer() => SenderType == TicketMessageSenderType.Customer;

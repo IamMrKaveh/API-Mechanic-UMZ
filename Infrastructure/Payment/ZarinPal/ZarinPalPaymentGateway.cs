@@ -2,6 +2,7 @@ using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
+using Infrastructure.Payment.ZarinPal.Options;
 using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Payment.ZarinPal;
@@ -109,12 +110,6 @@ public sealed class ZarinPalPaymentGateway(
             return ServiceResult<PaymentVerificationResult>.Failure("خطا در تأیید پرداخت زرین‌پال.");
         }
     }
-}
-
-public sealed class ZarinPalOptions
-{
-    public string MerchantId { get; init; } = string.Empty;
-    public bool IsSandbox { get; init; }
 }
 
 internal sealed class ZarinPalRequestResponse

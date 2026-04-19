@@ -9,11 +9,12 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Presentation.Auth.Requests;
 using Presentation.Common.Extensions;
+using Presentation.Common.Filters;
 using System.Security.Claims;
 
 namespace Presentation.Auth.Endpoints;
 
-[Route("api/auth")]
+[Route("api/v{version:apiVersion}/auth")]
 [ApiController]
 public class AuthController(IMediator mediator, IMapper mapper)
     : BaseApiController(mediator, mapper)
@@ -21,6 +22,7 @@ public class AuthController(IMediator mediator, IMapper mapper)
     [HttpPost("request-otp")]
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
+    [OtpRateLimit]
     public async Task<IActionResult> RequestOtp(
         [FromBody] SendOtpRequest request,
         CancellationToken ct)
@@ -36,6 +38,7 @@ public class AuthController(IMediator mediator, IMapper mapper)
     [HttpPost("verify-otp")]
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
+    [OtpRateLimit]
     public async Task<IActionResult> VerifyOtp(
         [FromBody] VerifyOtpRequest request,
         CancellationToken ct)

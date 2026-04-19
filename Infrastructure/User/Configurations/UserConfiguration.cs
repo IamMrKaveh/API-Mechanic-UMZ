@@ -49,6 +49,11 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.A
 
         builder.HasIndex("Email_Value").IsUnique().HasDatabaseName("IX_Users_Email");
 
+        builder.HasIndex("PhoneNumber_Value")
+            .IsUnique()
+            .HasFilter("\"PhoneNumber_Value\" IS NOT NULL")
+            .HasDatabaseName("IX_Users_PhoneNumber");
+
         builder.HasQueryFilter(e => e.IsActive);
     }
 }

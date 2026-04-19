@@ -1,3 +1,4 @@
+using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
@@ -19,9 +20,14 @@ public interface IOtpService
         OtpPurpose purpose,
         CancellationToken ct = default);
 
+    Task<ServiceResult<UserOtp>> GetActiveOtpAsync(
+        UserId userId,
+        OtpPurpose purpose,
+        CancellationToken ct = default);
+
     Task<bool> VerifyOtpAsync(
         PhoneNumber phoneNumber,
-        OtpCode otpCode,
+        OtpCode code,
         OtpPurpose purpose,
         CancellationToken ct = default);
 }

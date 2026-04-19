@@ -56,27 +56,6 @@ public sealed class PaymentStatus : ValueObject
         };
     }
 
-    public static Result<PaymentStatus> TryParse(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Result<PaymentStatus>.Success(Pending);
-
-        return value.ToLowerInvariant() switch
-        {
-            "pending" => Result<PaymentStatus>.Success(Pending),
-            "processing" => Result<PaymentStatus>.Success(Processing),
-            "success" => Result<PaymentStatus>.Success(Success),
-            "failed" => Result<PaymentStatus>.Success(Failed),
-            "expired" => Result<PaymentStatus>.Success(Expired),
-            "cancelled" => Result<PaymentStatus>.Success(Cancelled),
-            "refunded" => Result<PaymentStatus>.Success(Refunded),
-            _ => Result<PaymentStatus>.Failure(new Error(
-                "400",
-                $"وضعیت پرداخت '{value}' نامعتبر است.",
-                ErrorType.Validation))
-        };
-    }
-
     public static IEnumerable<PaymentStatus> GetAll()
     {
         yield return Pending;
@@ -88,15 +67,9 @@ public sealed class PaymentStatus : ValueObject
         yield return Refunded;
     }
 
-    public static IEnumerable<PaymentStatus> GetFinalStatuses()
-    {
-        return GetAll().Where(s => s.IsFinal);
-    }
+    public static IEnumerable<PaymentStatus> GetFinalStatuses() => GetAll().Where(s => s.IsFinal);
 
-    public static IEnumerable<PaymentStatus> GetActiveStatuses()
-    {
-        return GetAll().Where(s => !s.IsFinal);
-    }
+    public static IEnumerable<PaymentStatus> GetActiveStatuses() => GetAll().Where(s => !s.IsFinal);
 
     public bool IsSuccess() => Value == Success.Value;
 

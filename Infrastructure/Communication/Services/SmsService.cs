@@ -2,13 +2,13 @@ using Application.Communication.Contracts;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Communication.Options;
-using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Communication.Services;
 
 public sealed class SmsService(
+    HttpClient httpClient,
     IOptions<KavenegarOptions> options,
-    ILogger<SmsService> logger) : ISmsService
+    IAuditService auditService) : ISmsService
 {
     private readonly KavenegarOptions _options = options.Value;
 
@@ -19,7 +19,6 @@ public sealed class SmsService(
     {
         try
         {
-            using var client = new HttpClient();
             var url = $"https://api.kavenegar.com/v1/{_options.ApiKey}/verify/lookup.json";
             var content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
@@ -28,15 +27,14 @@ public sealed class SmsService(
                 ["template"] = _options.OtpTemplate
             });
 
-            var response = await client.PostAsync(url, content, ct);
+            var response = await httpClient.PostAsync(url, content, ct);
             response.EnsureSuccessStatusCode();
 
-            logger.LogInformation("OTP sent to {PhoneNumber}", phoneNumber.Value);
             return true;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to send OTP to {PhoneNumber}", phoneNumber.Value);
+            await auditService.LogErrorAsync($"[SMS] Failed to send OTP to {phoneNumber.Value}: {ex.Message}", ct);
             return false;
         }
     }
@@ -48,7 +46,6 @@ public sealed class SmsService(
     {
         try
         {
-            using var client = new HttpClient();
             var url = $"https://api.kavenegar.com/v1/{_options.ApiKey}/sms/send.json";
             var content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
@@ -57,15 +54,14 @@ public sealed class SmsService(
                 ["message"] = message
             });
 
-            var response = await client.PostAsync(url, content, ct);
+            var response = await httpClient.PostAsync(url, content, ct);
             response.EnsureSuccessStatusCode();
 
-            logger.LogInformation("SMS sent to {PhoneNumber}", phoneNumber.Value);
             return true;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to send SMS to {PhoneNumber}", phoneNumber.Value);
+            await auditService.LogErrorAsync($"[SMS] Failed to send SMS to {phoneNumber.Value}: {ex.Message}", ct);
             return false;
         }
     }
@@ -78,7 +74,6 @@ public sealed class SmsService(
     {
         try
         {
-            using var client = new HttpClient();
             var url = $"https://api.kavenegar.com/v1/{_options.ApiKey}/verify/lookup.json";
 
             var formData = new Dictionary<string, string>
@@ -96,15 +91,14 @@ public sealed class SmsService(
             }
 
             var content = new FormUrlEncodedContent(formData);
-            var response = await client.PostAsync(url, content, ct);
+            var response = await httpClient.PostAsync(url, content, ct);
             response.EnsureSuccessStatusCode();
 
-            logger.LogInformation("Template SMS sent to {PhoneNumber} with template {Template}", phoneNumber.Value, templateName);
             return true;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to send template SMS to {PhoneNumber}", phoneNumber.Value);
+            await auditService.LogErrorAsync($"[SMS] Failed to send template SMS to {phoneNumber.Value}: {ex.Message}", ct);
             return false;
         }
     }

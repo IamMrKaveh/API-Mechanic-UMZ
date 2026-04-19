@@ -10,6 +10,7 @@ public sealed class PaymentService(
     IPaymentTransactionRepository paymentRepository,
     IPaymentGatewayFactory gatewayFactory,
     IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider,
     IAuditService auditService) : IPaymentService
 {
     public async Task<ServiceResult<PaymentInitiationResult>> InitiatePaymentAsync(
@@ -24,9 +25,7 @@ public sealed class PaymentService(
             await auditService.LogWarningAsync(
                 $"[Payment] Duplicate initiation attempt for Order {orderId.Value}. Returning existing.", ct);
             return ServiceResult<PaymentInitiationResult>.Success(
-                new PaymentInitiationResult(
-                    existingPending.Authority.Value,
-                    string.Empty));
+                new PaymentInitiationResult(existingPending.Authority.Value, string.Empty));
         }
 
         var gateway = gatewayFactory.GetGateway();
@@ -49,7 +48,8 @@ public sealed class PaymentService(
             Domain.User.ValueObjects.UserId.NewId(),
             initiateResult.Value.Authority,
             amount.Amount,
-            gateway.GatewayName);
+            gateway.GatewayName,
+            dateTimeProvider.UtcNow);
 
         await paymentRepository.AddAsync(transaction, ct);
         await unitOfWork.SaveChangesAsync(ct);
@@ -61,6 +61,8 @@ public sealed class PaymentService(
         string authority,
         CancellationToken ct = default)
     {
+        var now = dateTimeProvider.UtcNow;
+
         var transaction = await paymentRepository.GetByAuthorityAsync(authority, ct);
         if (transaction is null)
             return ServiceResult<PaymentVerificationResult>.NotFound("تراکنش پیدا نشد.");
@@ -73,7 +75,7 @@ public sealed class PaymentService(
                 new PaymentVerificationResult(transaction.Id.Value, true, transaction.RefId, null, transaction.Fee));
         }
 
-        if (!transaction.CanBeVerified())
+        if (!transaction.CanBeVerified(now))
             return ServiceResult<PaymentVerificationResult>.Failure("تراکنش قابل تأیید نیست.");
 
         var gateway = gatewayFactory.GetGateway(transaction.Gateway.Value);
@@ -81,14 +83,14 @@ public sealed class PaymentService(
 
         if (!verifyResult.IsSuccess || !verifyResult.Value.IsVerified)
         {
-            transaction.MarkAsFailed(verifyResult.Error ?? "تأیید ناموفق");
+            transaction.MarkAsFailed(now, verifyResult.Error ?? "تأیید ناموفق");
             paymentRepository.Update(transaction);
             await unitOfWork.SaveChangesAsync(ct);
             return ServiceResult<PaymentVerificationResult>.Failure(
                 verifyResult.Error ?? "پرداخت تأیید نشد.");
         }
 
-        transaction.MarkAsSuccess(verifyResult.Value.RefId!.Value, verifyResult.Value.Fee);
+        transaction.MarkAsSuccess(verifyResult.Value.RefId!.Value, now, verifyResult.Value.Fee);
         paymentRepository.Update(transaction);
         await unitOfWork.SaveChangesAsync(ct);
 
@@ -100,6 +102,8 @@ public sealed class PaymentService(
         string status,
         CancellationToken ct = default)
     {
+        var now = dateTimeProvider.UtcNow;
+
         var transaction = await paymentRepository.GetByAuthorityAsync(authority, ct);
         if (transaction is null)
             return ServiceResult.NotFound("تراکنش پیدا نشد.");
@@ -110,7 +114,7 @@ public sealed class PaymentService(
             return verifyResult.IsSuccess ? ServiceResult.Success() : ServiceResult.Failure(verifyResult.Error ?? "خطا");
         }
 
-        transaction.MarkAsFailed($"Webhook status: {status}");
+        transaction.MarkAsFailed(now, $"Webhook status: {status}");
         paymentRepository.Update(transaction);
         await unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();

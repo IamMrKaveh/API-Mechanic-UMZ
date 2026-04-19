@@ -4,7 +4,7 @@ namespace Application.Auth.Features.Shared;
 
 public record AuthResult
 {
-    public string AccessToken { get; init; } = string.Empty;
+    public Guid AccessToken { get; init; }
     public string RefreshToken { get; init; } = string.Empty;
     public DateTime AccessTokenExpiresAt { get; init; }
     public DateTime RefreshTokenExpiresAt { get; init; }

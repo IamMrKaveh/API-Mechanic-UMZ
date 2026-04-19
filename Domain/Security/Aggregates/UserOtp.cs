@@ -14,7 +14,7 @@ public sealed class UserOtp : AggregateRoot<OtpId>
     { }
 
     public UserId UserId { get; private set; } = default!;
-    public OtpCode Code { get; private set; } = default!;
+    public string CodeHash { get; private set; } = default!;
     public OtpPurpose Purpose { get; private set; }
     public bool IsVerified { get; private set; }
     public int VerificationAttempts { get; private set; }
@@ -53,7 +53,7 @@ public sealed class UserOtp : AggregateRoot<OtpId>
         {
             Id = OtpId.NewId(),
             UserId = userId,
-            Code = code,
+            CodeHash = code.ToHash(),
             Purpose = purpose,
             IsVerified = false,
             VerificationAttempts = 0,
@@ -65,7 +65,7 @@ public sealed class UserOtp : AggregateRoot<OtpId>
         return otp;
     }
 
-    public void Verify(string providedCode)
+    public void Verify(OtpCode providedCode)
     {
         if (IsVerified)
             throw new OtpAlreadyVerifiedException(Id);
@@ -78,7 +78,7 @@ public sealed class UserOtp : AggregateRoot<OtpId>
 
         VerificationAttempts++;
 
-        if (!Code.Matches(providedCode))
+        if (!providedCode.MatchesHash(CodeHash))
         {
             RaiseDomainEvent(new OtpVerificationFailedEvent(Id, UserId, Purpose, VerificationAttempts, RemainingAttempts));
             throw new InvalidOtpCodeException(Id);

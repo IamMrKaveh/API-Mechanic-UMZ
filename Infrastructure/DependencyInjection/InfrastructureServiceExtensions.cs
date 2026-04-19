@@ -1,4 +1,5 @@
-﻿using Application.Analytics.Contracts;
+﻿using AngleSharp;
+using Application.Analytics.Contracts;
 using Application.Attribute.Contracts;
 using Application.Auth.Contracts;
 using Application.Brand.Contracts;
@@ -71,9 +72,12 @@ using Infrastructure.Notification.Services;
 using Infrastructure.Order.QueryServices;
 using Infrastructure.Order.Repositories;
 using Infrastructure.Order.Services;
+using Infrastructure.Payment.Factory;
 using Infrastructure.Payment.QueryServices;
 using Infrastructure.Payment.Repositories;
 using Infrastructure.Payment.Services;
+using Infrastructure.Payment.ZarinPal;
+using Infrastructure.Payment.ZarinPal.Options;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
@@ -102,6 +106,9 @@ using Infrastructure.Wishlist.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Polly;
+using DateTimeProvider = Infrastructure.Common.Services.DateTimeProvider;
+using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace Infrastructure.DependencyInjection;
 
@@ -117,6 +124,7 @@ public static class InfrastructureServiceExtensions
         services.AddQueryServices();
         services.AddDomainServices();
         services.AddAuthServices(configuration);
+        services.AddPaymentServices(configuration);
         services.AddStorageServices(configuration);
         services.AddCommunicationServices(configuration);
         services.AddSearchServices(configuration);
@@ -153,6 +161,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IOutboxProcessor, OutboxProcessor>();
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<IUrlResolverService, UrlResolverService>();
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
     }
 
     private static void AddRedisCache(this IServiceCollection services, IConfiguration configuration)
@@ -250,8 +259,16 @@ public static class InfrastructureServiceExtensions
 
     private static void AddAuthServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
-        services.Configure<OtpOptions>(configuration.GetSection(OtpOptions.SectionName));
+        services.AddOptions<JwtOptions>()
+            .BindConfiguration(JwtOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<OtpOptions>()
+            .BindConfiguration(OtpOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IOtpService, OtpService>();
@@ -265,10 +282,43 @@ public static class InfrastructureServiceExtensions
 
     private static void AddCommunicationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<SmsOptions>(configuration.GetSection(SmsOptions.SectionName));
+        services.AddOptions<SmsOptions>()
+            .BindConfiguration(SmsOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
-        services.AddScoped<ISmsService, SmsService>();
+
+        services.Configure<KavenegarOptions>(configuration.GetSection(KavenegarOptions.SectionName));
+
+        services.AddHttpClient<ISmsService, SmsService>()
+            .AddTransientHttpErrorPolicy(policy =>
+                policy.WaitAndRetryAsync(3, retryAttempt =>
+                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
+            .AddTransientHttpErrorPolicy(policy =>
+                policy.CircuitBreakerAsync(5, TimeSpan.FromSeconds(30)));
+
         services.AddScoped<IEmailService, EmailService>();
+    }
+
+    private static void AddPaymentServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<ZarinPalOptions>()
+            .BindConfiguration(ZarinPalOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.Configure<PaymentGatewayOptions>(configuration.GetSection("PaymentGateway"));
+
+        services.AddScoped<IPaymentGatewayFactory, PaymentGatewayFactory>();
+        services.AddScoped<IPaymentGateway, ZarinPalPaymentGateway>();
+
+        services.AddHttpClient<ZarinPalPaymentGateway>()
+            .AddTransientHttpErrorPolicy(policy =>
+                policy.WaitAndRetryAsync(3, retryAttempt =>
+                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
+            .AddTransientHttpErrorPolicy(policy =>
+                policy.CircuitBreakerAsync(5, TimeSpan.FromSeconds(60)));
     }
 
     private static void AddSearchServices(this IServiceCollection services, IConfiguration configuration)

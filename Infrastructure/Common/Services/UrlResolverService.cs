@@ -24,11 +24,17 @@ public sealed class UrlResolverService(IConfiguration configuration) : IUrlResol
 
     public string ResolveMediaUrl(string filePath)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(filePath))
+            return string.Empty;
+
+        if (filePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            return filePath;
+
+        return $"{_baseUrl.TrimEnd('/')}/{filePath.TrimStart('/')}";
     }
 
     public string ResolveAbsoluteUrl(string relativePath)
     {
-        throw new NotImplementedException();
+        return GetAbsoluteUrl(relativePath);
     }
 }

@@ -2,5 +2,7 @@
 
 public enum OtpRateLimitStatus
 {
-    Allowed
+    Allowed = 0,
+    Blocked = 1,
+    TemporarilyBlocked = 2
 }

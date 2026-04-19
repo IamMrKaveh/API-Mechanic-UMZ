@@ -8,8 +8,7 @@ namespace Application.Support.Features.Queries.GetTicketDetails;
 
 public sealed class GetTicketDetailsHandler(
     ITicketRepository ticketRepository,
-    ITicketQueryService ticketQueryService,
-    TicketDomainService ticketDomainService)
+    ITicketQueryService ticketQueryService)
         : IRequestHandler<GetTicketDetailsQuery, ServiceResult<TicketDto>>
 {
     public async Task<ServiceResult<TicketDto>> Handle(
@@ -24,7 +23,7 @@ public sealed class GetTicketDetailsHandler(
         if (ticket is null)
             return ServiceResult<TicketDto>.NotFound("تیکت یافت نشد.");
 
-        var result = ticketDomainService.ValidateUserAccess(ticket, userId, request.IsAdmin);
+        var result = TicketDomainService.ValidateUserAccess(ticket, userId, request.IsAdmin);
         if (!result.HasAccess)
             return ServiceResult<TicketDto>.Forbidden("شما دسترسی به این تیکت را ندارید");
 

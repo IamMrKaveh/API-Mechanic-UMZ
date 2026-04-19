@@ -39,26 +39,12 @@ public sealed class PaymentGateway : ValueObject
         };
     }
 
-    public static Result<PaymentGateway> TryParse(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Result<PaymentGateway>.Failure(new Error(
-                "400",
-                "نام درگاه پرداخت الزامی است.",
-                ErrorType.Validation));
-
-        return Result<PaymentGateway>.Success(FromString(value));
-    }
-
     public static PaymentGateway Custom(string value, string? displayName = null)
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new DomainException("نام درگاه پرداخت الزامی است.");
 
-        return new PaymentGateway(
-            value.Trim(),
-            displayName ?? value.Trim(),
-            true);
+        return new PaymentGateway(value.Trim(), displayName ?? value.Trim(), true);
     }
 
     public static IEnumerable<PaymentGateway> GetAll()
@@ -72,19 +58,13 @@ public sealed class PaymentGateway : ValueObject
         yield return Wallet;
     }
 
-    public static IEnumerable<PaymentGateway> GetActive()
-    {
-        return GetAll().Where(g => g.IsActive);
-    }
+    public static IEnumerable<PaymentGateway> GetActive() => GetAll().Where(g => g.IsActive);
 
-    public bool IsBankGateway() =>
-        this == Mellat || this == Saman || this == Parsian || this == Pasargad || this == Saderat;
+    public bool IsBankGateway() => this == Mellat || this == Saman || this == Parsian || this == Pasargad || this == Saderat;
 
-    public bool IsIPGGateway() =>
-        this == Zarinpal;
+    public bool IsIPGGateway() => this == Zarinpal;
 
-    public bool IsWallet() =>
-        this == Wallet;
+    public bool IsWallet() => this == Wallet;
 
     protected override IEnumerable<object> GetEqualityComponents()
     {

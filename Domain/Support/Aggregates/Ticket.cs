@@ -37,6 +37,36 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
 
     public TicketMessage? LastMessage => _messages.OrderByDescending(m => m.SentAt).FirstOrDefault();
 
+    public static Ticket Create(
+    TicketId id,
+    UserId customerId,
+    string subject,
+    TicketCategory category,
+    TicketPriority? priority,
+    DateTime now)
+    {
+        Guard.Against.Null(id, nameof(id));
+        Guard.Against.Null(customerId, nameof(customerId));
+        Guard.Against.NullOrWhiteSpace(subject, nameof(subject));
+        Guard.Against.Null(category, nameof(category));
+
+        var ticket = new Ticket
+        {
+            Id = id,
+            CustomerId = customerId,
+            Subject = subject.Trim(),
+            Category = category,
+            Priority = priority ?? TicketPriority.Normal,
+            Status = TicketStatus.Open,
+            CreatedAt = now,
+            UpdatedAt = now,
+            LastActivityAt = now
+        };
+
+        ticket.RaiseDomainEvent(new TicketCreatedEvent(id, customerId, subject.Trim(), category.Value, priority ?? TicketPriority.Normal));
+        return ticket;
+    }
+
     public static Ticket Open(
         TicketId id,
         UserId customerId,
@@ -67,36 +97,31 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
     }
 
     public TicketMessage AddMessage(
-        TicketMessageId messageId,
-        UserId senderId,
-        TicketMessageSenderType senderType,
-        string content)
+     TicketMessageId messageId,
+     UserId senderId,
+     TicketMessageSenderType senderType,
+     string content,
+     DateTime now)
     {
         if (IsClosed)
             throw new DomainException("تیکت بسته شده است.");
 
         Guard.Against.NullOrWhiteSpace(content, nameof(content));
 
-        var message = TicketMessage.Create(messageId, Id, senderId, senderType, content.Trim());
+        var message = TicketMessage.Create(messageId, Id, senderId, senderType, content.Trim(), now);
         _messages.Add(message);
 
         UpdateStatusAfterMessage(senderType);
 
-        LastActivityAt = DateTime.UtcNow;
-        UpdatedAt = DateTime.UtcNow;
+        LastActivityAt = now;
+        UpdatedAt = now;
 
-        RaiseDomainEvent(new TicketMessageAddedEvent(
-            Id,
-            messageId,
-            CustomerId,
-            senderId,
-            senderType,
-            _messages.Count));
+        RaiseDomainEvent(new TicketMessageAddedEvent(Id, messageId, CustomerId, senderId, senderType, _messages.Count));
 
         return message;
     }
 
-    public void EditMessage(TicketMessageId messageId, UserId editorId, string newContent)
+    public void EditMessage(TicketMessageId messageId, UserId editorId, string newContent, DateTime now)
     {
         if (IsClosed)
             throw new DomainException("تیکت بسته شده است.");
@@ -109,8 +134,8 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
 
         Guard.Against.NullOrWhiteSpace(newContent, nameof(newContent));
 
-        message.EditContent(newContent.Trim());
-        UpdatedAt = DateTime.UtcNow;
+        message.EditContent(newContent.Trim(), now);
+        UpdatedAt = now;
     }
 
     public void AssignTo(UserId agentId)
@@ -227,7 +252,7 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
 
     public bool IsUrgent() => Priority == TicketPriority.Urgent;
 
-    public bool RequiresUrgentAttention() => IsOpen && IsUrgent() && (DateTime.UtcNow - CreatedAt).TotalHours > 1;
+    public bool RequiresUrgentAttention(DateTime now) => IsOpen && IsUrgent() && (now - CreatedAt).TotalHours > 1;
 
     public TimeSpan? GetTimeToFirstResponse()
     {

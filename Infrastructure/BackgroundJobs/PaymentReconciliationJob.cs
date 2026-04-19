@@ -62,7 +62,8 @@ public sealed class PaymentReconciliationJob(
 
                 if (verifyResult.IsSuccess && verifyResult.Value.IsVerified)
                 {
-                    tx.MarkAsSuccess(verifyResult.Value.RefId!.Value, verifyResult.Value.Fee);
+                    var now = DateTime.UtcNow;
+                    tx.MarkAsSuccess(verifyResult.Value.RefId!.Value, now, verifyResult.Value.Fee);
                     reconciledCount++;
 
                     await auditService.LogWarningAsync(
@@ -70,7 +71,7 @@ public sealed class PaymentReconciliationJob(
                 }
                 else
                 {
-                    tx.MarkAsFailed("Reconciliation: پرداخت تأیید نشد.");
+                    tx.MarkAsFailed(DateTime.UtcNow, "Reconciliation: پرداخت تأیید نشد.");
                     failedCount++;
                 }
             }

@@ -8,6 +8,7 @@ public static class ConfigurationValidationExtension
         {
             "ConnectionStrings:PoolerConnection",
             "ConnectionStrings:DirectConnection",
+            "ConnectionStrings:Redis",
             "Jwt:Key",
             "Jwt:Issuer",
             "Jwt:Audience",
@@ -28,6 +29,10 @@ public static class ConfigurationValidationExtension
                 $"Required configuration keys are missing or empty: {string.Join(", ", missing)}. " +
                 "Ensure all required environment variables are set.");
         }
+
+        var allowedOrigins = builder.Configuration.GetSection("Security:AllowedOrigins").Get<string[]>();
+        if (allowedOrigins is null || allowedOrigins.Length == 0)
+            throw new InvalidOperationException("Security:AllowedOrigins باید حداقل یک origin داشته باشد.");
 
         return builder;
     }
