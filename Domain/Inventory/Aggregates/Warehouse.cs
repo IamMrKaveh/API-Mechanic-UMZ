@@ -25,6 +25,7 @@ public sealed class Warehouse : AggregateRoot<WarehouseId>, IActivatable, IAudit
         string code,
         string name,
         string city,
+        DateTime createdAt,
         string? address = null,
         string? phone = null,
         int priority = 0,
@@ -47,14 +48,14 @@ public sealed class Warehouse : AggregateRoot<WarehouseId>, IActivatable, IAudit
             Priority = priority,
             IsDefault = isDefault,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = createdAt
         };
 
         warehouse.RaiseDomainEvent(new WarehouseCreatedEvent(warehouseId, codeVo.Value, warehouse.Name));
         return warehouse;
     }
 
-    public void Update(string name, string city, string? address, string? phone, int priority)
+    public void Update(string name, string city, string? address, string? phone, int priority, DateTime updatedAt)
     {
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
 
@@ -63,7 +64,7 @@ public sealed class Warehouse : AggregateRoot<WarehouseId>, IActivatable, IAudit
         Address = address?.Trim();
         Phone = phone?.Trim();
         Priority = priority;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = updatedAt;
         IncrementVersion();
     }
 

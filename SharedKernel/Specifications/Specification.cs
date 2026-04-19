@@ -1,28 +1,23 @@
 namespace SharedKernel.Specifications;
 
-public abstract class Specification<T> : ISpecification<T>
+public abstract class Specification<T>
 {
     private Func<T, bool>? _compiledPredicate;
-    private readonly Lock _syncLock = new();
 
     public abstract Expression<Func<T, bool>> ToExpression();
 
     public bool IsSatisfiedBy(T entity)
     {
-        if (_compiledPredicate is null)
-        {
-            lock (_syncLock)
-            {
-                _compiledPredicate ??= ToExpression().Compile();
-            }
-        }
-
+        _compiledPredicate ??= ToExpression().Compile();
         return _compiledPredicate(entity);
     }
 
-    public Specification<T> And(Specification<T> other) => new AndSpecification<T>(this, other);
+    public static Specification<T> operator &(Specification<T> left, Specification<T> right)
+        => new AndSpecification<T>(left, right);
 
-    public Specification<T> Or(Specification<T> other) => new OrSpecification<T>(this, other);
+    public static Specification<T> operator |(Specification<T> left, Specification<T> right)
+        => new OrSpecification<T>(left, right);
 
-    public Specification<T> Not() => new NotSpecification<T>(this);
+    public static Specification<T> operator !(Specification<T> spec)
+        => new NotSpecification<T>(spec);
 }

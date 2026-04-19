@@ -1,7 +1,5 @@
 ﻿using Domain.Common.Abstractions;
-using Infrastructure.Persistence.Context;
 using Infrastructure.Persistence.Outbox;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Infrastructure.Persistence.Interceptors;
 
@@ -46,7 +44,7 @@ public sealed class DomainEventInterceptor : SaveChangesInterceptor
             var type = domainEvent.GetType().AssemblyQualifiedName!;
             var payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType());
 
-            return OutboxMessage.Create(type, payload);
+            return OutboxMessage.Create(type, payload, DateTime.UtcNow);
         }).ToList();
 
         if (context is DBContext dbContext)

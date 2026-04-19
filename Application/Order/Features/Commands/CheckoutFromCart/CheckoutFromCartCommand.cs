@@ -11,4 +11,4 @@ public record CheckoutFromCartCommand(
     string? PaymentMethod,
     string IpAddress,
     string? UserAgent,
-    Guid IdempotencyKey) : IRequest<ServiceResult<CheckoutResultDto>>;
+    Guid IdempotencyKey) : IRequest<ServiceResult<CheckoutResultDto>>, IIdempotentCommand;

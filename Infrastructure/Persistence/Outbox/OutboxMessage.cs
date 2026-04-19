@@ -13,20 +13,20 @@ public sealed class OutboxMessage
     private OutboxMessage()
     { }
 
-    public static OutboxMessage Create(string type, string payload)
+    public static OutboxMessage Create(string type, string payload, DateTime createdAt)
     {
         return new OutboxMessage
         {
             Id = OutboxMessageId.NewId(),
             Type = type,
             Payload = payload,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = createdAt
         };
     }
 
-    public void MarkProcessed()
+    public void MarkProcessed(DateTime processedAt)
     {
-        ProcessedAt = DateTime.UtcNow;
+        ProcessedAt = processedAt;
         Error = null;
     }
 

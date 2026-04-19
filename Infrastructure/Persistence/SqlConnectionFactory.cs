@@ -1,6 +1,3 @@
-using Application.Common.Contracts;
-using System.Data;
-
 namespace Infrastructure.Persistence;
 
 public sealed class SqlConnectionFactory(IConfiguration configuration) : ISqlConnectionFactory
