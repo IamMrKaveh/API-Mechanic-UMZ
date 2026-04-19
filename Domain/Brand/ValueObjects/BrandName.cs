@@ -12,15 +12,15 @@ public sealed record BrandName
     public static BrandName Create(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("نام برند الزامی است.", nameof(value));
+            throw new DomainException("نام برند الزامی است.");
 
         var trimmed = value.Trim();
 
         if (trimmed.Length < MinLength)
-            throw new ArgumentException($"نام برند باید حداقل {MinLength} کاراکتر باشد.", nameof(value));
+            throw new DomainException($"نام برند باید حداقل {MinLength} کاراکتر باشد.");
 
         if (trimmed.Length > MaxLength)
-            throw new ArgumentException($"نام برند نمی‌تواند بیش از {MaxLength} کاراکتر باشد.", nameof(value));
+            throw new DomainException($"نام برند نمی‌تواند بیش از {MaxLength} کاراکتر باشد.");
 
         return new BrandName(trimmed);
     }

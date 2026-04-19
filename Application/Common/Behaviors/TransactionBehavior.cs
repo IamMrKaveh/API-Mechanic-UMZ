@@ -20,7 +20,7 @@ public sealed class TransactionBehavior<TRequest, TResponse>(
                 var transaction = await unitOfWork.BeginTransactionAsync(ct);
                 try
                 {
-                    var response = await next();
+                    var response = await next(ct);
                     await unitOfWork.CommitTransactionAsync(ct);
                     return response;
                 }
@@ -38,6 +38,3 @@ public sealed class TransactionBehavior<TRequest, TResponse>(
         }
     }
 }
-
-public interface IQuery
-{ }

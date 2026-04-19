@@ -2,6 +2,6 @@
 
 public interface IDateTimeProvider
 {
-    DateTime UtcNow => DateTime.UtcNow;
-    DateOnly Today => DateOnly.FromDateTime(DateTime.UtcNow);
+    DateTime UtcNow { get; }
+    DateOnly Today { get; }
 }

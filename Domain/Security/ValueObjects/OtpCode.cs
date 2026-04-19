@@ -2,11 +2,9 @@
 
 public sealed class OtpCode : ValueObject
 {
-    public string Value { get; }
+    public const int Length = 6;
 
-    private const int DefaultLength = 6;
-    private const int MinLength = 4;
-    private const int MaxLength = 8;
+    public string Value { get; }
 
     private OtpCode(string value) => Value = value;
 
@@ -15,25 +13,19 @@ public sealed class OtpCode : ValueObject
         if (string.IsNullOrWhiteSpace(value))
             throw new DomainException("کد OTP الزامی است.");
 
-        var normalized = value.Trim();
+        var trimmed = value.Trim();
 
-        if (normalized.Length < MinLength || normalized.Length > MaxLength)
-            throw new DomainException($"کد OTP باید بین {MinLength} تا {MaxLength} کاراکتر باشد.");
+        if (trimmed.Length != Length)
+            throw new DomainException($"کد OTP باید دقیقاً {Length} رقم باشد.");
 
-        if (!normalized.All(char.IsDigit))
-            throw new DomainException("کد OTP فقط باید شامل اعداد باشد.");
+        if (!trimmed.All(char.IsDigit))
+            throw new DomainException("کد OTP باید فقط شامل اعداد باشد.");
 
-        return new OtpCode(normalized);
+        return new OtpCode(trimmed);
     }
 
-    public static OtpCode Generate(int length = DefaultLength)
+    public static OtpCode Generate(int length = Length)
     {
-        if (length < MinLength || length > MaxLength)
-            throw new DomainException($"طول کد OTP باید بین {MinLength} تا {MaxLength} باشد.");
-
-        if (length > 10)
-            throw new DomainException("برای جلوگیری از تکرار، طول OTP نمی‌تواند بیشتر از 10 باشد.");
-
         var digits = Enumerable.Range(0, 10).ToList();
 
         using var rng = RandomNumberGenerator.Create();

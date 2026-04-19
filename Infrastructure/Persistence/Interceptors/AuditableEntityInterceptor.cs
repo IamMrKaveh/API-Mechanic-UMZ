@@ -4,7 +4,7 @@ using SharedKernel.Abstractions.Interfaces;
 
 namespace Infrastructure.Persistence.Interceptors;
 
-public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
+public sealed class AuditableEntityInterceptor(IDateTimeProvider dateTimeProvider) : SaveChangesInterceptor
 {
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
@@ -23,11 +23,11 @@ public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private static void UpdateAuditFields(DbContext? context)
+    private void UpdateAuditFields(DbContext? context)
     {
         if (context is null) return;
 
-        var now = DateTime.UtcNow;
+        var now = dateTimeProvider.UtcNow;
 
         foreach (var entry in context.ChangeTracker.Entries<IAuditable>())
         {

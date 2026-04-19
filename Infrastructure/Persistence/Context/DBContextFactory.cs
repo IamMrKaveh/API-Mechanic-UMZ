@@ -1,11 +1,8 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration;
 using Infrastructure.Persistence.Interceptors;
 
 namespace Infrastructure.Persistence.Context;
 
-public sealed class DBContextFactory : IDesignTimeDbContextFactory<DBContext>
+public sealed class DBContextFactory(IDateTimeProvider dateTimeProvider) : IDesignTimeDbContextFactory<DBContext>
 {
     public DBContext CreateDbContext(string[] args)
     {
@@ -31,12 +28,15 @@ public sealed class DBContextFactory : IDesignTimeDbContextFactory<DBContext>
         var optionsBuilder = new DbContextOptionsBuilder<DBContext>();
         optionsBuilder.UseNpgsql(connectionString, npgsqlOptions =>
         {
-            npgsqlOptions.EnableRetryOnFailure(0);
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 3,
+                maxRetryDelay: TimeSpan.FromSeconds(5),
+                errorCodesToAdd: null);
         });
 
         return new DBContext(
             optionsBuilder.Options,
-            new AuditableEntityInterceptor(),
+            new AuditableEntityInterceptor(dateTimeProvider),
             new DomainEventInterceptor());
     }
 }

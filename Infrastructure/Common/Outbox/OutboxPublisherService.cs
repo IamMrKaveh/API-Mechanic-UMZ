@@ -9,7 +9,8 @@ namespace Infrastructure.Common.Outbox;
 /// </summary>
 public class OutboxPublisherService(
     IServiceScopeFactory scopeFactory,
-    IAuditService auditService) : BackgroundService
+    IAuditService auditService,
+    IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromSeconds(15);
     private const int BatchSize = 100;
@@ -57,9 +58,9 @@ public class OutboxPublisherService(
                 }
                 else
                 {
-                    var domainEvent = (INotification)System.Text.Json.JsonSerializer.Deserialize(message.Payload, eventType)!;
+                    var domainEvent = (INotification)JsonSerializer.Deserialize(message.Payload, eventType)!;
                     await mediator.Publish(domainEvent, ct);
-                    message.MarkProcessed();
+                    message.MarkProcessed(dateTimeProvider.UtcNow);
                 }
             }
             catch (Exception ex)
