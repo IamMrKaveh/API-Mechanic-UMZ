@@ -24,7 +24,7 @@ public class RefreshTokenHandler(IAuthService authService) : IRequestHandler<Ref
 
         return ServiceResult<AuthResult>.Success(new AuthResult
         {
-            AccessToken = accessToken,
+            AccessToken = Guid.Parse(accessToken),
             RefreshToken = refreshTokenInfo.RefreshToken,
             AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(60),
             RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30),

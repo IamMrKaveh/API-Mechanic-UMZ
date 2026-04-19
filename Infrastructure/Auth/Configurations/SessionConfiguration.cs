@@ -1,9 +1,6 @@
 using Domain.Security.Aggregates;
-using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Auth.Configurations;
 
@@ -53,6 +50,11 @@ public sealed class SessionConfiguration : IEntityTypeConfiguration<UserSession>
         builder.HasIndex(e => e.RefreshToken)
             .HasDatabaseName("IX_UserSessions_RefreshToken")
             .IsUnique();
+
+        builder.HasIndex(e => new { e.UserId, e.DeviceInfo })
+            .IsUnique()
+            .HasFilter("\"IsRevoked\" = false")
+            .HasDatabaseName("IX_UserSessions_UserId_DeviceInfo_Active");
 
         builder.HasIndex(e => new { e.UserId, e.IsRevoked, e.ExpiresAt });
     }

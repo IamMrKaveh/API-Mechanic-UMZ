@@ -3,7 +3,7 @@ using Domain.Payment.Results;
 
 namespace Domain.Payment.Services;
 
-public sealed class PaymentDomainService
+public sealed class PaymentDomainService()
 {
     public static PaymentProcessResult ProcessSuccessfulPayment(
         PaymentTransaction transaction,
@@ -12,10 +12,12 @@ public sealed class PaymentDomainService
     {
         Guard.Against.Null(transaction, nameof(transaction));
 
-        if (!transaction.CanBeVerified())
+        var now = DateTime.UtcNow;
+
+        if (!transaction.CanBeVerified(now))
             return PaymentProcessResult.Failed("تراکنش قابل تأیید نیست.");
 
-        transaction.MarkAsSuccess(refId, fee);
+        transaction.MarkAsSuccess(refId, now, fee);
 
         return PaymentProcessResult.Success(refId);
     }
@@ -26,20 +28,21 @@ public sealed class PaymentDomainService
     {
         Guard.Against.Null(transaction, nameof(transaction));
 
-        transaction.MarkAsFailed(errorMessage);
+        transaction.MarkAsFailed(DateTime.UtcNow, errorMessage);
     }
 
     public static int ExpireStaleTransactions(IEnumerable<PaymentTransaction> transactions)
     {
         Guard.Against.Null(transactions, nameof(transactions));
 
+        var now = DateTime.UtcNow;
         var expiredCount = 0;
 
         foreach (var transaction in transactions)
         {
-            if (transaction.IsExpired() && transaction.IsPending())
+            if (transaction.IsExpired(now) && transaction.IsPending())
             {
-                transaction.Expire();
+                transaction.Expire(now);
                 expiredCount++;
             }
         }

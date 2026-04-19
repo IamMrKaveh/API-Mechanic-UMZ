@@ -21,11 +21,12 @@ public class CreateTicketHandler(
 
         var ticketId = TicketId.NewId();
         var customerId = UserId.From(request.UserId);
+        var now = DateTime.UtcNow;
 
         var ticket = Ticket.Open(ticketId, customerId, request.Subject, category, priority);
 
         var messageId = TicketMessageId.NewId();
-        ticket.AddMessage(messageId, customerId, TicketMessageSenderType.Customer, request.Message);
+        ticket.AddMessage(messageId, customerId, TicketMessageSenderType.Customer, request.Message, now);
 
         await ticketRepository.AddAsync(ticket, ct);
         await unitOfWork.SaveChangesAsync(ct);

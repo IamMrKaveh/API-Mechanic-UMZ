@@ -43,12 +43,13 @@ public sealed class NotificationDomainService
 
     public static IReadOnlyList<Aggregates.Notification> FilterDeletableNotifications(
         IEnumerable<Aggregates.Notification> notifications,
-        TimeSpan minAge)
+        TimeSpan minAge,
+        DateTime now)
     {
         Guard.Against.Null(notifications, nameof(notifications));
 
         return notifications
-            .Where(n => n.IsRead && (DateTime.UtcNow - n.CreatedAt) >= minAge)
+            .Where(n => n.IsRead && (now - n.CreatedAt) >= minAge)
             .ToList()
             .AsReadOnly();
     }

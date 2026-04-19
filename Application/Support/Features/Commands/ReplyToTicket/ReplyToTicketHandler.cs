@@ -28,7 +28,7 @@ public class ReplyToTicketHandler(
                 ? TicketMessageSenderType.Agent
                 : TicketMessageSenderType.Customer;
 
-            ticket.AddMessage(messageId, senderId, senderType, request.Content);
+            ticket.AddMessage(messageId, senderId, senderType, request.Content, DateTime.UtcNow);
 
             ticketRepository.Update(ticket);
             await unitOfWork.SaveChangesAsync(ct);

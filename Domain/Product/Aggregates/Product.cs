@@ -106,6 +106,12 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
 
     public void Restore()
     {
-        throw new NotImplementedException();
+        if (!IsDeleted) return;
+
+        IsDeleted = false;
+        DeletedAt = null;
+        DeletedBy = null;
+        IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

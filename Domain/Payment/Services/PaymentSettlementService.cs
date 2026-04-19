@@ -61,7 +61,7 @@ public sealed class PaymentSettlementService
         if (!eligibility.IsValid)
             return SettlementRefundResult.Failed(eligibility.Error!);
 
-        payment.Refund(reason);
+        payment.Refund(DateTime.UtcNow, reason);
 
         order.Refund();
 

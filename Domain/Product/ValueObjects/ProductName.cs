@@ -17,8 +17,6 @@ public sealed class ProductName : ValueObject
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("نام محصول الزامی است.");
 
-        //move to application
-        //var normalized = PersianTextNormalizer.Normalize(name);
         Validate(name);
 
         return new ProductName(name);

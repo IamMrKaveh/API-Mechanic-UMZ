@@ -32,12 +32,10 @@ public class ChangePhoneNumberHandler(
 
         var otpCode = OtpCode.Create(request.OtpCode);
         otpService.HashOtp(otpCode);
-        if (otpService.VerifyOtpAsync(phoneNumber, otpCode, OtpPurpose.PhoneVerification, ct).Result is not true)
-        {
-            userRepository.Update(user);
-            await unitOfWork.SaveChangesAsync(ct);
+
+        var isValid = await otpService.VerifyOtpAsync(phoneNumber, otpCode, OtpPurpose.PhoneVerification, ct);
+        if (!isValid)
             return ServiceResult.Failure("کد تأیید نادرست است.");
-        }
 
         try
         {

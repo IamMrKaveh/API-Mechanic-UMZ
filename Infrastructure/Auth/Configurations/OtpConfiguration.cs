@@ -1,9 +1,6 @@
 using Domain.Security.Aggregates;
-using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Auth.Configurations;
 
@@ -22,10 +19,10 @@ public sealed class OtpConfiguration : IEntityTypeConfiguration<UserOtp>
             .HasConversion(v => v.Value, v => UserId.From(v))
             .IsRequired();
 
-        builder.Property(e => e.Code)
-            .HasConversion(v => v.Value, v => OtpCode.Create(v))
-            .IsRequired()
-            .HasMaxLength(8);
+        builder.Property(e => e.CodeHash)
+               .HasColumnName("CodeHash")
+               .IsRequired()
+               .HasMaxLength(128);
 
         builder.Property(e => e.Purpose)
             .HasConversion<string>()

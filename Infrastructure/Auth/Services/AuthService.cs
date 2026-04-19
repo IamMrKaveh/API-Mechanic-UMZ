@@ -78,7 +78,7 @@ public sealed class AuthService(
 
         try
         {
-            otp.Verify(code.Value);
+            otp.Verify(code);
         }
         catch
         {

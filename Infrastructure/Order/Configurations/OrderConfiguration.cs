@@ -101,6 +101,7 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
                .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(e => e.IdempotencyKey).IsUnique();
+        builder.HasIndex(e => e.OrderNumber).IsUnique();
         builder.HasIndex(e => e.UserId);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }

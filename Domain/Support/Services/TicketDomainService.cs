@@ -11,7 +11,7 @@ public sealed class TicketDomainService
     private static readonly string[] UrgentKeywords = ["فوری", "اورژانسی", "urgent", "بحرانی", "حیاتی", "critical"];
     private static readonly string[] HighKeywords = ["مهم", "ضروری", "سریع", "important", "asap"];
 
-    public TicketAccessResult ValidateUserAccess(
+    public static TicketAccessResult ValidateUserAccess(
         Ticket ticketId,
         UserId userId,
         bool isAdmin)
@@ -28,7 +28,7 @@ public sealed class TicketDomainService
         return TicketAccessResult.Allowed();
     }
 
-    public Result ValidateCanSendMessage(Ticket ticket)
+    public static Result ValidateCanSendMessage(Ticket ticket)
     {
         Guard.Against.Null(ticket, nameof(ticket));
 
@@ -41,7 +41,7 @@ public sealed class TicketDomainService
         return Result.Success();
     }
 
-    public Result ValidateCanClose(Ticket ticket)
+    public static Result ValidateCanClose(Ticket ticket)
     {
         Guard.Against.Null(ticket, nameof(ticket));
 
@@ -54,7 +54,7 @@ public sealed class TicketDomainService
         return Result.Success();
     }
 
-    public Result ValidateCanEditMessage(Ticket ticket, TicketMessageId messageId, UserId editorId, bool isAdmin)
+    public static Result ValidateCanEditMessage(Ticket ticket, TicketMessageId messageId, UserId editorId, bool isAdmin)
     {
         Guard.Against.Null(ticket, nameof(ticket));
         Guard.Against.Null(messageId, nameof(messageId));
@@ -89,7 +89,7 @@ public sealed class TicketDomainService
         return Result.Success();
     }
 
-    public TicketStatistics CalculateStatistics(IEnumerable<Ticket> tickets)
+    public static TicketStatistics CalculateStatistics(IEnumerable<Ticket> tickets)
     {
         Guard.Against.Null(tickets, nameof(tickets));
 
@@ -128,7 +128,7 @@ public sealed class TicketDomainService
             statusBreakdown);
     }
 
-    public TicketPriority SuggestPriority(string subject, string message)
+    public static TicketPriority SuggestPriority(string subject, string message)
     {
         Guard.Against.NullOrWhiteSpace(subject, nameof(subject));
 
@@ -143,14 +143,15 @@ public sealed class TicketDomainService
         return TicketPriority.Normal;
     }
 
-    public IEnumerable<Ticket> FilterRequiringUrgentAttention(IEnumerable<Ticket> tickets)
+    public static IEnumerable<Ticket> FilterRequiringUrgentAttention(IEnumerable<Ticket> tickets)
     {
         Guard.Against.Null(tickets, nameof(tickets));
 
-        return tickets.Where(t => t.RequiresUrgentAttention());
+        var now = DateTime.UtcNow;
+        return tickets.Where(t => t.RequiresUrgentAttention(now));
     }
 
-    public IEnumerable<Ticket> SortByPriorityAndAge(IEnumerable<Ticket> tickets)
+    public static IEnumerable<Ticket> SortByPriorityAndAge(IEnumerable<Ticket> tickets)
     {
         Guard.Against.Null(tickets, nameof(tickets));
 
@@ -159,7 +160,7 @@ public sealed class TicketDomainService
             .ThenBy(t => t.CreatedAt);
     }
 
-    public IEnumerable<Ticket> GetOverdueTickets(IEnumerable<Ticket> tickets, TimeSpan overdueThreshold)
+    public static IEnumerable<Ticket> GetOverdueTickets(IEnumerable<Ticket> tickets, TimeSpan overdueThreshold)
     {
         Guard.Against.Null(tickets, nameof(tickets));
 
@@ -171,7 +172,7 @@ public sealed class TicketDomainService
             (t.LastActivityAt ?? t.CreatedAt) < cutoff);
     }
 
-    public IEnumerable<Ticket> GetTicketsWithoutResponse(IEnumerable<Ticket> tickets, TimeSpan responseThreshold)
+    public static IEnumerable<Ticket> GetTicketsWithoutResponse(IEnumerable<Ticket> tickets, TimeSpan responseThreshold)
     {
         Guard.Against.Null(tickets, nameof(tickets));
 
@@ -184,7 +185,7 @@ public sealed class TicketDomainService
             t.CreatedAt < cutoff);
     }
 
-    public Result ValidatePriorityChange(Ticket ticket, ValueObjects.TicketPriority newPriority, bool isAdmin)
+    public static Result ValidatePriorityChange(Ticket ticket, ValueObjects.TicketPriority newPriority, bool isAdmin)
     {
         Guard.Against.Null(ticket, nameof(ticket));
         Guard.Against.Null(newPriority, nameof(newPriority));
@@ -210,7 +211,7 @@ public sealed class TicketDomainService
         return Result.Success();
     }
 
-    public Result ValidateAssignment(Ticket ticket, UserId agentId)
+    public static Result ValidateAssignment(Ticket ticket, UserId agentId)
     {
         Guard.Against.Null(ticket, nameof(ticket));
         Guard.Against.Null(agentId, nameof(agentId));

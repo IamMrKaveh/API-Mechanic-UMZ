@@ -1,12 +1,10 @@
 using Application.Auth.Contracts;
-using Application.Audit.Contracts;
-using Application.Communication.Contracts;
+using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Auth.Options;
-using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Auth.Services;
 
@@ -18,11 +16,21 @@ public sealed class OtpService(
 {
     private readonly AuthOptions _authOptions = authOptions.Value;
 
+    public async Task<ServiceResult<UserOtp>> GetActiveOtpAsync(
+        UserId userId,
+        OtpPurpose purpose,
+        CancellationToken ct = default)
+    {
+        var otp = await otpRepository.GetLatestActiveByUserIdAsync(userId, purpose, ct);
+        if (otp is null)
+            return ServiceResult<UserOtp>.NotFound("کد تأیید فعالی برای این کاربر یافت نشد.");
+        return ServiceResult<UserOtp>.Success(otp);
+    }
+
     public string HashOtp(OtpCode otp)
     {
-        using var sha = System.Security.Cryptography.SHA256.Create();
-        var bytes = System.Text.Encoding.UTF8.GetBytes(otp.Value);
-        var hash = sha.ComputeHash(bytes);
+        var bytes = Encoding.UTF8.GetBytes(otp.Value);
+        var hash = SHA256.HashData(bytes);
         return Convert.ToBase64String(hash);
     }
 

@@ -57,7 +57,7 @@ public sealed class SecurityDomainService
 
         try
         {
-            otp.Verify(providedCode);
+            otp.Verify(OtpCode.Create(providedCode));
             return OtpVerificationResult.Verified(otp);
         }
         catch (InvalidOtpCodeException)

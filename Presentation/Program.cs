@@ -71,6 +71,7 @@ static void ConfigureAuthentication(WebApplicationBuilder builder)
     var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty;
 
     builder.Services
+        .AddScoped<OtpRateLimitFilter>()
         .AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -121,6 +122,7 @@ static void ConfigureControllersAndApi(WebApplicationBuilder builder)
 
     builder.Services.AddControllers(options =>
     {
+        options.Filters.AddService<OtpRateLimitFilter>();
         options.Filters.Add<ValidationFilter>();
         options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
     });

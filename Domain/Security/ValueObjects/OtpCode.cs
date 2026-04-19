@@ -51,6 +51,20 @@ public sealed class OtpCode : ValueObject
         return string.Equals(Value, providedCode.Trim(), StringComparison.Ordinal);
     }
 
+    public string ToHash()
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes(Value);
+        return Convert.ToBase64String(SHA256.HashData(bytes));
+    }
+
+    public bool MatchesHash(string storedHash)
+    {
+        if (string.IsNullOrWhiteSpace(storedHash))
+            return false;
+
+        return string.Equals(ToHash(), storedHash, StringComparison.Ordinal);
+    }
+
     public string GetMasked()
     {
         if (Value.Length <= 2)

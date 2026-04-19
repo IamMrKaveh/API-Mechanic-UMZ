@@ -245,6 +245,9 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
 
     public void Restore()
     {
-        throw new NotImplementedException();
+        if (IsActive) return;
+
+        IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

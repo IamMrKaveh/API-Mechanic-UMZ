@@ -4,19 +4,17 @@ public static class CorsExtensions
 {
     private const string CorsPolicy = "AllowClient";
 
-    private static readonly string[] DefaultAllowedOrigins =
-    [
-        "http://localhost:4200",
-        "https://localhost:4201",
-        "https://localhost:44318"
-    ];
-
     public static IServiceCollection AddCustomCors(
         this IServiceCollection services,
         IConfiguration configuration)
     {
         var allowedOrigins = configuration.GetSection("Security:AllowedOrigins")
-            .Get<string[]>() ?? DefaultAllowedOrigins;
+            .Get<string[]>();
+
+        if (allowedOrigins is null || allowedOrigins.Length == 0)
+            throw new InvalidOperationException(
+                "Security:AllowedOrigins در تنظیمات مقداردهی نشده است. " +
+                "برای محیط‌های production باید domain‌های مجاز تعریف شوند.");
 
         services.AddCors(options =>
         {

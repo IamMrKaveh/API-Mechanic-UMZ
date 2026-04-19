@@ -41,7 +41,8 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         Money amount,
         PaymentGateway gateway,
         string? description,
-        int expiryMinutes) : base(id)
+        int expiryMinutes,
+        DateTime now) : base(id)
     {
         OrderId = orderId;
         UserId = userId;
@@ -50,8 +51,8 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         Gateway = gateway;
         Status = PaymentStatus.Pending;
         Description = description?.Trim();
-        ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
-        CreatedAt = DateTime.UtcNow;
+        ExpiresAt = now.AddMinutes(expiryMinutes);
+        CreatedAt = now;
         IsVerificationInProgress = false;
     }
 
@@ -61,6 +62,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         string authority,
         decimal amount,
         string gateway,
+        DateTime now,
         string? description = null,
         int expiryMinutes = DefaultExpiryMinutes)
     {
@@ -81,108 +83,86 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
             Money.FromDecimal(amount),
             gatewayVo,
             description,
-            expiryMinutes);
+            expiryMinutes,
+            now);
 
-        transaction.RaiseDomainEvent(new PaymentInitiatedEvent(
-            transaction.Id,
-            orderId,
-            amount));
+        transaction.RaiseDomainEvent(new PaymentInitiatedEvent(transaction.Id, orderId, amount));
 
         return transaction;
     }
 
-    public void MarkAsVerificationInProgress()
+    public void MarkAsVerificationInProgress(DateTime now)
     {
-        EnsureCanStartVerification();
+        EnsureCanStartVerification(now);
 
         IsVerificationInProgress = true;
         Status = PaymentStatus.Processing;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
     }
 
-    public void MarkAsSuccess(long refId, decimal fee = 0)
+    public void MarkAsSuccess(long refId, DateTime now, decimal fee = 0)
     {
-        EnsureCanSucceed();
+        EnsureCanSucceed(now);
         ValidateRefId(refId);
         ValidateFee(fee);
 
         Status = PaymentStatus.Success;
         RefId = refId;
         Fee = fee;
-        VerifiedAt = DateTime.UtcNow;
-        UpdatedAt = DateTime.UtcNow;
+        VerifiedAt = now;
+        UpdatedAt = now;
         IsVerificationInProgress = false;
 
-        RaiseDomainEvent(new PaymentSucceededEvent(
-            Id,
-            OrderId,
-            refId,
-            userId: UserId.NewId(),
-            Amount));
+        RaiseDomainEvent(new PaymentSucceededEvent(Id, OrderId, refId, userId: UserId.NewId(), Amount));
     }
 
-    public void MarkAsFailed(string? errorMessage = null)
+    public void MarkAsFailed(DateTime now, string? errorMessage = null)
     {
         EnsureCanFail();
 
         Status = PaymentStatus.Failed;
         ErrorMessage = errorMessage ?? "خطای نامشخص";
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IsVerificationInProgress = false;
 
-        RaiseDomainEvent(new PaymentFailedEvent(
-            Id,
-            OrderId,
-            ErrorMessage));
+        RaiseDomainEvent(new PaymentFailedEvent(Id, OrderId, ErrorMessage));
     }
 
-    public void Expire()
+    public void Expire(DateTime now)
     {
         if (!CanExpire()) return;
 
         Status = PaymentStatus.Expired;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IsVerificationInProgress = false;
 
-        RaiseDomainEvent(new PaymentExpiredEvent(
-            Id,
-            OrderId,
-            Amount.Amount,
-            Authority));
+        RaiseDomainEvent(new PaymentExpiredEvent(Id, OrderId, Amount.Amount, Authority));
     }
 
-    public void Cancel(string? reason = null)
+    public void Cancel(DateTime now, string? reason = null)
     {
         EnsureCanCancel();
 
         Status = PaymentStatus.Cancelled;
         ErrorMessage = reason ?? "لغو شده توسط کاربر";
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IsVerificationInProgress = false;
 
-        RaiseDomainEvent(new PaymentCancelledEvent(
-            Id,
-            OrderId,
-            ErrorMessage));
+        RaiseDomainEvent(new PaymentCancelledEvent(Id, OrderId, ErrorMessage));
     }
 
-    public void Refund(string? reason = null)
+    public void Refund(DateTime now, string? reason = null)
     {
         EnsureCanRefund();
 
         Status = PaymentStatus.Refunded;
         ErrorMessage = reason ?? "بازگشت وجه";
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
 
-        RaiseDomainEvent(new PaymentRefundedEvent(
-            Id,
-            OrderId,
-            UserId.NewId(),
-            Amount,
-            ErrorMessage));
+        RaiseDomainEvent(new PaymentRefundedEvent(Id, OrderId, UserId.NewId(), Amount, ErrorMessage));
     }
 
-    public bool IsExpired() => DateTime.UtcNow > ExpiresAt && Status == PaymentStatus.Pending;
+    public bool IsExpired(DateTime now) => now > ExpiresAt && Status == PaymentStatus.Pending;
 
     public bool IsSuccessful() => Status == PaymentStatus.Success;
 
@@ -194,16 +174,15 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
 
     public bool IsCancelled() => Status == PaymentStatus.Cancelled;
 
-    public bool CanBeVerified() =>
-        (Status == PaymentStatus.Pending || Status == PaymentStatus.Processing) && !IsExpired();
+    public bool CanBeVerified(DateTime now) =>
+        (Status == PaymentStatus.Pending || Status == PaymentStatus.Processing) && !IsExpired(now);
 
-    public bool CanExpire() =>
-        Status == PaymentStatus.Pending || Status == PaymentStatus.Processing;
+    public bool CanExpire() => Status == PaymentStatus.Pending || Status == PaymentStatus.Processing;
 
-    public TimeSpan? GetTimeUntilExpiry()
+    public TimeSpan? GetTimeUntilExpiry(DateTime now)
     {
         if (Status != PaymentStatus.Pending) return null;
-        var remaining = ExpiresAt - DateTime.UtcNow;
+        var remaining = ExpiresAt - now;
         return remaining > TimeSpan.Zero ? remaining : null;
     }
 
@@ -211,16 +190,16 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
 
     public bool MatchesAmount(decimal amount) => Math.Abs(Amount.Amount - amount) < 1;
 
-    private void EnsureCanStartVerification()
+    private void EnsureCanStartVerification(DateTime now)
     {
         if (Status != PaymentStatus.Pending)
             throw new DomainException("فقط تراکنش‌های در انتظار قابل بررسی هستند.");
 
-        if (IsExpired())
+        if (IsExpired(now))
             throw new Exceptions.PaymentExpiredException(Authority, ExpiresAt);
     }
 
-    private void EnsureCanSucceed()
+    private void EnsureCanSucceed(DateTime now)
     {
         if (Status == PaymentStatus.Success)
             throw new Exceptions.PaymentAlreadyVerifiedException(Id.Value, RefId ?? 0);
