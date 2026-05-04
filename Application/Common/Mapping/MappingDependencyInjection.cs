@@ -1,12 +1,10 @@
-﻿using Mapster;
-
-namespace Application.Common.Mapping;
+﻿namespace Application.Common.Mapping;
 
 public static class MappingDependencyInjection
 {
     public static IServiceCollection AddApplicationMappings(this IServiceCollection services)
     {
-        var config = new TypeAdapterConfig();
+        var config = TypeAdapterConfig.GlobalSettings;
 
         config.Scan(Assembly.GetExecutingAssembly());
         config.Compile();

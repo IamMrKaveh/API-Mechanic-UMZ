@@ -3,7 +3,6 @@ using Domain.Inventory.Services;
 using Domain.Media.Services;
 using Domain.Payment.Services;
 using Domain.Support.Services;
-using Mapster;
 
 namespace Application;
 
@@ -15,7 +14,7 @@ public static class ApplicationServiceCollection
         RegisterDomainServices(services);
         RegisterApplicationServices(services);
         RegisterValidation(services);
-        RegisterMapster(services);
+        services.AddApplicationMappings();
         return services;
     }
 
@@ -47,16 +46,5 @@ public static class ApplicationServiceCollection
     {
         services.AddScoped<InventoryReservationService>();
         services.AddScoped<PaymentSettlementService>();
-    }
-
-    private static void RegisterMapster(IServiceCollection services)
-    {
-        var config = TypeAdapterConfig.GlobalSettings;
-        config.Scan(Assembly.GetExecutingAssembly());
-
-        services.AddSingleton(config);
-        services.AddScoped<IMapper, ServiceMapper>();
-
-        services.AddApplicationMappings();
     }
 }

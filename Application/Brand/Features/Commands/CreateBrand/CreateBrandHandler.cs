@@ -4,7 +4,6 @@ using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
-using Microsoft.Extensions.Logging;
 
 namespace Application.Brand.Features.Commands.CreateBrand;
 
@@ -13,7 +12,7 @@ public sealed class CreateBrandHandler(
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
     IMapper mapper,
-    ILogger<CreateBrandHandler> logger) : IRequestHandler<CreateBrandCommand, ServiceResult<BrandDetailDto>>
+    IAuditService auditService) : IRequestHandler<CreateBrandCommand, ServiceResult<BrandDetailDto>>
 {
     public async Task<ServiceResult<BrandDetailDto>> Handle(
         CreateBrandCommand request,
@@ -50,7 +49,13 @@ public sealed class CreateBrandHandler(
         await brandRepository.AddAsync(brand, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        logger.LogInformation("Brand {BrandName} created with ID {BrandId}", brand.Name, brand.Id);
+        await auditService.LogAsync(
+            "Brand",
+            "CreateBrand",
+            IpAddress.Unknown,
+            entityType: "Brand",
+            entityId: brand.Id.Value.ToString(),
+            ct: ct);
 
         var dto = mapper.Map<BrandDetailDto>(brand);
         return ServiceResult<BrandDetailDto>.Success(dto);

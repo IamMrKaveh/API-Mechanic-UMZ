@@ -27,6 +27,7 @@ global using Application.Wallet.Contracts;
 global using Application.Wishlist.Contracts;
 global using Domain.Common.Interfaces;
 global using FluentValidation;
+global using Mapster;
 global using MapsterMapper;
 global using MediatR;
 global using Microsoft.Extensions.DependencyInjection;

@@ -1,7 +1,4 @@
-﻿using Application.Brand.Features.Commands.CreateBrand;
-using Application.Brand.Features.Commands.MoveBrand;
-using Application.Brand.Features.Commands.UpdateBrand;
-using Application.Brand.Features.Shared;
+﻿using Application.Brand.Features.Shared;
 using Mapster;
 
 namespace Application.Brand.Mapping;
@@ -32,14 +29,5 @@ public class BrandMappingConfig : IRegister
             .Ignore(dest => dest.CategoryName)
             .Ignore(dest => dest.ProductCount)
             .Ignore(dest => dest.ActiveProductCount);
-
-        config.NewConfig<CreateBrandCommand, Domain.Brand.Aggregates.Brand>()
-            .IgnoreNonMapped(true);
-
-        config.NewConfig<UpdateBrandCommand, Domain.Brand.Aggregates.Brand>()
-            .IgnoreNonMapped(true);
-
-        config.NewConfig<MoveBrandCommand, Domain.Brand.Aggregates.Brand>()
-            .IgnoreNonMapped(true);
     }
 }
