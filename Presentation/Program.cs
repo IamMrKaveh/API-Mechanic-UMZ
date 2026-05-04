@@ -5,6 +5,7 @@ using Presentation.Common.Extensions;
 using Presentation.Common.Filters;
 using Presentation.Common.Options;
 using Presentation.Security.Settings;
+using System.Reflection;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -15,6 +16,20 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     var builder = WebApplication.CreateBuilder(args);
+
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.SwaggerDoc("v1", new()
+        {
+            Title = "Ledka",
+            Version = "v1"
+        });
+
+        var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        options.IncludeXmlComments(xmlPath);
+    });
 
     builder.Configuration
         .SetBasePath(Directory.GetCurrentDirectory())
@@ -106,7 +121,6 @@ static void ConfigureServices(WebApplicationBuilder builder)
     var configuration = builder.Configuration;
     ConfigureControllersAndApi(builder);
     ConfigureOptions(builder, configuration);
-    ConfigureRedisAndDataProtection(builder);
 
     builder.Services.Configure<LiaraStorageSettings>(
         configuration.GetSection("LiaraStorage"));
@@ -144,14 +158,4 @@ static void ConfigureOptions(WebApplicationBuilder builder, IConfiguration confi
 
     builder.Services.Configure<SecuritySettings>(
         configuration.GetSection(SecuritySettings.SectionName));
-}
-
-static void ConfigureRedisAndDataProtection(WebApplicationBuilder builder)
-{
-    var redisConn = builder.Configuration.GetConnectionString("Redis") ?? string.Empty;
-    var redis = ConnectionMultiplexer.Connect(redisConn);
-
-    builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
-    builder.Services.AddDataProtection()
-        .PersistKeysToStackExchangeRedis(redis, "DataProtection-Keys-");
 }
