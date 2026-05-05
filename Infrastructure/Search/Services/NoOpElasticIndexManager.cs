@@ -1,9 +1,6 @@
-﻿using Application.Audit.Contracts;
-using Application.Search.Contracts;
+﻿namespace Infrastructure.Search.Services;
 
-namespace Infrastructure.Search.Services;
-
-public sealed class NoOpElasticIndexManager(IAuditService auditService) : IElasticIndexManager
+public sealed class NoOpElasticIndexManager() : IElasticIndexManager
 {
     public Task<bool> CreateAllIndicesAsync(CancellationToken ct = default)
     {
@@ -20,8 +17,6 @@ public sealed class NoOpElasticIndexManager(IAuditService auditService) : IElast
         throw new NotImplementedException();
     }
 
-    public Task CreateIndicesAsync(CancellationToken ct = default) => Task.CompletedTask;
-
     public Task<bool> CreateProductIndexAsync(CancellationToken ct = default)
     {
         throw new NotImplementedException();
@@ -31,8 +26,6 @@ public sealed class NoOpElasticIndexManager(IAuditService auditService) : IElast
     {
         throw new NotImplementedException();
     }
-
-    public Task DeleteIndicesAsync(CancellationToken ct = default) => Task.CompletedTask;
 
     public Task<bool> IndexExistsAsync(string indexName, CancellationToken ct = default)
         => Task.FromResult(false);

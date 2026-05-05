@@ -9,6 +9,7 @@
 	<ItemGroup>
 		<!-- Security -->
 		<PackageReference Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
+		<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.36" />
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 
 		<!-- Data Access -->
@@ -62,7 +63,6 @@
 	  <Folder Include="Media\BackgroundServices\" />
 	  <Folder Include="Payment\BackgroundServices\" />
 	  <Folder Include="Product\Services\" />
-	  <Folder Include="Review\Services\" />
 	  <Folder Include="Search\BackgroundServices\" />
 	  <Folder Include="Security\Repositories\" />
 	  <Folder Include="Shipping\Services\" />

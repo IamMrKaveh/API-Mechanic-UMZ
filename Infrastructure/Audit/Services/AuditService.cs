@@ -12,8 +12,7 @@ public sealed class AuditService(
     IAuditRepository auditRepository,
     IAuditMaskingService maskingService,
     IHttpContextAccessor httpContextAccessor,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService) : IAuditService
+    IUnitOfWork unitOfWork) : IAuditService
 {
     public async Task LogAsync(
         string eventType,
@@ -43,12 +42,8 @@ public sealed class AuditService(
             await auditRepository.AddAuditLogAsync(log, ct);
             await unitOfWork.SaveChangesAsync(ct);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            await auditService.LogSystemEventAsync(
-                ex.Message,
-                "Failed to write audit log: EventType={eventType}, Action={action}",
-                ct);
         }
     }
 

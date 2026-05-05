@@ -1,6 +1,4 @@
-using Application.Common.Interfaces;
 using Application.Variant.Features.Shared;
-using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
 using Domain.Product.Interfaces;
@@ -43,14 +41,14 @@ public class AddVariantHandler(
                 var attributeValueIds = request.AttributeValueIds.Select(AttributeValueId.From);
                 var attributeValues = request.AttributeValueIds.Count != 0
                     ? await attributeRepository.GetAttributeValuesByIdsAsync(attributeValueIds, ct)
-                    : new List<AttributeValue>();
+                    : [];
 
                 if (request.AttributeValueIds.Count != 0)
                 {
                     var missingIds = request.AttributeValueIds
                         .Except(attributeValues.Select(av => av.Id.Value))
                         .ToList();
-                    if (missingIds.Any())
+                    if (missingIds.Count != 0)
                         return ServiceResult<ProductVariantViewDto>.Validation(
                             $"شناسه‌های ویژگی نامعتبر: {string.Join(", ", missingIds)}");
                 }
@@ -79,7 +77,7 @@ public class AddVariantHandler(
                     var shippingIds = request.EnabledShippingIds.Select(ShippingId.From);
                     var shippings = await shippingRepository.GetByIdsAsync(shippingIds, ct);
                     var shippingAssignments = shippings.Select(s =>
-                        new Domain.Shipping.ValueObjects.ShippingAssignment(s.Id, 0, 0, 0, 0));
+                        new ShippingAssignment(s.Id, 0, 0, 0, 0));
                     variant.SetShippingMethods(shippingAssignments);
                 }
 
