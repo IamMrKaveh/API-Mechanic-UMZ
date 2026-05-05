@@ -8,7 +8,6 @@ namespace Infrastructure.Media.Services;
 public sealed class MediaService(
     IMediaRepository mediaRepository,
     IStorageService storageService,
-    MediaDomainService mediaDomainService,
     IAuditService auditService,
     IUnitOfWork unitOfWork) : IMediaService
 {

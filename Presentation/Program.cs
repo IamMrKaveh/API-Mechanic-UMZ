@@ -1,9 +1,11 @@
+using Application.Common.Interfaces;
 using Application.Media.Features.Shared;
 using Infrastructure.DependencyInjection;
 using Infrastructure.Security.Settings;
 using Presentation.Common.Extensions;
 using Presentation.Common.Filters;
 using Presentation.Common.Options;
+using Presentation.Common.Services;
 using Presentation.Security.Settings;
 using System.Reflection;
 
@@ -40,6 +42,7 @@ try
     ConfigureSerilog(builder);
     ConfigureAuthentication(builder);
     ConfigureServices(builder);
+    builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
     builder.ValidateRequiredConfiguration();
 
     var app = builder.Build();

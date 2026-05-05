@@ -2,6 +2,8 @@ using Domain.Cart.Services;
 using Domain.Inventory.Services;
 using Domain.Media.Services;
 using Domain.Payment.Services;
+using Domain.Review.Services;
+using Domain.Shipping.Services;
 using Domain.Support.Services;
 
 namespace Application;
@@ -35,6 +37,8 @@ public static class ApplicationServiceCollection
 
     private static void RegisterDomainServices(IServiceCollection services)
     {
+        services.AddScoped<ShippingDomainService>();
+        services.AddScoped<ReviewDomainService>();
         services.AddScoped<InventoryDomainService>();
         services.AddScoped<CartDomainService>();
         services.AddScoped<PaymentDomainService>();

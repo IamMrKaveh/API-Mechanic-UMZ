@@ -1,6 +1,5 @@
 ﻿using Application.Payment.Features.Shared;
 using Domain.Payment.Aggregates;
-using Mapster;
 
 namespace Application.Payment.Mapping;
 
@@ -11,6 +10,7 @@ public class PaymentMappingConfig : IRegister
         config.NewConfig<PaymentTransaction, PaymentTransactionDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.OrderId, src => src.OrderId.Value)
+            .Map(dest => dest.UserId, src => src.UserId.Value)
             .Map(dest => dest.Authority, src => src.Authority.Value)
             .Map(dest => dest.Gateway, src => src.Gateway.Value)
             .Map(dest => dest.Amount, src => src.Amount.Amount)
@@ -20,6 +20,7 @@ public class PaymentMappingConfig : IRegister
             .Map(dest => dest.IsSuccessful, src => src.IsSuccessful())
             .Map(dest => dest.VerifiedAt, src => src.VerifiedAt)
             .Map(dest => dest.ExpiresAt, src => src.ExpiresAt)
-            .Map(dest => dest.CreatedAt, src => src.CreatedAt);
+            .Map(dest => dest.CreatedAt, src => src.CreatedAt)
+            .Map(dest => dest.UpdatedAt, src => src.UpdatedAt);
     }
 }

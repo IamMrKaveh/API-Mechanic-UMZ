@@ -1,5 +1,4 @@
-﻿using AngleSharp;
-using Application.Analytics.Contracts;
+﻿using Application.Analytics.Contracts;
 using Application.Attribute.Contracts;
 using Application.Auth.Contracts;
 using Application.Brand.Contracts;
@@ -11,6 +10,7 @@ using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Payment.Contracts;
 using Application.Product.Contracts;
 using Application.Review.Contracts;
+using Application.Security.Interfaces;
 using Application.Shipping.Contracts;
 using Application.Support.Contracts;
 using Application.User.Contracts;
@@ -66,6 +66,7 @@ using Infrastructure.Inventory.Services;
 using Infrastructure.Location.Services;
 using Infrastructure.Media.QueryServices;
 using Infrastructure.Media.Repositories;
+using Infrastructure.Media.Services;
 using Infrastructure.Notification.QueryServices;
 using Infrastructure.Notification.Repositories;
 using Infrastructure.Notification.Services;
@@ -85,9 +86,12 @@ using Infrastructure.Product.QueryServices;
 using Infrastructure.Product.Repositories;
 using Infrastructure.Review.QueryServices;
 using Infrastructure.Review.Repositories;
+using Infrastructure.Review.Services;
+using Infrastructure.Search;
 using Infrastructure.Search.Options;
 using Infrastructure.Search.Services;
 using Infrastructure.Security.Options;
+using Infrastructure.Security.Services;
 using Infrastructure.Shipping.QueryServices;
 using Infrastructure.Shipping.Repositories;
 using Infrastructure.Storage.Options;
@@ -103,9 +107,7 @@ using Infrastructure.Wallet.Repositories;
 using Infrastructure.Wallet.Services;
 using Infrastructure.Wishlist.QueryServices;
 using Infrastructure.Wishlist.Repositories;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Polly;
 using DateTimeProvider = Infrastructure.Common.Services.DateTimeProvider;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
@@ -131,7 +133,7 @@ public static class InfrastructureServiceExtensions
         services.AddBackgroundServices(configuration);
         services.AddHealthChecks(configuration);
         services.AddDataProtectionWithRedis(configuration);
-        services.AddJwtAuthentication(configuration);
+        services.AddJwtAuthentication();
         services.AddHttpContextAccessor();
 
         return services;
@@ -220,6 +222,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ICategoryQueryService, CategoryQueryService>();
         services.AddScoped<IBrandQueryService, BrandQueryService>();
         services.AddScoped<IOrderQueryService, OrderQueryService>();
+        services.AddScoped<IOrderStatusQueryService, OrderStatusQueryService>();
         services.AddScoped<ICartQueryService, CartQueryService>();
         services.AddScoped<IPaymentQueryService, PaymentQueryService>();
         services.AddScoped<IWalletQueryService, WalletQueryService>();
@@ -229,6 +232,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IWishlistQueryService, WishlistQueryService>();
         services.AddScoped<IUserQueryService, UserQueryService>();
         services.AddScoped<IInventoryQueryService, InventoryQueryService>();
+        services.AddScoped<IStockLedgerQueryService, StockLedgerQueryService>();
         services.AddScoped<IShippingQueryService, ShippingQueryService>();
         services.AddScoped<ITicketQueryService, TicketQueryService>();
         services.AddScoped<IAttributeQueryService, AttributeQueryService>();
@@ -239,6 +243,7 @@ public static class InfrastructureServiceExtensions
 
     private static void AddDomainServices(this IServiceCollection services)
     {
+        services.AddScoped<IAuditMaskingService, AuditMaskingService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IDiscountService, DiscountService>();
         services.AddScoped<IInventoryService, InventoryService>();
@@ -255,38 +260,34 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ICheckoutShippingValidatorService, CheckoutShippingValidatorService>();
         services.AddScoped<ICheckoutStockValidatorService, CheckoutStockValidatorService>();
         services.AddScoped<ILocationService, LocationService>();
+        services.AddScoped<IPurchaseVerificationService, PurchaseVerificationService>();
     }
 
     private static void AddAuthServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptions<JwtOptions>()
-            .BindConfiguration(JwtOptions.SectionName)
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
         services.AddOptions<OtpOptions>()
             .BindConfiguration(OtpOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IOtpService, OtpService>();
+        services.AddScoped<IRateLimitService, RateLimitService>();
+        services.AddScoped<ITokenService, TokenService>();
     }
 
     private static void AddStorageServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<IMediaService, MediaService>();
         services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));
         services.AddScoped<IStorageService, S3FileStorageService>();
+        services.AddAWSService<IAmazonS3>();
     }
 
     private static void AddCommunicationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptions<SmsOptions>()
-            .BindConfiguration(SmsOptions.SectionName)
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
 
         services.Configure<KavenegarOptions>(configuration.GetSection(KavenegarOptions.SectionName));
@@ -338,10 +339,14 @@ public static class InfrastructureServiceExtensions
             });
 
             services.AddScoped<ISearchService, ResilientElasticSearchService>();
+            services.AddScoped<IElasticIndexManager, ElasticIndexManager>();
+            services.AddScoped<ISearchDatabaseSyncService, ElasticsearchDatabaseSyncService>();
         }
         else
         {
             services.AddScoped<ISearchService, NoOpSearchService>();
+            services.AddScoped<IElasticIndexManager, NoOpElasticIndexManager>();
+            services.AddScoped<ISearchDatabaseSyncService, NoOpSearchDatabaseSyncService>();
         }
     }
 
@@ -407,32 +412,13 @@ public static class InfrastructureServiceExtensions
                 "DataProtection-Keys");
     }
 
-    private static void AddJwtAuthentication(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    private static void AddJwtAuthentication(this IServiceCollection services)
     {
-        var jwtOptions = configuration
-            .GetSection(JwtOptions.SectionName)
-            .Get<JwtOptions>();
+        services.AddOptions<JwtOptions>()
+            .BindConfiguration(JwtOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtOptions?.Issuer,
-                ValidAudience = jwtOptions?.Audience,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwtOptions?.Secret ?? string.Empty))
-            };
-        });
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
     }
 }
