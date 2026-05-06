@@ -25,7 +25,6 @@ public sealed class CategoryQueryService(
     {
         var category = await context.Categories
             .AsNoTracking()
-            .Include(c => c.Brands)
             .FirstOrDefaultAsync(c => c.Id == categoryId, ct);
 
         if (category is null) return null;
@@ -34,6 +33,9 @@ public sealed class CategoryQueryService(
             .AsNoTracking()
             .Where(m => m.EntityType == "Category" && m.EntityId == category.Id.Value && m.IsPrimary)
             .FirstOrDefaultAsync(ct);
+
+        var brandCount = await context.Brands
+            .CountAsync(b => b.CategoryId == categoryId, ct);
 
         return new CategoryDetailDto
         {
@@ -44,7 +46,7 @@ public sealed class CategoryQueryService(
             IsActive = category.IsActive,
             SortOrder = category.SortOrder,
             IconUrl = media is not null ? urlResolver.ResolveMediaUrl(media.Path.Value) : null,
-            BrandCount = category.Brands.Count,
+            BrandCount = brandCount,
             CreatedAt = category.CreatedAt,
             UpdatedAt = category.UpdatedAt
         };
