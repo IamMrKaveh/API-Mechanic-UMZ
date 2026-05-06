@@ -1,6 +1,5 @@
 using Domain.Product.ValueObjects;
 using Domain.Variant.Aggregates;
-using Domain.Variant.Entities;
 using Domain.Variant.ValueObjects;
 
 namespace Infrastructure.Variant.Configurations;

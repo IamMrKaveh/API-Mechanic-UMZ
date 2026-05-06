@@ -19,12 +19,23 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.A
 
         builder.OwnsOne(e => e.Email, em =>
         {
-            em.Property(e => e.Value).HasColumnName("Email").IsRequired().HasMaxLength(256);
+            em.Property(e => e.Value)
+            .HasColumnName("Email")
+            .IsRequired()
+            .HasMaxLength(256);
+
+            em.HasIndex(e => e.Value).IsUnique();
         });
 
         builder.OwnsOne(e => e.PhoneNumber, pn =>
         {
-            pn.Property(p => p.Value).HasColumnName("PhoneNumber").HasMaxLength(20);
+            pn.Property(p => p.Value)
+                .HasColumnName("PhoneNumber")
+                .HasMaxLength(20);
+
+            pn.HasIndex(s => s.Value)
+                .IsUnique()
+                .HasFilter("\"PhoneNumber_Value\" IS NOT NULL");
         });
 
         builder.Property(e => e.PasswordHash).IsRequired(false).HasMaxLength(500);
@@ -46,13 +57,6 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.A
             .WithOne()
             .HasForeignKey("UserId")
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasIndex("Email_Value").IsUnique().HasDatabaseName("IX_Users_Email");
-
-        builder.HasIndex("PhoneNumber_Value")
-            .IsUnique()
-            .HasFilter("\"PhoneNumber_Value\" IS NOT NULL")
-            .HasDatabaseName("IX_Users_PhoneNumber");
 
         builder.HasQueryFilter(e => e.IsActive);
     }

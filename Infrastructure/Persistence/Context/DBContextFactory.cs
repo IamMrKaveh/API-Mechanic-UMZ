@@ -1,8 +1,10 @@
+using Infrastructure.Common.Services;
 using Infrastructure.Persistence.Interceptors;
+using DateTimeProvider = Infrastructure.Common.Services.DateTimeProvider;
 
 namespace Infrastructure.Persistence.Context;
 
-public sealed class DBContextFactory(IDateTimeProvider dateTimeProvider) : IDesignTimeDbContextFactory<DBContext>
+public sealed class DBContextFactory : IDesignTimeDbContextFactory<DBContext>
 {
     public DBContext CreateDbContext(string[] args)
     {
@@ -33,6 +35,8 @@ public sealed class DBContextFactory(IDateTimeProvider dateTimeProvider) : IDesi
                 maxRetryDelay: TimeSpan.FromSeconds(5),
                 errorCodesToAdd: null);
         });
+
+        var dateTimeProvider = new DateTimeProvider();
 
         return new DBContext(
             optionsBuilder.Options,

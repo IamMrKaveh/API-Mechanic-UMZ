@@ -1,6 +1,5 @@
 using Domain.Attribute.Aggregates;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Domain.Attribute.ValueObjects;
 
 namespace Infrastructure.Attribute.Configurations;
 
@@ -9,6 +8,9 @@ public sealed class AttributeTypeConfiguration : IEntityTypeConfiguration<Attrib
     public void Configure(EntityTypeBuilder<AttributeType> builder)
     {
         builder.HasKey(e => e.Id);
+
+        builder.Property(e => e.Id)
+            .HasConversion(v => v.Value, v => AttributeTypeId.From(v));
 
         builder.Property<byte[]>("RowVersion").IsRowVersion();
 
