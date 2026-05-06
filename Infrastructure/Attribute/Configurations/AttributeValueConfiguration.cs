@@ -1,6 +1,5 @@
 using Domain.Attribute.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Domain.Attribute.ValueObjects;
 
 namespace Infrastructure.Attribute.Configurations;
 
@@ -9,6 +8,13 @@ public sealed class AttributeValueConfiguration : IEntityTypeConfiguration<Attri
     public void Configure(EntityTypeBuilder<AttributeValue> builder)
     {
         builder.HasKey(e => e.Id);
+
+        builder.Property(e => e.Id)
+            .HasConversion(v => v.Value, v => AttributeValueId.From(v));
+
+        builder.Property(e => e.AttributeTypeId)
+            .HasConversion(v => v.Value, v => AttributeTypeId.From(v))
+            .IsRequired();
 
         builder.Property<byte[]>("RowVersion").IsRowVersion();
 

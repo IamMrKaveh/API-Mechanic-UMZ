@@ -19,6 +19,8 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Domain.Cate
                 .HasColumnName("Name")
                 .IsRequired()
                 .HasMaxLength(CategoryName.MaxLength);
+
+            nb.HasIndex(n => n.Value).IsUnique();
         });
 
         builder.OwnsOne(e => e.Slug, sb =>
@@ -27,6 +29,8 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Domain.Cate
                 .HasColumnName("Slug")
                 .IsRequired()
                 .HasMaxLength(200);
+
+            sb.HasIndex(s => s.Value).IsUnique();
         });
 
         builder.Property(e => e.Description).HasMaxLength(1000);
@@ -39,8 +43,5 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Domain.Cate
             .WithOne()
             .HasForeignKey("CategoryId")
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasIndex("Name_Value").IsUnique();
-        builder.HasIndex("Slug_Value").IsUnique();
     }
 }

@@ -10,7 +10,7 @@ public sealed class VariantAttribute : Entity<VariantAttributeId>
     private VariantAttribute()
     { }
 
-    public Variant.Aggregates.ProductVariant Variant { get; private set; } = default!;
+    public Aggregates.ProductVariant Variant { get; private set; } = default!;
     public VariantId VariantId { get; private set; } = default!;
     public AttributeType AttributeType { get; private set; } = default!;
     public AttributeTypeId AttributeTypeId { get; private set; } = default!;

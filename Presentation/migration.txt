@@ -1,9 +1,9 @@
-dotnet ef migrations add 1 --project Infrastructure --startup-project MainApi --context DBContext --output-dir Persistence/Migrations
+dotnet ef migrations add 1 --project Infrastructure --startup-project Presentation --context DBContext --output-dir Persistence/Migrations
 
 
-dotnet ef database update --project Infrastructure --startup-project MainApi --context DBContext
+dotnet ef database update --project Infrastructure --startup-project Presentation --context DBContext
 
 
 
 create sql query :
-dotnet ef migrations script --project Infrastructure --startup-project MainApi --context DBContext -o migrate.sql
+dotnet ef migrations script --project Infrastructure --startup-project Presentation --context DBContext -o migrate.sql
