@@ -1,4 +1,5 @@
 using Domain.Discount.Aggregates;
+using Domain.Discount.Entities;
 using Domain.Discount.ValueObjects;
 
 namespace Infrastructure.Discount.Configurations;
@@ -52,12 +53,12 @@ public sealed class DiscountCodeConfiguration : IEntityTypeConfiguration<Discoun
 
         builder.HasMany(e => e.Restrictions)
             .WithOne(r => r.DiscountCode)
-            .HasForeignKey(r => r.DiscountCodeId)
+            .HasForeignKey(nameof(DiscountRestriction.DiscountCodeId))
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(e => e.Usages)
             .WithOne()
-            .HasForeignKey(u => u.DiscountCodeId)
+            .HasForeignKey(nameof(DiscountUsageRecord.DiscountCodeId))
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(e => e.Code).IsUnique();

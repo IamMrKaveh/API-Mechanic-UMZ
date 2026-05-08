@@ -3,6 +3,8 @@ using Domain.Cart.Enum;
 using Domain.Cart.Events;
 using Domain.Cart.Exceptions;
 using Domain.Cart.ValueObjects;
+using Domain.Discount.Aggregates;
+using Domain.Discount.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
@@ -18,6 +20,9 @@ public sealed class Cart : AggregateRoot<CartId>
 
     public UserId? UserId { get; private set; }
     public User.Aggregates.User? User { get; private set; }
+
+    public DiscountCodeId? AppliedDiscountCodeId { get; private set; }
+    public DiscountCode? AppliedDiscountCode { get; private set; }
 
     private readonly List<CartItem> _cartItems = [];
     public IReadOnlyCollection<CartItem> CartItems => _cartItems.AsReadOnly();

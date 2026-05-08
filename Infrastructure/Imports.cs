@@ -18,6 +18,7 @@ global using Elastic.Clients.Elasticsearch.QueryDsl;
 global using Elastic.Transport;
 global using Infrastructure.Cache.Options;
 global using Infrastructure.Persistence.Context;
+global using Infrastructure.Persistence.Converters;
 global using Infrastructure.Security.Models;
 global using Mapster;
 global using MediatR;

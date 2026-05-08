@@ -1,9 +1,6 @@
 using Domain.Discount.ValueObjects;
-using Domain.Order.Aggregates;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Order.Configurations;
 
@@ -87,6 +84,12 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
                .HasConversion(
                    v => v == null ? (Guid?)null : v.Value,
                    v => v == null ? null : DiscountCodeId.From(v.Value));
+
+        builder.HasOne(e => e.AppliedDiscountCode)
+               .WithMany()
+               .HasForeignKey(nameof(Domain.Order.Aggregates.Order.AppliedDiscountCodeId))
+               .IsRequired(false)
+               .OnDelete(DeleteBehavior.SetNull);
 
         builder.Property(e => e.IdempotencyKey).IsRequired();
         builder.Property(e => e.CancellationReason).HasMaxLength(500);
