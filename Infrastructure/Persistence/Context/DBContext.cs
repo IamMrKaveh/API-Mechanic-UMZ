@@ -1,26 +1,65 @@
 using Application.Search.Features.Shared;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Entities;
+using Domain.Attribute.ValueObjects;
 using Domain.Audit.Entities;
+using Domain.Audit.ValueObjects;
+using Domain.Brand.ValueObjects;
 using Domain.Cart.Entities;
+using Domain.Cart.ValueObjects;
+using Domain.Category.ValueObjects;
 using Domain.Discount.Aggregates;
 using Domain.Discount.Entities;
+using Domain.Discount.ValueObjects;
 using Domain.Inventory.Aggregates;
 using Domain.Inventory.Entities;
+using Domain.Inventory.ValueObjects;
+using Domain.Media.ValueObjects;
+using Domain.Notification.ValueObjects;
 using Domain.Order.Entities;
 using Domain.Order.ValueObjects;
 using Domain.Payment.Aggregates;
+using Domain.Payment.ValueObjects;
+using Domain.Product.ValueObjects;
 using Domain.Review.Aggregates;
+using Domain.Review.ValueObjects;
 using Domain.Security.Aggregates;
+using Domain.Security.ValueObjects;
+using Domain.Shipping.ValueObjects;
 using Domain.Support.Aggregates;
 using Domain.Support.Entities;
+using Domain.Support.ValueObjects;
 using Domain.User.Entities;
+using Domain.User.ValueObjects;
 using Domain.Variant.Aggregates;
 using Domain.Variant.Entities;
+using Domain.Variant.ValueObjects;
 using Domain.Wallet.Entities;
+using Domain.Wallet.ValueObjects;
+using Domain.Wishlist.ValueObjects;
+using Infrastructure.Attribute.Converters;
+using Infrastructure.Audit.Converters;
+using Infrastructure.Brand.Converters;
+using Infrastructure.Cart.Converters;
+using Infrastructure.Category.Converters;
+using Infrastructure.Discount.Converters;
+using Infrastructure.Inventory.Converters;
+using Infrastructure.Media.Converters;
+using Infrastructure.Notification.Converters;
+using Infrastructure.Order.Converters;
+using Infrastructure.Payment.Converters;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
+using Infrastructure.Product.Converters;
+using Infrastructure.Review.Converters;
 using Infrastructure.Search;
+using Infrastructure.Security.Converters;
+using Infrastructure.Shipping.Converters;
+using Infrastructure.Support.Converters;
+using Infrastructure.User.Converters;
+using Infrastructure.Variant.Converters;
+using Infrastructure.Wallet.Converters;
+using Infrastructure.Wishlist.Converters;
 
 namespace Infrastructure.Persistence.Context;
 
@@ -69,6 +108,58 @@ public sealed class DBContext(
     public DbSet<FailedElasticOperation> FailedElasticOperations => Set<FailedElasticOperation>();
     public DbSet<OrderProcessState> OrderProcessStates => Set<OrderProcessState>();
     public DbSet<RateLimitEntry> RateLimitEntries => Set<RateLimitEntry>();
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        ConfigureStronglyTypedId<AttributeTypeId, AttributeTypeIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<AttributeValueId, AttributeValueIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<AuditLogId, AuditLogIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<BrandId, BrandIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<CartId, CartIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<CartItemId, CartItemIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<CategoryId, CategoryIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<DiscountCodeId, DiscountCodeIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<DiscountRestrictionId, DiscountRestrictionIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<DiscountUsageId, DiscountUsageIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<InventoryId, InventoryIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<InventoryTransactionId, InventoryTransactionIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<StockLedgerEntryId, StockLedgerEntryIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<WarehouseId, WarehouseIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<MediaId, MediaIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<NotificationId, NotificationIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<OrderId, OrderIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<OrderItemId, OrderItemIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<OrderStatusId, OrderStatusIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<PaymentTransactionId, PaymentTransactionIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<ProductId, ProductIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<ReviewId, ReviewIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<OtpId, OtpIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<SessionId, SessionIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<ShippingId, ShippingIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<TicketId, TicketIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<TicketMessageId, TicketMessageIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<UserAddressId, UserAddressIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<UserId, UserIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<VariantAttributeId, VariantAttributeIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<VariantId, VariantIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<VariantShippingId, VariantShippingIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<WalletId, WalletIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<WalletLedgerEntryId, WalletLedgerEntryIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<WalletReservationId, WalletReservationIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<WishlistId, WishlistIdConverter>(configurationBuilder);
+
+        base.ConfigureConventions(configurationBuilder);
+    }
+
+    private static void ConfigureStronglyTypedId<TId, TConverter>(
+        ModelConfigurationBuilder configurationBuilder)
+        where TId : class, IStronglyTypedId
+        where TConverter : ValueConverter
+    {
+        configurationBuilder
+            .Properties<TId>()
+            .HaveConversion<TConverter>();
+    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

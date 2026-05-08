@@ -1,20 +1,18 @@
 ﻿namespace Domain.Wishlist.ValueObjects;
 
-public sealed record WishlistId
+public sealed record WishlistId : IStronglyTypedId
 {
     public Guid Value { get; }
 
-    private WishlistId(Guid value)
-    {
-        if (value == Guid.Empty)
-            throw new ArgumentException("WishlistId cannot be empty.", nameof(value));
-
-        Value = value;
-    }
+    private WishlistId(Guid value) => Value = value;
 
     public static WishlistId NewId() => new(Guid.NewGuid());
 
-    public static WishlistId From(Guid value) => new(value);
+    public static WishlistId From(Guid value) => value == Guid.Empty
+        ? throw new DomainException("WishlistId cannot be empty.")
+        : new(value);
 
     public override string ToString() => Value.ToString();
+
+    public static implicit operator Guid(WishlistId id) => id.Value;
 }

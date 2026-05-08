@@ -1,6 +1,6 @@
 namespace Domain.User.ValueObjects;
 
-public sealed record UserId
+public sealed record UserId : IStronglyTypedId
 {
     public Guid Value { get; }
 
@@ -8,7 +8,11 @@ public sealed record UserId
 
     public static UserId NewId() => new(Guid.NewGuid());
 
-    public static UserId From(Guid value) => new(value);
+    public static UserId From(Guid value) => value == Guid.Empty
+        ? throw new DomainException("UserId cannot be empty.")
+        : new(value);
 
     public override string ToString() => Value.ToString();
+
+    public static implicit operator Guid(UserId id) => id.Value;
 }

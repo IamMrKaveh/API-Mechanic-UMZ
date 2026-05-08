@@ -1,4 +1,5 @@
 using Domain.Cart.ValueObjects;
+using Domain.Discount.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Infrastructure.Cart.Configurations;
@@ -20,6 +21,11 @@ public sealed class CartConfiguration : IEntityTypeConfiguration<Domain.Cart.Agg
         builder.Property(e => e.GuestToken)
             .HasConversion(v => v == null ? null : v.Value, v => v == null ? null : GuestToken.Create(v))
             .HasMaxLength(256);
+
+        builder.Property(e => e.AppliedDiscountCodeId)
+            .HasConversion(
+                v => v == null ? (Guid?)null : v.Value,
+                v => v == null ? null : DiscountCodeId.From(v.Value));
 
         builder.Property(e => e.IsCheckedOut).IsRequired();
         builder.Property(e => e.CreatedAt).IsRequired();

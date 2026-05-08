@@ -1,20 +1,18 @@
 ﻿namespace Domain.Support.ValueObjects;
 
-public sealed record TicketId
+public sealed record TicketId : IStronglyTypedId
 {
     public Guid Value { get; }
 
-    private TicketId(Guid value)
-    {
-        if (value == Guid.Empty)
-            throw new ArgumentException("TicketId cannot be empty.", nameof(value));
-
-        Value = value;
-    }
+    private TicketId(Guid value) => Value = value;
 
     public static TicketId NewId() => new(Guid.NewGuid());
 
-    public static TicketId From(Guid value) => new(value);
+    public static TicketId From(Guid value) => value == Guid.Empty
+        ? throw new DomainException("TicketId cannot be empty.")
+        : new(value);
 
     public override string ToString() => Value.ToString();
+
+    public static implicit operator Guid(TicketId id) => id.Value;
 }
