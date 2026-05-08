@@ -1,1 +1,0 @@
-var a = { frontendBaseUrl: "https://ledka-co.ir", paymentUrls: { success: "/payment/success", failure: "/payment/failure", callback: "/payment/callback" }, API_URL: "https://localhost:44318/api/", production: !1 }; export { a };
