@@ -5,6 +5,10 @@ public sealed class ShippingOrderRange : ValueObject
     public Money? MinOrderAmount { get; }
     public Money? MaxOrderAmount { get; }
 
+    public ShippingOrderRange()
+    {
+    }
+
     private ShippingOrderRange(Money? minOrderAmount, Money? maxOrderAmount)
     {
         MinOrderAmount = minOrderAmount;
