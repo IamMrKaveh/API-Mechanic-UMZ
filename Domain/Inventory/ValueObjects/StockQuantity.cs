@@ -2,9 +2,12 @@ namespace Domain.Inventory.ValueObjects;
 
 public sealed class StockQuantity : ValueObject, IComparable<StockQuantity>
 {
-    public int Value { get; }
+    public int Value { get; private set; }
 
     private const int MaxStockValue = 1_000_000;
+
+    private StockQuantity()
+    { }
 
     private StockQuantity(int value)
     {

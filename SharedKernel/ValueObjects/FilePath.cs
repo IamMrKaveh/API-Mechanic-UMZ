@@ -12,6 +12,10 @@ public sealed class FilePath : ValueObject
 
     private const int MaxPathLength = 500;
 
+    public FilePath()
+    {
+    }
+
     private FilePath(string value, string fileName, string extension, string directory)
     {
         Value = value;

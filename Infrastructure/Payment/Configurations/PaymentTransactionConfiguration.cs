@@ -1,8 +1,6 @@
 using Domain.Order.ValueObjects;
 using Domain.Payment.Aggregates;
 using Domain.Payment.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Payment.Configurations;
 
@@ -37,11 +35,19 @@ public sealed class PaymentTransactionConfiguration : IEntityTypeConfiguration<P
             .HasMaxLength(50);
 
         builder.Property(e => e.OrderId)
-            .HasConversion(v => v.Value, v => OrderId.From(v));
+            .HasConversion(v => v.Value, v => OrderId.From(v))
+            .IsRequired();
 
         builder.Property(e => e.ErrorMessage).HasMaxLength(500);
         builder.Property(e => e.Description).HasMaxLength(500);
 
+        builder.HasOne(e => e.Order)
+            .WithOne(e => e.PaymentTransaction)
+            .HasForeignKey<PaymentTransaction>(e => e.OrderId)
+            .IsRequired(true)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(e => e.Authority).IsUnique();
+        builder.HasIndex(e => e.OrderId).IsUnique();
     }
 }

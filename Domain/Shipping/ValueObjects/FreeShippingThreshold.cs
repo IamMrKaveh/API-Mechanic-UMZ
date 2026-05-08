@@ -5,6 +5,10 @@ public sealed class FreeShippingThreshold : ValueObject
     public bool IsEnabled { get; }
     public Money? ThresholdAmount { get; }
 
+    public FreeShippingThreshold()
+    {
+    }
+
     private FreeShippingThreshold(bool isEnabled, Money? thresholdAmount)
     {
         IsEnabled = isEnabled;

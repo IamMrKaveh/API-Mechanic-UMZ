@@ -45,9 +45,15 @@ internal sealed class ShippingConfiguration : IEntityTypeConfiguration<Domain.Sh
         builder.OwnsOne(e => e.OrderRange, or =>
         {
             or.OwnsOne(r => r.MinOrderAmount, m =>
-                m.Property(p => p.Amount).HasColumnName("MinOrderAmount").HasColumnType("decimal(18,2)"));
+            {
+                m.Property(p => p.Amount).HasColumnName("MinOrderAmount").HasColumnType("decimal(18,2)");
+                m.Property(p => p.Currency).HasColumnName("MinOrderAmountCurrency").HasMaxLength(10);
+            });
             or.OwnsOne(r => r.MaxOrderAmount, m =>
-                m.Property(p => p.Amount).HasColumnName("MaxOrderAmount").HasColumnType("decimal(18,2)"));
+            {
+                m.Property(p => p.Amount).HasColumnName("MaxOrderAmount").HasColumnType("decimal(18,2)");
+                m.Property(p => p.Currency).HasColumnName("MaxOrderAmountCurrency").HasMaxLength(10);
+            });
         });
 
         builder.Property(e => e.Description).HasMaxLength(500);

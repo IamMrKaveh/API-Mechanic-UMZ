@@ -5,6 +5,10 @@ public sealed class ReviewStatus : ValueObject
     public string Value { get; }
     public string DisplayName { get; }
 
+    public ReviewStatus()
+    {
+    }
+
     private ReviewStatus(string value, string displayName)
     {
         Value = value;
