@@ -33,23 +33,20 @@ public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiC
 
     [HttpPost]
     [RequestSizeLimit(10_485_760)]
+    [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadMedia(
-        [FromForm] IFormFile file,
-        [FromForm] string entityType,
-        [FromForm] Guid entityId,
-        [FromForm] bool isPrimary = false,
-        [FromForm] string? altText = null,
-        CancellationToken ct = default)
+    [FromForm] UploadMediaRequest request,
+    CancellationToken ct)
     {
         var command = new UploadMediaCommand(
-            file.OpenReadStream(),
-            file.FileName,
-            file.ContentType,
-            file.Length,
-            entityType,
-            entityId,
-            isPrimary,
-            altText);
+            request.File.OpenReadStream(),
+            request.File.FileName,
+            request.File.ContentType,
+            request.File.Length,
+            request.EntityType,
+            request.EntityId,
+            request.IsPrimary,
+            request.AltText);
 
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
