@@ -11,6 +11,9 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
         builder.Property(e => e.Type).IsRequired().HasMaxLength(500);
         builder.Property(e => e.Payload).IsRequired().HasColumnType("text");
         builder.Property(e => e.Error).HasColumnType("text");
+        builder.Property(e => e.CreatedAt).HasColumnName("created_at");
+        builder.Property(e => e.ProcessedAt).HasColumnName("processed_at");
+        builder.Property(e => e.RetryCount).HasColumnName("retry_count");
         builder.HasIndex(e => e.ProcessedAt);
     }
 }
