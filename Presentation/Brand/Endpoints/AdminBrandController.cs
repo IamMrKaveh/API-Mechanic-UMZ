@@ -4,9 +4,9 @@ using Application.Brand.Features.Commands.MoveBrand;
 using Application.Brand.Features.Commands.UpdateBrand;
 using Application.Brand.Features.Queries.GetAdminBrands;
 using Application.Brand.Features.Queries.GetBrandDetail;
+using Application.Brand.Features.Shared;
 using Application.Common.Results;
 using Application.Media.Contracts;
-using MapsterMapper;
 using Presentation.Brand.Requests;
 
 namespace Presentation.Brand.Endpoints;
@@ -20,6 +20,7 @@ public sealed class AdminBrandController(
     IStorageService storageService) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<BrandListItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBrands(
         [FromQuery] GetAdminBrandsRequest request,
         CancellationToken ct)
@@ -30,6 +31,8 @@ public sealed class AdminBrandController(
     }
 
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<BrandDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBrand(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetBrandDetailQuery(id), ct);
@@ -37,6 +40,7 @@ public sealed class AdminBrandController(
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<BrandDetailDto>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateBrand(
         [FromForm] CreateBrandRequest request,
         CancellationToken ct)
@@ -60,6 +64,9 @@ public sealed class AdminBrandController(
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<BrandDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<BrandDetailDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<BrandDetailDto>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateBrand(
         Guid id,
         [FromForm] UpdateBrandRequest request,
@@ -83,13 +90,17 @@ public sealed class AdminBrandController(
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteBrand(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new DeleteBrandCommand(id, CurrentUser.UserId), ct);
+        var command = new DeleteBrandCommand(id, CurrentUser.UserId);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("move")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> MoveBrand(
         [FromBody] MoveBrandRequest request,
         CancellationToken ct)

@@ -11,8 +11,8 @@ using Application.Inventory.Features.Queries.GetLowStockProducts;
 using Application.Inventory.Features.Queries.GetOutOfStockProducts;
 using Application.Inventory.Features.Queries.GetStockLedgerByVariant;
 using Application.Inventory.Features.Queries.GetWarehouseStock;
+using Application.Inventory.Features.Shared;
 using Application.Order.Features.Commands.ApproveReturn;
-using MapsterMapper;
 using Presentation.Inventory.Requests;
 
 namespace Presentation.Inventory.Endpoints;
@@ -23,6 +23,7 @@ namespace Presentation.Inventory.Endpoints;
 public sealed class AdminInventoryController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet("transactions")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<InventoryTransactionDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetInventoryTransactions(
         [FromQuery] Guid? variantId,
         [FromQuery] string? transactionType,
@@ -31,29 +32,35 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var result = await Mediator.Send(
-            new GetInventoryTransactionsQuery(variantId, transactionType, fromDate, toDate, page, pageSize));
+        var query = new GetInventoryTransactionsQuery(variantId, transactionType, fromDate, toDate, page, pageSize);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpGet("ledger")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<StockLedgerEntryDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStockLedger(
         [FromQuery] Guid variantId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await Mediator.Send(new GetStockLedgerByVariantQuery(variantId, page, pageSize));
+        var query = new GetStockLedgerByVariantQuery(variantId, page, pageSize);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpGet("warehouse-stock/{variantId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<WarehouseStockDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetWarehouseStock(Guid variantId)
     {
-        var result = await Mediator.Send(new GetWarehouseStockQuery(variantId));
+        var query = new GetWarehouseStockQuery(variantId);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpPost("reverse")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> ReverseTransaction([FromBody] ReverseInventoryTransactionRequest request)
     {
         var command = new ReverseInventoryCommand(
@@ -67,6 +74,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("low-stock")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<LowStockItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLowStockItems([FromQuery] int threshold = 5)
     {
         var query = new GetLowStockProductsQuery(threshold);
@@ -75,6 +83,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("out-of-stock")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<OutOfStockItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOutOfStockItems()
     {
         var query = new GetOutOfStockProductsQuery();
@@ -83,6 +92,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
     }
 
     [HttpPost("adjust")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> AdjustStock([FromBody] AdjustStockRequest request)
     {
         var command = new AdjustStockCommand(
@@ -96,6 +106,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
     }
 
     [HttpPost("bulk-adjust")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> BulkAdjustStock([FromBody] BulkAdjustStockRequest request)
     {
         var items = request.Items
@@ -108,6 +119,8 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
     }
 
     [HttpPost("reconcile/{variantId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReconcileStock(Guid variantId)
     {
         var command = new ReconcileStockCommand(variantId, 0, CurrentUser.UserId);
@@ -116,6 +129,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
     }
 
     [HttpPost("damage")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> RecordDamage([FromBody] RecordDamageRequest request)
     {
         var command = new RecordDamageCommand(
@@ -129,6 +143,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("statistics")]
+    [ProducesResponseType(typeof(ApiResponse<InventoryStatisticsDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStatistics()
     {
         var query = new GetInventoryStatisticsQuery();
@@ -137,13 +152,17 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("status/{variantId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<InventoryStatusDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetInventoryStatus(Guid variantId)
     {
-        var result = await Mediator.Send(new GetInventoryStatusQuery(variantId));
+        var query = new GetInventoryStatusQuery(variantId);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpPost("import")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> BulkStockIn([FromBody] BulkStockInRequest request)
     {
         var items = request.Items
@@ -156,6 +175,8 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
     }
 
     [HttpPost("approve-return/{orderId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> ApproveReturn(Guid orderId, [FromBody] ApproveReturnRequest? request = null)
     {
         var command = new ApproveReturnCommand(

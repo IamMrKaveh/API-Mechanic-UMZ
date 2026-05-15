@@ -2,22 +2,23 @@
 
 public record ApiResponse<T>(
     T? Data,
-    bool IsSuccess,
+    bool Success,
     string? Message,
     IDictionary<string, string[]>? Errors = null
 );
 
 public record ApiResponse(
-    bool IsSuccess,
+    bool Success,
     string? Message,
     IDictionary<string, string[]>? Errors = null
 );
 
 public record PaginatedResponse<T>(
     IReadOnlyList<T> Items,
-    int PageNumber,
-    int TotalPages,
+    int Page,
+    int PageSize,
     int TotalCount,
+    int TotalPages,
     bool HasPreviousPage,
     bool HasNextPage
 );

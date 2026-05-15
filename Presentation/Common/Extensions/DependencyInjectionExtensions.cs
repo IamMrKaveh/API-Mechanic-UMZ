@@ -1,5 +1,3 @@
-using Asp.Versioning;
-
 namespace Presentation.Common.Extensions;
 
 public static class DependencyInjectionExtensions
@@ -17,7 +15,13 @@ public static class DependencyInjectionExtensions
             options.AssumeDefaultVersionWhenUnspecified = true;
             options.ReportApiVersions = true;
             options.ApiVersionReader = new UrlSegmentApiVersionReader();
-        }).AddMvc();
+        })
+        .AddMvc()
+        .AddApiExplorer(options =>
+        {
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
 
         return services;
     }

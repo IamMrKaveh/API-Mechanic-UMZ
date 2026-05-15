@@ -1,25 +1,26 @@
+using Application.Audit.Contracts;
+using Application.Common.Interfaces;
+using Presentation.Base.Responses;
 using SharedKernel.Exceptions;
+using System.Net;
+using System.Text.Json;
 
 namespace Presentation.Common.Middleware;
 
-public class CustomExceptionHandlerMiddleware
+public class CustomExceptionHandlerMiddleware(
+    RequestDelegate next,
+    IServiceScopeFactory scopeFactory)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<CustomExceptionHandlerMiddleware> _logger;
-
-    public CustomExceptionHandlerMiddleware(
-        RequestDelegate next,
-        ILogger<CustomExceptionHandlerMiddleware> logger)
+    private static readonly JsonSerializerOptions SerializerOptions = new()
     {
-        _next = next;
-        _logger = logger;
-    }
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
 
     public async Task Invoke(HttpContext context)
     {
         try
         {
-            await _next(context);
+            await next(context);
         }
         catch (Exception ex)
         {
@@ -27,7 +28,7 @@ public class CustomExceptionHandlerMiddleware
         }
     }
 
-    private Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var (statusCode, body) = exception switch
         {
@@ -38,58 +39,50 @@ public class CustomExceptionHandlerMiddleware
             _ => MapUnhandledException(exception)
         };
 
+        if (exception is not ValidationException
+            and not DomainException
+            and not KeyNotFoundException
+            and not UnauthorizedAccessException)
+        {
+            await LogUnhandledExceptionAsync(exception);
+        }
+
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
 
-        return context.Response.WriteAsync(JsonSerializer.Serialize(body));
+        await context.Response.WriteAsync(JsonSerializer.Serialize(body, SerializerOptions));
     }
 
-    private static (HttpStatusCode, object) MapValidationException(ValidationException exception)
+    private async Task LogUnhandledExceptionAsync(Exception exception)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
+        await auditService.LogErrorAsync(
+            $"Unhandled exception: {exception.GetType().Name} — {exception.Message}\n{exception.StackTrace}");
+    }
+
+    private static (HttpStatusCode, ApiResponse) MapValidationException(ValidationException exception)
     {
         var errors = exception.Errors
             .GroupBy(e => e.PropertyName)
-            .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(e => e.ErrorMessage).ToArray());
 
-        return (HttpStatusCode.BadRequest, new
-        {
-            StatusCode = (int)HttpStatusCode.BadRequest,
-            Message = "Validation Failed",
-            Errors = errors
-        });
+        return (HttpStatusCode.BadRequest, new ApiResponse(false, "اطلاعات ورودی نامعتبر است.", errors));
     }
 
-    private static (HttpStatusCode, object) MapDomainException(
-        DomainException exception)
-        => (HttpStatusCode.BadRequest, new
-        {
-            StatusCode = (int)HttpStatusCode.BadRequest,
-            Message = exception.Message
-        });
+    private static (HttpStatusCode, ApiResponse) MapDomainException(DomainException exception)
+        => (HttpStatusCode.BadRequest, new ApiResponse(false, exception.Message));
 
-    private static (HttpStatusCode, object) MapNotFoundException(Exception exception)
-        => (HttpStatusCode.NotFound, new
-        {
-            StatusCode = (int)HttpStatusCode.NotFound,
-            Message = exception.Message
-        });
+    private static (HttpStatusCode, ApiResponse) MapNotFoundException(Exception exception)
+        => (HttpStatusCode.NotFound, new ApiResponse(false, exception.Message));
 
-    private static (HttpStatusCode, object) MapUnauthorizedException()
-        => (HttpStatusCode.Unauthorized, new
-        {
-            StatusCode = (int)HttpStatusCode.Unauthorized,
-            Message = "Unauthorized"
-        });
+    private static (HttpStatusCode, ApiResponse) MapUnauthorizedException()
+        => (HttpStatusCode.Unauthorized, new ApiResponse(false, "دسترسی غیرمجاز."));
 
-    private (HttpStatusCode, object) MapUnhandledException(Exception exception)
-    {
-        _logger.LogError(exception, "An unhandled exception has occurred.");
-
-        return (HttpStatusCode.InternalServerError, new
-        {
-            StatusCode = (int)HttpStatusCode.InternalServerError,
-            Message = "An unexpected error occurred."
-        });
-    }
+    private static (HttpStatusCode, ApiResponse) MapUnhandledException(Exception exception)
+        => (HttpStatusCode.InternalServerError, new ApiResponse(false, "خطای غیرمنتظره‌ای رخ داده است."));
 }
 
 public static class CustomExceptionHandlerMiddlewareExtensions

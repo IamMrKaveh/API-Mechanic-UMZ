@@ -1,3 +1,5 @@
+using Presentation.Base.Responses;
+
 namespace Presentation.Common.Filters;
 
 public class ValidationFilter : IActionFilter
@@ -19,10 +21,6 @@ public class ValidationFilter : IActionFilter
                 kvp => kvp.Key,
                 kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
 
-        return new BadRequestObjectResult(new
-        {
-            message = "Validation failed",
-            errors
-        });
+        return new BadRequestObjectResult(new ApiResponse(false, "اطلاعات ورودی نامعتبر است.", errors));
     }
 }

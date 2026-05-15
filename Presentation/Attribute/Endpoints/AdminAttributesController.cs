@@ -6,7 +6,7 @@ using Application.Attribute.Features.Commands.UpdateAttributeType;
 using Application.Attribute.Features.Commands.UpdateAttributeValue;
 using Application.Attribute.Features.Queries.GetAllAttributeTypes;
 using Application.Attribute.Features.Queries.GetAttributeTypeById;
-using MapsterMapper;
+using Application.Attribute.Features.Shared;
 using Presentation.Attribute.Requests;
 
 namespace Presentation.Attribute.Endpoints;
@@ -18,20 +18,26 @@ public class AdminAttributesController(IMediator mediator, IMapper mapper)
     : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<AttributeTypeDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllAttributeTypes(CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetAllAttributeTypesQuery(), ct);
+        var query = new GetAllAttributeTypesQuery();
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<AttributeTypeDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAttributeType(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetAttributeTypeByIdQuery(id), ct);
+        var query = new GetAttributeTypeByIdQuery(id);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<AttributeTypeDto>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateAttributeType(
         [FromBody] CreateAttributeTypeRequest request,
         CancellationToken ct)
@@ -45,7 +51,28 @@ public class AdminAttributesController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
+    [HttpPost("{typeId:guid}/values")]
+    [ProducesResponseType(typeof(ApiResponse<AttributeValueDto>), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateAttributeValue(
+    Guid typeId,
+    [FromBody] CreateAttributeValueRequest request,
+    CancellationToken ct)
+    {
+        var command = new CreateAttributeValueCommand(
+            typeId,
+            request.Value,
+            request.DisplayValue,
+            request.HexCode,
+            request.SortOrder);
+
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateAttributeType(
         Guid id,
         [FromBody] UpdateAttributeTypeRequest request,
@@ -62,35 +89,14 @@ public class AdminAttributesController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeleteAttributeType(Guid id, CancellationToken ct)
-    {
-        var result = await Mediator.Send(new DeleteAttributeTypeCommand(id), ct);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("{typeId:guid}/values")]
-    public async Task<IActionResult> CreateAttributeValue(
-        Guid typeId,
-        [FromBody] CreateAttributeValueRequest request,
-        CancellationToken ct)
-    {
-        var command = new CreateAttributeValueCommand(
-            typeId,
-            request.Value,
-            request.DisplayValue,
-            request.HexCode,
-            request.SortOrder);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
     [HttpPut("values/{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateAttributeValue(
-        Guid id,
-        [FromBody] UpdateAttributeValueRequest request,
-        CancellationToken ct)
+    Guid id,
+    [FromBody] UpdateAttributeValueRequest request,
+    CancellationToken ct)
     {
         var command = new UpdateAttributeValueCommand(
             id,
@@ -104,7 +110,19 @@ public class AdminAttributesController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAttributeType(Guid id, CancellationToken ct)
+    {
+        var command = new DeleteAttributeTypeCommand(id);
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
     [HttpDelete("values/{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAttributeValue(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteAttributeValueCommand(id), ct);

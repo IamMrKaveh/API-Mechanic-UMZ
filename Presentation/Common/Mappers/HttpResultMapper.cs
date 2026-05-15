@@ -10,26 +10,12 @@ public sealed class HttpResultMapper : IHttpResultMapper
     public IActionResult Map<T>(ServiceResult<T> result)
     {
         if (result.IsSuccess)
-            return new OkObjectResult(new ApiResponse<T>(result.Value, true, "Operation completed successfully.", null));
+            return new OkObjectResult(new ApiResponse<T>(result.Value, true, null));
 
         var statusCode = MapStatusCode(result.Type);
+        var errors = BuildErrors(result.Error);
 
-        var problem = new ProblemDetails
-        {
-            Title = result.Error ?? "Request failed",
-            Detail = result.Error,
-            Status = statusCode
-        };
-
-        var errors = new Dictionary<string, string[]>();
-        if (result.Error is not null)
-        {
-            errors.Add("Domain", [result.Error]);
-        }
-
-        var response = new ApiResponse<T>(default, false, problem.Title, errors);
-
-        return new ObjectResult(response)
+        return new ObjectResult(new ApiResponse<T>(default, false, result.Error, errors))
         {
             StatusCode = statusCode
         };
@@ -38,22 +24,21 @@ public sealed class HttpResultMapper : IHttpResultMapper
     public IActionResult Map(ServiceResult result)
     {
         if (result.IsSuccess)
-            return new OkObjectResult(new ApiResponse(true, "Operation completed successfully.", null));
+            return new OkObjectResult(new ApiResponse(true, null));
 
         var statusCode = MapStatusCode(result.Type);
+        var errors = BuildErrors(result.Error);
 
-        var errors = new Dictionary<string, string[]>();
-        if (result.Error is not null)
-        {
-            errors.Add("Domain", [result.Error]);
-        }
-
-        var response = new ApiResponse(false, result.Error ?? "Request failed", errors);
-
-        return new ObjectResult(response)
+        return new ObjectResult(new ApiResponse(false, result.Error, errors))
         {
             StatusCode = statusCode
         };
+    }
+
+    private static Dictionary<string, string[]> BuildErrors(string? error)
+    {
+        if (error is null) return [];
+        return new Dictionary<string, string[]> { ["domain"] = [error] };
     }
 
     private static int MapStatusCode(ErrorType type) =>
@@ -64,7 +49,7 @@ public sealed class HttpResultMapper : IHttpResultMapper
             ErrorType.Forbidden => StatusCodes.Status403Forbidden,
             ErrorType.NotFound => StatusCodes.Status404NotFound,
             ErrorType.Conflict => StatusCodes.Status409Conflict,
-            ErrorType.Failure => StatusCodes.Status500InternalServerError,
+            ErrorType.RateLimitExceeded => StatusCodes.Status429TooManyRequests,
             _ => StatusCodes.Status500InternalServerError
         };
 }
