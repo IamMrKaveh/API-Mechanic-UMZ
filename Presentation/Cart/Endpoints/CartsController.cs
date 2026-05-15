@@ -7,6 +7,7 @@ using Application.Cart.Features.Commands.UpdateCartItem;
 using Application.Cart.Features.Queries.GetCart;
 using Application.Cart.Features.Queries.GetCartSummary;
 using Application.Cart.Features.Queries.ValidateCartForCheckout;
+using Application.Cart.Features.Shared;
 using Presentation.Cart.Requests;
 
 namespace Presentation.Cart.Endpoints;
@@ -16,6 +17,7 @@ namespace Presentation.Cart.Endpoints;
 public sealed class CartController(ISender mediator) : BaseApiController(mediator)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCart()
     {
         var query = new GetCartQuery(CurrentUser.UserId, GuestToken);
@@ -24,6 +26,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     }
 
     [HttpGet("summary")]
+    [ProducesResponseType(typeof(ApiResponse<CartSummaryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCartSummary()
     {
         var query = new GetCartSummaryQuery(CurrentUser.UserId, CurrentUser.GuestToken);
@@ -33,6 +36,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
 
     [HttpGet("validate-checkout")]
     [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<CartCheckoutValidationDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ValidateCartForCheckout()
     {
         var query = new ValidateCartForCheckoutQuery(CurrentUser.UserId, CurrentUser.GuestToken);
@@ -41,6 +45,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     }
 
     [HttpPost("items")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> AddItem([FromBody] AddToCartRequest request)
     {
         var command = new AddToCartCommand(CurrentUser.UserId, request.VariantId, GuestToken, request.Quantity);
@@ -49,6 +54,9 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     }
 
     [HttpPut("items/{variantId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateItemQuantity(Guid variantId, [FromBody] UpdateCartItemRequest request)
     {
         var command = new UpdateCartItemCommand(CurrentUser.UserId, GuestToken, variantId, request.Quantity);
@@ -57,6 +65,8 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     }
 
     [HttpDelete("items/{variantId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveItem(Guid variantId)
     {
         var command = new RemoveFromCartCommand(CurrentUser.UserId, GuestToken, variantId);
@@ -65,6 +75,8 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     }
 
     [HttpDelete]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearCart()
     {
         var command = new ClearCartCommand(CurrentUser.UserId, GuestToken);
@@ -85,6 +97,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
 
     [HttpPost("sync-prices")]
     [Authorize]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> SyncCartPrices()
     {
         var command = new SyncCartPricesCommand(CurrentUser.UserId, CurrentUser.GuestToken ?? string.Empty);

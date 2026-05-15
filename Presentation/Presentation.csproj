@@ -12,6 +12,7 @@
 
 		<!-- API Versioning -->
 		<PackageReference Include="Asp.Versioning.Mvc" Version="8.1.1" />
+		<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.1" />
 		
 		<!-- Security -->
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
@@ -100,11 +101,11 @@
 		<PackageReference Include="Azure.Identity" Version="1.11.4" />
 		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.6.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.6" />
 
 	</ItemGroup>
 
   <ItemGroup>
-    <Folder Include="logs\" />
     <Folder Include="Notification\Mapping\" />
     <Folder Include="Search\Mapping\" />
     <Folder Include="wwwroot\" />

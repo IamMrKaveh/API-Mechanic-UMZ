@@ -1,7 +1,7 @@
 using Application.Audit.Features.Queries.ExportAuditLogs;
 using Application.Audit.Features.Queries.GetAuditLogs;
 using Application.Audit.Features.Queries.GetAuditStatistics;
-using MapsterMapper;
+using Application.Audit.Features.Shared;
 using Presentation.Audit.Requests;
 
 namespace Presentation.Audit.Endpoints;
@@ -14,6 +14,7 @@ public sealed class AdminAuditLogsController(IMediator mediator, IMapper mapper)
     : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<GetAuditLogsResult>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAuditLogs(
         [FromQuery] GetAuditLogsRequest request,
         CancellationToken ct)
@@ -24,6 +25,7 @@ public sealed class AdminAuditLogsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("statistics")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<AuditStatisticsDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStatistics(
         [FromQuery] GetAuditStatisticsRequest request,
         CancellationToken ct)
@@ -34,6 +36,7 @@ public sealed class AdminAuditLogsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("export/csv")]
+    [ProducesResponseType(typeof(ApiResponse<ExportAuditLogsResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportCsv(
         [FromQuery] ExportAuditLogsRequest request,
         CancellationToken ct)
@@ -52,6 +55,7 @@ public sealed class AdminAuditLogsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("export/json")]
+    [ProducesResponseType(typeof(ApiResponse<ExportAuditLogsResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportJson(
         [FromQuery] ExportAuditLogsRequest request,
         CancellationToken ct)

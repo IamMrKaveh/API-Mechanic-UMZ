@@ -2,6 +2,7 @@ using Application.Category.Features.Queries.GetCategory;
 using Application.Category.Features.Queries.GetCategoryProducts;
 using Application.Category.Features.Queries.GetCategoryTree;
 using Application.Category.Features.Queries.GetPublicCategories;
+using Application.Category.Features.Shared;
 
 namespace Presentation.Category.Endpoints;
 
@@ -11,39 +12,47 @@ public sealed class CategoryController(IMediator mediator) : BaseApiController(m
 {
     [HttpGet("hierarchy")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<CategoryTreeDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCategoryHierarchy()
     {
-        var result = await Mediator.Send(new GetCategoryTreeQuery());
+        var query = new GetCategoryTreeQuery();
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpGet]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<CategoryDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCategories(
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await Mediator.Send(new GetPublicCategoriesQuery(search, page, pageSize));
+        var query = new GetPublicCategoriesQuery(search, page, pageSize);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<CategoryDetailDto?>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCategoryById(Guid id)
     {
-        var result = await Mediator.Send(new GetCategoryQuery(id));
+        var query = new GetCategoryQuery(id);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpGet("{id:guid}/products")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<CategoryProductItemDto?>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCategoryProducts(
         Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await Mediator.Send(new GetCategoryProductsQuery(id, true, page, pageSize));
+        var query = new GetCategoryProductsQuery(id, true, page, pageSize);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 }

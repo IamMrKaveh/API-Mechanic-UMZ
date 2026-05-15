@@ -4,7 +4,7 @@ using Application.Analytics.Features.Queries.GetInventoryReport;
 using Application.Analytics.Features.Queries.GetRevenueReport;
 using Application.Analytics.Features.Queries.GetSalesChartData;
 using Application.Analytics.Features.Queries.GetTopSellingProducts;
-using MapsterMapper;
+using Application.Analytics.Features.Shared;
 using Presentation.Analytic.Requests;
 
 namespace Presentation.Analytic.Endpoints;
@@ -16,6 +16,7 @@ public class AdminAnalyticsController(IMediator mediator, IMapper mapper)
     : BaseApiController(mediator, mapper)
 {
     [HttpGet("dashboard")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<DashboardStatisticsDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDashboardStatistics(
         [FromQuery] GetDashboardStatisticsRequest request,
         CancellationToken ct)
@@ -26,6 +27,7 @@ public class AdminAnalyticsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("sales-chart")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<SalesChartDataPointDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSalesChartData(
         [FromQuery] GetSalesChartDataRequest request,
         CancellationToken ct)
@@ -36,6 +38,7 @@ public class AdminAnalyticsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("top-products")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<TopSellingProductDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTopSellingProducts(
         [FromQuery] GetTopSellingProductsRequest request,
         CancellationToken ct)
@@ -46,6 +49,7 @@ public class AdminAnalyticsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("category-performance")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<CategoryPerformanceDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCategoryPerformance(
         [FromQuery] GetCategoryPerformanceRequest request,
         CancellationToken ct)
@@ -56,6 +60,7 @@ public class AdminAnalyticsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("revenue")]
+    [ProducesResponseType(typeof(ApiResponse<RevenueReportDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRevenueReport(
         [FromQuery] GetRevenueReportRequest request,
         CancellationToken ct)
@@ -66,6 +71,7 @@ public class AdminAnalyticsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("inventory")]
+    [ProducesResponseType(typeof(ApiResponse<InventoryReportDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetInventoryReport(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetInventoryReportQuery(), ct);

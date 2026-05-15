@@ -109,6 +109,7 @@ using Infrastructure.Wishlist.QueryServices;
 using Infrastructure.Wishlist.Repositories;
 using Microsoft.AspNetCore.DataProtection;
 using Polly;
+using Serilog;
 using DateTimeProvider = Infrastructure.Common.Services.DateTimeProvider;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
@@ -179,9 +180,6 @@ public static class InfrastructureServiceExtensions
             options.Configuration = redisConnectionString;
             options.InstanceName = configuration["Cache:KeyPrefix"] ?? "shop";
         });
-
-        services.AddSingleton<IConnectionMultiplexer>(_ =>
-            ConnectionMultiplexer.Connect(redisConnectionString));
 
         services.AddScoped<ICacheService, RedisCacheService>();
         services.AddSingleton<IDistributedLock, DistributedLockService>();
@@ -404,12 +402,49 @@ public static class InfrastructureServiceExtensions
     {
         var redisConnectionString = configuration.GetConnectionString("Redis")
             ?? configuration["Cache:RedisConnectionString"]
-            ?? "localhost:6379";
+            ?? "localhost:6379,abortConnect=false";
 
-        services.AddDataProtection()
-            .PersistKeysToStackExchangeRedis(
-                ConnectionMultiplexer.Connect(redisConnectionString),
-                "DataProtection-Keys");
+        var options = ConfigurationOptions.Parse(redisConnectionString);
+
+        options.AbortOnConnectFail = false;
+        options.ConnectRetry = 5;
+        options.ConnectTimeout = 10000;
+        options.SyncTimeout = 10000;
+        options.AsyncTimeout = 10000;
+        options.ReconnectRetryPolicy = new ExponentialRetry(5000);
+
+        try
+        {
+            var redis = ConnectionMultiplexer.Connect(options);
+
+            services
+                .AddDataProtection()
+                .PersistKeysToStackExchangeRedis(
+                    redis,
+                    "DataProtection-Keys");
+
+            services.AddSingleton<IConnectionMultiplexer>(redis);
+        }
+        catch (RedisConnectionException ex)
+        {
+            Log.Warning(
+                ex,
+                "Redis is unavailable. Falling back to local key storage.");
+
+            var keysDirectory = new DirectoryInfo(
+                Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "keys"));
+
+            if (!keysDirectory.Exists)
+            {
+                keysDirectory.Create();
+            }
+
+            services
+                .AddDataProtection()
+                .PersistKeysToFileSystem(keysDirectory);
+        }
     }
 
     private static void AddJwtAuthentication(this IServiceCollection services)

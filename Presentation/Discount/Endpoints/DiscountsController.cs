@@ -1,5 +1,6 @@
 using Application.Discount.Features.Commands.ApplyDiscount;
 using Application.Discount.Features.Queries.ValidateDiscount;
+using Application.Discount.Features.Shared;
 using Presentation.Discount.Requests;
 
 namespace Presentation.Discount.Endpoints;
@@ -10,6 +11,7 @@ namespace Presentation.Discount.Endpoints;
 public sealed class DiscountsController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpPost("validate")]
+    [ProducesResponseType(typeof(ApiResponse<DiscountValidationResult>), StatusCodes.Status201Created)]
     public async Task<IActionResult> Validate([FromBody] ValidateDiscountRequest request)
     {
         var query = new ValidateDiscountQuery(
@@ -22,6 +24,7 @@ public sealed class DiscountsController(IMediator mediator) : BaseApiController(
     }
 
     [HttpPost("apply")]
+    [ProducesResponseType(typeof(ApiResponse<DiscountApplicationResult>), StatusCodes.Status201Created)]
     public async Task<IActionResult> Apply([FromBody] ApplyDiscountRequest request)
     {
         var command = new ApplyDiscountCommand(

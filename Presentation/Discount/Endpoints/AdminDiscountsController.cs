@@ -6,7 +6,7 @@ using Application.Discount.Features.Queries.GetDiscountById;
 using Application.Discount.Features.Queries.GetDiscountInfo;
 using Application.Discount.Features.Queries.GetDiscounts;
 using Application.Discount.Features.Queries.GetDiscountUsageReport;
-using MapsterMapper;
+using Application.Discount.Features.Shared;
 using Presentation.Discount.Requests;
 
 namespace Presentation.Discount.Endpoints;
@@ -17,39 +17,51 @@ namespace Presentation.Discount.Endpoints;
 public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<DiscountCodeDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] bool includeExpired = false,
         [FromQuery] bool includeDeleted = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var result = await Mediator.Send(new GetDiscountsQuery(includeExpired, includeDeleted, page, pageSize));
+        var query = new GetDiscountsQuery(includeExpired, includeDeleted, page, pageSize);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<DiscountCodeDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var result = await Mediator.Send(new GetDiscountByIdQuery(id));
+        var query = new GetDiscountByIdQuery(id);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpGet("{id:guid}/usage-report")]
+    [ProducesResponseType(typeof(ApiResponse<DiscountUsageReportDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUsageReport(Guid id)
     {
-        var result = await Mediator.Send(new GetDiscountUsageReportQuery(id));
+        var query = new GetDiscountUsageReportQuery(id);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpGet("info/{code}")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<DiscountInfoDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDiscountInfo(string code)
     {
-        var result = await Mediator.Send(new GetDiscountInfoQuery(code));
+        var query = new GetDiscountInfoQuery(code);
+        var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<DiscountDto>), StatusCodes.Status201Created)]
     public async Task<IActionResult> Create([FromBody] CreateDiscountRequest request)
     {
         var command = Mapper.Map<CreateDiscountCommand>(request);
@@ -58,6 +70,9 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<DiscountDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<DiscountDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<DiscountDto>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateDiscountRequest request)
     {
         var command = Mapper.Map<UpdateDiscountCommand>(request) with { Id = id };
@@ -66,13 +81,17 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var result = await Mediator.Send(new DeleteDiscountCommand(id));
+        var command = new DeleteDiscountCommand(id);
+        var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
 
     [HttpPost("{id:guid}/cancel-usage")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> CancelDiscountUsage(Guid id, [FromBody] CancelDiscountUsageRequest request)
     {
         var command = new CancelDiscountUsageCommand(id, request.OrderId);

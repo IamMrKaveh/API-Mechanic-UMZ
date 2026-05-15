@@ -2,17 +2,12 @@ using Application.Common.Interfaces;
 using Application.Media.Features.Shared;
 using Infrastructure.DependencyInjection;
 using Infrastructure.Security.Settings;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.IdentityModel.Tokens;
 using Presentation.Common.Extensions;
 using Presentation.Common.Filters;
 using Presentation.Common.Options;
 using Presentation.Common.Services;
+using Presentation.Common.Swagger;
 using Presentation.Security.Settings;
-using Serilog;
-using Serilog.Events;
-using System.Text;
 
 var logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "logs");
 var logsErrorDirectory = Path.Combine(logsDirectory, "errors");
@@ -59,7 +54,13 @@ try
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Ledka v1");
+        var provider = app.Services.GetRequiredService<Asp.Versioning.ApiExplorer.IApiVersionDescriptionProvider>();
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint(
+                $"/swagger/{description.GroupName}/swagger.json",
+                $"Ledka {description.GroupName.ToUpperInvariant()}");
+        }
         options.RoutePrefix = "swagger";
     });
 
@@ -200,39 +201,42 @@ static void ConfigureControllersAndApi(WebApplicationBuilder builder)
 
     builder.Services.AddEndpointsApiExplorer();
 
+    builder.Services.AddTransient<
+        IConfigureOptions<SwaggerGenOptions>,
+        SwaggerConfigureOptions>();
+
     builder.Services.AddSwaggerGen(options =>
     {
-        options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-        {
-            Title = "Ledka",
-            Version = "v1"
-        });
+        options.EnableAnnotations();
+
+        options.OperationFilter<RemoveVersionParameterOperationFilter>();
+        options.OperationFilter<DefaultResponseOperationFilter>();
 
         options.AddSecurityDefinition("Bearer",
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            new OpenApiSecurityScheme
             {
                 Name = "Authorization",
-                Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                Type = SecuritySchemeType.Http,
                 Scheme = "bearer",
                 BearerFormat = "JWT",
-                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                In = ParameterLocation.Header,
                 Description = "JWT Authorization header using the Bearer scheme."
             });
 
         options.AddSecurityRequirement(
-            new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+            new OpenApiSecurityRequirement
             {
+            {
+                new OpenApiSecurityScheme
                 {
-                    new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                    Reference = new OpenApiReference
                     {
-                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                        {
-                            Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
-                }
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
             });
     });
 

@@ -4,7 +4,7 @@ using Application.Media.Features.Commands.ReorderMedia;
 using Application.Media.Features.Commands.SetPrimaryMedia;
 using Application.Media.Features.Commands.UploadMedia;
 using Application.Media.Features.Queries.GetAllMedia;
-using MapsterMapper;
+using Application.Media.Features.Shared;
 using Presentation.Media.Requests;
 
 namespace Presentation.Media.Endpoints;
@@ -15,6 +15,10 @@ namespace Presentation.Media.Endpoints;
 public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<MediaDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<MediaDto>>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetAllMedia(
         [FromQuery] GetAllMediaRequest request,
         CancellationToken ct)
@@ -25,18 +29,26 @@ public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiC
     }
 
     [HttpPost("cleanup-orphaned")]
+    [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CleanupOrphaned(CancellationToken ct)
     {
-        var result = await Mediator.Send(new CleanupOrphanedMediaCommand(), ct);
+        var command = new CleanupOrphanedMediaCommand();
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPost]
     [RequestSizeLimit(10_485_760)]
     [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ApiResponse<MediaDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<MediaDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UploadMedia(
-    [FromForm] UploadMediaRequest request,
-    CancellationToken ct)
+        [FromForm] UploadMediaRequest request,
+        CancellationToken ct)
     {
         var command = new UploadMediaCommand(
             request.File.OpenReadStream(),
@@ -53,6 +65,10 @@ public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiC
     }
 
     [HttpDelete("{mediaId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DeleteMedia(Guid mediaId, CancellationToken ct)
     {
         var command = new DeleteMediaCommand(mediaId, CurrentUser.UserId);
@@ -61,6 +77,10 @@ public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiC
     }
 
     [HttpPatch("set-primary")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SetPrimaryMedia(
         [FromBody] SetPrimaryMediaRequest request,
         CancellationToken ct)
@@ -71,6 +91,10 @@ public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiC
     }
 
     [HttpPost("reorder")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ReorderMedia(
         [FromBody] ReorderMediaRequest request,
         CancellationToken ct)
