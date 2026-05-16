@@ -6,6 +6,7 @@ using Application.User.Features.Commands.RestoreUser;
 using Application.User.Features.Commands.UpdateUser;
 using Application.User.Features.Queries.GetUserById;
 using Application.User.Features.Queries.GetUsers;
+using Application.User.Features.Shared;
 using Presentation.User.Requests;
 
 namespace Presentation.User.Endpoints;
@@ -16,24 +17,30 @@ namespace Presentation.User.Endpoints;
 public sealed class AdminUserController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<UserProfileDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUsers(
         [FromQuery] bool includeDeleted = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        var result = await Mediator.Send(new GetUsersQuery(includeDeleted, page, pageSize), ct);
+        var query = new GetUsersQuery(includeDeleted, page, pageSize);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUser(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetUserByIdQuery(id), ct);
+        var command = new GetUserByIdQuery(id);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateUser(
         [FromBody] AdminCreateUserRequest request,
         CancellationToken ct)
@@ -50,6 +57,8 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateUser(
         Guid id,
         [FromBody] UpdateProfileRequest request,
@@ -66,37 +75,48 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
     }
 
     [HttpPatch("{id:guid}/status")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangeUserStatus(
         Guid id,
         [FromBody] ChangeUserStatusRequest request,
         CancellationToken ct)
     {
-        var result = await Mediator.Send(new ChangeUserStatusCommand(id, request.IsActive), ct);
+        var command = new ChangeUserStatusCommand(id, request.IsActive);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPatch("{id:guid}/role")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangeUserRole(
         Guid id,
         [FromBody] ChangeUserRoleRequest request,
         CancellationToken ct)
     {
-        var result = await Mediator.Send(
-            new ChangeUserRoleCommand(id, request.IsAdmin, CurrentUser.UserId), ct);
+        var command = new ChangeUserRoleCommand(id, request.IsAdmin, CurrentUser.UserId);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new DeleteUserCommand(id, CurrentUser.UserId), ct);
+        var command = new DeleteUserCommand(id, CurrentUser.UserId);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("{id:guid}/restore")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RestoreUser(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new RestoreUserCommand(id), ct);
+        var command = new RestoreUserCommand(id);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 }

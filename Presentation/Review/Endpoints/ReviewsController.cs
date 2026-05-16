@@ -1,7 +1,7 @@
 using Application.Review.Features.Commands.CreateReview;
 using Application.Review.Features.Queries.GetProductReviews;
 using Application.Review.Features.Queries.GetUserReviews;
-using MapsterMapper;
+using Application.Review.Features.Shared;
 using Presentation.Review.Mapping;
 using Presentation.Review.Requests;
 
@@ -13,6 +13,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
 {
     [HttpGet("product/{productId:guid}")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductReviewDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetReviews(
         Guid productId,
         [FromQuery] int page = 1,
@@ -26,6 +27,8 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
 
     [HttpPost]
     [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<ProductReviewDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CreateReview(
         [FromBody] CreateReviewRequest request,
         CancellationToken ct)
@@ -40,13 +43,15 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
 
     [HttpGet("my")]
     [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductReviewDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyReviews(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var result = await Mediator.Send(
-            new GetUserReviewsQuery(CurrentUser.UserId, page, pageSize), ct);
+        var query = new GetUserReviewsQuery(CurrentUser.UserId, page, pageSize);
+
+        var result = await Mediator.Send(query, ct);
 
         return ToActionResult(result);
     }

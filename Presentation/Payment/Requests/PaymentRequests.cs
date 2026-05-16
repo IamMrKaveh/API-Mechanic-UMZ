@@ -14,6 +14,6 @@ public record InitiatePaymentRequest(
     Guid OrderId,
     string Gateway);
 
-public record WebhookPayload(
+public record WebhookPayloadRequest(
     string Authority,
     string Status);

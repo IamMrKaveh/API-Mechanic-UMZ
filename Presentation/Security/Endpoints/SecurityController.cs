@@ -1,5 +1,3 @@
-using MapsterMapper;
-
 namespace Presentation.Security.Endpoints;
 
 [Route("api/[controller]")]
@@ -11,6 +9,7 @@ public class SecurityController(
 {
     [HttpGet("csrf-token")]
     [IgnoreAntiforgeryToken]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetCsrfToken()
     {
         var tokens = antiforgery.GetAndStoreTokens(HttpContext);

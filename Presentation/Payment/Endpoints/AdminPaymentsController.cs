@@ -1,6 +1,6 @@
 using Application.Payment.Features.Commands.AtomicRefundPayment;
 using Application.Payment.Features.Queries.GetAdminPayments;
-using MapsterMapper;
+using Application.Payment.Features.Shared;
 using Presentation.Payment.Requests;
 
 namespace Presentation.Payment.Endpoints;
@@ -11,6 +11,7 @@ namespace Presentation.Payment.Endpoints;
 public class AdminPaymentsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<PaymentTransactionDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPayments(
         [FromQuery] AdminPaymentSearchRequest request,
         CancellationToken ct)
@@ -21,6 +22,8 @@ public class AdminPaymentsController(IMediator mediator, IMapper mapper) : BaseA
     }
 
     [HttpPost("{id:guid}/refund")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RefundPayment(
         Guid id,
         [FromBody] RefundPaymentRequest request,

@@ -1,6 +1,5 @@
 using Application.Brand.Features.Queries.GetBrand;
 using Application.Brand.Features.Queries.GetPublicBrands;
-using MapsterMapper;
 using Presentation.Brand.Requests;
 
 namespace Presentation.Brand.Endpoints;
@@ -24,7 +23,8 @@ public sealed class BrandController(IMediator mediator, IMapper mapper) : BaseAp
     [AllowAnonymous]
     public async Task<IActionResult> GetBrand(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetBrandQuery(id), ct);
+        var query = new GetBrandQuery(id);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 }

@@ -1,7 +1,6 @@
 using Application.Search.Features.Commands.RecreateSearchIndices;
 using Application.Search.Features.Commands.SyncSearchData;
 using Application.Search.Features.Queries.GetSearchIndexStats;
-using MapsterMapper;
 
 namespace Presentation.Search.Endpoints;
 
@@ -11,6 +10,7 @@ namespace Presentation.Search.Endpoints;
 public class AdminSearchController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpPost("sync")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> SyncAllData(CancellationToken ct)
     {
         var command = new SyncSearchDataCommand();
@@ -19,6 +19,7 @@ public class AdminSearchController(IMediator mediator, IMapper mapper) : BaseApi
     }
 
     [HttpPost("recreate-indices")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> RecreateIndices(CancellationToken ct)
     {
         var command = new RecreateSearchIndicesCommand();
@@ -27,6 +28,7 @@ public class AdminSearchController(IMediator mediator, IMapper mapper) : BaseApi
     }
 
     [HttpGet("stats")]
+    [ProducesResponseType(typeof(ApiResponse<SearchIndexStatsDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetIndexStats(CancellationToken ct)
     {
         var query = new GetSearchIndexStatsQuery();

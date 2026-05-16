@@ -3,7 +3,7 @@ using Application.Notification.Features.Commands.MarkAllNotificationsRead;
 using Application.Notification.Features.Commands.MarkNotificationRead;
 using Application.Notification.Features.Queries.GetNotifications;
 using Application.Notification.Features.Queries.GetUnreadNotificationCount;
-using MapsterMapper;
+using Application.Notification.Features.Shared;
 using Presentation.Notification.Requests;
 
 namespace Presentation.Notification.Endpoints;
@@ -14,6 +14,7 @@ namespace Presentation.Notification.Endpoints;
 public class NotificationsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<NotificationDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyNotifications(
         [FromQuery] GetNotificationsRequest request,
         CancellationToken ct)
@@ -29,15 +30,17 @@ public class NotificationsController(IMediator mediator, IMapper mapper) : BaseA
     }
 
     [HttpGet("count")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUnreadCount(CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetUnreadNotificationCountQuery(CurrentUser.UserId), ct);
-        if (result.IsSuccess)
-            return Ok(new { count = result.Value });
+        var query = new GetUnreadNotificationCountQuery(CurrentUser.UserId);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpPatch("{id:guid}/read")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkAsRead(Guid id, CancellationToken ct)
     {
         var command = new MarkNotificationReadCommand(id, CurrentUser.UserId);
@@ -46,6 +49,7 @@ public class NotificationsController(IMediator mediator, IMapper mapper) : BaseA
     }
 
     [HttpPatch("read-all")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> MarkAllAsRead(CancellationToken ct)
     {
         var command = new MarkAllNotificationsReadCommand(CurrentUser.UserId);
@@ -54,6 +58,8 @@ public class NotificationsController(IMediator mediator, IMapper mapper) : BaseA
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteNotification(Guid id, CancellationToken ct)
     {
         var command = new DeleteNotificationCommand(id, CurrentUser.UserId);

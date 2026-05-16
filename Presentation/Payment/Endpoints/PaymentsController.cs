@@ -4,7 +4,7 @@ using Application.Payment.Features.Commands.VerifyPayment;
 using Application.Payment.Features.Queries.GetPaymentByAuthority;
 using Application.Payment.Features.Queries.GetPaymentsByOrder;
 using Application.Payment.Features.Queries.GetPaymentStatus;
-using MapsterMapper;
+using Application.Payment.Features.Shared;
 using Presentation.Payment.Requests;
 
 namespace Presentation.Payment.Endpoints;
@@ -15,6 +15,8 @@ public class PaymentsController(IMediator mediator, IMapper mapper) : BaseApiCon
 {
     [HttpPost("initiate")]
     [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<PaymentInitiationResult>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> InitiatePayment(
         [FromBody] InitiatePaymentRequest request,
         CancellationToken ct)
@@ -30,42 +32,54 @@ public class PaymentsController(IMediator mediator, IMapper mapper) : BaseApiCon
     }
 
     [HttpGet("verify")]
+    [ProducesResponseType(typeof(ApiResponse<PaymentVerificationResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> VerifyPayment(
         [FromQuery] string authority,
         [FromQuery] string status,
         CancellationToken ct)
     {
-        var result = await Mediator.Send(new VerifyPaymentCommand(authority, status), ct);
+        var command = new VerifyPaymentCommand(authority, status);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("{authority}")]
     [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<PaymentTransactionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByAuthority(string authority, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetPaymentByAuthorityQuery(authority), ct);
+        var query = new GetPaymentByAuthorityQuery(authority);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("by-order/{orderId:guid}")]
     [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<PaymentTransactionDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPaymentsByOrder(Guid orderId, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetPaymentsByOrderQuery(orderId), ct);
+        var query = new GetPaymentsByOrderQuery(orderId);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("status/{authority}")]
     [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<PaymentStatusDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPaymentStatus(string authority, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetPaymentStatusQuery(authority), ct);
+        var query = new GetPaymentStatusQuery(authority);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("webhook/{gateway}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> Webhook(
-        [FromBody] WebhookPayload payload,
+        [FromBody] WebhookPayloadRequest payload,
         CancellationToken ct)
     {
         var command = new ProcessWebhookCommand(

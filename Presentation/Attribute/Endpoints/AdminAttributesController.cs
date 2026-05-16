@@ -125,7 +125,8 @@ public class AdminAttributesController(IMediator mediator, IMapper mapper)
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAttributeValue(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new DeleteAttributeValueCommand(id), ct);
+        var command = new DeleteAttributeValueCommand(id);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 }

@@ -4,7 +4,6 @@ using Application.Auth.Features.Commands.LogoutAll;
 using Application.Auth.Features.Commands.RefreshToken;
 using Application.Auth.Features.Commands.SendOtp;
 using Application.Auth.Features.Commands.VerifyOtp;
-using MapsterMapper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Presentation.Auth.Requests;
@@ -84,7 +83,8 @@ public class AuthController(IMediator mediator, IMapper mapper)
     [Authorize]
     public async Task<IActionResult> LogoutAll(CancellationToken ct)
     {
-        var result = await Mediator.Send(new LogoutAllCommand(CurrentUser.UserId), ct);
+        var command = new LogoutAllCommand(CurrentUser.UserId);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
@@ -106,7 +106,7 @@ public class AuthController(IMediator mediator, IMapper mapper)
     {
         var authenticateResult = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
 
-        if (!authenticateResult.Succeeded)
+        if (authenticateResult.Succeeded is false)
             return BadRequest("Google authentication failed.");
 
         var claims = authenticateResult.Principal?.Identities.FirstOrDefault()?.Claims;
