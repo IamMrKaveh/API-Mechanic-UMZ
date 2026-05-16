@@ -3,7 +3,7 @@ using Application.Order.Features.Commands.DeleteOrderStatus;
 using Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 using Application.Order.Features.Queries.GetOrderStatus;
 using Application.Order.Features.Queries.GetOrderStatuses;
-using MapsterMapper;
+using Application.Order.Features.Shared;
 using Presentation.Order.Requests;
 
 namespace Presentation.Order.Endpoints;
@@ -15,13 +15,16 @@ public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : Ba
 {
     [HttpGet]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<OrderStatusDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOrderStatuses(CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetOrderStatusesQuery(), ct);
+        var query = new GetOrderStatusesQuery();
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<OrderStatusDto>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateOrderStatus(
         [FromBody] CreateOrderStatusRequest request,
         CancellationToken ct)
@@ -41,6 +44,8 @@ public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : Ba
 
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<OrderDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderStatus(Guid id, CancellationToken ct)
     {
         var query = new GetOrderStatusQuery(id, CurrentUser.UserId);
@@ -49,6 +54,8 @@ public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : Ba
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateOrderStatus(
         Guid id,
         [FromBody] UpdateOrderStatusRequest request,
@@ -68,6 +75,8 @@ public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : Ba
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteOrderStatus(Guid id, CancellationToken ct)
     {
         var command = new DeleteOrderStatusCommand(id, CurrentUser.UserId);

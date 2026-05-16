@@ -1,6 +1,6 @@
 using Application.Order.Features.Queries.GetOrderStatus;
 using Application.Order.Features.Queries.GetOrderStatuses;
-using MapsterMapper;
+using Application.Order.Features.Shared;
 
 namespace Presentation.Order.Endpoints;
 
@@ -10,16 +10,21 @@ namespace Presentation.Order.Endpoints;
 public class OrderStatusController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<OrderStatusDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOrderStatuses(CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetOrderStatusesQuery(), ct);
+        var query = new GetOrderStatusesQuery();
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<OrderDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderStatusById(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetOrderStatusQuery(id, CurrentUser.UserId), ct);
+        var query = new GetOrderStatusQuery(id, CurrentUser.UserId);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 }

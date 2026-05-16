@@ -3,6 +3,7 @@ using Application.Support.Features.Commands.CreateTicket;
 using Application.Support.Features.Commands.ReplyToTicket;
 using Application.Support.Features.Queries.GetTicketDetails;
 using Application.Support.Features.Queries.GetTickets;
+using Application.Support.Features.Shared;
 using Presentation.Support.Requests;
 
 namespace Presentation.Support.Endpoints;
@@ -13,6 +14,7 @@ namespace Presentation.Support.Endpoints;
 public sealed class TicketsController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<TicketListItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyTickets(
         [FromQuery] string? status,
         [FromQuery] string? priority,
@@ -26,6 +28,8 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
     }
 
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<TicketDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTicketDetails(Guid id, CancellationToken ct)
     {
         var query = new GetTicketDetailsQuery(id, CurrentUser.UserId, false);
@@ -34,6 +38,7 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<TicketDto>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateTicket(
         [FromBody] CreateTicketRequest request,
         CancellationToken ct)
@@ -50,6 +55,8 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
     }
 
     [HttpPost("{id:guid}/reply")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReplyToTicket(
         Guid id,
         [FromBody] ReplyToTicketRequest request,
@@ -61,6 +68,8 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
     }
 
     [HttpPost("{id:guid}/close")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CloseTicket(
         Guid id,
         [FromBody] CloseTicketRequest request,

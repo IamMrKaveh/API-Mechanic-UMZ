@@ -35,7 +35,8 @@ public sealed class AdminBrandController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBrand(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetBrandDetailQuery(id), ct);
+        var query = new GetBrandDetailQuery(id);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 

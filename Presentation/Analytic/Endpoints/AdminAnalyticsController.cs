@@ -74,7 +74,8 @@ public class AdminAnalyticsController(IMediator mediator, IMapper mapper)
     [ProducesResponseType(typeof(ApiResponse<InventoryReportDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetInventoryReport(CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetInventoryReportQuery(), ct);
+        var query = new GetInventoryReportQuery();
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 }

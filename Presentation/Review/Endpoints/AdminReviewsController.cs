@@ -4,7 +4,7 @@ using Application.Review.Features.Commands.RejectReview;
 using Application.Review.Features.Commands.ReplyToReview;
 using Application.Review.Features.Commands.UpdateReviewStatus;
 using Application.Review.Features.Queries.GetReviewsByStatus;
-using MapsterMapper;
+using Application.Review.Features.Shared;
 using Presentation.Review.Mapping;
 using Presentation.Review.Requests;
 
@@ -16,6 +16,7 @@ namespace Presentation.Review.Endpoints;
 public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductReviewDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetReviewsByStatus(
         [FromQuery] string status = "open",
         [FromQuery] int page = 1,
@@ -28,6 +29,8 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
     }
 
     [HttpPost("{reviewId:guid}/reply")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReplyToReview(
         Guid reviewId,
         [FromBody] ReplyToReviewRequest request,
@@ -39,6 +42,8 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
     }
 
     [HttpDelete("{reviewId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteReview(
         Guid reviewId,
         [FromBody] DeleteReviewRequest request,
@@ -53,6 +58,8 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
     }
 
     [HttpPatch("{reviewId:guid}/approve")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ApproveReview(
         Guid reviewId,
         [FromBody] ApproveReviewRequest request,
@@ -67,6 +74,8 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
     }
 
     [HttpPatch("{reviewId:guid}/reject")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RejectReview(
         Guid reviewId,
         [FromBody] RejectReviewRequest request,
@@ -81,12 +90,15 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
     }
 
     [HttpPatch("{reviewId:guid}/status")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateReviewStatus(
         Guid reviewId,
         [FromBody] UpdateReviewStatusRequest request,
         CancellationToken ct)
     {
-        var result = await Mediator.Send(new UpdateReviewStatusCommand(reviewId, request.Status), ct);
+        var command = new UpdateReviewStatusCommand(reviewId, request.Status);
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 }

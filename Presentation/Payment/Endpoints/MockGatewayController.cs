@@ -1,5 +1,3 @@
-using MapsterMapper;
-
 namespace Presentation.Payment.Endpoints;
 
 [ApiController]
@@ -10,6 +8,8 @@ public sealed class MockGatewayController(
     IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult Index([FromQuery] string orderId, [FromQuery] decimal amount)
     {
         if (!env.IsDevelopment())

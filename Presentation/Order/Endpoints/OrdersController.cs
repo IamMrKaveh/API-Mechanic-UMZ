@@ -2,7 +2,7 @@ using Application.Order.Features.Commands.CancelOrder;
 using Application.Order.Features.Commands.CheckoutFromCart;
 using Application.Order.Features.Queries.GetOrderDetails;
 using Application.Order.Features.Queries.GetUserOrders;
-using MapsterMapper;
+using Application.Order.Features.Shared;
 using Presentation.Order.Requests;
 
 namespace Presentation.Order.Endpoints;
@@ -13,6 +13,7 @@ namespace Presentation.Order.Endpoints;
 public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<OrderListItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOrders(
         [FromQuery] GetUserOrdersRequest request,
         CancellationToken ct)
@@ -28,13 +29,19 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
     }
 
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<OrderDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderById(Guid id, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetOrderDetailsQuery(id, CurrentUser.UserId), ct);
+        var query = new GetOrderDetailsQuery(id, CurrentUser.UserId);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("checkout")]
+    [ProducesResponseType(typeof(ApiResponse<CheckoutResultDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CheckoutFromCart(
         [FromBody] CheckoutFromCartRequest request,
         CancellationToken ct)
@@ -55,6 +62,8 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
     }
 
     [HttpPost("{id:guid}/cancel")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CancelOrder(
         Guid id,
         [FromBody] CancelOrderRequest request,

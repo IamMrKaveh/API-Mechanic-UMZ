@@ -2,6 +2,7 @@ using Application.Support.Features.Commands.CloseTicket;
 using Application.Support.Features.Commands.ReplyToTicket;
 using Application.Support.Features.Queries.GetAdminTickets;
 using Application.Support.Features.Queries.GetTicketDetails;
+using Application.Support.Features.Shared;
 using Presentation.Support.Requests;
 
 namespace Presentation.Support.Endpoints;
@@ -12,6 +13,7 @@ namespace Presentation.Support.Endpoints;
 public sealed class AdminTicketsController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<TicketDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTickets(
         [FromQuery] string? status,
         [FromQuery] string? priority,
@@ -26,6 +28,8 @@ public sealed class AdminTicketsController(IMediator mediator) : BaseApiControll
     }
 
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<TicketDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTicketDetails(Guid id, CancellationToken ct)
     {
         var query = new GetTicketDetailsQuery(id, CurrentUser.UserId, true);
@@ -34,6 +38,8 @@ public sealed class AdminTicketsController(IMediator mediator) : BaseApiControll
     }
 
     [HttpPost("{id:guid}/reply")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReplyToTicket(
         Guid id,
         [FromBody] ReplyToTicketRequest request,
@@ -45,6 +51,8 @@ public sealed class AdminTicketsController(IMediator mediator) : BaseApiControll
     }
 
     [HttpPost("{id:guid}/close")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CloseTicket(
         Guid id,
         [FromBody] CloseTicketRequest request,
