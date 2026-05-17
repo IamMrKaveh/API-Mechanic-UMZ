@@ -1,10 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Infrastructure.Persistence.Context;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
-
-namespace Infrastructure.Persistence.Outbox;
+﻿namespace Infrastructure.Persistence.Outbox;
 
 public sealed class OutboxProcessor(
     DBContext context,
@@ -41,7 +35,10 @@ public sealed class OutboxProcessor(
                     continue;
                 }
 
-                await publisher.Publish(@event, ct);
+                var notificationType = typeof(DomainEventNotification<>).MakeGenericType(type);
+                var notification = Activator.CreateInstance(notificationType, @event)!;
+                await publisher.Publish(notification, ct);
+
                 message.ProcessedAt = DateTime.UtcNow;
             }
             catch (Exception ex)

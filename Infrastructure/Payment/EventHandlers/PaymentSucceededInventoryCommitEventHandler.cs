@@ -4,18 +4,19 @@ using Domain.Inventory.ValueObjects;
 using Domain.Order.Interfaces;
 using Domain.Payment.Events;
 
-namespace Application.Payment.EventHandlers;
+namespace Infrastructure.Payment.EventHandlers;
 
 public class PaymentSucceededInventoryCommitEventHandler(
     IOrderRepository orderRepository,
     IInventoryRepository inventoryRepository,
-    IUnitOfWork unitOfWork) : INotificationHandler<PaymentSucceededEvent>
+    IUnitOfWork unitOfWork) : INotificationHandler<DomainEventNotification<PaymentSucceededEvent>>
 {
-    public async Task Handle(PaymentSucceededEvent notification, CancellationToken ct)
+    public async Task Handle(DomainEventNotification<PaymentSucceededEvent> notification, CancellationToken ct)
     {
         try
         {
-            var order = await orderRepository.FindByIdAsync(notification.OrderId, ct);
+            var domainEvent = notification.DomainEvent;
+            var order = await orderRepository.FindByIdAsync(domainEvent.OrderId, ct);
             if (order is null) return;
 
             foreach (var item in order.OrderItems)

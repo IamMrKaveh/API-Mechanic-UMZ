@@ -2,6 +2,7 @@ global using Amazon.S3;
 global using Application.Audit.Contracts;
 global using Application.Cache.Contracts;
 global using Application.Common.Contracts;
+global using Application.Common.Events;
 global using Application.Common.Results;
 global using Application.Communication.Contracts;
 global using Application.Inventory.Contracts;

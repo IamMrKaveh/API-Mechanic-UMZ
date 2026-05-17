@@ -6,6 +6,7 @@ global using Application.Cache.Contracts;
 global using Application.Cart.Contracts;
 global using Application.Category.Contracts;
 global using Application.Common.Behaviors;
+global using Application.Common.Events;
 global using Application.Common.Exceptions;
 global using Application.Common.Interfaces;
 global using Application.Common.Mapping;

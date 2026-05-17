@@ -6,12 +6,13 @@ namespace Application.Variant.EventHandlers;
 public class VariantStockChangedDomainEventHandler(
     IInventoryQueryService inventoryQueryService,
     IPublisher publisher,
-    IAuditService auditService) : INotificationHandler<VariantStockChangedEvent>
+    IAuditService auditService) : INotificationHandler<DomainEventNotification<VariantStockChangedEvent>>
 {
-    public async Task Handle(VariantStockChangedEvent notification, CancellationToken ct)
+    public async Task Handle(DomainEventNotification<VariantStockChangedEvent> notification, CancellationToken ct)
     {
-        var variantId = notification.VariantId;
-        var productId = notification.ProductId;
+        var domainEvent = notification.DomainEvent;
+        var variantId = domainEvent.VariantId;
+        var productId = domainEvent.ProductId;
 
         var availability = await inventoryQueryService.GetVariantAvailabilityAsync(variantId, ct);
 
@@ -28,7 +29,7 @@ public class VariantStockChangedDomainEventHandler(
         {
             VariantId = variantId.Value,
             ProductId = productId.Value,
-            QuantityChanged = notification.QuantityChanged,
+            QuantityChanged = domainEvent.QuantityChanged,
             NewOnHand = availability.StockQuantity,
             NewReserved = availability.ReservedQuantity,
             NewAvailable = availability.AvailableQuantity,
