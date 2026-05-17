@@ -1,25 +1,23 @@
-using Application.Audit.Contracts;
+using Application.Common.Events;
 using Domain.Inventory.Events;
-using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
 using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Search.EventHandlers;
 
-public sealed class InventoryStockSearchSyncHandler(
-    DBContext context) :
-    INotificationHandler<StockIncreasedEvent>,
-    INotificationHandler<StockReservedEvent>,
-    INotificationHandler<StockReservationReleasedEvent>
+public sealed class InventoryStockSearchSyncHandler(DBContext context) :
+    INotificationHandler<DomainEventNotification<StockIncreasedEvent>>,
+    INotificationHandler<DomainEventNotification<StockReservedEvent>>,
+    INotificationHandler<DomainEventNotification<StockReservationReleasedEvent>>
 {
-    public async Task Handle(StockIncreasedEvent notification, CancellationToken ct)
-        => await EnqueueProductUpdate(notification.VariantId, ct);
+    public async Task Handle(DomainEventNotification<StockIncreasedEvent> notification, CancellationToken ct)
+        => await EnqueueProductUpdate(notification.DomainEvent.VariantId, ct);
 
-    public async Task Handle(StockReservedEvent notification, CancellationToken ct)
-        => await EnqueueProductUpdate(notification.VariantId, ct);
+    public async Task Handle(DomainEventNotification<StockReservedEvent> notification, CancellationToken ct)
+        => await EnqueueProductUpdate(notification.DomainEvent.VariantId, ct);
 
-    public async Task Handle(StockReservationReleasedEvent notification, CancellationToken ct)
-        => await EnqueueProductUpdate(notification.VariantId, ct);
+    public async Task Handle(DomainEventNotification<StockReservationReleasedEvent> notification, CancellationToken ct)
+        => await EnqueueProductUpdate(notification.DomainEvent.VariantId, ct);
 
     private async Task EnqueueProductUpdate(VariantId variantId, CancellationToken ct)
     {

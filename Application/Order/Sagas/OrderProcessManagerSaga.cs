@@ -13,23 +13,25 @@ public sealed class OrderProcessManagerSaga(
     IInventoryService inventoryService,
     IOrderProcessStateRepository processStateRepository,
     IUnitOfWork unitOfWork) :
-    INotificationHandler<OrderCreatedEvent>,
-    INotificationHandler<PaymentSucceededEvent>,
-    INotificationHandler<PaymentFailedEvent>,
-    INotificationHandler<OrderCancelledEvent>,
-    INotificationHandler<OrderExpiredEvent>
+    INotificationHandler<DomainEventNotification<OrderCreatedEvent>>,
+    INotificationHandler<DomainEventNotification<PaymentSucceededEvent>>,
+    INotificationHandler<DomainEventNotification<PaymentFailedEvent>>,
+    INotificationHandler<DomainEventNotification<OrderCancelledEvent>>,
+    INotificationHandler<DomainEventNotification<OrderExpiredEvent>>
 {
-    public async Task Handle(OrderCreatedEvent notification, CancellationToken ct)
+    public async Task Handle(DomainEventNotification<OrderCreatedEvent> notification, CancellationToken ct)
     {
+        var domainEvent = notification.DomainEvent;
+
         var processState = OrderProcessState.Create(
-            notification.OrderId,
-            correlationId: notification.OrderId.ToString());
+            domainEvent.OrderId,
+            correlationId: domainEvent.OrderId.ToString());
 
         await processStateRepository.AddAsync(processState, ct);
         processState.TransitionTo(ProcessStepEnum.InventoryReserving);
         await unitOfWork.SaveChangesAsync(ct);
 
-        var order = await orderRepository.FindWithItemsByIdAsync(notification.OrderId, ct);
+        var order = await orderRepository.FindWithItemsByIdAsync(domainEvent.OrderId, ct);
         if (order is null)
         {
             processState.MarkFailed("Order not found after creation.");
@@ -61,16 +63,18 @@ public sealed class OrderProcessManagerSaga(
         await unitOfWork.SaveChangesAsync(ct);
     }
 
-    public async Task Handle(PaymentSucceededEvent notification, CancellationToken ct)
+    public async Task Handle(DomainEventNotification<PaymentSucceededEvent> notification, CancellationToken ct)
     {
-        var processState = await processStateRepository.GetByOrderIdAsync(notification.OrderId, ct);
+        var domainEvent = notification.DomainEvent;
+
+        var processState = await processStateRepository.GetByOrderIdAsync(domainEvent.OrderId, ct);
         if (processState is null)
         {
-            processState = OrderProcessState.Create(notification.OrderId);
+            processState = OrderProcessState.Create(domainEvent.OrderId);
             await processStateRepository.AddAsync(processState, ct);
         }
 
-        var order = await orderRepository.FindWithItemsByIdAsync(notification.OrderId, ct);
+        var order = await orderRepository.FindWithItemsByIdAsync(domainEvent.OrderId, ct);
         if (order is null)
         {
             processState.MarkFailed("Order not found after payment success.");
@@ -78,7 +82,7 @@ public sealed class OrderProcessManagerSaga(
             return;
         }
 
-        var paymentTransactionId = Domain.Payment.ValueObjects.PaymentTransactionId.From(notification.PaymentTransactionId.Value);
+        var paymentTransactionId = Domain.Payment.ValueObjects.PaymentTransactionId.From(domainEvent.PaymentTransactionId.Value);
         var settlementResult = PaymentSettlementService.ProcessPaymentSuccess(
             new OrderPaymentContextAdapter(order), paymentTransactionId);
 
@@ -102,9 +106,11 @@ public sealed class OrderProcessManagerSaga(
         await unitOfWork.SaveChangesAsync(ct);
     }
 
-    public async Task Handle(PaymentFailedEvent notification, CancellationToken ct)
+    public async Task Handle(DomainEventNotification<PaymentFailedEvent> notification, CancellationToken ct)
     {
-        var processState = await processStateRepository.GetByOrderIdAsync(notification.OrderId, ct);
+        var domainEvent = notification.DomainEvent;
+
+        var processState = await processStateRepository.GetByOrderIdAsync(domainEvent.OrderId, ct);
         if (processState is not null)
         {
             processState.TransitionTo(ProcessStepEnum.PaymentPending);
@@ -113,52 +119,46 @@ public sealed class OrderProcessManagerSaga(
         }
     }
 
-    public async Task Handle(OrderCancelledEvent notification, CancellationToken ct)
+    public async Task Handle(DomainEventNotification<OrderCancelledEvent> notification, CancellationToken ct)
     {
-        var processState = await processStateRepository.GetByOrderIdAsync(notification.OrderId, ct);
+        var domainEvent = notification.DomainEvent;
+
+        var processState = await processStateRepository.GetByOrderIdAsync(domainEvent.OrderId, ct);
         if (processState is not null)
         {
             processState.MarkCompensating();
             await unitOfWork.SaveChangesAsync(ct);
         }
 
-        await ReleaseInventoryForOrderAsync(notification.OrderId, "لغو سفارش", processState, ct);
+        await ReleaseInventoryForOrderAsync(domainEvent.OrderId, "لغو سفارش", processState, ct);
     }
 
-    public async Task Handle(OrderExpiredEvent notification, CancellationToken ct)
+    public async Task Handle(DomainEventNotification<OrderExpiredEvent> notification, CancellationToken ct)
     {
-        var processState = await processStateRepository.GetByOrderIdAsync(notification.OrderId, ct);
+        var domainEvent = notification.DomainEvent;
+
+        var processState = await processStateRepository.GetByOrderIdAsync(domainEvent.OrderId, ct);
         if (processState is not null)
         {
             processState.MarkCompensating();
             await unitOfWork.SaveChangesAsync(ct);
         }
 
-        await ReleaseInventoryForOrderAsync(notification.OrderId, "انقضای سفارش", processState, ct);
+        await ReleaseInventoryForOrderAsync(domainEvent.OrderId, "انقضای سفارش", processState, ct);
     }
 
     private async Task CompensateOrderAsync(
-        Domain.Order.Aggregates.Order order,
-        string reason,
-        OrderProcessState? processState,
-        CancellationToken ct)
+    Domain.Order.Aggregates.Order order,
+    string failureReason,
+    OrderProcessState processState,
+    CancellationToken ct)
     {
-        try
-        {
-            var referenceNumber = $"ORDER-{order.Id.Value}";
-            await inventoryService.RollbackReservationsAsync(referenceNumber, ct);
+        await ReleaseInventoryForOrderAsync(order.Id, failureReason, processState, ct);
 
-            order.Cancel(reason);
-            orderRepository.Update(order);
+        processState.MarkFailed(failureReason);
 
-            processState?.MarkCompensated();
-            await unitOfWork.SaveChangesAsync(ct);
-        }
-        catch (Exception)
-        {
-            processState?.MarkFailed("Compensation failed.");
-            await unitOfWork.SaveChangesAsync(ct);
-        }
+        orderRepository.Update(order);
+        await unitOfWork.SaveChangesAsync(ct);
     }
 
     private async Task ReleaseInventoryForOrderAsync(
@@ -167,24 +167,35 @@ public sealed class OrderProcessManagerSaga(
         OrderProcessState? processState,
         CancellationToken ct)
     {
-        try
+        var order = await orderRepository.FindWithItemsByIdAsync(orderId, ct);
+
+        if (order is null)
         {
-            var referenceNumber = $"ORDER-{orderId.Value}";
-            var result = await inventoryService.RollbackReservationsAsync(referenceNumber, ct);
-
-            if (result.IsSuccess)
-                processState?.MarkCompensated();
-            else
-                processState?.MarkFailed($"Inventory release failed: {result.Error}");
-
             if (processState is not null)
+            {
+                processState.MarkFailed("Order not found during inventory release.");
                 await unitOfWork.SaveChangesAsync(ct);
+            }
+
+            return;
         }
-        catch (Exception ex)
+
+        var referenceNumber = $"ORDER-{order.Id.Value}";
+
+        foreach (var item in order.OrderItems)
         {
-            processState?.MarkFailed($"Exception: {ex.Message}");
-            if (processState is not null)
-                await unitOfWork.SaveChangesAsync(ct);
+            await inventoryService.ReleaseReservationAsync(
+                item.VariantId,
+                Domain.Inventory.ValueObjects.StockQuantity.Create(item.Quantity),
+                referenceNumber,
+                reason,
+                ct);
+        }
+
+        if (processState is not null)
+        {
+            processState.MarkCompensated();
+            await unitOfWork.SaveChangesAsync(ct);
         }
     }
 }

@@ -5,17 +5,19 @@ namespace Application.Product.EventHandlers;
 
 public sealed class UpdateProductStatsOnReviewApprovedHandler(
     IProductRepository productRepository,
-    IAuditService auditService) : INotificationHandler<ReviewApprovedEvent>
+    IAuditService auditService) : INotificationHandler<DomainEventNotification<ReviewApprovedEvent>>
 {
-    public async Task Handle(ReviewApprovedEvent notification, CancellationToken ct)
+    public async Task Handle(DomainEventNotification<ReviewApprovedEvent> notification, CancellationToken ct)
     {
-        var product = await productRepository.GetByIdAsync(notification.ProductId, ct);
+        var domainEvent = notification.DomainEvent;
+
+        var product = await productRepository.GetByIdAsync(domainEvent.ProductId, ct);
         if (product is null)
             return;
 
         await auditService.LogSystemEventAsync(
             "ReviewApproved",
-            $"نظر برای محصول {notification.ProductId.Value} تایید شد. امتیاز: {notification.Rating.Value}",
+            $"نظر برای محصول {domainEvent.ProductId.Value} تایید شد. امتیاز: {domainEvent.Rating.Value}",
             ct);
     }
 }

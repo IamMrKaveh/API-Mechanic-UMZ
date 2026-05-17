@@ -1,24 +1,22 @@
-using Application.Cache.Contracts;
 using Domain.Product.Events;
-using Domain.Product.ValueObjects;
 
 namespace Infrastructure.Cache.EventHandlers;
 
 public sealed class ProductCacheInvalidationHandler(ICacheInvalidationService invalidation) :
-    INotificationHandler<ProductUpdatedEvent>,
-    INotificationHandler<PriceChangedEvent>,
-    INotificationHandler<ProductActivatedEvent>,
-    INotificationHandler<ProductDeactivatedEvent>
+    INotificationHandler<DomainEventNotification<ProductUpdatedEvent>>,
+    INotificationHandler<DomainEventNotification<PriceChangedEvent>>,
+    INotificationHandler<DomainEventNotification<ProductActivatedEvent>>,
+    INotificationHandler<DomainEventNotification<ProductDeactivatedEvent>>
 {
-    public Task Handle(ProductUpdatedEvent n, CancellationToken ct)
-        => invalidation.InvalidateProductCacheAsync(n.ProductId, ct);
+    public Task Handle(DomainEventNotification<ProductUpdatedEvent> n, CancellationToken ct)
+        => invalidation.InvalidateProductCacheAsync(n.DomainEvent.ProductId, ct);
 
-    public Task Handle(PriceChangedEvent n, CancellationToken ct)
-        => invalidation.InvalidateProductCacheAsync(n.ProductId, ct);
+    public Task Handle(DomainEventNotification<PriceChangedEvent> n, CancellationToken ct)
+        => invalidation.InvalidateProductCacheAsync(n.DomainEvent.ProductId, ct);
 
-    public Task Handle(ProductActivatedEvent n, CancellationToken ct)
-        => invalidation.InvalidateProductCacheAsync(n.ProductId, ct);
+    public Task Handle(DomainEventNotification<ProductActivatedEvent> n, CancellationToken ct)
+        => invalidation.InvalidateProductCacheAsync(n.DomainEvent.ProductId, ct);
 
-    public Task Handle(ProductDeactivatedEvent n, CancellationToken ct)
-        => invalidation.InvalidateProductCacheAsync(n.ProductId, ct);
+    public Task Handle(DomainEventNotification<ProductDeactivatedEvent> n, CancellationToken ct)
+        => invalidation.InvalidateProductCacheAsync(n.DomainEvent.ProductId, ct);
 }

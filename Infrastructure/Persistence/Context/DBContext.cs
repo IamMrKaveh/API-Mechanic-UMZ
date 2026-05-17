@@ -122,7 +122,6 @@ public sealed class DBContext(
         ConfigureStronglyTypedId<DiscountRestrictionId, DiscountRestrictionIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<DiscountUsageId, DiscountUsageIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<InventoryId, InventoryIdConverter>(configurationBuilder);
-        ConfigureStronglyTypedId<InventoryTransactionId, InventoryTransactionIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<StockLedgerEntryId, StockLedgerEntryIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<WarehouseId, WarehouseIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<MediaId, MediaIdConverter>(configurationBuilder);

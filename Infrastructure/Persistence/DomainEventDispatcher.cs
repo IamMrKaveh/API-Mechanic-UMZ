@@ -1,4 +1,4 @@
-using Application.Common.Contracts;
+using Application.Common.Events;
 using Domain.Common.Abstractions;
 
 namespace Infrastructure.Persistence;
@@ -9,7 +9,9 @@ public sealed class DomainEventDispatcher(IPublisher publisher) : IDomainEventDi
     {
         foreach (var @event in events)
         {
-            await publisher.Publish(@event, ct);
+            var notificationType = typeof(DomainEventNotification<>).MakeGenericType(@event.GetType());
+            var notification = Activator.CreateInstance(notificationType, @event)!;
+            await publisher.Publish(notification, ct);
         }
     }
 }

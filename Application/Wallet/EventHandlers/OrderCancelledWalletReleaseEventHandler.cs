@@ -8,27 +8,28 @@ namespace Application.Wallet.EventHandlers;
 public class OrderCancelledWalletReleaseEventHandler(
     IMediator mediator,
     IWalletQueryService walletQueryService,
-    IAuditService auditService) : INotificationHandler<OrderCancelledEvent>
+    IAuditService auditService) : INotificationHandler<DomainEventNotification<OrderCancelledEvent>>
 {
     public async Task Handle(
-        OrderCancelledEvent notification,
+        DomainEventNotification<OrderCancelledEvent> notification,
         CancellationToken ct)
     {
+        var domainEvent = notification.DomainEvent;
         try
         {
             var paymentEntry = await walletQueryService.GetOrderPaymentLedgerEntryAsync(
-                notification.UserId, notification.OrderId, ct);
+                domainEvent.UserId, domainEvent.OrderId, ct);
 
             if (paymentEntry != null)
             {
                 var refundCommand = new CreditWalletCommand(
-                    UserId: notification.UserId.Value,
+                    UserId: domainEvent.UserId.Value,
                     Amount: paymentEntry.AmountDelta,
                     TransactionType: WalletTransactionType.Refund,
                     ReferenceType: WalletReferenceType.Order,
-                    ReferenceId: notification.OrderId.Value.ToString(),
-                    IdempotencyKey: $"refund-order-{notification.OrderId.Value}",
-                    Description: $"استرداد وجه سفارش لغو شده #{notification.OrderId.Value}"
+                    ReferenceId: domainEvent.OrderId.Value.ToString(),
+                    IdempotencyKey: $"refund-order-{domainEvent.OrderId.Value}",
+                    Description: $"استرداد وجه سفارش لغو شده #{domainEvent.OrderId.Value}"
                 );
 
                 var result = await mediator.Send(refundCommand, ct);
@@ -36,14 +37,14 @@ public class OrderCancelledWalletReleaseEventHandler(
                 {
                     await auditService.LogSystemEventAsync(
                         "WalletRefundFailed",
-                        $"استرداد کیف پول برای سفارش {notification.OrderId.Value} ناموفق بود: {result.Error}");
+                        $"استرداد کیف پول برای سفارش {domainEvent.OrderId.Value} ناموفق بود: {result.Error}");
                 }
             }
             else
             {
                 var releaseCommand = new ReleaseWalletReservationCommand(
-                    notification.UserId.Value,
-                    notification.OrderId.Value);
+                    domainEvent.UserId.Value,
+                    domainEvent.OrderId.Value);
 
                 await mediator.Send(releaseCommand, ct);
             }
@@ -52,7 +53,8 @@ public class OrderCancelledWalletReleaseEventHandler(
         {
             await auditService.LogSystemEventAsync(
                 "WalletOrderCancelledHandlerError",
-                $"خطا در پردازش لغو سفارش {notification.OrderId.Value}: {ex.Message}");
+                $"خطا در پردازش لغو سفارش {domainEvent.OrderId.Value}: {ex.Message}",
+                ct);
         }
     }
 }

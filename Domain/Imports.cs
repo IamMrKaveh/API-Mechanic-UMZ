@@ -1,6 +1,5 @@
 global using Domain.Common.Abstractions;
 global using Domain.Common.Events;
-global using MediatR;
 global using SharedKernel.Abstractions;
 global using SharedKernel.Abstractions.Interfaces;
 global using SharedKernel.Exceptions;

@@ -1,10 +1,6 @@
-using Application.Inventory.Contracts;
 using Application.Inventory.Features.Shared;
-using Domain.Inventory.Aggregates;
 using Domain.Inventory.ValueObjects;
 using Domain.Variant.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Mapster;
 
 namespace Infrastructure.Inventory.QueryServices;
 
@@ -198,23 +194,67 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
     }
 
     public async Task<IEnumerable<WarehouseStockDto>> GetWarehouseStockByVariantAsync(
-        VariantId variantId, CancellationToken ct = default)
+    VariantId variantId, CancellationToken ct = default)
     {
         var inventory = await context.Inventories
             .AsNoTracking()
             .FirstOrDefaultAsync(i => i.VariantId == variantId, ct);
 
         if (inventory is null)
-            return Enumerable.Empty<WarehouseStockDto>();
+            return [];
 
-        return new[]
+        var ledgerByWarehouse = await context.StockLedgerEntries
+            .AsNoTracking()
+            .Where(e => e.VariantId == variantId && e.WarehouseId != null)
+            .GroupBy(e => e.WarehouseId)
+            .Select(g => new
+            {
+                WarehouseId = g.Key,
+                NetQuantity = g.Sum(e => e.QuantityDelta)
+            })
+            .Where(x => x.NetQuantity > 0)
+            .ToListAsync(ct);
+
+        if (ledgerByWarehouse.Count == 0)
         {
+            var defaultWarehouse = await context.Warehouses
+                .AsNoTracking()
+                .Where(w => w.IsDefault && w.IsActive)
+                .FirstOrDefaultAsync(ct);
+
+            return
+            [
             new WarehouseStockDto
             {
+                WarehouseId = defaultWarehouse?.Id.Value ?? Guid.Empty,
+                WarehouseName = defaultWarehouse?.Name,
                 VariantId = inventory.VariantId.Value,
                 Quantity = inventory.StockQuantity.Value,
                 ReservedQuantity = inventory.ReservedQuantity.Value
             }
-        };
+        ];
+        }
+
+        var warehouseGuids = ledgerByWarehouse
+            .Select(x => x.WarehouseId!.Value)
+            .ToList();
+
+        var warehouses = await context.Warehouses
+            .AsNoTracking()
+            .Where(w => warehouseGuids.Contains(w.Id.Value))
+            .ToDictionaryAsync(w => w.Id.Value, w => w.Name, ct);
+
+        var totalNet = ledgerByWarehouse.Sum(x => x.NetQuantity);
+
+        return ledgerByWarehouse.Select(x => new WarehouseStockDto
+        {
+            WarehouseId = x.WarehouseId!.Value,
+            WarehouseName = warehouses.GetValueOrDefault(x.WarehouseId!.Value),
+            VariantId = inventory.VariantId.Value,
+            Quantity = Math.Max(0, x.NetQuantity),
+            ReservedQuantity = totalNet > 0
+                ? (int)Math.Round((double)x.NetQuantity / totalNet * inventory.ReservedQuantity.Value)
+                : 0
+        });
     }
 }
