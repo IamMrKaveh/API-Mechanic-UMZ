@@ -48,6 +48,7 @@ using Infrastructure.Auth.Services;
 using Infrastructure.BackgroundJobs;
 using Infrastructure.Brand.QueryServices;
 using Infrastructure.Brand.Repositories;
+using Infrastructure.Cache.Redis.Lock;
 using Infrastructure.Cache.Redis.Services;
 using Infrastructure.Cache.Services;
 using Infrastructure.Cart.QueryServices;
@@ -57,6 +58,7 @@ using Infrastructure.Category.Repositories;
 using Infrastructure.Common.Services;
 using Infrastructure.Communication.Options;
 using Infrastructure.Communication.Services;
+using Infrastructure.DataProtection.Repositories;
 using Infrastructure.Discount.QueryServices;
 using Infrastructure.Discount.Repositories;
 using Infrastructure.Discount.Services;
@@ -107,9 +109,6 @@ using Infrastructure.Wallet.Repositories;
 using Infrastructure.Wallet.Services;
 using Infrastructure.Wishlist.QueryServices;
 using Infrastructure.Wishlist.Repositories;
-using Microsoft.AspNetCore.DataProtection;
-using Polly;
-using Serilog;
 using DateTimeProvider = Infrastructure.Common.Services.DateTimeProvider;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
@@ -122,7 +121,7 @@ public static class InfrastructureServiceExtensions
         IConfiguration configuration)
     {
         services.AddPersistence(configuration);
-        services.AddRedisCache(configuration);
+        services.AddCaching(configuration);
         services.AddRepositories();
         services.AddQueryServices();
         services.AddDomainServices();
@@ -133,11 +132,49 @@ public static class InfrastructureServiceExtensions
         services.AddSearchServices(configuration);
         services.AddBackgroundServices(configuration);
         services.AddHealthChecks(configuration);
-        services.AddDataProtectionWithRedis(configuration);
+        services.AddDataProtectionLayer(configuration);
         services.AddJwtAuthentication();
         services.AddHttpContextAccessor();
 
         return services;
+    }
+
+    private static void AddCaching(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<CacheOptions>(configuration.GetSection(CacheOptions.SectionName));
+
+        var cacheOptions = configuration.GetSection(CacheOptions.SectionName).Get<CacheOptions>()
+            ?? new CacheOptions();
+
+        if (cacheOptions.UseRedis)
+        {
+            var redisConnectionString = configuration.GetConnectionString("Redis")
+                ?? configuration["Cache:RedisConnectionString"]
+                ?? "localhost:6379";
+
+            services.AddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(redisConnectionString));
+
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnectionString;
+                options.InstanceName = cacheOptions.KeyPrefix;
+            });
+
+            services.AddScoped<ICacheService, RedisCacheService>();
+            services.AddSingleton<IDistributedLock, DistributedLockService>();
+            services.AddScoped<IRateLimitService, RateLimitService>();
+        }
+        else
+        {
+            services.AddMemoryCache();
+            services.AddDistributedMemoryCache();
+            services.AddScoped<ICacheService, InMemoryCacheService>();
+            services.AddSingleton<IDistributedLock, NoOpDistributedLock>();
+            services.AddScoped<IRateLimitService, InMemoryRateLimitService>();
+        }
+
+        services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
     }
 
     private static void AddPersistence(this IServiceCollection services, IConfiguration configuration)
@@ -165,25 +202,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<IUrlResolverService, UrlResolverService>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-    }
-
-    private static void AddRedisCache(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.Configure<CacheOptions>(configuration.GetSection(CacheOptions.SectionName));
-
-        var redisConnectionString = configuration.GetConnectionString("Redis")
-            ?? configuration["Cache:RedisConnectionString"]
-            ?? "localhost:6379";
-
-        services.AddStackExchangeRedisCache(options =>
-        {
-            options.Configuration = redisConnectionString;
-            options.InstanceName = configuration["Cache:KeyPrefix"] ?? "shop";
-        });
-
-        services.AddScoped<ICacheService, RedisCacheService>();
-        services.AddSingleton<IDistributedLock, DistributedLockService>();
-        services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
     }
 
     private static void AddRepositories(this IServiceCollection services)
@@ -365,13 +383,56 @@ public static class InfrastructureServiceExtensions
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")!;
 
-        services.AddHealthChecks()
+        var cacheOptions = configuration.GetSection(CacheOptions.SectionName).Get<CacheOptions>()
+            ?? new CacheOptions();
+
+        var builder = services.AddHealthChecks()
             .AddCheck("postgresql", new NpgsqlHealthCheck(connectionString),
-                tags: ["db", "sql", "postgresql"])
-            .AddRedis(
+                tags: ["db", "sql", "postgresql"]);
+
+        if (cacheOptions.UseRedis)
+        {
+            builder.AddRedis(
                 configuration.GetConnectionString("Redis") ?? "localhost:6379",
                 name: "redis",
                 tags: ["cache", "redis"]);
+        }
+    }
+
+    private static void AddDataProtectionLayer(
+    this IServiceCollection services,
+    IConfiguration configuration)
+    {
+        var cacheOptions = configuration.GetSection(CacheOptions.SectionName).Get<CacheOptions>()
+            ?? new CacheOptions();
+
+        if (!cacheOptions.UseRedis)
+        {
+            services.AddDataProtection();
+            return;
+        }
+
+        var redisConnectionString = configuration.GetConnectionString("Redis")
+            ?? configuration["Cache:RedisConnectionString"]
+            ?? "localhost:6379,abortConnect=false";
+
+        var options = ConfigurationOptions.Parse(redisConnectionString);
+        options.AbortOnConnectFail = false;
+        options.ConnectRetry = 3;
+        options.ConnectTimeout = 5000;
+        options.SyncTimeout = 5000;
+        options.AsyncTimeout = 5000;
+        options.ReconnectRetryPolicy = new ExponentialRetry(5000);
+
+        var redis = ConnectionMultiplexer.Connect(options);
+        services.AddSingleton<IConnectionMultiplexer>(redis);
+
+        services.AddDataProtection().Services.AddSingleton<IXmlRepository>(provider =>
+            new ResilientRedisXmlRepository(
+                redis,
+                provider.GetRequiredService<ILogger<ResilientRedisXmlRepository>>(),
+                "DataProtection",
+                TimeSpan.FromDays(90)));
     }
 
     private sealed class NpgsqlHealthCheck(string connectionString) : IHealthCheck
@@ -393,57 +454,6 @@ public static class InfrastructureServiceExtensions
             {
                 return HealthCheckResult.Unhealthy(ex.Message);
             }
-        }
-    }
-
-    private static void AddDataProtectionWithRedis(
-        this IServiceCollection services,
-        IConfiguration configuration)
-    {
-        var redisConnectionString = configuration.GetConnectionString("Redis")
-            ?? configuration["Cache:RedisConnectionString"]
-            ?? "localhost:6379,abortConnect=false";
-
-        var options = ConfigurationOptions.Parse(redisConnectionString);
-
-        options.AbortOnConnectFail = false;
-        options.ConnectRetry = 5;
-        options.ConnectTimeout = 10000;
-        options.SyncTimeout = 10000;
-        options.AsyncTimeout = 10000;
-        options.ReconnectRetryPolicy = new ExponentialRetry(5000);
-
-        try
-        {
-            var redis = ConnectionMultiplexer.Connect(options);
-
-            services
-                .AddDataProtection()
-                .PersistKeysToStackExchangeRedis(
-                    redis,
-                    "DataProtection-Keys");
-
-            services.AddSingleton<IConnectionMultiplexer>(redis);
-        }
-        catch (RedisConnectionException ex)
-        {
-            Log.Warning(
-                ex,
-                "Redis is unavailable. Falling back to local key storage.");
-
-            var keysDirectory = new DirectoryInfo(
-                Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    "keys"));
-
-            if (!keysDirectory.Exists)
-            {
-                keysDirectory.Create();
-            }
-
-            services
-                .AddDataProtection()
-                .PersistKeysToFileSystem(keysDirectory);
         }
     }
 
