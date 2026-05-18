@@ -290,7 +290,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IOtpService, OtpService>();
-        services.AddScoped<IRateLimitService, RateLimitService>();
         services.AddScoped<ITokenService, TokenService>();
     }
 
