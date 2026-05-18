@@ -38,12 +38,11 @@ public class SendOtpHandler(
             TimeSpan.FromMinutes(2));
 
         await otpRepository.AddAsync(otp, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         var sendResult = await otpService.SendOtpAsync(phoneNumber, otpCode, request.Purpose, ct);
         if (sendResult.IsFailed)
             return ServiceResult.Failure(sendResult.Error);
-
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogSecurityEventAsync(
             "SendOtp",
