@@ -35,7 +35,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.A
 
             pn.HasIndex(s => s.Value)
                 .IsUnique()
-                .HasFilter("\"PhoneNumber_Value\" IS NOT NULL");
+                .HasFilter("\"PhoneNumber\" IS NOT NULL");
         });
 
         builder.Property(e => e.PasswordHash).IsRequired(false).HasMaxLength(500);
