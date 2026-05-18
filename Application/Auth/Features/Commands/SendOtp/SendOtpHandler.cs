@@ -19,7 +19,11 @@ public class SendOtpHandler(
 
         var user = await userRepository.GetByPhoneNumberAsync(phoneNumber, ct);
         if (user is null)
-            return ServiceResult.Failure("کاربری با این شماره یافت نشد.");
+        {
+            user = Domain.User.Aggregates.User.RegisterByPhone(phoneNumber);
+            await userRepository.AddAsync(user, ct);
+            await unitOfWork.SaveChangesAsync(ct);
+        }
 
         var rateLimitOk = await otpService.ValidateRateLimitAsync(user.Id, request.Purpose, ct);
         if (!rateLimitOk)
@@ -37,10 +41,7 @@ public class SendOtpHandler(
 
         var sendResult = await otpService.SendOtpAsync(phoneNumber, otpCode, request.Purpose, ct);
         if (sendResult.IsFailed)
-        {
-            await unitOfWork.RollbackTransactionAsync(ct);
             return ServiceResult.Failure(sendResult.Error);
-        }
 
         await unitOfWork.SaveChangesAsync(ct);
 

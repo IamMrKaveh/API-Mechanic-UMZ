@@ -1,15 +1,11 @@
 ﻿namespace Infrastructure.Cache.Redis.Lock;
 
-/// <summary>
-/// قفل توزیع‌شده No-Op که زمانی استفاده می‌شود که Redis غیرفعال است
-/// </summary>
-public sealed class NoOpDistributedLock(IAuditService auditService) : IDistributedLock
+public sealed class NoOpDistributedLock(ILogger<NoOpDistributedLock> logger) : IDistributedLock
 {
-    public async Task<ILockHandle?> TryAcquireAsync(
-        string resource)
+    public async Task<ILockHandle?> TryAcquireAsync(string resource)
     {
-        await auditService.LogDebugAsync($"Distributed locks are disabled. Acquiring no-op lock for resource: {resource}");
-        return await Task.FromResult<ILockHandle?>(new NoOpLockHandle(resource, auditService));
+        logger.LogDebug("Distributed locks are disabled. Acquiring no-op lock for resource: {Resource}", resource);
+        return await Task.FromResult<ILockHandle?>(new NoOpLockHandle(resource, logger));
     }
 
     public async Task<ILockHandle?> AcquireAsync(
@@ -17,12 +13,12 @@ public sealed class NoOpDistributedLock(IAuditService auditService) : IDistribut
         TimeSpan expiry,
         CancellationToken ct = default)
     {
-        await auditService.LogDebugAsync($"Distributed locks are disabled. Acquiring no-op lock for resource: {resource}", ct);
-        return await Task.FromResult<ILockHandle>(new NoOpLockHandle(resource, auditService));
+        logger.LogDebug("Distributed locks are disabled. Acquiring no-op lock for resource: {Resource}", resource);
+        return await Task.FromResult<ILockHandle>(new NoOpLockHandle(resource, logger));
     }
 }
 
-public sealed class NoOpLockHandle(string resource, IAuditService auditService) : ILockHandle
+public sealed class NoOpLockHandle(string resource, ILogger logger) : ILockHandle
 {
     private bool _released = false;
 
@@ -34,9 +30,12 @@ public sealed class NoOpLockHandle(string resource, IAuditService auditService) 
     public async Task ReleaseAsync()
     {
         if (_released)
+        {
             await Task.CompletedTask;
+            return;
+        }
         _released = true;
-        await auditService.LogInformationAsync($"Releasing no-op lock for resource: {resource}");
+        logger.LogInformation("Releasing no-op lock for resource: {Resource}", resource);
         await Task.CompletedTask;
     }
 }
