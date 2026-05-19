@@ -240,6 +240,8 @@ static void ConfigureControllersAndApi(WebApplicationBuilder builder)
             });
     });
 
+    builder.Services.AddApplicationPipelines();
+
     builder.Services.AddHttpContextAccessor();
 
     builder.Services.AddAntiforgery(options =>

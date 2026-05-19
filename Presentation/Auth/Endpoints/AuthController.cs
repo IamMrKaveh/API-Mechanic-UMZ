@@ -4,12 +4,7 @@ using Application.Auth.Features.Commands.LogoutAll;
 using Application.Auth.Features.Commands.RefreshToken;
 using Application.Auth.Features.Commands.SendOtp;
 using Application.Auth.Features.Commands.VerifyOtp;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
 using Presentation.Auth.Requests;
-using Presentation.Common.Extensions;
-using Presentation.Common.Filters;
-using System.Security.Claims;
 
 namespace Presentation.Auth.Endpoints;
 

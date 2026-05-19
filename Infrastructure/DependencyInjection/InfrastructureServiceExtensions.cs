@@ -275,7 +275,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ICheckoutPriceValidatorService, CheckoutPriceValidatorService>();
         services.AddScoped<ICheckoutShippingValidatorService, CheckoutShippingValidatorService>();
         services.AddScoped<ICheckoutStockValidatorService, CheckoutStockValidatorService>();
-        services.AddScoped<ILocationService, LocationService>();
         services.AddScoped<IPurchaseVerificationService, PurchaseVerificationService>();
     }
 
@@ -303,6 +302,17 @@ public static class InfrastructureServiceExtensions
 
     private static void AddCommunicationServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddHttpClient<ILocationService, LocationService>(client =>
+        {
+            client.BaseAddress = new Uri("https://iran-locations-api.ir/api/v1/fa/");
+            client.Timeout = TimeSpan.FromSeconds(15);
+        })
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            AllowAutoRedirect = true,
+            MaxAutomaticRedirections = 5
+        });
+
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
 
         services.Configure<KavenegarOptions>(configuration.GetSection(KavenegarOptions.SectionName));

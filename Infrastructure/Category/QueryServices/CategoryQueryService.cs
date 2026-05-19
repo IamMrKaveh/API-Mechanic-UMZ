@@ -224,8 +224,29 @@ public sealed class CategoryQueryService(
         throw new NotImplementedException();
     }
 
-    public Task<PaginatedResult<CategoryDto>> GetPublicCategoriesAsync(string? search, int page, int pageSize, CancellationToken ct = default)
+    public async Task<PaginatedResult<CategoryDto>> GetPublicCategoriesAsync(
+        string? search, int page, int pageSize, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var query = context.Categories
+            .AsNoTracking()
+            .Where(c => c.IsActive);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLower();
+            query = query.Where(c => c.Name.Value.ToLower().Contains(term));
+        }
+
+        var total = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderBy(c => c.SortOrder)
+            .ThenByDescending(c => c.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        var dtos = items.Select(MapToDto).ToList();
+        return PaginatedResult<CategoryDto>.Create(dtos, total, page, pageSize);
     }
 }
