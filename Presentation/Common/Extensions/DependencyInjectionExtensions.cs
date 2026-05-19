@@ -1,9 +1,13 @@
+using Presentation.Common.Interfaces;
+using Presentation.Common.Mappers;
+
 namespace Presentation.Common.Extensions;
 
 public static class DependencyInjectionExtensions
 {
     public static IServiceCollection AddApplicationPipelines(this IServiceCollection services)
     {
+        services.AddScoped<IHttpResultMapper, HttpResultMapper>();
         return services;
     }
 

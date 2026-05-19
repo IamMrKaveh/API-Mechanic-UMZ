@@ -7,14 +7,11 @@ public class LocationService(
     HttpClient httpClient,
     IAuditService auditService) : ILocationService
 {
-    private readonly HttpClient _httpClient = httpClient;
-
     public async Task<IReadOnlyList<ProvinceDto>> GetProvincesAsync(CancellationToken ct = default)
     {
-        _httpClient.BaseAddress = new Uri("https://iran-locations-api.ir/api/v1/fa/");
         try
         {
-            var response = await _httpClient.GetFromJsonAsync<IReadOnlyList<ProvinceDto>>("states", cancellationToken: ct);
+            var response = await httpClient.GetFromJsonAsync<IReadOnlyList<ProvinceDto>>("states", cancellationToken: ct);
             return response ?? [];
         }
         catch (Exception)
@@ -26,10 +23,9 @@ public class LocationService(
 
     public async Task<IReadOnlyList<CityDto>> GetCitiesByProvinceAsync(string provinceId, CancellationToken ct = default)
     {
-        _httpClient.BaseAddress = new Uri("https://iran-locations-api.ir/api/v1/fa/");
         try
         {
-            var response = await _httpClient.GetFromJsonAsync<IReadOnlyList<CityDto>>($"cities?state_id={provinceId}", cancellationToken: ct);
+            var response = await httpClient.GetFromJsonAsync<IReadOnlyList<CityDto>>($"cities?state_id={provinceId}", cancellationToken: ct);
             return response ?? [];
         }
         catch (Exception)

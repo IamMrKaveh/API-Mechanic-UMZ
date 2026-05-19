@@ -1,10 +1,7 @@
 ﻿using Application.Brand.Contracts;
 using Application.Brand.Features.Shared;
-using Application.Common.Contracts;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Brand.QueryServices;
 
@@ -117,9 +114,6 @@ public sealed class BrandQueryService(
         var totalItems = await query.CountAsync(ct);
 
         var brands = await query
-            .OrderBy(b => b.Name.Value)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
             .Select(b => new
             {
                 b.Id,
@@ -129,6 +123,9 @@ public sealed class BrandQueryService(
                 b.IsActive,
                 b.LogoPath
             })
+            .OrderBy(b => b.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(ct);
 
         var categoryIds = brands.Select(b => CategoryId.From(b.CategoryId)).Distinct().ToList();
@@ -169,7 +166,6 @@ public sealed class BrandQueryService(
             query = query.Where(b => b.CategoryId == categoryId);
 
         var brands = await query
-            .OrderBy(b => b.Name.Value)
             .Select(b => new
             {
                 b.Id,
@@ -179,6 +175,7 @@ public sealed class BrandQueryService(
                 b.IsActive,
                 b.LogoPath
             })
+            .OrderBy(b => b.Name)
             .ToListAsync(ct);
 
         var categoryIds = brands.Select(b => CategoryId.From(b.CategoryId)).Distinct().ToList();
