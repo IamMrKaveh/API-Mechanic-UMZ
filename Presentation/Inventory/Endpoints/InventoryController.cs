@@ -6,7 +6,7 @@ using Presentation.Inventory.Requests;
 namespace Presentation.Inventory.Endpoints;
 
 [ApiController]
-[Route("api/inventory")]
+[Route("api/v{version:apiVersion}/inventory")]
 [AllowAnonymous]
 public sealed class InventoryController(IMediator mediator) : BaseApiController(mediator)
 {

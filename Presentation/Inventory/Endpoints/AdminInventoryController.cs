@@ -18,7 +18,7 @@ using Presentation.Inventory.Requests;
 namespace Presentation.Inventory.Endpoints;
 
 [ApiController]
-[Route("api/admin/inventory")]
+[Route("api/v{version:apiVersion}/admin/inventory")]
 [Authorize(Roles = "Admin")]
 public sealed class AdminInventoryController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
@@ -49,7 +49,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpGet("warehouse-stock/{variantId:guid}")]
+    [HttpGet("variants/{variantId:guid}/warehouse-stock")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<WarehouseStockDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetWarehouseStock(Guid variantId)
@@ -59,7 +59,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpPost("reverse")]
+    [HttpPost("transactions/reversal")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> ReverseTransaction([FromBody] ReverseInventoryTransactionRequest request)
     {
@@ -91,7 +91,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpPost("adjust")]
+    [HttpPost("adjustments")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> AdjustStock([FromBody] AdjustStockRequest request)
     {
@@ -105,7 +105,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpPost("bulk-adjust")]
+    [HttpPost("adjustments/bulk")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> BulkAdjustStock([FromBody] BulkAdjustStockRequest request)
     {
@@ -118,7 +118,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpPost("reconcile/{variantId:guid}")]
+    [HttpPost("variants/{variantId:guid}/reconciliation")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReconcileStock(Guid variantId)
@@ -128,7 +128,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpPost("damage")]
+    [HttpPost("damage-records")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> RecordDamage([FromBody] RecordDamageRequest request)
     {
@@ -151,7 +151,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpGet("status/{variantId:guid}")]
+    [HttpGet("variants/{variantId:guid}/status")]
     [ProducesResponseType(typeof(ApiResponse<InventoryStatusDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetInventoryStatus(Guid variantId)
@@ -161,7 +161,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpPost("import")]
+    [HttpPost("imports")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> BulkStockIn([FromBody] BulkStockInRequest request)
     {
@@ -174,7 +174,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpPost("approve-return/{orderId:guid}")]
+    [HttpPatch("orders/{orderId:guid}/return")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> ApproveReturn(Guid orderId, [FromBody] ApproveReturnRequest? request = null)

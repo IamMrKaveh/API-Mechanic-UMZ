@@ -317,7 +317,10 @@ public static class InfrastructureServiceExtensions
 
         services.Configure<KavenegarOptions>(configuration.GetSection(KavenegarOptions.SectionName));
 
-        services.AddHttpClient<ISmsService, SmsService>()
+        services.AddHttpClient<ISmsService, SmsService>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+        })
             .AddTransientHttpErrorPolicy(policy =>
                 policy.WaitAndRetryAsync(3, retryAttempt =>
                     TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))

@@ -10,7 +10,7 @@ using Presentation.Analytic.Requests;
 namespace Presentation.Analytic.Endpoints;
 
 [ApiController]
-[Route("api/admin/analytics")]
+[Route("api/v{version:apiVersion}/admin/analytics")]
 [Authorize(Roles = "Admin")]
 public class AdminAnalyticsController(IMediator mediator, IMapper mapper)
     : BaseApiController(mediator, mapper)

@@ -3,16 +3,20 @@ using Application.Inventory.Features.Commands.RemoveStock;
 using Application.Variant.Features.Commands.AddVariant;
 using Application.Variant.Features.Commands.RemoveVariant;
 using Application.Variant.Features.Commands.UpdateVariant;
+using Application.Variant.Features.Shared;
 using Presentation.Variant.Requests;
 
 namespace Presentation.Variant.Endpoints;
 
 [ApiController]
-[Route("api/admin/products/{productId:guid}/variants")]
+[Route("api/v{version:apiVersion}/admin/products/{productId:guid}/variants")]
 [Authorize(Roles = "Admin")]
 public sealed class AdminVariantController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<ProductVariantViewDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Add(
         Guid productId,
         [FromBody] AddVariantRequest request,
@@ -34,7 +38,29 @@ public sealed class AdminVariantController(IMediator mediator) : BaseApiControll
         return ToActionResult(result);
     }
 
+    [HttpPost("{variantId:guid}/stock")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AddStock(
+    Guid variantId,
+    [FromBody] AddStockRequest request,
+    CancellationToken ct)
+    {
+        var command = new AddStockCommand(
+            variantId,
+            request.Quantity,
+            CurrentUser.UserId,
+            request.Notes);
+
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
     [HttpPut("{variantId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(
         Guid productId,
         Guid variantId,
@@ -60,6 +86,8 @@ public sealed class AdminVariantController(IMediator mediator) : BaseApiControll
     }
 
     [HttpDelete("{variantId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
         Guid productId,
         Guid variantId,
@@ -70,23 +98,9 @@ public sealed class AdminVariantController(IMediator mediator) : BaseApiControll
         return ToActionResult(result);
     }
 
-    [HttpPost("{variantId:guid}/stock")]
-    public async Task<IActionResult> AddStock(
-        Guid variantId,
-        [FromBody] AddStockRequest request,
-        CancellationToken ct)
-    {
-        var command = new AddStockCommand(
-            variantId,
-            request.Quantity,
-            CurrentUser.UserId,
-            request.Notes);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("{variantId:guid}/remove-stock")]
+    [HttpDelete("{variantId:guid}/stock")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveStock(
         Guid variantId,
         [FromBody] RemoveStockRequest request,

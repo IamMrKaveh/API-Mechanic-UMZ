@@ -2,36 +2,43 @@
 using Application.Wallet.Features.Commands.DebitWallet;
 using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
+using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
 using Presentation.Wallet.Requests;
 
 namespace Presentation.Wallet.Endpoints;
 
 [ApiController]
-[Route("api/admin/wallet")]
+[Route("api/v{version:apiVersion}/admin/wallets")]
 [Authorize(Roles = "Admin")]
 [EnableRateLimiting("admin-wallet")]
 public sealed class AdminWalletController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet("{userId:guid}/balance")]
+    [ProducesResponseType(typeof(ApiResponse<WalletDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBalance(Guid userId, CancellationToken ct)
     {
-        var result = await Mediator.Send(new GetWalletBalanceQuery(userId), ct);
+        var query = new GetWalletBalanceQuery(userId);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("{userId:guid}/ledger")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletLedgerEntryDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLedger(
         Guid userId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var result = await Mediator.Send(new GetWalletLedgerQuery(userId, page, pageSize), ct);
+        var query = new GetWalletLedgerQuery(userId, page, pageSize);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpPost("{userId:guid}/credit")]
+    [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Credit(
         Guid userId,
         [FromBody] AdminWalletAdjustmentRequest request,
@@ -52,6 +59,8 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpPost("{userId:guid}/debit")]
+    [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Debit(
         Guid userId,
         [FromBody] AdminWalletAdjustmentRequest request,

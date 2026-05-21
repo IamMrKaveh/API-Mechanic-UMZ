@@ -7,11 +7,11 @@ using Presentation.Review.Requests;
 
 namespace Presentation.Review.Endpoints;
 
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/reviews")]
 [ApiController]
 public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    [HttpGet("product/{productId:guid}")]
+    [HttpGet("products/{productId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductReviewDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetReviews(
@@ -41,7 +41,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
         return ToActionResult(result);
     }
 
-    [HttpGet("my")]
+    [HttpGet("me")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductReviewDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyReviews(

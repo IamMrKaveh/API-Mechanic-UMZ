@@ -1,5 +1,7 @@
+using Application.Attribute.Features.Shared;
 using Application.Product.Contracts;
 using Application.Product.Features.Shared;
+using Application.Variant.Features.Shared;
 using Domain.Product.ValueObjects;
 
 namespace Infrastructure.Product.QueryServices;
@@ -243,9 +245,19 @@ public sealed class ProductQueryService(
             Price = variant.Price.Amount,
             CompareAtPrice = variant.CompareAtPrice?.Amount,
             IsActive = variant.IsActive,
+
             Attributes = variant.Attributes
                 .ToDictionary(
                     a => a.AttributeType.Name,
-                    a => a.Value.Value)
+                    a => new AttributeValueDto
+                    {
+                        Id = a.Value.Id.Value,
+                        AttributeTypeId = a.AttributeTypeId.Value,
+                        Value = a.Value.Value,
+                        DisplayValue = a.DisplayValue,
+                        HexCode = a.Value.HexCode,
+                        SortOrder = a.Value.SortOrder,
+                        IsActive = a.Value.IsActive
+                    })
         };
 }

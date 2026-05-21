@@ -10,7 +10,7 @@ using Presentation.Shipping.Requests;
 namespace Presentation.Shipping.Endpoints;
 
 [ApiController]
-[Route("api/admin/shipping")]
+[Route("api/v{version:apiVersion}/admin/shipping")]
 [Authorize(Roles = "Admin")]
 public sealed class AdminShippingsController(IMediator mediator, IMapper mapper)
     : BaseApiController(mediator, mapper)
@@ -47,6 +47,16 @@ public sealed class AdminShippingsController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
+    [HttpPost("{id:guid}/restore")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RestoreShipping(Guid id, CancellationToken ct)
+    {
+        var command = new RestoreShippingCommand(id, CurrentUser.UserId);
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<ShippingDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -66,16 +76,6 @@ public sealed class AdminShippingsController(IMediator mediator, IMapper mapper)
     public async Task<IActionResult> DeleteShipping(Guid id, CancellationToken ct)
     {
         var command = new DeleteShippingCommand(id, CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("{id:guid}/restore")]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RestoreShipping(Guid id, CancellationToken ct)
-    {
-        var command = new RestoreShippingCommand(id, CurrentUser.UserId);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }

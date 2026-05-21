@@ -6,11 +6,11 @@ using Presentation.Discount.Requests;
 namespace Presentation.Discount.Endpoints;
 
 [ApiController]
-[Route("api/discounts")]
+[Route("api/v{version:apiVersion}/discounts")]
 [Authorize]
 public sealed class DiscountsController(IMediator mediator) : BaseApiController(mediator)
 {
-    [HttpPost("validate")]
+    [HttpPost("validation")]
     [ProducesResponseType(typeof(ApiResponse<DiscountValidationResult>), StatusCodes.Status201Created)]
     public async Task<IActionResult> Validate([FromBody] ValidateDiscountRequest request)
     {
@@ -23,7 +23,7 @@ public sealed class DiscountsController(IMediator mediator) : BaseApiController(
         return ToActionResult(result);
     }
 
-    [HttpPost("apply")]
+    [HttpPost("application")]
     [ProducesResponseType(typeof(ApiResponse<DiscountApplicationResult>), StatusCodes.Status201Created)]
     public async Task<IActionResult> Apply([FromBody] ApplyDiscountRequest request)
     {

@@ -3,12 +3,12 @@ using Application.User.Features.Shared;
 
 namespace Presentation.User.Endpoints;
 
-[Route("api/dashboard")]
 [ApiController]
+[Route("api/v{version:apiVersion}/dashboard")]
 [Authorize]
 public sealed class DashboardController(IMediator mediator) : BaseApiController(mediator)
 {
-    [HttpGet("summary")]
+    [HttpGet()]
     [ProducesResponseType(typeof(ApiResponse<UserDashboardDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDashboardSummary(CancellationToken ct)
     {

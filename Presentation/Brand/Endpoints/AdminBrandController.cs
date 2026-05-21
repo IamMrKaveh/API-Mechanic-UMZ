@@ -11,8 +11,8 @@ using Presentation.Brand.Requests;
 
 namespace Presentation.Brand.Endpoints;
 
-[Route("api/v{version:apiVersion}/admin/brand")]
 [ApiController]
+[Route("api/v{version:apiVersion}/admin/brands")]
 [Authorize(Roles = "Admin")]
 public sealed class AdminBrandController(
     IMediator mediator,
@@ -100,7 +100,7 @@ public sealed class AdminBrandController(
         return ToActionResult(result);
     }
 
-    [HttpPost("move")]
+    [HttpPatch("move")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> MoveBrand(
         [FromBody] MoveBrandRequest request,

@@ -8,8 +8,8 @@ using Presentation.Support.Requests;
 
 namespace Presentation.Support.Endpoints;
 
-[Route("api/tickets")]
 [ApiController]
+[Route("api/v{version:apiVersion}/tickets")]
 [Authorize]
 public sealed class TicketsController(IMediator mediator) : BaseApiController(mediator)
 {
@@ -54,7 +54,7 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
         return ToActionResult(result);
     }
 
-    [HttpPost("{id:guid}/reply")]
+    [HttpPost("{id:guid}/replies")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReplyToTicket(
@@ -67,7 +67,7 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
         return ToActionResult(result);
     }
 
-    [HttpPost("{id:guid}/close")]
+    [HttpPatch("{id:guid}/status")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CloseTicket(

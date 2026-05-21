@@ -10,7 +10,7 @@ public sealed class TransactionBehavior<TRequest, TResponse>(
         RequestHandlerDelegate<TResponse> next,
         CancellationToken ct)
     {
-        if (request is IQuery)
+        if (request is IQuery || request is IBypassTransactionBehavior)
             return await next(ct);
 
         try

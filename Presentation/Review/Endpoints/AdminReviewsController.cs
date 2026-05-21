@@ -10,7 +10,7 @@ using Presentation.Review.Requests;
 
 namespace Presentation.Review.Endpoints;
 
-[Route("api/admin/reviews")]
+[Route("api/v{version:apiVersion}/admin/reviews")]
 [ApiController]
 [Authorize(Roles = "Admin")]
 public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)

@@ -1,7 +1,7 @@
 namespace Presentation.Payment.Endpoints;
 
 [ApiController]
-[Route("api/mock-gateway")]
+[Route("api/v{version:apiVersion}/mock-gateway")]
 public sealed class MockGatewayController(
     IWebHostEnvironment env,
     IMediator mediator,

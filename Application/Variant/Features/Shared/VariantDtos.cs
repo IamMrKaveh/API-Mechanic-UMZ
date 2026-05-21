@@ -41,6 +41,9 @@ public sealed record ProductVariantViewDto
     public bool IsInStock { get; init; }
     public bool HasDiscount { get; init; }
     public decimal DiscountPercentage { get; init; }
+    public decimal Price { get; init; }
+    public decimal? CompareAtPrice { get; init; }
+    public int StockQuantity { get; init; }
     public Dictionary<string, AttributeValueDto> Attributes { get; init; } = [];
     public IEnumerable<MediaDto> Images { get; init; } = [];
     public string? RowVersion { get; init; }

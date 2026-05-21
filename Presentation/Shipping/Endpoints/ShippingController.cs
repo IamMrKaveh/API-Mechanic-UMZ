@@ -4,7 +4,7 @@ using Application.Shipping.Features.Shared;
 namespace Presentation.Shipping.Endpoints;
 
 [ApiController]
-[Route("api/shipping")]
+[Route("api/v{version:apiVersion}/shipping")]
 [AllowAnonymous]
 public sealed class ShippingController(IMediator mediator) : BaseApiController(mediator)
 {

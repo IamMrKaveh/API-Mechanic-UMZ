@@ -61,7 +61,8 @@ public sealed class AuthService(
         return ServiceResult.Success();
     }
 
-    public async Task<ServiceResult<(string AccessToken, RefreshTokenResult RefreshToken, UserProfileDto User, bool IsNewUser)>> VerifyOtpAsync(
+    public async Task<ServiceResult<(string AccessToken, RefreshTokenResult RefreshToken, UserProfileDto User, bool IsNewUser)>>
+        VerifyOtpAsync(
         PhoneNumber phoneNumber,
         OtpCode code,
         IpAddress ipAddress,
@@ -111,7 +112,8 @@ public sealed class AuthService(
             (accessToken, sessionResult.Value!, userDto, isNewUser));
     }
 
-    public async Task<ServiceResult<(string AccessToken, RefreshTokenResult RefreshToken, UserProfileDto User, bool IsNewUser)>> RefreshTokenAsync(
+    public async Task<ServiceResult<(string AccessToken, RefreshTokenResult RefreshToken, UserProfileDto User, bool IsNewUser)>>
+        RefreshTokenAsync(
         RefreshToken refreshToken,
         IpAddress ipAddress,
         string? userAgent,

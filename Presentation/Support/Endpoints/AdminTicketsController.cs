@@ -7,8 +7,8 @@ using Presentation.Support.Requests;
 
 namespace Presentation.Support.Endpoints;
 
-[Route("api/admin/tickets")]
 [ApiController]
+[Route("api/v{version:apiVersion}/admin/tickets")]
 [Authorize(Roles = "Admin")]
 public sealed class AdminTicketsController(IMediator mediator) : BaseApiController(mediator)
 {
@@ -37,9 +37,8 @@ public sealed class AdminTicketsController(IMediator mediator) : BaseApiControll
         return ToActionResult(result);
     }
 
-    [HttpPost("{id:guid}/reply")]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [HttpPost("{id:guid}/replies")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> ReplyToTicket(
         Guid id,
         [FromBody] ReplyToTicketRequest request,
@@ -50,7 +49,7 @@ public sealed class AdminTicketsController(IMediator mediator) : BaseApiControll
         return ToActionResult(result);
     }
 
-    [HttpPost("{id:guid}/close")]
+    [HttpPatch("{id:guid}/status")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CloseTicket(

@@ -7,7 +7,7 @@ using Presentation.Order.Requests;
 
 namespace Presentation.Order.Endpoints;
 
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/orders")]
 [ApiController]
 [Authorize]
 public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
@@ -38,7 +38,7 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
         return ToActionResult(result);
     }
 
-    [HttpPost("checkout")]
+    [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<CheckoutResultDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -61,7 +61,7 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
         return ToActionResult(result);
     }
 
-    [HttpPost("{id:guid}/cancel")]
+    [HttpPatch("{id:guid}/cancellation")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CancelOrder(
