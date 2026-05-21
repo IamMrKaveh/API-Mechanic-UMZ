@@ -14,7 +14,7 @@ using Presentation.Product.Requests;
 
 namespace Presentation.Product.Endpoints;
 
-[Route("api/admin/products")]
+[Route("api/v{version:apiVersion}/admin/products")]
 [ApiController]
 [Authorize(Roles = "Admin")]
 public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
@@ -51,7 +51,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         return ToActionResult(result);
     }
 
-    [HttpGet("detail/{id:guid}")]
+    [HttpGet("{id:guid}/details")]
     [ProducesResponseType(typeof(ApiResponse<AdminProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductDetail(Guid id)
@@ -109,7 +109,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         return ToActionResult(result);
     }
 
-    [HttpPut("bulkupdateprices")]
+    [HttpPatch("prices/bulk")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> BulkUpdatePrices([FromBody] BulkUpdatePricesRequest request)
     {
@@ -123,7 +123,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         return ToActionResult(result);
     }
 
-    [HttpPut("details/{id:guid}")]
+    [HttpPatch("{id:guid}/details")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateProductDetails(Guid id, [FromBody] UpdateProductDetailsRequest request)

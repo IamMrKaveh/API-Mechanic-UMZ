@@ -12,7 +12,7 @@ using Presentation.Discount.Requests;
 namespace Presentation.Discount.Endpoints;
 
 [ApiController]
-[Route("api/admin/discounts")]
+[Route("api/v{version:apiVersion}/admin/discounts")]
 [Authorize(Roles = "Admin")]
 public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
@@ -49,7 +49,7 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpGet("info/{code}")]
+    [HttpGet("codes/{code}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<DiscountInfoDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -90,7 +90,7 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
         return ToActionResult(result);
     }
 
-    [HttpPost("{id:guid}/cancel-usage")]
+    [HttpDelete("{id:guid}/usage")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> CancelDiscountUsage(Guid id, [FromBody] CancelDiscountUsageRequest request)
     {

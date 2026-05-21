@@ -5,7 +5,7 @@ using Application.Search.Features.Queries.GetSearchIndexStats;
 namespace Presentation.Search.Endpoints;
 
 [ApiController]
-[Route("api/admin/search")]
+[Route("api/v{version:apiVersion}/admin/search")]
 [Authorize(Roles = "Admin")]
 public class AdminSearchController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
@@ -18,7 +18,7 @@ public class AdminSearchController(IMediator mediator, IMapper mapper) : BaseApi
         return ToActionResult(result);
     }
 
-    [HttpPost("recreate-indices")]
+    [HttpPost("indices")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> RecreateIndices(CancellationToken ct)
     {

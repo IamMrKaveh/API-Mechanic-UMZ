@@ -11,7 +11,7 @@ using Presentation.Order.Requests;
 namespace Presentation.Order.Endpoints;
 
 [ApiController]
-[Route("api/admin/orders")]
+[Route("api/v{version:apiVersion}/admin/orders")]
 [Authorize(Roles = "Admin")]
 public class AdminOrdersController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
@@ -33,6 +33,26 @@ public class AdminOrdersController(IMediator mediator, IMapper mapper) : BaseApi
     {
         var query = new GetAdminOrderByIdQuery(id);
         var result = await Mediator.Send(query, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpGet("statistics")]
+    [ProducesResponseType(typeof(ApiResponse<OrderStatisticsDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStatistics(
+        [FromQuery] GetOrderStatisticsRequest request,
+        CancellationToken ct)
+    {
+        var query = Mapper.Map<GetOrderStatisticsQuery>(request);
+        var result = await Mediator.Send(query, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpPost("expiration")]
+    [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ExpireOrders(CancellationToken ct)
+    {
+        var command = new ExpireOrdersCommand();
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
@@ -65,32 +85,12 @@ public class AdminOrdersController(IMediator mediator, IMapper mapper) : BaseApi
         return ToActionResult(result);
     }
 
-    [HttpGet("statistics")]
-    [ProducesResponseType(typeof(ApiResponse<OrderStatisticsDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetStatistics(
-        [FromQuery] GetOrderStatisticsRequest request,
-        CancellationToken ct)
-    {
-        var query = Mapper.Map<GetOrderStatisticsQuery>(request);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
-    }
-
     [HttpPatch("{id:guid}/ship")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkAsShipped(Guid id, CancellationToken ct)
     {
         var command = new MarkOrderAsShippedCommand(id);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("expire")]
-    [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ExpireOrders(CancellationToken ct)
-    {
-        var command = new ExpireOrdersCommand();
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }

@@ -5,8 +5,8 @@ using Presentation.User.Requests;
 
 namespace Presentation.User.Endpoints;
 
-[Route("api/users")]
 [ApiController]
+[Route("api/v{version:apiVersion}/users")]
 [Authorize]
 public sealed class UserController(IMediator mediator) : BaseApiController(mediator)
 {

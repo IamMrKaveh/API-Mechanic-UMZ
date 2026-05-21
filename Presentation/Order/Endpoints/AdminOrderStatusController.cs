@@ -8,7 +8,7 @@ using Presentation.Order.Requests;
 
 namespace Presentation.Order.Endpoints;
 
-[Route("api/admin/order-statuses")]
+[Route("api/v{version:apiVersion}/admin/order-statuses")]
 [ApiController]
 [Authorize(Roles = "Admin")]
 public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
@@ -19,6 +19,17 @@ public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : Ba
     public async Task<IActionResult> GetOrderStatuses(CancellationToken ct)
     {
         var query = new GetOrderStatusesQuery();
+        var result = await Mediator.Send(query, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpGet("{id:guid}")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<OrderDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetOrderStatus(Guid id, CancellationToken ct)
+    {
+        var query = new GetOrderStatusQuery(id, CurrentUser.UserId);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
@@ -39,17 +50,6 @@ public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : Ba
             request.AllowEdit);
 
         var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
-    [HttpGet("{id:guid}")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<OrderDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetOrderStatus(Guid id, CancellationToken ct)
-    {
-        var query = new GetOrderStatusQuery(id, CurrentUser.UserId);
-        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 

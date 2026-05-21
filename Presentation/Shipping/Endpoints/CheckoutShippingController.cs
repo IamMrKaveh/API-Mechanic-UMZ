@@ -5,12 +5,12 @@ using Application.Shipping.Features.Shared;
 
 namespace Presentation.Shipping.Endpoints;
 
-[Route("api/checkout/shipping")]
 [ApiController]
+[Route("api/v{version:apiVersion}/checkout/shipping")]
 [Authorize]
 public sealed class CheckoutShippingController(IMediator mediator) : BaseApiController(mediator)
 {
-    [HttpGet("available-methods")]
+    [HttpGet("available")]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<AvailableShippingDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAvailableShippings(
         [FromQuery] decimal orderAmount,
@@ -21,18 +21,7 @@ public sealed class CheckoutShippingController(IMediator mediator) : BaseApiCont
         return ToActionResult(result);
     }
 
-    [HttpPost("available-methods-for-variants")]
-    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<AvailableShippingDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAvailableShippingsForVariants(
-        [FromBody] ICollection<Guid> variantIds,
-        CancellationToken ct)
-    {
-        var query = new GetAvailableShippingsForVariantsQuery(variantIds);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
-    }
-
-    [HttpGet("calculate")]
+    [HttpGet("cost")]
     [ProducesResponseType(typeof(ApiResponse<ShippingCostResultDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> CalculateShippingCost(
         [FromQuery] Guid shippingId,
@@ -40,6 +29,17 @@ public sealed class CheckoutShippingController(IMediator mediator) : BaseApiCont
         CancellationToken ct)
     {
         var query = new CalculateShippingCostQuery(shippingId, orderAmount);
+        var result = await Mediator.Send(query, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpPost("available")]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<AvailableShippingDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAvailableShippingsForVariants(
+        [FromBody] ICollection<Guid> variantIds,
+        CancellationToken ct)
+    {
+        var query = new GetAvailableShippingsForVariantsQuery(variantIds);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }

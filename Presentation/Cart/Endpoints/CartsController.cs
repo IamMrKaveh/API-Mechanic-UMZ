@@ -12,8 +12,8 @@ using Presentation.Cart.Requests;
 
 namespace Presentation.Cart.Endpoints;
 
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/v{version:apiVersion}/cart")]
 public sealed class CartController(ISender mediator) : BaseApiController(mediator)
 {
     [HttpGet]
@@ -34,7 +34,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
         return ToActionResult(result);
     }
 
-    [HttpGet("validate-checkout")]
+    [HttpGet("checkout/validation")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<CartCheckoutValidationDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ValidateCartForCheckout()
@@ -53,6 +53,28 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
         return ToActionResult(result);
     }
 
+    [HttpPost("merge")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
+    public async Task<IActionResult> MergeCart()
+    {
+        var command = new MergeGuestCartCommand(
+            CurrentUser.UserId,
+            GuestToken);
+        var result = await Mediator.Send(command);
+        return ToActionResult(result);
+    }
+
+    [HttpPut("prices")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
+    public async Task<IActionResult> SyncCartPrices()
+    {
+        var command = new SyncCartPricesCommand(CurrentUser.UserId, CurrentUser.GuestToken ?? string.Empty);
+        var result = await Mediator.Send(command);
+        return ToActionResult(result);
+    }
+
     [HttpPut("items/{variantId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status404NotFound)]
@@ -60,16 +82,6 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     public async Task<IActionResult> UpdateItemQuantity(Guid variantId, [FromBody] UpdateCartItemRequest request)
     {
         var command = new UpdateCartItemCommand(CurrentUser.UserId, GuestToken, variantId, request.Quantity);
-        var result = await Mediator.Send(command);
-        return ToActionResult(result);
-    }
-
-    [HttpDelete("items/{variantId:guid}")]
-    [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RemoveItem(Guid variantId)
-    {
-        var command = new RemoveFromCartCommand(CurrentUser.UserId, GuestToken, variantId);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -84,23 +96,12 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
         return ToActionResult(result);
     }
 
-    [HttpPost("merge")]
-    [Authorize]
-    public async Task<IActionResult> MergeCart()
+    [HttpDelete("items/{variantId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoveItem(Guid variantId)
     {
-        var command = new MergeGuestCartCommand(
-            CurrentUser.UserId,
-            GuestToken);
-        var result = await Mediator.Send(command);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("sync-prices")]
-    [Authorize]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
-    public async Task<IActionResult> SyncCartPrices()
-    {
-        var command = new SyncCartPricesCommand(CurrentUser.UserId, CurrentUser.GuestToken ?? string.Empty);
+        var command = new RemoveFromCartCommand(CurrentUser.UserId, GuestToken, variantId);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }

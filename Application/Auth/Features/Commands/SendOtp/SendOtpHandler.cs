@@ -22,7 +22,6 @@ public class SendOtpHandler(
         {
             user = Domain.User.Aggregates.User.RegisterByPhone(phoneNumber);
             await userRepository.AddAsync(user, ct);
-            await unitOfWork.SaveChangesAsync(ct);
         }
 
         var rateLimitOk = await otpService.ValidateRateLimitAsync(user.Id, request.Purpose, ct);
@@ -30,14 +29,9 @@ public class SendOtpHandler(
             return ServiceResult.Failure("تعداد درخواست OTP بیش از حد مجاز است. لطفاً بعداً تلاش کنید.");
 
         var otpCode = OtpCode.Generate(6);
-
-        var otp = UserOtp.Create(
-            user.Id,
-            otpCode,
-            request.Purpose,
-            TimeSpan.FromMinutes(2));
-
+        var otp = UserOtp.Create(user.Id, otpCode, request.Purpose, TimeSpan.FromMinutes(2));
         await otpRepository.AddAsync(otp, ct);
+
         await unitOfWork.SaveChangesAsync(ct);
 
         var sendResult = await otpService.SendOtpAsync(phoneNumber, otpCode, request.Purpose, ct);

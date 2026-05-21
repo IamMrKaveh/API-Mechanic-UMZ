@@ -7,12 +7,12 @@ using Presentation.Product.Requests;
 
 namespace Presentation.Product.Endpoints;
 
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/products")]
 [ApiController]
+[AllowAnonymous]
 public class ProductsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductListItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProducts([FromQuery] GetProductsRequest request)
     {
@@ -22,7 +22,6 @@ public class ProductsController(IMediator mediator, IMapper mapper) : BaseApiCon
     }
 
     [HttpGet("{id:guid}")]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProduct(Guid id)
@@ -33,7 +32,6 @@ public class ProductsController(IMediator mediator, IMapper mapper) : BaseApiCon
     }
 
     [HttpGet("catalog")]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductCatalogItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProductCatalog([FromQuery] GetProductCatalogRequest request)
     {
@@ -42,8 +40,7 @@ public class ProductsController(IMediator mediator, IMapper mapper) : BaseApiCon
         return ToActionResult(result);
     }
 
-    [HttpGet("details/{id:guid}")]
-    [AllowAnonymous]
+    [HttpGet("{id:guid}/details")]
     [ProducesResponseType(typeof(ApiResponse<PublicProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductDetails(Guid id)

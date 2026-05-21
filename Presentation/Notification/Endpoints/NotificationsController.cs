@@ -8,7 +8,7 @@ using Presentation.Notification.Requests;
 
 namespace Presentation.Notification.Endpoints;
 
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/notifications")]
 [ApiController]
 [Authorize]
 public class NotificationsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
@@ -29,7 +29,7 @@ public class NotificationsController(IMediator mediator, IMapper mapper) : BaseA
         return ToActionResult(result);
     }
 
-    [HttpGet("count")]
+    [HttpGet("unread-count")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUnreadCount(CancellationToken ct)
     {
@@ -48,7 +48,7 @@ public class NotificationsController(IMediator mediator, IMapper mapper) : BaseA
         return ToActionResult(result);
     }
 
-    [HttpPatch("read-all")]
+    [HttpPatch("read")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> MarkAllAsRead(CancellationToken ct)
     {

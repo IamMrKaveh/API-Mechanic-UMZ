@@ -4,7 +4,7 @@ using Application.Location.Features.Shared;
 
 namespace Presentation.Location.Endpoints;
 
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/locations")]
 [ApiController]
 [AllowAnonymous]
 public class LocationController(IMediator mediator) : BaseApiController(mediator)

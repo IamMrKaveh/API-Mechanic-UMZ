@@ -12,7 +12,7 @@ using Presentation.Attribute.Requests;
 namespace Presentation.Attribute.Endpoints;
 
 [ApiController]
-[Route("api/admin/attributes")]
+[Route("api/v{version:apiVersion}/admin/attributes")]
 [Authorize(Roles = "Admin")]
 public class AdminAttributesController(IMediator mediator, IMapper mapper)
     : BaseApiController(mediator, mapper)

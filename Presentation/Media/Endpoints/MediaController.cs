@@ -4,7 +4,7 @@ using Application.Media.Features.Shared;
 
 namespace Presentation.Media.Endpoints;
 
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/media")]
 [ApiController]
 public class MediaController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {

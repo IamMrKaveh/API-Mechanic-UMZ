@@ -4,87 +4,20 @@ using Application.Auth.Features.Commands.LogoutAll;
 using Application.Auth.Features.Commands.RefreshToken;
 using Application.Auth.Features.Commands.SendOtp;
 using Application.Auth.Features.Commands.VerifyOtp;
+using Application.Auth.Features.Shared;
+using Application.Brand.Features.Shared;
 using Presentation.Auth.Requests;
 
 namespace Presentation.Auth.Endpoints;
 
-[Route("api/v{version:apiVersion}/auth")]
 [ApiController]
+[Route("api/v{version:apiVersion}/auth")]
 public class AuthController(IMediator mediator, IMapper mapper)
     : BaseApiController(mediator, mapper)
 {
-    [HttpPost("request-otp")]
+    [HttpGet("google")]
     [AllowAnonymous]
-    [IgnoreAntiforgeryToken]
-    [OtpRateLimit]
-    public async Task<IActionResult> RequestOtp(
-        [FromBody] SendOtpRequest request,
-        CancellationToken ct)
-    {
-        var command = new SendOtpCommand(
-            request.PhoneNumber,
-            HttpContextHelper.GetClientIpAddress(HttpContext));
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("verify-otp")]
-    [AllowAnonymous]
-    [IgnoreAntiforgeryToken]
-    [OtpRateLimit]
-    public async Task<IActionResult> VerifyOtp(
-        [FromBody] VerifyOtpRequest request,
-        CancellationToken ct)
-    {
-        var command = new VerifyOtpCommand(
-            request.PhoneNumber,
-            request.Code,
-            HttpContextHelper.GetClientIpAddress(HttpContext),
-            Request.Headers.UserAgent.ToString());
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("refresh-token")]
-    [AllowAnonymous]
-    [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> RefreshToken(
-        [FromBody] RefreshRequest request,
-        CancellationToken ct)
-    {
-        var command = new RefreshTokenCommand(
-            request.RefreshToken,
-            HttpContextHelper.GetClientIpAddress(HttpContext),
-            Request.Headers.UserAgent.ToString());
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("logout")]
-    [Authorize]
-    public async Task<IActionResult> Logout(
-        [FromBody] RefreshRequest request,
-        CancellationToken ct)
-    {
-        var command = new LogoutCommand(CurrentUser.UserId, request.RefreshToken);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("logout-all")]
-    [Authorize]
-    public async Task<IActionResult> LogoutAll(CancellationToken ct)
-    {
-        var command = new LogoutAllCommand(CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
-    [HttpGet("google-login")]
-    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public IActionResult GoogleLogin()
     {
         var properties = new AuthenticationProperties
@@ -95,8 +28,9 @@ public class AuthController(IMediator mediator, IMapper mapper)
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
-    [HttpGet("google-callback")]
+    [HttpGet("google/callback")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<TokenResultDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GoogleCallback(CancellationToken ct)
     {
         var authenticateResult = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
@@ -114,6 +48,82 @@ public class AuthController(IMediator mediator, IMapper mapper)
             return BadRequest("Incomplete profile data from Google.");
 
         var command = new GoogleLoginCommand(email, firstName ?? string.Empty, lastName ?? string.Empty, providerKey);
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpPost("otp")]
+    [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
+    [OtpRateLimit]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
+    public async Task<IActionResult> RequestOtp(
+        [FromBody] SendOtpRequest request,
+        CancellationToken ct)
+    {
+        var command = new SendOtpCommand(
+            request.PhoneNumber,
+            HttpContextHelper.GetClientIpAddress(HttpContext));
+
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpPost("otp/verify")]
+    [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
+    [OtpRateLimit]
+    [ProducesResponseType(typeof(ApiResponse<AuthResult>), StatusCodes.Status201Created)]
+    public async Task<IActionResult> VerifyOtp(
+        [FromBody] VerifyOtpRequest request,
+        CancellationToken ct)
+    {
+        var command = new VerifyOtpCommand(
+            request.PhoneNumber,
+            request.Code,
+            HttpContextHelper.GetClientIpAddress(HttpContext),
+            Request.Headers.UserAgent.ToString());
+
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpPost("token/refresh")]
+    [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
+    [ProducesResponseType(typeof(ApiResponse<AuthResult>), StatusCodes.Status201Created)]
+    public async Task<IActionResult> RefreshToken(
+        [FromBody] RefreshRequest request,
+        CancellationToken ct)
+    {
+        var command = new RefreshTokenCommand(
+            request.RefreshToken,
+            HttpContextHelper.GetClientIpAddress(HttpContext),
+            Request.Headers.UserAgent.ToString());
+
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpDelete("session")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Logout(
+        [FromBody] RefreshRequest request,
+        CancellationToken ct)
+    {
+        var command = new LogoutCommand(CurrentUser.UserId, request.RefreshToken);
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpDelete("sessions")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> LogoutAll(CancellationToken ct)
+    {
+        var command = new LogoutAllCommand(CurrentUser.UserId);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }

@@ -9,11 +9,11 @@ using Presentation.Payment.Requests;
 
 namespace Presentation.Payment.Endpoints;
 
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/payments")]
 [ApiController]
 public class PaymentsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    [HttpPost("initiate")]
+    [HttpPost]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<PaymentInitiationResult>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -55,7 +55,7 @@ public class PaymentsController(IMediator mediator, IMapper mapper) : BaseApiCon
         return ToActionResult(result);
     }
 
-    [HttpGet("by-order/{orderId:guid}")]
+    [HttpGet("orders/{orderId:guid}")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<PaymentTransactionDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPaymentsByOrder(Guid orderId, CancellationToken ct)
@@ -65,7 +65,7 @@ public class PaymentsController(IMediator mediator, IMapper mapper) : BaseApiCon
         return ToActionResult(result);
     }
 
-    [HttpGet("status/{authority}")]
+    [HttpGet("{authority}/status")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<PaymentStatusDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -76,7 +76,7 @@ public class PaymentsController(IMediator mediator, IMapper mapper) : BaseApiCon
         return ToActionResult(result);
     }
 
-    [HttpPost("webhook/{gateway}")]
+    [HttpPost("webhooks/{gateway}")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> Webhook(
         [FromBody] WebhookPayloadRequest payload,

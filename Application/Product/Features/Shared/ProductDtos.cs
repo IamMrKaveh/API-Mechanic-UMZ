@@ -1,3 +1,5 @@
+using Application.Variant.Features.Shared;
+
 namespace Application.Product.Features.Shared;
 
 public record ProductDetailDto
@@ -100,18 +102,6 @@ public record ProductListItemDto
     public string? PrimaryImageUrl { get; init; }
     public DateTime CreatedAt { get; init; }
     public string? RowVersion { get; init; }
-}
-
-public record ProductVariantViewDto
-{
-    public Guid Id { get; init; }
-    public string? Sku { get; init; }
-    public decimal Price { get; init; }
-    public decimal? CompareAtPrice { get; init; }
-    public int StockQuantity { get; init; }
-    public bool IsUnlimited { get; init; }
-    public bool IsActive { get; init; }
-    public Dictionary<string, string> Attributes { get; init; } = new();
 }
 
 public record CreateProductDto

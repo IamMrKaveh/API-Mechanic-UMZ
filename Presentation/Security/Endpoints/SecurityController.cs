@@ -1,7 +1,7 @@
 namespace Presentation.Security.Endpoints;
 
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/v{version:apiVersion}/security")]
 public class SecurityController(
     IAntiforgery antiforgery,
     IMediator mediator,

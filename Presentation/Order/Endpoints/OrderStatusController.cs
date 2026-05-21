@@ -4,7 +4,7 @@ using Application.Order.Features.Shared;
 
 namespace Presentation.Order.Endpoints;
 
-[Route("api/order-statuses")]
+[Route("api/v{version:apiVersion}/order-statuses")]
 [ApiController]
 [AllowAnonymous]
 public class OrderStatusController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)

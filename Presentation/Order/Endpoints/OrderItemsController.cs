@@ -2,7 +2,7 @@ using Application.Order.Features.Commands.DeleteOrderItem;
 
 namespace Presentation.Order.Endpoints;
 
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/order-items")]
 [ApiController]
 [Authorize]
 public class OrderItemsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)

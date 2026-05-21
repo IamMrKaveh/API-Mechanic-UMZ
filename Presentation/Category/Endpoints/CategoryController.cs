@@ -6,20 +6,10 @@ using Application.Category.Features.Shared;
 
 namespace Presentation.Category.Endpoints;
 
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/v{version:apiVersion}/categories")]
 public sealed class CategoryController(IMediator mediator) : BaseApiController(mediator)
 {
-    [HttpGet("hierarchy")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<CategoryTreeDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetCategoryHierarchy()
-    {
-        var query = new GetCategoryTreeQuery();
-        var result = await Mediator.Send(query);
-        return ToActionResult(result);
-    }
-
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<CategoryDto>>), StatusCodes.Status200OK)]
@@ -29,6 +19,16 @@ public sealed class CategoryController(IMediator mediator) : BaseApiController(m
         [FromQuery] int pageSize = 10)
     {
         var query = new GetPublicCategoriesQuery(search, page, pageSize);
+        var result = await Mediator.Send(query);
+        return ToActionResult(result);
+    }
+
+    [HttpGet("tree")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<CategoryTreeDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCategoryHierarchy()
+    {
+        var query = new GetCategoryTreeQuery();
         var result = await Mediator.Send(query);
         return ToActionResult(result);
     }

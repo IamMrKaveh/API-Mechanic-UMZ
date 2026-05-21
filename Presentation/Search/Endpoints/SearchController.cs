@@ -8,7 +8,7 @@ using Presentation.Search.Requests;
 namespace Presentation.Search.Endpoints;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/search")]
 public class SearchController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet("products")]

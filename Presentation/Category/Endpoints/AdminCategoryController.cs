@@ -9,8 +9,8 @@ using Presentation.Category.Requests;
 
 namespace Presentation.Category.Endpoints;
 
-[Route("api/admin/categories")]
 [ApiController]
+[Route("api/v{version:apiVersion}/admin/categories")]
 [Authorize(Roles = "Admin")]
 public sealed class AdminCategoryController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
@@ -80,7 +80,7 @@ public sealed class AdminCategoryController(IMediator mediator, IMapper mapper) 
         return ToActionResult(result);
     }
 
-    [HttpPost("reorder")]
+    [HttpPatch("order")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReorderCategories([FromBody] ReorderCategoriesRequest request)
     {

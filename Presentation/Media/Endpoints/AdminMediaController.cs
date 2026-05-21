@@ -9,7 +9,7 @@ using Presentation.Media.Requests;
 
 namespace Presentation.Media.Endpoints;
 
-[Route("api/admin/media")]
+[Route("api/v{version:apiVersion}/admin/media")]
 [ApiController]
 [Authorize(Roles = "Admin")]
 public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
@@ -25,17 +25,6 @@ public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiC
     {
         var query = Mapper.Map<GetAllMediaQuery>(request);
         var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
-    }
-
-    [HttpPost("cleanup-orphaned")]
-    [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> CleanupOrphaned(CancellationToken ct)
-    {
-        var command = new CleanupOrphanedMediaCommand();
-        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 
@@ -64,6 +53,17 @@ public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiC
         return ToActionResult(result);
     }
 
+    [HttpDelete("orphaned")]
+    [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CleanupOrphaned(CancellationToken ct)
+    {
+        var command = new CleanupOrphanedMediaCommand();
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
     [HttpDelete("{mediaId:guid}")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -76,7 +76,7 @@ public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiC
         return ToActionResult(result);
     }
 
-    [HttpPatch("set-primary")]
+    [HttpPatch("primary")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -90,7 +90,7 @@ public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiC
         return ToActionResult(result);
     }
 
-    [HttpPost("reorder")]
+    [HttpPatch("order")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

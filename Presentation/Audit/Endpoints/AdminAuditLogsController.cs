@@ -7,7 +7,7 @@ using Presentation.Audit.Requests;
 namespace Presentation.Audit.Endpoints;
 
 [ApiController]
-[Route("api/admin/audit-logs")]
+[Route("api/v{version:apiVersion}/admin/audit-logs")]
 [Authorize(Roles = "Admin")]
 [Tags("Admin - Audit Logs")]
 public sealed class AdminAuditLogsController(IMediator mediator, IMapper mapper)

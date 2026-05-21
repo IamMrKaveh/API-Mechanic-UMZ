@@ -6,7 +6,7 @@ using Presentation.Payment.Requests;
 namespace Presentation.Payment.Endpoints;
 
 [ApiController]
-[Route("api/admin/payments")]
+[Route("api/v{version:apiVersion}/admin/payments")]
 [Authorize(Roles = "Admin")]
 public class AdminPaymentsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
@@ -21,7 +21,7 @@ public class AdminPaymentsController(IMediator mediator, IMapper mapper) : BaseA
         return ToActionResult(result);
     }
 
-    [HttpPost("{id:guid}/refund")]
+    [HttpPost("{id:guid}/refunds")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RefundPayment(
