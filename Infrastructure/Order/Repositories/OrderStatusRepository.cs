@@ -1,8 +1,6 @@
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Order.Repositories;
 
@@ -14,27 +12,6 @@ public sealed class OrderStatusRepository(DBContext context) : IOrderStatusRepos
     {
         return await context.OrderStatuses
             .FirstOrDefaultAsync(s => s.Id == id, ct);
-    }
-
-    public async Task<IReadOnlyList<OrderStatus>> GetAllAsync(
-        CancellationToken ct = default)
-    {
-        var results = await context.OrderStatuses
-            .OrderBy(s => s.SortOrder)
-            .ToListAsync(ct);
-
-        return results.AsReadOnly();
-    }
-
-    public async Task<IReadOnlyList<OrderStatus>> GetActiveStatusesAsync(
-        CancellationToken ct = default)
-    {
-        var results = await context.OrderStatuses
-            .Where(s => s.IsActive)
-            .OrderBy(s => s.SortOrder)
-            .ToListAsync(ct);
-
-        return results.AsReadOnly();
     }
 
     public async Task<bool> IsInUseAsync(

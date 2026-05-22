@@ -26,12 +26,6 @@ public sealed class ShippingRepository(DBContext context) : IShippingRepository
             .ToListAsync(ct);
     }
 
-    public async Task<ICollection<Domain.Shipping.Aggregates.Shipping>> GetAllActiveAsync(CancellationToken ct = default)
-        => await context.Shippings
-            .Where(s => s.IsActive)
-            .OrderBy(s => s.SortOrder)
-            .ToListAsync(ct);
-
     public async Task<Domain.Shipping.Aggregates.Shipping?> GetDefaultAsync(CancellationToken ct = default)
         => await context.Shippings.FirstOrDefaultAsync(s => s.IsDefault && s.IsActive, ct);
 

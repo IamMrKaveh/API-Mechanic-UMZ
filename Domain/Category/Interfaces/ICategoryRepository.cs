@@ -8,13 +8,6 @@ public interface ICategoryRepository
         CategoryId id,
         CancellationToken ct = default);
 
-    Task<Aggregates.Category?> GetBySlugAsync(
-        Slug slug,
-        CancellationToken ct = default);
-
-    Task<IReadOnlyList<Aggregates.Category>> GetAllActiveAsync(
-        CancellationToken ct = default);
-
     Task<bool> ExistsByNameAsync(
         CategoryName name,
         CategoryId? excludeId = null,

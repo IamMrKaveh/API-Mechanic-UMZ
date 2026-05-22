@@ -1,3 +1,5 @@
+using Domain.Notification.Enums;
+
 namespace Domain.Notification.ValueObjects;
 
 public sealed class NotificationType : ValueObject
@@ -103,24 +105,6 @@ public sealed class NotificationType : ValueObject
         yield return AccountUpdate;
     }
 
-    public static IEnumerable<NotificationType> GetByCategory(NotificationCategory category)
-    {
-        return GetAll().Where(t => t.Category == category);
-    }
-
-    public bool IsOrderRelated() => Category == NotificationCategory.Order;
-
-    public bool IsSupportRelated() => Category == NotificationCategory.Support;
-
-    public bool IsProductRelated() => Category == NotificationCategory.Product;
-
-    public bool IsMarketingRelated() => Category == NotificationCategory.Marketing;
-
-    public bool IsSystemRelated() => Category == NotificationCategory.System;
-
-    public bool IsHighPriority() =>
-        this == SecurityAlert || this == OrderCancelled;
-
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value.ToLowerInvariant();
@@ -129,14 +113,4 @@ public sealed class NotificationType : ValueObject
     public override string ToString() => DisplayName;
 
     public static implicit operator string(NotificationType type) => type.Value;
-}
-
-public enum NotificationCategory
-{
-    Order,
-    Support,
-    Product,
-    Marketing,
-    System,
-    Custom
 }

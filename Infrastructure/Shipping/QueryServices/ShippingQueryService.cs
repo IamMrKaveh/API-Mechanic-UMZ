@@ -2,14 +2,10 @@ using Application.Shipping.Contracts;
 using Application.Shipping.Features.Shared;
 using Domain.Shipping.Services;
 using Domain.Shipping.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Shipping.QueryServices;
 
-public sealed class ShippingQueryService(
-    DBContext context,
-    ShippingDomainService shippingDomainService) : IShippingQueryService
+public sealed class ShippingQueryService(DBContext context) : IShippingQueryService
 {
     public async Task<ShippingDto?> GetShippingDetailAsync(
         ShippingId shippingId, CancellationToken ct = default)
@@ -128,7 +124,7 @@ public sealed class ShippingQueryService(
 
         foreach (var shipping in activeShippings)
         {
-            var calcResult = shippingDomainService.CalculateShippingCost(shipping, orderAmount);
+            var calcResult = ShippingDomainService.CalculateShippingCost(shipping, orderAmount);
             if (calcResult.IsSuccess is false) continue;
 
             result.Add(new AvailableShippingDto

@@ -5,10 +5,6 @@ namespace Domain.Wallet.Entities;
 
 public sealed class WalletReservation : Entity<WalletReservationId>
 {
-    private WalletReservation()
-    {
-    }
-
     public Wallet.Aggregates.Wallet Wallet { get; private set; } = default!;
     public WalletId WalletId { get; private set; } = default!;
 
@@ -19,9 +15,9 @@ public sealed class WalletReservation : Entity<WalletReservationId>
     public DateTime? ExpiresAt { get; private set; }
     public DateTime? ResolvedAt { get; private set; }
 
-    public bool IsActive => Status == WalletReservationStatus.Active;
-
-    public bool IsExpired => ExpiresAt.HasValue && DateTime.UtcNow > ExpiresAt.Value && Status == WalletReservationStatus.Active;
+    private WalletReservation()
+    {
+    }
 
     internal static WalletReservation Create(
         WalletReservationId id,
@@ -47,28 +43,10 @@ public sealed class WalletReservation : Entity<WalletReservationId>
         };
     }
 
-    internal void Confirm()
-    {
-        if (Status != WalletReservationStatus.Active)
-            throw new DomainException($"رزرو در وضعیت '{Status}' قابل تأیید نیست.");
-
-        Status = WalletReservationStatus.Confirmed;
-        ResolvedAt = DateTime.UtcNow;
-    }
-
     internal void Release()
     {
         if (Status != WalletReservationStatus.Active)
             throw new DomainException($"رزرو در وضعیت '{Status}' قابل آزادسازی نیست.");
-
-        Status = WalletReservationStatus.Released;
-        ResolvedAt = DateTime.UtcNow;
-    }
-
-    internal void MarkExpired()
-    {
-        if (Status != WalletReservationStatus.Active)
-            return;
 
         Status = WalletReservationStatus.Released;
         ResolvedAt = DateTime.UtcNow;

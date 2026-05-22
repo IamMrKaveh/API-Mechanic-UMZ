@@ -155,31 +155,6 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>, ISoftDeletable
         return usage;
     }
 
-    public void AddRestriction(
-        DiscountRestrictionId restrictionId,
-        DiscountRestrictionType restrictionType,
-        string restrictionValue)
-    {
-        if (string.IsNullOrWhiteSpace(restrictionValue))
-            throw new DomainException("مقدار محدودیت الزامی است.");
-
-        var restriction = DiscountRestriction.Create(
-            restrictionId, Id, restrictionType, restrictionValue);
-        _restrictions.Add(restriction);
-        UpdatedAt = DateTime.UtcNow;
-        IncrementVersion();
-    }
-
-    public void RemoveRestriction(DiscountRestrictionId restrictionId)
-    {
-        var restriction = _restrictions.FirstOrDefault(r => r.Id == restrictionId);
-        if (restriction is null) return;
-
-        _restrictions.Remove(restriction);
-        UpdatedAt = DateTime.UtcNow;
-        IncrementVersion();
-    }
-
     public void Activate()
     {
         if (IsActive) return;

@@ -17,11 +17,6 @@ public sealed class MediaRepository(DBContext context) : IMediaRepository
         context.Medias.Update(media);
     }
 
-    public void Remove(Domain.Media.Aggregates.Media media)
-    {
-        context.Medias.Remove(media);
-    }
-
     public async Task<Domain.Media.Aggregates.Media?> GetByIdAsync(
         MediaId id,
         CancellationToken ct = default)

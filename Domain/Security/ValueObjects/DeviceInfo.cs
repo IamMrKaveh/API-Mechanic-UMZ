@@ -26,8 +26,6 @@ public sealed class DeviceInfo : ValueObject
 
     public static DeviceInfo Unknown => new("Unknown");
 
-    public bool IsUnknown() => Value.Equals("Unknown", StringComparison.OrdinalIgnoreCase);
-
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value.ToLowerInvariant();

@@ -37,36 +37,6 @@ public sealed class PhoneNumber : ValueObject
         return Result<PhoneNumber>.Success(new PhoneNumber(normalized));
     }
 
-    public static PhoneNumber FromNormalized(string normalizedValue)
-    {
-        if (!IsValid(normalizedValue))
-            throw new InvalidPhoneNumberException(normalizedValue);
-
-        return new PhoneNumber(normalizedValue);
-    }
-
-    public string GetMasked()
-    {
-        if (Value.Length < 7)
-            return Value;
-
-        return $"{Value[..4]}***{Value[^4..]}";
-    }
-
-    public string GetInternationalFormat()
-    {
-        return $"+98{Value[1..]}";
-    }
-
-    public bool Matches(string other)
-    {
-        if (string.IsNullOrWhiteSpace(other))
-            return false;
-
-        var normalizedOther = Normalize(other);
-        return Value.Equals(normalizedOther, StringComparison.Ordinal);
-    }
-
     private static string Normalize(string value)
     {
         var digits = new string([.. value.Where(char.IsDigit)]);
@@ -99,13 +69,6 @@ public sealed class PhoneNumber : ValueObject
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;
-    }
-
-    public override string ToString() => Value;
-
-    public static string Create(object receiverPhone)
-    {
-        throw new NotImplementedException();
     }
 
     public static implicit operator string(PhoneNumber phoneNumber) => phoneNumber.Value;

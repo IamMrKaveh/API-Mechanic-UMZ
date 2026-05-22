@@ -27,19 +27,6 @@ public sealed class UserSession : AggregateRoot<SessionId>
     public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
     public bool IsActive => !IsRevoked && !IsExpired;
 
-    public TimeSpan? GetTimeUntilExpiry()
-    {
-        if (IsExpired) return null;
-        var remaining = ExpiresAt - DateTime.UtcNow;
-        return remaining > TimeSpan.Zero ? remaining : null;
-    }
-
-    public TimeSpan GetSessionDuration()
-    {
-        var endTime = RevokedAt ?? DateTime.UtcNow;
-        return endTime - CreatedAt;
-    }
-
     public static UserSession Create(
         SessionId id,
         UserId userId,
@@ -75,14 +62,6 @@ public sealed class UserSession : AggregateRoot<SessionId>
 
         session.RaiseDomainEvent(new SessionCreatedEvent(id, userId, deviceInfo, ipAddress, expiresAt));
         return session;
-    }
-
-    public void RecordActivity()
-    {
-        if (!IsActive)
-            return;
-
-        LastActivityAt = DateTime.UtcNow;
     }
 
     public void Revoke(SessionRevocationReason reason = SessionRevocationReason.UserRequested)

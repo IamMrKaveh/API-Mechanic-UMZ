@@ -16,9 +16,6 @@ public interface IShippingRepository
         IEnumerable<ShippingId> ids,
         CancellationToken ct = default);
 
-    Task<ICollection<Aggregates.Shipping>> GetAllActiveAsync(
-        CancellationToken ct = default);
-
     Task<Aggregates.Shipping?> GetDefaultAsync(
         CancellationToken ct = default);
 

@@ -98,22 +98,6 @@ public sealed class Wallet : AggregateRoot<WalletId>
         return reservation;
     }
 
-    public void ConfirmReservation(WalletReservationId reservationId, string description, string referenceId)
-    {
-        Guard.Against.Null(reservationId, nameof(reservationId));
-        Guard.Against.NullOrWhiteSpace(description, nameof(description));
-        Guard.Against.NullOrWhiteSpace(referenceId, nameof(referenceId));
-
-        var reservation = GetActiveReservation(reservationId);
-
-        reservation.Confirm();
-        Balance = Balance.Subtract(reservation.Amount);
-        _activeReservations.Remove(reservation);
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new WalletReservationConfirmedEvent(Id, OwnerId, reservationId, reservation.Amount, description, referenceId));
-    }
-
     public void ReleaseReservation(WalletReservationId reservationId)
     {
         Guard.Against.Null(reservationId, nameof(reservationId));
@@ -125,39 +109,6 @@ public sealed class Wallet : AggregateRoot<WalletId>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new WalletReservationReleasedEvent(Id, OwnerId, reservationId, reservation.Amount));
-    }
-
-    public void Activate()
-    {
-        if (IsActive)
-            return;
-
-        IsActive = true;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new WalletStatusChangedEvent(Id, OwnerId, WalletStatus.Active, null));
-    }
-
-    public void Deactivate(string? reason = null)
-    {
-        if (!IsActive)
-            return;
-
-        IsActive = false;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new WalletStatusChangedEvent(Id, OwnerId, WalletStatus.Suspended, reason));
-    }
-
-    public bool HasSufficientBalance(Money amount)
-    {
-        Guard.Against.Null(amount, nameof(amount));
-        return AvailableBalance.IsGreaterThanOrEqual(amount);
-    }
-
-    public bool HasActiveReservation(WalletReservationId reservationId)
-    {
-        return _activeReservations.Any(r => r.Id == reservationId && r.Status == WalletReservationStatus.Active);
     }
 
     private WalletReservation GetActiveReservation(WalletReservationId reservationId)

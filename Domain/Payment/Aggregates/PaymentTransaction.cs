@@ -91,15 +91,6 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         return transaction;
     }
 
-    public void MarkAsVerificationInProgress(DateTime now)
-    {
-        EnsureCanStartVerification(now);
-
-        IsVerificationInProgress = true;
-        Status = PaymentStatus.Processing;
-        UpdatedAt = now;
-    }
-
     public void MarkAsSuccess(long refId, DateTime now, decimal fee = 0)
     {
         EnsureCanSucceed(now);
@@ -139,18 +130,6 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         RaiseDomainEvent(new PaymentExpiredEvent(Id, OrderId, Amount.Amount, Authority));
     }
 
-    public void Cancel(DateTime now, string? reason = null)
-    {
-        EnsureCanCancel();
-
-        Status = PaymentStatus.Cancelled;
-        ErrorMessage = reason ?? "لغو شده توسط کاربر";
-        UpdatedAt = now;
-        IsVerificationInProgress = false;
-
-        RaiseDomainEvent(new PaymentCancelledEvent(Id, OrderId, ErrorMessage));
-    }
-
     public void Refund(DateTime now, string? reason = null)
     {
         EnsureCanRefund();
@@ -168,36 +147,12 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
 
     public bool IsPending() => Status == PaymentStatus.Pending;
 
-    public bool IsFailed() => Status == PaymentStatus.Failed;
-
     public bool IsRefunded() => Status == PaymentStatus.Refunded;
-
-    public bool IsCancelled() => Status == PaymentStatus.Cancelled;
 
     public bool CanBeVerified(DateTime now) =>
         (Status == PaymentStatus.Pending || Status == PaymentStatus.Processing) && !IsExpired(now);
 
     public bool CanExpire() => Status == PaymentStatus.Pending || Status == PaymentStatus.Processing;
-
-    public TimeSpan? GetTimeUntilExpiry(DateTime now)
-    {
-        if (Status != PaymentStatus.Pending) return null;
-        var remaining = ExpiresAt - now;
-        return remaining > TimeSpan.Zero ? remaining : null;
-    }
-
-    public bool HasRefId() => RefId.HasValue;
-
-    public bool MatchesAmount(decimal amount) => Math.Abs(Amount.Amount - amount) < 1;
-
-    private void EnsureCanStartVerification(DateTime now)
-    {
-        if (Status != PaymentStatus.Pending)
-            throw new DomainException("فقط تراکنش‌های در انتظار قابل بررسی هستند.");
-
-        if (IsExpired(now))
-            throw new Exceptions.PaymentExpiredException(Authority, ExpiresAt);
-    }
 
     private void EnsureCanSucceed(DateTime now)
     {
@@ -215,12 +170,6 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
     {
         if (Status == PaymentStatus.Success)
             throw new DomainException("امکان تغییر وضعیت تراکنش موفق وجود ندارد.");
-    }
-
-    private void EnsureCanCancel()
-    {
-        if (Status == PaymentStatus.Success)
-            throw new DomainException("امکان لغو تراکنش موفق وجود ندارد.");
     }
 
     private void EnsureCanRefund()

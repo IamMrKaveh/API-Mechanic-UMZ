@@ -31,26 +31,10 @@ public sealed class Sku : ValueObject
         return new Sku(normalized);
     }
 
-    public static Sku FromPersistedString(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new DomainException("کد SKU الزامی است.");
-        return new Sku(value);
-    }
-
-    public bool Matches(string other)
-    {
-        if (string.IsNullOrWhiteSpace(other))
-            return false;
-        return Value.Equals(other.Trim().ToUpperInvariant(), StringComparison.Ordinal);
-    }
-
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value.ToUpperInvariant();
     }
-
-    public override string ToString() => Value;
 
     public static implicit operator string(Sku sku) => sku.Value;
 }

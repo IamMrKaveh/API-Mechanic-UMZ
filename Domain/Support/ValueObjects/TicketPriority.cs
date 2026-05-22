@@ -37,39 +37,8 @@ public sealed class TicketPriority : ValueObject
         return Normal;
     }
 
-    public static TicketPriority Parse(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new DomainException("اولویت تیکت نمی‌تواند خالی باشد.");
-
-        if (All.TryGetValue(value, out var priority))
-            return priority;
-
-        throw new DomainException($"اولویت '{value}' نامعتبر است.");
-    }
-
-    public static IEnumerable<TicketPriority> GetAll() => All.Values.OrderBy(p => p.SortOrder);
-
-    public bool IsHighPriority() => SortOrder >= High.SortOrder;
-
-    public bool IsUrgent() => this == Urgent;
-
-    public bool IsNormalOrBelow() => SortOrder <= Normal.SortOrder;
-
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value.ToLowerInvariant();
     }
-
-    public override string ToString() => DisplayName;
-
-    public static implicit operator string(TicketPriority priority) => priority.Value;
-
-    public static bool operator >(TicketPriority left, TicketPriority right) => left.SortOrder > right.SortOrder;
-
-    public static bool operator <(TicketPriority left, TicketPriority right) => left.SortOrder < right.SortOrder;
-
-    public static bool operator >=(TicketPriority left, TicketPriority right) => left.SortOrder >= right.SortOrder;
-
-    public static bool operator <=(TicketPriority left, TicketPriority right) => left.SortOrder <= right.SortOrder;
 }

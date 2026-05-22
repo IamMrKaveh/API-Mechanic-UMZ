@@ -31,23 +31,6 @@ public sealed class PaymentSettlementService
         return RefundEligibilityResult.Success(payment.Amount.Amount);
     }
 
-    public static RefundAmountValidation ValidateRefundAmount(
-        PaymentTransaction payment)
-    {
-        Guard.Against.Null(payment, nameof(payment));
-
-        var refundAmount = payment.Amount.Amount;
-
-        if (refundAmount <= 0)
-            return RefundAmountValidation.Failed($"مبلغ استرداد باید بزرگ‌تر از صفر باشد. مقدار: {refundAmount:N0}");
-
-        if (refundAmount > payment.Amount.Amount)
-            return RefundAmountValidation.Failed(
-                $"مبلغ استرداد ({refundAmount:N0}) نمی‌تواند بیشتر از مبلغ پرداخت ({payment.Amount.Amount:N0}) باشد.");
-
-        return RefundAmountValidation.Success(refundAmount);
-    }
-
     public static SettlementRefundResult ProcessRefund(
         IOrderPaymentContext order,
         PaymentTransaction payment,

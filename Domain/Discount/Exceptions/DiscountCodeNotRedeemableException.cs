@@ -2,17 +2,10 @@
 
 namespace Domain.Discount.Exceptions;
 
-public sealed class DiscountCodeNotRedeemableException : DomainException
+public sealed class DiscountCodeNotRedeemableException(DiscountCodeId id, string code) : DomainException($"Discount code '{code}' (ID: {id}) is not redeemable. It may be inactive, expired, or have reached its usage limit.")
 {
-    public DiscountCodeId Id { get; }
-    public string Code { get; }
+    public DiscountCodeId Id { get; } = id;
+    public string Code { get; } = code;
 
     public override string ErrorCode => "DISCOUNT_CODE_NOT_REDEEMABLE";
-
-    public DiscountCodeNotRedeemableException(DiscountCodeId id, string code)
-        : base($"Discount code '{code}' (ID: {id}) is not redeemable. It may be inactive, expired, or have reached its usage limit.")
-    {
-        Id = id;
-        Code = code;
-    }
 }

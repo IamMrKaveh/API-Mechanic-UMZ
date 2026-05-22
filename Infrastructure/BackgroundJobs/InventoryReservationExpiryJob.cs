@@ -1,3 +1,4 @@
+using Domain.Inventory.Enums;
 using Domain.Inventory.ValueObjects;
 using Domain.Variant.ValueObjects;
 

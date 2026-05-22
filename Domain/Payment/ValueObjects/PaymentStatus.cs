@@ -41,64 +41,6 @@ public sealed class PaymentStatus : ValueObject
         };
     }
 
-    public static PaymentStatus FromInt(int value)
-    {
-        return value switch
-        {
-            0 => Pending,
-            1 => Processing,
-            2 => Success,
-            3 => Failed,
-            4 => Expired,
-            5 => Cancelled,
-            6 => Refunded,
-            _ => throw new DomainException($"وضعیت پرداخت با کد {value} نامعتبر است.")
-        };
-    }
-
-    public static IEnumerable<PaymentStatus> GetAll()
-    {
-        yield return Pending;
-        yield return Processing;
-        yield return Success;
-        yield return Failed;
-        yield return Expired;
-        yield return Cancelled;
-        yield return Refunded;
-    }
-
-    public static IEnumerable<PaymentStatus> GetFinalStatuses() => GetAll().Where(s => s.IsFinal);
-
-    public static IEnumerable<PaymentStatus> GetActiveStatuses() => GetAll().Where(s => !s.IsFinal);
-
-    public bool IsSuccess() => Value == Success.Value;
-
-    public bool IsPending() => Value == Pending.Value;
-
-    public bool IsProcessing() => Value == Processing.Value;
-
-    public bool IsFailed() => Value == Failed.Value;
-
-    public bool IsExpired() => Value == Expired.Value;
-
-    public bool IsCancelled() => Value == Cancelled.Value;
-
-    public bool IsRefunded() => Value == Refunded.Value;
-
-    public bool CanTransitionTo(PaymentStatus newStatus)
-    {
-        if (IsFinal && newStatus.Value != Refunded.Value)
-            return false;
-
-        return Value switch
-        {
-            "Pending" => newStatus == Processing || newStatus == Failed || newStatus == Expired || newStatus == Cancelled,
-            "Processing" => newStatus == Success || newStatus == Failed || newStatus == Expired,
-            "Success" => newStatus == Refunded,
-            _ => false
-        };
-    }
-
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;

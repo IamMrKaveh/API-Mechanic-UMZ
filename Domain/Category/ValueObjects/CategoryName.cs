@@ -25,9 +25,6 @@ public sealed class CategoryName : ValueObject
         return new CategoryName(trimmed);
     }
 
-    public bool IsSameAs(CategoryName other)
-        => Value.Equals(other.Value, StringComparison.OrdinalIgnoreCase);
-
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value.ToLowerInvariant();

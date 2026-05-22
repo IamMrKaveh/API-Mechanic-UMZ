@@ -227,21 +227,6 @@ public sealed class Cart : AggregateRoot<CartId>
         RaiseDomainEvent(new CartMergedEvent(Id, sourceCart.Id, UserId!, sourceCart.CartItems.Count));
     }
 
-    public void ValidateStockAvailability(
-        VariantId variantId,
-        int requestedQuantity,
-        int availableStock,
-        bool isUnlimited)
-    {
-        if (requestedQuantity <= 0)
-            throw new InvalidCartQuantityException(requestedQuantity);
-
-        if (!isUnlimited && availableStock < requestedQuantity)
-            throw new InsufficientStockForCartException(variantId, requestedQuantity, availableStock);
-    }
-
-    public bool HasItem(VariantId variantId) => _cartItems.Any(i => i.VariantId == variantId);
-
     public bool IsEmpty => _cartItems.Count == 0;
 
     public Money TotalAmount =>

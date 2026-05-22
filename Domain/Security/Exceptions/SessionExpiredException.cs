@@ -2,15 +2,9 @@
 
 namespace Domain.Security.Exceptions;
 
-public sealed class SessionExpiredException : DomainException
+public sealed class SessionExpiredException(SessionId sessionId) : DomainException($"نشست '{sessionId}' منقضی شده است.")
 {
-    public SessionId SessionId { get; }
+    public SessionId SessionId { get; } = sessionId;
 
     public override string ErrorCode => "SESSION_EXPIRED";
-
-    public SessionExpiredException(SessionId sessionId)
-        : base($"نشست '{sessionId}' منقضی شده است.")
-    {
-        SessionId = sessionId;
-    }
 }

@@ -116,18 +116,6 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
         RaiseDomainEvent(new UserPasswordChangedEvent(Id));
     }
 
-    public void ChangeEmail(Email newEmail)
-    {
-        Guard.Against.Null(newEmail, nameof(newEmail));
-
-        if (Email == newEmail)
-            throw new DomainException("ایمیل جدید با ایمیل فعلی یکسان است.");
-
-        Email = newEmail;
-        IsEmailVerified = false;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
     public void VerifyEmail()
     {
         if (IsEmailVerified)
@@ -214,13 +202,6 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
         RaiseDomainEvent(new UserLoginFailedEvent(Id, FailedLoginAttempts));
     }
 
-    public void Unlock()
-    {
-        FailedLoginAttempts = 0;
-        LockoutEnd = null;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
     public UserAddress AddAddress(
         UserAddressId addressId,
         string title,
@@ -274,7 +255,7 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
         EnsureActive();
 
         var userAddress = GetAddress(addressId);
-        userAddress.UpdateDetails(title, receiverName, phoneNumber, province, city, address, postalCode, latitude, longitude);
+        userAddress.UpdateDetails(title, receiverName, phoneNumber, province, city, address, postalCode, isDefault, latitude, longitude);
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new UserAddressUpdatedEvent(Id, addressId));
@@ -316,14 +297,6 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
 
         RaiseDomainEvent(new UserDefaultAddressChangedEvent(Id, previous, addressId));
         RaiseDomainEvent(new UserAddressSetAsDefaultEvent(Id, addressId));
-    }
-
-    public UserAddress? GetDefaultAddress()
-    {
-        if (Convert.ToString(DefaultAddressId?.Value) != string.Empty)
-            return _addresses.FirstOrDefault();
-
-        return _addresses.FirstOrDefault(a => a.Id == DefaultAddressId);
     }
 
     public bool HasAddress(UserAddressId addressId)

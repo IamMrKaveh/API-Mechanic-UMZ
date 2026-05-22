@@ -14,7 +14,4 @@ public sealed class PaymentSuccessSettlementResult
 
     public static PaymentSuccessSettlementResult Idempotent() =>
         new() { IsSuccess = true, IsIdempotent = true };
-
-    public static PaymentSuccessSettlementResult Failed(string error) =>
-        new() { IsSuccess = false, Error = error };
 }

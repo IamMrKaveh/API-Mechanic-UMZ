@@ -1,14 +1,8 @@
 namespace Domain.Discount.Exceptions;
 
-public sealed class InvalidDiscountException : DomainException
+public sealed class InvalidDiscountException(string message, string? code = null) : DomainException(message)
 {
-    public string? DiscountCode { get; }
+    public string? DiscountCode { get; } = code;
 
     public override string ErrorCode => "INVALID_DISCOUNT";
-
-    public InvalidDiscountException(string message, string? code = null)
-        : base(message)
-    {
-        DiscountCode = code;
-    }
 }

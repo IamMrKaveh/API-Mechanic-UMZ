@@ -11,22 +11,6 @@ public sealed class CategoryRepository(DBContext context) : ICategoryRepository
         => await context.Categories
             .FirstOrDefaultAsync(c => c.Id == id, ct);
 
-    public async Task<Domain.Category.Aggregates.Category?> GetBySlugAsync(
-        Slug slug,
-        CancellationToken ct = default)
-        => await context.Categories
-            .FirstOrDefaultAsync(c => c.Slug == slug, ct);
-
-    public async Task<IReadOnlyList<Domain.Category.Aggregates.Category>> GetAllActiveAsync(
-        CancellationToken ct = default)
-    {
-        var results = await context.Categories
-            .Where(c => c.IsActive)
-            .OrderBy(c => c.SortOrder)
-            .ToListAsync(ct);
-        return results.AsReadOnly();
-    }
-
     public async Task<bool> ExistsByNameAsync(
         CategoryName name,
         CategoryId? excludeId = null,

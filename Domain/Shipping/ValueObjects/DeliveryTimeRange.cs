@@ -27,8 +27,6 @@ public sealed class DeliveryTimeRange : ValueObject
         return new DeliveryTimeRange(minDays, maxDays);
     }
 
-    public static DeliveryTimeRange Default() => new(1, 7);
-
     public bool IsSameDay => MinDays == MaxDays;
 
     public string ToDisplayString()

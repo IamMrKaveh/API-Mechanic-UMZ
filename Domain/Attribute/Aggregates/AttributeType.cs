@@ -125,13 +125,4 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         attrValue.Update(trimmedValue, displayValue, hexCode, sortOrder, isActive);
         UpdatedAt = DateTime.UtcNow;
     }
-
-    public void RemoveValue(AttributeValueId valueId)
-    {
-        var attrValue = _values.FirstOrDefault(v => v.Id == valueId)
-            ?? throw new AttributeValueNotFoundException(valueId);
-
-        _values.Remove(attrValue);
-        UpdatedAt = DateTime.UtcNow;
-    }
 }

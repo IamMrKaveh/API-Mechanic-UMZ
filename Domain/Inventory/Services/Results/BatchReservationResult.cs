@@ -14,8 +14,4 @@ public sealed class BatchReservationResult
     public static BatchReservationResult Success() => new(true, Array.Empty<string>());
 
     public static BatchReservationResult Fail(IReadOnlyList<string> errors) => new(false, errors);
-
-    public Result ToResult() => IsSuccess
-        ? Result.Success()
-        : Result.Failure(new Error("BatchReservation.Failed", string.Join(", ", Errors)));
 }

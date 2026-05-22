@@ -120,22 +120,6 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
         RaiseDomainEvent(new VariantShippingSetEvent(Id, ProductId));
     }
 
-    public void Activate()
-    {
-        if (IsActive) return;
-        IsActive = true;
-        UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new VariantActivatedEvent(Id, ProductId));
-    }
-
-    public void Deactivate()
-    {
-        if (!IsActive) return;
-        IsActive = false;
-        UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new VariantDeactivatedEvent(Id, ProductId));
-    }
-
     public void Remove(Guid? deletedBy = null)
     {
         IsActive = false;
@@ -158,12 +142,6 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
             return Math.Round(
                 (CompareAtPrice.Amount - Price.Amount) / CompareAtPrice.Amount * 100, 2);
         }
-    }
-
-    public bool SkuMatches(string sku)
-    {
-        if (string.IsNullOrWhiteSpace(sku)) return false;
-        return Sku.Value.Equals(sku.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
     private void EnsureActive()

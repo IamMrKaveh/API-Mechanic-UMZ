@@ -14,23 +14,11 @@ public interface ISessionRepository
         RefreshToken refreshToken,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<UserSession>> GetActiveByUserIdAsync(
-        UserId userId,
-        CancellationToken ct = default);
-
-    Task<int> GetActiveSessionCountAsync(
-        UserId userId,
-        CancellationToken ct = default);
-
     Task AddAsync(
         UserSession session,
         CancellationToken ct = default);
 
     void Update(UserSession session);
-
-    Task RevokeAsync(
-        SessionId sessionId,
-        CancellationToken ct = default);
 
     Task RevokeAllByUserIdAsync(
         UserId userId,

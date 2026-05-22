@@ -27,15 +27,6 @@ public sealed class InventoryRepository(DBContext context) : IInventoryRepositor
         return results.AsReadOnly();
     }
 
-    public async Task AddAsync(Domain.Inventory.Aggregates.Inventory inventory, CancellationToken ct = default)
-        => await context.Inventories.AddAsync(inventory, ct);
-
     public void Update(Domain.Inventory.Aggregates.Inventory inventory)
         => context.Inventories.Update(inventory);
-
-    public void SetOriginalRowVersion(Domain.Inventory.Aggregates.Inventory entity, byte[] rowVersion)
-        => context.Entry(entity).OriginalValues["RowVersion"] = rowVersion;
-
-    public async Task<bool> ExistsByVariantIdAsync(VariantId variantId, CancellationToken ct = default)
-        => await context.Inventories.AnyAsync(i => i.VariantId == variantId, ct);
 }

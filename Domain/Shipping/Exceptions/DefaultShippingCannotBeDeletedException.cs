@@ -2,15 +2,9 @@
 
 namespace Domain.Shipping.Exceptions;
 
-public sealed class DefaultShippingCannotBeDeletedException : DomainException
+public sealed class DefaultShippingCannotBeDeletedException(ShippingId shippingId) : DomainException($"امکان حذف روش ارسال پیش‌فرض '{shippingId}' وجود ندارد.")
 {
-    public ShippingId ShippingId { get; }
+    public ShippingId ShippingId { get; } = shippingId;
 
     public override string ErrorCode => "DEFAULT_SHIPPING_CANNOT_BE_DELETED";
-
-    public DefaultShippingCannotBeDeletedException(ShippingId shippingId)
-        : base($"امکان حذف روش ارسال پیش‌فرض '{shippingId}' وجود ندارد.")
-    {
-        ShippingId = shippingId;
-    }
 }

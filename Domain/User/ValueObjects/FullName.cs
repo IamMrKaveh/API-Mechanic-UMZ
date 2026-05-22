@@ -31,60 +31,6 @@ public sealed class FullName : ValueObject
 
     public static FullName Empty() => new(string.Empty, string.Empty);
 
-    public string GetFullName()
-    {
-        var parts = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(FirstName))
-            parts.Add(FirstName);
-
-        if (!string.IsNullOrWhiteSpace(LastName))
-            parts.Add(LastName);
-
-        return string.Join(" ", parts);
-    }
-
-    public string GetDisplayName()
-    {
-        if (!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName))
-            return $"{FirstName} {LastName}";
-
-        if (!string.IsNullOrEmpty(FirstName))
-            return FirstName;
-
-        if (!string.IsNullOrEmpty(LastName))
-            return LastName;
-
-        return "کاربر";
-    }
-
-    public string GetInitials()
-    {
-        var initials = string.Empty;
-
-        if (!string.IsNullOrWhiteSpace(FirstName))
-            initials += FirstName[0];
-
-        if (!string.IsNullOrWhiteSpace(LastName))
-            initials += LastName[0];
-
-        return initials;
-    }
-
-    public bool IsEmpty() => string.IsNullOrWhiteSpace(FirstName) && string.IsNullOrWhiteSpace(LastName);
-
-    public bool IsComplete() => !string.IsNullOrWhiteSpace(FirstName) && !string.IsNullOrWhiteSpace(LastName);
-
-    public FullName WithFirstName(string firstName)
-    {
-        return Create(firstName, LastName);
-    }
-
-    public FullName WithLastName(string lastName)
-    {
-        return Create(FirstName, lastName);
-    }
-
     private static void ValidateName(string name, string fieldName)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -107,6 +53,4 @@ public sealed class FullName : ValueObject
         yield return FirstName.ToLowerInvariant();
         yield return LastName.ToLowerInvariant();
     }
-
-    public override string ToString() => GetFullName();
 }
