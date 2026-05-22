@@ -1,6 +1,5 @@
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Infrastructure.Order.Repositories;
 
@@ -15,34 +14,12 @@ public sealed class OrderRepository(DBContext context) : IOrderRepository
             .FirstOrDefaultAsync(o => o.Id == orderId, ct);
     }
 
-    public async Task<Domain.Order.Aggregates.Order?> FindByOrderNumberAsync(
-        OrderNumber orderNumber,
-        CancellationToken ct = default)
-    {
-        return await context.Orders
-            .Include(o => o.OrderItems)
-            .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, ct);
-    }
-
     public async Task<bool> ExistsByIdempotencyKeyAsync(
         Guid idempotencyKey,
         CancellationToken ct = default)
     {
         return await context.Orders
             .AnyAsync(o => o.IdempotencyKey == idempotencyKey, ct);
-    }
-
-    public async Task<IReadOnlyList<Domain.Order.Aggregates.Order>> FindByUserIdAsync(
-        UserId userId,
-        CancellationToken ct = default)
-    {
-        var results = await context.Orders
-            .Include(o => o.OrderItems)
-            .Where(o => o.UserId.Value == userId.Value)
-            .OrderByDescending(o => o.CreatedAt)
-            .ToListAsync(ct);
-
-        return results.AsReadOnly();
     }
 
     public async Task<IReadOnlyList<Domain.Order.Aggregates.Order>> FindPendingExpiredAsync(

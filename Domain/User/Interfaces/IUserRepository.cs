@@ -28,10 +28,6 @@ public interface IUserRepository
         UserId id,
         CancellationToken ct = default);
 
-    Task<Aggregates.User?> GetByIdIncludingDeletedAsync(
-        UserId id,
-        CancellationToken ct = default);
-
     Task<Aggregates.User?> GetActiveByIdAsync(
         UserId id,
         CancellationToken ct = default);
@@ -41,19 +37,7 @@ public interface IUserRepository
         UserId? excludeUserId = null,
         CancellationToken ct = default);
 
-    Task<bool> ExistsByEmailAsync(
-        Email email,
-        UserId? excludeUserId = null,
-        CancellationToken ct = default);
-
     Task<UserAddress?> GetUserAddressAsync(
         UserAddressId addressId,
-        CancellationToken ct = default);
-
-    Task<IReadOnlyList<Aggregates.User>> GetAllActiveAsync(
-        CancellationToken ct = default);
-
-    Task<bool> ExistsAsync(
-        UserId id,
         CancellationToken ct = default);
 }

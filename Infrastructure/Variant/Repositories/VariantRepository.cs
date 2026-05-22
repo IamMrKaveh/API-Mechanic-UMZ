@@ -1,18 +1,12 @@
-using Domain.Product.ValueObjects;
 using Domain.Variant.Aggregates;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Variant.Repositories;
 
 public sealed class VariantRepository(DBContext context) : IVariantRepository
 {
     public async Task<ProductVariant?> GetByIdAsync(VariantId id, CancellationToken ct = default)
-        => await context.ProductVariants.FirstOrDefaultAsync(v => v.Id == id, ct);
-
-    public async Task<ProductVariant?> GetByIdForUpdateAsync(VariantId id, CancellationToken ct = default)
         => await context.ProductVariants.FirstOrDefaultAsync(v => v.Id == id, ct);
 
     public async Task<ProductVariant?> GetWithProductAsync(VariantId id, CancellationToken ct = default)
@@ -26,19 +20,6 @@ public sealed class VariantRepository(DBContext context) : IVariantRepository
             .Include(v => v.Shippings)
                 .ThenInclude(pvs => pvs.Shipping)
             .FirstOrDefaultAsync(v => v.Id == id, ct);
-
-    public async Task<ProductVariant?> GetBySkuAsync(Sku sku, CancellationToken ct = default)
-        => await context.ProductVariants
-            .FirstOrDefaultAsync(v => v.Sku.Value == sku.Value, ct);
-
-    public async Task<IReadOnlyList<ProductVariant>> GetActiveByProductIdAsync(
-        ProductId productId, CancellationToken ct = default)
-    {
-        var result = await context.ProductVariants
-            .Where(v => v.ProductId == productId && v.IsActive && !v.IsDeleted)
-            .ToListAsync(ct);
-        return result.AsReadOnly();
-    }
 
     public async Task<IReadOnlyList<ProductVariant>> GetByIdsAsync(
         IEnumerable<VariantId> ids, CancellationToken ct = default)
@@ -61,9 +42,6 @@ public sealed class VariantRepository(DBContext context) : IVariantRepository
 
         return await query.AnyAsync(ct);
     }
-
-    public async Task<bool> ExistsAsync(VariantId id, CancellationToken ct = default)
-        => await context.ProductVariants.AnyAsync(v => v.Id == id, ct);
 
     public async Task AddAsync(ProductVariant variant, CancellationToken ct = default)
         => await context.ProductVariants.AddAsync(variant, ct);

@@ -1,4 +1,3 @@
-using Domain.Cart.Services;
 using Domain.Inventory.Services;
 using Domain.Media.Services;
 using Domain.Payment.Services;
@@ -40,7 +39,6 @@ public static class ApplicationServiceCollection
         services.AddScoped<ShippingDomainService>();
         services.AddScoped<ReviewDomainService>();
         services.AddScoped<InventoryDomainService>();
-        services.AddScoped<CartDomainService>();
         services.AddScoped<PaymentDomainService>();
         services.AddScoped<MediaDomainService>();
         services.AddScoped<TicketDomainService>();

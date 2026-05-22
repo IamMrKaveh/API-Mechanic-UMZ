@@ -19,10 +19,6 @@ public interface IBrandRepository
         BrandId id,
         CancellationToken ct = default);
 
-    Task<Aggregates.Brand?> GetBySlugAsync(
-        Slug slug,
-        CancellationToken ct = default);
-
     Task<bool> ExistsByNameInCategoryAsync(
         BrandName brandName,
         CategoryId categoryId,

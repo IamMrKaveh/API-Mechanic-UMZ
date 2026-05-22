@@ -71,6 +71,7 @@ public sealed class UserAddress : Entity<UserAddressId>, IAuditable
         string city,
         string address,
         string postalCode,
+        bool isDefault,
         decimal? latitude = null,
         decimal? longitude = null)
     {
@@ -83,6 +84,7 @@ public sealed class UserAddress : Entity<UserAddressId>, IAuditable
         City = city.Trim();
         Address = address.Trim();
         PostalCode = postalCode.Trim();
+        IsDefault = isDefault;
         Latitude = latitude;
         Longitude = longitude;
         UpdatedAt = DateTime.UtcNow;
@@ -99,12 +101,6 @@ public sealed class UserAddress : Entity<UserAddressId>, IAuditable
         IsDefault = false;
         UpdatedAt = DateTime.UtcNow;
     }
-
-    public string GetFullAddress() => $"{Province}، {City}، {Address}";
-
-    public string GetShortAddress() => $"{City}، {Address}";
-
-    public bool HasLocation() => Latitude.HasValue && Longitude.HasValue;
 
     private static void Validate(
         string title,

@@ -1,4 +1,5 @@
 using Application.Common.Exceptions;
+using Domain.Inventory.Enums;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
 using Domain.Order.ValueObjects;
@@ -266,6 +267,6 @@ public sealed class InventoryService(
 
     private static int GetReservedQuantityForReference(Domain.Inventory.Aggregates.Inventory inventory, string referenceNumber)
         => inventory.LedgerEntries
-            .Where(e => e.ReferenceNumber == referenceNumber && e.EventType == Domain.Inventory.ValueObjects.StockEventType.Reservation)
+            .Where(e => e.ReferenceNumber == referenceNumber && e.EventType == StockEventType.Reservation)
             .Sum(e => Math.Abs(e.QuantityDelta));
 }

@@ -91,37 +91,6 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
             RaiseDomainEvent(new ShippingCostChangedEvent(Id, previousCost, baseCost.Amount));
     }
 
-    public void SetOrderRange(Money? minOrderAmount, Money? maxOrderAmount)
-    {
-        OrderRange = ShippingOrderRange.Create(minOrderAmount, maxOrderAmount);
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void SetMaxWeight(decimal? maxWeight)
-    {
-        if (maxWeight.HasValue && maxWeight.Value <= 0)
-            throw new DomainException("حداکثر وزن باید بزرگتر از صفر باشد.");
-
-        MaxWeight = maxWeight;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void EnableFreeShipping(Money thresholdAmount)
-    {
-        FreeShipping = FreeShippingThreshold.Create(thresholdAmount);
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new ShippingFreeThresholdChangedEvent(Id, true, thresholdAmount.Amount));
-    }
-
-    public void DisableFreeShipping()
-    {
-        FreeShipping = FreeShippingThreshold.Disabled();
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new ShippingFreeThresholdChangedEvent(Id, false, null));
-    }
-
     public Money CalculateCost(Money orderTotal, decimal shippingMultiplier = 1m)
     {
         if (!IsActive) return Money.Zero();
@@ -174,28 +143,6 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
         return OrderRange.Validate(orderTotal);
     }
 
-    public void Activate()
-    {
-        if (IsActive) return;
-        IsActive = true;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new ShippingActivatedEvent(Id, Name));
-    }
-
-    public void Deactivate()
-    {
-        if (!IsActive) return;
-
-        if (IsDefault)
-            throw new DefaultShippingCannotBeDeactivatedException(Id);
-
-        IsActive = false;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new ShippingDeactivatedEvent(Id, Name));
-    }
-
     public void SetAsDefault()
     {
         if (!IsActive)
@@ -210,15 +157,6 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
     public void UnsetDefault()
     {
         IsDefault = false;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void SetSortOrder(int sortOrder)
-    {
-        if (sortOrder < 0)
-            throw new DomainException("ترتیب نمایش نمی‌تواند منفی باشد.");
-
-        SortOrder = sortOrder;
         UpdatedAt = DateTime.UtcNow;
     }
 

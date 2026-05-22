@@ -47,31 +47,10 @@ public sealed class PaymentGateway : ValueObject
         return new PaymentGateway(value.Trim(), displayName ?? value.Trim(), true);
     }
 
-    public static IEnumerable<PaymentGateway> GetAll()
-    {
-        yield return Zarinpal;
-        yield return Mellat;
-        yield return Saman;
-        yield return Parsian;
-        yield return Pasargad;
-        yield return Saderat;
-        yield return Wallet;
-    }
-
-    public static IEnumerable<PaymentGateway> GetActive() => GetAll().Where(g => g.IsActive);
-
-    public bool IsBankGateway() => this == Mellat || this == Saman || this == Parsian || this == Pasargad || this == Saderat;
-
-    public bool IsIPGGateway() => this == Zarinpal;
-
-    public bool IsWallet() => this == Wallet;
-
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value.ToLowerInvariant();
     }
-
-    public override string ToString() => DisplayName;
 
     public static implicit operator string(PaymentGateway gateway) => gateway.Value;
 }

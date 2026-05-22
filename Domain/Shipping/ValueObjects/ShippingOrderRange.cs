@@ -15,17 +15,6 @@ public sealed class ShippingOrderRange : ValueObject
         MaxOrderAmount = maxOrderAmount;
     }
 
-    public static ShippingOrderRange Create(Money? minOrderAmount, Money? maxOrderAmount)
-    {
-        if (minOrderAmount is not null && maxOrderAmount is not null)
-        {
-            if (minOrderAmount.IsGreaterThan(maxOrderAmount))
-                throw new DomainException("حداقل مبلغ سفارش نمی‌تواند بیشتر از حداکثر باشد.");
-        }
-
-        return new ShippingOrderRange(minOrderAmount, maxOrderAmount);
-    }
-
     public static ShippingOrderRange Unlimited() => new(null, null);
 
     public bool HasMinimum => MinOrderAmount is not null;

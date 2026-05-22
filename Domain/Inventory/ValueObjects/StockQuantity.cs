@@ -25,13 +25,6 @@ public sealed class StockQuantity : ValueObject, IComparable<StockQuantity>
         return new StockQuantity(value);
     }
 
-    public static StockQuantity Zero() => new(0);
-
-    public bool IsZero => Value == 0;
-    public bool IsPositive => Value > 0;
-
-    public bool IsLowStock(int threshold) => Value > 0 && Value <= threshold;
-
     public StockQuantity Add(int quantity)
     {
         if (quantity < 0)

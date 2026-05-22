@@ -34,9 +34,4 @@ public sealed class Wishlist : AggregateRoot<WishlistId>, IAuditable
 
         return new Wishlist(WishlistId.NewId(), userId, productId);
     }
-
-    public void Touch()
-    {
-        UpdatedAt = DateTime.UtcNow;
-    }
 }

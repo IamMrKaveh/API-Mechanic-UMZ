@@ -14,18 +14,6 @@ public sealed class NotificationRepository(DBContext context) : INotificationRep
             .FirstOrDefaultAsync(n => n.Id == id, ct);
     }
 
-    public async Task<IReadOnlyList<Domain.Notification.Aggregates.Notification>> GetByUserIdAsync(
-        UserId userId,
-        CancellationToken ct = default)
-    {
-        var results = await context.Notifications
-            .Where(n => n.UserId.Value == userId.Value)
-            .OrderByDescending(n => n.CreatedAt)
-            .ToListAsync(ct);
-
-        return results.AsReadOnly();
-    }
-
     public async Task<IReadOnlyList<Domain.Notification.Aggregates.Notification>> GetUnreadByUserIdAsync(
         UserId userId,
         CancellationToken ct = default)
@@ -33,17 +21,6 @@ public sealed class NotificationRepository(DBContext context) : INotificationRep
         var results = await context.Notifications
             .Where(n => n.UserId.Value == userId.Value && !n.IsRead)
             .OrderByDescending(n => n.CreatedAt)
-            .ToListAsync(ct);
-
-        return results.AsReadOnly();
-    }
-
-    public async Task<IReadOnlyList<Domain.Notification.Aggregates.Notification>> GetReadNotificationsOlderThanAsync(
-        DateTime cutoff,
-        CancellationToken ct = default)
-    {
-        var results = await context.Notifications
-            .Where(n => n.IsRead && n.CreatedAt < cutoff)
             .ToListAsync(ct);
 
         return results.AsReadOnly();

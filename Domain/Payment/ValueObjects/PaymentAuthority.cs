@@ -25,8 +25,6 @@ public sealed class PaymentAuthority : ValueObject
         return new PaymentAuthority(normalized);
     }
 
-    public bool Matches(string other) => !string.IsNullOrWhiteSpace(other) && Value.Equals(other.Trim(), StringComparison.Ordinal);
-
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;

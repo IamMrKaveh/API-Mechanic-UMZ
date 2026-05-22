@@ -2,15 +2,9 @@ using Domain.Category.ValueObjects;
 
 namespace Domain.Category.Exceptions;
 
-public sealed class DuplicateCategoryNameException : DomainException
+public sealed class DuplicateCategoryNameException(CategoryName categoryName) : DomainException($"دسته‌بندی با نام '{categoryName}' قبلاً وجود دارد.")
 {
-    public CategoryName CategoryName { get; }
+    public CategoryName CategoryName { get; } = categoryName;
 
     public override string ErrorCode => "DUPLICATE_CATEGORY_NAME";
-
-    public DuplicateCategoryNameException(CategoryName categoryName)
-        : base($"دسته‌بندی با نام '{categoryName}' قبلاً وجود دارد.")
-    {
-        CategoryName = categoryName;
-    }
 }

@@ -21,26 +21,6 @@ public sealed class SessionRepository(DBContext context) : ISessionRepository
             .FirstOrDefaultAsync(s => s.RefreshToken.Value == refreshToken.Value, ct);
     }
 
-    public async Task<IReadOnlyList<UserSession>> GetActiveByUserIdAsync(
-        UserId userId,
-        CancellationToken ct = default)
-    {
-        var now = DateTime.UtcNow;
-        var results = await context.UserSessions
-            .Where(s => s.UserId == userId && !s.IsRevoked && s.ExpiresAt > now)
-            .OrderByDescending(s => s.CreatedAt)
-            .ToListAsync(ct);
-
-        return results.AsReadOnly();
-    }
-
-    public async Task<int> GetActiveSessionCountAsync(UserId userId, CancellationToken ct = default)
-    {
-        var now = DateTime.UtcNow;
-        return await context.UserSessions
-            .CountAsync(s => s.UserId == userId && !s.IsRevoked && s.ExpiresAt > now, ct);
-    }
-
     public async Task AddAsync(UserSession session, CancellationToken ct = default)
     {
         await context.UserSessions.AddAsync(session, ct);
@@ -48,15 +28,6 @@ public sealed class SessionRepository(DBContext context) : ISessionRepository
 
     public void Update(UserSession session)
     {
-        context.UserSessions.Update(session);
-    }
-
-    public async Task RevokeAsync(SessionId sessionId, CancellationToken ct = default)
-    {
-        var session = await context.UserSessions.FirstOrDefaultAsync(s => s.Id == sessionId, ct);
-        if (session is null || !session.IsActive) return;
-
-        session.Revoke(SessionRevocationReason.UserRequested);
         context.UserSessions.Update(session);
     }
 

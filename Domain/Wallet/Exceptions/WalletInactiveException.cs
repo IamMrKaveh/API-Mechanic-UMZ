@@ -2,15 +2,9 @@
 
 namespace Domain.Wallet.Exceptions;
 
-public sealed class WalletInactiveException : DomainException
+public sealed class WalletInactiveException(WalletId walletId) : DomainException($"کیف پول '{walletId}' غیرفعال است و قادر به پردازش تراکنش نیست.")
 {
-    public WalletId WalletId { get; }
+    public WalletId WalletId { get; } = walletId;
 
     public override string ErrorCode => "WALLET_INACTIVE";
-
-    public WalletInactiveException(WalletId walletId)
-        : base($"کیف پول '{walletId}' غیرفعال است و قادر به پردازش تراکنش نیست.")
-    {
-        WalletId = walletId;
-    }
 }

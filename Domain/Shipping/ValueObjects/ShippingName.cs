@@ -7,10 +7,7 @@ public sealed class ShippingName : ValueObject
     private const int MinLength = 2;
     public const int MaxLength = 100;
 
-    private ShippingName(string value)
-    {
-        Value = value;
-    }
+    private ShippingName(string value) => Value = value;
 
     public static ShippingName Create(string name)
     {
@@ -24,14 +21,6 @@ public sealed class ShippingName : ValueObject
             throw new DomainException($"نام روش ارسال نمی‌تواند بیش از {MaxLength} کاراکتر باشد.");
 
         return new ShippingName(name);
-    }
-
-    public bool IsSameAs(string other)
-    {
-        if (string.IsNullOrWhiteSpace(other))
-            return false;
-
-        return Value.Equals(other.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
     protected override IEnumerable<object> GetEqualityComponents()

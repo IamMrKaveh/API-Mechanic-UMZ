@@ -1,7 +1,4 @@
-﻿using Domain.Common.Interfaces;
-using Infrastructure.Persistence.Context;
-
-namespace Infrastructure.Persistence;
+﻿namespace Infrastructure.Persistence;
 
 public sealed class UnitOfWork(DBContext context) : IUnitOfWork
 {
@@ -39,12 +36,6 @@ public sealed class UnitOfWork(DBContext context) : IUnitOfWork
         await _currentTransaction.RollbackAsync(ct);
         await _currentTransaction.DisposeAsync();
         _currentTransaction = null;
-    }
-
-    public async Task ExecuteStrategyAsync(Func<Task> action, CancellationToken ct = default)
-    {
-        var strategy = context.Database.CreateExecutionStrategy();
-        await strategy.ExecuteAsync(action);
     }
 
     public async Task<T> ExecuteStrategyAsync<T>(Func<Task<T>> action, CancellationToken ct = default)

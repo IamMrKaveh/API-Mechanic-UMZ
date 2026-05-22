@@ -42,42 +42,8 @@ public sealed class TicketStatus : ValueObject
         return Open;
     }
 
-    public static TicketStatus Parse(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new DomainException("وضعیت تیکت نمی‌تواند خالی باشد.");
-
-        if (All.TryGetValue(value, out var status))
-            return status;
-
-        throw new DomainException($"وضعیت تیکت '{value}' نامعتبر است.");
-    }
-
-    public static IEnumerable<TicketStatus> GetAll() => All.Values;
-
-    public static IEnumerable<TicketStatus> GetOpenStatuses() =>
-        All.Values.Where(s => !s.IsClosed);
-
-    public bool CanAddMessage() => !IsClosed;
-
-    public bool CanClose() => !IsClosed;
-
-    public bool CanReopen() => IsClosed;
-
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value.ToLowerInvariant();
     }
-
-    public override string ToString() => DisplayName;
-
-    public static implicit operator string(TicketStatus status) => status.Value;
-
-    public static bool operator >(TicketStatus left, TicketStatus right) => left.SortOrder > right.SortOrder;
-
-    public static bool operator <(TicketStatus left, TicketStatus right) => left.SortOrder < right.SortOrder;
-
-    public static bool operator >=(TicketStatus left, TicketStatus right) => left.SortOrder >= right.SortOrder;
-
-    public static bool operator <=(TicketStatus left, TicketStatus right) => left.SortOrder <= right.SortOrder;
 }

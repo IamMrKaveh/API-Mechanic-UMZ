@@ -32,36 +32,6 @@ public sealed class Inventory : AggregateRoot<InventoryId>
     public bool IsLowStock =>
         !IsUnlimited && AvailableQuantity > 0 && AvailableQuantity <= LowStockThreshold;
 
-    public static Inventory Create(
-        InventoryId id,
-        VariantId variantId,
-        int initialStock = 0,
-        int lowStockThreshold = 5)
-    {
-        var stock = StockQuantity.Create(initialStock);
-
-        if (lowStockThreshold < 0)
-            throw new ArgumentOutOfRangeException(nameof(lowStockThreshold));
-
-        var inventory = new Inventory
-        {
-            Id = id,
-            VariantId = variantId,
-            StockQuantity = stock,
-            IsUnlimited = false,
-            ReservedQuantity = StockQuantity.Create(0),
-            LowStockThreshold = lowStockThreshold,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        if (initialStock > 0)
-            inventory.RaiseDomainEvent(
-                new StockIncreasedEvent(id, variantId, initialStock, initialStock));
-
-        return inventory;
-    }
-
     public Result IncreaseStock(
         int quantity,
         string reason,
@@ -122,20 +92,6 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
         RaiseDomainEvent(new StockSetUnlimitedEvent(Id, VariantId));
-    }
-
-    public Result RemoveUnlimited(StockQuantity currentStock)
-    {
-        if (!IsUnlimited) return Result.Success();
-
-        if (currentStock < 0) return Result.Failure(new Error("Inventory.InvalidQuantity", "موجودی نمی‌تواند منفی باشد."));
-
-        IsUnlimited = false;
-        StockQuantity = currentStock;
-        UpdatedAt = DateTime.UtcNow;
-        IncrementVersion();
-
-        return Result.Success();
     }
 
     public Result ReserveStock(
@@ -349,17 +305,6 @@ public sealed class Inventory : AggregateRoot<InventoryId>
             $"انبارگردانی: اختلاف {difference} واحد", userId);
 
         _ledgerEntries.Add(entry);
-
-        return Result.Success();
-    }
-
-    public Result SetLowStockThreshold(int threshold)
-    {
-        if (threshold < 0) return Result.Failure(new Error("Inventory.InvalidThreshold", "آستانه کم‌موجودی نمی‌تواند منفی باشد."));
-
-        LowStockThreshold = threshold;
-        UpdatedAt = DateTime.UtcNow;
-        IncrementVersion();
 
         return Result.Success();
     }

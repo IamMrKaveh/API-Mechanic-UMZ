@@ -9,12 +9,6 @@ public interface IOrderStatusRepository
         OrderStatusId id,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<OrderStatus>> GetAllAsync(
-        CancellationToken ct = default);
-
-    Task<IReadOnlyList<OrderStatus>> GetActiveStatusesAsync(
-        CancellationToken ct = default);
-
     Task<bool> IsInUseAsync(
         OrderStatusId id,
         CancellationToken ct = default);

@@ -13,14 +13,6 @@ public interface INotificationRepository
         UserId userId,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<Aggregates.Notification>> GetByUserIdAsync(
-        UserId userId,
-        CancellationToken ct = default);
-
-    Task<IReadOnlyList<Aggregates.Notification>> GetReadNotificationsOlderThanAsync(
-        DateTime cutoff,
-        CancellationToken ct = default);
-
     Task AddAsync(
         Aggregates.Notification notification,
         CancellationToken ct = default);

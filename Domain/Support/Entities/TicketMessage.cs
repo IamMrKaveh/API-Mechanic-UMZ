@@ -37,19 +37,5 @@ public sealed class TicketMessage : Entity<TicketMessageId>
         };
     }
 
-    internal void EditContent(string newContent, DateTime now)
-    {
-        Content = newContent;
-        IsEdited = true;
-        EditedAt = now;
-    }
-
-    public bool IsFromCustomer() => SenderType == TicketMessageSenderType.Customer;
-
     public bool IsFromAgent() => SenderType == TicketMessageSenderType.Agent;
-
-    public bool IsFromSystem() => SenderType == TicketMessageSenderType.System;
-
-    public bool WasEditedAfter(TimeSpan threshold) =>
-        IsEdited && EditedAt.HasValue && EditedAt.Value - SentAt > threshold;
 }

@@ -92,7 +92,39 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Inventory\Enums\" />
+	  <Folder Include="Attribute\Services\" />
+	  <Folder Include="Attribute\Specifications\" />
+	  <Folder Include="Audit\Services\" />
+	  <Folder Include="Cart\Services\" />
+	  <Folder Include="Common\Services\" />
+	  <Folder Include="Discount\Rules\" />
+	  <Folder Include="Inventory\Exceptions\" />
+	  <Folder Include="Notification\Exceptions\" />
+	  <Folder Include="Notification\Services\" />
+	  <Folder Include="Order\Results\" />
+	  <Folder Include="Order\Rules\" />
+	  <Folder Include="Order\Services\" />
+	  <Folder Include="Product\Rules\" />
+	  <Folder Include="Product\Specifications\" />
+	  <Folder Include="Review\Exceptions\" />
+	  <Folder Include="Review\Specifications\" />
+	  <Folder Include="Security\Results\" />
+	  <Folder Include="Security\Rules\" />
+	  <Folder Include="Security\Services\" />
+	  <Folder Include="Security\Specifications\" />
+	  <Folder Include="Shipping\Enums\" />
+	  <Folder Include="Shipping\Rules\" />
+	  <Folder Include="Shipping\Specifications\" />
+	  <Folder Include="Support\Exceptions\" />
+	  <Folder Include="User\Services\" />
+	  <Folder Include="Variant\Rules\" />
+	  <Folder Include="Variant\Specifications\" />
+	  <Folder Include="Wallet\Projections\" />
+	  <Folder Include="Wallet\Results\" />
+	  <Folder Include="Wallet\Services\" />
+	  <Folder Include="Wishlist\Exceptions\" />
+	  <Folder Include="Wishlist\Services\" />
+	  <Folder Include="Wishlist\Specifications\" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -9,7 +9,6 @@ using Domain.Cart.Entities;
 using Domain.Cart.ValueObjects;
 using Domain.Category.ValueObjects;
 using Domain.Discount.Aggregates;
-using Domain.Discount.Entities;
 using Domain.Discount.ValueObjects;
 using Domain.Inventory.Aggregates;
 using Domain.Inventory.Entities;
@@ -80,8 +79,6 @@ public sealed class DBContext(
     public DbSet<CartItem> CartItems => Set<CartItem>();
     public DbSet<Domain.Category.Aggregates.Category> Categories => Set<Domain.Category.Aggregates.Category>();
     public DbSet<DiscountCode> DiscountCodes => Set<DiscountCode>();
-    public DbSet<DiscountRestriction> DiscountRestrictions => Set<DiscountRestriction>();
-    public DbSet<DiscountUsage> DiscountUsages => Set<DiscountUsage>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<Domain.Inventory.Aggregates.Inventory> Inventories => Set<Domain.Inventory.Aggregates.Inventory>();
     public DbSet<StockLedgerEntry> StockLedgerEntries => Set<StockLedgerEntry>();
@@ -89,7 +86,7 @@ public sealed class DBContext(
     public DbSet<Domain.Notification.Aggregates.Notification> Notifications => Set<Domain.Notification.Aggregates.Notification>();
     public DbSet<Domain.Order.Aggregates.Order> Orders => Set<Domain.Order.Aggregates.Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
-    public DbSet<Domain.Order.Entities.OrderStatus> OrderStatuses => Set<Domain.Order.Entities.OrderStatus>();
+    public DbSet<OrderStatus> OrderStatuses => Set<OrderStatus>();
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
     public DbSet<Domain.Product.Aggregates.Product> Products => Set<Domain.Product.Aggregates.Product>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();

@@ -17,16 +17,6 @@ public sealed class FreeShippingThreshold : ValueObject
 
     public static FreeShippingThreshold Disabled() => new(false, null);
 
-    public static FreeShippingThreshold Create(Money thresholdAmount)
-    {
-        Guard.Against.Null(thresholdAmount, nameof(thresholdAmount));
-
-        if (thresholdAmount.IsZero())
-            throw new DomainException("آستانه ارسال رایگان باید بزرگتر از صفر باشد.");
-
-        return new FreeShippingThreshold(true, thresholdAmount);
-    }
-
     public bool QualifiesForFreeShipping(Money orderTotal)
     {
         if (!IsEnabled || ThresholdAmount is null)

@@ -116,21 +116,9 @@ public sealed class Order : AggregateRoot<OrderId>
             idempotencyKey);
     }
 
-    public bool HasItems() => _orderItems.Any();
-
     public bool CanBeCancelled() => Status.CanBeCancelled();
 
     public bool CanBeModified() => Status.CanBeEdited();
-
-    public void MarkAsReserved()
-    {
-        TransitionTo(OrderStatusValue.Reserved);
-    }
-
-    public void MarkAsPending()
-    {
-        TransitionTo(OrderStatusValue.Pending);
-    }
 
     public void MarkAsPaid(PaymentTransactionId paymentTransactionId)
     {
@@ -147,11 +135,6 @@ public sealed class Order : AggregateRoot<OrderId>
             paymentTransactionId,
             FinalAmount.Amount,
             FinalAmount.Currency));
-    }
-
-    public void MarkAsFailed()
-    {
-        TransitionTo(OrderStatusValue.Failed);
     }
 
     public void StartProcessing()

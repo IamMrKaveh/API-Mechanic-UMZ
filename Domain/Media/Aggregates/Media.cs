@@ -133,23 +133,6 @@ public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable, ISoftDele
 
     public bool CanBeSetAsPrimary() => IsActive && !IsPrimary;
 
-    public string GetContentType() => Path.GetContentType();
-
-    public bool IsImage() => Path.IsImage();
-
-    public bool IsDocument() => Path.IsDocument();
-
-    public bool IsVideo() => Path.IsVideo();
-
-    public string GetDisplaySize() => Size.ToDisplayString();
-
-    public void UpdateAltText(string? altText)
-    {
-        ValidateAltText(altText);
-        AltText = altText?.Trim();
-        UpdatedAt = DateTime.UtcNow;
-    }
-
     private void EnsureActive()
     {
         if (!IsActive)

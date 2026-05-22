@@ -35,38 +35,6 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
 
     public bool IsAnswered => Status == TicketStatus.Answered;
 
-    public TicketMessage? LastMessage => _messages.OrderByDescending(m => m.SentAt).FirstOrDefault();
-
-    public static Ticket Create(
-    TicketId id,
-    UserId customerId,
-    string subject,
-    TicketCategory category,
-    TicketPriority? priority,
-    DateTime now)
-    {
-        Guard.Against.Null(id, nameof(id));
-        Guard.Against.Null(customerId, nameof(customerId));
-        Guard.Against.NullOrWhiteSpace(subject, nameof(subject));
-        Guard.Against.Null(category, nameof(category));
-
-        var ticket = new Ticket
-        {
-            Id = id,
-            CustomerId = customerId,
-            Subject = subject.Trim(),
-            Category = category,
-            Priority = priority ?? TicketPriority.Normal,
-            Status = TicketStatus.Open,
-            CreatedAt = now,
-            UpdatedAt = now,
-            LastActivityAt = now
-        };
-
-        ticket.RaiseDomainEvent(new TicketCreatedEvent(id, customerId, subject.Trim(), category.Value, priority ?? TicketPriority.Normal));
-        return ticket;
-    }
-
     public static Ticket Open(
         TicketId id,
         UserId customerId,
@@ -121,84 +89,6 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
         return message;
     }
 
-    public void EditMessage(TicketMessageId messageId, UserId editorId, string newContent, DateTime now)
-    {
-        if (IsClosed)
-            throw new DomainException("تیکت بسته شده است.");
-
-        var message = _messages.FirstOrDefault(m => m.Id == messageId)
-            ?? throw new DomainException("پیام یافت نشد.");
-
-        if (message.SenderId != editorId)
-            throw new DomainException("شما مجاز به ویرایش این پیام نیستید.");
-
-        Guard.Against.NullOrWhiteSpace(newContent, nameof(newContent));
-
-        message.EditContent(newContent.Trim(), now);
-        UpdatedAt = now;
-    }
-
-    public void AssignTo(UserId agentId)
-    {
-        if (IsClosed)
-            throw new DomainException("تیکت بسته شده است.");
-
-        Guard.Against.Null(agentId, nameof(agentId));
-
-        var previousAgent = AssignedAgentId;
-        AssignedAgentId = agentId;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new TicketAssignedEvent(Id, CustomerId, previousAgent, agentId));
-    }
-
-    public void Unassign()
-    {
-        if (AssignedAgentId is null) return;
-
-        AssignedAgentId = null;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void ChangePriority(TicketPriority newPriority)
-    {
-        Guard.Against.Null(newPriority, nameof(newPriority));
-
-        if (Priority == newPriority) return;
-
-        var previous = Priority;
-        Priority = newPriority;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new TicketPriorityChangedEvent(Id, CustomerId, previous, newPriority));
-    }
-
-    public void UpdateSubject(string newSubject)
-    {
-        if (IsClosed)
-            throw new DomainException("تیکت بسته شده است.");
-
-        Guard.Against.NullOrWhiteSpace(newSubject, nameof(newSubject));
-
-        Subject = newSubject.Trim();
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new TicketSubjectUpdatedEvent(Id, Subject));
-    }
-
-    public void Resolve()
-    {
-        if (IsClosed)
-            throw new DomainException("تیکت بسته شده است.");
-
-        var previous = Status;
-        Status = TicketStatus.Answered;
-        ResolvedAt = DateTime.UtcNow;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new TicketStatusChangedEvent(Id, CustomerId, previous, TicketStatus.Answered));
-    }
-
     public void Close()
     {
         if (Status == TicketStatus.Closed) return;
@@ -209,23 +99,6 @@ public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
 
         RaiseDomainEvent(new TicketClosedEvent(Id, CustomerId));
         RaiseDomainEvent(new TicketStatusChangedEvent(Id, CustomerId, previous, TicketStatus.Closed));
-    }
-
-    public void Reopen(TicketPriority? newPriority = null)
-    {
-        if (!IsClosed) return;
-
-        var previous = Status;
-        Status = TicketStatus.Open;
-        ResolvedAt = null;
-        UpdatedAt = DateTime.UtcNow;
-        LastActivityAt = DateTime.UtcNow;
-
-        if (newPriority is not null)
-            Priority = newPriority;
-
-        RaiseDomainEvent(new TicketReopenedEvent(Id, CustomerId));
-        RaiseDomainEvent(new TicketStatusChangedEvent(Id, CustomerId, previous, TicketStatus.Open));
     }
 
     private void UpdateStatusAfterMessage(TicketMessageSenderType senderType)

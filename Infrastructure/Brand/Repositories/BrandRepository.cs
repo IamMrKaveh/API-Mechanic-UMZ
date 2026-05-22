@@ -1,8 +1,6 @@
 ﻿using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Brand.Repositories;
 
@@ -13,13 +11,6 @@ public sealed class BrandRepository(DBContext context) : IBrandRepository
         CancellationToken ct = default)
     {
         return await context.Brands.FirstOrDefaultAsync(b => b.Id == brandId, ct);
-    }
-
-    public async Task<Domain.Brand.Aggregates.Brand?> GetBySlugAsync(
-        Slug slug,
-        CancellationToken ct = default)
-    {
-        return await context.Brands.FirstOrDefaultAsync(b => b.Slug == slug, ct);
     }
 
     public async Task<bool> ExistsByNameInCategoryAsync(

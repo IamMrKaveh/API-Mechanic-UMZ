@@ -2,15 +2,9 @@
 
 namespace Domain.Security.Exceptions;
 
-public sealed class InvalidOtpCodeException : DomainException
+public sealed class InvalidOtpCodeException(OtpId otpId) : DomainException($"کد OTP وارد شده برای '{otpId}' نامعتبر است.")
 {
-    public OtpId OtpId { get; }
+    public OtpId OtpId { get; } = otpId;
 
     public override string ErrorCode => "INVALID_OTP_CODE";
-
-    public InvalidOtpCodeException(OtpId otpId)
-        : base($"کد OTP وارد شده برای '{otpId}' نامعتبر است.")
-    {
-        OtpId = otpId;
-    }
 }

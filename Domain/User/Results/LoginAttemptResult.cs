@@ -43,14 +43,6 @@ public sealed class LoginAttemptResult
             Error = "حساب کاربری غیرفعال است."
         };
 
-    public static LoginAttemptResult AccountDeleted() =>
-        new()
-        {
-            IsSuccess = false,
-            IsAccountDeleted = true,
-            Error = "حساب کاربری یافت نشد."
-        };
-
     public static LoginAttemptResult InvalidCredentials(int remainingAttempts) =>
         new()
         {

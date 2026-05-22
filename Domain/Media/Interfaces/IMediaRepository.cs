@@ -10,8 +10,6 @@ public interface IMediaRepository
 
     void Update(Aggregates.Media media);
 
-    void Remove(Aggregates.Media media);
-
     Task<Aggregates.Media?> GetByIdAsync(
         MediaId id,
         CancellationToken ct = default);

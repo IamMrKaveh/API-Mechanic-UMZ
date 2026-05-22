@@ -1,6 +1,5 @@
 using Domain.Discount.Aggregates;
 using Domain.Discount.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Domain.Discount.Interfaces;
 
@@ -18,23 +17,9 @@ public interface IDiscountRepository
         DiscountCodeId id,
         CancellationToken ct = default);
 
-    Task<bool> ExistsByCodeAsync(
-        DiscountCode code,
-        DiscountCodeId? excludeId = null,
-        CancellationToken ct = default);
-
-    Task<int> CountUserUsageAsync(
-        DiscountCodeId discountId,
-        UserId userId,
-        CancellationToken ct = default);
-
     Task AddAsync(
         DiscountCode discount,
         CancellationToken ct = default);
 
     void Update(DiscountCode discount);
-
-    void SetOriginalRowVersion(
-        DiscountCode entity,
-        byte[] rowVersion);
 }
