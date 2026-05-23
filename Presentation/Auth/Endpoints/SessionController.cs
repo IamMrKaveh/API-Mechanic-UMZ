@@ -1,7 +1,7 @@
 using Application.Auth.Features.Commands.LogoutAll;
 using Application.Auth.Features.Commands.RevokeSession;
 using Application.Auth.Features.Queries.GetUserSessions;
-using Application.User.Features.Shared;
+using Application.Auth.Features.Shared;
 
 namespace Presentation.Auth.Endpoints;
 

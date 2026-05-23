@@ -9,7 +9,7 @@ using Presentation.Variant.Requests;
 namespace Presentation.Variant.Endpoints;
 
 [ApiController]
-[Route("api/v{version:apiVersion}/admin/products/{productId:guid}/variants")]
+[Route("api/v{version:apiVersion}/admin/products/variants")]
 [Authorize(Roles = "Admin")]
 public sealed class AdminVariantController(IMediator mediator) : BaseApiController(mediator)
 {

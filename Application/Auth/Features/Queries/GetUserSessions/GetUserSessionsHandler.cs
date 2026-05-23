@@ -1,4 +1,4 @@
-﻿using Application.User.Features.Shared;
+﻿using Application.Auth.Features.Shared;
 using Domain.User.ValueObjects;
 
 namespace Application.Auth.Features.Queries.GetUserSessions;

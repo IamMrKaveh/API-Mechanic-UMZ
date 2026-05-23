@@ -20,17 +20,13 @@ public class PaginatedResult<T>
 
     public PaginatedResult(IReadOnlyList<T> items, int totalCount, int page, int pageSize)
     {
-        if (items is null)
-            throw new ArgumentNullException(nameof(items));
+        ArgumentNullException.ThrowIfNull(items);
 
-        if (totalCount < 0)
-            throw new ArgumentOutOfRangeException(nameof(totalCount));
+        ArgumentOutOfRangeException.ThrowIfNegative(totalCount);
 
-        if (page <= 0)
-            throw new ArgumentOutOfRangeException(nameof(page));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(page);
 
-        if (pageSize <= 0)
-            throw new ArgumentOutOfRangeException(nameof(pageSize));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
 
         Items = items is List<T> list
             ? list.AsReadOnly()
@@ -43,25 +39,24 @@ public class PaginatedResult<T>
 
     public static PaginatedResult<T> Create(IEnumerable<T> items, int totalCount, int page, int pageSize)
     {
-        if (items is null)
-            throw new ArgumentNullException(nameof(items));
+        ArgumentNullException.ThrowIfNull(items);
 
-        if (totalCount < 0)
-            throw new ArgumentOutOfRangeException(nameof(totalCount));
+        ArgumentOutOfRangeException.ThrowIfNegative(totalCount);
 
-        if (page <= 0)
-            throw new ArgumentOutOfRangeException(nameof(page));
+        if (page > 0)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
 
-        if (pageSize <= 0)
-            throw new ArgumentOutOfRangeException(nameof(pageSize));
+            var list = items as List<T> ?? [.. items];
 
-        var list = items as List<T> ?? items.ToList();
+            return new PaginatedResult<T>(
+                list.AsReadOnly(),
+                totalCount,
+                page,
+                pageSize);
+        }
 
-        return new PaginatedResult<T>(
-            list.AsReadOnly(),
-            totalCount,
-            page,
-            pageSize);
+        throw new ArgumentOutOfRangeException(nameof(page));
     }
 
     public void Deconstruct(

@@ -1,3 +1,4 @@
+using Application.Auth.Features.Shared;
 using Application.Review.Features.Shared;
 using Application.User.Features.Shared;
 using Domain.User.ValueObjects;

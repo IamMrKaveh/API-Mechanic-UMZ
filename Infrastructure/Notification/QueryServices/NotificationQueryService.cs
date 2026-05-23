@@ -48,4 +48,33 @@ public sealed class NotificationQueryService(DBContext context) : INotificationQ
             .AsNoTracking()
             .CountAsync(n => n.UserId.Value == userId.Value && !n.IsRead, ct);
     }
+
+    public async Task<PaginatedResult<NotificationDto>> GetAllAsync(
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
+    {
+        var query = context.Notifications.AsNoTracking();
+
+        var totalItems = await query.CountAsync(ct);
+
+        var dtos = await query
+            .OrderByDescending(n => n.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(n => new NotificationDto
+            {
+                Id = n.Id.Value,
+                UserId = n.UserId.Value,
+                Title = EF.Property<string>(n, "Title"),
+                Message = EF.Property<string>(n, "Message"),
+                Type = EF.Property<string>(n, "Type"),
+                ActionUrl = EF.Property<string?>(n, "ActionUrl"),
+                IsRead = n.IsRead,
+                CreatedAt = n.CreatedAt
+            })
+            .ToListAsync(ct);
+
+        return PaginatedResult<NotificationDto>.Create(dtos, totalItems, page, pageSize);
+    }
 }
