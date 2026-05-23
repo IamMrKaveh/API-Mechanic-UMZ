@@ -9,8 +9,7 @@ public interface IUserRepository
         Aggregates.User user,
         CancellationToken ct = default);
 
-    void Update(
-        Aggregates.User user);
+    void Update(Aggregates.User user);
 
     Task<Aggregates.User?> GetByIdAsync(
         UserId id,
@@ -40,4 +39,6 @@ public interface IUserRepository
     Task<UserAddress?> GetUserAddressAsync(
         UserAddressId addressId,
         CancellationToken ct = default);
+
+    Task<IReadOnlyList<Guid>> GetAllActiveUserIdsAsync(CancellationToken ct = default);
 }

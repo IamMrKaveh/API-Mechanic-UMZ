@@ -14,4 +14,9 @@ public interface INotificationQueryService
     Task<int> GetUnreadCountAsync(
         UserId userId,
         CancellationToken ct = default);
+
+    Task<PaginatedResult<NotificationDto>> GetAllAsync(
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 }

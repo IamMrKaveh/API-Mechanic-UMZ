@@ -56,19 +56,6 @@ public record UserAddressDto
     public bool IsDefault { get; init; }
 }
 
-public record UserSessionDto
-{
-    public Guid Id { get; init; }
-    public string SessionType { get; init; } = string.Empty;
-    public string CreatedByIp { get; init; } = string.Empty;
-    public string? DeviceInfo { get; init; }
-    public string? BrowserInfo { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime? LastActivityAt { get; init; }
-    public DateTime ExpiresAt { get; init; }
-    public bool IsCurrent { get; init; }
-}
-
 public record UserDashboardDto
 {
     public UserProfileDto UserProfile { get; init; } = null!;

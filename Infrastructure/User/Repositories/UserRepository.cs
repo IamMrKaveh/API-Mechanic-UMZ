@@ -47,4 +47,11 @@ public sealed class UserRepository(DBContext context) : IUserRepository
 
     public void Update(Domain.User.Aggregates.User user)
         => context.Users.Update(user);
+
+    public async Task<IReadOnlyList<Guid>> GetAllActiveUserIdsAsync(CancellationToken ct = default)
+        => await context.Users
+            .AsNoTracking()
+            .Where(u => u.IsActive)
+            .Select(u => u.Id.Value)
+            .ToListAsync(ct);
 }

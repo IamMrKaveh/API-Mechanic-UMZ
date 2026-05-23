@@ -98,9 +98,9 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangeUserStatus(
-    Guid id,
-    [FromBody] ChangeUserStatusRequest request,
-    CancellationToken ct)
+        Guid id,
+        [FromBody] ChangeUserStatusRequest request,
+        CancellationToken ct)
     {
         var command = new ChangeUserStatusCommand(id, request.IsActive);
         var result = await Mediator.Send(command, ct);

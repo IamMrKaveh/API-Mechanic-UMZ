@@ -214,6 +214,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IBrandRepository, BrandRepository>();
         services.AddScoped<IInventoryRepository, InventoryRepository>();
+        services.AddScoped<IWarehouseRepository, WarehouseRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
         services.AddScoped<IOrderProcessStateRepository, OrderProcessStateRepository>();

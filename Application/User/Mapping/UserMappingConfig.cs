@@ -1,10 +1,10 @@
-﻿using Application.User.Features.Commands.CreateUserAddress;
+﻿using Application.Auth.Features.Shared;
+using Application.User.Features.Commands.CreateUserAddress;
 using Application.User.Features.Commands.UpdateProfile;
 using Application.User.Features.Commands.UpdateUserAddress;
 using Application.User.Features.Shared;
 using Domain.Security.Aggregates;
 using Domain.User.Entities;
-using Mapster;
 
 namespace Application.User.Mapping;
 
