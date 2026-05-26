@@ -3,6 +3,7 @@ using Application.Payment.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.Payment.Aggregates;
 using Domain.Payment.Interfaces;
+using Domain.User.ValueObjects;
 
 namespace Infrastructure.Payment.Services;
 
@@ -17,6 +18,7 @@ public sealed class PaymentService(
         OrderId orderId,
         Money amount,
         IpAddress ipAddress,
+        UserId userId,
         CancellationToken ct = default)
     {
         var existingPending = await paymentRepository.GetActiveByOrderIdAsync(orderId, ct);
@@ -45,7 +47,7 @@ public sealed class PaymentService(
 
         var transaction = PaymentTransaction.Initiate(
             orderId,
-            Domain.User.ValueObjects.UserId.NewId(),
+            userId,
             initiateResult.Value.Authority,
             amount.Amount,
             gateway.GatewayName,

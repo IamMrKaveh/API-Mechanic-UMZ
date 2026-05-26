@@ -9,5 +9,6 @@ public interface ICheckoutPaymentProcessorService
         string? paymentMethod,
         string ipAddress,
         string? userAgent,
+        Guid userId,
         CancellationToken ct);
 }

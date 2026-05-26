@@ -47,6 +47,5 @@ public sealed class UnitOfWork(DBContext context) : IUnitOfWork
     public void Dispose()
     {
         _currentTransaction?.Dispose();
-        context.Dispose();
     }
 }

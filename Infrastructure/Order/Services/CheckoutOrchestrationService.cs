@@ -75,6 +75,7 @@ public class CheckoutOrchestrationService(
             command.PaymentMethod,
             command.IpAddress,
             command.UserAgent,
+            command.UserId,
             ct);
     }
 }

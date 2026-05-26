@@ -2,6 +2,7 @@
 using Application.Order.Features.Shared;
 using Application.Payment.Contracts;
 using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Infrastructure.Order.Services;
 
@@ -13,6 +14,7 @@ public sealed class CheckoutPaymentProcessorService(IPaymentService paymentServi
         string? paymentMethod,
         string ipAddress,
         string? userAgent,
+        Guid userId,
         CancellationToken ct)
     {
         if (orderResult.FinalAmount <= 0)
@@ -22,6 +24,7 @@ public sealed class CheckoutPaymentProcessorService(IPaymentService paymentServi
             OrderId.From(orderResult.OrderId),
             Money.Create(orderResult.FinalAmount),
             IpAddress.Create(ipAddress),
+            UserId.From(userId),
             ct);
 
         if (!paymentResult.IsSuccess)

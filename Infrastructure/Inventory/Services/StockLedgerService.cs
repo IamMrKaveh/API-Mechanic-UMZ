@@ -1,20 +1,18 @@
 using Application.Inventory.Contracts;
+using Domain.Common.Interfaces;
 using Domain.Inventory.Entities;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
-using Infrastructure.Inventory.QueryServices;
-using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Inventory.Services;
 
 public sealed class StockLedgerService(
     DBContext context,
+    IUnitOfWork unitOfWork,
     IAuditService auditService) : IStockLedgerService
 {
     public async Task ReconcileAsync(VariantId variantId, UserId userId, CancellationToken ct = default)
     {
-        var queryService = new StockLedgerQueryService(context);
-
         var lastEntry = await context.StockLedgerEntries
             .Where(e => e.VariantId == variantId)
             .OrderByDescending(e => e.CreatedAt)
@@ -29,6 +27,6 @@ public sealed class StockLedgerService(
             variantId, 0, systemBalance, "[Reconcile] بررسی انبارگردانی", userId);
 
         await context.StockLedgerEntries.AddAsync(entry, ct);
-        await context.SaveChangesAsync(ct);
+        await unitOfWork.SaveChangesAsync(ct);
     }
 }

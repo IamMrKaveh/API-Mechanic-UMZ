@@ -13,11 +13,13 @@ public class InitiatePaymentHandler(
         InitiatePaymentCommand request, CancellationToken ct)
     {
         var orderId = OrderId.From(request.OrderId);
+        var userId = UserId.From(request.UserId);
+
         var order = await orderRepository.FindByIdAsync(orderId, ct);
         if (order is null)
             return ServiceResult<PaymentInitiationResult>.NotFound("سفارش یافت نشد.");
 
-        if (order.UserId != UserId.From(request.UserId))
+        if (order.UserId != userId)
             return ServiceResult<PaymentInitiationResult>.Forbidden("دسترسی ممنوع.");
 
         if (order.IsPaid)
@@ -27,6 +29,7 @@ public class InitiatePaymentHandler(
             orderId,
             order.FinalAmount,
             IpAddress.Create(request.IpAddress),
+            userId,
             ct);
     }
 }
