@@ -1,10 +1,12 @@
+using Application.Auth.Contracts;
 using Application.Common.Interfaces;
 using Application.Media.Features.Shared;
 using Infrastructure.DependencyInjection;
-using Infrastructure.Security.Settings;
 using Presentation.Common.Options;
 using Presentation.Common.Services;
 using Presentation.Common.Swagger;
+using Presentation.Security;
+using Presentation.Security.Services;
 using Presentation.Security.Settings;
 
 var logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "logs");
@@ -38,12 +40,35 @@ try
             reloadOnChange: true)
         .AddEnvironmentVariables();
 
-    ConfigureSerilog(builder);
-    ConfigureAuthentication(builder);
-    ConfigureServices(builder);
+    builder.Host.UseSerilog((context, services, configuration) =>
+        configuration
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .Enrich.WithMachineName()
+            .Enrich.WithEnvironmentName()
+            .Enrich.WithProcessId()
+            .Enrich.WithProcessName()
+            .Enrich.WithThreadId()
+            .Enrich.WithProperty("Application", "Presentation"));
 
+    builder.AddApplicationAuthentication();
+
+    var configuration = builder.Configuration;
+
+    ConfigureControllersAndApi(builder);
+    ConfigureOptions(builder, configuration);
+
+    builder.Services.Configure<LiaraStorageSettings>(configuration.GetSection("LiaraStorage"));
     builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
     builder.Services.AddScoped<OtpRateLimitFilter>();
+    builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+    builder.Services.AddApplicationServices();
+    builder.Services.AddInfrastructure(configuration);
+    builder.Services.AddCustomCors(configuration);
+
+    builder.Services.AddScoped<IMapper, ServiceMapper>();
 
     builder.ValidateRequiredConfiguration();
 
@@ -63,16 +88,11 @@ try
     });
 
     app.UseHttpsRedirection();
-
     app.UseCors();
-
     app.UseAuthentication();
     app.UseAuthorization();
-
     app.UseApplicationMiddleware();
-
     app.MapControllers();
-
     app.Run();
 }
 catch (Exception ex) when (ex is not HostAbortedException)
@@ -82,104 +102,6 @@ catch (Exception ex) when (ex is not HostAbortedException)
 finally
 {
     Log.CloseAndFlush();
-}
-
-static void ConfigureSerilog(WebApplicationBuilder builder)
-{
-    var logsDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
-    var logsErrorDir = Path.Combine(logsDir, "errors");
-
-    Directory.CreateDirectory(logsDir);
-    Directory.CreateDirectory(logsErrorDir);
-
-    builder.Host.UseSerilog((context, services, configuration) =>
-        configuration
-            .ReadFrom.Configuration(context.Configuration)
-            .ReadFrom.Services(services)
-            .Enrich.FromLogContext()
-            .Enrich.WithMachineName()
-            .Enrich.WithEnvironmentName()
-            .Enrich.WithProcessId()
-            .Enrich.WithProcessName()
-            .Enrich.WithThreadId()
-            .Enrich.WithProperty("Application", "Presentation"));
-}
-
-static void ConfigureAuthentication(WebApplicationBuilder builder)
-{
-    builder.Services.Configure<JwtSettings>(
-        builder.Configuration.GetSection(JwtSettings.SectionName));
-
-    builder.Services.Configure<GoogleAuthSettings>(
-        builder.Configuration.GetSection(GoogleAuthSettings.SectionName));
-
-    var jwtKey = builder.Configuration["Jwt:Key"] ?? string.Empty;
-    var issuer = builder.Configuration["Jwt:Issuer"];
-    var audience = builder.Configuration["Jwt:Audience"];
-
-    var googleClientId =
-        builder.Configuration["Authentication:Google:ClientId"] ?? string.Empty;
-
-    var googleClientSecret =
-        builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty;
-
-    var authBuilder = builder.Services
-        .AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme =
-                JwtBearerDefaults.AuthenticationScheme;
-
-            options.DefaultChallengeScheme =
-                JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.RequireHttpsMetadata = true;
-            options.SaveToken = true;
-
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = issuer,
-
-                ValidateAudience = true,
-                ValidAudience = audience,
-
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey =
-                    new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtKey)),
-
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.FromSeconds(30)
-            };
-        });
-
-    if (!string.IsNullOrWhiteSpace(googleClientId) &&
-        !string.IsNullOrWhiteSpace(googleClientSecret))
-    {
-        authBuilder.AddGoogle(options =>
-        {
-            options.ClientId = googleClientId;
-            options.ClientSecret = googleClientSecret;
-            options.SaveTokens = true;
-        });
-    }
-}
-
-static void ConfigureServices(WebApplicationBuilder builder)
-{
-    var configuration = builder.Configuration;
-
-    ConfigureControllersAndApi(builder);
-    ConfigureOptions(builder, configuration);
-
-    builder.Services.Configure<LiaraStorageSettings>(
-        configuration.GetSection("LiaraStorage"));
-
-    builder.Services.AddApplicationServices();
-    builder.Services.AddInfrastructure(configuration);
-    builder.Services.AddCustomCors(configuration);
 }
 
 static void ConfigureControllersAndApi(WebApplicationBuilder builder)
@@ -205,8 +127,6 @@ static void ConfigureControllersAndApi(WebApplicationBuilder builder)
 
     builder.Services.AddSwaggerGen(options =>
     {
-        options.EnableAnnotations();
-
         options.OperationFilter<RemoveVersionParameterOperationFilter>();
         options.OperationFilter<DefaultResponseOperationFilter>();
 
@@ -239,9 +159,7 @@ static void ConfigureControllersAndApi(WebApplicationBuilder builder)
     });
 
     builder.Services.AddApplicationPipelines();
-
     builder.Services.AddHttpContextAccessor();
-
     builder.Services.AddAntiforgery(options =>
     {
         options.HeaderName = "X-XSRF-TOKEN";

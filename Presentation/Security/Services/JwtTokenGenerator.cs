@@ -1,9 +1,11 @@
 ﻿using Application.Auth.Contracts;
 using Infrastructure.Security.Settings;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.JsonWebTokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography;
+using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
-namespace Infrastructure.Security.Services;
+namespace Presentation.Security.Services;
 
 public sealed class JwtTokenGenerator(IOptions<JwtSettings> jwtSettings) : IJwtTokenGenerator
 {
@@ -24,9 +26,9 @@ public sealed class JwtTokenGenerator(IOptions<JwtSettings> jwtSettings) : IJwtT
         return (accessToken, refreshToken);
     }
 
-    private List<System.Security.Claims.Claim> BuildClaims(Domain.User.Aggregates.User user)
+    private static List<Claim> BuildClaims(Domain.User.Aggregates.User user)
     {
-        var claims = new List<System.Security.Claims.Claim>
+        var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.Value.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
@@ -35,12 +37,12 @@ public sealed class JwtTokenGenerator(IOptions<JwtSettings> jwtSettings) : IJwtT
         };
 
         if (user.IsAdmin)
-            claims.Add(new System.Security.Claims.Claim(ClaimTypes.Role, "Admin"));
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
 
         return claims;
     }
 
-    private string CreateToken(IEnumerable<System.Security.Claims.Claim> claims, DateTime expires)
+    private string CreateToken(IEnumerable<Claim> claims, DateTime expires)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
