@@ -10,7 +10,6 @@ public static class MappingDependencyInjection
         config.Compile();
 
         services.AddSingleton(config);
-        services.AddScoped<IMapper, ServiceMapper>();
 
         return services;
     }

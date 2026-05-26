@@ -1,8 +1,3 @@
-using Application.Cache.Contracts;
-using Infrastructure.Cache.Options;
-using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
-using System.Text.Json;
 using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace Infrastructure.Cache.Redis.Services;
@@ -68,9 +63,14 @@ public sealed class RedisCacheService(
         try
         {
             var server = redis.GetServer(redis.GetEndPoints().First());
-            var keys = server.Keys(pattern: $"{_options.KeyPrefix}:{prefix}*").ToArray();
-            if (keys.Length > 0)
-                await _db.KeyDeleteAsync(keys);
+            var pattern = $"{_options.KeyPrefix}:{prefix}*";
+            var keys = new List<RedisKey>();
+
+            await foreach (var key in server.KeysAsync(pattern: pattern))
+                keys.Add(key);
+
+            if (keys.Count > 0)
+                await _db.KeyDeleteAsync([.. keys]);
         }
         catch (Exception ex)
         {

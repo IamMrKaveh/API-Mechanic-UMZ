@@ -423,24 +423,9 @@ public static class InfrastructureServiceExtensions
             return;
         }
 
-        var redisConnectionString = configuration.GetConnectionString("Redis")
-            ?? configuration["Cache:RedisConnectionString"]
-            ?? "localhost:6379,abortConnect=false";
-
-        var options = ConfigurationOptions.Parse(redisConnectionString);
-        options.AbortOnConnectFail = false;
-        options.ConnectRetry = 3;
-        options.ConnectTimeout = 5000;
-        options.SyncTimeout = 5000;
-        options.AsyncTimeout = 5000;
-        options.ReconnectRetryPolicy = new ExponentialRetry(5000);
-
-        var redis = ConnectionMultiplexer.Connect(options);
-        services.AddSingleton<IConnectionMultiplexer>(redis);
-
         services.AddDataProtection().Services.AddSingleton<IXmlRepository>(provider =>
             new ResilientRedisXmlRepository(
-                redis,
+                provider.GetRequiredService<IConnectionMultiplexer>(),
                 provider.GetRequiredService<ILogger<ResilientRedisXmlRepository>>(),
                 "DataProtection",
                 TimeSpan.FromDays(90)));
@@ -474,7 +459,5 @@ public static class InfrastructureServiceExtensions
             .BindConfiguration(JwtOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
-
-        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
     }
 }

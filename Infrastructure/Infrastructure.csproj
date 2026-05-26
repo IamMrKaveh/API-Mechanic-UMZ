@@ -66,6 +66,7 @@
 	  <Folder Include="Product\Services\" />
 	  <Folder Include="Search\BackgroundServices\" />
 	  <Folder Include="Security\Repositories\" />
+	  <Folder Include="Security\Settings\" />
 	  <Folder Include="Shipping\Services\" />
 	  <Folder Include="User\Services\" />
 	</ItemGroup>

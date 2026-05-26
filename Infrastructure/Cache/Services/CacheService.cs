@@ -36,9 +36,11 @@ public sealed class CacheService(IDistributedCache cache) : ICacheService
         await cache.RemoveAsync(key, ct);
     }
 
-    public async Task RemoveByPrefixAsync(string prefix, CancellationToken ct = default)
+    public Task RemoveByPrefixAsync(string prefix, CancellationToken ct = default)
     {
-        await cache.RemoveAsync(prefix, ct);
+        throw new NotSupportedException(
+            $"RemoveByPrefixAsync is not supported over IDistributedCache. " +
+            $"Ensure RedisCacheService is registered as ICacheService when Redis is active.");
     }
 
     public async Task<bool> ExistsAsync(string key, CancellationToken ct = default)
