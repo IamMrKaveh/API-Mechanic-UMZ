@@ -1,6 +1,5 @@
 ﻿using Application.Inventory.Features.Shared;
 using Domain.Inventory.Entities;
-using Mapster;
 
 namespace Application.Inventory.Mapping;
 

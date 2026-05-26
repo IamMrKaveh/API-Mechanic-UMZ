@@ -1,7 +1,6 @@
 ﻿using Application.Attribute.Features.Shared;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Entities;
-using Mapster;
 
 namespace Application.Attribute.Mapping;
 

@@ -1,5 +1,3 @@
-using Application.Shipping.Features.Queries.CalculateShippingCost;
-
 namespace Application.Shipping.Features.Queries.CalculateShippingCost;
 
 public class CalculateShippingCostValidator : AbstractValidator<CalculateShippingCostQuery>

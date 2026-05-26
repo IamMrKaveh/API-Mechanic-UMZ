@@ -1,7 +1,5 @@
 using Application.Analytics.Contracts;
 using Application.Analytics.Features.Shared;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Analytics.QueryServices;
 

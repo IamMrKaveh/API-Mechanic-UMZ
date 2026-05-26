@@ -4,6 +4,7 @@ public sealed class WalletReconciliationJob(
     IServiceScopeFactory scopeFactory) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(1);
+    private const int BatchSize = 200;
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -37,27 +38,48 @@ public sealed class WalletReconciliationJob(
         var context = scope.ServiceProvider.GetRequiredService<DBContext>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
-        var discrepancies = await context.Wallets
-            .AsNoTracking()
-            .Where(w => w.IsActive)
-            .Select(w => new
-            {
-                w.Id,
-                BalanceAmount = w.Balance.Amount,
-                LedgerSum = context.WalletLedgerEntries
-                    .Where(e => e.WalletId == w.Id)
-                    .Sum(e => (decimal?)e.Amount.Amount) ?? 0m
-            })
-            .Where(x => Math.Abs(x.BalanceAmount - x.LedgerSum) > 0.01m)
-            .ToListAsync(ct);
+        var offset = 0;
 
-        foreach (var item in discrepancies)
+        while (true)
         {
-            var diff = Math.Abs(item.BalanceAmount - item.LedgerSum);
-            await auditService.LogSystemEventAsync(
-                "WalletReconciliationDiscrepancy",
-                $"کیف پول {item.Id.Value}: مغایرت {diff} ریال یافت شد. موجودی: {item.BalanceAmount}، جمع دفتر: {item.LedgerSum}",
-                ct);
+            var walletBatch = await context.Wallets
+                .AsNoTracking()
+                .Where(w => w.IsActive)
+                .OrderBy(w => w.Id)
+                .Skip(offset)
+                .Take(BatchSize)
+                .Select(w => new { w.Id, BalanceAmount = w.Balance.Amount })
+                .ToListAsync(ct);
+
+            if (walletBatch.Count == 0)
+                break;
+
+            var batchIds = walletBatch.Select(w => w.Id).ToList();
+
+            var ledgerSums = await context.WalletLedgerEntries
+                .AsNoTracking()
+                .Where(e => batchIds.Contains(e.WalletId))
+                .GroupBy(e => e.WalletId)
+                .Select(g => new { WalletId = g.Key, Total = g.Sum(e => e.Amount.Amount) })
+                .ToListAsync(ct);
+
+            var ledgerLookup = ledgerSums.ToDictionary(l => l.WalletId, l => l.Total);
+
+            foreach (var wallet in walletBatch)
+            {
+                var ledgerSum = ledgerLookup.GetValueOrDefault(wallet.Id, 0m);
+                var diff = Math.Abs(wallet.BalanceAmount - ledgerSum);
+
+                if (diff > 0.01m)
+                {
+                    await auditService.LogSystemEventAsync(
+                        "WalletReconciliationDiscrepancy",
+                        $"کیف پول {wallet.Id.Value}: مغایرت {diff} ریال یافت شد. موجودی: {wallet.BalanceAmount}، جمع دفتر: {ledgerSum}",
+                        ct);
+                }
+            }
+
+            offset += BatchSize;
         }
     }
 }

@@ -1,8 +1,3 @@
-using Application.Audit.Contracts;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-
 namespace Infrastructure.Search.HealthChecks;
 
 public sealed class ElasticsearchDLQHealthCheck(

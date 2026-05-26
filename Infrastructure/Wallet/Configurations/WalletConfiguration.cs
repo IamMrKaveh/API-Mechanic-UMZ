@@ -1,6 +1,4 @@
-﻿using Domain.Wallet.Enums;
-
-namespace Infrastructure.Wallet.Configurations;
+﻿namespace Infrastructure.Wallet.Configurations;
 
 public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet.Aggregates.Wallet>
 {

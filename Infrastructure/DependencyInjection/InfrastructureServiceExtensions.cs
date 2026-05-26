@@ -106,7 +106,6 @@ using Infrastructure.Variant.QueryServices;
 using Infrastructure.Variant.Repositories;
 using Infrastructure.Wallet.QueryServices;
 using Infrastructure.Wallet.Repositories;
-using Infrastructure.Wallet.Services;
 using Infrastructure.Wishlist.QueryServices;
 using Infrastructure.Wishlist.Repositories;
 using DateTimeProvider = Infrastructure.Common.Services.DateTimeProvider;
@@ -264,7 +263,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IDiscountService, DiscountService>();
         services.AddScoped<IInventoryService, InventoryService>();
-        services.AddScoped<IWalletService, WalletService>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<ICheckoutOrchestrationService, CheckoutOrchestrationService>();

@@ -3,7 +3,6 @@ using Application.Variant.Features.Commands.UpdateProductVariantShipping;
 using Application.Variant.Features.Commands.UpdateVariant;
 using Application.Variant.Features.Shared;
 using Domain.Variant.Aggregates;
-using Mapster;
 
 namespace Application.Variant.Mapping;
 

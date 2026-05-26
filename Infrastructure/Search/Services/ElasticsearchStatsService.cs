@@ -1,8 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Application.Search.Contracts;
-using Elastic.Clients.Elasticsearch;
-
-namespace Infrastructure.Search.Services;
+﻿namespace Infrastructure.Search.Services;
 
 public sealed class ElasticsearchStatsService(
     ElasticsearchClient client,

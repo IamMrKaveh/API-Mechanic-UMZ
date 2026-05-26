@@ -1,5 +1,3 @@
-using Application.Audit.Contracts;
-using Application.Cache.Contracts;
 using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace Infrastructure.Cache.Redis.Lock;

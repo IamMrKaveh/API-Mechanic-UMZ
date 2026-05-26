@@ -1,6 +1,4 @@
-﻿using Application.Search.Contracts;
-
-namespace Infrastructure.Search.Services;
+﻿namespace Infrastructure.Search.Services;
 
 public class NoOpSearchStatsService : ISearchStatsService
 {

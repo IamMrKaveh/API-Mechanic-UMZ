@@ -15,10 +15,6 @@ public interface IOrderRepository
     Task<IReadOnlyList<Aggregates.Order>> FindPendingExpiredAsync(
         CancellationToken ct = default);
 
-    Task<Aggregates.Order?> FindWithItemsByIdAsync(
-        OrderId orderId,
-        CancellationToken ct = default);
-
     Task<Aggregates.Order?> FindByOrderItemIdAsync(
         OrderItemId orderItemId,
         CancellationToken ct = default);

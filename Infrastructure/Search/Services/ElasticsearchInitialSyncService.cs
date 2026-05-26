@@ -1,7 +1,4 @@
-using Application.Audit.Contracts;
-using Application.Search.Contracts;
 using Application.Search.Features.Shared;
-using Dapper;
 
 namespace Infrastructure.Search.Services;
 
@@ -23,7 +20,7 @@ public sealed class ElasticsearchInitialSyncService(
 
     private async Task SyncCategoriesAsync(CancellationToken ct)
     {
-        using var connection = sqlConnectionFactory.CreateConnection();
+        using var connection = await sqlConnectionFactory.CreateConnectionAsync();
 
         const string sql = @"
             SELECT
@@ -51,7 +48,7 @@ public sealed class ElasticsearchInitialSyncService(
 
     private async Task SyncBrandsAsync(CancellationToken ct)
     {
-        using var connection = sqlConnectionFactory.CreateConnection();
+        using var connection = await sqlConnectionFactory.CreateConnectionAsync();
 
         const string sql = @"
             SELECT
@@ -115,7 +112,7 @@ public sealed class ElasticsearchInitialSyncService(
 
         while (!ct.IsCancellationRequested)
         {
-            using var connection = sqlConnectionFactory.CreateConnection();
+            using var connection = await sqlConnectionFactory.CreateConnectionAsync();
 
             var documents = (await connection.QueryAsync<ProductSearchDocument>(
                 sql, new { Offset = offset, BatchSize = batchSize })).ToList();

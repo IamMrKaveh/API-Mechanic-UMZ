@@ -1,6 +1,4 @@
 using Application.Search.Features.Shared;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Search.Configurations;
 

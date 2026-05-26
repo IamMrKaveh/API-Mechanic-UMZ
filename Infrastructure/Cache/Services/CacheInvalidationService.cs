@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Cache.Features.Shared;
 using Domain.Brand.ValueObjects;
 using Domain.Cart.ValueObjects;

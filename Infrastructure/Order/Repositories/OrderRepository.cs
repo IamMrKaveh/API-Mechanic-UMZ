@@ -1,8 +1,6 @@
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 
-namespace Infrastructure.Order.Repositories;
-
 public sealed class OrderRepository(DBContext context) : IOrderRepository
 {
     public async Task<Domain.Order.Aggregates.Order?> FindByIdAsync(
@@ -29,20 +27,12 @@ public sealed class OrderRepository(DBContext context) : IOrderRepository
         var expirableStatuses = new[] { "Created", "Reserved", "Pending" };
 
         var results = await context.Orders
+            .AsNoTracking()
             .Where(o => expirableStatuses.Contains(o.Status.Value)
                         && o.CreatedAt < expiredBefore)
             .ToListAsync(ct);
 
         return results.AsReadOnly();
-    }
-
-    public async Task<Domain.Order.Aggregates.Order?> FindWithItemsByIdAsync(
-        OrderId orderId,
-        CancellationToken ct = default)
-    {
-        return await context.Orders
-            .Include(o => o.OrderItems)
-            .FirstOrDefaultAsync(o => o.Id == orderId, ct);
     }
 
     public async Task<Domain.Order.Aggregates.Order?> FindByOrderItemIdAsync(
@@ -51,8 +41,8 @@ public sealed class OrderRepository(DBContext context) : IOrderRepository
     {
         return await context.Orders
             .Include(o => o.OrderItems)
-            .FirstOrDefaultAsync(
-                o => o.OrderItems.Any(i => i.Id == orderItemId), ct);
+            .Where(o => o.OrderItems.Any(i => i.Id == orderItemId))
+            .FirstOrDefaultAsync(ct);
     }
 
     public void Add(Domain.Order.Aggregates.Order order)

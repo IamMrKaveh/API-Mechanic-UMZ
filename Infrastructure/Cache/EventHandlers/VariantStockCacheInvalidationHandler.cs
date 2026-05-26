@@ -1,6 +1,4 @@
-using Application.Cache.Contracts;
 using Application.Cache.Features.Shared;
-using Application.Audit.Contracts;
 using Application.Variant.Features.Shared;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;

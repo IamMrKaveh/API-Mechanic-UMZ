@@ -1,9 +1,5 @@
-using Application.Audit.Contracts;
-using Application.Search.Contracts;
 using Application.Search.Events;
 using Application.Search.Features.Shared;
-using Infrastructure.Persistence.Context;
-using System.Text.Json;
 
 namespace Infrastructure.Search.EventHandlers;
 

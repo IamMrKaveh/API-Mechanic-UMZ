@@ -1,7 +1,6 @@
 ﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Domain.Inventory.Interfaces;
 using Domain.Order.ValueObjects;
-using Domain.Variant.ValueObjects;
 
 namespace Infrastructure.Order.Services;
 

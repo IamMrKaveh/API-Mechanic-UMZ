@@ -1,8 +1,5 @@
-﻿using Application.Order.Contracts;
-using Application.Order.Features.Shared;
+﻿using Application.Order.Features.Shared;
 using Domain.Order.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Order.QueryServices;
 

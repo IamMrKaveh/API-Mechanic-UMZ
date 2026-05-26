@@ -5,7 +5,6 @@ using Application.Auth.Features.Commands.RefreshToken;
 using Application.Auth.Features.Commands.SendOtp;
 using Application.Auth.Features.Commands.VerifyOtp;
 using Application.Auth.Features.Shared;
-using Application.Brand.Features.Shared;
 using Presentation.Auth.Requests;
 
 namespace Presentation.Auth.Endpoints;

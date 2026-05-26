@@ -106,6 +106,7 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
         builder.HasIndex(e => e.IdempotencyKey).IsUnique();
         builder.HasIndex(e => e.OrderNumber).IsUnique();
         builder.HasIndex(e => e.UserId);
+        builder.HasIndex(e => new { e.Status, e.CreatedAt });
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

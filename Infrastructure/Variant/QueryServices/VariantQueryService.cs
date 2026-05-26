@@ -4,8 +4,6 @@ using Application.Variant.Contracts;
 using Application.Variant.Features.Shared;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Variant.QueryServices;
 

@@ -1,8 +1,5 @@
 using Domain.Brand.ValueObjects;
-using Domain.Product.Aggregates;
 using Domain.Product.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Product.Configurations;
 

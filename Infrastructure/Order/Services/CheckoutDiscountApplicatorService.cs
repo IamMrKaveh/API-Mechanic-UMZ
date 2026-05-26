@@ -1,5 +1,4 @@
 ﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
-using Domain.Common.Interfaces;
 using Domain.Discount.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;

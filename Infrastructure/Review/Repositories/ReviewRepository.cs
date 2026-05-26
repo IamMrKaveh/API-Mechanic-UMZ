@@ -4,8 +4,6 @@ using Domain.Review.Aggregates;
 using Domain.Review.Interfaces;
 using Domain.Review.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Review.Repositories;
 

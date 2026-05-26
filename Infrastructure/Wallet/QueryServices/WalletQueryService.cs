@@ -1,10 +1,7 @@
-﻿using Application.Wallet.Contracts;
-using Application.Wallet.Features.Shared;
+﻿using Application.Wallet.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Wallet.QueryServices;
 

@@ -1,5 +1,4 @@
 ﻿using Infrastructure.Persistence.Outbox;
-using Application.Audit.Contracts;
 using Quartz;
 
 namespace Infrastructure.BackgroundJobs;

@@ -1,9 +1,5 @@
 using Application.Audit.Contracts;
-using Application.Common.Interfaces;
-using Presentation.Base.Responses;
 using SharedKernel.Exceptions;
-using System.Net;
-using System.Text.Json;
 
 namespace Presentation.Common.Middleware;
 

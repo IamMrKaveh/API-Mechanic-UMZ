@@ -1,12 +1,8 @@
-using Application.Audit.Contracts;
 using Application.Review.Contracts;
 using Application.Review.Features.Shared;
 using Domain.Product.ValueObjects;
-using Domain.Review.Aggregates;
 using Domain.Review.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Review.QueryServices;
 

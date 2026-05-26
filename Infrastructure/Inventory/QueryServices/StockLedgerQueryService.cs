@@ -1,9 +1,5 @@
-using Application.Inventory.Contracts;
 using Application.Inventory.Features.Shared;
-using Domain.Inventory.Entities;
 using Domain.Variant.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Mapster;
 
 namespace Infrastructure.Inventory.QueryServices;
 

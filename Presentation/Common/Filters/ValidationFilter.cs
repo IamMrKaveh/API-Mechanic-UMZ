@@ -1,5 +1,3 @@
-using Presentation.Base.Responses;
-
 namespace Presentation.Common.Filters;
 
 public class ValidationFilter : IActionFilter

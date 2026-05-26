@@ -1,9 +1,6 @@
 using Application.Common.Interfaces;
 using Application.Common.Results;
-using Asp.Versioning;
-using MapsterMapper;
 using Presentation.Common.Interfaces;
-using SharedKernel.Models;
 
 namespace Presentation.Base.Endpoints.v1;
 

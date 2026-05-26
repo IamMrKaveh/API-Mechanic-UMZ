@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
 

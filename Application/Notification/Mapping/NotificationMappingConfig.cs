@@ -1,5 +1,4 @@
 ﻿using Application.Notification.Features.Shared;
-using Mapster;
 
 namespace Application.Notification.Mapping;
 

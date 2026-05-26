@@ -1,5 +1,3 @@
-using SharedKernel.ValueObjects;
-
 namespace Infrastructure.Common.Converters;
 
 public sealed class MoneyConverter : ValueConverter<Money, decimal>

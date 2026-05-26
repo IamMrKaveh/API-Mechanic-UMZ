@@ -1,9 +1,6 @@
 ﻿using Application.Discount.Contracts;
 using Application.Discount.Features.Shared;
-using Domain.Discount.Aggregates;
 using Domain.Discount.ValueObjects;
-using Domain.User.ValueObjects;
-using Mapster;
 using MapsterMapper;
 
 namespace Infrastructure.Discount.QueryServices;

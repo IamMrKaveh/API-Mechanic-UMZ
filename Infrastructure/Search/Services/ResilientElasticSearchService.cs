@@ -1,5 +1,3 @@
-using Application.Audit.Contracts;
-using Application.Search.Contracts;
 using Application.Search.Features.Queries.GetSearchIndexStats;
 using Application.Search.Features.Shared;
 

@@ -1,6 +1,5 @@
 ﻿using Application.Auth.Contracts;
 using Infrastructure.Security.Settings;
-using Microsoft.IdentityModel.JsonWebTokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;

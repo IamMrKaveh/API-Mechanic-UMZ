@@ -3,8 +3,6 @@ using Application.Support.Features.Shared;
 using Domain.Support.Enums;
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Support.QueryServices;
 

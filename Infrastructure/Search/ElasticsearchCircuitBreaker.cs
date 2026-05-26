@@ -1,5 +1,3 @@
-using Application.Audit.Contracts;
-
 namespace Infrastructure.Search;
 
 public sealed class ElasticsearchCircuitBreaker

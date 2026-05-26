@@ -15,7 +15,7 @@ public class ApproveReturnHandler(
         CancellationToken ct)
     {
         var orderId = OrderId.From(request.OrderId);
-        var order = await orderRepository.FindWithItemsByIdAsync(orderId, ct);
+        var order = await orderRepository.FindByIdAsync(orderId, ct);
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 

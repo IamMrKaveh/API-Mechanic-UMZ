@@ -1,6 +1,4 @@
 using Application.Common.Interfaces;
-using SharedKernel.Models;
-using System.Security.Claims;
 
 namespace Presentation.Common.Services;
 

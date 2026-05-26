@@ -1,5 +1,4 @@
 ﻿using Application.Product.Features.Shared;
-using Mapster;
 using DomainProduct = Domain.Product.Aggregates.Product;
 
 namespace Application.Product.Mapping;

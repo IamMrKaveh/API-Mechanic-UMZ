@@ -13,6 +13,10 @@ public interface IInventoryRepository
         VariantId variantId,
         CancellationToken ct = default);
 
+    Task<Aggregates.Inventory?> GetByVariantIdWithLedgerAsync(
+        VariantId variantId,
+        CancellationToken ct = default);
+
     Task<IReadOnlyList<Aggregates.Inventory>> GetByVariantIdsAsync(
         IEnumerable<VariantId> variantIds,
         CancellationToken ct = default);

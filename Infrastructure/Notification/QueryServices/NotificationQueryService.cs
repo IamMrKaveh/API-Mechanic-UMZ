@@ -1,8 +1,5 @@
-﻿using Application.Notification.Contracts;
-using Application.Notification.Features.Shared;
+﻿using Application.Notification.Features.Shared;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Notification.QueryServices;
 

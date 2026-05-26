@@ -1,8 +1,6 @@
 ﻿using Application.Shipping.Features.Commands.CreateShipping;
 using Application.Shipping.Features.Commands.UpdateShipping;
 using Application.Shipping.Features.Shared;
-using Domain.Shipping.Aggregates;
-using Mapster;
 
 namespace Application.Shipping.Mapping;
 

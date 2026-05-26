@@ -2,8 +2,6 @@ using Domain.Order.Entities;
 using Domain.Order.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Order.Configurations;
 

@@ -2,8 +2,6 @@
 using Application.Wishlist.Features.Shared;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Wishlist.QueryServices;
 

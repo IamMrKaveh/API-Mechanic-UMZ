@@ -8,10 +8,13 @@ public sealed class InventoryRepository(DBContext context) : IInventoryRepositor
 {
     public async Task<Domain.Inventory.Aggregates.Inventory?> GetByIdAsync(InventoryId id, CancellationToken ct = default)
         => await context.Inventories
-            .Include(i => i.LedgerEntries)
             .FirstOrDefaultAsync(i => i.Id == id, ct);
 
     public async Task<Domain.Inventory.Aggregates.Inventory?> GetByVariantIdAsync(VariantId variantId, CancellationToken ct = default)
+        => await context.Inventories
+            .FirstOrDefaultAsync(i => i.VariantId == variantId, ct);
+
+    public async Task<Domain.Inventory.Aggregates.Inventory?> GetByVariantIdWithLedgerAsync(VariantId variantId, CancellationToken ct = default)
         => await context.Inventories
             .Include(i => i.LedgerEntries)
             .FirstOrDefaultAsync(i => i.VariantId == variantId, ct);
@@ -21,7 +24,6 @@ public sealed class InventoryRepository(DBContext context) : IInventoryRepositor
     {
         var ids = variantIds.Select(v => v.Value).ToList();
         var results = await context.Inventories
-            .Include(i => i.LedgerEntries)
             .Where(i => ids.Contains(i.VariantId.Value))
             .ToListAsync(ct);
         return results.AsReadOnly();

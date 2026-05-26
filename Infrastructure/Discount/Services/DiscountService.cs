@@ -1,5 +1,4 @@
 using Application.Discount.Contracts;
-using Domain.Common.Interfaces;
 using Domain.Discount.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;

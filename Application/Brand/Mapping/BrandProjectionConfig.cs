@@ -1,5 +1,4 @@
 ﻿using Application.Brand.Features.Shared;
-using Mapster;
 
 namespace Application.Brand.Mapping;
 
