@@ -1,7 +1,4 @@
-using Domain.Media.Aggregates;
 using Domain.Media.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Media.Configurations;
 

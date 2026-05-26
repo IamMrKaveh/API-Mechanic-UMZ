@@ -1,8 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Elastic.Clients.Elasticsearch;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-
-namespace Infrastructure.Search.HealthChecks;
+﻿namespace Infrastructure.Search.HealthChecks;
 
 public sealed class ElasticsearchIndexHealthCheck(
     ElasticsearchClient client,

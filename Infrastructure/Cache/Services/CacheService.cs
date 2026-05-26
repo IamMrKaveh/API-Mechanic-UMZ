@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-using Application.Cache.Contracts;
-using Microsoft.Extensions.Caching.Distributed;
+﻿using Microsoft.Extensions.Caching.Distributed;
 
 namespace Infrastructure.Cache.Services;
 

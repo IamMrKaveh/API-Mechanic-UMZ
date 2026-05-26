@@ -1,6 +1,4 @@
-﻿using Infrastructure.Persistence.Outbox;
-
-namespace Infrastructure.Common.Outbox;
+﻿namespace Infrastructure.Common.Outbox;
 
 public class OutboxPublisherService(
     IServiceScopeFactory scopeFactory,

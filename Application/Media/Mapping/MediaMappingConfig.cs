@@ -1,5 +1,4 @@
 ﻿using Application.Media.Features.Shared;
-using Mapster;
 
 namespace Application.Media.Mapping;
 

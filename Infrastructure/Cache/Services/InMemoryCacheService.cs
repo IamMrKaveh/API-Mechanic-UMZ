@@ -1,7 +1,3 @@
-using Application.Cache.Contracts;
-using Microsoft.Extensions.Caching.Memory;
-using System.Collections.Concurrent;
-
 namespace Infrastructure.Cache.Services;
 
 public sealed class InMemoryCacheService(IMemoryCache cache) : ICacheService

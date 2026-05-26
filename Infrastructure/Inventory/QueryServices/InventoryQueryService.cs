@@ -59,12 +59,6 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
         return items.Adapt<List<InventoryDto>>().AsReadOnly();
     }
 
-    public async Task<InventoryDto?> GetVariantAvailabilityAsync(VariantId variantId, CancellationToken ct = default)
-        => await GetByVariantIdAsync(variantId, ct);
-
-    public async Task<InventoryDto?> GetVariantStatusAsync(VariantId variantId, CancellationToken ct = default)
-        => await GetByVariantIdAsync(variantId, ct);
-
     public async Task<IReadOnlyList<VariantAvailabilityDto>> GetBatchAvailabilityAsync(
         ICollection<VariantId> variantIds, CancellationToken ct = default)
     {

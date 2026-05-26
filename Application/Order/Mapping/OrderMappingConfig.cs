@@ -2,7 +2,6 @@
 using Application.Order.Features.Commands.CheckoutFromCart;
 using Application.Order.Features.Shared;
 using Domain.Order.Entities;
-using Mapster;
 
 namespace Application.Order.Mapping;
 

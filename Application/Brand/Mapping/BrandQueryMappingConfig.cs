@@ -1,7 +1,6 @@
 ﻿using Application.Brand.Features.Shared;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
-using Mapster;
 
 namespace Application.Brand.Mapping;
 

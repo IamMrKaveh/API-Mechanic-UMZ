@@ -6,10 +6,10 @@ public sealed class SqlConnectionFactory(IConfiguration configuration) : ISqlCon
         configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-    public IDbConnection CreateConnection()
+    public async Task<IDbConnection> CreateConnectionAsync()
     {
         var connection = new NpgsqlConnection(_connectionString);
-        connection.Open();
+        await connection.OpenAsync();
         return connection;
     }
 }

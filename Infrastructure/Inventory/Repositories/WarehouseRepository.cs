@@ -1,8 +1,6 @@
 ﻿using Domain.Inventory.Aggregates;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Inventory.Repositories;
 

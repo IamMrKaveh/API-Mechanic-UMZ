@@ -1,6 +1,4 @@
-﻿using Mapster;
-
-namespace Application.Auth.Mapping;
+﻿namespace Application.Auth.Mapping;
 
 public sealed class AuthMappingConfig : IRegister
 {

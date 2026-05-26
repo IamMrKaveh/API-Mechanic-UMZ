@@ -3,8 +3,6 @@ using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Auth.Repositories;
 

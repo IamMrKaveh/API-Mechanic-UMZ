@@ -1,9 +1,5 @@
-using Application.Audit.Contracts;
-using Application.Search.Contracts;
 using Application.Search.Features.Shared;
 using Domain.Product.ValueObjects;
-using Elastic.Clients.Elasticsearch;
-using System.Text.Json;
 
 namespace Infrastructure.Search.Services;
 

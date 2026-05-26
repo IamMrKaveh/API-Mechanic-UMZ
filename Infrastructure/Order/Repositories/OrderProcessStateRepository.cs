@@ -1,7 +1,4 @@
-﻿using Application.Order.Contracts;
-using Domain.Order.Enums;
-using Domain.Order.ValueObjects;
-using Infrastructure.Persistence.Context;
+﻿using Domain.Order.ValueObjects;
 
 namespace Infrastructure.Order.Repositories;
 

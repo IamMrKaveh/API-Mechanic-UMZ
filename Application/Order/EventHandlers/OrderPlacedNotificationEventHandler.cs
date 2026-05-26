@@ -1,4 +1,3 @@
-using Application.Common.Events;
 using Domain.Order.Events;
 
 namespace Application.Order.EventHandlers;

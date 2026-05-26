@@ -1,7 +1,4 @@
-﻿using Amazon.S3;
-using Amazon.S3.Transfer;
-using Application.Audit.Contracts;
-using Application.Media.Contracts;
+﻿using Amazon.S3.Transfer;
 using Infrastructure.Storage.Options;
 
 namespace Infrastructure.Storage.Services;

@@ -1,8 +1,4 @@
-using Application.Audit.Contracts;
-using Application.Common.Contracts;
-using Application.Search.Contracts;
 using Application.Search.Features.Shared;
-using Dapper;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Domain.Product.ValueObjects;
@@ -23,7 +19,7 @@ public sealed class ElasticsearchDatabaseSyncService(
 
     public async Task SyncProductAsync(ProductId productId, CancellationToken ct = default)
     {
-        using var connection = sqlConnectionFactory.CreateConnection();
+        using var connection = await sqlConnectionFactory.CreateConnectionAsync();
 
         const string sql = @"
             SELECT
@@ -65,7 +61,7 @@ public sealed class ElasticsearchDatabaseSyncService(
 
     public async Task SyncCategoryAsync(CategoryId categoryId, CancellationToken ct = default)
     {
-        using var connection = sqlConnectionFactory.CreateConnection();
+        using var connection = await sqlConnectionFactory.CreateConnectionAsync();
 
         const string sql = @"
             SELECT Id AS CategoryId, Name, Slug, IsActive
@@ -82,7 +78,7 @@ public sealed class ElasticsearchDatabaseSyncService(
 
     public async Task SyncBrandAsync(BrandId brandId, CancellationToken ct = default)
     {
-        using var connection = sqlConnectionFactory.CreateConnection();
+        using var connection = await sqlConnectionFactory.CreateConnectionAsync();
 
         const string sql = @"
             SELECT b.Id AS BrandId, b.Name, b.Slug, b.IsActive,
@@ -123,7 +119,7 @@ public sealed class ElasticsearchDatabaseSyncService(
 
         while (true)
         {
-            using var connection = sqlConnectionFactory.CreateConnection();
+            using var connection = await sqlConnectionFactory.CreateConnectionAsync();
             var batch = (await connection.QueryAsync<ProductSearchDocument>(
                 sql, new { BatchSize = batchSize, Offset = offset })).ToList();
 
@@ -139,7 +135,7 @@ public sealed class ElasticsearchDatabaseSyncService(
 
     public async Task SyncAllCategoriesAsync(CancellationToken ct = default)
     {
-        using var connection = sqlConnectionFactory.CreateConnection();
+        using var connection = await sqlConnectionFactory.CreateConnectionAsync();
 
         const string sql = "SELECT Id AS CategoryId, Name, Slug, IsActive FROM Categories";
 
@@ -149,7 +145,7 @@ public sealed class ElasticsearchDatabaseSyncService(
 
     public async Task SyncAllBrandsAsync(CancellationToken ct = default)
     {
-        using var connection = sqlConnectionFactory.CreateConnection();
+        using var connection = await sqlConnectionFactory.CreateConnectionAsync();
 
         const string sql = @"
             SELECT b.Id AS BrandId, b.Name, b.Slug, b.IsActive,

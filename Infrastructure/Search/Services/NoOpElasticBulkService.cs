@@ -1,5 +1,4 @@
-﻿using Application.Search.Contracts;
-using Application.Search.Features.Shared;
+﻿using Application.Search.Features.Shared;
 using Domain.Product.ValueObjects;
 
 namespace Infrastructure.Search.Services;

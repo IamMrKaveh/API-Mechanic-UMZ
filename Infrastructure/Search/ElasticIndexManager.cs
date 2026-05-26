@@ -1,7 +1,4 @@
-using Application.Audit.Contracts;
-using Application.Search.Contracts;
 using Application.Search.Features.Shared;
-using Elastic.Clients.Elasticsearch;
 
 namespace Infrastructure.Search;
 

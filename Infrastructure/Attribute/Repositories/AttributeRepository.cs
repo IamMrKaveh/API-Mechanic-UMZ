@@ -3,8 +3,6 @@ using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Attribute.Repositories;
 

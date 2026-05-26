@@ -1,4 +1,3 @@
-using Application.Common.Events;
 using Domain.Inventory.Events;
 using Domain.Variant.ValueObjects;
 

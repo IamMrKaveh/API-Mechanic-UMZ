@@ -1,8 +1,5 @@
-using Domain.Notification.Aggregates;
 using Domain.Notification.ValueObjects;
 using Domain.User.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Notification.Configurations;
 

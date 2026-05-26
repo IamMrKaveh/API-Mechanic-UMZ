@@ -1,8 +1,4 @@
-using Application.Audit.Contracts;
-using Elastic.Clients.Elasticsearch;
 using Infrastructure.Search.Options;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Search.HealthChecks;
 

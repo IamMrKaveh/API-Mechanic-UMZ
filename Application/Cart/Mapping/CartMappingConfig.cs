@@ -2,7 +2,6 @@
 using Application.Cart.Features.Commands.UpdateCartItem;
 using Application.Cart.Features.Shared;
 using Domain.Cart.Entities;
-using Mapster;
 
 namespace Application.Cart.Mapping;
 

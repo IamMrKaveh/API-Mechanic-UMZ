@@ -1,4 +1,3 @@
-using Application.Common.Events;
 using Domain.Common.Abstractions;
 
 namespace Infrastructure.Persistence;

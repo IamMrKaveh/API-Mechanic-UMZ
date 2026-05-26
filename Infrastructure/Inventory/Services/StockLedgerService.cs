@@ -1,5 +1,3 @@
-using Application.Inventory.Contracts;
-using Domain.Common.Interfaces;
 using Domain.Inventory.Entities;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;

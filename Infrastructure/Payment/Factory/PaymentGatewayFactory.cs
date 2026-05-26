@@ -1,5 +1,4 @@
 using Application.Payment.Contracts;
-using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Payment.Factory;
 

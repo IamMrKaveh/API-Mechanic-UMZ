@@ -1,9 +1,5 @@
-﻿using Application.Audit.Contracts;
-using Application.Audit.Features.Shared;
+﻿using Application.Audit.Features.Shared;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
-using System.Text;
 
 namespace Infrastructure.Audit.QueryServices;
 

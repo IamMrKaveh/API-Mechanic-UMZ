@@ -1,7 +1,4 @@
-﻿using Application.Cache.Contracts;
-using Application.Audit.Contracts;
-
-namespace Infrastructure.Cache.Services;
+﻿namespace Infrastructure.Cache.Services;
 
 public sealed class NoOpCacheService(IAuditService auditService) : ICacheService
 {

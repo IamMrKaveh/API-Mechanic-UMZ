@@ -1,5 +1,4 @@
-﻿using Application.Common.Events;
-using Application.Wallet.Features.Commands.CreditWallet;
+﻿using Application.Wallet.Features.Commands.CreditWallet;
 using Domain.Payment.Events;
 using Domain.Wallet.Enums;
 

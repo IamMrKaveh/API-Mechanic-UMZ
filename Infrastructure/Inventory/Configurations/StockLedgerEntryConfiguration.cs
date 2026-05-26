@@ -1,6 +1,4 @@
 using Domain.Inventory.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Inventory.Configurations;
 
@@ -17,6 +15,8 @@ public sealed class StockLedgerEntryConfiguration : IEntityTypeConfiguration<Sto
         builder.Property(e => e.UnitCost).HasColumnType("decimal(18,4)");
 
         builder.HasIndex(e => e.IdempotencyKey).IsUnique();
+        builder.HasIndex(e => e.VariantId);
+        builder.HasIndex(e => new { e.VariantId, e.CreatedAt }).IsDescending(false, true);
 
         builder.HasOne(e => e.ProductVariant)
             .WithMany()

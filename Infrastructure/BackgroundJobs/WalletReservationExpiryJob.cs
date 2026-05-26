@@ -1,11 +1,4 @@
-﻿using Application.Audit.Contracts;
-using Application.Wallet.Features.Commands.ReleaseWalletReservation;
-using Domain.Wallet.Enums;
-using Infrastructure.Persistence.Context;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Application.Wallet.Features.Commands.ReleaseWalletReservation;
 
 namespace Infrastructure.BackgroundJobs;
 

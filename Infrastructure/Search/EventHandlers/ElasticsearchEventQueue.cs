@@ -1,7 +1,3 @@
-using Application.Audit.Contracts;
-using Application.Search.Contracts;
-using System.Collections.Concurrent;
-
 namespace Infrastructure.Search.EventHandlers;
 
 public sealed class ElasticsearchEventQueue(

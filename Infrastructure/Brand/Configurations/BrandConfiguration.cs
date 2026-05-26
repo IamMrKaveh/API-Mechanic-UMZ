@@ -1,7 +1,5 @@
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Brand.Configurations;
 

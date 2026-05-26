@@ -1,5 +1,4 @@
 ﻿using Application.Security.Contracts;
-using Presentation.Common.Extensions;
 
 namespace Presentation.Common.Filters;
 

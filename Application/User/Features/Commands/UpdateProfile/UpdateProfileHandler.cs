@@ -1,7 +1,6 @@
 using Application.User.Features.Shared;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
-using Mapster;
 
 namespace Application.User.Features.Commands.UpdateProfile;
 

@@ -1,14 +1,20 @@
 using Application.Search.Features.Shared;
-using Infrastructure.Search.Services;
+using Infrastructure.Search.Options;
 
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class DeadLetterQueueJob(
     IServiceProvider serviceProvider,
-    IAuditService auditService) : BackgroundService
+    IAuditService auditService,
+    IOptions<ElasticsearchOptions> elasticsearchOptions) : BackgroundService
 {
+    private readonly ElasticsearchOptions _elasticsearchOptions = elasticsearchOptions.Value;
+
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
+        if (!_elasticsearchOptions.IsEnabled)
+            return;
+
         await auditService.LogInformationAsync("Dead Letter Queue Processor is starting", ct);
         await Task.Delay(TimeSpan.FromMinutes(1), ct);
 
@@ -32,7 +38,7 @@ public sealed class DeadLetterQueueJob(
     {
         using var scope = serviceProvider.CreateScope();
         var dlq = scope.ServiceProvider.GetRequiredService<IElasticDeadLetterQueue>();
-        var searchService = scope.ServiceProvider.GetRequiredService<ElasticsearchService>();
+        var searchService = scope.ServiceProvider.GetRequiredService<ISearchService>();
         var context = scope.ServiceProvider.GetRequiredService<DBContext>();
 
         var operations = await dlq.DequeueAsync(10, ct);
@@ -112,7 +118,9 @@ public sealed class DeadLetterQueueJob(
 
     public override async Task StopAsync(CancellationToken ct)
     {
-        await auditService.LogInformationAsync("Dead Letter Queue Processor is stopping", ct);
+        if (_elasticsearchOptions.IsEnabled)
+            await auditService.LogInformationAsync("Dead Letter Queue Processor is stopping", ct);
+
         await base.StopAsync(ct);
     }
 }

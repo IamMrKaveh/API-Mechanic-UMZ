@@ -1,7 +1,5 @@
-using Application.Common.Events;
 using Domain.Inventory.Events;
 using Domain.Variant.ValueObjects;
-using Infrastructure.Persistence.Context;
 
 namespace Infrastructure.Search.EventHandlers;
 

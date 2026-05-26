@@ -25,14 +25,6 @@ public interface IInventoryQueryService
         IEnumerable<VariantId> variantIds,
         CancellationToken ct = default);
 
-    Task<InventoryDto?> GetVariantAvailabilityAsync(
-        VariantId variantId,
-        CancellationToken ct = default);
-
-    Task<InventoryDto?> GetVariantStatusAsync(
-        VariantId variantId,
-        CancellationToken ct = default);
-
     Task<IReadOnlyList<VariantAvailabilityDto>> GetBatchAvailabilityAsync(
         ICollection<VariantId> variantIds,
         CancellationToken ct = default);

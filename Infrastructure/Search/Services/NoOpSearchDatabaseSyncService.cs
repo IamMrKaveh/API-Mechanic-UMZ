@@ -1,5 +1,4 @@
-﻿using Application.Search.Contracts;
-using Domain.Brand.ValueObjects;
+﻿using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Domain.Product.ValueObjects;
 

@@ -1,6 +1,4 @@
-using Elastic.Clients.Elasticsearch;
 using Infrastructure.Search.Options;
-using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Search;
 

@@ -1,6 +1,4 @@
-using Application.Communication.Contracts;
 using Infrastructure.Communication.Options;
-using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Communication.Services;
 

@@ -10,7 +10,7 @@ public class GetInventoryHandler(IInventoryQueryService inventoryQueryService) :
         CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var inventory = await inventoryQueryService.GetVariantAvailabilityAsync(variantId, ct);
+        var inventory = await inventoryQueryService.GetByVariantIdAsync(variantId, ct);
         return inventory is null
             ? ServiceResult<InventoryDto>.NotFound("موجودی یافت نشد.")
             : ServiceResult<InventoryDto>.Success(new InventoryDto

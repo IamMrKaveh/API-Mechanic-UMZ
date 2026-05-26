@@ -1,6 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
 namespace Infrastructure.Search.Configurations;
 
 public sealed class ElasticsearchOutboxMessageConfiguration : IEntityTypeConfiguration<ElasticsearchOutboxMessage>

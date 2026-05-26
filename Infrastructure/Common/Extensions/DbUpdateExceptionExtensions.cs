@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace Infrastructure.Common.Extensions;
+﻿namespace Infrastructure.Common.Extensions;
 
 public static class DbUpdateExceptionExtensions
 {

@@ -1,6 +1,4 @@
-﻿using Application.Common.Interfaces;
-
-namespace Application.Common.Behaviors;
+﻿namespace Application.Common.Behaviors;
 
 public interface IIdempotentCommand
 {

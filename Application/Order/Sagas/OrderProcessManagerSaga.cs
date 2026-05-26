@@ -31,7 +31,7 @@ public sealed class OrderProcessManagerSaga(
         processState.TransitionTo(ProcessStepEnum.InventoryReserving);
         await unitOfWork.SaveChangesAsync(ct);
 
-        var order = await orderRepository.FindWithItemsByIdAsync(domainEvent.OrderId, ct);
+        var order = await orderRepository.FindByIdAsync(domainEvent.OrderId, ct);
         if (order is null)
         {
             processState.MarkFailed("Order not found after creation.");
@@ -74,7 +74,7 @@ public sealed class OrderProcessManagerSaga(
             await processStateRepository.AddAsync(processState, ct);
         }
 
-        var order = await orderRepository.FindWithItemsByIdAsync(domainEvent.OrderId, ct);
+        var order = await orderRepository.FindByIdAsync(domainEvent.OrderId, ct);
         if (order is null)
         {
             processState.MarkFailed("Order not found after payment success.");
@@ -167,7 +167,7 @@ public sealed class OrderProcessManagerSaga(
         OrderProcessState? processState,
         CancellationToken ct)
     {
-        var order = await orderRepository.FindWithItemsByIdAsync(orderId, ct);
+        var order = await orderRepository.FindByIdAsync(orderId, ct);
 
         if (order is null)
         {

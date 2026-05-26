@@ -1,9 +1,7 @@
 ﻿using Application.Attribute.Contracts;
 using Application.Attribute.Features.Shared;
 using Domain.Attribute.ValueObjects;
-using Infrastructure.Persistence.Context;
 using MapsterMapper;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Attribute.QueryServices;
 

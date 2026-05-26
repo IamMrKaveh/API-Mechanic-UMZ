@@ -1,4 +1,3 @@
-using Application.Common.Events;
 using Domain.Support.Events;
 using Domain.Support.Interfaces;
 using Domain.Support.ValueObjects;

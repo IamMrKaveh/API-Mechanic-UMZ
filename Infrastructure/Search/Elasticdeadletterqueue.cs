@@ -1,8 +1,4 @@
-using Application.Audit.Contracts;
-using Application.Search.Contracts;
 using Application.Search.Features.Shared;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Search;
 

@@ -3,7 +3,6 @@ using Application.Discount.Features.Commands.UpdateDiscount;
 using Application.Discount.Features.Shared;
 using Domain.Discount.Aggregates;
 using Domain.Discount.Entities;
-using Mapster;
 
 namespace Application.Discount.Mapping;
 

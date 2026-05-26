@@ -1,7 +1,5 @@
 using Domain.Order.Entities;
 using Domain.Order.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Order.Configurations;
 

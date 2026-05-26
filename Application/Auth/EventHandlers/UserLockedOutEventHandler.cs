@@ -1,4 +1,3 @@
-using Application.Common.Events;
 using Domain.Security.Events;
 
 namespace Application.Auth.EventHandlers;

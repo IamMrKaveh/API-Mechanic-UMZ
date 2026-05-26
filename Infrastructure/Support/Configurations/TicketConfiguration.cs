@@ -1,4 +1,3 @@
-using Domain.Support.Entities;
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
 

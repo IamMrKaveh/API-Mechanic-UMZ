@@ -1,6 +1,4 @@
-﻿using Mapster;
-
-namespace Application.Wishlist.Mapping;
+﻿namespace Application.Wishlist.Mapping;
 
 public sealed class WishlistMappingConfig : IRegister
 {

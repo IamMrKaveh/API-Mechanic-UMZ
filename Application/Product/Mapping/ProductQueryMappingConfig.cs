@@ -1,6 +1,5 @@
 ﻿using Application.Product.Features.Queries.GetProductCatalog;
 using Application.Product.Features.Shared;
-using Mapster;
 
 namespace Application.Product.Mapping;
 
