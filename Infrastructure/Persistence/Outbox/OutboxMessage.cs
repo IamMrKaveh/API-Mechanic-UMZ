@@ -2,13 +2,13 @@
 
 public sealed class OutboxMessage
 {
-    public OutboxMessageId Id { get; set; } = OutboxMessageId.NewId();
-    public string Type { get; set; } = string.Empty;
-    public string Payload { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-    public DateTime? ProcessedAt { get; set; }
-    public string? Error { get; set; }
-    public int RetryCount { get; set; }
+    public OutboxMessageId Id { get; private set; } = OutboxMessageId.NewId();
+    public string Type { get; private set; } = string.Empty;
+    public string Payload { get; private set; } = string.Empty;
+    public DateTime CreatedAt { get; private set; }
+    public DateTime? ProcessedAt { get; private set; }
+    public string? Error { get; private set; }
+    public int RetryCount { get; private set; }
 
     private OutboxMessage()
     { }

@@ -2,8 +2,6 @@ using Application.Common.Interfaces;
 using Application.Media.Features.Shared;
 using Infrastructure.DependencyInjection;
 using Infrastructure.Security.Settings;
-using Presentation.Common.Extensions;
-using Presentation.Common.Filters;
 using Presentation.Common.Options;
 using Presentation.Common.Services;
 using Presentation.Common.Swagger;

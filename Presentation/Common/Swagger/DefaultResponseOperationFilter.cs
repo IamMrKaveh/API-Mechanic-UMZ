@@ -1,6 +1,4 @@
-﻿using Presentation.Base.Responses;
-
-namespace Presentation.Common.Swagger;
+﻿namespace Presentation.Common.Swagger;
 
 public sealed class DefaultResponseOperationFilter : IOperationFilter
 {

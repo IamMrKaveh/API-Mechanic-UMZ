@@ -1,8 +1,7 @@
 ﻿namespace Infrastructure.BackgroundJobs;
 
 public sealed class WalletReconciliationJob(
-    IServiceProvider serviceProvider,
-    IAuditService auditService) : BackgroundService
+    IServiceScopeFactory scopeFactory) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(1);
 
@@ -20,10 +19,12 @@ public sealed class WalletReconciliationJob(
             }
             catch (Exception ex)
             {
-                await auditService.LogSystemEventAsync(
-                    "WalletReconciliationError",
-                    $"خطا در سرویس انطباق کیف پول: {ex.Message}",
-                    ct);
+                using var errorScope = scopeFactory.CreateScope();
+                await errorScope.ServiceProvider.GetRequiredService<IAuditService>()
+                    .LogSystemEventAsync(
+                        "WalletReconciliationError",
+                        $"خطا در سرویس انطباق کیف پول: {ex.Message}",
+                        ct);
             }
 
             await Task.Delay(CheckInterval, ct);
@@ -32,30 +33,31 @@ public sealed class WalletReconciliationJob(
 
     private async Task RunReconciliationAsync(CancellationToken ct)
     {
-        using var scope = serviceProvider.CreateScope();
+        using var scope = scopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<DBContext>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
-        var wallets = await context.Wallets
+        var discrepancies = await context.Wallets
             .AsNoTracking()
             .Where(w => w.IsActive)
+            .Select(w => new
+            {
+                w.Id,
+                BalanceAmount = w.Balance.Amount,
+                LedgerSum = context.WalletLedgerEntries
+                    .Where(e => e.WalletId == w.Id)
+                    .Sum(e => (decimal?)e.Amount.Amount) ?? 0m
+            })
+            .Where(x => Math.Abs(x.BalanceAmount - x.LedgerSum) > 0.01m)
             .ToListAsync(ct);
 
-        foreach (var wallet in wallets)
+        foreach (var item in discrepancies)
         {
-            var ledgerSum = await context.WalletLedgerEntries
-                .AsNoTracking()
-                .Where(e => e.WalletId == wallet.Id)
-                .SumAsync(e => e.Amount.Amount, ct);
-
-            var diff = Math.Abs(wallet.Balance.Amount - ledgerSum);
-
-            if (diff > 0.01m)
-            {
-                await auditService.LogSystemEventAsync(
-                    "WalletReconciliationDiscrepancy",
-                    $"کیف پول {wallet.Id.Value}: مغایرت {diff} ریال یافت شد. موجودی: {wallet.Balance.Amount}، جمع دفتر: {ledgerSum}",
-                    ct);
-            }
+            var diff = Math.Abs(item.BalanceAmount - item.LedgerSum);
+            await auditService.LogSystemEventAsync(
+                "WalletReconciliationDiscrepancy",
+                $"کیف پول {item.Id.Value}: مغایرت {diff} ریال یافت شد. موجودی: {item.BalanceAmount}، جمع دفتر: {item.LedgerSum}",
+                ct);
         }
     }
 }
