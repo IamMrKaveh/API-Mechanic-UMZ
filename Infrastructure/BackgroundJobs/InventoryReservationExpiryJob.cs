@@ -5,14 +5,17 @@ using Domain.Variant.ValueObjects;
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class InventoryReservationExpiryJob(
-    IServiceProvider serviceProvider,
-    IAuditService auditService) : BackgroundService
+    IServiceScopeFactory scopeFactory) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        await auditService.LogInformationAsync("Inventory Reservation Expiry Service started.", ct);
+        using (var startScope = scopeFactory.CreateScope())
+        {
+            await startScope.ServiceProvider.GetRequiredService<IAuditService>()
+                .LogInformationAsync("Inventory Reservation Expiry Service started.", ct);
+        }
 
         while (!ct.IsCancellationRequested)
         {
@@ -22,19 +25,26 @@ public sealed class InventoryReservationExpiryJob(
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                await auditService.LogErrorAsync($"Error processing expired inventory reservations: {ex.Message}", ct);
+                using var errorScope = scopeFactory.CreateScope();
+                await errorScope.ServiceProvider.GetRequiredService<IAuditService>()
+                    .LogErrorAsync($"Error processing expired inventory reservations: {ex.Message}", ct);
             }
 
             await Task.Delay(_interval, ct);
         }
 
-        await auditService.LogInformationAsync("Inventory Reservation Expiry Service stopped.", ct);
+        using (var stopScope = scopeFactory.CreateScope())
+        {
+            await stopScope.ServiceProvider.GetRequiredService<IAuditService>()
+                .LogInformationAsync("Inventory Reservation Expiry Service stopped.", ct);
+        }
     }
 
     private async Task ProcessExpiredReservationsAsync(CancellationToken ct)
     {
-        using var scope = serviceProvider.CreateScope();
+        using var scope = scopeFactory.CreateScope();
         var inventoryService = scope.ServiceProvider.GetRequiredService<IInventoryService>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var expiredGroups = await GetExpiredReservationGroupsAsync(scope, ct);
 

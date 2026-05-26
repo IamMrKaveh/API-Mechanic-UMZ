@@ -2,11 +2,6 @@
 
 namespace Infrastructure.Common.Outbox;
 
-/// <summary>
-/// Background worker that reads unprocessed <see cref="OutboxMessage"/> rows and
-/// republishes them as MediatR notifications, guaranteeing at-least-once delivery
-/// even when the original process crashed after committing the transaction.
-/// </summary>
 public class OutboxPublisherService(
     IServiceScopeFactory scopeFactory,
     IAuditService auditService,
@@ -41,8 +36,8 @@ public class OutboxPublisherService(
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         var messages = await dbContext.OutboxMessages
-            .Where(m => m.ProcessedAt == null)
-            .OrderBy(m => m.ProcessedAt)
+            .Where(m => m.ProcessedAt == null && m.RetryCount < 5)
+            .OrderBy(m => m.CreatedAt)
             .Take(BatchSize)
             .ToListAsync(ct);
 

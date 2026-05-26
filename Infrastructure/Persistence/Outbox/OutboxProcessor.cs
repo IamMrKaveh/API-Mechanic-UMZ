@@ -22,16 +22,14 @@ public sealed class OutboxProcessor(
                 {
                     await auditService.LogWarningAsync(
                         $"Could not resolve type {message.Type} for outbox message {message.Id}", ct);
-                    message.ProcessedAt = DateTime.UtcNow;
-                    message.Error = $"Type not found: {message.Type}";
+                    message.MarkFailed($"Type not found: {message.Type}");
                     continue;
                 }
 
                 var @event = JsonSerializer.Deserialize(message.Payload, type);
                 if (@event is null)
                 {
-                    message.ProcessedAt = DateTime.UtcNow;
-                    message.Error = "Deserialization returned null.";
+                    message.MarkFailed("Deserialization returned null.");
                     continue;
                 }
 
@@ -39,14 +37,13 @@ public sealed class OutboxProcessor(
                 var notification = Activator.CreateInstance(notificationType, @event)!;
                 await publisher.Publish(notification, ct);
 
-                message.ProcessedAt = DateTime.UtcNow;
+                message.MarkProcessed(DateTime.UtcNow);
             }
             catch (Exception ex)
             {
                 await auditService.LogErrorAsync(
                     $"Error processing outbox message {message.Id}: {ex.Message}", ct);
-                message.RetryCount++;
-                message.Error = ex.Message;
+                message.MarkFailed(ex.Message);
             }
         }
 

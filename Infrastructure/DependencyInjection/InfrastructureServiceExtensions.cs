@@ -381,8 +381,6 @@ public static class InfrastructureServiceExtensions
 
     private static void AddBackgroundServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHostedService<OutboxProcessorJob>();
-
         var elasticsearchSection = configuration.GetSection(ElasticsearchOptions.SectionName);
         var options = elasticsearchSection.Get<ElasticsearchOptions>();
 
