@@ -1,12 +1,15 @@
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class OrphanedFileCleanupJob(
-    IServiceProvider serviceProvider,
-    IAuditService auditService) : BackgroundService
+    IServiceScopeFactory scopeFactory) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        await auditService.LogInformationAsync("Media Cleanup Service started.", ct);
+        using (var startScope = scopeFactory.CreateScope())
+        {
+            await startScope.ServiceProvider.GetRequiredService<IAuditService>()
+                .LogInformationAsync("Media Cleanup Service started.", ct);
+        }
 
         while (!ct.IsCancellationRequested)
         {
@@ -21,19 +24,24 @@ public sealed class OrphanedFileCleanupJob(
             }
             catch (Exception ex)
             {
-                await auditService.LogErrorAsync($"Media cleanup error: {ex.Message}", ct);
+                using var errorScope = scopeFactory.CreateScope();
+                await errorScope.ServiceProvider.GetRequiredService<IAuditService>()
+                    .LogErrorAsync($"Media cleanup error: {ex.Message}", ct);
                 await Task.Delay(TimeSpan.FromHours(1), ct);
             }
         }
 
-        await auditService.LogInformationAsync("Media Cleanup Service stopped.", ct);
+        using var stopScope = scopeFactory.CreateScope();
+        await stopScope.ServiceProvider.GetRequiredService<IAuditService>()
+            .LogInformationAsync("Media Cleanup Service stopped.", ct);
     }
 
     private async Task ProcessCleanupAsync(CancellationToken ct)
     {
-        using var scope = serviceProvider.CreateScope();
+        using var scope = scopeFactory.CreateScope();
         var storageService = scope.ServiceProvider.GetRequiredService<IStorageService>();
         var context = scope.ServiceProvider.GetRequiredService<DBContext>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var cutoffDate = DateTime.UtcNow.AddHours(-24);
 

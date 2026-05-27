@@ -2,16 +2,18 @@ using Application.Payment.Features.Commands.ExpireStalePayments;
 
 namespace Infrastructure.BackgroundJobs;
 
-public class PaymentCleanupJob(
-    IServiceProvider serviceProvider,
-    IAuditService auditService) : BackgroundService
+public sealed class PaymentCleanupJob(
+    IServiceScopeFactory scopeFactory) : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider = serviceProvider;
-    private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        await auditService.LogInformationAsync("Payment Cleanup Service started.", ct);
+        using (var startScope = scopeFactory.CreateScope())
+        {
+            await startScope.ServiceProvider.GetRequiredService<IAuditService>()
+                .LogInformationAsync("Payment Cleanup Service started.", ct);
+        }
 
         while (!ct.IsCancellationRequested)
         {
@@ -19,9 +21,15 @@ public class PaymentCleanupJob(
             {
                 await ProcessCleanupAsync(ct);
             }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
             catch (Exception ex)
             {
-                await auditService.LogErrorAsync(ex.Message, ct);
+                using var errorScope = scopeFactory.CreateScope();
+                await errorScope.ServiceProvider.GetRequiredService<IAuditService>()
+                    .LogErrorAsync(ex.Message, ct);
             }
 
             await Task.Delay(_interval, ct);
@@ -30,14 +38,13 @@ public class PaymentCleanupJob(
 
     private async Task ProcessCleanupAsync(CancellationToken ct)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = scopeFactory.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var cutoff = DateTime.UtcNow.AddMinutes(-20);
 
-        var result = await mediator.Send(
-            new ExpireStalePaymentsCommand(cutoff),
-            ct);
+        var result = await mediator.Send(new ExpireStalePaymentsCommand(cutoff), ct);
 
         if (result.IsSuccess && result.Value > 0)
         {

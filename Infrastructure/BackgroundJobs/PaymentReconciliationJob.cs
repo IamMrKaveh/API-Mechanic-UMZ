@@ -3,16 +3,18 @@ using Application.Payment.Contracts;
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class PaymentReconciliationJob(
-    DBContext dbContext,
-    IServiceProvider serviceProvider,
-    IAuditService auditService) : BackgroundService
+    IServiceScopeFactory scopeFactory) : BackgroundService
 {
     private static readonly TimeSpan ReconciliationInterval = TimeSpan.FromHours(6);
     private static readonly TimeSpan ReconciliationWindow = TimeSpan.FromHours(12);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        await auditService.LogInformationAsync("Payment Reconciliation Service started.", ct);
+        using (var startScope = scopeFactory.CreateScope())
+        {
+            await startScope.ServiceProvider.GetRequiredService<IAuditService>()
+                .LogInformationAsync("Payment Reconciliation Service started.", ct);
+        }
 
         while (!ct.IsCancellationRequested)
         {
@@ -26,20 +28,26 @@ public sealed class PaymentReconciliationJob(
             }
             catch (Exception ex)
             {
-                await auditService.LogErrorAsync($"Error during payment reconciliation: {ex.Message}", ct);
+                using var errorScope = scopeFactory.CreateScope();
+                await errorScope.ServiceProvider.GetRequiredService<IAuditService>()
+                    .LogErrorAsync($"Error during payment reconciliation: {ex.Message}", ct);
             }
 
             await Task.Delay(ReconciliationInterval, ct);
         }
 
-        await auditService.LogInformationAsync("Payment Reconciliation Service stopped.", ct);
+        using var stopScope = scopeFactory.CreateScope();
+        await stopScope.ServiceProvider.GetRequiredService<IAuditService>()
+            .LogInformationAsync("Payment Reconciliation Service stopped.", ct);
     }
 
     private async Task RunReconciliationAsync(CancellationToken ct)
     {
-        using var scope = serviceProvider.CreateScope();
+        using var scope = scopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<DBContext>();
         var gatewayFactory = scope.ServiceProvider.GetRequiredService<IPaymentGatewayFactory>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var threshold = DateTime.UtcNow.Subtract(ReconciliationWindow);
 
@@ -55,10 +63,7 @@ public sealed class PaymentReconciliationJob(
             try
             {
                 var gateway = gatewayFactory.GetGateway(tx.Gateway.Value);
-                var verifyResult = await gateway.VerifyAsync(
-                    tx.Authority.Value,
-                    tx.Amount,
-                    ct);
+                var verifyResult = await gateway.VerifyAsync(tx.Authority.Value, tx.Amount, ct);
 
                 if (verifyResult.IsSuccess && verifyResult.Value.IsVerified)
                 {

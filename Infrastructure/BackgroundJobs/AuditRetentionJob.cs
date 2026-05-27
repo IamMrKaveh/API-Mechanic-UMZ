@@ -2,29 +2,12 @@ using Domain.Audit.Entities;
 
 namespace Infrastructure.BackgroundJobs;
 
-/// <summary>
-/// سرویس Retention لاگ‌های حسابرسی.
-///
-/// سیاست‌ها:
-/// - لاگ‌های مالی: 7 سال نگه‌داری (الزام قانونی)
-/// - لاگ‌های امنیتی: 2 سال نگه‌داری
-/// - لاگ‌های معمولی: 90 روز نگه‌داری
-///
-/// فرایند:
-/// 1. لاگ‌های منقضی را به جدول Archive منتقل می‌کند
-/// 2. یا به فایل JSON Export می‌کند
-/// 3. از جدول اصلی حذف می‌کند (برای عملکرد)
-/// </summary>
 public sealed class AuditRetentionJob(
-    IServiceProvider serviceProvider,
-    IAuditService auditService) : BackgroundService
+    IServiceScopeFactory scopeFactory) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
-
     private static readonly TimeSpan InitialDelay = TimeSpan.FromMinutes(5);
-
     private static readonly int FinancialRetentionDays = 7 * 365;
-
     private static readonly int SecurityRetentionDays = 2 * 365;
     private static readonly int DefaultRetentionDays = 90;
 
@@ -40,10 +23,11 @@ public sealed class AuditRetentionJob(
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        await auditService.LogSystemEventAsync(
-            "Audit Retention",
-            "Audit Retention Service started.",
-            ct);
+        using (var startScope = scopeFactory.CreateScope())
+        {
+            await startScope.ServiceProvider.GetRequiredService<IAuditService>()
+                .LogSystemEventAsync("Audit Retention", "Audit Retention Service started.", ct);
+        }
 
         await Task.Delay(InitialDelay, ct);
 
@@ -59,33 +43,34 @@ public sealed class AuditRetentionJob(
             }
             catch (Exception ex)
             {
-                await auditService.LogSystemEventAsync(
-                    ex.Message,
-                    "Error during audit retention process.",
-                    ct);
+                using var errorScope = scopeFactory.CreateScope();
+                await errorScope.ServiceProvider.GetRequiredService<IAuditService>()
+                    .LogSystemEventAsync(ex.Message, "Error during audit retention process.", ct);
             }
 
             await Task.Delay(CheckInterval, ct);
         }
 
-        await auditService.LogSystemEventAsync(
-            "Audit Retention",
-            "Audit Retention Service stopped.",
-            ct);
+        using (var stopScope = scopeFactory.CreateScope())
+        {
+            await stopScope.ServiceProvider.GetRequiredService<IAuditService>()
+                .LogSystemEventAsync("Audit Retention", "Audit Retention Service stopped.", ct);
+        }
     }
 
     private async Task RunRetentionAsync(CancellationToken ct)
     {
-        using var scope = serviceProvider.CreateScope();
+        using var scope = scopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
         var archiveFolder = GetArchiveFolder();
 
         var now = DateTime.UtcNow;
 
         var defaultCutoff = now.AddDays(-DefaultRetentionDays);
-
         await ArchiveAndDeleteAsync(
             context,
+            auditService,
             archiveFolder,
             defaultCutoff,
             FinancialEventTypes.Union(SecurityEventTypes).ToHashSet(),
@@ -93,28 +78,32 @@ public sealed class AuditRetentionJob(
             ct: ct);
 
         var securityCutoff = now.AddDays(-SecurityRetentionDays);
-        await ArchiveAndDeleteAsync(context, archiveFolder,
+        await ArchiveAndDeleteAsync(
+            context,
+            auditService,
+            archiveFolder,
             securityCutoff,
             includeEventTypes: SecurityEventTypes,
             excludeEventTypes: FinancialEventTypes,
             batchLabel: "security",
-            ct);
+            ct: ct);
 
         var financialCutoff = now.AddDays(-FinancialRetentionDays);
-        await ArchiveOnlyAsync(context, archiveFolder,
+        await ArchiveOnlyAsync(
+            context,
+            auditService,
+            archiveFolder,
             financialCutoff,
             includeEventTypes: FinancialEventTypes,
             batchLabel: "financial",
-            ct);
+            ct: ct);
 
-        await auditService.LogSystemEventAsync(
-            "AuditRetention",
-            "Retention cycle completed.",
-            ct);
+        await auditService.LogSystemEventAsync("AuditRetention", "Retention cycle completed.", ct);
     }
 
-    private async Task ArchiveAndDeleteAsync(
+    private static async Task ArchiveAndDeleteAsync(
         Persistence.Context.DBContext context,
+        IAuditService auditService,
         string archiveFolder,
         DateTime cutoff,
         HashSet<string>? includeEventTypes = null,
@@ -122,21 +111,20 @@ public sealed class AuditRetentionJob(
         string batchLabel = "",
         CancellationToken ct = default)
     {
-        var query = context.AuditLogs
-            .Where(a => a.CreatedAt < cutoff);
+        var query = context.AuditLogs.Where(a => a.CreatedAt < cutoff);
 
         if (includeEventTypes?.Count != 0)
-            query = query.Where(a => includeEventTypes.Contains(a.EventType));
+            query = query.Where(a => includeEventTypes!.Contains(a.EventType));
 
         if (excludeEventTypes?.Count != 0)
-            query = query.Where(a => !excludeEventTypes.Contains(a.EventType));
+            query = query.Where(a => !excludeEventTypes!.Contains(a.EventType));
 
         var logsToArchive = await query
             .OrderBy(a => a.CreatedAt)
             .Take(1000)
             .ToListAsync(ct);
 
-        if (logsToArchive.Count != 0) return;
+        if (logsToArchive.Count == 0) return;
 
         await ExportToArchiveFileAsync(archiveFolder, logsToArchive, batchLabel, ct);
 
@@ -149,16 +137,16 @@ public sealed class AuditRetentionJob(
             ct);
     }
 
-    private async Task ArchiveOnlyAsync(
+    private static async Task ArchiveOnlyAsync(
         Persistence.Context.DBContext context,
+        IAuditService auditService,
         string archiveFolder,
         DateTime cutoff,
         HashSet<string>? includeEventTypes = null,
         string batchLabel = "",
         CancellationToken ct = default)
     {
-        var query = context.AuditLogs
-            .Where(a => a.CreatedAt < cutoff && !a.IsArchived);
+        var query = context.AuditLogs.Where(a => a.CreatedAt < cutoff && !a.IsArchived);
 
         if (includeEventTypes?.Any() == true)
             query = query.Where(a => includeEventTypes.Contains(a.EventType));
@@ -195,10 +183,7 @@ public sealed class AuditRetentionJob(
 
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-        var json = JsonSerializer.Serialize(logs, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
+        var json = JsonSerializer.Serialize(logs, new JsonSerializerOptions { WriteIndented = true });
 
         await File.WriteAllTextAsync(filePath, json, ct);
     }

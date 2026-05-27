@@ -1,25 +1,34 @@
 ﻿using Infrastructure.Persistence.Outbox;
-using Quartz;
 
 namespace Infrastructure.BackgroundJobs;
 
-[DisallowConcurrentExecution]
 public sealed class OutboxProcessingJob(
-    IOutboxProcessor outboxProcessor,
-    IAuditService auditService) : IJob
+    IServiceScopeFactory scopeFactory) : BackgroundService
 {
-    public async Task Execute(IJobExecutionContext context)
+    private static readonly TimeSpan ProcessingInterval = TimeSpan.FromSeconds(10);
+
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        try
+        while (!ct.IsCancellationRequested)
         {
-            await outboxProcessor.ProcessAsync(ct: context.CancellationToken);
-        }
-        catch (Exception ex)
-        {
-            await auditService.LogSystemEventAsync(
-                "OutboxProcessingError",
-                ex.Message,
-                context.CancellationToken);
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var outboxProcessor = scope.ServiceProvider.GetRequiredService<IOutboxProcessor>();
+                await outboxProcessor.ProcessAsync(ct: ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                using var errorScope = scopeFactory.CreateScope();
+                await errorScope.ServiceProvider.GetRequiredService<IAuditService>()
+                    .LogSystemEventAsync("OutboxProcessingError", ex.Message, ct);
+            }
+
+            await Task.Delay(ProcessingInterval, ct);
         }
     }
 }

@@ -7,6 +7,7 @@ public static class DependencyInjectionExtensions
 {
     public static IServiceCollection AddApplicationPipelines(this IServiceCollection services)
     {
+        services.AddHttpContextAccessor();
         services.AddScoped<IHttpResultMapper, HttpResultMapper>();
         return services;
     }

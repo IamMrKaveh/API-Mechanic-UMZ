@@ -3,8 +3,7 @@
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class WalletReservationExpiryJob(
-    IServiceProvider serviceProvider,
-    IAuditService auditService) : BackgroundService
+    IServiceScopeFactory scopeFactory) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(5);
     private const int BatchSize = 50;
@@ -23,10 +22,12 @@ public sealed class WalletReservationExpiryJob(
             }
             catch (Exception ex)
             {
-                await auditService.LogSystemEventAsync(
-                    "WalletReservationExpiryError",
-                    $"خطا در سرویس انقضای رزرو کیف پول: {ex.Message}",
-                    ct);
+                using var errorScope = scopeFactory.CreateScope();
+                await errorScope.ServiceProvider.GetRequiredService<IAuditService>()
+                    .LogSystemEventAsync(
+                        "WalletReservationExpiryError",
+                        $"خطا در سرویس انقضای رزرو کیف پول: {ex.Message}",
+                        ct);
             }
 
             await Task.Delay(CheckInterval, ct);
@@ -35,9 +36,10 @@ public sealed class WalletReservationExpiryJob(
 
     private async Task ProcessExpiredReservationsAsync(CancellationToken ct)
     {
-        using var scope = serviceProvider.CreateScope();
+        using var scope = scopeFactory.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
         var context = scope.ServiceProvider.GetRequiredService<DBContext>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var now = DateTime.UtcNow;
 
@@ -49,10 +51,7 @@ public sealed class WalletReservationExpiryJob(
                 (le, w) => new { LedgerEntry = le, Wallet = w })
             .Where(x => x.Wallet.OwnerId != null)
             .Take(BatchSize)
-            .Select(x => new
-            {
-                UserId = x.Wallet.OwnerId.Value
-            })
+            .Select(x => new { UserId = x.Wallet.OwnerId.Value })
             .ToListAsync(ct);
 
         foreach (var reservation in expiredReservations)

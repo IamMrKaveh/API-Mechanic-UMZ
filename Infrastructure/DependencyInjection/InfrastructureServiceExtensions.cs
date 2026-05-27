@@ -133,7 +133,6 @@ public static class InfrastructureServiceExtensions
         services.AddHealthChecks(configuration);
         services.AddDataProtectionLayer(configuration);
         services.AddJwtAuthentication();
-        services.AddHttpContextAccessor();
 
         return services;
     }
@@ -313,7 +312,6 @@ public static class InfrastructureServiceExtensions
         });
 
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
-
         services.Configure<KavenegarOptions>(configuration.GetSection(KavenegarOptions.SectionName));
 
         services.AddHttpClient<ISmsService, SmsService>(client =>
@@ -379,12 +377,27 @@ public static class InfrastructureServiceExtensions
 
     private static void AddBackgroundServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddHostedService<OutboxProcessingJob>();
+        services.AddHostedService<AuditRetentionJob>();
+        services.AddHostedService<PaymentCleanupJob>();
+        services.AddHostedService<PaymentReconciliationJob>();
+        services.AddHostedService<WalletReconciliationJob>();
+        services.AddHostedService<WalletReservationExpiryJob>();
+        services.AddHostedService<ExpiredOrderCleanupJob>();
+        services.AddHostedService<ExpiredSessionCleanupJob>();
+        services.AddHostedService<InventoryReservationExpiryJob>();
+        services.AddHostedService<OrphanedFileCleanupJob>();
+
         var elasticsearchSection = configuration.GetSection(ElasticsearchOptions.SectionName);
         var options = elasticsearchSection.Get<ElasticsearchOptions>();
 
-        if (options is not null && options.IsEnabled && options.EnableBackgroundSync)
+        if (options is not null && options.IsEnabled)
         {
-            services.AddHostedService<ElasticsearchSyncJob>();
+            services.AddHostedService<DeadLetterQueueJob>();
+            services.AddHostedService<ElasticsearchOutboxJob>();
+
+            if (options.EnableBackgroundSync)
+                services.AddHostedService<ElasticsearchSyncJob>();
         }
     }
 
@@ -409,8 +422,8 @@ public static class InfrastructureServiceExtensions
     }
 
     private static void AddDataProtectionLayer(
-    this IServiceCollection services,
-    IConfiguration configuration)
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         var cacheOptions = configuration.GetSection(CacheOptions.SectionName).Get<CacheOptions>()
             ?? new CacheOptions();
@@ -427,6 +440,14 @@ public static class InfrastructureServiceExtensions
                 provider.GetRequiredService<ILogger<ResilientRedisXmlRepository>>(),
                 "DataProtection",
                 TimeSpan.FromDays(90)));
+    }
+
+    private static void AddJwtAuthentication(this IServiceCollection services)
+    {
+        services.AddOptions<JwtOptions>()
+            .BindConfiguration(JwtOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
     }
 
     private sealed class NpgsqlHealthCheck(string connectionString) : IHealthCheck
@@ -449,13 +470,5 @@ public static class InfrastructureServiceExtensions
                 return HealthCheckResult.Unhealthy(ex.Message);
             }
         }
-    }
-
-    private static void AddJwtAuthentication(this IServiceCollection services)
-    {
-        services.AddOptions<JwtOptions>()
-            .BindConfiguration(JwtOptions.SectionName)
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
     }
 }
