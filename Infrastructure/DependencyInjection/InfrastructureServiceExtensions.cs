@@ -288,6 +288,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
     }
 
     private static void AddStorageServices(this IServiceCollection services, IConfiguration configuration)

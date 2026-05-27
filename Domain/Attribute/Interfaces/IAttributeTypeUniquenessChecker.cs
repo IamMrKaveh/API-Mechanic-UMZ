@@ -4,7 +4,8 @@ namespace Domain.Attribute.Interfaces;
 
 public interface IAttributeTypeUniquenessChecker
 {
-    bool IsUnique(
+    Task<bool> IsUniqueAsync(
         string name,
-        AttributeTypeId? excludeId = null);
+        AttributeTypeId? excludeId = null,
+        CancellationToken ct = default);
 }

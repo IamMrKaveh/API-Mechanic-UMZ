@@ -1,13 +1,11 @@
-using Application.Auth.Contracts;
 using Application.Common.Interfaces;
 using Application.Media.Features.Shared;
 using Infrastructure.DependencyInjection;
+using Infrastructure.Security.Settings;
 using Presentation.Common.Options;
 using Presentation.Common.Services;
 using Presentation.Common.Swagger;
 using Presentation.Security;
-using Presentation.Security.Services;
-using Presentation.Security.Settings;
 
 var logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "logs");
 var logsErrorDirectory = Path.Combine(logsDirectory, "errors");
@@ -62,7 +60,6 @@ try
     builder.Services.Configure<LiaraStorageSettings>(configuration.GetSection("LiaraStorage"));
     builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
     builder.Services.AddScoped<OtpRateLimitFilter>();
-    builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructure(configuration);

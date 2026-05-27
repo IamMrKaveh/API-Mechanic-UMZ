@@ -9,8 +9,8 @@ public class UpdateAttributeTypeHandler(
     IUnitOfWork unitOfWork) : IRequestHandler<UpdateAttributeTypeCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
-        UpdateAttributeTypeCommand request,
-        CancellationToken ct)
+    UpdateAttributeTypeCommand request,
+    CancellationToken ct)
     {
         var attributeTypeId = AttributeTypeId.From(request.Id);
 
@@ -20,12 +20,13 @@ public class UpdateAttributeTypeHandler(
 
         var uniquenessChecker = new AttributeTypeUniquenessCheckerAdapter(repository);
 
-        attributeType.Update(
+        await attributeType.Update(
             request.Name ?? attributeType.Name,
             request.DisplayName ?? attributeType.DisplayName,
             request.SortOrder ?? attributeType.SortOrder,
             request.IsActive ?? attributeType.IsActive,
-            uniquenessChecker);
+            uniquenessChecker,
+            ct);
 
         await repository.UpdateAttributeTypeAsync(attributeType, ct);
         await unitOfWork.SaveChangesAsync(ct);

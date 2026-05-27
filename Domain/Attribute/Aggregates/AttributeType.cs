@@ -34,12 +34,13 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         CreatedAt = DateTime.UtcNow;
     }
 
-    public static AttributeType Create(
-        string name,
-        string displayName,
-        int sortOrder,
-        bool isActive,
-        IAttributeTypeUniquenessChecker uniquenessChecker)
+    public static async Task<AttributeType> Create(
+    string name,
+    string displayName,
+    int sortOrder,
+    bool isActive,
+    IAttributeTypeUniquenessChecker uniquenessChecker,
+    CancellationToken ct = default)
     {
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
         Guard.Against.Null(uniquenessChecker, nameof(uniquenessChecker));
@@ -48,7 +49,7 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         var trimmedName = name.Trim();
         var trimmedDisplayName = string.IsNullOrWhiteSpace(displayName) ? trimmedName : displayName.Trim();
 
-        if (!uniquenessChecker.IsUnique(trimmedName))
+        if (!await uniquenessChecker.IsUniqueAsync(trimmedName, ct: ct))
             throw new DuplicateAttributeException(trimmedName);
 
         var id = AttributeTypeId.NewId();
@@ -58,12 +59,13 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         return attributeType;
     }
 
-    public void Update(
+    public async Task Update(
         string name,
         string displayName,
         int sortOrder,
         bool isActive,
-        IAttributeTypeUniquenessChecker uniquenessChecker)
+        IAttributeTypeUniquenessChecker uniquenessChecker,
+        CancellationToken ct = default)
     {
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
         Guard.Against.Null(uniquenessChecker, nameof(uniquenessChecker));
@@ -72,7 +74,8 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         var trimmedName = name.Trim();
         var trimmedDisplayName = string.IsNullOrWhiteSpace(displayName) ? trimmedName : displayName.Trim();
 
-        if (!Name.Equals(trimmedName, StringComparison.OrdinalIgnoreCase) && !uniquenessChecker.IsUnique(trimmedName, Id))
+        if (!Name.Equals(trimmedName, StringComparison.OrdinalIgnoreCase) &&
+            !await uniquenessChecker.IsUniqueAsync(trimmedName, Id, ct))
             throw new DuplicateAttributeException(trimmedName);
 
         Name = trimmedName;

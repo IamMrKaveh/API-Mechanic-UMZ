@@ -1,4 +1,4 @@
-using Presentation.Security.Settings;
+using Infrastructure.Security.Settings;
 
 namespace Presentation.Common.Middleware;
 
