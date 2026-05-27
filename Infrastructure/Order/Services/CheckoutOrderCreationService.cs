@@ -33,8 +33,8 @@ public sealed class CheckoutOrderCreationService(
             deliveryAddress,
             shippingCost,
             discountAmount,
-            DiscountCodeId.From(discountCodeId.Value),
-            items.ToList(),
+            discountCodeId.HasValue ? DiscountCodeId.From(discountCodeId.Value) : null,
+            [.. items],
             idempotencyKey);
 
         orderRepository.Add(order);

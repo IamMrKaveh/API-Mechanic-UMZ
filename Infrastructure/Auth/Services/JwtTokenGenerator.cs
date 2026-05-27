@@ -1,10 +1,8 @@
 ﻿using Application.Auth.Contracts;
 using Infrastructure.Security.Settings;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Cryptography;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
-namespace Presentation.Security.Services;
+namespace Infrastructure.Auth.Services;
 
 public sealed class JwtTokenGenerator(IOptions<JwtSettings> jwtSettings) : IJwtTokenGenerator
 {

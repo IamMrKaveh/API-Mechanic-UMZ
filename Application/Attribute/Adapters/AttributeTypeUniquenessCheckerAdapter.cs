@@ -6,10 +6,8 @@ namespace Application.Attribute.Adapters;
 public sealed class AttributeTypeUniquenessCheckerAdapter(IAttributeRepository repository)
     : IAttributeTypeUniquenessChecker
 {
-    private readonly IAttributeRepository _repository = repository;
-
-    public bool IsUnique(string name, AttributeTypeId? excludeId = null)
+    public async Task<bool> IsUniqueAsync(string name, AttributeTypeId? excludeId = null, CancellationToken ct = default)
     {
-        return !_repository.AttributeTypeExistsAsync(name, excludeId).GetAwaiter().GetResult();
+        return !await repository.AttributeTypeExistsAsync(name, excludeId, ct);
     }
 }

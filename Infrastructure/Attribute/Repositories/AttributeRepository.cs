@@ -119,8 +119,14 @@ public sealed class AttributeRepository(DBContext context) : IAttributeRepositor
         context.AttributeValues.Update(entity);
     }
 
-    private sealed class AlwaysTrueUniquenessChecker : Domain.Attribute.Interfaces.IAttributeTypeUniquenessChecker
+    private sealed class AlwaysTrueUniquenessChecker : IAttributeTypeUniquenessChecker
     {
-        public bool IsUnique(string name, AttributeTypeId? excludeId = null) => true;
+        public Task<bool> IsUniqueAsync(
+            string name,
+            AttributeTypeId? excludeId = null,
+            CancellationToken ct = default)
+        {
+            return Task.FromResult(true);
+        }
     }
 }
