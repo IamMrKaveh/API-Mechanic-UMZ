@@ -62,7 +62,7 @@ public class AuthController(IMediator mediator, IMapper mapper)
     {
         var command = new SendOtpCommand(
             request.PhoneNumber,
-            HttpContextHelper.GetClientIpAddress(HttpContext));
+            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
 
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
@@ -80,7 +80,7 @@ public class AuthController(IMediator mediator, IMapper mapper)
         var command = new VerifyOtpCommand(
             request.PhoneNumber,
             request.Code,
-            HttpContextHelper.GetClientIpAddress(HttpContext),
+            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             Request.Headers.UserAgent.ToString());
 
         var result = await Mediator.Send(command, ct);
@@ -97,7 +97,7 @@ public class AuthController(IMediator mediator, IMapper mapper)
     {
         var command = new RefreshTokenCommand(
             request.RefreshToken,
-            HttpContextHelper.GetClientIpAddress(HttpContext),
+            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             Request.Headers.UserAgent.ToString());
 
         var result = await Mediator.Send(command, ct);

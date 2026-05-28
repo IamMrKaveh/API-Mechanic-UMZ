@@ -5,6 +5,7 @@ using Domain.Shipping.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Order.Features.Commands.CreateOrder;
 
@@ -15,7 +16,8 @@ public class CreateOrderHandler(
     IDiscountService discountService,
     IInventoryService inventoryService,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<CreateOrderCommand, ServiceResult<Guid>>
+    IAuditService auditService,
+    IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateOrderCommand, ServiceResult<Guid>>
 {
     public async Task<ServiceResult<Guid>> Handle(
         CreateOrderCommand request,
@@ -89,7 +91,8 @@ public class CreateOrderHandler(
                 var order = Domain.Order.Aggregates.Order.Place(
                     orderId, userId, receiverInfo, deliveryAddress,
                     shippingCost, discountAmountToApply, discountCodeIdToApply,
-                    orderItemSnapshots, idempotencyKey);
+                    orderItemSnapshots, idempotencyKey,
+                    dateTimeProvider.Today);
 
                 orderRepository.Add(order);
                 await unitOfWork.SaveChangesAsync(ct);

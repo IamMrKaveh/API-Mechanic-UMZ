@@ -25,7 +25,7 @@ public sealed class OtpRateLimitFilter(
             return;
         }
 
-        var ip = HttpContextHelper.GetClientIpAddress(context.HttpContext);
+        var ip = context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var key = $"otp_rl_{ip}";
 
         var (isLimited, retryAfter) = await rateLimitService.IsLimitedAsync(key, MaxAttempts, WindowMinutes);

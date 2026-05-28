@@ -9,7 +9,8 @@ namespace Infrastructure.Order.Services;
 
 public sealed class CheckoutOrderCreationService(
     IOrderRepository orderRepository,
-    IUnitOfWork unitOfWork) : ICheckoutOrderCreationService
+    IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider) : ICheckoutOrderCreationService
 {
     public async Task<ServiceResult<CheckoutResultDto>> CreateAsync(
         Guid userId,
@@ -35,7 +36,8 @@ public sealed class CheckoutOrderCreationService(
             discountAmount,
             discountCodeId.HasValue ? DiscountCodeId.From(discountCodeId.Value) : null,
             [.. items],
-            idempotencyKey);
+            idempotencyKey,
+            dateTimeProvider.Today);
 
         orderRepository.Add(order);
         await unitOfWork.SaveChangesAsync(ct);

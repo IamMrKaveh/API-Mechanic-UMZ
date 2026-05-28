@@ -1,13 +1,16 @@
 using Domain.Inventory.Enums;
 using Domain.Inventory.ValueObjects;
 using Domain.Variant.ValueObjects;
+using Infrastructure.BackgroundJobs.Options;
 
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class InventoryReservationExpiryJob(
-    IServiceScopeFactory scopeFactory) : BackgroundService
+    IServiceScopeFactory scopeFactory,
+    IOptions<ReservationExpiryOptions> options) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
+    private readonly ReservationExpiryOptions _options = options.Value;
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -87,16 +90,22 @@ public sealed class InventoryReservationExpiryJob(
         }
     }
 
-    private static async Task<List<(VariantId VariantId, string? ReferenceNumber, int TotalQuantity)>>
-        GetExpiredReservationGroupsAsync(IServiceScope scope, CancellationToken ct)
+    private async Task<List<(VariantId VariantId, string? ReferenceNumber, int TotalQuantity)>>
+       GetExpiredReservationGroupsAsync(IServiceScope scope, CancellationToken ct)
     {
         var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
         var now = DateTime.UtcNow;
+        var cutoff = now.AddMinutes(-_options.ExpiryMinutes);
 
         var expiredEntries = await context.StockLedgerEntries
             .Where(e =>
                 e.EventType == StockEventType.Reservation &&
-                e.CreatedAt < now.AddMinutes(-30))
+                e.CreatedAt < cutoff &&
+                e.ReferenceNumber != null &&
+                !context.StockLedgerEntries.Any(r =>
+                    r.ReferenceNumber == e.ReferenceNumber &&
+                    (r.EventType == StockEventType.ReservationRelease ||
+                     r.EventType == StockEventType.ReservationCommit)))
             .GroupBy(e => new { VariantIdValue = e.VariantId.Value, e.ReferenceNumber })
             .Select(g => new
             {

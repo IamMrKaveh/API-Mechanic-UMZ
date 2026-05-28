@@ -49,5 +49,6 @@ public sealed class PaymentTransactionConfiguration : IEntityTypeConfiguration<P
 
         builder.HasIndex(e => e.Authority).IsUnique();
         builder.HasIndex(e => e.OrderId).IsUnique();
+        builder.HasIndex(e => new { e.Status, e.CreatedAt });
     }
 }
