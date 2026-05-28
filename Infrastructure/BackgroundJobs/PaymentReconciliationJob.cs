@@ -7,6 +7,7 @@ public sealed class PaymentReconciliationJob(
 {
     private static readonly TimeSpan ReconciliationInterval = TimeSpan.FromHours(6);
     private static readonly TimeSpan ReconciliationWindow = TimeSpan.FromHours(12);
+    private const int BatchSize = 100;
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -50,47 +51,61 @@ public sealed class PaymentReconciliationJob(
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var threshold = DateTime.UtcNow.Subtract(ReconciliationWindow);
+        var totalReconciled = 0;
+        var totalFailed = 0;
 
-        var stalePendingTransactions = await dbContext.PaymentTransactions
-            .Where(t => t.Status == Domain.Payment.ValueObjects.PaymentStatus.Pending && t.CreatedAt <= threshold)
-            .ToListAsync(ct);
-
-        var reconciledCount = 0;
-        var failedCount = 0;
-
-        foreach (var tx in stalePendingTransactions)
+        while (true)
         {
-            try
+            var batch = await dbContext.PaymentTransactions
+                .Where(t =>
+                    t.Status == Domain.Payment.ValueObjects.PaymentStatus.Pending &&
+                    t.CreatedAt <= threshold)
+                .OrderBy(t => t.CreatedAt)
+                .Take(BatchSize)
+                .ToListAsync(ct);
+
+            if (batch.Count == 0)
+                break;
+
+            var batchReconciled = 0;
+            var batchFailed = 0;
+
+            foreach (var tx in batch)
             {
-                var gateway = gatewayFactory.GetGateway(tx.Gateway.Value);
-                var verifyResult = await gateway.VerifyAsync(tx.Authority.Value, tx.Amount, ct);
-
-                if (verifyResult.IsSuccess && verifyResult.Value.IsVerified)
+                try
                 {
-                    var now = DateTime.UtcNow;
-                    tx.MarkAsSuccess(verifyResult.Value.RefId!.Value, now, verifyResult.Value.Fee);
-                    reconciledCount++;
+                    var gateway = gatewayFactory.GetGateway(tx.Gateway.Value);
+                    var verifyResult = await gateway.VerifyAsync(tx.Authority.Value, tx.Amount, ct);
 
-                    await auditService.LogWarningAsync(
-                        $"[Reconciliation] Transaction {tx.Id.Value} was PAID but showed Pending. Fixed.", ct);
+                    if (verifyResult.IsSuccess && verifyResult.Value.IsVerified)
+                    {
+                        tx.MarkAsSuccess(verifyResult.Value.RefId!.Value, DateTime.UtcNow, verifyResult.Value.Fee);
+                        batchReconciled++;
+
+                        await auditService.LogWarningAsync(
+                            $"[Reconciliation] Transaction {tx.Id.Value} was PAID but showed Pending. Fixed.", ct);
+                    }
+                    else
+                    {
+                        tx.MarkAsFailed(DateTime.UtcNow, "Reconciliation: پرداخت تأیید نشد.");
+                        batchFailed++;
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    tx.MarkAsFailed(DateTime.UtcNow, "Reconciliation: پرداخت تأیید نشد.");
-                    failedCount++;
+                    await auditService.LogErrorAsync(
+                        $"[Reconciliation] Failed to check transaction {tx.Id.Value}: {ex.Message}", ct);
                 }
             }
-            catch (Exception ex)
-            {
-                await auditService.LogErrorAsync(
-                    $"[Reconciliation] Failed to check transaction {tx.Id.Value}: {ex.Message}", ct);
-            }
+
+            if (batchReconciled > 0 || batchFailed > 0)
+                await unitOfWork.SaveChangesAsync(ct);
+
+            totalReconciled += batchReconciled;
+            totalFailed += batchFailed;
         }
 
         await auditService.LogInformationAsync(
-            $"[Reconciliation] Complete. Reconciled={reconciledCount}, Failed={failedCount}", ct);
-
-        if (reconciledCount > 0 || failedCount > 0)
-            await unitOfWork.SaveChangesAsync(ct);
+            $"[Reconciliation] Complete. Reconciled={totalReconciled}, Failed={totalFailed}", ct);
     }
 }

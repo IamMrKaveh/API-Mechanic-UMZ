@@ -83,19 +83,20 @@ public sealed class Order : AggregateRoot<OrderId>
     }
 
     public static Order Place(
-        OrderId orderId,
-        UserId userId,
-        ReceiverInfo receiverInfo,
-        DeliveryAddress deliveryAddress,
-        Money shippingCost,
-        Money discountAmount,
-        DiscountCodeId? appliedDiscountCodeId,
-        IEnumerable<OrderItemSnapshot> itemSnapshots,
-        Guid idempotencyKey)
+    OrderId orderId,
+    UserId userId,
+    ReceiverInfo receiverInfo,
+    DeliveryAddress deliveryAddress,
+    Money shippingCost,
+    Money discountAmount,
+    DiscountCodeId? appliedDiscountCodeId,
+    IEnumerable<OrderItemSnapshot> itemSnapshots,
+    Guid idempotencyKey,
+    DateOnly orderDate)
     {
         var snapshots = itemSnapshots.ToList();
 
-        if (!snapshots.Any())
+        if (snapshots.Count == 0)
             throw new EmptyOrderException();
 
         ArgumentNullException.ThrowIfNull(userId);
@@ -106,7 +107,7 @@ public sealed class Order : AggregateRoot<OrderId>
         return new Order(
             orderId,
             userId,
-            OrderNumber.Generate(),
+            OrderNumber.Generate(orderDate),
             receiverInfo,
             deliveryAddress,
             shippingCost,

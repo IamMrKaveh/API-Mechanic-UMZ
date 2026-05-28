@@ -1,0 +1,31 @@
+﻿using Application.Common.Interfaces;
+using Application.Media.Features.Shared;
+using Presentation.Common.Services;
+
+namespace Presentation.Common.Extensions;
+
+public static class PresentationServiceExtensions
+{
+    public static IServiceCollection AddPresentation(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddPresentationControllers();
+        services.AddPresentationOptions(configuration);
+        services.AddPresentationInternalServices();
+        services.AddCustomCors(configuration);
+        services.AddTrustedForwardedHeaders(configuration);
+
+        return services;
+    }
+
+    private static IServiceCollection AddPresentationInternalServices(
+        this IServiceCollection services)
+    {
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<OtpRateLimitFilter>();
+        services.AddScoped<IMapper, ServiceMapper>();
+
+        return services;
+    }
+}

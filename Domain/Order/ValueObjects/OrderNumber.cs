@@ -6,9 +6,9 @@ public sealed record OrderNumber
 
     private OrderNumber(string value) => Value = value;
 
-    public static OrderNumber Generate()
+    public static OrderNumber Generate(DateOnly date)
     {
-        var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+        var datePart = date.ToString("yyyyMMdd");
         var uniquePart = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
         return new OrderNumber($"ORD-{datePart}-{uniquePart}");
     }

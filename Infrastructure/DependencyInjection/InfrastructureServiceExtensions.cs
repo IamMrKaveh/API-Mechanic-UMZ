@@ -46,6 +46,9 @@ using Infrastructure.Auth.Options;
 using Infrastructure.Auth.Repositories;
 using Infrastructure.Auth.Services;
 using Infrastructure.BackgroundJobs;
+using Infrastructure.BackgroundJobs.Abstractions;
+using Infrastructure.BackgroundJobs.Options;
+using Infrastructure.BackgroundJobs.Services;
 using Infrastructure.Brand.QueryServices;
 using Infrastructure.Brand.Repositories;
 using Infrastructure.Cache.Redis.Lock;
@@ -378,6 +381,8 @@ public static class InfrastructureServiceExtensions
 
     private static void AddBackgroundServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<IAuditArchiveStorage, S3AuditArchiveStorage>();
+
         services.AddHostedService<OutboxProcessingJob>();
         services.AddHostedService<AuditRetentionJob>();
         services.AddHostedService<PaymentCleanupJob>();
@@ -400,6 +405,11 @@ public static class InfrastructureServiceExtensions
             if (options.EnableBackgroundSync)
                 services.AddHostedService<ElasticsearchSyncJob>();
         }
+
+        services.AddOptions<ReservationExpiryOptions>()
+            .BindConfiguration(ReservationExpiryOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
     }
 
     private static void AddHealthChecks(this IServiceCollection services, IConfiguration configuration)

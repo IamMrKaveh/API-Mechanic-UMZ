@@ -1,4 +1,4 @@
-using Domain.Audit.Entities;
+using Infrastructure.BackgroundJobs.Abstractions;
 
 namespace Infrastructure.BackgroundJobs;
 
@@ -51,60 +51,45 @@ public sealed class AuditRetentionJob(
             await Task.Delay(CheckInterval, ct);
         }
 
-        using (var stopScope = scopeFactory.CreateScope())
-        {
-            await stopScope.ServiceProvider.GetRequiredService<IAuditService>()
-                .LogSystemEventAsync("Audit Retention", "Audit Retention Service stopped.", ct);
-        }
+        using var stopScope = scopeFactory.CreateScope();
+        await stopScope.ServiceProvider.GetRequiredService<IAuditService>()
+            .LogSystemEventAsync("Audit Retention", "Audit Retention Service stopped.", ct);
     }
 
     private async Task RunRetentionAsync(CancellationToken ct)
     {
         using var scope = scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
+        var context = scope.ServiceProvider.GetRequiredService<DBContext>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
-        var archiveFolder = GetArchiveFolder();
-
+        var archiveStorage = scope.ServiceProvider.GetRequiredService<IAuditArchiveStorage>();
         var now = DateTime.UtcNow;
 
         var defaultCutoff = now.AddDays(-DefaultRetentionDays);
         await ArchiveAndDeleteAsync(
-            context,
-            auditService,
-            archiveFolder,
-            defaultCutoff,
+            context, auditService, archiveStorage, defaultCutoff,
             FinancialEventTypes.Union(SecurityEventTypes).ToHashSet(),
-            batchLabel: "default",
-            ct: ct);
+            batchLabel: "default", ct: ct);
 
         var securityCutoff = now.AddDays(-SecurityRetentionDays);
         await ArchiveAndDeleteAsync(
-            context,
-            auditService,
-            archiveFolder,
-            securityCutoff,
+            context, auditService, archiveStorage, securityCutoff,
             includeEventTypes: SecurityEventTypes,
             excludeEventTypes: FinancialEventTypes,
-            batchLabel: "security",
-            ct: ct);
+            batchLabel: "security", ct: ct);
 
         var financialCutoff = now.AddDays(-FinancialRetentionDays);
         await ArchiveOnlyAsync(
-            context,
-            auditService,
-            archiveFolder,
-            financialCutoff,
+            context, auditService, archiveStorage, financialCutoff,
             includeEventTypes: FinancialEventTypes,
-            batchLabel: "financial",
-            ct: ct);
+            batchLabel: "financial", ct: ct);
 
         await auditService.LogSystemEventAsync("AuditRetention", "Retention cycle completed.", ct);
     }
 
     private static async Task ArchiveAndDeleteAsync(
-        Persistence.Context.DBContext context,
+        DBContext context,
         IAuditService auditService,
-        string archiveFolder,
+        IAuditArchiveStorage archiveStorage,
         DateTime cutoff,
         HashSet<string>? includeEventTypes = null,
         HashSet<string>? excludeEventTypes = null,
@@ -126,7 +111,7 @@ public sealed class AuditRetentionJob(
 
         if (logsToArchive.Count == 0) return;
 
-        await ExportToArchiveFileAsync(archiveFolder, logsToArchive, batchLabel, ct);
+        await archiveStorage.ArchiveAsync(logsToArchive, batchLabel, DateTime.UtcNow, ct);
 
         context.AuditLogs.RemoveRange(logsToArchive);
         await context.SaveChangesAsync(ct);
@@ -138,9 +123,9 @@ public sealed class AuditRetentionJob(
     }
 
     private static async Task ArchiveOnlyAsync(
-        Persistence.Context.DBContext context,
+        DBContext context,
         IAuditService auditService,
-        string archiveFolder,
+        IAuditArchiveStorage archiveStorage,
         DateTime cutoff,
         HashSet<string>? includeEventTypes = null,
         string batchLabel = "",
@@ -158,7 +143,7 @@ public sealed class AuditRetentionJob(
 
         if (logsToArchive.Count == 0) return;
 
-        await ExportToArchiveFileAsync(archiveFolder, logsToArchive, batchLabel, ct);
+        await archiveStorage.ArchiveAsync(logsToArchive, batchLabel, DateTime.UtcNow, ct);
 
         foreach (var log in logsToArchive)
             log.MarkAsArchived();
@@ -169,30 +154,5 @@ public sealed class AuditRetentionJob(
             "AuditRetention",
             $"Archived {logsToArchive.Count} {batchLabel} audit logs (preserved in DB).",
             ct);
-    }
-
-    private static async Task ExportToArchiveFileAsync(
-        string archiveFolder,
-        IEnumerable<AuditLog> logs,
-        string label,
-        CancellationToken ct)
-    {
-        var date = DateTime.UtcNow;
-        var fileName = $"audit_{label}_{date:yyyy-MM-dd_HH}_{Guid.NewGuid():N[..8]}.json";
-        var filePath = Path.Combine(archiveFolder, date.Year.ToString(), fileName);
-
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
-        var json = JsonSerializer.Serialize(logs, new JsonSerializerOptions { WriteIndented = true });
-
-        await File.WriteAllTextAsync(filePath, json, ct);
-    }
-
-    private static string GetArchiveFolder()
-    {
-        var folder = Environment.GetEnvironmentVariable("AUDIT_ARCHIVE_PATH")
-                     ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "audit_archives");
-        Directory.CreateDirectory(folder);
-        return folder;
     }
 }
