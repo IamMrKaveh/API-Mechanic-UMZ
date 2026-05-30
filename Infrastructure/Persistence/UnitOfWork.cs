@@ -2,50 +2,117 @@
 
 public sealed class UnitOfWork(DBContext context) : IUnitOfWork
 {
-    private IDbContextTransaction? _currentTransaction;
+    private IDbContextTransaction? currentTransaction;
+    private bool disposed;
 
     public async Task<int> SaveChangesAsync(CancellationToken ct = default)
     {
+        ThrowIfDisposed();
         return await context.SaveChangesAsync(ct);
     }
 
     public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default)
     {
-        if (_currentTransaction != null)
-            return _currentTransaction;
+        ThrowIfDisposed();
 
-        _currentTransaction = await context.Database.BeginTransactionAsync(ct);
-        return _currentTransaction;
+        if (currentTransaction is not null)
+            return currentTransaction;
+
+        currentTransaction = await context.Database.BeginTransactionAsync(ct);
+        return currentTransaction;
     }
 
     public async Task CommitTransactionAsync(CancellationToken ct = default)
     {
-        if (_currentTransaction == null)
+        ThrowIfDisposed();
+
+        if (currentTransaction is null)
             throw new InvalidOperationException("No active transaction.");
 
-        await _currentTransaction.CommitAsync(ct);
-        await _currentTransaction.DisposeAsync();
-        _currentTransaction = null;
+        try
+        {
+            await currentTransaction.CommitAsync(ct);
+        }
+        finally
+        {
+            await currentTransaction.DisposeAsync();
+            currentTransaction = null;
+        }
     }
 
     public async Task RollbackTransactionAsync(CancellationToken ct = default)
     {
-        if (_currentTransaction == null)
+        ThrowIfDisposed();
+
+        if (currentTransaction is null)
             return;
 
-        await _currentTransaction.RollbackAsync(ct);
-        await _currentTransaction.DisposeAsync();
-        _currentTransaction = null;
+        try
+        {
+            await currentTransaction.RollbackAsync(ct);
+        }
+        finally
+        {
+            await currentTransaction.DisposeAsync();
+            currentTransaction = null;
+        }
     }
 
-    public async Task<T> ExecuteStrategyAsync<T>(Func<Task<T>> action, CancellationToken ct = default)
+    public async Task<T> ExecuteStrategyAsync<T>(
+        Func<IDbContextTransaction, CancellationToken, Task<T>> operation,
+        CancellationToken ct = default)
     {
+        ThrowIfDisposed();
+
         var strategy = context.Database.CreateExecutionStrategy();
-        return await strategy.ExecuteAsync(action);
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await context.Database.BeginTransactionAsync(ct);
+            try
+            {
+                var result = await operation(transaction, ct);
+                await transaction.CommitAsync(ct);
+                return result;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
+        });
     }
 
     public void Dispose()
     {
-        _currentTransaction?.Dispose();
+        if (disposed) return;
+
+        currentTransaction?.Dispose();
+        context.Dispose();
+
+        disposed = true;
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (disposed) return;
+
+        if (currentTransaction is not null)
+        {
+            await currentTransaction.DisposeAsync();
+            currentTransaction = null;
+        }
+
+        await context.DisposeAsync();
+
+        disposed = true;
+        GC.SuppressFinalize(this);
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (!disposed) return;
+        throw new ObjectDisposedException(nameof(UnitOfWork));
     }
 }

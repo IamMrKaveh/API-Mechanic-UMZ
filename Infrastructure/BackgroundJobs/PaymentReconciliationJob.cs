@@ -3,10 +3,12 @@ using Application.Payment.Contracts;
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class PaymentReconciliationJob(
-    IServiceScopeFactory scopeFactory) : BackgroundService
+    IServiceScopeFactory scopeFactory,
+    IDistributedLock distributedLock) : BackgroundService
 {
     private static readonly TimeSpan ReconciliationInterval = TimeSpan.FromHours(6);
     private static readonly TimeSpan ReconciliationWindow = TimeSpan.FromHours(12);
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromHours(1);
     private const int BatchSize = 100;
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -21,7 +23,13 @@ public sealed class PaymentReconciliationJob(
         {
             try
             {
-                await RunReconciliationAsync(ct);
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:payment-reconciliation", LockExpiry, ct);
+
+                if (lockHandle is not null && lockHandle.IsAcquired)
+                {
+                    await RunReconciliationAsync(ct);
+                }
             }
             catch (OperationCanceledException)
             {

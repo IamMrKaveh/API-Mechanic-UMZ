@@ -2,9 +2,12 @@
 
 namespace Infrastructure.BackgroundJobs;
 
-public sealed class ExpiredOrderCleanupJob(IServiceScopeFactory scopeFactory) : BackgroundService
+public sealed class ExpiredOrderCleanupJob(
+    IServiceScopeFactory scopeFactory,
+    IDistributedLock distributedLock) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(10);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -12,26 +15,32 @@ public sealed class ExpiredOrderCleanupJob(IServiceScopeFactory scopeFactory) : 
         {
             try
             {
-                using var scope = scopeFactory.CreateScope();
-                var orderRepo = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
-                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:expired-order-cleanup", LockExpiry, stoppingToken);
 
-                var expiredOrders = await orderRepo.FindPendingExpiredAsync(stoppingToken);
-
-                foreach (var order in expiredOrders)
+                if (lockHandle is not null && lockHandle.IsAcquired)
                 {
-                    order.Expire(order.Status);
-                    orderRepo.Update(order);
-                }
+                    using var scope = scopeFactory.CreateScope();
+                    var orderRepo = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
+                    var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                    var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
-                if (expiredOrders.Any())
-                {
-                    await unitOfWork.SaveChangesAsync(stoppingToken);
-                    await auditService.LogSystemEventAsync(
-                        "ExpiredOrderCleanup",
-                        $"{expiredOrders.Count} سفارش منقضی‌شده پردازش شد.",
-                        stoppingToken);
+                    var expiredOrders = await orderRepo.FindPendingExpiredAsync(stoppingToken);
+
+                    foreach (var order in expiredOrders)
+                    {
+                        order.Expire(order.Status);
+                        orderRepo.Update(order);
+                    }
+
+                    if (expiredOrders.Any())
+                    {
+                        await unitOfWork.SaveChangesAsync(stoppingToken);
+                        await auditService.LogSystemEventAsync(
+                            "ExpiredOrderCleanup",
+                            $"{expiredOrders.Count} سفارش منقضی‌شده پردازش شد.",
+                            stoppingToken);
+                    }
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

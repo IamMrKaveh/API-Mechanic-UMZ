@@ -29,28 +29,21 @@ public class CreateOrderHandler(
         if (await orderRepository.ExistsByIdempotencyKeyAsync(idempotencyKey, ct))
             return ServiceResult<Guid>.Conflict("درخواست تکراری. سفارش قبلاً ثبت شده است.");
 
-        return await unitOfWork.ExecuteStrategyAsync(async () =>
+        try
         {
-            using var transaction = await unitOfWork.BeginTransactionAsync(ct);
-            try
+            return await unitOfWork.ExecuteStrategyAsync(async (_, cancellationToken) =>
             {
                 var userAddressId = UserAddressId.From(request.UserAddressId);
                 var userId = UserId.From(request.UserId);
                 var shippingId = ShippingId.From(request.ShippingId);
 
-                var userAddress = await userRepository.GetUserAddressAsync(userAddressId, ct);
+                var userAddress = await userRepository.GetUserAddressAsync(userAddressId, cancellationToken);
                 if (userAddress is null || userAddress.UserId != userId)
-                {
-                    await unitOfWork.RollbackTransactionAsync(ct);
                     return ServiceResult<Guid>.Validation("آدرس کاربر نامعتبر است.");
-                }
 
-                var shipping = await shippingRepository.GetByIdAsync(shippingId, ct);
+                var shipping = await shippingRepository.GetByIdAsync(shippingId, cancellationToken);
                 if (shipping is null || !shipping.IsActive)
-                {
-                    await unitOfWork.RollbackTransactionAsync(ct);
                     return ServiceResult<Guid>.Validation("روش ارسال انتخاب شده معتبر نیست.");
-                }
 
                 var orderItemSnapshots = new List<OrderItemSnapshot>();
                 foreach (var item in request.OrderItems)
@@ -73,13 +66,10 @@ public class CreateOrderHandler(
                 if (!string.IsNullOrEmpty(request.DiscountCode))
                 {
                     var discountServiceResult = await discountService.ApplyDiscountAsync(
-                        request.DiscountCode, totalAmount, userId, orderId, ct);
+                        request.DiscountCode, totalAmount, userId, orderId, cancellationToken);
 
                     if (!discountServiceResult.IsSuccess)
-                    {
-                        await unitOfWork.RollbackTransactionAsync(ct);
                         return ServiceResult<Guid>.Validation(discountServiceResult.Error ?? "کد تخفیف نامعتبر است.");
-                    }
                 }
 
                 var receiverInfo = ReceiverInfo.Create(request.ReceiverName, userAddress.PhoneNumber.Value);
@@ -95,7 +85,7 @@ public class CreateOrderHandler(
                     dateTimeProvider.Today);
 
                 orderRepository.Add(order);
-                await unitOfWork.SaveChangesAsync(ct);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
 
                 foreach (var oi in order.OrderItems)
                 {
@@ -104,11 +94,10 @@ public class CreateOrderHandler(
                         Domain.Inventory.ValueObjects.StockQuantity.Create(oi.Quantity),
                         UserId.From(request.AdminUserId),
                         "Admin Created Order",
-                        ct);
+                        cancellationToken);
                 }
 
-                await unitOfWork.SaveChangesAsync(ct);
-                await unitOfWork.CommitTransactionAsync(ct);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
 
                 await auditService.LogOrderEventAsync(
                     order.Id,
@@ -116,20 +105,18 @@ public class CreateOrderHandler(
                     IpAddress.Unknown,
                     UserId.From(request.AdminUserId),
                     $"سفارش توسط مدیر ایجاد شد. شماره سفارش: {order.OrderNumber.Value}",
-                    ct);
+                    cancellationToken);
 
                 return ServiceResult<Guid>.Success(order.Id.Value);
-            }
-            catch (DomainException ex)
-            {
-                await unitOfWork.RollbackTransactionAsync(ct);
-                return ServiceResult<Guid>.Failure(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                await unitOfWork.RollbackTransactionAsync(ct);
-                return ServiceResult<Guid>.Failure(ex.Message);
-            }
-        }, ct);
+            }, ct);
+        }
+        catch (DomainException ex)
+        {
+            return ServiceResult<Guid>.Failure(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult<Guid>.Failure(ex.Message);
+        }
     }
 }

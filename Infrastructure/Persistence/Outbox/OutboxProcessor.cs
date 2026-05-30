@@ -7,11 +7,23 @@ public sealed class OutboxProcessor(
 {
     public async Task ProcessAsync(int batchSize = 50, CancellationToken ct = default)
     {
+        await using var transaction = await context.Database.BeginTransactionAsync(ct);
+
         var messages = await context.OutboxMessages
-            .Where(m => m.ProcessedAt == null && m.RetryCount < 5)
-            .OrderBy(m => m.CreatedAt)
-            .Take(batchSize)
+            .FromSqlRaw("""
+                SELECT * FROM "OutboxMessages"
+                WHERE "ProcessedAt" IS NULL AND "RetryCount" < 5
+                ORDER BY "CreatedAt"
+                LIMIT {0}
+                FOR UPDATE SKIP LOCKED
+                """, batchSize)
             .ToListAsync(ct);
+
+        if (messages.Count == 0)
+        {
+            await transaction.RollbackAsync(ct);
+            return;
+        }
 
         foreach (var message in messages)
         {
@@ -48,5 +60,6 @@ public sealed class OutboxProcessor(
         }
 
         await context.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
     }
 }

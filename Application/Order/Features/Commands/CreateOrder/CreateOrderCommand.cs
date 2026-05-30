@@ -10,4 +10,4 @@ public record CreateOrderCommand(
     string? DiscountCode,
     ICollection<AdminCreateOrderItemDto> OrderItems,
     string IdempotencyKey,
-    Guid AdminUserId) : IRequest<ServiceResult<Guid>>;
+    Guid AdminUserId) : IRequest<ServiceResult<Guid>>, IBypassTransactionBehavior;

@@ -12,4 +12,4 @@ public record AddVariantCommand(
     bool IsUnlimited,
     decimal ShippingMultiplier,
     ICollection<Guid> AttributeValueIds,
-    ICollection<Guid>? EnabledShippingIds) : IRequest<ServiceResult<ProductVariantViewDto>>;
+    ICollection<Guid>? EnabledShippingIds) : IRequest<ServiceResult<ProductVariantViewDto>>, IBypassTransactionBehavior;
