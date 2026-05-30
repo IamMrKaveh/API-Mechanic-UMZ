@@ -18,86 +18,50 @@ public sealed class DiscountService(
         OrderId orderId,
         CancellationToken ct = default)
     {
-        return await unitOfWork.ExecuteStrategyAsync(async () =>
-        {
-            using var transaction = await unitOfWork.BeginTransactionAsync(ct);
-            try
-            {
-                var discount = await discountRepository.GetByCodeAsync(code, ct);
-                if (discount == null)
-                {
-                    await unitOfWork.RollbackTransactionAsync(ct);
-                    return ServiceResult.Failure("کد تخفیف نامعتبر است.");
-                }
+        var discount = await discountRepository.GetByCodeAsync(code, ct);
+        if (discount == null)
+            return ServiceResult.Failure("کد تخفیف نامعتبر است.");
 
-                var validation = discount.ValidateForApplication(orderAmount);
-                if (!validation.IsValid)
-                {
-                    await unitOfWork.RollbackTransactionAsync(ct);
-                    return ServiceResult.Failure(validation.FailureReason!);
-                }
+        var validation = discount.ValidateForApplication(orderAmount);
+        if (!validation.IsValid)
+            return ServiceResult.Failure(validation.FailureReason!);
 
-                var discountAmount = discount.CalculateDiscount(orderAmount);
-                discount.RecordUsage(userId, orderId, discountAmount);
-                discountRepository.Update(discount);
+        var discountAmount = discount.CalculateDiscount(orderAmount);
+        discount.RecordUsage(userId, orderId, discountAmount);
+        discountRepository.Update(discount);
 
-                await unitOfWork.SaveChangesAsync(ct);
-                await unitOfWork.CommitTransactionAsync(ct);
+        await auditService.LogOrderEventAsync(
+            orderId,
+            "DiscountApplied",
+            IpAddress.Unknown,
+            userId,
+            $"Discount {code} applied. Amount: {discountAmount.Amount}",
+            ct);
 
-                await auditService.LogOrderEventAsync(
-                    orderId,
-                    "DiscountApplied",
-                    IpAddress.Unknown,
-                    userId,
-                    $"Discount {code} applied. Amount: {discountAmount.Amount}",
-                    ct);
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await unitOfWork.RollbackTransactionAsync(ct);
-                await auditService.LogSystemEventAsync("DiscountApplyFailed", ex.Message, ct);
-                throw;
-            }
-        }, ct);
+        return ServiceResult.Success();
     }
 
     public async Task<ServiceResult> CancelDiscountUsageAsync(
         OrderId orderId,
         CancellationToken ct = default)
     {
-        return await unitOfWork.ExecuteStrategyAsync(async () =>
+        return await unitOfWork.ExecuteStrategyAsync(async (_, cancellationToken) =>
         {
-            using var transaction = await unitOfWork.BeginTransactionAsync(ct);
-            try
-            {
-                var discount = await context.DiscountCodes
-                    .Include(d => d.Usages)
-                    .FirstOrDefaultAsync(d => d.Usages.Any(u => u.OrderId == orderId), ct);
+            var discount = await context.DiscountCodes
+                .Include(d => d.Usages)
+                .FirstOrDefaultAsync(d => d.Usages.Any(u => u.OrderId == orderId), cancellationToken);
 
-                if (discount == null)
-                {
-                    await unitOfWork.RollbackTransactionAsync(ct);
-                    return ServiceResult.Success();
-                }
-
-                discountRepository.Update(discount);
-                await unitOfWork.SaveChangesAsync(ct);
-                await unitOfWork.CommitTransactionAsync(ct);
-
-                await auditService.LogSystemEventAsync(
-                    "DiscountUsageCancelled",
-                    $"Discount usage cancelled for order {orderId.Value}");
-
+            if (discount == null)
                 return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await unitOfWork.RollbackTransactionAsync(ct);
-                await auditService.LogSystemEventAsync("DiscountCancelFailed", ex.Message);
-                throw;
-            }
+
+            discountRepository.Update(discount);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await auditService.LogSystemEventAsync(
+                "DiscountUsageCancelled",
+                $"Discount usage cancelled for order {orderId.Value}");
+
+            return ServiceResult.Success();
         }, ct);
     }
 
@@ -105,37 +69,24 @@ public sealed class DiscountService(
         OrderId orderId,
         CancellationToken ct = default)
     {
-        return await unitOfWork.ExecuteStrategyAsync(async () =>
+        return await unitOfWork.ExecuteStrategyAsync(async (_, cancellationToken) =>
         {
-            using var transaction = await unitOfWork.BeginTransactionAsync(ct);
-            try
-            {
-                var discount = await context.DiscountCodes
-                    .Include(d => d.Usages)
-                    .FirstOrDefaultAsync(d => d.Usages.Any(u => u.OrderId == orderId), ct);
+            var discount = await context.DiscountCodes
+                .Include(d => d.Usages)
+                .FirstOrDefaultAsync(d => d.Usages.Any(u => u.OrderId == orderId), cancellationToken);
 
-                if (discount == null)
-                {
-                    await unitOfWork.RollbackTransactionAsync(ct);
-                    return ServiceResult.Success();
-                }
-
-                discountRepository.Update(discount);
-                await unitOfWork.SaveChangesAsync(ct);
-                await unitOfWork.CommitTransactionAsync(ct);
-
-                await auditService.LogSystemEventAsync(
-                    "DiscountUsageConfirmed",
-                    $"Discount usage confirmed for order {orderId.Value}");
-
+            if (discount == null)
                 return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await unitOfWork.RollbackTransactionAsync(ct);
-                await auditService.LogSystemEventAsync("DiscountConfirmFailed", ex.Message);
-                throw;
-            }
+
+            discountRepository.Update(discount);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await auditService.LogSystemEventAsync(
+                "DiscountUsageConfirmed",
+                $"Discount usage confirmed for order {orderId.Value}",
+                cancellationToken);
+
+            return ServiceResult.Success();
         }, ct);
     }
 }

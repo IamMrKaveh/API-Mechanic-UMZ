@@ -6,4 +6,4 @@ public record ApplyDiscountCommand(
     string Code,
     decimal OrderAmount,
     Guid UserId,
-    Guid OrderId) : IRequest<ServiceResult<DiscountApplicationResult>>;
+    Guid OrderId) : IRequest<ServiceResult<DiscountApplicationResult>>, IBypassTransactionBehavior;

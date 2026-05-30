@@ -4,4 +4,4 @@ public record ApproveReturnCommand(
     Guid OrderId,
     Guid AdminUserId,
     string Reason = "تأیید مرجوعی توسط ادمین",
-    string? IpAddress = null) : IRequest<ServiceResult>;
+    string? IpAddress = null) : IRequest<ServiceResult>, IBypassTransactionBehavior;

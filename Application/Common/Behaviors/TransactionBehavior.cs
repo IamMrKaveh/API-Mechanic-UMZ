@@ -15,25 +15,15 @@ public sealed class TransactionBehavior<TRequest, TResponse>(
 
         try
         {
-            return await unitOfWork.ExecuteStrategyAsync(async () =>
-            {
-                var transaction = await unitOfWork.BeginTransactionAsync(ct);
-                try
-                {
-                    var response = await next(ct);
-                    await unitOfWork.CommitTransactionAsync(ct);
-                    return response;
-                }
-                catch
-                {
-                    await unitOfWork.RollbackTransactionAsync(ct);
-                    throw;
-                }
-            }, ct);
+            return await unitOfWork.ExecuteStrategyAsync(
+                async (_, cancellationToken) => await next(cancellationToken), ct);
         }
         catch (Exception ex)
         {
-            await auditService.LogSystemEventAsync("TransactionFailed", $"Transaction failed for {typeof(TRequest).Name}: {ex.Message}", ct);
+            await auditService.LogSystemEventAsync(
+                "TransactionFailed",
+                $"Transaction failed for {typeof(TRequest).Name}: {ex.Message}",
+                ct);
             throw;
         }
     }

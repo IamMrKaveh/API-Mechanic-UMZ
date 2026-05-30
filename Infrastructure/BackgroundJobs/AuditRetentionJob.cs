@@ -3,10 +3,12 @@ using Infrastructure.BackgroundJobs.Abstractions;
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class AuditRetentionJob(
-    IServiceScopeFactory scopeFactory) : BackgroundService
+    IServiceScopeFactory scopeFactory,
+    IDistributedLock distributedLock) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
     private static readonly TimeSpan InitialDelay = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromHours(2);
     private static readonly int FinancialRetentionDays = 7 * 365;
     private static readonly int SecurityRetentionDays = 2 * 365;
     private static readonly int DefaultRetentionDays = 90;
@@ -35,7 +37,13 @@ public sealed class AuditRetentionJob(
         {
             try
             {
-                await RunRetentionAsync(ct);
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:audit-retention", LockExpiry, ct);
+
+                if (lockHandle is not null && lockHandle.IsAcquired)
+                {
+                    await RunRetentionAsync(ct);
+                }
             }
             catch (OperationCanceledException)
             {

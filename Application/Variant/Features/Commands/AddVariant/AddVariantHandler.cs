@@ -26,21 +26,20 @@ public class AddVariantHandler(
         AddVariantCommand request,
         CancellationToken ct)
     {
-        return await unitOfWork.ExecuteStrategyAsync(async () =>
+        try
         {
-            using var transaction = await unitOfWork.BeginTransactionAsync(ct);
-            try
+            return await unitOfWork.ExecuteStrategyAsync(async (_, cancellationToken) =>
             {
                 var productId = ProductId.From(request.ProductId);
                 var userId = UserId.From(currentUserService.CurrentUser.UserId);
 
-                var product = await productRepository.GetByIdAsync(productId, ct);
+                var product = await productRepository.GetByIdAsync(productId, cancellationToken);
                 if (product is null)
                     return ServiceResult<ProductVariantViewDto>.NotFound("محصول یافت نشد.");
 
                 var attributeValueIds = request.AttributeValueIds.Select(AttributeValueId.From);
                 var attributeValues = request.AttributeValueIds.Count != 0
-                    ? await attributeRepository.GetAttributeValuesByIdsAsync(attributeValueIds, ct)
+                    ? await attributeRepository.GetAttributeValuesByIdsAsync(attributeValueIds, cancellationToken)
                     : [];
 
                 if (request.AttributeValueIds.Count != 0)
@@ -54,7 +53,9 @@ public class AddVariantHandler(
                 }
 
                 var variantId = VariantId.NewId();
-                var sku = request.Sku is not null ? Sku.Create(request.Sku) : Sku.Create(Guid.NewGuid().ToString("N")[..12]);
+                var sku = request.Sku is not null
+                    ? Sku.Create(request.Sku)
+                    : Sku.Create(Guid.NewGuid().ToString("N")[..12]);
                 var price = Money.FromDecimal(request.SellingPrice);
                 var compareAtPrice = request.OriginalPrice > request.SellingPrice
                     ? Money.FromDecimal(request.OriginalPrice)
@@ -65,25 +66,21 @@ public class AddVariantHandler(
                 if (request.AttributeValueIds.Count != 0)
                 {
                     var assignments = attributeValues.Select(av =>
-                        AttributeAssignment.Create(
-                            av.AttributeTypeId,
-                            av.Id,
-                            av.Value));
+                        AttributeAssignment.Create(av.AttributeTypeId, av.Id, av.Value));
                     variant.SetAttributes(assignments);
                 }
 
                 if (request.EnabledShippingIds is not null && request.EnabledShippingIds.Count != 0)
                 {
                     var shippingIds = request.EnabledShippingIds.Select(ShippingId.From);
-                    var shippings = await shippingRepository.GetByIdsAsync(shippingIds, ct);
+                    var shippings = await shippingRepository.GetByIdsAsync(shippingIds, cancellationToken);
                     var shippingAssignments = shippings.Select(s =>
                         new ShippingAssignment(s.Id, 0, 0, 0, 0));
                     variant.SetShippingMethods(shippingAssignments);
                 }
 
-                await variantRepository.AddAsync(variant, ct);
-                await unitOfWork.SaveChangesAsync(ct);
-                await unitOfWork.CommitTransactionAsync(ct);
+                await variantRepository.AddAsync(variant, cancellationToken);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
 
                 await auditService.LogProductEventAsync(
                     product.Id,
@@ -91,21 +88,19 @@ public class AddVariantHandler(
                     $"واریانت به محصول '{product.Name}' اضافه شد. SKU: {sku.Value}",
                     userId);
 
-                var variants = await variantQueryService.GetProductVariantsAsync(productId, false, ct);
+                var variants = await variantQueryService.GetProductVariantsAsync(productId, false, cancellationToken);
                 var result = variants.FirstOrDefault(v => v.Id == variantId.Value);
 
                 return ServiceResult<ProductVariantViewDto>.Success(result!);
-            }
-            catch (DomainException ex)
-            {
-                await unitOfWork.RollbackTransactionAsync(ct);
-                return ServiceResult<ProductVariantViewDto>.Failure(ex.Message);
-            }
-            catch (Exception)
-            {
-                await unitOfWork.RollbackTransactionAsync(ct);
-                return ServiceResult<ProductVariantViewDto>.Failure("خطایی در افزودن واریانت رخ داد.");
-            }
-        }, ct);
+            }, ct);
+        }
+        catch (DomainException ex)
+        {
+            return ServiceResult<ProductVariantViewDto>.Failure(ex.Message);
+        }
+        catch (Exception)
+        {
+            return ServiceResult<ProductVariantViewDto>.Failure("خطایی در افزودن واریانت رخ داد.");
+        }
     }
 }

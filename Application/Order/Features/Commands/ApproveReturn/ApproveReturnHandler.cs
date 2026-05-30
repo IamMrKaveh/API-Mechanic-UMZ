@@ -28,18 +28,18 @@ public class ApproveReturnHandler(
             return ServiceResult.Forbidden(ex.Message);
         }
 
-        return await unitOfWork.ExecuteStrategyAsync(async () =>
+        try
         {
-            try
+            return await unitOfWork.ExecuteStrategyAsync(async (_, cancellationToken) =>
             {
                 orderRepository.Update(order);
-                await unitOfWork.SaveChangesAsync(ct);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
 
                 var result = await inventoryService.ReturnStockForOrderAsync(
                     orderId,
                     request.AdminUserId,
                     request.Reason,
-                    ct);
+                    cancellationToken);
 
                 if (!result.IsSuccess)
                     return ServiceResult.Failure($"خطا در بازگشت موجودی: {result.Error}");
@@ -52,11 +52,11 @@ public class ApproveReturnHandler(
                     $"مرجوعی سفارش تأیید شد. دلیل: {request.Reason}");
 
                 return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                return ServiceResult.Failure(ex.Message);
-            }
-        }, ct);
+            }, ct);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Failure(ex.Message);
+        }
     }
 }

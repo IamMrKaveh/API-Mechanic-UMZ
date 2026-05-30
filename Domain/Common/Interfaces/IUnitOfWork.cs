@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Domain.Common.Interfaces;
 
-public interface IUnitOfWork : IDisposable
+public interface IUnitOfWork : IDisposable, IAsyncDisposable
 {
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 
@@ -13,6 +13,6 @@ public interface IUnitOfWork : IDisposable
     Task RollbackTransactionAsync(CancellationToken ct = default);
 
     Task<T> ExecuteStrategyAsync<T>(
-        Func<Task<T>> operation,
+        Func<IDbContextTransaction, CancellationToken, Task<T>> operation,
         CancellationToken ct = default);
 }
