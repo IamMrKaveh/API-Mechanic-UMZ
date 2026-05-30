@@ -1,8 +1,11 @@
-﻿namespace Infrastructure.Persistence;
+﻿using Application.Common.Interfaces;
+using ITransaction = Application.Common.Interfaces.ITransaction;
+
+namespace Infrastructure.Persistence;
 
 public sealed class UnitOfWork(DBContext context) : IUnitOfWork
 {
-    private IDbContextTransaction? currentTransaction;
+    private EfCoreTransaction? currentTransaction;
     private bool disposed;
 
     public async Task<int> SaveChangesAsync(CancellationToken ct = default)
@@ -11,14 +14,15 @@ public sealed class UnitOfWork(DBContext context) : IUnitOfWork
         return await context.SaveChangesAsync(ct);
     }
 
-    public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default)
+    public async Task<ITransaction> BeginTransactionAsync(CancellationToken ct = default)
     {
         ThrowIfDisposed();
 
         if (currentTransaction is not null)
             return currentTransaction;
 
-        currentTransaction = await context.Database.BeginTransactionAsync(ct);
+        var efTransaction = await context.Database.BeginTransactionAsync(ct);
+        currentTransaction = new EfCoreTransaction(efTransaction);
         return currentTransaction;
     }
 
@@ -31,7 +35,7 @@ public sealed class UnitOfWork(DBContext context) : IUnitOfWork
 
         try
         {
-            await currentTransaction.CommitAsync(ct);
+            await currentTransaction.Inner.CommitAsync(ct);
         }
         finally
         {
@@ -49,7 +53,7 @@ public sealed class UnitOfWork(DBContext context) : IUnitOfWork
 
         try
         {
-            await currentTransaction.RollbackAsync(ct);
+            await currentTransaction.Inner.RollbackAsync(ct);
         }
         finally
         {
@@ -59,7 +63,7 @@ public sealed class UnitOfWork(DBContext context) : IUnitOfWork
     }
 
     public async Task<T> ExecuteStrategyAsync<T>(
-        Func<IDbContextTransaction, CancellationToken, Task<T>> operation,
+        Func<ITransaction, CancellationToken, Task<T>> operation,
         CancellationToken ct = default)
     {
         ThrowIfDisposed();
@@ -68,16 +72,17 @@ public sealed class UnitOfWork(DBContext context) : IUnitOfWork
 
         return await strategy.ExecuteAsync(async () =>
         {
-            await using var transaction = await context.Database.BeginTransactionAsync(ct);
+            var efTransaction = await context.Database.BeginTransactionAsync(ct);
+            await using var transaction = new EfCoreTransaction(efTransaction);
             try
             {
                 var result = await operation(transaction, ct);
-                await transaction.CommitAsync(ct);
+                await efTransaction.CommitAsync(ct);
                 return result;
             }
             catch
             {
-                await transaction.RollbackAsync(ct);
+                await efTransaction.RollbackAsync(ct);
                 throw;
             }
         });

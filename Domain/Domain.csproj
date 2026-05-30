@@ -96,6 +96,7 @@
 	  <Folder Include="Attribute\Specifications\" />
 	  <Folder Include="Audit\Services\" />
 	  <Folder Include="Cart\Services\" />
+	  <Folder Include="Common\Interfaces\" />
 	  <Folder Include="Common\Services\" />
 	  <Folder Include="Discount\Rules\" />
 	  <Folder Include="Inventory\Exceptions\" />
