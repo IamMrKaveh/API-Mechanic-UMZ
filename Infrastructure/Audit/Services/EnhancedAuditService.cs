@@ -1,14 +1,9 @@
 using Application.Audit.Features.Shared;
-using Domain.Audit.Interfaces;
 using Domain.User.ValueObjects;
 
 namespace Infrastructure.Audit.Services;
 
-public sealed class EnhancedAuditService(
-    IAuditRepository auditRepository,
-    IAuditQueryService auditQueryService,
-    IAuditMaskingService masking,
-    IUnitOfWork unitOfWork)
+public sealed class EnhancedAuditService(IAuditQueryService auditQueryService)
 {
     public async Task<PaginatedResult<AuditLogDto>> GetAuditLogsPagedAsync(
         Guid? userId,
@@ -25,13 +20,7 @@ public sealed class EnhancedAuditService(
 
     public async Task<(IReadOnlyList<AuditLogDto> Logs, int Total)> SearchLogsAsync(
         AuditSearchRequest request,
-        CancellationToken ct = default)
-    {
-        return await auditQueryService.SearchAsync(request, ct);
-    }
+        CancellationToken ct = default) => await auditQueryService.SearchAsync(request, ct);
 
-    public async Task<byte[]> ExportAsync(AuditExportRequest request, CancellationToken ct = default)
-    {
-        return await auditQueryService.ExportToCsvAsync(request, ct);
-    }
+    public async Task<byte[]> ExportAsync(AuditExportRequest request, CancellationToken ct = default) => await auditQueryService.ExportToCsvAsync(request, ct);
 }
