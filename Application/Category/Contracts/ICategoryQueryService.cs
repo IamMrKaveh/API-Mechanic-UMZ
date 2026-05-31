@@ -5,19 +5,8 @@ namespace Application.Category.Contracts;
 
 public interface ICategoryQueryService
 {
-    Task<CategoryDto?> GetCategoryByIdAsync(
-        CategoryId categoryId,
-        CancellationToken ct = default);
-
     Task<CategoryDetailDto?> GetCategoryDetailAsync(
         CategoryId categoryId,
-        CancellationToken ct = default);
-
-    Task<CategoryDto?> GetCategoryBySlugAsync(
-        Slug slug,
-        CancellationToken ct = default);
-
-    Task<IReadOnlyList<CategoryDto>> GetAllActiveAsync(
         CancellationToken ct = default);
 
     Task<IReadOnlyList<CategoryTreeDto>> GetCategoryTreeAsync(

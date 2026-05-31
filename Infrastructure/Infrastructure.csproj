@@ -59,6 +59,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Folder Include="Attribute\QueryServices\" />
+	  <Folder Include="Common\Extensions\" />
+	  <Folder Include="Common\Outbox\" />
 	  <Folder Include="Wallet\Services\" />
 	</ItemGroup>
 

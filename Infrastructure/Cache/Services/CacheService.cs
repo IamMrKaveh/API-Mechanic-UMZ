@@ -46,9 +46,4 @@ public sealed class CacheService(IDistributedCache cache) : ICacheService
         var data = await cache.GetStringAsync(key, ct);
         return data is not null;
     }
-
-    public async Task ClearAsync(string key, CancellationToken ct)
-    {
-        await cache.RemoveAsync(key, ct);
-    }
 }

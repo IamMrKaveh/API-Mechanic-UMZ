@@ -1,5 +1,4 @@
-﻿using Application.Media.Features.Shared;
-using Infrastructure.Security.Settings;
+﻿using Infrastructure.Security.Settings;
 using Presentation.Common.Options;
 
 namespace Presentation.Common.Extensions;
@@ -20,9 +19,6 @@ public static class OptionsExtensions
 
         services.Configure<SecuritySettings>(
             configuration.GetSection(SecuritySettings.SectionName));
-
-        services.Configure<LiaraStorageSettings>(
-            configuration.GetSection("LiaraStorage"));
 
         return services;
     }

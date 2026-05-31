@@ -46,11 +46,4 @@ public sealed class InMemoryCacheService(IMemoryCache cache) : ICacheService
     {
         return Task.FromResult(cache.TryGetValue(key, out _));
     }
-
-    public Task ClearAsync(string key, CancellationToken ct)
-    {
-        cache.Remove(key);
-        _trackedKeys.TryRemove(key, out _);
-        return Task.CompletedTask;
-    }
 }

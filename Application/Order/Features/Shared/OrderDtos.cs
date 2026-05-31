@@ -3,12 +3,6 @@ using Application.User.Features.Shared;
 
 namespace Application.Order.Features.Shared;
 
-public sealed record CreateOrderItemDto
-{
-    public Guid VariantId { get; init; }
-    public int Quantity { get; init; }
-}
-
 public sealed record AdminOrderDto
 {
     public Guid Id { get; init; }
@@ -42,18 +36,6 @@ public sealed record AdminOrderDto
     public bool IsDeleted { get; init; }
 }
 
-public sealed record AddressSnapshotDto
-{
-    public Guid OriginalAddressId { get; init; }
-    public string Title { get; init; } = string.Empty;
-    public string ReceiverName { get; init; } = string.Empty;
-    public string PhoneNumber { get; init; } = string.Empty;
-    public string Province { get; init; } = string.Empty;
-    public string City { get; init; } = string.Empty;
-    public string Address { get; init; } = string.Empty;
-    public string PostalCode { get; init; } = string.Empty;
-}
-
 public sealed record UserSummaryDto
 {
     public Guid Id { get; init; }
@@ -63,43 +45,10 @@ public sealed record UserSummaryDto
     public bool IsAdmin { get; init; }
 }
 
-public sealed record CreateOrderFromCartDto
-{
-    public Guid? UserAddressId { get; init; }
-    public CreateUserAddressDto? NewAddress { get; init; }
-    public bool SaveNewAddress { get; init; }
-    public Guid ShippingId { get; init; }
-    public string? DiscountCode { get; init; }
-    public List<CheckoutItemPriceDto> ExpectedItems { get; init; } = [];
-    public string? CallbackUrl { get; init; }
-}
-
-public sealed record CheckoutItemPriceDto
-{
-    public Guid VariantId { get; init; }
-    public decimal ExpectedPrice { get; init; }
-}
-
 public sealed record UpdateOrderDto
 {
     public Guid? ShippingId { get; init; }
     public string RowVersion { get; init; } = string.Empty;
-}
-
-public sealed record UpdateOrderItemDto
-{
-    public Guid OrderItemId { get; init; }
-    public int Quantity { get; init; }
-}
-
-public sealed record UpdateOrderStatusDto
-{
-    public string? DisplayName { get; init; }
-    public string? Icon { get; init; }
-    public string? Color { get; init; }
-    public int? SortOrder { get; init; }
-    public bool? AllowCancel { get; init; }
-    public bool? AllowEdit { get; init; }
 }
 
 public sealed record AdminCreateOrderItemDto
@@ -107,23 +56,6 @@ public sealed record AdminCreateOrderItemDto
     public Guid VariantId { get; init; }
     public int Quantity { get; init; }
     public decimal SellingPrice { get; init; }
-}
-
-public sealed record CreateOrderDto
-{
-    public Guid UserId { get; init; }
-    public string ReceiverName { get; init; } = string.Empty;
-    public Guid UserAddressId { get; init; }
-    public Guid ShippingId { get; init; }
-    public string? DiscountCode { get; init; }
-    public List<CreateOrderItemDto> OrderItems { get; init; } = [];
-}
-
-public sealed record UpdateOrderStatusByIdDto
-{
-    public Guid OrderStatusId { get; init; }
-    public string RowVersion { get; init; } = string.Empty;
-    public int UpdatedByUserId { get; init; }
 }
 
 public record OrderDto
@@ -228,9 +160,4 @@ public sealed record CheckoutDto(
 
 public sealed record CancelOrderDto(
     string Reason
-);
-
-public sealed record InitiatePaymentDto(
-    Guid OrderId,
-    string? GatewayName = null
 );

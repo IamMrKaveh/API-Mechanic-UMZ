@@ -15,11 +15,6 @@ public interface IAuditQueryService
         int pageSize,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<AuditLogDto>> GetByEntityAsync(
-        string entityType,
-        string entityId,
-        CancellationToken ct = default);
-
     Task<(IReadOnlyList<AuditLogDto> Logs, int Total)> SearchAsync(
         AuditSearchRequest request,
         CancellationToken ct = default);

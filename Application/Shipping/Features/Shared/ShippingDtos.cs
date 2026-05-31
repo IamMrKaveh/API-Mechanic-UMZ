@@ -60,12 +60,6 @@ public record ProductVariantShippingInfoDto
     public List<int> EnabledShippingIds { get; init; } = [];
 }
 
-public record UpdateVariantShippingsDto
-{
-    public decimal ShippingMultiplier { get; init; }
-    public List<Guid> EnabledShippingIds { get; init; } = [];
-}
-
 public sealed record CreateShippingDto(
     string Name,
     decimal BaseCost,

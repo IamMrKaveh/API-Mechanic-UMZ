@@ -23,8 +23,8 @@ public sealed class VariantStockCacheInvalidationHandler(
             var variantId = VariantId.From(notification.VariantId);
             var productId = ProductId.From(notification.ProductId);
 
-            await cacheService.ClearAsync(VariantAvailabilityCacheKey(variantId), ct);
-            await cacheService.ClearAsync(ProductAvailabilityCacheKey(productId), ct);
+            await cacheService.RemoveAsync(VariantAvailabilityCacheKey(variantId), ct);
+            await cacheService.RemoveAsync(ProductAvailabilityCacheKey(productId), ct);
 
             if (notification.NewAvailable >= 0)
             {

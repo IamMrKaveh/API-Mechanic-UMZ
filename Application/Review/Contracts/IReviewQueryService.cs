@@ -12,11 +12,6 @@ public interface IReviewQueryService
         int pageSize,
         CancellationToken ct = default);
 
-    Task<PaginatedResult<ProductReviewDto>> GetPendingReviewsAsync(
-        int page,
-        int pageSize,
-        CancellationToken ct = default);
-
     Task<PaginatedResult<ProductReviewDto>> GetUserReviewsAsync(
         UserId userId,
         int page,

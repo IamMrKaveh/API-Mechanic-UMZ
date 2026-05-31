@@ -15,8 +15,4 @@ public interface IVariantQueryService
     Task<ProductVariantShippingInfoDto?> GetVariantShippingInfoAsync(
         VariantId variantId,
         CancellationToken ct = default);
-
-    Task<Features.Shared.VariantAvailabilityDto?> GetVariantAvailabilityAsync(
-        VariantId variantId,
-        CancellationToken ct = default);
 }

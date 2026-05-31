@@ -1,5 +1,4 @@
 using Application.Auth.Contracts;
-using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
@@ -15,17 +14,6 @@ public sealed class OtpService(
     IAuditService auditService) : IOtpService
 {
     private readonly AuthOptions _authOptions = authOptions.Value;
-
-    public async Task<ServiceResult<UserOtp>> GetActiveOtpAsync(
-        UserId userId,
-        OtpPurpose purpose,
-        CancellationToken ct = default)
-    {
-        var otp = await otpRepository.GetLatestActiveByUserIdAsync(userId, purpose, ct);
-        if (otp is null)
-            return ServiceResult<UserOtp>.NotFound("کد تأیید فعالی برای این کاربر یافت نشد.");
-        return ServiceResult<UserOtp>.Success(otp);
-    }
 
     public string HashOtp(OtpCode otp)
     {

@@ -1,6 +1,4 @@
-﻿using Application.Cache.Interfaces;
-
-namespace Application.Common.Behaviors;
+﻿namespace Application.Common.Behaviors;
 
 public sealed class CachingBehavior<TRequest, TResponse>(
     ICacheService cacheService,

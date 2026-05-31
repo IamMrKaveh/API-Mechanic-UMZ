@@ -75,23 +75,4 @@ public sealed class VariantQueryService(DBContext context) : IVariantQueryServic
                 }).ToList()
         };
     }
-
-    public async Task<VariantAvailabilityDto?> GetVariantAvailabilityAsync(
-        VariantId variantId, CancellationToken ct = default)
-    {
-        var variant = await context.ProductVariants
-            .AsNoTracking()
-            .Where(v => v.Id == variantId && !v.IsDeleted)
-            .FirstOrDefaultAsync(ct);
-
-        if (variant is null) return null;
-
-        return new VariantAvailabilityDto(
-            VariantId: variant.Id.Value,
-            IsInStock: false,
-            IsUnlimited: false,
-            AvailableQuantity: 0,
-            StockQuantity: 0,
-            ReservedQuantity: 0);
-    }
 }

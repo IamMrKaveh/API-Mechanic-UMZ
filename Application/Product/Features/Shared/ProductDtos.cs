@@ -104,26 +104,6 @@ public record ProductListItemDto
     public string? RowVersion { get; init; }
 }
 
-public record CreateProductDto
-{
-    public string Name { get; init; } = string.Empty;
-    public string? Slug { get; init; }
-    public string Description { get; init; } = string.Empty;
-    public Guid CategoryId { get; init; }
-    public Guid BrandId { get; init; }
-}
-
-public record UpdateProductDto
-{
-    public string Name { get; init; } = string.Empty;
-    public string? Slug { get; init; }
-    public string Description { get; init; } = string.Empty;
-    public Guid CategoryId { get; init; }
-    public Guid BrandId { get; init; }
-    public bool IsActive { get; init; }
-    public bool IsFeatured { get; init; }
-}
-
 public sealed record VariantPriceUpdateInput(
     Guid ProductId,
     Guid VariantId,

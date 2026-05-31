@@ -1,30 +1,5 @@
 namespace Application.Brand.Features.Shared;
 
-public sealed record BrandInfoDto
-{
-    public Guid Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string CategoryName { get; init; } = string.Empty;
-}
-
-public sealed record BrandSummaryInProductDto(
-    Guid Id,
-    string Name,
-    string CategoryName
-);
-
-public record BrandSummaryDto
-{
-    public Guid Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string? Slug { get; init; }
-    public string? IconUrl { get; init; }
-    public bool IsActive { get; init; }
-    public int SortOrder { get; init; }
-    public int ProductCount { get; init; }
-    public int ActiveProductCount { get; init; }
-}
-
 public record BrandViewDto
 {
     public Guid Id { get; init; }
@@ -40,21 +15,6 @@ public record BrandViewDto
     public int TotalProductsCount { get; init; }
     public DateTime CreatedAt { get; init; }
     public string? RowVersion { get; init; }
-}
-
-public record BrandHierarchyDto
-{
-    public Guid Id { get; init; }
-    public string Title { get; init; } = null!;
-}
-
-public record BrandTreeDto
-{
-    public Guid Id { get; init; }
-    public string Name { get; init; } = null!;
-    public string? Slug { get; init; }
-    public int SortOrder { get; init; }
-    public int ProductCount { get; init; }
 }
 
 public record BrandDto

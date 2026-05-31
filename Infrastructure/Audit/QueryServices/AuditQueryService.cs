@@ -63,35 +63,6 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         };
     }
 
-    public async Task<IReadOnlyList<AuditLogDto>> GetByEntityAsync(
-        string entityType,
-        string entityId,
-        CancellationToken ct = default)
-    {
-        var logs = await context.AuditLogs
-            .AsNoTracking()
-            .Where(l => l.EntityType == entityType && l.EntityId == entityId)
-            .OrderByDescending(l => l.CreatedAt)
-            .Select(l => new AuditLogDto
-            {
-                Id = l.Id.Value,
-                UserId = l.UserId == null ? null : l.UserId.Value,
-                EventType = l.EventType,
-                Action = l.Action,
-                Details = l.Details,
-                IpAddress = l.IpAddress,
-                UserAgent = l.UserAgent,
-                EntityType = l.EntityType,
-                EntityId = l.EntityId == null ? null : Guid.Parse(l.EntityId),
-                CreatedAt = l.CreatedAt,
-                Timestamp = l.CreatedAt,
-                IsArchived = l.IsArchived
-            })
-            .ToListAsync(ct);
-
-        return logs.AsReadOnly();
-    }
-
     public async Task<(IReadOnlyList<AuditLogDto> Logs, int Total)> SearchAsync(
         AuditSearchRequest request,
         CancellationToken ct = default)

@@ -6,22 +6,6 @@ public sealed class UrlResolverService(IConfiguration configuration) : IUrlResol
         ?? configuration["Liara:BaseUrl"]
         ?? string.Empty;
 
-    public string? ResolveUrl(string? relativePath)
-    {
-        if (string.IsNullOrWhiteSpace(relativePath))
-            return null;
-
-        if (relativePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            return relativePath;
-
-        return $"{_baseUrl.TrimEnd('/')}/{relativePath.TrimStart('/')}";
-    }
-
-    public string GetAbsoluteUrl(string relativePath)
-    {
-        return ResolveUrl(relativePath) ?? relativePath;
-    }
-
     public string ResolveMediaUrl(string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath))
@@ -31,10 +15,5 @@ public sealed class UrlResolverService(IConfiguration configuration) : IUrlResol
             return filePath;
 
         return $"{_baseUrl.TrimEnd('/')}/{filePath.TrimStart('/')}";
-    }
-
-    public string ResolveAbsoluteUrl(string relativePath)
-    {
-        return GetAbsoluteUrl(relativePath);
     }
 }

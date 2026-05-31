@@ -3,27 +3,17 @@ using RegexOptions = System.Text.RegularExpressions.RegexOptions;
 
 namespace Infrastructure.Audit.Services;
 
-public sealed class AuditMaskingService : IAuditMaskingService
+public sealed partial class AuditMaskingService : IAuditMaskingService
 {
-    private static readonly Regex CardNumberRegex = new(
-        @"\b(\d{4})[\s\-]?(\d{4})[\s\-]?(\d{4})[\s\-]?(\d{4})\b",
-        RegexOptions.Compiled);
+    private static readonly Regex CardNumberRegex = cardNumberRegex();
 
-    private static readonly Regex PhoneRegex = new(
-        @"\b(0?9[0-9]{2})[\s\-]?(\d{3})[\s\-]?(\d{4})\b",
-        RegexOptions.Compiled);
+    private static readonly Regex PhoneRegex = phoneRegex();
 
-    private static readonly Regex EmailRegex = new(
-        @"\b([a-zA-Z0-9._%+\-]+)@([a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b",
-        RegexOptions.Compiled);
+    private static readonly Regex EmailRegex = emailRegex();
 
-    private static readonly Regex BearerTokenRegex = new(
-        @"(Bearer\s+)[A-Za-z0-9\-._~+/]+=*",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex BearerTokenRegex = bearerTokenRegex();
 
-    private static readonly Regex IpV4Regex = new(
-        @"\b(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\b",
-        RegexOptions.Compiled);
+    private static readonly Regex IpV4Regex = ipV4Regex();
 
     public string MaskPhoneNumber(PhoneNumber phoneNumber)
     {
@@ -73,4 +63,19 @@ public sealed class AuditMaskingService : IAuditMaskingService
         if (username.Length <= 2) return "**";
         return $"{username[0]}{new string('*', Math.Min(username.Length - 2, 5))}{username[^1]}";
     }
+
+    [GeneratedRegex(@"\b(\d{4})[\s\-]?(\d{4})[\s\-]?(\d{4})[\s\-]?(\d{4})\b", RegexOptions.Compiled)]
+    private static partial Regex cardNumberRegex();
+
+    [GeneratedRegex(@"\b(0?9[0-9]{2})[\s\-]?(\d{3})[\s\-]?(\d{4})\b", RegexOptions.Compiled)]
+    private static partial Regex phoneRegex();
+
+    [GeneratedRegex(@"\b([a-zA-Z0-9._%+\-]+)@([a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b", RegexOptions.Compiled)]
+    private static partial Regex emailRegex();
+
+    [GeneratedRegex(@"(Bearer\s+)[A-Za-z0-9\-._~+/]+=*", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
+    private static partial Regex bearerTokenRegex();
+
+    [GeneratedRegex(@"\b(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\b", RegexOptions.Compiled)]
+    private static partial Regex ipV4Regex();
 }

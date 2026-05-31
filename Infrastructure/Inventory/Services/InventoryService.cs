@@ -2,6 +2,7 @@ using Application.Common.Exceptions;
 using Domain.Inventory.Enums;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
+using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
@@ -10,6 +11,7 @@ namespace Infrastructure.Inventory.Services;
 
 public sealed class InventoryService(
     IInventoryRepository inventoryRepository,
+    IOrderRepository orderRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService) : IInventoryService
 {
@@ -69,62 +71,6 @@ public sealed class InventoryService(
         }
     }
 
-    public async Task<ServiceResult> CommitReservationAsync(
-        VariantId variantId,
-        StockQuantity quantity,
-        string referenceNumber,
-        OrderItemId? orderItemId = null,
-        CancellationToken ct = default)
-    {
-        var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
-        if (inventory is null)
-            return ServiceResult.NotFound($"موجودی واریانت {variantId.Value} یافت نشد.");
-
-        var result = inventory.ConfirmReservation(quantity, referenceNumber, orderItemId);
-        if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
-
-        inventoryRepository.Update(inventory);
-
-        try
-        {
-            await unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult.Success();
-        }
-        catch (ConcurrencyException)
-        {
-            return ServiceResult.Failure("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
-        }
-    }
-
-    public async Task<ServiceResult> IncreaseStockAsync(
-        VariantId variantId,
-        StockQuantity quantity,
-        string reason,
-        UserId? userId = null,
-        CancellationToken ct = default)
-    {
-        var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
-        if (inventory is null)
-            return ServiceResult.NotFound($"موجودی واریانت {variantId.Value} یافت نشد.");
-
-        var result = inventory.IncreaseStock(quantity, reason, userId);
-        if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
-
-        inventoryRepository.Update(inventory);
-
-        try
-        {
-            await unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult.Success();
-        }
-        catch (ConcurrencyException)
-        {
-            return ServiceResult.Failure("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
-        }
-    }
-
     public async Task<ServiceResult> AdjustStockAsync(
         VariantId variantId,
         StockQuantity quantityChange,
@@ -153,48 +99,19 @@ public sealed class InventoryService(
         }
     }
 
-    public async Task<ServiceResult> ReturnStockAsync(
-        VariantId variantId,
-        StockQuantity quantity,
-        string reason,
-        OrderItemId? orderItemId = null,
-        UserId? userId = null,
-        CancellationToken ct = default)
-    {
-        var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
-        if (inventory is null)
-            return ServiceResult.NotFound($"موجودی واریانت {variantId.Value} یافت نشد.");
-
-        var result = inventory.ReturnStock(quantity, reason, userId);
-        if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
-
-        inventoryRepository.Update(inventory);
-
-        try
-        {
-            await unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult.Success();
-        }
-        catch (ConcurrencyException)
-        {
-            return ServiceResult.Failure("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
-        }
-    }
-
     public async Task<ServiceResult> ReturnStockForOrderAsync(
         OrderId orderId,
         Guid adminUserId,
         string reason,
         CancellationToken ct = default)
     {
-        var orderItems = await GetOrderItemsAsync(orderId, ct);
-        if (!orderItems.Any())
-            return ServiceResult.NotFound("آیتمی برای سفارش یافت نشد.");
+        var order = await orderRepository.FindByIdAsync(orderId, ct);
+        if (order is null)
+            return ServiceResult.NotFound("سفارش یافت نشد");
 
         var adminUserIdVo = UserId.From(adminUserId);
 
-        foreach (var item in orderItems)
+        foreach (var item in order.OrderItems)
         {
             var inventory = await inventoryRepository.GetByVariantIdAsync(item.VariantId, ct);
             if (inventory is null || inventory.IsUnlimited) continue;
@@ -248,12 +165,6 @@ public sealed class InventoryService(
         {
             return ServiceResult.Failure("خطا در آزادسازی رزروها.");
         }
-    }
-
-    private async Task<IEnumerable<(VariantId VariantId, int Quantity)>> GetOrderItemsAsync(
-        OrderId orderId, CancellationToken ct)
-    {
-        return await Task.FromResult(Enumerable.Empty<(VariantId, int)>());
     }
 
     private async Task<IEnumerable<Domain.Inventory.Aggregates.Inventory>> GetInventoriesByReferenceAsync(

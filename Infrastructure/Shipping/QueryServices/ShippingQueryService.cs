@@ -64,29 +64,6 @@ public sealed class ShippingQueryService(DBContext context) : IShippingQueryServ
         }).ToList().AsReadOnly();
     }
 
-    public async Task<IReadOnlyList<ShippingListItemDto>> GetAvailableShippingsForOrderAsync(
-        Money orderAmount, CancellationToken ct = default)
-    {
-        var activeShippings = await context.Shippings
-            .AsNoTracking()
-            .Where(s => s.IsActive)
-            .OrderBy(s => s.SortOrder)
-            .ToListAsync(ct);
-
-        return activeShippings
-            .Where(s => s.IsAvailableForOrder(orderAmount))
-            .Select(s => new ShippingListItemDto
-            {
-                Id = s.Id.Value,
-                Name = s.Name.Value,
-                BaseCost = s.BaseCost.Amount,
-                IsActive = s.IsActive,
-                IsDefault = s.IsDefault,
-                SortOrder = s.SortOrder,
-                DeliveryTimeDisplay = s.GetDeliveryTimeDisplay()
-            }).ToList().AsReadOnly();
-    }
-
     public async Task<ShippingCostResultDto> CalculateShippingCostAsync(
         ShippingId shippingId, Money orderAmount, CancellationToken ct = default)
     {

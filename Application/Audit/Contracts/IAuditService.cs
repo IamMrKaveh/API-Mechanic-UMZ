@@ -64,12 +64,6 @@ public interface IAuditService
         CancellationToken ct = default);
 
     Task LogInventoryEventAsync(
-        ProductId productId,
-        string action,
-        string details,
-        UserId? userId = null);
-
-    Task LogInventoryEventAsync(
         VariantId variantId,
         string action,
         string details,

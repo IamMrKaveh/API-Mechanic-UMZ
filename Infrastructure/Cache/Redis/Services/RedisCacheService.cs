@@ -89,9 +89,4 @@ public sealed class RedisCacheService(
             return false;
         }
     }
-
-    public async Task ClearAsync(string key, CancellationToken ct)
-    {
-        await RemoveAsync(key, ct);
-    }
 }

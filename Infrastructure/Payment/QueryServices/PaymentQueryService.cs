@@ -1,21 +1,11 @@
 ﻿using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
 using Domain.Order.ValueObjects;
-using Domain.Payment.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Infrastructure.Payment.QueryServices;
 
 public sealed class PaymentQueryService(DBContext context) : IPaymentQueryService
 {
-    public async Task<PaymentTransactionDto?> GetTransactionByIdAsync(
-        PaymentTransactionId paymentTransactionId, CancellationToken ct = default)
-        => await context.PaymentTransactions
-            .AsNoTracking()
-            .Where(t => t.Id == paymentTransactionId)
-            .Select(MapToDto())
-            .FirstOrDefaultAsync(ct);
-
     public async Task<PaymentTransactionDto?> GetByAuthorityAsync(
         string authority, CancellationToken ct = default)
         => await context.PaymentTransactions
@@ -23,36 +13,6 @@ public sealed class PaymentQueryService(DBContext context) : IPaymentQueryServic
             .Where(t => t.Authority.Value == authority)
             .Select(MapToDto())
             .FirstOrDefaultAsync(ct);
-
-    public async Task<PaymentTransactionDto?> GetLatestByOrderIdAsync(
-        OrderId orderId, CancellationToken ct = default)
-        => await context.PaymentTransactions
-            .AsNoTracking()
-            .Where(t => t.OrderId == orderId)
-            .OrderByDescending(t => t.CreatedAt)
-            .Select(MapToDto())
-            .FirstOrDefaultAsync(ct);
-
-    public async Task<PaginatedResult<PaymentTransactionDto>> GetAllAsync(
-        UserId? userId, string? status, int page, int pageSize, CancellationToken ct = default)
-    {
-        var query = context.PaymentTransactions.AsNoTracking().AsQueryable();
-
-        if (userId is not null)
-            query = query.Where(t => t.UserId == userId);
-        if (!string.IsNullOrWhiteSpace(status))
-            query = query.Where(t => t.Status.Value == status);
-
-        var total = await query.CountAsync(ct);
-        var items = await query
-            .OrderByDescending(t => t.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(MapToDto())
-            .ToListAsync(ct);
-
-        return PaginatedResult<PaymentTransactionDto>.Create(items, total, page, pageSize);
-    }
 
     public async Task<PaginatedResult<PaymentTransactionDto>> GetPagedAsync(
         Guid? orderId, Guid? userId, string? status, string? gateway,

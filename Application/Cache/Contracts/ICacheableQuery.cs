@@ -1,4 +1,4 @@
-﻿namespace Application.Cache.Interfaces;
+﻿namespace Application.Cache.Contracts;
 
 public interface ICacheableQuery
 {

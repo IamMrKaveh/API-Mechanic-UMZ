@@ -2,27 +2,17 @@ using Application.Payment.Contracts;
 
 namespace Infrastructure.Payment.Factory;
 
-public sealed class PaymentGatewayOptions
+public sealed class PaymentGatewayFactory(IEnumerable<IPaymentGateway> gateways) : IPaymentGatewayFactory
 {
-    public string DefaultGateway { get; init; } = "zarinpal";
-}
-
-public sealed class PaymentGatewayFactory(
-    IEnumerable<IPaymentGateway> gateways,
-    IOptions<PaymentGatewayOptions> options) : IPaymentGatewayFactory
-{
-    private readonly string _defaultGateway = options.Value.DefaultGateway;
-
     public IPaymentGateway GetGateway(string gatewayName = "zarinpal")
     {
         var gateway = gateways.FirstOrDefault(g =>
             g.GatewayName.Equals(gatewayName, StringComparison.OrdinalIgnoreCase));
 
-        if (gateway is null)
-            throw new InvalidOperationException(
-                $"درگاه پرداخت '{gatewayName}' پیدا نشد. درگاه‌های موجود: {string.Join(", ", GetAvailableGateways())}");
-
-        return gateway;
+        return gateway is null
+            ? throw new InvalidOperationException(
+                $"درگاه پرداخت '{gatewayName}' پیدا نشد. درگاه‌های موجود: {string.Join(", ", GetAvailableGateways())}")
+            : gateway;
     }
 
     public IReadOnlyList<string> GetAvailableGateways()

@@ -122,14 +122,3 @@ public sealed record UpdateDiscountDto(
     DateTime? ExpiresAt,
     bool IsActive
 );
-
-public sealed record ValidateDiscountDto(
-    string Code,
-    decimal OrderAmount
-);
-
-public sealed record ApplyDiscountDto(
-    string Code,
-    Guid OrderId,
-    decimal OrderAmount
-);

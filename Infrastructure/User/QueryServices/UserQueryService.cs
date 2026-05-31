@@ -32,28 +32,6 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
         return user;
     }
 
-    public async Task<IReadOnlyList<UserAddressDto>> GetUserAddressesAsync(
-        UserId userId, CancellationToken ct = default)
-    {
-        var addresses = await context.UserAddresses
-            .AsNoTracking()
-            .Where(a => EF.Property<Guid>(a, "UserId") == userId.Value)
-            .Select(a => new UserAddressDto
-            {
-                Id = a.Id.Value,
-                Title = a.Title,
-                ReceiverName = a.ReceiverName,
-                PhoneNumber = a.PhoneNumber,
-                Province = a.Province,
-                City = a.City,
-                PostalCode = a.PostalCode,
-                IsDefault = a.IsDefault
-            })
-            .ToListAsync(ct);
-
-        return addresses.AsReadOnly();
-    }
-
     public async Task<UserDashboardDto> GetUserDashboardAsync(
         UserId userId, CancellationToken ct = default)
     {
@@ -87,7 +65,7 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
         throw new NotImplementedException();
     }
 
-    Task<IEnumerable<UserAddressDto>> IUserQueryService.GetUserAddressesAsync(UserId userId, CancellationToken ct)
+    public Task<IEnumerable<UserAddressDto>> GetUserAddressesAsync(UserId userId, CancellationToken ct)
     {
         throw new NotImplementedException();
     }

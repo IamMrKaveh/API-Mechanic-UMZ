@@ -4,10 +4,6 @@ namespace Application.Search.Contracts;
 
 public interface IElasticDeadLetterQueue
 {
-    Task EnqueueAsync(
-        FailedElasticOperation operation,
-        CancellationToken ct);
-
     Task<IEnumerable<FailedElasticOperation>> DequeueAsync(
         int count,
         CancellationToken ct);
