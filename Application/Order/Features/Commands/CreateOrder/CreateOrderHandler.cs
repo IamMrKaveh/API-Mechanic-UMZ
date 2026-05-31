@@ -31,7 +31,7 @@ public class CreateOrderHandler(
 
         try
         {
-            return await unitOfWork.ExecuteStrategyAsync(async (_, cancellationToken) =>
+            return await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
             {
                 var userAddressId = UserAddressId.From(request.UserAddressId);
                 var userId = UserId.From(request.UserId);

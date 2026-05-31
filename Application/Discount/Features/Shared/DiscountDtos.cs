@@ -103,22 +103,3 @@ public record DiscountUsageItemDto
     public decimal DiscountedAmount { get; init; }
     public DateTime UsedAt { get; init; }
 }
-
-public sealed record CreateDiscountDto(
-    string Code,
-    string DiscountType,
-    decimal Value,
-    decimal? MaximumDiscountAmount,
-    int? UsageLimit,
-    DateTime? StartsAt,
-    DateTime? ExpiresAt,
-    bool IsActive
-);
-
-public sealed record UpdateDiscountDto(
-    decimal Value,
-    int? UsageLimit,
-    DateTime? StartsAt,
-    DateTime? ExpiresAt,
-    bool IsActive
-);

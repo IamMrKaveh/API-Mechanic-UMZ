@@ -87,36 +87,4 @@ public sealed record InventoryReportDto
     public int InStockVariants { get; init; }
     public int OutOfStockVariants { get; init; }
     public int LowStockVariants { get; init; }
-    public int UnlimitedVariants { get; init; }
-    public decimal TotalStockValue { get; init; }
-    public decimal TotalRetailValue { get; init; }
-    public decimal PotentialProfit { get; init; }
-    public ICollection<InventoryCategoryBreakdownDto> ByCategory { get; init; } = [];
-    public ICollection<AnalyticsLowStockItemDto> LowStockItems { get; init; } = [];
-    public ICollection<AnalyticsOutOfStockItemDto> OutOfStockItems { get; init; } = [];
 }
-
-public sealed record InventoryCategoryBreakdownDto
-{
-    public Guid CategoryId { get; init; }
-    public string CategoryName { get; init; } = string.Empty;
-    public int VariantCount { get; init; }
-    public int TotalStock { get; init; }
-    public decimal StockValue { get; init; }
-}
-
-public sealed record AnalyticsLowStockItemDto(
-    Guid VariantId,
-    Guid ProductId,
-    string ProductName,
-    string? Sku,
-    int AvailableStock,
-    int LowStockThreshold
-);
-
-public sealed record AnalyticsOutOfStockItemDto(
-    Guid VariantId,
-    Guid ProductId,
-    string ProductName,
-    string? Sku,
-    DateTime? LastStockDate);

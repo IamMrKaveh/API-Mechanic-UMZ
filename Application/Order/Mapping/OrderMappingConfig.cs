@@ -1,6 +1,4 @@
-﻿using Application.Order.Features.Commands.CancelOrder;
-using Application.Order.Features.Commands.CheckoutFromCart;
-using Application.Order.Features.Shared;
+﻿using Application.Order.Features.Shared;
 using Domain.Order.Entities;
 
 namespace Application.Order.Mapping;
@@ -35,18 +33,5 @@ public class OrderMappingConfig : IRegister
             .Map(dest => dest.UnitPrice, src => src.UnitPrice.Amount)
             .Map(dest => dest.Quantity, src => src.Quantity)
             .Map(dest => dest.TotalPrice, src => src.TotalPrice.Amount);
-
-        config.NewConfig<CheckoutDto, CheckoutFromCartCommand>()
-           .Map(dest => dest.CartId, src => src.CartId)
-           .Map(dest => dest.ShippingId, src => src.ShippingId)
-           .Map(dest => dest.AddressId, src => src.AddressId)
-           .Map(dest => dest.DiscountCode, src => src.DiscountCode)
-           .Map(dest => dest.PaymentMethod, src => src.PaymentMethod)
-           .Map(dest => dest.IdempotencyKey, src => src.IdempotencyKey)
-           .IgnoreNonMapped(true);
-
-        config.NewConfig<CancelOrderDto, CancelOrderCommand>()
-            .Map(dest => dest.Reason, src => src.Reason)
-            .IgnoreNonMapped(true);
     }
 }

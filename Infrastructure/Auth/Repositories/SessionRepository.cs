@@ -41,6 +41,19 @@ public sealed class SessionRepository(DBContext context) : ISessionRepository
             session.Revoke(SessionRevocationReason.AllSessionsRevoked);
     }
 
+    public async Task<UserSession?> GetActiveByUserAndDeviceAsync(
+        UserId userId,
+        DeviceInfo deviceInfo,
+        CancellationToken ct = default)
+    {
+        return await context.UserSessions
+            .FirstOrDefaultAsync(
+                s => s.UserId == userId
+                  && s.DeviceInfo == deviceInfo
+                  && !s.IsRevoked,
+                ct);
+    }
+
     public async Task<IReadOnlyList<UserSession>> GetExpiredActiveSessionsAsync(
         DateTime cutoffTime,
         CancellationToken ct = default)

@@ -15,7 +15,7 @@ public class ApplyDiscountHandler(
     {
         try
         {
-            return await unitOfWork.ExecuteStrategyAsync(async (_, cancellationToken) =>
+            return await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
             {
                 var discount = await discountRepository.GetByCodeAsync(request.Code, cancellationToken);
                 if (discount is null)

@@ -30,7 +30,7 @@ public class ApproveReturnHandler(
 
         try
         {
-            return await unitOfWork.ExecuteStrategyAsync(async (_, cancellationToken) =>
+            return await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
             {
                 orderRepository.Update(order);
                 await unitOfWork.SaveChangesAsync(cancellationToken);

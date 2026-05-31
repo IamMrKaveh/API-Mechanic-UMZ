@@ -50,35 +50,3 @@ public record UserDashboardDto
     public int CompletedOrders { get; init; }
     public int OpenTickets { get; init; }
 }
-
-public sealed record UpdateProfileDto(
-    string? FirstName,
-    string? LastName,
-    string? PhoneNumber
-);
-
-public sealed record AddUserAddressDto(
-    string Title,
-    string ReceiverName,
-    string PhoneNumber,
-    string Province,
-    string City,
-    string Address,
-    string PostalCode,
-    bool IsDefault = false,
-    decimal? Latitude = null,
-    decimal? Longitude = null
-);
-
-public sealed record UpdateUserAddressDto(
-    string Title,
-    string ReceiverName,
-    string PhoneNumber,
-    string Province,
-    string City,
-    string Address,
-    string PostalCode,
-    bool IsDefault,
-    decimal? Latitude = null,
-    decimal? Longitude = null
-);

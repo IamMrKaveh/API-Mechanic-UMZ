@@ -1,6 +1,4 @@
-﻿using Application.Support.Features.Commands.CreateTicket;
-using Application.Support.Features.Commands.ReplyToTicket;
-using Application.Support.Features.Shared;
+﻿using Application.Support.Features.Shared;
 using Domain.Support.Aggregates;
 using Domain.Support.Entities;
 
@@ -52,15 +50,5 @@ public class SupportMappingConfig : IRegister
             .Map(dest => dest.SentAt, src => src.SentAt)
             .Map(dest => dest.CreatedAt, src => src.SentAt)
             .Ignore(dest => dest.SenderName);
-
-        config.NewConfig<CreateTicketDto, CreateTicketCommand>()
-            .Map(dest => dest.Subject, src => src.Subject)
-            .Map(dest => dest.Message, src => src.Message)
-            .Map(dest => dest.Priority, src => src.Priority)
-            .IgnoreNonMapped(true);
-
-        config.NewConfig<ReplyToTicketDto, ReplyToTicketCommand>()
-            .Map(dest => dest.Content, src => src.Message)
-            .IgnoreNonMapped(true);
     }
 }

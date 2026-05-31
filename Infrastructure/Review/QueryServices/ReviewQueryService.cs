@@ -6,9 +6,7 @@ using Domain.User.ValueObjects;
 
 namespace Infrastructure.Review.QueryServices;
 
-public sealed class ReviewQueryService(
-    DBContext context,
-    IAuditService auditService) : IReviewQueryService
+public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 {
     public async Task<PaginatedResult<ProductReviewDto>> GetApprovedProductReviewsAsync(
         ProductId productId, int page, int pageSize, CancellationToken ct = default)

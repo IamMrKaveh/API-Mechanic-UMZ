@@ -12,8 +12,7 @@ public class AddToCartHandler(
     ICartRepository cartRepository,
     IVariantRepository variantRepository,
     IInventoryRepository inventoryRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<AddToCartCommand, ServiceResult>
+    IUnitOfWork unitOfWork) : IRequestHandler<AddToCartCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(AddToCartCommand request, CancellationToken ct)
     {

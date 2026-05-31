@@ -8,8 +8,7 @@ namespace Application.Wishlist.Features.Commands.AddToWishlist;
 public class AddToWishlistHandler(
     IWishlistRepository wishlistRepository,
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<AddToWishlistCommand, ServiceResult>
+    IUnitOfWork unitOfWork) : IRequestHandler<AddToWishlistCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         AddToWishlistCommand request,

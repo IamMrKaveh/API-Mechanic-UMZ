@@ -1,12 +1,10 @@
 using Application.Search.Features.Queries.GetSearchIndexStats;
 using Application.Search.Features.Shared;
-using Infrastructure.Search.Options;
 
 namespace Infrastructure.Search.Services;
 
 public sealed class ElasticsearchService(
     ElasticsearchClient client,
-    IOptions<ElasticsearchOptions> options,
     IAuditService auditService) : ISearchService
 {
     public async Task IndexProductAsync(ProductSearchDocument document, CancellationToken ct = default)

@@ -1,6 +1,4 @@
-﻿using Application.Shipping.Features.Commands.CreateShipping;
-using Application.Shipping.Features.Commands.UpdateShipping;
-using Application.Shipping.Features.Shared;
+﻿using Application.Shipping.Features.Shared;
 
 namespace Application.Shipping.Mapping;
 
@@ -34,22 +32,5 @@ public class ShippingMappingConfig : IRegister
             .Map(dest => dest.IsDefault, src => src.IsDefault)
             .Map(dest => dest.SortOrder, src => src.SortOrder)
             .Map(dest => dest.DeliveryTimeDisplay, src => src.GetDeliveryTimeDisplay());
-
-        config.NewConfig<CreateShippingDto, CreateShippingCommand>()
-            .Map(dest => dest.Name, src => src.Name)
-            .Map(dest => dest.BaseCost, src => src.BaseCost)
-            .Map(dest => dest.Description, src => src.Description)
-            .Map(dest => dest.EstimatedDeliveryTime, src => src.EstimatedDeliveryTime)
-            .Map(dest => dest.MinDeliveryDays, src => src.MinDeliveryDays)
-            .Map(dest => dest.MaxDeliveryDays, src => src.MaxDeliveryDays);
-
-        config.NewConfig<UpdateShippingDto, UpdateShippingCommand>()
-            .Map(dest => dest.Name, src => src.Name)
-            .Map(dest => dest.BaseCost, src => src.BaseCost)
-            .Map(dest => dest.Description, src => src.Description)
-            .Map(dest => dest.EstimatedDeliveryTime, src => src.EstimatedDeliveryTime)
-            .Map(dest => dest.MinDeliveryDays, src => src.MinDeliveryDays)
-            .Map(dest => dest.MaxDeliveryDays, src => src.MaxDeliveryDays)
-            .IgnoreNonMapped(true);
     }
 }

@@ -28,7 +28,7 @@ public class AddVariantHandler(
     {
         try
         {
-            return await unitOfWork.ExecuteStrategyAsync(async (_, cancellationToken) =>
+            return await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
             {
                 var productId = ProductId.From(request.ProductId);
                 var userId = UserId.From(currentUserService.CurrentUser.UserId);

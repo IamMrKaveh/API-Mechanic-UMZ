@@ -3,9 +3,7 @@ using Domain.Variant.ValueObjects;
 
 namespace Application.Variant.Features.Queries.GetVariantShipping;
 
-public class GetVariantShippingHandler(
-    IVariantQueryService variantQueryService,
-    IAuditService auditService) : IRequestHandler<GetVariantShippingQuery, ServiceResult<ProductVariantShippingInfoDto>>
+public class GetVariantShippingHandler(IVariantQueryService variantQueryService) : IRequestHandler<GetVariantShippingQuery, ServiceResult<ProductVariantShippingInfoDto>>
 {
     public async Task<ServiceResult<ProductVariantShippingInfoDto>> Handle(
         GetVariantShippingQuery request,

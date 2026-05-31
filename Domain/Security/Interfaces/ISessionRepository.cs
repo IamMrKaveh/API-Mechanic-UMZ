@@ -24,6 +24,11 @@ public interface ISessionRepository
         UserId userId,
         CancellationToken ct = default);
 
+    Task<UserSession?> GetActiveByUserAndDeviceAsync(
+        UserId userId,
+        DeviceInfo deviceInfo,
+        CancellationToken ct = default);
+
     Task<IReadOnlyList<UserSession>> GetExpiredActiveSessionsAsync(
         DateTime cutoffTime,
         CancellationToken ct = default);

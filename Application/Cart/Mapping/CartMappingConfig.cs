@@ -1,6 +1,4 @@
-﻿using Application.Cart.Features.Commands.AddToCart;
-using Application.Cart.Features.Commands.UpdateCartItem;
-using Application.Cart.Features.Shared;
+﻿using Application.Cart.Features.Shared;
 using Domain.Cart.Entities;
 
 namespace Application.Cart.Mapping;
@@ -33,14 +31,5 @@ public class CartMappingConfig : IRegister
             .Map(dest => dest.AddedAt, src => src.AddedAt)
             .Ignore(dest => dest.ProductIcon)
             .Ignore(dest => dest.Attributes);
-
-        config.NewConfig<AddToCartDto, AddToCartCommand>()
-           .Map(dest => dest.VariantId, src => src.VariantId)
-           .Map(dest => dest.Quantity, src => src.Quantity)
-           .IgnoreNonMapped(true);
-
-        config.NewConfig<UpdateCartItemDto, UpdateCartItemCommand>()
-            .Map(dest => dest.Quantity, src => src.Quantity)
-            .IgnoreNonMapped(true);
     }
 }
