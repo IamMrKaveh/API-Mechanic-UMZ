@@ -7,7 +7,6 @@ public sealed class BulkUpdatePricesHandler(
     IVariantRepository variantRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService,
     ICacheService cacheService) : IRequestHandler<BulkUpdatePricesCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(BulkUpdatePricesCommand request, CancellationToken ct)
@@ -48,7 +47,7 @@ public sealed class BulkUpdatePricesHandler(
 
         foreach (var productId in affectedProductIds)
         {
-            await cacheService.ClearAsync($"product:{productId}", ct);
+            await cacheService.RemoveAsync($"product:{productId}", ct);
         }
 
         await auditService.LogSystemEventAsync(

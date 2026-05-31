@@ -16,13 +16,3 @@ public record MediaDto
     public string? PublicUrl { get; init; }
     public DateTime CreatedAt { get; init; }
 }
-
-public sealed record SetPrimaryMediaDto(
-    Guid MediaId
-);
-
-public sealed record ReorderMediaDto(
-    string EntityType,
-    Guid EntityId,
-    ICollection<Guid> OrderedMediaIds
-);

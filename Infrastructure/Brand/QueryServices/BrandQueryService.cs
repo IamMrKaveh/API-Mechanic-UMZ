@@ -66,28 +66,6 @@ public sealed class BrandQueryService(
         };
     }
 
-    public async Task<BrandDto?> GetBrandBySlugAsync(Slug slug, CancellationToken ct = default)
-    {
-        var brand = await context.Brands
-            .AsNoTracking()
-            .Where(b => b.Slug == slug && b.IsActive)
-            .Select(b => new BrandDto
-            {
-                Id = b.Id.Value,
-                CategoryId = b.CategoryId.Value,
-                Name = b.Name.Value,
-                Slug = b.Slug != null ? b.Slug.Value : string.Empty,
-                Description = b.Description,
-                LogoPath = b.LogoPath,
-                IsActive = b.IsActive,
-                CreatedAt = b.CreatedAt,
-                UpdatedAt = b.UpdatedAt
-            })
-            .FirstOrDefaultAsync(ct);
-
-        return brand;
-    }
-
     public async Task<PaginatedResult<BrandListItemDto>> GetBrandsPagedAsync(
         CategoryId? categoryId,
         string? search,

@@ -6,14 +6,6 @@ namespace Application.Order.Contracts;
 
 public interface IOrderQueryService
 {
-    Task<OrderDto?> GetOrderByIdAsync(
-        OrderId orderId,
-        CancellationToken ct = default);
-
-    Task<OrderDto?> GetOrderByNumberAsync(
-        OrderNumber orderNumber,
-        CancellationToken ct = default);
-
     Task<PaginatedResult<OrderListItemDto>> GetUserOrdersAsync(
         UserId userId,
         int page,

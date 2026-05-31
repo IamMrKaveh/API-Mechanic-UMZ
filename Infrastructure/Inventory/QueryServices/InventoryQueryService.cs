@@ -1,5 +1,4 @@
 using Application.Inventory.Features.Shared;
-using Domain.Inventory.ValueObjects;
 using Domain.Variant.ValueObjects;
 
 namespace Infrastructure.Inventory.QueryServices;
@@ -12,51 +11,6 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
             .AsNoTracking()
             .FirstOrDefaultAsync(i => i.VariantId == variantId, ct);
         return inventory?.Adapt<InventoryDto>();
-    }
-
-    public async Task<PaginatedResult<InventoryDto>> GetLowStockAsync(
-        StockQuantity threshold, int page, int pageSize, CancellationToken ct = default)
-    {
-        var query = context.Inventories
-            .AsNoTracking()
-            .Where(i => !i.IsUnlimited && i.AvailableQuantity <= threshold.Value && i.AvailableQuantity > 0);
-
-        var total = await query.CountAsync(ct);
-        var items = await query
-            .OrderBy(i => i.AvailableQuantity)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
-
-        return PaginatedResult<InventoryDto>.Create(items.Adapt<List<InventoryDto>>(), total, page, pageSize);
-    }
-
-    public async Task<PaginatedResult<InventoryDto>> GetOutOfStockAsync(
-        int page, int pageSize, CancellationToken ct = default)
-    {
-        var query = context.Inventories
-            .AsNoTracking()
-            .Where(i => !i.IsUnlimited && i.AvailableQuantity <= 0);
-
-        var total = await query.CountAsync(ct);
-        var items = await query
-            .OrderByDescending(i => i.UpdatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
-
-        return PaginatedResult<InventoryDto>.Create(items.Adapt<List<InventoryDto>>(), total, page, pageSize);
-    }
-
-    public async Task<IReadOnlyList<InventoryDto>> GetByVariantIdsAsync(
-        IEnumerable<VariantId> variantIds, CancellationToken ct = default)
-    {
-        var ids = variantIds.Select(v => v.Value).ToList();
-        var items = await context.Inventories
-            .AsNoTracking()
-            .Where(i => ids.Contains(i.VariantId.Value))
-            .ToListAsync(ct);
-        return items.Adapt<List<InventoryDto>>().AsReadOnly();
     }
 
     public async Task<IReadOnlyList<VariantAvailabilityDto>> GetBatchAvailabilityAsync(

@@ -92,12 +92,6 @@ public sealed class AuditService(
         CancellationToken ct = default) => await LogAsync("PaymentEvent", action, ipAddress, userId, "Payment", paymentId.Value.ToString(), details, null, ct);
 
     public async Task LogInventoryEventAsync(
-        ProductId productId,
-        string action,
-        string details,
-        UserId? userId = null) => await LogAsync("InventoryEvent", action, IpAddress.System, userId, "Product", productId.Value.ToString(), details);
-
-    public async Task LogInventoryEventAsync(
         VariantId variantId,
         string action,
         string details,

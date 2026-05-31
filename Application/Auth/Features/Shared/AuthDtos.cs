@@ -32,21 +32,3 @@ public record RefreshTokenResult(
     string RefreshToken,
     DateTime ExpiresAt,
     Guid UserId);
-
-public sealed record SendOtpDto(
-    string PhoneNumber
-);
-
-public sealed record VerifyOtpDto(
-    string PhoneNumber,
-    string Code,
-    string? DeviceInfo = null
-);
-
-public sealed record RefreshTokenDto(
-    string RefreshToken
-);
-
-public sealed record RevokeSessionDto(
-    Guid SessionId
-);

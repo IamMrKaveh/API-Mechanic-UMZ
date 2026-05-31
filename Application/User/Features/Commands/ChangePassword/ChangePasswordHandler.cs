@@ -1,4 +1,4 @@
-using Application.Security.Interfaces;
+using Application.Security.Contracts;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 

@@ -19,6 +19,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Folder Include="Attribute\Contracts\" />
+		<Folder Include="Common\Utilities\" />
 		<Folder Include="Variant\EventHandlers\" />
 	</ItemGroup>
 

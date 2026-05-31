@@ -11,8 +11,4 @@ public interface IOrderProcessStateRepository
     Task AddAsync(
         OrderProcessState state,
         CancellationToken ct = default);
-
-    Task UpdateAsync(
-        OrderProcessState state,
-        CancellationToken ct = default);
 }

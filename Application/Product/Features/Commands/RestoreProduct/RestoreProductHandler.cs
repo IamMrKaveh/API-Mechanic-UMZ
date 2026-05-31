@@ -31,8 +31,8 @@ public class RestoreProductHandler(
             "RestoreProduct", $"Product '{product.Name}' restored.",
             userId);
 
-        await cacheService.ClearAsync($"product:{request.ProductId}", ct);
-        await cacheService.ClearAsync($"brand:{product.BrandId}", ct);
+        await cacheService.RemoveAsync($"product:{request.ProductId}", ct);
+        await cacheService.RemoveAsync($"brand:{product.BrandId}", ct);
 
         return ServiceResult.Success();
     }

@@ -10,10 +10,6 @@ public interface IBrandQueryService
         BrandId brandId,
         CancellationToken ct = default);
 
-    Task<BrandDto?> GetBrandBySlugAsync(
-        Slug slug,
-        CancellationToken ct = default);
-
     Task<PaginatedResult<BrandListItemDto>> GetBrandsPagedAsync(
         CategoryId? categoryId,
         string? search,

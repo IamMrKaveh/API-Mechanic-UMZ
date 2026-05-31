@@ -32,14 +32,6 @@ public record CategoryListItemDto
     public string? RowVersion { get; init; }
 }
 
-public record CategorySummaryDto
-{
-    public Guid Id { get; init; }
-    public string Name { get; init; } = null!;
-    public string? Slug { get; init; }
-    public string? ImageUrl { get; init; }
-}
-
 public record CategoryDto
 {
     public Guid Id { get; init; }
@@ -91,28 +83,3 @@ public record CategoryProductItemDto
     public bool IsActive { get; init; }
     public DateTime CreatedAt { get; init; }
 }
-
-public sealed record CreateCategoryDto(
-    string Name,
-    string? Slug,
-    string? Description,
-    int SortOrder = 0
-);
-
-public sealed record UpdateCategoryDto(
-    string Name,
-    string? Slug,
-    string? Description,
-    int SortOrder,
-    bool IsActive,
-    string RowVersion
-);
-
-public sealed record ReorderCategoriesDto(
-    IReadOnlyList<CategoryOrderItemDto> Items
-);
-
-public sealed record CategoryOrderItemDto(
-    Guid CategoryId,
-    int SortOrder
-);

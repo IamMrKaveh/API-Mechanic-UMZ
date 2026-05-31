@@ -7,32 +7,6 @@ namespace Infrastructure.Order.QueryServices;
 
 public sealed class OrderQueryService(DBContext context) : IOrderQueryService
 {
-    public async Task<OrderDto?> GetOrderByIdAsync(
-        OrderId orderId,
-        CancellationToken ct = default)
-    {
-        var order = await context.Orders
-            .AsNoTracking()
-            .Include(o => o.OrderItems)
-            .Where(o => o.Id == orderId)
-            .FirstOrDefaultAsync(ct);
-
-        return order is null ? null : MapToOrderDto(order);
-    }
-
-    public async Task<OrderDto?> GetOrderByNumberAsync(
-        OrderNumber orderNumber,
-        CancellationToken ct = default)
-    {
-        var order = await context.Orders
-            .AsNoTracking()
-            .Include(o => o.OrderItems)
-            .Where(o => o.OrderNumber == orderNumber)
-            .FirstOrDefaultAsync(ct);
-
-        return order is null ? null : MapToOrderDto(order);
-    }
-
     public async Task<PaginatedResult<OrderListItemDto>> GetUserOrdersAsync(
         UserId userId,
         int page,

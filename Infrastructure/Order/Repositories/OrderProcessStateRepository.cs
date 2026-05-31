@@ -16,10 +16,4 @@ public sealed class OrderProcessStateRepository(DBContext context) : IOrderProce
     {
         await context.OrderProcessStates.AddAsync(state, ct);
     }
-
-    public Task UpdateAsync(OrderProcessState state, CancellationToken ct = default)
-    {
-        context.OrderProcessStates.Update(state);
-        return Task.CompletedTask;
-    }
 }

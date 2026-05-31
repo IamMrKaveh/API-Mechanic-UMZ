@@ -13,10 +13,6 @@ public interface IShippingQueryService
         bool includeInactive = false,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<ShippingListItemDto>> GetAvailableShippingsForOrderAsync(
-        Money orderAmount,
-        CancellationToken ct = default);
-
     Task<ShippingCostResultDto> CalculateShippingCostAsync(
         ShippingId shippingId,
         Money orderAmount,

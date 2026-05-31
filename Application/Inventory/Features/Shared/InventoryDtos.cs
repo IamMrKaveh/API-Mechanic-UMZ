@@ -1,5 +1,3 @@
-using Application.Inventory.Features.Commands.BulkAdjustStock;
-
 namespace Application.Inventory.Features.Shared;
 
 public record InventoryTransactionDto
@@ -101,26 +99,3 @@ public record WarehouseStockDto
     public int Quantity { get; init; }
     public int ReservedQuantity { get; init; }
 }
-
-public sealed record ReverseInventoryDto(
-    Guid VariantId,
-    string IdempotencyKey,
-    string Reason
-);
-
-public sealed record AdjustStockDto(
-    Guid VariantId,
-    int QuantityChange,
-    string Reason
-);
-
-public sealed record BulkAdjustStockDto(
-    IReadOnlyList<BulkAdjustStockItem> Items,
-    string Reason
-);
-
-public sealed record RecordDamageDto(
-    Guid VariantId,
-    int Quantity,
-    string Reason
-);

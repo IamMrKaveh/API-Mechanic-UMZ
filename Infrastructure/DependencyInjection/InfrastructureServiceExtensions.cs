@@ -1,5 +1,4 @@
 ﻿using Application.Analytics.Contracts;
-using Application.Attribute.Contracts;
 using Application.Auth.Contracts;
 using Application.Brand.Contracts;
 using Application.Cart.Contracts;
@@ -10,7 +9,6 @@ using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Payment.Contracts;
 using Application.Product.Contracts;
 using Application.Review.Contracts;
-using Application.Security.Interfaces;
 using Application.Shipping.Contracts;
 using Application.Support.Contracts;
 using Application.User.Contracts;
@@ -37,7 +35,6 @@ using Domain.Variant.Interfaces;
 using Domain.Wallet.Interfaces;
 using Domain.Wishlist.Interfaces;
 using Infrastructure.Analytics.QueryServices;
-using Infrastructure.Attribute.QueryServices;
 using Infrastructure.Attribute.Repositories;
 using Infrastructure.Audit.QueryServices;
 using Infrastructure.Audit.Repositories;
@@ -253,7 +250,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IStockLedgerQueryService, StockLedgerQueryService>();
         services.AddScoped<IShippingQueryService, ShippingQueryService>();
         services.AddScoped<ITicketQueryService, TicketQueryService>();
-        services.AddScoped<IAttributeQueryService, AttributeQueryService>();
         services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IMediaQueryService, MediaQueryService>();
         services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
@@ -315,7 +311,6 @@ public static class InfrastructureServiceExtensions
             MaxAutomaticRedirections = 5
         });
 
-        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
         services.Configure<KavenegarOptions>(configuration.GetSection(KavenegarOptions.SectionName));
 
         services.AddHttpClient<ISmsService, SmsService>(client =>
@@ -327,8 +322,6 @@ public static class InfrastructureServiceExtensions
                     TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
             .AddTransientHttpErrorPolicy(policy =>
                 policy.CircuitBreakerAsync(5, TimeSpan.FromSeconds(30)));
-
-        services.AddScoped<IEmailService, EmailService>();
     }
 
     private static void AddPaymentServices(this IServiceCollection services, IConfiguration configuration)
@@ -337,8 +330,6 @@ public static class InfrastructureServiceExtensions
             .BindConfiguration(ZarinPalOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
-
-        services.Configure<PaymentGatewayOptions>(configuration.GetSection("PaymentGateway"));
 
         services.AddScoped<IPaymentGatewayFactory, PaymentGatewayFactory>();
         services.AddScoped<IPaymentGateway, ZarinPalPaymentGateway>();

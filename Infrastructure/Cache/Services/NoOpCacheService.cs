@@ -28,9 +28,4 @@ public sealed class NoOpCacheService(IAuditService auditService) : ICacheService
         await auditService.LogDebugAsync($"[NoOpCache] ExistsAsync skipped for key: {key}", ct);
         return false;
     }
-
-    public async Task ClearAsync(string key, CancellationToken ct)
-    {
-        await auditService.LogDebugAsync($"[NoOpCache] ClearAsync skipped for key: {key}", ct);
-    }
 }

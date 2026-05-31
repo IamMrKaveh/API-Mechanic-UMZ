@@ -35,12 +35,3 @@ public record ReviewSummaryDto
     public int OneStarCount { get; init; }
     public Dictionary<int, int> RatingDistribution { get; init; } = [];
 }
-
-public record CreateReviewDto
-{
-    public Guid ProductId { get; init; }
-    public Guid? OrderId { get; init; }
-    public int Rating { get; init; }
-    public string? Title { get; init; }
-    public string? Comment { get; init; }
-}

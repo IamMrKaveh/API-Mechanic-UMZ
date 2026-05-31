@@ -85,16 +85,6 @@ public sealed class SessionService(
             newSession.UserId.Value));
     }
 
-    public async Task RevokeSessionAsync(SessionId sessionId, CancellationToken ct = default)
-    {
-        var session = await sessionRepository.GetByIdAsync(sessionId, ct);
-        if (session is null) return;
-
-        session.Revoke(SessionRevocationReason.UserRequested);
-        sessionRepository.Update(session);
-        await unitOfWork.SaveChangesAsync(ct);
-    }
-
     public async Task RevokeAllSessionsAsync(UserId userId, CancellationToken ct = default)
     {
         await sessionRepository.RevokeAllByUserIdAsync(userId, ct);

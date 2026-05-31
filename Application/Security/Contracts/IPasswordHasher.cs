@@ -1,4 +1,4 @@
-﻿namespace Application.Security.Interfaces;
+﻿namespace Application.Security.Contracts;
 
 public interface IPasswordHasher
 {

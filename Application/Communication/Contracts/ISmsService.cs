@@ -9,15 +9,4 @@ public interface ISmsService
         PhoneNumber phoneNumber,
         OtpCode code,
         CancellationToken ct = default);
-
-    Task<bool> SendSMSAsync(
-        PhoneNumber phoneNumber,
-        string message,
-        CancellationToken ct = default);
-
-    Task<bool> SendTemplateSMSAsync(
-        PhoneNumber phoneNumber,
-        string templateName,
-        Dictionary<string, string> parameters,
-        CancellationToken ct = default);
 }

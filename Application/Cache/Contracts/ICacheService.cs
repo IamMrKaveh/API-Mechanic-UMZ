@@ -11,6 +11,4 @@ public interface ICacheService
     Task RemoveByPrefixAsync(string prefix, CancellationToken ct = default);
 
     Task<bool> ExistsAsync(string key, CancellationToken ct = default);
-
-    Task ClearAsync(string key, CancellationToken ct);
 }

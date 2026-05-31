@@ -22,23 +22,3 @@ public sealed record WalletLedgerEntryDto(
     Guid ReferenceId,
     string? Description,
     DateTime CreatedAt);
-
-public sealed record AdminWalletAdjustmentDto(
-    decimal Amount,
-    string Reason,
-    string? Description = null
-);
-
-public sealed record CreditWalletDto(
-    decimal Amount,
-    string Description,
-    string ReferenceId,
-    string? IdempotencyKey = null
-);
-
-public sealed record DebitWalletDto(
-    decimal Amount,
-    string Description,
-    string ReferenceId,
-    string? IdempotencyKey = null
-);

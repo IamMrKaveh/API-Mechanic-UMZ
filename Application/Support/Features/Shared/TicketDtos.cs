@@ -59,7 +59,3 @@ public sealed record CreateTicketDto(
 public sealed record ReplyToTicketDto(
     string Message
 );
-
-public sealed record CloseTicketDto(
-    bool IsAdmin = false
-);

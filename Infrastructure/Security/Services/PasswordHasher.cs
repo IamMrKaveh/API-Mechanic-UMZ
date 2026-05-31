@@ -1,6 +1,4 @@
-﻿using Application.Security.Interfaces;
-
-namespace Infrastructure.Security.Services;
+﻿namespace Infrastructure.Security.Services;
 
 public sealed class PasswordHasher : IPasswordHasher
 {

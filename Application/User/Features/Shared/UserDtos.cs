@@ -2,29 +2,6 @@ using Application.Order.Features.Shared;
 
 namespace Application.User.Features.Shared;
 
-public record UserActivityDto
-{
-    public Guid Id { get; init; }
-    public string Action { get; init; } = string.Empty;
-    public string Details { get; init; } = string.Empty;
-    public DateTime Timestamp { get; init; }
-    public string IpAddress { get; init; } = string.Empty;
-}
-
-public record ChangeUserStatusDto
-{
-    public bool IsActive { get; init; }
-}
-
-public record AdminCreateUserDto
-{
-    public string PhoneNumber { get; init; } = string.Empty;
-    public string? FirstName { get; init; }
-    public string? LastName { get; init; }
-    public string? Email { get; init; }
-    public bool IsAdmin { get; init; }
-}
-
 public record UserProfileDto
 {
     public Guid Id { get; init; }
@@ -72,27 +49,6 @@ public record UserDashboardDto
     public DateTime MemberSince { get; init; }
     public int CompletedOrders { get; init; }
     public int OpenTickets { get; init; }
-}
-
-public record ChangePasswordDto
-{
-    public string CurrentPassword { get; init; } = string.Empty;
-    public string NewPassword { get; init; } = string.Empty;
-    public string ConfirmNewPassword { get; init; } = string.Empty;
-}
-
-public record CreateUserAddressDto
-{
-    public string Title { get; init; } = string.Empty;
-    public string ReceiverName { get; init; } = string.Empty;
-    public string PhoneNumber { get; init; } = string.Empty;
-    public string Province { get; init; } = string.Empty;
-    public string City { get; init; } = string.Empty;
-    public string Address { get; init; } = string.Empty;
-    public string PostalCode { get; init; } = string.Empty;
-    public bool IsDefault { get; init; }
-    public decimal? Latitude { get; init; }
-    public decimal? Longitude { get; init; }
 }
 
 public sealed record UpdateProfileDto(

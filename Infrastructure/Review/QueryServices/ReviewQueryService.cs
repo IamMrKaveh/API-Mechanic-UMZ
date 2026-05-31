@@ -43,36 +43,6 @@ public sealed class ReviewQueryService(
         return new PaginatedResult<ProductReviewDto>(items, total, page, pageSize);
     }
 
-    public async Task<PaginatedResult<ProductReviewDto>> GetPendingReviewsAsync(
-        int page, int pageSize, CancellationToken ct = default)
-    {
-        var query = context.ProductReviews
-            .AsNoTracking()
-            .Where(r => r.Status == ReviewStatus.Pending && !r.IsDeleted);
-
-        var total = await query.CountAsync(ct);
-
-        var items = await query
-            .OrderBy(r => r.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(r => new ProductReviewDto
-            {
-                Id = r.Id.Value,
-                ProductId = r.ProductId.Value,
-                UserId = r.UserId.Value,
-                Rating = r.Rating.Value,
-                Title = r.Title,
-                Comment = r.Comment,
-                Status = r.Status.Value,
-                IsVerifiedPurchase = r.IsVerifiedPurchase,
-                CreatedAt = r.CreatedAt
-            })
-            .ToListAsync(ct);
-
-        return new PaginatedResult<ProductReviewDto>(items, total, page, pageSize);
-    }
-
     public async Task<PaginatedResult<ProductReviewDto>> GetUserReviewsAsync(
         UserId userId, int page, int pageSize, CancellationToken ct = default)
     {

@@ -17,10 +17,6 @@ public interface ISessionService
         IpAddress ipAddress,
         CancellationToken ct = default);
 
-    Task RevokeSessionAsync(
-        SessionId sessionId,
-        CancellationToken ct = default);
-
     Task RevokeAllSessionsAsync(
         UserId userId,
         CancellationToken ct = default);

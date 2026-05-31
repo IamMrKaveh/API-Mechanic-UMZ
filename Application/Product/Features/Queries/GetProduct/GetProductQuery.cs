@@ -1,5 +1,4 @@
 using Application.Cache.Features.Shared;
-using Application.Cache.Interfaces;
 using Application.Product.Features.Shared;
 
 namespace Application.Product.Features.Queries.GetProduct;

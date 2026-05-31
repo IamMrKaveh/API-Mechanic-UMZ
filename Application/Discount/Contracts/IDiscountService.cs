@@ -11,12 +11,4 @@ public interface IDiscountService
     UserId userId,
     OrderId orderId,
     CancellationToken ct = default);
-
-    Task<ServiceResult> CancelDiscountUsageAsync(
-        OrderId orderId,
-        CancellationToken ct = default);
-
-    Task<ServiceResult> ConfirmDiscountUsageAsync(
-        OrderId orderId,
-        CancellationToken ct = default);
 }
