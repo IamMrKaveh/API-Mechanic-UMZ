@@ -17,7 +17,7 @@ namespace Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.13")
+                .HasAnnotation("ProductVersion", "9.0.16")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -484,47 +484,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.ToTable("DiscountCodes", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.Discount.Aggregates.DiscountUsage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("DiscountCodeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("DiscountedAmount")
-                        .HasColumnType("numeric");
-
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("UsageCountAtTime")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UsedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DiscountCodeId");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("DiscountUsages");
-                });
-
             modelBuilder.Entity("Domain.Discount.Entities.DiscountRestriction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -753,6 +712,9 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("WarehouseId");
 
+                    b.HasIndex("VariantId", "CreatedAt")
+                        .IsDescending(false, true);
+
                     b.ToTable("StockLedgerEntries");
                 });
 
@@ -926,6 +888,8 @@ namespace Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("Status", "CreatedAt");
 
                     b.ToTable("Orders");
                 });
@@ -1133,6 +1097,8 @@ namespace Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("Status", "CreatedAt");
 
                     b.ToTable("PaymentTransactions");
                 });
@@ -2330,33 +2296,6 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Navigation("Value")
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Domain.Discount.Aggregates.DiscountUsage", b =>
-                {
-                    b.HasOne("Domain.Discount.Aggregates.DiscountCode", "DiscountCode")
-                        .WithMany()
-                        .HasForeignKey("DiscountCodeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Order.Aggregates.Order", "Order")
-                        .WithMany()
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.User.Aggregates.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("DiscountCode");
-
-                    b.Navigation("Order");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Discount.Entities.DiscountRestriction", b =>
