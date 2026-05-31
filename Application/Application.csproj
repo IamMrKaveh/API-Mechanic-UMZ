@@ -20,6 +20,7 @@
 
 	<ItemGroup>
 		<Folder Include="Attribute\Contracts\" />
+		<Folder Include="Common\Features\Shared\" />
 		<Folder Include="Common\Utilities\" />
 		<Folder Include="Variant\EventHandlers\" />
 	</ItemGroup>

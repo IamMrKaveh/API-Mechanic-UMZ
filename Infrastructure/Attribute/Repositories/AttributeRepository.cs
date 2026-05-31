@@ -97,12 +97,13 @@ public sealed class AttributeRepository(DBContext context) : IAttributeRepositor
         var entity = await context.AttributeTypes.FindAsync([id], ct);
         if (entity is null) return;
 
-        entity.Update(
+        await entity.Update(
             entity.Name,
             entity.DisplayName,
             entity.SortOrder,
             false,
-            new AlwaysTrueUniquenessChecker());
+            new AlwaysTrueUniquenessChecker(),
+            ct);
 
         context.AttributeTypes.Update(entity);
     }

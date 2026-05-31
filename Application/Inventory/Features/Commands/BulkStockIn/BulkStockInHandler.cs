@@ -1,59 +1,53 @@
+using Application.Common.Interfaces;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
 using Domain.Inventory.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Exceptions;
 
 namespace Application.Inventory.Features.Commands.BulkStockIn;
 
 public class BulkStockInHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<BulkStockInCommand, ServiceResult>
+    IAuditService auditService)
+    : IRequestHandler<BulkStockInCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(BulkStockInCommand request, CancellationToken ct)
     {
-        var userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
+        if (request.Items.Count == 0)
+            return ServiceResult.Failure("لیست اقلام برای ورود موجودی خالی است.");
 
-        using var transaction = await unitOfWork.BeginTransactionAsync(ct);
+        var userId = request.UserId.HasValue
+            ? UserId.From(request.UserId.Value)
+            : null;
 
-        try
+        await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
         {
-            var errors = new List<string>();
-
             foreach (var item in request.Items)
             {
                 var variantId = VariantId.From(item.VariantId);
-                var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
 
-                if (inventory is null)
-                {
-                    errors.Add($"موجودی برای واریانت {item.VariantId} یافت نشد.");
-                    continue;
-                }
-
+                var inventory = await inventoryRepository.GetByVariantIdAsync(
+                    variantId,
+                    cancellationToken) ?? throw new DomainException(
+                        $"موجودی برای واریانت {item.VariantId} یافت نشد.");
                 var stockQuantity = StockQuantity.Create(item.Quantity);
-                var result = InventoryDomainService.IncreaseStock(inventory, stockQuantity, request.Reason, userId);
+
+                var result = InventoryDomainService.IncreaseStock(
+                    inventory,
+                    stockQuantity,
+                    request.Reason,
+                    userId);
 
                 if (result.IsFailure)
-                {
-                    errors.Add($"واریانت {item.VariantId}: {result.Error.Message}");
-                    continue;
-                }
+                    throw new DomainException(result.Error.Message);
 
                 inventoryRepository.Update(inventory);
             }
 
-            if (errors.Count > 0)
-            {
-                await unitOfWork.RollbackTransactionAsync(ct);
-                return ServiceResult.Failure(string.Join(" | ", errors));
-            }
-
-            await unitOfWork.SaveChangesAsync(ct);
-            await unitOfWork.CommitTransactionAsync(ct);
-
-            if (userId is not null && request.Items.Count > 0)
+            if (userId is not null)
             {
                 await auditService.LogInventoryEventAsync(
                     VariantId.From(request.Items[0].VariantId),
@@ -62,12 +56,11 @@ public class BulkStockInHandler(
                     userId);
             }
 
-            return ServiceResult.Success();
-        }
-        catch
-        {
-            await unitOfWork.RollbackTransactionAsync(ct);
-            throw;
-        }
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return 0;
+        }, ct);
+
+        return ServiceResult.Success();
     }
 }

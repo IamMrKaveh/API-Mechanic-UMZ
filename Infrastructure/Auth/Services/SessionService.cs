@@ -12,11 +12,9 @@ namespace Infrastructure.Auth.Services;
 
 public sealed class SessionService(
     ISessionRepository sessionRepository,
-    IOptions<JwtOptions> jwtOptions,
     IOptions<AuthOptions> authOptions,
     IUnitOfWork unitOfWork) : ISessionService
 {
-    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private readonly AuthOptions _authOptions = authOptions.Value;
 
     public async Task<ServiceResult<RefreshTokenResult>> CreateSessionAsync(
@@ -29,6 +27,15 @@ public sealed class SessionService(
         var deviceInfo = DeviceInfo.Create(userAgent ?? "Unknown");
         var expiresAt = DateTime.UtcNow.AddDays(_authOptions.SessionExpirationDays);
 
+        var existingSession = await sessionRepository
+            .GetActiveByUserAndDeviceAsync(userId, deviceInfo, ct);
+
+        if (existingSession is not null)
+        {
+            existingSession.Revoke(SessionRevocationReason.UserRequested);
+            sessionRepository.Update(existingSession);
+        }
+
         var session = UserSession.Create(
             SessionId.NewId(),
             userId,
@@ -40,11 +47,12 @@ public sealed class SessionService(
         await sessionRepository.AddAsync(session, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return ServiceResult<RefreshTokenResult>.Success(new RefreshTokenResult(
-            session.Id.Value,
-            token.Value,
-            expiresAt,
-            session.UserId.Value));
+        return ServiceResult<RefreshTokenResult>.Success(
+            new RefreshTokenResult(
+                session.Id.Value,
+                token.Value,
+                expiresAt,
+                session.UserId.Value));
     }
 
     public async Task<ServiceResult<RefreshTokenResult>> RefreshSessionAsync(

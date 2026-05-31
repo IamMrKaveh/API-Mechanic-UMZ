@@ -1,13 +1,10 @@
 ﻿using Application.Discount.Contracts;
 using Application.Discount.Features.Shared;
 using Domain.Discount.ValueObjects;
-using MapsterMapper;
 
 namespace Infrastructure.Discount.QueryServices;
 
-public sealed class DiscountQueryService(
-    DBContext context,
-    IMapper mapper) : IDiscountQueryService
+public sealed class DiscountQueryService(DBContext context) : IDiscountQueryService
 {
     public async Task<(IReadOnlyCollection<DiscountCodeDto> Items, int Total)> GetPagedAsync(
         bool includeExpired,

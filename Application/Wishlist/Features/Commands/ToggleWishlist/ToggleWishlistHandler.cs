@@ -4,39 +4,32 @@ using Domain.Wishlist.Interfaces;
 
 namespace Application.Wishlist.Features.Commands.ToggleWishlist;
 
-public class ToggleWishlistHandler(
-    IWishlistRepository wishlistRepository,
-    IWishlistQueryService wishlistQueryService,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<ToggleWishlistCommand, ServiceResult<bool>>
+public class ToggleWishlistHandler(IWishlistRepository wishlistRepository, IWishlistQueryService wishlistQueryService, IAuditService auditService) : IRequestHandler<ToggleWishlistCommand, ServiceResult>
 {
-    public async Task<ServiceResult<bool>> Handle(
-        ToggleWishlistCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult> Handle(ToggleWishlistCommand request, CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
-        var productId = ProductId.From(request.ProductId);
+        var userId = UserId.From(request.UserId); var productId = ProductId.From(request.ProductId);
 
-        try
+        var isInWishlist = await wishlistQueryService.IsInWishlistAsync(userId, productId, ct);
+        bool added;
+
+        if (isInWishlist)
         {
-            var isInWishlist = await wishlistQueryService.IsInWishlistAsync(userId, productId, ct);
-
-            if (isInWishlist)
-            {
-                await wishlistRepository.RemoveAsync(userId, productId, ct);
-                await unitOfWork.SaveChangesAsync(ct);
-                return ServiceResult<bool>.Success(false);
-            }
-
+            await wishlistRepository.RemoveAsync(userId, productId, ct);
+            added = false;
+        }
+        else
+        {
             var wishlist = Domain.Wishlist.Aggregates.Wishlist.Create(userId, productId);
             await wishlistRepository.AddAsync(wishlist, ct);
-            await unitOfWork.SaveChangesAsync(ct);
+            added = true;
+        }
 
-            return ServiceResult<bool>.Success(true);
-        }
-        catch (Exception)
-        {
-            return ServiceResult<bool>.Failure("خطا در تغییر وضعیت علاقه‌مندی.");
-        }
+        await auditService.LogSystemEventAsync(
+            "ToggleWishlist",
+            $"وضعیت علاقه‌مندی محصول {productId.Value} برای کاربر {userId.Value} تغییر یافت. اکنون: {(added ? "افزوده" : "حذف")}.",
+            ct);
+
+        return ServiceResult<bool>.Success(added);
     }
 }

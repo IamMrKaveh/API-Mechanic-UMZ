@@ -1,7 +1,4 @@
 ﻿using Application.Auth.Features.Shared;
-using Application.User.Features.Commands.CreateUserAddress;
-using Application.User.Features.Commands.UpdateProfile;
-using Application.User.Features.Commands.UpdateUserAddress;
 using Application.User.Features.Shared;
 using Domain.Security.Aggregates;
 using Domain.User.Entities;
@@ -47,36 +44,5 @@ public class UserMappingConfig : IRegister
             .Ignore(dest => dest.SessionType)
             .Ignore(dest => dest.BrowserInfo)
             .Ignore(dest => dest.IsCurrent);
-
-        config.NewConfig<UpdateProfileDto, UpdateProfileCommand>()
-            .Map(dest => dest.FirstName, src => src.FirstName)
-            .Map(dest => dest.LastName, src => src.LastName)
-            .IgnoreNonMapped(true);
-
-        config.NewConfig<AddUserAddressDto, CreateUserAddressCommand>()
-            .Map(dest => dest.Title, src => src.Title)
-            .Map(dest => dest.ReceiverName, src => src.ReceiverName)
-            .Map(dest => dest.PhoneNumber, src => src.PhoneNumber)
-            .Map(dest => dest.Province, src => src.Province)
-            .Map(dest => dest.City, src => src.City)
-            .Map(dest => dest.Address, src => src.Address)
-            .Map(dest => dest.PostalCode, src => src.PostalCode)
-            .Map(dest => dest.IsDefault, src => src.IsDefault)
-            .Map(dest => dest.Latitude, src => src.Latitude)
-            .Map(dest => dest.Longitude, src => src.Longitude)
-            .IgnoreNonMapped(true);
-
-        config.NewConfig<UpdateUserAddressDto, UpdateUserAddressCommand>()
-            .Map(dest => dest.Title, src => src.Title)
-            .Map(dest => dest.ReceiverName, src => src.ReceiverName)
-            .Map(dest => dest.PhoneNumber, src => src.PhoneNumber)
-            .Map(dest => dest.Province, src => src.Province)
-            .Map(dest => dest.City, src => src.City)
-            .Map(dest => dest.Address, src => src.Address)
-            .Map(dest => dest.PostalCode, src => src.PostalCode)
-            .Map(dest => dest.IsDefault, src => src.IsDefault)
-            .Map(dest => dest.Latitude, src => src.Latitude)
-            .Map(dest => dest.Longitude, src => src.Longitude)
-            .IgnoreNonMapped(true);
     }
 }

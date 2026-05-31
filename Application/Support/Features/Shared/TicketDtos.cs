@@ -48,14 +48,3 @@ public sealed record TicketMessageDto
     public DateTime? SentAt { get; init; }
     public DateTime CreatedAt { get; init; }
 }
-
-public sealed record CreateTicketDto(
-    string Subject,
-    string Category,
-    string Message,
-    string Priority
-);
-
-public sealed record ReplyToTicketDto(
-    string Message
-);

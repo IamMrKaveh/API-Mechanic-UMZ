@@ -3,7 +3,7 @@ using Domain.Product.ValueObjects;
 
 namespace Infrastructure.Search.Services;
 
-public sealed class NoOpElasticBulkService(IAuditService auditService) : IElasticBulkService
+public sealed class NoOpElasticBulkService() : IElasticBulkService
 {
     public Task<bool> BulkIndexProductsAsync(
         IEnumerable<ProductSearchDocument> products, CancellationToken ct = default)

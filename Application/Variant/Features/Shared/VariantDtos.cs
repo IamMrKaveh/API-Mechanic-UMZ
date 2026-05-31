@@ -3,20 +3,6 @@ using Application.Media.Features.Shared;
 
 namespace Application.Variant.Features.Shared;
 
-public record ProductVariantDto
-{
-    public Guid Id { get; init; }
-    public Guid ProductId { get; init; }
-    public string Sku { get; init; } = string.Empty;
-    public decimal Price { get; init; }
-    public decimal? CompareAtPrice { get; init; }
-    public decimal FinalPrice { get; init; }
-    public bool IsActive { get; init; }
-    public bool IsDiscounted { get; init; }
-    public decimal? DiscountPercentage { get; init; }
-    public int StockQuantity { get; init; }
-}
-
 public record VariantStockChangedApplicationNotification : INotification
 {
     public Guid VariantId { get; init; }
@@ -50,32 +36,3 @@ public sealed record ProductVariantViewDto
     public decimal ShippingMultiplier { get; init; }
     public List<Guid> EnabledShippingIds { get; init; } = [];
 }
-
-public sealed record AddVariantDto(
-    string? Sku,
-    decimal PurchasePrice,
-    decimal SellingPrice,
-    decimal OriginalPrice,
-    int Stock = 0,
-    bool IsUnlimited = false,
-    decimal ShippingMultiplier = 1,
-    ICollection<Guid>? AttributeValueIds = null,
-    ICollection<Guid>? EnabledShippingIds = null
-);
-
-public sealed record UpdateVariantDto(
-    string? Sku,
-    decimal PurchasePrice,
-    decimal SellingPrice,
-    decimal OriginalPrice,
-    int Stock = 0,
-    bool IsUnlimited = false,
-    decimal ShippingMultiplier = 1,
-    ICollection<Guid>? AttributeValueIds = null,
-    ICollection<Guid>? EnabledShippingIds = null
-);
-
-public sealed record UpdateVariantShippingDto(
-    decimal ShippingMultiplier,
-    ICollection<Guid> EnabledShippingIds
-);

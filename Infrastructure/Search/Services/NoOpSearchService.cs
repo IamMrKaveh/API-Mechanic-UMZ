@@ -3,7 +3,7 @@ using Application.Search.Features.Shared;
 
 namespace Infrastructure.Search.Services;
 
-public sealed class NoOpSearchService(IAuditService auditService) : ISearchService
+public sealed class NoOpSearchService() : ISearchService
 {
     public Task IndexProductAsync(ProductSearchDocument document, CancellationToken ct = default)
         => Task.CompletedTask;

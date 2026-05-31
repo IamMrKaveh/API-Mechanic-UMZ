@@ -5,8 +5,7 @@ namespace Application.Inventory.Features.Queries.GetVariantAvailability;
 
 public class GetVariantAvailabilityHandler(
     ICacheService cacheService,
-    IInventoryQueryService inventoryQueryService,
-    IAuditService auditService)
+    IInventoryQueryService inventoryQueryService)
     : IRequestHandler<GetVariantAvailabilityQuery, ServiceResult<VariantAvailabilityDto>>
 {
     private static string CacheKey(Guid variantId) => $"inventory:availability:{variantId}";

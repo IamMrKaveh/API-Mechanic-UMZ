@@ -10,7 +10,7 @@ namespace Presentation.Wallet.Endpoints;
 public sealed class WalletController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet("balance")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletLedgerEntryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<WalletDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBalance(CancellationToken ct)
     {
         var query = new GetWalletBalanceQuery(CurrentUser.UserId);

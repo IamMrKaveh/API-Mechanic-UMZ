@@ -3,6 +3,7 @@ using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
+using SharedKernel.Exceptions;
 
 namespace Application.Auth.Features.Commands.VerifyOtp;
 
@@ -10,8 +11,8 @@ public class VerifyOtpHandler(
     IOtpRepository otpRepository,
     IUserRepository userRepository,
     ISessionService sessionService,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<VerifyOtpCommand, ServiceResult<AuthResult>>
+    IAuditService auditService)
+    : IRequestHandler<VerifyOtpCommand, ServiceResult<AuthResult>>
 {
     public async Task<ServiceResult<AuthResult>> Handle(VerifyOtpCommand request, CancellationToken ct)
     {
@@ -31,16 +32,20 @@ public class VerifyOtpHandler(
         {
             otp.Verify(otpCode);
         }
-        catch (Exception ex)
+        catch (DomainException ex)
         {
-            await unitOfWork.SaveChangesAsync(ct);
+            otpRepository.Update(otp);
             return ServiceResult<AuthResult>.Failure(ex.Message);
         }
 
         otpRepository.Update(otp);
-        await unitOfWork.SaveChangesAsync(ct);
 
-        var authResult = await sessionService.CreateSessionAsync(user.Id, ipAddress, request.UserAgent, ct);
+        var authResult = await sessionService.CreateSessionAsync(
+            user.Id,
+            ipAddress,
+            request.UserAgent,
+            ct);
+
         if (!authResult.IsSuccess)
             return ServiceResult<AuthResult>.Failure(authResult.Error);
 
@@ -56,7 +61,7 @@ public class VerifyOtpHandler(
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            RefreshTokenExpiresAt = expiresAt,
+            RefreshTokenExpiresAt = expiresAt
         });
     }
 }

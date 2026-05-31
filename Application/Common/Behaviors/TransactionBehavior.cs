@@ -1,3 +1,5 @@
+using Application.Common.Interfaces;
+
 namespace Application.Common.Behaviors;
 
 public sealed class TransactionBehavior<TRequest, TResponse>(
@@ -15,8 +17,12 @@ public sealed class TransactionBehavior<TRequest, TResponse>(
 
         try
         {
-            return await unitOfWork.ExecuteStrategyAsync(
-                async (_, cancellationToken) => await next(cancellationToken), ct);
+            return await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
+            {
+                var response = await next(cancellationToken);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+                return response;
+            }, ct);
         }
         catch (Exception ex)
         {
