@@ -478,22 +478,6 @@ CREATE TABLE "DiscountUsageRecords" (
     CONSTRAINT "FK_DiscountUsageRecords_Users_UserId" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
 );
 
-CREATE TABLE "DiscountUsages" (
-    "Id" uuid NOT NULL,
-    "DiscountCodeId" uuid NOT NULL,
-    "UserId" uuid NOT NULL,
-    "OrderId" uuid NOT NULL,
-    "Code" text NOT NULL,
-    "DiscountedAmount" numeric NOT NULL,
-    "UsageCountAtTime" integer NOT NULL,
-    "UsedAt" timestamp with time zone NOT NULL,
-    "Version" integer NOT NULL,
-    CONSTRAINT "PK_DiscountUsages" PRIMARY KEY ("Id"),
-    CONSTRAINT "FK_DiscountUsages_DiscountCodes_DiscountCodeId" FOREIGN KEY ("DiscountCodeId") REFERENCES "DiscountCodes" ("Id") ON DELETE CASCADE,
-    CONSTRAINT "FK_DiscountUsages_Orders_OrderId" FOREIGN KEY ("OrderId") REFERENCES "Orders" ("Id") ON DELETE CASCADE,
-    CONSTRAINT "FK_DiscountUsages_Users_UserId" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE CASCADE
-);
-
 CREATE TABLE "PaymentTransactions" (
     "Id" uuid NOT NULL,
     "Authority" character varying(100) NOT NULL,
@@ -766,12 +750,6 @@ CREATE INDEX "IX_DiscountUsageRecords_OrderId" ON "DiscountUsageRecords" ("Order
 
 CREATE INDEX "IX_DiscountUsageRecords_UserId" ON "DiscountUsageRecords" ("UserId");
 
-CREATE INDEX "IX_DiscountUsages_DiscountCodeId" ON "DiscountUsages" ("DiscountCodeId");
-
-CREATE INDEX "IX_DiscountUsages_OrderId" ON "DiscountUsages" ("OrderId");
-
-CREATE INDEX "IX_DiscountUsages_UserId" ON "DiscountUsages" ("UserId");
-
 CREATE INDEX "IX_ElasticsearchOutboxMessages_EntityType_EntityId" ON "ElasticsearchOutboxMessages" ("EntityType", "EntityId");
 
 CREATE INDEX "IX_ElasticsearchOutboxMessages_ProcessedAt" ON "ElasticsearchOutboxMessages" ("ProcessedAt");
@@ -804,6 +782,8 @@ CREATE UNIQUE INDEX "IX_Orders_IdempotencyKey" ON "Orders" ("IdempotencyKey");
 
 CREATE UNIQUE INDEX "IX_Orders_OrderNumber" ON "Orders" ("OrderNumber");
 
+CREATE INDEX "IX_Orders_Status_CreatedAt" ON "Orders" ("Status", "CreatedAt");
+
 CREATE INDEX "IX_Orders_UserId" ON "Orders" ("UserId");
 
 CREATE UNIQUE INDEX "IX_OrderStatuses_Name" ON "OrderStatuses" ("Name");
@@ -813,6 +793,8 @@ CREATE INDEX "IX_OutboxMessages_processed_at" ON "OutboxMessages" (processed_at)
 CREATE UNIQUE INDEX "IX_PaymentTransactions_Authority" ON "PaymentTransactions" ("Authority");
 
 CREATE UNIQUE INDEX "IX_PaymentTransactions_OrderId" ON "PaymentTransactions" ("OrderId");
+
+CREATE INDEX "IX_PaymentTransactions_Status_CreatedAt" ON "PaymentTransactions" ("Status", "CreatedAt");
 
 CREATE INDEX "IX_PaymentTransactions_UserId" ON "PaymentTransactions" ("UserId");
 
@@ -870,6 +852,8 @@ CREATE INDEX "IX_StockLedgerEntries_UserId" ON "StockLedgerEntries" ("UserId");
 
 CREATE INDEX "IX_StockLedgerEntries_VariantId" ON "StockLedgerEntries" ("VariantId");
 
+CREATE INDEX "IX_StockLedgerEntries_VariantId_CreatedAt" ON "StockLedgerEntries" ("VariantId", "CreatedAt" DESC);
+
 CREATE INDEX "IX_StockLedgerEntries_WarehouseId" ON "StockLedgerEntries" ("WarehouseId");
 
 CREATE INDEX "IX_TicketMessages_TicketId" ON "TicketMessages" ("TicketId");
@@ -925,7 +909,7 @@ CREATE INDEX "IX_Wishlists_UserId" ON "Wishlists" ("UserId");
 CREATE UNIQUE INDEX "IX_Wishlists_UserId_ProductId" ON "Wishlists" ("UserId", "ProductId");
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260518005030_1', '9.0.13');
+VALUES ('20260531151616_1', '9.0.16');
 
 COMMIT;
 
