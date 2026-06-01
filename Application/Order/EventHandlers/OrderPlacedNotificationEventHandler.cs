@@ -5,7 +5,9 @@ namespace Application.Order.EventHandlers;
 public sealed class OrderPlacedNotificationEventHandler(
     INotificationService notificationService) : INotificationHandler<DomainEventNotification<OrderCreatedEvent>>
 {
-    public async Task Handle(DomainEventNotification<OrderCreatedEvent> notification, CancellationToken ct)
+    public async Task Handle(
+        DomainEventNotification<OrderCreatedEvent> notification,
+        CancellationToken ct)
     {
         var domainEvent = notification.DomainEvent;
         try

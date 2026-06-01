@@ -1,7 +1,6 @@
 using Application.Support.Features.Shared;
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
-using Quartz.Util;
 
 namespace Application.Support.Features.Queries.GetTickets;
 
@@ -12,11 +11,11 @@ public class GetTicketsHandler(
         GetTicketsQuery request,
         CancellationToken ct)
     {
-        var ticketPriority = request.Priority.IsNullOrWhiteSpace()
+        var ticketPriority = string.IsNullOrWhiteSpace(request.Priority)
             ? TicketPriority.Normal
             : TicketPriority.FromString(request.Priority);
 
-        var ticketStatus = request.Status.IsNullOrWhiteSpace()
+        var ticketStatus = string.IsNullOrWhiteSpace(request.Status)
             ? TicketStatus.Open
             : TicketStatus.FromString(request.Status);
 

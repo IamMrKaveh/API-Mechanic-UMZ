@@ -41,6 +41,105 @@ public sealed class CategoryQueryService(
         };
     }
 
+    public async Task<IReadOnlyList<CategoryTreeDto>> GetCategoryTreeAsync(CancellationToken ct = default)
+    {
+        var categories = await context.Categories
+            .AsNoTracking()
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.SortOrder)
+            .ThenBy(c => c.Name.Value)
+            .Select(c => new CategoryTreeDto
+            {
+                Id = c.Id.Value,
+                Name = c.Name.Value,
+                Slug = c.Slug.Value,
+                IsActive = c.IsActive,
+                SortOrder = c.SortOrder
+            })
+            .ToListAsync(ct);
+
+        return categories;
+    }
+
+    public async Task<PaginatedResult<CategoryListItemDto>> GetCategoriesPagedAsync(
+        string? search,
+        bool? isActive,
+        bool includeDeleted,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
+    {
+        var query = context.Categories.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLower();
+            query = query.Where(c => c.Name.Value.ToLower().Contains(term));
+        }
+
+        if (isActive.HasValue)
+            query = query.Where(c => c.IsActive == isActive.Value);
+
+        var total = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderBy(c => c.SortOrder)
+            .ThenByDescending(c => c.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(c => new CategoryListItemDto
+            {
+                Id = c.Id.Value,
+                Name = c.Name.Value,
+                Slug = c.Slug.Value,
+                IsActive = c.IsActive,
+                IsDeleted = false,
+                SortOrder = c.SortOrder,
+                ProductCount = context.Products
+                    .Count(p => p.Brand != null && p.Brand.CategoryId == c.Id && p.IsActive && !p.IsDeleted),
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt,
+                RowVersion = null
+            })
+            .ToListAsync(ct);
+
+        return PaginatedResult<CategoryListItemDto>.Create(items, total, page, pageSize);
+    }
+
+    public async Task<CategoryWithBrandsDto?> GetCategoryWithBrandsAsync(
+        CategoryId categoryId,
+        CancellationToken ct = default)
+    {
+        var category = await context.Categories
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == categoryId, ct);
+
+        if (category is null) return null;
+
+        var brands = await context.Brands
+            .AsNoTracking()
+            .Where(b => b.CategoryId == categoryId && !b.IsDeleted)
+            .Select(b => new BrandInCategoryDto
+            {
+                Id = b.Id.Value,
+                Name = b.Name.Value,
+                Slug = b.Slug.Value,
+                LogoPath = b.LogoPath,
+                IsActive = b.IsActive
+            })
+            .ToListAsync(ct);
+
+        return new CategoryWithBrandsDto
+        {
+            Id = category.Id.Value,
+            Name = category.Name.Value,
+            Slug = category.Slug?.Value,
+            Description = category.Description,
+            IsActive = category.IsActive,
+            Brands = brands
+        };
+    }
+
     public async Task<PaginatedResult<CategoryProductItemDto>> GetCategoryProductsAsync(
         CategoryId categoryId,
         bool activeOnly,
@@ -89,21 +188,6 @@ public sealed class CategoryQueryService(
         }).ToList();
 
         return PaginatedResult<CategoryProductItemDto>.Create(dtos, total, page, pageSize);
-    }
-
-    public Task<IReadOnlyList<CategoryTreeDto>> GetCategoryTreeAsync(CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<PaginatedResult<CategoryListItemDto>> GetCategoriesPagedAsync(string? search, bool? isActive, bool includeDeleted, int page, int pageSize, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<CategoryWithBrandsDto?> GetCategoryWithBrandsAsync(CategoryId categoryId, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
     }
 
     public async Task<PaginatedResult<CategoryDto>> GetPublicCategoriesAsync(

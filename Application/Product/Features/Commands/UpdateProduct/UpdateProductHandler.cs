@@ -7,7 +7,6 @@ using Domain.Category.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 
 namespace Application.Product.Features.Commands.UpdateProduct;
 
@@ -45,28 +44,21 @@ public sealed class UpdateProductHandler(
         if (await productRepository.ExistsBySlugAsync(slug, productId, ct))
             return ServiceResult<ProductDetailDto>.Conflict("محصولی با این Slug قبلاً ثبت شده است.");
 
-        try
-        {
-            productRepository.SetOriginalRowVersion(product, request.RowVersion.FromBase64RowVersion());
+        productRepository.SetOriginalRowVersion(product, request.RowVersion.FromBase64RowVersion());
 
-            product.UpdateDetails(ProductName.Create(request.Name), slug, request.Description ?? string.Empty);
+        product.UpdateDetails(ProductName.Create(request.Name), slug, request.Description ?? string.Empty);
 
-            if (product.BrandId != brandId)
-                product.ChangeBrand(brandId);
+        if (product.BrandId != brandId)
+            product.ChangeBrand(brandId);
 
-            if (request.IsActive && !product.IsActive) product.Activate();
-            else if (!request.IsActive && product.IsActive) product.Deactivate();
+        if (request.IsActive && !product.IsActive) product.Activate();
+        else if (!request.IsActive && product.IsActive) product.Deactivate();
 
-            if (request.IsFeatured && !product.IsFeatured) product.MarkAsFeatured();
-            else if (!request.IsFeatured && product.IsFeatured) product.UnmarkAsFeatured();
+        if (request.IsFeatured && !product.IsFeatured) product.MarkAsFeatured();
+        else if (!request.IsFeatured && product.IsFeatured) product.UnmarkAsFeatured();
 
-            productRepository.Update(product);
-            await unitOfWork.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new ConcurrencyException("اطلاعات محصول توسط کاربر دیگری تغییر کرده است.");
-        }
+        productRepository.Update(product);
+        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogProductEventAsync(
             product.Id,
