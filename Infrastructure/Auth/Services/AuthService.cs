@@ -4,6 +4,7 @@ using Application.User.Features.Shared;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
+using Mapster;
 
 namespace Infrastructure.Auth.Services;
 
@@ -11,8 +12,7 @@ public sealed class AuthService(
     IUserRepository userRepository,
     ISessionRepository sessionRepository,
     ISessionService sessionService,
-    IJwtTokenGenerator jwtTokenGenerator,
-    IMapper mapper) : IAuthService
+    IJwtTokenGenerator jwtTokenGenerator) : IAuthService
 {
     public async Task<ServiceResult<(string AccessToken, RefreshTokenResult RefreshToken, UserProfileDto User, bool IsNewUser)>>
         RefreshTokenAsync(
@@ -39,7 +39,7 @@ public sealed class AuthService(
             return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Unauthorized("حساب کاربری غیرفعال است.");
 
         var accessToken = jwtTokenGenerator.GenerateAccessToken(user);
-        var userDto = mapper.Map<UserProfileDto>(user);
+        var userDto = user.Adapt<UserProfileDto>();
 
         return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Success(
             (accessToken, sessionResult.Value!, userDto, false));

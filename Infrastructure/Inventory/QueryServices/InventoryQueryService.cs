@@ -1,5 +1,6 @@
 using Application.Inventory.Features.Shared;
 using Domain.Variant.ValueObjects;
+using Mapster;
 
 namespace Infrastructure.Inventory.QueryServices;
 

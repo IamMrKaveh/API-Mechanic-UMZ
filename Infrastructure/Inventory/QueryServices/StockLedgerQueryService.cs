@@ -1,12 +1,16 @@
 using Application.Inventory.Features.Shared;
 using Domain.Variant.ValueObjects;
+using Mapster;
 
 namespace Infrastructure.Inventory.QueryServices;
 
 public sealed class StockLedgerQueryService(DBContext context) : IStockLedgerQueryService
 {
     public async Task<PaginatedResult<StockLedgerEntryDto>> GetByVariantIdAsync(
-        VariantId variantId, int page, int pageSize, CancellationToken ct = default)
+        VariantId variantId,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
     {
         var query = context.StockLedgerEntries
             .AsNoTracking()
@@ -20,6 +24,9 @@ public sealed class StockLedgerQueryService(DBContext context) : IStockLedgerQue
             .ToListAsync(ct);
 
         return PaginatedResult<StockLedgerEntryDto>.Create(
-            items.Adapt<List<StockLedgerEntryDto>>(), total, page, pageSize);
+            items.Adapt<List<StockLedgerEntryDto>>(),
+            total,
+            page,
+            pageSize);
     }
 }

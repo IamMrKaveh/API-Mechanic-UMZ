@@ -11,32 +11,28 @@ public static class ApplicationServiceCollection
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        RegisterMediatR(services);
-        RegisterDomainServices(services);
-        RegisterApplicationServices(services);
-        RegisterValidation(services);
+        services.RegisterMediatR();
+        services.RegisterDomainServices();
+        services.RegisterApplicationServices();
         services.AddApplicationMappings();
         return services;
     }
 
-    private static void RegisterMediatR(IServiceCollection services)
+    private static IServiceCollection RegisterMediatR(this IServiceCollection services)
     {
         services.AddMediatR(cfg =>
         {
-            cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+            cfg.RegisterServicesFromAssembly(typeof(ApplicationServiceCollection).Assembly);
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(IdempotencyBehavior<,>));
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
         });
+
+        return services;
     }
 
-    private static void RegisterValidation(IServiceCollection services)
-    {
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
-    }
-
-    private static void RegisterDomainServices(IServiceCollection services)
+    private static IServiceCollection RegisterDomainServices(this IServiceCollection services)
     {
         services.AddScoped<ShippingDomainService>();
         services.AddScoped<ReviewDomainService>();
@@ -44,11 +40,15 @@ public static class ApplicationServiceCollection
         services.AddScoped<PaymentDomainService>();
         services.AddScoped<MediaDomainService>();
         services.AddScoped<TicketDomainService>();
+
+        return services;
     }
 
-    private static void RegisterApplicationServices(IServiceCollection services)
+    private static IServiceCollection RegisterApplicationServices(this IServiceCollection services)
     {
         services.AddScoped<InventoryReservationService>();
         services.AddScoped<PaymentSettlementService>();
+
+        return services;
     }
 }
