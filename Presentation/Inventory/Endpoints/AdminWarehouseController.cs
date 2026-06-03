@@ -79,10 +79,10 @@ public sealed class AdminWarehouseController(IMediator mediator) : BaseApiContro
         return ToActionResult(result);
     }
 
-    [HttpPatch("{id:guid}/set-default")]
+    [HttpPatch("{id:guid}/set-default-warehouse")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SetDefault(Guid id, CancellationToken ct)
+    public async Task<IActionResult> SetDefaultWarehouse(Guid id, CancellationToken ct)
     {
         var command = new SetDefaultWarehouseCommand(id);
         var result = await Mediator.Send(command, ct);

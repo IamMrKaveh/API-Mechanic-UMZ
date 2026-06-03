@@ -26,6 +26,16 @@ public sealed class WishlistRepository(DBContext context) : IWishlistRepository
             context.Wishlists.Remove(wishlist);
     }
 
+    public async Task ClearAsync(UserId userId, CancellationToken ct = default)
+    {
+        var items = await context.Wishlists
+            .Where(w => w.UserId == userId)
+            .ToListAsync(ct);
+
+        if (items.Count > 0)
+            context.Wishlists.RemoveRange(items);
+    }
+
     public async Task<bool> ExistsAsync(UserId userId, ProductId productId, CancellationToken ct = default)
         => await context.Wishlists.AnyAsync(
             w => w.UserId == userId && w.ProductId == productId, ct);

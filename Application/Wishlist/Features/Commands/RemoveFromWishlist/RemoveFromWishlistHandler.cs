@@ -17,7 +17,7 @@ public class RemoveFromWishlistHandler(
 
         var item = await wishlistRepository.GetByUserAndProductAsync(userId, productId, ct);
         if (item is null)
-            return ServiceResult.NotFound("آیتم در علاقه‌مندی‌ها یافت نشد.");
+            return ServiceResult.Success();
 
         await wishlistRepository.RemoveAsync(userId, productId, ct);
         await unitOfWork.SaveChangesAsync(ct);

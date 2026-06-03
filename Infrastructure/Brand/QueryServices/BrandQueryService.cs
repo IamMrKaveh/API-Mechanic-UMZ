@@ -86,7 +86,7 @@ public sealed class BrandQueryService(
         if (!string.IsNullOrWhiteSpace(search))
         {
             var searchTerm = search.Trim().ToLower();
-            query = query.Where(b => b.Name.Value.ToLower().Contains(searchTerm));
+            query = query.Where(b => EF.Functions.ILike(b.Name.Value, $"%{searchTerm}%"));
         }
 
         var totalItems = await query.CountAsync(ct);
@@ -136,39 +136,38 @@ public sealed class BrandQueryService(
         CategoryId? categoryId = null,
         CancellationToken ct = default)
     {
-        var query = context.Brands
-            .AsNoTracking()
-            .Where(b => b.IsActive);
+        var query = context.Brands.AsNoTracking().Where(b => b.IsActive);
 
         if (categoryId is not null)
             query = query.Where(b => b.CategoryId == categoryId);
 
-        var brands = await query
+        var projected = await query
             .Select(b => new
             {
                 b.Id,
-                Name = b.Name.Value,
-                Slug = b.Slug != null ? b.Slug.Value : null,
-                CategoryId = b.CategoryId.Value,
+                NameValue = b.Name.Value,
+                SlugValue = b.Slug.Value,
+                CategoryIdValue = b.CategoryId.Value,
                 b.IsActive,
                 b.LogoPath
             })
-            .OrderBy(b => b.Name)
+            .OrderBy(x => x.NameValue)
             .ToListAsync(ct);
 
-        var categoryIds = brands.Select(b => CategoryId.From(b.CategoryId)).Distinct().ToList();
+        var categoryIds = projected.Select(b => CategoryId.From(b.CategoryIdValue)).Distinct().ToList();
         var categoryNames = await context.Categories
-            .Where(c => categoryIds.Contains(c.Id))
             .AsNoTracking()
-            .ToDictionaryAsync(c => c.Id.Value, c => c.Name.Value, ct);
+            .Where(c => categoryIds.Contains(c.Id))
+            .Select(c => new { Id = c.Id.Value, Name = c.Name.Value })
+            .ToDictionaryAsync(c => c.Id, c => c.Name, ct);
 
-        return brands.Select(b => new BrandListItemDto
+        return projected.Select(b => new BrandListItemDto
         {
             Id = b.Id.Value,
-            Name = b.Name,
-            Slug = b.Slug,
-            CategoryId = b.CategoryId,
-            CategoryName = categoryNames.TryGetValue(b.CategoryId, out var cn) ? cn : string.Empty,
+            Name = b.NameValue,
+            Slug = b.SlugValue,
+            CategoryId = b.CategoryIdValue,
+            CategoryName = categoryNames.TryGetValue(b.CategoryIdValue, out var cn) ? cn : string.Empty,
             IsActive = b.IsActive,
             LogoPath = b.LogoPath is not null ? urlResolver.ResolveMediaUrl(b.LogoPath) : null
         }).ToList().AsReadOnly();

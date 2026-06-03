@@ -13,24 +13,6 @@ namespace Presentation.Payment.Endpoints;
 [ApiController]
 public class PaymentsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
-    [HttpPost]
-    [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<PaymentInitiationResult>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> InitiatePayment(
-        [FromBody] InitiatePaymentRequest request,
-        CancellationToken ct)
-    {
-        var command = new InitiatePaymentCommand(
-            request.OrderId,
-            CurrentUser.UserId,
-            request.Gateway,
-            CurrentUser.IpAddress);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
     [HttpGet("verify")]
     [ProducesResponseType(typeof(ApiResponse<PaymentVerificationResult>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -73,6 +55,24 @@ public class PaymentsController(IMediator mediator, IMapper mapper) : BaseApiCon
     {
         var query = new GetPaymentStatusQuery(authority);
         var result = await Mediator.Send(query, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpPost]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<PaymentInitiationResult>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> InitiatePayment(
+    [FromBody] InitiatePaymentRequest request,
+    CancellationToken ct)
+    {
+        var command = new InitiatePaymentCommand(
+            request.OrderId,
+            CurrentUser.UserId,
+            request.Gateway,
+            CurrentUser.IpAddress);
+
+        var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
 

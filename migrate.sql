@@ -344,16 +344,16 @@ CREATE TABLE "Carts" (
 
 CREATE TABLE "Notifications" (
     "Id" uuid NOT NULL,
+    "Title" character varying(200) NOT NULL,
+    "Message" character varying(1000) NOT NULL,
+    "Type" character varying(100) NOT NULL,
+    "ActionUrl" character varying(500),
+    "RelatedEntityType" character varying(100),
+    "RelatedEntityId" uuid,
     "IsRead" boolean NOT NULL,
     "CreatedAt" timestamp with time zone NOT NULL,
     "UpdatedAt" timestamp with time zone,
     "UserId" uuid NOT NULL,
-    "ActionUrl" character varying(500),
-    "Message" character varying(1000) NOT NULL,
-    "RelatedEntityId" uuid,
-    "RelatedEntityType" character varying(100),
-    "Title" character varying(200) NOT NULL,
-    "Type" character varying(100) NOT NULL,
     "Version" integer NOT NULL,
     CONSTRAINT "PK_Notifications" PRIMARY KEY ("Id"),
     CONSTRAINT "FK_Notifications_Users_UserId" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE CASCADE
@@ -720,7 +720,9 @@ CREATE INDEX "IX_AuditLogs_EventType" ON "AuditLogs" ("EventType");
 
 CREATE INDEX "IX_AuditLogs_UserId" ON "AuditLogs" ("UserId");
 
-CREATE INDEX "IX_Brands_CategoryId_Name" ON "Brands" ("CategoryId", "Name");
+CREATE INDEX "IX_Brands_CategoryId" ON "Brands" ("CategoryId");
+
+CREATE INDEX "IX_Brands_Name" ON "Brands" ("Name");
 
 CREATE UNIQUE INDEX "IX_Brands_Slug" ON "Brands" ("Slug");
 
@@ -909,7 +911,7 @@ CREATE INDEX "IX_Wishlists_UserId" ON "Wishlists" ("UserId");
 CREATE UNIQUE INDEX "IX_Wishlists_UserId_ProductId" ON "Wishlists" ("UserId", "ProductId");
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260531151616_1', '9.0.16');
+VALUES ('20260603054724_1', '9.0.16');
 
 COMMIT;
 

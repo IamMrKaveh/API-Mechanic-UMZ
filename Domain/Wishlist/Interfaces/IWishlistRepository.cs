@@ -14,6 +14,10 @@ public interface IWishlistRepository
         ProductId productId,
         CancellationToken ct = default);
 
+    Task ClearAsync(
+        UserId userId,
+        CancellationToken ct = default);
+
     Task<Aggregates.Wishlist?> GetByUserAndProductAsync(
         UserId userId,
         ProductId productId,

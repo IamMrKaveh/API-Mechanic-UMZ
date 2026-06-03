@@ -22,10 +22,16 @@ public sealed class NotificationService(
         CancellationToken ct = default)
     {
         var notificationType = NotificationType.FromString(typeName);
+
         var notification = Domain.Notification.Aggregates.Notification.Create(
             NotificationId.NewId(),
             userId,
-            notificationType);
+            notificationType,
+            title,
+            message,
+            actionUrl,
+            referenceType,
+            referenceId);
 
         await notificationRepository.AddAsync(notification, ct);
 

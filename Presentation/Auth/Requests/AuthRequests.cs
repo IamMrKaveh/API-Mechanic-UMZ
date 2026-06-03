@@ -8,7 +8,3 @@ public record VerifyOtpRequest(
     string? DeviceInfo = null);
 
 public record RefreshRequest(string RefreshToken);
-
-public record RevokeSessionRequest(Guid SessionId);
-
-public record GoogleLoginRequest(string IdToken);

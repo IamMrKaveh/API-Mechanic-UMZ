@@ -4,11 +4,16 @@ namespace Application.Auth.Features.Shared;
 
 public record AuthResult
 {
-    public Guid AccessToken { get; init; }
+    public string AccessToken { get; init; } = string.Empty;
+
     public string RefreshToken { get; init; } = string.Empty;
+
     public DateTime AccessTokenExpiresAt { get; init; }
+
     public DateTime RefreshTokenExpiresAt { get; init; }
+
     public UserProfileDto User { get; init; } = null!;
+
     public bool IsNewUser { get; init; }
 }
 

@@ -16,12 +16,10 @@ public class SearchProductsHandler(ISearchService searchService)
             BrandId = request.BrandId,
             MinPrice = request.MinPrice,
             MaxPrice = request.MaxPrice,
-            Brand = request.Brand,
             InStockOnly = request.InStockOnly,
             SortBy = request.SortBy,
             Page = request.Page,
-            PageSize = request.PageSize,
-            Tags = request.Tags
+            PageSize = request.PageSize
         };
 
         var result = await searchService.SearchProductsAsync(searchParams, ct);
