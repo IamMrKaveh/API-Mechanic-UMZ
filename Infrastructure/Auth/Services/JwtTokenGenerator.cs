@@ -1,5 +1,6 @@
 ﻿using Application.Auth.Contracts;
 using Infrastructure.Security.Settings;
+using SharedKernel.Constants;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
 namespace Infrastructure.Auth.Services;
@@ -31,10 +32,11 @@ public sealed class JwtTokenGenerator(IOptions<JwtSettings> jwtSettings) : IJwtT
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(ClaimTypes.NameIdentifier, user.Id.Value.ToString()),
             new(ClaimTypes.MobilePhone, user.PhoneNumber.Value),
+            new(ClaimTypes.Role, AppRoles.User),
         };
 
         if (user.IsAdmin)
-            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+            claims.Add(new Claim(ClaimTypes.Role, AppRoles.Admin));
 
         return claims;
     }

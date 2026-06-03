@@ -29,7 +29,7 @@ public class AuthController(IMediator mediator, IMapper mapper)
 
     [HttpGet("google/callback")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<TokenResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GoogleCallback(CancellationToken ct)
     {
         var authenticateResult = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
@@ -65,6 +65,10 @@ public class AuthController(IMediator mediator, IMapper mapper)
             HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
 
         var result = await Mediator.Send(command, ct);
+
+        if (result.IsSuccess)
+            return StatusCode(StatusCodes.Status201Created, new ApiResponse(true, null));
+
         return ToActionResult(result);
     }
 
@@ -84,6 +88,10 @@ public class AuthController(IMediator mediator, IMapper mapper)
             Request.Headers.UserAgent.ToString());
 
         var result = await Mediator.Send(command, ct);
+
+        if (result.IsSuccess)
+            return StatusCode(StatusCodes.Status201Created, new ApiResponse<AuthResult>(result.Value, true, null));
+
         return ToActionResult(result);
     }
 
@@ -101,6 +109,10 @@ public class AuthController(IMediator mediator, IMapper mapper)
             Request.Headers.UserAgent.ToString());
 
         var result = await Mediator.Send(command, ct);
+
+        if (result.IsSuccess)
+            return StatusCode(StatusCodes.Status201Created, new ApiResponse<AuthResult>(result.Value, true, null));
+
         return ToActionResult(result);
     }
 

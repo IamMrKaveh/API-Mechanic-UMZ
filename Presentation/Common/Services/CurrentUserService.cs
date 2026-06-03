@@ -1,4 +1,5 @@
 using Application.Common.Interfaces;
+using SharedKernel.Constants;
 
 namespace Presentation.Common.Services;
 
@@ -21,7 +22,7 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
     }
 
     public bool IsAdmin =>
-        User?.IsInRole("Admin") ?? false;
+        User?.IsInRole(AppRoles.Admin) ?? false;
 
     public string? UserAgent =>
         _httpContextAccessor.HttpContext?.Request?.Headers.UserAgent.FirstOrDefault();

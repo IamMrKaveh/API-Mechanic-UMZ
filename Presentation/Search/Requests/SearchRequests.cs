@@ -6,10 +6,8 @@ public record SearchProductsRequest(
     Guid? BrandId = null,
     decimal? MinPrice = null,
     decimal? MaxPrice = null,
-    string? Brand = null,
     bool InStockOnly = false,
     string? SortBy = null,
-    string[]? Tags = null,
     int Page = 1,
     int PageSize = 20);
 

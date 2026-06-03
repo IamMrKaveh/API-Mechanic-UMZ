@@ -19,8 +19,9 @@ public sealed class BrandRepository(DBContext context) : IBrandRepository
         BrandId? excludeId = null,
         CancellationToken ct = default)
     {
+        var nameValue = name.Value;
         var query = context.Brands
-            .Where(b => b.Name.Value == name.Value && b.CategoryId == categoryId);
+            .Where(b => b.Name.Value == nameValue && b.CategoryId == categoryId);
         if (excludeId is not null)
             query = query.Where(b => b.Id != excludeId);
         return await query.AnyAsync(ct);

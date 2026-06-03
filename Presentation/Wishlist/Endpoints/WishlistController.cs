@@ -1,4 +1,6 @@
-﻿using Application.Wishlist.Features.Commands.ToggleWishlist;
+﻿using Application.Wishlist.Features.Commands.ClearWishlist;
+using Application.Wishlist.Features.Commands.RemoveFromWishlist;
+using Application.Wishlist.Features.Commands.ToggleWishlist;
 using Application.Wishlist.Features.Queries.CheckWishlistStatus;
 using Application.Wishlist.Features.Queries.GetWishlistById;
 using Application.Wishlist.Features.Shared;
@@ -32,7 +34,7 @@ public sealed class WishlistController(IMediator mediator) : BaseApiController(m
         return ToActionResult(result);
     }
 
-    [HttpPost()]
+    [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ToggleWishlist(
@@ -42,5 +44,23 @@ public sealed class WishlistController(IMediator mediator) : BaseApiController(m
         var command = new ToggleWishlistCommand(request.ProductId, CurrentUser.UserId);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
+    }
+
+    [HttpDelete("{productId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RemoveFromWishlist(Guid productId, CancellationToken ct)
+    {
+        var command = new RemoveFromWishlistCommand(CurrentUser.UserId, productId);
+        await Mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    [HttpDelete]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ClearWishlist(CancellationToken ct)
+    {
+        var command = new ClearWishlistCommand(CurrentUser.UserId);
+        await Mediator.Send(command, ct);
+        return NoContent();
     }
 }

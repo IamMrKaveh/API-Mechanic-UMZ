@@ -30,7 +30,7 @@ public class NotificationsController(IMediator mediator, IMapper mapper) : BaseA
     }
 
     [HttpGet("unread-count")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUnreadCount(CancellationToken ct)
     {
         var query = new GetUnreadNotificationCountQuery(CurrentUser.UserId);

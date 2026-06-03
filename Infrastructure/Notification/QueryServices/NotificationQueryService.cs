@@ -25,10 +25,10 @@ public sealed class NotificationQueryService(DBContext context) : INotificationQ
             {
                 Id = n.Id.Value,
                 UserId = n.UserId.Value,
-                Title = EF.Property<string>(n, "Title"),
-                Message = EF.Property<string>(n, "Message"),
-                Type = EF.Property<string>(n, "Type"),
-                ActionUrl = EF.Property<string?>(n, "ActionUrl"),
+                Title = n.Title,
+                Message = n.Message,
+                Type = n.Type.Value,
+                ActionUrl = n.ActionUrl,
                 IsRead = n.IsRead,
                 CreatedAt = n.CreatedAt
             })
@@ -63,10 +63,10 @@ public sealed class NotificationQueryService(DBContext context) : INotificationQ
             {
                 Id = n.Id.Value,
                 UserId = n.UserId.Value,
-                Title = EF.Property<string>(n, "Title"),
-                Message = EF.Property<string>(n, "Message"),
-                Type = EF.Property<string>(n, "Type"),
-                ActionUrl = EF.Property<string?>(n, "ActionUrl"),
+                Title = n.Title,
+                Message = n.Message,
+                Type = n.Type.Value,
+                ActionUrl = n.ActionUrl,
                 IsRead = n.IsRead,
                 CreatedAt = n.CreatedAt
             })

@@ -14,16 +14,23 @@ public sealed class BrandConfiguration : IEntityTypeConfiguration<Domain.Brand.A
 
         builder.Property<byte[]>("RowVersion").IsRowVersion();
 
-        builder.Property(e => e.Name)
-            .HasConversion(v => v.Value, v => BrandName.Create(v))
-            .IsRequired()
-            .HasMaxLength(BrandName.MaxLength);
+        builder.OwnsOne(e => e.Name, nb =>
+        {
+            nb.Property(p => p.Value)
+                .HasColumnName("Name")
+                .HasMaxLength(BrandName.MaxLength)
+                .IsRequired();
+            nb.HasIndex(p => p.Value);
+        });
 
-        builder.Property(e => e.Slug)
-            .HasConversion(v => v != null ? v.Value : string.Empty, v => Slug.FromString(v))
-            .HasColumnName("Slug")
-            .HasMaxLength(Slug.MaxLength)
-            .IsRequired();
+        builder.OwnsOne(e => e.Slug, sb =>
+        {
+            sb.Property(p => p.Value)
+                .HasColumnName("Slug")
+                .HasMaxLength(Slug.MaxLength)
+                .IsRequired();
+            sb.HasIndex(p => p.Value).IsUnique();
+        });
 
         builder.Property(e => e.CategoryId)
             .HasConversion(v => v.Value, v => CategoryId.From(v))
@@ -35,7 +42,9 @@ public sealed class BrandConfiguration : IEntityTypeConfiguration<Domain.Brand.A
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.UpdatedAt);
 
-        builder.HasIndex(e => e.Slug).IsUnique();
-        builder.HasIndex(e => new { e.CategoryId, e.Name });
+        builder.HasIndex(e => new { e.CategoryId });
+
+        builder.Navigation(e => e.Name).IsRequired();
+        builder.Navigation(e => e.Slug).IsRequired();
     }
 }
