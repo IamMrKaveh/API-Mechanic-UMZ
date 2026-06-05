@@ -65,5 +65,5 @@ public sealed class S3FileStorageService(
     }
 
     public string GetPublicUrl(string filePath)
-        => $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{filePath.TrimStart('/')}";
+        => $"{_options.BaseUrl.TrimEnd('/')}/{filePath.TrimStart('/')}";
 }
