@@ -12,9 +12,12 @@ public static class ConfigurationValidationExtension
             "Jwt:Key",
             "Jwt:Issuer",
             "Jwt:Audience",
-            "LiaraStorage:AccessKey",
-            "LiaraStorage:SecretKey",
-            "LiaraStorage:BucketName",
+            "AWS:S3:BucketName",
+            "AWS:S3:Region",
+            "AWS:S3:AccessKey",
+            "AWS:S3:SecretKey",
+            "AWS:S3:Endpoint",
+            "AWS:S3:BaseUrl",
             "Zarinpal:MerchantId",
             "FrontendUrls:BaseUrl"
         };

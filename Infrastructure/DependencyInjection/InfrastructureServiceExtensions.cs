@@ -293,9 +293,28 @@ public static class InfrastructureServiceExtensions
     private static void AddStorageServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<IMediaService, MediaService>();
-        services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));
+
+        services.Configure<S3Options>(
+            configuration.GetSection(S3Options.SectionName));
+
+        services.AddSingleton<IAmazonS3>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<S3Options>>().Value;
+
+            var config = new AmazonS3Config
+            {
+                ServiceURL = options.Endpoint,
+                ForcePathStyle = true,
+                AuthenticationRegion = options.Region
+            };
+
+            return new AmazonS3Client(
+                options.AccessKey,
+                options.SecretKey,
+                config);
+        });
+
         services.AddScoped<IStorageService, S3FileStorageService>();
-        services.AddAWSService<IAmazonS3>();
     }
 
     private static void AddCommunicationServices(this IServiceCollection services, IConfiguration configuration)
