@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Application.Security.Contracts;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -7,11 +8,12 @@ namespace Application.User.Features.Commands.ChangePassword;
 public class ChangePasswordHandler(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork) : IRequestHandler<ChangePasswordCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(ChangePasswordCommand request, CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUser.UserId!.Value);
 
         var user = await userRepository.GetByIdAsync(userId, ct);
         if (user is null)

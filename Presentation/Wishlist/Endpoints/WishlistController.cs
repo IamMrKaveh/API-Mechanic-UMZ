@@ -20,18 +20,14 @@ public sealed class WishlistController(IMediator mediator) : BaseApiController(m
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var query = new GetWishlistByIdQuery(CurrentUser.UserId, page, pageSize);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetWishlistByIdQuery(RequestContext.UserId ?? Guid.Empty, page, pageSize), ct);
     }
 
     [HttpGet("{productId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public async Task<IActionResult> IsInWishlist(Guid productId, CancellationToken ct)
     {
-        var query = new CheckWishlistStatusQuery(CurrentUser.UserId, productId);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new CheckWishlistStatusQuery(RequestContext.UserId ?? Guid.Empty, productId), ct);
     }
 
     [HttpPost]
@@ -41,16 +37,14 @@ public sealed class WishlistController(IMediator mediator) : BaseApiController(m
         [FromBody] ToggleWishlistRequest request,
         CancellationToken ct)
     {
-        var command = new ToggleWishlistCommand(request.ProductId, CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new ToggleWishlistCommand(request.ProductId, RequestContext.UserId ?? Guid.Empty), ct);
     }
 
     [HttpDelete("{productId:guid}")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemoveFromWishlist(Guid productId, CancellationToken ct)
     {
-        var command = new RemoveFromWishlistCommand(CurrentUser.UserId, productId);
+        var command = new RemoveFromWishlistCommand(RequestContext.UserId ?? Guid.Empty, productId);
         await Mediator.Send(command, ct);
         return NoContent();
     }
@@ -59,7 +53,7 @@ public sealed class WishlistController(IMediator mediator) : BaseApiController(m
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ClearWishlist(CancellationToken ct)
     {
-        var command = new ClearWishlistCommand(CurrentUser.UserId);
+        var command = new ClearWishlistCommand(RequestContext.UserId ?? Guid.Empty);
         await Mediator.Send(command, ct);
         return NoContent();
     }

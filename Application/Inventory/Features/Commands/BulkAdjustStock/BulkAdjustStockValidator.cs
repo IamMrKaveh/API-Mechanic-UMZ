@@ -6,7 +6,6 @@ public class BulkAdjustStockValidator : AbstractValidator<BulkAdjustStockCommand
     {
         RuleFor(x => x.Items).NotEmpty().WithMessage("لیست آیتم‌ها نمی‌تواند خالی باشد.");
         RuleFor(x => x.Reason).NotEmpty();
-        RuleFor(x => x.UserId).NotEmpty();
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(x => x.VariantId).NotEmpty();

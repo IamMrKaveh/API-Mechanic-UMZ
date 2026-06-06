@@ -8,28 +8,13 @@ public static class AdminReviewMappingExtensions
 {
     public static ApproveReviewCommand Enrich(
         this ApproveReviewCommand command,
-        Guid reviewId,
-        Guid userId) => command with
-        {
-            ReviewId = reviewId,
-            UserId = userId
-        };
+        Guid reviewId) => command with { ReviewId = reviewId };
 
     public static DeleteReviewCommand Enrich(
         this DeleteReviewCommand command,
-        Guid reviewId,
-        Guid userId) => command with
-        {
-            ReviewId = reviewId,
-            UserId = userId
-        };
+        Guid reviewId) => command with { ReviewId = reviewId };
 
     public static RejectReviewCommand Enrich(
         this RejectReviewCommand command,
-        Guid reviewId,
-        Guid userId) => command with
-        {
-            ReviewId = reviewId,
-            UserId = userId
-        };
+        Guid reviewId) => command with { ReviewId = reviewId };
 }

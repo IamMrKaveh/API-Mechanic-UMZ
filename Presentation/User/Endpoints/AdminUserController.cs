@@ -24,9 +24,7 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        var query = new GetUsersQuery(includeDeleted, page, pageSize);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetUsersQuery(includeDeleted, page, pageSize), ct);
     }
 
     [HttpGet("{id:guid}")]
@@ -34,9 +32,7 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUser(Guid id, CancellationToken ct)
     {
-        var command = new GetUserByIdQuery(id);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new GetUserByIdQuery(id), ct);
     }
 
     [HttpPost]
@@ -52,8 +48,7 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
             request.Email,
             request.IsAdmin);
 
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(command, ct);
     }
 
     [HttpPost("{id:guid}/restore")]
@@ -61,9 +56,7 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RestoreUser(Guid id, CancellationToken ct)
     {
-        var command = new RestoreUserCommand(id);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new RestoreUserCommand(id), ct);
     }
 
     [HttpPut("{id:guid}")]
@@ -74,14 +67,7 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
         [FromBody] UpdateProfileRequest request,
         CancellationToken ct)
     {
-        var command = new UpdateUserCommand(
-            id,
-            CurrentUser.UserId,
-            request.FirstName,
-            request.LastName);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new UpdateUserCommand(id, request.FirstName, request.LastName), ct);
     }
 
     [HttpDelete("{id:guid}")]
@@ -89,9 +75,7 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken ct)
     {
-        var command = new DeleteUserCommand(id, CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new DeleteUserCommand(id), ct);
     }
 
     [HttpPatch("{id:guid}/status")]
@@ -102,9 +86,7 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
         [FromBody] ChangeUserStatusRequest request,
         CancellationToken ct)
     {
-        var command = new ChangeUserStatusCommand(id, request.IsActive);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new ChangeUserStatusCommand(id, request.IsActive), ct);
     }
 
     [HttpPatch("{id:guid}/role")]
@@ -115,8 +97,6 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
         [FromBody] ChangeUserRoleRequest request,
         CancellationToken ct)
     {
-        var command = new ChangeUserRoleCommand(id, request.IsAdmin, CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new ChangeUserRoleCommand(id, request.IsAdmin), ct);
     }
 }

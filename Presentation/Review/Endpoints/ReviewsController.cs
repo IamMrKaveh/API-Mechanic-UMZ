@@ -2,7 +2,6 @@ using Application.Review.Features.Commands.CreateReview;
 using Application.Review.Features.Queries.GetProductReviews;
 using Application.Review.Features.Queries.GetUserReviews;
 using Application.Review.Features.Shared;
-using Presentation.Review.Mapping;
 using Presentation.Review.Requests;
 
 namespace Presentation.Review.Endpoints;
@@ -20,9 +19,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var query = new GetProductReviewsQuery(productId, page, pageSize);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetProductReviewsQuery(productId, page, pageSize), ct);
     }
 
     [HttpPost]
@@ -33,12 +30,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
         [FromBody] CreateReviewRequest request,
         CancellationToken ct)
     {
-        var command = Mapper
-            .Map<CreateReviewCommand>(request)
-            .Enrich(CurrentUser.UserId);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(Mapper.Map<CreateReviewCommand>(request), ct);
     }
 
     [HttpGet("me")]
@@ -49,10 +41,6 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var query = new GetUserReviewsQuery(CurrentUser.UserId, page, pageSize);
-
-        var result = await Mediator.Send(query, ct);
-
-        return ToActionResult(result);
+        return await Send(new GetUserReviewsQuery(RequestContext.UserId ?? Guid.Empty, page, pageSize), ct);
     }
 }

@@ -1,17 +1,16 @@
-using Application.Common.Interfaces;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
 using Domain.Inventory.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
-using SharedKernel.Exceptions;
 
 namespace Application.Inventory.Features.Commands.BulkStockIn;
 
 public class BulkStockInHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : IRequestHandler<BulkStockInCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(BulkStockInCommand request, CancellationToken ct)
@@ -19,8 +18,8 @@ public class BulkStockInHandler(
         if (request.Items.Count == 0)
             return ServiceResult.Failure("لیست اقلام برای ورود موجودی خالی است.");
 
-        var userId = request.UserId.HasValue
-            ? UserId.From(request.UserId.Value)
+        var userId = currentUserService.UserId.HasValue
+            ? UserId.From(currentUserService.UserId.Value)
             : null;
 
         await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>

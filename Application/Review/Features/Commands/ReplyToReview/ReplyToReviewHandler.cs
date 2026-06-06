@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Domain.Review.Interfaces;
 using Domain.Review.ValueObjects;
 using Domain.User.ValueObjects;
@@ -6,6 +7,7 @@ namespace Application.Review.Features.Commands.ReplyToReview;
 
 public class ReplyToReviewHandler(
     IReviewRepository reviewRepository,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
     IAuditService auditService) : IRequestHandler<ReplyToReviewCommand, ServiceResult>
 {
@@ -14,7 +16,7 @@ public class ReplyToReviewHandler(
         CancellationToken ct)
     {
         var reviewId = ReviewId.From(request.ReviewId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUser.UserId!.Value);
 
         var review = await reviewRepository.GetByIdAsync(reviewId, ct);
         if (review is null)

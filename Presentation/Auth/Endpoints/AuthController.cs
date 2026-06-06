@@ -1,3 +1,4 @@
+using Application.Auth.Contracts;
 using Application.Auth.Features.Commands.GoogleLogin;
 using Application.Auth.Features.Commands.Logout;
 using Application.Auth.Features.Commands.LogoutAll;
@@ -11,7 +12,10 @@ namespace Presentation.Auth.Endpoints;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/auth")]
-public class AuthController(IMediator mediator, IMapper mapper)
+public class AuthController(
+    IMediator mediator,
+    IMapper mapper,
+    IGoogleAuthenticationService googleAuthService)
     : BaseApiController(mediator, mapper)
 {
     [HttpGet("google")]
@@ -32,23 +36,18 @@ public class AuthController(IMediator mediator, IMapper mapper)
     [ProducesResponseType(typeof(ApiResponse<AuthResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GoogleCallback(CancellationToken ct)
     {
-        var authenticateResult = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+        var profile = await googleAuthService.AuthenticateAsync(ct);
 
-        if (authenticateResult.Succeeded is false)
+        if (profile is null)
             return BadRequest("Google authentication failed.");
 
-        var claims = authenticateResult.Principal?.Identities.FirstOrDefault()?.Claims;
-        var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-        var firstName = claims?.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value;
-        var lastName = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value;
-        var providerKey = claims?.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+        var command = new GoogleLoginCommand(
+            profile.Email,
+            profile.FirstName,
+            profile.LastName,
+            profile.ProviderKey);
 
-        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(providerKey))
-            return BadRequest("Incomplete profile data from Google.");
-
-        var command = new GoogleLoginCommand(email, firstName ?? string.Empty, lastName ?? string.Empty, providerKey);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(command, ct);
     }
 
     [HttpPost("otp")]
@@ -60,10 +59,7 @@ public class AuthController(IMediator mediator, IMapper mapper)
         [FromBody] SendOtpRequest request,
         CancellationToken ct)
     {
-        var command = new SendOtpCommand(
-            request.PhoneNumber,
-            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
-
+        var command = new SendOtpCommand(request.PhoneNumber);
         var result = await Mediator.Send(command, ct);
 
         if (result.IsSuccess)
@@ -81,12 +77,7 @@ public class AuthController(IMediator mediator, IMapper mapper)
         [FromBody] VerifyOtpRequest request,
         CancellationToken ct)
     {
-        var command = new VerifyOtpCommand(
-            request.PhoneNumber,
-            request.Code,
-            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            Request.Headers.UserAgent.ToString());
-
+        var command = new VerifyOtpCommand(request.PhoneNumber, request.Code);
         var result = await Mediator.Send(command, ct);
 
         if (result.IsSuccess)
@@ -103,11 +94,7 @@ public class AuthController(IMediator mediator, IMapper mapper)
         [FromBody] RefreshRequest request,
         CancellationToken ct)
     {
-        var command = new RefreshTokenCommand(
-            request.RefreshToken,
-            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            Request.Headers.UserAgent.ToString());
-
+        var command = new RefreshTokenCommand(request.RefreshToken);
         var result = await Mediator.Send(command, ct);
 
         if (result.IsSuccess)
@@ -124,9 +111,7 @@ public class AuthController(IMediator mediator, IMapper mapper)
         [FromBody] RefreshRequest request,
         CancellationToken ct)
     {
-        var command = new LogoutCommand(CurrentUser.UserId, request.RefreshToken);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new LogoutCommand(request.RefreshToken), ct);
     }
 
     [HttpDelete("sessions")]
@@ -134,8 +119,6 @@ public class AuthController(IMediator mediator, IMapper mapper)
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> LogoutAll(CancellationToken ct)
     {
-        var command = new LogoutAllCommand(CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new LogoutAllCommand(RequestContext.UserId!.Value), ct);
     }
 }

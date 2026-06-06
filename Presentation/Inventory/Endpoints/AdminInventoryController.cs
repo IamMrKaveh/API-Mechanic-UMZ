@@ -20,7 +20,9 @@ namespace Presentation.Inventory.Endpoints;
 [ApiController]
 [Route("api/v{version:apiVersion}/admin/inventory")]
 [Authorize(Roles = "Admin")]
-public sealed class AdminInventoryController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
+public sealed class AdminInventoryController(
+    IMediator mediator,
+    IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet("transactions")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<InventoryTransactionDto>>), StatusCodes.Status200OK)]
@@ -66,8 +68,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         var command = new ReverseInventoryCommand(
             request.VariantId,
             request.IdempotencyKey,
-            request.Reason,
-            CurrentUser.UserId);
+            request.Reason);
 
         var result = await Mediator.Send(command);
         return ToActionResult(result);
@@ -98,7 +99,6 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         var command = new AdjustStockCommand(
             request.VariantId,
             request.QuantityChange,
-            CurrentUser.UserId,
             request.Reason);
 
         var result = await Mediator.Send(command);
@@ -113,7 +113,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
             .Select(x => new BulkAdjustStockItem(x.VariantId, x.QuantityChange))
             .ToList();
 
-        var command = new BulkAdjustStockCommand(items, CurrentUser.UserId, request.Reason);
+        var command = new BulkAdjustStockCommand(items, request.Reason);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -123,7 +123,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReconcileStock(Guid variantId)
     {
-        var command = new ReconcileStockCommand(variantId, 0, CurrentUser.UserId);
+        var command = new ReconcileStockCommand(variantId, 0);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -135,7 +135,6 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
         var command = new RecordDamageCommand(
             request.VariantId,
             request.Quantity,
-            CurrentUser.UserId,
             request.Reason);
 
         var result = await Mediator.Send(command);
@@ -169,7 +168,7 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
             .Select(x => new BulkStockInItem(x.VariantId, x.Quantity, x.Notes))
             .ToList();
 
-        var command = new BulkStockInCommand(items, CurrentUser.UserId, request.Reason);
+        var command = new BulkStockInCommand(items, request.Reason);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -181,7 +180,6 @@ public sealed class AdminInventoryController(IMediator mediator, IMapper mapper)
     {
         var command = new ApproveReturnCommand(
             orderId,
-            CurrentUser.UserId,
             request?.Reason ?? "تأیید مرجوعی توسط ادمین");
 
         var result = await Mediator.Send(command);

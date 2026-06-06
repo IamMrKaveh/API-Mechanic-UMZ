@@ -16,14 +16,15 @@ public class UpdateVariantHandler(
     IAttributeRepository attributeRepository,
     IShippingRepository shippingRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<UpdateVariantCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<UpdateVariantCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         UpdateVariantCommand request,
         CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
         var productId = ProductId.From(request.ProductId);
 
         var variant = await variantRepository.GetByIdAsync(variantId, ct);

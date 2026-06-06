@@ -6,8 +6,5 @@ public sealed class ActivateProductValidator : AbstractValidator<ActivateProduct
     {
         RuleFor(x => x.ProductId)
             .NotEmpty().WithMessage("شناسه محصول الزامی است.");
-
-        RuleFor(x => x.ActivatedByUserId)
-            .NotEmpty().WithMessage("کاربر فعال‌کننده الزامی است.");
     }
 }

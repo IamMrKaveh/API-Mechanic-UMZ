@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Application.Support.Features.Shared;
 using Domain.Support.Aggregates;
 using Domain.Support.Enums;
@@ -9,6 +10,7 @@ namespace Application.Support.Features.Commands.CreateTicket;
 
 public class CreateTicketHandler(
     ITicketRepository ticketRepository,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
     IMapper mapper) : IRequestHandler<CreateTicketCommand, ServiceResult<TicketDto>>
 {
@@ -20,7 +22,7 @@ public class CreateTicketHandler(
             : TicketPriority.FromString(request.Priority);
 
         var ticketId = TicketId.NewId();
-        var customerId = UserId.From(request.UserId);
+        var customerId = UserId.From(currentUser.UserId!.Value);
         var now = DateTime.UtcNow;
 
         var ticket = Ticket.Open(ticketId, customerId, request.Subject, category, priority);

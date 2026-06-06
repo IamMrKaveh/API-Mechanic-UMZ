@@ -31,7 +31,7 @@ public class AddVariantHandler(
             return await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
             {
                 var productId = ProductId.From(request.ProductId);
-                var userId = UserId.From(currentUserService.CurrentUser.UserId);
+                var userId = UserId.From(currentUserService.UserId.Value);
 
                 var product = await productRepository.GetByIdAsync(productId, cancellationToken);
                 if (product is null)

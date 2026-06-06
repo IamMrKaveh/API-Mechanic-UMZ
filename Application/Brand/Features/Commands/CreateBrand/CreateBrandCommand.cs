@@ -7,4 +7,7 @@ public record CreateBrandCommand(
     string Name,
     string? Slug,
     string? Description,
-    string? LogoPath) : IRequest<ServiceResult<BrandDetailDto>>;
+    Stream? LogoStream,
+    string? LogoFileName,
+    string? LogoContentType,
+    long? LogoFileSize) : IRequest<ServiceResult<BrandDetailDto>>;

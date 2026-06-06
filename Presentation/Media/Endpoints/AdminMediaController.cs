@@ -12,7 +12,9 @@ namespace Presentation.Media.Endpoints;
 [Route("api/v{version:apiVersion}/admin/media")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
+public class AdminMediaController(
+    IMediator mediator,
+    IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<MediaDto>>), StatusCodes.Status200OK)]
@@ -71,7 +73,7 @@ public class AdminMediaController(IMediator mediator, IMapper mapper) : BaseApiC
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DeleteMedia(Guid mediaId, CancellationToken ct)
     {
-        var command = new DeleteMediaCommand(mediaId, CurrentUser.UserId);
+        var command = new DeleteMediaCommand(mediaId);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }

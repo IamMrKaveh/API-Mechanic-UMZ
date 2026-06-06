@@ -7,12 +7,15 @@ public static class MiddlewareExtensions
     public static WebApplication UseApplication(this WebApplication app)
     {
         app.UseForwardedHeaders();
+
         app.UseHttpsRedirection();
+
         app.UseStaticFiles();
 
         if (app.Configuration.GetValue<bool>("Swagger:Enabled"))
         {
             app.UseSwagger();
+
             app.UseSwaggerUI(options =>
             {
                 var provider = app.Services
@@ -30,17 +33,24 @@ public static class MiddlewareExtensions
         }
 
         app.UseMiddleware<CorrelationIdMiddleware>();
+
         app.UseCustomExceptionHandler();
+
         app.UseMiddleware<SecurityHeadersMiddleware>();
+
         app.UseRequestPerformanceMonitoring();
 
         app.UseCustomCors();
-        app.UseMiddleware<RateLimitMiddleware>();
-        app.UseAdminIpWhitelist();
-        app.UseMiddleware<WebhookIpWhitelistMiddleware>();
 
         app.UseAuthentication();
+
         app.UseAuthorization();
+
+        app.UseMiddleware<RateLimitMiddleware>();
+
+        app.UseAdminIpWhitelist();
+
+        app.UseMiddleware<WebhookIpWhitelistMiddleware>();
 
         return app;
     }

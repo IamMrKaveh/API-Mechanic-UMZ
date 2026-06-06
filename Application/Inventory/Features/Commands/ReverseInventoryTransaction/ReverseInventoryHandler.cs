@@ -7,12 +7,13 @@ namespace Application.Inventory.Features.Commands.ReverseInventoryTransaction;
 public class ReverseInventoryHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<ReverseInventoryCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<ReverseInventoryCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(ReverseInventoryCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
         if (inventory is null)

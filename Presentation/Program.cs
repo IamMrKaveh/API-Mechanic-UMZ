@@ -1,6 +1,4 @@
 using Infrastructure.DependencyInjection;
-using Presentation.Common.Extensions;
-using Presentation.Security;
 
 var logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "logs");
 var logsErrorDirectory = Path.Combine(logsDirectory, "errors");

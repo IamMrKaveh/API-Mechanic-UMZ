@@ -12,12 +12,13 @@ public class RemoveStockHandler(
     IInventoryRepository inventoryRepository,
     IAuditService auditService,
     IUnitOfWork unitOfWork,
-    ICacheService cacheService) : IRequestHandler<RemoveStockCommand, ServiceResult>
+    ICacheService cacheService,
+    ICurrentUserService currentUserService) : IRequestHandler<RemoveStockCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(RemoveStockCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
         var stock = StockQuantity.Create(request.Quantity);
 
         var variant = await variantRepository.GetByIdAsync(variantId, ct);

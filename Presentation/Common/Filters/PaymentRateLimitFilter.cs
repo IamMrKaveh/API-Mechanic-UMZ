@@ -31,7 +31,7 @@ public class PaymentRateLimitAttribute : ActionFilterAttribute
 
     private static string ResolveRateLimitKey(ICurrentUserService currentUserService, HttpContext httpContext)
         => currentUserService.IsAuthenticated
-            ? $"payment_limit_user_{currentUserService.CurrentUser.UserId}"
+            ? $"payment_limit_user_{currentUserService.UserId.Value}"
             : $"payment_limit_ip_{httpContext.Connection.RemoteIpAddress}";
 
     private static ObjectResult BuildTooManyRequestsResult(TimeSpan? retryAfter)

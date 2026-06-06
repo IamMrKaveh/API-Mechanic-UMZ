@@ -1,3 +1,3 @@
 namespace Application.User.Features.Commands.DeleteUserAddress;
 
-public record DeleteUserAddressCommand(Guid UserId, Guid AddressId) : IRequest<ServiceResult>;
+public record DeleteUserAddressCommand(Guid AddressId) : IRequest<ServiceResult>;

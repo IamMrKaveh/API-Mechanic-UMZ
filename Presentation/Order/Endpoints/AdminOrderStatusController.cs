@@ -11,7 +11,9 @@ namespace Presentation.Order.Endpoints;
 [Route("api/v{version:apiVersion}/admin/order-statuses")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
+public class AdminOrderStatusController(
+    IMediator mediator,
+    IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
     [AllowAnonymous]
@@ -29,7 +31,7 @@ public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : Ba
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderStatus(Guid id, CancellationToken ct)
     {
-        var query = new GetOrderStatusQuery(id, CurrentUser.UserId);
+        var query = new GetOrderStatusQuery(id);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
@@ -79,7 +81,7 @@ public class AdminOrderStatusController(IMediator mediator, IMapper mapper) : Ba
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteOrderStatus(Guid id, CancellationToken ct)
     {
-        var command = new DeleteOrderStatusCommand(id, CurrentUser.UserId);
+        var command = new DeleteOrderStatusCommand(id);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }

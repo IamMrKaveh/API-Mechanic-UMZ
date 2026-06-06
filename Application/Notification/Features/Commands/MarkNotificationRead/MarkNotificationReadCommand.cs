@@ -1,3 +1,3 @@
 namespace Application.Notification.Features.Commands.MarkNotificationRead;
 
-public record MarkNotificationReadCommand(Guid NotificationId, Guid UserId) : IRequest<ServiceResult>;
+public record MarkNotificationReadCommand(Guid NotificationId) : IRequest<ServiceResult>;

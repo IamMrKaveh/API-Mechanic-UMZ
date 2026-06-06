@@ -3,7 +3,6 @@ using Application.User.Features.Shared;
 namespace Application.User.Features.Commands.CreateUserAddress;
 
 public record CreateUserAddressCommand(
-    Guid UserId,
     string Title,
     string ReceiverName,
     string PhoneNumber,

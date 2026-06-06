@@ -12,23 +12,20 @@ namespace Presentation.User.Endpoints;
 [Authorize]
 public sealed class AddressController(IMediator mediator) : BaseApiController(mediator)
 {
-    [HttpGet()]
+    [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<UserAddressDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserAddresses(CancellationToken ct)
     {
-        var query = new GetUserAddressesQuery(CurrentUser.UserId);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetUserAddressesQuery(RequestContext.UserId ?? Guid.Empty), ct);
     }
 
-    [HttpPost()]
+    [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<UserAddressDto>), StatusCodes.Status201Created)]
     public async Task<IActionResult> AddAddress(
        [FromBody] CreateUserAddressRequest request,
        CancellationToken ct)
     {
         var command = new CreateUserAddressCommand(
-            CurrentUser.UserId,
             request.Title,
             request.ReceiverName,
             request.PhoneNumber,
@@ -40,20 +37,18 @@ public sealed class AddressController(IMediator mediator) : BaseApiController(me
             request.Latitude,
             request.Longitude);
 
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(command, ct);
     }
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateAddress(
-    Guid id,
-    [FromBody] UpdateUserAddressRequest request,
-    CancellationToken ct)
+        Guid id,
+        [FromBody] UpdateUserAddressRequest request,
+        CancellationToken ct)
     {
         var command = new UpdateUserAddressCommand(
-            CurrentUser.UserId,
             id,
             request.Title,
             request.ReceiverName,
@@ -66,8 +61,7 @@ public sealed class AddressController(IMediator mediator) : BaseApiController(me
             request.Latitude,
             request.Longitude);
 
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(command, ct);
     }
 
     [HttpDelete("{id:guid}")]
@@ -75,8 +69,6 @@ public sealed class AddressController(IMediator mediator) : BaseApiController(me
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAddress(Guid id, CancellationToken ct)
     {
-        var command = new DeleteUserAddressCommand(CurrentUser.UserId, id);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new DeleteUserAddressCommand(id), ct);
     }
 }

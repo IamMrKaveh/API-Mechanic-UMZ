@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 using Domain.User.ValueObjects;
@@ -6,6 +7,7 @@ namespace Application.Shipping.Features.Commands.RestoreShipping;
 
 public class RestoreShippingHandler(
     IShippingRepository shippingMethodRepository,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
     IAuditService auditService) : IRequestHandler<RestoreShippingCommand, ServiceResult>
 {
@@ -14,7 +16,7 @@ public class RestoreShippingHandler(
         CancellationToken ct)
     {
         var shippingId = ShippingId.From(request.Id);
-        var adminId = UserId.From(request.CurrentUserId);
+        var adminId = UserId.From(currentUser.UserId!.Value);
 
         var shipping = await shippingMethodRepository.GetByIdAsync(shippingId, ct);
         if (shipping is null)

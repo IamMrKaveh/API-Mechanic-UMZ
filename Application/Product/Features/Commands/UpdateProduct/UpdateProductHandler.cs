@@ -16,7 +16,8 @@ public sealed class UpdateProductHandler(
     IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    IMapper mapper) : IRequestHandler<UpdateProductCommand, ServiceResult<ProductDetailDto>>
+    IMapper mapper,
+    ICurrentUserService currentUserService) : IRequestHandler<UpdateProductCommand, ServiceResult<ProductDetailDto>>
 {
     public async Task<ServiceResult<ProductDetailDto>> Handle(
         UpdateProductCommand request,
@@ -64,7 +65,7 @@ public sealed class UpdateProductHandler(
             product.Id,
             "UpdateProduct",
             $"محصول '{product.Name}' ویرایش شد. Slug='{product.Slug}', IsActive={product.IsActive}, IsFeatured={product.IsFeatured}.",
-            UserId.From(request.UpdatedByUserId));
+            UserId.From(currentUserService.UserId.Value));
 
         var dto = mapper.Map<ProductDetailDto>(product) with
         {

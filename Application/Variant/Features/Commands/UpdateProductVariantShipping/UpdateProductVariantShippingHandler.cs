@@ -10,13 +10,14 @@ public class UpdateProductVariantShippingHandler(
     IVariantRepository variantRepository,
     IShippingRepository shippingRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<UpdateVariantShippingCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<UpdateVariantShippingCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         UpdateVariantShippingCommand request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
         var variantId = VariantId.From(request.VariantId);
 
         var variant = await variantRepository.GetVariantWithShippingsAsync(variantId, ct);

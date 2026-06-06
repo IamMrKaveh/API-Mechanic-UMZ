@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
@@ -8,6 +9,7 @@ namespace Application.User.Features.Commands.ChangePhoneNumber;
 public class ChangePhoneNumberHandler(
     IUserRepository userRepository,
     IOtpService otpService,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
     IAuditService auditService) : IRequestHandler<ChangePhoneNumberCommand, ServiceResult>
 {
@@ -15,7 +17,7 @@ public class ChangePhoneNumberHandler(
         ChangePhoneNumberCommand request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUser.UserId!.Value);
 
         var result = PhoneNumber.TryCreate(request.NewPhoneNumber);
         if (result.IsFailure)

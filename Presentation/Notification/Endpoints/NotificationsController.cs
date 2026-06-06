@@ -11,7 +11,9 @@ namespace Presentation.Notification.Endpoints;
 [Route("api/v{version:apiVersion}/notifications")]
 [ApiController]
 [Authorize]
-public class NotificationsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
+public class NotificationsController(
+    IMediator mediator,
+    IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<NotificationDto>>), StatusCodes.Status200OK)]
@@ -20,7 +22,6 @@ public class NotificationsController(IMediator mediator, IMapper mapper) : BaseA
         CancellationToken ct)
     {
         var query = new GetNotificationsQuery(
-            CurrentUser.UserId,
             request.UnreadOnly,
             request.Page,
             request.PageSize);
@@ -33,7 +34,7 @@ public class NotificationsController(IMediator mediator, IMapper mapper) : BaseA
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUnreadCount(CancellationToken ct)
     {
-        var query = new GetUnreadNotificationCountQuery(CurrentUser.UserId);
+        var query = new GetUnreadNotificationCountQuery();
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
@@ -43,7 +44,7 @@ public class NotificationsController(IMediator mediator, IMapper mapper) : BaseA
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkAsRead(Guid id, CancellationToken ct)
     {
-        var command = new MarkNotificationReadCommand(id, CurrentUser.UserId);
+        var command = new MarkNotificationReadCommand(id);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
@@ -52,7 +53,7 @@ public class NotificationsController(IMediator mediator, IMapper mapper) : BaseA
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> MarkAllAsRead(CancellationToken ct)
     {
-        var command = new MarkAllNotificationsReadCommand(CurrentUser.UserId);
+        var command = new MarkAllNotificationsReadCommand();
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
@@ -62,7 +63,7 @@ public class NotificationsController(IMediator mediator, IMapper mapper) : BaseA
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteNotification(Guid id, CancellationToken ct)
     {
-        var command = new DeleteNotificationCommand(id, CurrentUser.UserId);
+        var command = new DeleteNotificationCommand(id);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }

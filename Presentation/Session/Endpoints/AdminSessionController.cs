@@ -3,14 +3,14 @@ using Application.Auth.Features.Commands.LogoutAll;
 using Application.Auth.Features.Queries.GetUserSessions;
 using Application.Auth.Features.Shared;
 
-namespace Presentation.Auth.Endpoints;
+namespace Presentation.Session.Endpoints;
 
 [ApiController]
-[Route("api/v{version:apiVersion}/admin/sessions")]
+[Route("api/v{version:apiVersion}/admin/users/{userId:guid}/sessions")]
 [Authorize(Roles = "Admin")]
 public sealed class AdminSessionController(IMediator mediator) : BaseApiController(mediator)
 {
-    [HttpGet()]
+    [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<UserSessionDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserSessions(Guid userId, CancellationToken ct)
     {
@@ -29,7 +29,7 @@ public sealed class AdminSessionController(IMediator mediator) : BaseApiControll
         return ToActionResult(result);
     }
 
-    [HttpDelete()]
+    [HttpDelete]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> RevokeAllUserSessions(Guid userId, CancellationToken ct)
     {

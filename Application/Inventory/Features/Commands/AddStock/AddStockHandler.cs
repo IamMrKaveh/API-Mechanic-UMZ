@@ -9,12 +9,13 @@ namespace Application.Inventory.Features.Commands.AddStock;
 public class AddStockHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<AddStockCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<AddStockCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(AddStockCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
         var stockQuantity = StockQuantity.Create(request.Quantity);
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);

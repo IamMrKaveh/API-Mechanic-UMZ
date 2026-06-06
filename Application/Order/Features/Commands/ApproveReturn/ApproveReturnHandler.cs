@@ -8,7 +8,8 @@ public class ApproveReturnHandler(
     IOrderRepository orderRepository,
     IInventoryService inventoryService,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<ApproveReturnCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<ApproveReturnCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         ApproveReturnCommand request,
@@ -16,6 +17,8 @@ public class ApproveReturnHandler(
     {
         var orderId = OrderId.From(request.OrderId);
         var order = await orderRepository.FindByIdAsync(orderId, ct);
+        var userId = UserId.From(currentUserService.UserId.Value);
+
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
@@ -37,7 +40,7 @@ public class ApproveReturnHandler(
 
                 var result = await inventoryService.ReturnStockForOrderAsync(
                     orderId,
-                    request.AdminUserId,
+                    userId.Value,
                     request.Reason,
                     cancellationToken);
 
@@ -47,8 +50,8 @@ public class ApproveReturnHandler(
                 await auditService.LogOrderEventAsync(
                     order.Id,
                     "ApproveReturn",
-                    IpAddress.Create(request.IpAddress ?? "0.0.0.0"),
-                    UserId.From(request.AdminUserId),
+                    IpAddress.Create(currentUserService.IpAddress ?? "0.0.0.0"),
+                    UserId.From(currentUserService.UserId.Value),
                     $"مرجوعی سفارش تأیید شد. دلیل: {request.Reason}");
 
                 return ServiceResult.Success();

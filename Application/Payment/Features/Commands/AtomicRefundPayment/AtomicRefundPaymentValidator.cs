@@ -5,7 +5,6 @@ public class AtomicRefundPaymentValidator : AbstractValidator<AtomicRefundPaymen
     public AtomicRefundPaymentValidator()
     {
         RuleFor(x => x.OrderId).NotEmpty();
-        RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.Reason).NotEmpty().MaximumLength(500);
     }
 }

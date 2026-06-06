@@ -8,7 +8,9 @@ namespace Presentation.Payment.Endpoints;
 [ApiController]
 [Route("api/v{version:apiVersion}/admin/payments")]
 [Authorize(Roles = "Admin")]
-public class AdminPaymentsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
+public class AdminPaymentsController(
+    IMediator mediator,
+    IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<PaymentTransactionDto>>), StatusCodes.Status200OK)]
@@ -29,7 +31,7 @@ public class AdminPaymentsController(IMediator mediator, IMapper mapper) : BaseA
         [FromBody] RefundPaymentRequest request,
         CancellationToken ct)
     {
-        var command = new AtomicRefundPaymentCommand(id, CurrentUser.UserId, request.Reason);
+        var command = new AtomicRefundPaymentCommand(id, request.Reason);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }

@@ -7,12 +7,13 @@ namespace Application.Inventory.Features.Commands.AdjustStock;
 public class AdjustStockHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<AdjustStockCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<AdjustStockCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(AdjustStockCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
         if (inventory is null)

@@ -17,7 +17,6 @@ public sealed class DiscountsController(IMediator mediator) : BaseApiController(
         var query = new ValidateDiscountQuery(
             request.Code,
             request.OrderAmount,
-            CurrentUser.UserId,
             request.Currency);
         var result = await Mediator.Send(query);
         return ToActionResult(result);
@@ -30,7 +29,6 @@ public sealed class DiscountsController(IMediator mediator) : BaseApiController(
         var command = new ApplyDiscountCommand(
             request.Code,
             request.OrderAmount,
-            CurrentUser.UserId,
             request.OrderId);
 
         var result = await Mediator.Send(command);

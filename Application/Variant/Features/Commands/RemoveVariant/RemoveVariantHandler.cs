@@ -7,14 +7,15 @@ namespace Application.Variant.Features.Commands.RemoveVariant;
 public class RemoveVariantHandler(
     IVariantRepository variantRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<RemoveVariantCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<RemoveVariantCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         RemoveVariantCommand request,
         CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
 
         var variant = await variantRepository.GetByIdAsync(variantId, ct);
         if (variant is null)

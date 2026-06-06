@@ -1,16 +1,20 @@
-﻿using Domain.User.Interfaces;
+﻿using Application.Common.Interfaces;
+using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.ChangeUserRole;
 
-public class ChangeUserRoleHandler(IUserRepository userRepository, IUnitOfWork unitOfWork) : IRequestHandler<ChangeUserRoleCommand, ServiceResult>
+public class ChangeUserRoleHandler(
+    IUserRepository userRepository,
+    ICurrentUserService currentUser,
+    IUnitOfWork unitOfWork) : IRequestHandler<ChangeUserRoleCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         ChangeUserRoleCommand request,
         CancellationToken ct)
     {
         var userId = UserId.From(request.UserId);
-        var adminId = UserId.From(request.AdminUserId);
+        var adminId = UserId.From(currentUser.UserId!.Value);
 
         var user = await userRepository.GetActiveByIdAsync(userId, ct);
 

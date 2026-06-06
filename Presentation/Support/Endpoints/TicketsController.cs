@@ -22,9 +22,7 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var query = new GetTicketsQuery(CurrentUser.UserId, status, priority, page, pageSize);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetTicketsQuery(RequestContext.UserId ?? Guid.Empty, status, priority, page, pageSize), ct);
     }
 
     [HttpGet("{id:guid}")]
@@ -32,9 +30,7 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTicketDetails(Guid id, CancellationToken ct)
     {
-        var query = new GetTicketDetailsQuery(id, CurrentUser.UserId, false);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetTicketDetailsQuery(id, RequestContext.UserId ?? Guid.Empty, false), ct);
     }
 
     [HttpPost]
@@ -43,15 +39,9 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
         [FromBody] CreateTicketRequest request,
         CancellationToken ct)
     {
-        var command = new CreateTicketCommand(
-            CurrentUser.UserId,
-            request.Subject,
-            request.Category,
-            request.Priority,
-            request.Message);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(
+            new CreateTicketCommand(request.Subject, request.Category, request.Priority, request.Message),
+            ct);
     }
 
     [HttpPost("{id:guid}/replies")]
@@ -62,21 +52,14 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
         [FromBody] ReplyToTicketRequest request,
         CancellationToken ct)
     {
-        var command = new ReplyToTicketCommand(id, CurrentUser.UserId, request.Message, false);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new ReplyToTicketCommand(id, request.Message), ct);
     }
 
     [HttpPatch("{id:guid}/status")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> CloseTicket(
-        Guid id,
-        [FromBody] CloseTicketRequest request,
-        CancellationToken ct)
+    public async Task<IActionResult> CloseTicket(Guid id, CancellationToken ct)
     {
-        var command = new CloseTicketCommand(id, CurrentUser.UserId, request.IsAdmin);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new CloseTicketCommand(id), ct);
     }
 }

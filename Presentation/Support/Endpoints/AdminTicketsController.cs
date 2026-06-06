@@ -22,9 +22,7 @@ public sealed class AdminTicketsController(IMediator mediator) : BaseApiControll
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        var query = new GetAdminTicketsQuery(status, priority, userId, page, pageSize);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetAdminTicketsQuery(status, priority, userId, page, pageSize), ct);
     }
 
     [HttpGet("{id:guid}")]
@@ -32,9 +30,7 @@ public sealed class AdminTicketsController(IMediator mediator) : BaseApiControll
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTicketDetails(Guid id, CancellationToken ct)
     {
-        var query = new GetTicketDetailsQuery(id, CurrentUser.UserId, true);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetTicketDetailsQuery(id, RequestContext.UserId ?? Guid.Empty, true), ct);
     }
 
     [HttpPost("{id:guid}/replies")]
@@ -44,9 +40,7 @@ public sealed class AdminTicketsController(IMediator mediator) : BaseApiControll
         [FromBody] ReplyToTicketRequest request,
         CancellationToken ct)
     {
-        var command = new ReplyToTicketCommand(id, CurrentUser.UserId, request.Message, true);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new ReplyToTicketCommand(id, request.Message), ct);
     }
 
     [HttpPatch("{id:guid}/status")]
@@ -54,11 +48,8 @@ public sealed class AdminTicketsController(IMediator mediator) : BaseApiControll
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CloseTicket(
         Guid id,
-        [FromBody] CloseTicketRequest request,
         CancellationToken ct)
     {
-        var command = new CloseTicketCommand(id, CurrentUser.UserId, request.IsAdmin);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new CloseTicketCommand(id), ct);
     }
 }

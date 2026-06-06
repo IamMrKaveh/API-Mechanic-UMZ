@@ -2,5 +2,4 @@ namespace Application.Review.Features.Commands.ReplyToReview;
 
 public record ReplyToReviewCommand(
     Guid ReviewId,
-    string Reply,
-    Guid UserId) : IRequest<ServiceResult>;
+    string Reply) : IRequest<ServiceResult>;

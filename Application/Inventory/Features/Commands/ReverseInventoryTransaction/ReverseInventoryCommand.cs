@@ -3,5 +3,4 @@
 public record ReverseInventoryCommand(
     Guid VariantId,
     string IdempotencyKey,
-    string Reason,
-    Guid UserId) : IRequest<ServiceResult>;
+    string Reason) : IRequest<ServiceResult>;

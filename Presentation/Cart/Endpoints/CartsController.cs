@@ -20,7 +20,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCart()
     {
-        var query = new GetCartQuery(CurrentUser.UserId, GuestToken);
+        var query = new GetCartQuery(RequestContext.UserId, RequestContext.GuestToken);
         var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
@@ -29,7 +29,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     [ProducesResponseType(typeof(ApiResponse<CartSummaryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCartSummary()
     {
-        var query = new GetCartSummaryQuery(CurrentUser.UserId, CurrentUser.GuestToken);
+        var query = new GetCartSummaryQuery(RequestContext.UserId, RequestContext.GuestToken);
         var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
@@ -39,7 +39,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     [ProducesResponseType(typeof(ApiResponse<CartCheckoutValidationDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ValidateCartForCheckout()
     {
-        var query = new ValidateCartForCheckoutQuery(CurrentUser.UserId, CurrentUser.GuestToken);
+        var query = new ValidateCartForCheckoutQuery(RequestContext.UserId, RequestContext.GuestToken);
         var result = await Mediator.Send(query);
         return ToActionResult(result);
     }
@@ -48,7 +48,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> AddItem([FromBody] AddToCartRequest request)
     {
-        var command = new AddToCartCommand(CurrentUser.UserId, request.VariantId, GuestToken, request.Quantity);
+        var command = new AddToCartCommand(RequestContext.UserId, request.VariantId, RequestContext.GuestToken, request.Quantity);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -58,9 +58,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> MergeCart()
     {
-        var command = new MergeGuestCartCommand(
-            CurrentUser.UserId,
-            GuestToken);
+        var command = new MergeGuestCartCommand(RequestContext.UserId, RequestContext.GuestToken);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -70,7 +68,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> SyncCartPrices()
     {
-        var command = new SyncCartPricesCommand(CurrentUser.UserId, CurrentUser.GuestToken ?? string.Empty);
+        var command = new SyncCartPricesCommand(RequestContext.UserId, RequestContext.GuestToken ?? string.Empty);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -81,7 +79,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateItemQuantity(Guid variantId, [FromBody] UpdateCartItemRequest request)
     {
-        var command = new UpdateCartItemCommand(CurrentUser.UserId, GuestToken, variantId, request.Quantity);
+        var command = new UpdateCartItemCommand(RequestContext.UserId, RequestContext.GuestToken, variantId, request.Quantity);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -91,7 +89,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearCart()
     {
-        var command = new ClearCartCommand(CurrentUser.UserId, GuestToken);
+        var command = new ClearCartCommand(RequestContext.UserId, RequestContext.GuestToken);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }
@@ -101,7 +99,7 @@ public sealed class CartController(ISender mediator) : BaseApiController(mediato
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveItem(Guid variantId)
     {
-        var command = new RemoveFromCartCommand(CurrentUser.UserId, GuestToken, variantId);
+        var command = new RemoveFromCartCommand(RequestContext.UserId, RequestContext.GuestToken, variantId);
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }

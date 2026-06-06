@@ -4,7 +4,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.Order.Features.Queries.GetOrderStatus;
 
-public class GetOrderStatusHandler(IOrderQueryService orderQueryService)
+public class GetOrderStatusHandler(
+    IOrderQueryService orderQueryService,
+    ICurrentUserService currentUserService)
     : IRequestHandler<GetOrderStatusQuery, ServiceResult<OrderDto>>
 {
     public async Task<ServiceResult<OrderDto>> Handle(
@@ -12,7 +14,7 @@ public class GetOrderStatusHandler(IOrderQueryService orderQueryService)
         CancellationToken ct)
     {
         var orderId = OrderId.From(request.OrderId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
 
         var order = await orderQueryService.GetOrderDetailsAsync(orderId, userId, ct);
 

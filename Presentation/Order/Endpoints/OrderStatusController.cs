@@ -7,7 +7,9 @@ namespace Presentation.Order.Endpoints;
 [Route("api/v{version:apiVersion}/order-statuses")]
 [ApiController]
 [AllowAnonymous]
-public class OrderStatusController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
+public class OrderStatusController(
+    IMediator mediator,
+    IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<OrderStatusDto>>), StatusCodes.Status200OK)]
@@ -23,7 +25,7 @@ public class OrderStatusController(IMediator mediator, IMapper mapper) : BaseApi
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderStatusById(Guid id, CancellationToken ct)
     {
-        var query = new GetOrderStatusQuery(id, CurrentUser.UserId);
+        var query = new GetOrderStatusQuery(id);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }

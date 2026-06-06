@@ -1,4 +1,6 @@
-﻿using Application.Common.Interfaces;
+﻿using Application.Auth.Contracts;
+using Application.Common.Interfaces;
+using Presentation.Auth.Services;
 using Presentation.Common.Services;
 
 namespace Presentation.Common.Extensions;
@@ -23,6 +25,7 @@ public static class PresentationServiceExtensions
         this IServiceCollection services)
     {
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IGoogleAuthenticationService, HttpGoogleAuthenticationService>();
         services.AddScoped<OtpRateLimitFilter>();
         services.AddScoped<IMapper, ServiceMapper>();
 

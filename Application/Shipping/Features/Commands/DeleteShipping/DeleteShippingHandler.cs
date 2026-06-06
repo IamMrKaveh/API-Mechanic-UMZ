@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 using Domain.User.ValueObjects;
@@ -6,6 +7,7 @@ namespace Application.Shipping.Features.Commands.DeleteShipping;
 
 public class DeleteShippingHandler(
     IShippingRepository shippingRepository,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork) : IRequestHandler<DeleteShippingCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(DeleteShippingCommand request, CancellationToken ct)
@@ -18,8 +20,8 @@ public class DeleteShippingHandler(
 
         try
         {
-            UserId? deletedBy = request.DeletedByUserId.HasValue
-                ? UserId.From(request.DeletedByUserId.Value)
+            UserId? deletedBy = currentUser.UserId.HasValue
+                ? UserId.From(currentUser.UserId.Value)
                 : null;
 
             shipping.RequestDeletion(deletedBy);
