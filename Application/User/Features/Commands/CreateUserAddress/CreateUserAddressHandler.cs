@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Application.User.Features.Shared;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -6,13 +7,14 @@ namespace Application.User.Features.Commands.CreateUserAddress;
 
 public class CreateUserAddressHandler(
     IUserRepository userRepository,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
     IMapper mapper) : IRequestHandler<CreateUserAddressCommand, ServiceResult<UserAddressDto>>
 {
     public async Task<ServiceResult<UserAddressDto>> Handle(
         CreateUserAddressCommand request, CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUser.UserId!.Value);
 
         var user = await userRepository.GetWithAddressesAsync(userId, ct);
         if (user is null)

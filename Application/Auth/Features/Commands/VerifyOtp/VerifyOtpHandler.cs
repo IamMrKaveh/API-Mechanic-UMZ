@@ -1,4 +1,5 @@
 using Application.Auth.Features.Shared;
+using Application.Common.Interfaces;
 using Application.User.Features.Shared;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
@@ -12,6 +13,7 @@ public class VerifyOtpHandler(
     IUserRepository userRepository,
     ISessionService sessionService,
     IJwtTokenGenerator jwtTokenGenerator,
+    ICurrentUserService currentUser,
     IAuditService auditService)
     : IRequestHandler<VerifyOtpCommand, ServiceResult<AuthResult>>
 {
@@ -20,25 +22,18 @@ public class VerifyOtpHandler(
         CancellationToken ct)
     {
         var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
-        var ipAddress = IpAddress.Create(request.IpAddress);
+        var ipAddress = IpAddress.Create(currentUser.IpAddress ?? IpAddress.Unknown.Value);
         var otpCode = OtpCode.Create(request.Code);
 
-        var user = await userRepository.GetByPhoneNumberAsync(
-            phoneNumber,
-            ct);
+        var user = await userRepository.GetByPhoneNumberAsync(phoneNumber, ct);
 
         if (user is null)
-            return ServiceResult<AuthResult>.Failure(
-                "کاربری با این شماره یافت نشد.");
+            return ServiceResult<AuthResult>.Failure("کاربری با این شماره یافت نشد.");
 
-        var otp = await otpRepository.GetLatestActiveByUserIdAsync(
-            user.Id,
-            request.Purpose,
-            ct);
+        var otp = await otpRepository.GetLatestActiveByUserIdAsync(user.Id, request.Purpose, ct);
 
         if (otp is null)
-            return ServiceResult<AuthResult>.Failure(
-                "کد OTP فعالی یافت نشد.");
+            return ServiceResult<AuthResult>.Failure("کد OTP فعالی یافت نشد.");
 
         try
         {
@@ -47,9 +42,7 @@ public class VerifyOtpHandler(
         catch (DomainException ex)
         {
             otpRepository.Update(otp);
-
-            return ServiceResult<AuthResult>.Failure(
-                ex.Message);
+            return ServiceResult<AuthResult>.Failure(ex.Message);
         }
 
         otpRepository.Update(otp);
@@ -57,12 +50,11 @@ public class VerifyOtpHandler(
         var sessionResult = await sessionService.CreateSessionAsync(
             user.Id,
             ipAddress,
-            request.UserAgent,
+            currentUser.UserAgent,
             ct);
 
         if (sessionResult.IsSuccess is false)
-            return ServiceResult<AuthResult>.Failure(
-                sessionResult.Error);
+            return ServiceResult<AuthResult>.Failure(sessionResult.Error);
 
         await auditService.LogSecurityEventAsync(
             "VerifyOtp",
@@ -71,30 +63,18 @@ public class VerifyOtpHandler(
             user.Id,
             ct);
 
-        var jwtAccessToken =
-            jwtTokenGenerator.GenerateAccessToken(user);
-
+        var jwtAccessToken = jwtTokenGenerator.GenerateAccessToken(user);
         var refreshSession = sessionResult.Value!;
+        var userDto = user.Adapt<UserProfileDto>();
 
-        var userDto =
-            user.Adapt<UserProfileDto>();
-
-        return ServiceResult<AuthResult>.Success(
-            new AuthResult
-            {
-                AccessToken = jwtAccessToken,
-
-                RefreshToken = refreshSession.RefreshToken,
-
-                AccessTokenExpiresAt =
-                    DateTime.UtcNow.AddMinutes(60),
-
-                RefreshTokenExpiresAt =
-                    refreshSession.ExpiresAt,
-
-                User = userDto,
-
-                IsNewUser = false
-            });
+        return ServiceResult<AuthResult>.Success(new AuthResult
+        {
+            AccessToken = jwtAccessToken,
+            RefreshToken = refreshSession.RefreshToken,
+            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(60),
+            RefreshTokenExpiresAt = refreshSession.ExpiresAt,
+            User = userDto,
+            IsNewUser = false
+        });
     }
 }

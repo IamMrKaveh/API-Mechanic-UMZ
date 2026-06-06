@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.User.ValueObjects;
@@ -8,6 +9,7 @@ public class LogoutHandler(
     ITokenService tokenService,
     ISessionRepository sessionRepository,
     IUnitOfWork unitOfWork,
+    ICurrentUserService currentUser,
     IAuditService auditService) : IRequestHandler<LogoutCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(LogoutCommand request, CancellationToken ct)
@@ -22,8 +24,9 @@ public class LogoutHandler(
             return ServiceResult.Success();
 
         var session = await sessionRepository.GetByRefreshTokenAsync(refreshToken, ct);
+        var userId = UserId.From(currentUser.UserId!.Value);
 
-        if (session is not null && session.UserId == UserId.From(request.UserId))
+        if (session is not null && session.UserId == userId)
         {
             session.Revoke(SessionRevocationReason.UserRequested);
             sessionRepository.Update(session);
@@ -31,9 +34,10 @@ public class LogoutHandler(
 
             await auditService.LogSecurityEventAsync(
                 "Logout",
-                $"کاربر {request.UserId} از سیستم خارج شد.",
+                $"کاربر {currentUser.UserId} از سیستم خارج شد.",
                 IpAddress.Unknown,
-                UserId.From(request.UserId));
+                userId,
+                ct);
         }
 
         return ServiceResult.Success();

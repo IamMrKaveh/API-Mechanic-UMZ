@@ -15,7 +15,8 @@ public sealed class CreateProductHandler(
     IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    IMapper mapper) : IRequestHandler<CreateProductCommand, ServiceResult<ProductDetailDto>>
+    IMapper mapper,
+    ICurrentUserService currentUserService) : IRequestHandler<CreateProductCommand, ServiceResult<ProductDetailDto>>
 {
     public async Task<ServiceResult<ProductDetailDto>> Handle(
         CreateProductCommand request,
@@ -51,7 +52,7 @@ public sealed class CreateProductHandler(
             product.Id,
             "CreateProduct",
             $"محصول '{product.Name}' ایجاد شد.",
-            UserId.From(request.CreatedByUserId));
+            UserId.From(currentUserService.UserId.Value));
 
         var dto = mapper.Map<ProductDetailDto>(product) with
         {

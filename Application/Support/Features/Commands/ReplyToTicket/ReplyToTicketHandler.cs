@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Domain.Support.Enums;
 using Domain.Support.Interfaces;
 using Domain.Support.ValueObjects;
@@ -7,24 +8,25 @@ namespace Application.Support.Features.Commands.ReplyToTicket;
 
 public class ReplyToTicketHandler(
     ITicketRepository ticketRepository,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork) : IRequestHandler<ReplyToTicketCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(ReplyToTicketCommand request, CancellationToken ct)
     {
         var ticketId = TicketId.From(request.TicketId);
-        var senderId = UserId.From(request.SenderId);
+        var senderId = UserId.From(currentUser.UserId!.Value);
 
         var ticket = await ticketRepository.GetByIdWithMessagesAsync(ticketId, ct);
         if (ticket is null)
             return ServiceResult.NotFound("تیکت یافت نشد.");
 
-        if (!request.IsAdmin && ticket.CustomerId != senderId)
+        if (!currentUser.IsAdmin && ticket.CustomerId != senderId)
             return ServiceResult.Forbidden("دسترسی ممنوع.");
 
         try
         {
             var messageId = TicketMessageId.NewId();
-            var senderType = request.IsAdmin
+            var senderType = currentUser.IsAdmin
                 ? TicketMessageSenderType.Agent
                 : TicketMessageSenderType.Customer;
 

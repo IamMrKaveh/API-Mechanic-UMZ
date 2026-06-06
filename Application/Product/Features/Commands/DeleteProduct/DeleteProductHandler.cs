@@ -7,7 +7,8 @@ namespace Application.Product.Features.Commands.DeleteProduct;
 public sealed class DeleteProductHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<DeleteProductCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<DeleteProductCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         DeleteProductCommand request,
@@ -26,7 +27,7 @@ public sealed class DeleteProductHandler(
             product.Id,
             "DeleteProduct",
             $"محصول '{product.Name}' (Id={product.Id.Value}) حذف نرم شد.",
-            UserId.From(request.DeletedByUserId));
+            UserId.From(currentUserService.UserId.Value));
 
         return ServiceResult.Success();
     }

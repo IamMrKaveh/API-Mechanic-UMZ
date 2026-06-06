@@ -15,18 +15,14 @@ public class SessionController(IMediator mediator, IMapper mapper)
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<UserSessionDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetActiveSessions(CancellationToken ct)
     {
-        var query = new GetUserSessionsQuery(CurrentUser.UserId);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetUserSessionsQuery(RequestContext.UserId ?? Guid.Empty), ct);
     }
 
     [HttpDelete]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> RevokeAllSessions(CancellationToken ct)
     {
-        var command = new LogoutAllCommand(CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new LogoutAllCommand(RequestContext.UserId!.Value), ct);
     }
 
     [HttpDelete("{sessionId:guid}")]
@@ -34,8 +30,6 @@ public class SessionController(IMediator mediator, IMapper mapper)
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeSession(Guid sessionId, CancellationToken ct)
     {
-        var command = new RevokeSessionCommand(CurrentUser.UserId, sessionId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new RevokeSessionCommand(RequestContext.UserId!.Value, sessionId), ct);
     }
 }

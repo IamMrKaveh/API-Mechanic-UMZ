@@ -3,14 +3,16 @@ using Domain.User.ValueObjects;
 
 namespace Application.Notification.Features.Queries.GetNotifications;
 
-public class GetNotificationsHandler(INotificationQueryService notificationQueryService)
+public class GetNotificationsHandler(
+    INotificationQueryService notificationQueryService,
+    ICurrentUserService currentUserService)
     : IRequestHandler<GetNotificationsQuery, ServiceResult<PaginatedResult<NotificationDto>>>
 {
     public async Task<ServiceResult<PaginatedResult<NotificationDto>>> Handle(
         GetNotificationsQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
         var result = await notificationQueryService.GetByUserIdAsync(
             userId,
             request.Page,

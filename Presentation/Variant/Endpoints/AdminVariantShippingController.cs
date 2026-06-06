@@ -9,7 +9,8 @@ namespace Presentation.Variant.Endpoints;
 [ApiController]
 [Route("api/v{version:apiVersion}/admin/products/variants/shipping")]
 [Authorize(Roles = "Admin")]
-public sealed class AdminVariantShippingController(IMediator mediator) : BaseApiController(mediator)
+public sealed class AdminVariantShippingController(
+    IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<ShippingListItemDto>>), StatusCodes.Status200OK)]
@@ -42,8 +43,7 @@ public sealed class AdminVariantShippingController(IMediator mediator) : BaseApi
         var command = new UpdateVariantShippingCommand(
             variantId,
             request.ShippingMultiplier,
-            request.EnabledShippingIds,
-            CurrentUser.UserId);
+            request.EnabledShippingIds);
 
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);

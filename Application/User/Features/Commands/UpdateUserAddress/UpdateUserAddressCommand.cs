@@ -1,7 +1,6 @@
 namespace Application.User.Features.Commands.UpdateUserAddress;
 
 public record UpdateUserAddressCommand(
-    Guid UserId,
     Guid AddressId,
     string Title,
     string ReceiverName,

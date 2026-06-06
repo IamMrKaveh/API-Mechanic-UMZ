@@ -15,9 +15,7 @@ public sealed class UserController(IMediator mediator) : BaseApiController(media
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUser(Guid id, CancellationToken ct)
     {
-        var query = new GetUserByIdQuery(id);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetUserByIdQuery(id), ct);
     }
 
     [HttpPut("{id:guid}")]
@@ -30,13 +28,6 @@ public sealed class UserController(IMediator mediator) : BaseApiController(media
         [FromBody] UpdateProfileRequest request,
         CancellationToken ct)
     {
-        var command = new UpdateUserCommand(
-            id,
-            CurrentUser.UserId,
-            request.FirstName,
-            request.LastName);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new UpdateUserCommand(id, request.FirstName, request.LastName), ct);
     }
 }

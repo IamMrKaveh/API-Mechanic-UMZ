@@ -15,7 +15,6 @@ public sealed class AdminProductMappingConfig : IRegister
             .Map(dest => dest.IsActive, src => src.IsActive)
             .Map(dest => dest.IncludeDeleted, src => src.IncludeDeleted)
             .Map(dest => dest.Page, src => src.Page)
-            .Map(dest => dest.PageSize, src => src.PageSize)
-            .Ignore(dest => dest.UserId);
+            .Map(dest => dest.PageSize, src => src.PageSize);
     }
 }

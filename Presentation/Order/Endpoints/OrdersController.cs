@@ -19,13 +19,12 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
         CancellationToken ct)
     {
         var query = new GetUserOrdersQuery(
-            CurrentUser.UserId,
+            RequestContext.UserId ?? Guid.Empty,
             request.Status,
             request.Page,
             request.PageSize);
 
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(query, ct);
     }
 
     [HttpGet("{id:guid}")]
@@ -33,9 +32,7 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderById(Guid id, CancellationToken ct)
     {
-        var query = new GetOrderDetailsQuery(id, CurrentUser.UserId);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetOrderDetailsQuery(id, RequestContext.UserId ?? Guid.Empty), ct);
     }
 
     [HttpPost]
@@ -47,14 +44,14 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
         CancellationToken ct)
     {
         var command = new CheckoutFromCartCommand(
-            CurrentUser.UserId,
+            RequestContext.UserId ?? Guid.Empty,
             request.CartId,
             request.ShippingId,
             request.AddressId,
             request.DiscountCode,
             request.PaymentGateway,
-            CurrentUser.IpAddress,
-            HttpContext.Request.Headers.UserAgent.ToString(),
+            RequestContext.IpAddress ?? string.Empty,
+            RequestContext.UserAgent ?? string.Empty,
             Guid.NewGuid());
 
         var result = await Mediator.Send(command, ct);
@@ -69,12 +66,6 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
         [FromBody] CancelOrderRequest request,
         CancellationToken ct)
     {
-        var command = new CancelOrderCommand(
-            id,
-            CurrentUser.UserId,
-            request.Reason);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new CancelOrderCommand(id, request.Reason), ct);
     }
 }

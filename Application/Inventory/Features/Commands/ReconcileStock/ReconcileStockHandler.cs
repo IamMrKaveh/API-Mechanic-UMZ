@@ -9,12 +9,13 @@ namespace Application.Inventory.Features.Commands.ReconcileStock;
 public class ReconcileStockHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<ReconcileStockCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<ReconcileStockCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(ReconcileStockCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
         var stock = StockQuantity.Create(request.CalculatedStock);
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);

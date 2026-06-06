@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
@@ -5,6 +6,7 @@ namespace Application.User.Features.Commands.UpdateUser;
 
 public class UpdateUserHandler(
     IUserRepository userRepository,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
     IAuditService auditService) : IRequestHandler<UpdateUserCommand, ServiceResult>
 {
@@ -13,7 +15,7 @@ public class UpdateUserHandler(
         CancellationToken ct)
     {
         var userId = UserId.From(request.Id);
-        var adminId = UserId.From(request.CurrentUserId);
+        var adminId = UserId.From(currentUser.UserId!.Value);
 
         var user = await userRepository.GetByIdAsync(userId, ct);
         if (user is null)

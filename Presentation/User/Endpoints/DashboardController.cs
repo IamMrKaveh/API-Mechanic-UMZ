@@ -6,13 +6,14 @@ namespace Presentation.User.Endpoints;
 [ApiController]
 [Route("api/v{version:apiVersion}/dashboard")]
 [Authorize]
-public sealed class DashboardController(IMediator mediator) : BaseApiController(mediator)
+public sealed class DashboardController(
+    IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet()]
     [ProducesResponseType(typeof(ApiResponse<UserDashboardDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDashboardSummary(CancellationToken ct)
     {
-        var query = new GetUserDashboardQuery(CurrentUser.UserId);
+        var query = new GetUserDashboardQuery();
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }

@@ -5,8 +5,6 @@ using Application.Brand.Features.Commands.UpdateBrand;
 using Application.Brand.Features.Queries.GetAdminBrands;
 using Application.Brand.Features.Queries.GetBrandDetail;
 using Application.Brand.Features.Shared;
-using Application.Common.Results;
-using Application.Media.Contracts;
 using Presentation.Brand.Requests;
 
 namespace Presentation.Brand.Endpoints;
@@ -16,8 +14,7 @@ namespace Presentation.Brand.Endpoints;
 [Authorize(Roles = "Admin")]
 public sealed class AdminBrandController(
     IMediator mediator,
-    IMapper mapper,
-    IStorageService storageService) : BaseApiController(mediator, mapper)
+    IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<BrandListItemDto>>), StatusCodes.Status200OK)]
@@ -25,9 +22,7 @@ public sealed class AdminBrandController(
         [FromQuery] GetAdminBrandsRequest request,
         CancellationToken ct)
     {
-        var query = Mapper.Map<GetAdminBrandsQuery>(request);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(Mapper.Map<GetAdminBrandsQuery>(request), ct);
     }
 
     [HttpGet("{id:guid}")]
@@ -35,9 +30,7 @@ public sealed class AdminBrandController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBrand(Guid id, CancellationToken ct)
     {
-        var query = new GetBrandDetailQuery(id);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetBrandDetailQuery(id), ct);
     }
 
     [HttpPost]
@@ -46,16 +39,15 @@ public sealed class AdminBrandController(
         [FromForm] CreateBrandRequest request,
         CancellationToken ct)
     {
-        var logoPath = await UploadLogoIfPresentAsync(request.LogoFile, ct);
-        if (logoPath.IsFailed)
-            return ToActionResult(logoPath);
-
         var command = new CreateBrandCommand(
             request.CategoryId,
             request.Name,
             request.Slug,
             request.Description,
-            logoPath.Value);
+            request.LogoFile?.OpenReadStream(),
+            request.LogoFile?.FileName,
+            request.LogoFile?.ContentType,
+            request.LogoFile?.Length);
 
         var result = await Mediator.Send(command, ct);
         if (result.IsSuccess)
@@ -73,21 +65,19 @@ public sealed class AdminBrandController(
         [FromForm] UpdateBrandRequest request,
         CancellationToken ct)
     {
-        var logoPath = await UploadLogoIfPresentAsync(request.LogoFile, ct);
-        if (logoPath.IsFailed)
-            return ToActionResult(logoPath);
-
         var command = new UpdateBrandCommand(
             id,
             request.CategoryId,
             request.Name,
             request.Slug,
             request.Description,
-            logoPath.Value,
+            request.LogoFile?.OpenReadStream(),
+            request.LogoFile?.FileName,
+            request.LogoFile?.ContentType,
+            request.LogoFile?.Length,
             request.RowVersion);
 
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(command, ct);
     }
 
     [HttpDelete("{id:guid}")]
@@ -95,9 +85,7 @@ public sealed class AdminBrandController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteBrand(Guid id, CancellationToken ct)
     {
-        var command = new DeleteBrandCommand(id, CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new DeleteBrandCommand(id), ct);
     }
 
     [HttpPatch("move")]
@@ -106,33 +94,6 @@ public sealed class AdminBrandController(
         [FromBody] MoveBrandRequest request,
         CancellationToken ct)
     {
-        var command = Mapper.Map<MoveBrandCommand>(request);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
-    }
-
-    private async Task<ServiceResult<string?>> UploadLogoIfPresentAsync(
-        IFormFile? file,
-        CancellationToken ct)
-    {
-        if (file is null)
-            return ServiceResult<string?>.Success(null);
-
-        const long maxFileSizeBytes = 2 * 1024 * 1024;
-        string[] allowedContentTypes = ["image/jpeg", "image/png", "image/webp"];
-
-        if (file.Length > maxFileSizeBytes)
-            return ServiceResult<string?>.Validation("حجم فایل نمی‌تواند بیش از ۲ مگابایت باشد.");
-
-        if (!allowedContentTypes.Contains(file.ContentType, StringComparer.OrdinalIgnoreCase))
-            return ServiceResult<string?>.Validation("فرمت فایل مجاز نیست. فقط JPEG، PNG و WebP پشتیبانی می‌شوند.");
-
-        var extension = Path.GetExtension(file.FileName);
-        var fileName = $"brands/{Guid.NewGuid()}{extension}";
-
-        await using var stream = file.OpenReadStream();
-        var path = await storageService.UploadAsync(stream, fileName, file.ContentType, "brands", ct);
-
-        return ServiceResult<string?>.Success(path);
+        return await Send(Mapper.Map<MoveBrandCommand>(request), ct);
     }
 }

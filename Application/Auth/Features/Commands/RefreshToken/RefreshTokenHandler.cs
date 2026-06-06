@@ -1,20 +1,23 @@
 using Application.Auth.Features.Shared;
+using Application.Common.Interfaces;
 
 namespace Application.Auth.Features.Commands.RefreshToken;
 
-public class RefreshTokenHandler(IAuthService authService) : IRequestHandler<RefreshTokenCommand, ServiceResult<AuthResult>>
+public class RefreshTokenHandler(
+    IAuthService authService,
+    ICurrentUserService currentUser) : IRequestHandler<RefreshTokenCommand, ServiceResult<AuthResult>>
 {
     public async Task<ServiceResult<AuthResult>> Handle(
         RefreshTokenCommand request,
         CancellationToken ct)
     {
         var refreshToken = Domain.Security.ValueObjects.RefreshToken.Create(request.RefreshToken);
-        var ipAddress = IpAddress.Create(request.IpAddress);
+        var ipAddress = IpAddress.Create(currentUser.IpAddress ?? IpAddress.Unknown.Value);
 
         var result = await authService.RefreshTokenAsync(
             refreshToken,
             ipAddress,
-            request.UserAgent,
+            currentUser.UserAgent,
             ct);
 
         if (result.IsFailed || result.Value == default)

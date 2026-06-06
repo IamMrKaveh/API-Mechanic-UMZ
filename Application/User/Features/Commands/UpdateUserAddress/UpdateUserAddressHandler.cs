@@ -1,21 +1,26 @@
+using Application.Common.Interfaces;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.UpdateUserAddress;
 
-public class UpdateUserAddressHandler(IUserRepository userRepository, IUnitOfWork unitOfWork) : IRequestHandler<UpdateUserAddressCommand, ServiceResult>
+public class UpdateUserAddressHandler(
+    IUserRepository userRepository,
+    ICurrentUserService currentUser,
+    IUnitOfWork unitOfWork) : IRequestHandler<UpdateUserAddressCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         UpdateUserAddressCommand request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUser.UserId!.Value);
         var addressId = UserAddressId.From(request.AddressId);
         var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
 
         var user = await userRepository.GetWithAddressesAsync(userId, ct);
         if (user == null)
             return ServiceResult.NotFound("User not found.");
+
         user.UpdateAddress(
             addressId,
             request.Title,

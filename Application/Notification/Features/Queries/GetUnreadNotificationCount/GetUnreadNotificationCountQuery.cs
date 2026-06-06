@@ -1,3 +1,3 @@
 namespace Application.Notification.Features.Queries.GetUnreadNotificationCount;
 
-public sealed record GetUnreadNotificationCountQuery(Guid UserId) : IRequest<ServiceResult<int>>;
+public sealed record GetUnreadNotificationCountQuery() : IRequest<ServiceResult<int>>;

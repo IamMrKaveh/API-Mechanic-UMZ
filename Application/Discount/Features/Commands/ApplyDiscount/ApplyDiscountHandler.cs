@@ -8,7 +8,8 @@ namespace Application.Discount.Features.Commands.ApplyDiscount;
 public class ApplyDiscountHandler(
     IDiscountRepository discountRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<ApplyDiscountCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<ApplyDiscountCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         ApplyDiscountCommand request, CancellationToken ct)
@@ -28,7 +29,7 @@ public class ApplyDiscountHandler(
 
                 var discountAmount = discount.CalculateDiscount(orderAmount);
                 var finalAmount = orderAmount.Subtract(discountAmount);
-                var userId = UserId.From(request.UserId);
+                var userId = UserId.From(currentUserService.UserId.Value);
                 var orderId = OrderId.From(request.OrderId);
 
                 discount.RecordUsage(userId, orderId, discountAmount);

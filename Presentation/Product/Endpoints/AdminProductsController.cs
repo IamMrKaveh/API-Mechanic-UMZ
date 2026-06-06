@@ -17,7 +17,9 @@ namespace Presentation.Product.Endpoints;
 [Route("api/v{version:apiVersion}/admin/products")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
+public class AdminProductsController(
+    IMediator mediator,
+    IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductListItemDto>>), StatusCodes.Status200OK)]
@@ -26,7 +28,6 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         var query = new GetAdminProductsQuery(
             request.CategoryId,
             request.BrandId,
-            CurrentUser.UserId,
             request.Search,
             request.IsActive,
             request.IncludeDeleted,
@@ -44,7 +45,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProduct(Guid id)
     {
-        var query = new GetAdminProductQuery(id, CurrentUser.UserId);
+        var query = new GetAdminProductQuery(id);
 
         var result = await Mediator.Send(query);
 
@@ -56,7 +57,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductDetail(Guid id)
     {
-        var query = new GetAdminProductDetailQuery(id, CurrentUser.UserId);
+        var query = new GetAdminProductDetailQuery(id);
 
         var result = await Mediator.Send(query);
 
@@ -72,7 +73,6 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
         var command = new CreateProductCommand(
             request.CategoryId,
             request.BrandId,
-            CurrentUser.UserId,
             request.Name,
             request.Description,
             request.Price,
@@ -100,8 +100,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
             request.Description,
             request.IsActive,
             request.IsFeatured,
-            request.RowVersion,
-            CurrentUser.UserId
+            request.RowVersion
         );
 
         var result = await Mediator.Send(command);
@@ -114,8 +113,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
     public async Task<IActionResult> BulkUpdatePrices([FromBody] BulkUpdatePricesRequest request)
     {
         var command = new BulkUpdatePricesCommand(
-            request.Updates,
-            CurrentUser.UserId
+            request.Updates
         );
 
         var result = await Mediator.Send(command);
@@ -135,8 +133,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
             request.BrandId,
             request.IsActive,
             request.Sku,
-            request.RowVersion,
-            CurrentUser.UserId
+            request.RowVersion
         );
 
         var result = await Mediator.Send(command);
@@ -149,7 +146,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteProduct(Guid id)
     {
-        var command = new DeleteProductCommand(id, CurrentUser.UserId);
+        var command = new DeleteProductCommand(id);
 
         var result = await Mediator.Send(command);
 
@@ -161,7 +158,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ActivateProduct(Guid id)
     {
-        var command = new ActivateProductCommand(id, CurrentUser.UserId);
+        var command = new ActivateProductCommand(id);
 
         var result = await Mediator.Send(command);
 
@@ -173,7 +170,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeactivateProduct(Guid id)
     {
-        var command = new DeactivateProductCommand(id, CurrentUser.UserId);
+        var command = new DeactivateProductCommand(id);
 
         var result = await Mediator.Send(command);
 
@@ -185,7 +182,7 @@ public class AdminProductsController(IMediator mediator, IMapper mapper) : BaseA
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RestoreProduct(Guid id)
     {
-        var command = new RestoreProductCommand(id, CurrentUser.UserId);
+        var command = new RestoreProductCommand(id);
 
         var result = await Mediator.Send(command);
 

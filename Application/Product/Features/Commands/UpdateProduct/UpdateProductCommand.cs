@@ -12,5 +12,4 @@ public record UpdateProductCommand(
     string? Description,
     bool IsActive,
     bool IsFeatured,
-    string RowVersion,
-    Guid UpdatedByUserId) : IRequest<ServiceResult<ProductDetailDto>>;
+    string RowVersion) : IRequest<ServiceResult<ProductDetailDto>>;

@@ -11,16 +11,13 @@ public sealed class AdminReviewMappingConfig : IRegister
     public void Register(TypeAdapterConfig config)
     {
         config.NewConfig<ApproveReviewRequest, ApproveReviewCommand>()
-            .Ignore(dest => dest.ReviewId)
-            .Ignore(dest => dest.UserId);
+            .Ignore(dest => dest.ReviewId);
 
         config.NewConfig<DeleteReviewRequest, DeleteReviewCommand>()
-            .Ignore(dest => dest.ReviewId)
-            .Ignore(dest => dest.UserId);
+            .Ignore(dest => dest.ReviewId);
 
         config.NewConfig<RejectReviewRequest, RejectReviewCommand>()
             .Map(dest => dest.Reason, src => src.Reason)
-            .Ignore(dest => dest.ReviewId)
-            .Ignore(dest => dest.UserId);
+            .Ignore(dest => dest.ReviewId);
     }
 }

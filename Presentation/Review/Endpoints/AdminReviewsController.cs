@@ -23,9 +23,7 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var query = new GetReviewsByStatusQuery(status, page, pageSize);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetReviewsByStatusQuery(status, page, pageSize), ct);
     }
 
     [HttpPost("{reviewId:guid}/reply")]
@@ -36,9 +34,7 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
         [FromBody] ReplyToReviewRequest request,
         CancellationToken ct)
     {
-        var command = new ReplyToReviewCommand(reviewId, request.Reply, CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new ReplyToReviewCommand(reviewId, request.Reply), ct);
     }
 
     [HttpDelete("{reviewId:guid}")]
@@ -49,12 +45,8 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
         [FromBody] DeleteReviewRequest request,
         CancellationToken ct)
     {
-        var command = Mapper
-            .Map<DeleteReviewCommand>(request)
-            .Enrich(reviewId, CurrentUser.UserId);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        var command = Mapper.Map<DeleteReviewCommand>(request).Enrich(reviewId);
+        return await Send(command, ct);
     }
 
     [HttpPatch("{reviewId:guid}/approve")]
@@ -65,12 +57,8 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
         [FromBody] ApproveReviewRequest request,
         CancellationToken ct)
     {
-        var command = Mapper
-            .Map<ApproveReviewCommand>(request)
-            .Enrich(reviewId, CurrentUser.UserId);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        var command = Mapper.Map<ApproveReviewCommand>(request).Enrich(reviewId);
+        return await Send(command, ct);
     }
 
     [HttpPatch("{reviewId:guid}/reject")]
@@ -81,12 +69,8 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
         [FromBody] RejectReviewRequest request,
         CancellationToken ct)
     {
-        var command = Mapper
-            .Map<RejectReviewCommand>(request)
-            .Enrich(reviewId, CurrentUser.UserId);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        var command = Mapper.Map<RejectReviewCommand>(request).Enrich(reviewId);
+        return await Send(command, ct);
     }
 
     [HttpPatch("{reviewId:guid}/status")]
@@ -97,8 +81,6 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
         [FromBody] UpdateReviewStatusRequest request,
         CancellationToken ct)
     {
-        var command = new UpdateReviewStatusCommand(reviewId, request.Status);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new UpdateReviewStatusCommand(reviewId, request.Status), ct);
     }
 }

@@ -8,14 +8,15 @@ public class RestoreProductHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICacheService cacheService) : IRequestHandler<RestoreProductCommand, ServiceResult>
+    ICacheService cacheService,
+    ICurrentUserService currentUserService) : IRequestHandler<RestoreProductCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         RestoreProductCommand request,
         CancellationToken ct)
     {
         var productId = ProductId.From(request.ProductId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
 
         var product = await productRepository.GetByIdAsync(productId, ct);
         if (product is null)

@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
@@ -5,6 +6,7 @@ namespace Application.User.Features.Commands.DeleteUser;
 
 public class DeleteUserHandler(
     IUserRepository userRepository,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
     IAuditService auditService) : IRequestHandler<DeleteUserCommand, ServiceResult>
 {
@@ -12,11 +14,12 @@ public class DeleteUserHandler(
         DeleteUserCommand request,
         CancellationToken ct)
     {
-        if (request.Id == request.CurrentUserId)
+        var adminId = UserId.From(currentUser.UserId!.Value);
+
+        if (request.Id == currentUser.UserId!.Value)
             return ServiceResult.Forbidden("Admins cannot delete their own account this way.");
 
         var userId = UserId.From(request.Id);
-        var currentUserId = UserId.From(request.CurrentUserId);
 
         var user = await userRepository.GetByIdAsync(userId);
         if (user is null)
@@ -29,7 +32,7 @@ public class DeleteUserHandler(
 
         await auditService.LogAdminEventAsync(
             "DeleteUser",
-            currentUserId,
+            adminId,
             $"Soft-deleted user {request.Id}");
 
         return ServiceResult.Success();

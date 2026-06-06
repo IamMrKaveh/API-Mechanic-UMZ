@@ -11,7 +11,8 @@ namespace Presentation.Variant.Endpoints;
 [ApiController]
 [Route("api/v{version:apiVersion}/admin/products/variants")]
 [Authorize(Roles = "Admin")]
-public sealed class AdminVariantController(IMediator mediator) : BaseApiController(mediator)
+public sealed class AdminVariantController(
+    IMediator mediator) : BaseApiController(mediator)
 {
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<ProductVariantViewDto>), StatusCodes.Status201Created)]
@@ -50,7 +51,6 @@ public sealed class AdminVariantController(IMediator mediator) : BaseApiControll
         var command = new AddStockCommand(
             variantId,
             request.Quantity,
-            CurrentUser.UserId,
             request.Notes);
 
         var result = await Mediator.Send(command, ct);
@@ -70,7 +70,6 @@ public sealed class AdminVariantController(IMediator mediator) : BaseApiControll
         var command = new UpdateVariantCommand(
             productId,
             variantId,
-            CurrentUser.UserId,
             request.Sku,
             request.PurchasePrice,
             request.SellingPrice,
@@ -93,7 +92,7 @@ public sealed class AdminVariantController(IMediator mediator) : BaseApiControll
         Guid variantId,
         CancellationToken ct)
     {
-        var command = new RemoveVariantCommand(productId, variantId, CurrentUser.UserId);
+        var command = new RemoveVariantCommand(productId, variantId);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
@@ -109,7 +108,6 @@ public sealed class AdminVariantController(IMediator mediator) : BaseApiControll
         var command = new RemoveStockCommand(
             variantId,
             request.Quantity,
-            CurrentUser.UserId,
             request.Notes);
 
         var result = await Mediator.Send(command, ct);

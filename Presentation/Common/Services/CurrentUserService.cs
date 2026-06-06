@@ -24,19 +24,12 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
     public bool IsAdmin =>
         User?.IsInRole(AppRoles.Admin) ?? false;
 
+    public string? IpAddress =>
+        _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
     public string? UserAgent =>
         _httpContextAccessor.HttpContext?.Request?.Headers.UserAgent.FirstOrDefault();
 
     public string? GuestToken =>
         _httpContextAccessor.HttpContext?.Request.Headers["X-Guest-Token"].FirstOrDefault();
-
-    public CurrentUser CurrentUser => new()
-    {
-        UserId = UserId ?? Guid.Empty,
-        IsAdmin = IsAdmin,
-        PhoneNumber = User?.FindFirst(ClaimTypes.MobilePhone)?.Value,
-        Email = User?.FindFirst(ClaimTypes.Email)?.Value,
-        Username = User?.Identity?.Name,
-        IpAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? string.Empty
-    };
 }

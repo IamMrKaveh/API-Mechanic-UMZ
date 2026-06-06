@@ -3,7 +3,8 @@ using Application.Discount.Features.Shared;
 namespace Application.Discount.Features.Queries.ValidateDiscount;
 
 public class ValidateDiscountHandler(
-    IDiscountQueryService discountQueryService)
+    IDiscountQueryService discountQueryService,
+    ICurrentUserService currentUserService)
     : IRequestHandler<ValidateDiscountQuery, ServiceResult<DiscountValidationResult>>
 {
     public async Task<ServiceResult<DiscountValidationResult>> Handle(
@@ -14,7 +15,7 @@ public class ValidateDiscountHandler(
         var result = await discountQueryService.ValidateDiscountAsync(
             request.Code,
             orderAmount,
-            request.UserId,
+            currentUserService.UserId.Value,
             ct);
 
         return result.IsValid

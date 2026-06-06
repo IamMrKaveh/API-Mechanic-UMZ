@@ -3,14 +3,16 @@ using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Queries.GetUserDashboard;
 
-public class GetUserDashboardHandler(IUserQueryService userQueryService)
+public class GetUserDashboardHandler(
+    IUserQueryService userQueryService,
+    ICurrentUserService currentUserService)
         : IRequestHandler<GetUserDashboardQuery, ServiceResult<UserDashboardDto>>
 {
     public async Task<ServiceResult<UserDashboardDto>> Handle(
         GetUserDashboardQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
 
         var dashboard = await userQueryService.GetUserDashboardAsync(
             userId,

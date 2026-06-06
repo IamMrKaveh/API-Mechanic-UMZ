@@ -3,6 +3,5 @@ using Application.User.Features.Shared;
 namespace Application.User.Features.Commands.UpdateProfile;
 
 public record UpdateProfileCommand(
-    Guid UserId,
     string? FirstName,
     string? LastName) : IRequest<ServiceResult<UserProfileDto>>;

@@ -17,9 +17,6 @@ public sealed class CreateProductValidator : AbstractValidator<CreateProductComm
         RuleFor(x => x.BrandId)
             .NotEmpty().WithMessage("برند الزامی است.");
 
-        RuleFor(x => x.CreatedByUserId)
-            .NotEmpty().WithMessage("کاربر ایجادکننده الزامی است.");
-
         RuleFor(x => x.Slug)
             .MaximumLength(200).WithMessage("Slug نمی‌تواند بیش از ۲۰۰ کاراکتر باشد.")
             .When(x => x.Slug is not null);

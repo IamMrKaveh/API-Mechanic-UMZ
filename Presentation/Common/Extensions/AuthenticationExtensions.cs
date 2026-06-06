@@ -1,6 +1,6 @@
 ﻿using Infrastructure.Security.Settings;
 
-namespace Presentation.Security;
+namespace Presentation.Common.Extensions;
 
 public static class AuthenticationExtensions
 {

@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
@@ -6,6 +7,7 @@ namespace Application.Order.Features.Commands.CancelOrder;
 
 public class CancelOrderHandler(
     IOrderRepository orderRepository,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork) : IRequestHandler<CancelOrderCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(CancelOrderCommand request, CancellationToken ct)
@@ -15,7 +17,7 @@ public class CancelOrderHandler(
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
-        if (!request.IsAdmin && order.UserId != UserId.From(request.UserId))
+        if (!currentUser.IsAdmin && order.UserId != UserId.From(currentUser.UserId!.Value))
             return ServiceResult.Forbidden("دسترسی ممنوع.");
 
         if (!order.CanBeCancelled())

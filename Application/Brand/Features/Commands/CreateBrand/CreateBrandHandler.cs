@@ -1,5 +1,6 @@
 using Application.Brand.Adapters;
 using Application.Brand.Features.Shared;
+using Application.Media.Contracts;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
@@ -12,8 +13,12 @@ public sealed class CreateBrandHandler(
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
     IMapper mapper,
+    IStorageService storageService,
     IAuditService auditService) : IRequestHandler<CreateBrandCommand, ServiceResult<BrandDetailDto>>
 {
+    private const long MaxFileSizeBytes = 2 * 1024 * 1024;
+    private static readonly string[] AllowedContentTypes = ["image/jpeg", "image/png", "image/webp"];
+
     public async Task<ServiceResult<BrandDetailDto>> Handle(
         CreateBrandCommand request,
         CancellationToken ct)
@@ -36,6 +41,21 @@ public sealed class CreateBrandHandler(
         if (await brandRepository.ExistsBySlugAsync(slug, null, ct))
             return ServiceResult<BrandDetailDto>.Conflict("این اسلاگ قبلاً استفاده شده است.");
 
+        string? logoPath = null;
+
+        if (request.LogoStream is not null)
+        {
+            if (request.LogoFileSize > MaxFileSizeBytes)
+                return ServiceResult<BrandDetailDto>.Validation("حجم فایل نمی‌تواند بیش از ۲ مگابایت باشد.");
+
+            if (!AllowedContentTypes.Contains(request.LogoContentType, StringComparer.OrdinalIgnoreCase))
+                return ServiceResult<BrandDetailDto>.Validation("فرمت فایل مجاز نیست. فقط JPEG، PNG و WebP پشتیبانی می‌شوند.");
+
+            var extension = Path.GetExtension(request.LogoFileName);
+            var fileName = $"brands/{Guid.NewGuid()}{extension}";
+            logoPath = await storageService.UploadAsync(request.LogoStream, fileName, request.LogoContentType!, "brands", ct);
+        }
+
         var uniquenessChecker = new BrandUniquenessCheckerAdapter(brandRepository);
 
         var brand = Domain.Brand.Aggregates.Brand.Create(
@@ -44,7 +64,7 @@ public sealed class CreateBrandHandler(
             categoryId,
             uniquenessChecker,
             request.Description,
-            request.LogoPath);
+            logoPath);
 
         await brandRepository.AddAsync(brand, ct);
         await unitOfWork.SaveChangesAsync(ct);

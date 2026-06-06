@@ -8,7 +8,8 @@ public class UpdateOrderStatusHandler(
     IOrderRepository orderRepository,
     IUnitOfWork unitOfWork,
     INotificationService notificationService,
-    IAuditService auditService) : IRequestHandler<UpdateOrderStatusCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<UpdateOrderStatusCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         UpdateOrderStatusCommand request,
@@ -79,7 +80,7 @@ public class UpdateOrderStatusHandler(
                 order.Id,
                 "UpdateOrderStatus",
                 IpAddress.Unknown,
-                UserId.From(request.UpdatedByUserId),
+                UserId.From(currentUserService.UserId.Value),
                 $"وضعیت سفارش از {oldStatusName} به {newStatus.DisplayName} تغییر کرد.",
                 ct);
 

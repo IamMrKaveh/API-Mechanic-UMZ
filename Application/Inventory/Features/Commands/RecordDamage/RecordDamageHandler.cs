@@ -8,12 +8,13 @@ namespace Application.Inventory.Features.Commands.RecordDamage;
 
 public class RecordDamageHandler(
     IInventoryRepository inventoryRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<RecordDamageCommand, ServiceResult>
+    IUnitOfWork unitOfWork,
+    ICurrentUserService currentUserService) : IRequestHandler<RecordDamageCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(RecordDamageCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
         var stock = StockQuantity.Create(request.Quantity);
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);

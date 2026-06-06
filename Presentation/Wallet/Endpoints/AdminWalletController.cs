@@ -18,9 +18,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     [ProducesResponseType(typeof(ApiResponse<WalletDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBalance(Guid userId, CancellationToken ct)
     {
-        var query = new GetWalletBalanceQuery(userId);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetWalletBalanceQuery(userId), ct);
     }
 
     [HttpGet("{userId:guid}/ledger")]
@@ -31,9 +29,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var query = new GetWalletLedgerQuery(userId, page, pageSize);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetWalletLedgerQuery(userId, page, pageSize), ct);
     }
 
     [HttpPost("{userId:guid}/credit")]
@@ -44,6 +40,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         [FromBody] AdminWalletAdjustmentRequest request,
         CancellationToken ct)
     {
+        var adminId = RequestContext.UserId!.Value;
         var command = new CreditWalletCommand(
             userId,
             request.Amount,
@@ -52,10 +49,9 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
             "0",
             $"admin-credit-{userId}-{HttpContext.TraceIdentifier}",
             HttpContext.TraceIdentifier,
-            BuildAuditDescription("CREDIT", CurrentUser.UserId, request.Reason, request.Description));
+            BuildAuditDescription("CREDIT", adminId, request.Reason, request.Description));
 
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(command, ct);
     }
 
     [HttpPost("{userId:guid}/debit")]
@@ -66,18 +62,18 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         [FromBody] AdminWalletAdjustmentRequest request,
         CancellationToken ct)
     {
+        var adminId = RequestContext.UserId!.Value;
         var command = new DebitWalletCommand(
             userId,
             request.Amount,
             WalletTransactionType.Debit,
             WalletReferenceType.Admin,
-            CurrentUser.UserId.ToString(),
+            adminId.ToString(),
             $"admin-debit-{userId}-{HttpContext.TraceIdentifier}",
             HttpContext.TraceIdentifier,
-            BuildAuditDescription("DEBIT", CurrentUser.UserId, request.Reason, request.Description));
+            BuildAuditDescription("DEBIT", adminId, request.Reason, request.Description));
 
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(command, ct);
     }
 
     private static string BuildAuditDescription(

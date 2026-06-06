@@ -1,4 +1,5 @@
-﻿using Application.Review.Features.Shared;
+﻿using Application.Common.Interfaces;
+using Application.Review.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
@@ -13,6 +14,7 @@ public sealed class CreateReviewHandler(
     ReviewDomainService reviewDomainService,
     IReviewRepository reviewRepository,
     IProductRepository productRepository,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
     IMapper mapper) : IRequestHandler<CreateReviewCommand, ServiceResult<ProductReviewDto>>
 {
@@ -23,7 +25,7 @@ public sealed class CreateReviewHandler(
         if (product is null)
             return ServiceResult<ProductReviewDto>.NotFound("محصول یافت نشد.");
 
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUser.UserId!.Value);
         OrderId? orderId = request.OrderId.HasValue ? OrderId.From(request.OrderId.Value) : null;
         var rating = Rating.Create(request.Rating);
 

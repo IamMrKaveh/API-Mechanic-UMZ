@@ -7,7 +7,8 @@ namespace Application.Order.Features.Commands.DeleteOrder;
 public class DeleteOrderHandler(
     IOrderRepository orderRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<DeleteOrderCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<DeleteOrderCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         DeleteOrderCommand request,
@@ -34,7 +35,7 @@ public class DeleteOrderHandler(
             order.Id,
             "DeleteOrder",
             IpAddress.Unknown,
-            UserId.From(request.UserId),
+            UserId.From(currentUserService.UserId.Value),
             $"سفارش {order.Id.Value} حذف شد.");
 
         return ServiceResult.Success();

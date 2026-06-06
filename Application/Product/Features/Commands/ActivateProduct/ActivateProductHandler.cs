@@ -7,7 +7,8 @@ namespace Application.Product.Features.Commands.ActivateProduct;
 public sealed class ActivateProductHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<ActivateProductCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<ActivateProductCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         ActivateProductCommand request,
@@ -29,7 +30,7 @@ public sealed class ActivateProductHandler(
             product.Id,
             "ActivateProduct",
             $"محصول '{product.Name}' فعال شد.",
-            UserId.From(request.ActivatedByUserId));
+            UserId.From(currentUserService.UserId.Value));
 
         return ServiceResult.Success();
     }

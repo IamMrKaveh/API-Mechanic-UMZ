@@ -7,7 +7,8 @@ namespace Application.Product.Features.Commands.DeactivateProduct;
 public sealed class DeactivateProductHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<DeactivateProductCommand, ServiceResult>
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : IRequestHandler<DeactivateProductCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         DeactivateProductCommand request,
@@ -29,7 +30,7 @@ public sealed class DeactivateProductHandler(
             product.Id,
             "DeactivateProduct",
             $"محصول '{product.Name}' غیرفعال شد.",
-            UserId.From(request.DeactivatedByUserId));
+            UserId.From(currentUserService.UserId.Value));
 
         return ServiceResult.Success();
     }

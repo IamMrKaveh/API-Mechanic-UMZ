@@ -36,7 +36,6 @@ public sealed class VariantMappingConfig : IRegister
             .Map(dest => dest.EnabledShippingIds, src => src.EnabledShippingIds)
             .Map(dest => dest.ProductId, src => src.ProductId)
             .Map(dest => dest.VariantId, src => src.VariantId)
-            .Map(dest => dest.UserId, src => src.UserId)
             .IgnoreNonMapped(true);
     }
 }

@@ -21,9 +21,7 @@ public sealed class AdminShippingsController(IMediator mediator, IMapper mapper)
         [FromQuery] bool includeDeleted = false,
         CancellationToken ct = default)
     {
-        var query = new GetShippingsQuery(includeDeleted);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetShippingsQuery(includeDeleted), ct);
     }
 
     [HttpGet("{id:guid}")]
@@ -31,9 +29,7 @@ public sealed class AdminShippingsController(IMediator mediator, IMapper mapper)
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetShippingById(Guid id, CancellationToken ct)
     {
-        var query = new GetShippingQuery(id);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetShippingQuery(id), ct);
     }
 
     [HttpPost]
@@ -42,9 +38,7 @@ public sealed class AdminShippingsController(IMediator mediator, IMapper mapper)
         [FromBody] CreateShippingRequest request,
         CancellationToken ct)
     {
-        var command = Mapper.Map<CreateShippingCommand>(request);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(Mapper.Map<CreateShippingCommand>(request), ct);
     }
 
     [HttpPost("{id:guid}/restore")]
@@ -52,9 +46,7 @@ public sealed class AdminShippingsController(IMediator mediator, IMapper mapper)
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RestoreShipping(Guid id, CancellationToken ct)
     {
-        var command = new RestoreShippingCommand(id, CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new RestoreShippingCommand(id), ct);
     }
 
     [HttpPut("{id:guid}")]
@@ -65,9 +57,7 @@ public sealed class AdminShippingsController(IMediator mediator, IMapper mapper)
         [FromBody] UpdateShippingRequest request,
         CancellationToken ct)
     {
-        var command = Mapper.Map<UpdateShippingCommand>(request) with { Id = id };
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(Mapper.Map<UpdateShippingCommand>(request) with { Id = id }, ct);
     }
 
     [HttpDelete("{id:guid}")]
@@ -75,8 +65,6 @@ public sealed class AdminShippingsController(IMediator mediator, IMapper mapper)
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteShipping(Guid id, CancellationToken ct)
     {
-        var command = new DeleteShippingCommand(id, CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new DeleteShippingCommand(id), ct);
     }
 }

@@ -7,5 +7,4 @@ public record UpdateProductDetailsCommand(
     Guid BrandId,
     bool IsActive,
     string? Sku,
-    string RowVersion,
-    Guid UserId) : IRequest<ServiceResult>;
+    string RowVersion) : IRequest<ServiceResult>;

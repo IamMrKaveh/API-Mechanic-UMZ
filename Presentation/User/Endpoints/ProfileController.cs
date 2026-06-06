@@ -19,9 +19,7 @@ public sealed class ProfileController(IMediator mediator) : BaseApiController(me
     [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProfile(CancellationToken ct)
     {
-        var query = new GetCurrentUserQuery(CurrentUser.UserId);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetCurrentUserQuery(RequestContext.UserId ?? Guid.Empty), ct);
     }
 
     [HttpGet("reviews")]
@@ -31,25 +29,17 @@ public sealed class ProfileController(IMediator mediator) : BaseApiController(me
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var query = new GetUserReviewsQuery(CurrentUser.UserId, page, pageSize);
-        var result = await Mediator.Send(query, ct);
-        return ToActionResult(result);
+        return await Send(new GetUserReviewsQuery(RequestContext.UserId ?? Guid.Empty, page, pageSize), ct);
     }
 
     [HttpPut]
     [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateProfile(
-    [FromBody] UpdateProfileRequest request,
-    CancellationToken ct)
+        [FromBody] UpdateProfileRequest request,
+        CancellationToken ct)
     {
-        var command = new UpdateProfileCommand(
-            CurrentUser.UserId,
-            request.FirstName,
-            request.LastName);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new UpdateProfileCommand(request.FirstName, request.LastName), ct);
     }
 
     [HttpDelete]
@@ -57,25 +47,17 @@ public sealed class ProfileController(IMediator mediator) : BaseApiController(me
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAccount(CancellationToken ct)
     {
-        var command = new DeactivateAccountCommand(CurrentUser.UserId);
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new DeactivateAccountCommand(), ct);
     }
 
     [HttpPatch("password")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ChangePassword(
-     [FromBody] ChangePasswordRequest request,
-     CancellationToken ct)
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken ct)
     {
-        var command = new ChangePasswordCommand(
-            CurrentUser.UserId,
-            request.CurrentPassword,
-            request.NewPassword);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new ChangePasswordCommand(request.CurrentPassword, request.NewPassword), ct);
     }
 
     [HttpPatch("phone")]
@@ -85,12 +67,6 @@ public sealed class ProfileController(IMediator mediator) : BaseApiController(me
         [FromBody] ChangePhoneNumberRequest request,
         CancellationToken ct)
     {
-        var command = new ChangePhoneNumberCommand(
-            CurrentUser.UserId,
-            request.NewPhoneNumber,
-            request.OtpCode);
-
-        var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return await Send(new ChangePhoneNumberCommand(request.NewPhoneNumber, request.OtpCode), ct);
     }
 }

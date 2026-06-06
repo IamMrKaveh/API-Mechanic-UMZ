@@ -7,7 +7,8 @@ namespace Application.Inventory.Features.Commands.BulkAdjustStock;
 public class BulkAdjustStockHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : IRequestHandler<BulkAdjustStockCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(BulkAdjustStockCommand request, CancellationToken ct)
@@ -15,7 +16,7 @@ public class BulkAdjustStockHandler(
         if (request.Items.Count == 0)
             return ServiceResult.Failure("لیست اقلام برای تعدیل خالی است.");
 
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
 
         await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
         {

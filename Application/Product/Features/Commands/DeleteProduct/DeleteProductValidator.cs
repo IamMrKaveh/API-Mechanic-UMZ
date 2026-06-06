@@ -6,8 +6,5 @@ public sealed class DeleteProductValidator : AbstractValidator<DeleteProductComm
     {
         RuleFor(x => x.ProductId)
             .NotEmpty().WithMessage("شناسه محصول الزامی است.");
-
-        RuleFor(x => x.DeletedByUserId)
-            .NotEmpty().WithMessage("کاربر حذف‌کننده الزامی است.");
     }
 }

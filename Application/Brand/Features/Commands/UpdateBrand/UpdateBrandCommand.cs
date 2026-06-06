@@ -8,5 +8,8 @@ public record UpdateBrandCommand(
     string Name,
     string? Slug,
     string? Description,
-    string? LogoPath,
+    Stream? LogoStream,
+    string? LogoFileName,
+    string? LogoContentType,
+    long? LogoFileSize,
     string RowVersion) : IRequest<ServiceResult<BrandDetailDto>>;

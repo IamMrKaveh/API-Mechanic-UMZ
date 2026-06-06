@@ -24,9 +24,6 @@ public sealed class UpdateProductValidator : AbstractValidator<UpdateProductComm
         RuleFor(x => x.RowVersion)
             .NotEmpty().WithMessage("RowVersion الزامی است.");
 
-        RuleFor(x => x.UpdatedByUserId)
-            .NotEmpty().WithMessage("کاربر ویرایش‌کننده الزامی است.");
-
         RuleFor(x => x.Slug)
             .MaximumLength(200).WithMessage("Slug نمی‌تواند بیش از ۲۰۰ کاراکتر باشد.")
             .When(x => x.Slug is not null);

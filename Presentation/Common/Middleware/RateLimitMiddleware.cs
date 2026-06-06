@@ -50,7 +50,7 @@ public class RateLimitMiddleware(
         string clientIp)
     {
         if (currentUserService.IsAuthenticated)
-            return ($"rl_user_{currentUserService.CurrentUser.UserId}", AuthenticatedMaxAttempts);
+            return ($"rl_user_{currentUserService.UserId.Value}", AuthenticatedMaxAttempts);
 
         return ($"rl_ip_{clientIp}", AnonymousMaxAttempts);
     }
