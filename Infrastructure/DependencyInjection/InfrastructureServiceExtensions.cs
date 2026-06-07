@@ -1,4 +1,5 @@
 ﻿using Application.Analytics.Contracts;
+using Application.Attribute.Adapters;
 using Application.Auth.Contracts;
 using Application.Brand.Contracts;
 using Application.Cart.Contracts;
@@ -90,6 +91,7 @@ using Infrastructure.Review.QueryServices;
 using Infrastructure.Review.Repositories;
 using Infrastructure.Review.Services;
 using Infrastructure.Search;
+using Infrastructure.Search.Contracts;
 using Infrastructure.Search.Options;
 using Infrastructure.Search.Services;
 using Infrastructure.Security.Options;
@@ -121,6 +123,7 @@ public static class InfrastructureServiceExtensions
     {
         services.AddPersistence(configuration);
         services.AddCaching(configuration);
+        services.AddInfrastructureCoreServices();
         services.AddRepositories();
         services.AddQueryServices();
         services.AddDomainServices();
@@ -228,6 +231,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IAttributeRepository, AttributeRepository>();
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<IMediaRepository, MediaRepository>();
+        services.AddScoped<IAttributeTypeUniquenessChecker, AttributeTypeUniquenessCheckerAdapter>();
     }
 
     private static void AddQueryServices(this IServiceCollection services)
@@ -370,12 +374,16 @@ public static class InfrastructureServiceExtensions
 
         if (options is not null && options.IsEnabled)
         {
-            services.AddSingleton<ElasticsearchClient>(_ =>
+            services.AddSingleton<ElasticsearchClient>(sp =>
             {
-                var settings = new ElasticsearchClientSettings(new Uri(options.Url))
+                var settings = new ElasticsearchClientSettings(
+                    new Uri(options.Url))
                     .DefaultIndex(options.DefaultIndex);
+
                 return new ElasticsearchClient(settings);
             });
+
+            services.AddScoped<IElasticsearchIndexer, ElasticsearchIndexer>();
 
             services.AddScoped<ISearchService, ResilientElasticSearchService>();
             services.AddScoped<IElasticIndexManager, ElasticIndexManager>();
@@ -383,6 +391,7 @@ public static class InfrastructureServiceExtensions
         }
         else
         {
+            services.AddScoped<IElasticsearchIndexer, NoOpElasticsearchIndexer>();
             services.AddScoped<ISearchService, NoOpSearchService>();
             services.AddScoped<IElasticIndexManager, NoOpElasticIndexManager>();
             services.AddScoped<ISearchDatabaseSyncService, NoOpSearchDatabaseSyncService>();
@@ -461,6 +470,15 @@ public static class InfrastructureServiceExtensions
                 provider.GetRequiredService<ILogger<ResilientRedisXmlRepository>>(),
                 "DataProtection",
                 TimeSpan.FromDays(90)));
+    }
+
+    private static void AddInfrastructureCoreServices(this IServiceCollection services)
+    {
+        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+        services.AddScoped<IUrlResolverService, UrlResolverService>();
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+        services.AddSingleton<IOutboxEventTypeRegistry,
+            OutboxEventTypeRegistry>();
     }
 
     private static void AddJwtAuthentication(this IServiceCollection services)

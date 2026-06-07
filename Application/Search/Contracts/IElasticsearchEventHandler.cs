@@ -2,9 +2,6 @@ using Application.Search.Events;
 
 namespace Application.Search.Contracts;
 
-/// <summary>
-/// Event handler for Elasticsearch synchronization
-/// </summary>
 public interface IElasticsearchEventHandler
 {
     void HandleProductChangedAsync(

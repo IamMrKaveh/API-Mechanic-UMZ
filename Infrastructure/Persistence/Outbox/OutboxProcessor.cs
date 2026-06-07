@@ -3,11 +3,14 @@
 public sealed class OutboxProcessor(
     DBContext context,
     IPublisher publisher,
+    IOutboxEventTypeRegistry typeRegistry,
     IAuditService auditService) : IOutboxProcessor
 {
+    private const int MaxRetries = 5;
+
     public async Task ProcessAsync(
-    int batchSize = 50,
-    CancellationToken ct = default)
+        int batchSize = 50,
+        CancellationToken ct = default)
     {
         var strategy = context.Database.CreateExecutionStrategy();
 
@@ -20,7 +23,8 @@ public sealed class OutboxProcessor(
                 .FromSqlRaw("""
                 SELECT * FROM "OutboxMessages"
                 WHERE "processed_at" IS NULL
-                  AND "retry_count" < 5
+                  AND "is_poisoned" = false
+                  AND "retry_count" < {MaxRetries}
                 ORDER BY "created_at"
                 LIMIT {0}
                 FOR UPDATE SKIP LOCKED
@@ -37,7 +41,7 @@ public sealed class OutboxProcessor(
             {
                 try
                 {
-                    var type = Type.GetType(message.Type);
+                    var type = typeRegistry.Resolve(message.Type);
 
                     if (type is null)
                     {
@@ -45,7 +49,7 @@ public sealed class OutboxProcessor(
                             $"Could not resolve type {message.Type} for outbox message {message.Id}",
                             ct);
 
-                        message.MarkFailed($"Type not found: {message.Type}");
+                        message.MarkPoisoned($"Unresolvable event type: {message.Type}");
                         continue;
                     }
 
@@ -55,7 +59,7 @@ public sealed class OutboxProcessor(
 
                     if (@event is null)
                     {
-                        message.MarkFailed("Deserialization returned null.");
+                        message.MarkPoisoned("Deserialization returned null payload.");
                         continue;
                     }
 
@@ -77,6 +81,9 @@ public sealed class OutboxProcessor(
                         ct);
 
                     message.MarkFailed(ex.Message);
+
+                    if (message.RetryCount >= MaxRetries)
+                        message.MarkPoisoned($"Exceeded max retries ({MaxRetries}): {ex.Message}");
                 }
             }
 

@@ -9,28 +9,39 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
 {
     public async Task<PaginatedResult<WalletLedgerEntryDto>> GetLedgerPageAsync(
         UserId userId,
+        int page,
+        int pageSize,
         CancellationToken ct = default)
     {
-        var entries = await context.WalletLedgerEntries
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 200) pageSize = 200;
+
+        var query = context.WalletLedgerEntries
             .AsNoTracking()
-            .Where(e => e.OwnerId == userId)
+            .Where(e => e.OwnerId == userId);
+
+        var totalCount = await query.CountAsync(ct);
+
+        var dtos = await query
             .OrderByDescending(e => e.OccurredAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => new WalletLedgerEntryDto(
+                e.Id.Value,
+                e.WalletId.Value,
+                e.OwnerId.Value,
+                e.Amount.Amount,
+                e.BalanceAfter.Amount,
+                e.TransactionType.ToString(),
+                string.Empty,
+                Guid.Empty,
+                e.Description,
+                e.OccurredAt
+            ))
             .ToListAsync(ct);
 
-        var dtos = entries.Select(e => new WalletLedgerEntryDto(
-            Id: e.Id.Value,
-            WalletId: e.WalletId.Value,
-            UserId: e.OwnerId.Value,
-            AmountDelta: e.Amount.Amount,
-            BalanceAfter: e.BalanceAfter.Amount,
-            TransactionType: e.TransactionType.ToString(),
-            ReferenceType: string.Empty,
-            ReferenceId: Guid.TryParse(e.ReferenceId, out var refGuid) ? refGuid : Guid.Empty,
-            Description: e.Description,
-            CreatedAt: e.OccurredAt
-        )).ToList();
-
-        return PaginatedResult<WalletLedgerEntryDto>.Create(dtos, dtos.Count, 1, dtos.Count);
+        return PaginatedResult<WalletLedgerEntryDto>.Create(dtos, totalCount, page, pageSize);
     }
 
     public async Task<WalletLedgerEntryDto?> GetOrderPaymentLedgerEntryAsync(
@@ -38,26 +49,26 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
         OrderId orderId,
         CancellationToken ct = default)
     {
-        var entry = await context.WalletLedgerEntries
+        var orderIdString = orderId.Value.ToString();
+
+        return await context.WalletLedgerEntries
             .AsNoTracking()
             .Where(e => e.OwnerId == userId
-                        && e.ReferenceId == orderId.Value.ToString()
+                        && e.ReferenceId == orderIdString
                         && (e.TransactionType == WalletTransactionType.Debit
                             || e.TransactionType == WalletTransactionType.ReservationConfirmed))
+            .Select(e => new WalletLedgerEntryDto(
+                e.Id.Value,
+                e.WalletId.Value,
+                e.OwnerId.Value,
+                e.Amount.Amount,
+                e.BalanceAfter.Amount,
+                e.TransactionType.ToString(),
+                string.Empty,
+                Guid.Empty,
+                e.Description,
+                e.OccurredAt
+            ))
             .FirstOrDefaultAsync(ct);
-
-        if (entry is null) return null;
-
-        return new WalletLedgerEntryDto(
-            Id: entry.Id.Value,
-            WalletId: entry.WalletId.Value,
-            UserId: entry.OwnerId.Value,
-            AmountDelta: entry.Amount.Amount,
-            BalanceAfter: entry.BalanceAfter.Amount,
-            TransactionType: entry.TransactionType.ToString(),
-            ReferenceType: string.Empty,
-            ReferenceId: Guid.TryParse(entry.ReferenceId, out var refGuid) ? refGuid : Guid.Empty,
-            Description: entry.Description,
-            CreatedAt: entry.OccurredAt);
     }
 }

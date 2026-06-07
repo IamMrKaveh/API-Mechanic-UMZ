@@ -1,3 +1,4 @@
+using Application.Common.DependencyInjection;
 using Infrastructure.DependencyInjection;
 
 var logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "logs");

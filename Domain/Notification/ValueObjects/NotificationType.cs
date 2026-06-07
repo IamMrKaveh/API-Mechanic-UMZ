@@ -19,42 +19,22 @@ public sealed class NotificationType : ValueObject
         Category = category;
     }
 
-    #region Predefined Types - Order Related
-
     public static NotificationType OrderCreated => new("OrderCreated", "ثبت سفارش", "shopping-cart", "green", NotificationCategory.Order);
     public static NotificationType OrderPaid => new("OrderPaid", "پرداخت سفارش", "credit-card", "green", NotificationCategory.Order);
     public static NotificationType OrderShipped => new("OrderShipped", "ارسال سفارش", "truck", "blue", NotificationCategory.Order);
     public static NotificationType OrderDelivered => new("OrderDelivered", "تحویل سفارش", "check-circle", "green", NotificationCategory.Order);
     public static NotificationType OrderCancelled => new("OrderCancelled", "لغو سفارش", "x-circle", "red", NotificationCategory.Order);
 
-    #endregion Predefined Types - Order Related
-
-    #region Predefined Types - Support Related
-
     public static NotificationType TicketReply => new("TicketReply", "پاسخ تیکت", "message-circle", "blue", NotificationCategory.Support);
-
-    #endregion Predefined Types - Support Related
-
-    #region Predefined Types - Product Related
 
     public static NotificationType PriceDropAlert => new("PriceDropAlert", "کاهش قیمت", "trending-down", "orange", NotificationCategory.Product);
     public static NotificationType StockAlert => new("StockAlert", "موجود شدن محصول", "package", "green", NotificationCategory.Product);
 
-    #endregion Predefined Types - Product Related
-
-    #region Predefined Types - Marketing Related
-
     public static NotificationType DiscountCode => new("DiscountCode", "کد تخفیف", "tag", "purple", NotificationCategory.Marketing);
-
-    #endregion Predefined Types - Marketing Related
-
-    #region Predefined Types - System Related
 
     public static NotificationType SystemAlert => new("SystemAlert", "اطلاعیه سیستم", "bell", "gray", NotificationCategory.System);
     public static NotificationType SecurityAlert => new("SecurityAlert", "هشدار امنیتی", "shield", "red", NotificationCategory.System);
     public static NotificationType AccountUpdate => new("AccountUpdate", "به‌روزرسانی حساب", "user", "blue", NotificationCategory.System);
-
-    #endregion Predefined Types - System Related
 
     public static NotificationType FromString(string value)
     {

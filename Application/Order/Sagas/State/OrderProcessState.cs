@@ -1,11 +1,12 @@
-using Domain.Order.Enums;
+﻿using Domain.Order.Enums;
+using Domain.Order.ValueObjects;
 
-namespace Domain.Order.ValueObjects;
+namespace Application.Order.Sagas.State;
 
-public class OrderProcessState
+public sealed class OrderProcessState
 {
     public Guid Id { get; private set; }
-    public OrderId OrderId { get; private set; }
+    public OrderId OrderId { get; private set; } = default!;
     public ProcessStepEnum CurrentStep { get; private set; }
     public ProcessStatusEnum Status { get; private set; }
     public string? FailureReason { get; private set; }

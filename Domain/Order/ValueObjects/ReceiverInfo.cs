@@ -14,10 +14,10 @@ public sealed record ReceiverInfo
     public static ReceiverInfo Create(string fullName, string phoneNumber)
     {
         if (string.IsNullOrWhiteSpace(fullName))
-            throw new ArgumentException("Receiver full name cannot be empty.", nameof(fullName));
+            throw new DomainException("Receiver full name cannot be empty.");
 
         if (string.IsNullOrWhiteSpace(phoneNumber))
-            throw new ArgumentException("Receiver phone number cannot be empty.", nameof(phoneNumber));
+            throw new DomainException("Receiver phone number cannot be empty.");
 
         var normalized = NormalizePhoneNumber(phoneNumber);
 
@@ -26,10 +26,10 @@ public sealed record ReceiverInfo
 
     private static string NormalizePhoneNumber(string phone)
     {
-        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        var digits = new string([.. phone.Where(char.IsDigit)]);
 
         if (digits.Length < 10 || digits.Length > 15)
-            throw new ArgumentException("Phone number must have between 10 and 15 digits.", nameof(phone));
+            throw new DomainException("Phone number must have between 10 and 15 digits.");
 
         return digits;
     }

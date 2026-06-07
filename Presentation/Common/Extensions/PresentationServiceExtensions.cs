@@ -16,7 +16,6 @@ public static class PresentationServiceExtensions
         services.AddPresentationInternalServices();
         services.AddCustomCors(configuration);
         services.AddTrustedForwardedHeaders(configuration);
-        services.RegisterValidation();
 
         return services;
     }
@@ -28,13 +27,6 @@ public static class PresentationServiceExtensions
         services.AddScoped<IGoogleAuthenticationService, HttpGoogleAuthenticationService>();
         services.AddScoped<OtpRateLimitFilter>();
         services.AddScoped<IMapper, ServiceMapper>();
-
-        return services;
-    }
-
-    private static IServiceCollection RegisterValidation(this IServiceCollection services)
-    {
-        services.AddValidatorsFromAssembly(typeof(ApplicationServiceCollection).Assembly);
 
         return services;
     }

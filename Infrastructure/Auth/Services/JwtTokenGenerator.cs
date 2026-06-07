@@ -1,18 +1,18 @@
 ﻿using Application.Auth.Contracts;
-using Infrastructure.Security.Settings;
+using Infrastructure.Security.Options;
 using SharedKernel.Constants;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
 namespace Infrastructure.Auth.Services;
 
-public sealed class JwtTokenGenerator(IOptions<JwtSettings> jwtSettings) : IJwtTokenGenerator
+public sealed class JwtTokenGenerator(IOptions<JwtOptions> jwtOptions) : IJwtTokenGenerator
 {
-    private readonly JwtSettings _jwtSettings = jwtSettings.Value;
+    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
 
     public string GenerateAccessToken(Domain.User.Aggregates.User user)
     {
         var claims = BuildClaims(user);
-        return CreateToken(claims, DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationMinutes));
+        return CreateToken(claims, DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes));
     }
 
     public (string AccessToken, string RefreshToken) GenerateTokens(Domain.User.Aggregates.User user)
@@ -43,12 +43,12 @@ public sealed class JwtTokenGenerator(IOptions<JwtSettings> jwtSettings) : IJwtT
 
     private string CreateToken(IEnumerable<Claim> claims, DateTime expires)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: _jwtSettings.Issuer,
-            audience: _jwtSettings.Audience,
+            issuer: _jwtOptions.Issuer,
+            audience: _jwtOptions.Audience,
             claims: claims,
             expires: expires,
             signingCredentials: creds);
