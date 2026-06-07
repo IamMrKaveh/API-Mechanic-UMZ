@@ -16,7 +16,7 @@ public sealed record OrderNumber
     public static OrderNumber Create(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Order number cannot be empty.", nameof(value));
+            throw new DomainException("Order number cannot be empty.");
         return new OrderNumber(value.Trim().ToUpperInvariant());
     }
 

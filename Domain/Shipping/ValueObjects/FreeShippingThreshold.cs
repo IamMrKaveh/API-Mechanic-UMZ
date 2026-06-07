@@ -5,10 +5,6 @@ public sealed class FreeShippingThreshold : ValueObject
     public bool IsEnabled { get; }
     public Money? ThresholdAmount { get; }
 
-    public FreeShippingThreshold()
-    {
-    }
-
     private FreeShippingThreshold(bool isEnabled, Money? thresholdAmount)
     {
         IsEnabled = isEnabled;
@@ -16,6 +12,25 @@ public sealed class FreeShippingThreshold : ValueObject
     }
 
     public static FreeShippingThreshold Disabled() => new(false, null);
+
+    public static FreeShippingThreshold Enabled(Money thresholdAmount)
+    {
+        if (thresholdAmount is null)
+            throw new DomainException("FreeShippingThreshold amount is required when enabled.");
+
+        if (thresholdAmount.Amount < 0)
+            throw new DomainException("FreeShippingThreshold amount cannot be negative.");
+
+        return new FreeShippingThreshold(true, thresholdAmount);
+    }
+
+    public static FreeShippingThreshold Restore(bool isEnabled, Money? thresholdAmount)
+    {
+        if (isEnabled && thresholdAmount is null)
+            throw new DomainException("Enabled FreeShippingThreshold requires a threshold amount.");
+
+        return new FreeShippingThreshold(isEnabled, thresholdAmount);
+    }
 
     public bool QualifiesForFreeShipping(Money orderTotal)
     {

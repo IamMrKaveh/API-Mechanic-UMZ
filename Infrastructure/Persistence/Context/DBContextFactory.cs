@@ -1,4 +1,5 @@
 using Infrastructure.Persistence.Interceptors;
+using Infrastructure.Persistence.Outbox;
 using DateTimeProvider = Infrastructure.Common.Services.DateTimeProvider;
 
 namespace Infrastructure.Persistence.Context;
@@ -36,10 +37,11 @@ public sealed class DBContextFactory : IDesignTimeDbContextFactory<DBContext>
         });
 
         var dateTimeProvider = new DateTimeProvider();
+        var outboxEventTypeRegistry = new OutboxEventTypeRegistry();
 
         return new DBContext(
             optionsBuilder.Options,
             new AuditableEntityInterceptor(dateTimeProvider),
-            new DomainEventInterceptor());
+            new DomainEventInterceptor(outboxEventTypeRegistry));
     }
 }

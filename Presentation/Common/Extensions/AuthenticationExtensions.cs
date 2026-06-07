@@ -1,4 +1,5 @@
-﻿using Infrastructure.Security.Settings;
+﻿using Infrastructure.Security.Options;
+using Infrastructure.Security.Settings;
 
 namespace Presentation.Common.Extensions;
 
@@ -6,11 +7,6 @@ public static class AuthenticationExtensions
 {
     public static WebApplicationBuilder AddApplicationAuthentication(this WebApplicationBuilder builder)
     {
-        builder.Services.AddOptions<JwtSettings>()
-            .BindConfiguration(JwtSettings.SectionName)
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
         builder.Services.Configure<GoogleAuthSettings>(
             builder.Configuration.GetSection(GoogleAuthSettings.SectionName));
 
@@ -24,9 +20,9 @@ public static class AuthenticationExtensions
 
         builder.Services
             .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
-            .Configure<IOptions<JwtSettings>>((bearerOptions, jwtSettings) =>
+            .Configure<IOptions<JwtOptions>>((bearerOptions, jwtOptions) =>
             {
-                var settings = jwtSettings.Value;
+                var settings = jwtOptions.Value;
                 bearerOptions.RequireHttpsMetadata = true;
                 bearerOptions.SaveToken = true;
                 bearerOptions.TokenValidationParameters = new TokenValidationParameters

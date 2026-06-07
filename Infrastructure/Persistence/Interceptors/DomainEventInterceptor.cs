@@ -3,7 +3,7 @@ using Infrastructure.Persistence.Outbox;
 
 namespace Infrastructure.Persistence.Interceptors;
 
-public sealed class DomainEventInterceptor : SaveChangesInterceptor
+public sealed class DomainEventInterceptor(IOutboxEventTypeRegistry typeRegistry) : SaveChangesInterceptor
 {
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
@@ -14,7 +14,7 @@ public sealed class DomainEventInterceptor : SaveChangesInterceptor
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private static async Task DispatchDomainEvents(DbContext? context)
+    private async Task DispatchDomainEvents(DbContext? context)
     {
         if (context is null) return;
 
@@ -33,7 +33,7 @@ public sealed class DomainEventInterceptor : SaveChangesInterceptor
 
         var outboxMessages = domainEvents.Select(domainEvent =>
         {
-            var type = domainEvent.GetType().AssemblyQualifiedName!;
+            var type = typeRegistry.GetTypeName(domainEvent.GetType());
             var payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType());
             return OutboxMessage.Create(type, payload, DateTime.UtcNow);
         }).ToList();

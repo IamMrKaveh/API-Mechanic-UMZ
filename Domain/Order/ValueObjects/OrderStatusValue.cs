@@ -67,12 +67,12 @@ public sealed record OrderStatusValue
     public static OrderStatusValue From(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Invalid order status.", nameof(value));
+            throw new DomainException("Invalid order status.");
 
         if (All.TryGetValue(value, out var status))
             return status;
 
-        throw new ArgumentException($"'{value}' is not a valid order status.", nameof(value));
+        throw new DomainException($"'{value}' is not a valid order status.");
     }
 
     public bool CanTransitionTo(OrderStatusValue next)

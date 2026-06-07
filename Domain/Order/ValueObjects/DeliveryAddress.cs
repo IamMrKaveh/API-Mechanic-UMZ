@@ -18,13 +18,13 @@ public sealed record DeliveryAddress
     public static DeliveryAddress Create(string province, string city, string street, string postalCode)
     {
         if (string.IsNullOrWhiteSpace(province))
-            throw new ArgumentException("Province cannot be empty.", nameof(province));
+            throw new DomainException("Province cannot be empty.");
         if (string.IsNullOrWhiteSpace(city))
-            throw new ArgumentException("City cannot be empty.", nameof(city));
+            throw new DomainException("City cannot be empty.");
         if (string.IsNullOrWhiteSpace(street))
-            throw new ArgumentException("Street cannot be empty.", nameof(street));
+            throw new DomainException("Street cannot be empty.");
         if (string.IsNullOrWhiteSpace(postalCode))
-            throw new ArgumentException("Postal code cannot be empty.", nameof(postalCode));
+            throw new DomainException("Postal code cannot be empty.");
 
         return new DeliveryAddress(
             province.Trim(),

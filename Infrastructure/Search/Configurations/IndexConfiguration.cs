@@ -1,8 +1,5 @@
 ﻿namespace Infrastructure.Search.Configurations;
 
-/// <summary>
-/// Index configuration for different types
-/// </summary>
 public class IndexConfiguration
 {
     public string Name { get; set; } = default!;

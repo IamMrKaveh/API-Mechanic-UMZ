@@ -128,4 +128,16 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         attrValue.Update(trimmedValue, displayValue, hexCode, sortOrder, isActive);
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void MarkAsDeleted(Guid? deletedBy)
+    {
+        if (IsDeleted)
+            return;
+
+        IsDeleted = true;
+        IsActive = false;
+        DeletedAt = DateTime.UtcNow;
+        DeletedBy = deletedBy;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

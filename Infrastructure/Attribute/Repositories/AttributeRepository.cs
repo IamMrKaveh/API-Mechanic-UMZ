@@ -6,7 +6,8 @@ using Domain.User.ValueObjects;
 
 namespace Infrastructure.Attribute.Repositories;
 
-public sealed class AttributeRepository(DBContext context) : IAttributeRepository
+public sealed class AttributeRepository(
+    DBContext context) : IAttributeRepository
 {
     public async Task<AttributeType?> GetAttributeTypeByIdAsync(
         AttributeTypeId id,
@@ -97,13 +98,7 @@ public sealed class AttributeRepository(DBContext context) : IAttributeRepositor
         var entity = await context.AttributeTypes.FindAsync([id], ct);
         if (entity is null) return;
 
-        await entity.Update(
-            entity.Name,
-            entity.DisplayName,
-            entity.SortOrder,
-            false,
-            new AlwaysTrueUniquenessChecker(),
-            ct);
+        entity.MarkAsDeleted(deletedBy?.Value);
 
         context.AttributeTypes.Update(entity);
     }
@@ -118,16 +113,5 @@ public sealed class AttributeRepository(DBContext context) : IAttributeRepositor
 
         entity.Update(entity.Value, entity.DisplayValue, entity.HexCode, entity.SortOrder, false);
         context.AttributeValues.Update(entity);
-    }
-
-    private sealed class AlwaysTrueUniquenessChecker : IAttributeTypeUniquenessChecker
-    {
-        public Task<bool> IsUniqueAsync(
-            string name,
-            AttributeTypeId? excludeId = null,
-            CancellationToken ct = default)
-        {
-            return Task.FromResult(true);
-        }
     }
 }

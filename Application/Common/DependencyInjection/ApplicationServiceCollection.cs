@@ -5,7 +5,7 @@ using Domain.Review.Services;
 using Domain.Shipping.Services;
 using Domain.Support.Services;
 
-namespace Application;
+namespace Application.Common.DependencyInjection;
 
 public static class ApplicationServiceCollection
 {
@@ -14,6 +14,7 @@ public static class ApplicationServiceCollection
         services.RegisterMediatR();
         services.RegisterDomainServices();
         services.RegisterApplicationServices();
+        services.RegisterValidators();
         services.AddApplicationMappings();
         return services;
     }
@@ -48,6 +49,13 @@ public static class ApplicationServiceCollection
     {
         services.AddScoped<InventoryReservationService>();
         services.AddScoped<PaymentSettlementService>();
+
+        return services;
+    }
+
+    private static IServiceCollection RegisterValidators(this IServiceCollection services)
+    {
+        services.AddValidatorsFromAssembly(typeof(ApplicationServiceCollection).Assembly);
 
         return services;
     }

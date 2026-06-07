@@ -1,3 +1,5 @@
+using Application.Order.Contracts;
+using Application.Order.Sagas.State;
 using Application.Payment.Features.Adapters;
 using Domain.Order.Enums;
 using Domain.Order.Events;
@@ -148,10 +150,10 @@ public sealed class OrderProcessManagerSaga(
     }
 
     private async Task CompensateOrderAsync(
-    Domain.Order.Aggregates.Order order,
-    string failureReason,
-    OrderProcessState processState,
-    CancellationToken ct)
+        Domain.Order.Aggregates.Order order,
+        string failureReason,
+        OrderProcessState processState,
+        CancellationToken ct)
     {
         await ReleaseInventoryForOrderAsync(order.Id, failureReason, processState, ct);
 

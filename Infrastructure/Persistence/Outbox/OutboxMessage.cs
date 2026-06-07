@@ -9,6 +9,7 @@ public sealed class OutboxMessage
     public DateTime? ProcessedAt { get; private set; }
     public string? Error { get; private set; }
     public int RetryCount { get; private set; }
+    public bool IsPoisoned { get; private set; }
 
     private OutboxMessage()
     { }
@@ -33,6 +34,12 @@ public sealed class OutboxMessage
     public void MarkFailed(string error)
     {
         RetryCount++;
+        Error = error;
+    }
+
+    public void MarkPoisoned(string error)
+    {
+        IsPoisoned = true;
         Error = error;
     }
 }

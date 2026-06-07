@@ -5,8 +5,8 @@ namespace Domain.Order.ValueObjects;
 
 public sealed record OrderItemSnapshot
 {
-    public VariantId VariantId { get; init; }
-    public ProductId ProductId { get; init; }
+    public VariantId VariantId { get; init; } = default!;
+    public ProductId ProductId { get; init; } = default!;
     public ProductName ProductName { get; init; } = null!;
     public Sku Sku { get; init; } = null!;
     public Money UnitPrice { get; init; } = null!;
@@ -23,16 +23,17 @@ public sealed record OrderItemSnapshot
         int quantity)
     {
         if (variantId is null)
-            throw new ArgumentException("Variant ID cannot be empty.", nameof(variantId));
+            throw new DomainException("Variant ID cannot be empty.");
         if (productId is null)
-            throw new ArgumentException("Product ID cannot be empty.", nameof(productId));
-        if (string.IsNullOrWhiteSpace(productName))
-            throw new ArgumentException("Product name cannot be empty.", nameof(productName));
-        if (string.IsNullOrWhiteSpace(sku))
-            throw new ArgumentException("SKU cannot be empty.", nameof(sku));
-        ArgumentNullException.ThrowIfNull(unitPrice);
+            throw new DomainException("Product ID cannot be empty.");
+        if (productName is null || string.IsNullOrWhiteSpace(productName))
+            throw new DomainException("Product name cannot be empty.");
+        if (sku is null || string.IsNullOrWhiteSpace(sku))
+            throw new DomainException("SKU cannot be empty.");
+        if (unitPrice is null)
+            throw new DomainException("Unit price is required.");
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero.", nameof(quantity));
+            throw new DomainException("Quantity must be greater than zero.");
 
         return new OrderItemSnapshot
         {

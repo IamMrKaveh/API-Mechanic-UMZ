@@ -3,7 +3,8 @@ using Domain.User.ValueObjects;
 
 namespace Application.Wallet.Features.Queries.GetWalletLedger;
 
-public class GetWalletLedgerHandler(IWalletQueryService walletQueryService) : IRequestHandler<GetWalletLedgerQuery, ServiceResult<PaginatedResult<WalletLedgerEntryDto>>>
+public class GetWalletLedgerHandler(IWalletQueryService walletQueryService)
+    : IRequestHandler<GetWalletLedgerQuery, ServiceResult<PaginatedResult<WalletLedgerEntryDto>>>
 {
     public async Task<ServiceResult<PaginatedResult<WalletLedgerEntryDto>>> Handle(
         GetWalletLedgerQuery request,
@@ -13,23 +14,10 @@ public class GetWalletLedgerHandler(IWalletQueryService walletQueryService) : IR
 
         var result = await walletQueryService.GetLedgerPageAsync(
             userId,
+            request.Page,
+            request.PageSize,
             ct);
 
-        var entries = result.Items.Select(e => new WalletLedgerEntryDto(
-            e.Id,
-            e.WalletId,
-            e.UserId,
-            e.AmountDelta,
-            e.BalanceAfter,
-            e.TransactionType.ToString(),
-            e.ReferenceType.ToString(),
-            e.ReferenceId,
-            e.Description,
-            e.CreatedAt))
-        .ToList();
-
-        var finalResult = PaginatedResult<WalletLedgerEntryDto>.Create(entries, result.TotalCount, request.Page, request.PageSize);
-
-        return ServiceResult<PaginatedResult<WalletLedgerEntryDto>>.Success(finalResult);
+        return ServiceResult<PaginatedResult<WalletLedgerEntryDto>>.Success(result);
     }
 }

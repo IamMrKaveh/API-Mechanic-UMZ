@@ -8,6 +8,8 @@ public interface IWalletQueryService
 {
     Task<PaginatedResult<WalletLedgerEntryDto>> GetLedgerPageAsync(
         UserId userId,
+        int page,
+        int pageSize,
         CancellationToken ct = default);
 
     Task<WalletLedgerEntryDto?> GetOrderPaymentLedgerEntryAsync(

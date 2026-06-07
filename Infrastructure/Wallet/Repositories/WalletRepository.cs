@@ -13,9 +13,20 @@ public sealed class WalletRepository(DBContext context) : IWalletRepository
 
     public async Task<Domain.Wallet.Aggregates.Wallet?> GetByUserIdForUpdateAsync(
         UserId userId, CancellationToken ct = default)
-        => await context.Wallets
+    {
+        var wallet = await context.Wallets
             .Include(w => w.ActiveReservations)
             .FirstOrDefaultAsync(w => w.OwnerId == userId, ct);
+
+        if (wallet is not null)
+        {
+            var entry = context.Entry(wallet);
+            entry.Property("xmin").IsModified = false;
+            entry.OriginalValues["xmin"] = entry.CurrentValues["xmin"];
+        }
+
+        return wallet;
+    }
 
     public async Task<bool> HasIdempotencyKeyAsync(
         UserId userId, string idempotencyKey, CancellationToken ct = default)
@@ -27,5 +38,11 @@ public sealed class WalletRepository(DBContext context) : IWalletRepository
         => await context.Wallets.AddAsync(wallet, ct);
 
     public void Update(Domain.Wallet.Aggregates.Wallet wallet)
-        => context.Wallets.Update(wallet);
+    {
+        var entry = context.Entry(wallet);
+        if (entry.State == EntityState.Detached)
+            context.Wallets.Attach(wallet);
+
+        entry.State = EntityState.Modified;
+    }
 }
