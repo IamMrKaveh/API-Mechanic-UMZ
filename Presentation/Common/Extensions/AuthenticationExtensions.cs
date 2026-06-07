@@ -1,5 +1,6 @@
 ﻿using Infrastructure.Security.Options;
 using Infrastructure.Security.Settings;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Presentation.Common.Extensions;
 
@@ -23,8 +24,11 @@ public static class AuthenticationExtensions
             .Configure<IOptions<JwtOptions>>((bearerOptions, jwtOptions) =>
             {
                 var settings = jwtOptions.Value;
-                bearerOptions.RequireHttpsMetadata = true;
+
+                bearerOptions.MapInboundClaims = true;
+                bearerOptions.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
                 bearerOptions.SaveToken = true;
+
                 bearerOptions.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -35,7 +39,9 @@ public static class AuthenticationExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(settings.Key)),
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromSeconds(30)
+                    ClockSkew = TimeSpan.FromSeconds(30),
+                    NameClaimType = ClaimTypes.NameIdentifier,
+                    RoleClaimType = ClaimTypes.Role,
                 };
             });
 
