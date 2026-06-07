@@ -15,6 +15,10 @@ public sealed class ReviewStatus : ValueObject
     public static readonly ReviewStatus Approved = new("Approved", "تأیید شده");
     public static readonly ReviewStatus Rejected = new("Rejected", "رد شده");
 
+    public ReviewStatus()
+    {
+    }
+
     public static ReviewStatus From(string value)
     {
         if (string.IsNullOrWhiteSpace(value))

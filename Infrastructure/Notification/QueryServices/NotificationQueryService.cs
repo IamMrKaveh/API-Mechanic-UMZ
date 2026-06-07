@@ -41,7 +41,7 @@ public sealed class NotificationQueryService(DBContext context) : INotificationQ
         UserId userId,
         CancellationToken ct = default) => await context.Notifications
             .AsNoTracking()
-            .CountAsync(n => n.UserId.Value == userId.Value && !n.IsRead, ct);
+            .CountAsync(n => n.UserId == userId && !n.IsRead, ct);
 
     public async Task<PaginatedResult<NotificationDto>> GetAllAsync(
         int page,

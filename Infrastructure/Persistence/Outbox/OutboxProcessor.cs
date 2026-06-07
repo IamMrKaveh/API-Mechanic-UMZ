@@ -20,15 +20,15 @@ public sealed class OutboxProcessor(
                 await context.Database.BeginTransactionAsync(ct);
 
             var messages = await context.OutboxMessages
-                .FromSqlRaw("""
-                SELECT * FROM "OutboxMessages"
-                WHERE "processed_at" IS NULL
-                  AND "is_poisoned" = false
-                  AND "retry_count" < {MaxRetries}
-                ORDER BY "created_at"
-                LIMIT {0}
-                FOR UPDATE SKIP LOCKED
-                """, batchSize)
+                .FromSqlInterpolated($"""
+                    SELECT * FROM "OutboxMessages"
+                    WHERE "processed_at" IS NULL
+                      AND "is_poisoned" = false
+                      AND "retry_count" < {MaxRetries}
+                    ORDER BY "created_at"
+                    LIMIT {batchSize}
+                    FOR UPDATE SKIP LOCKED
+                    """)
                 .ToListAsync(ct);
 
             if (messages.Count == 0)

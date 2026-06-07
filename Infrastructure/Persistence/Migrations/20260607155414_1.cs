@@ -90,10 +90,13 @@ namespace Infrastructure.Persistence.Migrations
                     EntityId = table.Column<Guid>(type: "uuid", nullable: false),
                     Document = table.Column<string>(type: "text", nullable: false),
                     ChangeType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    IdempotencyKey = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     RetryCount = table.Column<int>(type: "integer", nullable: false),
                     ProcessedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Error = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true)
+                    NextAttemptAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Error = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    IsPoisoned = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
@@ -191,17 +194,18 @@ namespace Infrastructure.Persistence.Migrations
                 name: "OutboxMessages",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Type = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    Payload = table.Column<string>(type: "text", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    type = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    payload = table.Column<string>(type: "text", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     processed_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Error = table.Column<string>(type: "text", nullable: true),
-                    retry_count = table.Column<int>(type: "integer", nullable: false)
+                    error = table.Column<string>(type: "text", maxLength: 2000, nullable: true),
+                    retry_count = table.Column<int>(type: "integer", nullable: false),
+                    is_poisoned = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OutboxMessages", x => x.Id);
+                    table.PrimaryKey("PK_OutboxMessages", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -656,6 +660,7 @@ namespace Infrastructure.Persistence.Migrations
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -1314,14 +1319,15 @@ namespace Infrastructure.Persistence.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ElasticsearchOutboxMessages_EntityType_EntityId",
+                name: "IX_ElasticsearchOutboxMessages_Dispatch",
                 table: "ElasticsearchOutboxMessages",
-                columns: new[] { "EntityType", "EntityId" });
+                columns: new[] { "ProcessedAt", "IsPoisoned", "NextAttemptAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ElasticsearchOutboxMessages_ProcessedAt",
+                name: "IX_ElasticsearchOutboxMessages_IdempotencyKey",
                 table: "ElasticsearchOutboxMessages",
-                column: "ProcessedAt");
+                column: "IdempotencyKey",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_FailedElasticOperations_EntityType_EntityId",
@@ -1412,6 +1418,11 @@ namespace Infrastructure.Persistence.Migrations
                 table: "OrderStatuses",
                 column: "Name",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OutboxMessages_Dispatch",
+                table: "OutboxMessages",
+                columns: new[] { "processed_at", "is_poisoned", "retry_count", "created_at" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_OutboxMessages_processed_at",

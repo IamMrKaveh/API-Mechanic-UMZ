@@ -11,6 +11,10 @@ public sealed class FreeShippingThreshold : ValueObject
         ThresholdAmount = thresholdAmount;
     }
 
+    public FreeShippingThreshold()
+    {
+    }
+
     public static FreeShippingThreshold Disabled() => new(false, null);
 
     public static FreeShippingThreshold Enabled(Money thresholdAmount)

@@ -1,7 +1,6 @@
 ﻿using Application.Auth.Contracts;
 using Infrastructure.Security.Options;
 using SharedKernel.Constants;
-using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
 namespace Infrastructure.Auth.Services;
 
@@ -26,11 +25,13 @@ public sealed class JwtTokenGenerator(IOptions<JwtOptions> jwtOptions) : IJwtTok
 
     private static List<Claim> BuildClaims(Domain.User.Aggregates.User user)
     {
+        var userId = user.Id.Value.ToString();
+
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id.Value.ToString()),
+            new(JwtRegisteredClaimNames.Sub, userId),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new(ClaimTypes.NameIdentifier, user.Id.Value.ToString()),
+            new("nameid", userId),
             new(ClaimTypes.MobilePhone, user.PhoneNumber.Value),
             new(ClaimTypes.Role, AppRoles.User),
         };
