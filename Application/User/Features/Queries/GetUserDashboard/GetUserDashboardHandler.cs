@@ -1,3 +1,4 @@
+using Application.User.Contracts;
 using Application.User.Features.Shared;
 using Domain.User.ValueObjects;
 
@@ -14,22 +15,25 @@ public class GetUserDashboardHandler(
     {
         var userId = UserId.From(currentUserService.UserId.Value);
 
-        var dashboard = await userQueryService.GetUserDashboardAsync(
-            userId,
-            ct);
+        var dashboard = await userQueryService.GetUserDashboardAsync(userId, ct);
 
         if (dashboard is null)
             return ServiceResult<UserDashboardDto>.NotFound("کاربر یافت نشد.");
 
+        var profile = dashboard.UserProfile;
+
         var result = new UserDashboardDto
         {
+            UserProfile = profile,
             TotalOrders = dashboard.TotalOrders,
             TotalSpent = dashboard.TotalSpent,
             WishlistCount = dashboard.WishlistCount,
             UnreadNotifications = dashboard.UnreadNotifications,
-            MemberSince = dashboard.UserProfile.CreatedAt,
-            LastLoginAt = dashboard.UserProfile.LastLoginAt,
-            ActiveAddresses = dashboard.UserProfile.UserAddresses.Count
+            CompletedOrders = dashboard.CompletedOrders,
+            OpenTickets = dashboard.OpenTickets,
+            MemberSince = profile?.CreatedAt ?? default,
+            LastLoginAt = profile?.LastLoginAt,
+            ActiveAddresses = profile?.UserAddresses.Count ?? 0
         };
 
         return ServiceResult<UserDashboardDto>.Success(result);

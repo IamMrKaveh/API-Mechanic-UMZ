@@ -25,5 +25,6 @@ internal sealed class WishlistConfiguration : IEntityTypeConfiguration<Domain.Wi
 
         builder.HasIndex(e => new { e.UserId, e.ProductId }).IsUnique();
         builder.HasIndex(e => e.UserId);
+        builder.HasQueryFilter(e => e.User.IsActive);
     }
 }

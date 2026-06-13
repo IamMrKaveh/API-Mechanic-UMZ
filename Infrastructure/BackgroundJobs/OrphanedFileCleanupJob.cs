@@ -3,6 +3,8 @@ namespace Infrastructure.BackgroundJobs;
 public sealed class OrphanedFileCleanupJob(
     IServiceScopeFactory scopeFactory) : BackgroundService
 {
+    private const int BatchSize = 100;
+
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
         using (var startScope = scopeFactory.CreateScope())
@@ -48,7 +50,9 @@ public sealed class OrphanedFileCleanupJob(
         var deletedMedias = await context.Medias
             .IgnoreQueryFilters()
             .Where(m => m.IsDeleted && m.DeletedAt < cutoffDate)
-            .Take(100)
+            .OrderBy(m => m.DeletedAt)
+            .ThenBy(m => m.Id)
+            .Take(BatchSize)
             .ToListAsync(ct);
 
         foreach (var media in deletedMedias)

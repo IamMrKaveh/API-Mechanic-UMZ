@@ -10,7 +10,9 @@ public class GetInventoryTransactionsHandler(IInventoryQueryService queryService
         GetInventoryTransactionsQuery request,
         CancellationToken ct)
     {
-        var variantId = VariantId.From(request.VariantId.Value);
+        var variantId = request.VariantId.HasValue ?
+            VariantId.From(request.VariantId.Value)
+            : null;
         var result = await queryService.GetTransactionsPagedAsync(
             variantId,
             request.TransactionType,

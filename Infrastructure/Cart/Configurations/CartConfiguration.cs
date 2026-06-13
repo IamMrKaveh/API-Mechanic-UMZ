@@ -32,7 +32,7 @@ public sealed class CartConfiguration : IEntityTypeConfiguration<Domain.Cart.Agg
         builder.Property(e => e.UpdatedAt);
 
         builder.HasMany(e => e.CartItems)
-            .WithOne()
+            .WithOne(ci => ci.Cart)
             .HasForeignKey(ci => ci.CartId)
             .OnDelete(DeleteBehavior.Cascade);
     }

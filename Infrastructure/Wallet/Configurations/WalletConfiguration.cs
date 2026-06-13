@@ -44,5 +44,7 @@ public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet
         builder.Metadata
             .FindNavigation(nameof(Domain.Wallet.Aggregates.Wallet.ActiveReservations))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasQueryFilter(e => e.Owner.IsActive);
     }
 }

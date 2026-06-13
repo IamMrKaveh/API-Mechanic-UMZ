@@ -8,6 +8,8 @@ public interface IWishlistQueryService
 {
     Task<PaginatedResult<WishlistItemDto>> GetPagedAsync(
         UserId userId,
+        int page,
+        int pageSize,
         CancellationToken ct = default);
 
     Task<bool> IsInWishlistAsync(

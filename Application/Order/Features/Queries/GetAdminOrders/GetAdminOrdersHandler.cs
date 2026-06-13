@@ -3,14 +3,16 @@ using Domain.User.ValueObjects;
 
 namespace Application.Order.Features.Queries.GetAdminOrders;
 
-public class GetAdminOrdersHandler(IOrderQueryService orderQueryService)
+public class GetAdminOrdersHandler(
+    IOrderQueryService orderQueryService,
+    ICurrentUserService currentUserService)
     : IRequestHandler<GetAdminOrdersQuery, ServiceResult<PaginatedResult<AdminOrderDto>>>
 {
     public async Task<ServiceResult<PaginatedResult<AdminOrderDto>>> Handle(
         GetAdminOrdersQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
         var result = await orderQueryService.GetAdminOrdersAsync(
             userId,
             request.Status,
