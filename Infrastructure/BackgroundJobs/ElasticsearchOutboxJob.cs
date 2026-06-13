@@ -121,6 +121,7 @@ public sealed class ElasticsearchOutboxJob(
 
         var failedOps = await dbContext.FailedElasticOperations
             .Where(o => o.Status == "Pending" && o.RetryCount < maxRetries)
+            .OrderBy(o => o.CreatedAt)
             .Take(batchSize)
             .ToListAsync(ct);
 

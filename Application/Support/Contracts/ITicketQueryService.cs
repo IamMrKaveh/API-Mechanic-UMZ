@@ -9,7 +9,7 @@ public interface ITicketQueryService
     Task<PaginatedResult<TicketDto>> GetAdminTicketsPagedAsync(
         TicketStatus ticketStatus,
         TicketPriority ticketPriority,
-        UserId userId,
+        UserId? userId,
         int page,
         int pageSize,
         CancellationToken ct);

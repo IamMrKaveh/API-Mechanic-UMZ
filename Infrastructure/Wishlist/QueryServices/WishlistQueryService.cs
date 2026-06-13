@@ -7,10 +7,17 @@ namespace Infrastructure.Wishlist.QueryServices;
 
 public sealed class WishlistQueryService(DBContext context) : IWishlistQueryService
 {
+    private const int DefaultPageSize = 10;
+
     public async Task<PaginatedResult<WishlistItemDto>> GetPagedAsync(
         UserId userId,
+        int page,
+        int pageSize,
         CancellationToken ct = default)
     {
+        var effectivePage = page > 0 ? page : 1;
+        var effectivePageSize = pageSize > 0 ? pageSize : DefaultPageSize;
+
         var query = context.Wishlists
             .AsNoTracking()
             .Where(w => w.UserId == userId);
@@ -19,6 +26,8 @@ public sealed class WishlistQueryService(DBContext context) : IWishlistQueryServ
 
         var items = await query
             .OrderByDescending(w => w.CreatedAt)
+            .Skip((effectivePage - 1) * effectivePageSize)
+            .Take(effectivePageSize)
             .Join(context.Products.AsNoTracking(),
                 w => w.ProductId,
                 p => p.Id,
@@ -35,7 +44,7 @@ public sealed class WishlistQueryService(DBContext context) : IWishlistQueryServ
             AddedAt: x.w.CreatedAt
         )).ToList();
 
-        return PaginatedResult<WishlistItemDto>.Create(dtos, total, 1, total);
+        return PaginatedResult<WishlistItemDto>.Create(dtos, total, effectivePage, effectivePageSize);
     }
 
     public async Task<bool> IsInWishlistAsync(

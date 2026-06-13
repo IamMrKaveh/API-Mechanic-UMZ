@@ -54,8 +54,8 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.A
                 value => value.HasValue ? UserAddressId.From(value.Value) : null);
 
         builder.HasMany(e => e.Addresses)
-            .WithOne()
-            .HasForeignKey("UserId")
+            .WithOne(a => a.User)
+            .HasForeignKey(a => a.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasQueryFilter(e => e.IsActive);

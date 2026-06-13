@@ -99,9 +99,9 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
         builder.Property<byte[]>("RowVersion").IsRowVersion();
 
         builder.HasMany(e => e.OrderItems)
-               .WithOne()
-               .HasForeignKey("OrderId")
-               .OnDelete(DeleteBehavior.Cascade);
+            .WithOne(oi => oi.Order)
+            .HasForeignKey(oi => oi.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(e => e.IdempotencyKey).IsUnique();
         builder.HasIndex(e => e.OrderNumber).IsUnique();

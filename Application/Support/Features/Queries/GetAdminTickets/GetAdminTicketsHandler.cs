@@ -4,7 +4,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.Support.Features.Queries.GetAdminTickets;
 
-public sealed class GetAdminTicketsHandler(ITicketQueryService supportQueryService)
+public sealed class GetAdminTicketsHandler(
+    ITicketQueryService supportQueryService,
+    ICurrentUserService currentUserService)
         : IRequestHandler<GetAdminTicketsQuery, ServiceResult<PaginatedResult<TicketDto>>>
 {
     public async Task<ServiceResult<PaginatedResult<TicketDto>>> Handle(
@@ -19,7 +21,7 @@ public sealed class GetAdminTicketsHandler(ITicketQueryService supportQueryServi
             ? TicketStatus.Open
             : TicketStatus.FromString(request.Status);
 
-        var userId = UserId.From(request.UserId.Value);
+        UserId? userId = null;
 
         var result = await supportQueryService.GetAdminTicketsPagedAsync(
             ticketStatus,

@@ -50,6 +50,7 @@ public sealed class WalletReservationExpiryJob(
                 w => w.Id,
                 (le, w) => new { LedgerEntry = le, Wallet = w })
             .Where(x => x.Wallet.OwnerId != null)
+            .OrderBy(x => x.LedgerEntry.OccurredAt)
             .Take(BatchSize)
             .Select(x => new { UserId = x.Wallet.OwnerId.Value })
             .ToListAsync(ct);

@@ -43,8 +43,8 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(e => e.Variants)
-            .WithOne()
-            .HasForeignKey("ProductId")
+            .WithOne(v => v.Product)
+            .HasForeignKey(v => v.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(e => e.Slug).IsUnique();

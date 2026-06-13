@@ -17,12 +17,11 @@ public sealed class AdminTicketsController(IMediator mediator) : BaseApiControll
     public async Task<IActionResult> GetTickets(
         [FromQuery] string? status,
         [FromQuery] string? priority,
-        [FromQuery] Guid? userId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        return await Send(new GetAdminTicketsQuery(status, priority, userId, page, pageSize), ct);
+        return await Send(new GetAdminTicketsQuery(status, priority, page, pageSize), ct);
     }
 
     [HttpGet("{id:guid}")]

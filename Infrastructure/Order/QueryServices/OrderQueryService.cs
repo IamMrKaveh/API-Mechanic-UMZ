@@ -7,32 +7,44 @@ namespace Infrastructure.Order.QueryServices;
 public sealed class OrderQueryService(DBContext context) : IOrderQueryService
 {
     public async Task<PaginatedResult<OrderListItemDto>> GetUserOrdersAsync(
-        UserId userId,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+    UserId userId,
+    int page,
+    int pageSize,
+    CancellationToken ct = default)
     {
         var query = context.Orders
             .AsNoTracking()
-            .Where(o => o.UserId.Value == userId.Value);
+            .Where(o => o.UserId == userId);
 
         var totalItems = await query.CountAsync(ct);
 
-        var dtos = await query
+        var rawItems = await query
             .OrderByDescending(o => o.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(o => new OrderListItemDto
+            .Select(o => new
             {
                 Id = o.Id.Value,
                 OrderNumber = o.OrderNumber.Value,
-                Status = o.Status.Value,
-                StatusDisplayName = o.Status.DisplayName,
+                StatusValue = o.Status.Value,
                 FinalAmount = o.FinalAmount.Amount,
                 ItemCount = o.OrderItems.Count,
                 CreatedAt = o.CreatedAt
             })
             .ToListAsync(ct);
+
+        var dtos = rawItems
+            .Select(o => new OrderListItemDto
+            {
+                Id = o.Id,
+                OrderNumber = o.OrderNumber,
+                Status = o.StatusValue,
+                StatusDisplayName = OrderStatusValue.From(o.StatusValue).DisplayName,
+                FinalAmount = o.FinalAmount,
+                ItemCount = o.ItemCount,
+                CreatedAt = o.CreatedAt
+            })
+            .ToList();
 
         return PaginatedResult<OrderListItemDto>.Create(dtos, totalItems, page, pageSize);
     }

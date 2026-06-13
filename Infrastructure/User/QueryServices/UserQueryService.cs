@@ -30,8 +30,13 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
             .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<UserDashboardDto> GetUserDashboardAsync(UserId userId, CancellationToken ct = default)
+    public async Task<UserDashboardDto?> GetUserDashboardAsync(UserId userId, CancellationToken ct = default)
     {
+        var profile = await GetUserProfileAsync(userId, ct);
+
+        if (profile is null)
+            return null;
+
         var orderCount = await context.Orders
             .AsNoTracking()
             .CountAsync(o => o.UserId == userId, ct);
@@ -39,6 +44,11 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
         var completedOrderCount = await context.Orders
             .AsNoTracking()
             .CountAsync(o => o.UserId == userId && o.Status == Domain.Order.ValueObjects.OrderStatusValue.Delivered, ct);
+
+        var totalSpent = await context.Orders
+            .AsNoTracking()
+            .Where(o => o.UserId == userId && o.Status == Domain.Order.ValueObjects.OrderStatusValue.Delivered)
+            .SumAsync(o => (decimal?)o.FinalAmount.Amount, ct) ?? 0m;
 
         var wishlistCount = await context.Wishlists
             .AsNoTracking()
@@ -48,12 +58,23 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
             .AsNoTracking()
             .CountAsync(t => t.CustomerId == userId, ct);
 
+        var addressCount = await context.UserAddresses
+            .AsNoTracking()
+            .CountAsync(a => a.UserId == userId, ct);
+
         return new UserDashboardDto
         {
+            UserProfile = profile,
             TotalOrders = orderCount,
             CompletedOrders = completedOrderCount,
+            DeliveredOrders = completedOrderCount,
+            TotalSpent = totalSpent,
             WishlistCount = wishlistCount,
-            OpenTickets = ticketCount
+            OpenTickets = ticketCount,
+            OpenTicketsCount = ticketCount,
+            ActiveAddresses = addressCount,
+            MemberSince = profile.CreatedAt,
+            LastLoginAt = profile.LastLoginAt
         };
     }
 

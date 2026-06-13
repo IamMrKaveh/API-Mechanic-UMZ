@@ -56,6 +56,11 @@ try
 
     app.UseApplication();
     app.MapControllers();
+
+    app
+        .MapGet("/", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }))
+        .AllowAnonymous();
+
     app.Run();
 }
 catch (Exception ex) when (ex is not HostAbortedException)

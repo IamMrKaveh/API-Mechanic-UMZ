@@ -11,15 +11,21 @@ public sealed class TicketQueryService(DBContext context) : ITicketQueryService
     public async Task<PaginatedResult<TicketDto>> GetAdminTicketsPagedAsync(
         TicketStatus ticketStatus,
         TicketPriority ticketPriority,
-        UserId userId,
+        UserId? userId,
         int page,
         int pageSize,
         CancellationToken ct)
     {
         var query = context.Tickets
             .AsNoTracking()
-            .Where(t => t.Status == ticketStatus && t.Priority == ticketPriority)
-            .OrderByDescending(t => t.CreatedAt);
+            .Where(t => t.Status == ticketStatus && t.Priority == ticketPriority);
+
+        if (userId is not null)
+        {
+            query = query.Where(t => t.CustomerId.Value == userId.Value);
+        }
+
+        query = query.OrderByDescending(t => t.CreatedAt);
 
         var total = await query.CountAsync(ct);
 
@@ -29,7 +35,6 @@ public sealed class TicketQueryService(DBContext context) : ITicketQueryService
             .Select(t => new TicketDto
             {
                 Id = t.Id.Value,
-                UserId = t.CustomerId.Value,
                 CustomerId = t.CustomerId.Value,
                 AssignedAgentId = t.AssignedAgentId != null ? t.AssignedAgentId.Value : null,
                 Subject = t.Subject,

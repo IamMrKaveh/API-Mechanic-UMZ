@@ -42,5 +42,6 @@ public sealed class NotificationConfiguration : IEntityTypeConfiguration<Domain.
 
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => new { e.UserId, e.IsRead });
+        builder.HasQueryFilter(e => e.User.IsActive);
     }
 }
