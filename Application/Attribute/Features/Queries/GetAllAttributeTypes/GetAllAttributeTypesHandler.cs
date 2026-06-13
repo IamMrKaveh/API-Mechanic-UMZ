@@ -1,3 +1,4 @@
+using Application.Attribute.Constants;
 using Application.Attribute.Features.Shared;
 using Domain.Attribute.Interfaces;
 
@@ -12,17 +13,22 @@ public class GetAllAttributeTypesHandler(
         GetAllAttributeTypesQuery request,
         CancellationToken ct)
     {
-        const string cacheKey = "attributes:all_types";
-
-        var cached = await cacheService.GetAsync<PaginatedResult<AttributeTypeDto>>(cacheKey, ct);
-        if (cached is not null)
+        var cached = await cacheService.GetAsync<PaginatedResult<AttributeTypeDto>>(AttributeCacheKeys.AllTypes, ct);
+        if (cached is not null && cached.TotalCount > 0)
             return ServiceResult<PaginatedResult<AttributeTypeDto>>.Success(cached);
 
+        if (cached is not null)
+            await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
+
         var types = await repository.GetAllAttributeTypesAsync(ct);
-        var dtos = mapper.Map<PaginatedResult<AttributeTypeDto>>(types);
+        var dtos = mapper.Map<List<AttributeTypeDto>>(types);
 
-        await cacheService.SetAsync(cacheKey, dtos, TimeSpan.FromHours(1), ct);
+        var page = 1;
+        var pageSize = dtos.Count > 0 ? dtos.Count : 1;
+        var result = new PaginatedResult<AttributeTypeDto>(dtos, dtos.Count, page, pageSize);
 
-        return ServiceResult<PaginatedResult<AttributeTypeDto>>.Success(dtos);
+        await cacheService.SetAsync(AttributeCacheKeys.AllTypes, result, TimeSpan.FromHours(1), ct);
+
+        return ServiceResult<PaginatedResult<AttributeTypeDto>>.Success(result);
     }
 }

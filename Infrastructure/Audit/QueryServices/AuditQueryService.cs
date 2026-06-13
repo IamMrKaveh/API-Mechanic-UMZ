@@ -64,13 +64,13 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
     }
 
     public async Task<(IReadOnlyList<AuditLogDto> Logs, int Total)> SearchAsync(
-        AuditSearchRequest request,
-        CancellationToken ct = default)
+            AuditSearchRequest request,
+            CancellationToken ct = default)
     {
         var query = context.AuditLogs.AsNoTracking().AsQueryable();
 
         if (request.UserId.HasValue)
-            query = query.Where(l => l.UserId!.Value == request.UserId.Value);
+            query = query.Where(l => l.UserId != null && l.UserId.Value == request.UserId.Value);
 
         if (!string.IsNullOrEmpty(request.EventType))
             query = query.Where(l => l.EventType == request.EventType);
@@ -103,13 +103,31 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
             ? query.OrderByDescending(l => l.CreatedAt)
             : query.OrderBy(l => l.CreatedAt);
 
-        var logs = await ordered
+        var pagedIds = await ordered
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(l => new AuditLogDto
+            .Select(l => l.Id)
+            .ToListAsync(ct);
+
+        var pageQuery = context.AuditLogs.AsNoTracking()
+            .Where(l => pagedIds.Contains(l.Id));
+
+        var pageQueryOrdered = request.SortDesc
+            ? pageQuery.OrderByDescending(l => l.CreatedAt)
+            : pageQuery.OrderBy(l => l.CreatedAt);
+
+        var logs = await (
+            from l in pageQueryOrdered
+            join u in context.Users.AsNoTracking()
+                on l.UserId equals u.Id into userJoin
+            from u in userJoin.DefaultIfEmpty()
+            select new AuditLogDto
             {
                 Id = l.Id.Value,
                 UserId = l.UserId == null ? null : l.UserId.Value,
+                UserName = u == null
+                    ? null
+                    : $"{u.FullName.FirstName} {u.FullName.LastName}",
                 EventType = l.EventType,
                 Action = l.Action,
                 Details = l.Details,
@@ -119,8 +137,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
                 CreatedAt = l.CreatedAt,
                 Timestamp = l.CreatedAt,
                 IsArchived = l.IsArchived
-            })
-            .ToListAsync(ct);
+            }).ToListAsync(ct);
 
         return (logs.AsReadOnly(), total);
     }
@@ -132,7 +149,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         var query = context.AuditLogs.AsNoTracking().AsQueryable();
 
         if (request.UserId.HasValue)
-            query = query.Where(l => l.UserId!.Value == request.UserId.Value);
+            query = query.Where(l => l.UserId != null && l.UserId.Value == request.UserId.Value);
 
         if (!string.IsNullOrEmpty(request.EventType))
             query = query.Where(l => l.EventType == request.EventType);

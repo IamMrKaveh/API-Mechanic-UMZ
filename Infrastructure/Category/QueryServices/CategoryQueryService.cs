@@ -9,8 +9,8 @@ public sealed class CategoryQueryService(
     IUrlResolverService urlResolver) : ICategoryQueryService
 {
     public async Task<CategoryDetailDto?> GetCategoryDetailAsync(
-        CategoryId categoryId,
-        CancellationToken ct = default)
+           CategoryId categoryId,
+           CancellationToken ct = default)
     {
         var category = await context.Categories
             .AsNoTracking()
@@ -26,6 +26,8 @@ public sealed class CategoryQueryService(
         var brandCount = await context.Brands
             .CountAsync(b => b.CategoryId == categoryId, ct);
 
+        var rowVersionBytes = context.Entry(category).Property<byte[]>("RowVersion").CurrentValue;
+
         return new CategoryDetailDto
         {
             Id = category.Id.Value,
@@ -37,7 +39,8 @@ public sealed class CategoryQueryService(
             IconUrl = media is not null ? urlResolver.ResolveMediaUrl(media.Path.Value) : null,
             BrandCount = brandCount,
             CreatedAt = category.CreatedAt,
-            UpdatedAt = category.UpdatedAt
+            UpdatedAt = category.UpdatedAt,
+            RowVersion = rowVersionBytes is not null ? Convert.ToBase64String(rowVersionBytes) : null,
         };
     }
 
@@ -62,12 +65,12 @@ public sealed class CategoryQueryService(
     }
 
     public async Task<PaginatedResult<CategoryListItemDto>> GetCategoriesPagedAsync(
-        string? search,
-        bool? isActive,
-        bool includeDeleted,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+            string? search,
+            bool? isActive,
+            bool includeDeleted,
+            int page,
+            int pageSize,
+            CancellationToken ct = default)
     {
         var query = context.Categories.AsNoTracking();
 
@@ -82,33 +85,46 @@ public sealed class CategoryQueryService(
 
         var total = await query.CountAsync(ct);
 
-        var items = await query
+        var rawItems = await query
             .OrderBy(c => c.SortOrder)
             .ThenByDescending(c => c.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(c => new CategoryListItemDto
+            .Select(c => new
             {
-                Id = c.Id.Value,
+                c.Id,
                 Name = c.Name.Value,
                 Slug = c.Slug.Value,
-                IsActive = c.IsActive,
-                IsDeleted = false,
-                SortOrder = c.SortOrder,
+                c.IsActive,
+                c.SortOrder,
+                c.CreatedAt,
+                c.UpdatedAt,
                 ProductCount = context.Products
                     .Count(p => p.Brand != null && p.Brand.CategoryId == c.Id && p.IsActive && !p.IsDeleted),
-                CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt,
-                RowVersion = null
+                RowVersion = EF.Property<byte[]>(c, "RowVersion"),
             })
             .ToListAsync(ct);
+
+        var items = rawItems.Select(c => new CategoryListItemDto
+        {
+            Id = c.Id.Value,
+            Name = c.Name,
+            Slug = c.Slug,
+            IsActive = c.IsActive,
+            IsDeleted = false,
+            SortOrder = c.SortOrder,
+            ProductCount = c.ProductCount,
+            CreatedAt = c.CreatedAt,
+            UpdatedAt = c.UpdatedAt,
+            RowVersion = c.RowVersion is not null ? Convert.ToBase64String(c.RowVersion) : null,
+        }).ToList();
 
         return PaginatedResult<CategoryListItemDto>.Create(items, total, page, pageSize);
     }
 
     public async Task<CategoryWithBrandsDto?> GetCategoryWithBrandsAsync(
-        CategoryId categoryId,
-        CancellationToken ct = default)
+            CategoryId categoryId,
+            CancellationToken ct = default)
     {
         var category = await context.Categories
             .AsNoTracking()
@@ -129,14 +145,18 @@ public sealed class CategoryQueryService(
             })
             .ToListAsync(ct);
 
+        var rowVersionBytes = context.Entry(category).Property<byte[]>("RowVersion").CurrentValue;
+
         return new CategoryWithBrandsDto
         {
             Id = category.Id.Value,
             Name = category.Name.Value,
             Slug = category.Slug?.Value,
             Description = category.Description,
+            SortOrder = category.SortOrder,
             IsActive = category.IsActive,
-            Brands = brands
+            RowVersion = rowVersionBytes is not null ? Convert.ToBase64String(rowVersionBytes) : null,
+            Brands = brands,
         };
     }
 
@@ -165,10 +185,10 @@ public sealed class CategoryQueryService(
                 Id = p.Id.Value,
                 p.Name,
                 BrandName = p.Brand != null ? p.Brand.Name.Value : "N/A",
-                MinPrice = p.Variants.Where(v => v.IsActive).Any()
+                MinPrice = p.Variants.Any(v => v.IsActive)
                     ? p.Variants.Where(v => v.IsActive).Min(v => v.SellingPrice.Amount)
                     : 0m,
-                MaxPrice = p.Variants.Where(v => v.IsActive).Any()
+                MaxPrice = p.Variants.Any(v => v.IsActive)
                     ? p.Variants.Where(v => v.IsActive).Max(v => v.SellingPrice.Amount)
                     : 0m,
                 p.IsActive,
@@ -221,7 +241,7 @@ public sealed class CategoryQueryService(
         {
             Id = category.Id.Value,
             Name = category.Name.Value,
-            Slug = category.Slug?.Value,
+            Slug = category.Slug.Value,
             Description = category.Description,
             IsActive = category.IsActive,
             SortOrder = category.SortOrder,

@@ -617,7 +617,6 @@ namespace Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId1 = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     ReceiverName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
@@ -638,12 +637,6 @@ namespace Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "FK_UserAddresses_Users_UserId",
                         column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_UserAddresses_Users_UserId1",
-                        column: x => x.UserId1,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -912,7 +905,6 @@ namespace Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId1 = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductId = table.Column<Guid>(type: "uuid", nullable: false),
                     Sku = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Price = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
@@ -935,12 +927,6 @@ namespace Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "FK_ProductVariants_Products_ProductId",
                         column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ProductVariants_Products_ProductId1",
-                        column: x => x.ProductId1,
                         principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -988,7 +974,6 @@ namespace Infrastructure.Persistence.Migrations
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     AddedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CartId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CartId1 = table.Column<Guid>(type: "uuid", nullable: false),
                     VariantId = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductId = table.Column<Guid>(type: "uuid", nullable: false),
                     RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
@@ -999,12 +984,6 @@ namespace Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "FK_CartItems_Carts_CartId",
                         column: x => x.CartId,
-                        principalTable: "Carts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CartItems_Carts_CartId1",
-                        column: x => x.CartId1,
                         principalTable: "Carts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1058,7 +1037,6 @@ namespace Infrastructure.Persistence.Migrations
                     UnitPriceAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     UnitPriceCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
-                    OrderId1 = table.Column<Guid>(type: "uuid", nullable: false),
                     OrderId = table.Column<Guid>(type: "uuid", nullable: false),
                     VariantId = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductId = table.Column<Guid>(type: "uuid", nullable: false)
@@ -1069,12 +1047,6 @@ namespace Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "FK_OrderItems_Orders_OrderId",
                         column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_OrderItems_Orders_OrderId1",
-                        column: x => x.OrderId1,
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1256,11 +1228,6 @@ namespace Infrastructure.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_CartItems_CartId1",
-                table: "CartItems",
-                column: "CartId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_CartItems_ProductId",
                 table: "CartItems",
                 column: "ProductId");
@@ -1364,11 +1331,6 @@ namespace Infrastructure.Persistence.Migrations
                 name: "IX_OrderItems_OrderId",
                 table: "OrderItems",
                 column: "OrderId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OrderItems_OrderId1",
-                table: "OrderItems",
-                column: "OrderId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_ProductId",
@@ -1524,11 +1486,6 @@ namespace Infrastructure.Persistence.Migrations
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProductVariants_ProductId1",
-                table: "ProductVariants",
-                column: "ProductId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ProductVariants_Sku",
                 table: "ProductVariants",
                 column: "Sku",
@@ -1632,11 +1589,6 @@ namespace Infrastructure.Persistence.Migrations
                 name: "IX_UserAddresses_UserId",
                 table: "UserAddresses",
                 column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserAddresses_UserId1",
-                table: "UserAddresses",
-                column: "UserId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserOtps_CreatedAt",

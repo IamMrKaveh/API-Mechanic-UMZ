@@ -1,5 +1,6 @@
 using Application.Location.Contracts;
 using Application.Location.Features.Shared;
+using Infrastructure.Location.Models;
 
 namespace Infrastructure.Location.Services;
 
@@ -11,8 +12,14 @@ public class LocationService(
     {
         try
         {
-            var response = await httpClient.GetFromJsonAsync<IReadOnlyList<ProvinceDto>>("states", cancellationToken: ct);
-            return response ?? [];
+            var response = await httpClient.GetFromJsonAsync<IReadOnlyList<ExternalProvinceApiDto>>("states", cancellationToken: ct);
+            if (response is null)
+                return [];
+
+            return response
+                .Select(p => new ProvinceDto(p.Id, p.Name, p.Code ?? string.Empty))
+                .ToList()
+                .AsReadOnly();
         }
         catch (Exception)
         {
@@ -25,8 +32,14 @@ public class LocationService(
     {
         try
         {
-            var response = await httpClient.GetFromJsonAsync<IReadOnlyList<CityDto>>($"cities?state_id={provinceId}", cancellationToken: ct);
-            return response ?? [];
+            var response = await httpClient.GetFromJsonAsync<IReadOnlyList<ExternalCityApiDto>>($"cities?state_id={provinceId}", cancellationToken: ct);
+            if (response is null)
+                return [];
+
+            return response
+                .Select(c => new CityDto(c.Id, c.Name, c.Province ?? string.Empty, c.StateId))
+                .ToList()
+                .AsReadOnly();
         }
         catch (Exception)
         {

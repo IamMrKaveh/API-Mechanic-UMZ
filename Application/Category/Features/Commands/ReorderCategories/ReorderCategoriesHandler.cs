@@ -1,3 +1,4 @@
+using Application.Category.Adapters;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
 
@@ -10,16 +11,16 @@ public class ReorderCategoriesHandler(
 {
     public async Task<ServiceResult> Handle(ReorderCategoriesCommand request, CancellationToken ct)
     {
-        foreach (var item in request.Items)
+        foreach (var (Id, SortOrder) in request.Items)
         {
-            var categoryId = CategoryId.From(item.Id);
+            var categoryId = CategoryId.From(Id);
             var category = await categoryRepository.GetByIdAsync(categoryId, ct);
 
             if (category is null)
                 continue;
 
-            var uniquenessChecker = new Application.Category.Adapters.CategoryUniquenessCheckerAdapter(categoryRepository);
-            category.UpdateDetails(category.Name, category.Slug, uniquenessChecker, category.Description, item.SortOrder);
+            var uniquenessChecker = new CategoryUniquenessCheckerAdapter(categoryRepository);
+            await category.UpdateDetails(category.Name, category.Slug, uniquenessChecker, category.Description, SortOrder, ct);
             categoryRepository.Update(category);
         }
 

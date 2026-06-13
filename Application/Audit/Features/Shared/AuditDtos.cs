@@ -1,28 +1,30 @@
 namespace Application.Audit.Features.Shared;
 
-public record AuditLogDto
+public sealed record AuditLogDto
 {
     public Guid Id { get; init; }
     public Guid? UserId { get; init; }
+    public string? UserName { get; init; }
     public string EventType { get; init; } = string.Empty;
     public string Action { get; init; } = string.Empty;
     public string? Details { get; init; }
-    public string IpAddress { get; init; } = string.Empty;
+    public string? IpAddress { get; init; }
     public string? UserAgent { get; init; }
     public string? EntityType { get; init; }
-    public Guid? EntityId { get; init; }
+    public string? EntityId { get; init; }
     public DateTime CreatedAt { get; init; }
+    public DateTime Timestamp { get; init; }
     public bool IsArchived { get; init; }
-    public DateTime? Timestamp { get; init; }
 }
 
-public sealed record AuditStatisticsDto(
-    int TotalLogs,
-    int FinancialLogs,
-    int SecurityLogs,
-    int AdminLogs,
-    IEnumerable<EventTypeCountDto> ByEventType,
-    IEnumerable<HourlyCountDto> ByHour);
+public sealed record AuditStatisticsDto
+{
+    public long TotalLogs { get; init; }
+    public IReadOnlyDictionary<string, long> ByEventType { get; init; } = new Dictionary<string, long>();
+    public IReadOnlyDictionary<string, long> ByHour { get; init; } = new Dictionary<string, long>();
+}
+
+public sealed record ExportAuditLogsResult(byte[] FileContent, string FileName, string ContentType);
 
 public sealed record EventTypeCountDto(
     string EventType,
@@ -31,11 +33,6 @@ public sealed record EventTypeCountDto(
 public sealed record HourlyCountDto(
     int Hour,
     int Count);
-
-public sealed record ExportAuditLogsResult(
-    byte[] FileContent,
-    string FileName = "",
-    string ContentType = "text/csv");
 
 public sealed record GetAuditLogsResult
 {

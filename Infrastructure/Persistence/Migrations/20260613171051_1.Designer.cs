@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DBContext))]
-    [Migration("20260607155414_1")]
+    [Migration("20260613171051_1")]
     partial class _1
     {
         /// <inheritdoc />
@@ -392,9 +392,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CartId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("CartId1")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
@@ -410,8 +407,6 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CartId1");
 
                     b.HasIndex("ProductId");
 
@@ -935,9 +930,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("OrderId1")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
@@ -960,8 +952,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
-
-                    b.HasIndex("OrderId1");
 
                     b.HasIndex("ProductId");
 
@@ -1598,14 +1588,9 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("UserId1")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("UserId1");
 
                     b.ToTable("UserAddresses");
                 });
@@ -1633,9 +1618,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProductId1")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Sku")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -1652,8 +1634,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("IsActive");
 
                     b.HasIndex("ProductId");
-
-                    b.HasIndex("ProductId1");
 
                     b.HasIndex("Sku")
                         .IsUnique();
@@ -2162,15 +2142,9 @@ namespace Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Domain.Cart.Entities.CartItem", b =>
                 {
-                    b.HasOne("Domain.Cart.Aggregates.Cart", null)
+                    b.HasOne("Domain.Cart.Aggregates.Cart", "Cart")
                         .WithMany("CartItems")
                         .HasForeignKey("CartId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Cart.Aggregates.Cart", "Cart")
-                        .WithMany()
-                        .HasForeignKey("CartId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -2753,15 +2727,9 @@ namespace Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Domain.Order.Entities.OrderItem", b =>
                 {
-                    b.HasOne("Domain.Order.Aggregates.Order", null)
+                    b.HasOne("Domain.Order.Aggregates.Order", "Order")
                         .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Order.Aggregates.Order", "Order")
-                        .WithMany()
-                        .HasForeignKey("OrderId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -3172,15 +3140,9 @@ namespace Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Domain.User.Entities.UserAddress", b =>
                 {
-                    b.HasOne("Domain.User.Aggregates.User", null)
+                    b.HasOne("Domain.User.Aggregates.User", "User")
                         .WithMany("Addresses")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.User.Aggregates.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -3211,15 +3173,9 @@ namespace Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Domain.Variant.Aggregates.ProductVariant", b =>
                 {
-                    b.HasOne("Domain.Product.Aggregates.Product", null)
+                    b.HasOne("Domain.Product.Aggregates.Product", "Product")
                         .WithMany("Variants")
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Product.Aggregates.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

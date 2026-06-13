@@ -19,7 +19,15 @@ public class CreateCategoryHandler(
 
         var categoryId = CategoryId.NewId();
         var uniquenessChecker = new CategoryUniquenessCheckerAdapter(categoryRepository);
-        var category = Domain.Category.Aggregates.Category.Create(categoryId, name, slug, uniquenessChecker, request.Description, request.SortOrder);
+
+        var category = await Domain.Category.Aggregates.Category.Create(
+            categoryId,
+            name,
+            slug,
+            uniquenessChecker,
+            request.Description,
+            request.SortOrder,
+            ct);
 
         await categoryRepository.AddAsync(category, ct);
         await unitOfWork.SaveChangesAsync(ct);
