@@ -1,3 +1,4 @@
+using Application.Attribute.Constants;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
 
@@ -5,7 +6,8 @@ namespace Application.Attribute.Features.Commands.DeleteAttributeValue;
 
 public class DeleteAttributeValueHandler(
     IAttributeRepository repository,
-    IUnitOfWork unitOfWork) : IRequestHandler<DeleteAttributeValueCommand, ServiceResult>
+    IUnitOfWork unitOfWork,
+    ICacheService cacheService) : IRequestHandler<DeleteAttributeValueCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         DeleteAttributeValueCommand request,
@@ -19,6 +21,7 @@ public class DeleteAttributeValueHandler(
 
         await repository.DeleteAttributeValueAsync(attributeValue.Id, null, ct);
         await unitOfWork.SaveChangesAsync(ct);
+        await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult.Success();
     }

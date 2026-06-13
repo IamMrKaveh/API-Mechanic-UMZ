@@ -11,15 +11,15 @@ public class GetTicketsHandler(
         GetTicketsQuery request,
         CancellationToken ct)
     {
-        var ticketPriority = string.IsNullOrWhiteSpace(request.Priority)
-            ? TicketPriority.Normal
+        TicketPriority? ticketPriority = string.IsNullOrWhiteSpace(request.Priority)
+            ? null
             : TicketPriority.FromString(request.Priority);
 
-        var ticketStatus = string.IsNullOrWhiteSpace(request.Status)
-            ? TicketStatus.Open
+        TicketStatus? ticketStatus = string.IsNullOrWhiteSpace(request.Status)
+            ? null
             : TicketStatus.FromString(request.Status);
 
-        var userId = UserId.From(request.UserId.Value);
+        var userId = UserId.From(request.UserId!.Value);
 
         var result = await supportQueryService.GetTicketsPagedAsync(
             userId,

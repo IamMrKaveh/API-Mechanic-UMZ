@@ -22,17 +22,18 @@ public sealed class Category : AggregateRoot<CategoryId>
     private Category()
     { }
 
-    public static Category Create(
+    public static async Task<Category> Create(
         CategoryId id,
         CategoryName name,
         Slug slug,
         ICategoryUniquenessChecker uniquenessChecker,
-        string? description = null,
-        int sortOrder = 0)
+        string? description,
+        int sortOrder,
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(uniquenessChecker);
 
-        if (!uniquenessChecker.IsUnique(name, slug, null))
+        if (!await uniquenessChecker.IsUniqueAsync(name, slug, null, ct))
             throw new DuplicateCategoryNameException(name);
 
         var category = new Category
@@ -51,16 +52,17 @@ public sealed class Category : AggregateRoot<CategoryId>
         return category;
     }
 
-    public void UpdateDetails(
+    public async Task UpdateDetails(
         CategoryName name,
         Slug slug,
-        ICategoryUniquenessChecker uniquenessChecker,
+        ICategoryUniquenessChecker? uniquenessChecker,
         string? description,
-        int sortOrder)
+        int sortOrder,
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(uniquenessChecker);
 
-        if (!uniquenessChecker.IsUnique(name, slug, Id))
+        if (!await uniquenessChecker.IsUniqueAsync(name, slug, Id, ct))
             throw new DuplicateCategoryNameException(name);
 
         Name = name;

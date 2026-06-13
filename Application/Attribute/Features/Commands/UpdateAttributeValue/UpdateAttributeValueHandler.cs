@@ -1,3 +1,4 @@
+using Application.Attribute.Constants;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
 
@@ -5,7 +6,8 @@ namespace Application.Attribute.Features.Commands.UpdateAttributeValue;
 
 public class UpdateAttributeValueHandler(
     IAttributeRepository repository,
-    IUnitOfWork unitOfWork) : IRequestHandler<UpdateAttributeValueCommand, ServiceResult>
+    IUnitOfWork unitOfWork,
+    ICacheService cacheService) : IRequestHandler<UpdateAttributeValueCommand, ServiceResult>
 {
     public async Task<ServiceResult> Handle(
         UpdateAttributeValueCommand request,
@@ -43,6 +45,7 @@ public class UpdateAttributeValueHandler(
 
         await repository.UpdateAttributeTypeAsync(type, ct);
         await unitOfWork.SaveChangesAsync(ct);
+        await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult.Success();
     }

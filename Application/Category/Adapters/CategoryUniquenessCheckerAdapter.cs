@@ -3,15 +3,19 @@ using Domain.Category.ValueObjects;
 
 namespace Application.Category.Adapters;
 
-public sealed class CategoryUniquenessCheckerAdapter(ICategoryRepository repository)
-    : ICategoryUniquenessChecker
+public sealed class CategoryUniquenessCheckerAdapter(ICategoryRepository categoryRepository) : ICategoryUniquenessChecker
 {
-    private readonly ICategoryRepository _repository = repository;
-
-    public bool IsUnique(CategoryName name, Slug slug, CategoryId? excludeId = null)
+    public async Task<bool> IsUniqueAsync(
+        CategoryName name,
+        Slug slug,
+        CategoryId? excludeId,
+        CancellationToken ct)
     {
-        var nameExists = _repository.ExistsByNameAsync(name, excludeId).GetAwaiter().GetResult();
-        var slugExists = _repository.ExistsBySlugAsync(slug, excludeId).GetAwaiter().GetResult();
-        return !nameExists && !slugExists;
+        var nameExists = await categoryRepository.ExistsByNameAsync(name, excludeId, ct);
+        if (nameExists)
+            return false;
+
+        var slugExists = await categoryRepository.ExistsBySlugAsync(slug, excludeId, ct);
+        return !slugExists;
     }
 }

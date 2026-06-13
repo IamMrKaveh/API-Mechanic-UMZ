@@ -1,3 +1,4 @@
+using Application.Attribute.Constants;
 using Application.Attribute.Features.Shared;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
@@ -7,7 +8,8 @@ namespace Application.Attribute.Features.Commands.CreateAttributeValue;
 public class CreateAttributeValueHandler(
     IAttributeRepository repository,
     IUnitOfWork unitOfWork,
-    IMapper mapper) : IRequestHandler<CreateAttributeValueCommand, ServiceResult<AttributeValueDto>>
+    IMapper mapper,
+    ICacheService cacheService) : IRequestHandler<CreateAttributeValueCommand, ServiceResult<AttributeValueDto>>
 {
     public async Task<ServiceResult<AttributeValueDto>> Handle(
         CreateAttributeValueCommand request,
@@ -30,6 +32,7 @@ public class CreateAttributeValueHandler(
 
         await repository.UpdateAttributeTypeAsync(type, ct);
         await unitOfWork.SaveChangesAsync(ct);
+        await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult<AttributeValueDto>.Success(mapper.Map<AttributeValueDto>(attributeValue));
     }

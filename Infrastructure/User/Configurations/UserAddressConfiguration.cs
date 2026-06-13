@@ -57,6 +57,11 @@ internal sealed class UserAddressConfiguration : IEntityTypeConfiguration<UserAd
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.UpdatedAt);
 
+        builder.HasOne(e => e.User)
+            .WithMany(u => u.Addresses)
+            .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasIndex(e => e.UserId);
     }
 }

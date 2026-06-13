@@ -49,14 +49,9 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.A
         builder.Property(e => e.UpdatedAt);
 
         builder.Property(e => e.DefaultAddressId)
-            .HasConversion(
-                id => id != null ? id.Value : (Guid?)null,
-                value => value.HasValue ? UserAddressId.From(value.Value) : null);
-
-        builder.HasMany(e => e.Addresses)
-            .WithOne(a => a.User)
-            .HasForeignKey(a => a.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+                    .HasConversion(
+                        id => id != null ? id.Value : (Guid?)null,
+                        value => value.HasValue ? UserAddressId.From(value.Value) : null);
 
         builder.HasQueryFilter(e => e.IsActive);
     }

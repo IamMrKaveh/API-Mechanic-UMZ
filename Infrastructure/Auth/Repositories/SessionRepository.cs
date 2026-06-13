@@ -18,7 +18,7 @@ public sealed class SessionRepository(DBContext context) : ISessionRepository
         CancellationToken ct = default)
     {
         return await context.UserSessions
-            .FirstOrDefaultAsync(s => s.RefreshToken.Value == refreshToken.Value, ct);
+            .FirstOrDefaultAsync(s => s.RefreshToken == refreshToken, ct);
     }
 
     public async Task AddAsync(UserSession session, CancellationToken ct = default)

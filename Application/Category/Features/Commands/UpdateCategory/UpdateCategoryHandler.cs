@@ -30,7 +30,7 @@ public class UpdateCategoryHandler(
             : Slug.FromString(request.Slug);
 
         var uniquenessChecker = new CategoryUniquenessCheckerAdapter(categoryRepository);
-        category.UpdateDetails(name, slug, uniquenessChecker, request.Description, request.SortOrder);
+        await category.UpdateDetails(name, slug, uniquenessChecker, request.Description, request.SortOrder, ct);
 
         if (request.IsActive && !category.IsActive)
             category.Activate();
