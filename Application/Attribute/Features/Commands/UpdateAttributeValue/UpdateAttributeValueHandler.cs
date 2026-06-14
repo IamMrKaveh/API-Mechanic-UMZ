@@ -19,11 +19,13 @@ public class UpdateAttributeValueHandler(
         if (attributeValue is null)
             return ServiceResult.NotFound("Attribute value not found.");
 
+        var resolvedValue = request.Value ?? attributeValue.Value;
+
         if (request.Value is not null)
         {
             var isDuplicate = await repository.AttributeValueExistsAsync(
                 attributeValue.AttributeTypeId,
-                request.Value,
+                resolvedValue,
                 attributeValueId,
                 ct);
 
@@ -37,7 +39,7 @@ public class UpdateAttributeValueHandler(
 
         type.UpdateValue(
             attributeValueId,
-            attributeValue,
+            resolvedValue,
             request.DisplayValue ?? attributeValue.DisplayValue,
             request.HexCode ?? attributeValue.HexCode,
             request.SortOrder ?? attributeValue.SortOrder,

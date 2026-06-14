@@ -23,6 +23,7 @@ public record CategoryListItemDto
     public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
     public string? Slug { get; init; }
+    public string? IconUrl { get; init; }
     public bool IsActive { get; init; }
     public bool IsDeleted { get; init; }
     public int SortOrder { get; init; }
@@ -60,6 +61,7 @@ public record CategoryWithBrandsDto
     public string Name { get; init; } = string.Empty;
     public string? Slug { get; init; }
     public string? Description { get; init; }
+    public string? IconUrl { get; init; }
     public int SortOrder { get; init; }
     public bool IsActive { get; init; }
     public string? RowVersion { get; init; }

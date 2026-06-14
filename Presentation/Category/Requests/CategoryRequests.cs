@@ -13,7 +13,7 @@ public record UpdateCategoryRequest(
     string? Description,
     int SortOrder,
     bool IsActive,
-    string RowVersion
+    string? RowVersion
 );
 
 public record ReorderCategoriesRequest(IReadOnlyList<CategoryOrderItemRequest> Items);

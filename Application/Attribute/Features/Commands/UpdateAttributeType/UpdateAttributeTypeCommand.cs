@@ -1,5 +1,3 @@
-using Application.Attribute.Features.Shared;
-
 namespace Application.Attribute.Features.Commands.UpdateAttributeType;
 
 public record UpdateAttributeTypeCommand(
@@ -7,4 +5,4 @@ public record UpdateAttributeTypeCommand(
     string? Name,
     string? DisplayName,
     int? SortOrder,
-    bool? IsActive) : IRequest<ServiceResult<UpdateAttributeTypeDto>>;
+    bool? IsActive) : IRequest<ServiceResult>;

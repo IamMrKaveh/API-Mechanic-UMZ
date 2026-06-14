@@ -12,9 +12,9 @@ public sealed class CreateBrandValidator : AbstractValidator<CreateBrandCommand>
             .NotEmpty().WithMessage("دسته‌بندی الزامی است.");
 
         RuleFor(x => x.Slug)
-            .MaximumLength(200).When(x => x.Slug is not null);
+            .MaximumLength(200).When(x => !string.IsNullOrWhiteSpace(x.Slug));
 
         RuleFor(x => x.Description)
-            .MaximumLength(500).When(x => x.Description is not null);
+            .MaximumLength(500).When(x => !string.IsNullOrWhiteSpace(x.Description));
     }
 }

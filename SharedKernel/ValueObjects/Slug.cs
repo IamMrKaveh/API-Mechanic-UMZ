@@ -3,17 +3,14 @@ using SharedKernel.Exceptions;
 
 namespace SharedKernel.ValueObjects;
 
-public sealed class Slug : ValueObject
+public sealed partial class Slug : ValueObject
 {
-    public string Value { get; }
+    public string Value { get; private set; }
     public const int MaxLength = 200;
 
-    private static readonly Regex SlugRegex = new(@"^[a-z0-9\u0600-\u06FF]+(?:-[a-z0-9\u0600-\u06FF]+)*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex SlugRegex = slugRegex();
 
-    private Slug(string value)
-    {
-        Value = value;
-    }
+    private Slug(string value) => Value = value;
 
     private Slug()
     { }
@@ -59,7 +56,7 @@ public sealed class Slug : ValueObject
             .Replace(".", "-")
             .Replace("_", "-");
 
-        normalized = Regex.Replace(normalized, @"-+", "-");
+        normalized = plusRegex().Replace(normalized, "-");
         normalized = normalized.Trim('-');
         return normalized;
     }
@@ -69,7 +66,7 @@ public sealed class Slug : ValueObject
         if (slug.Length > MaxLength)
             throw new DomainException($"مقدار Slug نمی‌تواند بیش از {MaxLength} کاراکتر باشد.");
 
-        if (slug.StartsWith("-") || slug.EndsWith("-"))
+        if (slug.StartsWith('-') || slug.EndsWith('-'))
             throw new DomainException("مقدار Slug نمی‌تواند با خط تیره شروع یا پایان یابد.");
 
         if (slug.Contains("--"))
@@ -95,4 +92,10 @@ public sealed class Slug : ValueObject
     public override string ToString() => Value;
 
     public static implicit operator string(Slug slug) => slug.Value;
+
+    [GeneratedRegex(@"^[a-z0-9\u0600-\u06FF]+(?:-[a-z0-9\u0600-\u06FF]+)*$", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
+    private static partial Regex slugRegex();
+
+    [GeneratedRegex(@"-+")]
+    private static partial Regex plusRegex();
 }

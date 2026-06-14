@@ -17,7 +17,7 @@ public sealed class Category : AggregateRoot<CategoryId>
     public DateTime UpdatedAt { get; private set; }
 
     private readonly List<BrandId> _brands = [];
-    public IReadOnlyCollection<BrandId> Brands => _brands;
+    public IEnumerable<BrandId> Brands => _brands;
 
     private Category()
     { }

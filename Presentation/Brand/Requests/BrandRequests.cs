@@ -1,22 +1,50 @@
-﻿namespace Presentation.Brand.Requests;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
 
-public record CreateBrandRequest
+namespace Presentation.Brand.Requests;
+
+public sealed class CreateBrandRequest
 {
-    public Guid CategoryId { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string? Slug { get; init; }
-    public string? Description { get; init; }
-    public IFormFile? LogoFile { get; init; }
+    [FromForm(Name = "CategoryId")]
+    [Required]
+    public Guid CategoryId { get; set; }
+
+    [FromForm(Name = "Name")]
+    [Required]
+    public string Name { get; set; } = string.Empty;
+
+    [FromForm(Name = "Slug")]
+    public string? Slug { get; set; }
+
+    [FromForm(Name = "Description")]
+    public string? Description { get; set; }
+
+    [FromForm(Name = "LogoFile")]
+    public IFormFile? LogoFile { get; set; }
 }
 
-public record UpdateBrandRequest
+public sealed class UpdateBrandRequest
 {
-    public string Name { get; init; } = string.Empty;
-    public Guid CategoryId { get; init; }
-    public string? Slug { get; init; }
-    public string? Description { get; init; }
-    public IFormFile? LogoFile { get; init; }
-    public string RowVersion { get; init; } = string.Empty;
+    [FromForm(Name = "Name")]
+    [Required]
+    public string Name { get; set; } = string.Empty;
+
+    [FromForm(Name = "CategoryId")]
+    [Required]
+    public Guid CategoryId { get; set; }
+
+    [FromForm(Name = "Slug")]
+    public string? Slug { get; set; }
+
+    [FromForm(Name = "Description")]
+    public string? Description { get; set; }
+
+    [FromForm(Name = "LogoFile")]
+    public IFormFile? LogoFile { get; set; }
+
+    [FromForm(Name = "RowVersion")]
+    [Required]
+    public string RowVersion { get; set; } = string.Empty;
 }
 
 public record MoveBrandRequest(
