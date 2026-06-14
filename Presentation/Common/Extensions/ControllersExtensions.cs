@@ -45,6 +45,7 @@ public static class ControllersExtensions
         {
             options.OperationFilter<RemoveVersionParameterOperationFilter>();
             options.OperationFilter<DefaultResponseOperationFilter>();
+            options.SchemaFilter<NullableSchemaFilter>();
 
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {

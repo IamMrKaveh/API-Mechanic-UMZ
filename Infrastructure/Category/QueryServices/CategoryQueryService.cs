@@ -8,6 +8,8 @@ public sealed class CategoryQueryService(
     DBContext context,
     IUrlResolverService urlResolver) : ICategoryQueryService
 {
+    private const string CategoryEntityType = "Category";
+
     public async Task<CategoryDetailDto?> GetCategoryDetailAsync(
            CategoryId categoryId,
            CancellationToken ct = default)
@@ -20,7 +22,7 @@ public sealed class CategoryQueryService(
 
         var media = await context.Medias
             .AsNoTracking()
-            .Where(m => m.EntityType == "Category" && m.EntityId == category.Id.Value && m.IsPrimary)
+            .Where(m => m.EntityType == CategoryEntityType && m.EntityId == category.Id.Value && m.IsPrimary)
             .FirstOrDefaultAsync(ct);
 
         var brandCount = await context.Brands
@@ -105,6 +107,17 @@ public sealed class CategoryQueryService(
             })
             .ToListAsync(ct);
 
+        var categoryIds = rawItems.Select(c => c.Id.Value).ToList();
+
+        var iconPaths = await context.Medias
+            .AsNoTracking()
+            .Where(m => m.EntityType == CategoryEntityType
+                        && categoryIds.Contains(m.EntityId)
+                        && m.IsPrimary
+                        && m.IsActive)
+            .Select(m => new { m.EntityId, Path = m.Path.Value })
+            .ToDictionaryAsync(m => m.EntityId, m => m.Path, ct);
+
         var items = rawItems.Select(c => new CategoryListItemDto
         {
             Id = c.Id.Value,
@@ -117,20 +130,34 @@ public sealed class CategoryQueryService(
             CreatedAt = c.CreatedAt,
             UpdatedAt = c.UpdatedAt,
             RowVersion = c.RowVersion is not null ? Convert.ToBase64String(c.RowVersion) : null,
+            IconUrl = iconPaths.TryGetValue(c.Id.Value, out var iconPath) && !string.IsNullOrEmpty(iconPath)
+                ? urlResolver.ResolveMediaUrl(iconPath)
+                : null,
         }).ToList();
 
         return PaginatedResult<CategoryListItemDto>.Create(items, total, page, pageSize);
     }
 
     public async Task<CategoryWithBrandsDto?> GetCategoryWithBrandsAsync(
-            CategoryId categoryId,
-            CancellationToken ct = default)
+                CategoryId categoryId,
+                CancellationToken ct = default)
     {
-        var category = await context.Categories
+        var result = await context.Categories
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == categoryId, ct);
+            .Where(c => c.Id == categoryId)
+            .Select(c => new
+            {
+                c.Id,
+                Name = c.Name.Value,
+                Slug = c.Slug.Value,
+                c.Description,
+                c.SortOrder,
+                c.IsActive,
+                RowVersion = EF.Property<byte[]>(c, "RowVersion"),
+            })
+            .FirstOrDefaultAsync(ct);
 
-        if (category is null) return null;
+        if (result is null) return null;
 
         var brands = await context.Brands
             .AsNoTracking()
@@ -145,17 +172,25 @@ public sealed class CategoryQueryService(
             })
             .ToListAsync(ct);
 
-        var rowVersionBytes = context.Entry(category).Property<byte[]>("RowVersion").CurrentValue;
+        var iconPath = await context.Medias
+            .AsNoTracking()
+            .Where(m => m.EntityType == CategoryEntityType
+                        && m.EntityId == result.Id.Value
+                        && m.IsPrimary
+                        && m.IsActive)
+            .Select(m => m.Path.Value)
+            .FirstOrDefaultAsync(ct);
 
         return new CategoryWithBrandsDto
         {
-            Id = category.Id.Value,
-            Name = category.Name.Value,
-            Slug = category.Slug?.Value,
-            Description = category.Description,
-            SortOrder = category.SortOrder,
-            IsActive = category.IsActive,
-            RowVersion = rowVersionBytes is not null ? Convert.ToBase64String(rowVersionBytes) : null,
+            Id = result.Id.Value,
+            Name = result.Name,
+            Slug = result.Slug,
+            Description = result.Description,
+            IconUrl = !string.IsNullOrEmpty(iconPath) ? urlResolver.ResolveMediaUrl(iconPath) : null,
+            SortOrder = result.SortOrder,
+            IsActive = result.IsActive,
+            RowVersion = result.RowVersion is not null ? Convert.ToBase64String(result.RowVersion) : null,
             Brands = brands,
         };
     }

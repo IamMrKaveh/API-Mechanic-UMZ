@@ -17,6 +17,7 @@ public sealed class CreateBrandHandler(
     IAuditService auditService) : IRequestHandler<CreateBrandCommand, ServiceResult<BrandDetailDto>>
 {
     private const long MaxFileSizeBytes = 2 * 1024 * 1024;
+    private const string EmptyLogoPlaceholder = "__EMPTY__";
     private static readonly string[] AllowedContentTypes = ["image/jpeg", "image/png", "image/webp"];
 
     public async Task<ServiceResult<BrandDetailDto>> Handle(
@@ -43,7 +44,7 @@ public sealed class CreateBrandHandler(
 
         string? logoPath = null;
 
-        if (request.LogoStream is not null)
+        if (HasUploadedLogo(request))
         {
             if (request.LogoFileSize > MaxFileSizeBytes)
                 return ServiceResult<BrandDetailDto>.Validation("حجم فایل نمی‌تواند بیش از ۲ مگابایت باشد.");
@@ -53,7 +54,7 @@ public sealed class CreateBrandHandler(
 
             var extension = Path.GetExtension(request.LogoFileName);
             var fileName = $"brands/{Guid.NewGuid()}{extension}";
-            logoPath = await storageService.UploadAsync(request.LogoStream, fileName, request.LogoContentType!, "brands", ct);
+            logoPath = await storageService.UploadAsync(request.LogoStream!, fileName, request.LogoContentType!, "brands", ct);
         }
 
         var uniquenessChecker = new BrandUniquenessCheckerAdapter(brandRepository);
@@ -63,7 +64,7 @@ public sealed class CreateBrandHandler(
             slug,
             categoryId,
             uniquenessChecker,
-            request.Description,
+            string.IsNullOrWhiteSpace(request.Description) ? null : request.Description,
             logoPath);
 
         await brandRepository.AddAsync(brand, ct);
@@ -79,5 +80,13 @@ public sealed class CreateBrandHandler(
 
         var dto = mapper.Map<BrandDetailDto>(brand);
         return ServiceResult<BrandDetailDto>.Success(dto);
+    }
+
+    private static bool HasUploadedLogo(CreateBrandCommand request)
+    {
+        if (request.LogoStream is null) return false;
+        if (request.LogoFileSize is null or <= 0) return false;
+        if (string.Equals(request.LogoFileName, EmptyLogoPlaceholder, StringComparison.Ordinal)) return false;
+        return true;
     }
 }
