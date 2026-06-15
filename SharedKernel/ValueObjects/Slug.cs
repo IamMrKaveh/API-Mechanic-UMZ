@@ -3,16 +3,16 @@ using SharedKernel.Exceptions;
 
 namespace SharedKernel.ValueObjects;
 
-public sealed partial class Slug : ValueObject
+public partial class Slug : ValueObject
 {
-    public string Value { get; private set; }
+    public string Value { get; private set; } = default!;
     public const int MaxLength = 200;
 
     private static readonly Regex SlugRegex = slugRegex();
 
-    private Slug(string value) => Value = value;
+    protected Slug(string value) => Value = value;
 
-    private Slug()
+    protected Slug()
     { }
 
     public static Slug Create(string value)
@@ -45,6 +45,36 @@ public sealed partial class Slug : ValueObject
         var slug = Normalize(displayName);
         Validate(slug);
         return new Slug(slug);
+    }
+
+    protected static string NormalizeValue(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new DomainException("مقدار Slug الزامی است.");
+
+        var normalized = Normalize(value);
+        Validate(normalized);
+        return normalized;
+    }
+
+    protected static string NormalizeFromString(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new DomainException("مقدار Slug الزامی است.");
+
+        var normalized = value.ToLowerInvariant().Trim();
+        Validate(normalized);
+        return normalized;
+    }
+
+    protected static string NormalizeFromDisplay(string displayName)
+    {
+        if (string.IsNullOrWhiteSpace(displayName))
+            throw new DomainException("مقدار برای تولید Slug الزامی است.");
+
+        var normalized = Normalize(displayName);
+        Validate(normalized);
+        return normalized;
     }
 
     private static string Normalize(string name)

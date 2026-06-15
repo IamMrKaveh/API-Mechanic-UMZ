@@ -19,7 +19,7 @@ public interface IProductRepository
         CancellationToken ct = default);
 
     Task<bool> ExistsBySlugAsync(
-        Slug slug,
+        ProductSlug slug,
         ProductId? excludeId = null,
         CancellationToken ct = default);
 }

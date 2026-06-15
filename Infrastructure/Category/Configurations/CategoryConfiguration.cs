@@ -6,38 +6,53 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Domain.Cate
 {
     public void Configure(EntityTypeBuilder<Domain.Category.Aggregates.Category> builder)
     {
+        builder.ToTable("Categories");
+
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => CategoryId.From(v));
+            .HasConversion(v => v.Value, v => CategoryId.From(v))
+            .ValueGeneratedNever();
 
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.Property<byte[]>("RowVersion")
+            .IsRowVersion();
 
         builder.OwnsOne(e => e.Name, nb =>
         {
             nb.Property(n => n.Value)
                 .HasColumnName("Name")
-                .IsRequired()
-                .HasMaxLength(CategoryName.MaxLength);
+                .HasMaxLength(CategoryName.MaxLength)
+                .IsRequired();
 
-            nb.HasIndex(n => n.Value).IsUnique();
+            nb.HasIndex(n => n.Value)
+                .IsUnique();
         });
 
         builder.OwnsOne(e => e.Slug, sb =>
         {
             sb.Property(s => s.Value)
                 .HasColumnName("Slug")
-                .IsRequired()
-                .HasMaxLength(200);
+                .HasMaxLength(Slug.MaxLength)
+                .IsRequired();
 
-            sb.HasIndex(s => s.Value).IsUnique();
+            sb.HasIndex(s => s.Value)
+                .IsUnique();
         });
 
-        builder.Property(e => e.Description).HasMaxLength(1000);
-        builder.Property(e => e.IsActive).IsRequired();
-        builder.Property(e => e.SortOrder).IsRequired();
-        builder.Property(e => e.CreatedAt).IsRequired();
-        builder.Property(e => e.UpdatedAt).IsRequired();
+        builder.Property(e => e.Description)
+            .HasMaxLength(1000);
+
+        builder.Property(e => e.IsActive)
+            .IsRequired();
+
+        builder.Property(e => e.SortOrder)
+            .IsRequired();
+
+        builder.Property(e => e.CreatedAt)
+            .IsRequired();
+
+        builder.Property(e => e.UpdatedAt)
+            .IsRequired();
 
         builder.Ignore(e => e.Brands);
     }

@@ -9,9 +9,7 @@ public sealed class BrandRepository(DBContext context) : IBrandRepository
     public async Task<Domain.Brand.Aggregates.Brand?> GetByIdAsync(
         BrandId brandId,
         CancellationToken ct = default)
-    {
-        return await context.Brands.FirstOrDefaultAsync(b => b.Id == brandId, ct);
-    }
+        => await context.Brands.FirstOrDefaultAsync(b => b.Id == brandId, ct);
 
     public async Task<bool> ExistsByNameInCategoryAsync(
         BrandName name,
@@ -28,28 +26,29 @@ public sealed class BrandRepository(DBContext context) : IBrandRepository
     }
 
     public async Task<bool> ExistsBySlugAsync(
-        Slug slug,
+        BrandSlug slug,
         BrandId? excludeId = null,
         CancellationToken ct = default)
     {
-        var query = context.Brands.Where(b => b.Slug == slug);
+        var query = context.Brands.Where(b => b.Slug.Value == slug.Value);
         if (excludeId is not null)
             query = query.Where(b => b.Id != excludeId);
         return await query.AnyAsync(ct);
     }
 
-    public async Task AddAsync(Domain.Brand.Aggregates.Brand brand, CancellationToken ct = default)
-    {
-        await context.Brands.AddAsync(brand, ct);
-    }
+    public async Task AddAsync(
+        Domain.Brand.Aggregates.Brand brand,
+        CancellationToken ct = default)
+        => await context.Brands.AddAsync(brand, ct);
 
     public void Update(Domain.Brand.Aggregates.Brand brand)
-    {
-        context.Brands.Update(brand);
-    }
+        => context.Brands.Update(brand);
 
-    public void SetOriginalRowVersion(Domain.Brand.Aggregates.Brand entity, byte[] rowVersion)
-    {
-        context.Entry(entity).Property("RowVersion").OriginalValue = rowVersion;
-    }
+    public void SetOriginalRowVersion(
+        Domain.Brand.Aggregates.Brand entity,
+        byte[] rowVersion)
+        => context.Entry(entity).Property("RowVersion").OriginalValue = rowVersion;
+
+    public byte[]? GetCurrentRowVersion(Domain.Brand.Aggregates.Brand entity)
+        => context.Entry(entity).Property<byte[]>("RowVersion").CurrentValue;
 }

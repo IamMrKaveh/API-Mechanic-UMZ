@@ -14,6 +14,15 @@ public sealed class UpdateBrandValidator : AbstractValidator<UpdateBrandCommand>
         RuleFor(x => x.Description)
             .MaximumLength(500).When(x => !string.IsNullOrWhiteSpace(x.Description));
         RuleFor(x => x.RowVersion)
-            .NotEmpty().WithMessage("نسخه سطر برای کنترل همزمانی الزامی است.");
+            .Must(BeValidBase64)
+            .When(x => !string.IsNullOrWhiteSpace(x.RowVersion))
+            .WithMessage("نسخه سطر معتبر نیست.");
+    }
+
+    private static bool BeValidBase64(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return true;
+        Span<byte> buffer = stackalloc byte[value.Length];
+        return Convert.TryFromBase64String(value, buffer, out _);
     }
 }

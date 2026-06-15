@@ -7,10 +7,7 @@ public abstract class Entity<TId> where TId : notnull
     protected Entity()
     { }
 
-    protected Entity(TId id)
-    {
-        Id = id;
-    }
+    protected Entity(TId id) => Id = id;
 
     public override bool Equals(object? obj)
     {

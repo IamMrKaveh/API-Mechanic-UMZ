@@ -26,8 +26,8 @@ public class UpdateCategoryHandler(
 
         var name = CategoryName.Create(request.Name);
         var slug = string.IsNullOrWhiteSpace(request.Slug)
-            ? Slug.GenerateFrom(request.Name)
-            : Slug.FromString(request.Slug);
+            ? CategorySlug.GenerateFrom(request.Name)
+            : CategorySlug.FromString(request.Slug);
 
         var uniquenessChecker = new CategoryUniquenessCheckerAdapter(categoryRepository);
         await category.UpdateDetails(name, slug, uniquenessChecker, request.Description, request.SortOrder, ct);

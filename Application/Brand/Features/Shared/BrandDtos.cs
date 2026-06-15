@@ -14,6 +14,7 @@ public record BrandDetailDto
     public int ActiveProductCount { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
+    public string? RowVersion { get; init; }
 }
 
 public record BrandListItemDto

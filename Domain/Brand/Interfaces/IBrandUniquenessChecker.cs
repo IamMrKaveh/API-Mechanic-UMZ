@@ -7,7 +7,7 @@ public interface IBrandUniquenessChecker
 {
     bool IsUnique(
         BrandName name,
-        Slug slug,
+        BrandSlug slug,
         CategoryId categoryId,
         BrandId? excludeId = null);
 }
