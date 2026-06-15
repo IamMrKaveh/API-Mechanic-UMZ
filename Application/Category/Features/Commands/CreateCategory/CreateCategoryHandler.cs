@@ -14,8 +14,8 @@ public class CreateCategoryHandler(
     {
         var name = CategoryName.Create(request.CategoryName);
         var slug = string.IsNullOrWhiteSpace(request.Slug)
-            ? Slug.GenerateFrom(request.CategoryName)
-            : Slug.FromString(request.Slug);
+            ? CategorySlug.GenerateFrom(request.CategoryName)
+            : CategorySlug.FromString(request.Slug);
 
         var categoryId = CategoryId.NewId();
         var uniquenessChecker = new CategoryUniquenessCheckerAdapter(categoryRepository);

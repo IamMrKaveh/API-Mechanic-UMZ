@@ -334,7 +334,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Brands");
+                    b.ToTable("Brands", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Cart.Aggregates.Cart", b =>
@@ -446,7 +446,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Discount.Aggregates.DiscountCode", b =>
@@ -1109,20 +1109,10 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1137,9 +1127,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("IsActive");
 
                     b.HasIndex("IsDeleted");
-
-                    b.HasIndex("Slug")
-                        .IsUnique();
 
                     b.ToTable("Products", (string)null);
                 });
@@ -2070,28 +2057,6 @@ namespace Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("SharedKernel.ValueObjects.Slug", "Slug", b1 =>
-                        {
-                            b1.Property<Guid>("BrandId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasMaxLength(200)
-                                .HasColumnType("character varying(200)")
-                                .HasColumnName("Slug");
-
-                            b1.HasKey("BrandId");
-
-                            b1.HasIndex("Value")
-                                .IsUnique();
-
-                            b1.ToTable("Brands");
-
-                            b1.WithOwner()
-                                .HasForeignKey("BrandId");
-                        });
-
                     b.OwnsOne("Domain.Brand.ValueObjects.BrandName", "Name", b1 =>
                         {
                             b1.Property<Guid>("BrandId")
@@ -2106,6 +2071,28 @@ namespace Infrastructure.Persistence.Migrations
                             b1.HasKey("BrandId");
 
                             b1.HasIndex("Value");
+
+                            b1.ToTable("Brands");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BrandId");
+                        });
+
+                    b.OwnsOne("Domain.Brand.ValueObjects.BrandSlug", "Slug", b1 =>
+                        {
+                            b1.Property<Guid>("BrandId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)")
+                                .HasColumnName("Slug");
+
+                            b1.HasKey("BrandId");
+
+                            b1.HasIndex("Value")
+                                .IsUnique();
 
                             b1.ToTable("Brands");
 
@@ -2180,6 +2167,25 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasForeignKey("CartItemId");
                         });
 
+                    b.OwnsOne("Domain.Product.ValueObjects.ProductName", "ProductName", b1 =>
+                        {
+                            b1.Property<Guid>("CartItemId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(500)
+                                .HasColumnType("character varying(500)")
+                                .HasColumnName("ProductName");
+
+                            b1.HasKey("CartItemId");
+
+                            b1.ToTable("CartItems");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CartItemId");
+                        });
+
                     b.OwnsOne("SharedKernel.ValueObjects.Money", "SellingPrice", b1 =>
                         {
                             b1.Property<Guid>("CartItemId")
@@ -2194,25 +2200,6 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasMaxLength(10)
                                 .HasColumnType("character varying(10)")
                                 .HasColumnName("SellingPriceCurrency");
-
-                            b1.HasKey("CartItemId");
-
-                            b1.ToTable("CartItems");
-
-                            b1.WithOwner()
-                                .HasForeignKey("CartItemId");
-                        });
-
-                    b.OwnsOne("Domain.Product.ValueObjects.ProductName", "ProductName", b1 =>
-                        {
-                            b1.Property<Guid>("CartItemId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasMaxLength(500)
-                                .HasColumnType("character varying(500)")
-                                .HasColumnName("ProductName");
 
                             b1.HasKey("CartItemId");
 
@@ -2262,16 +2249,16 @@ namespace Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Domain.Category.Aggregates.Category", b =>
                 {
-                    b.OwnsOne("SharedKernel.ValueObjects.Slug", "Slug", b1 =>
+                    b.OwnsOne("Domain.Category.ValueObjects.CategoryName", "Name", b1 =>
                         {
                             b1.Property<Guid>("CategoryId")
                                 .HasColumnType("uuid");
 
                             b1.Property<string>("Value")
                                 .IsRequired()
-                                .HasMaxLength(200)
-                                .HasColumnType("character varying(200)")
-                                .HasColumnName("Slug");
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("Name");
 
                             b1.HasKey("CategoryId");
 
@@ -2284,16 +2271,16 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasForeignKey("CategoryId");
                         });
 
-                    b.OwnsOne("Domain.Category.ValueObjects.CategoryName", "Name", b1 =>
+                    b.OwnsOne("Domain.Category.ValueObjects.CategorySlug", "Slug", b1 =>
                         {
                             b1.Property<Guid>("CategoryId")
                                 .HasColumnType("uuid");
 
                             b1.Property<string>("Value")
                                 .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("character varying(100)")
-                                .HasColumnName("Name");
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)")
+                                .HasColumnName("Slug");
 
                             b1.HasKey("CategoryId");
 
@@ -2802,7 +2789,56 @@ namespace Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.OwnsOne("Domain.Product.ValueObjects.ProductName", "Name", b1 =>
+                        {
+                            b1.Property<Guid>("ProductId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("Name");
+
+                            b1.HasKey("ProductId");
+
+                            b1.HasIndex("Value");
+
+                            b1.ToTable("Products");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ProductId");
+                        });
+
+                    b.OwnsOne("Domain.Product.ValueObjects.ProductSlug", "Slug", b1 =>
+                        {
+                            b1.Property<Guid>("ProductId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)")
+                                .HasColumnName("Slug");
+
+                            b1.HasKey("ProductId");
+
+                            b1.HasIndex("Value")
+                                .IsUnique();
+
+                            b1.ToTable("Products");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ProductId");
+                        });
+
                     b.Navigation("Brand");
+
+                    b.Navigation("Name")
+                        .IsRequired();
+
+                    b.Navigation("Slug")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Review.Aggregates.ProductReview", b =>

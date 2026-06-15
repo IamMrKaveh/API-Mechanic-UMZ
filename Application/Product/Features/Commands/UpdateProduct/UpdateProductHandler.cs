@@ -39,8 +39,8 @@ public sealed class UpdateProductHandler(
             return ServiceResult<ProductDetailDto>.NotFound("برند یافت نشد.");
 
         var slug = string.IsNullOrWhiteSpace(request.Slug)
-            ? Slug.GenerateFrom(request.Name)
-            : Slug.FromString(request.Slug);
+    ? ProductSlug.GenerateFrom(request.Name)
+    : ProductSlug.FromString(request.Slug);
 
         if (await productRepository.ExistsBySlugAsync(slug, productId, ct))
             return ServiceResult<ProductDetailDto>.Conflict("محصولی با این Slug قبلاً ثبت شده است.");

@@ -7,10 +7,7 @@ public sealed class ProductName : ValueObject
     private const int MinLength = 2;
     public const int MaxLength = 100;
 
-    private ProductName(string value)
-    {
-        Value = value;
-    }
+    private ProductName(string value) => Value = value;
 
     public static ProductName Create(string name)
     {

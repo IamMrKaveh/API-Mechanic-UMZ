@@ -1,6 +1,5 @@
 using Application.Brand.Adapters;
 using Application.Brand.Features.Shared;
-using Application.Media.Contracts;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 
@@ -8,6 +7,7 @@ namespace Application.Brand.Features.Commands.UpdateBrand;
 
 public sealed class UpdateBrandHandler(
     IBrandRepository brandRepository,
+    IBrandQueryService brandQueryService,
     IUnitOfWork unitOfWork,
     IStorageService storageService) : IRequestHandler<UpdateBrandCommand, ServiceResult<BrandDetailDto>>
 {
@@ -48,8 +48,8 @@ public sealed class UpdateBrandHandler(
 
         var brandName = BrandName.Create(request.Name);
         var slug = string.IsNullOrWhiteSpace(request.Slug)
-            ? Slug.GenerateFrom(request.Name)
-            : Slug.FromString(request.Slug);
+            ? BrandSlug.GenerateFrom(request.Name)
+            : BrandSlug.FromString(request.Slug);
 
         var uniquenessChecker = new BrandUniquenessCheckerAdapter(brandRepository);
         brand.UpdateDetails(
@@ -62,7 +62,10 @@ public sealed class UpdateBrandHandler(
         brandRepository.Update(brand);
         await unitOfWork.SaveChangesAsync(ct);
 
-        var dto = brand.Adapt<BrandDetailDto>();
+        var dto = await brandQueryService.GetBrandDetailAsync(brand.Id, ct);
+        if (dto is null)
+            return ServiceResult<BrandDetailDto>.NotFound("برند یافت نشد.");
+
         return ServiceResult<BrandDetailDto>.Success(dto);
     }
 

@@ -9,7 +9,7 @@ namespace Domain.Category.Aggregates;
 public sealed class Category : AggregateRoot<CategoryId>
 {
     public CategoryName Name { get; private set; } = default!;
-    public Slug Slug { get; private set; } = default!;
+    public CategorySlug Slug { get; private set; } = default!;
     public string? Description { get; private set; }
     public bool IsActive { get; private set; }
     public int SortOrder { get; private set; }
@@ -17,7 +17,7 @@ public sealed class Category : AggregateRoot<CategoryId>
     public DateTime UpdatedAt { get; private set; }
 
     private readonly List<BrandId> _brands = [];
-    public IEnumerable<BrandId> Brands => _brands;
+    public IReadOnlyCollection<BrandId> Brands => _brands;
 
     private Category()
     { }
@@ -25,7 +25,7 @@ public sealed class Category : AggregateRoot<CategoryId>
     public static async Task<Category> Create(
         CategoryId id,
         CategoryName name,
-        Slug slug,
+        CategorySlug slug,
         ICategoryUniquenessChecker uniquenessChecker,
         string? description,
         int sortOrder,
@@ -54,7 +54,7 @@ public sealed class Category : AggregateRoot<CategoryId>
 
     public async Task UpdateDetails(
         CategoryName name,
-        Slug slug,
+        CategorySlug slug,
         ICategoryUniquenessChecker? uniquenessChecker,
         string? description,
         int sortOrder,

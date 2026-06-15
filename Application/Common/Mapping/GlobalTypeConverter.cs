@@ -27,6 +27,32 @@ public class GlobalTypeConverter : IRegister
         config.NewConfig<string, ProductName>()
             .MapWith(src => ProductName.Create(src));
 
+        config.NewConfig<string, CategoryName>()
+            .MapWith(src => CategoryName.Create(src));
+
+        config.NewConfig<string, BrandName>()
+            .MapWith(src => BrandName.Create(src));
+
+        config.NewConfig<string, Slug>()
+            .MapWith(src => string.IsNullOrWhiteSpace(src)
+            ? null!
+            : Slug.FromString(src));
+
+        config.NewConfig<string, BrandSlug>()
+            .MapWith(src => string.IsNullOrWhiteSpace(src)
+            ? null!
+            : BrandSlug.FromString(src));
+
+        config.NewConfig<string, CategorySlug>()
+            .MapWith(src => string.IsNullOrWhiteSpace(src)
+            ? null!
+            : CategorySlug.FromString(src));
+
+        config.NewConfig<string, ProductSlug>()
+            .MapWith(src => string.IsNullOrWhiteSpace(src)
+            ? null!
+            : ProductSlug.FromString(src));
+
         config.NewConfig<Guid, CategoryId>()
             .MapWith(src => CategoryId.From(src));
 

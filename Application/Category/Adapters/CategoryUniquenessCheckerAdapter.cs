@@ -7,7 +7,7 @@ public sealed class CategoryUniquenessCheckerAdapter(ICategoryRepository categor
 {
     public async Task<bool> IsUniqueAsync(
         CategoryName name,
-        Slug slug,
+        CategorySlug slug,
         CategoryId? excludeId,
         CancellationToken ct)
     {

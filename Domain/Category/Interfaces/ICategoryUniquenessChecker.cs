@@ -6,7 +6,7 @@ public interface ICategoryUniquenessChecker
 {
     Task<bool> IsUniqueAsync(
         CategoryName name,
-        Slug slug,
+        CategorySlug slug,
         CategoryId? excludeId,
         CancellationToken ct);
 }

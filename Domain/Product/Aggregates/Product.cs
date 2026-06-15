@@ -10,8 +10,8 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
     private Product()
     { }
 
-    public string Name { get; private set; } = default!;
-    public string Slug { get; private set; } = default!;
+    public ProductName Name { get; private set; } = default!;
+    public ProductSlug Slug { get; private set; } = default!;
     public string Description { get; private set; } = default!;
     public bool IsActive { get; private set; }
     public bool IsFeatured { get; private set; }
@@ -28,7 +28,7 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
 
     public static Product Create(
         ProductName name,
-        Slug slug,
+        ProductSlug slug,
         string description,
         BrandId brandId)
     {
@@ -49,7 +49,7 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
         return product;
     }
 
-    public void UpdateDetails(ProductName name, Slug slug, string description)
+    public void UpdateDetails(ProductName name, ProductSlug slug, string description)
     {
         Name = name;
         Slug = slug;

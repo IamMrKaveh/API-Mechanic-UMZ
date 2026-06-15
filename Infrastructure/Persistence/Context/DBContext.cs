@@ -165,6 +165,10 @@ public sealed class DBContext(
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Owned<Slug>();
+        modelBuilder.Owned<BrandSlug>();
+        modelBuilder.Owned<CategorySlug>();
+        modelBuilder.Owned<ProductSlug>();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DBContext).Assembly);
         base.OnModelCreating(modelBuilder);
     }

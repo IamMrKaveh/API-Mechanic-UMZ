@@ -43,8 +43,7 @@ public sealed class UpdateBrandRequest
     public IFormFile? LogoFile { get; set; }
 
     [FromForm(Name = "RowVersion")]
-    [Required]
-    public string RowVersion { get; set; } = string.Empty;
+    public string? RowVersion { get; set; }
 }
 
 public record MoveBrandRequest(

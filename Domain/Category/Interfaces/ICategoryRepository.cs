@@ -14,7 +14,7 @@ public interface ICategoryRepository
         CancellationToken ct = default);
 
     Task<bool> ExistsBySlugAsync(
-        Slug slug,
+        CategorySlug slug,
         CategoryId? excludeId = null,
         CancellationToken ct = default);
 

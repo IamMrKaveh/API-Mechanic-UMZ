@@ -12,4 +12,4 @@ public record UpdateBrandCommand(
     string? LogoFileName,
     string? LogoContentType,
     long? LogoFileSize,
-    string RowVersion) : IRequest<ServiceResult<BrandDetailDto>>;
+    string? RowVersion) : IRequest<ServiceResult<BrandDetailDto>>;

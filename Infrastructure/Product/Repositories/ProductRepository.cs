@@ -20,9 +20,9 @@ public sealed class ProductRepository(DBContext context) : IProductRepository
             .Include(p => p.Variants)
             .FirstOrDefaultAsync(p => p.Id == id, ct);
 
-    public async Task<bool> ExistsBySlugAsync(Slug slug, ProductId? excludeId = null, CancellationToken ct = default)
+    public async Task<bool> ExistsBySlugAsync(ProductSlug slug, ProductId? excludeId = null, CancellationToken ct = default)
         => await context.Products
-            .AnyAsync(p => p.Slug == slug.Value
+            .AnyAsync(p => p.Slug.Value == slug.Value
                 && !p.IsDeleted
                 && (excludeId == null || p.Id != excludeId), ct);
 }

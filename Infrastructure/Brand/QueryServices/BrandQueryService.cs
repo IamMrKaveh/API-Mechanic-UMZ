@@ -14,7 +14,6 @@ public sealed class BrandQueryService(
         CancellationToken ct = default)
     {
         var brand = await context.Brands
-            .AsNoTracking()
             .Where(b => b.Id == brandId)
             .Select(b => new
             {
@@ -26,7 +25,8 @@ public sealed class BrandQueryService(
                 CategoryId = b.CategoryId.Value,
                 b.IsActive,
                 b.CreatedAt,
-                b.UpdatedAt
+                b.UpdatedAt,
+                RowVersion = EF.Property<byte[]>(b, "RowVersion")
             })
             .FirstOrDefaultAsync(ct);
 
@@ -62,7 +62,8 @@ public sealed class BrandQueryService(
             ProductCount = productCount,
             ActiveProductCount = activeProductCount,
             CreatedAt = brand.CreatedAt,
-            UpdatedAt = brand.UpdatedAt
+            UpdatedAt = brand.UpdatedAt,
+            RowVersion = brand.RowVersion is not null ? Convert.ToBase64String(brand.RowVersion) : string.Empty
         };
     }
 

@@ -15,6 +15,8 @@ public interface IBrandRepository
         Aggregates.Brand entity,
         byte[] rowVersion);
 
+    byte[]? GetCurrentRowVersion(Aggregates.Brand entity);
+
     Task<Aggregates.Brand?> GetByIdAsync(
         BrandId id,
         CancellationToken ct = default);
@@ -26,7 +28,7 @@ public interface IBrandRepository
         CancellationToken ct = default);
 
     Task<bool> ExistsBySlugAsync(
-        Slug slug,
+        BrandSlug slug,
         BrandId? excludeId = null,
         CancellationToken ct = default);
 }

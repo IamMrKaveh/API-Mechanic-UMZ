@@ -36,8 +36,8 @@ public sealed class CreateBrandHandler(
             return ServiceResult<BrandDetailDto>.Conflict("نام برند در این دسته‌بندی قبلاً ثبت شده است.");
 
         var slug = string.IsNullOrWhiteSpace(request.Slug)
-            ? Slug.GenerateFrom(request.Name)
-            : Slug.FromString(request.Slug);
+            ? BrandSlug.GenerateFrom(request.Name)
+            : BrandSlug.FromString(request.Slug);
 
         if (await brandRepository.ExistsBySlugAsync(slug, null, ct))
             return ServiceResult<BrandDetailDto>.Conflict("این اسلاگ قبلاً استفاده شده است.");

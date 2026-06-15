@@ -148,10 +148,14 @@ public sealed class ProductQueryService(
         if (categoryId.HasValue)
             query = query.Where(p => p.Brand.CategoryId.Value == categoryId.Value);
 
-        if (!string.IsNullOrWhiteSpace(search))
+        if (string.IsNullOrWhiteSpace(search) is false)
+        {
+            var pattern = $"%{search.Trim()}%";
+
             query = query.Where(p =>
-                p.Name.Contains(search) ||
-                p.Slug.Contains(search));
+                EF.Functions.Like(p.Name.Value, pattern) ||
+                EF.Functions.Like(p.Slug.Value, pattern));
+        }
 
         var total = await query.CountAsync(ct);
 
@@ -193,8 +197,13 @@ public sealed class ProductQueryService(
         if (searchParams.BrandId.HasValue)
             query = query.Where(p => p.BrandId.Value == searchParams.BrandId.Value);
 
-        if (!string.IsNullOrWhiteSpace(searchParams.Search))
-            query = query.Where(p => p.Name.Contains(searchParams.Search));
+        if (string.IsNullOrWhiteSpace(searchParams.Search) is false)
+        {
+            var pattern = $"%{searchParams.Search.Trim()}%";
+
+            query = query.Where(p =>
+                EF.Functions.Like(p.Name.Value, pattern));
+        }
 
         if (searchParams.MinPrice.HasValue)
             query = query.Where(p =>

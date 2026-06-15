@@ -21,7 +21,7 @@ public sealed class UpdateProductDetailsHandler(
 
         productRepository.SetOriginalRowVersion(product, Convert.FromBase64String(request.RowVersion));
 
-        var slug = Slug.GenerateFrom(request.Name);
+        var slug = ProductSlug.GenerateFrom(request.Name);
 
         if (await productRepository.ExistsBySlugAsync(slug, productId, ct))
             return ServiceResult.Conflict("محصولی با این نام قبلاً ثبت شده است.");
