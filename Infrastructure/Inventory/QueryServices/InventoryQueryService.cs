@@ -82,7 +82,10 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
             .Where(i => !i.IsUnlimited && i.AvailableQuantity > 0 && i.AvailableQuantity <= threshold)
             .Select(i => new LowStockItemDto
             {
+                ProductId = i.Variant.ProductId.Value,
                 VariantId = i.VariantId.Value,
+                ProductName = i.Variant.Product.Name.Value,
+                Sku = i.Variant.Sku.Value,
                 StockQuantity = i.StockQuantity.Value,
                 LowStockThreshold = i.LowStockThreshold
             })
@@ -98,7 +101,9 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
             .Where(i => !i.IsUnlimited && i.AvailableQuantity <= 0)
             .Select(i => new OutOfStockItemDto
             {
-                VariantId = i.VariantId.Value
+                VariantId = i.VariantId.Value,
+                ProductName = i.Variant.Product.Name.Value,
+                Sku = i.Variant.Sku.Value
             })
             .ToListAsync(ct);
         return result;
