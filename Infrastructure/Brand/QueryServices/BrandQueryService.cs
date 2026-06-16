@@ -9,6 +9,8 @@ public sealed class BrandQueryService(
     DBContext context,
     IUrlResolverService urlResolver) : IBrandQueryService
 {
+    private const string ConcurrencyTokenName = "xmin";
+
     public async Task<BrandDetailDto?> GetBrandDetailAsync(
         BrandId brandId,
         CancellationToken ct = default)
@@ -26,7 +28,7 @@ public sealed class BrandQueryService(
                 b.IsActive,
                 b.CreatedAt,
                 b.UpdatedAt,
-                RowVersion = EF.Property<byte[]>(b, "RowVersion")
+                ConcurrencyToken = EF.Property<uint>(b, ConcurrencyTokenName)
             })
             .FirstOrDefaultAsync(ct);
 
@@ -63,7 +65,7 @@ public sealed class BrandQueryService(
             ActiveProductCount = activeProductCount,
             CreatedAt = brand.CreatedAt,
             UpdatedAt = brand.UpdatedAt,
-            RowVersion = brand.RowVersion is not null ? Convert.ToBase64String(brand.RowVersion) : string.Empty
+            RowVersion = Convert.ToBase64String(BitConverter.GetBytes(brand.ConcurrencyToken))
         };
     }
 
@@ -81,53 +83,63 @@ public sealed class BrandQueryService(
         if (categoryId is not null)
             query = query.Where(b => b.CategoryId == categoryId);
 
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var pattern = $"%{search.Trim()}%";
+            query = query.Where(b => EF.Functions.ILike(b.Name.Value, pattern)
+                                  || (b.Slug != null && EF.Functions.ILike(b.Slug.Value, pattern)));
+        }
+
         if (isActive.HasValue)
             query = query.Where(b => b.IsActive == isActive.Value);
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var searchTerm = search.Trim().ToLower();
-            query = query.Where(b => EF.Functions.ILike(b.Name.Value, $"%{searchTerm}%"));
-        }
-
-        var totalItems = await query.CountAsync(ct);
+        var totalCount = await query.CountAsync(ct);
 
         var brands = await query
+            .OrderBy(b => b.Name.Value)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(b => new
             {
                 b.Id,
-                Name = b.Name.Value,
-                Slug = b.Slug != null ? b.Slug.Value : null,
-                CategoryId = b.CategoryId.Value,
-                b.IsActive,
-                b.LogoPath
+                b.Name,
+                Slug = b.Slug ?? null,
+                b.LogoPath,
+                b.CategoryId,
+                b.IsActive
             })
-            .OrderBy(b => b.Name)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
             .ToListAsync(ct);
 
-        var categoryIds = brands.Select(b => CategoryId.From(b.CategoryId)).Distinct().ToList();
+        var categoryIds = brands.Select(b => b.CategoryId).Distinct().ToList();
         var categoryNames = await context.Categories
-            .Where(c => categoryIds.Contains(c.Id))
             .AsNoTracking()
-            .ToDictionaryAsync(c => c.Id.Value, c => c.Name.Value, ct);
+            .Where(c => categoryIds.Contains(c.Id))
+            .Select(c => new { c.Id, c.Name })
+            .ToDictionaryAsync(c => c.Id, c => c.Name, ct);
+
+        var brandIds = brands.Select(b => b.Id).ToList();
+        var productCounts = await context.Products
+            .Where(p => brandIds.Contains(p.BrandId!))
+            .GroupBy(p => p.BrandId)
+            .Select(g => new { BrandId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.BrandId!, g => g.Count, ct);
 
         var items = brands.Select(b => new BrandListItemDto
         {
             Id = b.Id.Value,
-            Name = b.Name,
-            Slug = b.Slug,
+            Name = b.Name.Value,
+            Slug = b.Slug?.Value,
             CategoryId = b.CategoryId,
-            CategoryName = categoryNames.TryGetValue(b.CategoryId, out var cn) ? cn : string.Empty,
+            CategoryName = categoryNames.TryGetValue(b.CategoryId, out var name) ? name : string.Empty,
             IsActive = b.IsActive,
-            LogoPath = b.LogoPath is not null ? urlResolver.ResolveMediaUrl(b.LogoPath) : null
+            ProductCount = productCounts.TryGetValue(b.Id, out var count) ? count : 0,
+            LogoPath = b.LogoPath
         }).ToList();
 
         return new PaginatedResult<BrandListItemDto>
         {
             Items = items,
-            TotalCount = totalItems,
+            TotalCount = totalCount,
             Page = page,
             PageSize = pageSize
         };
@@ -137,40 +149,36 @@ public sealed class BrandQueryService(
         CategoryId? categoryId = null,
         CancellationToken ct = default)
     {
-        var query = context.Brands.AsNoTracking().Where(b => b.IsActive);
+        var query = context.Brands
+            .AsNoTracking()
+            .Where(b => b.IsActive);
 
         if (categoryId is not null)
             query = query.Where(b => b.CategoryId == categoryId);
 
         var projected = await query
+            .OrderBy(b => b.Name.Value)
             .Select(b => new
             {
                 b.Id,
-                NameValue = b.Name.Value,
-                SlugValue = b.Slug.Value,
-                CategoryIdValue = b.CategoryId.Value,
-                b.IsActive,
-                b.LogoPath
+                Name = b.Name.Value,
+                Slug = b.Slug != null ? b.Slug.Value : null,
+                b.LogoPath,
+                CategoryId = b.CategoryId.Value,
+                b.IsActive
             })
-            .OrderBy(x => x.NameValue)
             .ToListAsync(ct);
-
-        var categoryIds = projected.Select(b => CategoryId.From(b.CategoryIdValue)).Distinct().ToList();
-        var categoryNames = await context.Categories
-            .AsNoTracking()
-            .Where(c => categoryIds.Contains(c.Id))
-            .Select(c => new { Id = c.Id.Value, Name = c.Name.Value })
-            .ToDictionaryAsync(c => c.Id, c => c.Name, ct);
 
         return projected.Select(b => new BrandListItemDto
         {
             Id = b.Id.Value,
-            Name = b.NameValue,
-            Slug = b.SlugValue,
-            CategoryId = b.CategoryIdValue,
-            CategoryName = categoryNames.TryGetValue(b.CategoryIdValue, out var cn) ? cn : string.Empty,
+            Name = b.Name,
+            Slug = b.Slug,
+            CategoryId = b.CategoryId,
+            CategoryName = string.Empty,
             IsActive = b.IsActive,
-            LogoPath = b.LogoPath is not null ? urlResolver.ResolveMediaUrl(b.LogoPath) : null
-        }).ToList().AsReadOnly();
+            ProductCount = 0,
+            LogoPath = b.LogoPath
+        }).ToList();
     }
 }

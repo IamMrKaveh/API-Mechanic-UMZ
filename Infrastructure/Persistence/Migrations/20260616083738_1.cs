@@ -415,7 +415,7 @@ namespace Infrastructure.Persistence.Migrations
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
