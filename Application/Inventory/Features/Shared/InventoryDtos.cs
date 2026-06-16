@@ -57,6 +57,7 @@ public record VariantAvailabilityDto
 
 public record LowStockItemDto
 {
+    public Guid ProductId { get; init; }
     public Guid VariantId { get; init; }
     public string? ProductName { get; init; }
     public string? Sku { get; init; }
