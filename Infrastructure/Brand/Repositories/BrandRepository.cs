@@ -6,6 +6,8 @@ namespace Infrastructure.Brand.Repositories;
 
 public sealed class BrandRepository(DBContext context) : IBrandRepository
 {
+    private const string ConcurrencyTokenName = "xmin";
+
     public async Task<Domain.Brand.Aggregates.Brand?> GetByIdAsync(
         BrandId brandId,
         CancellationToken ct = default)
@@ -47,8 +49,28 @@ public sealed class BrandRepository(DBContext context) : IBrandRepository
     public void SetOriginalRowVersion(
         Domain.Brand.Aggregates.Brand entity,
         byte[] rowVersion)
-        => context.Entry(entity).Property("RowVersion").OriginalValue = rowVersion;
+    {
+        if (rowVersion is null || rowVersion.Length == 0)
+            return;
+
+        var token = ToConcurrencyToken(rowVersion);
+        context.Entry(entity).Property<uint>(ConcurrencyTokenName).OriginalValue = token;
+    }
 
     public byte[]? GetCurrentRowVersion(Domain.Brand.Aggregates.Brand entity)
-        => context.Entry(entity).Property<byte[]>("RowVersion").CurrentValue;
+    {
+        var token = context.Entry(entity).Property<uint>(ConcurrencyTokenName).CurrentValue;
+        return FromConcurrencyToken(token);
+    }
+
+    private static uint ToConcurrencyToken(byte[] rowVersion)
+    {
+        Span<byte> buffer = stackalloc byte[sizeof(uint)];
+        var length = Math.Min(rowVersion.Length, buffer.Length);
+        rowVersion.AsSpan(0, length).CopyTo(buffer);
+        return BitConverter.ToUInt32(buffer);
+    }
+
+    private static byte[] FromConcurrencyToken(uint token)
+        => BitConverter.GetBytes(token);
 }
