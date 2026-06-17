@@ -25,9 +25,6 @@ public record GetProductCatalogRequest(
 
 public record CreateProductRequest(
     string Name,
-    string Slug,
-    string Description,
-    decimal Price,
     Guid CategoryId,
     Guid BrandId
 );

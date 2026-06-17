@@ -1088,6 +1088,9 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<Guid>("BrandId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1124,6 +1127,8 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BrandId");
+
+                    b.HasIndex("CategoryId");
 
                     b.HasIndex("IsActive");
 
@@ -2790,6 +2795,12 @@ namespace Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Domain.Category.Aggregates.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.OwnsOne("Domain.Product.ValueObjects.ProductName", "Name", b1 =>
                         {
                             b1.Property<Guid>("ProductId")
@@ -2834,6 +2845,8 @@ namespace Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Brand");
+
+                    b.Navigation("Category");
 
                     b.Navigation("Name")
                         .IsRequired();

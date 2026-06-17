@@ -73,10 +73,7 @@ public class AdminProductsController(
         var command = new CreateProductCommand(
             request.CategoryId,
             request.BrandId,
-            request.Name,
-            request.Description,
-            request.Price,
-            request.Slug
+            request.Name
         );
 
         var result = await Mediator.Send(command);
