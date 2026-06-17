@@ -32,9 +32,7 @@ public sealed class CreateProductHandler(
         if (brand is null)
             return ServiceResult<ProductDetailDto>.NotFound("برند یافت نشد.");
 
-        var slug = string.IsNullOrWhiteSpace(request.Slug)
-            ? ProductSlug.GenerateFrom(request.Name)
-            : ProductSlug.FromString(request.Slug);
+        var slug = ProductSlug.GenerateFrom(request.Name);
 
         if (await productRepository.ExistsBySlugAsync(slug, null, ct))
             return ServiceResult<ProductDetailDto>.Conflict("محصولی با این Slug قبلاً ثبت شده است.");
@@ -42,8 +40,9 @@ public sealed class CreateProductHandler(
         var product = Domain.Product.Aggregates.Product.Create(
             ProductName.Create(request.Name),
             slug,
-            request.Description,
-            brandId);
+            string.Empty,
+            brandId,
+            categoryId);
 
         await productRepository.AddAsync(product, ct);
         await unitOfWork.SaveChangesAsync(ct);

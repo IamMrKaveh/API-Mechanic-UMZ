@@ -38,25 +38,27 @@ public sealed class UpdateProductHandler(
         if (brand is null)
             return ServiceResult<ProductDetailDto>.NotFound("برند یافت نشد.");
 
-        var slug = string.IsNullOrWhiteSpace(request.Slug)
-    ? ProductSlug.GenerateFrom(request.Name)
-    : ProductSlug.FromString(request.Slug);
-
-        if (await productRepository.ExistsBySlugAsync(slug, productId, ct))
-            return ServiceResult<ProductDetailDto>.Conflict("محصولی با این Slug قبلاً ثبت شده است.");
+        var slug = ProductSlug.GenerateFrom(request.Slug);
 
         productRepository.SetOriginalRowVersion(product, request.RowVersion.FromBase64RowVersion());
 
-        product.UpdateDetails(ProductName.Create(request.Name), slug, request.Description ?? string.Empty);
+        product.UpdateDetails(
+            ProductName.Create(request.Name),
+            slug,
+            request.Description ?? string.Empty);
 
-        if (product.BrandId != brandId)
-            product.ChangeBrand(brandId);
+        product.ChangeBrand(brandId);
+        product.ChangeCategory(categoryId);
 
-        if (request.IsActive && !product.IsActive) product.Activate();
-        else if (!request.IsActive && product.IsActive) product.Deactivate();
+        if (request.IsActive)
+            product.Activate();
+        else
+            product.Deactivate();
 
-        if (request.IsFeatured && !product.IsFeatured) product.MarkAsFeatured();
-        else if (!request.IsFeatured && product.IsFeatured) product.UnmarkAsFeatured();
+        if (request.IsFeatured)
+            product.MarkAsFeatured();
+        else
+            product.UnmarkAsFeatured();
 
         productRepository.Update(product);
         await unitOfWork.SaveChangesAsync(ct);

@@ -1,4 +1,5 @@
 using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
 using Domain.Product.ValueObjects;
 
 namespace Infrastructure.Product.Configurations;
@@ -42,8 +43,12 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
         builder.Property(e => e.Description)
             .HasColumnType("text");
 
-        builder.Property(e => e.BrandId)
-            .HasConversion(v => v.Value, v => BrandId.From(v))
+        builder.Property(p => p.BrandId)
+            .HasConversion(id => id.Value, value => BrandId.From(value))
+            .IsRequired();
+
+        builder.Property(p => p.CategoryId)
+            .HasConversion(id => id.Value, value => CategoryId.From(value))
             .IsRequired();
 
         builder.Property(e => e.IsActive)
@@ -65,9 +70,14 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
 
         builder.Property(e => e.DeletedBy);
 
-        builder.HasOne(e => e.Brand)
+        builder.HasOne(p => p.Brand)
             .WithMany()
-            .HasForeignKey(e => e.BrandId)
+            .HasForeignKey(p => p.BrandId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.Category)
+            .WithMany()
+            .HasForeignKey(p => p.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(e => e.Variants)
@@ -75,10 +85,9 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
             .HasForeignKey(v => v.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(e => e.BrandId);
-
-        builder.HasIndex(e => e.IsActive);
-
-        builder.HasIndex(e => e.IsDeleted);
+        builder.HasIndex(p => p.BrandId);
+        builder.HasIndex(p => p.CategoryId);
+        builder.HasIndex(p => p.IsActive);
+        builder.HasIndex(p => p.IsDeleted);
     }
 }
