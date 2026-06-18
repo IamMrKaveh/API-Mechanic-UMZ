@@ -82,6 +82,29 @@ public class UpdateVariantHandler(
                     .ToList();
                 if (missingIds.Count != 0)
                     return ServiceResult.Failure($"شناسه‌های ویژگی نامعتبر: {string.Join(", ", missingIds)}");
+
+                var duplicateTypes = attributeValues
+                    .GroupBy(av => av.AttributeTypeId)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key)
+                    .ToList();
+
+                if (duplicateTypes.Count != 0)
+                    return ServiceResult.Validation("برای هر نوع ویژگی فقط یک مقدار مجاز است.");
+
+                var signature = attributeValues
+                    .Select(av => av.Id.Value)
+                    .OrderBy(id => id)
+                    .ToList();
+
+                var duplicateVariantExists = await variantRepository.ExistsByAttributeCombinationAsync(
+                    productId,
+                    signature,
+                    excludeId: variantId,
+                    ct);
+
+                if (duplicateVariantExists)
+                    return ServiceResult.Conflict("تنوع دیگری با همین ترکیب ویژگی‌ها از قبل وجود دارد.");
             }
 
             var assignments = attributeValues.Select(av =>

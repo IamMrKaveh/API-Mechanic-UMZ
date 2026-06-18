@@ -51,18 +51,25 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
         if (compareAtPrice is not null && compareAtPrice.Amount < price.Amount)
             throw new InvalidPriceException("قیمت مقایسه‌ای نمی‌تواند کمتر از قیمت فروش باشد.");
 
+        var purchasePrice = Money.FromDecimal(price.Amount, price.Currency);
+        var sellingPrice = Money.FromDecimal(price.Amount, price.Currency);
+        var listPrice = compareAtPrice is null
+            ? null
+            : Money.FromDecimal(compareAtPrice.Amount, compareAtPrice.Currency);
+
         var variant = new ProductVariant
         {
             Id = id,
             ProductId = productId,
             Sku = sku,
-            Price = price,
-            CompareAtPrice = compareAtPrice,
+            Price = purchasePrice,
+            SellingPrice = sellingPrice,
+            CompareAtPrice = listPrice,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
 
-        variant.RaiseDomainEvent(new VariantCreatedEvent(id, productId, sku, price));
+        variant.RaiseDomainEvent(new VariantCreatedEvent(id, productId, sku, sellingPrice));
         return variant;
     }
 
@@ -78,10 +85,13 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
             throw new InvalidPriceException("قیمت مقایسه‌ای نمی‌تواند کمتر از قیمت فروش باشد.");
 
         var previousPrice = Price;
-        Price = newPrice;
-        CompareAtPrice = newCompareAtPrice;
+        Price = Money.FromDecimal(newPrice.Amount, newPrice.Currency);
+        SellingPrice = Money.FromDecimal(newPrice.Amount, newPrice.Currency);
+        CompareAtPrice = newCompareAtPrice is null
+            ? null
+            : Money.FromDecimal(newCompareAtPrice.Amount, newCompareAtPrice.Currency);
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new ProductVariantPriceChangedEvent(Id, ProductId, previousPrice, newPrice));
+        RaiseDomainEvent(new ProductVariantPriceChangedEvent(Id, ProductId, previousPrice, SellingPrice));
     }
 
     public void ChangeSku(Sku newSku)
