@@ -50,12 +50,45 @@ public class AddVariantHandler(
                     if (missingIds.Count != 0)
                         return ServiceResult<ProductVariantViewDto>.Validation(
                             $"شناسه‌های ویژگی نامعتبر: {string.Join(", ", missingIds)}");
+
+                    var duplicateTypes = attributeValues
+                        .GroupBy(av => av.AttributeTypeId)
+                        .Where(g => g.Count() > 1)
+                        .Select(g => g.Key)
+                        .ToList();
+
+                    if (duplicateTypes.Count != 0)
+                        return ServiceResult<ProductVariantViewDto>.Validation(
+                            "برای هر نوع ویژگی فقط یک مقدار مجاز است.");
+                }
+
+                if (request.AttributeValueIds.Count != 0)
+                {
+                    var existingSignature = attributeValues
+                        .Select(av => av.Id.Value)
+                        .OrderBy(id => id)
+                        .ToList();
+
+                    var duplicateVariantExists = await variantRepository.ExistsByAttributeCombinationAsync(
+                        productId,
+                        existingSignature,
+                        excludeId: null,
+                        cancellationToken);
+
+                    if (duplicateVariantExists)
+                        return ServiceResult<ProductVariantViewDto>.Conflict(
+                            "تنوعی با همین ترکیب ویژگی‌ها از قبل وجود دارد.");
                 }
 
                 var variantId = VariantId.NewId();
                 var sku = request.Sku is not null
                     ? Sku.Create(request.Sku)
                     : Sku.Create(Guid.NewGuid().ToString("N")[..12]);
+
+                var skuExists = await variantRepository.ExistsBySkuAsync(sku, null, cancellationToken);
+                if (skuExists)
+                    return ServiceResult<ProductVariantViewDto>.Conflict("این SKU قبلاً استفاده شده است.");
+
                 var price = Money.FromDecimal(request.SellingPrice);
                 var compareAtPrice = request.OriginalPrice > request.SellingPrice
                     ? Money.FromDecimal(request.OriginalPrice)

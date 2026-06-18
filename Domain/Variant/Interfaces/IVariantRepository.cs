@@ -1,3 +1,4 @@
+using Domain.Product.ValueObjects;
 using Domain.Variant.Aggregates;
 using Domain.Variant.ValueObjects;
 
@@ -31,5 +32,11 @@ public interface IVariantRepository
     Task<bool> ExistsBySkuAsync(
         Sku sku,
         VariantId? excludeId = null,
+        CancellationToken ct = default);
+
+    Task<bool> ExistsByAttributeCombinationAsync(
+        ProductId productId,
+        IReadOnlyCollection<Guid> attributeValueIdsSorted,
+        VariantId? excludeId,
         CancellationToken ct = default);
 }
