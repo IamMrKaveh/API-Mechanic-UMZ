@@ -55,6 +55,7 @@ public sealed class CreateProductHandler(
 
         var dto = mapper.Map<ProductDetailDto>(product) with
         {
+            Id = product.Id.Value,
             CategoryName = category.Name.Value,
             BrandName = brand.Name.Value
         };

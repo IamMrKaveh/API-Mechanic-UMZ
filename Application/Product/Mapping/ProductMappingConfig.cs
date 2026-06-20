@@ -13,6 +13,7 @@ public sealed class ProductMappingConfig : IRegister
             .Map(dest => dest.Slug, src => src.Slug.Value)
             .Map(dest => dest.Description, src => src.Description)
             .Map(dest => dest.BrandId, src => src.BrandId.Value)
+            .Map(dest => dest.CategoryId, src => src.CategoryId.Value)
             .Map(dest => dest.IsActive, src => src.IsActive)
             .Map(dest => dest.IsFeatured, src => src.IsFeatured)
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)

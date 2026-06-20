@@ -57,6 +57,11 @@ public abstract class BaseApiController(ISender mediator, IMapper? mapper = null
         return StatusCode(statusCode, new ApiResponse(false, result.Error, errors));
     }
 
+    protected IActionResult CreatedActionResult<T>(ServiceResult<T> result) =>
+        StatusCode(
+            StatusCodes.Status201Created,
+            new ApiResponse<T>(result.Value, true, null));
+
     private static int MapStatusCode(ErrorType type) =>
         type switch
         {
