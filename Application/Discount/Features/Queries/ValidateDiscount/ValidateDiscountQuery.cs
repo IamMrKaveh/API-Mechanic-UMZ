@@ -5,4 +5,4 @@ namespace Application.Discount.Features.Queries.ValidateDiscount;
 public record ValidateDiscountQuery(
     string Code,
     decimal OrderAmount,
-    string Currency) : IRequest<ServiceResult<DiscountValidationResult>>;
+    string Currency) : IQuery<DiscountValidationResult>;

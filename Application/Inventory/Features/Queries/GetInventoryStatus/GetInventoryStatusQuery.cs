@@ -2,4 +2,5 @@ using Application.Inventory.Features.Shared;
 
 namespace Application.Inventory.Features.Queries.GetInventoryStatus;
 
-public record GetInventoryStatusQuery(Guid VariantId) : IRequest<ServiceResult<InventoryStatusDto>>;
+public record GetInventoryStatusQuery(
+    Guid VariantId) : IQuery<InventoryStatusDto>;

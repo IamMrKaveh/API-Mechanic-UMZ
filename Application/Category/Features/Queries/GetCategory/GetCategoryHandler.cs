@@ -5,7 +5,7 @@ namespace Application.Category.Features.Queries.GetCategory;
 
 public class GetCategoryHandler(
     ICategoryQueryService categoryQueryService)
-    : IRequestHandler<GetCategoryQuery, ServiceResult<CategoryDetailDto>>
+    : IQueryHandler<GetCategoryQuery, CategoryDetailDto>
 {
     public async Task<ServiceResult<CategoryDetailDto>> Handle(GetCategoryQuery request, CancellationToken ct)
     {

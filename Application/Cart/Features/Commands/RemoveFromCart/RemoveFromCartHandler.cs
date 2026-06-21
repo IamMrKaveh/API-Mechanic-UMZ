@@ -9,7 +9,8 @@ namespace Application.Cart.Features.Commands.RemoveFromCart;
 public class RemoveFromCartHandler(
     ICartRepository cartRepository,
     ICartQueryService cartQueryService,
-    IUnitOfWork unitOfWork) : IRequestHandler<RemoveFromCartCommand, ServiceResult<CartDetailDto>>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<RemoveFromCartCommand, CartDetailDto>
 {
     public async Task<ServiceResult<CartDetailDto>> Handle(
         RemoveFromCartCommand request,

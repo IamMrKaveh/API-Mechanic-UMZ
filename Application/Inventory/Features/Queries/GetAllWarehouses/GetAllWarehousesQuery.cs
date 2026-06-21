@@ -2,4 +2,4 @@
 
 namespace Application.Inventory.Features.Queries.GetAllWarehouses;
 
-public record GetAllWarehousesQuery : IRequest<ServiceResult<IReadOnlyList<WarehouseDto>>>;
+public record GetAllWarehousesQuery : IQuery<IReadOnlyList<WarehouseDto>>;

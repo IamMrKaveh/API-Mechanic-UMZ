@@ -7,4 +7,4 @@ public record CreateWarehouseCommand(
     string? Address,
     string? Phone,
     int Priority,
-    bool IsDefault) : IRequest<ServiceResult>;
+    bool IsDefault) : ICommand;

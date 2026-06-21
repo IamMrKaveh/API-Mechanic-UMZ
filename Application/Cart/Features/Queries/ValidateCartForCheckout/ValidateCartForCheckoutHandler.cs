@@ -5,7 +5,8 @@ using Domain.User.ValueObjects;
 namespace Application.Cart.Features.Queries.ValidateCartForCheckout;
 
 public class ValidateCartForCheckoutHandler(
-    ICartQueryService cartQueryService) : IRequestHandler<ValidateCartForCheckoutQuery, ServiceResult<CartCheckoutValidationDto>>
+    ICartQueryService cartQueryService)
+    : IQueryHandler<ValidateCartForCheckoutQuery, CartCheckoutValidationDto>
 {
     public async Task<ServiceResult<CartCheckoutValidationDto>> Handle(
         ValidateCartForCheckoutQuery request,

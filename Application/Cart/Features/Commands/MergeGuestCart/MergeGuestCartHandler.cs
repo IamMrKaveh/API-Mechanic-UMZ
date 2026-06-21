@@ -7,7 +7,8 @@ namespace Application.Cart.Features.Commands.MergeGuestCart;
 public class MergeGuestCartHandler(
     ICartRepository cartRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<MergeGuestCartCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<MergeGuestCartCommand>
 {
     public async Task<ServiceResult> Handle(MergeGuestCartCommand request, CancellationToken ct)
     {

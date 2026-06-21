@@ -5,7 +5,8 @@ using Domain.User.ValueObjects;
 namespace Application.Cart.Features.Queries.GetCartSummary;
 
 public class GetCartSummaryHandler(
-    ICartQueryService cartQueryService) : IRequestHandler<GetCartSummaryQuery, ServiceResult<CartSummaryDto>>
+    ICartQueryService cartQueryService)
+    : IQueryHandler<GetCartSummaryQuery, CartSummaryDto>
 {
     public async Task<ServiceResult<CartSummaryDto>> Handle(
         GetCartSummaryQuery request,

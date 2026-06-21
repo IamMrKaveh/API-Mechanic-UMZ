@@ -5,7 +5,8 @@ using Domain.User.ValueObjects;
 namespace Application.Cart.Features.Queries.GetCart;
 
 public class GetCartHandler(
-    ICartQueryService cartQueryService) : IRequestHandler<GetCartQuery, ServiceResult<CartDetailDto>>
+    ICartQueryService cartQueryService)
+    : IQueryHandler<GetCartQuery, CartDetailDto>
 {
     public async Task<ServiceResult<CartDetailDto>> Handle(
         GetCartQuery request,

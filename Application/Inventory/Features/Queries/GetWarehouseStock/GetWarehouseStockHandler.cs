@@ -4,7 +4,7 @@ using Domain.Variant.ValueObjects;
 namespace Application.Inventory.Features.Queries.GetWarehouseStock;
 
 public class GetWarehouseStockHandler(IInventoryQueryService inventoryQueryService)
-    : IRequestHandler<GetWarehouseStockQuery, ServiceResult<IEnumerable<WarehouseStockDto>>>
+    : IQueryHandler<GetWarehouseStockQuery, IEnumerable<WarehouseStockDto>>
 {
     public async Task<ServiceResult<IEnumerable<WarehouseStockDto>>> Handle(
         GetWarehouseStockQuery request,

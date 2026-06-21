@@ -3,7 +3,7 @@ using Application.Inventory.Features.Shared;
 namespace Application.Inventory.Features.Queries.GetOutOfStockProducts;
 
 public class GetOutOfStockProductsHandler(IInventoryQueryService queryService)
-    : IRequestHandler<GetOutOfStockProductsQuery, ServiceResult<IEnumerable<OutOfStockItemDto>>>
+    : IQueryHandler<GetOutOfStockProductsQuery, IEnumerable<OutOfStockItemDto>>
 {
     public async Task<ServiceResult<IEnumerable<OutOfStockItemDto>>> Handle(
         GetOutOfStockProductsQuery request,

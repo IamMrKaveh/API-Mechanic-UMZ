@@ -9,4 +9,4 @@ public record UpdateCategoryCommand(
     string? Slug,
     string? Description,
     int SortOrder,
-    string? RowVersion) : IRequest<ServiceResult<CategoryDto>>;
+    string? RowVersion) : ICommand<CategoryDto>;

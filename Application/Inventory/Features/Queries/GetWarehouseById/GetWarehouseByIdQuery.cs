@@ -2,4 +2,4 @@
 
 namespace Application.Inventory.Features.Queries.GetWarehouseById;
 
-public record GetWarehouseByIdQuery(Guid Id) : IRequest<ServiceResult<WarehouseDto>>;
+public record GetWarehouseByIdQuery(Guid Id) : IQuery<WarehouseDto>;

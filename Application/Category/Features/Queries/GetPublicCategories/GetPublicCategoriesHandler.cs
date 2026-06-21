@@ -3,7 +3,7 @@
 namespace Application.Category.Features.Queries.GetPublicCategories;
 
 public class GetPublicCategoriesHandler(ICategoryQueryService categoryQueryService)
-    : IRequestHandler<GetPublicCategoriesQuery, ServiceResult<PaginatedResult<CategoryDto>>>
+    : IQueryHandler<GetPublicCategoriesQuery, PaginatedResult<CategoryDto>>
 {
     public async Task<ServiceResult<PaginatedResult<CategoryDto>>> Handle(
         GetPublicCategoriesQuery request,

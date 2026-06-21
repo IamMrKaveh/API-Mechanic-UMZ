@@ -10,4 +10,4 @@ public record UploadMediaCommand(
     string EntityType,
     Guid EntityId,
     bool IsPrimary = false,
-    string? AltText = null) : IRequest<ServiceResult<MediaDto>>;
+    string? AltText = null) : ICommand<MediaDto>;

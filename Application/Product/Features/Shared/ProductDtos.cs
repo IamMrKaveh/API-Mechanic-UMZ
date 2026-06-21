@@ -99,6 +99,7 @@ public record ProductListItemDto
     public bool IsDeleted { get; init; }
     public decimal? MinPrice { get; init; }
     public bool HasStock { get; init; }
+    public int TotalStock { get; init; }
     public string? PrimaryImageUrl { get; init; }
     public DateTime CreatedAt { get; init; }
     public string? RowVersion { get; init; }

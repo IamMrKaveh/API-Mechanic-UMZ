@@ -6,4 +6,4 @@ public record UpdateCartItemCommand(
     Guid? UserId,
     string? GuestToken,
     Guid VariantId,
-    int Quantity) : IRequest<ServiceResult<CartDetailDto>>;
+    int Quantity) : ICommand<CartDetailDto>;

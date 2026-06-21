@@ -5,7 +5,8 @@ namespace Application.Discount.Features.Commands.DeleteDiscount;
 
 public class DeleteDiscountHandler(
     IDiscountRepository discountRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<DeleteDiscountCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<DeleteDiscountCommand>
 {
     public async Task<ServiceResult> Handle(DeleteDiscountCommand request, CancellationToken ct)
     {

@@ -11,4 +11,4 @@ public record CreateDiscountCommand(
     int? UsageLimit,
     bool? IsActive,
     DateTime? StartsAt,
-    DateTime? ExpiresAt) : IRequest<ServiceResult<DiscountDto>>;
+    DateTime? ExpiresAt) : ICommand<DiscountDto>;

@@ -8,10 +8,13 @@ internal sealed class VariantConfiguration : IEntityTypeConfiguration<ProductVar
 {
     public void Configure(EntityTypeBuilder<ProductVariant> builder)
     {
+        builder.ToTable("ProductVariants");
+
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => VariantId.From(value));
+            .HasConversion(id => id.Value, value => VariantId.From(value))
+            .ValueGeneratedNever();
 
         builder.Property(e => e.ProductId)
             .HasConversion(id => id.Value, value => ProductId.From(value))
@@ -48,16 +51,23 @@ internal sealed class VariantConfiguration : IEntityTypeConfiguration<ProductVar
         builder.HasMany(e => e.Attributes)
             .WithOne(a => a.Variant)
             .HasForeignKey(a => a.VariantId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasPrincipalKey(v => v.Id)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
 
         builder.HasMany(e => e.Shippings)
             .WithOne(s => s.Variant)
             .HasForeignKey(s => s.VariantId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasPrincipalKey(v => v.Id)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
 
-        builder.Metadata.FindNavigation(nameof(ProductVariant.Attributes))!
-            .SetPropertyAccessMode(PropertyAccessMode.Field);
-        builder.Metadata.FindNavigation(nameof(ProductVariant.Shippings))!
-            .SetPropertyAccessMode(PropertyAccessMode.Field);
+        var attributesNav = builder.Metadata.FindNavigation(nameof(ProductVariant.Attributes))!;
+        attributesNav.SetPropertyAccessMode(PropertyAccessMode.Field);
+        attributesNav.SetField("_attributes");
+
+        var shippingsNav = builder.Metadata.FindNavigation(nameof(ProductVariant.Shippings))!;
+        shippingsNav.SetPropertyAccessMode(PropertyAccessMode.Field);
+        shippingsNav.SetField("_shippings");
     }
 }

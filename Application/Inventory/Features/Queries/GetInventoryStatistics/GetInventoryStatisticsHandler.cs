@@ -3,7 +3,7 @@ using Application.Inventory.Features.Shared;
 namespace Application.Inventory.Features.Queries.GetInventoryStatistics;
 
 public class GetInventoryStatisticsHandler(IInventoryQueryService queryService)
-    : IRequestHandler<GetInventoryStatisticsQuery, ServiceResult<InventoryStatisticsDto>>
+    : IQueryHandler<GetInventoryStatisticsQuery, InventoryStatisticsDto>
 {
     public async Task<ServiceResult<InventoryStatisticsDto>> Handle(
         GetInventoryStatisticsQuery request,

@@ -1,6 +1,5 @@
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.ValueObjects;
-using Domain.Variant.Entities;
 
 namespace Domain.Attribute.Entities;
 
@@ -16,12 +15,9 @@ public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActi
 
     public AttributeTypeId AttributeTypeId { get; private set; } = null!;
     public AttributeType AttributeType { get; private set; } = null!;
-    public ICollection<VariantAttribute> VariantAttributes { get; private set; } = [];
 
     public bool IsDeleted { get; private set; }
-
     public DateTime? DeletedAt { get; private set; }
-
     public Guid? DeletedBy { get; private set; }
 
     private AttributeValue()

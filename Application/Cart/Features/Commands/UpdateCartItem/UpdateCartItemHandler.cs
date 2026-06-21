@@ -13,7 +13,8 @@ public class UpdateCartItemHandler(
     IVariantRepository variantRepository,
     IInventoryRepository inventoryRepository,
     ICartQueryService cartQueryService,
-    IUnitOfWork unitOfWork) : IRequestHandler<UpdateCartItemCommand, ServiceResult<CartDetailDto>>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<UpdateCartItemCommand, CartDetailDto>
 {
     public async Task<ServiceResult<CartDetailDto>> Handle(
         UpdateCartItemCommand request,

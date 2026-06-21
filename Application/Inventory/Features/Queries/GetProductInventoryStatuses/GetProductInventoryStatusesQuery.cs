@@ -1,5 +1,4 @@
-﻿using Application.Common.Interfaces;
-using Application.Inventory.Features.Shared;
+﻿using Application.Inventory.Features.Shared;
 
 namespace Application.Inventory.Features.Queries.GetProductInventoryStatuses;
 

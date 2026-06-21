@@ -5,7 +5,8 @@ namespace Application.Media.Features.Commands.DeleteMedia;
 
 public class DeleteMediaHandler(
     IMediaService mediaService,
-    ICurrentUserService currentUserService) : IRequestHandler<DeleteMediaCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<DeleteMediaCommand>
 {
     public Task<ServiceResult> Handle(DeleteMediaCommand request, CancellationToken ct)
     {

@@ -1080,8 +1080,7 @@ namespace Infrastructure.Persistence.Migrations
                     VariantId = table.Column<Guid>(type: "uuid", nullable: false),
                     AttributeTypeId = table.Column<Guid>(type: "uuid", nullable: false),
                     ValueId = table.Column<Guid>(type: "uuid", nullable: false),
-                    DisplayValue = table.Column<string>(type: "text", nullable: false),
-                    AttributeValueId = table.Column<Guid>(type: "uuid", nullable: true)
+                    DisplayValue = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1092,11 +1091,6 @@ namespace Infrastructure.Persistence.Migrations
                         principalTable: "AttributeTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ProductVariantAttributes_AttributeValues_AttributeValueId",
-                        column: x => x.AttributeValueId,
-                        principalTable: "AttributeValues",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ProductVariantAttributes_AttributeValues_ValueId",
                         column: x => x.ValueId,
@@ -1495,20 +1489,26 @@ namespace Infrastructure.Persistence.Migrations
                 column: "AttributeTypeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProductVariantAttributes_AttributeValueId",
-                table: "ProductVariantAttributes",
-                column: "AttributeValueId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ProductVariantAttributes_ValueId",
                 table: "ProductVariantAttributes",
                 column: "ValueId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProductVariantAttributes_VariantId_ValueId",
+                name: "IX_ProductVariantAttributes_Variant_Type",
+                table: "ProductVariantAttributes",
+                columns: new[] { "VariantId", "AttributeTypeId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductVariantAttributes_Variant_Value",
                 table: "ProductVariantAttributes",
                 columns: new[] { "VariantId", "ValueId" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductVariantAttributes_VariantId",
+                table: "ProductVariantAttributes",
+                column: "VariantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProductVariants_IsActive",

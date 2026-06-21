@@ -3,7 +3,7 @@ using Application.Media.Features.Shared;
 namespace Application.Media.Features.Queries.GetEntityMedia;
 
 public class GetEntityMediaHandler(IMediaQueryService mediaQueryService)
-    : IRequestHandler<GetEntityMediaQuery, ServiceResult<IReadOnlyList<MediaDto>>>
+    : IQueryHandler<GetEntityMediaQuery, IReadOnlyList<MediaDto>>
 {
     public async Task<ServiceResult<IReadOnlyList<MediaDto>>> Handle(
         GetEntityMediaQuery request,

@@ -4,7 +4,7 @@ using Application.Location.Features.Shared;
 namespace Application.Location.Features.Queries.GetCities;
 
 public class GetCitiesHandler(ILocationService locationService)
-    : IRequestHandler<GetCitiesQuery, ServiceResult<IEnumerable<CityDto>>>
+    : IQueryHandler<GetCitiesQuery, IEnumerable<CityDto>>
 {
     public async Task<ServiceResult<IEnumerable<CityDto>>> Handle(
         GetCitiesQuery request,

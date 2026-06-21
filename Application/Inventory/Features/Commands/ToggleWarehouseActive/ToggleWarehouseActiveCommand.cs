@@ -1,3 +1,5 @@
 ﻿namespace Application.Inventory.Features.Commands.ToggleWarehouseActive;
 
-public record ToggleWarehouseActiveCommand(Guid Id, bool IsActive) : IRequest<ServiceResult>;
+public record ToggleWarehouseActiveCommand(
+    Guid Id,
+    bool IsActive) : ICommand;

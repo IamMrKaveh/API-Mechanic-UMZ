@@ -3,7 +3,9 @@ using Domain.Discount.ValueObjects;
 
 namespace Application.Discount.Features.Queries.GetDiscountUsageReport;
 
-public class GetDiscountUsageReportHandler(IDiscountQueryService discountQueryService) : IRequestHandler<GetDiscountUsageReportQuery, ServiceResult<DiscountUsageReportDto?>>
+public class GetDiscountUsageReportHandler(
+    IDiscountQueryService discountQueryService)
+    : IQueryHandler<GetDiscountUsageReportQuery, DiscountUsageReportDto?>
 {
     public async Task<ServiceResult<DiscountUsageReportDto?>> Handle(
         GetDiscountUsageReportQuery request,

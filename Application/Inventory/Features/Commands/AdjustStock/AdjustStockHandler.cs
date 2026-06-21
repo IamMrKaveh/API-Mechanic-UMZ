@@ -8,7 +8,8 @@ public class AdjustStockHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<AdjustStockCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<AdjustStockCommand>
 {
     public async Task<ServiceResult> Handle(AdjustStockCommand request, CancellationToken ct)
     {

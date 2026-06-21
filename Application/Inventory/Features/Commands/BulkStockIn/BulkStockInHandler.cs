@@ -11,7 +11,7 @@ public class BulkStockInHandler(
     IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService)
-    : IRequestHandler<BulkStockInCommand, ServiceResult>
+    : ICommandHandler<BulkStockInCommand>
 {
     public async Task<ServiceResult> Handle(BulkStockInCommand request, CancellationToken ct)
     {

@@ -8,4 +8,4 @@ public record GetInventoryTransactionsQuery(
     DateTime? FromDate,
     DateTime? ToDate,
     int Page = 1,
-    int PageSize = 20) : IRequest<ServiceResult<PaginatedResult<InventoryTransactionDto>>>;
+    int PageSize = 20) : IPageQuery<InventoryTransactionDto>;

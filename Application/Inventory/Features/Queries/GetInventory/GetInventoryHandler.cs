@@ -3,7 +3,9 @@ using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Features.Queries.GetInventory;
 
-public class GetInventoryHandler(IInventoryQueryService inventoryQueryService) : IRequestHandler<GetInventoryQuery, ServiceResult<InventoryDto>>
+public class GetInventoryHandler(
+    IInventoryQueryService inventoryQueryService)
+    : IQueryHandler<GetInventoryQuery, InventoryDto>
 {
     public async Task<ServiceResult<InventoryDto>> Handle(
         GetInventoryQuery request,

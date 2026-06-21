@@ -4,7 +4,7 @@ using Domain.Category.ValueObjects;
 namespace Application.Category.Features.Queries.GetCategoryProducts;
 
 public class GetCategoryProductsHandler(ICategoryQueryService queryService)
-    : IRequestHandler<GetCategoryProductsQuery, ServiceResult<PaginatedResult<CategoryProductItemDto>>>
+    : IQueryHandler<GetCategoryProductsQuery, PaginatedResult<CategoryProductItemDto>>
 {
     public async Task<ServiceResult<PaginatedResult<CategoryProductItemDto>>> Handle(
         GetCategoryProductsQuery request,

@@ -10,7 +10,8 @@ public class ReconcileStockHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<ReconcileStockCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<ReconcileStockCommand>
 {
     public async Task<ServiceResult> Handle(ReconcileStockCommand request, CancellationToken ct)
     {

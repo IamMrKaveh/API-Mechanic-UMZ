@@ -3,8 +3,9 @@ using Domain.Inventory.Interfaces;
 
 namespace Application.Inventory.Features.Queries.GetAllWarehouses;
 
-public class GetAllWarehousesHandler(IWarehouseRepository warehouseRepository)
-    : IRequestHandler<GetAllWarehousesQuery, ServiceResult<IReadOnlyList<WarehouseDto>>>
+public class GetAllWarehousesHandler(
+    IWarehouseRepository warehouseRepository)
+    : IQueryHandler<GetAllWarehousesQuery, IReadOnlyList<WarehouseDto>>
 {
     public async Task<ServiceResult<IReadOnlyList<WarehouseDto>>> Handle(
         GetAllWarehousesQuery request,

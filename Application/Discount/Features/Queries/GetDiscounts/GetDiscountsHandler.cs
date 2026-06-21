@@ -3,7 +3,8 @@ using Application.Discount.Features.Shared;
 namespace Application.Discount.Features.Queries.GetDiscounts;
 
 public class GetDiscountsHandler(
-    IDiscountQueryService discountQueryService) : IRequestHandler<GetDiscountsQuery, ServiceResult<PaginatedResult<DiscountCodeDto>>>
+    IDiscountQueryService discountQueryService)
+    : IQueryHandler<GetDiscountsQuery, PaginatedResult<DiscountCodeDto>>
 {
     public async Task<ServiceResult<PaginatedResult<DiscountCodeDto>>> Handle(
         GetDiscountsQuery request, CancellationToken ct)

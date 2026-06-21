@@ -8,7 +8,8 @@ namespace Application.Discount.Features.Commands.UpdateDiscount;
 public class UpdateDiscountHandler(
     IDiscountRepository discountRepository,
     IUnitOfWork unitOfWork,
-    IMapper mapper) : IRequestHandler<UpdateDiscountCommand, ServiceResult<DiscountDto>>
+    IMapper mapper)
+    : ICommandHandler<UpdateDiscountCommand, DiscountDto>
 {
     public async Task<ServiceResult<DiscountDto>> Handle(UpdateDiscountCommand request, CancellationToken ct)
     {

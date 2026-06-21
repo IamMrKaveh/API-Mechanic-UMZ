@@ -1646,42 +1646,51 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("Sku")
                         .IsUnique();
 
-                    b.ToTable("ProductVariants");
+                    b.ToTable("ProductVariants", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Variant.Entities.VariantAttribute", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("Id");
 
                     b.Property<Guid>("AttributeTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("AttributeValueId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("AttributeTypeId");
 
                     b.Property<string>("DisplayValue")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("DisplayValue");
 
                     b.Property<Guid>("ValueId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("ValueId");
 
                     b.Property<Guid>("VariantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("VariantId");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AttributeTypeId");
 
-                    b.HasIndex("AttributeValueId");
-
                     b.HasIndex("ValueId");
 
-                    b.HasIndex("VariantId", "ValueId")
-                        .IsUnique();
+                    b.HasIndex("VariantId")
+                        .HasDatabaseName("IX_ProductVariantAttributes_VariantId");
 
-                    b.ToTable("ProductVariantAttributes");
+                    b.HasIndex("VariantId", "AttributeTypeId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ProductVariantAttributes_Variant_Type");
+
+                    b.HasIndex("VariantId", "ValueId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ProductVariantAttributes_Variant_Value");
+
+                    b.ToTable("ProductVariantAttributes", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Variant.Entities.VariantShipping", b =>
@@ -3314,10 +3323,6 @@ namespace Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Attribute.Entities.AttributeValue", null)
-                        .WithMany("VariantAttributes")
-                        .HasForeignKey("AttributeValueId");
-
                     b.HasOne("Domain.Attribute.Entities.AttributeValue", "Value")
                         .WithMany()
                         .HasForeignKey("ValueId")
@@ -3523,11 +3528,6 @@ namespace Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Domain.Attribute.Aggregates.AttributeType", b =>
                 {
                     b.Navigation("Values");
-                });
-
-            modelBuilder.Entity("Domain.Attribute.Entities.AttributeValue", b =>
-                {
-                    b.Navigation("VariantAttributes");
                 });
 
             modelBuilder.Entity("Domain.Cart.Aggregates.Cart", b =>

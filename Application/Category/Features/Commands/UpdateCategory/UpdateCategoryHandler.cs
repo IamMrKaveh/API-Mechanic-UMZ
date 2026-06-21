@@ -8,7 +8,8 @@ namespace Application.Category.Features.Commands.UpdateCategory;
 public class UpdateCategoryHandler(
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<UpdateCategoryCommand, ServiceResult<CategoryDto>>
+    IAuditService auditService)
+    : ICommandHandler<UpdateCategoryCommand, CategoryDto>
 {
     public async Task<ServiceResult<CategoryDto>> Handle(UpdateCategoryCommand request, CancellationToken ct)
     {
