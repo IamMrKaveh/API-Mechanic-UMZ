@@ -1,11 +1,13 @@
 using Application.Audit.Contracts;
+using Application.Common.Exceptions;
 using SharedKernel.Exceptions;
 
 namespace Presentation.Common.Middleware;
 
 public class CustomExceptionHandlerMiddleware(
     RequestDelegate next,
-    IServiceScopeFactory scopeFactory)
+    IServiceScopeFactory scopeFactory,
+    ILogger<CustomExceptionHandlerMiddleware> logger)
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
@@ -26,22 +28,15 @@ public class CustomExceptionHandlerMiddleware(
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var (statusCode, body) = exception switch
-        {
-            ValidationException ve => MapValidationException(ve),
-            DomainException de => MapDomainException(de),
-            KeyNotFoundException => MapNotFoundException(exception),
-            UnauthorizedAccessException => MapUnauthorizedException(),
-            _ => MapUnhandledException(exception)
-        };
+        var (statusCode, body, isUnhandled) = MapException(exception);
 
-        if (exception is not ValidationException
-            and not DomainException
-            and not KeyNotFoundException
-            and not UnauthorizedAccessException)
-        {
-            await LogUnhandledExceptionAsync(exception);
-        }
+        LogException(context, exception, (int)statusCode, isUnhandled);
+
+        if (isUnhandled)
+            await LogAuditAsync(exception);
+
+        if (context.Response.HasStarted)
+            return;
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
@@ -49,36 +44,60 @@ public class CustomExceptionHandlerMiddleware(
         await context.Response.WriteAsync(JsonSerializer.Serialize(body, SerializerOptions));
     }
 
-    private async Task LogUnhandledExceptionAsync(Exception exception)
-    {
-        using var scope = scopeFactory.CreateScope();
-        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
-        await auditService.LogErrorAsync(
-            $"Unhandled exception: {exception.GetType().Name} — {exception.Message}\n{exception.StackTrace}");
-    }
+    private static (HttpStatusCode StatusCode, ApiResponse Body, bool IsUnhandled) MapException(Exception exception)
+        => exception switch
+        {
+            ValidationException ve => (HttpStatusCode.BadRequest, BuildValidation(ve), false),
+            DomainException de => (HttpStatusCode.BadRequest, new ApiResponse(false, de.Message), false),
+            KeyNotFoundException => (HttpStatusCode.NotFound, new ApiResponse(false, exception.Message), false),
+            UnauthorizedAccessException => (HttpStatusCode.Unauthorized, new ApiResponse(false, "دسترسی غیرمجاز."), false),
+            ConcurrencyException ce => (HttpStatusCode.Conflict, new ApiResponse(false, ce.Message), false),
+            DbUpdateConcurrencyException => (HttpStatusCode.Conflict, new ApiResponse(false, "تغییرات همزمان رخ داده است. لطفاً دوباره تلاش کنید."), false),
+            OperationCanceledException => ((HttpStatusCode)499, new ApiResponse(false, "درخواست لغو شد."), false),
+            _ => (HttpStatusCode.InternalServerError, new ApiResponse(false, "خطای غیرمنتظره‌ای رخ داده است."), true)
+        };
 
-    private static (HttpStatusCode, ApiResponse) MapValidationException(ValidationException exception)
+    private static ApiResponse BuildValidation(ValidationException exception)
     {
         var errors = exception.Errors
             .GroupBy(e => e.PropertyName)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(e => e.ErrorMessage).ToArray());
+            .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
 
-        return (HttpStatusCode.BadRequest, new ApiResponse(false, "اطلاعات ورودی نامعتبر است.", errors));
+        return new ApiResponse(false, "اطلاعات ورودی نامعتبر است.", errors);
     }
 
-    private static (HttpStatusCode, ApiResponse) MapDomainException(DomainException exception)
-        => (HttpStatusCode.BadRequest, new ApiResponse(false, exception.Message));
+    private void LogException(HttpContext context, Exception exception, int statusCode, bool isUnhandled)
+    {
+        var level = isUnhandled
+            ? LogLevel.Error
+            : statusCode >= 500
+                ? LogLevel.Error
+                : LogLevel.Warning;
 
-    private static (HttpStatusCode, ApiResponse) MapNotFoundException(Exception exception)
-        => (HttpStatusCode.NotFound, new ApiResponse(false, exception.Message));
+        logger.Log(
+            level,
+            exception,
+            "Exception {ExceptionType} handled with status {StatusCode} for {RequestMethod} {RequestPath}",
+            exception.GetType().Name,
+            statusCode,
+            context.Request.Method,
+            context.Request.Path.Value);
+    }
 
-    private static (HttpStatusCode, ApiResponse) MapUnauthorizedException()
-        => (HttpStatusCode.Unauthorized, new ApiResponse(false, "دسترسی غیرمجاز."));
-
-    private static (HttpStatusCode, ApiResponse) MapUnhandledException(Exception exception)
-        => (HttpStatusCode.InternalServerError, new ApiResponse(false, "خطای غیرمنتظره‌ای رخ داده است."));
+    private async Task LogAuditAsync(Exception exception)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
+            await auditService.LogErrorAsync(
+                $"Unhandled exception: {exception.GetType().Name} — {exception.Message}\n{exception.StackTrace}");
+        }
+        catch (Exception auditEx)
+        {
+            logger.LogError(auditEx, "Failed to write unhandled exception to audit log.");
+        }
+    }
 }
 
 public static class CustomExceptionHandlerMiddlewareExtensions

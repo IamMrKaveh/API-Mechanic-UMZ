@@ -1,5 +1,7 @@
 using Application.Common.DependencyInjection;
 using Infrastructure.DependencyInjection;
+using Serilog.Exceptions;
+using Serilog.Formatting.Compact;
 
 var logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "logs");
 var logsErrorDirectory = Path.Combine(logsDirectory, "errors");
@@ -10,13 +12,10 @@ Directory.CreateDirectory(logsErrorDirectory);
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.File(
-        path: Path.Combine(logsDirectory, "log-.txt"),
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 7,
+    .Enrich.WithExceptionDetails()
+    .WriteTo.Console(
         outputTemplate:
-        "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+        "[{Level:u3}] {Message:lj}{NewLine}{Exception}")
     .CreateBootstrapLogger();
 
 try
@@ -42,7 +41,30 @@ try
             .Enrich.WithProcessId()
             .Enrich.WithProcessName()
             .Enrich.WithThreadId()
-            .Enrich.WithProperty("Application", "Presentation"));
+            .Enrich.WithExceptionDetails()
+            .WriteTo.Console(
+                outputTemplate:
+                "[{Level:u3}] " +
+                "{SourceContext} {Message:lj}{NewLine}{Exception}")
+            .WriteTo.File(
+                path: Path.Combine(logsDirectory, "log-.txt"),
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 14,
+                fileSizeLimitBytes: 50 * 1024 * 1024,
+                rollOnFileSizeLimit: true,
+                shared: true,
+                outputTemplate:
+                "[{Level:u3}] " +
+                "{SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}")
+            .WriteTo.File(
+                formatter: new CompactJsonFormatter(),
+                path: Path.Combine(logsErrorDirectory, "error-.json"),
+                restrictedToMinimumLevel: LogEventLevel.Warning,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 30,
+                fileSizeLimitBytes: 50 * 1024 * 1024,
+                rollOnFileSizeLimit: true,
+                shared: true));
 
     builder.AddApplicationAuthentication();
 

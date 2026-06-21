@@ -104,12 +104,42 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
     public void SetAttributes(IEnumerable<AttributeAssignment> assignments)
     {
         EnsureActive();
-        _attributes.Clear();
-        foreach (var assignment in assignments)
+
+        var desired = (assignments ?? Enumerable.Empty<AttributeAssignment>()).ToList();
+
+        var desiredByValueId = desired
+            .GroupBy(a => a.ValueId)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        var toRemove = _attributes
+            .Where(existing => !desiredByValueId.ContainsKey(existing.ValueId))
+            .ToList();
+
+        foreach (var orphan in toRemove)
+            _attributes.Remove(orphan);
+
+        foreach (var existing in _attributes)
         {
-            _attributes.Add(VariantAttribute.Create(
-                Id, assignment.AttributeId, assignment.ValueId, assignment.DisplayValue));
+            if (desiredByValueId.TryGetValue(existing.ValueId, out var match))
+                existing.UpdateDisplay(match.AttributeId, match.DisplayValue);
         }
+
+        var existingValueIds = _attributes.Select(a => a.ValueId).ToHashSet();
+
+        foreach (var assignment in desired)
+        {
+            if (existingValueIds.Contains(assignment.ValueId))
+                continue;
+
+            _attributes.Add(VariantAttribute.Create(
+                Id,
+                assignment.AttributeId,
+                assignment.ValueId,
+                assignment.DisplayValue));
+
+            existingValueIds.Add(assignment.ValueId);
+        }
+
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new VariantAttributeSetEvent(Id, ProductId));
     }
@@ -121,15 +151,49 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
         if (shippingMultiplier <= 0)
             throw new DomainException("ضریب هزینه ارسال باید بزرگتر از صفر باشد.");
 
-        _shippings.Clear();
-        foreach (var assignment in assignments)
+        var desired = (assignments ?? Enumerable.Empty<ShippingAssignment>()).ToList();
+
+        var desiredByShippingId = desired
+            .GroupBy(a => a.ShippingId)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        var toRemove = _shippings
+            .Where(existing => !desiredByShippingId.ContainsKey(existing.ShippingId))
+            .ToList();
+
+        foreach (var orphan in toRemove)
+            _shippings.Remove(orphan);
+
+        foreach (var existing in _shippings)
         {
-            _shippings.Add(VariantShipping.Create(
-                Id, assignment.ShippingId,
-                assignment.Weight, assignment.Width,
-                assignment.Height, assignment.Length,
-                shippingMultiplier));
+            if (desiredByShippingId.TryGetValue(existing.ShippingId, out var match))
+                existing.UpdateDimensions(
+                    match.Weight,
+                    match.Width,
+                    match.Height,
+                    match.Length,
+                    shippingMultiplier);
         }
+
+        var existingShippingIds = _shippings.Select(s => s.ShippingId).ToHashSet();
+
+        foreach (var assignment in desired)
+        {
+            if (existingShippingIds.Contains(assignment.ShippingId))
+                continue;
+
+            _shippings.Add(VariantShipping.Create(
+                Id,
+                assignment.ShippingId,
+                assignment.Weight,
+                assignment.Width,
+                assignment.Height,
+                assignment.Length,
+                shippingMultiplier));
+
+            existingShippingIds.Add(assignment.ShippingId);
+        }
+
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new VariantShippingSetEvent(Id, ProductId));
     }

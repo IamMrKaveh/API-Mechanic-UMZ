@@ -17,6 +17,10 @@ public interface IVariantRepository
         VariantId id,
         CancellationToken ct = default);
 
+    Task<ProductVariant?> GetForUpdateAsync(
+        VariantId id,
+        CancellationToken ct = default);
+
     Task<ProductVariant?> GetWithProductAsync(
         VariantId id,
         CancellationToken ct = default);
@@ -28,6 +32,8 @@ public interface IVariantRepository
     Task<IReadOnlyList<ProductVariant>> GetByIdsAsync(
         IEnumerable<VariantId> ids,
         CancellationToken ct = default);
+
+    Task<bool> ExistsAsync(VariantId id, CancellationToken ct = default);
 
     Task<bool> ExistsBySkuAsync(
         Sku sku,

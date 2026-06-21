@@ -24,6 +24,7 @@ public static class ApplicationServiceCollection
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(ApplicationServiceCollection).Assembly);
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionLoggingBehavior<,>));
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(QueryLoggingBehavior<,>));
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(IdempotencyBehavior<,>));

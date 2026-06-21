@@ -162,6 +162,44 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
         };
     }
 
+    public async Task<IReadOnlyList<InventoryStatusDto>> GetInventoryStatusesByProductAsync(
+        ProductId productId,
+        CancellationToken ct = default)
+    {
+        var variantIds = await context.ProductVariants
+            .AsNoTracking()
+            .Where(v => v.ProductId == productId && !v.IsDeleted)
+            .Select(v => v.Id)
+            .ToListAsync(ct);
+
+        if (variantIds.Count == 0)
+            return Array.Empty<InventoryStatusDto>();
+
+        var inventories = await context.Inventories
+            .AsNoTracking()
+            .Where(i => variantIds.Contains(i.VariantId))
+            .ToListAsync(ct);
+
+        var inventoryByVariant = inventories.ToDictionary(i => i.VariantId);
+
+        return variantIds
+            .Select(vid =>
+            {
+                inventoryByVariant.TryGetValue(vid, out var inv);
+                return new InventoryStatusDto
+                {
+                    VariantId = vid.Value,
+                    StockQuantity = inv?.StockQuantity.Value ?? 0,
+                    ReservedQuantity = inv?.ReservedQuantity.Value ?? 0,
+                    AvailableStock = inv?.AvailableQuantity ?? 0,
+                    IsInStock = inv?.IsInStock ?? false,
+                    IsUnlimited = inv?.IsUnlimited ?? false,
+                    IsLowStock = inv?.IsLowStock ?? false
+                };
+            })
+            .ToList();
+    }
+
     public async Task<IEnumerable<WarehouseStockDto>> GetWarehouseStockByVariantAsync(
         VariantId variantId,
         CancellationToken ct = default)
@@ -226,37 +264,5 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
                 ? (int)Math.Round((double)x.NetQuantity / totalNet * inventory.ReservedQuantity.Value)
                 : 0
         });
-    }
-
-    public async Task<IReadOnlyList<InventoryStatusDto>> GetInventoryStatusesByProductAsync(
-        ProductId productId,
-        CancellationToken ct = default)
-    {
-        var variantIds = await context.ProductVariants
-            .AsNoTracking()
-            .Where(v => v.ProductId == productId && !v.IsDeleted)
-            .Select(v => v.Id)
-            .ToListAsync(ct);
-
-        if (variantIds.Count == 0)
-            return Array.Empty<InventoryStatusDto>();
-
-        var inventories = await context.Inventories
-            .AsNoTracking()
-            .Where(i => variantIds.Contains(i.VariantId))
-            .ToListAsync(ct);
-
-        return inventories
-            .Select(inventory => new InventoryStatusDto
-            {
-                VariantId = inventory.VariantId.Value,
-                StockQuantity = inventory.StockQuantity.Value,
-                ReservedQuantity = inventory.ReservedQuantity.Value,
-                AvailableStock = inventory.AvailableQuantity,
-                IsInStock = inventory.IsInStock,
-                IsUnlimited = inventory.IsUnlimited,
-                IsLowStock = inventory.IsLowStock
-            })
-            .ToList();
     }
 }

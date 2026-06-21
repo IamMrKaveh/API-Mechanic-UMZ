@@ -1,6 +1,7 @@
 using Application.Variant.Features.Shared;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
+using Domain.Inventory.Interfaces;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.Shipping.Interfaces;
@@ -15,6 +16,7 @@ namespace Application.Variant.Features.Commands.AddVariant;
 public class AddVariantHandler(
     IProductRepository productRepository,
     IVariantRepository variantRepository,
+    IInventoryRepository inventoryRepository,
     IAttributeRepository attributeRepository,
     IShippingRepository shippingRepository,
     IUnitOfWork unitOfWork,
@@ -115,6 +117,17 @@ public class AddVariantHandler(
                 }
 
                 await variantRepository.AddAsync(variant, cancellationToken);
+
+                var initialStock = request.IsUnlimited ? 0 : Math.Max(0, request.Stock);
+                var inventory = Domain.Inventory.Aggregates.Inventory.Create(
+                    variantId,
+                    initialStock,
+                    request.IsUnlimited,
+                    lowStockThreshold: 5,
+                    createdBy: userId);
+
+                await inventoryRepository.AddAsync(inventory, cancellationToken);
+
                 await unitOfWork.SaveChangesAsync(cancellationToken);
 
                 await auditService.LogProductEventAsync(

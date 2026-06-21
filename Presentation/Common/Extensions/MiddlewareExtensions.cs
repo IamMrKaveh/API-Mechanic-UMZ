@@ -34,6 +34,34 @@ public static class MiddlewareExtensions
 
         app.UseMiddleware<CorrelationIdMiddleware>();
 
+        app.UseSerilogRequestLogging(options =>
+        {
+            options.MessageTemplate =
+                "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+
+            options.GetLevel = (httpContext, elapsed, ex) =>
+                ex != null
+                    ? LogEventLevel.Error
+                    : httpContext.Response.StatusCode >= 500
+                        ? LogEventLevel.Error
+                        : httpContext.Response.StatusCode >= 400
+                            ? LogEventLevel.Warning
+                            : LogEventLevel.Information;
+
+            options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+            {
+                diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+                diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+                diagnosticContext.Set("UserAgent", httpContext.Request.Headers.UserAgent.ToString());
+                diagnosticContext.Set("RemoteIpAddress", httpContext.Connection.RemoteIpAddress?.ToString());
+
+                if (httpContext.User.Identity?.IsAuthenticated == true)
+                    diagnosticContext.Set("UserName", httpContext.User.Identity.Name);
+            };
+        });
+
+        app.UseMiddleware<RequestLoggingEnrichmentMiddleware>();
+
         app.UseCustomExceptionHandler();
 
         app.UseMiddleware<SecurityHeadersMiddleware>();

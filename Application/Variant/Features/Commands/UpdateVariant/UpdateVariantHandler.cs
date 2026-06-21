@@ -27,7 +27,7 @@ public class UpdateVariantHandler(
         var userId = UserId.From(currentUserService.UserId.Value);
         var productId = ProductId.From(request.ProductId);
 
-        var variant = await variantRepository.GetByIdAsync(variantId, ct);
+        var variant = await variantRepository.GetForUpdateAsync(variantId, ct);
         if (variant is null)
             return ServiceResult.NotFound("واریانت یافت نشد.");
 
@@ -37,10 +37,13 @@ public class UpdateVariantHandler(
         if (request.Sku is not null)
         {
             var newSku = Sku.Create(request.Sku);
-            var skuExists = await variantRepository.ExistsBySkuAsync(newSku, variantId, ct);
-            if (skuExists)
-                return ServiceResult.Conflict("این SKU قبلاً استفاده شده است.");
-            variant.ChangeSku(newSku);
+            if (!variant.Sku.Equals(newSku))
+            {
+                var skuExists = await variantRepository.ExistsBySkuAsync(newSku, variantId, ct);
+                if (skuExists)
+                    return ServiceResult.Conflict("این SKU قبلاً استفاده شده است.");
+                variant.ChangeSku(newSku);
+            }
         }
 
         var price = Money.FromDecimal(request.SellingPrice);
@@ -50,7 +53,18 @@ public class UpdateVariantHandler(
         variant.ChangePrice(price, compareAtPrice);
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
-        if (inventory is not null)
+        if (inventory is null)
+        {
+            var initialStock = request.IsUnlimited ? 0 : Math.Max(0, request.Stock);
+            inventory = Domain.Inventory.Aggregates.Inventory.Create(
+                variantId,
+                initialStock,
+                request.IsUnlimited,
+                lowStockThreshold: 5,
+                createdBy: userId);
+            await inventoryRepository.AddAsync(inventory, ct);
+        }
+        else
         {
             if (request.IsUnlimited)
             {
@@ -130,7 +144,6 @@ public class UpdateVariantHandler(
                 shippingAssignments);
         }
 
-        variantRepository.Update(variant);
         await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogProductEventAsync(
