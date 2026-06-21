@@ -2,5 +2,6 @@
 
 namespace Application.Inventory.Features.Queries.GetBatchVariantAvailability;
 
-public record GetBatchVariantAvailabilityQuery(ICollection<Guid> VariantIds)
-    : IRequest<ServiceResult<IReadOnlyList<VariantAvailabilityDto>>>;
+public record GetBatchVariantAvailabilityQuery(
+    ICollection<Guid> VariantIds)
+    : IQuery<IReadOnlyList<VariantAvailabilityDto>>;

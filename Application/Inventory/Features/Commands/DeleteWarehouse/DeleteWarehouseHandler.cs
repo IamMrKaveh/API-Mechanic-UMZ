@@ -5,7 +5,8 @@ namespace Application.Inventory.Features.Commands.DeleteWarehouse;
 
 public class DeleteWarehouseHandler(
     IWarehouseRepository warehouseRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<DeleteWarehouseCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<DeleteWarehouseCommand>
 {
     public async Task<ServiceResult> Handle(DeleteWarehouseCommand request, CancellationToken ct)
     {

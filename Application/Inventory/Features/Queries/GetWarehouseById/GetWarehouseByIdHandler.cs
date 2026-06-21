@@ -5,7 +5,7 @@ using Domain.Inventory.ValueObjects;
 namespace Application.Inventory.Features.Queries.GetWarehouseById;
 
 public class GetWarehouseByIdHandler(IWarehouseRepository warehouseRepository)
-    : IRequestHandler<GetWarehouseByIdQuery, ServiceResult<WarehouseDto>>
+    : IQueryHandler<GetWarehouseByIdQuery, WarehouseDto>
 {
     public async Task<ServiceResult<WarehouseDto>> Handle(
         GetWarehouseByIdQuery request,

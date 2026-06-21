@@ -5,7 +5,8 @@ namespace Application.Inventory.Features.Commands.UpdateWarehouse;
 
 public class UpdateWarehouseHandler(
     IWarehouseRepository warehouseRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<UpdateWarehouseCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<UpdateWarehouseCommand>
 {
     public async Task<ServiceResult> Handle(UpdateWarehouseCommand request, CancellationToken ct)
     {

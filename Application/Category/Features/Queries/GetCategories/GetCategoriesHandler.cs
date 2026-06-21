@@ -4,7 +4,7 @@ namespace Application.Category.Features.Queries.GetCategories;
 
 public class GetCategoriesHandler(
     ICategoryQueryService categoryQueryService)
-    : IRequestHandler<GetCategoriesQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>
+    : IQueryHandler<GetCategoriesQuery, PaginatedResult<CategoryListItemDto>>
 {
     public async Task<ServiceResult<PaginatedResult<CategoryListItemDto>>> Handle(
         GetCategoriesQuery request,

@@ -6,7 +6,8 @@ namespace Application.Cart.Features.Commands.ClearCart;
 
 public class ClearCartHandler(
     ICartRepository cartRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<ClearCartCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<ClearCartCommand>
 {
     public async Task<ServiceResult> Handle(ClearCartCommand request, CancellationToken ct)
     {

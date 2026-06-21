@@ -9,7 +9,8 @@ namespace Application.Inventory.Features.Commands.RecordDamage;
 public class RecordDamageHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUserService currentUserService) : IRequestHandler<RecordDamageCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<RecordDamageCommand>
 {
     public async Task<ServiceResult> Handle(RecordDamageCommand request, CancellationToken ct)
     {

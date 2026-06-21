@@ -9,7 +9,8 @@ namespace Application.Discount.Features.Commands.CreateDiscount;
 public class CreateDiscountHandler(
     IDiscountRepository discountRepository,
     IUnitOfWork unitOfWork,
-    IMapper mapper) : IRequestHandler<CreateDiscountCommand, ServiceResult<DiscountDto>>
+    IMapper mapper)
+    : ICommandHandler<CreateDiscountCommand, DiscountDto>
 {
     public async Task<ServiceResult<DiscountDto>> Handle(CreateDiscountCommand request, CancellationToken ct)
     {

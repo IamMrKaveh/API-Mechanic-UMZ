@@ -5,4 +5,4 @@ namespace Application.Cart.Features.Commands.RemoveFromCart;
 public record RemoveFromCartCommand(
     Guid? UserId,
     string? GuestToken,
-    Guid VariantId) : IRequest<ServiceResult<CartDetailDto>>;
+    Guid VariantId) : ICommand<CartDetailDto>;

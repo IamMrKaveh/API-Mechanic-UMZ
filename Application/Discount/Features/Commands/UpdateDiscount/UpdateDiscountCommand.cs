@@ -11,4 +11,4 @@ public record UpdateDiscountCommand(
     int? UsageLimit,
     DateTime? StartsAt,
     DateTime? ExpiresAt,
-    bool IsActive) : IRequest<ServiceResult<DiscountDto>>;
+    bool IsActive) : ICommand<DiscountDto>;

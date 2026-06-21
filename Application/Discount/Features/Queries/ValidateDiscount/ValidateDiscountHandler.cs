@@ -5,7 +5,7 @@ namespace Application.Discount.Features.Queries.ValidateDiscount;
 public class ValidateDiscountHandler(
     IDiscountQueryService discountQueryService,
     ICurrentUserService currentUserService)
-    : IRequestHandler<ValidateDiscountQuery, ServiceResult<DiscountValidationResult>>
+    : IQueryHandler<ValidateDiscountQuery, DiscountValidationResult>
 {
     public async Task<ServiceResult<DiscountValidationResult>> Handle(
         ValidateDiscountQuery request, CancellationToken ct)

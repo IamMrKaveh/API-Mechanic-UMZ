@@ -4,6 +4,7 @@ using Application.Product.Features.Shared;
 using Application.Variant.Features.Shared;
 using Domain.Brand.ValueObjects;
 using Domain.Product.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Infrastructure.Product.QueryServices;
 
@@ -11,51 +12,6 @@ public sealed class ProductQueryService(
     DBContext context,
     IUrlResolverService urlResolver) : IProductQueryService
 {
-    public async Task<ProductDetailDto?> GetProductDetailAsync(
-        ProductId productId, CancellationToken ct = default)
-    {
-        var product = await context.Products
-            .AsNoTracking()
-            .Include(p => p.Brand)
-            .Include(p => p.Category)
-            .Include(p => p.Variants.Where(v => !v.IsDeleted))
-                .ThenInclude(v => v.Attributes)
-                    .ThenInclude(va => va.AttributeType)
-            .Include(p => p.Variants.Where(v => !v.IsDeleted))
-                .ThenInclude(v => v.Attributes)
-                    .ThenInclude(va => va.Value)
-            .AsSplitQuery()
-            .FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted, ct);
-
-        if (product is null) return null;
-
-        var primaryImagePath = await GetPrimaryImagePathAsync(productId, ct);
-
-        return new ProductDetailDto
-        {
-            Id = product.Id.Value,
-            Name = product.Name.Value,
-            Slug = product.Slug.Value,
-            Description = product.Description,
-            CategoryId = product.CategoryId.Value,
-            CategoryName = product.Category.Name.Value,
-            BrandId = product.BrandId.Value,
-            BrandName = product.Brand.Name.Value,
-            IsActive = product.IsActive,
-            IsFeatured = product.IsFeatured,
-            IsDeleted = product.IsDeleted,
-            CreatedAt = product.CreatedAt,
-            UpdatedAt = product.UpdatedAt,
-            PrimaryImageUrl = primaryImagePath is not null
-                ? urlResolver.ResolveMediaUrl(primaryImagePath)
-                : null,
-            Variants = product.Variants
-                .Where(v => !v.IsDeleted)
-                .Select(MapToVariantDto)
-                .ToList()
-        };
-    }
-
     public async Task<AdminProductDetailDto?> GetAdminProductDetailAsync(
         ProductId productId, CancellationToken ct = default)
     {
@@ -143,14 +99,14 @@ public sealed class ProductQueryService(
     }
 
     public async Task<PaginatedResult<ProductListItemDto>> GetAdminProductsAsync(
-        Guid? categoryId,
-        Guid? brandId,
-        string? search,
-        bool? isActive,
-        bool includeDeleted,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
+    Guid? categoryId,
+    Guid? brandId,
+    string? search,
+    bool? isActive,
+    bool includeDeleted,
+    int page,
+    int pageSize,
+    CancellationToken ct = default)
     {
         var query = context.Products.AsNoTracking();
 
@@ -200,7 +156,17 @@ public sealed class ProductQueryService(
                 MinPrice = p.Variants
                     .Where(v => v.IsActive && !v.IsDeleted)
                     .Min(v => (decimal?)v.SellingPrice.Amount),
-                HasStock = p.Variants.Any(v => v.IsActive && !v.IsDeleted),
+                TotalStock = context.Inventories
+                    .Where(i => p.Variants
+                        .Where(v => v.IsActive && !v.IsDeleted)
+                        .Select(v => v.Id)
+                        .Contains(i.VariantId))
+                    .Sum(i => (int?)i.StockQuantity.Value) ?? 0,
+                HasUnlimited = context.Inventories
+                    .Any(i => p.Variants
+                        .Where(v => v.IsActive && !v.IsDeleted)
+                        .Select(v => v.Id)
+                        .Contains(i.VariantId) && i.IsUnlimited),
                 PrimaryImagePath = context.Medias
                     .Where(m => m.EntityId == p.Id && m.IsPrimary)
                     .Select(m => m.FilePath)
@@ -223,7 +189,8 @@ public sealed class ProductQueryService(
                 IsFeatured = p.IsFeatured,
                 IsDeleted = p.IsDeleted,
                 MinPrice = p.MinPrice,
-                HasStock = p.HasStock,
+                TotalStock = p.TotalStock,
+                HasStock = p.HasUnlimited || p.TotalStock > 0,
                 PrimaryImageUrl = p.PrimaryImagePath is not null
                     ? urlResolver.ResolveMediaUrl(p.PrimaryImagePath)
                     : null,
@@ -234,6 +201,67 @@ public sealed class ProductQueryService(
         return new PaginatedResult<ProductListItemDto>(items, total, page, pageSize);
     }
 
+    public async Task<ProductDetailDto?> GetProductDetailAsync(
+        ProductId productId, CancellationToken ct = default)
+    {
+        var product = await context.Products
+            .AsNoTracking()
+            .Include(p => p.Brand)
+            .Include(p => p.Category)
+            .Include(p => p.Variants.Where(v => !v.IsDeleted))
+                .ThenInclude(v => v.Attributes)
+                    .ThenInclude(va => va.AttributeType)
+            .Include(p => p.Variants.Where(v => !v.IsDeleted))
+                .ThenInclude(v => v.Attributes)
+                    .ThenInclude(va => va.Value)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted, ct);
+
+        if (product is null) return null;
+
+        var primaryImagePath = await GetPrimaryImagePathAsync(productId, ct);
+
+        var variantIds = product.Variants
+            .Where(v => !v.IsDeleted)
+            .Select(v => v.Id)
+            .ToList();
+
+        var inventories = variantIds.Count == 0
+            ? new Dictionary<VariantId, Domain.Inventory.Aggregates.Inventory>()
+            : await context.Inventories
+                .AsNoTracking()
+                .Where(i => variantIds.Contains(i.VariantId))
+                .ToDictionaryAsync(i => i.VariantId, ct);
+
+        return new ProductDetailDto
+        {
+            Id = product.Id.Value,
+            Name = product.Name.Value,
+            Slug = product.Slug.Value,
+            Description = product.Description,
+            CategoryId = product.CategoryId.Value,
+            CategoryName = product.Category.Name.Value,
+            BrandId = product.BrandId.Value,
+            BrandName = product.Brand.Name.Value,
+            IsActive = product.IsActive,
+            IsFeatured = product.IsFeatured,
+            IsDeleted = product.IsDeleted,
+            CreatedAt = product.CreatedAt,
+            UpdatedAt = product.UpdatedAt,
+            PrimaryImageUrl = primaryImagePath is not null
+                ? urlResolver.ResolveMediaUrl(primaryImagePath)
+                : null,
+            Variants = product.Variants
+                .Where(v => !v.IsDeleted)
+                .Select(v =>
+                {
+                    inventories.TryGetValue(v.Id, out var inv);
+                    return MapToVariantDto(v, inv);
+                })
+                .ToList()
+        };
+    }
+
     public async Task<PaginatedResult<ProductCatalogItemDto>> GetProductCatalogAsync(
         ProductCatalogSearchParams searchParams, CancellationToken ct = default)
     {
@@ -242,34 +270,36 @@ public sealed class ProductQueryService(
             .Where(p => p.IsActive && !p.IsDeleted);
 
         if (searchParams.CategoryId.HasValue)
-        {
             query = query.Where(p => p.CategoryId == searchParams.CategoryId);
-        }
 
         if (searchParams.BrandId.HasValue)
         {
-            query = query.Where(p => p.BrandId == searchParams.BrandId);
+            var brandFilter = BrandId.From(searchParams.BrandId.Value);
+            query = query.Where(p => p.BrandId == brandFilter);
         }
 
         if (!string.IsNullOrWhiteSpace(searchParams.Search))
         {
             var pattern = $"%{searchParams.Search.Trim()}%";
-            query = query.Where(p => EF.Functions.ILike(p.Name, pattern));
+            query = query.Where(p =>
+                EF.Functions.ILike(p.Name.Value, pattern) ||
+                EF.Functions.ILike(p.Slug.Value, pattern));
         }
 
         if (searchParams.MinPrice.HasValue)
-            query = query.Where(p =>
-                p.Variants.Any(v => v.IsActive && !v.IsDeleted
-                    && v.SellingPrice.Amount >= searchParams.MinPrice));
+            query = query.Where(p => p.Variants.Any(v => v.IsActive && !v.IsDeleted && v.SellingPrice.Amount >= searchParams.MinPrice.Value));
 
         if (searchParams.MaxPrice.HasValue)
-            query = query.Where(p =>
-                p.Variants.Any(v => v.IsActive && !v.IsDeleted
-                    && v.SellingPrice.Amount <= searchParams.MaxPrice));
+            query = query.Where(p => p.Variants.Any(v => v.IsActive && !v.IsDeleted && v.SellingPrice.Amount <= searchParams.MaxPrice.Value));
 
-        if (searchParams.InStockOnly)
+        if (searchParams.InStockOnly == true)
+        {
             query = query.Where(p =>
-                p.Variants.Any(v => v.IsActive && !v.IsDeleted));
+                context.Inventories.Any(i => p.Variants
+                    .Where(v => v.IsActive && !v.IsDeleted)
+                    .Select(v => v.Id)
+                    .Contains(i.VariantId) && (i.IsUnlimited || i.StockQuantity.Value > 0)));
+        }
 
         var ordered = searchParams.SortBy?.ToLowerInvariant() switch
         {
@@ -285,7 +315,7 @@ public sealed class ProductQueryService(
             _ => query.OrderByDescending(p => p.CreatedAt)
         };
 
-        var total = await query.CountAsync(ct);
+        var total = await ordered.CountAsync(ct);
 
         var projected = await ordered
             .Skip((searchParams.Page - 1) * searchParams.PageSize)
@@ -306,7 +336,10 @@ public sealed class ProductQueryService(
                 MaxPrice = p.Variants
                     .Where(v => v.IsActive && !v.IsDeleted)
                     .Max(v => (decimal?)v.SellingPrice.Amount),
-                HasStock = p.Variants.Any(v => v.IsActive && !v.IsDeleted),
+                HasStock = context.Inventories.Any(i => p.Variants
+                    .Where(v => v.IsActive && !v.IsDeleted)
+                    .Select(v => v.Id)
+                    .Contains(i.VariantId) && (i.IsUnlimited || i.StockQuantity.Value > 0)),
                 PrimaryImagePath = context.Medias
                     .Where(m => m.EntityId == p.Id && m.IsPrimary)
                     .Select(m => m.FilePath)
@@ -334,8 +367,7 @@ public sealed class ProductQueryService(
             })
             .ToList();
 
-        return new PaginatedResult<ProductCatalogItemDto>(
-            items, total, searchParams.Page, searchParams.PageSize);
+        return new PaginatedResult<ProductCatalogItemDto>(items, total, searchParams.Page, searchParams.PageSize);
     }
 
     private Task<string?> GetPrimaryImagePathAsync(ProductId productId, CancellationToken ct)
@@ -346,8 +378,19 @@ public sealed class ProductQueryService(
             .FirstOrDefaultAsync(ct);
 
     private static ProductVariantViewDto MapToVariantDto(
-        Domain.Variant.Aggregates.ProductVariant variant)
-        => new()
+        Domain.Variant.Aggregates.ProductVariant variant) => MapToVariantDto(variant, null);
+
+    private static ProductVariantViewDto MapToVariantDto(
+            Domain.Variant.Aggregates.ProductVariant variant,
+            Domain.Inventory.Aggregates.Inventory? inventory)
+    {
+        var stockQuantity = inventory?.StockQuantity.Value ?? 0;
+        var reservedQuantity = inventory?.ReservedQuantity.Value ?? 0;
+        var availableQuantity = inventory?.AvailableQuantity ?? 0;
+        var isUnlimited = inventory?.IsUnlimited ?? false;
+        var isInStock = isUnlimited || availableQuantity > 0;
+
+        return new ProductVariantViewDto
         {
             Id = variant.Id.Value,
             Sku = variant.Sku.Value,
@@ -356,6 +399,16 @@ public sealed class ProductQueryService(
             HasDiscount = variant.IsDiscounted,
             DiscountPercentage = variant.DiscountPercentage ?? 0m,
             IsActive = variant.IsActive,
+            Stock = stockQuantity,
+            StockQuantity = stockQuantity,
+            ReservedQuantity = reservedQuantity,
+            AvailableQuantity = availableQuantity,
+            IsUnlimited = isUnlimited,
+            IsInStock = isInStock,
+            ShippingMultiplier = variant.Shippings.Count > 0
+                ? variant.Shippings.Min(s => s.ShippingMultiplier)
+                : 1m,
+            EnabledShippingIds = variant.Shippings.Select(s => s.ShippingId.Value).ToList(),
             Attributes = variant.Attributes
                 .ToDictionary(
                     a => a.AttributeType?.Name ?? a.AttributeTypeId.Value.ToString(),
@@ -370,4 +423,5 @@ public sealed class ProductQueryService(
                         IsActive = a.Value?.IsActive ?? true
                     })
         };
+    }
 }

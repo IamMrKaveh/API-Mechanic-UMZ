@@ -23,6 +23,9 @@ public class UpdateVariantHandler(
         UpdateVariantCommand request,
         CancellationToken ct)
     {
+        if (currentUserService.UserId is null)
+            return ServiceResult.Unauthorized();
+
         var variantId = VariantId.From(request.VariantId);
         var userId = UserId.From(currentUserService.UserId.Value);
         var productId = ProductId.From(request.ProductId);
@@ -34,7 +37,7 @@ public class UpdateVariantHandler(
         if (variant.ProductId != productId)
             return ServiceResult.Validation("واریانت متعلق به این محصول نیست.");
 
-        if (request.Sku is not null)
+        if (!string.IsNullOrWhiteSpace(request.Sku))
         {
             var newSku = Sku.Create(request.Sku);
             if (!variant.Sku.Equals(newSku))
@@ -50,7 +53,63 @@ public class UpdateVariantHandler(
         var compareAtPrice = request.OriginalPrice > request.SellingPrice
             ? Money.FromDecimal(request.OriginalPrice)
             : null;
-        variant.ChangePrice(price, compareAtPrice);
+
+        try
+        {
+            variant.ChangePrice(price, compareAtPrice);
+        }
+        catch (DomainException ex)
+        {
+            return ServiceResult.Validation(ex.Message);
+        }
+
+        if (request.AttributeValueIds is not null)
+        {
+            var attributeAssignmentResult = await BuildAttributeAssignmentsAsync(
+                request.AttributeValueIds,
+                productId,
+                variantId,
+                ct);
+
+            if (!attributeAssignmentResult.IsSuccess)
+                return attributeAssignmentResult.ToServiceResult();
+
+            try
+            {
+                variant.SetAttributes(attributeAssignmentResult.Assignments);
+            }
+            catch (DomainException ex)
+            {
+                return ServiceResult.Validation(ex.Message);
+            }
+        }
+
+        if (request.EnabledShippingIds is not null)
+        {
+            var multiplier = request.ShippingMultiplier <= 0 ? 1m : request.ShippingMultiplier;
+            var newShippingIds = request.EnabledShippingIds.Select(ShippingId.From).ToList();
+
+            var shippings = newShippingIds.Count != 0
+                ? await shippingRepository.GetByIdsAsync(newShippingIds, ct)
+                : Array.Empty<Domain.Shipping.Aggregates.Shipping>();
+
+            var foundIds = shippings.Select(s => s.Id.Value).ToHashSet();
+            var missing = request.EnabledShippingIds.Where(id => !foundIds.Contains(id)).ToList();
+            if (missing.Count != 0)
+                return ServiceResult.Validation($"روش‌های ارسال نامعتبر: {string.Join(", ", missing)}");
+
+            var shippingAssignments = shippings.Select(s =>
+                new ShippingAssignment(s.Id, 0, 0, 0, 0));
+
+            try
+            {
+                variant.SetShippingMethods(multiplier, shippingAssignments);
+            }
+            catch (DomainException ex)
+            {
+                return ServiceResult.Validation(ex.Message);
+            }
+        }
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
         if (inventory is null)
@@ -72,79 +131,20 @@ public class UpdateVariantHandler(
             }
             else
             {
-                var currentStock = inventory.StockQuantity;
-                var stockDiff = request.Stock - (int)currentStock;
+                var currentStock = (int)inventory.StockQuantity;
+                var stockDiff = request.Stock - currentStock;
                 if (stockDiff > 0)
                     inventory.IncreaseStock(stockDiff, "به‌روزرسانی موجودی", userId);
                 else if (stockDiff < 0)
                     inventory.DecreaseStock(Math.Abs(stockDiff), "به‌روزرسانی موجودی", userId);
             }
-            inventoryRepository.Update(inventory);
         }
 
-        if (request.AttributeValueIds is not null)
+        await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
         {
-            var attributeValueIds = request.AttributeValueIds.Select(AttributeValueId.From);
-            var attributeValues = request.AttributeValueIds.Count != 0
-                ? await attributeRepository.GetAttributeValuesByIdsAsync(attributeValueIds, ct)
-                : [];
-
-            if (request.AttributeValueIds.Count != 0)
-            {
-                var missingIds = request.AttributeValueIds
-                    .Except(attributeValues.Select(av => av.Id.Value))
-                    .ToList();
-                if (missingIds.Count != 0)
-                    return ServiceResult.Failure($"شناسه‌های ویژگی نامعتبر: {string.Join(", ", missingIds)}");
-
-                var duplicateTypes = attributeValues
-                    .GroupBy(av => av.AttributeTypeId)
-                    .Where(g => g.Count() > 1)
-                    .Select(g => g.Key)
-                    .ToList();
-
-                if (duplicateTypes.Count != 0)
-                    return ServiceResult.Validation("برای هر نوع ویژگی فقط یک مقدار مجاز است.");
-
-                var signature = attributeValues
-                    .Select(av => av.Id.Value)
-                    .OrderBy(id => id)
-                    .ToList();
-
-                var duplicateVariantExists = await variantRepository.ExistsByAttributeCombinationAsync(
-                    productId,
-                    signature,
-                    excludeId: variantId,
-                    ct);
-
-                if (duplicateVariantExists)
-                    return ServiceResult.Conflict("تنوع دیگری با همین ترکیب ویژگی‌ها از قبل وجود دارد.");
-            }
-
-            var assignments = attributeValues.Select(av =>
-                AttributeAssignment.Create(
-                    av.AttributeTypeId,
-                    av.Id,
-                    av.Value));
-            variant.SetAttributes(assignments);
-        }
-
-        if (request.EnabledShippingIds is not null)
-        {
-            var newShippingIds = request.EnabledShippingIds.Select(ShippingId.From);
-
-            var shippings = request.EnabledShippingIds.Count != 0
-                ? await shippingRepository.GetByIdsAsync(newShippingIds, ct)
-                : [];
-
-            var shippingAssignments = shippings.Select(s =>
-                new ShippingAssignment(s.Id, 0, 0, 0, 0));
-            variant.SetShippingMethods(
-                request.ShippingMultiplier,
-                shippingAssignments);
-        }
-
-        await unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            return true;
+        }, ct);
 
         await auditService.LogProductEventAsync(
             productId,
@@ -153,5 +153,104 @@ public class UpdateVariantHandler(
             userId);
 
         return ServiceResult.Success();
+    }
+
+    private async Task<AttributeAssignmentBuildResult> BuildAttributeAssignmentsAsync(
+        ICollection<Guid> attributeValueIds,
+        ProductId productId,
+        VariantId variantId,
+        CancellationToken ct)
+    {
+        if (attributeValueIds.Count == 0)
+            return AttributeAssignmentBuildResult.Empty();
+
+        var attributeValueIdVOs = attributeValueIds.Select(AttributeValueId.From).ToList();
+        var attributeValues = (await attributeRepository.GetAttributeValuesByIdsAsync(attributeValueIdVOs, ct)).ToList();
+
+        var missingIds = attributeValueIds
+            .Except(attributeValues.Select(av => av.Id.Value))
+            .ToList();
+        if (missingIds.Count != 0)
+            return AttributeAssignmentBuildResult.Failure($"شناسه‌های ویژگی نامعتبر: {string.Join(", ", missingIds)}");
+
+        var duplicateTypes = attributeValues
+            .GroupBy(av => av.AttributeTypeId)
+            .Any(g => g.Count() > 1);
+        if (duplicateTypes)
+            return AttributeAssignmentBuildResult.ValidationFailure("برای هر نوع ویژگی فقط یک مقدار مجاز است.");
+
+        var signature = attributeValues
+            .Select(av => av.Id.Value)
+            .OrderBy(id => id)
+            .ToList();
+
+        var duplicateVariantExists = await variantRepository.ExistsByAttributeCombinationAsync(
+            productId,
+            signature,
+            excludeId: variantId,
+            ct);
+
+        if (duplicateVariantExists)
+            return AttributeAssignmentBuildResult.Conflict("تنوع دیگری با همین ترکیب ویژگی‌ها از قبل وجود دارد.");
+
+        var assignments = attributeValues.Select(av =>
+            AttributeAssignment.Create(av.AttributeTypeId, av.Id, av.Value)).ToList();
+
+        return AttributeAssignmentBuildResult.Success(assignments);
+    }
+
+    private sealed class AttributeAssignmentBuildResult
+    {
+        public bool IsSuccess { get; private init; }
+        public IReadOnlyCollection<AttributeAssignment> Assignments { get; private init; } = Array.Empty<AttributeAssignment>();
+        public string? ErrorMessage { get; private init; }
+        public ServiceResultKind Kind { get; private init; }
+
+        public static AttributeAssignmentBuildResult Empty() => new()
+        {
+            IsSuccess = true,
+            Assignments = Array.Empty<AttributeAssignment>()
+        };
+
+        public static AttributeAssignmentBuildResult Success(IReadOnlyCollection<AttributeAssignment> assignments) => new()
+        {
+            IsSuccess = true,
+            Assignments = assignments
+        };
+
+        public static AttributeAssignmentBuildResult Failure(string message) => new()
+        {
+            IsSuccess = false,
+            ErrorMessage = message,
+            Kind = ServiceResultKind.Failure
+        };
+
+        public static AttributeAssignmentBuildResult ValidationFailure(string message) => new()
+        {
+            IsSuccess = false,
+            ErrorMessage = message,
+            Kind = ServiceResultKind.Validation
+        };
+
+        public static AttributeAssignmentBuildResult Conflict(string message) => new()
+        {
+            IsSuccess = false,
+            ErrorMessage = message,
+            Kind = ServiceResultKind.Conflict
+        };
+
+        public ServiceResult ToServiceResult() => Kind switch
+        {
+            ServiceResultKind.Validation => ServiceResult.Validation(ErrorMessage!),
+            ServiceResultKind.Conflict => ServiceResult.Conflict(ErrorMessage!),
+            _ => ServiceResult.Failure(ErrorMessage!)
+        };
+
+        public enum ServiceResultKind
+        {
+            Failure,
+            Validation,
+            Conflict
+        }
     }
 }

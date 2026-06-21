@@ -7,7 +7,8 @@ namespace Application.Category.Features.Commands.ReorderCategories;
 public class ReorderCategoriesHandler(
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<ReorderCategoriesCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<ReorderCategoriesCommand>
 {
     public async Task<ServiceResult> Handle(ReorderCategoriesCommand request, CancellationToken ct)
     {

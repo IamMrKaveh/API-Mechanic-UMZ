@@ -5,7 +5,8 @@ namespace Application.Inventory.Features.Commands.CreateWarehouse;
 
 public class CreateWarehouseHandler(
     IWarehouseRepository warehouseRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<CreateWarehouseCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<CreateWarehouseCommand>
 {
     public async Task<ServiceResult> Handle(CreateWarehouseCommand request, CancellationToken ct)
     {

@@ -4,7 +4,7 @@ using Domain.Variant.ValueObjects;
 namespace Application.Inventory.Features.Queries.GetInventoryTransactions;
 
 public class GetInventoryTransactionsHandler(IInventoryQueryService queryService)
-    : IRequestHandler<GetInventoryTransactionsQuery, ServiceResult<PaginatedResult<InventoryTransactionDto>>>
+    : IQueryHandler<GetInventoryTransactionsQuery, PaginatedResult<InventoryTransactionDto>>
 {
     public async Task<ServiceResult<PaginatedResult<InventoryTransactionDto>>> Handle(
         GetInventoryTransactionsQuery request,

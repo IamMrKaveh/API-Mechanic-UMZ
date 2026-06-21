@@ -4,7 +4,7 @@ namespace Application.Inventory.Features.Queries.GetStockLedgerByVariant;
 
 public class GetStockLedgerByVariantHandler(
     IStockLedgerQueryService ledgerQueryService)
-    : IRequestHandler<GetStockLedgerByVariantQuery, ServiceResult<PaginatedResult<StockLedgerEntryDto>>>
+    : IQueryHandler<GetStockLedgerByVariantQuery, PaginatedResult<StockLedgerEntryDto>>
 {
     public async Task<ServiceResult<PaginatedResult<StockLedgerEntryDto>>> Handle(
         GetStockLedgerByVariantQuery request,

@@ -4,7 +4,7 @@ using Application.Location.Features.Shared;
 namespace Application.Location.Features.Queries.GetStates;
 
 public class GetStatesHandler(ILocationService locationService)
-    : IRequestHandler<GetStatesQuery, ServiceResult<PaginatedResult<ProvinceDto>>>
+    : IQueryHandler<GetStatesQuery, PaginatedResult<ProvinceDto>>
 {
     public async Task<ServiceResult<PaginatedResult<ProvinceDto>>> Handle(
         GetStatesQuery request,

@@ -4,7 +4,8 @@ using Domain.Media.Services;
 namespace Application.Media.Features.Commands.UploadMedia;
 
 public class UploadMediaHandler(
-    IMediaService mediaService) : IRequestHandler<UploadMediaCommand, ServiceResult<MediaDto>>
+    IMediaService mediaService)
+    : ICommandHandler<UploadMediaCommand, MediaDto>
 {
     public Task<ServiceResult<MediaDto>> Handle(UploadMediaCommand request, CancellationToken ct)
     {

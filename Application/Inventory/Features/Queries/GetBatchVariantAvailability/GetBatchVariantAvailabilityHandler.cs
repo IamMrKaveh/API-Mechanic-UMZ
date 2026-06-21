@@ -5,7 +5,7 @@ namespace Application.Inventory.Features.Queries.GetBatchVariantAvailability;
 
 public class GetBatchVariantAvailabilityHandler(
     IInventoryQueryService inventoryQueryService)
-    : IRequestHandler<GetBatchVariantAvailabilityQuery, ServiceResult<IReadOnlyList<VariantAvailabilityDto>>>
+    : IQueryHandler<GetBatchVariantAvailabilityQuery, IReadOnlyList<VariantAvailabilityDto>>
 {
     public async Task<ServiceResult<IReadOnlyList<VariantAvailabilityDto>>> Handle(
         GetBatchVariantAvailabilityQuery request,

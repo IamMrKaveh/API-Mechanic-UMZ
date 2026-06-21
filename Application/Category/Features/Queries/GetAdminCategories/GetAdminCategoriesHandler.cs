@@ -4,7 +4,7 @@ namespace Application.Category.Features.Queries.GetAdminCategories;
 
 public class GetAdminCategoriesHandler(
     ICategoryQueryService categoryQueryService)
-    : IRequestHandler<GetAdminCategoriesQuery, ServiceResult<PaginatedResult<CategoryListItemDto>>>
+    : IQueryHandler<GetAdminCategoriesQuery, PaginatedResult<CategoryListItemDto>>
 {
     public async Task<ServiceResult<PaginatedResult<CategoryListItemDto>>> Handle(
         GetAdminCategoriesQuery request,

@@ -7,4 +7,4 @@ public record GetCategoriesQuery(
     bool? IsActive,
     bool IncludeDeleted,
     int Page,
-    int PageSize) : IRequest<ServiceResult<PaginatedResult<CategoryListItemDto>>>;
+    int PageSize) : IPageQuery<CategoryListItemDto>;

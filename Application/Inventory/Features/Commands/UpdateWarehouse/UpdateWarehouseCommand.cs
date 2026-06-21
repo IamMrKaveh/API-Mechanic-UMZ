@@ -6,4 +6,4 @@ public record UpdateWarehouseCommand(
     string City,
     string? Address,
     string? Phone,
-    int Priority) : IRequest<ServiceResult>;
+    int Priority) : ICommand;

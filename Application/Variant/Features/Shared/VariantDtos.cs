@@ -27,6 +27,8 @@ public sealed record ProductVariantViewDto
     public decimal DiscountPercentage { get; init; }
     public int Stock { get; init; }
     public int StockQuantity { get; init; }
+    public int AvailableQuantity { get; init; }
+    public int ReservedQuantity { get; init; }
     public bool IsUnlimited { get; init; }
     public bool IsInStock { get; init; }
     public decimal ShippingMultiplier { get; init; } = 1m;

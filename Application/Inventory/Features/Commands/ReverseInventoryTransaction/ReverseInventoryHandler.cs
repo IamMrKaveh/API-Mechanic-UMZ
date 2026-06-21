@@ -8,7 +8,8 @@ public class ReverseInventoryHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<ReverseInventoryCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<ReverseInventoryCommand>
 {
     public async Task<ServiceResult> Handle(ReverseInventoryCommand request, CancellationToken ct)
     {

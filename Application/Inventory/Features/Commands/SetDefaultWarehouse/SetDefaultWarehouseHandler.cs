@@ -5,7 +5,8 @@ namespace Application.Inventory.Features.Commands.SetDefaultWarehouse;
 
 public class SetDefaultWarehouseHandler(
     IWarehouseRepository warehouseRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<SetDefaultWarehouseCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<SetDefaultWarehouseCommand>
 {
     public async Task<ServiceResult> Handle(SetDefaultWarehouseCommand request, CancellationToken ct)
     {

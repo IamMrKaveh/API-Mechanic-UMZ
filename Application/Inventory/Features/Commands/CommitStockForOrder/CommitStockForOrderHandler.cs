@@ -1,10 +1,8 @@
-using Application.Common.Interfaces;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.Services;
 using Domain.Inventory.ValueObjects;
 using Domain.Order.ValueObjects;
 using Domain.Variant.ValueObjects;
-using SharedKernel.Exceptions;
 
 namespace Application.Inventory.Features.Commands.CommitStockForOrder;
 
@@ -12,7 +10,7 @@ public class CommitStockForOrderHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService)
-    : IRequestHandler<CommitStockForOrderCommand, ServiceResult>
+    : ICommandHandler<CommitStockForOrderCommand>
 {
     public async Task<ServiceResult> Handle(CommitStockForOrderCommand request, CancellationToken ct)
     {

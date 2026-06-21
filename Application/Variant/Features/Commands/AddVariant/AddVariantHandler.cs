@@ -32,26 +32,27 @@ public sealed class AddVariantHandler(
         AddVariantCommand request,
         CancellationToken ct)
     {
-        var productId = ProductId.From(request.ProductId);
-
         if (currentUserService.UserId is null)
             return ServiceResult<ProductVariantViewDto>.Unauthorized();
 
+        var productId = ProductId.From(request.ProductId);
         var userId = UserId.From(currentUserService.UserId.Value);
 
         var product = await productRepository.GetByIdAsync(productId, ct);
         if (product is null)
             return ServiceResult<ProductVariantViewDto>.NotFound("محصول یافت نشد.");
 
-        var attributeValues = request.AttributeValueIds.Count != 0
-            ? await attributeRepository.GetAttributeValuesByIdsAsync(
-                request.AttributeValueIds.Select(AttributeValueId.From), ct)
+        var attributeValueIds = request.AttributeValueIds ?? Array.Empty<Guid>();
+
+        var attributeValues = attributeValueIds.Count != 0
+            ? (await attributeRepository.GetAttributeValuesByIdsAsync(
+                attributeValueIds.Select(AttributeValueId.From), ct)).ToList()
             : [];
 
-        if (request.AttributeValueIds.Count != 0)
+        if (attributeValueIds.Count != 0)
         {
             var foundIds = attributeValues.Select(av => av.Id.Value).ToHashSet();
-            var missingIds = request.AttributeValueIds.Where(id => !foundIds.Contains(id)).ToList();
+            var missingIds = attributeValueIds.Where(id => !foundIds.Contains(id)).ToList();
             if (missingIds.Count != 0)
                 return ServiceResult<ProductVariantViewDto>.Validation(
                     $"شناسه‌های ویژگی نامعتبر: {string.Join(", ", missingIds)}");
@@ -74,7 +75,7 @@ public sealed class AddVariantHandler(
         Sku sku;
         try
         {
-            sku = request.Sku is not null
+            sku = !string.IsNullOrWhiteSpace(request.Sku)
                 ? Sku.Create(request.Sku)
                 : Sku.Create(Guid.NewGuid().ToString("N")[..12].ToUpperInvariant());
         }
@@ -87,18 +88,19 @@ public sealed class AddVariantHandler(
         if (skuExists)
             return ServiceResult<ProductVariantViewDto>.Conflict("این SKU قبلاً استفاده شده است.");
 
-        if (request.OriginalPrice < request.SellingPrice)
+        if (request.OriginalPrice > 0 && request.OriginalPrice < request.SellingPrice)
             return ServiceResult<ProductVariantViewDto>.Validation(
                 "قیمت اصلی نمی‌تواند کمتر از قیمت فروش باشد.");
 
-        List<Domain.Shipping.Aggregates.Shipping> shippings = [];
-        if (request.EnabledShippingIds is { Count: > 0 })
+        var enabledShippingIds = request.EnabledShippingIds ?? Array.Empty<Guid>();
+        var shippings = new List<Domain.Shipping.Aggregates.Shipping>();
+        if (enabledShippingIds.Count > 0)
         {
-            var shippingIds = request.EnabledShippingIds.Select(ShippingId.From).ToList();
-            shippings = (await shippingRepository.GetByIdsAsync(shippingIds, ct)).ToList();
+            var shippingIdVOs = enabledShippingIds.Select(ShippingId.From).ToList();
+            shippings = (await shippingRepository.GetByIdsAsync(shippingIdVOs, ct)).ToList();
 
             var foundShippingIds = shippings.Select(s => s.Id.Value).ToHashSet();
-            var missingShipping = request.EnabledShippingIds.Where(id => !foundShippingIds.Contains(id)).ToList();
+            var missingShipping = enabledShippingIds.Where(id => !foundShippingIds.Contains(id)).ToList();
             if (missingShipping.Count != 0)
                 return ServiceResult<ProductVariantViewDto>.Validation(
                     $"روش‌های ارسال نامعتبر: {string.Join(", ", missingShipping)}");
@@ -116,10 +118,10 @@ public sealed class AddVariantHandler(
 
             variant = ProductVariant.Create(variantId, productId, sku, sellingPrice, originalPrice);
 
-            if (attributeValues.Any())
+            if (attributeValues.Count > 0)
             {
                 var assignments = attributeValues.Select(av =>
-                    AttributeAssignment.Create(av.AttributeTypeId, av.Id, av.Value));
+                    AttributeAssignment.Create(av.AttributeTypeId, av.Id, av.Value)).ToList();
                 variant.SetAttributes(assignments);
             }
 

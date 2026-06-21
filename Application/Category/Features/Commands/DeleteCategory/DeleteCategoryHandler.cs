@@ -6,7 +6,8 @@ namespace Application.Category.Features.Commands.DeleteCategory;
 public class DeleteCategoryHandler(
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<DeleteCategoryCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<DeleteCategoryCommand>
 {
     public async Task<ServiceResult> Handle(DeleteCategoryCommand request, CancellationToken ct)
     {

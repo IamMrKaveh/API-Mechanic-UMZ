@@ -9,7 +9,8 @@ public class SyncCartPricesHandler(
     ICartRepository cartRepository,
     IVariantRepository variantRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<SyncCartPricesCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<SyncCartPricesCommand>
 {
     public async Task<ServiceResult> Handle(SyncCartPricesCommand request, CancellationToken ct)
     {

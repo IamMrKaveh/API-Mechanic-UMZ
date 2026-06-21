@@ -7,7 +7,8 @@ namespace Application.Discount.Features.Commands.CancelDiscountUsage;
 public class CancelDiscountUsageHandler(
     IDiscountRepository discountRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<CancelDiscountUsageCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<CancelDiscountUsageCommand>
 {
     public async Task<ServiceResult> Handle(CancelDiscountUsageCommand request, CancellationToken ct)
     {

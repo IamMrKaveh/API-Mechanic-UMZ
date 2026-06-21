@@ -4,7 +4,8 @@ namespace Application.Media.Features.Commands.CleanupOrphanedMedia;
 
 public class CleanupOrphanedMediaHandler(
     IMediaRepository mediaRepository,
-    IStorageService storageService) : IRequestHandler<CleanupOrphanedMediaCommand, ServiceResult<int>>
+    IStorageService storageService)
+    : ICommandHandler<CleanupOrphanedMediaCommand, int>
 {
     public async Task<ServiceResult<int>> Handle(CleanupOrphanedMediaCommand request, CancellationToken ct)
     {

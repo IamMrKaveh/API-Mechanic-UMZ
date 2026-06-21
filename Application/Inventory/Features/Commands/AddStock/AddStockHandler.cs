@@ -10,7 +10,8 @@ public class AddStockHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<AddStockCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<AddStockCommand>
 {
     public async Task<ServiceResult> Handle(AddStockCommand request, CancellationToken ct)
     {

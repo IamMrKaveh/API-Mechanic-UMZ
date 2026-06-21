@@ -1,8 +1,6 @@
-using Application.Discount.Features.Shared;
-
 namespace Application.Discount.Features.Commands.ApplyDiscount;
 
 public record ApplyDiscountCommand(
     string Code,
     decimal OrderAmount,
-    Guid OrderId) : IRequest<ServiceResult<DiscountApplicationResult>>, IBypassTransactionBehavior;
+    Guid OrderId) : ICommand, IBypassTransactionBehavior;

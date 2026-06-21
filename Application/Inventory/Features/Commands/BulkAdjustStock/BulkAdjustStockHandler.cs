@@ -9,7 +9,7 @@ public class BulkAdjustStockHandler(
     IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService)
-    : IRequestHandler<BulkAdjustStockCommand, ServiceResult>
+    : ICommandHandler<BulkAdjustStockCommand>
 {
     public async Task<ServiceResult> Handle(BulkAdjustStockCommand request, CancellationToken ct)
     {

@@ -3,7 +3,7 @@ using Application.Media.Features.Shared;
 namespace Application.Media.Features.Queries.GetAllMedia;
 
 public class GetAllMediaHandler(IMediaQueryService mediaQueryService)
-    : IRequestHandler<GetAllMediaQuery, ServiceResult<PaginatedResult<MediaDto>>>
+    : IQueryHandler<GetAllMediaQuery, PaginatedResult<MediaDto>>
 {
     public async Task<ServiceResult<PaginatedResult<MediaDto>>> Handle(
         GetAllMediaQuery request,

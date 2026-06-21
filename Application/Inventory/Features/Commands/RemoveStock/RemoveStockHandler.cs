@@ -13,7 +13,8 @@ public class RemoveStockHandler(
     IAuditService auditService,
     IUnitOfWork unitOfWork,
     ICacheService cacheService,
-    ICurrentUserService currentUserService) : IRequestHandler<RemoveStockCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<RemoveStockCommand>
 {
     public async Task<ServiceResult> Handle(RemoveStockCommand request, CancellationToken ct)
     {

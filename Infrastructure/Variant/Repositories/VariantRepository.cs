@@ -18,6 +18,7 @@ public sealed class VariantRepository(DBContext context) : IVariantRepository
         => await context.ProductVariants
             .Include(v => v.Attributes)
             .Include(v => v.Shippings)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(v => v.Id == id, ct);
 
     public async Task<ProductVariant?> GetWithProductAsync(
@@ -38,7 +39,7 @@ public sealed class VariantRepository(DBContext context) : IVariantRepository
     public async Task<IReadOnlyList<ProductVariant>> GetByIdsAsync(
         IEnumerable<VariantId> ids, CancellationToken ct = default)
     {
-        var idValues = ids.Select(id => id).ToList();
+        var idValues = ids.ToList();
         var result = await context.ProductVariants
             .Where(v => idValues.Contains(v.Id))
             .ToListAsync(ct);
@@ -51,6 +52,7 @@ public sealed class VariantRepository(DBContext context) : IVariantRepository
         CancellationToken ct = default)
     {
         var query = context.ProductVariants
+            .AsNoTracking()
             .Where(v => v.Sku == sku && !v.IsDeleted);
 
         if (excludeId is not null)
@@ -62,13 +64,30 @@ public sealed class VariantRepository(DBContext context) : IVariantRepository
     public async Task AddAsync(
         ProductVariant variant,
         CancellationToken ct = default)
-        => await context.ProductVariants.AddAsync(variant, ct);
+    {
+        await context.ProductVariants.AddAsync(variant, ct);
+
+        foreach (var attribute in variant.Attributes)
+        {
+            var entry = context.Entry(attribute);
+            if (entry.State == EntityState.Detached)
+                entry.State = EntityState.Added;
+        }
+
+        foreach (var shipping in variant.Shippings)
+        {
+            var entry = context.Entry(shipping);
+            if (entry.State == EntityState.Detached)
+                entry.State = EntityState.Added;
+        }
+    }
 
     public void Update(ProductVariant variant)
     {
         var entry = context.Entry(variant);
         if (entry.State == EntityState.Detached)
-            context.ProductVariants.Update(variant);
+            context.ProductVariants.Attach(variant);
+        entry.State = EntityState.Modified;
     }
 
     public async Task<bool> ExistsAsync(VariantId id, CancellationToken ct = default)

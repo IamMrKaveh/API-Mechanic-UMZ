@@ -9,7 +9,8 @@ public class ApplyDiscountHandler(
     IDiscountRepository discountRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<ApplyDiscountCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<ApplyDiscountCommand>
 {
     public async Task<ServiceResult> Handle(
         ApplyDiscountCommand request, CancellationToken ct)
@@ -54,7 +55,7 @@ public class ApplyDiscountHandler(
         }
         catch (Exception ex)
         {
-            await auditService.LogSystemEventAsync("ApplyDiscountError", ex.Message);
+            await auditService.LogSystemEventAsync("ApplyDiscountError", ex.Message, ct);
             return ServiceResult<DiscountApplicationResult>.Failure("خطا در اعمال تخفیف");
         }
     }

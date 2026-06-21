@@ -24,13 +24,18 @@ public sealed class VariantAttribute : Entity<VariantAttributeId>
         AttributeValueId valueId,
         string displayValue)
     {
+        Guard.Against.Null(variantId, nameof(variantId));
+        Guard.Against.Null(attributeId, nameof(attributeId));
+        Guard.Against.Null(valueId, nameof(valueId));
+        Guard.Against.NullOrWhiteSpace(displayValue, nameof(displayValue));
+
         return new VariantAttribute
         {
             Id = VariantAttributeId.NewId(),
             VariantId = variantId,
             AttributeTypeId = attributeId,
             ValueId = valueId,
-            DisplayValue = displayValue
+            DisplayValue = displayValue.Trim()
         };
     }
 
@@ -40,6 +45,6 @@ public sealed class VariantAttribute : Entity<VariantAttributeId>
         Guard.Against.NullOrWhiteSpace(displayValue, nameof(displayValue));
 
         AttributeTypeId = attributeTypeId;
-        DisplayValue = displayValue;
+        DisplayValue = displayValue.Trim();
     }
 }

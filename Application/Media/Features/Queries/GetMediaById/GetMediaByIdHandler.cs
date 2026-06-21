@@ -4,7 +4,7 @@ using Domain.Media.ValueObjects;
 namespace Application.Media.Features.Queries.GetMediaById;
 
 public class GetMediaByIdHandler(IMediaQueryService mediaQueryService)
-    : IRequestHandler<GetMediaByIdQuery, ServiceResult<MediaDto>>
+    : IQueryHandler<GetMediaByIdQuery, MediaDto>
 {
     public async Task<ServiceResult<MediaDto>> Handle(
         GetMediaByIdQuery request,

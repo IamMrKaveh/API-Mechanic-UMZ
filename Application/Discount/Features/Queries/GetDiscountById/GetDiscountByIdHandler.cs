@@ -3,7 +3,8 @@ using Domain.Discount.ValueObjects;
 
 namespace Application.Discount.Features.Queries.GetDiscountById;
 
-public class GetDiscountByIdHandler(IDiscountQueryService discountQueryService) : IRequestHandler<GetDiscountByIdQuery, ServiceResult<DiscountCodeDetailDto?>>
+public class GetDiscountByIdHandler(IDiscountQueryService discountQueryService)
+    : IQueryHandler<GetDiscountByIdQuery, DiscountCodeDetailDto?>
 {
     public async Task<ServiceResult<DiscountCodeDetailDto?>> Handle(
         GetDiscountByIdQuery request,

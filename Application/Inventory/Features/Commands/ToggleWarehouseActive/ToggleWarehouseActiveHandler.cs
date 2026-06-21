@@ -5,7 +5,8 @@ namespace Application.Inventory.Features.Commands.ToggleWarehouseActive;
 
 public class ToggleWarehouseActiveHandler(
     IWarehouseRepository warehouseRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<ToggleWarehouseActiveCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<ToggleWarehouseActiveCommand>
 {
     public async Task<ServiceResult> Handle(ToggleWarehouseActiveCommand request, CancellationToken ct)
     {

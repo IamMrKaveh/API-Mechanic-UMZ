@@ -4,7 +4,7 @@ using Domain.Category.ValueObjects;
 namespace Application.Category.Features.Queries.GetCategoryWithBrands;
 
 public class GetCategoryWithBrandsHandler(ICategoryQueryService queryService)
-    : IRequestHandler<GetCategoryWithBrandsQuery, ServiceResult<CategoryWithBrandsDto?>>
+    : IQueryHandler<GetCategoryWithBrandsQuery, CategoryWithBrandsDto?>
 {
     public async Task<ServiceResult<CategoryWithBrandsDto?>> Handle(
         GetCategoryWithBrandsQuery request,

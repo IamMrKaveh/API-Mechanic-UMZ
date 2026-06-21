@@ -1,3 +1,4 @@
+using Domain.Attribute.ValueObjects;
 using Domain.Product.Exceptions;
 using Domain.Product.ValueObjects;
 using Domain.Shipping.ValueObjects;
@@ -5,11 +6,15 @@ using Domain.Variant.Entities;
 using Domain.Variant.Events;
 using Domain.Variant.Exceptions;
 using Domain.Variant.ValueObjects;
+using System.Linq;
 
 namespace Domain.Variant.Aggregates;
 
 public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
 {
+    private readonly List<VariantAttribute> _attributes = new();
+    private readonly List<VariantShipping> _shippings = new();
+
     private ProductVariant()
     { }
 
@@ -27,10 +32,8 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
     public DateTime? DeletedAt { get; private set; }
     public Guid? DeletedBy { get; private set; }
 
-    public IReadOnlyList<VariantAttribute> Attributes => _attributes.AsReadOnly();
-    private readonly List<VariantAttribute> _attributes = [];
-    public IReadOnlyList<VariantShipping> Shippings => _shippings.AsReadOnly();
-    private readonly List<VariantShipping> _shippings = [];
+    public IReadOnlyList<VariantAttribute> Attributes => _attributes;
+    public IReadOnlyList<VariantShipping> Shippings => _shippings;
 
     public static ProductVariant Create(
         VariantId id,
@@ -87,16 +90,23 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
             throw new InvalidPriceException("قیمت اصلی نمی‌تواند کمتر از قیمت فروش باشد.");
 
         var previousPrice = SellingPrice;
+        var sameSelling = SellingPrice is not null && SellingPrice.Amount == resolvedSellingPrice.Amount && SellingPrice.Currency == resolvedSellingPrice.Currency;
+        var sameOriginal = OriginalPrice is not null && OriginalPrice.Amount == resolvedOriginalPrice.Amount && OriginalPrice.Currency == resolvedOriginalPrice.Currency;
+
         SellingPrice = resolvedSellingPrice;
         OriginalPrice = resolvedOriginalPrice;
         UpdatedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new ProductVariantPriceChangedEvent(Id, ProductId, previousPrice, SellingPrice));
+
+        if (!sameSelling || !sameOriginal)
+            RaiseDomainEvent(new ProductVariantPriceChangedEvent(Id, ProductId, previousPrice, SellingPrice));
     }
 
     public void ChangeSku(Sku newSku)
     {
         EnsureActive();
         Guard.Against.Null(newSku, nameof(newSku));
+        if (Sku.Equals(newSku))
+            return;
         Sku = newSku;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -105,11 +115,12 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
     {
         EnsureActive();
 
-        var desired = (assignments ?? Enumerable.Empty<AttributeAssignment>()).ToList();
-
-        var desiredByValueId = desired
+        var desired = (assignments ?? Enumerable.Empty<AttributeAssignment>())
             .GroupBy(a => a.ValueId)
-            .ToDictionary(g => g.Key, g => g.First());
+            .Select(g => g.First())
+            .ToList();
+
+        var desiredByValueId = desired.ToDictionary(a => a.ValueId);
 
         var toRemove = _attributes
             .Where(existing => !desiredByValueId.ContainsKey(existing.ValueId))
@@ -124,7 +135,7 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
                 existing.UpdateDisplay(match.AttributeId, match.DisplayValue);
         }
 
-        var existingValueIds = _attributes.Select(a => a.ValueId).ToHashSet();
+        var existingValueIds = new HashSet<AttributeValueId>(_attributes.Select(a => a.ValueId));
 
         foreach (var assignment in desired)
         {
@@ -151,11 +162,12 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
         if (shippingMultiplier <= 0)
             throw new DomainException("ضریب هزینه ارسال باید بزرگتر از صفر باشد.");
 
-        var desired = (assignments ?? Enumerable.Empty<ShippingAssignment>()).ToList();
-
-        var desiredByShippingId = desired
+        var desired = (assignments ?? Enumerable.Empty<ShippingAssignment>())
             .GroupBy(a => a.ShippingId)
-            .ToDictionary(g => g.Key, g => g.First());
+            .Select(g => g.First())
+            .ToList();
+
+        var desiredByShippingId = desired.ToDictionary(a => a.ShippingId);
 
         var toRemove = _shippings
             .Where(existing => !desiredByShippingId.ContainsKey(existing.ShippingId))
@@ -175,7 +187,7 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
                     shippingMultiplier);
         }
 
-        var existingShippingIds = _shippings.Select(s => s.ShippingId).ToHashSet();
+        var existingShippingIds = new HashSet<ShippingId>(_shippings.Select(s => s.ShippingId));
 
         foreach (var assignment in desired)
         {

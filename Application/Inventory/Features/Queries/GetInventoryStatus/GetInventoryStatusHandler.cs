@@ -7,7 +7,7 @@ namespace Application.Inventory.Features.Queries.GetInventoryStatus;
 public class GetInventoryStatusHandler(
     IInventoryQueryService queryService,
     IVariantRepository variantRepository)
-    : IRequestHandler<GetInventoryStatusQuery, ServiceResult<InventoryStatusDto>>
+    : IQueryHandler<GetInventoryStatusQuery, InventoryStatusDto>
 {
     public async Task<ServiceResult<InventoryStatusDto>> Handle(
         GetInventoryStatusQuery request,
