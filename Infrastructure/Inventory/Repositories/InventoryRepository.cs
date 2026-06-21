@@ -29,6 +29,9 @@ public sealed class InventoryRepository(DBContext context) : IInventoryRepositor
         return results.AsReadOnly();
     }
 
+    public async Task AddAsync(Domain.Inventory.Aggregates.Inventory inventory, CancellationToken ct = default)
+        => await context.Inventories.AddAsync(inventory, ct);
+
     public void Update(Domain.Inventory.Aggregates.Inventory inventory)
         => context.Inventories.Update(inventory);
 }

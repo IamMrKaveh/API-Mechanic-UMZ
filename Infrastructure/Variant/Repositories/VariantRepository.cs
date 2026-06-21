@@ -12,6 +12,14 @@ public sealed class VariantRepository(DBContext context) : IVariantRepository
         CancellationToken ct = default)
         => await context.ProductVariants.FirstOrDefaultAsync(v => v.Id == id, ct);
 
+    public async Task<ProductVariant?> GetForUpdateAsync(
+        VariantId id,
+        CancellationToken ct = default)
+        => await context.ProductVariants
+            .Include(v => v.Attributes)
+            .Include(v => v.Shippings)
+            .FirstOrDefaultAsync(v => v.Id == id, ct);
+
     public async Task<ProductVariant?> GetWithProductAsync(
         VariantId id,
         CancellationToken ct = default)
@@ -57,7 +65,16 @@ public sealed class VariantRepository(DBContext context) : IVariantRepository
         => await context.ProductVariants.AddAsync(variant, ct);
 
     public void Update(ProductVariant variant)
-        => context.ProductVariants.Update(variant);
+    {
+        var entry = context.Entry(variant);
+        if (entry.State == EntityState.Detached)
+            context.ProductVariants.Update(variant);
+    }
+
+    public async Task<bool> ExistsAsync(VariantId id, CancellationToken ct = default)
+        => await context.ProductVariants
+            .AsNoTracking()
+            .AnyAsync(v => v.Id == id && !v.IsDeleted, ct);
 
     public async Task<bool> ExistsByAttributeCombinationAsync(
         ProductId productId,

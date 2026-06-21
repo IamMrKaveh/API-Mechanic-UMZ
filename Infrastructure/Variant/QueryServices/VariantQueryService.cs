@@ -10,7 +10,7 @@ namespace Infrastructure.Variant.QueryServices;
 public sealed class VariantQueryService(DBContext context) : IVariantQueryService
 {
     public async Task<IEnumerable<ProductVariantViewDto>> GetProductVariantsAsync(
-        ProductId productId, bool activeOnly, CancellationToken ct = default)
+            ProductId productId, bool activeOnly, CancellationToken ct = default)
     {
         var query = context.ProductVariants
             .AsNoTracking()
@@ -27,34 +27,50 @@ public sealed class VariantQueryService(DBContext context) : IVariantQueryServic
 
         var variants = await query.ToListAsync(ct);
 
-        return variants.Select(v => new ProductVariantViewDto
+        var variantIds = variants.Select(v => v.Id).ToList();
+        var inventories = await context.Inventories
+            .AsNoTracking()
+            .Where(i => variantIds.Contains(i.VariantId))
+            .ToListAsync(ct);
+
+        var inventoryByVariant = inventories.ToDictionary(i => i.VariantId);
+
+        return variants.Select(v =>
         {
-            Id = v.Id.Value,
-            Sku = v.Sku.Value,
-            SellingPrice = v.SellingPrice.Amount,
-            OriginalPrice = v.OriginalPrice.Amount,
-            IsActive = v.IsActive,
-            IsInStock = false,
-            HasDiscount = v.IsDiscounted,
-            DiscountPercentage = v.DiscountPercentage ?? 0m,
-            EnabledShippingIds = v.Shippings
-                .Select(s => s.ShippingId.Value)
-                .ToList(),
-            ShippingMultiplier = v.Shippings.Count > 0
-                ? v.Shippings.Min(s => s.ShippingMultiplier)
-                : 1m,
-            Attributes = v.Attributes.ToDictionary(
-                va => va.AttributeType?.Name ?? va.AttributeTypeId.Value.ToString(),
-                va => new AttributeValueDto
-                {
-                    Id = va.Value?.Id.Value ?? Guid.Empty,
-                    AttributeTypeId = va.AttributeTypeId.Value,
-                    Value = va.Value?.Value ?? va.DisplayValue,
-                    DisplayValue = va.DisplayValue,
-                    HexCode = va.Value?.HexCode,
-                    SortOrder = va.Value?.SortOrder ?? 0,
-                    IsActive = va.Value?.IsActive ?? true
-                })
+            inventoryByVariant.TryGetValue(v.Id, out var inv);
+
+            return new ProductVariantViewDto
+            {
+                Id = v.Id.Value,
+                Sku = v.Sku.Value,
+                SellingPrice = v.SellingPrice.Amount,
+                OriginalPrice = v.OriginalPrice.Amount,
+                IsActive = v.IsActive,
+                HasDiscount = v.IsDiscounted,
+                DiscountPercentage = v.DiscountPercentage ?? 0m,
+                Stock = inv?.StockQuantity ?? 0,
+                StockQuantity = inv?.StockQuantity ?? 0,
+                IsUnlimited = inv?.IsUnlimited ?? false,
+                IsInStock = inv?.IsInStock ?? false,
+                EnabledShippingIds = v.Shippings
+                    .Select(s => s.ShippingId.Value)
+                    .ToList(),
+                ShippingMultiplier = v.Shippings.Count > 0
+                    ? v.Shippings.Min(s => s.ShippingMultiplier)
+                    : 1m,
+                Attributes = v.Attributes.ToDictionary(
+                    va => va.AttributeType?.Name ?? va.AttributeTypeId.Value.ToString(),
+                    va => new AttributeValueDto
+                    {
+                        Id = va.Value?.Id.Value ?? Guid.Empty,
+                        AttributeTypeId = va.AttributeTypeId.Value,
+                        Value = va.Value?.Value ?? va.DisplayValue,
+                        DisplayValue = va.DisplayValue,
+                        HexCode = va.Value?.HexCode,
+                        SortOrder = va.Value?.SortOrder ?? 0,
+                        IsActive = va.Value?.IsActive ?? true
+                    })
+            };
         }).ToList();
     }
 

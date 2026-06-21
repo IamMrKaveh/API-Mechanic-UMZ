@@ -7,7 +7,7 @@ using Domain.Variant.ValueObjects;
 
 namespace Domain.Inventory.Aggregates;
 
-public sealed class Inventory : AggregateRoot<InventoryId>
+public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
 {
     private Inventory()
     { }
@@ -31,6 +31,52 @@ public sealed class Inventory : AggregateRoot<InventoryId>
 
     public bool IsLowStock =>
         !IsUnlimited && AvailableQuantity > 0 && AvailableQuantity <= LowStockThreshold;
+
+    public static Inventory Create(
+        VariantId variantId,
+        int initialStock = 0,
+        bool isUnlimited = false,
+        int lowStockThreshold = 5,
+        UserId? createdBy = null)
+    {
+        Guard.Against.Null(variantId, nameof(variantId));
+        if (initialStock < 0)
+            throw new DomainException("موجودی اولیه نمی‌تواند منفی باشد.");
+        if (lowStockThreshold < 0)
+            throw new DomainException("آستانه کمبود موجودی نمی‌تواند منفی باشد.");
+
+        var inventory = new Inventory
+        {
+            Id = InventoryId.NewId(),
+            VariantId = variantId,
+            StockQuantity = StockQuantity.Create(initialStock),
+            ReservedQuantity = StockQuantity.Create(0),
+            IsUnlimited = isUnlimited,
+            LowStockThreshold = lowStockThreshold,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        if (initialStock > 0 && !isUnlimited)
+        {
+            var entry = StockLedgerEntry.StockIn(
+                variantId,
+                initialStock,
+                StockQuantity.Create(initialStock),
+                0,
+                null,
+                "ایجاد موجودی اولیه برای واریانت",
+                userId: createdBy);
+            inventory._ledgerEntries.Add(entry);
+        }
+
+        inventory.RaiseDomainEvent(new InventoryCreatedEvent(inventory.Id, variantId, initialStock, isUnlimited));
+        return inventory;
+    }
+
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public Guid? DeletedBy { get; private set; }
 
     public Result IncreaseStock(
         int quantity,
@@ -92,6 +138,15 @@ public sealed class Inventory : AggregateRoot<InventoryId>
         UpdatedAt = DateTime.UtcNow;
         IncrementVersion();
         RaiseDomainEvent(new StockSetUnlimitedEvent(Id, VariantId));
+    }
+
+    public void SetLowStockThreshold(int threshold)
+    {
+        if (threshold < 0)
+            throw new DomainException("آستانه کمبود موجودی نمی‌تواند منفی باشد.");
+        LowStockThreshold = threshold;
+        UpdatedAt = DateTime.UtcNow;
+        IncrementVersion();
     }
 
     public Result ReserveStock(

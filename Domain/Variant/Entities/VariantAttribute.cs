@@ -33,4 +33,13 @@ public sealed class VariantAttribute : Entity<VariantAttributeId>
             DisplayValue = displayValue
         };
     }
+
+    internal void UpdateDisplay(AttributeTypeId attributeTypeId, string displayValue)
+    {
+        Guard.Against.Null(attributeTypeId, nameof(attributeTypeId));
+        Guard.Against.NullOrWhiteSpace(displayValue, nameof(displayValue));
+
+        AttributeTypeId = attributeTypeId;
+        DisplayValue = displayValue;
+    }
 }

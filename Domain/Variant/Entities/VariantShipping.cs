@@ -28,16 +28,7 @@ public sealed class VariantShipping : Entity<VariantShippingId>
         decimal length,
         decimal shippingMultiplier)
     {
-        if (weight < 0)
-            throw new DomainException("وزن نمی‌تواند منفی باشد.");
-        if (width < 0)
-            throw new DomainException("عرض نمی‌تواند منفی باشد.");
-        if (height < 0)
-            throw new DomainException("ارتفاع نمی‌تواند منفی باشد.");
-        if (length < 0)
-            throw new DomainException("طول نمی‌تواند منفی باشد.");
-        if (shippingMultiplier <= 0)
-            throw new DomainException("ضریب هزینه ارسال باید بزرگتر از صفر باشد.");
+        ValidateDimensions(weight, width, height, length, shippingMultiplier);
 
         return new VariantShipping
         {
@@ -50,5 +41,40 @@ public sealed class VariantShipping : Entity<VariantShippingId>
             Length = length,
             ShippingMultiplier = shippingMultiplier
         };
+    }
+
+    internal void UpdateDimensions(
+        decimal weight,
+        decimal width,
+        decimal height,
+        decimal length,
+        decimal shippingMultiplier)
+    {
+        ValidateDimensions(weight, width, height, length, shippingMultiplier);
+
+        Weight = weight;
+        Width = width;
+        Height = height;
+        Length = length;
+        ShippingMultiplier = shippingMultiplier;
+    }
+
+    private static void ValidateDimensions(
+        decimal weight,
+        decimal width,
+        decimal height,
+        decimal length,
+        decimal shippingMultiplier)
+    {
+        if (weight < 0)
+            throw new DomainException("وزن نمی‌تواند منفی باشد.");
+        if (width < 0)
+            throw new DomainException("عرض نمی‌تواند منفی باشد.");
+        if (height < 0)
+            throw new DomainException("ارتفاع نمی‌تواند منفی باشد.");
+        if (length < 0)
+            throw new DomainException("طول نمی‌تواند منفی باشد.");
+        if (shippingMultiplier <= 0)
+            throw new DomainException("ضریب هزینه ارسال باید بزرگتر از صفر باشد.");
     }
 }
