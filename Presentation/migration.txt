@@ -3,6 +3,9 @@ CREATE SCHEMA public;
 GRANT ALL ON SCHEMA public TO postgres;
 
 
+dotnet ef database drop --project Infrastructure --startup-project Presentation --context DBContext --force
+
+dotnet ef database update --project Infrastructure --startup-project Presentation --context DBContext
 
 dotnet ef migrations add 1 --project Infrastructure --startup-project Presentation --context DBContext --output-dir Persistence/Migrations
 

@@ -19,22 +19,16 @@ public abstract class BaseApiController(ISender mediator, IMapper? mapper = null
 
     protected async Task<IActionResult> Send<TResponse>(
         IRequest<ServiceResult<TResponse>> request,
-        CancellationToken ct)
-    {
-        return ToActionResult(await Mediator.Send(request, ct));
-    }
+        CancellationToken ct) => ToActionResult(await Mediator.Send(request, ct));
 
     protected async Task<IActionResult> Send(
         IRequest<ServiceResult> request,
-        CancellationToken ct)
-    {
-        return ToActionResult(await Mediator.Send(request, ct));
-    }
+        CancellationToken ct) => ToActionResult(await Mediator.Send(request, ct));
 
-    protected IActionResult ToActionResult<T>(ServiceResult<T> result)
+    protected IActionResult ToActionResult<T>(ServiceResult<T> result, int successStatusCode = StatusCodes.Status200OK)
     {
         if (result.IsSuccess)
-            return Ok(new ApiResponse<T>(result.Value, true, null));
+            return StatusCode(successStatusCode, new ApiResponse<T>(result.Value, true, null));
 
         var statusCode = MapStatusCode(result.Type);
         var errors = result.Error is null
@@ -44,10 +38,10 @@ public abstract class BaseApiController(ISender mediator, IMapper? mapper = null
         return StatusCode(statusCode, new ApiResponse<T>(default, false, result.Error, errors));
     }
 
-    protected IActionResult ToActionResult(ServiceResult result)
+    protected IActionResult ToActionResult(ServiceResult result, int successStatusCode = StatusCodes.Status200OK)
     {
         if (result.IsSuccess)
-            return Ok(new ApiResponse(true, null));
+            return StatusCode(successStatusCode, new ApiResponse(true, null));
 
         var statusCode = MapStatusCode(result.Type);
         var errors = result.Error is null
@@ -56,11 +50,6 @@ public abstract class BaseApiController(ISender mediator, IMapper? mapper = null
 
         return StatusCode(statusCode, new ApiResponse(false, result.Error, errors));
     }
-
-    protected IActionResult CreatedActionResult<T>(ServiceResult<T> result) =>
-        StatusCode(
-            StatusCodes.Status201Created,
-            new ApiResponse<T>(result.Value, true, null));
 
     private static int MapStatusCode(ErrorType type) =>
         type switch
@@ -71,6 +60,12 @@ public abstract class BaseApiController(ISender mediator, IMapper? mapper = null
             ErrorType.NotFound => StatusCodes.Status404NotFound,
             ErrorType.Conflict => StatusCodes.Status409Conflict,
             ErrorType.RateLimitExceeded => StatusCodes.Status429TooManyRequests,
+            ErrorType.Failure => StatusCodes.Status422UnprocessableEntity,
             _ => StatusCodes.Status500InternalServerError
         };
+
+    protected IActionResult CreatedActionResult<T>(ServiceResult<T> result) =>
+        StatusCode(
+            StatusCodes.Status201Created,
+            new ApiResponse<T>(result.Value, true, null));
 }

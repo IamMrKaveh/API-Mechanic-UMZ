@@ -178,23 +178,48 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
     }
 
-    private static void AddPersistence(this IServiceCollection services, IConfiguration configuration)
+    private static void AddPersistence(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddSingleton<AuditableEntityInterceptor>();
         services.AddSingleton<DomainEventInterceptor>();
 
+        var environment =
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+        var isDevelopment =
+            string.Equals(
+                environment,
+                Environments.Development,
+                StringComparison.OrdinalIgnoreCase);
+
+        var connectionString =
+            configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException(
+                "DefaultConnection connection string was not found.");
+
         services.AddDbContext<DBContext>((sp, options) =>
         {
             options.UseNpgsql(
-                configuration.GetConnectionString("DefaultConnection"),
+                connectionString,
                 npgsql =>
                 {
-                    npgsql.MigrationsAssembly(typeof(DBContext).Assembly.FullName);
-                    npgsql.EnableRetryOnFailure(3, TimeSpan.FromSeconds(5), null);
-                })
-                .AddInterceptors(
-                    sp.GetRequiredService<AuditableEntityInterceptor>(),
-                    sp.GetRequiredService<DomainEventInterceptor>());
+                    npgsql.MigrationsAssembly(
+                        typeof(DBContext).Assembly.FullName);
+
+                    if (!isDevelopment)
+                    {
+                        npgsql.EnableRetryOnFailure(
+                            maxRetryCount: 3,
+                            maxRetryDelay: TimeSpan.FromSeconds(5),
+                            errorCodesToAdd: null);
+                    }
+                });
+
+            options.AddInterceptors(
+                sp.GetRequiredService<AuditableEntityInterceptor>(),
+                sp.GetRequiredService<DomainEventInterceptor>());
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();

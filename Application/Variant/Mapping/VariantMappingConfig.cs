@@ -20,8 +20,6 @@ public class VariantMappingConfig : IRegister
             .Ignore(dest => dest.IsInStock)
             .Ignore(dest => dest.EnabledShippingIds)
             .Ignore(dest => dest.ShippingMultiplier)
-            .Ignore(dest => dest.Attributes)
-            .Ignore(dest => dest.Images)
-            .Ignore(dest => dest.RowVersion);
+            .Ignore(dest => dest.Attributes);
     }
 }

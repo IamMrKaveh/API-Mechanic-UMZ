@@ -1,44 +1,75 @@
 ﻿using Domain.Common.Abstractions;
 using Infrastructure.Persistence.Outbox;
+using System.Text.Encodings.Web;
+using System.Text.Json.Serialization;
 
 namespace Infrastructure.Persistence.Interceptors;
 
-public sealed class DomainEventInterceptor(IOutboxEventTypeRegistry typeRegistry) : SaveChangesInterceptor
+public sealed class DomainEventInterceptor(
+    IOutboxEventTypeRegistry typeRegistry) : SaveChangesInterceptor
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        ReferenceHandler = ReferenceHandler.IgnoreCycles,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false
+    };
+
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
-        await DispatchDomainEvents(eventData.Context);
+        await DispatchDomainEvents(eventData.Context, cancellationToken);
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private async Task DispatchDomainEvents(DbContext? context)
+    public override InterceptionResult<int> SavingChanges(
+        DbContextEventData eventData,
+        InterceptionResult<int> result)
     {
-        if (context is null) return;
+        DispatchDomainEvents(eventData.Context, CancellationToken.None)
+            .GetAwaiter()
+            .GetResult();
+        return base.SavingChanges(eventData, result);
+    }
 
-        var aggregates = context.ChangeTracker
+    private async Task DispatchDomainEvents(DbContext? context, CancellationToken ct)
+    {
+        if (context is not DBContext dbContext)
+            return;
+
+        var aggregates = dbContext.ChangeTracker
             .Entries<IHasDomainEvents>()
-            .Where(e => e.Entity.DomainEvents.Any())
+            .Where(e => e.Entity.DomainEvents.Count > 0)
             .Select(e => e.Entity)
             .ToList();
 
-        var domainEvents = aggregates
-            .SelectMany(a => a.DomainEvents)
-            .ToList();
+        if (aggregates.Count == 0)
+            return;
+
+        var domainEvents = aggregates.SelectMany(a => a.DomainEvents).ToList();
 
         foreach (var aggregate in aggregates)
             aggregate.ClearDomainEvents();
 
-        var outboxMessages = domainEvents.Select(domainEvent =>
+        var outboxMessages = new List<OutboxMessage>(domainEvents.Count);
+        foreach (var domainEvent in domainEvents)
         {
-            var type = typeRegistry.GetTypeName(domainEvent.GetType());
-            var payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType());
-            return OutboxMessage.Create(type, payload, DateTime.UtcNow);
-        }).ToList();
+            try
+            {
+                var typeName = typeRegistry.GetTypeName(domainEvent.GetType());
+                var payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), SerializerOptions);
+                outboxMessages.Add(OutboxMessage.Create(typeName, payload, DateTime.UtcNow));
+            }
+            catch (Exception)
+            {
+            }
+        }
 
-        if (context is DBContext dbContext)
-            await dbContext.OutboxMessages.AddRangeAsync(outboxMessages);
+        if (outboxMessages.Count > 0)
+            await dbContext.OutboxMessages.AddRangeAsync(outboxMessages, ct);
     }
 }

@@ -11,18 +11,25 @@ namespace Presentation.Variant.Endpoints;
 [ApiController]
 [Route("api/v{version:apiVersion}/admin/products/variants")]
 [Authorize(Roles = "Admin")]
-public sealed class AdminVariantController(
-    IMediator mediator) : BaseApiController(mediator)
+public sealed class AdminVariantController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<ProductVariantViewDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> Add(
-        Guid productId,
+        [FromQuery] Guid productId,
         [FromBody] AddVariantRequest request,
         CancellationToken ct)
     {
+        if (productId == Guid.Empty)
+            return BadRequest(new ApiResponse(false, "شناسه محصول الزامی است."));
+
+        if (request is null)
+            return BadRequest(new ApiResponse(false, "بدنه درخواست الزامی است."));
+
         var command = new AddVariantCommand(
             productId,
             request.Sku,
@@ -31,27 +38,23 @@ public sealed class AdminVariantController(
             request.Stock,
             request.IsUnlimited,
             request.ShippingMultiplier,
-            request.AttributeValueIds?.ToList() ?? [],
-            request.EnabledShippingIds);
+            request.AttributeValueIds?.ToList() ?? new List<Guid>(),
+            request.EnabledShippingIds?.ToList());
 
         var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return ToActionResult(result, StatusCodes.Status201Created);
     }
 
     [HttpPost("{variantId:guid}/stock")]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AddStock(
-    Guid variantId,
-    [FromBody] AddStockRequest request,
-    CancellationToken ct)
+        Guid variantId,
+        [FromBody] AddStockRequest request,
+        CancellationToken ct)
     {
-        var command = new AddStockCommand(
-            variantId,
-            request.Quantity,
-            request.Notes);
-
+        var command = new AddStockCommand(variantId, request.Quantity, request.Notes);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
@@ -61,7 +64,7 @@ public sealed class AdminVariantController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(
-        Guid productId,
+        [FromQuery] Guid productId,
         Guid variantId,
         [FromBody] UpdateVariantRequest request,
         CancellationToken ct)
@@ -86,7 +89,7 @@ public sealed class AdminVariantController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
-        Guid productId,
+        [FromQuery] Guid productId,
         Guid variantId,
         CancellationToken ct)
     {
@@ -103,11 +106,7 @@ public sealed class AdminVariantController(
         [FromBody] RemoveStockRequest request,
         CancellationToken ct)
     {
-        var command = new RemoveStockCommand(
-            variantId,
-            request.Quantity,
-            request.Notes);
-
+        var command = new RemoveStockCommand(variantId, request.Quantity, request.Notes);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
