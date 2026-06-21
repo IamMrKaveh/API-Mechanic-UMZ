@@ -7,11 +7,12 @@ using Domain.User.ValueObjects;
 namespace Application.Auth.Features.Commands.SendOtp;
 
 public class SendOtpHandler(
+    IUnitOfWork unitOfWork,
     IOtpService otpService,
     IOtpRepository otpRepository,
     IUserRepository userRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<SendOtpCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<SendOtpCommand>
 {
     public async Task<ServiceResult> Handle(SendOtpCommand request, CancellationToken ct)
     {

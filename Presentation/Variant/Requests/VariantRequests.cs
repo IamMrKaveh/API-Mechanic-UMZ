@@ -2,7 +2,6 @@
 
 public record AddVariantRequest(
     string? Sku,
-    decimal PurchasePrice,
     decimal SellingPrice,
     decimal OriginalPrice,
     int Stock = 0,
@@ -17,7 +16,6 @@ public record UpdateVariantRequest(
     Guid VariantId,
     Guid UserId,
     string? Sku,
-    decimal PurchasePrice,
     decimal SellingPrice,
     decimal OriginalPrice,
     int Stock = 0,

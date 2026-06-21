@@ -7,7 +7,8 @@ namespace Application.Auth.Features.Commands.GoogleLogin;
 public class GoogleLoginHandler(
     IUserRepository userRepository,
     IJwtTokenGenerator jwtTokenGenerator,
-    IUnitOfWork unitOfWork) : IRequestHandler<GoogleLoginCommand, ServiceResult<TokenResultDto>>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<GoogleLoginCommand, TokenResultDto>
 {
     public async Task<ServiceResult<TokenResultDto>> Handle(GoogleLoginCommand request, CancellationToken ct)
     {

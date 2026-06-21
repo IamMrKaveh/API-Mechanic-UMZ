@@ -42,5 +42,7 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         });
 
         builder.Ignore(e => e.TotalPrice);
+
+        builder.HasQueryFilter(e => !e.Order.IsDeleted);
     }
 }

@@ -9,7 +9,8 @@ public class MoveBrandHandler(
     IBrandRepository brandRepository,
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<MoveBrandCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<MoveBrandCommand>
 {
     public async Task<ServiceResult> Handle(MoveBrandCommand request, CancellationToken ct)
     {

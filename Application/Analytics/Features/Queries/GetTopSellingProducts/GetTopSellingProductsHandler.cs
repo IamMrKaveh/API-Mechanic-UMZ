@@ -4,7 +4,8 @@ namespace Application.Analytics.Features.Queries.GetTopSellingProducts;
 
 public sealed class GetTopSellingProductsHandler(
     IAnalyticsQueryService analyticsQuery,
-    ICacheService cache) : IRequestHandler<GetTopSellingProductsQuery, ServiceResult<PaginatedResult<TopSellingProductDto>>>
+    ICacheService cache)
+    : IQueryHandler<GetTopSellingProductsQuery, PaginatedResult<TopSellingProductDto>>
 {
     public async Task<ServiceResult<PaginatedResult<TopSellingProductDto>>> Handle(
         GetTopSellingProductsQuery request,

@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.User.ValueObjects;
@@ -10,7 +9,8 @@ public class LogoutHandler(
     ISessionRepository sessionRepository,
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
-    IAuditService auditService) : IRequestHandler<LogoutCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<LogoutCommand>
 {
     public async Task<ServiceResult> Handle(LogoutCommand request, CancellationToken ct)
     {

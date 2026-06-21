@@ -4,4 +4,4 @@ namespace Application.Auth.Features.Commands.SendOtp;
 
 public record SendOtpCommand(
     string PhoneNumber,
-    OtpPurpose Purpose = OtpPurpose.Login) : IRequest<ServiceResult>, IBypassTransactionBehavior;
+    OtpPurpose Purpose = OtpPurpose.Login) : ICommand, IBypassTransactionBehavior;

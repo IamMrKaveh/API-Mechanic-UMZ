@@ -14,11 +14,13 @@ public sealed class VariantQueryService(DBContext context) : IVariantQueryServic
     {
         var query = context.ProductVariants
             .AsNoTracking()
+            .Where(v => v.ProductId == productId && !v.IsDeleted)
+            .Include(v => v.Attributes)
+                .ThenInclude(va => va.AttributeType)
             .Include(v => v.Attributes)
                 .ThenInclude(va => va.Value)
-                    .ThenInclude(av => av.AttributeType)
             .Include(v => v.Shippings)
-            .Where(v => v.ProductId == productId && !v.IsDeleted);
+            .AsSplitQuery();
 
         if (activeOnly)
             query = query.Where(v => v.IsActive);
@@ -29,50 +31,66 @@ public sealed class VariantQueryService(DBContext context) : IVariantQueryServic
         {
             Id = v.Id.Value,
             Sku = v.Sku.Value,
-            PurchasePrice = v.Price.Amount,
             SellingPrice = v.SellingPrice.Amount,
-            OriginalPrice = v.CompareAtPrice?.Amount ?? v.Price.Amount,
+            OriginalPrice = v.OriginalPrice.Amount,
             IsActive = v.IsActive,
             IsInStock = false,
             HasDiscount = v.IsDiscounted,
             DiscountPercentage = v.DiscountPercentage ?? 0m,
-            EnabledShippingIds = v.Shippings.Select(s => s.ShippingId.Value).ToList(),
+            EnabledShippingIds = v.Shippings
+                .Select(s => s.ShippingId.Value)
+                .ToList(),
+            ShippingMultiplier = v.Shippings.Count > 0
+                ? v.Shippings.Min(s => s.ShippingMultiplier)
+                : 1m,
             Attributes = v.Attributes.ToDictionary(
                 va => va.AttributeType?.Name ?? va.AttributeTypeId.Value.ToString(),
                 va => new AttributeValueDto
                 {
                     Id = va.Value?.Id.Value ?? Guid.Empty,
                     AttributeTypeId = va.AttributeTypeId.Value,
-                    Value = va.DisplayValue,
+                    Value = va.Value?.Value ?? va.DisplayValue,
                     DisplayValue = va.DisplayValue,
-                    SortOrder = 0
+                    HexCode = va.Value?.HexCode,
+                    SortOrder = va.Value?.SortOrder ?? 0,
+                    IsActive = va.Value?.IsActive ?? true
                 })
-        });
+        }).ToList();
     }
 
-    public async Task<ProductVariantShippingInfoDto?> GetVariantShippingInfoAsync(
+    public async Task<VariantShippingInfoDto?> GetVariantShippingInfoAsync(
         VariantId variantId, CancellationToken ct = default)
     {
         var variant = await context.ProductVariants
             .AsNoTracking()
+            .AsSplitQuery()
+            .Where(v => v.Id == variantId && !v.IsDeleted)
             .Include(v => v.Shippings)
                 .ThenInclude(pvs => pvs.Shipping)
-            .FirstOrDefaultAsync(v => v.Id == variantId, ct);
+            .FirstOrDefaultAsync(ct);
 
         if (variant is null) return null;
 
-        return new ProductVariantShippingInfoDto
+        var activeShippings = variant.Shippings
+            .Where(pvs => pvs.Shipping is not null && pvs.Shipping.IsActive)
+            .ToList();
+
+        return new VariantShippingInfoDto
         {
             VariantId = variant.Id.Value,
-            AvailableShippings = variant.Shippings
-                .Where(pvs => pvs.Shipping.IsActive)
+            ShippingMultiplier = activeShippings.Count > 0
+                ? activeShippings.Min(pvs => pvs.ShippingMultiplier)
+                : 1m,
+            AvailableShippings = activeShippings
                 .Select(pvs => new ShippingListItemDto
                 {
                     Id = pvs.Shipping.Id.Value,
                     Name = pvs.Shipping.Name.Value,
                     BaseCost = pvs.Shipping.Cost.Amount,
+                    IsActive = pvs.Shipping.IsActive,
                     IsDefault = pvs.Shipping.IsDefault
-                }).ToList()
+                })
+                .ToList()
         };
     }
 }

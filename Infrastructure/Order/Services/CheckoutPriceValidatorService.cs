@@ -15,7 +15,7 @@ public sealed class CheckoutPriceValidatorService(IVariantRepository variantRepo
             var variant = await variantRepository.GetByIdAsync(item.VariantId, ct);
             if (variant is null) continue;
 
-            if (Math.Abs(variant.Price.Amount - item.UnitPrice.Amount) > 1)
+            if (Math.Abs(variant.SellingPrice.Amount - item.UnitPrice.Amount) > 1)
                 return ServiceResult.Failure(
                     $"قیمت محصول {item.ProductName} تغییر کرده است. لطفاً سبد خرید را بروزرسانی کنید.");
         }

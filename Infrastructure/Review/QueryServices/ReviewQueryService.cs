@@ -74,16 +74,25 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
     public async Task<ReviewSummaryDto> GetProductReviewSummaryAsync(
         ProductId productId, CancellationToken ct = default)
     {
-        var reviews = await context.ProductReviews
+        var summary = await context.ProductReviews
             .AsNoTracking()
             .Where(r => r.ProductId == productId
                 && r.Status == ReviewStatus.Approved
                 && !r.IsDeleted)
-            .ToListAsync(ct);
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(),
+                AverageRating = g.Average(r => r.Rating.Value),
+                FiveStar = g.Count(r => r.Rating.Value == 5),
+                FourStar = g.Count(r => r.Rating.Value == 4),
+                ThreeStar = g.Count(r => r.Rating.Value == 3),
+                TwoStar = g.Count(r => r.Rating.Value == 2),
+                OneStar = g.Count(r => r.Rating.Value == 1)
+            })
+            .FirstOrDefaultAsync(ct);
 
-        var total = reviews.Count;
-
-        if (total == 0)
+        if (summary is null || summary.Total == 0)
         {
             return new ReviewSummaryDto
             {
@@ -95,30 +104,24 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             };
         }
 
-        var fiveStar = reviews.Count(r => r.Rating.Value == 5);
-        var fourStar = reviews.Count(r => r.Rating.Value == 4);
-        var threeStar = reviews.Count(r => r.Rating.Value == 3);
-        var twoStar = reviews.Count(r => r.Rating.Value == 2);
-        var oneStar = reviews.Count(r => r.Rating.Value == 1);
-
         return new ReviewSummaryDto
         {
             ProductId = productId.Value,
-            TotalReviews = total,
-            TotalCount = total,
-            AverageRating = reviews.Average(r => r.Rating.Value),
-            FiveStarCount = fiveStar,
-            FourStarCount = fourStar,
-            ThreeStarCount = threeStar,
-            TwoStarCount = twoStar,
-            OneStarCount = oneStar,
+            TotalReviews = summary.Total,
+            TotalCount = summary.Total,
+            AverageRating = summary.AverageRating,
+            FiveStarCount = summary.FiveStar,
+            FourStarCount = summary.FourStar,
+            ThreeStarCount = summary.ThreeStar,
+            TwoStarCount = summary.TwoStar,
+            OneStarCount = summary.OneStar,
             RatingDistribution = new Dictionary<int, int>
             {
-                [5] = fiveStar,
-                [4] = fourStar,
-                [3] = threeStar,
-                [2] = twoStar,
-                [1] = oneStar
+                [5] = summary.FiveStar,
+                [4] = summary.FourStar,
+                [3] = summary.ThreeStar,
+                [2] = summary.TwoStar,
+                [1] = summary.OneStar
             }
         };
     }

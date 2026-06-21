@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DBContext))]
-    [Migration("20260620135551_1")]
-    partial class _1
+    [Migration("20260621052839_2")]
+    partial class _2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -377,7 +377,9 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("AppliedDiscountCodeId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("GuestToken", "IsCheckedOut");
+
+                    b.HasIndex("UserId", "IsCheckedOut");
 
                     b.ToTable("Carts");
                 });
@@ -449,6 +451,8 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IsActive", "SortOrder");
 
                     b.ToTable("Categories", (string)null);
                 });
@@ -1444,6 +1448,8 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("Status", "Priority");
+
                     b.ToTable("Tickets");
                 });
 
@@ -1682,6 +1688,11 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("ShippingId")
                         .HasColumnType("uuid");
+
+                    b.Property<decimal>("ShippingMultiplier")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(10,3)")
+                        .HasDefaultValue(1m);
 
                     b.Property<Guid>("VariantId")
                         .HasColumnType("uuid");
@@ -2906,6 +2917,8 @@ namespace Infrastructure.Persistence.Migrations
 
                             b1.HasKey("ProductReviewId");
 
+                            b1.HasIndex("Value");
+
                             b1.ToTable("ProductReviews");
 
                             b1.WithOwner()
@@ -3229,43 +3242,20 @@ namespace Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("SharedKernel.ValueObjects.Money", "CompareAtPrice", b1 =>
+                    b.OwnsOne("SharedKernel.ValueObjects.Money", "OriginalPrice", b1 =>
                         {
                             b1.Property<Guid>("ProductVariantId")
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
                                 .HasColumnType("decimal(18,2)")
-                                .HasColumnName("CompareAtPrice");
+                                .HasColumnName("OriginalPrice");
 
                             b1.Property<string>("Currency")
                                 .IsRequired()
                                 .HasMaxLength(10)
                                 .HasColumnType("character varying(10)")
-                                .HasColumnName("CompareAtPriceCurrency");
-
-                            b1.HasKey("ProductVariantId");
-
-                            b1.ToTable("ProductVariants");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ProductVariantId");
-                        });
-
-                    b.OwnsOne("SharedKernel.ValueObjects.Money", "Price", b1 =>
-                        {
-                            b1.Property<Guid>("ProductVariantId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("decimal(18,2)")
-                                .HasColumnName("Price");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .HasMaxLength(10)
-                                .HasColumnType("character varying(10)")
-                                .HasColumnName("PriceCurrency");
+                                .HasColumnName("OriginalPriceCurrency");
 
                             b1.HasKey("ProductVariantId");
 
@@ -3298,9 +3288,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasForeignKey("ProductVariantId");
                         });
 
-                    b.Navigation("CompareAtPrice");
-
-                    b.Navigation("Price")
+                    b.Navigation("OriginalPrice")
                         .IsRequired();
 
                     b.Navigation("Product");
@@ -3401,13 +3389,13 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasOne("Domain.User.Aggregates.User", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.Wallet.Aggregates.Wallet", "Wallet")
                         .WithMany()
                         .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.OwnsOne("SharedKernel.ValueObjects.Money", "Amount", b1 =>

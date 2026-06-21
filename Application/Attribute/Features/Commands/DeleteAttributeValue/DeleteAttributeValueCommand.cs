@@ -1,3 +1,3 @@
 namespace Application.Attribute.Features.Commands.DeleteAttributeValue;
 
-public record DeleteAttributeValueCommand(Guid Id) : IRequest<ServiceResult>;
+public record DeleteAttributeValueCommand(Guid Id) : ICommand;

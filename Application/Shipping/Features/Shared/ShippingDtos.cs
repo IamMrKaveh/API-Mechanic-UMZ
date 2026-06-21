@@ -52,7 +52,7 @@ public record AvailableShippingDto
     public bool IsDefault { get; init; }
 }
 
-public record ProductVariantShippingInfoDto
+public record VariantShippingInfoDto
 {
     public Guid VariantId { get; init; }
     public decimal ShippingMultiplier { get; init; }

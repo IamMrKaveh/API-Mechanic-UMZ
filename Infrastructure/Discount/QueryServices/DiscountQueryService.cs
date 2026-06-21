@@ -59,6 +59,7 @@ public sealed class DiscountQueryService(DBContext context) : IDiscountQueryServ
             .AsNoTracking()
             .Include(d => d.Restrictions)
             .Include(d => d.Usages)
+            .AsSplitQuery()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(d => d.Id == id, ct);
 

@@ -1,4 +1,5 @@
 using Application.Inventory.Features.Shared;
+using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
 
 namespace Application.Inventory.Contracts;
@@ -38,5 +39,9 @@ public interface IInventoryQueryService
 
     Task<IEnumerable<WarehouseStockDto>> GetWarehouseStockByVariantAsync(
         VariantId variantId,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<InventoryStatusDto>> GetInventoryStatusesByProductAsync(
+        ProductId productId,
         CancellationToken ct = default);
 }

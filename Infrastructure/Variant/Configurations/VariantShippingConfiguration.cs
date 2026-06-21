@@ -25,6 +25,7 @@ internal sealed class VariantShippingConfiguration : IEntityTypeConfiguration<Va
         builder.Property(e => e.Width).HasColumnType("decimal(10,3)").IsRequired();
         builder.Property(e => e.Height).HasColumnType("decimal(10,3)").IsRequired();
         builder.Property(e => e.Length).HasColumnType("decimal(10,3)").IsRequired();
+        builder.Property(e => e.ShippingMultiplier).HasColumnType("decimal(10,3)").IsRequired().HasDefaultValue(1m);
 
         builder.HasOne(e => e.Shipping)
             .WithMany()

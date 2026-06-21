@@ -31,6 +31,9 @@ public sealed class CartConfiguration : IEntityTypeConfiguration<Domain.Cart.Agg
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.UpdatedAt);
 
+        builder.HasIndex(e => new { e.UserId, e.IsCheckedOut });
+        builder.HasIndex(e => new { e.GuestToken, e.IsCheckedOut });
+
         builder.HasMany(e => e.CartItems)
             .WithOne(ci => ci.Cart)
             .HasForeignKey(ci => ci.CartId)

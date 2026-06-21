@@ -65,23 +65,23 @@ public sealed class OrderQueryService(DBContext context) : IOrderQueryService
             .Where(o => !o.IsDeleted);
 
         if (userId is not null)
-            query = query.Where(o => o.UserId.Value == userId.Value);
+            query = query.Where(o => o.UserId == userId);
 
         if (!string.IsNullOrWhiteSpace(status))
-            query = query.Where(o => o.Status.Value == status);
+            query = query.Where(o => o.Status == status);
 
         if (from.HasValue)
-            query = query.Where(o => o.CreatedAt >= from.Value);
+            query = query.Where(o => o.CreatedAt >= from);
 
         if (to.HasValue)
-            query = query.Where(o => o.CreatedAt <= to.Value);
+            query = query.Where(o => o.CreatedAt <= to);
 
         if (isPaid.HasValue)
         {
             var paidStatuses = new[] { "Paid", "Processing", "Shipped", "Delivered" };
             query = isPaid.Value
-                ? query.Where(o => paidStatuses.Contains(o.Status.Value))
-                : query.Where(o => !paidStatuses.Contains(o.Status.Value));
+                ? query.Where(o => paidStatuses.Contains(o.Status))
+                : query.Where(o => !paidStatuses.Contains(o.Status));
         }
 
         var totalItems = await query.CountAsync(ct);
@@ -102,7 +102,7 @@ public sealed class OrderQueryService(DBContext context) : IOrderQueryService
                 ShippingCost = o.ShippingCost.Amount,
                 DiscountAmount = o.DiscountAmount.Amount,
                 FinalAmount = o.FinalAmount.Amount,
-                DiscountCodeId = o.AppliedDiscountCodeId != null ? (Guid?)o.AppliedDiscountCodeId.Value : null,
+                DiscountCodeId = o.AppliedDiscountCodeId != null ? o.AppliedDiscountCodeId.Value : null,
                 CancellationReason = o.CancellationReason,
                 IsPaid = o.IsPaid,
                 IsCancelled = o.IsCancelled,
@@ -147,7 +147,7 @@ public sealed class OrderQueryService(DBContext context) : IOrderQueryService
                 ShippingCost = o.ShippingCost.Amount,
                 DiscountAmount = o.DiscountAmount.Amount,
                 FinalAmount = o.FinalAmount.Amount,
-                DiscountCodeId = o.AppliedDiscountCodeId != null ? (Guid?)o.AppliedDiscountCodeId.Value : null,
+                DiscountCodeId = o.AppliedDiscountCodeId != null ? o.AppliedDiscountCodeId.Value : null,
                 CancellationReason = o.CancellationReason,
                 IsPaid = o.IsPaid,
                 IsCancelled = o.IsCancelled,

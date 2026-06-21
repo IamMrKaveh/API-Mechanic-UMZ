@@ -17,9 +17,8 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
     public ProductId ProductId { get; private set; } = default!;
 
     public Sku Sku { get; private set; } = default!;
-    public Money Price { get; private set; } = default!;
+    public Money OriginalPrice { get; private set; } = default!;
     public Money SellingPrice { get; private set; } = default!;
-    public Money? CompareAtPrice { get; private set; }
     public bool IsActive { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
@@ -37,59 +36,59 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
         VariantId id,
         ProductId productId,
         Sku sku,
-        Money price,
-        Money? compareAtPrice = null)
+        Money sellingPrice,
+        Money? originalPrice = null)
     {
         Guard.Against.Null(id, nameof(id));
         Guard.Against.Null(productId, nameof(productId));
         Guard.Against.Null(sku, nameof(sku));
-        Guard.Against.Null(price, nameof(price));
+        Guard.Against.Null(sellingPrice, nameof(sellingPrice));
 
-        if (price.Amount <= 0)
+        if (sellingPrice.Amount <= 0)
             throw new InvalidPriceException("قیمت واریانت باید بزرگتر از صفر باشد.");
 
-        if (compareAtPrice is not null && compareAtPrice.Amount < price.Amount)
-            throw new InvalidPriceException("قیمت مقایسه‌ای نمی‌تواند کمتر از قیمت فروش باشد.");
+        var resolvedSellingPrice = Money.FromDecimal(sellingPrice.Amount, sellingPrice.Currency);
+        var resolvedOriginalPrice = originalPrice is not null && originalPrice.Amount > 0
+            ? Money.FromDecimal(originalPrice.Amount, originalPrice.Currency)
+            : Money.FromDecimal(sellingPrice.Amount, sellingPrice.Currency);
 
-        var purchasePrice = Money.FromDecimal(price.Amount, price.Currency);
-        var sellingPrice = Money.FromDecimal(price.Amount, price.Currency);
-        var listPrice = compareAtPrice is null
-            ? null
-            : Money.FromDecimal(compareAtPrice.Amount, compareAtPrice.Currency);
+        if (resolvedOriginalPrice.Amount < resolvedSellingPrice.Amount)
+            throw new InvalidPriceException("قیمت اصلی نمی‌تواند کمتر از قیمت فروش باشد.");
 
         var variant = new ProductVariant
         {
             Id = id,
             ProductId = productId,
             Sku = sku,
-            Price = purchasePrice,
-            SellingPrice = sellingPrice,
-            CompareAtPrice = listPrice,
+            SellingPrice = resolvedSellingPrice,
+            OriginalPrice = resolvedOriginalPrice,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
 
-        variant.RaiseDomainEvent(new VariantCreatedEvent(id, productId, sku, sellingPrice));
+        variant.RaiseDomainEvent(new VariantCreatedEvent(id, productId, sku, resolvedSellingPrice));
         return variant;
     }
 
-    public void ChangePrice(Money newPrice, Money? newCompareAtPrice = null)
+    public void ChangePrice(Money sellingPrice, Money? originalPrice = null)
     {
         EnsureActive();
-        Guard.Against.Null(newPrice, nameof(newPrice));
+        Guard.Against.Null(sellingPrice, nameof(sellingPrice));
 
-        if (newPrice.Amount <= 0)
+        if (sellingPrice.Amount <= 0)
             throw new InvalidPriceException("قیمت واریانت باید بزرگتر از صفر باشد.");
 
-        if (newCompareAtPrice is not null && newCompareAtPrice.Amount < newPrice.Amount)
-            throw new InvalidPriceException("قیمت مقایسه‌ای نمی‌تواند کمتر از قیمت فروش باشد.");
+        var resolvedSellingPrice = Money.FromDecimal(sellingPrice.Amount, sellingPrice.Currency);
+        var resolvedOriginalPrice = originalPrice is not null && originalPrice.Amount > 0
+            ? Money.FromDecimal(originalPrice.Amount, originalPrice.Currency)
+            : Money.FromDecimal(sellingPrice.Amount, sellingPrice.Currency);
 
-        var previousPrice = Price;
-        Price = Money.FromDecimal(newPrice.Amount, newPrice.Currency);
-        SellingPrice = Money.FromDecimal(newPrice.Amount, newPrice.Currency);
-        CompareAtPrice = newCompareAtPrice is null
-            ? null
-            : Money.FromDecimal(newCompareAtPrice.Amount, newCompareAtPrice.Currency);
+        if (resolvedOriginalPrice.Amount < resolvedSellingPrice.Amount)
+            throw new InvalidPriceException("قیمت اصلی نمی‌تواند کمتر از قیمت فروش باشد.");
+
+        var previousPrice = SellingPrice;
+        SellingPrice = resolvedSellingPrice;
+        OriginalPrice = resolvedOriginalPrice;
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new ProductVariantPriceChangedEvent(Id, ProductId, previousPrice, SellingPrice));
     }
@@ -115,16 +114,21 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
         RaiseDomainEvent(new VariantAttributeSetEvent(Id, ProductId));
     }
 
-    public void SetShippingMethods(IEnumerable<ShippingAssignment> assignments)
+    public void SetShippingMethods(decimal shippingMultiplier, IEnumerable<ShippingAssignment> assignments)
     {
         EnsureActive();
+
+        if (shippingMultiplier <= 0)
+            throw new DomainException("ضریب هزینه ارسال باید بزرگتر از صفر باشد.");
+
         _shippings.Clear();
         foreach (var assignment in assignments)
         {
             _shippings.Add(VariantShipping.Create(
                 Id, assignment.ShippingId,
                 assignment.Weight, assignment.Width,
-                assignment.Height, assignment.Length));
+                assignment.Height, assignment.Length,
+                shippingMultiplier));
         }
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new VariantShippingSetEvent(Id, ProductId));
@@ -141,16 +145,16 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
     }
 
     public bool IsDiscounted =>
-        CompareAtPrice is not null && CompareAtPrice.Amount > Price.Amount;
+        OriginalPrice.Amount > SellingPrice.Amount;
 
     public decimal? DiscountPercentage
     {
         get
         {
-            if (!IsDiscounted || CompareAtPrice is null || CompareAtPrice.Amount == 0)
+            if (!IsDiscounted || OriginalPrice.Amount == 0)
                 return null;
             return Math.Round(
-                (CompareAtPrice.Amount - Price.Amount) / CompareAtPrice.Amount * 100, 2);
+                (OriginalPrice.Amount - SellingPrice.Amount) / OriginalPrice.Amount * 100, 2);
         }
     }
 

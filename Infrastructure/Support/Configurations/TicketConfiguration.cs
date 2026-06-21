@@ -48,6 +48,7 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Domain.Supp
         builder.HasIndex(e => e.CustomerId);
         builder.HasIndex(e => e.AssignedAgentId);
         builder.HasIndex(e => e.Status);
+        builder.HasIndex(e => new { e.Status, e.Priority });
 
         builder.HasMany(e => e.Messages)
             .WithOne()

@@ -59,7 +59,7 @@ public class AddToCartHandler(
         }
 
         var productName = ProductName.Create(variant.Sku.Value);
-        cart.AddItem(variantId, variant.ProductId, productName, variant.Sku, variant.Price, variant.CompareAtPrice ?? variant.Price, request.Quantity);
+        cart.AddItem(variantId, variant.ProductId, productName, variant.Sku, variant.SellingPrice, variant.OriginalPrice, request.Quantity);
         cartRepository.Update(cart);
         await unitOfWork.SaveChangesAsync(ct);
 

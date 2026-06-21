@@ -5,10 +5,11 @@ using Domain.Category.ValueObjects;
 
 namespace Application.Category.Features.Commands.CreateCategory;
 
-public class CreateCategoryHandler(
+public sealed class CreateCategoryHandler(
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<CreateCategoryCommand, ServiceResult<CategoryDto>>
+    IAuditService auditService)
+    : ICommandHandler<CreateCategoryCommand, CategoryDto>
 {
     public async Task<ServiceResult<CategoryDto>> Handle(CreateCategoryCommand request, CancellationToken ct)
     {

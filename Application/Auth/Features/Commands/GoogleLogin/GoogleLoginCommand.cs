@@ -6,4 +6,4 @@ public record GoogleLoginCommand(
     string Email,
     string FirstName,
     string LastName,
-    string ProviderKey) : IRequest<ServiceResult<TokenResultDto>>;
+    string ProviderKey) : ICommand<TokenResultDto>;

@@ -41,25 +41,32 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
         DateTime to,
         CancellationToken ct = default)
     {
-        var orders = await context.Orders
-            .Where(o => o.CreatedAt >= from && o.CreatedAt <= to)
+        var rows = await context.Orders
             .AsNoTracking()
+            .Where(o => o.CreatedAt >= from && o.CreatedAt <= to)
+            .Select(o => new
+            {
+                FinalAmount = o.FinalAmount.Amount,
+                DiscountAmount = o.DiscountAmount.Amount,
+                ShippingCost = o.ShippingCost.Amount,
+                o.Status
+            })
             .ToListAsync(ct);
 
-        var grossRevenue = orders.Sum(o => o.FinalAmount.Amount);
-        var totalDiscounts = orders.Sum(o => o.DiscountAmount.Amount);
-        var totalShipping = orders.Sum(o => o.ShippingCost.Amount);
+        var grossRevenue = rows.Sum(o => o.FinalAmount);
+        var totalDiscounts = rows.Sum(o => o.DiscountAmount);
+        var totalShipping = rows.Sum(o => o.ShippingCost);
         var netRevenue = grossRevenue - totalDiscounts;
-        var totalOrders = orders.Count;
+        var totalOrders = rows.Count;
         var avgOrderValue = totalOrders > 0 ? grossRevenue / totalOrders : 0;
 
-        var byStatus = orders
+        var byStatus = rows
             .GroupBy(o => o.Status.ToString())
             .Select(g => new RevenueByStatusDto
             {
                 Status = g.Key,
                 Count = g.Count(),
-                Amount = g.Sum(o => o.FinalAmount.Amount)
+                Amount = g.Sum(o => o.FinalAmount)
             })
             .ToList();
 
@@ -74,6 +81,30 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
             TotalOrders = totalOrders,
             AverageOrderValue = avgOrderValue,
             ByStatus = byStatus
+        };
+    }
+
+    public async Task<InventoryReportDto> GetInventoryReportAsync(CancellationToken ct = default)
+    {
+        var stats = await context.Inventories
+            .AsNoTracking()
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                TotalVariants = g.Count(),
+                InStockVariants = g.Count(i => i.AvailableQuantity > 0),
+                OutOfStockVariants = g.Count(i => i.AvailableQuantity <= 0),
+                LowStockVariants = g.Count(i => i.AvailableQuantity > 0 && i.AvailableQuantity <= 5)
+            })
+            .FirstOrDefaultAsync(ct);
+
+        return new InventoryReportDto
+        {
+            TotalVariants = stats?.TotalVariants ?? 0,
+            ActiveVariants = stats?.InStockVariants ?? 0,
+            InStockVariants = stats?.InStockVariants ?? 0,
+            OutOfStockVariants = stats?.OutOfStockVariants ?? 0,
+            LowStockVariants = stats?.LowStockVariants ?? 0
         };
     }
 
@@ -197,26 +228,6 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
             TotalCount = data.Count,
             Page = 1,
             PageSize = data.Count
-        };
-    }
-
-    public async Task<InventoryReportDto> GetInventoryReportAsync(CancellationToken ct = default)
-    {
-        var inventories = await context.Inventories
-            .AsNoTracking()
-            .ToListAsync(ct);
-
-        var totalVariants = inventories.Count;
-        var inStockVariants = inventories.Count(i => i.AvailableQuantity > 0);
-        var outOfStockVariants = inventories.Count(i => i.AvailableQuantity <= 0);
-
-        return new InventoryReportDto
-        {
-            TotalVariants = totalVariants,
-            ActiveVariants = inStockVariants,
-            InStockVariants = inStockVariants,
-            OutOfStockVariants = outOfStockVariants,
-            LowStockVariants = inventories.Count(i => i.AvailableQuantity > 0 && i.AvailableQuantity <= 5)
         };
     }
 }

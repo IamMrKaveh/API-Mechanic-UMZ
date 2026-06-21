@@ -4,7 +4,8 @@ namespace Application.Analytics.Features.Queries.GetCategoryPerformance;
 
 public sealed class GetCategoryPerformanceHandler(
     IAnalyticsQueryService analyticsQuery,
-    ICacheService cache) : IRequestHandler<GetCategoryPerformanceQuery, ServiceResult<PaginatedResult<CategoryPerformanceDto>>>
+    ICacheService cache)
+    : IQueryHandler<GetCategoryPerformanceQuery, PaginatedResult<CategoryPerformanceDto>>
 {
     public async Task<ServiceResult<PaginatedResult<CategoryPerformanceDto>>> Handle(
         GetCategoryPerformanceQuery request,

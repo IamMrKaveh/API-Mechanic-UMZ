@@ -4,7 +4,8 @@ namespace Application.Analytics.Features.Queries.GetDashboardStatistics;
 
 public sealed class GetDashboardStatisticsHandler(
     IAnalyticsQueryService analyticsQuery,
-    ICacheService cache) : IRequestHandler<GetDashboardStatisticsQuery, ServiceResult<DashboardStatisticsDto>>
+    ICacheService cache)
+    : IQueryHandler<GetDashboardStatisticsQuery, DashboardStatisticsDto>
 {
     public async Task<ServiceResult<DashboardStatisticsDto>> Handle(
         GetDashboardStatisticsQuery request,

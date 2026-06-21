@@ -9,7 +9,8 @@ public sealed class UpdateBrandHandler(
     IBrandRepository brandRepository,
     IBrandQueryService brandQueryService,
     IUnitOfWork unitOfWork,
-    IStorageService storageService) : IRequestHandler<UpdateBrandCommand, ServiceResult<BrandDetailDto>>
+    IStorageService storageService)
+    : ICommandHandler<UpdateBrandCommand, BrandDetailDto>
 {
     private const long MaxFileSizeBytes = 2 * 1024 * 1024;
     private const string EmptyLogoPlaceholder = "__EMPTY__";

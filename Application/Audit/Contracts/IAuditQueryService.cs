@@ -20,6 +20,11 @@ public interface IAuditQueryService
         CancellationToken ct = default);
 
     Task<byte[]> ExportToCsvAsync(
-        AuditExportRequest request,
+            AuditExportRequest request,
+            CancellationToken ct = default);
+
+    Task<AuditStatisticsDto> GetStatisticsAsync(
+        DateTime? from,
+        DateTime? to,
         CancellationToken ct = default);
 }

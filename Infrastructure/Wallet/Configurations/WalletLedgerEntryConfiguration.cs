@@ -44,11 +44,23 @@ public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<Wa
         builder.Property(e => e.IdempotencyKey).HasMaxLength(200);
         builder.Property(e => e.OccurredAt).HasColumnName("CreatedAt").IsRequired();
 
+        builder.HasOne(e => e.Wallet)
+            .WithMany()
+            .HasForeignKey(e => e.WalletId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.Owner)
+            .WithMany()
+            .HasForeignKey(e => e.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(e => e.WalletId).HasDatabaseName("IX_WalletLedgerEntries_WalletId");
         builder.HasIndex(e => e.OwnerId).HasDatabaseName("IX_WalletLedgerEntries_UserId");
         builder.HasIndex(e => e.IdempotencyKey)
             .IsUnique()
             .HasFilter("\"IdempotencyKey\" IS NOT NULL")
             .HasDatabaseName("IX_WalletLedgerEntries_IdempotencyKey");
+
+        builder.HasQueryFilter(e => e.Owner.IsActive);
     }
 }

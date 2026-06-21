@@ -5,4 +5,4 @@ namespace Application.Attribute.Features.Commands.CreateAttributeType;
 public record CreateAttributeTypeCommand(
     string Name,
     string DisplayName,
-    int SortOrder) : IRequest<ServiceResult<AttributeTypeDto>>;
+    int SortOrder) : ICommand<AttributeTypeDto>;

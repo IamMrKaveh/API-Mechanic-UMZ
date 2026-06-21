@@ -18,7 +18,6 @@ public sealed record ProductVariantViewDto
 {
     public Guid Id { get; init; }
     public string? Sku { get; init; }
-    public decimal PurchasePrice { get; init; }
     public decimal OriginalPrice { get; init; }
     public decimal SellingPrice { get; init; }
     public int Stock { get; init; }
@@ -27,8 +26,6 @@ public sealed record ProductVariantViewDto
     public bool IsInStock { get; init; }
     public bool HasDiscount { get; init; }
     public decimal DiscountPercentage { get; init; }
-    public decimal Price { get; init; }
-    public decimal? CompareAtPrice { get; init; }
     public int StockQuantity { get; init; }
     public Dictionary<string, AttributeValueDto> Attributes { get; init; } = [];
     public IEnumerable<MediaDto> Images { get; init; } = [];

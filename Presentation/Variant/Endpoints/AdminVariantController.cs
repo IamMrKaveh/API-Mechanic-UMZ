@@ -26,7 +26,6 @@ public sealed class AdminVariantController(
         var command = new AddVariantCommand(
             productId,
             request.Sku,
-            request.PurchasePrice,
             request.SellingPrice,
             request.OriginalPrice,
             request.Stock,
@@ -71,7 +70,6 @@ public sealed class AdminVariantController(
             productId,
             variantId,
             request.Sku,
-            request.PurchasePrice,
             request.SellingPrice,
             request.OriginalPrice,
             request.Stock,

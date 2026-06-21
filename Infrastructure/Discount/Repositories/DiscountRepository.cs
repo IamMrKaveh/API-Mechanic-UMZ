@@ -11,6 +11,7 @@ public sealed class DiscountRepository(DBContext context) : IDiscountRepository
         return await context.DiscountCodes
             .Include(d => d.Restrictions)
             .Include(d => d.Usages)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Id == id, ct);
     }
 
@@ -20,6 +21,7 @@ public sealed class DiscountRepository(DBContext context) : IDiscountRepository
         return await context.DiscountCodes
             .Include(d => d.Restrictions)
             .Include(d => d.Usages)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Code == normalizedCode, ct);
     }
 
@@ -29,16 +31,11 @@ public sealed class DiscountRepository(DBContext context) : IDiscountRepository
             .Include(d => d.Restrictions)
             .Include(d => d.Usages)
                 .ThenInclude(u => u.User)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Id == id, ct);
     }
 
-    public async Task AddAsync(DiscountCode discountCode, CancellationToken ct = default)
-    {
-        await context.DiscountCodes.AddAsync(discountCode, ct);
-    }
+    public async Task AddAsync(DiscountCode discountCode, CancellationToken ct = default) => await context.DiscountCodes.AddAsync(discountCode, ct);
 
-    public void Update(DiscountCode discountCode)
-    {
-        context.DiscountCodes.Update(discountCode);
-    }
+    public void Update(DiscountCode discountCode) => context.DiscountCodes.Update(discountCode);
 }

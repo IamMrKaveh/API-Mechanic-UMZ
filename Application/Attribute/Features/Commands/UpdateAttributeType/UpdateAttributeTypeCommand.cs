@@ -5,4 +5,4 @@ public record UpdateAttributeTypeCommand(
     string? Name,
     string? DisplayName,
     int? SortOrder,
-    bool? IsActive) : IRequest<ServiceResult>;
+    bool? IsActive) : ICommand;

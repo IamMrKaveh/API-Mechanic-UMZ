@@ -37,7 +37,7 @@ public class SyncCartPricesHandler(
         {
             var variant = await variantRepository.GetByIdAsync(item.VariantId, ct);
             if (variant is not null)
-                cart.RefreshItemPrice(item.VariantId, variant.Price, variant.CompareAtPrice ?? variant.Price);
+                cart.RefreshItemPrice(item.VariantId, variant.SellingPrice, variant.OriginalPrice);
         }
 
         cartRepository.Update(cart);

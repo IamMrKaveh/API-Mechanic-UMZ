@@ -107,6 +107,5 @@ public record ProductListItemDto
 public sealed record VariantPriceUpdateInput(
     Guid ProductId,
     Guid VariantId,
-    decimal PurchasePrice,
     decimal SellingPrice,
     decimal OriginalPrice);

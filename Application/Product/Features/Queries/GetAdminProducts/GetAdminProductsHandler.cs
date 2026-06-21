@@ -3,7 +3,8 @@ using Application.Product.Features.Shared;
 namespace Application.Product.Features.Queries.GetAdminProducts;
 
 public sealed class GetAdminProductsHandler(
-    IProductQueryService productQueryService) : IRequestHandler<GetAdminProductsQuery, ServiceResult<PaginatedResult<ProductListItemDto>>>
+    IProductQueryService productQueryService)
+    : IQueryHandler<GetAdminProductsQuery, PaginatedResult<ProductListItemDto>>
 {
     public async Task<ServiceResult<PaginatedResult<ProductListItemDto>>> Handle(
         GetAdminProductsQuery request,

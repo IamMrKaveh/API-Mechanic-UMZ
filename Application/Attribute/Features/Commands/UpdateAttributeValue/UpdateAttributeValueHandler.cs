@@ -7,7 +7,8 @@ namespace Application.Attribute.Features.Commands.UpdateAttributeValue;
 public class UpdateAttributeValueHandler(
     IAttributeRepository repository,
     IUnitOfWork unitOfWork,
-    ICacheService cacheService) : IRequestHandler<UpdateAttributeValueCommand, ServiceResult>
+    ICacheService cacheService)
+    : ICommandHandler<UpdateAttributeValueCommand>
 {
     public async Task<ServiceResult> Handle(
         UpdateAttributeValueCommand request,

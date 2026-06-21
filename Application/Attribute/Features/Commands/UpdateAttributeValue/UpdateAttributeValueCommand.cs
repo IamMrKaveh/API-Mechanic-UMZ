@@ -6,4 +6,4 @@ public record UpdateAttributeValueCommand(
     string? DisplayValue,
     string? HexCode,
     int? SortOrder,
-    bool? IsActive) : IRequest<ServiceResult>;
+    bool? IsActive) : ICommand;

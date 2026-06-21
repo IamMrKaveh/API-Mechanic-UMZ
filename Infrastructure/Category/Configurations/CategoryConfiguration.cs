@@ -54,6 +54,8 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Domain.Cate
         builder.Property(e => e.UpdatedAt)
             .IsRequired();
 
+        builder.HasIndex(e => new { e.IsActive, e.SortOrder });
+
         builder.Ignore(e => e.Brands);
     }
 }

@@ -7,7 +7,8 @@ namespace Application.Attribute.Features.Queries.GetAllAttributeTypes;
 public class GetAllAttributeTypesHandler(
     IAttributeRepository repository,
     IMapper mapper,
-    ICacheService cacheService) : IRequestHandler<GetAllAttributeTypesQuery, ServiceResult<PaginatedResult<AttributeTypeDto>>>
+    ICacheService cacheService)
+    : IQueryHandler<GetAllAttributeTypesQuery, PaginatedResult<AttributeTypeDto>>
 {
     public async Task<ServiceResult<PaginatedResult<AttributeTypeDto>>> Handle(
         GetAllAttributeTypesQuery request,

@@ -34,7 +34,6 @@ public record UpdateProductRequest(
     Guid CategoryId,
     Guid BrandId,
     string Name,
-    decimal Price,
     string Slug,
     string? Description,
     bool IsActive,

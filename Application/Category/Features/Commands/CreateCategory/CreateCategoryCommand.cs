@@ -6,4 +6,4 @@ public record CreateCategoryCommand(
     string CategoryName,
     string? Slug,
     string? Description,
-    int SortOrder = 0) : IRequest<ServiceResult<CategoryDto>>;
+    int SortOrder = 0) : ICommand<CategoryDto>;

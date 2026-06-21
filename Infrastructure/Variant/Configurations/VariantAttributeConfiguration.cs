@@ -38,5 +38,7 @@ internal sealed class VariantAttributeConfiguration
             .WithMany()
             .HasForeignKey(e => e.AttributeTypeId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasQueryFilter(e => !e.AttributeType.IsDeleted);
     }
 }

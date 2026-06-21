@@ -1,11 +1,11 @@
 using Application.Auth.Features.Shared;
-using Application.Common.Interfaces;
 
 namespace Application.Auth.Features.Commands.RefreshToken;
 
 public class RefreshTokenHandler(
     IAuthService authService,
-    ICurrentUserService currentUser) : IRequestHandler<RefreshTokenCommand, ServiceResult<AuthResult>>
+    ICurrentUserService currentUser)
+    : ICommandHandler<RefreshTokenCommand, AuthResult>
 {
     public async Task<ServiceResult<AuthResult>> Handle(
         RefreshTokenCommand request,

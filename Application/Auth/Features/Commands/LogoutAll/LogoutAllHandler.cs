@@ -6,7 +6,8 @@ namespace Application.Auth.Features.Commands.LogoutAll;
 public class LogoutAllHandler(
     ISessionRepository sessionRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<LogoutAllCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<LogoutAllCommand>
 {
     public async Task<ServiceResult> Handle(
         LogoutAllCommand request,
