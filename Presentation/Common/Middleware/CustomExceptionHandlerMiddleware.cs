@@ -53,9 +53,24 @@ public class CustomExceptionHandlerMiddleware(
             UnauthorizedAccessException => (HttpStatusCode.Unauthorized, new ApiResponse(false, "دسترسی غیرمجاز."), false),
             ConcurrencyException ce => (HttpStatusCode.Conflict, new ApiResponse(false, ce.Message), false),
             DbUpdateConcurrencyException => (HttpStatusCode.Conflict, new ApiResponse(false, "تغییرات همزمان رخ داده است. لطفاً دوباره تلاش کنید."), false),
+            DbUpdateException dbEx when IsPgUniqueViolation(dbEx) => (HttpStatusCode.Conflict, new ApiResponse(false, "داده تکراری است."), false),
             OperationCanceledException => ((HttpStatusCode)499, new ApiResponse(false, "درخواست لغو شد."), false),
             _ => (HttpStatusCode.InternalServerError, new ApiResponse(false, "خطای غیرمنتظره‌ای رخ داده است."), true)
         };
+
+    private static bool IsPgUniqueViolation(DbUpdateException ex)
+    => ex.InnerException is Npgsql.PostgresException pg && pg.SqlState == "23505";
+
+    private void LogException(HttpContext context, Exception exception, int statusCode, bool isUnhandled)
+    {
+        var level = isUnhandled ? Microsoft.Extensions.Logging.LogLevel.Error : Microsoft.Extensions.Logging.LogLevel.Warning;
+        logger.Log(level, exception,
+            "Request {Method} {Path} failed with {StatusCode}: {Message}",
+            context.Request.Method,
+            context.Request.Path,
+            statusCode,
+            exception.Message);
+    }
 
     private static ApiResponse BuildValidation(ValidationException exception)
     {
@@ -64,24 +79,6 @@ public class CustomExceptionHandlerMiddleware(
             .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
 
         return new ApiResponse(false, "اطلاعات ورودی نامعتبر است.", errors);
-    }
-
-    private void LogException(HttpContext context, Exception exception, int statusCode, bool isUnhandled)
-    {
-        var level = isUnhandled
-            ? LogLevel.Error
-            : statusCode >= 500
-                ? LogLevel.Error
-                : LogLevel.Warning;
-
-        logger.Log(
-            level,
-            exception,
-            "Exception {ExceptionType} handled with status {StatusCode} for {RequestMethod} {RequestPath}",
-            exception.GetType().Name,
-            statusCode,
-            context.Request.Method,
-            context.Request.Path.Value);
     }
 
     private async Task LogAuditAsync(Exception exception)

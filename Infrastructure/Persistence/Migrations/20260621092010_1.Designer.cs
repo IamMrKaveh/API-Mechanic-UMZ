@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DBContext))]
-    [Migration("20260621081950_1")]
+    [Migration("20260621092010_1")]
     partial class _1
     {
         /// <inheritdoc />
@@ -729,6 +729,9 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("UnitCost")
                         .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");

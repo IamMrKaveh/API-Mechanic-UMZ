@@ -27,7 +27,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
     public string? Note { get; private set; }
     public string IdempotencyKey { get; private set; } = null!;
     public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt => null;
+    public DateTime? UpdatedAt { get; private set; }
 
     private StockLedgerEntry()
     { }

@@ -727,6 +727,9 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<decimal>("UnitCost")
                         .HasColumnType("decimal(18,4)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 

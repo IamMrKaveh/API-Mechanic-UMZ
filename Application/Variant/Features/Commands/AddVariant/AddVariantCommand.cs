@@ -2,7 +2,7 @@ using Application.Variant.Features.Shared;
 
 namespace Application.Variant.Features.Commands.AddVariant;
 
-public record AddVariantCommand(
+public sealed record AddVariantCommand(
     Guid ProductId,
     string? Sku,
     decimal SellingPrice,
@@ -11,4 +11,4 @@ public record AddVariantCommand(
     bool IsUnlimited,
     decimal ShippingMultiplier,
     ICollection<Guid> AttributeValueIds,
-    ICollection<Guid>? EnabledShippingIds) : IRequest<ServiceResult<ProductVariantViewDto>>, IBypassTransactionBehavior;
+    ICollection<Guid>? EnabledShippingIds) : ICommand<ProductVariantViewDto>, IBypassTransactionBehavior;

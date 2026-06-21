@@ -1159,6 +1159,7 @@ namespace Infrastructure.Persistence.Migrations
                     Note = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IdempotencyKey = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     InventoryId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>

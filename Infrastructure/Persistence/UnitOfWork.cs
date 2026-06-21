@@ -1,6 +1,8 @@
 ﻿namespace Infrastructure.Persistence;
 
-public sealed class UnitOfWork(DBContext context) : IUnitOfWork
+public sealed class UnitOfWork(
+    DBContext context,
+    ILogger<UnitOfWork> logger) : IUnitOfWork
 {
     private bool disposed;
 
@@ -16,20 +18,24 @@ public sealed class UnitOfWork(DBContext context) : IUnitOfWork
     {
         ThrowIfDisposed();
 
+        if (context.Database.CurrentTransaction is not null)
+            return await operation(ct);
+
         var strategy = context.Database.CreateExecutionStrategy();
 
         return await strategy.ExecuteAsync(async () =>
         {
-            await using var efTransaction = await context.Database.BeginTransactionAsync(ct);
+            await using IDbContextTransaction efTransaction = await context.Database.BeginTransactionAsync(ct);
             try
             {
                 var result = await operation(ct);
                 await efTransaction.CommitAsync(ct);
                 return result;
             }
-            catch
+            catch (Exception ex)
             {
-                await efTransaction.RollbackAsync(ct);
+                logger.LogError(ex, "Transaction rolled back due to exception.");
+                await efTransaction.RollbackAsync(CancellationToken.None);
                 throw;
             }
         });
@@ -51,9 +57,5 @@ public sealed class UnitOfWork(DBContext context) : IUnitOfWork
         GC.SuppressFinalize(this);
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (!disposed) return;
-        throw new ObjectDisposedException(nameof(UnitOfWork));
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(disposed, nameof(UnitOfWork));
 }
