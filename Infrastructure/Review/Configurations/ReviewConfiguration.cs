@@ -39,6 +39,8 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
                 .HasColumnName("Status")
                 .HasMaxLength(50)
                 .IsRequired();
+
+            s.HasIndex(x => x.Value);
         });
 
         builder.Property(e => e.Title).HasMaxLength(100);

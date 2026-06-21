@@ -1,5 +1,4 @@
 using Application.Auth.Features.Shared;
-using Application.Common.Interfaces;
 using Application.User.Features.Shared;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
@@ -15,7 +14,7 @@ public class VerifyOtpHandler(
     IJwtTokenGenerator jwtTokenGenerator,
     ICurrentUserService currentUser,
     IAuditService auditService)
-    : IRequestHandler<VerifyOtpCommand, ServiceResult<AuthResult>>
+    : ICommandHandler<VerifyOtpCommand, AuthResult>
 {
     public async Task<ServiceResult<AuthResult>> Handle(
         VerifyOtpCommand request,

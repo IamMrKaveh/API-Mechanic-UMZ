@@ -6,7 +6,8 @@ namespace Application.Brand.Features.Commands.DeleteBrand;
 public class DeleteBrandHandler(
     IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<DeleteBrandCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<DeleteBrandCommand>
 {
     public async Task<ServiceResult> Handle(DeleteBrandCommand request, CancellationToken ct)
     {

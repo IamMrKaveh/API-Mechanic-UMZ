@@ -4,7 +4,8 @@ using Domain.Brand.ValueObjects;
 namespace Application.Brand.Features.Queries.GetBrand;
 
 public class GetBrandHandler(
-    IBrandQueryService brandQueryService) : IRequestHandler<GetBrandQuery, ServiceResult<BrandDetailDto>>
+    IBrandQueryService brandQueryService)
+    : IQueryHandler<GetBrandQuery, BrandDetailDto>
 {
     public async Task<ServiceResult<BrandDetailDto>> Handle(GetBrandQuery request, CancellationToken ct)
     {

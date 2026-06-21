@@ -12,7 +12,7 @@ public interface IVariantQueryService
         bool activeOnly,
         CancellationToken ct = default);
 
-    Task<ProductVariantShippingInfoDto?> GetVariantShippingInfoAsync(
+    Task<VariantShippingInfoDto?> GetVariantShippingInfoAsync(
         VariantId variantId,
         CancellationToken ct = default);
 }

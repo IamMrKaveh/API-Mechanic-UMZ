@@ -4,7 +4,8 @@ using Domain.User.ValueObjects;
 namespace Application.Audit.Features.Queries.ExportAuditLogs;
 
 public sealed class ExportAuditLogsHandler(
-    IAuditQueryService auditQueryService) : IRequestHandler<ExportAuditLogsQuery, ServiceResult<ExportAuditLogsResult>>
+    IAuditQueryService auditQueryService)
+    : IQueryHandler<ExportAuditLogsQuery, ExportAuditLogsResult>
 {
     public async Task<ServiceResult<ExportAuditLogsResult>> Handle(
         ExportAuditLogsQuery request,

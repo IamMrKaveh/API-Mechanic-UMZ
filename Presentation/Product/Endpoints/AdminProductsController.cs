@@ -88,17 +88,16 @@ public class AdminProductsController(
     public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
     {
         var command = new UpdateProductCommand(
-            id,
-            request.CategoryId,
-            request.BrandId,
-            request.Name,
-            request.Price,
-            request.Slug,
-            request.Description,
-            request.IsActive,
-            request.IsFeatured,
-            request.RowVersion
-        );
+                    id,
+                    request.CategoryId,
+                    request.BrandId,
+                    request.Name,
+                    request.Slug,
+                    request.Description,
+                    request.IsActive,
+                    request.IsFeatured,
+                    request.RowVersion
+                );
 
         var result = await Mediator.Send(command);
 

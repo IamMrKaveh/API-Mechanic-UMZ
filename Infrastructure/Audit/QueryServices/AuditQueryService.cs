@@ -195,6 +195,39 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         return Encoding.UTF8.GetBytes(sb.ToString());
     }
 
+    public async Task<AuditStatisticsDto> GetStatisticsAsync(
+        DateTime? from,
+        DateTime? to,
+        CancellationToken ct = default)
+    {
+        var query = context.AuditLogs.AsNoTracking().AsQueryable();
+
+        if (from.HasValue)
+            query = query.Where(l => l.CreatedAt >= from.Value);
+
+        if (to.HasValue)
+            query = query.Where(l => l.CreatedAt <= to.Value);
+
+        var totalLogs = await query.LongCountAsync(ct);
+
+        var byEventType = await query
+            .GroupBy(l => l.EventType)
+            .Select(g => new { g.Key, Count = g.LongCount() })
+            .ToDictionaryAsync(g => g.Key, g => g.Count, ct);
+
+        var byHour = await query
+            .GroupBy(l => l.CreatedAt.Hour)
+            .Select(g => new { g.Key, Count = g.LongCount() })
+            .ToDictionaryAsync(g => g.Key.ToString(), g => g.Count, ct);
+
+        return new AuditStatisticsDto
+        {
+            TotalLogs = totalLogs,
+            ByEventType = byEventType,
+            ByHour = byHour
+        };
+    }
+
     private static string Escape(string? value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;

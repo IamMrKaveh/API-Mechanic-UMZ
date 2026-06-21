@@ -8,7 +8,8 @@ namespace Application.Attribute.Features.Commands.UpdateAttributeType;
 public class UpdateAttributeTypeHandler(
     IAttributeRepository repository,
     IUnitOfWork unitOfWork,
-    ICacheService cacheService) : IRequestHandler<UpdateAttributeTypeCommand, ServiceResult>
+    ICacheService cacheService)
+    : ICommandHandler<UpdateAttributeTypeCommand>
 {
     public async Task<ServiceResult> Handle(
         UpdateAttributeTypeCommand request,

@@ -6,4 +6,4 @@ namespace Application.Auth.Features.Commands.VerifyOtp;
 public record VerifyOtpCommand(
     string PhoneNumber,
     string Code,
-    OtpPurpose Purpose = OtpPurpose.Login) : IRequest<ServiceResult<AuthResult>>;
+    OtpPurpose Purpose = OtpPurpose.Login) : ICommand<AuthResult>;

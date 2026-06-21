@@ -1,3 +1,3 @@
 namespace Application.Attribute.Features.Commands.DeleteAttributeType;
 
-public record DeleteAttributeTypeCommand(Guid Id) : IRequest<ServiceResult>;
+public record DeleteAttributeTypeCommand(Guid Id) : ICommand;

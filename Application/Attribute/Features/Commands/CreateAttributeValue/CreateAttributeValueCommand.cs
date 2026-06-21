@@ -7,4 +7,4 @@ public record CreateAttributeValueCommand(
     string Value,
     string DisplayValue,
     string? HexCode,
-    int SortOrder) : IRequest<ServiceResult<AttributeValueDto>>;
+    int SortOrder) : ICommand<AttributeValueDto>;

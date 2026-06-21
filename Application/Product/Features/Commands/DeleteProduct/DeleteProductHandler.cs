@@ -8,7 +8,8 @@ public sealed class DeleteProductHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<DeleteProductCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<DeleteProductCommand>
 {
     public async Task<ServiceResult> Handle(
         DeleteProductCommand request,

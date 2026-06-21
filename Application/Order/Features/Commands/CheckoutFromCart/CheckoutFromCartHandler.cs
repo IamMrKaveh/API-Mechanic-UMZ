@@ -3,9 +3,9 @@ using Application.Order.Features.Shared;
 
 namespace Application.Order.Features.Commands.CheckoutFromCart;
 
-public class CheckoutFromCartHandler(
+public sealed class CheckoutFromCartHandler(
     ICheckoutOrchestrationService checkoutOrchestrationService)
-    : IRequestHandler<CheckoutFromCartCommand, ServiceResult<CheckoutResultDto>>
+    : ICommandHandler<CheckoutFromCartCommand, CheckoutResultDto>
 {
     public async Task<ServiceResult<CheckoutResultDto>> Handle(
         CheckoutFromCartCommand request,

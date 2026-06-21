@@ -3,25 +3,21 @@ using Domain.Variant.ValueObjects;
 
 namespace Application.Variant.Features.Queries.GetVariantShipping;
 
-public class GetVariantShippingHandler(IVariantQueryService variantQueryService) : IRequestHandler<GetVariantShippingQuery, ServiceResult<ProductVariantShippingInfoDto>>
+public sealed class GetVariantShippingHandler(
+    IVariantQueryService variantQueryService)
+    : IQueryHandler<GetVariantShippingQuery, VariantShippingInfoDto>
 {
-    public async Task<ServiceResult<ProductVariantShippingInfoDto>> Handle(
+    public async Task<ServiceResult<VariantShippingInfoDto>> Handle(
         GetVariantShippingQuery request,
         CancellationToken ct)
     {
-        try
-        {
-            var variantId = VariantId.From(request.VariantId);
+        var variantId = VariantId.From(request.VariantId);
 
-            var result = await variantQueryService.GetVariantShippingInfoAsync(variantId, ct);
+        var shipping = await variantQueryService
+            .GetVariantShippingInfoAsync(variantId, ct);
 
-            return result is null
-                ? ServiceResult<ProductVariantShippingInfoDto>.NotFound("واریانت یافت نشد.")
-                : ServiceResult<ProductVariantShippingInfoDto>.Success(result);
-        }
-        catch (Exception)
-        {
-            return ServiceResult<ProductVariantShippingInfoDto>.Failure("خطا در دریافت اطلاعات ارسال.");
-        }
+        return shipping is null
+            ? ServiceResult<VariantShippingInfoDto>.NotFound("اطلاعات حمل و نقل تنوع یافت نشد.")
+            : ServiceResult<VariantShippingInfoDto>.Success(shipping);
     }
 }

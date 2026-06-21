@@ -52,5 +52,7 @@ public sealed class DiscountUsageConfiguration : IEntityTypeConfiguration<Discou
         builder.HasIndex(e => e.OrderId);
 
         builder.ToTable("DiscountUsageRecords");
+
+        builder.HasQueryFilter(e => !e.Order.IsDeleted && e.User.IsActive);
     }
 }

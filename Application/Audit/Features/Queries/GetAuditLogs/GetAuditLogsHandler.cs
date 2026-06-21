@@ -3,7 +3,7 @@ using Application.Audit.Features.Shared;
 namespace Application.Audit.Features.Queries.GetAuditLogs;
 
 public sealed class GetAuditLogsHandler(IAuditQueryService auditQueryService)
-    : IRequestHandler<GetAuditLogsQuery, ServiceResult<PaginatedResult<GetAuditLogsResult>>>
+    : IQueryHandler<GetAuditLogsQuery, PaginatedResult<GetAuditLogsResult>>
 {
     public async Task<ServiceResult<PaginatedResult<GetAuditLogsResult>>> Handle(
         GetAuditLogsQuery request,

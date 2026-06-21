@@ -37,7 +37,9 @@ public class UpdateProductVariantShippingHandler(
         var assignments = newShippings.Select(s =>
             new ShippingAssignment(s.Id, 0, 0, 0, 0));
 
-        variant.SetShippingMethods(assignments);
+        variant.SetShippingMethods(
+            request.ShippingMultiplier,
+            assignments);
 
         variantRepository.Update(variant);
         await unitOfWork.SaveChangesAsync(ct);

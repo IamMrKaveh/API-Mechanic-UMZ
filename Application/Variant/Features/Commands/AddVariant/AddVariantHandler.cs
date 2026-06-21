@@ -109,7 +109,9 @@ public class AddVariantHandler(
                     var shippings = await shippingRepository.GetByIdsAsync(shippingIds, cancellationToken);
                     var shippingAssignments = shippings.Select(s =>
                         new ShippingAssignment(s.Id, 0, 0, 0, 0));
-                    variant.SetShippingMethods(shippingAssignments);
+                    variant.SetShippingMethods(
+                        request.ShippingMultiplier,
+                        shippingAssignments);
                 }
 
                 await variantRepository.AddAsync(variant, cancellationToken);

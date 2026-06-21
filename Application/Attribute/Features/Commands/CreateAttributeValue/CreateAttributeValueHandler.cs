@@ -9,7 +9,8 @@ public class CreateAttributeValueHandler(
     IAttributeRepository repository,
     IUnitOfWork unitOfWork,
     IMapper mapper,
-    ICacheService cacheService) : IRequestHandler<CreateAttributeValueCommand, ServiceResult<AttributeValueDto>>
+    ICacheService cacheService)
+    : ICommandHandler<CreateAttributeValueCommand, AttributeValueDto>
 {
     public async Task<ServiceResult<AttributeValueDto>> Handle(
         CreateAttributeValueCommand request,

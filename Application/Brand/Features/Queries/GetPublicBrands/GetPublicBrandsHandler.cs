@@ -4,7 +4,7 @@ using Domain.Category.ValueObjects;
 namespace Application.Brand.Features.Queries.GetPublicBrands;
 
 public sealed class GetPublicBrandsHandler(IBrandQueryService brandQueryService)
-    : IRequestHandler<GetPublicBrandsQuery, ServiceResult<IReadOnlyList<BrandListItemDto>>>
+    : IQueryHandler<GetPublicBrandsQuery, IReadOnlyList<BrandListItemDto>>
 {
     public async Task<ServiceResult<IReadOnlyList<BrandListItemDto>>> Handle(
         GetPublicBrandsQuery request,

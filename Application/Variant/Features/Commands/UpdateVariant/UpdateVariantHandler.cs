@@ -125,7 +125,9 @@ public class UpdateVariantHandler(
 
             var shippingAssignments = shippings.Select(s =>
                 new ShippingAssignment(s.Id, 0, 0, 0, 0));
-            variant.SetShippingMethods(shippingAssignments);
+            variant.SetShippingMethods(
+                request.ShippingMultiplier,
+                shippingAssignments);
         }
 
         variantRepository.Update(variant);

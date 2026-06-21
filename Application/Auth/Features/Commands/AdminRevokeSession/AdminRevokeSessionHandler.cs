@@ -8,7 +8,8 @@ namespace Application.Auth.Features.Commands.AdminRevokeSession;
 public class AdminRevokeSessionHandler(
     ISessionRepository sessionRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<AdminRevokeSessionCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<AdminRevokeSessionCommand>
 {
     public async Task<ServiceResult> Handle(AdminRevokeSessionCommand request, CancellationToken ct)
     {

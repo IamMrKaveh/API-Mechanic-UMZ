@@ -4,7 +4,8 @@ namespace Application.Analytics.Features.Queries.GetSalesChartData;
 
 public sealed class GetSalesChartDataHandler(
     IAnalyticsQueryService analyticsQuery,
-    ICacheService cache) : IRequestHandler<GetSalesChartDataQuery, ServiceResult<PaginatedResult<SalesChartDataPointDto>>>
+    ICacheService cache)
+    : IQueryHandler<GetSalesChartDataQuery, PaginatedResult<SalesChartDataPointDto>>
 {
     public async Task<ServiceResult<PaginatedResult<SalesChartDataPointDto>>> Handle(
         GetSalesChartDataQuery request,

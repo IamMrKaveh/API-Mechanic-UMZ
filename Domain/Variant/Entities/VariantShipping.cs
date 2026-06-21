@@ -17,6 +17,7 @@ public sealed class VariantShipping : Entity<VariantShippingId>
     public decimal Width { get; private set; }
     public decimal Height { get; private set; }
     public decimal Length { get; private set; }
+    public decimal ShippingMultiplier { get; private set; }
 
     internal static VariantShipping Create(
         VariantId variantId,
@@ -24,7 +25,8 @@ public sealed class VariantShipping : Entity<VariantShippingId>
         decimal weight,
         decimal width,
         decimal height,
-        decimal length)
+        decimal length,
+        decimal shippingMultiplier)
     {
         if (weight < 0)
             throw new DomainException("وزن نمی‌تواند منفی باشد.");
@@ -34,6 +36,8 @@ public sealed class VariantShipping : Entity<VariantShippingId>
             throw new DomainException("ارتفاع نمی‌تواند منفی باشد.");
         if (length < 0)
             throw new DomainException("طول نمی‌تواند منفی باشد.");
+        if (shippingMultiplier <= 0)
+            throw new DomainException("ضریب هزینه ارسال باید بزرگتر از صفر باشد.");
 
         return new VariantShipping
         {
@@ -43,7 +47,8 @@ public sealed class VariantShipping : Entity<VariantShippingId>
             Weight = weight,
             Width = width,
             Height = height,
-            Length = length
+            Length = length,
+            ShippingMultiplier = shippingMultiplier
         };
     }
 }

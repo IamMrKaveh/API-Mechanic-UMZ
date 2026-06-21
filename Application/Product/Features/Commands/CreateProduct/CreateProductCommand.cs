@@ -5,4 +5,4 @@ namespace Application.Product.Features.Commands.CreateProduct;
 public record CreateProductCommand(
     Guid CategoryId,
     Guid BrandId,
-    string Name) : IRequest<ServiceResult<ProductDetailDto>>;
+    string Name) : ICommand<ProductDetailDto>;

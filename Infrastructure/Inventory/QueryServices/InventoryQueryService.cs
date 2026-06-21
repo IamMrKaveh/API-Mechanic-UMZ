@@ -1,4 +1,5 @@
 using Application.Inventory.Features.Shared;
+using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
 using Mapster;
 
@@ -6,7 +7,9 @@ namespace Infrastructure.Inventory.QueryServices;
 
 public sealed class InventoryQueryService(DBContext context) : IInventoryQueryService
 {
-    public async Task<InventoryDto?> GetByVariantIdAsync(VariantId variantId, CancellationToken ct = default)
+    public async Task<InventoryDto?> GetByVariantIdAsync(
+        VariantId variantId,
+        CancellationToken ct = default)
     {
         var inventory = await context.Inventories
             .AsNoTracking()
@@ -15,7 +18,8 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
     }
 
     public async Task<IReadOnlyList<VariantAvailabilityDto>> GetBatchAvailabilityAsync(
-        ICollection<VariantId> variantIds, CancellationToken ct = default)
+        ICollection<VariantId> variantIds,
+        CancellationToken ct = default)
     {
         var ids = variantIds.Select(v => v.Value).ToList();
         var inventories = await context.Inventories
@@ -111,23 +115,34 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
 
     public async Task<InventoryStatisticsDto?> GetStatisticsAsync(CancellationToken ct = default)
     {
-        var inventories = await context.Inventories
+        var stats = await context.Inventories
             .AsNoTracking()
-            .ToListAsync(ct);
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                TotalVariants = g.Count(),
+                UnlimitedVariants = g.Count(i => i.IsUnlimited),
+                InStockVariants = g.Count(i => i.IsInStock),
+                OutOfStockVariants = g.Count(i => i.IsOutOfStock),
+                LowStockVariants = g.Count(i => i.IsLowStock)
+            })
+            .FirstOrDefaultAsync(ct);
 
-        if (!inventories.Any()) return null;
+        if (stats is null || stats.TotalVariants == 0) return null;
 
         return new InventoryStatisticsDto
         {
-            TotalVariants = inventories.Count,
-            UnlimitedVariants = inventories.Count(i => i.IsUnlimited),
-            InStockVariants = inventories.Count(i => i.IsInStock),
-            OutOfStockVariants = inventories.Count(i => i.IsOutOfStock),
-            LowStockVariants = inventories.Count(i => i.IsLowStock)
+            TotalVariants = stats.TotalVariants,
+            UnlimitedVariants = stats.UnlimitedVariants,
+            InStockVariants = stats.InStockVariants,
+            OutOfStockVariants = stats.OutOfStockVariants,
+            LowStockVariants = stats.LowStockVariants
         };
     }
 
-    public async Task<InventoryStatusDto?> GetInventoryStatusAsync(VariantId variantId, CancellationToken ct = default)
+    public async Task<InventoryStatusDto?> GetInventoryStatusAsync(
+        VariantId variantId,
+        CancellationToken ct = default)
     {
         var inventory = await context.Inventories
             .AsNoTracking()
@@ -148,7 +163,8 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
     }
 
     public async Task<IEnumerable<WarehouseStockDto>> GetWarehouseStockByVariantAsync(
-    VariantId variantId, CancellationToken ct = default)
+        VariantId variantId,
+        CancellationToken ct = default)
     {
         var inventory = await context.Inventories
             .AsNoTracking()
@@ -210,5 +226,37 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
                 ? (int)Math.Round((double)x.NetQuantity / totalNet * inventory.ReservedQuantity.Value)
                 : 0
         });
+    }
+
+    public async Task<IReadOnlyList<InventoryStatusDto>> GetInventoryStatusesByProductAsync(
+        ProductId productId,
+        CancellationToken ct = default)
+    {
+        var variantIds = await context.ProductVariants
+            .AsNoTracking()
+            .Where(v => v.ProductId == productId && !v.IsDeleted)
+            .Select(v => v.Id)
+            .ToListAsync(ct);
+
+        if (variantIds.Count == 0)
+            return Array.Empty<InventoryStatusDto>();
+
+        var inventories = await context.Inventories
+            .AsNoTracking()
+            .Where(i => variantIds.Contains(i.VariantId))
+            .ToListAsync(ct);
+
+        return inventories
+            .Select(inventory => new InventoryStatusDto
+            {
+                VariantId = inventory.VariantId.Value,
+                StockQuantity = inventory.StockQuantity.Value,
+                ReservedQuantity = inventory.ReservedQuantity.Value,
+                AvailableStock = inventory.AvailableQuantity,
+                IsInStock = inventory.IsInStock,
+                IsUnlimited = inventory.IsUnlimited,
+                IsLowStock = inventory.IsLowStock
+            })
+            .ToList();
     }
 }

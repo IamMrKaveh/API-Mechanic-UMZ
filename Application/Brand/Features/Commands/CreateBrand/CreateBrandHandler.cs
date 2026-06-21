@@ -1,6 +1,5 @@
 using Application.Brand.Adapters;
 using Application.Brand.Features.Shared;
-using Application.Media.Contracts;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
@@ -14,7 +13,8 @@ public sealed class CreateBrandHandler(
     IUnitOfWork unitOfWork,
     IMapper mapper,
     IStorageService storageService,
-    IAuditService auditService) : IRequestHandler<CreateBrandCommand, ServiceResult<BrandDetailDto>>
+    IAuditService auditService)
+    : ICommandHandler<CreateBrandCommand, BrandDetailDto>
 {
     private const long MaxFileSizeBytes = 2 * 1024 * 1024;
     private const string EmptyLogoPlaceholder = "__EMPTY__";

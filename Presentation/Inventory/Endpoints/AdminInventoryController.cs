@@ -9,6 +9,7 @@ using Application.Inventory.Features.Queries.GetInventoryStatus;
 using Application.Inventory.Features.Queries.GetInventoryTransactions;
 using Application.Inventory.Features.Queries.GetLowStockProducts;
 using Application.Inventory.Features.Queries.GetOutOfStockProducts;
+using Application.Inventory.Features.Queries.GetProductInventoryStatuses;
 using Application.Inventory.Features.Queries.GetStockLedgerByVariant;
 using Application.Inventory.Features.Queries.GetWarehouseStock;
 using Application.Inventory.Features.Shared;
@@ -183,6 +184,15 @@ public sealed class AdminInventoryController(
             request?.Reason ?? "تأیید مرجوعی توسط ادمین");
 
         var result = await Mediator.Send(command);
+        return ToActionResult(result);
+    }
+
+    [HttpGet("products/{productId:guid}/statuses")]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<InventoryStatusDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProductInventoryStatuses(Guid productId, CancellationToken ct)
+    {
+        var query = new GetProductInventoryStatusesQuery(productId);
+        var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 }

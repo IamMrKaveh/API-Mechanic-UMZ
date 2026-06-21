@@ -7,9 +7,8 @@ public record UpdateProductCommand(
     Guid CategoryId,
     Guid BrandId,
     string Name,
-    decimal Price,
     string? Slug,
     string? Description,
     bool IsActive,
     bool IsFeatured,
-    string RowVersion) : IRequest<ServiceResult<ProductDetailDto>>;
+    string RowVersion) : ICommand<ProductDetailDto>;

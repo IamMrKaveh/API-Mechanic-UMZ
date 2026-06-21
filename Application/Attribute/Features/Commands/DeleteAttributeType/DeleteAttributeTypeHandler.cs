@@ -7,7 +7,8 @@ namespace Application.Attribute.Features.Commands.DeleteAttributeType;
 public class DeleteAttributeTypeHandler(
     IAttributeRepository repository,
     IUnitOfWork unitOfWork,
-    ICacheService cacheService) : IRequestHandler<DeleteAttributeTypeCommand, ServiceResult>
+    ICacheService cacheService)
+    : ICommandHandler<DeleteAttributeTypeCommand>
 {
     public async Task<ServiceResult> Handle(
         DeleteAttributeTypeCommand request,

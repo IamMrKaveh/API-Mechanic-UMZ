@@ -3,3 +3,7 @@
 public interface IQuery
 {
 }
+
+public interface IQuery<TResult> : IRequest<ServiceResult<TResult>>, IQuery
+{
+}

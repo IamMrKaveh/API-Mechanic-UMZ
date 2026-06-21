@@ -5,7 +5,6 @@ namespace Application.Variant.Features.Commands.AddVariant;
 public record AddVariantCommand(
     Guid ProductId,
     string? Sku,
-    decimal PurchasePrice,
     decimal SellingPrice,
     decimal OriginalPrice,
     int Stock,

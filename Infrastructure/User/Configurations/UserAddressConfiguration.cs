@@ -63,5 +63,7 @@ internal sealed class UserAddressConfiguration : IEntityTypeConfiguration<UserAd
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(e => e.UserId);
+
+        builder.HasQueryFilter(e => e.User.IsActive);
     }
 }

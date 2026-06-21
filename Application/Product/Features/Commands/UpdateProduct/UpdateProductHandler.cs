@@ -17,7 +17,8 @@ public sealed class UpdateProductHandler(
     IUnitOfWork unitOfWork,
     IAuditService auditService,
     IMapper mapper,
-    ICurrentUserService currentUserService) : IRequestHandler<UpdateProductCommand, ServiceResult<ProductDetailDto>>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<UpdateProductCommand, ProductDetailDto>
 {
     public async Task<ServiceResult<ProductDetailDto>> Handle(
         UpdateProductCommand request,

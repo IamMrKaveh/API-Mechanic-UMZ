@@ -914,12 +914,10 @@ namespace Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductId = table.Column<Guid>(type: "uuid", nullable: false),
                     Sku = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Price = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    PriceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    OriginalPrice = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    OriginalPriceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     SellingPrice = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     SellingPriceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    CompareAtPrice = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
-                    CompareAtPriceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -1120,7 +1118,8 @@ namespace Infrastructure.Persistence.Migrations
                     Weight = table.Column<decimal>(type: "numeric(10,3)", nullable: false),
                     Width = table.Column<decimal>(type: "numeric(10,3)", nullable: false),
                     Height = table.Column<decimal>(type: "numeric(10,3)", nullable: false),
-                    Length = table.Column<decimal>(type: "numeric(10,3)", nullable: false)
+                    Length = table.Column<decimal>(type: "numeric(10,3)", nullable: false),
+                    ShippingMultiplier = table.Column<decimal>(type: "numeric(10,3)", nullable: false, defaultValue: 1m)
                 },
                 constraints: table =>
                 {
@@ -1250,9 +1249,19 @@ namespace Infrastructure.Persistence.Migrations
                 column: "AppliedDiscountCodeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Carts_UserId",
+                name: "IX_Carts_GuestToken_IsCheckedOut",
                 table: "Carts",
-                column: "UserId");
+                columns: new[] { "GuestToken", "IsCheckedOut" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Carts_UserId_IsCheckedOut",
+                table: "Carts",
+                columns: new[] { "UserId", "IsCheckedOut" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_IsActive_SortOrder",
+                table: "Categories",
+                columns: new[] { "IsActive", "SortOrder" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Categories_Name",
@@ -1436,6 +1445,11 @@ namespace Infrastructure.Persistence.Migrations
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProductReviews_Status",
+                table: "ProductReviews",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ProductReviews_UserId",
                 table: "ProductReviews",
                 column: "UserId");
@@ -1596,6 +1610,11 @@ namespace Infrastructure.Persistence.Migrations
                 name: "IX_Tickets_Status",
                 table: "Tickets",
                 column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tickets_Status_Priority",
+                table: "Tickets",
+                columns: new[] { "Status", "Priority" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Tickets_UserId",

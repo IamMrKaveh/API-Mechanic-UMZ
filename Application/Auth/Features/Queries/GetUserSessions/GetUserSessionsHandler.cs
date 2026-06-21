@@ -3,8 +3,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.Auth.Features.Queries.GetUserSessions;
 
-public class GetUserSessionsHandler(IUserQueryService userQueryService)
-    : IRequestHandler<GetUserSessionsQuery, ServiceResult<PaginatedResult<UserSessionDto>>>
+public class GetUserSessionsHandler(
+    IUserQueryService userQueryService)
+    : IQueryHandler<GetUserSessionsQuery, PaginatedResult<UserSessionDto>>
 {
     public async Task<ServiceResult<PaginatedResult<UserSessionDto>>> Handle(
         GetUserSessionsQuery request,

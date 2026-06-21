@@ -4,9 +4,9 @@ using Domain.Wallet.Interfaces;
 
 namespace Application.Wallet.Features.Queries.GetWalletBalance;
 
-public class GetWalletBalanceHandler(
+public sealed class GetWalletBalanceHandler(
     IWalletRepository walletRepository)
-    : IRequestHandler<GetWalletBalanceQuery, ServiceResult<WalletDto>>
+    : IQueryHandler<GetWalletBalanceQuery, WalletDto>
 {
     public async Task<ServiceResult<WalletDto>> Handle(
         GetWalletBalanceQuery request,

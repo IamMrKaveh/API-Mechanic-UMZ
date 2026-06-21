@@ -22,22 +22,16 @@ internal sealed class VariantConfiguration : IEntityTypeConfiguration<ProductVar
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.OwnsOne(e => e.Price, p =>
-        {
-            p.Property(m => m.Amount).HasColumnName("Price").HasColumnType("decimal(18,2)").IsRequired();
-            p.Property(m => m.Currency).HasColumnName("PriceCurrency").HasMaxLength(10).IsRequired();
-        });
-
         builder.OwnsOne(e => e.SellingPrice, sp =>
         {
             sp.Property(m => m.Amount).HasColumnName("SellingPrice").HasColumnType("decimal(18,2)").IsRequired();
             sp.Property(m => m.Currency).HasColumnName("SellingPriceCurrency").HasMaxLength(10).IsRequired();
         });
 
-        builder.OwnsOne(e => e.CompareAtPrice, cap =>
+        builder.OwnsOne(e => e.OriginalPrice, op =>
         {
-            cap.Property(m => m.Amount).HasColumnName("CompareAtPrice").HasColumnType("decimal(18,2)");
-            cap.Property(m => m.Currency).HasColumnName("CompareAtPriceCurrency").HasMaxLength(10);
+            op.Property(m => m.Amount).HasColumnName("OriginalPrice").HasColumnType("decimal(18,2)").IsRequired();
+            op.Property(m => m.Currency).HasColumnName("OriginalPriceCurrency").HasMaxLength(10).IsRequired();
         });
 
         builder.Property(e => e.IsActive).IsRequired();

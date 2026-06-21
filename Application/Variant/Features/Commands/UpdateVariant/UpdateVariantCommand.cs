@@ -4,7 +4,6 @@ public record UpdateVariantCommand(
     Guid ProductId,
     Guid VariantId,
     string? Sku,
-    decimal PurchasePrice,
     decimal SellingPrice,
     decimal OriginalPrice,
     int Stock,

@@ -144,20 +144,18 @@ public sealed class CartQueryService(
     }
 
     private IQueryable<Domain.Cart.Aggregates.Cart> BuildBaseCartQuery(
-        UserId? userId,
-        GuestToken? guestToken)
+            UserId? userId,
+            GuestToken? guestToken)
     {
         if (userId is not null)
         {
             return context.Carts
-                .Include(c => c.CartItems)
                 .Where(c => c.UserId == userId && !c.IsCheckedOut);
         }
 
         if (guestToken is not null)
         {
             return context.Carts
-                .Include(c => c.CartItems)
                 .Where(c => c.GuestToken == guestToken && !c.IsCheckedOut);
         }
 

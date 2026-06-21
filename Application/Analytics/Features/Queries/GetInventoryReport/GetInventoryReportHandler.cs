@@ -5,7 +5,7 @@ namespace Application.Analytics.Features.Queries.GetInventoryReport;
 public sealed class GetInventoryReportHandler(
     IAnalyticsQueryService analyticsQuery,
     ICacheService cache)
-        : IRequestHandler<GetInventoryReportQuery, ServiceResult<InventoryReportDto>>
+    : IQueryHandler<GetInventoryReportQuery, InventoryReportDto>
 {
     public async Task<ServiceResult<InventoryReportDto>> Handle(
         GetInventoryReportQuery request,
@@ -13,7 +13,7 @@ public sealed class GetInventoryReportHandler(
     {
         const string cacheKey = "analytics:inventory-report";
 
-        var cached = await cache.GetAsync<InventoryReportDto>(cacheKey);
+        var cached = await cache.GetAsync<InventoryReportDto>(cacheKey, ct);
         if (cached is not null)
             return ServiceResult<InventoryReportDto>.Success(cached);
 

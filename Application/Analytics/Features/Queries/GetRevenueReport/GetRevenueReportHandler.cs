@@ -4,7 +4,8 @@ namespace Application.Analytics.Features.Queries.GetRevenueReport;
 
 public sealed class GetRevenueReportHandler(
     IAnalyticsQueryService analyticsQuery,
-    ICacheService cache) : IRequestHandler<GetRevenueReportQuery, ServiceResult<RevenueReportDto>>
+    ICacheService cache)
+    : IQueryHandler<GetRevenueReportQuery, RevenueReportDto>
 {
     public async Task<ServiceResult<RevenueReportDto>> Handle(
         GetRevenueReportQuery request,

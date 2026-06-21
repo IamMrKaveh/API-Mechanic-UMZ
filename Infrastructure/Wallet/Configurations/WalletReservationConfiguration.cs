@@ -40,5 +40,7 @@ public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<Wa
         builder.HasIndex("WalletId").HasDatabaseName("IX_WalletReservations_WalletId");
         builder.HasIndex(new[] { "WalletId", "Status" })
             .HasDatabaseName("IX_WalletReservations_WalletId_Status");
+
+        builder.HasQueryFilter(e => e.Wallet.Owner.IsActive);
     }
 }
