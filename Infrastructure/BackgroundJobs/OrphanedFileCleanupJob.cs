@@ -1,9 +1,11 @@
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class OrphanedFileCleanupJob(
-    IServiceScopeFactory scopeFactory) : BackgroundService
+    IServiceScopeFactory scopeFactory,
+    IDistributedLock distributedLock) : BackgroundService
 {
     private const int BatchSize = 100;
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromHours(2);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -17,7 +19,14 @@ public sealed class OrphanedFileCleanupJob(
         {
             try
             {
-                await ProcessCleanupAsync(ct);
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:orphaned-file-cleanup", LockExpiry, ct);
+
+                if (lockHandle is not null && lockHandle.IsAcquired)
+                {
+                    await ProcessCleanupAsync(ct);
+                }
+
                 await Task.Delay(TimeSpan.FromHours(12), ct);
             }
             catch (OperationCanceledException)

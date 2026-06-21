@@ -99,14 +99,14 @@ public sealed class ProductQueryService(
     }
 
     public async Task<PaginatedResult<ProductListItemDto>> GetAdminProductsAsync(
-    Guid? categoryId,
-    Guid? brandId,
-    string? search,
-    bool? isActive,
-    bool includeDeleted,
-    int page,
-    int pageSize,
-    CancellationToken ct = default)
+        Guid? categoryId,
+        Guid? brandId,
+        string? search,
+        bool? isActive,
+        bool includeDeleted,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
     {
         var query = context.Products.AsNoTracking();
 
@@ -156,17 +156,10 @@ public sealed class ProductQueryService(
                 MinPrice = p.Variants
                     .Where(v => v.IsActive && !v.IsDeleted)
                     .Min(v => (decimal?)v.SellingPrice.Amount),
-                TotalStock = context.Inventories
-                    .Where(i => p.Variants
-                        .Where(v => v.IsActive && !v.IsDeleted)
-                        .Select(v => v.Id)
-                        .Contains(i.VariantId))
-                    .Sum(i => (int?)i.StockQuantity.Value) ?? 0,
-                HasUnlimited = context.Inventories
-                    .Any(i => p.Variants
-                        .Where(v => v.IsActive && !v.IsDeleted)
-                        .Select(v => v.Id)
-                        .Contains(i.VariantId) && i.IsUnlimited),
+                VariantIds = p.Variants
+                    .Where(v => v.IsActive && !v.IsDeleted)
+                    .Select(v => v.Id)
+                    .ToList(),
                 PrimaryImagePath = context.Medias
                     .Where(m => m.EntityId == p.Id && m.IsPrimary)
                     .Select(m => m.FilePath)
@@ -175,26 +168,67 @@ public sealed class ProductQueryService(
             })
             .ToListAsync(ct);
 
-        var items = projected
-            .Select(p => new ProductListItemDto
+        var allVariantIds = projected
+            .SelectMany(p => p.VariantIds)
+            .Distinct()
+            .ToList();
+
+        var inventoryByVariant = new Dictionary<VariantId, (int Stock, bool IsUnlimited)>();
+
+        if (allVariantIds.Count > 0)
+        {
+            var inventoryRows = await context.Inventories
+                .AsNoTracking()
+                .Where(i => allVariantIds.Contains(i.VariantId))
+                .Select(i => new
+                {
+                    i.VariantId,
+                    Stock = i.StockQuantity.Value,
+                    i.IsUnlimited
+                })
+                .ToListAsync(ct);
+
+            foreach (var row in inventoryRows)
             {
-                Id = p.Id,
-                Name = p.Name,
-                Slug = p.Slug,
-                BrandId = p.BrandId,
-                BrandName = p.BrandName,
-                CategoryId = p.CategoryId,
-                CategoryName = p.CategoryName,
-                IsActive = p.IsActive,
-                IsFeatured = p.IsFeatured,
-                IsDeleted = p.IsDeleted,
-                MinPrice = p.MinPrice,
-                TotalStock = p.TotalStock,
-                HasStock = p.HasUnlimited || p.TotalStock > 0,
-                PrimaryImageUrl = p.PrimaryImagePath is not null
-                    ? urlResolver.ResolveMediaUrl(p.PrimaryImagePath)
-                    : null,
-                CreatedAt = p.CreatedAt
+                inventoryByVariant[row.VariantId] = (row.Stock, row.IsUnlimited);
+            }
+        }
+
+        var items = projected
+            .Select(p =>
+            {
+                var totalStock = 0;
+                var hasUnlimited = false;
+                foreach (var vid in p.VariantIds)
+                {
+                    if (inventoryByVariant.TryGetValue(vid, out var inv))
+                    {
+                        totalStock += inv.Stock;
+                        if (inv.IsUnlimited)
+                            hasUnlimited = true;
+                    }
+                }
+
+                return new ProductListItemDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Slug = p.Slug,
+                    BrandId = p.BrandId,
+                    BrandName = p.BrandName,
+                    CategoryId = p.CategoryId,
+                    CategoryName = p.CategoryName,
+                    IsActive = p.IsActive,
+                    IsFeatured = p.IsFeatured,
+                    IsDeleted = p.IsDeleted,
+                    MinPrice = p.MinPrice,
+                    TotalStock = totalStock,
+                    HasStock = hasUnlimited || totalStock > 0,
+                    PrimaryImageUrl = p.PrimaryImagePath is not null
+                        ? urlResolver.ResolveMediaUrl(p.PrimaryImagePath)
+                        : null,
+                    CreatedAt = p.CreatedAt
+                };
             })
             .ToList();
 

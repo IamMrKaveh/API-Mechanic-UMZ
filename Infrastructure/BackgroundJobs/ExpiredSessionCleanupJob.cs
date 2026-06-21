@@ -2,9 +2,12 @@
 
 namespace Infrastructure.BackgroundJobs;
 
-public sealed class ExpiredSessionCleanupJob(IServiceScopeFactory scopeFactory) : BackgroundService
+public sealed class ExpiredSessionCleanupJob(
+    IServiceScopeFactory scopeFactory,
+    IDistributedLock distributedLock) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromHours(1);
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(30);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -12,24 +15,30 @@ public sealed class ExpiredSessionCleanupJob(IServiceScopeFactory scopeFactory) 
         {
             try
             {
-                using var scope = scopeFactory.CreateScope();
-                var sessionRepo = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
-                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:expired-session-cleanup", LockExpiry, stoppingToken);
 
-                var cutoff = DateTime.UtcNow;
-                var expiredSessions = await sessionRepo.GetExpiredActiveSessionsAsync(cutoff, stoppingToken);
-
-                foreach (var session in expiredSessions)
-                    session.MarkExpired();
-
-                if (expiredSessions.Any())
+                if (lockHandle is not null && lockHandle.IsAcquired)
                 {
-                    await unitOfWork.SaveChangesAsync(stoppingToken);
-                    await auditService.LogSystemEventAsync(
-                        "ExpiredSessionCleanup",
-                        $"{expiredSessions.Count} نشست منقضی‌شده پاکسازی شد.",
-                        stoppingToken);
+                    using var scope = scopeFactory.CreateScope();
+                    var sessionRepo = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
+                    var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                    var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
+
+                    var cutoff = DateTime.UtcNow;
+                    var expiredSessions = await sessionRepo.GetExpiredActiveSessionsAsync(cutoff, stoppingToken);
+
+                    foreach (var session in expiredSessions)
+                        session.MarkExpired();
+
+                    if (expiredSessions.Any())
+                    {
+                        await unitOfWork.SaveChangesAsync(stoppingToken);
+                        await auditService.LogSystemEventAsync(
+                            "ExpiredSessionCleanup",
+                            $"{expiredSessions.Count} نشست منقضی‌شده پاکسازی شد.",
+                            stoppingToken);
+                    }
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

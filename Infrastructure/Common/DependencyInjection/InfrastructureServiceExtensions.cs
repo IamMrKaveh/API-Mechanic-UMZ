@@ -56,6 +56,7 @@ using Infrastructure.Cart.QueryServices;
 using Infrastructure.Cart.Repositories;
 using Infrastructure.Category.QueryServices;
 using Infrastructure.Category.Repositories;
+using Infrastructure.Common.DependencyInjection;
 using Infrastructure.Common.Services;
 using Infrastructure.Communication.Options;
 using Infrastructure.Communication.Services;
@@ -113,7 +114,7 @@ using Infrastructure.Wishlist.Repositories;
 using DateTimeProvider = Infrastructure.Common.Services.DateTimeProvider;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
-namespace Infrastructure.DependencyInjection;
+namespace Infrastructure.Common.DependencyInjection;
 
 public static class InfrastructureServiceExtensions
 {
@@ -176,6 +177,7 @@ public static class InfrastructureServiceExtensions
         }
 
         services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
+        services.AddScoped<IIdempotencyService, CacheIdempotencyService>();
     }
 
     private static void AddPersistence(
@@ -225,9 +227,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
         services.AddScoped<IOutboxProcessor, OutboxProcessor>();
-        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
-        services.AddScoped<IUrlResolverService, UrlResolverService>();
-        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
     }
 
     private static void AddRepositories(this IServiceCollection services)

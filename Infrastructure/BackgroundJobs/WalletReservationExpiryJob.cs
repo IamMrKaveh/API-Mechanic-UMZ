@@ -3,9 +3,11 @@
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class WalletReservationExpiryJob(
-    IServiceScopeFactory scopeFactory) : BackgroundService
+    IServiceScopeFactory scopeFactory,
+    IDistributedLock distributedLock) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(10);
     private const int BatchSize = 50;
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -14,7 +16,13 @@ public sealed class WalletReservationExpiryJob(
         {
             try
             {
-                await ProcessExpiredReservationsAsync(ct);
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:wallet-reservation-expiry", LockExpiry, ct);
+
+                if (lockHandle is not null && lockHandle.IsAcquired)
+                {
+                    await ProcessExpiredReservationsAsync(ct);
+                }
             }
             catch (OperationCanceledException)
             {

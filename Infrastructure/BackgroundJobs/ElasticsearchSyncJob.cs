@@ -5,9 +5,11 @@ namespace Infrastructure.BackgroundJobs;
 public sealed class ElasticsearchSyncJob(
     IServiceProvider serviceProvider,
     IAuditService auditService,
+    IDistributedLock distributedLock,
     IOptions<ElasticsearchOptions> options) : BackgroundService
 {
     private readonly ElasticsearchOptions _options = options.Value;
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(30);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -23,9 +25,15 @@ public sealed class ElasticsearchSyncJob(
         {
             try
             {
-                using var scope = serviceProvider.CreateScope();
-                var syncService = scope.ServiceProvider.GetRequiredService<ISearchDatabaseSyncService>();
-                await syncService.SyncAsync(ct);
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:elasticsearch-sync", LockExpiry, ct);
+
+                if (lockHandle is not null && lockHandle.IsAcquired)
+                {
+                    using var scope = serviceProvider.CreateScope();
+                    var syncService = scope.ServiceProvider.GetRequiredService<ISearchDatabaseSyncService>();
+                    await syncService.SyncAsync(ct);
+                }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {

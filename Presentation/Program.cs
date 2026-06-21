@@ -1,5 +1,5 @@
 using Application.Common.DependencyInjection;
-using Infrastructure.DependencyInjection;
+using Infrastructure.Common.DependencyInjection;
 using Serilog.Exceptions;
 using Serilog.Formatting.Compact;
 

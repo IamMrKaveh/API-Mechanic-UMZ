@@ -26,16 +26,6 @@ public sealed class DomainEventInterceptor(
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    public override InterceptionResult<int> SavingChanges(
-        DbContextEventData eventData,
-        InterceptionResult<int> result)
-    {
-        DispatchDomainEvents(eventData.Context, CancellationToken.None)
-            .GetAwaiter()
-            .GetResult();
-        return base.SavingChanges(eventData, result);
-    }
-
     private async Task DispatchDomainEvents(DbContext? context, CancellationToken ct)
     {
         if (context is not DBContext dbContext)

@@ -3,9 +3,11 @@ using Application.Payment.Features.Commands.ExpireStalePayments;
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class PaymentCleanupJob(
-    IServiceScopeFactory scopeFactory) : BackgroundService
+    IServiceScopeFactory scopeFactory,
+    IDistributedLock distributedLock) : BackgroundService
 {
     private static readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(10);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -19,7 +21,13 @@ public sealed class PaymentCleanupJob(
         {
             try
             {
-                await ProcessCleanupAsync(ct);
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:payment-cleanup", LockExpiry, ct);
+
+                if (lockHandle is not null && lockHandle.IsAcquired)
+                {
+                    await ProcessCleanupAsync(ct);
+                }
             }
             catch (OperationCanceledException)
             {
