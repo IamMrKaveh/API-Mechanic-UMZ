@@ -5,8 +5,11 @@ namespace Infrastructure.BackgroundJobs;
 public sealed class ElasticsearchOutboxJob(
     IServiceScopeFactory scopeFactory,
     IAuditService auditService,
+    IDistributedLock distributedLock,
     IConfiguration configuration) : BackgroundService
 {
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(5);
+
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
         var intervalSeconds = configuration.GetValue("Elasticsearch:DeadLetterQueue:ProcessIntervalSeconds", 60);
@@ -22,8 +25,14 @@ public sealed class ElasticsearchOutboxJob(
         {
             try
             {
-                await ProcessOutboxMessagesAsync(batchSize, maxRetries, ct);
-                await ProcessDeadLetterQueueAsync(batchSize, maxRetries, ct);
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:elasticsearch-outbox", LockExpiry, ct);
+
+                if (lockHandle is not null && lockHandle.IsAcquired)
+                {
+                    await ProcessOutboxMessagesAsync(batchSize, maxRetries, ct);
+                    await ProcessDeadLetterQueueAsync(batchSize, maxRetries, ct);
+                }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {

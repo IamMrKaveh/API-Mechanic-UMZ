@@ -7,10 +7,12 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class InventoryReservationExpiryJob(
     IServiceScopeFactory scopeFactory,
+    IDistributedLock distributedLock,
     IOptions<ReservationExpiryOptions> options) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
     private readonly ReservationExpiryOptions _options = options.Value;
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(10);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -24,7 +26,13 @@ public sealed class InventoryReservationExpiryJob(
         {
             try
             {
-                await ProcessExpiredReservationsAsync(ct);
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:inventory-reservation-expiry", LockExpiry, ct);
+
+                if (lockHandle is not null && lockHandle.IsAcquired)
+                {
+                    await ProcessExpiredReservationsAsync(ct);
+                }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -36,11 +44,9 @@ public sealed class InventoryReservationExpiryJob(
             await Task.Delay(_interval, ct);
         }
 
-        using (var stopScope = scopeFactory.CreateScope())
-        {
-            await stopScope.ServiceProvider.GetRequiredService<IAuditService>()
-                .LogInformationAsync("Inventory Reservation Expiry Service stopped.", ct);
-        }
+        using var stopScope = scopeFactory.CreateScope();
+        await stopScope.ServiceProvider.GetRequiredService<IAuditService>()
+            .LogInformationAsync("Inventory Reservation Expiry Service stopped.", ct);
     }
 
     private async Task ProcessExpiredReservationsAsync(CancellationToken ct)

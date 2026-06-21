@@ -6,9 +6,11 @@ namespace Infrastructure.BackgroundJobs;
 public sealed class DeadLetterQueueJob(
     IServiceProvider serviceProvider,
     IAuditService auditService,
+    IDistributedLock distributedLock,
     IOptions<ElasticsearchOptions> elasticsearchOptions) : BackgroundService
 {
     private readonly ElasticsearchOptions _elasticsearchOptions = elasticsearchOptions.Value;
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(10);
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -22,7 +24,13 @@ public sealed class DeadLetterQueueJob(
         {
             try
             {
-                await ProcessFailedOperationsAsync(ct);
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:dead-letter-queue", LockExpiry, ct);
+
+                if (lockHandle is not null && lockHandle.IsAcquired)
+                {
+                    await ProcessFailedOperationsAsync(ct);
+                }
             }
             catch (Exception ex)
             {

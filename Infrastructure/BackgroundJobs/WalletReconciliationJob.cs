@@ -1,9 +1,11 @@
 ﻿namespace Infrastructure.BackgroundJobs;
 
 public sealed class WalletReconciliationJob(
-    IServiceScopeFactory scopeFactory) : BackgroundService
+    IServiceScopeFactory scopeFactory,
+    IDistributedLock distributedLock) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(1);
+    private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(45);
     private const int BatchSize = 200;
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -12,7 +14,13 @@ public sealed class WalletReconciliationJob(
         {
             try
             {
-                await RunReconciliationAsync(ct);
+                await using var lockHandle = await distributedLock.AcquireAsync(
+                    "jobs:wallet-reconciliation", LockExpiry, ct);
+
+                if (lockHandle is not null && lockHandle.IsAcquired)
+                {
+                    await RunReconciliationAsync(ct);
+                }
             }
             catch (OperationCanceledException)
             {

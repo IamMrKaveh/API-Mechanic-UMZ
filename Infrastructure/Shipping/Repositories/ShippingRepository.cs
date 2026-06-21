@@ -9,7 +9,7 @@ public sealed class ShippingRepository(DBContext context) : IShippingRepository
         bool includeInactive = false, CancellationToken ct = default)
     {
         var query = context.Shippings.AsQueryable();
-        if (!includeInactive)
+        if (includeInactive is false)
             query = query.Where(s => s.IsActive);
         return await query.OrderBy(s => s.SortOrder).ToListAsync(ct);
     }
@@ -20,9 +20,9 @@ public sealed class ShippingRepository(DBContext context) : IShippingRepository
     public async Task<ICollection<Domain.Shipping.Aggregates.Shipping>> GetByIdsAsync(
         IEnumerable<ShippingId> ids, CancellationToken ct = default)
     {
-        var idValues = ids.Select(id => id.Value).ToList();
+        var idValues = ids.Select(id => id).ToList();
         return await context.Shippings
-            .Where(s => idValues.Contains(s.Id.Value))
+            .Where(s => idValues.Contains(s.Id))
             .ToListAsync(ct);
     }
 
