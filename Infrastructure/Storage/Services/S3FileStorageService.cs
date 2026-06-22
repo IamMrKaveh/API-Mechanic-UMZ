@@ -1,4 +1,4 @@
-﻿using Amazon.S3.Transfer;
+﻿using Amazon.S3.Model;
 using Infrastructure.Storage.Options;
 
 namespace Infrastructure.Storage.Services;
@@ -11,23 +11,49 @@ public sealed class S3FileStorageService(
     private readonly S3Options _options = options.Value;
 
     public async Task<string> UploadAsync(
-        Stream fileStream, string fileName, string contentType,
-        string? folder = null, CancellationToken ct = default)
+        Stream fileStream,
+        string fileName,
+        string contentType,
+        string? folder = null,
+        CancellationToken ct = default)
     {
         var key = string.IsNullOrWhiteSpace(folder)
             ? $"{Guid.NewGuid()}/{fileName}"
             : $"{folder.Trim('/')}/{Guid.NewGuid()}/{fileName}";
 
-        var uploadRequest = new TransferUtilityUploadRequest
+        await using var buffer = await BufferAsync(fileStream, ct);
+
+        var putRequest = new PutObjectRequest
         {
-            InputStream = fileStream,
-            Key = key,
             BucketName = _options.BucketName,
-            ContentType = contentType
+            Key = key,
+            InputStream = buffer,
+            ContentType = contentType,
+            AutoCloseStream = false,
+            UseChunkEncoding = false,
+            DisablePayloadSigning = true,
+            DisableDefaultChecksumValidation = true,
+            CannedACL = S3CannedACL.PublicRead
         };
 
-        var transferUtility = new TransferUtility(s3Client);
-        await transferUtility.UploadAsync(uploadRequest, ct);
+        try
+        {
+            await s3Client.PutObjectAsync(putRequest, ct);
+        }
+        catch (AmazonS3Exception ex)
+        {
+            await auditService.LogErrorAsync(
+                $"S3 upload failed for '{fileName}' (key='{key}', status={(int)ex.StatusCode}, code='{ex.ErrorCode}'): {ex.Message}",
+                ct);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            await auditService.LogErrorAsync(
+                $"S3 upload failed for '{fileName}' (key='{key}'): {ex.Message}",
+                ct);
+            throw;
+        }
 
         await auditService.LogSystemEventAsync(
             "FileUploaded",
@@ -66,4 +92,22 @@ public sealed class S3FileStorageService(
 
     public string GetPublicUrl(string filePath)
         => $"{_options.BaseUrl.TrimEnd('/')}/{filePath.TrimStart('/')}";
+
+    private static async Task<MemoryStream> BufferAsync(Stream source, CancellationToken ct)
+    {
+        if (source is MemoryStream existing && existing.CanSeek)
+        {
+            existing.Position = 0;
+            return existing;
+        }
+
+        var buffer = new MemoryStream();
+        if (source.CanSeek)
+        {
+            source.Position = 0;
+        }
+        await source.CopyToAsync(buffer, ct);
+        buffer.Position = 0;
+        return buffer;
+    }
 }
