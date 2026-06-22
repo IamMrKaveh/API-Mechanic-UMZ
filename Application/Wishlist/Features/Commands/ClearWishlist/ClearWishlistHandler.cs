@@ -5,7 +5,8 @@ namespace Application.Wishlist.Features.Commands.ClearWishlist;
 
 public sealed class ClearWishlistHandler(
     IWishlistRepository wishlistRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<ClearWishlistCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<ClearWishlistCommand>
 {
     public async Task<ServiceResult> Handle(ClearWishlistCommand request, CancellationToken ct)
     {

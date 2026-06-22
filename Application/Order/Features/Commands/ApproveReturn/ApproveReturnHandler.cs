@@ -9,7 +9,8 @@ public class ApproveReturnHandler(
     IInventoryService inventoryService,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<ApproveReturnCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<ApproveReturnCommand>
 {
     public async Task<ServiceResult> Handle(
         ApproveReturnCommand request,

@@ -2,4 +2,5 @@
 
 public record ChangeUserRoleCommand(
     Guid UserId,
-    bool IsAdmin) : IRequest<ServiceResult>;
+    bool IsAdmin)
+    : ICommand;

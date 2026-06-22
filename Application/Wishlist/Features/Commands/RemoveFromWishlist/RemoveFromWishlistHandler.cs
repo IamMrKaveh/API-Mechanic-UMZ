@@ -6,7 +6,8 @@ namespace Application.Wishlist.Features.Commands.RemoveFromWishlist;
 
 public class RemoveFromWishlistHandler(
     IWishlistRepository wishlistRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<RemoveFromWishlistCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<RemoveFromWishlistCommand>
 {
     public async Task<ServiceResult> Handle(
         RemoveFromWishlistCommand request,

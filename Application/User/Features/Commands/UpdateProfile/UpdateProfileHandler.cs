@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Application.User.Features.Shared;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -8,7 +7,8 @@ namespace Application.User.Features.Commands.UpdateProfile;
 public class UpdateProfileHandler(
     IUserRepository userRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork) : IRequestHandler<UpdateProfileCommand, ServiceResult<UserProfileDto>>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<UpdateProfileCommand, UserProfileDto>
 {
     public async Task<ServiceResult<UserProfileDto>> Handle(UpdateProfileCommand request, CancellationToken ct)
     {

@@ -5,7 +5,8 @@ namespace Application.Notification.Features.Commands.AdminSendNotification;
 
 public class AdminSendNotificationHandler(
     INotificationService notificationService,
-    IUserRepository userRepository) : IRequestHandler<AdminSendNotificationCommand, ServiceResult>
+    IUserRepository userRepository)
+    : ICommandHandler<AdminSendNotificationCommand>
 {
     public async Task<ServiceResult> Handle(AdminSendNotificationCommand request, CancellationToken ct)
     {

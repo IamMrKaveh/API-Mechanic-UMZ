@@ -3,8 +3,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Queries.GetUserReviews;
 
-public class GetUserReviewsHandler(IUserQueryService userQueryService)
-        : IRequestHandler<GetUserReviewsQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>
+public class GetUserReviewsHandler(
+    IUserQueryService userQueryService)
+        : IQueryHandler<GetUserReviewsQuery, PaginatedResult<ProductReviewDto>>
 {
     private readonly IUserQueryService _userQueryService = userQueryService;
 

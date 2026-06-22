@@ -1,4 +1,3 @@
-using Application.User.Contracts;
 using Application.User.Features.Shared;
 using Domain.User.ValueObjects;
 
@@ -7,7 +6,7 @@ namespace Application.User.Features.Queries.GetUserDashboard;
 public class GetUserDashboardHandler(
     IUserQueryService userQueryService,
     ICurrentUserService currentUserService)
-        : IRequestHandler<GetUserDashboardQuery, ServiceResult<UserDashboardDto>>
+        : IQueryHandler<GetUserDashboardQuery, UserDashboardDto>
 {
     public async Task<ServiceResult<UserDashboardDto>> Handle(
         GetUserDashboardQuery request,

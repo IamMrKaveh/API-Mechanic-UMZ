@@ -4,7 +4,8 @@ namespace Application.Notification.Features.Commands.MarkAllNotificationsRead;
 
 public class MarkAllNotificationsReadHandler(
     INotificationService notificationService,
-    ICurrentUserService currentUserService) : IRequestHandler<MarkAllNotificationsReadCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<MarkAllNotificationsReadCommand>
 {
     public async Task<ServiceResult> Handle(MarkAllNotificationsReadCommand request, CancellationToken ct)
     {

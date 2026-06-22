@@ -4,9 +4,13 @@ using Domain.Wishlist.Interfaces;
 
 namespace Application.Wishlist.Features.Commands.ToggleWishlist;
 
-public class ToggleWishlistHandler(IWishlistRepository wishlistRepository, IWishlistQueryService wishlistQueryService, IAuditService auditService) : IRequestHandler<ToggleWishlistCommand, ServiceResult>
+public class ToggleWishlistHandler(
+    IWishlistRepository wishlistRepository,
+    IWishlistQueryService wishlistQueryService,
+    IAuditService auditService)
+    : ICommandHandler<ToggleWishlistCommand, bool>
 {
-    public async Task<ServiceResult> Handle(ToggleWishlistCommand request, CancellationToken ct)
+    public async Task<ServiceResult<bool>> Handle(ToggleWishlistCommand request, CancellationToken ct)
     {
         var userId = UserId.From(request.UserId); var productId = ProductId.From(request.ProductId);
 

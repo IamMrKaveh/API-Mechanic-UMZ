@@ -11,4 +11,5 @@ public record UpdateUserAddressCommand(
     string PostalCode,
     bool IsDefault,
     decimal? Latitude = null,
-    decimal? Longitude = null) : IRequest<ServiceResult>;
+    decimal? Longitude = null)
+    : ICommand;

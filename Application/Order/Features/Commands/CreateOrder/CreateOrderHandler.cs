@@ -17,7 +17,8 @@ public class CreateOrderHandler(
     IInventoryService inventoryService,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateOrderCommand, ServiceResult<Guid>>
+    IDateTimeProvider dateTimeProvider)
+    : ICommandHandler<CreateOrderCommand, Guid>
 {
     public async Task<ServiceResult<Guid>> Handle(
         CreateOrderCommand request,

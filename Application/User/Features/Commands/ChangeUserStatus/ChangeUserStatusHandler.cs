@@ -3,7 +3,10 @@ using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.ChangeUserStatus;
 
-public class ChangeUserStatusHandler(IUserRepository userRepository, IUnitOfWork unitOfWork) : IRequestHandler<ChangeUserStatusCommand, ServiceResult>
+public class ChangeUserStatusHandler(
+    IUserRepository userRepository,
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<ChangeUserStatusCommand>
 {
     public async Task<ServiceResult> Handle(
         ChangeUserStatusCommand request,

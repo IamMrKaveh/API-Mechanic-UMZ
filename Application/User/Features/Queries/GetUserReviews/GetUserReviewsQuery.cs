@@ -5,4 +5,5 @@ namespace Application.User.Features.Queries.GetUserReviews;
 public record GetUserReviewsQuery(
     Guid UserId,
     int Page = 1,
-    int PageSize = 10) : IRequest<ServiceResult<PaginatedResult<ProductReviewDto>>>;
+    int PageSize = 10)
+    : IPageQuery<ProductReviewDto>;

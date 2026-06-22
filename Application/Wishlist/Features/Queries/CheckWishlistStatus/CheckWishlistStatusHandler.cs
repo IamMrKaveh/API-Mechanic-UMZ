@@ -3,7 +3,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.Wishlist.Features.Queries.CheckWishlistStatus;
 
-public class CheckWishlistStatusHandler(IWishlistQueryService wishlistQueryService) : IRequestHandler<CheckWishlistStatusQuery, ServiceResult<bool>>
+public class CheckWishlistStatusHandler(
+    IWishlistQueryService wishlistQueryService)
+    : IQueryHandler<CheckWishlistStatusQuery, bool>
 {
     public async Task<ServiceResult<bool>> Handle(
         CheckWishlistStatusQuery request,

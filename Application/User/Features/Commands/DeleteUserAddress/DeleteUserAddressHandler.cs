@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
@@ -7,7 +6,8 @@ namespace Application.User.Features.Commands.DeleteUserAddress;
 public class DeleteUserAddressHandler(
     IUserRepository userRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork) : IRequestHandler<DeleteUserAddressCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<DeleteUserAddressCommand>
 {
     public async Task<ServiceResult> Handle(DeleteUserAddressCommand request, CancellationToken ct)
     {

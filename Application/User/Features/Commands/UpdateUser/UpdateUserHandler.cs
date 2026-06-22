@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
@@ -8,7 +7,8 @@ public class UpdateUserHandler(
     IUserRepository userRepository,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<UpdateUserCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<UpdateUserCommand>
 {
     public async Task<ServiceResult> Handle(
         UpdateUserCommand request,
