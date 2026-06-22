@@ -31,6 +31,7 @@ public class AddToCartHandler(
             return ServiceResult.Failure("موجودی کافی نیست.");
 
         Domain.Cart.Aggregates.Cart? cart;
+        var isNewCart = false;
 
         if (request.UserId.HasValue)
         {
@@ -41,6 +42,7 @@ public class AddToCartHandler(
             {
                 cart = Domain.Cart.Aggregates.Cart.CreateForUser(userId);
                 cartRepository.Add(cart);
+                isNewCart = true;
             }
         }
         else if (!string.IsNullOrWhiteSpace(request.GuestToken))
@@ -52,6 +54,7 @@ public class AddToCartHandler(
             {
                 cart = Domain.Cart.Aggregates.Cart.CreateForGuest(guestToken);
                 cartRepository.Add(cart);
+                isNewCart = true;
             }
         }
         else
@@ -61,7 +64,10 @@ public class AddToCartHandler(
 
         var productName = ProductName.Create(variant.Sku.Value);
         cart.AddItem(variantId, variant.ProductId, productName, variant.Sku, variant.SellingPrice, variant.OriginalPrice, request.Quantity);
-        cartRepository.Update(cart);
+
+        if (!isNewCart)
+            cartRepository.Update(cart);
+
         await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
