@@ -6,7 +6,8 @@ namespace Application.Order.Features.Commands.ConfirmDelivery;
 
 public class ConfirmDeliveryHandler(
     IOrderRepository orderRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<ConfirmDeliveryCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<ConfirmDeliveryCommand>
 {
     public async Task<ServiceResult> Handle(ConfirmDeliveryCommand request, CancellationToken ct)
     {

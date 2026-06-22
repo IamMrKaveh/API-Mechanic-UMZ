@@ -6,4 +6,5 @@ public record AdminSendNotificationCommand(
     string Type,
     string? ActionUrl,
     bool SendToAll,
-    Guid? UserId) : IRequest<ServiceResult>;
+    Guid? UserId)
+    : ICommand;

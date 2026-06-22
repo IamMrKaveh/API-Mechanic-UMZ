@@ -1,3 +1,4 @@
 namespace Application.User.Features.Commands.DeactivateAccount;
 
-public record DeactivateAccountCommand : IRequest<ServiceResult>;
+public record DeactivateAccountCommand
+    : ICommand;

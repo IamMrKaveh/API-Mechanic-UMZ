@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
@@ -8,7 +7,8 @@ public class DeleteUserHandler(
     IUserRepository userRepository,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<DeleteUserCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<DeleteUserCommand>
 {
     public async Task<ServiceResult> Handle(
         DeleteUserCommand request,

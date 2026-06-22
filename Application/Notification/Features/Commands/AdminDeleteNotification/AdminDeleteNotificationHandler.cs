@@ -5,7 +5,8 @@ namespace Application.Notification.Features.Commands.AdminDeleteNotification;
 
 public class AdminDeleteNotificationHandler(
     INotificationRepository notificationRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<AdminDeleteNotificationCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<AdminDeleteNotificationCommand>
 {
     public async Task<ServiceResult> Handle(AdminDeleteNotificationCommand request, CancellationToken ct)
     {

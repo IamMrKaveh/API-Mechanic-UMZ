@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
@@ -7,7 +6,8 @@ namespace Application.User.Features.Commands.UpdateUserAddress;
 public class UpdateUserAddressHandler(
     IUserRepository userRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork) : IRequestHandler<UpdateUserAddressCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<UpdateUserAddressCommand>
 {
     public async Task<ServiceResult> Handle(
         UpdateUserAddressCommand request,

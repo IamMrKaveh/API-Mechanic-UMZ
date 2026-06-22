@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Application.Security.Contracts;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -9,7 +8,8 @@ public class ChangePasswordHandler(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork) : IRequestHandler<ChangePasswordCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<ChangePasswordCommand>
 {
     public async Task<ServiceResult> Handle(ChangePasswordCommand request, CancellationToken ct)
     {

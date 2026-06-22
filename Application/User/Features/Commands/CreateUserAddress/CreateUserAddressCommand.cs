@@ -12,4 +12,5 @@ public record CreateUserAddressCommand(
     string PostalCode,
     bool IsDefault,
     decimal? Latitude,
-    decimal? Longitude) : IRequest<ServiceResult<UserAddressDto>>;
+    decimal? Longitude)
+    : ICommand<UserAddressDto>;

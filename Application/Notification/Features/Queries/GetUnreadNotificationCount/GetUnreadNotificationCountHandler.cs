@@ -5,7 +5,7 @@ namespace Application.Notification.Features.Queries.GetUnreadNotificationCount;
 public class GetUnreadNotificationCountHandler(
     INotificationQueryService notificationQueryService,
     ICurrentUserService currentUserService)
-    : IRequestHandler<GetUnreadNotificationCountQuery, ServiceResult<int>>
+    : IQueryHandler<GetUnreadNotificationCountQuery, int>
 {
     public async Task<ServiceResult<int>> Handle(
         GetUnreadNotificationCountQuery request,

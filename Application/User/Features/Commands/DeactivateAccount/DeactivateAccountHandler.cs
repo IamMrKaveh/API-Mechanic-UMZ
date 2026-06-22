@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
@@ -9,7 +8,8 @@ public class DeactivateAccountHandler(
     ISessionService sessionService,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<DeactivateAccountCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<DeactivateAccountCommand>
 {
     public async Task<ServiceResult> Handle(
         DeactivateAccountCommand request,

@@ -5,7 +5,8 @@ namespace Application.Notification.Features.Commands.DeleteNotification;
 
 public class DeleteNotificationHandler(
     INotificationService notificationService,
-    ICurrentUserService currentUserService) : IRequestHandler<DeleteNotificationCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<DeleteNotificationCommand>
 {
     public async Task<ServiceResult> Handle(DeleteNotificationCommand request, CancellationToken ct)
     {

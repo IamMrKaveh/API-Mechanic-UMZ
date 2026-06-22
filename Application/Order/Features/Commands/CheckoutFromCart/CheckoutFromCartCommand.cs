@@ -11,4 +11,5 @@ public record CheckoutFromCartCommand(
     string? PaymentMethod,
     string IpAddress,
     string? UserAgent,
-    Guid IdempotencyKey) : ICommand<CheckoutResultDto>, IIdempotentCommand;
+    Guid IdempotencyKey)
+    : ICommand<CheckoutResultDto>, IIdempotentCommand;

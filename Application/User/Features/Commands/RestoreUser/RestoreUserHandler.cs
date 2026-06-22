@@ -3,7 +3,10 @@ using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.RestoreUser;
 
-public class RestoreUserHandler(IUserRepository userRepository, IUnitOfWork unitOfWork) : IRequestHandler<RestoreUserCommand, ServiceResult>
+public class RestoreUserHandler(
+    IUserRepository userRepository,
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<RestoreUserCommand>
 {
     public async Task<ServiceResult> Handle(
         RestoreUserCommand request,

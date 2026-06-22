@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
@@ -8,7 +7,8 @@ namespace Application.Order.Features.Commands.CancelOrder;
 public class CancelOrderHandler(
     IOrderRepository orderRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork) : IRequestHandler<CancelOrderCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<CancelOrderCommand>
 {
     public async Task<ServiceResult> Handle(CancelOrderCommand request, CancellationToken ct)
     {

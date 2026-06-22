@@ -3,7 +3,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Queries.GetCurrentUser;
 
-public class GetCurrentUserHandler(IUserQueryService userQueryService) : IRequestHandler<GetCurrentUserQuery, ServiceResult<UserProfileDto>>
+public class GetCurrentUserHandler(
+    IUserQueryService userQueryService)
+    : IQueryHandler<GetCurrentUserQuery, UserProfileDto>
 {
     public async Task<ServiceResult<UserProfileDto>> Handle(
         GetCurrentUserQuery request,

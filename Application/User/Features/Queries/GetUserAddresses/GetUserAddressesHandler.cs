@@ -3,8 +3,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Queries.GetUserAddresses;
 
-public class GetUserAddressesHandler(IUserQueryService userQueryService)
-        : IRequestHandler<GetUserAddressesQuery, ServiceResult<IEnumerable<UserAddressDto>>>
+public class GetUserAddressesHandler(
+    IUserQueryService userQueryService)
+        : IQueryHandler<GetUserAddressesQuery, IEnumerable<UserAddressDto>>
 {
     public async Task<ServiceResult<IEnumerable<UserAddressDto>>> Handle(
         GetUserAddressesQuery request, CancellationToken ct)

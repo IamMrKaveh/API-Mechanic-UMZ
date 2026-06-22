@@ -7,4 +7,5 @@ public record CreateUserCommand(
     string? FirstName,
     string? LastName,
     string? Email,
-    bool IsAdmin = false) : IRequest<ServiceResult<UserProfileDto>>;
+    bool IsAdmin = false)
+    : ICommand<UserProfileDto>;

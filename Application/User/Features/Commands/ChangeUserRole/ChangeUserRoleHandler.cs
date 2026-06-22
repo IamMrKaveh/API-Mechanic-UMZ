@@ -1,5 +1,4 @@
-﻿using Application.Common.Interfaces;
-using Domain.User.Interfaces;
+﻿using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.ChangeUserRole;
@@ -7,7 +6,8 @@ namespace Application.User.Features.Commands.ChangeUserRole;
 public class ChangeUserRoleHandler(
     IUserRepository userRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork) : IRequestHandler<ChangeUserRoleCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<ChangeUserRoleCommand>
 {
     public async Task<ServiceResult> Handle(
         ChangeUserRoleCommand request,

@@ -1,3 +1,4 @@
 namespace Application.Notification.Features.Commands.MarkAllNotificationsRead;
 
-public record MarkAllNotificationsReadCommand() : IRequest<ServiceResult>;
+public record MarkAllNotificationsReadCommand()
+    : ICommand;

@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
@@ -11,7 +10,8 @@ public class ChangePhoneNumberHandler(
     IOtpService otpService,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<ChangePhoneNumberCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<ChangePhoneNumberCommand>
 {
     public async Task<ServiceResult> Handle(
         ChangePhoneNumberCommand request,

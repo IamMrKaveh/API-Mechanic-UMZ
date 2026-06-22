@@ -3,8 +3,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.Wishlist.Features.Queries.GetWishlistById;
 
-public class GetWishlistByIdHandler(IWishlistQueryService wishlistQueryService)
-        : IRequestHandler<GetWishlistByIdQuery, ServiceResult<PaginatedResult<WishlistItemDto>>>
+public class GetWishlistByIdHandler(
+    IWishlistQueryService wishlistQueryService)
+        : IQueryHandler<GetWishlistByIdQuery, PaginatedResult<WishlistItemDto>>
 {
     private const int DefaultPageSize = 10;
 

@@ -3,7 +3,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Queries.GetUserById;
 
-public class GetUserByIdHandler(IUserQueryService userQueryService) : IRequestHandler<GetUserByIdQuery, ServiceResult<UserProfileDto?>>
+public class GetUserByIdHandler(
+    IUserQueryService userQueryService)
+    : IQueryHandler<GetUserByIdQuery, UserProfileDto?>
 {
     public async Task<ServiceResult<UserProfileDto?>> Handle(
         GetUserByIdQuery request,

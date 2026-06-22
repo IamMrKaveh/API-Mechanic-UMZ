@@ -2,7 +2,9 @@ using Application.User.Features.Shared;
 
 namespace Application.User.Features.Queries.GetUsers;
 
-public class GetUsersHandler(IUserQueryService userQueryService) : IRequestHandler<GetUsersQuery, ServiceResult<PaginatedResult<UserProfileDto>>>
+public class GetUsersHandler(
+    IUserQueryService userQueryService)
+    : IQueryHandler<GetUsersQuery, PaginatedResult<UserProfileDto>>
 {
     public async Task<ServiceResult<PaginatedResult<UserProfileDto>>> Handle(
         GetUsersQuery request,

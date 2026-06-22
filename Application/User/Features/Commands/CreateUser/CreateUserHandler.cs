@@ -7,7 +7,8 @@ namespace Application.User.Features.Commands.CreateUser;
 public class CreateUserHandler(
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
-    IMapper mapper) : IRequestHandler<CreateUserCommand, ServiceResult<UserProfileDto>>
+    IMapper mapper)
+    : ICommandHandler<CreateUserCommand, UserProfileDto>
 {
     public async Task<ServiceResult<UserProfileDto>> Handle(
         CreateUserCommand request,

@@ -6,7 +6,7 @@ namespace Application.Notification.Features.Queries.GetNotifications;
 public class GetNotificationsHandler(
     INotificationQueryService notificationQueryService,
     ICurrentUserService currentUserService)
-    : IRequestHandler<GetNotificationsQuery, ServiceResult<PaginatedResult<NotificationDto>>>
+    : IQueryHandler<GetNotificationsQuery, PaginatedResult<NotificationDto>>
 {
     public async Task<ServiceResult<PaginatedResult<NotificationDto>>> Handle(
         GetNotificationsQuery request,
