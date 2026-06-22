@@ -5,7 +5,8 @@ namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
 public class UpdateOrderStatusDefinitionHandler(
     IOrderStatusRepository orderStatusRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<UpdateOrderStatusDefinitionCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<UpdateOrderStatusDefinitionCommand>
 {
     public async Task<ServiceResult> Handle(
         UpdateOrderStatusDefinitionCommand request,

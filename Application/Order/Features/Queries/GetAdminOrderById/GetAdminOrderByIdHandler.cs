@@ -3,8 +3,9 @@ using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Queries.GetAdminOrderById;
 
-public class GetAdminOrderByIdHandler(IOrderQueryService orderQueryService)
-    : IRequestHandler<GetAdminOrderByIdQuery, ServiceResult<AdminOrderDto>>
+public class GetAdminOrderByIdHandler(
+    IOrderQueryService orderQueryService)
+    : IQueryHandler<GetAdminOrderByIdQuery, AdminOrderDto>
 {
     public async Task<ServiceResult<AdminOrderDto>> Handle(
         GetAdminOrderByIdQuery request,

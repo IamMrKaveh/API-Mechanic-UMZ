@@ -1,6 +1,8 @@
 namespace Application.Search.Features.Commands.SyncSearchData;
 
-public class SyncSearchDataHandler(ISearchDatabaseSyncService syncService) : IRequestHandler<SyncSearchDataCommand, ServiceResult>
+public class SyncSearchDataHandler(
+    ISearchDatabaseSyncService syncService)
+    : ICommandHandler<SyncSearchDataCommand>
 {
     public async Task<ServiceResult> Handle(SyncSearchDataCommand request, CancellationToken ct)
     {

@@ -3,8 +3,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.Order.Features.Queries.GetUserOrders;
 
-public class GetUserOrdersHandler(IOrderQueryService orderQueryService)
-    : IRequestHandler<GetUserOrdersQuery, ServiceResult<PaginatedResult<OrderListItemDto>>>
+public class GetUserOrdersHandler(
+    IOrderQueryService orderQueryService)
+    : IQueryHandler<GetUserOrdersQuery, PaginatedResult<OrderListItemDto>>
 {
     public async Task<ServiceResult<PaginatedResult<OrderListItemDto>>> Handle(
         GetUserOrdersQuery request,

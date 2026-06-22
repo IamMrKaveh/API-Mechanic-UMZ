@@ -1,3 +1,5 @@
 namespace Application.Order.Features.Commands.MarkOrderAsShipped;
 
-public record MarkOrderAsShippedCommand(Guid OrderId) : IRequest<ServiceResult>;
+public record MarkOrderAsShippedCommand(
+    Guid OrderId)
+    : ICommand;

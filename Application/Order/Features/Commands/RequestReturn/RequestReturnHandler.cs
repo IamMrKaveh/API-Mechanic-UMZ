@@ -8,7 +8,8 @@ public class RequestReturnHandler(
     IOrderRepository orderRepository,
     IUnitOfWork unitOfWork,
     INotificationService notificationService,
-    IAuditService auditService) : IRequestHandler<RequestReturnCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<RequestReturnCommand>
 {
     public async Task<ServiceResult> Handle(
         RequestReturnCommand request,

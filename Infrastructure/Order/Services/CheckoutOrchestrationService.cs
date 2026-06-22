@@ -14,7 +14,6 @@ public class CheckoutOrchestrationService(
     ICheckoutStockValidatorService stockValidator,
     ICheckoutPriceValidatorService priceValidator,
     ICheckoutOrderCreationService orderCreation,
-    ICheckoutPaymentProcessorService paymentProcessor,
     ICartRepository cartRepository) : ICheckoutOrchestrationService
 {
     public async Task<ServiceResult<CheckoutResultDto>> ProcessCheckoutAsync(
@@ -70,12 +69,10 @@ public class CheckoutOrchestrationService(
             cartRepository.Update(cart);
         }
 
-        return await paymentProcessor.ProcessAsync(
-            orderResult.Value!,
-            command.PaymentMethod,
-            command.IpAddress,
-            command.UserAgent,
-            command.UserId,
-            ct);
+        return ServiceResult<CheckoutResultDto>.Success(orderResult.Value! with
+        {
+            PaymentUrl = null,
+            PaymentAuthority = null
+        });
     }
 }

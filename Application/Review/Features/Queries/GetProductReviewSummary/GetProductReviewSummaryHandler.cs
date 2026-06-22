@@ -3,8 +3,9 @@ using Domain.Product.ValueObjects;
 
 namespace Application.Review.Features.Queries.GetProductReviewSummary;
 
-public sealed class GetProductReviewSummaryHandler(IReviewQueryService reviewQueryService)
-        : IRequestHandler<GetProductReviewSummaryQuery, ServiceResult<ReviewSummaryDto>>
+public sealed class GetProductReviewSummaryHandler(
+    IReviewQueryService reviewQueryService)
+    : IQueryHandler<GetProductReviewSummaryQuery, ReviewSummaryDto>
 {
     public async Task<ServiceResult<ReviewSummaryDto>> Handle(
         GetProductReviewSummaryQuery request,

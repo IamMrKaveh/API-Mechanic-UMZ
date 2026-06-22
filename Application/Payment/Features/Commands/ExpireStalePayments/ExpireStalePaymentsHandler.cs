@@ -5,7 +5,8 @@ namespace Application.Payment.Features.Commands.ExpireStalePayments;
 
 public class ExpireStalePaymentsHandler(
     IPaymentTransactionRepository paymentRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<ExpireStalePaymentsCommand, ServiceResult<int>>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<ExpireStalePaymentsCommand, int>
 {
     public async Task<ServiceResult<int>> Handle(ExpireStalePaymentsCommand request, CancellationToken ct)
     {

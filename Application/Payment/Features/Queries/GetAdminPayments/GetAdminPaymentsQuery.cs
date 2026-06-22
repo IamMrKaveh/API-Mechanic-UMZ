@@ -10,4 +10,5 @@ public record GetAdminPaymentsQuery(
     DateTime? FromDate,
     DateTime? ToDate,
     int Page = 1,
-    int PageSize = 10) : IRequest<ServiceResult<PaginatedResult<PaymentTransactionDto>>>;
+    int PageSize = 10)
+    : IPageQuery<PaymentTransactionDto>;

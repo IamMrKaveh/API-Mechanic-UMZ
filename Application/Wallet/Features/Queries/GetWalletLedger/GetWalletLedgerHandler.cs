@@ -3,8 +3,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.Wallet.Features.Queries.GetWalletLedger;
 
-public class GetWalletLedgerHandler(IWalletQueryService walletQueryService)
-    : IRequestHandler<GetWalletLedgerQuery, ServiceResult<PaginatedResult<WalletLedgerEntryDto>>>
+public class GetWalletLedgerHandler(
+    IWalletQueryService walletQueryService)
+    : IQueryHandler<GetWalletLedgerQuery, PaginatedResult<WalletLedgerEntryDto>>
 {
     public async Task<ServiceResult<PaginatedResult<WalletLedgerEntryDto>>> Handle(
         GetWalletLedgerQuery request,

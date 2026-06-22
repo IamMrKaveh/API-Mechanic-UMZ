@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 using Domain.User.ValueObjects;
@@ -8,7 +7,8 @@ namespace Application.Shipping.Features.Commands.DeleteShipping;
 public class DeleteShippingHandler(
     IShippingRepository shippingRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork) : IRequestHandler<DeleteShippingCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<DeleteShippingCommand>
 {
     public async Task<ServiceResult> Handle(DeleteShippingCommand request, CancellationToken ct)
     {

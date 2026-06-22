@@ -9,4 +9,5 @@ public record GetProductsQuery(
     bool? IsActive,
     bool IncludeDeleted,
     int Page,
-    int PageSize) : IRequest<ServiceResult<PaginatedResult<ProductListItemDto>>>;
+    int PageSize)
+    : IPageQuery<ProductListItemDto>;

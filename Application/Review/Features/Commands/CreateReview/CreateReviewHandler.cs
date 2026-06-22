@@ -1,5 +1,4 @@
-﻿using Application.Common.Interfaces;
-using Application.Review.Features.Shared;
+﻿using Application.Review.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
@@ -16,7 +15,8 @@ public sealed class CreateReviewHandler(
     IProductRepository productRepository,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
-    IMapper mapper) : IRequestHandler<CreateReviewCommand, ServiceResult<ProductReviewDto>>
+    IMapper mapper)
+    : ICommandHandler<CreateReviewCommand, ProductReviewDto>
 {
     public async Task<ServiceResult<ProductReviewDto>> Handle(CreateReviewCommand request, CancellationToken ct)
     {

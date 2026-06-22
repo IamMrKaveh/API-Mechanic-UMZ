@@ -6,4 +6,5 @@ public sealed record GetAdminTicketsQuery(
     string? Status,
     string? Priority,
     int Page = 1,
-    int PageSize = 10) : IRequest<ServiceResult<PaginatedResult<TicketDto>>>;
+    int PageSize = 10)
+    : IPageQuery<TicketDto>;

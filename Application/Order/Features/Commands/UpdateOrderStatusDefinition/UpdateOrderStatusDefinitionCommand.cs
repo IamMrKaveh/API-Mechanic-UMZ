@@ -7,4 +7,5 @@ public record UpdateOrderStatusDefinitionCommand(
     string? Color,
     int SortOrder,
     bool AllowCancel,
-    bool AllowEdit) : IRequest<ServiceResult>;
+    bool AllowEdit)
+    : ICommand;

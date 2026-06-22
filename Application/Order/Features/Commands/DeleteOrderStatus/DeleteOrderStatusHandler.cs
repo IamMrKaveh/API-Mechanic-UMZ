@@ -5,7 +5,8 @@ namespace Application.Order.Features.Commands.DeleteOrderStatus;
 
 public class DeleteOrderStatusHandler(
     IOrderStatusRepository orderStatusRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<DeleteOrderStatusCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<DeleteOrderStatusCommand>
 {
     public async Task<ServiceResult> Handle(DeleteOrderStatusCommand request, CancellationToken ct)
     {

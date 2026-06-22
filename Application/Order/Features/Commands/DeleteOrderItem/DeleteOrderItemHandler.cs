@@ -6,7 +6,7 @@ namespace Application.Order.Features.Commands.DeleteOrderItem;
 public class DeleteOrderItemHandler(
     IOrderRepository orderRepository,
     IUnitOfWork unitOfWork)
-        : IRequestHandler<DeleteOrderItemCommand, ServiceResult>
+    : ICommandHandler<DeleteOrderItemCommand>
 {
     public async Task<ServiceResult> Handle(
         DeleteOrderItemCommand request,

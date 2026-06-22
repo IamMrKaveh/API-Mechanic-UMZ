@@ -8,7 +8,8 @@ public class RemoveVariantHandler(
     IVariantRepository variantRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<RemoveVariantCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<RemoveVariantCommand>
 {
     public async Task<ServiceResult> Handle(
         RemoveVariantCommand request,

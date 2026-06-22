@@ -9,4 +9,5 @@ public record UpdateShippingCommand(
     string? Description,
     string? EstimatedDeliveryTime,
     int MinDeliveryDays,
-    int MaxDeliveryDays) : IRequest<ServiceResult<ShippingDto>>;
+    int MaxDeliveryDays)
+    : ICommand<ShippingDto>;

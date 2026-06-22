@@ -10,4 +10,5 @@ public record UpdateVariantCommand(
     bool IsUnlimited,
     decimal ShippingMultiplier,
     ICollection<Guid>? AttributeValueIds,
-    ICollection<Guid>? EnabledShippingIds) : IRequest<ServiceResult>;
+    ICollection<Guid>? EnabledShippingIds)
+    : ICommand;

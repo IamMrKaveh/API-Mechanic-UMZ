@@ -9,7 +9,8 @@ namespace Application.Payment.Features.Commands.AtomicRefundPayment;
 public class AtomicRefundPaymentHandler(
     IOrderRepository orderRepository,
     IPaymentTransactionRepository paymentRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<AtomicRefundPaymentCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<AtomicRefundPaymentCommand>
 {
     public async Task<ServiceResult> Handle(AtomicRefundPaymentCommand request, CancellationToken ct)
     {

@@ -17,7 +17,8 @@ public class UpdateVariantHandler(
     IShippingRepository shippingRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<UpdateVariantCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<UpdateVariantCommand>
 {
     public async Task<ServiceResult> Handle(
         UpdateVariantCommand request,

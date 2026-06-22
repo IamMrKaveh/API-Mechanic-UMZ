@@ -2,4 +2,6 @@ using Application.Payment.Features.Shared;
 
 namespace Application.Payment.Features.Queries.GetPaymentStatus;
 
-public record GetPaymentStatusQuery(string Authority) : IRequest<ServiceResult<PaymentStatusDto?>>;
+public record GetPaymentStatusQuery(
+    string Authority)
+    : IQuery<PaymentStatusDto?>;

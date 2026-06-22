@@ -1,3 +1,5 @@
 namespace Application.Payment.Features.Commands.ExpireStalePayments;
 
-public record ExpireStalePaymentsCommand(DateTime CutOff) : IRequest<ServiceResult<int>>;
+public record ExpireStalePaymentsCommand(
+    DateTime CutOff)
+    : ICommand<int>;

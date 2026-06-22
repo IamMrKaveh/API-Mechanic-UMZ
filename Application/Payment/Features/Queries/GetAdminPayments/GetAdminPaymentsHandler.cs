@@ -2,8 +2,9 @@ using Application.Payment.Features.Shared;
 
 namespace Application.Payment.Features.Queries.GetAdminPayments;
 
-public class GetAdminPaymentsHandler(IPaymentQueryService paymentQueryService)
-        : IRequestHandler<GetAdminPaymentsQuery, ServiceResult<PaginatedResult<PaymentTransactionDto>>>
+public class GetAdminPaymentsHandler(
+    IPaymentQueryService paymentQueryService)
+    : IQueryHandler<GetAdminPaymentsQuery, PaginatedResult<PaymentTransactionDto>>
 {
     public async Task<ServiceResult<PaginatedResult<PaymentTransactionDto>>> Handle(
         GetAdminPaymentsQuery request,

@@ -5,9 +5,8 @@ using Domain.User.ValueObjects;
 namespace Application.Support.Features.Queries.GetAdminTickets;
 
 public sealed class GetAdminTicketsHandler(
-    ITicketQueryService supportQueryService,
-    ICurrentUserService currentUserService)
-        : IRequestHandler<GetAdminTicketsQuery, ServiceResult<PaginatedResult<TicketDto>>>
+    ITicketQueryService supportQueryService)
+    : IQueryHandler<GetAdminTicketsQuery, PaginatedResult<TicketDto>>
 {
     public async Task<ServiceResult<PaginatedResult<TicketDto>>> Handle(
         GetAdminTicketsQuery request,

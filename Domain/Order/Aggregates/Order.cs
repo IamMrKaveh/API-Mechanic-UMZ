@@ -73,91 +73,64 @@ public sealed class Order : AggregateRoot<OrderId>
         RecalculateTotals();
 
         RaiseDomainEvent(new OrderCreatedEvent(
-            id,
-            userId,
-            orderNumber,
-            FinalAmount.Amount,
-            FinalAmount.Currency,
-            _orderItems.Count,
-            idempotencyKey));
+            id, userId, orderNumber, FinalAmount.Amount, FinalAmount.Currency,
+            _orderItems.Count, idempotencyKey));
     }
 
     public static Order Place(
-    OrderId orderId,
-    UserId userId,
-    ReceiverInfo receiverInfo,
-    DeliveryAddress deliveryAddress,
-    Money shippingCost,
-    Money discountAmount,
-    DiscountCodeId? appliedDiscountCodeId,
-    IEnumerable<OrderItemSnapshot> itemSnapshots,
-    Guid idempotencyKey,
-    DateOnly orderDate)
+        OrderId orderId,
+        UserId userId,
+        ReceiverInfo receiverInfo,
+        DeliveryAddress deliveryAddress,
+        Money shippingCost,
+        Money discountAmount,
+        DiscountCodeId? appliedDiscountCodeId,
+        IEnumerable<OrderItemSnapshot> itemSnapshots,
+        Guid idempotencyKey,
+        DateOnly orderDate)
     {
         var snapshots = itemSnapshots.ToList();
-
         if (snapshots.Count == 0)
             throw new EmptyOrderException();
 
         ArgumentNullException.ThrowIfNull(userId);
-
         if (idempotencyKey == Guid.Empty)
             throw new ArgumentException("Idempotency key cannot be empty.", nameof(idempotencyKey));
 
         return new Order(
-            orderId,
-            userId,
-            OrderNumber.Generate(orderDate),
-            receiverInfo,
-            deliveryAddress,
-            shippingCost,
-            discountAmount,
-            appliedDiscountCodeId,
-            snapshots,
-            idempotencyKey);
+            orderId, userId, OrderNumber.Generate(orderDate),
+            receiverInfo, deliveryAddress, shippingCost, discountAmount,
+            appliedDiscountCodeId, snapshots, idempotencyKey);
     }
 
-    public bool CanBeCancelled() => Status.CanBeCancelled();
-
-    public bool CanBeModified() => Status.CanBeEdited();
+    public void MoveToPending()
+    {
+        if (Status == OrderStatusValue.Pending) return;
+        TransitionTo(OrderStatusValue.Pending);
+    }
 
     public void MarkAsPaid(PaymentTransactionId paymentTransactionId)
     {
         ArgumentNullException.ThrowIfNull(paymentTransactionId);
-
         TransitionTo(OrderStatusValue.Paid);
         PaymentTransactionId = paymentTransactionId;
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new OrderPaidEvent(
-            Id,
-            OrderNumber,
-            UserId,
-            paymentTransactionId,
-            FinalAmount.Amount,
-            FinalAmount.Currency));
+            Id, OrderNumber, UserId, paymentTransactionId,
+            FinalAmount.Amount, FinalAmount.Currency));
     }
 
-    public void StartProcessing()
-    {
-        TransitionTo(OrderStatusValue.Processing);
-    }
+    public void StartProcessing() => TransitionTo(OrderStatusValue.Processing);
 
-    public void MarkAsShipped()
-    {
-        TransitionTo(OrderStatusValue.Shipped);
-    }
+    public void MarkAsShipped() => TransitionTo(OrderStatusValue.Shipped);
 
-    public void MarkAsDelivered()
-    {
-        TransitionTo(OrderStatusValue.Delivered);
-    }
+    public void MarkAsDelivered() => TransitionTo(OrderStatusValue.Delivered);
 
     public void Cancel(string reason)
     {
         if (string.IsNullOrWhiteSpace(reason))
             throw new ArgumentException("Cancellation reason cannot be empty.", nameof(reason));
-
         if (!CanBeCancelled())
             throw new OrderCancellationNotAllowedException(Status);
 
@@ -165,37 +138,19 @@ public sealed class Order : AggregateRoot<OrderId>
         TransitionTo(OrderStatusValue.Cancelled);
         CancellationReason = reason;
 
-        RaiseDomainEvent(new OrderCancelledEvent(
-            Id,
-            OrderNumber,
-            UserId,
-            reason,
-            wasPaid));
+        RaiseDomainEvent(new OrderCancelledEvent(Id, OrderNumber, UserId, reason, wasPaid));
     }
 
     public void Expire(OrderStatusValue orderStatusValue)
     {
         if (IsPaid)
             throw new InvalidOrderTransitionException(Status, orderStatusValue);
-
         TransitionTo(OrderStatusValue.Expired);
     }
 
-    public void Refund()
-    {
-        TransitionTo(OrderStatusValue.Refunded);
-    }
+    public void Refund() => TransitionTo(OrderStatusValue.Refunded);
 
-    public void MarkAsReturned()
-    {
-        TransitionTo(OrderStatusValue.Returned);
-    }
-
-    public void MarkAsDeleted()
-    {
-        IsDeleted = true;
-        UpdatedAt = DateTime.UtcNow;
-    }
+    public void MarkAsReturned() => TransitionTo(OrderStatusValue.Returned);
 
     private void TransitionTo(OrderStatusValue next)
     {
@@ -206,23 +161,25 @@ public sealed class Order : AggregateRoot<OrderId>
         Status = next;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new OrderStatusChangedEvent(
-            Id,
-            OrderNumber,
-            UserId,
-            previous,
-            next));
+        RaiseDomainEvent(new OrderStatusChangedEvent(Id, OrderNumber, UserId, previous, next));
     }
 
     private void RecalculateTotals()
     {
-        SubTotal = _orderItems.Aggregate(
-            Money.Zero(),
-            (acc, item) => acc.Add(item.TotalPrice));
-
+        SubTotal = _orderItems.Aggregate(Money.Zero(), (acc, item) => acc.Add(item.TotalPrice));
         var beforeDiscount = SubTotal.Add(ShippingCost);
         FinalAmount = beforeDiscount.IsGreaterThan(DiscountAmount)
             ? beforeDiscount.Subtract(DiscountAmount)
             : Money.Zero(SubTotal.Currency);
+    }
+
+    public bool CanBeCancelled() => Status.CanBeCancelled();
+
+    public bool CanBeModified() => Status.CanBeEdited();
+
+    public void MarkAsDeleted()
+    {
+        IsDeleted = true;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

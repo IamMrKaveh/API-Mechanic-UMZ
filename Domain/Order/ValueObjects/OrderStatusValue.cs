@@ -48,7 +48,7 @@ public sealed record OrderStatusValue
     private static readonly IReadOnlyDictionary<OrderStatusValue, IReadOnlySet<OrderStatusValue>> Transitions =
         new Dictionary<OrderStatusValue, IReadOnlySet<OrderStatusValue>>
         {
-            [Created] = new HashSet<OrderStatusValue> { Reserved, Cancelled, Expired },
+            [Created] = new HashSet<OrderStatusValue> { Reserved, Pending, Paid, Cancelled, Expired },
             [Reserved] = new HashSet<OrderStatusValue> { Pending, Cancelled, Expired },
             [Pending] = new HashSet<OrderStatusValue> { Paid, Failed, Cancelled, Expired },
             [Failed] = new HashSet<OrderStatusValue> { Pending, Cancelled, Expired },
@@ -68,30 +68,16 @@ public sealed record OrderStatusValue
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new DomainException("Invalid order status.");
-
         if (All.TryGetValue(value, out var status))
             return status;
-
         throw new DomainException($"'{value}' is not a valid order status.");
     }
 
     public bool CanTransitionTo(OrderStatusValue next)
-    {
-        return Transitions.TryGetValue(this, out var allowed) && allowed.Contains(next);
-    }
+        => Transitions.TryGetValue(this, out var allowed) && allowed.Contains(next);
 
-    public bool CanBeCancelled()
-    {
-        return !IsFinal && this != Shipped;
-    }
+    public bool CanBeCancelled() => !IsFinal && this != Shipped;
+    public bool CanBeEdited() => this == Created || this == Reserved || this == Pending;
 
-    public bool CanBeEdited()
-    {
-        return this == Created || this == Reserved || this == Pending;
-    }
-
-    public static implicit operator string(OrderStatusValue status)
-    {
-        return status.Value;
-    }
+    public static implicit operator string(OrderStatusValue status) => status.Value;
 }

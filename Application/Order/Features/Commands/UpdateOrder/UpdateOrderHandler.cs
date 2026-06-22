@@ -8,7 +8,8 @@ namespace Application.Order.Features.Commands.UpdateOrder;
 public class UpdateOrderHandler(
     IOrderRepository orderRepository,
     IShippingRepository shippingRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<UpdateOrderCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<UpdateOrderCommand>
 {
     public async Task<ServiceResult> Handle(UpdateOrderCommand request, CancellationToken ct)
     {

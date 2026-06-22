@@ -3,7 +3,8 @@ using Application.Product.Features.Shared;
 namespace Application.Product.Features.Queries.GetProductCatalog;
 
 public sealed class GetProductCatalogHandler(
-    IProductQueryService productQueryService) : IRequestHandler<GetProductCatalogQuery, ServiceResult<PaginatedResult<ProductCatalogItemDto>>>
+    IProductQueryService productQueryService)
+    : IQueryHandler<GetProductCatalogQuery, PaginatedResult<ProductCatalogItemDto>>
 {
     public async Task<ServiceResult<PaginatedResult<ProductCatalogItemDto>>> Handle(
         GetProductCatalogQuery request, CancellationToken ct)

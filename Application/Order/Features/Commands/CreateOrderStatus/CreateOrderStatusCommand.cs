@@ -9,4 +9,5 @@ public record CreateOrderStatusCommand(
     string? Color,
     int SortOrder,
     bool AllowCancel,
-    bool AllowEdit) : IRequest<ServiceResult<OrderStatusDto>>;
+    bool AllowEdit)
+    : ICommand<OrderStatusDto>;

@@ -6,7 +6,7 @@ namespace Application.Order.Features.Queries.GetAdminOrders;
 public class GetAdminOrdersHandler(
     IOrderQueryService orderQueryService,
     ICurrentUserService currentUserService)
-    : IRequestHandler<GetAdminOrdersQuery, ServiceResult<PaginatedResult<AdminOrderDto>>>
+    : IQueryHandler<GetAdminOrdersQuery, PaginatedResult<AdminOrderDto>>
 {
     public async Task<ServiceResult<PaginatedResult<AdminOrderDto>>> Handle(
         GetAdminOrdersQuery request,

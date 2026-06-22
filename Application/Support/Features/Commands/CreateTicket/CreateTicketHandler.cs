@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Application.Support.Features.Shared;
 using Domain.Support.Aggregates;
 using Domain.Support.Enums;
@@ -12,7 +11,8 @@ public class CreateTicketHandler(
     ITicketRepository ticketRepository,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
-    IMapper mapper) : IRequestHandler<CreateTicketCommand, ServiceResult<TicketDto>>
+    IMapper mapper)
+    : ICommandHandler<CreateTicketCommand, TicketDto>
 {
     public async Task<ServiceResult<TicketDto>> Handle(CreateTicketCommand request, CancellationToken ct)
     {

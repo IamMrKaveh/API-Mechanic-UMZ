@@ -3,4 +3,5 @@ namespace Application.Order.Features.Commands.UpdateOrderStatus;
 public record UpdateOrderStatusCommand(
     Guid OrderId,
     string NewStatus,
-    string RowVersion) : IRequest<ServiceResult>;
+    string RowVersion)
+    : ICommand;

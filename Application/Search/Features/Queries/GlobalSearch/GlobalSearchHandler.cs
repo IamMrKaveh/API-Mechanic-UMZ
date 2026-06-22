@@ -2,7 +2,9 @@ using Application.Search.Features.Shared;
 
 namespace Application.Search.Features.Queries.GlobalSearch;
 
-public class GlobalSearchHandler(ISearchService searchService) : IRequestHandler<GlobalSearchQuery, ServiceResult<GlobalSearchResultDto>>
+public class GlobalSearchHandler(
+    ISearchService searchService)
+    : IQueryHandler<GlobalSearchQuery, GlobalSearchResultDto>
 {
     public async Task<ServiceResult<GlobalSearchResultDto>> Handle(
         GlobalSearchQuery request, CancellationToken ct)

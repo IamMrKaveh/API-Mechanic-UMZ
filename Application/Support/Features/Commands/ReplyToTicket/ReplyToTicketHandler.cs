@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.Support.Enums;
 using Domain.Support.Interfaces;
 using Domain.Support.ValueObjects;
@@ -9,7 +8,8 @@ namespace Application.Support.Features.Commands.ReplyToTicket;
 public class ReplyToTicketHandler(
     ITicketRepository ticketRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork) : IRequestHandler<ReplyToTicketCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<ReplyToTicketCommand>
 {
     public async Task<ServiceResult> Handle(ReplyToTicketCommand request, CancellationToken ct)
     {

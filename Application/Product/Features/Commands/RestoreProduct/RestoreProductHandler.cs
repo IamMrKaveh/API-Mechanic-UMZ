@@ -9,7 +9,8 @@ public class RestoreProductHandler(
     IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICacheService cacheService,
-    ICurrentUserService currentUserService) : IRequestHandler<RestoreProductCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<RestoreProductCommand>
 {
     public async Task<ServiceResult> Handle(
         RestoreProductCommand request,

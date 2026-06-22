@@ -7,7 +7,8 @@ public sealed class BulkUpdatePricesHandler(
     IVariantRepository variantRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICacheService cacheService) : IRequestHandler<BulkUpdatePricesCommand, ServiceResult>
+    ICacheService cacheService)
+    : ICommandHandler<BulkUpdatePricesCommand>
 {
     public async Task<ServiceResult> Handle(BulkUpdatePricesCommand request, CancellationToken ct)
     {

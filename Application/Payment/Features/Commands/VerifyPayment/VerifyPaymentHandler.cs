@@ -5,7 +5,8 @@ namespace Application.Payment.Features.Commands.VerifyPayment;
 
 public class VerifyPaymentHandler(
     IPaymentService paymentService,
-    IAuditService auditService) : IRequestHandler<VerifyPaymentCommand, ServiceResult<PaymentVerificationResult>>
+    IAuditService auditService)
+    : ICommandHandler<VerifyPaymentCommand, PaymentVerificationResult>
 {
     public async Task<ServiceResult<PaymentVerificationResult>> Handle(
         VerifyPaymentCommand request,

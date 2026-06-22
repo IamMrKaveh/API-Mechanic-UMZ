@@ -379,14 +379,19 @@ public static class InfrastructureServiceExtensions
             .ValidateOnStart();
 
         services.AddScoped<IPaymentGatewayFactory, PaymentGatewayFactory>();
+        services.AddScoped<IPaymentService, PaymentService>();
+
+        services.AddScoped<IPaymentGateway, ZarinPalSandboxGateway>();
         services.AddScoped<IPaymentGateway, ZarinPalPaymentGateway>();
 
-        services.AddHttpClient<ZarinPalPaymentGateway>()
-            .AddTransientHttpErrorPolicy(policy =>
-                policy.WaitAndRetryAsync(3, retryAttempt =>
-                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
-            .AddTransientHttpErrorPolicy(policy =>
-                policy.CircuitBreakerAsync(5, TimeSpan.FromSeconds(60)));
+        services.AddHttpClient<ZarinPalPaymentGateway>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        })
+        .AddTransientHttpErrorPolicy(policy =>
+            policy.WaitAndRetryAsync(2, retryAttempt => TimeSpan.FromSeconds(retryAttempt)))
+        .AddTransientHttpErrorPolicy(policy =>
+            policy.CircuitBreakerAsync(5, TimeSpan.FromSeconds(60)));
     }
 
     private static void AddSearchServices(this IServiceCollection services, IConfiguration configuration)

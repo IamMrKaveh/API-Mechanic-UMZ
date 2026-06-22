@@ -1,3 +1,5 @@
 namespace Application.Shipping.Features.Commands.DeleteShipping;
 
-public record DeleteShippingCommand(Guid Id) : IRequest<ServiceResult>;
+public record DeleteShippingCommand(
+    Guid Id)
+    : ICommand;

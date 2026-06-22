@@ -6,7 +6,8 @@ namespace Application.Review.Features.Commands.UpdateReviewStatus;
 public sealed class UpdateReviewStatusHandler(
     IReviewRepository reviewRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<UpdateReviewStatusCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<UpdateReviewStatusCommand>
 {
     public async Task<ServiceResult> Handle(
         UpdateReviewStatusCommand request,

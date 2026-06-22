@@ -7,7 +7,7 @@ namespace Application.Order.Features.Queries.GetOrderStatus;
 public class GetOrderStatusHandler(
     IOrderQueryService orderQueryService,
     ICurrentUserService currentUserService)
-    : IRequestHandler<GetOrderStatusQuery, ServiceResult<OrderDto>>
+    : IQueryHandler<GetOrderStatusQuery, OrderDto>
 {
     public async Task<ServiceResult<OrderDto>> Handle(
         GetOrderStatusQuery request,

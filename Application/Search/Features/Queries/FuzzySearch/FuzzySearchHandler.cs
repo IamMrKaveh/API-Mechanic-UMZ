@@ -2,8 +2,9 @@ using Application.Search.Features.Shared;
 
 namespace Application.Search.Features.Queries.FuzzySearch;
 
-public class FuzzySearchHandler(ISearchService searchService)
-        : IRequestHandler<FuzzySearchQuery, ServiceResult<SearchResultDto<ProductSearchResultItemDto>>>
+public class FuzzySearchHandler(
+    ISearchService searchService)
+    : IQueryHandler<FuzzySearchQuery, SearchResultDto<ProductSearchResultItemDto>>
 {
     public async Task<ServiceResult<SearchResultDto<ProductSearchResultItemDto>>> Handle(
         FuzzySearchQuery request, CancellationToken ct)

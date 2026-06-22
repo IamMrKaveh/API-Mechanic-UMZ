@@ -8,7 +8,8 @@ public class DeleteOrderHandler(
     IOrderRepository orderRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<DeleteOrderCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<DeleteOrderCommand>
 {
     public async Task<ServiceResult> Handle(
         DeleteOrderCommand request,

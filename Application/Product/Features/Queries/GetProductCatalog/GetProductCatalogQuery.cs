@@ -11,4 +11,5 @@ public record GetProductCatalogQuery(
     decimal? MinPrice = null,
     decimal? MaxPrice = null,
     bool InStockOnly = false,
-    string? SortBy = null) : IRequest<ServiceResult<PaginatedResult<ProductCatalogItemDto>>>;
+    string? SortBy = null)
+    : IPageQuery<ProductCatalogItemDto>;
