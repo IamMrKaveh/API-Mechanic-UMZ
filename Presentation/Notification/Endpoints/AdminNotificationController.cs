@@ -24,7 +24,7 @@ public class AdminNotificationController(IMediator mediator) : BaseApiController
     }
 
     [HttpPost("send")]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> Send(
         [FromBody] AdminSendNotificationRequest request,
         CancellationToken ct)

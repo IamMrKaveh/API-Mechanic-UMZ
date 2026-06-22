@@ -78,7 +78,7 @@ public class AdminProductsController(
 
         var result = await Mediator.Send(command);
 
-        return CreatedActionResult(result);
+        return ToCreatedActionResult(result);
     }
 
     [HttpPut("{id:guid}")]

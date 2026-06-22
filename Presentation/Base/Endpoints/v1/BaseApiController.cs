@@ -64,7 +64,7 @@ public abstract class BaseApiController(ISender mediator, IMapper? mapper = null
             _ => StatusCodes.Status500InternalServerError
         };
 
-    protected IActionResult CreatedActionResult<T>(ServiceResult<T> result) =>
+    protected IActionResult ToCreatedActionResult<T>(ServiceResult<T> result) =>
         StatusCode(
             StatusCodes.Status201Created,
             new ApiResponse<T>(result.Value, true, null));

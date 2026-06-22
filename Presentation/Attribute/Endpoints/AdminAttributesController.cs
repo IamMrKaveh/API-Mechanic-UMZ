@@ -48,7 +48,7 @@ public class AdminAttributesController(IMediator mediator, IMapper mapper)
             request.SortOrder);
 
         var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return ToCreatedActionResult(result);
     }
 
     [HttpPost("{typeId:guid}/values")]
@@ -66,7 +66,7 @@ public class AdminAttributesController(IMediator mediator, IMapper mapper)
             request.SortOrder);
 
         var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return ToCreatedActionResult(result);
     }
 
     [HttpPut("{id:guid}")]

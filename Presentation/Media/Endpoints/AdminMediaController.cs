@@ -33,7 +33,7 @@ public class AdminMediaController(
     [HttpPost]
     [RequestSizeLimit(10_485_760)]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(ApiResponse<MediaDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<MediaDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<MediaDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -52,7 +52,7 @@ public class AdminMediaController(
             request.AltText);
 
         var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return ToCreatedActionResult(result);
     }
 
     [HttpDelete("orphaned")]

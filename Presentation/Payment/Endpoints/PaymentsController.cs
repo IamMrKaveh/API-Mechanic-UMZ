@@ -58,7 +58,8 @@ public class PaymentsController(IMediator mediator, IMapper mapper) : BaseApiCon
         [FromBody] InitiatePaymentRequest request,
         CancellationToken ct)
     {
-        return await Send(new InitiatePaymentCommand(request.OrderId, request.Gateway), ct);
+        var result = await Mediator.Send(new InitiatePaymentCommand(request.OrderId, request.Gateway), ct);
+        return ToCreatedActionResult(result);
     }
 
     [HttpPost("webhooks/{gateway}")]

@@ -55,7 +55,7 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
             Guid.NewGuid());
 
         var result = await Mediator.Send(command, ct);
-        return ToActionResult(result);
+        return ToCreatedActionResult(result);
     }
 
     [HttpPatch("{id:guid}/cancellation")]
