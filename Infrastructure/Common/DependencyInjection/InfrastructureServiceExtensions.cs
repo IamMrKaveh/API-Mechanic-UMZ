@@ -1,4 +1,5 @@
-﻿using Application.Analytics.Contracts;
+﻿using Amazon.Runtime;
+using Application.Analytics.Contracts;
 using Application.Attribute.Adapters;
 using Application.Auth.Contracts;
 using Application.Brand.Contracts;
@@ -333,7 +334,10 @@ public static class InfrastructureServiceExtensions
             {
                 ServiceURL = options.Endpoint,
                 ForcePathStyle = true,
-                AuthenticationRegion = options.Region
+                AuthenticationRegion = options.Region,
+                UseHttp = false,
+                RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
+                ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED
             };
 
             return new AmazonS3Client(
