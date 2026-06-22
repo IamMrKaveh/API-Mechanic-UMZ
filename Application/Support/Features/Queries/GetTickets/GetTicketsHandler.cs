@@ -5,7 +5,8 @@ using Domain.User.ValueObjects;
 namespace Application.Support.Features.Queries.GetTickets;
 
 public class GetTicketsHandler(
-    ITicketQueryService supportQueryService) : IRequestHandler<GetTicketsQuery, ServiceResult<PaginatedResult<TicketListItemDto>>>
+    ITicketQueryService supportQueryService)
+    : IQueryHandler<GetTicketsQuery, PaginatedResult<TicketListItemDto>>
 {
     public async Task<ServiceResult<PaginatedResult<TicketListItemDto>>> Handle(
         GetTicketsQuery request,

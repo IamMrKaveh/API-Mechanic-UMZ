@@ -2,8 +2,9 @@ using Application.Shipping.Features.Shared;
 
 namespace Application.Shipping.Features.Queries.GetAvailableShippingsForVariants;
 
-public class GetAvailableShippingsForVariantsHandler(IShippingQueryService shippingQueryService)
-    : IRequestHandler<GetAvailableShippingsForVariantsQuery, ServiceResult<IReadOnlyList<AvailableShippingDto>>>
+public class GetAvailableShippingsForVariantsHandler(
+    IShippingQueryService shippingQueryService)
+    : IQueryHandler<GetAvailableShippingsForVariantsQuery, IReadOnlyList<AvailableShippingDto>>
 {
     public async Task<ServiceResult<IReadOnlyList<AvailableShippingDto>>> Handle(
         GetAvailableShippingsForVariantsQuery request,

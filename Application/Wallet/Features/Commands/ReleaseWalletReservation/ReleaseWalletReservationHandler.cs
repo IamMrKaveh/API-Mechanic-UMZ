@@ -7,7 +7,8 @@ namespace Application.Wallet.Features.Commands.ReleaseWalletReservation;
 public class ReleaseWalletReservationHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<ReleaseWalletReservationCommand, ServiceResult<Unit>>
+    IAuditService auditService)
+    : ICommandHandler<ReleaseWalletReservationCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
         ReleaseWalletReservationCommand request,

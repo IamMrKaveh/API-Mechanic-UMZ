@@ -2,8 +2,9 @@ using Application.Payment.Features.Shared;
 
 namespace Application.Payment.Features.Queries.GetPaymentByAuthority;
 
-public class GetPaymentByAuthorityHandler(IPaymentQueryService paymentQueryService)
-        : IRequestHandler<GetPaymentByAuthorityQuery, ServiceResult<PaymentTransactionDto?>>
+public class GetPaymentByAuthorityHandler(
+    IPaymentQueryService paymentQueryService)
+    : IQueryHandler<GetPaymentByAuthorityQuery, PaymentTransactionDto?>
 {
     public async Task<ServiceResult<PaymentTransactionDto?>> Handle(
         GetPaymentByAuthorityQuery request,

@@ -3,8 +3,9 @@ using Domain.Order.ValueObjects;
 
 namespace Application.Payment.Features.Queries.GetPaymentsByOrder;
 
-public class GetPaymentsByOrderHandler(IPaymentQueryService paymentQueryService)
-        : IRequestHandler<GetPaymentsByOrderQuery, ServiceResult<IEnumerable<PaymentTransactionDto>>>
+public class GetPaymentsByOrderHandler(
+    IPaymentQueryService paymentQueryService)
+    : IQueryHandler<GetPaymentsByOrderQuery, IEnumerable<PaymentTransactionDto>>
 {
     public async Task<ServiceResult<IEnumerable<PaymentTransactionDto>>> Handle(
         GetPaymentsByOrderQuery request,

@@ -7,7 +7,8 @@ namespace Application.Shipping.Features.Commands.UpdateShipping;
 public class UpdateShippingHandler(
     IShippingRepository shippingRepository,
     IUnitOfWork unitOfWork,
-    IMapper mapper) : IRequestHandler<UpdateShippingCommand, ServiceResult<ShippingDto>>
+    IMapper mapper)
+    : ICommandHandler<UpdateShippingCommand, ShippingDto>
 {
     public async Task<ServiceResult<ShippingDto>> Handle(UpdateShippingCommand request, CancellationToken ct)
     {

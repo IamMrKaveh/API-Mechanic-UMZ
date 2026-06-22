@@ -2,8 +2,9 @@ using Application.Search.Features.Shared;
 
 namespace Application.Search.Features.Queries.SearchProducts;
 
-public class SearchProductsHandler(ISearchService searchService)
-        : IRequestHandler<SearchProductsQuery, ServiceResult<SearchResultDto<ProductSearchResultItemDto>>>
+public class SearchProductsHandler(
+    ISearchService searchService)
+    : IQueryHandler<SearchProductsQuery, SearchResultDto<ProductSearchResultItemDto>>
 {
     public async Task<ServiceResult<SearchResultDto<ProductSearchResultItemDto>>> Handle(
         SearchProductsQuery request,

@@ -5,7 +5,8 @@ namespace Application.Review.Features.Commands.DeleteReview;
 
 public class DeleteReviewHandler(
     IReviewRepository reviewRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<DeleteReviewCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<DeleteReviewCommand>
 {
     public async Task<ServiceResult> Handle(DeleteReviewCommand request, CancellationToken ct)
     {

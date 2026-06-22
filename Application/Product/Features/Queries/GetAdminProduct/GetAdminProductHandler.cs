@@ -4,7 +4,8 @@ using Domain.Product.ValueObjects;
 namespace Application.Product.Features.Queries.GetAdminProduct;
 
 public sealed class GetAdminProductHandler(
-    IProductQueryService productQueryService) : IRequestHandler<GetAdminProductQuery, ServiceResult<AdminProductDetailDto?>>
+    IProductQueryService productQueryService)
+    : IQueryHandler<GetAdminProductQuery, AdminProductDetailDto?>
 {
     public async Task<ServiceResult<AdminProductDetailDto?>> Handle(
         GetAdminProductQuery request,

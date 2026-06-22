@@ -3,8 +3,9 @@ using Domain.Product.ValueObjects;
 
 namespace Application.Variant.Features.Queries.GetVariants;
 
-public class GetVariantsHandler(IVariantQueryService variantQueryService)
-    : IRequestHandler<GetVariantsQuery, ServiceResult<IEnumerable<ProductVariantViewDto>>>
+public class GetVariantsHandler(
+    IVariantQueryService variantQueryService)
+    : IQueryHandler<GetVariantsQuery, IEnumerable<ProductVariantViewDto>>
 {
     public async Task<ServiceResult<IEnumerable<ProductVariantViewDto>>> Handle(
         GetVariantsQuery request,

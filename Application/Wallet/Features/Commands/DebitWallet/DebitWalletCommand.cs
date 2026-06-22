@@ -10,4 +10,5 @@ public record DebitWalletCommand(
     string ReferenceId,
     string IdempotencyKey,
     string? CorrelationId = null,
-    string? Description = null) : IRequest<ServiceResult<Unit>>;
+    string? Description = null)
+    : ICommand<Unit>;

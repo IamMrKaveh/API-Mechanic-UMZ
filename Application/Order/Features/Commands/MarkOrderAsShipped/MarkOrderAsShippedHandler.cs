@@ -5,7 +5,8 @@ namespace Application.Order.Features.Commands.MarkOrderAsShipped;
 
 public class MarkOrderAsShippedHandler(
     IOrderRepository orderRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<MarkOrderAsShippedCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<MarkOrderAsShippedCommand>
 {
     public async Task<ServiceResult> Handle(MarkOrderAsShippedCommand request, CancellationToken ct)
     {

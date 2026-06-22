@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.Review.Interfaces;
 using Domain.Review.ValueObjects;
 using Domain.User.ValueObjects;
@@ -9,7 +8,8 @@ public class ReplyToReviewHandler(
     IReviewRepository reviewRepository,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<ReplyToReviewCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<ReplyToReviewCommand>
 {
     public async Task<ServiceResult> Handle(
         ReplyToReviewCommand request,

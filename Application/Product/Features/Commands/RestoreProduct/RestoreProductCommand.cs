@@ -1,4 +1,5 @@
 namespace Application.Product.Features.Commands.RestoreProduct;
 
 public record RestoreProductCommand(
-    Guid ProductId) : IRequest<ServiceResult>;
+    Guid ProductId)
+    : ICommand;

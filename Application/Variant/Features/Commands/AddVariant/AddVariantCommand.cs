@@ -11,4 +11,5 @@ public sealed record AddVariantCommand(
     bool IsUnlimited,
     decimal ShippingMultiplier,
     ICollection<Guid> AttributeValueIds,
-    ICollection<Guid>? EnabledShippingIds) : ICommand<ProductVariantViewDto>, IBypassTransactionBehavior;
+    ICollection<Guid>? EnabledShippingIds)
+    : ICommand<ProductVariantViewDto>, IBypassTransactionBehavior;

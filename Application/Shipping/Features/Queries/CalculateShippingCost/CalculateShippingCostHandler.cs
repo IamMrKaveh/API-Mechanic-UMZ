@@ -3,8 +3,9 @@ using Domain.Shipping.ValueObjects;
 
 namespace Application.Shipping.Features.Queries.CalculateShippingCost;
 
-public class CalculateShippingCostHandler(IShippingQueryService shippingQueryService)
-    : IRequestHandler<CalculateShippingCostQuery, ServiceResult<ShippingCostResultDto>>
+public class CalculateShippingCostHandler(
+    IShippingQueryService shippingQueryService)
+    : IQueryHandler<CalculateShippingCostQuery, ShippingCostResultDto>
 {
     public async Task<ServiceResult<ShippingCostResultDto>> Handle(
         CalculateShippingCostQuery request,

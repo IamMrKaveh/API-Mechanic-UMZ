@@ -2,4 +2,5 @@
 
 public record ReleaseWalletReservationCommand(
     Guid UserId,
-    Guid WalletReservationId) : IRequest<ServiceResult<Unit>>;
+    Guid WalletReservationId)
+    : ICommand<Unit>;

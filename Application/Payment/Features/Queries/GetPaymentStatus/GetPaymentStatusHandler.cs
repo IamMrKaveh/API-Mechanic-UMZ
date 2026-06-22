@@ -2,8 +2,9 @@ using Application.Payment.Features.Shared;
 
 namespace Application.Payment.Features.Queries.GetPaymentStatus;
 
-public class GetPaymentStatusHandler(IPaymentQueryService paymentQueryService)
-        : IRequestHandler<GetPaymentStatusQuery, ServiceResult<PaymentStatusDto?>>
+public class GetPaymentStatusHandler(
+    IPaymentQueryService paymentQueryService)
+    : IQueryHandler<GetPaymentStatusQuery, PaymentStatusDto?>
 {
     public async Task<ServiceResult<PaymentStatusDto?>> Handle(
         GetPaymentStatusQuery request,

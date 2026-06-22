@@ -3,7 +3,9 @@ using Domain.Shipping.ValueObjects;
 
 namespace Application.Shipping.Features.Queries.GetShipping;
 
-public class GetShippingHandler(IShippingQueryService shippingQueryService) : IRequestHandler<GetShippingQuery, ServiceResult<ShippingDto>>
+public class GetShippingHandler(
+    IShippingQueryService shippingQueryService)
+    : IQueryHandler<GetShippingQuery, ShippingDto>
 {
     public async Task<ServiceResult<ShippingDto>> Handle(
         GetShippingQuery request,

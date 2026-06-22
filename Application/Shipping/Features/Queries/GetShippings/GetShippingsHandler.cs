@@ -3,7 +3,8 @@ using Application.Shipping.Features.Shared;
 namespace Application.Shipping.Features.Queries.GetShippings;
 
 public class GetShippingsHandler(
-    IShippingQueryService shippingQueryService) : IRequestHandler<GetShippingsQuery, ServiceResult<IReadOnlyList<ShippingListItemDto>>>
+    IShippingQueryService shippingQueryService)
+    : IQueryHandler<GetShippingsQuery, IReadOnlyList<ShippingListItemDto>>
 {
     public async Task<ServiceResult<IReadOnlyList<ShippingListItemDto>>> Handle(
         GetShippingsQuery request,

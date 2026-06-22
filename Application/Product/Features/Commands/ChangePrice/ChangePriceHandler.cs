@@ -9,7 +9,8 @@ public sealed class ChangePriceHandler(
     IVariantRepository variantRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICacheService cacheService) : IRequestHandler<ChangePriceCommand, ServiceResult>
+    ICacheService cacheService)
+    : ICommandHandler<ChangePriceCommand>
 {
     public async Task<ServiceResult> Handle(
         ChangePriceCommand request,

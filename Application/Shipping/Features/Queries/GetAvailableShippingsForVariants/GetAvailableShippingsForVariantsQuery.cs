@@ -3,4 +3,5 @@ using Application.Shipping.Features.Shared;
 namespace Application.Shipping.Features.Queries.GetAvailableShippingsForVariants;
 
 public sealed record GetAvailableShippingsForVariantsQuery(
-    ICollection<Guid> VariantIds) : IRequest<ServiceResult<IReadOnlyList<AvailableShippingDto>>>;
+    ICollection<Guid> VariantIds)
+    : IQuery<IReadOnlyList<AvailableShippingDto>>;

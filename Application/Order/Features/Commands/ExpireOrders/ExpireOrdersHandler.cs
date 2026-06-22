@@ -4,7 +4,8 @@ namespace Application.Order.Features.Commands.ExpireOrders;
 
 public class ExpireOrdersHandler(
     IOrderRepository orderRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<ExpireOrdersCommand, ServiceResult<int>>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<ExpireOrdersCommand, int>
 {
     public async Task<ServiceResult<int>> Handle(ExpireOrdersCommand request, CancellationToken ct)
     {

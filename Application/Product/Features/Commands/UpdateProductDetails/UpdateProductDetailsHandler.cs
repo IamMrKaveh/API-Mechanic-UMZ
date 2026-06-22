@@ -8,7 +8,8 @@ public sealed class UpdateProductDetailsHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<UpdateProductDetailsCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<UpdateProductDetailsCommand>
 {
     public async Task<ServiceResult> Handle(UpdateProductDetailsCommand request, CancellationToken ct)
     {

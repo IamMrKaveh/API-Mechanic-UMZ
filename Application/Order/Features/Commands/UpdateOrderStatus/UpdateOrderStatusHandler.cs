@@ -9,7 +9,8 @@ public class UpdateOrderStatusHandler(
     IUnitOfWork unitOfWork,
     INotificationService notificationService,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<UpdateOrderStatusCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<UpdateOrderStatusCommand>
 {
     public async Task<ServiceResult> Handle(
         UpdateOrderStatusCommand request,

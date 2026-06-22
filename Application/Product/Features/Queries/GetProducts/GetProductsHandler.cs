@@ -3,7 +3,8 @@
 namespace Application.Product.Features.Queries.GetProducts;
 
 public sealed class GetProductsHandler(
-    IProductQueryService productQueryService) : IRequestHandler<GetProductsQuery, ServiceResult<PaginatedResult<ProductListItemDto>>>
+    IProductQueryService productQueryService)
+    : IQueryHandler<GetProductsQuery, PaginatedResult<ProductListItemDto>>
 {
     public async Task<ServiceResult<PaginatedResult<ProductListItemDto>>> Handle(
         GetProductsQuery request,

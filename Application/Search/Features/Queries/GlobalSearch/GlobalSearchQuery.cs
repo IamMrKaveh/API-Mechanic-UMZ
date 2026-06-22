@@ -2,4 +2,6 @@ using Application.Search.Features.Shared;
 
 namespace Application.Search.Features.Queries.GlobalSearch;
 
-public record GlobalSearchQuery(string Q) : IRequest<ServiceResult<GlobalSearchResultDto>>;
+public record GlobalSearchQuery(
+    string Q)
+    : IQuery<GlobalSearchResultDto>;

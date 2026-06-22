@@ -1,7 +1,8 @@
 namespace Application.Search.Features.Queries.GetSearchIndexStats;
 
-public sealed class GetSearchIndexStatsHandler(ISearchService searchService)
-    : IRequestHandler<GetSearchIndexStatsQuery, ServiceResult<SearchIndexStatsDto>>
+public sealed class GetSearchIndexStatsHandler(
+    ISearchService searchService)
+    : IQueryHandler<GetSearchIndexStatsQuery, SearchIndexStatsDto>
 {
     public async Task<ServiceResult<SearchIndexStatsDto>> Handle(
         GetSearchIndexStatsQuery request,

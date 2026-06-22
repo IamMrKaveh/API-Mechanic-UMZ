@@ -11,4 +11,5 @@ public sealed record SearchProductsQuery(
     bool InStockOnly,
     string? SortBy,
     int Page = 1,
-    int PageSize = 10) : IRequest<ServiceResult<SearchResultDto<ProductSearchResultItemDto>>>;
+    int PageSize = 10)
+    : IQuery<SearchResultDto<ProductSearchResultItemDto>>;

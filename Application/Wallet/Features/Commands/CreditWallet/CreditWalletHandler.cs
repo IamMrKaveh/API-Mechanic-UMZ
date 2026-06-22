@@ -7,7 +7,8 @@ namespace Application.Wallet.Features.Commands.CreditWallet;
 public class CreditWalletHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<CreditWalletCommand, ServiceResult<Unit>>
+    IAuditService auditService)
+    : ICommandHandler<CreditWalletCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
         CreditWalletCommand request,

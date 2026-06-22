@@ -7,4 +7,5 @@ public record CreateReviewCommand(
     Guid? OrderId,
     int Rating,
     string? Title,
-    string? Comment) : IRequest<ServiceResult<ProductReviewDto>>;
+    string? Comment)
+    : ICommand<ProductReviewDto>;

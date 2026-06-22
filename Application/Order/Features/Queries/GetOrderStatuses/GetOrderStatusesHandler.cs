@@ -2,8 +2,9 @@ using Application.Order.Features.Shared;
 
 namespace Application.Order.Features.Queries.GetOrderStatuses;
 
-public class GetOrderStatusesHandler(IOrderStatusQueryService orderStatusQueryService)
-    : IRequestHandler<GetOrderStatusesQuery, ServiceResult<IReadOnlyList<OrderStatusDto>>>
+public class GetOrderStatusesHandler(
+    IOrderStatusQueryService orderStatusQueryService)
+    : IQueryHandler<GetOrderStatusesQuery, IReadOnlyList<OrderStatusDto>>
 {
     public async Task<ServiceResult<IReadOnlyList<OrderStatusDto>>> Handle(
         GetOrderStatusesQuery request,

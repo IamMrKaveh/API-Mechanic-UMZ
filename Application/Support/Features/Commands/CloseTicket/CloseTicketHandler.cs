@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.Support.Interfaces;
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
@@ -8,7 +7,8 @@ namespace Application.Support.Features.Commands.CloseTicket;
 public class CloseTicketHandler(
     ITicketRepository ticketRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork) : IRequestHandler<CloseTicketCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<CloseTicketCommand>
 {
     public async Task<ServiceResult> Handle(CloseTicketCommand request, CancellationToken ct)
     {

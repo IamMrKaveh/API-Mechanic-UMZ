@@ -1,6 +1,8 @@
 namespace Application.Search.Features.Commands.RecreateSearchIndices;
 
-public class RecreateSearchIndicesHandler(IElasticIndexManager indexManager) : IRequestHandler<RecreateSearchIndicesCommand, ServiceResult>
+public class RecreateSearchIndicesHandler(
+    IElasticIndexManager indexManager)
+    : ICommandHandler<RecreateSearchIndicesCommand>
 {
     public async Task<ServiceResult> Handle(RecreateSearchIndicesCommand request, CancellationToken ct)
     {

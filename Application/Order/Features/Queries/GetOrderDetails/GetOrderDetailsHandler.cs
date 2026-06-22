@@ -4,8 +4,9 @@ using Domain.User.ValueObjects;
 
 namespace Application.Order.Features.Queries.GetOrderDetails;
 
-public class GetOrderDetailsHandler(IOrderQueryService orderQueryService)
-    : IRequestHandler<GetOrderDetailsQuery, ServiceResult<OrderDto>>
+public class GetOrderDetailsHandler(
+    IOrderQueryService orderQueryService)
+    : IQueryHandler<GetOrderDetailsQuery, OrderDto>
 {
     public async Task<ServiceResult<OrderDto>> Handle(
         GetOrderDetailsQuery request,

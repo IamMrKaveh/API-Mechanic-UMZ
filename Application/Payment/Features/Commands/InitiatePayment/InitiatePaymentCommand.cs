@@ -4,4 +4,5 @@ namespace Application.Payment.Features.Commands.InitiatePayment;
 
 public record InitiatePaymentCommand(
     Guid OrderId,
-    string? GatewayName) : IRequest<ServiceResult<PaymentInitiationResult>>;
+    string? GatewayName)
+    : ICommand<PaymentInitiationResult>;

@@ -5,4 +5,5 @@ public record ChangePriceCommand(
     Guid VariantId,
     Guid UserId,
     decimal SellingPrice,
-    decimal OriginalPrice) : IRequest<ServiceResult>;
+    decimal OriginalPrice)
+    : ICommand;

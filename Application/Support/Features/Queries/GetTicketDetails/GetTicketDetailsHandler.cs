@@ -9,7 +9,7 @@ namespace Application.Support.Features.Queries.GetTicketDetails;
 public sealed class GetTicketDetailsHandler(
     ITicketRepository ticketRepository,
     ITicketQueryService ticketQueryService)
-        : IRequestHandler<GetTicketDetailsQuery, ServiceResult<TicketDto>>
+    : IQueryHandler<GetTicketDetailsQuery, TicketDto>
 {
     public async Task<ServiceResult<TicketDto>> Handle(
         GetTicketDetailsQuery request,

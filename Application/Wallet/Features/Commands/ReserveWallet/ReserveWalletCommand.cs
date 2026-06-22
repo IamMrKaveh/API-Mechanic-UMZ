@@ -4,4 +4,5 @@ public record ReserveWalletCommand(
     Guid UserId,
     decimal Amount,
     Guid WalletId,
-    DateTime? ExpiresAt = null) : IRequest<ServiceResult<Unit>>;
+    DateTime? ExpiresAt = null)
+    : ICommand<Unit>;

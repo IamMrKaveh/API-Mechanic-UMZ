@@ -8,7 +8,8 @@ namespace Application.Wallet.Features.Commands.ReserveWallet;
 public class ReserveWalletHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<ReserveWalletCommand, ServiceResult<Unit>>
+    IAuditService auditService)
+    : ICommandHandler<ReserveWalletCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
         ReserveWalletCommand request,

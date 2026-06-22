@@ -5,7 +5,8 @@ namespace Application.Review.Features.Commands.RejectReview;
 
 public class RejectReviewHandler(
     IReviewRepository reviewRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<RejectReviewCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<RejectReviewCommand>
 {
     public async Task<ServiceResult> Handle(RejectReviewCommand request, CancellationToken ct)
     {

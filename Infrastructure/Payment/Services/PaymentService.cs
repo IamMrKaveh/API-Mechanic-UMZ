@@ -1,19 +1,25 @@
 using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
+using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.Payment.Aggregates;
 using Domain.Payment.Interfaces;
 using Domain.User.ValueObjects;
+using Infrastructure.Payment.ZarinPal.Options;
 
 namespace Infrastructure.Payment.Services;
 
 public sealed class PaymentService(
     IPaymentTransactionRepository paymentRepository,
+    IOrderRepository orderRepository,
     IPaymentGatewayFactory gatewayFactory,
     IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider,
-    IAuditService auditService) : IPaymentService
+    IAuditService auditService,
+    IOptions<ZarinPalOptions> zarinPalOptions) : IPaymentService
 {
+    private readonly ZarinPalOptions _zarinPalOptions = zarinPalOptions.Value;
+
     public async Task<ServiceResult<PaymentInitiationResult>> InitiatePaymentAsync(
         OrderId orderId,
         Money amount,
@@ -21,26 +27,39 @@ public sealed class PaymentService(
         UserId userId,
         CancellationToken ct = default)
     {
-        var existingPending = await paymentRepository.GetActiveByOrderIdAsync(orderId, ct);
-        if (existingPending is not null)
+        var order = await orderRepository.FindByIdAsync(orderId, ct);
+        if (order is null)
+            return ServiceResult<PaymentInitiationResult>.NotFound("سفارش یافت نشد.");
+
+        if (order.IsPaid)
+            return ServiceResult<PaymentInitiationResult>.Conflict("سفارش قبلاً پرداخت شده است.");
+
+        var existing = await paymentRepository.GetActiveByOrderIdAsync(orderId, ct);
+        if (existing is not null)
         {
-            await auditService.LogWarningAsync(
-                $"[Payment] Duplicate initiation attempt for Order {orderId.Value}. Returning existing.", ct);
+            var gw = gatewayFactory.GetGateway();
+            var startPayBase = _zarinPalOptions.IsSandbox
+                ? _zarinPalOptions.SandboxStartPayBaseUrl.TrimEnd('/')
+                : _zarinPalOptions.ProductionStartPayBaseUrl.TrimEnd('/');
+            var url = $"{startPayBase}/{existing.Authority.Value}";
             return ServiceResult<PaymentInitiationResult>.Success(
-                new PaymentInitiationResult(existingPending.Authority.Value, string.Empty));
+                new PaymentInitiationResult(existing.Authority.Value, url));
         }
 
         var gateway = gatewayFactory.GetGateway();
+        var callbackUrl = _zarinPalOptions.CallbackUrl;
+
         var initiateResult = await gateway.InitiateAsync(
-            orderId, amount,
-            $"پرداخت سفارش {orderId.Value}",
-            $"/payment/callback",
+            orderId,
+            amount,
+            $"پرداخت سفارش {order.OrderNumber.Value}",
+            callbackUrl,
             ct: ct);
 
         if (!initiateResult.IsSuccess)
         {
             await auditService.LogErrorAsync(
-                $"[Payment] Gateway initiation failed for Order {orderId.Value}", ct);
+                $"[Payment] Gateway initiation failed for Order {orderId.Value}: {initiateResult.Error}", ct);
             return ServiceResult<PaymentInitiationResult>.Failure(
                 initiateResult.Error ?? "خطا در اتصال به درگاه پرداخت.");
         }
@@ -48,15 +67,20 @@ public sealed class PaymentService(
         var transaction = PaymentTransaction.Initiate(
             orderId,
             userId,
-            initiateResult.Value.Authority,
+            initiateResult.Value!.Authority,
             amount.Amount,
             gateway.GatewayName,
             dateTimeProvider.UtcNow);
 
         await paymentRepository.AddAsync(transaction, ct);
+
+        if (order.Status == OrderStatusValue.Created)
+            order.MoveToPending();
+
+        orderRepository.Update(order);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return ServiceResult<PaymentInitiationResult>.Success(initiateResult.Value);
+        return ServiceResult<PaymentInitiationResult>.Success(initiateResult.Value!);
     }
 
     public async Task<ServiceResult<PaymentVerificationResult>> VerifyPaymentAsync(
@@ -69,10 +93,19 @@ public sealed class PaymentService(
         if (transaction is null)
             return ServiceResult<PaymentVerificationResult>.NotFound("تراکنش پیدا نشد.");
 
+        var order = await orderRepository.FindByIdAsync(transaction.OrderId, ct);
+        if (order is null)
+            return ServiceResult<PaymentVerificationResult>.NotFound("سفارش یافت نشد.");
+
         if (transaction.IsSuccessful())
         {
-            await auditService.LogWarningAsync(
-                $"[Payment] Duplicate verify for authority {authority}. Already verified.", ct);
+            if (!order.IsPaid)
+            {
+                order.MarkAsPaid(transaction.Id);
+                orderRepository.Update(order);
+                await unitOfWork.SaveChangesAsync(ct);
+            }
+
             return ServiceResult<PaymentVerificationResult>.Success(
                 new PaymentVerificationResult(transaction.Id.Value, true, transaction.RefId, null, transaction.Fee));
         }
@@ -83,7 +116,7 @@ public sealed class PaymentService(
         var gateway = gatewayFactory.GetGateway(transaction.Gateway.Value);
         var verifyResult = await gateway.VerifyAsync(authority, transaction.Amount, ct);
 
-        if (!verifyResult.IsSuccess || !verifyResult.Value.IsVerified)
+        if (!verifyResult.IsSuccess || !verifyResult.Value!.IsVerified)
         {
             transaction.MarkAsFailed(now, verifyResult.Error ?? "تأیید ناموفق");
             paymentRepository.Update(transaction);
@@ -92,11 +125,16 @@ public sealed class PaymentService(
                 verifyResult.Error ?? "پرداخت تأیید نشد.");
         }
 
-        transaction.MarkAsSuccess(verifyResult.Value.RefId!.Value, now, verifyResult.Value.Fee);
+        transaction.MarkAsSuccess(verifyResult.Value!.RefId!.Value, now, verifyResult.Value!.Fee);
         paymentRepository.Update(transaction);
+
+        if (!order.IsPaid)
+            order.MarkAsPaid(transaction.Id);
+
+        orderRepository.Update(order);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return ServiceResult<PaymentVerificationResult>.Success(verifyResult.Value);
+        return ServiceResult<PaymentVerificationResult>.Success(verifyResult.Value!);
     }
 
     public async Task<ServiceResult> ProcessWebhookAsync(
@@ -113,7 +151,9 @@ public sealed class PaymentService(
         if (status.Equals("OK", StringComparison.OrdinalIgnoreCase))
         {
             var verifyResult = await VerifyPaymentAsync(authority, ct);
-            return verifyResult.IsSuccess ? ServiceResult.Success() : ServiceResult.Failure(verifyResult.Error ?? "خطا");
+            return verifyResult.IsSuccess
+                ? ServiceResult.Success()
+                : ServiceResult.Failure(verifyResult.Error ?? "خطا");
         }
 
         transaction.MarkAsFailed(now, $"Webhook status: {status}");

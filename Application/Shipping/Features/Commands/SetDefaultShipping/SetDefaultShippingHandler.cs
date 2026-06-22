@@ -5,7 +5,8 @@ namespace Application.Shipping.Features.Commands.SetDefaultShipping;
 
 public class SetDefaultShippingHandler(
     IShippingRepository shippingRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<SetDefaultShippingCommand, ServiceResult>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<SetDefaultShippingCommand>
 {
     public async Task<ServiceResult> Handle(SetDefaultShippingCommand request, CancellationToken ct)
     {

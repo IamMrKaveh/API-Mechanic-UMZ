@@ -6,7 +6,8 @@ namespace Application.Order.Features.Commands.CreateOrderStatus;
 
 public class CreateOrderStatusHandler(
     IOrderStatusRepository orderStatusRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<CreateOrderStatusCommand, ServiceResult<OrderStatusDto>>
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<CreateOrderStatusCommand, OrderStatusDto>
 {
     public async Task<ServiceResult<OrderStatusDto>> Handle(
         CreateOrderStatusCommand request,

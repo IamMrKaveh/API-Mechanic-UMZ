@@ -7,7 +7,8 @@ namespace Application.Wallet.Features.Commands.DebitWallet;
 public class DebitWalletHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<DebitWalletCommand, ServiceResult<Unit>>
+    IAuditService auditService)
+    : ICommandHandler<DebitWalletCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
         DebitWalletCommand request,

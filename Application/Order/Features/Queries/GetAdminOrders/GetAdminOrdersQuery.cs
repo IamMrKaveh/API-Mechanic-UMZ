@@ -8,4 +8,5 @@ public record GetAdminOrdersQuery(
     DateTime? ToDate,
     bool? IsPaid,
     int Page,
-    int PageSize) : IRequest<ServiceResult<PaginatedResult<AdminOrderDto>>>;
+    int PageSize)
+    : IPageQuery<AdminOrderDto>;

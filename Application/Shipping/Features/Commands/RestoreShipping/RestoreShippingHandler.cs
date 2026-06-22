@@ -1,4 +1,3 @@
-using Application.Common.Interfaces;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 using Domain.User.ValueObjects;
@@ -9,7 +8,8 @@ public class RestoreShippingHandler(
     IShippingRepository shippingMethodRepository,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IRequestHandler<RestoreShippingCommand, ServiceResult>
+    IAuditService auditService)
+    : ICommandHandler<RestoreShippingCommand>
 {
     public async Task<ServiceResult> Handle(
         RestoreShippingCommand request,

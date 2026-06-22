@@ -8,7 +8,8 @@ public sealed class ActivateProductHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService) : IRequestHandler<ActivateProductCommand, ServiceResult>
+    ICurrentUserService currentUserService)
+    : ICommandHandler<ActivateProductCommand>
 {
     public async Task<ServiceResult> Handle(
         ActivateProductCommand request,

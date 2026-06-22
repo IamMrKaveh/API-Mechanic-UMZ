@@ -3,8 +3,9 @@ using Domain.Product.ValueObjects;
 
 namespace Application.Review.Features.Queries.GetProductReviews;
 
-public class GetProductReviewsHandler(IReviewQueryService reviewQueryService)
-        : IRequestHandler<GetProductReviewsQuery, ServiceResult<PaginatedResult<ProductReviewDto>>>
+public class GetProductReviewsHandler(
+    IReviewQueryService reviewQueryService)
+    : IQueryHandler<GetProductReviewsQuery, PaginatedResult<ProductReviewDto>>
 {
     public async Task<ServiceResult<PaginatedResult<ProductReviewDto>>> Handle(
         GetProductReviewsQuery request, CancellationToken ct)
