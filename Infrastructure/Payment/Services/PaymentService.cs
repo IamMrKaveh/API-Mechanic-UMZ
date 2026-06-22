@@ -38,16 +38,16 @@ public sealed class PaymentService(
         if (existing is not null)
         {
             var gw = gatewayFactory.GetGateway();
-            var startPayBase = _zarinPalOptions.IsSandbox
+            var startPayBase = _zarinPalOptions.UseSandbox
                 ? _zarinPalOptions.SandboxStartPayBaseUrl.TrimEnd('/')
-                : _zarinPalOptions.ProductionStartPayBaseUrl.TrimEnd('/');
+                : _zarinPalOptions.StartPayBaseUrl.TrimEnd('/');
             var url = $"{startPayBase}/{existing.Authority.Value}";
             return ServiceResult<PaymentInitiationResult>.Success(
                 new PaymentInitiationResult(existing.Authority.Value, url));
         }
 
         var gateway = gatewayFactory.GetGateway();
-        var callbackUrl = _zarinPalOptions.CallbackUrl;
+        var callbackUrl = _zarinPalOptions.ApiBaseUrl;
 
         var initiateResult = await gateway.InitiateAsync(
             orderId,

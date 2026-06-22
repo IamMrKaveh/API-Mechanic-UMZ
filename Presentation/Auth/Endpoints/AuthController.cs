@@ -100,7 +100,7 @@ public class AuthController(
         if (result.IsSuccess)
             return StatusCode(StatusCodes.Status201Created, new ApiResponse<AuthResult>(result.Value, true, null));
 
-        return ToActionResult(result);
+        return ToCreatedActionResult(result);
     }
 
     [HttpDelete("session")]

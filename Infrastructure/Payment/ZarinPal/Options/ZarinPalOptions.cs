@@ -1,22 +1,22 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Infrastructure.Payment.ZarinPal.Options;
+﻿namespace Infrastructure.Payment.ZarinPal.Options;
 
 public sealed class ZarinPalOptions
 {
-    public const string SectionName = "Zarinpal";
+    public const string SectionName = "Payment:ZarinPal";
 
-    [Required(AllowEmptyStrings = false)]
-    [MinLength(8, ErrorMessage = "MerchantId معتبر نیست.")]
-    public string MerchantId { get; init; } = string.Empty;
+    public string MerchantId { get; set; } = string.Empty;
 
-    public bool IsSandbox { get; init; } = true;
+    public string? SandboxMerchantId { get; set; }
 
-    public string CallbackUrl { get; init; } = "/payment/callback";
+    public string ApiBaseUrl { get; set; } = "https://payment.zarinpal.com/";
 
-    public string ProductionApiBaseUrl { get; init; } = "https://api.zarinpal.com/pg/v4/payment/";
-    public string ProductionStartPayBaseUrl { get; init; } = "https://www.zarinpal.com/pg/StartPay/";
+    public string? SandboxApiBaseUrl { get; set; } = "https://sandbox.zarinpal.com/";
 
-    public string SandboxApiBaseUrl { get; init; } = "https://sandbox.zarinpal.com/pg/v4/payment/";
-    public string SandboxStartPayBaseUrl { get; init; } = "https://sandbox.zarinpal.com/pg/StartPay/";
+    public string StartPayBaseUrl { get; set; } = "https://payment.zarinpal.com/pg/StartPay";
+
+    public string? SandboxStartPayBaseUrl { get; set; } = "https://sandbox.zarinpal.com/pg/StartPay";
+
+    public bool UseSandbox { get; set; } = true;
+
+    public int TimeoutSeconds { get; set; } = 30;
 }

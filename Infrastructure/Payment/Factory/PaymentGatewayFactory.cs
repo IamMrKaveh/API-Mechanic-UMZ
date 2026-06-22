@@ -16,7 +16,7 @@ public sealed class PaymentGatewayFactory(
             ? GetDefaultGatewayName()
             : NormalizeGatewayName(gatewayName);
 
-        if (_zarinPalOptions.IsSandbox)
+        if (_zarinPalOptions.UseSandbox)
             requested = "ZarinpalSandbox";
 
         var gateway = _gateways.FirstOrDefault(g =>
@@ -32,7 +32,7 @@ public sealed class PaymentGatewayFactory(
         => _gateways.Select(g => g.GatewayName).ToList().AsReadOnly();
 
     private string GetDefaultGatewayName()
-        => _zarinPalOptions.IsSandbox ? "ZarinpalSandbox" : "Zarinpal";
+        => _zarinPalOptions.UseSandbox ? "ZarinpalSandbox" : "Zarinpal";
 
     private static string NormalizeGatewayName(string name)
     {

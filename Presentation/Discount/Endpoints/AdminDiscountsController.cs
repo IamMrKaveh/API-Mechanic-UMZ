@@ -66,7 +66,7 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
     {
         var command = Mapper.Map<CreateDiscountCommand>(request);
         var result = await Mediator.Send(command);
-        return ToActionResult(result);
+        return ToCreatedActionResult(result);
     }
 
     [HttpPut("{id:guid}")]

@@ -48,7 +48,7 @@ public sealed class AdminCategoryController(IMediator mediator, IMapper mapper) 
             request.SortOrder);
 
         var result = await Mediator.Send(command);
-        return ToActionResult(result);
+        return ToCreatedActionResult(result);
     }
 
     [HttpPut("{id:guid}")]

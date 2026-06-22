@@ -1,11 +1,8 @@
-using System.Net.Http.Json;
-using Application.Common;
 using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Payment.ZarinPal.Options;
-using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Payment.ZarinPal;
 
@@ -29,8 +26,8 @@ public sealed class ZarinPalPaymentGateway(
     {
         try
         {
-            var apiBase = _options.ProductionApiBaseUrl.TrimEnd('/');
-            var startPayBase = _options.ProductionStartPayBaseUrl.TrimEnd('/');
+            var apiBase = _options.ApiBaseUrl.TrimEnd('/');
+            var startPayBase = _options.StartPayBaseUrl.TrimEnd('/');
 
             var request = new
             {
@@ -75,7 +72,7 @@ public sealed class ZarinPalPaymentGateway(
     {
         try
         {
-            var apiBase = _options.ProductionApiBaseUrl.TrimEnd('/');
+            var apiBase = _options.ApiBaseUrl.TrimEnd('/');
             var request = new
             {
                 merchant_id = _options.MerchantId,
