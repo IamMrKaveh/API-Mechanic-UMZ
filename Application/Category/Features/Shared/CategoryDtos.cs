@@ -1,5 +1,18 @@
 namespace Application.Category.Features.Shared;
 
+public record CategoryDto
+{
+    public Guid Id { get; init; }
+    public string Name { get; init; } = null!;
+    public string Slug { get; init; } = null!;
+    public string? Description { get; init; }
+    public string? IconUrl { get; init; }
+    public bool IsActive { get; init; }
+    public int SortOrder { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
+}
+
 public record CategoryDetailDto
 {
     public Guid Id { get; init; }
@@ -31,18 +44,6 @@ public record CategoryListItemDto
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
     public string? RowVersion { get; init; }
-}
-
-public record CategoryDto
-{
-    public Guid Id { get; init; }
-    public string Name { get; init; } = null!;
-    public string Slug { get; init; } = null!;
-    public string? Description { get; init; }
-    public bool IsActive { get; init; }
-    public int SortOrder { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime UpdatedAt { get; init; }
 }
 
 public record CategoryTreeDto

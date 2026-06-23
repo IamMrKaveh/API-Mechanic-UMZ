@@ -1,5 +1,6 @@
 using Application.Category.Contracts;
 using Application.Category.Features.Shared;
+using Application.Common.Interfaces;
 using Domain.Category.ValueObjects;
 
 namespace Infrastructure.Category.QueryServices;
@@ -9,6 +10,7 @@ public sealed class CategoryQueryService(
     IUrlResolverService urlResolver) : ICategoryQueryService
 {
     private const string CategoryEntityType = "Category";
+    private const string BrandEntityType = "Brand";
 
     public async Task<CategoryDetailDto?> GetCategoryDetailAsync(
            CategoryId categoryId,
@@ -159,18 +161,46 @@ public sealed class CategoryQueryService(
 
         if (result is null) return null;
 
-        var brands = await context.Brands
+        var rawBrands = await context.Brands
             .AsNoTracking()
             .Where(b => b.CategoryId == categoryId && !b.IsDeleted)
-            .Select(b => new BrandInCategoryDto
+            .Select(b => new
             {
                 Id = b.Id.Value,
                 Name = b.Name.Value,
-                Slug = b.Slug.Value,
-                LogoPath = b.LogoPath,
-                IsActive = b.IsActive
+                Slug = b.Slug != null ? b.Slug.Value : null,
+                b.LogoPath,
+                b.IsActive
             })
             .ToListAsync(ct);
+
+        var brandIdValues = rawBrands.Select(b => b.Id).ToList();
+
+        var brandLogoPaths = await context.Medias
+            .AsNoTracking()
+            .Where(m => m.EntityType == BrandEntityType
+                        && brandIdValues.Contains(m.EntityId)
+                        && m.IsPrimary
+                        && m.IsActive)
+            .Select(m => new { m.EntityId, Path = m.FilePath })
+            .ToDictionaryAsync(m => m.EntityId, m => m.Path, ct);
+
+        var brands = rawBrands.Select(b =>
+        {
+            var mediaPath = brandLogoPaths.TryGetValue(b.Id, out var p) ? p : null;
+            var resolvedLogo = !string.IsNullOrWhiteSpace(mediaPath)
+                ? urlResolver.ResolveMediaUrl(mediaPath)
+                : urlResolver.ResolveMediaUrl(b.LogoPath ?? string.Empty);
+
+            return new BrandInCategoryDto
+            {
+                Id = b.Id,
+                Name = b.Name,
+                Slug = b.Slug,
+                LogoPath = resolvedLogo,
+                IsActive = b.IsActive
+            };
+        }).ToList();
 
         var iconPath = await context.Medias
             .AsNoTracking()
@@ -267,20 +297,41 @@ public sealed class CategoryQueryService(
             .Take(pageSize)
             .ToListAsync(ct);
 
-        var dtos = items.Select(MapToDto).ToList();
+        var categoryIds = items.Select(c => c.Id.Value).ToList();
+
+        var iconPaths = await context.Medias
+            .AsNoTracking()
+            .Where(m => m.EntityType == CategoryEntityType
+                        && categoryIds.Contains(m.EntityId)
+                        && m.IsPrimary
+                        && m.IsActive)
+            .Select(m => new { m.EntityId, Path = m.Path.Value })
+            .ToDictionaryAsync(m => m.EntityId, m => m.Path, ct);
+
+        var dtos = items.Select(category => MapToDto(category, iconPaths, urlResolver)).ToList();
         return PaginatedResult<CategoryDto>.Create(dtos, total, page, pageSize);
     }
 
-    private static CategoryDto MapToDto(Domain.Category.Aggregates.Category category)
-        => new()
+    private static CategoryDto MapToDto(
+        Domain.Category.Aggregates.Category category,
+        IReadOnlyDictionary<Guid, string> iconPaths,
+        IUrlResolverService resolver)
+    {
+        var iconUrl = iconPaths.TryGetValue(category.Id.Value, out var path) && !string.IsNullOrWhiteSpace(path)
+            ? resolver.ResolveMediaUrl(path)
+            : null;
+
+        return new CategoryDto
         {
             Id = category.Id.Value,
             Name = category.Name.Value,
             Slug = category.Slug.Value,
             Description = category.Description,
+            IconUrl = iconUrl,
             IsActive = category.IsActive,
             SortOrder = category.SortOrder,
             CreatedAt = category.CreatedAt,
             UpdatedAt = category.UpdatedAt
         };
+    }
 }
