@@ -177,7 +177,7 @@ public sealed class OrderQueryService(DBContext context) : IOrderQueryService
     {
         return await context.Orders
             .AsNoTracking()
-            .Where(o => o.Id == orderId && o.UserId.Value == userId.Value)
+            .Where(o => o.Id == orderId && o.UserId == userId)
             .Select(o => new OrderDto
             {
                 Id = o.Id.Value,

@@ -13,9 +13,6 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .Enrich.FromLogContext()
     .Enrich.WithExceptionDetails()
-    .WriteTo.Console(
-        outputTemplate:
-        "[{Level:u3}] {Message:lj}{NewLine}{Exception}")
     .CreateBootstrapLogger();
 
 try
@@ -42,15 +39,11 @@ try
             .Enrich.WithProcessName()
             .Enrich.WithThreadId()
             .Enrich.WithExceptionDetails()
-            .WriteTo.Console(
-                outputTemplate:
-                "[{Level:u3}] " +
-                "{SourceContext} {Message:lj}{NewLine}{Exception}")
             .WriteTo.File(
                 path: Path.Combine(logsDirectory, "log-.txt"),
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 14,
-                fileSizeLimitBytes: 50 * 1024 * 1024,
+                fileSizeLimitBytes: 10 * 1024 * 1024,
                 rollOnFileSizeLimit: true,
                 shared: true,
                 outputTemplate:
@@ -62,7 +55,7 @@ try
                 restrictedToMinimumLevel: LogEventLevel.Warning,
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
-                fileSizeLimitBytes: 50 * 1024 * 1024,
+                fileSizeLimitBytes: 10 * 1024 * 1024,
                 rollOnFileSizeLimit: true,
                 shared: true));
 

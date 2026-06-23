@@ -1,5 +1,6 @@
 ﻿using Application.Brand.Contracts;
 using Application.Brand.Features.Shared;
+using Application.Common.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 
@@ -9,6 +10,7 @@ public sealed class BrandQueryService(
     DBContext context,
     IUrlResolverService urlResolver) : IBrandQueryService
 {
+    private const string BrandEntityType = "Brand";
     private const string ConcurrencyTokenName = "xmin";
 
     public async Task<BrandDetailDto?> GetBrandDetailAsync(
@@ -47,7 +49,11 @@ public sealed class BrandQueryService(
             .CountAsync(p => p.BrandId == brandId && p.IsActive, ct);
 
         var mediaPath = await context.Medias
-            .Where(m => m.EntityType == "Brand" && m.IsPrimary && m.IsActive)
+            .AsNoTracking()
+            .Where(m => m.EntityType == BrandEntityType
+                        && m.EntityId == brand.Id.Value
+                        && m.IsPrimary
+                        && m.IsActive)
             .Select(m => m.FilePath)
             .FirstOrDefaultAsync(ct);
 
@@ -57,7 +63,9 @@ public sealed class BrandQueryService(
             Name = brand.Name,
             Slug = brand.Slug,
             Description = brand.Description,
-            LogoPath = mediaPath is not null ? urlResolver.ResolveMediaUrl(mediaPath) : brand.LogoPath,
+            LogoPath = !string.IsNullOrWhiteSpace(mediaPath)
+                ? urlResolver.ResolveMediaUrl(mediaPath)
+                : urlResolver.ResolveMediaUrl(brand.LogoPath ?? string.Empty),
             CategoryId = brand.CategoryId,
             CategoryName = category ?? string.Empty,
             IsActive = brand.IsActive,
@@ -118,22 +126,41 @@ public sealed class BrandQueryService(
             .ToDictionaryAsync(c => c.Id, c => c.Name, ct);
 
         var brandIds = brands.Select(b => b.Id).ToList();
+        var brandIdValues = brandIds.Select(id => id.Value).ToList();
+
         var productCounts = await context.Products
             .Where(p => brandIds.Contains(p.BrandId!))
             .GroupBy(p => p.BrandId)
             .Select(g => new { BrandId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(g => g.BrandId!, g => g.Count, ct);
 
-        var items = brands.Select(b => new BrandListItemDto
+        var logoPaths = await context.Medias
+            .AsNoTracking()
+            .Where(m => m.EntityType == BrandEntityType
+                        && brandIdValues.Contains(m.EntityId)
+                        && m.IsPrimary
+                        && m.IsActive)
+            .Select(m => new { m.EntityId, Path = m.FilePath })
+            .ToDictionaryAsync(m => m.EntityId, m => m.Path, ct);
+
+        var items = brands.Select(b =>
         {
-            Id = b.Id.Value,
-            Name = b.Name.Value,
-            Slug = b.Slug?.Value,
-            CategoryId = b.CategoryId,
-            CategoryName = categoryNames.TryGetValue(b.CategoryId, out var name) ? name : string.Empty,
-            IsActive = b.IsActive,
-            ProductCount = productCounts.TryGetValue(b.Id, out var count) ? count : 0,
-            LogoPath = b.LogoPath
+            var mediaPath = logoPaths.TryGetValue(b.Id.Value, out var p) ? p : null;
+            var resolvedLogo = !string.IsNullOrWhiteSpace(mediaPath)
+                ? urlResolver.ResolveMediaUrl(mediaPath)
+                : urlResolver.ResolveMediaUrl(b.LogoPath ?? string.Empty);
+
+            return new BrandListItemDto
+            {
+                Id = b.Id.Value,
+                Name = b.Name.Value,
+                Slug = b.Slug?.Value,
+                CategoryId = b.CategoryId,
+                CategoryName = categoryNames.TryGetValue(b.CategoryId, out var name) ? name : string.Empty,
+                IsActive = b.IsActive,
+                ProductCount = productCounts.TryGetValue(b.Id, out var count) ? count : 0,
+                LogoPath = resolvedLogo
+            };
         }).ToList();
 
         return new PaginatedResult<BrandListItemDto>
@@ -169,16 +196,35 @@ public sealed class BrandQueryService(
             })
             .ToListAsync(ct);
 
-        return projected.Select(b => new BrandListItemDto
+        var brandIdValues = projected.Select(b => b.Id.Value).ToList();
+
+        var logoPaths = await context.Medias
+            .AsNoTracking()
+            .Where(m => m.EntityType == BrandEntityType
+                        && brandIdValues.Contains(m.EntityId)
+                        && m.IsPrimary
+                        && m.IsActive)
+            .Select(m => new { m.EntityId, Path = m.FilePath })
+            .ToDictionaryAsync(m => m.EntityId, m => m.Path, ct);
+
+        return projected.Select(b =>
         {
-            Id = b.Id.Value,
-            Name = b.Name,
-            Slug = b.Slug,
-            CategoryId = b.CategoryId,
-            CategoryName = string.Empty,
-            IsActive = b.IsActive,
-            ProductCount = 0,
-            LogoPath = b.LogoPath
+            var mediaPath = logoPaths.TryGetValue(b.Id.Value, out var p) ? p : null;
+            var resolvedLogo = !string.IsNullOrWhiteSpace(mediaPath)
+                ? urlResolver.ResolveMediaUrl(mediaPath)
+                : urlResolver.ResolveMediaUrl(b.LogoPath ?? string.Empty);
+
+            return new BrandListItemDto
+            {
+                Id = b.Id.Value,
+                Name = b.Name,
+                Slug = b.Slug,
+                CategoryId = b.CategoryId,
+                CategoryName = string.Empty,
+                IsActive = b.IsActive,
+                ProductCount = 0,
+                LogoPath = resolvedLogo
+            };
         }).ToList();
     }
 }
