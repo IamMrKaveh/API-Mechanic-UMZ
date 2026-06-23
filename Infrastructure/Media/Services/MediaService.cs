@@ -1,7 +1,9 @@
+using Application.Media.Contracts;
 using Application.Media.Features.Shared;
 using Domain.Media.Interfaces;
 using Domain.Media.Services;
 using Domain.Media.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Infrastructure.Media.Services;
 
@@ -22,12 +24,13 @@ public sealed class MediaService(
         CancellationToken ct = default)
     {
         var contentType = filePath.GetContentType();
+        var folder = NormalizeFolder(entityType);
 
         var storedPath = await storageService.UploadAsync(
             fileStream,
             filePath.FileName,
             contentType,
-            null,
+            folder,
             ct);
 
         var existing = await mediaRepository.GetByEntityAsync(entityType, entityId, ct);
@@ -71,6 +74,7 @@ public sealed class MediaService(
 
     public async Task<ServiceResult> DeleteAsync(
         MediaId mediaId,
+        UserId? deletedBy = null,
         CancellationToken ct = default)
     {
         var media = await mediaRepository.GetByIdAsync(mediaId, ct);
@@ -81,7 +85,7 @@ public sealed class MediaService(
         var entityType = media.EntityType;
         var entityId = media.EntityId;
 
-        media.RequestDeletion();
+        media.RequestDeletion(deletedBy);
         mediaRepository.Update(media);
 
         if (wasPrimary)
@@ -98,6 +102,12 @@ public sealed class MediaService(
         }
 
         await unitOfWork.SaveChangesAsync(ct);
+
+        await auditService.LogSystemEventAsync(
+            "MediaDeletionRequested",
+            $"Media {mediaId.Value} marked for deletion by {(deletedBy?.Value.ToString() ?? "system")}",
+            ct);
+
         return ServiceResult.Success();
     }
 
@@ -136,7 +146,7 @@ public sealed class MediaService(
         var sortOrder = 0;
         foreach (var id in orderedIds)
         {
-            var media = medias.FirstOrDefault(m => m.EntityId == id);
+            var media = medias.FirstOrDefault(m => m.Id.Value == id);
             if (media is null) continue;
 
             media.UpdateSortOrder(sortOrder++);
@@ -145,5 +155,13 @@ public sealed class MediaService(
 
         await unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
+    }
+
+    private static string? NormalizeFolder(string entityType)
+    {
+        if (string.IsNullOrWhiteSpace(entityType)) return null;
+
+        var trimmed = entityType.Trim().ToLowerInvariant().Replace('\\', '/').Trim('/');
+        return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
     }
 }

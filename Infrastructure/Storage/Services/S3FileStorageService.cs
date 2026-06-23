@@ -1,14 +1,15 @@
 ﻿using Amazon.S3.Model;
+using Application.Media.Contracts;
 using Infrastructure.Storage.Options;
 
 namespace Infrastructure.Storage.Services;
 
 public sealed class S3FileStorageService(
     IAmazonS3 s3Client,
-    IOptions<S3Options> options,
+    IOptions<StorageOptions> options,
     IAuditService auditService) : IStorageService
 {
-    private readonly S3Options _options = options.Value;
+    private readonly StorageOptions _options = options.Value;
 
     public async Task<string> UploadAsync(
         Stream fileStream,
@@ -43,21 +44,21 @@ public sealed class S3FileStorageService(
         catch (AmazonS3Exception ex)
         {
             await auditService.LogErrorAsync(
-                $"S3 upload failed for '{fileName}' (key='{key}', status={(int)ex.StatusCode}, code='{ex.ErrorCode}'): {ex.Message}",
+                $"Storage upload failed for '{fileName}' (key='{key}', status={(int)ex.StatusCode}, code='{ex.ErrorCode}'): {ex.Message}",
                 ct);
             throw;
         }
         catch (Exception ex)
         {
             await auditService.LogErrorAsync(
-                $"S3 upload failed for '{fileName}' (key='{key}'): {ex.Message}",
+                $"Storage upload failed for '{fileName}' (key='{key}'): {ex.Message}",
                 ct);
             throw;
         }
 
         await auditService.LogSystemEventAsync(
             "FileUploaded",
-            $"فایل '{fileName}' در S3 آپلود شد.",
+            $"فایل '{fileName}' در فضای ذخیره‌سازی '{_options.Provider}' آپلود شد.",
             ct);
 
         return key;
@@ -72,7 +73,7 @@ public sealed class S3FileStorageService(
         }
         catch (Exception ex)
         {
-            await auditService.LogErrorAsync($"S3 delete failed for '{filePath}': {ex.Message}", ct);
+            await auditService.LogErrorAsync($"Storage delete failed for '{filePath}': {ex.Message}", ct);
             return false;
         }
     }
@@ -91,7 +92,10 @@ public sealed class S3FileStorageService(
     }
 
     public string GetPublicUrl(string filePath)
-        => $"{_options.BaseUrl.TrimEnd('/')}/{filePath.TrimStart('/')}";
+    {
+        if (string.IsNullOrWhiteSpace(filePath)) return string.Empty;
+        return $"{_options.BaseUrl.TrimEnd('/')}/{filePath.TrimStart('/')}";
+    }
 
     private static async Task<MemoryStream> BufferAsync(Stream source, CancellationToken ct)
     {

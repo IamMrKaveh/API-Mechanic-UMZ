@@ -41,9 +41,9 @@ public class SendOtpHandler(
 
         await unitOfWork.SaveChangesAsync(ct);
 
-        var sendResult = await otpService.SendOtpAsync(phoneNumber, otpCode, request.Purpose, ct);
-        if (sendResult.IsFailed)
-            return ServiceResult.Failure(sendResult.Error);
+        //var sendResult = await otpService.SendOtpAsync(phoneNumber, otpCode, request.Purpose, ct);
+        //if (sendResult.IsFailed)
+        //    return ServiceResult.Failure(sendResult.Error);
 
         await auditService.LogSecurityEventAsync(
             "SendOtp",

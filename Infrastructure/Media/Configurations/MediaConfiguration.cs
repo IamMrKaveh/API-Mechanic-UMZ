@@ -43,7 +43,11 @@ public sealed class MediaConfiguration : IEntityTypeConfiguration<Domain.Media.A
         builder.Property(e => e.IsActive).IsRequired();
         builder.Property(e => e.AltText).HasMaxLength(500);
         builder.Property(e => e.CreatedAt).IsRequired();
+        builder.Property(e => e.UpdatedAt);
+
         builder.Property(e => e.IsDeleted).IsRequired();
+        builder.Property(e => e.DeletedAt);
+        builder.Property(e => e.DeletedBy);
 
         builder.Ignore(e => e.FilePath);
         builder.Ignore(e => e.FileName);
@@ -51,6 +55,8 @@ public sealed class MediaConfiguration : IEntityTypeConfiguration<Domain.Media.A
         builder.Ignore(e => e.FileSize);
 
         builder.HasIndex(e => new { e.EntityType, e.EntityId });
+        builder.HasIndex(e => new { e.IsDeleted, e.DeletedAt });
+
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

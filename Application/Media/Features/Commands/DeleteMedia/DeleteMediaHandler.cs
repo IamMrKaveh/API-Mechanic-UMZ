@@ -1,3 +1,5 @@
+using Application.Common.Interfaces;
+using Application.Media.Contracts;
 using Domain.Media.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -11,8 +13,11 @@ public class DeleteMediaHandler(
     public Task<ServiceResult> Handle(DeleteMediaCommand request, CancellationToken ct)
     {
         var mediaId = MediaId.From(request.MediaId);
-        var userId = UserId.From(currentUserService.UserId.Value);
 
-        return mediaService.DeleteAsync(mediaId, ct);
+        UserId? deletedBy = currentUserService.UserId.HasValue
+            ? UserId.From(currentUserService.UserId.Value)
+            : null;
+
+        return mediaService.DeleteAsync(mediaId, deletedBy, ct);
     }
 }
