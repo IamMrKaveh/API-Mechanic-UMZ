@@ -51,6 +51,17 @@ public sealed class MediaRepository(DBContext context) : IMediaRepository
             .FirstOrDefaultAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Domain.Media.Aggregates.Media>> GetByPathAsync(
+        string filePath,
+        CancellationToken ct = default)
+    {
+        var results = await context.Medias
+            .Where(m => m.Path.Value == filePath)
+            .ToListAsync(ct);
+
+        return results.AsReadOnly();
+    }
+
     public async Task<IReadOnlySet<string>> GetAllFilePathsAsync(
         CancellationToken ct = default)
     {

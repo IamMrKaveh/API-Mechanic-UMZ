@@ -124,17 +124,27 @@ public class Media : AggregateRoot<MediaId>, IAuditable, IActivatable, ISoftDele
 
     public void RequestDeletion(UserId? deletedBy = null)
     {
+        if (IsDeleted) return;
+
+        var now = DateTime.UtcNow;
+
         IsActive = false;
         IsPrimary = false;
-        UpdatedAt = DateTime.UtcNow;
+        IsDeleted = true;
+        DeletedAt = now;
+        DeletedBy = deletedBy?.Value;
+        UpdatedAt = now;
 
         RaiseDomainEvent(new MediaDeletedEvent(Id, EntityType, EntityId, deletedBy));
     }
 
-    public bool CanBeSetAsPrimary() => IsActive && !IsPrimary;
+    public bool CanBeSetAsPrimary() => IsActive && !IsPrimary && !IsDeleted;
 
     private void EnsureActive()
     {
+        if (IsDeleted)
+            throw new DomainException("رسانه حذف شده است.");
+
         if (!IsActive)
             throw new DomainException("رسانه غیرفعال است.");
     }

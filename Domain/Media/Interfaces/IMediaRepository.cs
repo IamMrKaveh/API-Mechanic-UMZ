@@ -24,5 +24,9 @@ public interface IMediaRepository
         Guid entityId,
         CancellationToken ct = default);
 
+    Task<IReadOnlyList<Aggregates.Media>> GetByPathAsync(
+        string filePath,
+        CancellationToken ct = default);
+
     Task<IReadOnlySet<string>> GetAllFilePathsAsync(CancellationToken ct = default);
 }

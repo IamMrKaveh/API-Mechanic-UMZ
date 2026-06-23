@@ -1,3 +1,5 @@
+using Application.Common.Interfaces;
+using Application.Media.Contracts;
 using Application.Media.Features.Shared;
 using Domain.Media.ValueObjects;
 
@@ -5,7 +7,7 @@ namespace Infrastructure.Media.QueryServices;
 
 public sealed class MediaQueryService(
     DBContext context,
-    IStorageService storageService) : IMediaQueryService
+    IUrlResolverService urlResolver) : IMediaQueryService
 {
     public async Task<MediaDto?> GetByIdAsync(
         MediaId id,
@@ -88,7 +90,7 @@ public sealed class MediaQueryService(
             IsPrimary = media.IsPrimary,
             AltText = media.AltText,
             IsActive = media.IsActive,
-            PublicUrl = storageService.GetPublicUrl(media.Path.Value),
+            PublicUrl = urlResolver.ResolveMediaUrl(media.Path.Value),
             CreatedAt = media.CreatedAt
         };
     }

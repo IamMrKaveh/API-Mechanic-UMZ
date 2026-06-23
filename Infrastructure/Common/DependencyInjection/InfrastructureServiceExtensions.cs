@@ -323,30 +323,53 @@ public static class InfrastructureServiceExtensions
     {
         services.AddScoped<IMediaService, MediaService>();
 
-        services.Configure<S3Options>(
-            configuration.GetSection(S3Options.SectionName));
+        var storageSection = configuration.GetSection(StorageOptions.SectionName);
+        services.Configure<StorageOptions>(storageSection);
 
-        services.AddSingleton<IAmazonS3>(sp =>
+        var storageOptions = storageSection.Get<StorageOptions>()
+            ?? throw new InvalidOperationException(
+                $"Storage configuration section '{StorageOptions.SectionName}' is missing.");
+
+        if (string.IsNullOrWhiteSpace(storageOptions.Provider))
+            throw new InvalidOperationException("Storage provider is not configured.");
+
+        if (string.IsNullOrWhiteSpace(storageOptions.BucketName))
+            throw new InvalidOperationException("Storage bucket name is not configured.");
+
+        var provider = storageOptions.Provider.Trim().ToLowerInvariant();
+
+        switch (provider)
         {
-            var options = sp.GetRequiredService<IOptions<S3Options>>().Value;
+            case "s3":
+            case "aws":
+            case "arvan":
+            case "liara":
+            case "minio":
+                services.AddSingleton<IAmazonS3>(sp =>
+                {
+                    var opts = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
 
-            var config = new AmazonS3Config
-            {
-                ServiceURL = options.Endpoint,
-                ForcePathStyle = true,
-                AuthenticationRegion = options.Region,
-                UseHttp = false,
-                RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
-                ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED
-            };
+                    var config = new AmazonS3Config
+                    {
+                        ServiceURL = opts.Endpoint,
+                        ForcePathStyle = opts.ForcePathStyle,
+                        AuthenticationRegion = opts.Region,
+                        UseHttp = opts.UseHttp,
+                        RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
+                        ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED
+                    };
 
-            return new AmazonS3Client(
-                options.AccessKey,
-                options.SecretKey,
-                config);
-        });
+                    return new AmazonS3Client(opts.AccessKey, opts.SecretKey, config);
+                });
 
-        services.AddScoped<IStorageService, S3FileStorageService>();
+                services.AddScoped<IStorageService, S3FileStorageService>();
+                break;
+
+            default:
+                throw new NotSupportedException(
+                    $"Storage provider '{storageOptions.Provider}' is not supported. " +
+                    $"Supported providers: S3, AWS, Arvan, Liara, MinIO.");
+        }
     }
 
     private static void AddCommunicationServices(this IServiceCollection services, IConfiguration configuration)

@@ -1,5 +1,6 @@
 using Application.Media.Features.Shared;
 using Domain.Media.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Application.Media.Contracts;
 
@@ -17,6 +18,7 @@ public interface IMediaService
 
     Task<ServiceResult> DeleteAsync(
         MediaId mediaId,
+        UserId? deletedBy = null,
         CancellationToken ct = default);
 
     Task<ServiceResult> SetAsPrimaryAsync(
