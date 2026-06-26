@@ -408,17 +408,37 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IPaymentGatewayFactory, PaymentGatewayFactory>();
         services.AddScoped<IPaymentService, PaymentService>();
 
-        services.AddScoped<IPaymentGateway, ZarinPalSandboxGateway>();
-        services.AddScoped<IPaymentGateway, ZarinPalPaymentGateway>();
-
-        services.AddHttpClient<ZarinPalPaymentGateway>(client =>
+        services.AddHttpClient<ZarinPalPaymentGateway>((sp, client) =>
         {
-            client.Timeout = TimeSpan.FromSeconds(15);
+            var opts = sp.GetRequiredService<IOptions<ZarinPalOptions>>().Value;
+            var baseUrl = string.IsNullOrWhiteSpace(opts.ApiBaseUrl)
+                ? "https://payment.zarinpal.com/"
+                : opts.ApiBaseUrl;
+            if (!baseUrl.EndsWith('/')) baseUrl += "/";
+            client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
+            client.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds > 0 ? opts.TimeoutSeconds : 30);
         })
         .AddTransientHttpErrorPolicy(policy =>
             policy.WaitAndRetryAsync(2, retryAttempt => TimeSpan.FromSeconds(retryAttempt)))
         .AddTransientHttpErrorPolicy(policy =>
             policy.CircuitBreakerAsync(5, TimeSpan.FromSeconds(60)));
+
+        services.AddHttpClient("ZarinPalSandbox", (sp, client) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<ZarinPalOptions>>().Value;
+            var baseUrl = string.IsNullOrWhiteSpace(opts.SandboxApiBaseUrl)
+                ? "https://sandbox.zarinpal.com/"
+                : opts.SandboxApiBaseUrl!;
+            if (!baseUrl.EndsWith('/')) baseUrl += "/";
+            client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
+            client.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds > 0 ? opts.TimeoutSeconds : 30);
+        })
+        .AddTransientHttpErrorPolicy(policy =>
+            policy.WaitAndRetryAsync(2, retryAttempt => TimeSpan.FromSeconds(retryAttempt)));
+
+        services.AddScoped<ZarinPalSandboxGateway>();
+        services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<ZarinPalSandboxGateway>());
+        services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<ZarinPalPaymentGateway>());
     }
 
     private static void AddSearchServices(this IServiceCollection services, IConfiguration configuration)

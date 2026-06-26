@@ -8,4 +8,5 @@ public interface ICurrentUserService
     string? IpAddress { get; }
     string? UserAgent { get; }
     string? GuestToken { get; }
+    string FrontendBaseUrl { get; }
 }

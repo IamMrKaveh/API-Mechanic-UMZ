@@ -19,7 +19,7 @@ public sealed class PaymentTransactionConfiguration : IEntityTypeConfiguration<P
             .HasMaxLength(100);
 
         builder.Property(e => e.Amount)
-            .HasConversion(v => v.Amount, v => Money.FromDecimal(v, "IRR"))
+            .HasConversion(v => v.Amount, v => Money.FromDecimal(v, "IRT"))
             .HasColumnType("decimal(18,2)");
 
         builder.Property(e => e.Gateway)

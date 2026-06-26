@@ -3,9 +3,12 @@ using SharedKernel.Constants;
 
 namespace Presentation.Common.Services;
 
-public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
+public class CurrentUserService(
+    IHttpContextAccessor httpContextAccessor,
+    IConfiguration configuration) : ICurrentUserService
 {
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly IConfiguration _configuration = configuration;
 
     private ClaimsPrincipal? User => _httpContextAccessor.HttpContext?.User;
 
@@ -40,4 +43,23 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
 
     public string? GuestToken =>
         _httpContextAccessor.HttpContext?.Request.Headers["X-Guest-Token"].FirstOrDefault();
+
+    public string FrontendBaseUrl
+    {
+        get
+        {
+            var origin = _httpContextAccessor.HttpContext?.Request.Headers.Origin.FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(origin))
+            {
+                var allowedOrigins = _configuration
+                    .GetSection("Security:AllowedOrigins")
+                    .Get<string[]>() ?? [];
+
+                if (allowedOrigins.Contains(origin.TrimEnd('/'), StringComparer.OrdinalIgnoreCase))
+                    return origin.TrimEnd('/');
+            }
+
+            return (_configuration["FrontendUrls:BaseUrl"] ?? "https://ledka-co.ir").TrimEnd('/');
+        }
+    }
 }

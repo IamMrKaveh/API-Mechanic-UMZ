@@ -16,9 +16,11 @@ public sealed class PaymentService(
     IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider,
     IAuditService auditService,
-    IOptions<ZarinPalOptions> zarinPalOptions) : IPaymentService
+    IOptions<ZarinPalOptions> zarinPalOptions,
+    ICurrentUserService currentUserService) : IPaymentService
 {
     private readonly ZarinPalOptions _zarinPalOptions = zarinPalOptions.Value;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     public async Task<ServiceResult<PaymentInitiationResult>> InitiatePaymentAsync(
         OrderId orderId,
@@ -39,7 +41,7 @@ public sealed class PaymentService(
         {
             var gw = gatewayFactory.GetGateway();
             var startPayBase = _zarinPalOptions.UseSandbox
-                ? _zarinPalOptions.SandboxStartPayBaseUrl.TrimEnd('/')
+                ? (_zarinPalOptions.SandboxStartPayBaseUrl ?? string.Empty).TrimEnd('/')
                 : _zarinPalOptions.StartPayBaseUrl.TrimEnd('/');
             var url = $"{startPayBase}/{existing.Authority.Value}";
             return ServiceResult<PaymentInitiationResult>.Success(
@@ -47,7 +49,7 @@ public sealed class PaymentService(
         }
 
         var gateway = gatewayFactory.GetGateway();
-        var callbackUrl = _zarinPalOptions.ApiBaseUrl;
+        var callbackUrl = $"{_currentUserService.FrontendBaseUrl}/payment/callback";
 
         var initiateResult = await gateway.InitiateAsync(
             orderId,
@@ -107,7 +109,12 @@ public sealed class PaymentService(
             }
 
             return ServiceResult<PaymentVerificationResult>.Success(
-                new PaymentVerificationResult(transaction.Id.Value, true, transaction.RefId, null, transaction.Fee));
+                new PaymentVerificationResult(
+                    transaction.Id.Value,
+                    true,
+                    transaction.RefId,
+                    null,
+                    transaction.Fee));
         }
 
         if (!transaction.CanBeVerified(now))
@@ -116,16 +123,32 @@ public sealed class PaymentService(
         var gateway = gatewayFactory.GetGateway(transaction.Gateway.Value);
         var verifyResult = await gateway.VerifyAsync(authority, transaction.Amount, ct);
 
-        if (!verifyResult.IsSuccess || !verifyResult.Value!.IsVerified)
+        if (!verifyResult.IsSuccess)
         {
-            transaction.MarkAsFailed(now, verifyResult.Error ?? "تأیید ناموفق");
+            await auditService.LogWarningAsync(
+                $"[Payment] Gateway communication failure for authority {authority}: {verifyResult.Error}", ct);
+            return ServiceResult<PaymentVerificationResult>.Failure(
+                verifyResult.Error ?? "ارتباط با درگاه پرداخت برقرار نشد. لطفاً مجدداً تلاش کنید.");
+        }
+
+        if (!verifyResult.Value!.IsVerified)
+        {
+            transaction.MarkAsFailed(now, verifyResult.Error ?? "تأیید پرداخت توسط درگاه ناموفق بود.");
             paymentRepository.Update(transaction);
             await unitOfWork.SaveChangesAsync(ct);
             return ServiceResult<PaymentVerificationResult>.Failure(
                 verifyResult.Error ?? "پرداخت تأیید نشد.");
         }
 
-        transaction.MarkAsSuccess(verifyResult.Value!.RefId!.Value, now, verifyResult.Value!.Fee);
+        var verifiedRefId = verifyResult.Value!.RefId ?? 0L;
+        if (verifiedRefId <= 0)
+        {
+            await auditService.LogWarningAsync(
+                $"[Payment] Gateway reported verified but RefId is invalid for authority {authority}.", ct);
+            return ServiceResult<PaymentVerificationResult>.Failure("پاسخ درگاه پرداخت معتبر نیست. لطفاً مجدداً تلاش کنید.");
+        }
+
+        transaction.MarkAsSuccess(verifiedRefId, now, verifyResult.Value!.Fee);
         paymentRepository.Update(transaction);
 
         if (!order.IsPaid)
@@ -134,7 +157,13 @@ public sealed class PaymentService(
         orderRepository.Update(order);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return ServiceResult<PaymentVerificationResult>.Success(verifyResult.Value!);
+        return ServiceResult<PaymentVerificationResult>.Success(
+            new PaymentVerificationResult(
+                transaction.Id.Value,
+                true,
+                verifiedRefId,
+                verifyResult.Value!.CardPan,
+                verifyResult.Value!.Fee));
     }
 
     public async Task<ServiceResult> ProcessWebhookAsync(
@@ -156,9 +185,13 @@ public sealed class PaymentService(
                 : ServiceResult.Failure(verifyResult.Error ?? "خطا");
         }
 
-        transaction.MarkAsFailed(now, $"Webhook status: {status}");
-        paymentRepository.Update(transaction);
-        await unitOfWork.SaveChangesAsync(ct);
+        if (transaction.IsPending())
+        {
+            transaction.MarkAsFailed(now, $"Webhook status: {status}");
+            paymentRepository.Update(transaction);
+            await unitOfWork.SaveChangesAsync(ct);
+        }
+
         return ServiceResult.Success();
     }
 }

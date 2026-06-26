@@ -813,6 +813,8 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("EntityType", "EntityId");
 
+                    b.HasIndex("IsDeleted", "DeletedAt");
+
                     b.ToTable("Medias");
                 });
 
