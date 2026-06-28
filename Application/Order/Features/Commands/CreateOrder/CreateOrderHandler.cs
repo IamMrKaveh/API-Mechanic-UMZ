@@ -4,6 +4,7 @@ using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
+using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
 using SharedKernel.Abstractions.Interfaces;
 
@@ -13,6 +14,7 @@ public class CreateOrderHandler(
     IOrderRepository orderRepository,
     IUserRepository userRepository,
     IShippingRepository shippingRepository,
+    IVariantRepository variantRepository,
     IDiscountService discountService,
     IInventoryService inventoryService,
     IUnitOfWork unitOfWork,
@@ -77,7 +79,28 @@ public class CreateOrderHandler(
                 var deliveryAddress = DeliveryAddress.Create(
                     userAddress.Province, userAddress.City,
                     userAddress.Address, userAddress.PostalCode);
-                var shippingCost = shipping.CalculateCost(totalAmount);
+
+                var variantIdList = orderItemSnapshots.Select(s => s.VariantId).Distinct().ToList();
+                var variantsWithShippings = await variantRepository.GetByIdsWithShippingsAsync(
+                    variantIdList, cancellationToken);
+
+                var multiplierByVariant = new Dictionary<VariantId, decimal>();
+                foreach (var variant in variantsWithShippings)
+                {
+                    var assignment = variant.Shippings.FirstOrDefault(s => s.ShippingId == shippingId);
+                    multiplierByVariant[variant.Id] = assignment is not null && assignment.ShippingMultiplier > 0
+                        ? assignment.ShippingMultiplier
+                        : 1m;
+                }
+
+                var shippingCostItems = orderItemSnapshots
+                    .Select(s => new ShippingCostItem(
+                        s.VariantId,
+                        multiplierByVariant.TryGetValue(s.VariantId, out var m) ? m : 1m,
+                        s.Quantity))
+                    .ToList();
+
+                var shippingCost = shipping.CalculateCostForCart(totalAmount, shippingCostItems);
 
                 var order = Domain.Order.Aggregates.Order.Place(
                     orderId, userId, receiverInfo, deliveryAddress,

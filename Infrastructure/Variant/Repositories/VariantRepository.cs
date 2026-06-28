@@ -46,6 +46,22 @@ public sealed class VariantRepository(DBContext context) : IVariantRepository
         return result.AsReadOnly();
     }
 
+    public async Task<IReadOnlyList<ProductVariant>> GetByIdsWithShippingsAsync(
+        IEnumerable<VariantId> ids, CancellationToken ct = default)
+    {
+        var idValues = ids.Distinct().ToList();
+        if (idValues.Count == 0)
+            return Array.Empty<ProductVariant>();
+
+        var result = await context.ProductVariants
+            .Include(v => v.Shippings)
+            .Where(v => idValues.Contains(v.Id))
+            .AsSplitQuery()
+            .ToListAsync(ct);
+
+        return result.AsReadOnly();
+    }
+
     public async Task<bool> ExistsBySkuAsync(
         Sku sku,
         VariantId? excludeId = null,
