@@ -69,6 +69,7 @@
 	  <Folder Include="Attribute\QueryServices\" />
 	  <Folder Include="Common\Extensions\" />
 	  <Folder Include="Common\Outbox\" />
+	  <Folder Include="Payment\Configurations\NewFolder\" />
 	  <Folder Include="Wallet\Services\" />
 	</ItemGroup>
 

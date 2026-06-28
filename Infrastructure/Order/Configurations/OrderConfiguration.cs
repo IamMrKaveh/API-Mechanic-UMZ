@@ -1,5 +1,6 @@
 using Domain.Discount.ValueObjects;
 using Domain.Order.ValueObjects;
+using Domain.Payment.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Infrastructure.Order.Configurations;
@@ -103,6 +104,19 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
             .HasForeignKey(oi => oi.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Property(e => e.PaymentMethodId)
+               .HasConversion(
+                   v => v == null ? (Guid?)null : v.Value,
+                   v => v == null ? null : PaymentMethodId.From(v.Value))
+               .HasColumnName("PaymentMethodId");
+
+        builder.HasOne<Domain.Payment.Aggregates.PaymentMethod>()
+               .WithMany()
+               .HasForeignKey(nameof(Domain.Order.Aggregates.Order.PaymentMethodId))
+               .IsRequired(false)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(e => e.PaymentMethodId);
         builder.HasIndex(e => e.IdempotencyKey).IsUnique();
         builder.HasIndex(e => e.OrderNumber).IsUnique();
         builder.HasIndex(e => e.UserId);

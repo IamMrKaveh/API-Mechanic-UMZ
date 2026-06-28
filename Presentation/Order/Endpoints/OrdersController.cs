@@ -50,6 +50,7 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
             request.AddressId,
             request.DiscountCode,
             request.PaymentGateway,
+            request.PaymentMethodId,
             RequestContext.IpAddress ?? string.Empty,
             RequestContext.UserAgent ?? string.Empty,
             Guid.NewGuid());
