@@ -9,6 +9,7 @@ public record CheckoutFromCartCommand(
     Guid AddressId,
     string? DiscountCode,
     string? PaymentMethod,
+    Guid? PaymentMethodId,
     string IpAddress,
     string? UserAgent,
     Guid IdempotencyKey)

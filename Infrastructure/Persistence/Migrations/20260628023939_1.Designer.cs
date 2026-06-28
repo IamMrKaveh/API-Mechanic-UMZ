@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DBContext))]
-    [Migration("20260621184105_1")]
+    [Migration("20260628023939_1")]
     partial class _1
     {
         /// <inheritdoc />
@@ -816,6 +816,8 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("EntityType", "EntityId");
 
+                    b.HasIndex("IsDeleted", "DeletedAt");
+
                     b.ToTable("Medias");
                 });
 
@@ -900,6 +902,13 @@ namespace Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<Guid?>("PaymentMethodId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("PaymentMethodId");
+
+                    b.Property<Guid?>("PaymentMethodId1")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("PaymentTransactionId")
                         .HasColumnType("uuid");
 
@@ -931,6 +940,10 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OrderNumber")
                         .IsUnique();
+
+                    b.HasIndex("PaymentMethodId");
+
+                    b.HasIndex("PaymentMethodId1");
 
                     b.HasIndex("UserId");
 
@@ -1021,6 +1034,68 @@ namespace Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("OrderStatuses");
+                });
+
+            modelBuilder.Entity("Domain.Payment.Aggregates.PaymentMethod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("IconUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("SortOrder");
+
+                    b.ToTable("PaymentMethods", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Payment.Aggregates.PaymentTransaction", b =>
@@ -2567,6 +2642,15 @@ namespace Infrastructure.Persistence.Migrations
                         .HasForeignKey("AppliedDiscountCodeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Domain.Payment.Aggregates.PaymentMethod", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentMethodId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Payment.Aggregates.PaymentMethod", "PaymentMethod")
+                        .WithMany()
+                        .HasForeignKey("PaymentMethodId1");
+
                     b.HasOne("Domain.User.Aggregates.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -2738,6 +2822,8 @@ namespace Infrastructure.Persistence.Migrations
                     b.Navigation("FinalAmount")
                         .IsRequired();
 
+                    b.Navigation("PaymentMethod");
+
                     b.Navigation("ReceiverInfo")
                         .IsRequired();
 
@@ -2801,6 +2887,55 @@ namespace Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Variant");
+                });
+
+            modelBuilder.Entity("Domain.Payment.Aggregates.PaymentMethod", b =>
+                {
+                    b.OwnsOne("Domain.Payment.ValueObjects.PaymentMethodFee", "Fee", b1 =>
+                        {
+                            b1.Property<Guid>("PaymentMethodId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<decimal>("Percentage")
+                                .HasColumnType("decimal(5,2)")
+                                .HasColumnName("FeePercentage");
+
+                            b1.HasKey("PaymentMethodId");
+
+                            b1.ToTable("PaymentMethods");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PaymentMethodId");
+
+                            b1.OwnsOne("SharedKernel.ValueObjects.Money", "Amount", b2 =>
+                                {
+                                    b2.Property<Guid>("PaymentMethodFeePaymentMethodId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<decimal>("Amount")
+                                        .HasColumnType("decimal(18,2)")
+                                        .HasColumnName("FeeAmount");
+
+                                    b2.Property<string>("Currency")
+                                        .IsRequired()
+                                        .HasMaxLength(10)
+                                        .HasColumnType("character varying(10)")
+                                        .HasColumnName("FeeCurrency");
+
+                                    b2.HasKey("PaymentMethodFeePaymentMethodId");
+
+                                    b2.ToTable("PaymentMethods");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("PaymentMethodFeePaymentMethodId");
+                                });
+
+                            b1.Navigation("Amount")
+                                .IsRequired();
+                        });
+
+                    b.Navigation("Fee")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Payment.Aggregates.PaymentTransaction", b =>

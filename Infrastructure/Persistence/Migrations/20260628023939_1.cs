@@ -209,6 +209,32 @@ namespace Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PaymentMethods",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IconUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    FeeAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    FeeCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    FeePercentage = table.Column<decimal>(type: "numeric(5,2)", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    SortOrder = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    Version = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentMethods", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RateLimitEntries",
                 columns: table => new
                 {
@@ -564,6 +590,8 @@ namespace Infrastructure.Persistence.Migrations
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     AppliedDiscountCodeId = table.Column<Guid>(type: "uuid", nullable: true),
                     PaymentTransactionId = table.Column<Guid>(type: "uuid", nullable: true),
+                    PaymentMethodId = table.Column<Guid>(type: "uuid", nullable: true),
+                    PaymentMethodId1 = table.Column<Guid>(type: "uuid", nullable: true),
                     RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -576,6 +604,17 @@ namespace Infrastructure.Persistence.Migrations
                         principalTable: "DiscountCodes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Orders_PaymentMethods_PaymentMethodId",
+                        column: x => x.PaymentMethodId,
+                        principalTable: "PaymentMethods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Orders_PaymentMethods_PaymentMethodId1",
+                        column: x => x.PaymentMethodId1,
+                        principalTable: "PaymentMethods",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Orders_Users_UserId",
                         column: x => x.UserId,
@@ -1332,6 +1371,11 @@ namespace Infrastructure.Persistence.Migrations
                 columns: new[] { "EntityType", "EntityId" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Medias_IsDeleted_DeletedAt",
+                table: "Medias",
+                columns: new[] { "IsDeleted", "DeletedAt" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Notifications_UserId",
                 table: "Notifications",
                 column: "UserId");
@@ -1380,6 +1424,16 @@ namespace Infrastructure.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_PaymentMethodId",
+                table: "Orders",
+                column: "PaymentMethodId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_PaymentMethodId1",
+                table: "Orders",
+                column: "PaymentMethodId1");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_Status_CreatedAt",
                 table: "Orders",
                 columns: new[] { "Status", "CreatedAt" });
@@ -1404,6 +1458,28 @@ namespace Infrastructure.Persistence.Migrations
                 name: "IX_OutboxMessages_processed_at",
                 table: "OutboxMessages",
                 column: "processed_at");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentMethods_Code",
+                table: "PaymentMethods",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentMethods_IsActive",
+                table: "PaymentMethods",
+                column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentMethods_Name",
+                table: "PaymentMethods",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentMethods_SortOrder",
+                table: "PaymentMethods",
+                column: "SortOrder");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentTransactions_Authority",
@@ -1850,6 +1926,9 @@ namespace Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "DiscountCodes");
+
+            migrationBuilder.DropTable(
+                name: "PaymentMethods");
 
             migrationBuilder.DropTable(
                 name: "Users");

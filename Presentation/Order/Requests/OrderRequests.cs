@@ -23,7 +23,8 @@ public record CheckoutFromCartRequest(
     Guid ShippingId,
     Guid AddressId,
     string? DiscountCode = null,
-    string? PaymentGateway = null);
+    string? PaymentGateway = null,
+    Guid? PaymentMethodId = null);
 
 public record CancelOrderRequest(string Reason);
 

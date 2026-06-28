@@ -81,6 +81,7 @@ using Infrastructure.Order.Services;
 using Infrastructure.Payment.Factory;
 using Infrastructure.Payment.QueryServices;
 using Infrastructure.Payment.Repositories;
+using Infrastructure.Payment.Seeders;
 using Infrastructure.Payment.Services;
 using Infrastructure.Payment.ZarinPal;
 using Infrastructure.Payment.ZarinPal.Options;
@@ -246,6 +247,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IOrderProcessStateRepository, OrderProcessStateRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IPaymentTransactionRepository, PaymentRepository>();
+        services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddScoped<IDiscountRepository, DiscountRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
@@ -269,6 +271,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IOrderStatusQueryService, OrderStatusQueryService>();
         services.AddScoped<ICartQueryService, CartQueryService>();
         services.AddScoped<IPaymentQueryService, PaymentQueryService>();
+        services.AddScoped<IPaymentMethodQueryService, PaymentMethodQueryService>();
         services.AddScoped<IWalletQueryService, WalletQueryService>();
         services.AddScoped<IDiscountQueryService, DiscountQueryService>();
         services.AddScoped<IReviewQueryService, ReviewQueryService>();
@@ -478,6 +481,7 @@ public static class InfrastructureServiceExtensions
     {
         services.AddScoped<IAuditArchiveStorage, S3AuditArchiveStorage>();
 
+        services.AddHostedService<PaymentMethodSeeder>();
         services.AddHostedService<OutboxProcessingJob>();
         services.AddHostedService<AuditRetentionJob>();
         services.AddHostedService<PaymentCleanupJob>();

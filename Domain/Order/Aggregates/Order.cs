@@ -32,6 +32,8 @@ public sealed class Order : AggregateRoot<OrderId>
     public DiscountCode? AppliedDiscountCode { get; private set; }
     public PaymentTransactionId? PaymentTransactionId { get; private set; }
     public PaymentTransaction? PaymentTransaction { get; private set; }
+    public PaymentMethodId? PaymentMethodId { get; private set; }
+    public PaymentMethod? PaymentMethod { get; private set; }
 
     private readonly List<OrderItem> _orderItems = [];
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
@@ -78,16 +80,17 @@ public sealed class Order : AggregateRoot<OrderId>
     }
 
     public static Order Place(
-        OrderId orderId,
-        UserId userId,
-        ReceiverInfo receiverInfo,
-        DeliveryAddress deliveryAddress,
-        Money shippingCost,
-        Money discountAmount,
-        DiscountCodeId? appliedDiscountCodeId,
-        IEnumerable<OrderItemSnapshot> itemSnapshots,
-        Guid idempotencyKey,
-        DateOnly orderDate)
+    OrderId orderId,
+    UserId userId,
+    ReceiverInfo receiverInfo,
+    DeliveryAddress deliveryAddress,
+    Money shippingCost,
+    Money discountAmount,
+    DiscountCodeId? appliedDiscountCodeId,
+    IEnumerable<OrderItemSnapshot> itemSnapshots,
+    Guid idempotencyKey,
+    DateOnly orderDate,
+    PaymentMethodId? paymentMethodId = null)
     {
         var snapshots = itemSnapshots.ToList();
         if (snapshots.Count == 0)
@@ -97,10 +100,24 @@ public sealed class Order : AggregateRoot<OrderId>
         if (idempotencyKey == Guid.Empty)
             throw new ArgumentException("Idempotency key cannot be empty.", nameof(idempotencyKey));
 
-        return new Order(
+        var order = new Order(
             orderId, userId, OrderNumber.Generate(orderDate),
             receiverInfo, deliveryAddress, shippingCost, discountAmount,
             appliedDiscountCodeId, snapshots, idempotencyKey);
+
+        if (paymentMethodId is not null)
+            order.PaymentMethodId = paymentMethodId;
+
+        return order;
+    }
+
+    public void AssignPaymentMethod(PaymentMethodId paymentMethodId)
+    {
+        Guard.Against.Null(paymentMethodId, nameof(paymentMethodId));
+        if (IsPaid)
+            throw new DomainException("امکان تغییر روش پرداخت سفارش پرداخت‌شده وجود ندارد.");
+        PaymentMethodId = paymentMethodId;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void MoveToPending()

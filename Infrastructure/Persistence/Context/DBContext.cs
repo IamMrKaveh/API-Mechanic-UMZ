@@ -89,6 +89,7 @@ public sealed class DBContext(
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderStatus> OrderStatuses => Set<OrderStatus>();
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
+    public DbSet<PaymentMethod> PaymentMethods => Set<PaymentMethod>();
     public DbSet<Domain.Product.Aggregates.Product> Products => Set<Domain.Product.Aggregates.Product>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<VariantAttribute> ProductVariantAttributes => Set<VariantAttribute>();
@@ -127,6 +128,7 @@ public sealed class DBContext(
         ConfigureStronglyTypedId<OrderId, OrderIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<OrderItemId, OrderItemIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<OrderStatusId, OrderStatusIdConverter>(configurationBuilder);
+        ConfigureStronglyTypedId<PaymentMethodId, PaymentMethodIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<PaymentTransactionId, PaymentTransactionIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<ProductId, ProductIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<ReviewId, ReviewIdConverter>(configurationBuilder);
