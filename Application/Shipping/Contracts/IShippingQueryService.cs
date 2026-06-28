@@ -25,4 +25,9 @@ public interface IShippingQueryService
     Task<IReadOnlyList<AvailableShippingDto>> GetAvailableShippingsForVariantsAsync(
         IEnumerable<Guid> variantIds,
         CancellationToken ct = default);
+
+    Task<IReadOnlyList<AvailableShippingDto>> GetShippingQuotesAsync(
+        Money orderAmount,
+        IEnumerable<ShippingQuoteItemDto> items,
+        CancellationToken ct = default);
 }

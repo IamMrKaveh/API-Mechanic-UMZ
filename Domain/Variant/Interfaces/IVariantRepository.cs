@@ -33,6 +33,10 @@ public interface IVariantRepository
         IEnumerable<VariantId> ids,
         CancellationToken ct = default);
 
+    Task<IReadOnlyList<ProductVariant>> GetByIdsWithShippingsAsync(
+        IEnumerable<VariantId> ids,
+        CancellationToken ct = default);
+
     Task<bool> ExistsAsync(VariantId id, CancellationToken ct = default);
 
     Task<bool> ExistsBySkuAsync(

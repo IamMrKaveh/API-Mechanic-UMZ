@@ -36,7 +36,10 @@ public class CheckoutOrchestrationService(
             return ServiceResult<CheckoutResultDto>.Failure(priceResult.Error!);
 
         var shippingResult = await shippingValidator.ValidateAndCalculateCostAsync(
-            command.ShippingId, cartItemsResult.Value!.SubTotal, ct);
+            command.ShippingId,
+            cartItemsResult.Value!.SubTotal,
+            cartItemsResult.Value!.Items,
+            ct);
         if (!shippingResult.IsSuccess)
             return ServiceResult<CheckoutResultDto>.Failure(shippingResult.Error!);
 

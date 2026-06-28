@@ -1,6 +1,7 @@
 using Application.Shipping.Features.Queries.CalculateShippingCost;
 using Application.Shipping.Features.Queries.GetAvailableShippings;
 using Application.Shipping.Features.Queries.GetAvailableShippingsForVariants;
+using Application.Shipping.Features.Queries.GetShippingQuotes;
 using Application.Shipping.Features.Shared;
 
 namespace Presentation.Shipping.Endpoints;
@@ -40,6 +41,16 @@ public sealed class CheckoutShippingController(IMediator mediator) : BaseApiCont
         CancellationToken ct)
     {
         var query = new GetAvailableShippingsForVariantsQuery(variantIds);
+        var result = await Mediator.Send(query, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpPost("quotes")]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<AvailableShippingDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetShippingQuotes(
+        [FromBody] GetShippingQuotesQuery query,
+        CancellationToken ct)
+    {
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }

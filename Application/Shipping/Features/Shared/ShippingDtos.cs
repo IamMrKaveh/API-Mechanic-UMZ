@@ -32,6 +32,12 @@ public record ShippingListItemDto
     public string DeliveryTimeDisplay { get; init; } = string.Empty;
 }
 
+public sealed record ShippingQuoteItemDto
+{
+    public Guid VariantId { get; init; }
+    public int Quantity { get; init; }
+}
+
 public record ShippingCostResultDto
 {
     public Guid ShippingId { get; init; }

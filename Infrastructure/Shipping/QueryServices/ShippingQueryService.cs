@@ -2,6 +2,7 @@ using Application.Shipping.Contracts;
 using Application.Shipping.Features.Shared;
 using Domain.Shipping.Services;
 using Domain.Shipping.ValueObjects;
+using Domain.Variant.ValueObjects;
 
 namespace Infrastructure.Shipping.QueryServices;
 
@@ -123,9 +124,12 @@ public sealed class ShippingQueryService(DBContext context) : IShippingQueryServ
     {
         var variantIdList = variantIds.ToList();
 
+        if (variantIdList.Count == 0)
+            return Array.Empty<AvailableShippingDto>();
+
         var enabledShippingIds = await context.ProductVariantShippings
             .AsNoTracking()
-            .Where(pvs => variantIdList.Contains(pvs.ShippingId.Value))
+            .Where(pvs => variantIdList.Contains(pvs.VariantId.Value))
             .Select(pvs => pvs.ShippingId.Value)
             .Distinct()
             .ToListAsync(ct);
@@ -145,5 +149,85 @@ public sealed class ShippingQueryService(DBContext context) : IShippingQueryServ
             IsDefault = s.IsDefault,
             DeliveryTimeDisplay = s.GetDeliveryTimeDisplay()
         }).ToList().AsReadOnly();
+    }
+
+    public async Task<IReadOnlyList<AvailableShippingDto>> GetShippingQuotesAsync(
+        Money orderAmount,
+        IEnumerable<ShippingQuoteItemDto> items,
+        CancellationToken ct = default)
+    {
+        var itemList = items?.Where(i => i.Quantity > 0).ToList()
+            ?? [];
+
+        if (itemList.Count == 0)
+            return await GetAvailableShippingsAsync(orderAmount, ct);
+
+        var variantIdList = itemList.Select(i => i.VariantId).Distinct().ToList();
+
+        var variantShippingRows = await context.ProductVariantShippings
+            .AsNoTracking()
+            .Where(pvs => variantIdList.Contains(pvs.VariantId))
+            .Select(pvs => new
+            {
+                VariantId = pvs.VariantId.Value,
+                ShippingId = pvs.ShippingId.Value,
+                pvs.ShippingMultiplier
+            })
+            .ToListAsync(ct);
+
+        var enabledShippingIds = variantShippingRows
+            .Select(r => r.ShippingId)
+            .Distinct()
+            .ToList();
+
+        if (enabledShippingIds.Count == 0)
+            return [];
+
+        var activeShippings = await context.Shippings
+            .AsNoTracking()
+            .Where(s => s.IsActive && enabledShippingIds.Contains(s.Id))
+            .OrderBy(s => s.SortOrder)
+            .ToListAsync(ct);
+
+        var multipliersByShipping = variantShippingRows
+            .GroupBy(r => r.ShippingId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.ToDictionary(r => r.VariantId, r => r.ShippingMultiplier));
+
+        var result = new List<AvailableShippingDto>(activeShippings.Count);
+
+        foreach (var shipping in activeShippings)
+        {
+            multipliersByShipping.TryGetValue(shipping.Id, out var multiplierMap);
+
+            var costItems = itemList.Select(i =>
+            {
+                var multiplier = multiplierMap is not null
+                                 && multiplierMap.TryGetValue(i.VariantId, out var m)
+                                 && m > 0
+                    ? m
+                    : 1m;
+                return new ShippingCostItem(
+                    VariantId.From(i.VariantId),
+                    multiplier,
+                    i.Quantity);
+            }).ToList();
+
+            var calcResult = ShippingDomainService.CalculateShippingCost(shipping, orderAmount, costItems);
+            if (calcResult.IsSuccess is false) continue;
+
+            result.Add(new AvailableShippingDto
+            {
+                Id = shipping.Id.Value,
+                Name = shipping.Name.Value,
+                Cost = calcResult.Cost?.Amount ?? 0,
+                IsFree = calcResult.IsFreeShipping,
+                IsDefault = shipping.IsDefault,
+                DeliveryTimeDisplay = shipping.GetDeliveryTimeDisplay()
+            });
+        }
+
+        return result.AsReadOnly();
     }
 }

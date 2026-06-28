@@ -98,7 +98,8 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
         if (FreeShipping.QualifiesForFreeShipping(orderTotal))
             return Money.Zero();
 
-        var cost = BaseCost.Amount * shippingMultiplier;
+        var effectiveMultiplier = shippingMultiplier <= 0 ? 1m : shippingMultiplier;
+        var cost = BaseCost.Amount * effectiveMultiplier;
         return Money.FromDecimal(Math.Round(cost, 0));
     }
 
@@ -111,18 +112,19 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
         if (FreeShipping.QualifiesForFreeShipping(orderTotal))
             return Money.Zero();
 
-        var totalMultiplier = 0m;
-        var totalQuantity = 0;
+        var aggregatedMultiplier = 0m;
 
         foreach (var item in items)
         {
-            totalMultiplier += item.ShippingMultiplier * item.Quantity;
-            totalQuantity += item.Quantity;
+            if (item.Quantity <= 0) continue;
+            var multiplier = item.ShippingMultiplier <= 0 ? 1m : item.ShippingMultiplier;
+            aggregatedMultiplier += multiplier * item.Quantity;
         }
 
-        var avgMultiplier = totalQuantity > 0 ? totalMultiplier / totalQuantity : 1m;
-        var cost = BaseCost.Amount * avgMultiplier;
+        if (aggregatedMultiplier <= 0)
+            return Money.FromDecimal(Math.Round(BaseCost.Amount, 0));
 
+        var cost = BaseCost.Amount * aggregatedMultiplier;
         return Money.FromDecimal(Math.Round(cost, 0));
     }
 
