@@ -14,6 +14,9 @@ public record GetUserOrdersRequest(
     int Page = 1,
     int PageSize = 10);
 
+public record GetOrderStatusesRequest(
+    bool? OnlyActive = null);
+
 public record GetOrderStatisticsRequest(
     DateTime? FromDate = null,
     DateTime? ToDate = null);
@@ -54,14 +57,17 @@ public record OrderItemRequest(Guid VariantId, int Quantity);
 public record CreateOrderStatusRequest(
     string Name,
     string DisplayName,
+    string? Icon,
+    string? Color,
     int SortOrder,
     bool AllowCancel,
     bool AllowEdit);
 
 public record UpdateOrderStatusRequest(
-    string Name,
     string DisplayName,
-    string? Description,
+    string? Icon,
+    string? Color,
     int SortOrder,
     bool AllowCancel,
-    bool AllowEdit);
+    bool AllowEdit,
+    string? RowVersion = null);

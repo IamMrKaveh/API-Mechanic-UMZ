@@ -1,26 +1,20 @@
 using Application.Order.Features.Shared;
-using Domain.Order.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Application.Order.Features.Queries.GetOrderStatus;
 
 public class GetOrderStatusHandler(
-    IOrderQueryService orderQueryService,
-    ICurrentUserService currentUserService)
-    : IQueryHandler<GetOrderStatusQuery, OrderDto>
+    IOrderStatusQueryService orderStatusQueryService)
+    : IQueryHandler<GetOrderStatusQuery, OrderStatusDto>
 {
-    public async Task<ServiceResult<OrderDto>> Handle(
+    public async Task<ServiceResult<OrderStatusDto>> Handle(
         GetOrderStatusQuery request,
         CancellationToken ct)
     {
-        var orderId = OrderId.From(request.OrderId);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var status = await orderStatusQueryService.GetByIdAsync(request.Id, ct);
 
-        var order = await orderQueryService.GetOrderDetailsAsync(orderId, userId, ct);
+        if (status is null)
+            return ServiceResult<OrderStatusDto>.NotFound("وضعیت سفارش یافت نشد.");
 
-        if (order is null)
-            return ServiceResult<OrderDto>.NotFound("سفارش یافت نشد.");
-
-        return ServiceResult<OrderDto>.Success(order);
+        return ServiceResult<OrderStatusDto>.Success(status);
     }
 }

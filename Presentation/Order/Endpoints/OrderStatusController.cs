@@ -15,13 +15,13 @@ public class OrderStatusController(
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<OrderStatusDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOrderStatuses(CancellationToken ct)
     {
-        var query = new GetOrderStatusesQuery();
+        var query = new GetOrderStatusesQuery(OnlyActive: true);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(ApiResponse<OrderDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OrderStatusDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderStatusById(Guid id, CancellationToken ct)
     {

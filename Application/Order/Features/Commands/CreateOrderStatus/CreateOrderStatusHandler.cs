@@ -1,3 +1,5 @@
+using Application.Audit.Contracts;
+using Application.Cache.Contracts;
 using Application.Order.Features.Shared;
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
@@ -6,13 +8,19 @@ namespace Application.Order.Features.Commands.CreateOrderStatus;
 
 public class CreateOrderStatusHandler(
     IOrderStatusRepository orderStatusRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICacheService cacheService)
     : ICommandHandler<CreateOrderStatusCommand, OrderStatusDto>
 {
     public async Task<ServiceResult<OrderStatusDto>> Handle(
         CreateOrderStatusCommand request,
         CancellationToken ct)
     {
+        var nameExists = await orderStatusRepository.ExistsByNameAsync(request.Name, null, ct);
+        if (nameExists)
+            return ServiceResult<OrderStatusDto>.Validation("وضعیتی با این نام قبلاً ثبت شده است.");
+
         var status = OrderStatus.Create(
             request.Name,
             request.DisplayName,
@@ -25,6 +33,13 @@ public class CreateOrderStatusHandler(
         await orderStatusRepository.AddAsync(status, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
+        await cacheService.RemoveByPrefixAsync("order-status:", ct);
+
+        await auditService.LogSystemEventAsync(
+            "OrderStatusCreated",
+            $"وضعیت سفارش جدید با نام {status.Name} ایجاد شد.",
+            ct);
+
         var dto = new OrderStatusDto
         {
             Id = status.Id.Value,
@@ -35,7 +50,9 @@ public class CreateOrderStatusHandler(
             SortOrder = status.SortOrder,
             AllowCancel = status.AllowCancel,
             AllowEdit = status.AllowEdit,
-            IsActive = status.IsActive
+            IsActive = status.IsActive,
+            IsDefault = status.IsDefault,
+            RowVersion = status.RowVersion is { Length: > 0 } ? Convert.ToBase64String(status.RowVersion) : null
         };
 
         return ServiceResult<OrderStatusDto>.Success(dto);

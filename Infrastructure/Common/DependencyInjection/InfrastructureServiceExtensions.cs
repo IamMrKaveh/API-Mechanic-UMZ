@@ -77,6 +77,7 @@ using Infrastructure.Notification.Repositories;
 using Infrastructure.Notification.Services;
 using Infrastructure.Order.QueryServices;
 using Infrastructure.Order.Repositories;
+using Infrastructure.Order.Seeders;
 using Infrastructure.Order.Services;
 using Infrastructure.Payment.Factory;
 using Infrastructure.Payment.QueryServices;
@@ -482,6 +483,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IAuditArchiveStorage, S3AuditArchiveStorage>();
 
         services.AddHostedService<PaymentMethodSeeder>();
+        services.AddHostedService<OrderStatusSeeder>();
         services.AddHostedService<OutboxProcessingJob>();
         services.AddHostedService<AuditRetentionJob>();
         services.AddHostedService<PaymentCleanupJob>();

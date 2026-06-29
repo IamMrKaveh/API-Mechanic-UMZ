@@ -19,7 +19,7 @@ public sealed class NotificationRepository(DBContext context) : INotificationRep
         CancellationToken ct = default)
     {
         var results = await context.Notifications
-            .Where(n => n.UserId.Value == userId.Value && !n.IsRead)
+            .Where(n => n.UserId == userId && !n.IsRead)
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync(ct);
 
@@ -29,17 +29,11 @@ public sealed class NotificationRepository(DBContext context) : INotificationRep
     public async Task AddAsync(
         Domain.Notification.Aggregates.Notification notification,
         CancellationToken ct = default)
-    {
-        await context.Notifications.AddAsync(notification, ct);
-    }
+        => await context.Notifications.AddAsync(notification, ct);
 
     public void Update(Domain.Notification.Aggregates.Notification notification)
-    {
-        context.Notifications.Update(notification);
-    }
+        => context.Notifications.Update(notification);
 
     public void Remove(Domain.Notification.Aggregates.Notification notification)
-    {
-        context.Notifications.Remove(notification);
-    }
+        => context.Notifications.Remove(notification);
 }

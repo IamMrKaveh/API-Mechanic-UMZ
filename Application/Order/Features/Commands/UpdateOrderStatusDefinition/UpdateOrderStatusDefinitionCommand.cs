@@ -7,5 +7,6 @@ public record UpdateOrderStatusDefinitionCommand(
     string? Color,
     int SortOrder,
     bool AllowCancel,
-    bool AllowEdit)
+    bool AllowEdit,
+    string? RowVersion = null)
     : ICommand;

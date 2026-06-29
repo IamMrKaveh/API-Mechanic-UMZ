@@ -3,6 +3,29 @@ using Application.User.Features.Shared;
 
 namespace Application.Order.Features.Shared;
 
+public record OrderDto
+{
+    public Guid Id { get; init; }
+    public string OrderNumber { get; init; } = string.Empty;
+    public Guid UserId { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public string StatusDisplayName { get; init; } = string.Empty;
+    public decimal SubTotal { get; init; }
+    public decimal ShippingCost { get; init; }
+    public decimal DiscountAmount { get; init; }
+    public decimal FinalAmount { get; init; }
+    public bool IsPaid { get; init; }
+    public bool IsCancelled { get; init; }
+    public bool IsCancellable { get; init; }
+    public IReadOnlyList<string> AllowedTransitions { get; init; } = [];
+    public string? CancellationReason { get; init; }
+    public ReceiverInfoDto? ReceiverInfo { get; init; }
+    public DeliveryAddressDto? DeliveryAddress { get; init; }
+    public List<OrderItemDto> Items { get; init; } = [];
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+}
+
 public sealed record AdminOrderDto
 {
     public Guid Id { get; init; }
@@ -29,6 +52,8 @@ public sealed record AdminOrderDto
     public ShippingDto? Shipping { get; init; }
     public bool IsPaid { get; init; }
     public bool IsCancelled { get; init; }
+    public bool IsCancellable { get; init; }
+    public IReadOnlyList<string> AllowedTransitions { get; init; } = [];
     public string? RowVersion { get; init; }
     public UserSummaryDto? User { get; init; }
     public int OrderItemsCount { get; init; }
@@ -56,27 +81,6 @@ public sealed record AdminCreateOrderItemDto
     public Guid VariantId { get; init; }
     public int Quantity { get; init; }
     public decimal SellingPrice { get; init; }
-}
-
-public record OrderDto
-{
-    public Guid Id { get; init; }
-    public string OrderNumber { get; init; } = string.Empty;
-    public Guid UserId { get; init; }
-    public string Status { get; init; } = string.Empty;
-    public string StatusDisplayName { get; init; } = string.Empty;
-    public decimal SubTotal { get; init; }
-    public decimal ShippingCost { get; init; }
-    public decimal DiscountAmount { get; init; }
-    public decimal FinalAmount { get; init; }
-    public bool IsPaid { get; init; }
-    public bool IsCancelled { get; init; }
-    public string? CancellationReason { get; init; }
-    public ReceiverInfoDto? ReceiverInfo { get; init; }
-    public DeliveryAddressDto? DeliveryAddress { get; init; }
-    public List<OrderItemDto> Items { get; init; } = [];
-    public DateTime CreatedAt { get; init; }
-    public DateTime? UpdatedAt { get; init; }
 }
 
 public record OrderListItemDto
@@ -114,19 +118,6 @@ public record DeliveryAddressDto
     public string City { get; init; } = string.Empty;
     public string AddressLine { get; init; } = string.Empty;
     public string PostalCode { get; init; } = string.Empty;
-}
-
-public record OrderStatusDto
-{
-    public Guid Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string DisplayName { get; init; } = string.Empty;
-    public string? Icon { get; init; }
-    public string? Color { get; init; }
-    public int SortOrder { get; init; }
-    public bool IsActive { get; init; }
-    public bool AllowCancel { get; init; }
-    public bool AllowEdit { get; init; }
 }
 
 public record OrderStatisticsDto

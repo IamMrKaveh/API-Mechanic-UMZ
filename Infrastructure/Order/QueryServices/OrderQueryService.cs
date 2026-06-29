@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using Application.Order.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
@@ -7,10 +8,10 @@ namespace Infrastructure.Order.QueryServices;
 public sealed class OrderQueryService(DBContext context) : IOrderQueryService
 {
     public async Task<PaginatedResult<OrderListItemDto>> GetUserOrdersAsync(
-    UserId userId,
-    int page,
-    int pageSize,
-    CancellationToken ct = default)
+        UserId userId,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
     {
         var query = context.Orders
             .AsNoTracking()
@@ -127,55 +128,12 @@ public sealed class OrderQueryService(DBContext context) : IOrderQueryService
         return PaginatedResult<AdminOrderDto>.Create(dtos, totalItems, page, pageSize);
     }
 
-    public async Task<AdminOrderDto?> GetAdminOrderDetailsAsync(
-        OrderId orderId,
-        CancellationToken ct = default)
-    {
-        return await context.Orders
-            .AsNoTracking()
-            .IgnoreQueryFilters()
-            .Where(o => o.Id == orderId)
-            .Select(o => new AdminOrderDto
-            {
-                Id = o.Id.Value,
-                UserId = o.UserId.Value,
-                OrderNumber = o.OrderNumber.Value,
-                ReceiverName = o.ReceiverInfo.FullName,
-                Status = o.Status.Value,
-                StatusDisplayName = o.Status.DisplayName,
-                TotalAmount = o.SubTotal.Amount,
-                ShippingCost = o.ShippingCost.Amount,
-                DiscountAmount = o.DiscountAmount.Amount,
-                FinalAmount = o.FinalAmount.Amount,
-                DiscountCodeId = o.AppliedDiscountCodeId != null ? o.AppliedDiscountCodeId.Value : null,
-                CancellationReason = o.CancellationReason,
-                IsPaid = o.IsPaid,
-                IsCancelled = o.IsCancelled,
-                IsDeleted = o.IsDeleted,
-                OrderItems = o.OrderItems.Select(i => new OrderItemDto
-                {
-                    Id = i.Id.Value,
-                    VariantId = i.VariantId.Value,
-                    ProductId = i.ProductId.Value,
-                    ProductName = i.ProductName,
-                    Sku = i.Sku,
-                    UnitPrice = i.UnitPrice.Amount,
-                    Quantity = i.Quantity,
-                    TotalPrice = i.TotalPrice.Amount
-                }).ToList(),
-                OrderItemsCount = o.OrderItems.Count,
-                CreatedAt = o.CreatedAt,
-                UpdatedAt = o.UpdatedAt
-            })
-            .FirstOrDefaultAsync(ct);
-    }
-
     public async Task<OrderDto?> GetOrderDetailsAsync(
         OrderId orderId,
         UserId userId,
         CancellationToken ct = default)
     {
-        return await context.Orders
+        var dto = await context.Orders
             .AsNoTracking()
             .Where(o => o.Id == orderId && o.UserId == userId)
             .Select(o => new OrderDto
@@ -219,6 +177,106 @@ public sealed class OrderQueryService(DBContext context) : IOrderQueryService
                 UpdatedAt = o.UpdatedAt
             })
             .FirstOrDefaultAsync(ct);
+
+        if (dto is null)
+            return null;
+
+        var statusValue = OrderStatusValue.From(dto.Status);
+        return dto with
+        {
+            IsCancellable = statusValue.CanBeCancelled(),
+            AllowedTransitions = ComputeAllowedTransitions(statusValue)
+        };
+    }
+
+    public async Task<AdminOrderDto?> GetAdminOrderDetailsAsync(
+        OrderId orderId,
+        CancellationToken ct = default)
+    {
+        var dto = await context.Orders
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(o => o.Id == orderId)
+            .Select(o => new AdminOrderDto
+            {
+                Id = o.Id.Value,
+                UserId = o.UserId.Value,
+                OrderNumber = o.OrderNumber.Value,
+                ReceiverName = o.ReceiverInfo.FullName,
+                Status = o.Status.Value,
+                StatusDisplayName = o.Status.DisplayName,
+                TotalAmount = o.SubTotal.Amount,
+                ShippingCost = o.ShippingCost.Amount,
+                DiscountAmount = o.DiscountAmount.Amount,
+                FinalAmount = o.FinalAmount.Amount,
+                DiscountCodeId = o.AppliedDiscountCodeId != null ? o.AppliedDiscountCodeId.Value : null,
+                CancellationReason = o.CancellationReason,
+                IsPaid = o.IsPaid,
+                IsCancelled = o.IsCancelled,
+                IsDeleted = o.IsDeleted,
+                OrderItems = o.OrderItems.Select(i => new OrderItemDto
+                {
+                    Id = i.Id.Value,
+                    VariantId = i.VariantId.Value,
+                    ProductId = i.ProductId.Value,
+                    ProductName = i.ProductName,
+                    Sku = i.Sku,
+                    UnitPrice = i.UnitPrice.Amount,
+                    Quantity = i.Quantity,
+                    TotalPrice = i.TotalPrice.Amount
+                }).ToList(),
+                OrderItemsCount = o.OrderItems.Count,
+                CreatedAt = o.CreatedAt,
+                UpdatedAt = o.UpdatedAt
+            })
+            .FirstOrDefaultAsync(ct);
+
+        if (dto is null)
+            return null;
+
+        var xmin = await context.Orders
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(o => o.Id == orderId)
+            .Select(o => EF.Property<uint>(o, "xmin"))
+            .FirstOrDefaultAsync(ct);
+
+        var statusValue = OrderStatusValue.From(dto.Status);
+
+        var rowVersionBytes = new byte[4];
+        BinaryPrimitives.WriteUInt32BigEndian(rowVersionBytes, xmin);
+        var rowVersion = Convert.ToBase64String(rowVersionBytes);
+
+        return dto with
+        {
+            IsCancellable = statusValue.CanBeCancelled(),
+            AllowedTransitions = ComputeAllowedTransitions(statusValue),
+            RowVersion = rowVersion
+        };
+    }
+
+    private static IReadOnlyList<string> ComputeAllowedTransitions(OrderStatusValue current)
+    {
+        var candidates = new[]
+        {
+            OrderStatusValue.Created,
+            OrderStatusValue.Reserved,
+            OrderStatusValue.Pending,
+            OrderStatusValue.Failed,
+            OrderStatusValue.Paid,
+            OrderStatusValue.Processing,
+            OrderStatusValue.Shipped,
+            OrderStatusValue.Delivered,
+            OrderStatusValue.Cancelled,
+            OrderStatusValue.Returned,
+            OrderStatusValue.Refunded,
+            OrderStatusValue.Expired
+        };
+
+        return candidates
+            .Where(s => current.CanTransitionTo(s))
+            .Select(s => s.Value)
+            .ToList();
     }
 
     public async Task<OrderStatisticsDto> GetOrderStatisticsAsync(

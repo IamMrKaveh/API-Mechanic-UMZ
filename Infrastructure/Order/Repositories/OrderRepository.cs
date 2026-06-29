@@ -1,5 +1,9 @@
+using System.Buffers.Binary;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
+using Microsoft.EntityFrameworkCore;
+
+namespace Infrastructure.Order.Repositories;
 
 public sealed class OrderRepository(DBContext context) : IOrderRepository
 {
@@ -57,6 +61,13 @@ public sealed class OrderRepository(DBContext context) : IOrderRepository
 
     public void SetOriginalRowVersion(Domain.Order.Aggregates.Order entity, byte[] rowVersion)
     {
-        context.Entry(entity).Property("RowVersion").OriginalValue = rowVersion;
+        if (rowVersion is null || rowVersion.Length == 0)
+            return;
+
+        var xmin = rowVersion.Length >= 4
+            ? BinaryPrimitives.ReadUInt32BigEndian(rowVersion.AsSpan(0, 4))
+            : 0u;
+
+        context.Entry(entity).Property("xmin").OriginalValue = xmin;
     }
 }

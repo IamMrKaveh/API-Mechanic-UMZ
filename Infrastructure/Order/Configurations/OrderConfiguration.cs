@@ -14,6 +14,12 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
         builder.Property(e => e.Id)
                .HasConversion(v => v.Value, v => OrderId.From(v));
 
+        builder.Property<uint>("xmin")
+               .HasColumnName("xmin")
+               .HasColumnType("xid")
+               .ValueGeneratedOnAddOrUpdate()
+               .IsConcurrencyToken();
+
         builder.Property(e => e.UserId)
                .HasConversion(v => v.Value, v => UserId.From(v))
                .IsRequired();
@@ -96,8 +102,6 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
         builder.Property(e => e.CancellationReason).HasMaxLength(500);
         builder.Property(e => e.IsDeleted).IsRequired();
         builder.Property(e => e.CreatedAt).IsRequired();
-
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
 
         builder.HasMany(e => e.OrderItems)
             .WithOne(oi => oi.Order)

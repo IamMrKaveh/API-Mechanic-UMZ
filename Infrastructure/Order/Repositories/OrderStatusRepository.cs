@@ -1,6 +1,7 @@
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Order.Repositories;
 
@@ -9,10 +10,11 @@ public sealed class OrderStatusRepository(DBContext context) : IOrderStatusRepos
     public async Task<OrderStatus?> GetByIdAsync(
         OrderStatusId id,
         CancellationToken ct = default)
-    {
-        return await context.OrderStatuses
-            .FirstOrDefaultAsync(s => s.Id == id, ct);
-    }
+        => await context.OrderStatuses.FirstOrDefaultAsync(s => s.Id == id, ct);
+
+    public async Task<OrderStatus?> GetDefaultAsync(
+        CancellationToken ct = default)
+        => await context.OrderStatuses.FirstOrDefaultAsync(s => s.IsDefault, ct);
 
     public async Task<bool> IsInUseAsync(
         OrderStatusId id,
@@ -20,28 +22,49 @@ public sealed class OrderStatusRepository(DBContext context) : IOrderStatusRepos
     {
         var status = await context.OrderStatuses
             .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == id, ct);
+            .Where(s => s.Id == id)
+            .Select(s => s.Name)
+            .FirstOrDefaultAsync(ct);
 
-        if (status is null) return false;
+        if (string.IsNullOrWhiteSpace(status))
+            return false;
 
         return await context.Orders
-            .AnyAsync(o => o.Status.Value == status.Name, ct);
+            .AsNoTracking()
+            .AnyAsync(o => o.Status.Value == status, ct);
+    }
+
+    public async Task<bool> ExistsByNameAsync(
+        string name,
+        OrderStatusId? excludeId = null,
+        CancellationToken ct = default)
+    {
+        var trimmed = name.Trim();
+        var query = context.OrderStatuses
+            .AsNoTracking()
+            .Where(s => s.Name == trimmed);
+
+        if (excludeId is not null)
+            query = query.Where(s => s.Id != excludeId);
+
+        return await query.AnyAsync(ct);
     }
 
     public async Task AddAsync(
         OrderStatus orderStatus,
         CancellationToken ct = default)
-    {
-        await context.OrderStatuses.AddAsync(orderStatus, ct);
-    }
+        => await context.OrderStatuses.AddAsync(orderStatus, ct);
 
     public void Update(OrderStatus orderStatus)
-    {
-        context.OrderStatuses.Update(orderStatus);
-    }
+        => context.OrderStatuses.Update(orderStatus);
 
     public void Remove(OrderStatus orderStatus)
+        => context.OrderStatuses.Remove(orderStatus);
+
+    public void SetOriginalRowVersion(OrderStatus entity, byte[] rowVersion)
     {
-        context.OrderStatuses.Remove(orderStatus);
+        if (rowVersion is null || rowVersion.Length == 0)
+            return;
+        context.Entry(entity).Property(e => e.RowVersion).OriginalValue = rowVersion;
     }
 }

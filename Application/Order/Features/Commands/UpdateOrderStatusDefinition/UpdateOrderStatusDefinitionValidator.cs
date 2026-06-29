@@ -1,15 +1,14 @@
-namespace Application.Order.Features.Commands.CreateOrderStatus;
+﻿namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
-public class CreateOrderStatusValidator : AbstractValidator<CreateOrderStatusCommand>
+public class UpdateOrderStatusDefinitionValidator : AbstractValidator<UpdateOrderStatusDefinitionCommand>
 {
     private static readonly System.Text.RegularExpressions.Regex HexColorRegex =
         new("^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$", System.Text.RegularExpressions.RegexOptions.Compiled);
 
-    public CreateOrderStatusValidator()
+    public UpdateOrderStatusDefinitionValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("نام وضعیت الزامی است.")
-            .MaximumLength(50).WithMessage("نام وضعیت نمی‌تواند بیش از 50 کاراکتر باشد.");
+        RuleFor(x => x.Id)
+            .NotEmpty().WithMessage("شناسه وضعیت الزامی است.");
 
         RuleFor(x => x.DisplayName)
             .NotEmpty().WithMessage("نام نمایشی وضعیت الزامی است.")

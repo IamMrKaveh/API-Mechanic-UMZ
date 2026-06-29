@@ -9,8 +9,16 @@ public interface IOrderStatusRepository
         OrderStatusId id,
         CancellationToken ct = default);
 
+    Task<OrderStatus?> GetDefaultAsync(
+        CancellationToken ct = default);
+
     Task<bool> IsInUseAsync(
         OrderStatusId id,
+        CancellationToken ct = default);
+
+    Task<bool> ExistsByNameAsync(
+        string name,
+        OrderStatusId? excludeId = null,
         CancellationToken ct = default);
 
     Task AddAsync(
@@ -22,4 +30,8 @@ public interface IOrderStatusRepository
 
     void Remove(
         OrderStatus orderStatus);
+
+    void SetOriginalRowVersion(
+        OrderStatus entity,
+        byte[] rowVersion);
 }

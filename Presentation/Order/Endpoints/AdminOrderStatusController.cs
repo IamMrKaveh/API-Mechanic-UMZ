@@ -1,5 +1,8 @@
+using Application.Order.Features.Commands.ActivateOrderStatus;
 using Application.Order.Features.Commands.CreateOrderStatus;
+using Application.Order.Features.Commands.DeactivateOrderStatus;
 using Application.Order.Features.Commands.DeleteOrderStatus;
+using Application.Order.Features.Commands.SetDefaultOrderStatus;
 using Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 using Application.Order.Features.Queries.GetOrderStatus;
 using Application.Order.Features.Queries.GetOrderStatuses;
@@ -16,18 +19,18 @@ public class AdminOrderStatusController(
     IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<OrderStatusDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetOrderStatuses(CancellationToken ct)
+    public async Task<IActionResult> GetOrderStatuses(
+        [FromQuery] GetOrderStatusesRequest request,
+        CancellationToken ct)
     {
-        var query = new GetOrderStatusesQuery();
+        var query = new GetOrderStatusesQuery(request.OnlyActive);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
 
     [HttpGet("{id:guid}")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<OrderDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OrderStatusDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderStatus(Guid id, CancellationToken ct)
     {
@@ -43,13 +46,13 @@ public class AdminOrderStatusController(
         CancellationToken ct)
     {
         var command = new CreateOrderStatusCommand(
-            request.Name,
-            request.DisplayName,
-            null,
-            null,
-            request.SortOrder,
-            request.AllowCancel,
-            request.AllowEdit);
+            Name: request.Name,
+            DisplayName: request.DisplayName,
+            Icon: request.Icon,
+            Color: request.Color,
+            SortOrder: request.SortOrder,
+            AllowCancel: request.AllowCancel,
+            AllowEdit: request.AllowEdit);
 
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
@@ -58,19 +61,21 @@ public class AdminOrderStatusController(
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateOrderStatus(
         Guid id,
         [FromBody] UpdateOrderStatusRequest request,
         CancellationToken ct)
     {
         var command = new UpdateOrderStatusDefinitionCommand(
-            id,
-            request.Name,
-            request.DisplayName,
-            request.Description,
-            request.SortOrder,
-            request.AllowCancel,
-            request.AllowEdit);
+            Id: id,
+            DisplayName: request.DisplayName,
+            Icon: request.Icon,
+            Color: request.Color,
+            SortOrder: request.SortOrder,
+            AllowCancel: request.AllowCancel,
+            AllowEdit: request.AllowEdit,
+            RowVersion: request.RowVersion);
 
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
@@ -82,6 +87,36 @@ public class AdminOrderStatusController(
     public async Task<IActionResult> DeleteOrderStatus(Guid id, CancellationToken ct)
     {
         var command = new DeleteOrderStatusCommand(id);
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpPatch("{id:guid}/activate")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ActivateOrderStatus(Guid id, CancellationToken ct)
+    {
+        var command = new ActivateOrderStatusCommand(id);
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpPatch("{id:guid}/deactivate")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeactivateOrderStatus(Guid id, CancellationToken ct)
+    {
+        var command = new DeactivateOrderStatusCommand(id);
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
+    [HttpPut("{id:guid}/set-default")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetDefaultOrderStatus(Guid id, CancellationToken ct)
+    {
+        var command = new SetDefaultOrderStatusCommand(id);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
