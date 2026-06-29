@@ -1,3 +1,6 @@
+using Application.Audit.Contracts;
+using Application.Cache.Contracts;
+using Application.Common.Exceptions;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 
@@ -5,7 +8,9 @@ namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
 public class UpdateOrderStatusDefinitionHandler(
     IOrderStatusRepository orderStatusRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IAuditService auditService,
+    ICacheService cacheService)
     : ICommandHandler<UpdateOrderStatusDefinitionCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -17,6 +22,18 @@ public class UpdateOrderStatusDefinitionHandler(
         if (status is null)
             return ServiceResult.NotFound("وضعیت یافت نشد.");
 
+        if (!string.IsNullOrEmpty(request.RowVersion))
+        {
+            try
+            {
+                orderStatusRepository.SetOriginalRowVersion(status, Convert.FromBase64String(request.RowVersion));
+            }
+            catch (FormatException)
+            {
+                return ServiceResult.Validation("RowVersion نامعتبر است.");
+            }
+        }
+
         status.Update(
             request.DisplayName,
             request.Icon,
@@ -26,7 +43,23 @@ public class UpdateOrderStatusDefinitionHandler(
             request.AllowEdit);
 
         orderStatusRepository.Update(status);
-        await unitOfWork.SaveChangesAsync(ct);
+
+        try
+        {
+            await unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyException)
+        {
+            return ServiceResult.Conflict("این وضعیت توسط کاربر دیگری تغییر کرده است.");
+        }
+
+        await cacheService.RemoveByPrefixAsync("order-status:", ct);
+
+        await auditService.LogSystemEventAsync(
+            "OrderStatusUpdated",
+            $"وضعیت سفارش {status.Name} ویرایش شد.",
+            ct);
+
         return ServiceResult.Success();
     }
 }

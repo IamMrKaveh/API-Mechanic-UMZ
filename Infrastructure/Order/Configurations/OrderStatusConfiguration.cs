@@ -22,6 +22,15 @@ public sealed class OrderStatusConfiguration : IEntityTypeConfiguration<OrderSta
         builder.Property(e => e.AllowCancel).IsRequired();
         builder.Property(e => e.AllowEdit).IsRequired();
 
+        builder.Property(e => e.RowVersion)
+               .IsRowVersion()
+               .IsConcurrencyToken();
+
         builder.HasIndex(e => e.Name).IsUnique();
+        builder.HasIndex(e => e.SortOrder);
+        builder.HasIndex(e => e.IsActive);
+        builder.HasIndex(e => e.IsDefault);
+
+        builder.Ignore(e => e.DomainEvents);
     }
 }

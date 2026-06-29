@@ -8,8 +8,7 @@ namespace Infrastructure.Notification.Services;
 public sealed class NotificationService(
     INotificationRepository notificationRepository,
     IAuditService auditService,
-    IUnitOfWork unitOfWork,
-    DBContext context) : INotificationService
+    IUnitOfWork unitOfWork) : INotificationService
 {
     public async Task CreateNotificationAsync(
         UserId userId,
@@ -34,13 +33,6 @@ public sealed class NotificationService(
             referenceId);
 
         await notificationRepository.AddAsync(notification, ct);
-
-        context.Entry(notification).Property("Title").CurrentValue = title;
-        context.Entry(notification).Property("Message").CurrentValue = message;
-        context.Entry(notification).Property("Type").CurrentValue = typeName;
-        context.Entry(notification).Property("ActionUrl").CurrentValue = actionUrl;
-        context.Entry(notification).Property("RelatedEntityType").CurrentValue = referenceType;
-        context.Entry(notification).Property("RelatedEntityId").CurrentValue = referenceId;
 
         await unitOfWork.SaveChangesAsync(ct);
 

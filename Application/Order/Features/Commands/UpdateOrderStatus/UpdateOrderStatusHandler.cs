@@ -43,6 +43,10 @@ public class UpdateOrderStatusHandler(
         {
             switch (newStatus.Value)
             {
+                case "Pending":
+                    order.MoveToPending();
+                    break;
+
                 case "Processing":
                     order.StartProcessing();
                     break;
@@ -54,6 +58,17 @@ public class UpdateOrderStatusHandler(
                 case "Delivered":
                     order.MarkAsDelivered();
                     break;
+
+                case "Returned":
+                    order.MarkAsReturned();
+                    break;
+
+                case "Refunded":
+                    order.Refund();
+                    break;
+
+                case "Cancelled":
+                    return ServiceResult.Validation("برای لغو سفارش از مسیر اختصاصی لغو استفاده کنید.");
 
                 default:
                     return ServiceResult.Forbidden($"تغییر مستقیم به وضعیت '{newStatus.DisplayName}' مجاز نیست.");
@@ -81,7 +96,7 @@ public class UpdateOrderStatusHandler(
                 order.Id,
                 "UpdateOrderStatus",
                 IpAddress.Unknown,
-                UserId.From(currentUserService.UserId.Value),
+                UserId.From(currentUserService.UserId!.Value),
                 $"وضعیت سفارش از {oldStatusName} به {newStatus.DisplayName} تغییر کرد.",
                 ct);
 

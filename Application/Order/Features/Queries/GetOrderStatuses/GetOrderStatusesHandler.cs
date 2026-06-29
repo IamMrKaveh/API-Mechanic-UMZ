@@ -10,7 +10,7 @@ public class GetOrderStatusesHandler(
         GetOrderStatusesQuery request,
         CancellationToken ct)
     {
-        var statuses = await orderStatusQueryService.GetAllAsync(ct);
+        var statuses = await orderStatusQueryService.GetAllAsync(request.OnlyActive, ct);
         return ServiceResult<IReadOnlyList<OrderStatusDto>>.Success(statuses);
     }
 }

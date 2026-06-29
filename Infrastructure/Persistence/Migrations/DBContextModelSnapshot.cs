@@ -909,11 +909,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("PaymentTransactionId")
                         .HasColumnType("uuid");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -927,6 +922,12 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<int>("Version")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -1022,13 +1023,28 @@ namespace Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
                     b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Version")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("IsDefault");
+
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("SortOrder");
 
                     b.ToTable("OrderStatuses");
                 });
