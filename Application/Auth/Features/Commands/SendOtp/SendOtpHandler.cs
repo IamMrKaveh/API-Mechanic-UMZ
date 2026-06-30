@@ -11,6 +11,7 @@ public class SendOtpHandler(
     IOtpService otpService,
     IOtpRepository otpRepository,
     IUserRepository userRepository,
+    IInitialAdminOptions initialAdminOptions,
     IAuditService auditService)
     : ICommandHandler<SendOtpCommand>
 {
@@ -23,7 +24,7 @@ public class SendOtpHandler(
         {
             user = Domain.User.Aggregates.User.RegisterByPhone(phoneNumber);
 
-            if (phoneNumber.Value == "09336255252")
+            if (IsInitialAdmin(phoneNumber.Value))
             {
                 user.PromoteToAdmin();
             }
@@ -52,5 +53,22 @@ public class SendOtpHandler(
             ct: ct);
 
         return ServiceResult.Success();
+    }
+
+    private bool IsInitialAdmin(string phoneNumberValue)
+    {
+        if (initialAdminOptions.PhoneNumbers.Count == 0)
+            return false;
+
+        foreach (var configured in initialAdminOptions.PhoneNumbers)
+        {
+            if (string.IsNullOrWhiteSpace(configured))
+                continue;
+
+            if (string.Equals(configured.Trim(), phoneNumberValue, StringComparison.Ordinal))
+                return true;
+        }
+
+        return false;
     }
 }

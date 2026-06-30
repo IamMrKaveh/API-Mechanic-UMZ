@@ -16,8 +16,11 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
             .HasConversion(v => v.Value, v => ProductId.From(v))
             .ValueGeneratedNever();
 
-        builder.Property<byte[]>("RowVersion")
-            .IsRowVersion();
+        builder.Property<uint>("xmin")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
 
         builder.OwnsOne(e => e.Name, nb =>
         {

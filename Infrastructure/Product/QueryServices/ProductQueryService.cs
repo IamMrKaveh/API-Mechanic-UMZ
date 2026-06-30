@@ -5,6 +5,7 @@ using Application.Variant.Features.Shared;
 using Domain.Brand.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
+using System.Buffers.Binary;
 
 namespace Infrastructure.Product.QueryServices;
 
@@ -12,6 +13,8 @@ public sealed class ProductQueryService(
     DBContext context,
     IUrlResolverService urlResolver) : IProductQueryService
 {
+    private const string ConcurrencyTokenName = "xmin";
+
     public async Task<AdminProductDetailDto?> GetAdminProductDetailAsync(
         ProductId productId, CancellationToken ct = default)
     {
@@ -31,6 +34,7 @@ public sealed class ProductQueryService(
         if (product is null) return null;
 
         var primaryImagePath = await GetPrimaryImagePathAsync(productId, ct);
+        var rowVersion = await GetProductRowVersionAsync(productId, ct);
 
         return new AdminProductDetailDto
         {
@@ -48,6 +52,7 @@ public sealed class ProductQueryService(
             CreatedAt = product.CreatedAt,
             UpdatedAt = product.UpdatedAt,
             DeletedAt = product.DeletedAt,
+            RowVersion = rowVersion,
             PrimaryImageUrl = primaryImagePath is not null
                 ? urlResolver.ResolveMediaUrl(primaryImagePath)
                 : null,
@@ -254,6 +259,7 @@ public sealed class ProductQueryService(
         if (product is null) return null;
 
         var primaryImagePath = await GetPrimaryImagePathAsync(productId, ct);
+        var rowVersion = await GetProductRowVersionAsync(productId, ct);
 
         var variantIds = product.Variants
             .Where(v => !v.IsDeleted)
@@ -282,6 +288,7 @@ public sealed class ProductQueryService(
             IsDeleted = product.IsDeleted,
             CreatedAt = product.CreatedAt,
             UpdatedAt = product.UpdatedAt,
+            RowVersion = rowVersion,
             PrimaryImageUrl = primaryImagePath is not null
                 ? urlResolver.ResolveMediaUrl(primaryImagePath)
                 : null,
@@ -302,6 +309,9 @@ public sealed class ProductQueryService(
         var query = context.Products
             .AsNoTracking()
             .Where(p => p.IsActive && !p.IsDeleted);
+
+        if (searchParams.IsFeatured.HasValue)
+            query = query.Where(p => p.IsFeatured == searchParams.IsFeatured);
 
         if (searchParams.CategoryId.HasValue)
             query = query.Where(p => p.CategoryId == searchParams.CategoryId);
@@ -410,6 +420,22 @@ public sealed class ProductQueryService(
             .Where(m => m.EntityId == productId && m.IsPrimary)
             .Select(m => m.FilePath)
             .FirstOrDefaultAsync(ct);
+
+    private async Task<string?> GetProductRowVersionAsync(ProductId productId, CancellationToken ct)
+    {
+        var xmin = await context.Products
+            .AsNoTracking()
+            .Where(p => p.Id == productId)
+            .Select(p => EF.Property<uint>(p, ConcurrencyTokenName))
+            .FirstOrDefaultAsync(ct);
+
+        if (xmin == 0u)
+            return null;
+
+        var buffer = new byte[sizeof(uint)];
+        BinaryPrimitives.WriteUInt32BigEndian(buffer, xmin);
+        return Convert.ToBase64String(buffer);
+    }
 
     private static ProductVariantViewDto MapToVariantDto(
         Domain.Variant.Aggregates.ProductVariant variant) => MapToVariantDto(variant, null);

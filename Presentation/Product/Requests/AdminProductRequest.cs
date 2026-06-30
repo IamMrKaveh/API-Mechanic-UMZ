@@ -21,7 +21,8 @@ public record GetProductCatalogRequest(
     decimal? MinPrice = null,
     decimal? MaxPrice = null,
     bool InStockOnly = false,
-    string? SortBy = null);
+    string? SortBy = null,
+    bool? IsFeatured = null);
 
 public record CreateProductRequest(
     string Name,

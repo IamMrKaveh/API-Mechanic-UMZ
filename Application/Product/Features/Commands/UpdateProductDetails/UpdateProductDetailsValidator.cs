@@ -19,7 +19,6 @@ public sealed class UpdateProductDetailsValidator : AbstractValidator<UpdateProd
 
         RuleFor(x => x.Sku)
             .MaximumLength(50).WithMessage("SKU نمی‌تواند بیش از ۵۰ کاراکتر باشد.")
-            .Matches(@"^[a-zA-Z0-9\-_]*$").WithMessage("SKU فقط می‌تواند شامل حروف، اعداد، خط تیره و زیرخط باشد.")
             .When(x => !string.IsNullOrEmpty(x.Sku));
     }
 }

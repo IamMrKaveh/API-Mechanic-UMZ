@@ -83,7 +83,8 @@ public sealed record ProductCatalogSearchParams(
     decimal? MinPrice,
     decimal? MaxPrice,
     bool InStockOnly,
-    string? SortBy);
+    string? SortBy,
+    bool? IsFeatured = null);
 
 public record ProductListItemDto
 {
