@@ -18,7 +18,8 @@ public sealed class GetProductCatalogHandler(
             request.MinPrice,
             request.MaxPrice,
             request.InStockOnly,
-            request.SortBy);
+            request.SortBy,
+            request.IsFeatured);
 
         var result = await productQueryService.GetProductCatalogAsync(searchParams, ct);
         return ServiceResult<PaginatedResult<ProductCatalogItemDto>>.Success(result);

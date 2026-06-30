@@ -315,6 +315,13 @@ public static class InfrastructureServiceExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<InitialAdminOptions>()
+            .BindConfiguration(IInitialAdminOptions.SectionName)
+            .ValidateOnStart();
+
+        services.AddSingleton<IInitialAdminOptions>(sp =>
+            sp.GetRequiredService<IOptions<InitialAdminOptions>>().Value);
+
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ISessionService, SessionService>();
