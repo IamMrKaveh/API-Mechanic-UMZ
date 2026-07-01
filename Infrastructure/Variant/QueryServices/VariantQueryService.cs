@@ -97,6 +97,12 @@ public sealed class VariantQueryService(DBContext context) : IVariantQueryServic
             ShippingMultiplier = activeShippings.Count > 0
                 ? activeShippings.Min(pvs => pvs.ShippingMultiplier)
                 : 1m,
+            WeightGrams = activeShippings.Count > 0
+                ? activeShippings.Max(pvs => pvs.Weight)
+                : 0m,
+            EnabledShippingIds = activeShippings
+                .Select(pvs => pvs.ShippingId.Value)
+                .ToList(),
             AvailableShippings = activeShippings
                 .Select(pvs => new ShippingListItemDto
                 {

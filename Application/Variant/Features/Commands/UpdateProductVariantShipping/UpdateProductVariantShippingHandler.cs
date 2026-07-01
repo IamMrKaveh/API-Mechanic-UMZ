@@ -18,6 +18,9 @@ public class UpdateProductVariantShippingHandler(
         UpdateVariantShippingCommand request,
         CancellationToken ct)
     {
+        if (currentUserService.UserId is null)
+            return ServiceResult.Unauthorized();
+
         var userId = UserId.From(currentUserService.UserId.Value);
         var variantId = VariantId.From(request.VariantId);
 
@@ -33,10 +36,19 @@ public class UpdateProductVariantShippingHandler(
             return ServiceResult.Failure($"روش‌های ارسال نامعتبر: {string.Join(", ", invalidIds)}");
 
         var newShippingIds = request.EnabledShippingIds.Select(ShippingId.From).ToList();
-
         var newShippings = await shippingRepository.GetByIdsAsync(newShippingIds, ct);
+
+        var existingDimensions = variant.Shippings
+            .Where(s => s.Width > 0 || s.Height > 0 || s.Length > 0)
+            .Select(s => new { s.Width, s.Height, s.Length })
+            .FirstOrDefault();
+
+        var width = existingDimensions?.Width ?? 0m;
+        var height = existingDimensions?.Height ?? 0m;
+        var length = existingDimensions?.Length ?? 0m;
+
         var assignments = newShippings.Select(s =>
-            new ShippingAssignment(s.Id, 0, 0, 0, 0));
+            new ShippingAssignment(s.Id, request.WeightGrams, width, height, length));
 
         variant.SetShippingMethods(
             request.ShippingMultiplier,
@@ -48,7 +60,7 @@ public class UpdateProductVariantShippingHandler(
         await auditService.LogInventoryEventAsync(
             variantId,
             "UpdateVariantShippings",
-            $"روش‌های ارسال واریانت {variantId.Value} به‌روزرسانی شد.",
+            $"روش‌های ارسال و وزن ({request.WeightGrams} گرم) واریانت {variantId.Value} به‌روزرسانی شد.",
             userId);
 
         return ServiceResult.Success();

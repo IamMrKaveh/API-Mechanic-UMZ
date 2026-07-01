@@ -1,6 +1,6 @@
-using Application.Shipping.Features.Shared;
 using Application.Variant.Features.Commands.UpdateProductVariantShipping;
 using Application.Variant.Features.Queries.GetVariantShipping;
+using Application.Variant.Features.Shared;
 using Presentation.Variant.Requests;
 
 namespace Presentation.Variant.Endpoints;
@@ -33,6 +33,7 @@ public sealed class AdminVariantShippingController(
         var command = new UpdateVariantShippingCommand(
             variantId,
             request.ShippingMultiplier,
+            request.WeightGrams,
             request.EnabledShippingIds);
 
         var result = await Mediator.Send(command, ct);
