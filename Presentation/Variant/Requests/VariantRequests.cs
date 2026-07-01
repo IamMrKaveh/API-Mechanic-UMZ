@@ -31,5 +31,6 @@ public record RemoveStockRequest(int Quantity, string Notes);
 
 public record UpdateVariantShippingRequest(
     decimal ShippingMultiplier,
+    decimal WeightGrams,
     ICollection<Guid> EnabledShippingIds
 );

@@ -57,11 +57,3 @@ public record AvailableShippingDto
     public string DeliveryTimeDisplay { get; init; } = string.Empty;
     public bool IsDefault { get; init; }
 }
-
-public record VariantShippingInfoDto
-{
-    public Guid VariantId { get; init; }
-    public decimal ShippingMultiplier { get; init; }
-    public List<ShippingListItemDto> AvailableShippings { get; init; } = [];
-    public List<int> EnabledShippingIds { get; init; } = [];
-}

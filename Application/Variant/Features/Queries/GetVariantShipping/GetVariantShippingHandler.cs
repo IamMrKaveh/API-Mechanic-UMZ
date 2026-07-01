@@ -1,4 +1,4 @@
-using Application.Shipping.Features.Shared;
+using Application.Variant.Features.Shared;
 using Domain.Variant.ValueObjects;
 
 namespace Application.Variant.Features.Queries.GetVariantShipping;

@@ -1,4 +1,5 @@
 using Application.Attribute.Features.Shared;
+using Application.Shipping.Features.Shared;
 using Domain.Attribute.Entities;
 using Domain.Variant.Aggregates;
 
@@ -34,6 +35,15 @@ public sealed record ProductVariantViewDto
     public decimal ShippingMultiplier { get; init; } = 1m;
     public List<Guid> EnabledShippingIds { get; init; } = [];
     public Dictionary<string, AttributeValueDto> Attributes { get; init; } = [];
+}
+
+public record VariantShippingInfoDto
+{
+    public Guid VariantId { get; init; }
+    public decimal ShippingMultiplier { get; init; }
+    public decimal WeightGrams { get; init; }
+    public List<ShippingListItemDto> AvailableShippings { get; init; } = [];
+    public List<Guid> EnabledShippingIds { get; init; } = [];
 }
 
 public static class ProductVariantViewDtoFactory
