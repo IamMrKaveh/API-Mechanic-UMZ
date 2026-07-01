@@ -23,7 +23,8 @@ public sealed class OrderStatusConfiguration : IEntityTypeConfiguration<OrderSta
         builder.Property(e => e.AllowEdit).IsRequired();
 
         builder.Property(e => e.RowVersion)
-               .IsRowVersion()
+               .IsRequired()
+               .ValueGeneratedNever()
                .IsConcurrencyToken();
 
         builder.HasIndex(e => e.Name).IsUnique();
