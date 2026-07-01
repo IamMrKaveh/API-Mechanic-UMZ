@@ -15,7 +15,7 @@ public class OrderStatus : AggregateRoot<OrderStatusId>, IActivatable
     public bool IsDefault { get; private set; }
     public bool AllowCancel { get; private set; }
     public bool AllowEdit { get; private set; }
-    public byte[] RowVersion { get; private set; } = [];
+    public byte[] RowVersion { get; private set; } = Guid.NewGuid().ToByteArray();
 
     private OrderStatus()
     { }
@@ -39,6 +39,7 @@ public class OrderStatus : AggregateRoot<OrderStatusId>, IActivatable
         AllowEdit = allowEdit;
         IsActive = true;
         IsDefault = false;
+        RowVersion = Guid.NewGuid().ToByteArray();
     }
 
     public static OrderStatus Create(
@@ -88,6 +89,7 @@ public class OrderStatus : AggregateRoot<OrderStatusId>, IActivatable
         SortOrder = sortOrder;
         AllowCancel = allowCancel;
         AllowEdit = allowEdit;
+        RowVersion = Guid.NewGuid().ToByteArray();
 
         RaiseDomainEvent(new OrderStatusUpdatedDomainEvent(
             Id,
@@ -100,6 +102,7 @@ public class OrderStatus : AggregateRoot<OrderStatusId>, IActivatable
     {
         if (IsActive) return;
         IsActive = true;
+        RowVersion = Guid.NewGuid().ToByteArray();
         RaiseDomainEvent(new OrderStatusActivationChangedDomainEvent(Id, Name, true));
     }
 
@@ -109,6 +112,7 @@ public class OrderStatus : AggregateRoot<OrderStatusId>, IActivatable
         if (IsDefault)
             throw new DomainException("امکان غیرفعال کردن وضعیت پیش‌فرض وجود ندارد.");
         IsActive = false;
+        RowVersion = Guid.NewGuid().ToByteArray();
         RaiseDomainEvent(new OrderStatusActivationChangedDomainEvent(Id, Name, false));
     }
 
@@ -118,6 +122,7 @@ public class OrderStatus : AggregateRoot<OrderStatusId>, IActivatable
             throw new DomainException("وضعیت غیرفعال نمی‌تواند به‌عنوان پیش‌فرض تنظیم شود.");
         if (IsDefault) return;
         IsDefault = true;
+        RowVersion = Guid.NewGuid().ToByteArray();
         RaiseDomainEvent(new OrderStatusDefaultChangedDomainEvent(Id, Name, true));
     }
 
@@ -125,6 +130,7 @@ public class OrderStatus : AggregateRoot<OrderStatusId>, IActivatable
     {
         if (!IsDefault) return;
         IsDefault = false;
+        RowVersion = Guid.NewGuid().ToByteArray();
         RaiseDomainEvent(new OrderStatusDefaultChangedDomainEvent(Id, Name, false));
     }
 

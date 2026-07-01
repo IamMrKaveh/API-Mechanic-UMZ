@@ -1,8 +1,5 @@
 ﻿using Domain.Payment.Aggregates;
 using Domain.Payment.ValueObjects;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Payment.Seeders;
 
@@ -12,11 +9,11 @@ public sealed class PaymentMethodSeeder(
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        using var scope = scopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<DBContext>();
+
         try
         {
-            using var scope = scopeFactory.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<DBContext>();
-
             await EnsureMethodAsync(
                 context,
                 PaymentMethodCode.ZarinpalSandbox,

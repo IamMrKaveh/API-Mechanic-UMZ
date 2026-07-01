@@ -1,9 +1,5 @@
 ﻿using Domain.Order.Entities;
 using Domain.Order.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Order.Seeders;
 
@@ -29,11 +25,11 @@ public sealed class OrderStatusSeeder(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        using var scope = scopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<DBContext>();
+
         try
         {
-            using var scope = scopeFactory.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<DBContext>();
-
             foreach (var definition in Definitions)
             {
                 await EnsureStatusAsync(context, definition, cancellationToken);

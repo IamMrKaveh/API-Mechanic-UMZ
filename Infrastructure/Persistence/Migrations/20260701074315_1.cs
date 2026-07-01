@@ -183,7 +183,9 @@ namespace Infrastructure.Persistence.Migrations
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     IsDefault = table.Column<bool>(type: "boolean", nullable: false),
                     AllowCancel = table.Column<bool>(type: "boolean", nullable: false),
-                    AllowEdit = table.Column<bool>(type: "boolean", nullable: false)
+                    AllowEdit = table.Column<bool>(type: "boolean", nullable: false),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -592,7 +594,7 @@ namespace Infrastructure.Persistence.Migrations
                     PaymentTransactionId = table.Column<Guid>(type: "uuid", nullable: true),
                     PaymentMethodId = table.Column<Guid>(type: "uuid", nullable: true),
                     PaymentMethodId1 = table.Column<Guid>(type: "uuid", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -723,7 +725,7 @@ namespace Infrastructure.Persistence.Migrations
                     DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
                     BrandId = table.Column<Guid>(type: "uuid", nullable: false),
                     CategoryId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -1444,10 +1446,25 @@ namespace Infrastructure.Persistence.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderStatuses_IsActive",
+                table: "OrderStatuses",
+                column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderStatuses_IsDefault",
+                table: "OrderStatuses",
+                column: "IsDefault");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderStatuses_Name",
                 table: "OrderStatuses",
                 column: "Name",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderStatuses_SortOrder",
+                table: "OrderStatuses",
+                column: "SortOrder");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OutboxMessages_Dispatch",
