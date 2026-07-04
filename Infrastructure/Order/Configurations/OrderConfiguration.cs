@@ -114,7 +114,7 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
                    v => v == null ? null : PaymentMethodId.From(v.Value))
                .HasColumnName("PaymentMethodId");
 
-        builder.HasOne<Domain.Payment.Aggregates.PaymentMethod>()
+        builder.HasOne(e => e.PaymentMethod)
                .WithMany()
                .HasForeignKey(nameof(Domain.Order.Aggregates.Order.PaymentMethodId))
                .IsRequired(false)
