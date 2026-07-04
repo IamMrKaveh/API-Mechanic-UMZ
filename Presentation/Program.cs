@@ -1,18 +1,17 @@
 using Application.Common.DependencyInjection;
 using Infrastructure.Common.DependencyInjection;
+using Presentation.Common.Logging;
 using Serilog.Exceptions;
-using Serilog.Formatting.Compact;
 
-var logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+var logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Logs");
 var logsErrorDirectory = Path.Combine(logsDirectory, "errors");
 
 Directory.CreateDirectory(logsDirectory);
 Directory.CreateDirectory(logsErrorDirectory);
 
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-    .Enrich.FromLogContext()
-    .Enrich.WithExceptionDetails()
+    .MinimumLevel.Warning()
+    .WriteTo.Console(outputTemplate: "[{Level:u3}] {Message:lj}{NewLine}{Exception}")
     .CreateBootstrapLogger();
 
 try
@@ -28,36 +27,48 @@ try
             reloadOnChange: true)
         .AddEnvironmentVariables();
 
-    builder.Host.UseSerilog((context, services, configuration) =>
-        configuration
-            .ReadFrom.Configuration(context.Configuration)
-            .ReadFrom.Services(services)
+    builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+    {
+        loggerConfiguration
+            .MinimumLevel.Warning()
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Error)
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Infrastructure", LogEventLevel.Error)
+            .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Error)
+
             .Enrich.FromLogContext()
-            .Enrich.WithMachineName()
-            .Enrich.WithEnvironmentName()
-            .Enrich.WithProcessId()
-            .Enrich.WithProcessName()
-            .Enrich.WithThreadId()
             .Enrich.WithExceptionDetails()
+            .Enrich.WithProperty("Application", "Mechanic.Api")
+            .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
+
+            .Filter.ByExcluding(logEvent =>
+                logEvent.Properties.TryGetValue("RequestPath", out var path) &&
+                IsIgnoredPath(path.ToString()))
+
+            .WriteTo.Console(
+                outputTemplate: "[{Level:u3}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",
+                restrictedToMinimumLevel: LogEventLevel.Warning)
+
             .WriteTo.File(
-                path: Path.Combine(logsDirectory, "log-.txt"),
+                new NoTimestampCompactJsonFormatter(),
+                path: Path.Combine(logsDirectory, "log-.json"),
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 14,
-                fileSizeLimitBytes: 10 * 1024 * 1024,
+                fileSizeLimitBytes: 50 * 1024 * 1024,
                 rollOnFileSizeLimit: true,
                 shared: true,
-                outputTemplate:
-                "[{Level:u3}] " +
-                "{SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}")
-            .WriteTo.File(
-                formatter: new CompactJsonFormatter(),
-                path: Path.Combine(logsErrorDirectory, "error-.json"),
-                restrictedToMinimumLevel: LogEventLevel.Warning,
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 30,
-                fileSizeLimitBytes: 10 * 1024 * 1024,
-                rollOnFileSizeLimit: true,
-                shared: true));
+                restrictedToMinimumLevel: LogEventLevel.Warning)
+
+            .WriteTo.Logger(errorLogger => errorLogger
+                .Filter.ByIncludingOnly(le => le.Level >= LogEventLevel.Error)
+                .Enrich.WithProcessId()
+                .Enrich.WithThreadId()
+                .WriteTo.File(
+                    new NoTimestampCompactJsonFormatter(),
+                    path: Path.Combine(logsErrorDirectory, "errors-.json"),
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 90,
+                    shared: true));
+    });
 
     builder.AddApplicationAuthentication();
 
@@ -85,4 +96,14 @@ catch (Exception ex) when (ex is not HostAbortedException)
 finally
 {
     Log.CloseAndFlush();
+}
+
+static bool IsIgnoredPath(string? path)
+{
+    if (string.IsNullOrEmpty(path))
+        return false;
+
+    return path.Contains("/health", StringComparison.OrdinalIgnoreCase)
+        || path.Contains("/swagger", StringComparison.OrdinalIgnoreCase)
+        || path.Contains("/favicon.ico", StringComparison.OrdinalIgnoreCase);
 }

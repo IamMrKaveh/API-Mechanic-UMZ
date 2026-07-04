@@ -63,12 +63,16 @@ public class CustomExceptionHandlerMiddleware(
 
     private void LogException(HttpContext context, Exception exception, int statusCode, bool isUnhandled)
     {
-        var level = isUnhandled ? Microsoft.Extensions.Logging.LogLevel.Error : Microsoft.Extensions.Logging.LogLevel.Warning;
+        var level = isUnhandled
+            ? LogLevel.Error
+            : LogLevel.Warning;
+
         logger.Log(level, exception,
-            "Request {Method} {Path} failed with {StatusCode}: {Message}",
+            "Request {Method} {Path} failed with {StatusCode} ({ExceptionType}): {Message}",
             context.Request.Method,
             context.Request.Path,
             statusCode,
+            exception.GetType().Name,
             exception.Message);
     }
 

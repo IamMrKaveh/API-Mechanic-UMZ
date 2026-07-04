@@ -37,7 +37,7 @@ public sealed class WishlistController(IMediator mediator) : BaseApiController(m
         [FromBody] ToggleWishlistRequest request,
         CancellationToken ct)
     {
-        return await Send(new ToggleWishlistCommand(request.ProductId, RequestContext.UserId ?? Guid.Empty), ct);
+        return await Send(new ToggleWishlistCommand(RequestContext.UserId ?? Guid.Empty, request.ProductId), ct);
     }
 
     [HttpDelete("{productId:guid}")]
