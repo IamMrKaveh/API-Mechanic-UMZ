@@ -5,15 +5,16 @@ using Domain.User.ValueObjects;
 namespace Application.Cart.Features.Queries.ValidateCartForCheckout;
 
 public class ValidateCartForCheckoutHandler(
-    ICartQueryService cartQueryService)
+    ICartQueryService cartQueryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<ValidateCartForCheckoutQuery, CartCheckoutValidationDto>
 {
     public async Task<ServiceResult<CartCheckoutValidationDto>> Handle(
         ValidateCartForCheckoutQuery request,
         CancellationToken ct)
     {
-        UserId? userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
-        GuestToken? guestToken = GuestToken.TryCreate(request.GuestToken);
+        UserId? userId = currentUserService.UserId.HasValue ? UserId.From(currentUserService.UserId.Value) : null;
+        GuestToken? guestToken = GuestToken.TryCreate(currentUserService.GuestToken);
 
         if (userId is null && guestToken is null)
             return ServiceResult<CartCheckoutValidationDto>.Validation("UserId یا GuestToken الزامی است.");

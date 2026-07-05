@@ -31,6 +31,7 @@ public class NotificationsController(
     }
 
     [HttpGet("unread-count")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUnreadCount(CancellationToken ct)
     {

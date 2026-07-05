@@ -5,18 +5,22 @@ using Domain.User.ValueObjects;
 namespace Application.Cart.Features.Queries.GetCart;
 
 public class GetCartHandler(
-    ICartQueryService cartQueryService)
+    ICartQueryService cartQueryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<GetCartQuery, CartDetailDto>
 {
     public async Task<ServiceResult<CartDetailDto>> Handle(
         GetCartQuery request,
         CancellationToken ct)
     {
-        UserId? userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
-        GuestToken? guestToken = GuestToken.TryCreate(request.GuestToken);
+        UserId? userId = currentUserService.UserId.HasValue
+            ? UserId.From(currentUserService.UserId.Value)
+            : null;
+
+        GuestToken? guestToken = GuestToken.TryCreate(currentUserService.GuestToken);
 
         if (userId is null && guestToken is null)
-            return ServiceResult<CartDetailDto>.Validation("UserId یا GuestToken الزامی است.");
+            return ServiceResult<CartDetailDto>.Success(new CartDetailDto());
 
         var cart = await cartQueryService.GetCartDetailAsync(userId, guestToken, ct);
 

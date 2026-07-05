@@ -5,15 +5,16 @@ using Domain.User.ValueObjects;
 namespace Application.Cart.Features.Queries.GetCartSummary;
 
 public class GetCartSummaryHandler(
-    ICartQueryService cartQueryService)
+    ICartQueryService cartQueryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<GetCartSummaryQuery, CartSummaryDto>
 {
     public async Task<ServiceResult<CartSummaryDto>> Handle(
         GetCartSummaryQuery request,
         CancellationToken ct)
     {
-        UserId? userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
-        GuestToken? guestToken = GuestToken.TryCreate(request.GuestToken);
+        UserId? userId = currentUserService.UserId.HasValue ? UserId.From(currentUserService.UserId.Value) : null;
+        GuestToken? guestToken = GuestToken.TryCreate(currentUserService.GuestToken);
 
         if (userId is null && guestToken is null)
             return ServiceResult<CartSummaryDto>.Validation("UserId یا GuestToken الزامی است.");

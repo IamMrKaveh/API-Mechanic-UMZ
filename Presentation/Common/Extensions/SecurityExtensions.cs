@@ -1,8 +1,20 @@
+using System.Diagnostics;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Serilog;
+
 namespace Presentation.Common.Extensions;
 
 public static class SecurityExtensions
 {
     private const long SlowRequestThresholdMs = 2000;
+
+    private static readonly HashSet<int> SuppressedStatusCodes = new()
+    {
+        StatusCodes.Status401Unauthorized,
+        StatusCodes.Status403Forbidden,
+        StatusCodes.Status404NotFound
+    };
 
     public static IApplicationBuilder UseRequestPerformanceMonitoring(this IApplicationBuilder app)
     {
@@ -22,8 +34,20 @@ public static class SecurityExtensions
     }
 
     private static bool ShouldLogRequest(HttpContext context, long elapsedMs)
-        => elapsedMs > SlowRequestThresholdMs ||
-           (context.Response.StatusCode >= 400 && context.Response.StatusCode != 404);
+    {
+        if (elapsedMs > SlowRequestThresholdMs)
+        {
+            return true;
+        }
+
+        var status = context.Response.StatusCode;
+        if (status < 400)
+        {
+            return false;
+        }
+
+        return !SuppressedStatusCodes.Contains(status);
+    }
 
     private static void LogSlowOrFailedRequest(HttpContext context, long elapsedMs)
     {

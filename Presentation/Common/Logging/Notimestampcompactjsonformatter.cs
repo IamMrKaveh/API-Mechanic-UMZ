@@ -1,4 +1,5 @@
 ﻿using Serilog.Formatting;
+using System.Collections;
 using System.Globalization;
 using System.Text.Encodings.Web;
 
@@ -43,16 +44,31 @@ public sealed class NoTimestampCompactJsonFormatter : ITextFormatter
             if (ExcludedProperties.Contains(key))
                 continue;
 
-            var rendered = Simplify(value);
-            if (string.IsNullOrEmpty(rendered))
+            var converted = ToJsonValue(value);
+            if (converted is null || (converted is string s && string.IsNullOrEmpty(s)))
                 continue;
 
-            entry[ToCamelCase(key)] = rendered;
+            entry[ToCamelCase(key)] = converted;
         }
 
         if (logEvent.Exception is { } exception)
         {
             entry["exceptionType"] = exception.GetType().FullName ?? exception.GetType().Name;
+            entry["exceptionMessage"] = exception.Message;
+
+            if (exception.InnerException is { } inner)
+            {
+                entry["innerExceptionType"] = inner.GetType().FullName ?? inner.GetType().Name;
+                entry["innerExceptionMessage"] = inner.Message;
+            }
+
+            if (exception.Data.Count > 0)
+            {
+                entry["exceptionData"] = exception.Data
+                    .Cast<DictionaryEntry>()
+                    .ToDictionary(e => e.Key.ToString() ?? string.Empty, e => e.Value?.ToString());
+            }
+
             entry["exception"] = exception.ToString();
         }
 
@@ -72,6 +88,21 @@ public sealed class NoTimestampCompactJsonFormatter : ITextFormatter
         ScalarValue { Value: null } => null,
         ScalarValue { Value: IFormattable formattable } => formattable.ToString(null, CultureInfo.InvariantCulture),
         ScalarValue scalar => scalar.Value?.ToString(),
+        _ => value.ToString()
+    };
+
+    private static object? ToJsonValue(LogEventPropertyValue value) => value switch
+    {
+        ScalarValue { Value: null } => null,
+        ScalarValue { Value: IFormattable formattable } => formattable.ToString(null, CultureInfo.InvariantCulture),
+        ScalarValue scalar => scalar.Value,
+        SequenceValue sequence => sequence.Elements.Select(ToJsonValue).ToList(),
+        DictionaryValue dictionary => dictionary.Elements.ToDictionary(
+            kvp => Simplify(kvp.Key) ?? string.Empty,
+            kvp => ToJsonValue(kvp.Value)),
+        StructureValue structure => structure.Properties.ToDictionary(
+            p => ToCamelCase(p.Name),
+            p => ToJsonValue(p.Value)),
         _ => value.ToString()
     };
 

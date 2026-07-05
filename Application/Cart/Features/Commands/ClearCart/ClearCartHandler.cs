@@ -6,20 +6,21 @@ namespace Application.Cart.Features.Commands.ClearCart;
 
 public class ClearCartHandler(
     ICartRepository cartRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICurrentUserService currentUserService)
     : ICommandHandler<ClearCartCommand>
 {
     public async Task<ServiceResult> Handle(ClearCartCommand request, CancellationToken ct)
     {
         Domain.Cart.Aggregates.Cart? cart;
 
-        if (request.UserId.HasValue)
+        if (currentUserService.UserId.HasValue)
         {
-            cart = await cartRepository.FindByUserIdAsync(UserId.From(request.UserId.Value), ct);
+            cart = await cartRepository.FindByUserIdAsync(UserId.From(currentUserService.UserId.Value), ct);
         }
         else
         {
-            var guestToken = GuestToken.TryCreate(request.GuestToken);
+            var guestToken = GuestToken.TryCreate(currentUserService.GuestToken);
             if (guestToken is null)
                 return ServiceResult.Failure("توکن مهمان نامعتبر است.", SharedKernel.Results.ErrorType.Validation);
 

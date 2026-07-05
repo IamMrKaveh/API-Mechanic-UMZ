@@ -9,21 +9,22 @@ public class SyncCartPricesHandler(
     ICartRepository cartRepository,
     IVariantRepository variantRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : ICommandHandler<SyncCartPricesCommand>
 {
     public async Task<ServiceResult> Handle(SyncCartPricesCommand request, CancellationToken ct)
     {
         Domain.Cart.Aggregates.Cart? cart;
+        var userId = UserId.From(currentUserService.UserId.Value);
+        var guestToken = GuestToken.Create(currentUserService.GuestToken);
 
-        if (request.UserId.HasValue)
+        if (currentUserService.UserId.HasValue)
         {
-            var userId = UserId.From(request.UserId.Value);
             cart = await cartRepository.FindByUserIdAsync(userId, ct);
         }
-        else if (!string.IsNullOrWhiteSpace(request.GuestToken))
+        else if (!string.IsNullOrWhiteSpace(currentUserService.GuestToken))
         {
-            var guestToken = GuestToken.Create(request.GuestToken);
             cart = await cartRepository.FindByGuestTokenAsync(guestToken, ct);
         }
         else
@@ -44,9 +45,8 @@ public class SyncCartPricesHandler(
         cartRepository.Update(cart);
         await unitOfWork.SaveChangesAsync(ct);
 
-        if (request.UserId.HasValue)
+        if (userId is not null)
         {
-            var userId = UserId.From(request.UserId.Value);
             await auditService.LogAsync("Cart", "SyncCartPrices", IpAddress.Unknown, userId, entityType: "Cart", ct: ct);
         }
 
