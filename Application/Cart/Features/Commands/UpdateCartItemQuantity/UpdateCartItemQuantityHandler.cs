@@ -6,22 +6,23 @@ using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
 
-namespace Application.Cart.Features.Commands.UpdateCartItem;
+namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
 
-public class UpdateCartItemHandler(
+public class UpdateCartItemQuantityHandler(
     ICartRepository cartRepository,
     IVariantRepository variantRepository,
     IInventoryRepository inventoryRepository,
     ICartQueryService cartQueryService,
-    IUnitOfWork unitOfWork)
-    : ICommandHandler<UpdateCartItemCommand, CartDetailDto>
+    IUnitOfWork unitOfWork,
+    ICurrentUserService currentUserService)
+    : ICommandHandler<UpdateCartItemQuantityCommand, CartDetailDto>
 {
     public async Task<ServiceResult<CartDetailDto>> Handle(
-        UpdateCartItemCommand request,
+        UpdateCartItemQuantityCommand request,
         CancellationToken ct)
     {
-        UserId? userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
-        GuestToken? guestToken = GuestToken.TryCreate(request.GuestToken);
+        UserId? userId = currentUserService.UserId.HasValue ? UserId.From(currentUserService.UserId.Value) : null;
+        GuestToken? guestToken = GuestToken.TryCreate(currentUserService.GuestToken);
 
         if (userId is null && guestToken is null)
             return ServiceResult<CartDetailDto>.Validation("UserId یا GuestToken الزامی است.");

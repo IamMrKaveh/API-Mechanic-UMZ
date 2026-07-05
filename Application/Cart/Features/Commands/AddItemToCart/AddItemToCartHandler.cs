@@ -6,16 +6,17 @@ using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
 
-namespace Application.Cart.Features.Commands.AddToCart;
+namespace Application.Cart.Features.Commands.AddItemToCart;
 
-public class AddToCartHandler(
+public class AddItemToCartHandler(
     ICartRepository cartRepository,
     IVariantRepository variantRepository,
     IInventoryRepository inventoryRepository,
-    IUnitOfWork unitOfWork)
-    : ICommandHandler<AddToCartCommand>
+    IUnitOfWork unitOfWork,
+    ICurrentUserService currentUserService)
+    : ICommandHandler<AddItemToCartCommand>
 {
-    public async Task<ServiceResult> Handle(AddToCartCommand request, CancellationToken ct)
+    public async Task<ServiceResult> Handle(AddItemToCartCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
         var variant = await variantRepository.GetWithProductAsync(variantId, ct);
@@ -33,9 +34,9 @@ public class AddToCartHandler(
         Domain.Cart.Aggregates.Cart? cart;
         var isNewCart = false;
 
-        if (request.UserId.HasValue)
+        if (currentUserService.UserId.HasValue)
         {
-            var userId = UserId.From(request.UserId.Value);
+            var userId = UserId.From(currentUserService.UserId.Value);
             cart = await cartRepository.FindByUserIdAsync(userId, ct);
 
             if (cart is null)
@@ -45,9 +46,9 @@ public class AddToCartHandler(
                 isNewCart = true;
             }
         }
-        else if (!string.IsNullOrWhiteSpace(request.GuestToken))
+        else if (!string.IsNullOrWhiteSpace(currentUserService.GuestToken))
         {
-            var guestToken = GuestToken.Create(request.GuestToken);
+            var guestToken = GuestToken.Create(currentUserService.GuestToken);
             cart = await cartRepository.FindByGuestTokenAsync(guestToken, ct);
 
             if (cart is null)

@@ -1,5 +1,5 @@
 ﻿namespace Presentation.Cart.Requests;
 
-public record AddToCartRequest(Guid VariantId, int Quantity);
+public record AddCartItemRequest(Guid VariantId, int Quantity);
 
-public record UpdateCartItemRequest(int Quantity);
+public record UpdateCartItemQuantityRequest(int Quantity);

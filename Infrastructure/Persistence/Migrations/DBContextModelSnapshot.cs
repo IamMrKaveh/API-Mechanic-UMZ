@@ -903,9 +903,6 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("PaymentMethodId");
 
-                    b.Property<Guid?>("PaymentMethodId1")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid?>("PaymentTransactionId")
                         .HasColumnType("uuid");
 
@@ -940,8 +937,6 @@ namespace Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("PaymentMethodId");
-
-                    b.HasIndex("PaymentMethodId1");
 
                     b.HasIndex("UserId");
 
@@ -2655,14 +2650,10 @@ namespace Infrastructure.Persistence.Migrations
                         .HasForeignKey("AppliedDiscountCodeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("Domain.Payment.Aggregates.PaymentMethod", null)
+                    b.HasOne("Domain.Payment.Aggregates.PaymentMethod", "PaymentMethod")
                         .WithMany()
                         .HasForeignKey("PaymentMethodId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Domain.Payment.Aggregates.PaymentMethod", "PaymentMethod")
-                        .WithMany()
-                        .HasForeignKey("PaymentMethodId1");
 
                     b.HasOne("Domain.User.Aggregates.User", "User")
                         .WithMany()

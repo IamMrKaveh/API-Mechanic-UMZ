@@ -7,13 +7,14 @@ namespace Application.Cart.Features.Commands.MergeGuestCart;
 public class MergeGuestCartHandler(
     ICartRepository cartRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : ICommandHandler<MergeGuestCartCommand>
 {
     public async Task<ServiceResult> Handle(MergeGuestCartCommand request, CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId!.Value);
-        var guestToken = GuestToken.Create(request.GuestToken);
+        var userId = UserId.From(currentUserService.UserId!.Value);
+        var guestToken = GuestToken.Create(currentUserService.GuestToken);
 
         var guestCart = await cartRepository.FindByGuestTokenAsync(guestToken, ct);
         if (guestCart is null)

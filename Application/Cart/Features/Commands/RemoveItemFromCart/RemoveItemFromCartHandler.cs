@@ -4,20 +4,21 @@ using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 
-namespace Application.Cart.Features.Commands.RemoveFromCart;
+namespace Application.Cart.Features.Commands.RemoveItemFromCart;
 
-public class RemoveFromCartHandler(
+public class RemoveItemFromCartHandler(
     ICartRepository cartRepository,
     ICartQueryService cartQueryService,
-    IUnitOfWork unitOfWork)
-    : ICommandHandler<RemoveFromCartCommand, CartDetailDto>
+    IUnitOfWork unitOfWork,
+    ICurrentUserService currentUserService)
+    : ICommandHandler<RemoveItemFromCartCommand, CartDetailDto>
 {
     public async Task<ServiceResult<CartDetailDto>> Handle(
-        RemoveFromCartCommand request,
+        RemoveItemFromCartCommand request,
         CancellationToken ct)
     {
-        UserId? userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
-        GuestToken? guestToken = GuestToken.TryCreate(request.GuestToken);
+        UserId? userId = currentUserService.UserId.HasValue ? UserId.From(currentUserService.UserId.Value) : null;
+        GuestToken? guestToken = GuestToken.TryCreate(currentUserService.GuestToken);
 
         if (userId is null && guestToken is null)
             return ServiceResult<CartDetailDto>.Validation("UserId یا GuestToken الزامی است.");

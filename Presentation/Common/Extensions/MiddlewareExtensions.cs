@@ -34,7 +34,7 @@ public static class MiddlewareExtensions
 
         app.UseMiddleware<CorrelationIdMiddleware>();
 
-        app.UseMiddleware<RequestLoggingEnrichmentMiddleware>();
+        app.UseMiddleware<RequestLoggingMiddleware>();
 
         app.UseSerilogRequestLogging(options =>
         {
@@ -52,6 +52,7 @@ public static class MiddlewareExtensions
             {
                 diagnosticContext.Set("RemoteIpAddress", httpContext.Connection.RemoteIpAddress?.ToString() ?? "");
                 diagnosticContext.Set("UserAgent", httpContext.Request.Headers.UserAgent.ToString());
+                diagnosticContext.Set("TraceId", httpContext.TraceIdentifier);
             };
         });
 
