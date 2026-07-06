@@ -70,6 +70,7 @@
 	  <Folder Include="Common\Extensions\" />
 	  <Folder Include="Common\Outbox\" />
 	  <Folder Include="Payment\Configurations\NewFolder\" />
+	  <Folder Include="Security\Options\" />
 	  <Folder Include="Wallet\Services\" />
 	</ItemGroup>
 

@@ -1,6 +1,12 @@
 ﻿using Application.Auth.Contracts;
-using Infrastructure.Security.Options;
+using Application.Auth.Features.Shared;
+using Domain.Security.ValueObjects;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using SharedKernel.Constants;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace Infrastructure.Auth.Services;
 
@@ -8,22 +14,13 @@ public sealed class JwtTokenGenerator(IOptions<JwtOptions> jwtOptions) : IJwtTok
 {
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
 
-    public string GenerateAccessToken(Domain.User.Aggregates.User user)
+    public string GenerateAccessToken(Domain.User.Aggregates.User user, SessionId sessionId)
     {
-        var claims = BuildClaims(user);
+        var claims = BuildClaims(user, sessionId);
         return CreateToken(claims, DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes));
     }
 
-    public (string AccessToken, string RefreshToken) GenerateTokens(Domain.User.Aggregates.User user)
-    {
-        var accessToken = GenerateAccessToken(user);
-        var refreshTokenBytes = new byte[32];
-        RandomNumberGenerator.Fill(refreshTokenBytes);
-        var refreshToken = Convert.ToBase64String(refreshTokenBytes);
-        return (accessToken, refreshToken);
-    }
-
-    private static List<Claim> BuildClaims(Domain.User.Aggregates.User user)
+    private static List<Claim> BuildClaims(Domain.User.Aggregates.User user, SessionId sessionId)
     {
         var userId = user.Id.Value.ToString();
 
@@ -31,6 +28,8 @@ public sealed class JwtTokenGenerator(IOptions<JwtOptions> jwtOptions) : IJwtTok
         {
             new(JwtRegisteredClaimNames.Sub, userId),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtRegisteredClaimNames.Sid, sessionId.Value.ToString()),
+            new("sid", sessionId.Value.ToString()),
             new("nameid", userId),
             new(ClaimTypes.MobilePhone, user.PhoneNumber.Value),
             new(ClaimTypes.Role, AppRoles.User),

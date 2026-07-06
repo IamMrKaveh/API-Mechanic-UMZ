@@ -1,3 +1,4 @@
+using Application.Common.Results;
 using Application.Shipping.Features.Queries.CalculateShippingCost;
 using Application.Shipping.Features.Queries.GetAvailableShippings;
 using Application.Shipping.Features.Queries.GetAvailableShippingsForVariants;
@@ -14,10 +15,11 @@ public sealed class CheckoutShippingController(IMediator mediator) : BaseApiCont
     [HttpGet("available")]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<AvailableShippingDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAvailableShippings(
-        [FromQuery] decimal orderAmount,
-        CancellationToken ct)
+        [FromQuery] decimal orderAmount = 0m,
+        CancellationToken ct = default)
     {
-        var query = new GetAvailableShippingsQuery(orderAmount);
+        var safeAmount = orderAmount < 0 ? 0m : orderAmount;
+        var query = new GetAvailableShippingsQuery(safeAmount);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
@@ -29,7 +31,8 @@ public sealed class CheckoutShippingController(IMediator mediator) : BaseApiCont
         [FromQuery] decimal orderAmount,
         CancellationToken ct)
     {
-        var query = new CalculateShippingCostQuery(shippingId, orderAmount);
+        var safeAmount = orderAmount < 0 ? 0m : orderAmount;
+        var query = new CalculateShippingCostQuery(shippingId, safeAmount);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
@@ -40,7 +43,7 @@ public sealed class CheckoutShippingController(IMediator mediator) : BaseApiCont
         [FromBody] ICollection<Guid> variantIds,
         CancellationToken ct)
     {
-        var query = new GetAvailableShippingsForVariantsQuery(variantIds);
+        var query = new GetAvailableShippingsForVariantsQuery(variantIds ?? Array.Empty<Guid>());
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
@@ -51,6 +54,16 @@ public sealed class CheckoutShippingController(IMediator mediator) : BaseApiCont
         [FromBody] GetShippingQuotesQuery query,
         CancellationToken ct)
     {
+        if (query is null)
+            return ToActionResult(ServiceResult<IReadOnlyList<AvailableShippingDto>>.Success([]));
+
+        if (query.OrderAmount < 0 || query.Items is null || query.Items.Count == 0)
+        {
+            var fallback = new GetAvailableShippingsQuery(query?.OrderAmount < 0 ? 0m : query!.OrderAmount);
+            var fallbackResult = await Mediator.Send(fallback, ct);
+            return ToActionResult(fallbackResult);
+        }
+
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }

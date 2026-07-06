@@ -18,10 +18,4 @@ public interface IOtpService
         UserId userId,
         OtpPurpose purpose,
         CancellationToken ct = default);
-
-    Task<bool> VerifyOtpAsync(
-        PhoneNumber phoneNumber,
-        OtpCode code,
-        OtpPurpose purpose,
-        CancellationToken ct = default);
 }

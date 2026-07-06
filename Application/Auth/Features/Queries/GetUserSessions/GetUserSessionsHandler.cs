@@ -12,11 +12,12 @@ public class GetUserSessionsHandler(
         CancellationToken ct)
     {
         var userId = UserId.From(request.UserId);
-        var sessions = await userQueryService.GetActiveSessionsAsync(userId, ct);
+        var sessions = await userQueryService.GetActiveSessionsAsync(userId, request.CurrentSessionId, ct);
 
+        var list = sessions.ToList();
         var paginatedResult = PaginatedResult<UserSessionDto>.Create(
-            sessions.ToList(),
-            sessions.Count(),
+            list,
+            list.Count,
             1,
             int.MaxValue);
 

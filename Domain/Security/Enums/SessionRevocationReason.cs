@@ -8,5 +8,6 @@ public enum SessionRevocationReason
     PasswordChanged = 4,
     AccountDeactivated = 5,
     Expired = 6,
-    AllSessionsRevoked = 7
+    AllSessionsRevoked = 7,
+    PhoneChanged = 8
 }

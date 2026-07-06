@@ -52,7 +52,6 @@ public class AuthController(
 
     [HttpPost("otp")]
     [AllowAnonymous]
-    [IgnoreAntiforgeryToken]
     [OtpRateLimit]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> RequestOtp(
@@ -70,14 +69,13 @@ public class AuthController(
 
     [HttpPost("otp/verify")]
     [AllowAnonymous]
-    [IgnoreAntiforgeryToken]
     [OtpRateLimit]
     [ProducesResponseType(typeof(ApiResponse<AuthResult>), StatusCodes.Status201Created)]
     public async Task<IActionResult> VerifyOtp(
         [FromBody] VerifyOtpRequest request,
         CancellationToken ct)
     {
-        var command = new VerifyOtpCommand(request.PhoneNumber, request.Code);
+        var command = new VerifyOtpCommand(request.PhoneNumber, request.Code, request.DeviceInfo);
         var result = await Mediator.Send(command, ct);
 
         if (result.IsSuccess)
@@ -88,7 +86,6 @@ public class AuthController(
 
     [HttpPost("token/refresh")]
     [AllowAnonymous]
-    [IgnoreAntiforgeryToken]
     [ProducesResponseType(typeof(ApiResponse<AuthResult>), StatusCodes.Status201Created)]
     public async Task<IActionResult> RefreshToken(
         [FromBody] RefreshRequest request,

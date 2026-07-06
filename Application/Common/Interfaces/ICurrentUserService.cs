@@ -3,6 +3,7 @@ namespace Application.Common.Interfaces;
 public interface ICurrentUserService
 {
     Guid? UserId { get; }
+    Guid? SessionId { get; }
     bool IsAuthenticated { get; }
     bool IsAdmin { get; }
     string? IpAddress { get; }

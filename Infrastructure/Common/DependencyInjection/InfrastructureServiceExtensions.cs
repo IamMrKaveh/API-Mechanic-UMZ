@@ -2,6 +2,7 @@
 using Application.Analytics.Contracts;
 using Application.Attribute.Adapters;
 using Application.Auth.Contracts;
+using Application.Auth.Features.Shared;
 using Application.Brand.Contracts;
 using Application.Cart.Contracts;
 using Application.Category.Contracts;
@@ -98,7 +99,6 @@ using Infrastructure.Search;
 using Infrastructure.Search.Contracts;
 using Infrastructure.Search.Options;
 using Infrastructure.Search.Services;
-using Infrastructure.Security.Options;
 using Infrastructure.Security.Services;
 using Infrastructure.Shipping.QueryServices;
 using Infrastructure.Shipping.Repositories;
@@ -326,7 +326,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IOtpService, OtpService>();
-        services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
     }
 
@@ -507,7 +506,6 @@ public static class InfrastructureServiceExtensions
 
         if (options is not null && options.IsEnabled)
         {
-            services.AddHostedService<DeadLetterQueueJob>();
             services.AddHostedService<ElasticsearchOutboxJob>();
 
             if (options.EnableBackgroundSync)

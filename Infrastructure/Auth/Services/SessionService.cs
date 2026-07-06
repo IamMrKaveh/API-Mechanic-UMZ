@@ -5,8 +5,6 @@ using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Auth.Options;
-using Infrastructure.Security.Options;
 
 namespace Infrastructure.Auth.Services;
 

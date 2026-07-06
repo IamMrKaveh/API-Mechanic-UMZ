@@ -1,9 +1,9 @@
 using Application.Auth.Contracts;
+using Application.Auth.Features.Shared;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Auth.Options;
 
 namespace Infrastructure.Auth.Services;
 
@@ -50,14 +50,5 @@ public sealed class OtpService(
         var window = TimeSpan.FromMinutes(_authOptions.OtpRateLimitWindowMinutes);
         var count = await otpRepository.CountRecentByUserIdAsync(userId, purpose, window, ct);
         return count < _authOptions.MaxOtpPerWindow;
-    }
-
-    public async Task<bool> VerifyOtpAsync(
-        PhoneNumber phoneNumber,
-        OtpCode otpCode,
-        OtpPurpose purpose,
-        CancellationToken ct = default)
-    {
-        return await Task.FromResult(true);
     }
 }

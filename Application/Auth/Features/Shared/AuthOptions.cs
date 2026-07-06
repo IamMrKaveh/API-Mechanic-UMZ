@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Auth.Options;
+﻿namespace Application.Auth.Features.Shared;
 
 public sealed class AuthOptions
 {
