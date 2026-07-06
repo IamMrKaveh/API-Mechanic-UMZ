@@ -1,4 +1,5 @@
 using Application.Common.Interfaces;
+using Microsoft.IdentityModel.JsonWebTokens;
 using SharedKernel.Constants;
 
 namespace Presentation.Common.Services;
@@ -22,6 +23,17 @@ public class CurrentUserService(
             var value = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
                 ?? User?.FindFirst("nameid")?.Value
                 ?? User?.FindFirst("sub")?.Value;
+
+            return Guid.TryParse(value, out var id) ? id : null;
+        }
+    }
+
+    public Guid? SessionId
+    {
+        get
+        {
+            var value = User?.FindFirst("sid")?.Value
+                ?? User?.FindFirst(JwtRegisteredClaimNames.Sid)?.Value;
 
             return Guid.TryParse(value, out var id) ? id : null;
         }

@@ -64,11 +64,13 @@ public static class MiddlewareExtensions
 
         app.UseCustomCors();
 
+        app.UseMiddleware<RateLimitMiddleware>();
+
         app.UseAuthentication();
 
         app.UseAuthorization();
 
-        app.UseMiddleware<RateLimitMiddleware>();
+        app.UseMiddleware<SessionActivityMiddleware>();
 
         app.UseAdminIpWhitelist();
 

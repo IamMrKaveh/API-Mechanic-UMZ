@@ -89,6 +89,20 @@ public sealed class UserSession : AggregateRoot<SessionId>
         RaiseDomainEvent(new SessionExpiredEvent(Id, UserId));
     }
 
+    public void UpdateActivity(DateTime timestamp)
+    {
+        if (IsRevoked)
+            return;
+
+        if (IsExpired)
+            return;
+
+        if (LastActivityAt.HasValue && timestamp <= LastActivityAt.Value)
+            return;
+
+        LastActivityAt = timestamp;
+    }
+
     public bool ValidateRefreshToken(string token)
     {
         if (!IsActive)

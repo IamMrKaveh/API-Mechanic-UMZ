@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Security.Options;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Application.Auth.Features.Shared;
 
 public sealed class JwtOptions
 {
@@ -14,7 +16,9 @@ public sealed class JwtOptions
     [Required(AllowEmptyStrings = false)]
     public string Audience { get; init; } = string.Empty;
 
-    public int AccessTokenExpirationMinutes { get; init; } = 15;
+    [Range(1, 1440)]
+    public int AccessTokenExpirationMinutes { get; init; } = 60;
 
-    public int RefreshTokenExpirationDays { get; init; } = 7;
+    [Range(1, 365)]
+    public int RefreshTokenExpirationDays { get; init; } = 30;
 }

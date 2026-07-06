@@ -1,4 +1,4 @@
-﻿using Infrastructure.Security.Options;
+﻿using Application.Auth.Features.Shared;
 using Infrastructure.Security.Settings;
 using Microsoft.IdentityModel.Tokens;
 

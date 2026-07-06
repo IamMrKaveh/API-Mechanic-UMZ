@@ -1,4 +1,5 @@
 using Domain.Security.Enums;
+using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -7,7 +8,7 @@ namespace Application.User.Features.Commands.ChangePhoneNumber;
 
 public class ChangePhoneNumberHandler(
     IUserRepository userRepository,
-    IOtpService otpService,
+    IOtpRepository otpRepository,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
     IAuditService auditService)
@@ -33,11 +34,22 @@ public class ChangePhoneNumberHandler(
             return ServiceResult.NotFound("کاربر یافت نشد.");
 
         var otpCode = OtpCode.Create(request.OtpCode);
-        otpService.HashOtp(otpCode);
 
-        var isValid = await otpService.VerifyOtpAsync(phoneNumber, otpCode, OtpPurpose.PhoneVerification, ct);
-        if (!isValid)
-            return ServiceResult.Failure("کد تأیید نادرست است.");
+        var otp = await otpRepository.GetLatestActiveByUserIdAsync(userId, OtpPurpose.PhoneVerification, ct);
+        if (otp is null)
+            return ServiceResult.Failure("کد OTP فعالی یافت نشد.");
+
+        try
+        {
+            otp.Verify(otpCode);
+        }
+        catch (DomainException ex)
+        {
+            otpRepository.Update(otp);
+            return ServiceResult.Failure(ex.Message);
+        }
+
+        otpRepository.Update(otp);
 
         try
         {

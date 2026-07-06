@@ -26,11 +26,6 @@ public static class ControllersExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<IHttpResultMapper, HttpResultMapper>();
 
-        services.AddAntiforgery(options =>
-        {
-            options.HeaderName = "X-XSRF-TOKEN";
-        });
-
         services.AddSwaggerServices();
 
         return services;

@@ -1,12 +1,17 @@
 using System.Buffers.Binary;
+using Application.Common.Interfaces;
 using Application.Order.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Infrastructure.Order.QueryServices;
 
-public sealed class OrderQueryService(DBContext context) : IOrderQueryService
+public sealed class OrderQueryService(
+    DBContext context,
+    IUrlResolverService urlResolver) : IOrderQueryService
 {
+    private const string ProductEntityType = "Product";
+
     public async Task<PaginatedResult<OrderListItemDto>> GetUserOrdersAsync(
         UserId userId,
         int page,
@@ -133,56 +138,83 @@ public sealed class OrderQueryService(DBContext context) : IOrderQueryService
         UserId userId,
         CancellationToken ct = default)
     {
-        var dto = await context.Orders
+        var raw = await context.Orders
             .AsNoTracking()
             .Where(o => o.Id == orderId && o.UserId == userId)
-            .Select(o => new OrderDto
+            .Select(o => new
             {
-                Id = o.Id.Value,
-                OrderNumber = o.OrderNumber.Value,
-                UserId = o.UserId.Value,
-                Status = o.Status.Value,
-                StatusDisplayName = o.Status.DisplayName,
-                SubTotal = o.SubTotal.Amount,
-                ShippingCost = o.ShippingCost.Amount,
-                DiscountAmount = o.DiscountAmount.Amount,
-                FinalAmount = o.FinalAmount.Amount,
-                IsPaid = o.IsPaid,
-                IsCancelled = o.IsCancelled,
-                CancellationReason = o.CancellationReason,
-                ReceiverInfo = new ReceiverInfoDto
+                Order = new OrderDto
                 {
-                    FullName = o.ReceiverInfo.FullName,
-                    PhoneNumber = o.ReceiverInfo.PhoneNumber
+                    Id = o.Id.Value,
+                    OrderNumber = o.OrderNumber.Value,
+                    UserId = o.UserId.Value,
+                    Status = o.Status.Value,
+                    StatusDisplayName = o.Status.DisplayName,
+                    SubTotal = o.SubTotal.Amount,
+                    ShippingCost = o.ShippingCost.Amount,
+                    DiscountAmount = o.DiscountAmount.Amount,
+                    FinalAmount = o.FinalAmount.Amount,
+                    IsPaid = o.IsPaid,
+                    IsCancelled = o.IsCancelled,
+                    CancellationReason = o.CancellationReason,
+                    ReceiverInfo = new ReceiverInfoDto
+                    {
+                        FullName = o.ReceiverInfo.FullName,
+                        PhoneNumber = o.ReceiverInfo.PhoneNumber
+                    },
+                    DeliveryAddress = new DeliveryAddressDto
+                    {
+                        Province = o.DeliveryAddress.Province,
+                        City = o.DeliveryAddress.City,
+                        AddressLine = o.DeliveryAddress.Street,
+                        PostalCode = o.DeliveryAddress.PostalCode
+                    },
+                    Items = o.OrderItems.Select(i => new OrderItemDto
+                    {
+                        Id = i.Id.Value,
+                        VariantId = i.VariantId.Value,
+                        ProductId = i.ProductId.Value,
+                        ProductName = i.ProductName,
+                        Sku = i.Sku,
+                        UnitPrice = i.UnitPrice.Amount,
+                        Quantity = i.Quantity,
+                        TotalPrice = i.TotalPrice.Amount
+                    }).ToList(),
+                    CreatedAt = o.CreatedAt,
+                    UpdatedAt = o.UpdatedAt
                 },
-                DeliveryAddress = new DeliveryAddressDto
-                {
-                    Province = o.DeliveryAddress.Province,
-                    City = o.DeliveryAddress.City,
-                    AddressLine = o.DeliveryAddress.Street,
-                    PostalCode = o.DeliveryAddress.PostalCode
-                },
-                Items = o.OrderItems.Select(i => new OrderItemDto
-                {
-                    Id = i.Id.Value,
-                    VariantId = i.VariantId.Value,
-                    ProductId = i.ProductId.Value,
-                    ProductName = i.ProductName,
-                    Sku = i.Sku,
-                    UnitPrice = i.UnitPrice.Amount,
-                    Quantity = i.Quantity,
-                    TotalPrice = i.TotalPrice.Amount
-                }).ToList(),
-                CreatedAt = o.CreatedAt,
-                UpdatedAt = o.UpdatedAt
+                ProductIds = o.OrderItems.Select(i => i.ProductId.Value).ToList()
             })
             .FirstOrDefaultAsync(ct);
 
-        if (dto is null)
+        if (raw is null)
             return null;
 
-        var statusValue = OrderStatusValue.From(dto.Status);
-        return dto with
+        var dto = raw.Order;
+        var productIds = raw.ProductIds.Distinct().ToList();
+
+        var imagePaths = await context.Medias
+            .AsNoTracking()
+            .Where(m => m.EntityType == ProductEntityType
+                        && productIds.Contains(m.EntityId)
+                        && m.IsPrimary
+                        && m.IsActive)
+            .Select(m => new { m.EntityId, m.FilePath })
+            .ToDictionaryAsync(x => x.EntityId, x => x.FilePath, ct);
+
+        var itemsWithImage = dto.Items.Select(item =>
+        {
+            imagePaths.TryGetValue(item.ProductId, out var path);
+            var url = !string.IsNullOrWhiteSpace(path)
+                ? urlResolver.ResolveMediaUrl(path)
+                : null;
+            return item with { ImageUrl = url };
+        }).ToList();
+
+        var updatedDto = dto with { Items = itemsWithImage };
+
+        var statusValue = OrderStatusValue.From(updatedDto.Status);
+        return updatedDto with
         {
             IsCancellable = statusValue.CanBeCancelled(),
             AllowedTransitions = ComputeAllowedTransitions(statusValue)

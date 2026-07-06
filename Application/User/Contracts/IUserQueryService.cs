@@ -26,6 +26,7 @@ public interface IUserQueryService
 
     Task<IEnumerable<UserSessionDto>> GetActiveSessionsAsync(
         UserId userId,
+        Guid? currentSessionId = null,
         CancellationToken ct = default);
 
     Task<UserDashboardDto?> GetUserDashboardAsync(

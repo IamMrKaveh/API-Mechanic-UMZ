@@ -24,7 +24,7 @@ public class RevokeSessionHandler(
         if (session.UserId != userId)
             return ServiceResult.Forbidden("دسترسی غیرمجاز.");
 
-        session.Revoke(SessionRevocationReason.AdminRevoked);
+        session.Revoke(SessionRevocationReason.UserRequested);
         sessionRepository.Update(session);
         await unitOfWork.SaveChangesAsync(ct);
 

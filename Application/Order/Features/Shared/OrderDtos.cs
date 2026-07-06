@@ -104,6 +104,7 @@ public record OrderItemDto
     public decimal UnitPrice { get; init; }
     public int Quantity { get; init; }
     public decimal TotalPrice { get; init; }
+    public string? ImageUrl { get; init; }
 }
 
 public record ReceiverInfoDto

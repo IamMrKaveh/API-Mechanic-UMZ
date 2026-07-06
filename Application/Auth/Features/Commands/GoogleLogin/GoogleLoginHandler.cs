@@ -1,4 +1,5 @@
 ﻿using Application.Auth.Features.Shared;
+using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
@@ -7,6 +8,8 @@ namespace Application.Auth.Features.Commands.GoogleLogin;
 public class GoogleLoginHandler(
     IUserRepository userRepository,
     IJwtTokenGenerator jwtTokenGenerator,
+    ISessionService sessionService,
+    ICurrentUserService currentUser,
     IUnitOfWork unitOfWork)
     : ICommandHandler<GoogleLoginCommand, TokenResultDto>
 {
@@ -31,8 +34,21 @@ public class GoogleLoginHandler(
             await unitOfWork.SaveChangesAsync(ct);
         }
 
-        var (accessToken, refreshToken) = jwtTokenGenerator.GenerateTokens(user);
+        var ipAddress = IpAddress.Create(currentUser.IpAddress ?? IpAddress.Unknown.Value);
 
-        return ServiceResult<TokenResultDto>.Success(new TokenResultDto(accessToken, refreshToken));
+        var sessionResult = await sessionService.CreateSessionAsync(
+            user.Id,
+            ipAddress,
+            currentUser.UserAgent,
+            ct);
+
+        if (sessionResult.IsSuccess is false)
+            return ServiceResult<TokenResultDto>.Failure(sessionResult.Error);
+
+        var session = sessionResult.Value!;
+        var sessionId = SessionId.From(session.SessionId);
+        var accessToken = jwtTokenGenerator.GenerateAccessToken(user, sessionId);
+
+        return ServiceResult<TokenResultDto>.Success(new TokenResultDto(accessToken, session.RefreshToken));
     }
 }

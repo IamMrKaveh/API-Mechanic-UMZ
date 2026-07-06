@@ -38,7 +38,8 @@ public sealed class AuthService(
         if (!user.IsActive)
             return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Unauthorized("حساب کاربری غیرفعال است.");
 
-        var accessToken = jwtTokenGenerator.GenerateAccessToken(user);
+        var newSessionId = SessionId.From(sessionResult.Value!.SessionId);
+        var accessToken = jwtTokenGenerator.GenerateAccessToken(user, newSessionId);
         var userDto = user.Adapt<UserProfileDto>();
 
         return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Success(

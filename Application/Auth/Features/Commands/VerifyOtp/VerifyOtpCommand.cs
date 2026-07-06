@@ -6,4 +6,5 @@ namespace Application.Auth.Features.Commands.VerifyOtp;
 public record VerifyOtpCommand(
     string PhoneNumber,
     string Code,
+    string? DeviceInfo = null,
     OtpPurpose Purpose = OtpPurpose.Login) : ICommand<AuthResult>;

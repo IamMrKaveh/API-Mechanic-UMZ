@@ -4,6 +4,7 @@ using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
+using Microsoft.Extensions.Options;
 
 namespace Application.Auth.Features.Commands.VerifyOtp;
 
@@ -13,9 +14,12 @@ public class VerifyOtpHandler(
     ISessionService sessionService,
     IJwtTokenGenerator jwtTokenGenerator,
     ICurrentUserService currentUser,
-    IAuditService auditService)
+    IAuditService auditService,
+    IOptions<JwtOptions> jwtOptions)
     : ICommandHandler<VerifyOtpCommand, AuthResult>
 {
+    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
+
     public async Task<ServiceResult<AuthResult>> Handle(
         VerifyOtpCommand request,
         CancellationToken ct)
@@ -46,10 +50,14 @@ public class VerifyOtpHandler(
 
         otpRepository.Update(otp);
 
+        var deviceDescriptor = !string.IsNullOrWhiteSpace(request.DeviceInfo)
+            ? request.DeviceInfo
+            : currentUser.UserAgent;
+
         var sessionResult = await sessionService.CreateSessionAsync(
             user.Id,
             ipAddress,
-            currentUser.UserAgent,
+            deviceDescriptor,
             ct);
 
         if (sessionResult.IsSuccess is false)
@@ -62,15 +70,16 @@ public class VerifyOtpHandler(
             user.Id,
             ct);
 
-        var jwtAccessToken = jwtTokenGenerator.GenerateAccessToken(user);
         var refreshSession = sessionResult.Value!;
+        var newSessionId = SessionId.From(refreshSession.SessionId);
+        var jwtAccessToken = jwtTokenGenerator.GenerateAccessToken(user, newSessionId);
         var userDto = user.Adapt<UserProfileDto>();
 
         return ServiceResult<AuthResult>.Success(new AuthResult
         {
             AccessToken = jwtAccessToken,
             RefreshToken = refreshSession.RefreshToken,
-            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(60),
+            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes),
             RefreshTokenExpiresAt = refreshSession.ExpiresAt,
             User = userDto,
             IsNewUser = false

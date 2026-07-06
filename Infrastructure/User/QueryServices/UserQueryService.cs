@@ -152,9 +152,13 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
             .ToListAsync(ct);
     }
 
-    public async Task<IEnumerable<UserSessionDto>> GetActiveSessionsAsync(UserId userId, CancellationToken ct = default)
+    public async Task<IEnumerable<UserSessionDto>> GetActiveSessionsAsync(
+        UserId userId,
+        Guid? currentSessionId = null,
+        CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
+        var current = currentSessionId ?? Guid.Empty;
 
         return await context.UserSessions
             .AsNoTracking()
@@ -169,7 +173,7 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
                 CreatedAt = s.CreatedAt,
                 LastActivityAt = s.LastActivityAt,
                 ExpiresAt = s.ExpiresAt,
-                IsCurrent = false
+                IsCurrent = current != Guid.Empty && s.Id.Value == current
             })
             .ToListAsync(ct);
     }

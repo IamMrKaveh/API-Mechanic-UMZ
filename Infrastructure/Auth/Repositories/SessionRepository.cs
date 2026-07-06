@@ -31,14 +31,17 @@ public sealed class SessionRepository(DBContext context) : ISessionRepository
         context.UserSessions.Update(session);
     }
 
-    public async Task RevokeAllByUserIdAsync(UserId userId, CancellationToken ct = default)
+    public Task RevokeAllByUserIdAsync(UserId userId, CancellationToken ct = default)
+        => RevokeAllByUserIdAsync(userId, SessionRevocationReason.AllSessionsRevoked, ct);
+
+    public async Task RevokeAllByUserIdAsync(UserId userId, SessionRevocationReason reason, CancellationToken ct = default)
     {
         var sessions = await context.UserSessions
             .Where(s => s.UserId == userId && !s.IsRevoked)
             .ToListAsync(ct);
 
         foreach (var session in sessions)
-            session.Revoke(SessionRevocationReason.AllSessionsRevoked);
+            session.Revoke(reason);
     }
 
     public async Task<UserSession?> GetActiveByUserAndDeviceAsync(
