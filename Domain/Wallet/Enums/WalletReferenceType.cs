@@ -6,5 +6,6 @@ public enum WalletReferenceType
     Payment = 2,
     Refund = 3,
     Admin = 4,
-    System = 5
+    System = 5,
+    TopUp = 6
 }

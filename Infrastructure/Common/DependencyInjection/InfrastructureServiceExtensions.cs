@@ -234,68 +234,67 @@ public static class InfrastructureServiceExtensions
 
     private static void AddRepositories(this IServiceCollection services)
     {
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IOtpRepository, OtpRepository>();
-        services.AddScoped<ISessionRepository, SessionRepository>();
-        services.AddScoped<IProductRepository, ProductRepository>();
-        services.AddScoped<IVariantRepository, VariantRepository>();
-        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IAttributeTypeUniquenessChecker, AttributeTypeUniquenessCheckerAdapter>();
+        services.AddScoped<IAttributeRepository, AttributeRepository>();
+        services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<IBrandRepository, BrandRepository>();
+        services.AddScoped<ICartRepository, CartRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IDiscountRepository, DiscountRepository>();
         services.AddScoped<IInventoryRepository, InventoryRepository>();
-        services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+        services.AddScoped<IMediaRepository, MediaRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
         services.AddScoped<IOrderProcessStateRepository, OrderProcessStateRepository>();
-        services.AddScoped<ICartRepository, CartRepository>();
+        services.AddScoped<IOtpRepository, OtpRepository>();
         services.AddScoped<IPaymentTransactionRepository, PaymentRepository>();
         services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
-        services.AddScoped<IWalletRepository, WalletRepository>();
-        services.AddScoped<IDiscountRepository, DiscountRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
-        services.AddScoped<INotificationRepository, NotificationRepository>();
-        services.AddScoped<IWishlistRepository, WishlistRepository>();
-        services.AddScoped<ITicketRepository, TicketRepository>();
+        services.AddScoped<ISessionRepository, SessionRepository>();
         services.AddScoped<IShippingRepository, ShippingRepository>();
-        services.AddScoped<IAttributeRepository, AttributeRepository>();
-        services.AddScoped<IAuditRepository, AuditRepository>();
-        services.AddScoped<IMediaRepository, MediaRepository>();
-        services.AddScoped<IAttributeTypeUniquenessChecker, AttributeTypeUniquenessCheckerAdapter>();
+        services.AddScoped<ITicketRepository, TicketRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IVariantRepository, VariantRepository>();
+        services.AddScoped<IWalletRepository, WalletRepository>();
+        services.AddScoped<IWalletTopUpRepository, WalletTopUpRepository>();
+        services.AddScoped<IWalletWithdrawalRepository, WalletWithdrawalRepository>();
+        services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+        services.AddScoped<IWishlistRepository, WishlistRepository>();
     }
 
     private static void AddQueryServices(this IServiceCollection services)
     {
-        services.AddScoped<IProductQueryService, ProductQueryService>();
-        services.AddScoped<IVariantQueryService, VariantQueryService>();
-        services.AddScoped<ICategoryQueryService, CategoryQueryService>();
+        services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
+        services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IBrandQueryService, BrandQueryService>();
+        services.AddScoped<ICartQueryService, CartQueryService>();
+        services.AddScoped<ICategoryQueryService, CategoryQueryService>();
+        services.AddScoped<IDiscountQueryService, DiscountQueryService>();
+        services.AddScoped<IInventoryQueryService, InventoryQueryService>();
+        services.AddScoped<IMediaQueryService, MediaQueryService>();
+        services.AddScoped<INotificationQueryService, NotificationQueryService>();
         services.AddScoped<IOrderQueryService, OrderQueryService>();
         services.AddScoped<IOrderStatusQueryService, OrderStatusQueryService>();
-        services.AddScoped<ICartQueryService, CartQueryService>();
         services.AddScoped<IPaymentQueryService, PaymentQueryService>();
         services.AddScoped<IPaymentMethodQueryService, PaymentMethodQueryService>();
-        services.AddScoped<IWalletQueryService, WalletQueryService>();
-        services.AddScoped<IDiscountQueryService, DiscountQueryService>();
+        services.AddScoped<IProductQueryService, ProductQueryService>();
         services.AddScoped<IReviewQueryService, ReviewQueryService>();
-        services.AddScoped<INotificationQueryService, NotificationQueryService>();
-        services.AddScoped<IWishlistQueryService, WishlistQueryService>();
-        services.AddScoped<IUserQueryService, UserQueryService>();
-        services.AddScoped<IInventoryQueryService, InventoryQueryService>();
-        services.AddScoped<IStockLedgerQueryService, StockLedgerQueryService>();
         services.AddScoped<IShippingQueryService, ShippingQueryService>();
+        services.AddScoped<IStockLedgerQueryService, StockLedgerQueryService>();
         services.AddScoped<ITicketQueryService, TicketQueryService>();
-        services.AddScoped<IAuditQueryService, AuditQueryService>();
-        services.AddScoped<IMediaQueryService, MediaQueryService>();
-        services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
+        services.AddScoped<IUserQueryService, UserQueryService>();
+        services.AddScoped<IVariantQueryService, VariantQueryService>();
+        services.AddScoped<IWalletQueryService, WalletQueryService>();
+        services.AddScoped<IWalletWithdrawalQueryService, WalletWithdrawalQueryService>();
+        services.AddScoped<IWishlistQueryService, WishlistQueryService>();
     }
 
     private static void AddDomainServices(this IServiceCollection services)
     {
         services.AddScoped<IAuditMaskingService, AuditMaskingService>();
         services.AddScoped<IAuditService, AuditService>();
-        services.AddScoped<IDiscountService, DiscountService>();
-        services.AddScoped<IInventoryService, InventoryService>();
-        services.AddScoped<IPaymentService, PaymentService>();
-        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<ICheckoutOrchestrationService, CheckoutOrchestrationService>();
         services.AddScoped<ICheckoutAddressResolverService, CheckoutAddressResolverService>();
         services.AddScoped<ICheckoutCartItemBuilderService, CheckoutCartItemBuilderService>();
@@ -305,6 +304,10 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ICheckoutPriceValidatorService, CheckoutPriceValidatorService>();
         services.AddScoped<ICheckoutShippingValidatorService, CheckoutShippingValidatorService>();
         services.AddScoped<ICheckoutStockValidatorService, CheckoutStockValidatorService>();
+        services.AddScoped<IDiscountService, DiscountService>();
+        services.AddScoped<IInventoryService, InventoryService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IPurchaseVerificationService, PurchaseVerificationService>();
     }
 
@@ -488,18 +491,19 @@ public static class InfrastructureServiceExtensions
     {
         services.AddScoped<IAuditArchiveStorage, S3AuditArchiveStorage>();
 
-        services.AddHostedService<PaymentMethodSeeder>();
-        services.AddHostedService<OrderStatusSeeder>();
-        services.AddHostedService<OutboxProcessingJob>();
         services.AddHostedService<AuditRetentionJob>();
-        services.AddHostedService<PaymentCleanupJob>();
-        services.AddHostedService<PaymentReconciliationJob>();
-        services.AddHostedService<WalletReconciliationJob>();
-        services.AddHostedService<WalletReservationExpiryJob>();
         services.AddHostedService<ExpiredOrderCleanupJob>();
         services.AddHostedService<ExpiredSessionCleanupJob>();
         services.AddHostedService<InventoryReservationExpiryJob>();
+        services.AddHostedService<OrderStatusSeeder>();
         services.AddHostedService<OrphanedFileCleanupJob>();
+        services.AddHostedService<OutboxProcessingJob>();
+        services.AddHostedService<PaymentCleanupJob>();
+        services.AddHostedService<PaymentMethodSeeder>();
+        services.AddHostedService<PaymentReconciliationJob>();
+        services.AddHostedService<WalletReconciliationJob>();
+        services.AddHostedService<WalletReservationExpiryJob>();
+        services.AddHostedService<WalletTopUpCleanupJob>();
 
         var elasticsearchSection = configuration.GetSection(ElasticsearchOptions.SectionName);
         var options = elasticsearchSection.Get<ElasticsearchOptions>();

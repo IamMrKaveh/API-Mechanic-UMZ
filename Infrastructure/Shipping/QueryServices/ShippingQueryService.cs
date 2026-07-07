@@ -127,7 +127,7 @@ public sealed class ShippingQueryService(DBContext context) : IShippingQueryServ
         if (variantIdList.Count == 0)
             return Array.Empty<AvailableShippingDto>();
 
-        var enabledShippingIds = await context.ProductVariantShippings
+        var enabledShippingIds = await context.VariantShippings
             .AsNoTracking()
             .Where(pvs => variantIdList.Contains(pvs.VariantId.Value))
             .Select(pvs => pvs.ShippingId.Value)
@@ -164,7 +164,7 @@ public sealed class ShippingQueryService(DBContext context) : IShippingQueryServ
 
         var variantIdList = itemList.Select(i => i.VariantId).Distinct().ToList();
 
-        var variantShippingRows = await context.ProductVariantShippings
+        var variantShippingRows = await context.VariantShippings
             .AsNoTracking()
             .Where(pvs => variantIdList.Contains(pvs.VariantId))
             .Select(pvs => new

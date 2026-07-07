@@ -22,3 +22,29 @@ public sealed record WalletLedgerEntryDto(
     Guid ReferenceId,
     string? Description,
     DateTime CreatedAt);
+
+public sealed record InitiateTopUpResultDto
+{
+    public Guid TopUpId { get; init; }
+    public string PaymentUrl { get; init; } = string.Empty;
+    public string Authority { get; init; } = string.Empty;
+    public string Gateway { get; init; } = string.Empty;
+    public decimal Amount { get; init; }
+}
+
+public sealed record WalletWithdrawalRequestDto(
+    Guid Id,
+    Guid UserId,
+    string? UserFullName,
+    decimal Amount,
+    string Iban,
+    string AccountHolder,
+    string? Description,
+    string Status,
+    string? RejectionReason,
+    string? BankReferenceNumber,
+    DateTime CreatedAt,
+    DateTime? ApprovedAt,
+    DateTime? RejectedAt,
+    DateTime? PaidAt,
+    DateTime? CancelledAt);

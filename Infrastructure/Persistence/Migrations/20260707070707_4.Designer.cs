@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20260707070707_4")]
+    partial class _4
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1813,7 +1816,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("VariantId");
 
-                    b.ToTable("VariantShippings");
+                    b.ToTable("ProductVariantShippings");
                 });
 
             modelBuilder.Entity("Domain.Wallet.Aggregates.Wallet", b =>
@@ -1910,101 +1913,6 @@ namespace Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_WalletTopUps_UserId");
 
                     b.ToTable("WalletTopUps", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Wallet.Aggregates.WalletWithdrawalRequest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AccountHolder")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("ApprovedBy");
-
-                    b.Property<string>("BankReferenceNumber")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTime?>("CancelledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Iban")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("Iban");
-
-                    b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("PaidBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("PaidBy");
-
-                    b.Property<DateTime?>("RejectedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("RejectedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("RejectedBy");
-
-                    b.Property<string>("RejectionReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("ReservationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("ReservationId");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("UserId");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt")
-                        .HasDatabaseName("IX_WalletWithdrawalRequests_CreatedAt");
-
-                    b.HasIndex("ReservationId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_WalletWithdrawalRequests_ReservationId");
-
-                    b.HasIndex("Status")
-                        .HasDatabaseName("IX_WalletWithdrawalRequests_Status");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("IX_WalletWithdrawalRequests_UserId");
-
-                    b.ToTable("WalletWithdrawalRequests", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Wallet.Entities.WalletLedgerEntry", b =>
@@ -3718,35 +3626,6 @@ namespace Infrastructure.Persistence.Migrations
 
                             b1.WithOwner()
                                 .HasForeignKey("WalletTopUpId");
-                        });
-
-                    b.Navigation("Amount")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Domain.Wallet.Aggregates.WalletWithdrawalRequest", b =>
-                {
-                    b.OwnsOne("SharedKernel.ValueObjects.Money", "Amount", b1 =>
-                        {
-                            b1.Property<Guid>("WalletWithdrawalRequestId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("decimal(18,2)")
-                                .HasColumnName("Amount");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .HasMaxLength(10)
-                                .HasColumnType("character varying(10)")
-                                .HasColumnName("AmountCurrency");
-
-                            b1.HasKey("WalletWithdrawalRequestId");
-
-                            b1.ToTable("WalletWithdrawalRequests");
-
-                            b1.WithOwner()
-                                .HasForeignKey("WalletWithdrawalRequestId");
                         });
 
                     b.Navigation("Amount")

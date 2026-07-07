@@ -34,6 +34,7 @@ using Domain.User.ValueObjects;
 using Domain.Variant.Aggregates;
 using Domain.Variant.Entities;
 using Domain.Variant.ValueObjects;
+using Domain.Wallet.Aggregates;
 using Domain.Wallet.Entities;
 using Domain.Wallet.ValueObjects;
 using Domain.Wishlist.ValueObjects;
@@ -68,10 +69,6 @@ public sealed class DBContext(
     AuditableEntityInterceptor auditableInterceptor,
     DomainEventInterceptor domainEventInterceptor) : DbContext(options)
 {
-    public DbSet<Domain.User.Aggregates.User> Users => Set<Domain.User.Aggregates.User>();
-    public DbSet<UserAddress> UserAddresses => Set<UserAddress>();
-    public DbSet<UserOtp> UserOtps => Set<UserOtp>();
-    public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<AttributeType> AttributeTypes => Set<AttributeType>();
     public DbSet<AttributeValue> AttributeValues => Set<AttributeValue>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -80,33 +77,40 @@ public sealed class DBContext(
     public DbSet<CartItem> CartItems => Set<CartItem>();
     public DbSet<Domain.Category.Aggregates.Category> Categories => Set<Domain.Category.Aggregates.Category>();
     public DbSet<DiscountCode> DiscountCodes => Set<DiscountCode>();
-    public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+    public DbSet<ElasticsearchOutboxMessage> ElasticsearchOutboxMessages => Set<ElasticsearchOutboxMessage>();
+    public DbSet<FailedElasticOperation> FailedElasticOperations => Set<FailedElasticOperation>();
     public DbSet<Domain.Inventory.Aggregates.Inventory> Inventories => Set<Domain.Inventory.Aggregates.Inventory>();
-    public DbSet<StockLedgerEntry> StockLedgerEntries => Set<StockLedgerEntry>();
     public DbSet<Domain.Media.Aggregates.Media> Medias => Set<Domain.Media.Aggregates.Media>();
     public DbSet<Domain.Notification.Aggregates.Notification> Notifications => Set<Domain.Notification.Aggregates.Notification>();
     public DbSet<Domain.Order.Aggregates.Order> Orders => Set<Domain.Order.Aggregates.Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderStatus> OrderStatuses => Set<OrderStatus>();
+    public DbSet<OrderProcessState> OrderProcessStates => Set<OrderProcessState>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
     public DbSet<PaymentMethod> PaymentMethods => Set<PaymentMethod>();
     public DbSet<Domain.Product.Aggregates.Product> Products => Set<Domain.Product.Aggregates.Product>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
-    public DbSet<VariantAttribute> ProductVariantAttributes => Set<VariantAttribute>();
-    public DbSet<VariantShipping> ProductVariantShippings => Set<VariantShipping>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
+    public DbSet<RateLimitEntry> RateLimitEntries => Set<RateLimitEntry>();
     public DbSet<Domain.Shipping.Aggregates.Shipping> Shippings => Set<Domain.Shipping.Aggregates.Shipping>();
+    public DbSet<StockLedgerEntry> StockLedgerEntries => Set<StockLedgerEntry>();
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<TicketMessage> TicketMessages => Set<TicketMessage>();
+    public DbSet<Domain.User.Aggregates.User> Users => Set<Domain.User.Aggregates.User>();
+    public DbSet<UserAddress> UserAddresses => Set<UserAddress>();
+    public DbSet<UserOtp> UserOtps => Set<UserOtp>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
+    public DbSet<VariantAttribute> VariantAttributes => Set<VariantAttribute>();
+    public DbSet<VariantShipping> VariantShippings => Set<VariantShipping>();
     public DbSet<Domain.Wallet.Aggregates.Wallet> Wallets => Set<Domain.Wallet.Aggregates.Wallet>();
     public DbSet<WalletLedgerEntry> WalletLedgerEntries => Set<WalletLedgerEntry>();
     public DbSet<WalletReservation> WalletReservations => Set<WalletReservation>();
+    public DbSet<WalletTopUp> WalletTopUps => Set<WalletTopUp>();
+    public DbSet<WalletWithdrawalRequest> WalletWithdrawalRequests => Set<WalletWithdrawalRequest>();
+
+    public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<Domain.Wishlist.Aggregates.Wishlist> Wishlists => Set<Domain.Wishlist.Aggregates.Wishlist>();
-    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
-    public DbSet<ElasticsearchOutboxMessage> ElasticsearchOutboxMessages => Set<ElasticsearchOutboxMessage>();
-    public DbSet<FailedElasticOperation> FailedElasticOperations => Set<FailedElasticOperation>();
-    public DbSet<OrderProcessState> OrderProcessStates => Set<OrderProcessState>();
-    public DbSet<RateLimitEntry> RateLimitEntries => Set<RateLimitEntry>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

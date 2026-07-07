@@ -1,5 +1,4 @@
 using Application.Variant.Features.Shared;
-using Application.Wallet.Features.Commands.CreditWallet;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
 using Domain.Inventory.Interfaces;
