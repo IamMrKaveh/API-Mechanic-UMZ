@@ -7,6 +7,9 @@ public sealed record WalletDto
     public decimal CurrentBalance { get; init; }
     public decimal ReservedBalance { get; init; }
     public decimal AvailableBalance { get; init; }
+    public bool IsActive { get; init; }
+    public string? FreezeReason { get; init; }
+    public DateTime? FrozenAt { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
 }

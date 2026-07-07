@@ -18,6 +18,10 @@ public sealed class Wallet : AggregateRoot<WalletId>
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
+    public string? FreezeReason { get; private set; }
+    public DateTime? FrozenAt { get; private set; }
+    public UserId? FrozenBy { get; private set; }
+
     public User.Aggregates.User Owner { get; private set; } = default!;
     public UserId OwnerId { get; private set; } = default!;
     private readonly List<WalletReservation> _activeReservations = [];
@@ -109,6 +113,39 @@ public sealed class Wallet : AggregateRoot<WalletId>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new WalletReservationReleasedEvent(Id, OwnerId, reservationId, reservation.Amount));
+    }
+
+    public void Freeze(string reason, UserId adminId)
+    {
+        Guard.Against.NullOrWhiteSpace(reason, nameof(reason));
+        Guard.Against.Null(adminId, nameof(adminId));
+
+        if (!IsActive)
+            throw new WalletInactiveException(Id);
+
+        IsActive = false;
+        FreezeReason = reason;
+        FrozenAt = DateTime.UtcNow;
+        FrozenBy = adminId;
+        UpdatedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new WalletFrozenEvent(Id, OwnerId, reason, adminId));
+    }
+
+    public void Unfreeze(UserId adminId)
+    {
+        Guard.Against.Null(adminId, nameof(adminId));
+
+        if (IsActive)
+            return;
+
+        IsActive = true;
+        FreezeReason = null;
+        FrozenAt = null;
+        FrozenBy = null;
+        UpdatedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new WalletUnfrozenEvent(Id, OwnerId, adminId));
     }
 
     private WalletReservation GetActiveReservation(WalletReservationId reservationId)

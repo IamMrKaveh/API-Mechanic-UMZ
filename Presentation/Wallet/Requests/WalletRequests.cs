@@ -45,3 +45,5 @@ public sealed record GetPendingWithdrawalsListRequest(
     int PageSize = 20);
 
 public sealed record GetWalletLedgerRequest(int Page = 1, int PageSize = 10);
+
+public sealed record FreezeWalletRequest(string Reason);
