@@ -1,4 +1,4 @@
-﻿namespace Application.Wallet.Features.Commands.CreditWallet;
+﻿namespace Application.Common.Exceptions;
 
 [Serializable]
 internal class DbUpdateException : Exception
