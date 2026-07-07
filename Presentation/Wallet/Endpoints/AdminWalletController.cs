@@ -1,5 +1,7 @@
 ﻿using Application.Wallet.Features.Commands.CreditWallet;
 using Application.Wallet.Features.Commands.DebitWallet;
+using Application.Wallet.Features.Commands.FreezeWallet;
+using Application.Wallet.Features.Commands.UnfreezeWallet;
 using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
 using Application.Wallet.Features.Shared;
@@ -73,6 +75,34 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
             HttpContext.TraceIdentifier,
             BuildAuditDescription("DEBIT", adminId, request.Reason, request.Description));
 
+        return await Send(command, ct);
+    }
+
+    [HttpPost("{userId:guid}/freeze")]
+    [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Freeze(
+        Guid userId,
+        [FromBody] FreezeWalletRequest request,
+        CancellationToken ct)
+    {
+        var adminId = RequestContext.UserId!.Value;
+        var command = new FreezeWalletCommand(userId, request.Reason, adminId);
+        return await Send(command, ct);
+    }
+
+    [HttpPost("{userId:guid}/unfreeze")]
+    [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Unfreeze(
+        Guid userId,
+        CancellationToken ct)
+    {
+        var adminId = RequestContext.UserId!.Value;
+        var command = new UnfreezeWalletCommand(userId, adminId);
         return await Send(command, ct);
     }
 

@@ -28,6 +28,17 @@ public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.UpdatedAt).IsRequired();
 
+        builder.Property(e => e.FreezeReason)
+            .HasMaxLength(500);
+
+        builder.Property(e => e.FrozenAt);
+
+        builder.Property(e => e.FrozenBy)
+            .HasConversion(
+                id => id != null ? id.Value : (Guid?)null,
+                value => value.HasValue ? Domain.User.ValueObjects.UserId.From(value.Value) : null)
+            .HasColumnName("FrozenBy");
+
         builder.Property<uint>("xmin")
             .HasColumnName("xmin")
             .HasColumnType("xid")
@@ -35,6 +46,7 @@ public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet
             .IsConcurrencyToken();
 
         builder.HasIndex(e => e.OwnerId).IsUnique().HasDatabaseName("IX_Wallets_UserId");
+        builder.HasIndex(e => e.IsActive).HasDatabaseName("IX_Wallets_IsActive");
 
         builder.HasMany(e => e.ActiveReservations)
             .WithOne(r => r.Wallet)
