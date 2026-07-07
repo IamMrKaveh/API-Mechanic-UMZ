@@ -51,3 +51,19 @@ public sealed record WalletWithdrawalRequestDto(
     DateTime? RejectedAt,
     DateTime? PaidAt,
     DateTime? CancelledAt);
+
+public sealed record WalletFraudAlertDto(
+    Guid Id,
+    Guid WalletId,
+    Guid UserId,
+    string? UserFullName,
+    string RuleName,
+    string Severity,
+    string Description,
+    string? Metadata,
+    string Status,
+    DateTime TriggeredAt,
+    Guid? ReviewedBy,
+    DateTime? ReviewedAt,
+    string? ReviewNote,
+    DateTime CreatedAt);

@@ -104,6 +104,7 @@ public sealed class DBContext(
     public DbSet<VariantAttribute> VariantAttributes => Set<VariantAttribute>();
     public DbSet<VariantShipping> VariantShippings => Set<VariantShipping>();
     public DbSet<Domain.Wallet.Aggregates.Wallet> Wallets => Set<Domain.Wallet.Aggregates.Wallet>();
+    public DbSet<WalletFraudAlert> WalletFraudAlerts => Set<WalletFraudAlert>();
     public DbSet<WalletLedgerEntry> WalletLedgerEntries => Set<WalletLedgerEntry>();
     public DbSet<WalletReservation> WalletReservations => Set<WalletReservation>();
     public DbSet<WalletTopUp> WalletTopUps => Set<WalletTopUp>();
