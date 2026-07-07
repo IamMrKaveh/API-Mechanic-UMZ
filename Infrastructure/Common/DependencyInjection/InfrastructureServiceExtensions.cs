@@ -35,6 +35,8 @@ using Domain.Shipping.Interfaces;
 using Domain.Support.Interfaces;
 using Domain.User.Interfaces;
 using Domain.Variant.Interfaces;
+using Domain.Wallet.FraudDetection;
+using Domain.Wallet.FraudDetection.Rules;
 using Domain.Wallet.Interfaces;
 using Domain.Wishlist.Interfaces;
 using Infrastructure.Analytics.QueryServices;
@@ -258,6 +260,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IVariantRepository, VariantRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
+        services.AddScoped<IWalletFraudAlertRepository, WalletFraudAlertRepository>();
         services.AddScoped<IWalletTopUpRepository, WalletTopUpRepository>();
         services.AddScoped<IWalletWithdrawalRepository, WalletWithdrawalRepository>();
         services.AddScoped<IWarehouseRepository, WarehouseRepository>();
@@ -287,6 +290,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IUserQueryService, UserQueryService>();
         services.AddScoped<IVariantQueryService, VariantQueryService>();
         services.AddScoped<IWalletQueryService, WalletQueryService>();
+        services.AddScoped<IWalletFraudAlertQueryService, WalletFraudAlertQueryService>();
         services.AddScoped<IWalletWithdrawalQueryService, WalletWithdrawalQueryService>();
         services.AddScoped<IWishlistQueryService, WishlistQueryService>();
     }
@@ -305,6 +309,10 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ICheckoutShippingValidatorService, CheckoutShippingValidatorService>();
         services.AddScoped<ICheckoutStockValidatorService, CheckoutStockValidatorService>();
         services.AddScoped<IDiscountService, DiscountService>();
+        services.AddScoped<IFraudDetectionRule, HighVelocityRule>();
+        services.AddScoped<IFraudDetectionRule, UnusualAmountRule>();
+        services.AddScoped<IFraudDetectionRule, RapidTopUpWithdrawRule>();
+        services.AddScoped<IFraudDetectionRule, MultipleFailedTopUpRule>();
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IPaymentService, PaymentService>();
@@ -494,6 +502,7 @@ public static class InfrastructureServiceExtensions
         services.AddHostedService<AuditRetentionJob>();
         services.AddHostedService<ExpiredOrderCleanupJob>();
         services.AddHostedService<ExpiredSessionCleanupJob>();
+        services.AddHostedService<FraudDetectionJob>();
         services.AddHostedService<InventoryReservationExpiryJob>();
         services.AddHostedService<OrderStatusSeeder>();
         services.AddHostedService<OrphanedFileCleanupJob>();
