@@ -40,9 +40,16 @@ public sealed class WalletRepository(DBContext context) : IWalletRepository
     public void Update(Domain.Wallet.Aggregates.Wallet wallet)
     {
         var entry = context.Entry(wallet);
-        if (entry.State == EntityState.Detached)
-            context.Wallets.Attach(wallet);
+        switch (entry.State)
+        {
+            case EntityState.Detached:
+                context.Wallets.Attach(wallet);
+                context.Entry(wallet).State = EntityState.Modified;
+                break;
 
-        entry.State = EntityState.Modified;
+            case EntityState.Unchanged:
+                entry.State = EntityState.Modified;
+                break;
+        }
     }
 }

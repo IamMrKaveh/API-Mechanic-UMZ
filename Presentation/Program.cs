@@ -74,6 +74,7 @@ try
 
     builder.Services.AddPresentation(builder.Configuration);
     builder.Services.AddApplicationServices();
+    builder.Services.AddWalletTransferOptions(builder.Configuration);
     builder.Services.AddInfrastructure(builder.Configuration);
 
     builder.ValidateRequiredConfiguration();

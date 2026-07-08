@@ -29,16 +29,15 @@ public sealed class UserCreatedEventHandler(
         {
             try
             {
-                var walletId = WalletId.NewId();
                 var userId = domainEvent.UserId;
-                var wallet = Domain.Wallet.Aggregates.Wallet.Create(walletId, userId, "IRR");
+                var wallet = Domain.Wallet.Aggregates.Wallet.Create(userId, "IRR");
 
                 await walletRepository.AddAsync(wallet, ct);
                 await unitOfWork.SaveChangesAsync(ct);
 
                 logger.LogInformation(
                     "Wallet {WalletId} created for user {UserId}",
-                    walletId.Value,
+                        wallet.Id.Value,
                     userId.Value);
 
                 await auditService.LogSystemEventAsync(

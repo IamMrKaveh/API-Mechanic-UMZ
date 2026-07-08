@@ -18,15 +18,19 @@ public sealed class NoTimestampCompactJsonFormatter : ITextFormatter
         "SourceContext", "ActionId", "ActionName", "RequestId", "ConnectionId", "EventId", "MachineName"
     };
 
+    private const int MaxDepth = 6;
+    private const int MaxCollectionItems = 50;
+    private const int MaxStringLength = 4000;
+
     public void Format(LogEvent logEvent, TextWriter output)
     {
         ArgumentNullException.ThrowIfNull(logEvent);
         ArgumentNullException.ThrowIfNull(output);
 
-        var entry = new Dictionary<string, object?>
+        var entry = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
             ["level"] = LevelCode(logEvent.Level),
-            ["message"] = logEvent.RenderMessage(CultureInfo.InvariantCulture)
+            ["message"] = SafeRenderMessage(logEvent)
         };
 
         if (logEvent.Properties.TryGetValue("SourceContext", out var sourceContextValue))
@@ -44,7 +48,7 @@ public sealed class NoTimestampCompactJsonFormatter : ITextFormatter
             if (ExcludedProperties.Contains(key))
                 continue;
 
-            var converted = ToJsonValue(value);
+            var converted = ToJsonValue(value, 0);
             if (converted is null || (converted is string s && string.IsNullOrEmpty(s)))
                 continue;
 
@@ -54,33 +58,67 @@ public sealed class NoTimestampCompactJsonFormatter : ITextFormatter
         if (logEvent.Exception is { } exception)
         {
             entry["exceptionType"] = exception.GetType().FullName ?? exception.GetType().Name;
-            entry["exceptionMessage"] = exception.Message;
+            entry["exceptionMessage"] = Truncate(exception.Message);
 
             if (exception.InnerException is { } inner)
             {
                 entry["innerExceptionType"] = inner.GetType().FullName ?? inner.GetType().Name;
-                entry["innerExceptionMessage"] = inner.Message;
+                entry["innerExceptionMessage"] = Truncate(inner.Message);
             }
 
             if (exception.Data.Count > 0)
             {
                 entry["exceptionData"] = exception.Data
                     .Cast<DictionaryEntry>()
-                    .ToDictionary(e => e.Key.ToString() ?? string.Empty, e => e.Value?.ToString());
+                    .Take(MaxCollectionItems)
+                    .ToDictionary(
+                        e => e.Key.ToString() ?? string.Empty,
+                        e => (object?)Truncate(e.Value?.ToString()));
             }
 
-            entry["exception"] = exception.ToString();
+            entry["exception"] = Truncate(exception.ToString());
         }
 
-        output.WriteLine(JsonSerializer.Serialize(entry, SerializerOptions));
+        string serialized;
+        try
+        {
+            serialized = JsonSerializer.Serialize(entry, SerializerOptions);
+        }
+        catch (Exception ex)
+        {
+            var fallback = new Dictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["level"] = LevelCode(logEvent.Level),
+                ["message"] = SafeRenderMessage(logEvent),
+                ["logFormatterError"] = ex.GetType().Name + ": " + ex.Message
+            };
+            serialized = JsonSerializer.Serialize(fallback, SerializerOptions);
+        }
+
+        output.WriteLine(serialized);
+    }
+
+    private static string SafeRenderMessage(LogEvent logEvent)
+    {
+        try
+        {
+            return logEvent.RenderMessage(CultureInfo.InvariantCulture);
+        }
+        catch (Exception ex)
+        {
+            return $"[RenderMessageFailed:{ex.GetType().Name}] {logEvent.MessageTemplate.Text}";
+        }
     }
 
     private static string LevelCode(LogEventLevel level) => level switch
     {
+        LogEventLevel.Verbose => "VRB",
+        LogEventLevel.Debug => "DBG",
+        LogEventLevel.Information => "INF",
         LogEventLevel.Warning => "WRN",
         LogEventLevel.Error => "ERR",
         LogEventLevel.Fatal => "FTL",
-        _ => level.ToString().ToUpperInvariant()[..Math.Min(3, level.ToString().Length)]
+        _ => level.ToString().ToUpperInvariant()
     };
 
     private static string? Simplify(LogEventPropertyValue value) => value switch
@@ -91,20 +129,78 @@ public sealed class NoTimestampCompactJsonFormatter : ITextFormatter
         _ => value.ToString()
     };
 
-    private static object? ToJsonValue(LogEventPropertyValue value) => value switch
+    private static object? ToJsonValue(LogEventPropertyValue value, int depth)
     {
-        ScalarValue { Value: null } => null,
-        ScalarValue { Value: IFormattable formattable } => formattable.ToString(null, CultureInfo.InvariantCulture),
-        ScalarValue scalar => scalar.Value,
-        SequenceValue sequence => sequence.Elements.Select(ToJsonValue).ToList(),
-        DictionaryValue dictionary => dictionary.Elements.ToDictionary(
-            kvp => Simplify(kvp.Key) ?? string.Empty,
-            kvp => ToJsonValue(kvp.Value)),
-        StructureValue structure => structure.Properties.ToDictionary(
-            p => ToCamelCase(p.Name),
-            p => ToJsonValue(p.Value)),
-        _ => value.ToString()
-    };
+        if (depth > MaxDepth)
+            return "[MaxDepthExceeded]";
+
+        return value switch
+        {
+            ScalarValue { Value: null } => null,
+            ScalarValue scalar => ConvertScalar(scalar.Value),
+            SequenceValue sequence => sequence.Elements
+                .Take(MaxCollectionItems)
+                .Select(e => ToJsonValue(e, depth + 1))
+                .ToList(),
+            DictionaryValue dictionary => dictionary.Elements
+                .Take(MaxCollectionItems)
+                .ToDictionary(
+                    kvp => Simplify(kvp.Key) ?? string.Empty,
+                    kvp => ToJsonValue(kvp.Value, depth + 1)),
+            StructureValue structure => structure.Properties
+                .Take(MaxCollectionItems)
+                .ToDictionary(
+                    p => ToCamelCase(p.Name),
+                    p => ToJsonValue(p.Value, depth + 1)),
+            _ => Truncate(value.ToString())
+        };
+    }
+
+    private static object? ConvertScalar(object? raw)
+    {
+        if (raw is null) return null;
+
+        switch (raw)
+        {
+            case string s: return Truncate(s);
+            case bool or byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal:
+                return raw;
+
+            case Guid g: return g.ToString();
+            case DateTime dt: return dt.ToString("O", CultureInfo.InvariantCulture);
+            case DateTimeOffset dto: return dto.ToString("O", CultureInfo.InvariantCulture);
+            case TimeSpan ts: return ts.ToString(null, CultureInfo.InvariantCulture);
+            case Uri uri: return uri.ToString();
+            case Enum e: return e.ToString();
+            case IFormattable f: return f.ToString(null, CultureInfo.InvariantCulture);
+            default:
+                return Truncate(SafeToString(raw));
+        }
+    }
+
+    private static string SafeToString(object obj)
+    {
+        try
+        {
+            var type = obj.GetType();
+            if (type.Namespace?.StartsWith("System.Reflection", StringComparison.Ordinal) == true
+                || type.Namespace?.StartsWith("System.RuntimeType", StringComparison.Ordinal) == true)
+            {
+                return $"[{type.Name}]";
+            }
+            return obj.ToString() ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            return $"[ToStringFailed:{ex.GetType().Name}]";
+        }
+    }
+
+    private static string? Truncate(string? value)
+    {
+        if (value is null) return null;
+        return value.Length <= MaxStringLength ? value : value[..MaxStringLength] + "…[truncated]";
+    }
 
     private static string ToCamelCase(string key)
         => string.IsNullOrEmpty(key) ? key : char.ToLowerInvariant(key[0]) + key[1..];

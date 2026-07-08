@@ -22,14 +22,13 @@ public sealed class DomainEventInterceptor(
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
-        await DispatchDomainEvents(eventData.Context, cancellationToken);
+        await DispatchDomainEventsAsync(eventData.Context, cancellationToken);
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private async Task DispatchDomainEvents(DbContext? context, CancellationToken ct)
+    private async Task DispatchDomainEventsAsync(DbContext? context, CancellationToken ct)
     {
-        if (context is not DBContext dbContext)
-            return;
+        if (context is not DBContext dbContext) return;
 
         var aggregates = dbContext.ChangeTracker
             .Entries<IHasDomainEvents>()
@@ -37,8 +36,7 @@ public sealed class DomainEventInterceptor(
             .Select(e => e.Entity)
             .ToList();
 
-        if (aggregates.Count == 0)
-            return;
+        if (aggregates.Count == 0) return;
 
         var domainEvents = aggregates.SelectMany(a => a.DomainEvents).ToList();
 
@@ -54,7 +52,7 @@ public sealed class DomainEventInterceptor(
                 var payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), SerializerOptions);
                 outboxMessages.Add(OutboxMessage.Create(typeName, payload, DateTime.UtcNow));
             }
-            catch (Exception)
+            catch
             {
             }
         }

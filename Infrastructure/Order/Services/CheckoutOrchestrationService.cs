@@ -3,6 +3,8 @@ using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Order.Features.Shared;
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
+using Domain.Order.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Infrastructure.Order.Services;
 
@@ -14,11 +16,17 @@ public class CheckoutOrchestrationService(
     ICheckoutStockValidatorService stockValidator,
     ICheckoutPriceValidatorService priceValidator,
     ICheckoutOrderCreationService orderCreation,
+    ICheckoutPaymentStrategyResolver paymentStrategyResolver,
     ICartRepository cartRepository) : ICheckoutOrchestrationService
 {
     public async Task<ServiceResult<CheckoutResultDto>> ProcessCheckoutAsync(
         CheckoutFromCartCommand command, CancellationToken ct)
     {
+        var strategyResult = await paymentStrategyResolver.ResolveAsync(
+            command.PaymentMethodId, command.PaymentMethod, ct);
+        if (!strategyResult.IsSuccess)
+            return ServiceResult<CheckoutResultDto>.Failure(strategyResult.Error!);
+
         var addressResult = await addressResolver.ResolveAsync(command.UserId, command.AddressId, ct);
         if (!addressResult.IsSuccess)
             return ServiceResult<CheckoutResultDto>.Failure(addressResult.Error!);
@@ -44,7 +52,9 @@ public class CheckoutOrchestrationService(
             return ServiceResult<CheckoutResultDto>.Failure(shippingResult.Error!);
 
         var discountResult = await discountApplicator.ApplyAsync(
-            command.DiscountCode, Money.FromDecimal(cartItemsResult.Value!.SubTotal), command.UserId, ct);
+            command.DiscountCode,
+            Money.FromDecimal(cartItemsResult.Value!.SubTotal),
+            command.UserId, ct);
         if (!discountResult.IsSuccess)
             return ServiceResult<CheckoutResultDto>.Failure(discountResult.Error!);
 
@@ -65,6 +75,22 @@ public class CheckoutOrchestrationService(
         if (!orderResult.IsSuccess)
             return ServiceResult<CheckoutResultDto>.Failure(orderResult.Error!);
 
+        var orderDto = orderResult.Value!;
+        var strategy = strategyResult.Value!;
+
+        var paymentOutcome = await strategy.ExecuteAsync(
+            orderDto,
+            OrderId.From(orderDto.OrderId),
+            UserId.From(command.UserId),
+            Money.FromDecimal(orderDto.FinalAmount),
+            command.IpAddress,
+            command.UserAgent,
+            command.IdempotencyKey,
+            ct);
+
+        if (!paymentOutcome.IsSuccess)
+            return ServiceResult<CheckoutResultDto>.Failure(paymentOutcome.Error!);
+
         var cart = await cartRepository.FindByIdAsync(CartId.From(command.CartId), ct);
         if (cart is not null)
         {
@@ -72,10 +98,6 @@ public class CheckoutOrchestrationService(
             cartRepository.Update(cart);
         }
 
-        return ServiceResult<CheckoutResultDto>.Success(orderResult.Value! with
-        {
-            PaymentUrl = null,
-            PaymentAuthority = null
-        });
+        return ServiceResult<CheckoutResultDto>.Success(paymentOutcome.Value!);
     }
 }

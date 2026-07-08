@@ -25,7 +25,7 @@ public class CreditWalletHandler(
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)
             {
-                wallet = Domain.Wallet.Aggregates.Wallet.Create(WalletId.NewId(), userId);
+                wallet = Domain.Wallet.Aggregates.Wallet.Create(userId);
                 await walletRepository.AddAsync(wallet, ct);
             }
 

@@ -21,7 +21,7 @@ public sealed class MockPaymentGateway : IPaymentGateway
         var authority = Guid.NewGuid().ToString("N");
         var paymentUrl = $"/mock/pay?authority={authority}&amount={amount.Amount}";
 
-        var result = new PaymentInitiationResult(authority, paymentUrl);
+        var result = new PaymentInitiationResult(authority, paymentUrl, Guid.Empty);
         return Task.FromResult(ServiceResult<PaymentInitiationResult>.Success(result));
     }
 

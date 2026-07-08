@@ -1,6 +1,5 @@
 using Domain.Order.Entities;
 using Domain.Order.ValueObjects;
-using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
 
 namespace Infrastructure.Order.Configurations;
@@ -9,40 +8,32 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 {
     public void Configure(EntityTypeBuilder<OrderItem> builder)
     {
-        builder.HasKey(e => e.Id);
+        builder.ToTable("OrderItems");
 
-        builder.Property(e => e.Id)
-               .HasConversion(v => v.Value, v => OrderItemId.From(v));
+        builder.HasKey(x => x.Id);
 
-        builder.Property(e => e.OrderId)
-               .HasConversion(v => v.Value, v => OrderId.From(v))
-               .IsRequired();
+        builder.Property(x => x.Id)
+            .HasConversion(id => id.Value, value => OrderItemId.From(value))
+            .ValueGeneratedNever();
 
-        builder.Property(e => e.VariantId)
-               .HasConversion(v => v.Value, v => VariantId.From(v))
-               .IsRequired();
+        builder.Property(x => x.VariantId)
+            .HasConversion(id => id.Value, value => VariantId.From(value))
+            .IsRequired();
 
-        builder.Property(e => e.ProductId)
-               .HasConversion(v => v.Value, v => ProductId.From(v))
-               .IsRequired();
+        builder.Property(x => x.Quantity).IsRequired();
 
-        builder.Property(e => e.ProductName).IsRequired().HasMaxLength(200);
-        builder.Property(e => e.Sku).IsRequired().HasMaxLength(100);
-        builder.Property(e => e.Quantity).IsRequired();
-
-        builder.OwnsOne(e => e.UnitPrice, mb =>
+        builder.OwnsOne(x => x.UnitPrice, price =>
         {
-            mb.Property(m => m.Amount)
-              .HasColumnName("UnitPriceAmount")
-              .HasColumnType("decimal(18,2)")
-              .IsRequired();
-            mb.Property(m => m.Currency)
-              .HasColumnName("UnitPriceCurrency")
-              .HasMaxLength(5);
+            price.Property(p => p.Amount).HasColumnName("UnitPriceAmount").HasPrecision(18, 2).IsRequired();
+            price.Property(p => p.Currency).HasColumnName("UnitPriceCurrency").HasMaxLength(3).IsRequired();
+            price.WithOwner();
         });
 
-        builder.Ignore(e => e.TotalPrice);
+        builder.Ignore(x => x.TotalPrice);
 
-        builder.HasQueryFilter(e => !e.Order.IsDeleted);
+        builder.Property(x => x.ProductName).HasMaxLength(500).IsRequired();
+        builder.Property(x => x.Sku).HasMaxLength(100);
+
+        builder.Navigation(x => x.UnitPrice).IsRequired();
     }
 }

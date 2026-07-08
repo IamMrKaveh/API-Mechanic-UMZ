@@ -14,7 +14,7 @@ public sealed class WalletTopUpSucceededCreditHandler(
         CancellationToken ct)
     {
         var e = notification.DomainEvent;
-        var idempotencyKey = $"topup:{e.TopUpId.Value:N}";
+        var idempotencyKey = $"topup-credit:{e.TopUpId.Value}";
 
         var command = new CreditWalletCommand(
             UserId: e.UserId.Value,

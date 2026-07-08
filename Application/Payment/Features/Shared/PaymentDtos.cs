@@ -18,7 +18,10 @@ public record PaymentTransactionDto
     public DateTime? UpdatedAt { get; init; }
 }
 
-public sealed record PaymentInitiationResult(string Authority, string PaymentUrl);
+public sealed record PaymentInitiationResult(
+    string Authority,
+    string PaymentUrl,
+    Guid TransactionId);
 
 public sealed record PaymentVerificationResult(
     Guid? TransactionId,

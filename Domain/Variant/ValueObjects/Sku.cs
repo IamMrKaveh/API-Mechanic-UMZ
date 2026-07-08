@@ -7,9 +7,10 @@ public sealed class Sku : ValueObject
     private const int MaxLength = 100;
     private const int MinLength = 1;
 
-    private Sku(string value)
+    private Sku(string value) => Value = value;
+
+    public Sku()
     {
-        Value = value;
     }
 
     public static Sku Create(string value)

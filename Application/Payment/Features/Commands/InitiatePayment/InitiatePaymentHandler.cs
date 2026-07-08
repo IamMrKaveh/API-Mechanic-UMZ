@@ -32,6 +32,6 @@ public class InitiatePaymentHandler(
 
         var ipAddress = IpAddress.Create(currentUser.IpAddress ?? IpAddress.Unknown.Value);
 
-        return await paymentService.InitiatePaymentAsync(orderId, order.FinalAmount, ipAddress, userId, ct);
+        return await paymentService.InitiatePaymentAsync(orderId, order.FinalAmount, ipAddress, userId, "", ct);
     }
 }

@@ -6,6 +6,7 @@ using Application.Auth.Features.Shared;
 using Application.Brand.Contracts;
 using Application.Cart.Contracts;
 using Application.Category.Contracts;
+using Application.Common.Options;
 using Application.Discount.Contracts;
 using Application.Location.Contracts;
 using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
@@ -61,6 +62,7 @@ using Infrastructure.Cart.Repositories;
 using Infrastructure.Category.QueryServices;
 using Infrastructure.Category.Repositories;
 using Infrastructure.Common.DependencyInjection;
+using Infrastructure.Common.Options;
 using Infrastructure.Common.Services;
 using Infrastructure.Communication.Options;
 using Infrastructure.Communication.Services;
@@ -82,6 +84,7 @@ using Infrastructure.Order.QueryServices;
 using Infrastructure.Order.Repositories;
 using Infrastructure.Order.Seeders;
 using Infrastructure.Order.Services;
+using Infrastructure.Order.Services.Strategies;
 using Infrastructure.Payment.Factory;
 using Infrastructure.Payment.QueryServices;
 using Infrastructure.Payment.Repositories;
@@ -133,7 +136,7 @@ public static class InfrastructureServiceExtensions
         services.AddRepositories();
         services.AddQueryServices();
         services.AddDomainServices();
-        services.AddAuthServices(configuration);
+        services.AddAuthServices();
         services.AddPaymentServices(configuration);
         services.AddStorageServices(configuration);
         services.AddCommunicationServices(configuration);
@@ -171,6 +174,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<ICacheService, RedisCacheService>();
             services.AddSingleton<IDistributedLock, DistributedLockService>();
             services.AddScoped<IRateLimitService, RateLimitService>();
+            services.AddScoped<IIdempotencyService, RedisIdempotencyService>();
         }
         else
         {
@@ -179,10 +183,10 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<ICacheService, InMemoryCacheService>();
             services.AddSingleton<IDistributedLock, NoOpDistributedLock>();
             services.AddScoped<IRateLimitService, InMemoryRateLimitService>();
+            services.AddScoped<IIdempotencyService, CacheIdempotencyService>();
         }
 
         services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
-        services.AddScoped<IIdempotencyService, CacheIdempotencyService>();
     }
 
     private static void AddPersistence(
@@ -192,19 +196,14 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<AuditableEntityInterceptor>();
         services.AddSingleton<DomainEventInterceptor>();
 
-        var environment =
-            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        var isDevelopment = string.Equals(
+            environment,
+            Environments.Development,
+            StringComparison.OrdinalIgnoreCase);
 
-        var isDevelopment =
-            string.Equals(
-                environment,
-                Environments.Development,
-                StringComparison.OrdinalIgnoreCase);
-
-        var connectionString =
-            configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException(
-                "DefaultConnection connection string was not found.");
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("DefaultConnection connection string was not found.");
 
         services.AddDbContext<DBContext>((sp, options) =>
         {
@@ -212,8 +211,7 @@ public static class InfrastructureServiceExtensions
                 connectionString,
                 npgsql =>
                 {
-                    npgsql.MigrationsAssembly(
-                        typeof(DBContext).Assembly.FullName);
+                    npgsql.MigrationsAssembly(typeof(DBContext).Assembly.FullName);
 
                     if (!isDevelopment)
                     {
@@ -263,6 +261,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IWalletFraudAlertRepository, WalletFraudAlertRepository>();
         services.AddScoped<IWalletTopUpRepository, WalletTopUpRepository>();
         services.AddScoped<IWalletWithdrawalRepository, WalletWithdrawalRepository>();
+        services.AddScoped<IWalletTransferRepository, WalletTransferRepository>();
         services.AddScoped<IWarehouseRepository, WarehouseRepository>();
         services.AddScoped<IWishlistRepository, WishlistRepository>();
     }
@@ -305,6 +304,10 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ICheckoutDiscountApplicatorService, CheckoutDiscountApplicatorService>();
         services.AddScoped<ICheckoutOrderCreationService, CheckoutOrderCreationService>();
         services.AddScoped<ICheckoutPaymentProcessorService, CheckoutPaymentProcessorService>();
+        services.AddScoped<ICheckoutPaymentStrategy, CashOnDeliveryCheckoutPaymentStrategy>();
+        services.AddScoped<ICheckoutPaymentStrategy, WalletCheckoutPaymentStrategy>();
+        services.AddScoped<ICheckoutPaymentStrategy, ZarinPalCheckoutPaymentStrategy>();
+        services.AddScoped<ICheckoutPaymentStrategyResolver, CheckoutPaymentStrategyResolver>();
         services.AddScoped<ICheckoutPriceValidatorService, CheckoutPriceValidatorService>();
         services.AddScoped<ICheckoutShippingValidatorService, CheckoutShippingValidatorService>();
         services.AddScoped<ICheckoutStockValidatorService, CheckoutStockValidatorService>();
@@ -319,7 +322,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IPurchaseVerificationService, PurchaseVerificationService>();
     }
 
-    private static void AddAuthServices(this IServiceCollection services, IConfiguration configuration)
+    private static void AddAuthServices(this IServiceCollection services)
     {
         services.AddOptions<OtpOptions>()
             .BindConfiguration(OtpOptions.SectionName)
@@ -419,11 +422,19 @@ public static class InfrastructureServiceExtensions
                 policy.CircuitBreakerAsync(5, TimeSpan.FromSeconds(30)));
     }
 
-    private static void AddPaymentServices(this IServiceCollection services, IConfiguration configuration)
+    private static IServiceCollection AddPaymentServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<ZarinPalOptions>()
-            .BindConfiguration(ZarinPalOptions.SectionName)
+            .Bind(configuration.GetSection(ZarinPalOptions.SectionName))
             .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<FrontendUrlsOptions>()
+            .Bind(configuration.GetSection(FrontendUrlsOptions.SectionName))
+            .ValidateOnStart();
+
+        services.AddOptions<ApiBaseUrlOptions>()
+            .Bind(configuration.GetSection(ApiBaseUrlOptions.SectionName))
             .ValidateOnStart();
 
         services.AddScoped<IPaymentGatewayFactory, PaymentGatewayFactory>();
@@ -433,33 +444,34 @@ public static class InfrastructureServiceExtensions
         {
             var opts = sp.GetRequiredService<IOptions<ZarinPalOptions>>().Value;
             var baseUrl = string.IsNullOrWhiteSpace(opts.ApiBaseUrl)
-                ? "https://payment.zarinpal.com/"
+                ? "https://api.zarinpal.com/pg/v4/payment/"
                 : opts.ApiBaseUrl;
             if (!baseUrl.EndsWith('/')) baseUrl += "/";
             client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
             client.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds > 0 ? opts.TimeoutSeconds : 30);
         })
-        .AddTransientHttpErrorPolicy(policy =>
-            policy.WaitAndRetryAsync(2, retryAttempt => TimeSpan.FromSeconds(retryAttempt)))
-        .AddTransientHttpErrorPolicy(policy =>
-            policy.CircuitBreakerAsync(5, TimeSpan.FromSeconds(60)));
+        .AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(2, i => TimeSpan.FromSeconds(i)))
+        .AddTransientHttpErrorPolicy(p => p.CircuitBreakerAsync(5, TimeSpan.FromSeconds(60)));
 
         services.AddHttpClient("ZarinPalSandbox", (sp, client) =>
         {
             var opts = sp.GetRequiredService<IOptions<ZarinPalOptions>>().Value;
             var baseUrl = string.IsNullOrWhiteSpace(opts.SandboxApiBaseUrl)
                 ? "https://sandbox.zarinpal.com/"
-                : opts.SandboxApiBaseUrl!;
+                : opts.SandboxApiBaseUrl;
             if (!baseUrl.EndsWith('/')) baseUrl += "/";
             client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
             client.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds > 0 ? opts.TimeoutSeconds : 30);
         })
-        .AddTransientHttpErrorPolicy(policy =>
-            policy.WaitAndRetryAsync(2, retryAttempt => TimeSpan.FromSeconds(retryAttempt)));
+        .AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(2, i => TimeSpan.FromSeconds(i)));
 
+        services.AddScoped<ZarinPalPaymentGateway>();
         services.AddScoped<ZarinPalSandboxGateway>();
-        services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<ZarinPalSandboxGateway>());
+
         services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<ZarinPalPaymentGateway>());
+        services.AddScoped<IPaymentGateway>(sp => sp.GetRequiredService<ZarinPalSandboxGateway>());
+
+        return services;
     }
 
     private static void AddSearchServices(this IServiceCollection services, IConfiguration configuration)

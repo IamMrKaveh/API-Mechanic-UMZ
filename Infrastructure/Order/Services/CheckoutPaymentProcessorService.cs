@@ -25,6 +25,7 @@ public sealed class CheckoutPaymentProcessorService(IPaymentService paymentServi
             Money.Create(orderResult.FinalAmount),
             IpAddress.Create(ipAddress),
             UserId.From(userId),
+            "",
             ct);
 
         if (!paymentResult.IsSuccess)

@@ -26,42 +26,38 @@ public sealed class ZarinPalPaymentGateway(
     {
         try
         {
-            var apiBase = _options.ApiBaseUrl.TrimEnd('/');
-            var startPayBase = _options.StartPayBaseUrl.TrimEnd('/');
-
             var request = new
             {
                 merchant_id = _options.MerchantId,
-                amount = (long)amount.ToRialDecimal(),
+                amount = ToRial(amount),
                 description,
                 callback_url = callbackUrl,
                 metadata = new
                 {
                     mobile = phoneNumber?.Value,
-                    email = email?.Value
+                    email = email?.Value,
+                    order_id = orderId.Value.ToString()
                 }
             };
 
-            var response = await httpClient.PostAsJsonAsync($"{apiBase}/request.json", request, ct);
-            response.EnsureSuccessStatusCode();
+            using var response = await httpClient.PostAsJsonAsync("request.json", request, ct);
             var result = await response.Content.ReadFromJsonAsync<ZarinPalRequestResponse>(cancellationToken: ct);
 
             if (result?.Data?.Code == 100 && !string.IsNullOrWhiteSpace(result.Data.Authority))
             {
-                var paymentUrl = $"{startPayBase}/{result.Data.Authority}";
+                var paymentUrl = $"{_options.StartPayBaseUrl.TrimEnd('/')}/{result.Data.Authority}";
                 return ServiceResult<PaymentInitiationResult>.Success(
-                    new PaymentInitiationResult(result.Data.Authority, paymentUrl));
+                    new PaymentInitiationResult(result.Data.Authority, paymentUrl, Guid.Empty));
             }
 
-            var errorCode = result?.Errors?.Code ?? -1;
-            var errorMsg = ZarinPalErrorMapper.GetMessage(errorCode);
-            await auditService.LogErrorAsync($"[ZarinPal] Request failed: {errorMsg}", ct);
-            return ServiceResult<PaymentInitiationResult>.Failure(errorMsg);
+            var code = result?.Errors?.Code ?? -1;
+            await auditService.LogErrorAsync($"[ZarinPal] Request failed code={code}", ct);
+            return ServiceResult<PaymentInitiationResult>.Failure(ZarinPalErrorMapper.GetMessage(code));
         }
         catch (Exception ex)
         {
-            await auditService.LogErrorAsync($"[ZarinPal] Exception InitiateAsync: {ex.Message}", ct);
-            return ServiceResult<PaymentInitiationResult>.Failure("خطا در اتصال به درگاه زرین‌پال.");
+            await auditService.LogErrorAsync($"[ZarinPal] Initiate exception: {ex.Message}", ct);
+            return ServiceResult<PaymentInitiationResult>.Failure("خطا در ارتباط با درگاه زرین‌پال.");
         }
     }
 
@@ -72,16 +68,14 @@ public sealed class ZarinPalPaymentGateway(
     {
         try
         {
-            var apiBase = _options.ApiBaseUrl.TrimEnd('/');
             var request = new
             {
                 merchant_id = _options.MerchantId,
-                amount = (long)expectedAmount.ToRialDecimal(),
+                amount = ToRial(expectedAmount),
                 authority
             };
 
-            var response = await httpClient.PostAsJsonAsync($"{apiBase}/verify.json", request, ct);
-            response.EnsureSuccessStatusCode();
+            using var response = await httpClient.PostAsJsonAsync("verify.json", request, ct);
             var result = await response.Content.ReadFromJsonAsync<ZarinPalVerifyResponse>(cancellationToken: ct);
 
             if (result?.Data?.Code is 100 or 101)
@@ -90,14 +84,23 @@ public sealed class ZarinPalPaymentGateway(
                     new PaymentVerificationResult(null, true, result.Data.RefId, result.Data.CardPan, result.Data.Fee));
             }
 
-            var errorCode = result?.Errors?.Code ?? -1;
-            return ServiceResult<PaymentVerificationResult>.Failure(ZarinPalErrorMapper.GetMessage(errorCode));
+            var code = result?.Errors?.Code ?? -1;
+            return ServiceResult<PaymentVerificationResult>.Failure(ZarinPalErrorMapper.GetMessage(code));
         }
         catch (Exception ex)
         {
-            await auditService.LogErrorAsync($"[ZarinPal] Exception VerifyAsync: {ex.Message}", ct);
+            await auditService.LogErrorAsync($"[ZarinPal] Verify exception: {ex.Message}", ct);
             return ServiceResult<PaymentVerificationResult>.Failure("خطا در تأیید پرداخت زرین‌پال.");
         }
+    }
+
+    private static long ToRial(Money amount)
+    {
+        var value = amount.Amount;
+        if (string.Equals(amount.Currency, "IRT", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(amount.Currency, "TOMAN", StringComparison.OrdinalIgnoreCase))
+            value *= 10m;
+        return (long)Math.Round(value, MidpointRounding.AwayFromZero);
     }
 }
 

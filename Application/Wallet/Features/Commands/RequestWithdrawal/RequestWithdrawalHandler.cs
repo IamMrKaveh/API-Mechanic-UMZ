@@ -20,12 +20,42 @@ public sealed class RequestWithdrawalHandler(
         RequestWithdrawalCommand request,
         CancellationToken ct)
     {
+        UserId userId;
+        IbanNumber iban;
+        Money amount;
+
         try
         {
-            var userId = UserId.From(request.UserId);
-            var iban = IbanNumber.Create(request.Iban);
-            var amount = Money.Create(request.Amount);
+            userId = UserId.From(request.UserId);
+        }
+        catch (DomainException)
+        {
+            return ServiceResult<Guid>.Validation("شناسه کاربر نامعتبر است.");
+        }
 
+        try
+        {
+            iban = IbanNumber.Create(request.Iban);
+        }
+        catch (DomainException ex)
+        {
+            return ServiceResult<Guid>.Validation(ex.Message);
+        }
+
+        try
+        {
+            amount = Money.Create(request.Amount);
+        }
+        catch (DomainException ex)
+        {
+            return ServiceResult<Guid>.Validation(ex.Message);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.AccountHolder))
+            return ServiceResult<Guid>.Validation("نام صاحب حساب الزامی است.");
+
+        try
+        {
             var pendingCount = await withdrawalRepository
                 .CountByUserAndStatusAsync(userId, WithdrawalStatus.Pending, ct);
 
@@ -35,21 +65,24 @@ public sealed class RequestWithdrawalHandler(
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)
-                return ServiceResult<Guid>.NotFound("کیف پول یافت نشد.");
+            {
+                wallet = Domain.Wallet.Aggregates.Wallet.Create(userId);
+                await walletRepository.AddAsync(wallet, ct);
+            }
+
+            if (!wallet.IsActive)
+                return ServiceResult<Guid>.Failure("کیف پول شما غیرفعال است.");
+
+            if (wallet.AvailableBalance.IsLessThan(amount))
+                return ServiceResult<Guid>.Failure(
+                    $"موجودی قابل برداشت کافی نیست. موجودی فعلی: {wallet.AvailableBalance.Amount:N0} تومان.");
 
             var reservationId = WalletReservationId.NewId();
-            wallet.CreateReservation(
-                reservationId,
-                amount,
-                $"withdrawal-request");
+            wallet.CreateReservation(reservationId, amount, "withdrawal-request");
 
             var withdrawal = WalletWithdrawalRequest.Create(
-                userId,
-                amount,
-                iban,
-                request.AccountHolder,
-                reservationId,
-                request.Description);
+                userId, amount, iban, request.AccountHolder,
+                reservationId, request.Description);
 
             walletRepository.Update(wallet);
             await withdrawalRepository.AddAsync(withdrawal, ct);
@@ -61,20 +94,25 @@ public sealed class RequestWithdrawalHandler(
         {
             return ServiceResult<Guid>.Failure(ex.Message);
         }
+        catch (WalletInactiveException)
+        {
+            return ServiceResult<Guid>.Failure("کیف پول شما غیرفعال است.");
+        }
         catch (ConcurrencyException)
         {
             await auditService.LogSystemEventAsync(
                 "WithdrawalRequestConcurrencyConflict",
-                $"تعارض همزمانی در ثبت درخواست برداشت کاربر {request.UserId}",
-                ct);
+                $"تعارض همزمانی در ثبت درخواست برداشت کاربر {request.UserId}", ct);
             return ServiceResult<Guid>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
         {
-            return ServiceResult<Guid>.Failure(ex.Message);
+            return ServiceResult<Guid>.Validation(ex.Message);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            await auditService.LogErrorAsync(
+                $"[Withdrawal] Unexpected error for user {request.UserId}: {ex.Message}", ct);
             return ServiceResult<Guid>.Failure("خطا در ثبت درخواست برداشت.");
         }
     }
