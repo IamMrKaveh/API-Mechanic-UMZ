@@ -42,6 +42,9 @@ public sealed class OrderItem : Entity<OrderItemId>
 
     internal static OrderItem FromSnapshot(OrderId orderId, OrderItemSnapshot snapshot)
     {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(snapshot.UnitPrice);
+
         return new OrderItem(
             OrderItemId.NewId(),
             orderId,
@@ -49,7 +52,7 @@ public sealed class OrderItem : Entity<OrderItemId>
             snapshot.ProductId,
             snapshot.ProductName,
             snapshot.Sku,
-            snapshot.UnitPrice,
+            snapshot.UnitPrice.Copy(),
             snapshot.Quantity);
     }
 

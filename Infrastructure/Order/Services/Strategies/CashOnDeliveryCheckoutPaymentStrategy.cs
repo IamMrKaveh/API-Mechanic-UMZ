@@ -2,6 +2,7 @@
 using Application.Order.Features.Shared;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
+using Domain.Payment.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Infrastructure.Order.Services.Strategies;
@@ -10,7 +11,7 @@ public sealed class CashOnDeliveryCheckoutPaymentStrategy(
     IOrderRepository orderRepository,
     IUnitOfWork unitOfWork) : ICheckoutPaymentStrategy
 {
-    public string Code => "cash_on_delivery";
+    public string Code => PaymentMethodCode.CashOnDelivery;
 
     public async Task<ServiceResult<CheckoutResultDto>> ExecuteAsync(
         CheckoutResultDto orderResult,

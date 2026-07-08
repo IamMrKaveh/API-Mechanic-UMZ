@@ -26,6 +26,8 @@ public sealed class Money : ValueObject
 
     public static Money Zero(string currency = "IRT") => new(0, currency);
 
+    public Money Copy() => new(Amount, Currency);
+
     public Money Add(Money other)
     {
         EnsureSameCurrency(other);

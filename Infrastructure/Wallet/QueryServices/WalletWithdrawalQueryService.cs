@@ -22,11 +22,13 @@ public sealed class WalletWithdrawalQueryService(DBContext context) : IWalletWit
 
         var total = await baseQuery.CountAsync(ct);
 
-        var items = await Project(baseQuery)
+        var entities = await baseQuery
             .OrderByDescending(w => w.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
+
+        var items = await MapToDtosAsync(entities, ct);
 
         return PaginatedResult<WalletWithdrawalRequestDto>.Create(items, total, page, pageSize);
     }
@@ -41,16 +43,19 @@ public sealed class WalletWithdrawalQueryService(DBContext context) : IWalletWit
         pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
 
         var baseQuery = context.Set<WalletWithdrawalRequest>().AsNoTracking();
+
         if (status.HasValue)
             baseQuery = baseQuery.Where(w => w.Status == status.Value);
 
         var total = await baseQuery.CountAsync(ct);
 
-        var items = await Project(baseQuery)
+        var entities = await baseQuery
             .OrderBy(w => w.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
+
+        var items = await MapToDtosAsync(entities, ct);
 
         return PaginatedResult<WalletWithdrawalRequestDto>.Create(items, total, page, pageSize);
     }
@@ -59,34 +64,60 @@ public sealed class WalletWithdrawalQueryService(DBContext context) : IWalletWit
         Guid id,
         CancellationToken ct = default)
     {
-        return await Project(
-            context.Set<WalletWithdrawalRequest>()
-                .AsNoTracking()
-                .Where(w => w.Id.Value == id))
-            .FirstOrDefaultAsync(ct);
+        var entity = await context.Set<WalletWithdrawalRequest>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.Id.Value == id, ct);
+
+        if (entity is null)
+            return null;
+
+        var list = await MapToDtosAsync([entity], ct);
+        return list.FirstOrDefault();
     }
 
-    private IQueryable<WalletWithdrawalRequestDto> Project(IQueryable<WalletWithdrawalRequest> source)
+    private async Task<List<WalletWithdrawalRequestDto>> MapToDtosAsync(
+        IReadOnlyCollection<WalletWithdrawalRequest> entities,
+        CancellationToken ct)
     {
-        return from w in source
-               join u in context.Set<Domain.User.Aggregates.User>().AsNoTracking()
-                   on w.UserId equals u.Id into userJoin
-               from user in userJoin.DefaultIfEmpty()
-               select new WalletWithdrawalRequestDto(
-                   w.Id.Value,
-                   w.UserId.Value,
-                   user != null ? $"{user.FullName.FirstName} {user.FullName.LastName}" : null,
-                   w.Amount.Amount,
-                   w.Iban.Value,
-                   w.AccountHolder,
-                   w.Description,
-                   w.Status.ToString(),
-                   w.RejectionReason,
-                   w.BankReferenceNumber,
-                   w.CreatedAt,
-                   w.ApprovedAt,
-                   w.RejectedAt,
-                   w.PaidAt,
-                   w.CancelledAt);
+        if (entities.Count == 0)
+            return [];
+
+        var userIds = entities
+            .Select(w => w.UserId.Value)
+            .Distinct()
+            .ToList();
+
+        var userNames = await context.Set<Domain.User.Aggregates.User>()
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(u => userIds.Contains(u.Id.Value))
+            .Select(u => new
+            {
+                Id = u.Id.Value,
+                u.FullName.FirstName,
+                u.FullName.LastName
+            })
+            .ToListAsync(ct);
+
+        var namesById = userNames.ToDictionary(
+            x => x.Id,
+            x => $"{x.FirstName} {x.LastName}".Trim());
+
+        return entities.Select(w => new WalletWithdrawalRequestDto(
+            w.Id.Value,
+            w.UserId.Value,
+            namesById.TryGetValue(w.UserId.Value, out var name) ? name : null,
+            w.Amount.Amount,
+            w.Iban.Value,
+            w.AccountHolder,
+            w.Description,
+            w.Status.ToString(),
+            w.RejectionReason,
+            w.BankReferenceNumber,
+            w.CreatedAt,
+            w.ApprovedAt,
+            w.RejectedAt,
+            w.PaidAt,
+            w.CancelledAt)).ToList();
     }
 }

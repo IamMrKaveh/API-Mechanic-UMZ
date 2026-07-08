@@ -5,6 +5,7 @@ using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.Payment.Aggregates;
 using Domain.Payment.Interfaces;
+using Domain.Payment.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Infrastructure.Order.Services.Strategies;
@@ -16,7 +17,7 @@ public sealed class ZarinPalCheckoutPaymentStrategy(
     IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider) : ICheckoutPaymentStrategy
 {
-    public string Code => "zarinpal";
+    public string Code => PaymentMethodCode.Zarinpal;
 
     public async Task<ServiceResult<CheckoutResultDto>> ExecuteAsync(
         CheckoutResultDto orderResult,

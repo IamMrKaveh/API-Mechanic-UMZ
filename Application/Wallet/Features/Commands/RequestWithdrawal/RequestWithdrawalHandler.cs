@@ -35,6 +35,19 @@ public sealed class RequestWithdrawalHandler(
 
         try
         {
+            amount = Money.Create(request.Amount);
+        }
+        catch (DomainException ex)
+        {
+            return ServiceResult<Guid>.Validation(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return ServiceResult<Guid>.Validation(ex.Message);
+        }
+
+        try
+        {
             iban = IbanNumber.Create(request.Iban);
         }
         catch (DomainException ex)
@@ -42,17 +55,11 @@ public sealed class RequestWithdrawalHandler(
             return ServiceResult<Guid>.Validation(ex.Message);
         }
 
-        try
-        {
-            amount = Money.Create(request.Amount);
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult<Guid>.Validation(ex.Message);
-        }
+        var accountHolder = request.AccountHolder?.Trim() ?? string.Empty;
+        if (accountHolder.Length < 3)
+            return ServiceResult<Guid>.Validation("نام صاحب حساب باید حداقل ۳ کاراکتر باشد.");
 
-        if (string.IsNullOrWhiteSpace(request.AccountHolder))
-            return ServiceResult<Guid>.Validation("نام صاحب حساب الزامی است.");
+        var description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description!.Trim();
 
         try
         {
@@ -74,15 +81,19 @@ public sealed class RequestWithdrawalHandler(
                 return ServiceResult<Guid>.Failure("کیف پول شما غیرفعال است.");
 
             if (wallet.AvailableBalance.IsLessThan(amount))
-                return ServiceResult<Guid>.Failure(
+                return ServiceResult<Guid>.Validation(
                     $"موجودی قابل برداشت کافی نیست. موجودی فعلی: {wallet.AvailableBalance.Amount:N0} تومان.");
 
             var reservationId = WalletReservationId.NewId();
             wallet.CreateReservation(reservationId, amount, "withdrawal-request");
 
             var withdrawal = WalletWithdrawalRequest.Create(
-                userId, amount, iban, request.AccountHolder,
-                reservationId, request.Description);
+                userId,
+                amount,
+                iban,
+                accountHolder,
+                reservationId,
+                description);
 
             walletRepository.Update(wallet);
             await withdrawalRepository.AddAsync(withdrawal, ct);
@@ -92,7 +103,7 @@ public sealed class RequestWithdrawalHandler(
         }
         catch (InsufficientWalletBalanceException ex)
         {
-            return ServiceResult<Guid>.Failure(ex.Message);
+            return ServiceResult<Guid>.Validation(ex.Message);
         }
         catch (WalletInactiveException)
         {
@@ -102,7 +113,8 @@ public sealed class RequestWithdrawalHandler(
         {
             await auditService.LogSystemEventAsync(
                 "WithdrawalRequestConcurrencyConflict",
-                $"تعارض همزمانی در ثبت درخواست برداشت کاربر {request.UserId}", ct);
+                $"تعارض همزمانی در ثبت درخواست برداشت کاربر {request.UserId}",
+                ct);
             return ServiceResult<Guid>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
@@ -112,7 +124,8 @@ public sealed class RequestWithdrawalHandler(
         catch (Exception ex)
         {
             await auditService.LogErrorAsync(
-                $"[Withdrawal] Unexpected error for user {request.UserId}: {ex.Message}", ct);
+                $"[Withdrawal] Unexpected error for user {request.UserId}: {ex.Message}",
+                ct);
             return ServiceResult<Guid>.Failure("خطا در ثبت درخواست برداشت.");
         }
     }
