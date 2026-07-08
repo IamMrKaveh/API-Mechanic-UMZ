@@ -14,9 +14,23 @@ public sealed class WalletTopUpRepository(DBContext context) : IWalletTopUpRepos
     public void Update(WalletTopUp topUp)
     {
         var entry = context.Entry(topUp);
-        if (entry.State == EntityState.Detached)
-            context.Set<WalletTopUp>().Attach(topUp);
-        entry.State = EntityState.Modified;
+
+        switch (entry.State)
+        {
+            case EntityState.Detached:
+                context.Set<WalletTopUp>().Attach(topUp);
+                context.Entry(topUp).State = EntityState.Modified;
+                break;
+
+            case EntityState.Added:
+            case EntityState.Modified:
+            case EntityState.Deleted:
+                break;
+
+            case EntityState.Unchanged:
+                entry.State = EntityState.Modified;
+                break;
+        }
     }
 
     public async Task<WalletTopUp?> GetByIdAsync(WalletTopUpId id, CancellationToken ct = default)

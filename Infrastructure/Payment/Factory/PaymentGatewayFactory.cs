@@ -16,16 +16,16 @@ public sealed class PaymentGatewayFactory(
             ? GetDefaultGatewayName()
             : NormalizeGatewayName(gatewayName);
 
-        if (_zarinPalOptions.UseSandbox)
+        if (_zarinPalOptions.UseSandbox && IsZarinPalFamily(requested))
             requested = "ZarinpalSandbox";
 
         var gateway = _gateways.FirstOrDefault(g =>
             g.GatewayName.Equals(requested, StringComparison.OrdinalIgnoreCase));
 
-        return gateway is null
-            ? throw new InvalidOperationException(
-                $"درگاه پرداخت '{requested}' پیدا نشد. درگاه‌های موجود: {string.Join(", ", GetAvailableGateways())}")
-            : gateway;
+        if (gateway is null)
+            throw new InvalidOperationException($"درگاه پرداخت '{requested}' یافت نشد.");
+
+        return gateway;
     }
 
     public IReadOnlyList<string> GetAvailableGateways()
@@ -33,6 +33,10 @@ public sealed class PaymentGatewayFactory(
 
     private string GetDefaultGatewayName()
         => _zarinPalOptions.UseSandbox ? "ZarinpalSandbox" : "Zarinpal";
+
+    private static bool IsZarinPalFamily(string name)
+        => name.Equals("Zarinpal", StringComparison.OrdinalIgnoreCase)
+        || name.Equals("ZarinpalSandbox", StringComparison.OrdinalIgnoreCase);
 
     private static string NormalizeGatewayName(string name)
     {

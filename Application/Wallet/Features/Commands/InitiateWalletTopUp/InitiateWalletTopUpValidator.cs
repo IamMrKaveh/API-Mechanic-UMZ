@@ -1,11 +1,9 @@
-﻿namespace Application.Wallet.Features.Commands.InitiateTopUp;
+﻿namespace Application.Wallet.Features.Commands.InitiateWalletTopUp;
 
 public sealed class InitiateWalletTopUpValidator : AbstractValidator<InitiateWalletTopUpCommand>
 {
     public InitiateWalletTopUpValidator()
     {
-        RuleFor(x => x.UserId).NotEmpty();
-
         RuleFor(x => x.Amount)
             .GreaterThanOrEqualTo(10_000m)
                 .WithMessage("حداقل مبلغ شارژ ۱۰,۰۰۰ تومان است.")

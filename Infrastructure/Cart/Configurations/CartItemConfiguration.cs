@@ -1,5 +1,4 @@
 using Domain.Cart.Entities;
-using Domain.Cart.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
 
@@ -9,50 +8,41 @@ public sealed class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
 {
     public void Configure(EntityTypeBuilder<CartItem> builder)
     {
-        builder.HasKey(e => e.Id);
+        builder.ToTable("CartItems");
+        builder.HasKey(x => x.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => CartItemId.From(v));
-
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
-
-        builder.Property(e => e.CartId)
-            .HasConversion(v => v.Value, v => CartId.From(v))
+        builder.Property(x => x.ProductName)
+            .HasConversion(v => v.Value, v => ProductName.Create(v))
+            .HasMaxLength(ProductName.MaxLength)
             .IsRequired();
 
-        builder.Property(e => e.VariantId)
-            .HasConversion(v => v.Value, v => VariantId.From(v))
+        builder.Property(x => x.Sku)
+            .HasConversion(v => v.Value, v => Sku.Create(v))
+            .HasMaxLength(100)
             .IsRequired();
 
-        builder.Property(e => e.ProductId)
-            .HasConversion(v => v.Value, v => ProductId.From(v))
-            .IsRequired();
-
-        builder.OwnsOne(e => e.ProductName, pb =>
+        builder.OwnsOne(x => x.OriginalPrice, price =>
         {
-            pb.Property(p => p.Value).HasColumnName("ProductName").IsRequired().HasMaxLength(500);
+            price.Property(p => p.Amount).HasColumnName("OriginalPriceAmount").HasPrecision(18, 2);
+            price.Property(p => p.Currency).HasColumnName("OriginalPriceCurrency").HasMaxLength(3);
+            price.WithOwner();
         });
 
-        builder.OwnsOne(e => e.Sku, pb =>
+        builder.OwnsOne(x => x.SellingPrice, price =>
         {
-            pb.Property(p => p.Value).HasColumnName("Sku").IsRequired().HasMaxLength(100);
+            price.Property(p => p.Amount).HasColumnName("SellingPriceAmount").HasPrecision(18, 2);
+            price.Property(p => p.Currency).HasColumnName("SellingPriceCurrency").HasMaxLength(3);
+            price.WithOwner();
         });
 
-        builder.OwnsOne(e => e.SellingPrice, pb =>
-        {
-            pb.Property(p => p.Amount).HasColumnName("SellingPrice").IsRequired();
-            pb.Property(p => p.Currency).HasColumnName("SellingPriceCurrency").HasMaxLength(10);
-        });
+        builder.HasOne(x => x.Variant)
+            .WithMany()
+            .HasForeignKey(x => x.VariantId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-        builder.OwnsOne(e => e.OriginalPrice, pb =>
-        {
-            pb.Property(p => p.Amount).HasColumnName("OriginalPrice").IsRequired();
-            pb.Property(p => p.Currency).HasColumnName("OriginalPriceCurrency").HasMaxLength(10);
-        });
-
-        builder.Property(e => e.Quantity).IsRequired();
-        builder.Property(e => e.AddedAt).IsRequired();
-
-        builder.HasIndex(e => new { e.CartId, e.VariantId }).IsUnique();
+        builder.HasOne(x => x.Product)
+            .WithMany()
+            .HasForeignKey(x => x.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -2,10 +2,5 @@
 
 public sealed record CompleteWalletTopUpCommand(
     string Authority,
-    string Status) : ICommand<CompleteWalletTopUpResult>;
-
-public sealed record CompleteWalletTopUpResult(
-    Guid? TopUpId,
-    bool IsSucceeded,
-    string StatusText,
-    string? FailureReason);
+    string Status)
+    : ICommand<CompleteWalletTopUpResult>;

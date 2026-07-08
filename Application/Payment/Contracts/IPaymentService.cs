@@ -11,6 +11,7 @@ public interface IPaymentService
         Money amount,
         IpAddress ipAddress,
         UserId userId,
+        string? gatewayName = null,
         CancellationToken ct = default);
 
     Task<ServiceResult<PaymentVerificationResult>> VerifyPaymentAsync(

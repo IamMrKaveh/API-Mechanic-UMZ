@@ -27,6 +27,7 @@ public sealed class PaymentService(
         Money amount,
         IpAddress ipAddress,
         UserId userId,
+        string? gatewayName = null,
         CancellationToken ct = default)
     {
         var order = await orderRepository.FindByIdAsync(orderId, ct);
@@ -39,16 +40,24 @@ public sealed class PaymentService(
         var existing = await paymentRepository.GetActiveByOrderIdAsync(orderId, ct);
         if (existing is not null)
         {
-            var gw = gatewayFactory.GetGateway();
             var startPayBase = _zarinPalOptions.UseSandbox
                 ? (_zarinPalOptions.SandboxStartPayBaseUrl ?? string.Empty).TrimEnd('/')
                 : _zarinPalOptions.StartPayBaseUrl.TrimEnd('/');
             var url = $"{startPayBase}/{existing.Authority.Value}";
             return ServiceResult<PaymentInitiationResult>.Success(
-                new PaymentInitiationResult(existing.Authority.Value, url));
+                new PaymentInitiationResult(existing.Authority.Value, url, existing.Id.Value));
         }
 
-        var gateway = gatewayFactory.GetGateway();
+        IPaymentGateway gateway;
+        try
+        {
+            gateway = gatewayFactory.GetGateway(gatewayName ?? string.Empty);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return ServiceResult<PaymentInitiationResult>.Failure(ex.Message);
+        }
+
         var callbackUrl = $"{_currentUserService.FrontendBaseUrl}/payment/callback";
 
         var initiateResult = await gateway.InitiateAsync(
@@ -67,12 +76,8 @@ public sealed class PaymentService(
         }
 
         var transaction = PaymentTransaction.Initiate(
-            orderId,
-            userId,
-            initiateResult.Value!.Authority,
-            amount.Amount,
-            gateway.GatewayName,
-            dateTimeProvider.UtcNow);
+            orderId, userId, initiateResult.Value!.Authority,
+            amount.Amount, gateway.GatewayName, dateTimeProvider.UtcNow);
 
         await paymentRepository.AddAsync(transaction, ct);
 
@@ -82,12 +87,15 @@ public sealed class PaymentService(
         orderRepository.Update(order);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return ServiceResult<PaymentInitiationResult>.Success(initiateResult.Value!);
+        return ServiceResult<PaymentInitiationResult>.Success(
+            new PaymentInitiationResult(
+                initiateResult.Value!.Authority,
+                initiateResult.Value!.PaymentUrl,
+                transaction.Id.Value));
     }
 
     public async Task<ServiceResult<PaymentVerificationResult>> VerifyPaymentAsync(
-        string authority,
-        CancellationToken ct = default)
+        string authority, CancellationToken ct = default)
     {
         var now = dateTimeProvider.UtcNow;
 
@@ -110,11 +118,7 @@ public sealed class PaymentService(
 
             return ServiceResult<PaymentVerificationResult>.Success(
                 new PaymentVerificationResult(
-                    transaction.Id.Value,
-                    true,
-                    transaction.RefId,
-                    null,
-                    transaction.Fee));
+                    transaction.Id.Value, true, transaction.RefId, null, transaction.Fee));
         }
 
         if (!transaction.CanBeVerified(now))
@@ -159,17 +163,12 @@ public sealed class PaymentService(
 
         return ServiceResult<PaymentVerificationResult>.Success(
             new PaymentVerificationResult(
-                transaction.Id.Value,
-                true,
-                verifiedRefId,
-                verifyResult.Value!.CardPan,
-                verifyResult.Value!.Fee));
+                transaction.Id.Value, true, verifiedRefId,
+                verifyResult.Value!.CardPan, verifyResult.Value!.Fee));
     }
 
     public async Task<ServiceResult> ProcessWebhookAsync(
-        string authority,
-        string status,
-        CancellationToken ct = default)
+        string authority, string status, CancellationToken ct = default)
     {
         var now = dateTimeProvider.UtcNow;
 

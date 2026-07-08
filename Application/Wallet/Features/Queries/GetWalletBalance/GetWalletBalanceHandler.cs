@@ -1,11 +1,13 @@
 ﻿using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
+using Domain.Wallet.Aggregates;
 using Domain.Wallet.Interfaces;
 
 namespace Application.Wallet.Features.Queries.GetWalletBalance;
 
 public sealed class GetWalletBalanceHandler(
-    IWalletRepository walletRepository)
+    IWalletRepository walletRepository,
+    IUnitOfWork unitOfWork)
     : IQueryHandler<GetWalletBalanceQuery, WalletDto>
 {
     public async Task<ServiceResult<WalletDto>> Handle(
@@ -17,7 +19,11 @@ public sealed class GetWalletBalanceHandler(
         var wallet = await walletRepository.GetByUserIdAsync(userId, ct);
 
         if (wallet is null)
-            return ServiceResult<WalletDto>.NotFound("کیف پول یافت نشد.");
+        {
+            wallet = Domain.Wallet.Aggregates.Wallet.Create(userId);
+            await walletRepository.AddAsync(wallet, ct);
+            await unitOfWork.SaveChangesAsync(ct);
+        }
 
         return ServiceResult<WalletDto>.Success(new WalletDto
         {

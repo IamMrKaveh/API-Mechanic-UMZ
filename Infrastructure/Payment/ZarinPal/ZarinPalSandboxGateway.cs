@@ -30,70 +30,46 @@ public sealed class ZarinPalSandboxGateway(
         CancellationToken ct = default)
     {
         var merchantId = ResolveMerchantId();
-        var amountInRial = ConvertToRial(amount);
+        var amountInRial = ToRial(amount);
 
-        var requestBody = new ZarinPalRequestDto
+        var body = new ZarinPalRequestDto
         {
             MerchantId = merchantId,
             Amount = amountInRial,
-            Description = string.IsNullOrWhiteSpace(description) ? $"Order {orderId.Value}" : description,
+            Description = string.IsNullOrWhiteSpace(description) ? $"Wallet TopUp {orderId.Value}" : description,
             CallbackUrl = callbackUrl,
             Metadata = new ZarinPalMetadataDto
             {
                 Mobile = phoneNumber?.Value ?? "09000000000",
-                Email = email?.Value ?? "test@gmail.com",
-                OrderId = orderId.Value.ToString(),
-            },
+                Email = email?.Value ?? "test@example.com",
+                OrderId = orderId.Value.ToString()
+            }
         };
-
-        var client = CreateHttpClient();
-
-        ZarinPalResponseDto? parsed;
 
         try
         {
-            using var response = await client.PostAsJsonAsync(RequestPath, requestBody, ct);
-            parsed = await response.Content.ReadFromJsonAsync<ZarinPalResponseDto>(cancellationToken: ct);
-        }
-        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
-        {
-            await auditService.LogErrorAsync(
-                $"[ZarinPalSandbox] Timeout calling request endpoint for Order {orderId.Value}: {ex.Message}",
-                ct);
-            return ServiceResult<PaymentInitiationResult>.Failure(
-                "ارتباط با درگاه پرداخت برقرار نشد. لطفاً مجدداً تلاش کنید.");
+            var client = CreateClient();
+            using var response = await client.PostAsJsonAsync(RequestPath, body, ct);
+            var parsed = await response.Content.ReadFromJsonAsync<ZarinPalResponseDto>(cancellationToken: ct);
+
+            var code = parsed?.Data?.Code ?? -1;
+            var authority = parsed?.Data?.Authority;
+
+            if (code != 100 || string.IsNullOrWhiteSpace(authority))
+            {
+                await auditService.LogErrorAsync($"[ZarinPalSandbox] Initiate failed code={code}", ct);
+                return ServiceResult<PaymentInitiationResult>.Failure(MapErrorCode(code));
+            }
+
+            var startPay = _options.SandboxStartPayBaseUrl.TrimEnd('/');
+            return ServiceResult<PaymentInitiationResult>.Success(
+                new PaymentInitiationResult(authority, $"{startPay}/{authority}", Guid.Empty));
         }
         catch (Exception ex)
         {
-            await auditService.LogErrorAsync(
-                $"[ZarinPalSandbox] HTTP failure for Order {orderId.Value}: {ex.Message}",
-                ct);
-            return ServiceResult<PaymentInitiationResult>.Failure(
-                "ارتباط با درگاه پرداخت برقرار نشد.");
+            await auditService.LogErrorAsync($"[ZarinPalSandbox] Initiate exception: {ex.Message}", ct);
+            return ServiceResult<PaymentInitiationResult>.Failure("ارتباط با درگاه پرداخت سندباکس برقرار نشد.");
         }
-
-        var code = parsed?.Data?.Code ?? -1;
-        var authority = parsed?.Data?.Authority;
-
-        if (code != 100 || string.IsNullOrWhiteSpace(authority))
-        {
-            var errorMessage = parsed?.Errors?.Message ?? $"ZarinPal code {code}";
-            await auditService.LogErrorAsync(
-                $"[ZarinPalSandbox] Initiate failed for Order {orderId.Value} code {code}: {errorMessage}",
-                ct);
-            return ServiceResult<PaymentInitiationResult>.Failure(
-                "ایجاد تراکنش در درگاه پرداخت ناموفق بود.");
-        }
-
-        var startPayBase = ResolveStartPayBaseUrl().TrimEnd('/');
-        var paymentUrl = $"{startPayBase}/{authority}";
-
-        await auditService.LogInformationAsync(
-            $"[ZarinPalSandbox] Initiated for Order {orderId.Value} amount {amountInRial} authority {authority}",
-            ct);
-
-        return ServiceResult<PaymentInitiationResult>.Success(
-            new PaymentInitiationResult(authority, paymentUrl));
     }
 
     public async Task<ServiceResult<PaymentVerificationResult>> VerifyAsync(
@@ -101,229 +77,133 @@ public sealed class ZarinPalSandboxGateway(
         Money expectedAmount,
         CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(authority))
-            return ServiceResult<PaymentVerificationResult>.Failure("شناسه تراکنش معتبر نیست.");
-
-        var merchantId = ResolveMerchantId();
-        var amountInRial = ConvertToRial(expectedAmount);
-
-        var requestBody = new ZarinPalVerifyRequestDto
+        var body = new ZarinPalVerifyRequestDto
         {
-            MerchantId = merchantId,
-            Amount = amountInRial,
-            Authority = authority,
+            MerchantId = ResolveMerchantId(),
+            Amount = ToRial(expectedAmount),
+            Authority = authority
         };
-
-        var client = CreateHttpClient();
-
-        ZarinPalVerifyResponseDto? parsed;
 
         try
         {
-            using var response = await client.PostAsJsonAsync(VerifyPath, requestBody, ct);
-            parsed = await response.Content.ReadFromJsonAsync<ZarinPalVerifyResponseDto>(cancellationToken: ct);
-        }
-        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
-        {
-            await auditService.LogErrorAsync(
-                $"[ZarinPalSandbox] Verify timeout for authority {authority}: {ex.Message}",
-                ct);
-            return ServiceResult<PaymentVerificationResult>.Failure(
-                "ارتباط با درگاه پرداخت برقرار نشد. لطفاً مجدداً تلاش کنید.");
+            var client = CreateClient();
+            using var response = await client.PostAsJsonAsync(VerifyPath, body, ct);
+            var parsed = await response.Content.ReadFromJsonAsync<ZarinPalVerifyResponseDto>(cancellationToken: ct);
+
+            var code = parsed?.Data?.Code ?? -1;
+            if (code is 100 or 101)
+            {
+                return ServiceResult<PaymentVerificationResult>.Success(
+                    new PaymentVerificationResult(null, true, parsed!.Data!.RefId, parsed.Data.CardPan, parsed.Data.Fee));
+            }
+
+            return ServiceResult<PaymentVerificationResult>.Failure(MapErrorCode(code));
         }
         catch (Exception ex)
         {
-            await auditService.LogErrorAsync(
-                $"[ZarinPalSandbox] Verify HTTP failure for authority {authority}: {ex.Message}",
-                ct);
-            return ServiceResult<PaymentVerificationResult>.Failure(
-                "ارتباط با درگاه پرداخت برقرار نشد.");
+            await auditService.LogErrorAsync($"[ZarinPalSandbox] Verify exception: {ex.Message}", ct);
+            return ServiceResult<PaymentVerificationResult>.Failure("ارتباط با درگاه پرداخت سندباکس برقرار نشد.");
         }
-
-        var code = parsed?.Data?.Code ?? -1;
-        var refId = parsed?.Data?.RefId ?? 0;
-        var cardPan = parsed?.Data?.CardPan;
-        var feeAmount = parsed?.Data?.Fee ?? 0m;
-
-        if (code == 100 || code == 101)
-        {
-            await auditService.LogInformationAsync(
-                $"[ZarinPalSandbox] Verify success for authority {authority} refId {refId} code {code}",
-                ct);
-            return ServiceResult<PaymentVerificationResult>.Success(
-                new PaymentVerificationResult(null, true, refId, cardPan, feeAmount));
-        }
-
-        var errorMessage = parsed?.Errors?.Message
-                           ?? MapZarinPalErrorCode(code);
-
-        await auditService.LogWarningAsync(
-            $"[ZarinPalSandbox] Verify rejected for authority {authority} code {code}: {errorMessage}",
-            ct);
-
-        return ServiceResult<PaymentVerificationResult>.Failure(errorMessage);
     }
 
-    private HttpClient CreateHttpClient()
+    private HttpClient CreateClient()
     {
         var client = httpClientFactory.CreateClient(HttpClientName);
         if (client.BaseAddress is null)
         {
-            var baseUrl = ResolveApiBaseUrl();
+            var baseUrl = string.IsNullOrWhiteSpace(_options.SandboxApiBaseUrl)
+                ? "https://sandbox.zarinpal.com/"
+                : _options.SandboxApiBaseUrl;
+            if (!baseUrl.EndsWith('/')) baseUrl += "/";
             client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
         }
-        if (client.Timeout == TimeSpan.FromSeconds(100))
-        {
-            var timeout = _options.TimeoutSeconds > 0 ? _options.TimeoutSeconds : 30;
-            client.Timeout = TimeSpan.FromSeconds(timeout);
-        }
+        client.Timeout = TimeSpan.FromSeconds(_options.TimeoutSeconds > 0 ? _options.TimeoutSeconds : 30);
         return client;
     }
 
     private string ResolveMerchantId()
     {
-        var merchantId = _options.SandboxMerchantId;
-        if (string.IsNullOrWhiteSpace(merchantId))
-            merchantId = _options.MerchantId;
-        return string.IsNullOrWhiteSpace(merchantId)
-            ? "00000000-0000-0000-0000-000000000000"
-            : merchantId;
+        if (!string.IsNullOrWhiteSpace(_options.SandboxMerchantId))
+            return _options.SandboxMerchantId!;
+        if (!string.IsNullOrWhiteSpace(_options.MerchantId))
+            return _options.MerchantId;
+        return "00000000-0000-0000-0000-000000000000";
     }
 
-    private string ResolveApiBaseUrl()
+    private static long ToRial(Money amount)
     {
-        var url = _options.SandboxApiBaseUrl;
-        if (string.IsNullOrWhiteSpace(url))
-            url = "https://sandbox.zarinpal.com/";
-        return url.EndsWith('/') ? url : url + "/";
-    }
-
-    private string ResolveStartPayBaseUrl()
-    {
-        var url = _options.SandboxStartPayBaseUrl;
-        return string.IsNullOrWhiteSpace(url)
-            ? "https://sandbox.zarinpal.com/pg/StartPay"
-            : url!;
-    }
-
-    private static long ConvertToRial(Money amount)
-    {
-        var currency = amount.Currency?.ToUpperInvariant();
         var value = amount.Amount;
-        if (currency == "IRT" || currency == "TOMAN")
+        if (string.Equals(amount.Currency, "IRT", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(amount.Currency, "TOMAN", StringComparison.OrdinalIgnoreCase))
             value *= 10m;
         return (long)Math.Round(value, MidpointRounding.AwayFromZero);
     }
 
-    private static string MapZarinPalErrorCode(int code) => code switch
+    private static string MapErrorCode(int code) => code switch
     {
-        -9 => "اطلاعات ارسال شده ناقص است.",
-        -10 => "آی‌پی یا مرچنت کد پذیرنده صحیح نیست.",
-        -11 => "مرچنت کد فعال نیست.",
-        -12 => "تلاش بیش از حد در یک بازه زمانی کوتاه.",
-        -15 => "تجار شما به دلیل عدم پرداخت کارمزد غیر فعال شده است.",
-        -16 => "سطح تایید پذیرنده پایین‌تر از سطح نقره‌ای است.",
-        -30 => "اجازه دسترسی به تسویه اشتراکی شناور ندارید.",
-        -31 => "حساب بانکی تسویه را به پنل اضافه کنید.",
-        -32 => "مبلغ ارسالی از حد مجاز کمتر است.",
-        -33 => "درصد‌های وارد شده با مبلغ همخوانی ندارد.",
-        -34 => "مبلغ بیشتر از حد مجاز ارسال است.",
-        -35 => "تعداد دریافت‌کنندگان تسویه بیشتر از حد مجاز است.",
-        -40 => "اجازه دسترسی به متد مربوطه وجود ندارد.",
-        -41 => "اطلاعات ارسال شده نامعتبر است.",
-        -42 => "مدت زمان معتبر طول عمر شناسه پرداخت بین ۳۰ دقیقه تا ۴۵ روز است.",
-        -50 => "مبلغ پرداخت شده با مقدار ارسال شده در متد verify متفاوت است.",
-        -51 => "پرداخت ناموفق.",
-        -52 => "خطای غیر منتظره. در صورت بروز این خطا با پشتیبانی تماس بگیرید.",
-        -53 => "اتوریتی برای این مرچنت کد نیست.",
-        -54 => "اتوریتی نامعتبر است.",
+        100 => "عملیات موفق.",
         101 => "تراکنش پیش از این تأیید شده است.",
-        _ => $"پرداخت تأیید نشد. کد خطا: {code}",
+        -9 => "اطلاعات ارسال‌شده ناقص است.",
+        -10 => "IP یا مرچنت کد پذیرنده صحیح نیست.",
+        -11 => "مرچنت کد فعال نیست.",
+        -22 => "شناسه پرداخت نامعتبر یا منقضی شده است.",
+        -50 => "مبلغ ارسالی معتبر نیست.",
+        -51 => "پرداخت یافت نشد.",
+        -52 => "خطای غیرمنتظره در درگاه.",
+        -53 => "شناسه پرداخت با تراکنش مطابقت ندارد.",
+        -54 => "درخواست مورد نظر آرشیو شده است.",
+        _ => $"پرداخت تأیید نشد. کد خطا: {code}"
     };
+}
 
-    private sealed class ZarinPalRequestDto
-    {
-        [JsonPropertyName("merchant_id")] public string MerchantId { get; set; } = string.Empty;
-        [JsonPropertyName("amount")] public long Amount { get; set; }
-        [JsonPropertyName("description")] public string Description { get; set; } = string.Empty;
-        [JsonPropertyName("callback_url")] public string CallbackUrl { get; set; } = string.Empty;
-        [JsonPropertyName("metadata")] public ZarinPalMetadataDto? Metadata { get; set; }
-    }
+internal sealed class ZarinPalRequestDto
+{
+    [JsonPropertyName("merchant_id")] public string MerchantId { get; set; } = string.Empty;
+    [JsonPropertyName("amount")] public long Amount { get; set; }
+    [JsonPropertyName("description")] public string Description { get; set; } = string.Empty;
+    [JsonPropertyName("callback_url")] public string CallbackUrl { get; set; } = string.Empty;
+    [JsonPropertyName("metadata")] public ZarinPalMetadataDto Metadata { get; set; } = new();
+}
 
-    private sealed class ZarinPalMetadataDto
-    {
-        [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
-        [JsonPropertyName("mobile")] public string Mobile { get; set; } = string.Empty;
-        [JsonPropertyName("order_id")] public string? OrderId { get; set; }
-    }
+internal sealed class ZarinPalMetadataDto
+{
+    [JsonPropertyName("mobile")] public string Mobile { get; set; } = string.Empty;
+    [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
+    [JsonPropertyName("order_id")] public string OrderId { get; set; } = string.Empty;
+}
 
-    private sealed class ZarinPalResponseDto
-    {
-        [JsonPropertyName("data")] public ZarinPalResponseDataDto? Data { get; set; }
-        [JsonPropertyName("errors")] public ZarinPalErrorsDto? Errors { get; set; }
-    }
+internal sealed class ZarinPalVerifyRequestDto
+{
+    [JsonPropertyName("merchant_id")] public string MerchantId { get; set; } = string.Empty;
+    [JsonPropertyName("amount")] public long Amount { get; set; }
+    [JsonPropertyName("authority")] public string Authority { get; set; } = string.Empty;
+}
 
-    private sealed class ZarinPalResponseDataDto
-    {
-        [JsonPropertyName("code")] public int Code { get; set; }
-        [JsonPropertyName("message")] public string? Message { get; set; }
-        [JsonPropertyName("authority")] public string? Authority { get; set; }
-        [JsonPropertyName("fee_type")] public string? FeeType { get; set; }
-        [JsonPropertyName("fee")] public decimal Fee { get; set; }
-    }
+internal sealed class ZarinPalResponseDto
+{
+    [JsonPropertyName("data")] public ZarinPalResponseData? Data { get; set; }
+    [JsonPropertyName("errors")] public object? Errors { get; set; }
+}
 
-    private sealed class ZarinPalVerifyRequestDto
-    {
-        [JsonPropertyName("merchant_id")] public string MerchantId { get; set; } = string.Empty;
-        [JsonPropertyName("amount")] public long Amount { get; set; }
-        [JsonPropertyName("authority")] public string Authority { get; set; } = string.Empty;
-    }
+internal sealed class ZarinPalResponseData
+{
+    [JsonPropertyName("code")] public int Code { get; set; }
+    [JsonPropertyName("authority")] public string? Authority { get; set; }
+    [JsonPropertyName("message")] public string? Message { get; set; }
+}
 
-    private sealed class ZarinPalVerifyResponseDto
-    {
-        [JsonPropertyName("data")] public ZarinPalVerifyDataDto? Data { get; set; }
-        [JsonPropertyName("errors")] public ZarinPalErrorsDto? Errors { get; set; }
-    }
+internal sealed class ZarinPalVerifyResponseDto
+{
+    [JsonPropertyName("data")] public ZarinPalVerifyResponseData? Data { get; set; }
+    [JsonPropertyName("errors")] public object? Errors { get; set; }
+}
 
-    private sealed class ZarinPalVerifyDataDto
-    {
-        [JsonPropertyName("code")] public int Code { get; set; }
-        [JsonPropertyName("message")] public string? Message { get; set; }
-        [JsonPropertyName("card_hash")] public string? CardHash { get; set; }
-        [JsonPropertyName("card_pan")] public string? CardPan { get; set; }
-        [JsonPropertyName("ref_id")] public long RefId { get; set; }
-        [JsonPropertyName("fee_type")] public string? FeeType { get; set; }
-        [JsonPropertyName("fee")] public decimal Fee { get; set; }
-    }
-
-    [JsonConverter(typeof(ZarinPalErrorsDtoConverter))]
-    private sealed class ZarinPalErrorsDto
-    {
-        [JsonPropertyName("code")] public int Code { get; set; }
-        [JsonPropertyName("message")] public string? Message { get; set; }
-    }
-
-    private sealed class ZarinPalErrorsDtoConverter : JsonConverter<ZarinPalErrorsDto>
-    {
-        public override ZarinPalErrorsDto? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        {
-            using var jsonDocument = JsonDocument.ParseValue(ref reader);
-            var root = jsonDocument.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) return null;
-            var dto = new ZarinPalErrorsDto();
-            if (root.TryGetProperty("code", out var codeElement) && codeElement.ValueKind == JsonValueKind.Number)
-                dto.Code = codeElement.GetInt32();
-            if (root.TryGetProperty("message", out var messageElement) && messageElement.ValueKind == JsonValueKind.String)
-                dto.Message = messageElement.GetString();
-            return dto;
-        }
-
-        public override void Write(Utf8JsonWriter writer, ZarinPalErrorsDto value, JsonSerializerOptions options)
-        {
-            writer.WriteStartObject();
-            writer.WriteNumber("code", value.Code);
-            writer.WriteString("message", value.Message);
-            writer.WriteEndObject();
-        }
-    }
+internal sealed class ZarinPalVerifyResponseData
+{
+    [JsonPropertyName("code")] public int Code { get; set; }
+    [JsonPropertyName("ref_id")] public long RefId { get; set; }
+    [JsonPropertyName("card_pan")] public string? CardPan { get; set; }
+    [JsonPropertyName("card_hash")] public string? CardHash { get; set; }
+    [JsonPropertyName("fee")] public decimal Fee { get; set; }
+    [JsonPropertyName("message")] public string? Message { get; set; }
 }

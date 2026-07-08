@@ -35,15 +35,14 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
     public Money AvailableBalance => Balance.Subtract(ReservedBalance);
 
-    public static Wallet Create(WalletId id, UserId ownerId, string currency = "IRT")
+    public static Wallet Create(UserId ownerId, string currency = "IRT")
     {
-        Guard.Against.Null(id, nameof(id));
         Guard.Against.Null(ownerId, nameof(ownerId));
         Guard.Against.NullOrWhiteSpace(currency, nameof(currency));
 
         var wallet = new Wallet
         {
-            Id = id,
+            Id = WalletId.NewId(),
             OwnerId = ownerId,
             Balance = Money.Zero(currency),
             IsActive = true,
@@ -51,7 +50,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
             UpdatedAt = DateTime.UtcNow
         };
 
-        wallet.RaiseDomainEvent(new WalletCreatedEvent(id, ownerId, currency));
+        wallet.RaiseDomainEvent(new WalletCreatedEvent(wallet.Id, ownerId, currency));
         return wallet;
     }
 

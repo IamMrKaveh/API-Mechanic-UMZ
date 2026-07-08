@@ -1,42 +1,19 @@
-﻿using Infrastructure.Persistence.Outbox;
+﻿using Infrastructure.BackgroundJobs.Common;
+using Infrastructure.Persistence.Outbox;
 
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class OutboxProcessingJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock) : BackgroundService
+    ILogger<OutboxProcessingJob> logger) : DistributedLockedBackgroundService(scopeFactory, logger)
 {
-    private static readonly TimeSpan ProcessingInterval = TimeSpan.FromSeconds(10);
-    private static readonly TimeSpan LockExpiry = TimeSpan.FromSeconds(30);
+    protected override string LockKey => "jobs:outbox-processing";
+    protected override TimeSpan Interval => TimeSpan.FromSeconds(15);
+    protected override TimeSpan LockExpiry => TimeSpan.FromMinutes(2);
 
-    protected override async Task ExecuteAsync(CancellationToken ct)
+    protected override async Task ExecuteInsideLockAsync(IServiceProvider services, CancellationToken ct)
     {
-        while (!ct.IsCancellationRequested)
-        {
-            try
-            {
-                await using var lockHandle = await distributedLock.AcquireAsync(
-                    "jobs:outbox-processing", LockExpiry, ct);
-
-                if (lockHandle is not null && lockHandle.IsAcquired)
-                {
-                    using var scope = scopeFactory.CreateScope();
-                    var outboxProcessor = scope.ServiceProvider.GetRequiredService<IOutboxProcessor>();
-                    await outboxProcessor.ProcessAsync(ct: ct);
-                }
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                using var errorScope = scopeFactory.CreateScope();
-                await errorScope.ServiceProvider.GetRequiredService<IAuditService>()
-                    .LogSystemEventAsync("OutboxProcessingError", ex.Message, ct);
-            }
-
-            await Task.Delay(ProcessingInterval, ct);
-        }
+        var processor = services.GetRequiredService<IOutboxProcessor>();
+        await processor.ProcessAsync(ct: ct);
     }
 }
