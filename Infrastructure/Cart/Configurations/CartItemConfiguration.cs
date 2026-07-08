@@ -21,19 +21,43 @@ public sealed class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
             .HasMaxLength(100)
             .IsRequired();
 
+        builder.Property(x => x.Quantity).IsRequired();
+        builder.Property(x => x.AddedAt).IsRequired();
+
         builder.OwnsOne(x => x.OriginalPrice, price =>
         {
-            price.Property(p => p.Amount).HasColumnName("OriginalPriceAmount").HasPrecision(18, 2);
-            price.Property(p => p.Currency).HasColumnName("OriginalPriceCurrency").HasMaxLength(3);
+            price.Property(p => p.Amount)
+                 .HasColumnName("OriginalPriceAmount")
+                 .HasPrecision(18, 2)
+                 .IsRequired();
+
+            price.Property(p => p.Currency)
+                 .HasColumnName("OriginalPriceCurrency")
+                 .HasMaxLength(3)
+                 .IsRequired();
+
             price.WithOwner();
         });
 
         builder.OwnsOne(x => x.SellingPrice, price =>
         {
-            price.Property(p => p.Amount).HasColumnName("SellingPriceAmount").HasPrecision(18, 2);
-            price.Property(p => p.Currency).HasColumnName("SellingPriceCurrency").HasMaxLength(3);
+            price.Property(p => p.Amount)
+                 .HasColumnName("SellingPriceAmount")
+                 .HasPrecision(18, 2)
+                 .IsRequired();
+
+            price.Property(p => p.Currency)
+                 .HasColumnName("SellingPriceCurrency")
+                 .HasMaxLength(3)
+                 .IsRequired();
+
             price.WithOwner();
         });
+
+        builder.Navigation(x => x.SellingPrice).IsRequired();
+        builder.Navigation(x => x.OriginalPrice).IsRequired();
+
+        builder.Ignore(x => x.TotalPrice);
 
         builder.HasOne(x => x.Variant)
             .WithMany()
@@ -44,5 +68,9 @@ public sealed class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
             .WithMany()
             .HasForeignKey(x => x.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(x => x.CartId);
+        builder.HasIndex(x => x.VariantId);
+        builder.HasIndex(x => x.ProductId);
     }
 }

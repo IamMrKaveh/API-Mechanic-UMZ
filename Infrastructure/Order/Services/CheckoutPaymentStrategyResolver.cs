@@ -1,5 +1,4 @@
 ﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
-using Application.Order.Features.Shared;
 using Domain.Payment.Interfaces;
 using Domain.Payment.ValueObjects;
 
@@ -10,7 +9,7 @@ public sealed class CheckoutPaymentStrategyResolver(
     IPaymentMethodRepository paymentMethodRepository) : ICheckoutPaymentStrategyResolver
 {
     private readonly IReadOnlyDictionary<string, ICheckoutPaymentStrategy> _byCode =
-        strategies.ToDictionary(s => s.Code.ToLowerInvariant(), s => s);
+        strategies.ToDictionary(s => Canonicalize(s.Code), s => s);
 
     public async Task<ServiceResult<ICheckoutPaymentStrategy>> ResolveAsync(
         Guid? paymentMethodId,
@@ -40,15 +39,31 @@ public sealed class CheckoutPaymentStrategyResolver(
         if (string.IsNullOrWhiteSpace(code))
             return ServiceResult<ICheckoutPaymentStrategy>.Failure("روش پرداخت مشخص نشده است.");
 
-        var normalized = code.Trim().ToLowerInvariant();
+        var canonical = Canonicalize(code);
 
-        if (_byCode.TryGetValue(normalized, out var strategy))
+        if (_byCode.TryGetValue(canonical, out var strategy))
             return ServiceResult<ICheckoutPaymentStrategy>.Success(strategy);
 
-        if (normalized is "zarinpalsandbox" or "zarinpal"
-            && _byCode.TryGetValue("zarinpal", out var zp))
-            return ServiceResult<ICheckoutPaymentStrategy>.Success(zp);
+        var aliasTarget = ResolveAlias(canonical);
+        if (aliasTarget is not null && _byCode.TryGetValue(aliasTarget, out var aliased))
+            return ServiceResult<ICheckoutPaymentStrategy>.Success(aliased);
 
-        return ServiceResult<ICheckoutPaymentStrategy>.Failure($"روش پرداخت '{code}' پشتیبانی نمی‌شود.");
+        return ServiceResult<ICheckoutPaymentStrategy>.Failure(
+            $"روش پرداخت '{code}' پشتیبانی نمی‌شود.");
     }
+
+    private static string Canonicalize(string value)
+        => value.Trim().ToLowerInvariant().Replace('_', '-');
+
+    private static string? ResolveAlias(string canonicalCode)
+        => canonicalCode switch
+        {
+            "zarinpal-sandbox" => PaymentMethodCode.Zarinpal,
+            "zarinpalsandbox" => PaymentMethodCode.Zarinpal,
+            "zarinpal" => PaymentMethodCode.Zarinpal,
+            "cashondelivery" => PaymentMethodCode.CashOnDelivery,
+            "cash-on-delivery" => PaymentMethodCode.CashOnDelivery,
+            "wallet" => PaymentMethodCode.Wallet,
+            _ => null
+        };
 }

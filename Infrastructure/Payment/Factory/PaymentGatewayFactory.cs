@@ -40,8 +40,9 @@ public sealed class PaymentGatewayFactory(
 
     private static string NormalizeGatewayName(string name)
     {
-        if (name.Equals("zarinpal", StringComparison.OrdinalIgnoreCase)) return "Zarinpal";
-        if (name.Equals("zarinpalsandbox", StringComparison.OrdinalIgnoreCase)) return "ZarinpalSandbox";
+        var flat = name.Trim().Replace("-", string.Empty).Replace("_", string.Empty);
+        if (flat.Equals("zarinpal", StringComparison.OrdinalIgnoreCase)) return "Zarinpal";
+        if (flat.Equals("zarinpalsandbox", StringComparison.OrdinalIgnoreCase)) return "ZarinpalSandbox";
         return name;
     }
 }

@@ -212,6 +212,7 @@ public static class InfrastructureServiceExtensions
                 npgsql =>
                 {
                     npgsql.MigrationsAssembly(typeof(DBContext).Assembly.FullName);
+                    npgsql.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery);
 
                     if (!isDevelopment)
                     {

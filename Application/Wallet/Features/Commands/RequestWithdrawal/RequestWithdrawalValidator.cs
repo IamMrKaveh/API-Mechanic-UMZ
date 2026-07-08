@@ -1,12 +1,9 @@
-﻿using FluentValidation;
-using System.Text.RegularExpressions;
+﻿using SharedKernel.Validation;
 
 namespace Application.Wallet.Features.Commands.RequestWithdrawal;
 
 public sealed class RequestWithdrawalValidator : AbstractValidator<RequestWithdrawalCommand>
 {
-    private static readonly Regex IbanPattern = new(@"^IR\d{24}$", RegexOptions.Compiled);
-
     public RequestWithdrawalValidator()
     {
         RuleFor(x => x.UserId)
@@ -18,12 +15,16 @@ public sealed class RequestWithdrawalValidator : AbstractValidator<RequestWithdr
             .LessThanOrEqualTo(1_000_000_000m).WithMessage("مبلغ از سقف مجاز عبور کرده است.");
 
         RuleFor(x => x.Iban)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("شماره شبا الزامی است.")
-            .Must(BeValidIbanFormat).WithMessage("فرمت شماره شبا نامعتبر است. باید با IR شروع شود و ۲۶ کاراکتر باشد.");
+            .Must(BeValidIbanFormat).WithMessage("فرمت شماره شبا نامعتبر است. باید با IR شروع شود و شامل ۲۴ رقم باشد.")
+            .Must(BeValidIbanChecksum).WithMessage("شماره شبا نامعتبر است. لطفاً شماره شبای صحیح وارد کنید.");
 
         RuleFor(x => x.AccountHolder)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("نام صاحب حساب الزامی است.")
-            .MinimumLength(3).WithMessage("نام صاحب حساب باید حداقل ۳ کاراکتر باشد.")
+            .Must(v => !string.IsNullOrWhiteSpace(v?.Trim())).WithMessage("نام صاحب حساب الزامی است.")
+            .Must(v => v!.Trim().Length >= 3).WithMessage("نام صاحب حساب باید حداقل ۳ کاراکتر باشد.")
             .MaximumLength(150).WithMessage("نام صاحب حساب نباید بیش از ۱۵۰ کاراکتر باشد.");
 
         RuleFor(x => x.Description)
@@ -32,10 +33,8 @@ public sealed class RequestWithdrawalValidator : AbstractValidator<RequestWithdr
     }
 
     private static bool BeValidIbanFormat(string? iban)
-    {
-        if (string.IsNullOrWhiteSpace(iban)) return false;
-        var normalized = iban.Replace(" ", "").Replace("-", "").ToUpperInvariant();
-        if (!normalized.StartsWith("IR")) normalized = "IR" + normalized;
-        return IbanPattern.IsMatch(normalized);
-    }
+        => IranianIban.HasValidFormat(IranianIban.Normalize(iban));
+
+    private static bool BeValidIbanChecksum(string? iban)
+        => IranianIban.HasValidChecksum(IranianIban.Normalize(iban));
 }

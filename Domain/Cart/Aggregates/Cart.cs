@@ -62,6 +62,8 @@ public sealed class Cart : AggregateRoot<CartId>
         int quantity)
     {
         EnsureNotCheckedOut();
+        ArgumentNullException.ThrowIfNull(unitPrice);
+        ArgumentNullException.ThrowIfNull(originalPrice);
 
         var existing = _cartItems.FirstOrDefault(i => i.VariantId == variantId);
 
@@ -110,6 +112,8 @@ public sealed class Cart : AggregateRoot<CartId>
     public void RefreshItemPrice(VariantId variantId, Money newUnitPrice, Money newOriginalPrice)
     {
         EnsureNotCheckedOut();
+        ArgumentNullException.ThrowIfNull(newUnitPrice);
+        ArgumentNullException.ThrowIfNull(newOriginalPrice);
 
         var item = _cartItems.FirstOrDefault(i => i.VariantId == variantId)
             ?? throw new CartItemNotFoundException(variantId);

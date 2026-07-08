@@ -21,6 +21,8 @@ public sealed class CartItem : Entity<CartItemId>
     public ProductId ProductId { get; private init; } = default!;
     public Product.Aggregates.Product Product { get; private init; } = default!;
 
+    public Money TotalPrice => SellingPrice.Multiply(Quantity);
+
     private CartItem()
     { }
 
@@ -59,6 +61,9 @@ public sealed class CartItem : Entity<CartItemId>
         if (quantity <= 0)
             throw new InvalidCartQuantityException(quantity);
 
+        ArgumentNullException.ThrowIfNull(unitPrice);
+        ArgumentNullException.ThrowIfNull(originalPrice);
+
         return new CartItem(
             CartItemId.NewId(),
             cartId,
@@ -66,8 +71,8 @@ public sealed class CartItem : Entity<CartItemId>
             productId,
             productName,
             sku,
-            unitPrice,
-            originalPrice,
+            unitPrice.Copy(),
+            originalPrice.Copy(),
             quantity);
     }
 
@@ -89,9 +94,7 @@ public sealed class CartItem : Entity<CartItemId>
     {
         ArgumentNullException.ThrowIfNull(newUnitPrice);
         ArgumentNullException.ThrowIfNull(newOriginalPrice);
-        SellingPrice = newUnitPrice;
-        OriginalPrice = newOriginalPrice;
+        SellingPrice = newUnitPrice.Copy();
+        OriginalPrice = newOriginalPrice.Copy();
     }
-
-    public Money TotalPrice => SellingPrice.Multiply(Quantity);
 }
