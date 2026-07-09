@@ -68,3 +68,30 @@ public sealed record WalletFraudAlertDto(
     DateTime? ReviewedAt,
     string? ReviewNote,
     DateTime CreatedAt);
+
+public sealed record WalletOverviewDto(
+    Guid WalletId,
+    Guid UserId,
+    string UserFullName,
+    string UserEmail,
+    decimal CurrentBalance,
+    decimal ReservedBalance,
+    decimal AvailableBalance,
+    bool IsActive,
+    string? FreezeReason,
+    DateTime CreatedAt,
+    DateTime? LastActivityAt);
+
+public sealed record WalletStatisticsDto(
+    decimal TotalSystemBalance,
+    decimal TotalReservedBalance,
+    decimal TotalAvailableBalance,
+    int ActiveWalletsCount,
+    int FrozenWalletsCount,
+    int TotalWalletsCount,
+    decimal TodayCreditVolume,
+    decimal TodayDebitVolume,
+    int Last7DaysTransactionCount,
+    int PendingWithdrawalsCount,
+    int OpenFraudAlertsCount,
+    DateTime GeneratedAt);

@@ -6,4 +6,6 @@ public enum WalletTransactionType
     Debit,
     ReservationConfirmed,
     Refund,
+    TransferIn,
+    TransferOut
 }

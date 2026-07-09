@@ -8,4 +8,6 @@ public sealed record GetFraudAlertsQuery(
     FraudAlertSeverity? Severity,
     Guid? UserId,
     int Page,
-    int PageSize) : IPageQuery<WalletFraudAlertDto>;
+    int PageSize,
+    DateTime? FromDate = null,
+    DateTime? ToDate = null) : IPageQuery<WalletFraudAlertDto>;
