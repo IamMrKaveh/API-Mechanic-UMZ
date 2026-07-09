@@ -1,4 +1,5 @@
-﻿using Application.Wallet.Features.Shared;
+﻿using Application.Wallet.Contracts;
+using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
@@ -37,6 +38,8 @@ public sealed class WalletWithdrawalQueryService(DBContext context) : IWalletWit
         WithdrawalStatus? status,
         int page,
         int pageSize,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
         CancellationToken ct = default)
     {
         page = page < 1 ? 1 : page;
@@ -46,6 +49,18 @@ public sealed class WalletWithdrawalQueryService(DBContext context) : IWalletWit
 
         if (status.HasValue)
             baseQuery = baseQuery.Where(w => w.Status == status);
+
+        if (fromDate.HasValue)
+        {
+            var from = DateTime.SpecifyKind(fromDate.Value, DateTimeKind.Utc);
+            baseQuery = baseQuery.Where(w => w.CreatedAt >= from);
+        }
+
+        if (toDate.HasValue)
+        {
+            var to = DateTime.SpecifyKind(toDate.Value, DateTimeKind.Utc);
+            baseQuery = baseQuery.Where(w => w.CreatedAt <= to);
+        }
 
         var total = await baseQuery.CountAsync(ct);
 
@@ -73,6 +88,13 @@ public sealed class WalletWithdrawalQueryService(DBContext context) : IWalletWit
 
         var list = await MapToDtosAsync([entity], ct);
         return list.FirstOrDefault();
+    }
+
+    public async Task<int> GetPendingCountAsync(CancellationToken ct = default)
+    {
+        return await context.Set<WalletWithdrawalRequest>()
+            .AsNoTracking()
+            .CountAsync(w => w.Status == WithdrawalStatus.Pending, ct);
     }
 
     private async Task<List<WalletWithdrawalRequestDto>> MapToDtosAsync(

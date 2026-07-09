@@ -16,6 +16,8 @@ public sealed class GetFraudAlertsHandler(IWalletFraudAlertQueryService querySer
             request.UserId,
             request.Page,
             request.PageSize,
+            request.FromDate,
+            request.ToDate,
             ct);
 
         return ServiceResult<PaginatedResult<WalletFraudAlertDto>>.Success(result);

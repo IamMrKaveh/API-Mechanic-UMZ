@@ -23,7 +23,9 @@ public class AdminWalletWithdrawalController(IMediator mediator, IMapper mapper)
         var query = new GetPendingWithdrawalsQuery(
             request.Status,
             request.Page,
-            request.PageSize);
+            request.PageSize,
+            request.FromDate,
+            request.ToDate);
         return await Send(query, ct);
     }
 

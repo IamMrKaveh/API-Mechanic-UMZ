@@ -16,9 +16,13 @@ public interface IWalletWithdrawalQueryService
         WithdrawalStatus? status,
         int page,
         int pageSize,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
         CancellationToken ct = default);
 
     Task<WalletWithdrawalRequestDto?> GetByIdAsync(
         Guid id,
         CancellationToken ct = default);
+
+    Task<int> GetPendingCountAsync(CancellationToken ct = default);
 }

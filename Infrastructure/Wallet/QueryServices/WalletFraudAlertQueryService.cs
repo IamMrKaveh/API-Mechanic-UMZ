@@ -13,6 +13,8 @@ public sealed class WalletFraudAlertQueryService(DBContext context) : IWalletFra
         Guid? userId,
         int page,
         int pageSize,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
         CancellationToken ct = default)
     {
         if (page < 1) page = 1;
@@ -31,6 +33,18 @@ public sealed class WalletFraudAlertQueryService(DBContext context) : IWalletFra
         {
             var uid = userId.Value;
             query = query.Where(a => a.UserId.Value == uid);
+        }
+
+        if (fromDate.HasValue)
+        {
+            var from = DateTime.SpecifyKind(fromDate.Value, DateTimeKind.Utc);
+            query = query.Where(a => a.TriggeredAt >= from);
+        }
+
+        if (toDate.HasValue)
+        {
+            var to = DateTime.SpecifyKind(toDate.Value, DateTimeKind.Utc);
+            query = query.Where(a => a.TriggeredAt <= to);
         }
 
         var totalCount = await query.CountAsync(ct);

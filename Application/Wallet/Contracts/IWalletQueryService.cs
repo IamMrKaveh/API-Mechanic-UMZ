@@ -22,4 +22,12 @@ public interface IWalletQueryService
         UserId userId,
         WalletLedgerFilter filter,
         CancellationToken ct = default);
+
+    Task<PaginatedResult<WalletOverviewDto>> GetOverviewPageAsync(
+        int page,
+        int pageSize,
+        WalletOverviewFilter? filter = null,
+        CancellationToken ct = default);
+
+    Task<WalletStatisticsDto> GetStatisticsAsync(CancellationToken ct = default);
 }

@@ -11,6 +11,8 @@ public interface IWalletFraudAlertQueryService
         Guid? userId,
         int page,
         int pageSize,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
         CancellationToken ct = default);
 
     Task<WalletFraudAlertDto?> GetByIdAsync(Guid id, CancellationToken ct = default);

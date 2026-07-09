@@ -1,4 +1,5 @@
-﻿using Application.Wallet.Features.Shared;
+﻿using Application.Wallet.Contracts;
+using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
 
 namespace Application.Wallet.Features.Queries.GetPendingWithdrawals;
@@ -26,6 +27,8 @@ public sealed class GetPendingWithdrawalsHandler(
             statusFilter,
             request.Page,
             request.PageSize,
+            request.FromDate,
+            request.ToDate,
             ct);
 
         return ServiceResult<PaginatedResult<WalletWithdrawalRequestDto>>.Success(result);

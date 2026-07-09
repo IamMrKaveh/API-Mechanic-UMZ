@@ -10,6 +10,8 @@ using Application.Wallet.Features.Queries.GetFraudAlerts;
 using Application.Wallet.Features.Queries.GetOpenFraudAlertsCount;
 using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
+using Application.Wallet.Features.Queries.GetWalletsOverview;
+using Application.Wallet.Features.Queries.GetWalletStatistics;
 using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
 using Presentation.Wallet.Requests;
@@ -22,6 +24,33 @@ namespace Presentation.Wallet.Endpoints;
 [EnableRateLimiting("admin-wallet")]
 public sealed class AdminWalletController(IMediator mediator) : BaseApiController(mediator)
 {
+    [HttpGet("overview")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletOverviewDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetOverview(
+        [FromQuery] GetWalletsOverviewRequest request,
+        CancellationToken ct)
+    {
+        var query = new GetWalletsOverviewQuery(
+            request.Search,
+            request.IsFrozen,
+            request.MinBalance,
+            request.MaxBalance,
+            request.CreatedFrom,
+            request.CreatedTo,
+            request.SortBy,
+            request.Page,
+            request.PageSize);
+
+        return await Send(query, ct);
+    }
+
+    [HttpGet("statistics")]
+    [ProducesResponseType(typeof(ApiResponse<WalletStatisticsDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStatistics(CancellationToken ct)
+    {
+        return await Send(new GetWalletStatisticsQuery(), ct);
+    }
+
     [HttpGet("{userId:guid}/balance")]
     [ProducesResponseType(typeof(ApiResponse<WalletDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBalance(Guid userId, CancellationToken ct)
@@ -163,7 +192,15 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
             severity = parsedSeverity;
         }
 
-        var query = new GetFraudAlertsQuery(status, severity, request.UserId, request.Page, request.PageSize);
+        var query = new GetFraudAlertsQuery(
+            status,
+            severity,
+            request.UserId,
+            request.Page,
+            request.PageSize,
+            request.FromDate,
+            request.ToDate);
+
         return await Send(query, ct);
     }
 

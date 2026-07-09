@@ -42,8 +42,21 @@ public sealed record GetWithdrawalsListRequest(int Page = 1, int PageSize = 10);
 public sealed record GetPendingWithdrawalsListRequest(
     string? Status = null,
     int Page = 1,
-    int PageSize = 20);
+    int PageSize = 20,
+    DateTime? FromDate = null,
+    DateTime? ToDate = null);
 
 public sealed record GetWalletLedgerRequest(int Page = 1, int PageSize = 10);
 
 public sealed record FreezeWalletRequest(string Reason);
+
+public sealed record GetWalletsOverviewRequest(
+    string? Search = null,
+    bool? IsFrozen = null,
+    decimal? MinBalance = null,
+    decimal? MaxBalance = null,
+    DateTime? CreatedFrom = null,
+    DateTime? CreatedTo = null,
+    string? SortBy = null,
+    int Page = 1,
+    int PageSize = 20);
