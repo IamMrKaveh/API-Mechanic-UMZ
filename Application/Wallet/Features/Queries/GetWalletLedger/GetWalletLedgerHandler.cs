@@ -13,10 +13,21 @@ public class GetWalletLedgerHandler(
     {
         var userId = UserId.From(request.UserId);
 
+        var filter = new WalletLedgerFilter
+        {
+            FromDate = request.FromDate,
+            ToDate = request.ToDate,
+            TransactionType = request.TransactionType,
+            MinAmount = request.MinAmount,
+            MaxAmount = request.MaxAmount,
+            SearchTerm = request.SearchTerm
+        };
+
         var result = await walletQueryService.GetLedgerPageAsync(
             userId,
             request.Page,
             request.PageSize,
+            filter,
             ct);
 
         return ServiceResult<PaginatedResult<WalletLedgerEntryDto>>.Success(result);

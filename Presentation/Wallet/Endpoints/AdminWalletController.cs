@@ -4,6 +4,7 @@ using Application.Wallet.Features.Commands.DismissFraudAlert;
 using Application.Wallet.Features.Commands.FreezeWallet;
 using Application.Wallet.Features.Commands.MarkFraudAlertReviewed;
 using Application.Wallet.Features.Commands.UnfreezeWallet;
+using Application.Wallet.Features.Queries.ExportWalletLedger;
 using Application.Wallet.Features.Queries.GetFraudAlertById;
 using Application.Wallet.Features.Queries.GetFraudAlerts;
 using Application.Wallet.Features.Queries.GetOpenFraudAlertsCount;
@@ -32,11 +33,42 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletLedgerEntryDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLedger(
         Guid userId,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
+        [FromQuery] GetAdminWalletLedgerRequest request,
         CancellationToken ct = default)
     {
-        return await Send(new GetWalletLedgerQuery(userId, page, pageSize), ct);
+        var query = new GetWalletLedgerQuery(
+            userId,
+            request.Page,
+            request.PageSize,
+            request.FromDate,
+            request.ToDate,
+            request.TransactionType,
+            request.MinAmount,
+            request.MaxAmount,
+            request.SearchTerm);
+
+        return await Send(query, ct);
+    }
+
+    [HttpGet("{userId:guid}/ledger/export")]
+    [ProducesResponseType(typeof(ApiResponse<ExportWalletLedgerResult>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ExportLedger(
+        Guid userId,
+        [FromQuery] ExportAdminWalletLedgerRequest request,
+        CancellationToken ct = default)
+    {
+        var query = new ExportWalletLedgerQuery(
+            userId,
+            request.FromDate,
+            request.ToDate,
+            request.TransactionType,
+            request.MinAmount,
+            request.MaxAmount,
+            request.SearchTerm,
+            request.Format,
+            request.MaxRows ?? 10_000);
+
+        return await Send(query, ct);
     }
 
     [HttpPost("{userId:guid}/credit")]
