@@ -5,6 +5,8 @@ namespace Application.Wallet.Mapping;
 
 public class WalletMappingConfig : IRegister
 {
+    private const string AdminAdjustmentDescriptionPrefix = "[ADMIN-";
+
     public void Register(TypeAdapterConfig config)
     {
         config.NewConfig<Domain.Wallet.Aggregates.Wallet, WalletDto>()
@@ -25,6 +27,8 @@ public class WalletMappingConfig : IRegister
             .Map(dest => dest.TransactionType, src => src.TransactionType.ToString())
             .Map(dest => dest.Description, src => src.Description)
             .Map(dest => dest.ReferenceId, src => src.ReferenceId)
-            .Map(dest => dest.CreatedAt, src => src.OccurredAt);
+            .Map(dest => dest.CreatedAt, src => src.OccurredAt)
+            .Map(dest => dest.IsAdminAdjustment,
+                src => src.Description != null && src.Description.StartsWith(AdminAdjustmentDescriptionPrefix));
     }
 }

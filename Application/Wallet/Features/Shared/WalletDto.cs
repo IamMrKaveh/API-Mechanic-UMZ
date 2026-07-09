@@ -24,7 +24,8 @@ public sealed record WalletLedgerEntryDto(
     string ReferenceType,
     Guid ReferenceId,
     string? Description,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    bool IsAdminAdjustment);
 
 public sealed record InitiateTopUpResultDto
 {

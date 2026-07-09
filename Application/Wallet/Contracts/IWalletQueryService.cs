@@ -10,10 +10,16 @@ public interface IWalletQueryService
         UserId userId,
         int page,
         int pageSize,
+        WalletLedgerFilter? filter = null,
         CancellationToken ct = default);
 
     Task<WalletLedgerEntryDto?> GetOrderPaymentLedgerEntryAsync(
         UserId userId,
         OrderId orderId,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<WalletLedgerEntryDto>> ExportLedgerAsync(
+        UserId userId,
+        WalletLedgerFilter filter,
         CancellationToken ct = default);
 }
