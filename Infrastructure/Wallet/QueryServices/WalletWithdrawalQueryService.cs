@@ -45,7 +45,7 @@ public sealed class WalletWithdrawalQueryService(DBContext context) : IWalletWit
         var baseQuery = context.Set<WalletWithdrawalRequest>().AsNoTracking();
 
         if (status.HasValue)
-            baseQuery = baseQuery.Where(w => w.Status == status.Value);
+            baseQuery = baseQuery.Where(w => w.Status == status);
 
         var total = await baseQuery.CountAsync(ct);
 
@@ -66,7 +66,7 @@ public sealed class WalletWithdrawalQueryService(DBContext context) : IWalletWit
     {
         var entity = await context.Set<WalletWithdrawalRequest>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(w => w.Id.Value == id, ct);
+            .FirstOrDefaultAsync(w => w.Id == id, ct);
 
         if (entity is null)
             return null;
@@ -76,21 +76,21 @@ public sealed class WalletWithdrawalQueryService(DBContext context) : IWalletWit
     }
 
     private async Task<List<WalletWithdrawalRequestDto>> MapToDtosAsync(
-        IReadOnlyCollection<WalletWithdrawalRequest> entities,
+        List<WalletWithdrawalRequest> entities,
         CancellationToken ct)
     {
         if (entities.Count == 0)
             return [];
 
         var userIds = entities
-            .Select(w => w.UserId.Value)
+            .Select(w => w.UserId)
             .Distinct()
             .ToList();
 
         var userNames = await context.Set<Domain.User.Aggregates.User>()
             .AsNoTracking()
             .IgnoreQueryFilters()
-            .Where(u => userIds.Contains(u.Id.Value))
+            .Where(u => userIds.Contains(u.Id))
             .Select(u => new
             {
                 Id = u.Id.Value,
