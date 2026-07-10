@@ -321,6 +321,20 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
 
     public void ChangePhoneNumber(PhoneNumber phoneNumber)
     {
-        throw new NotImplementedException();
+        Guard.Against.Null(phoneNumber, nameof(phoneNumber));
+
+        if (PhoneNumber is null)
+            throw new DomainException("شماره تلفن قبلی برای تغییر وجود ندارد.");
+
+        if (PhoneNumber.Equals(phoneNumber))
+            return;
+
+        EnsureActive();
+
+        var oldPhone = PhoneNumber;
+        PhoneNumber = phoneNumber;
+        UpdatedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new UserPhoneChangedEvent(Id, oldPhone, phoneNumber));
     }
 }

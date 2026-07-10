@@ -49,33 +49,35 @@ public sealed class Brand : AggregateRoot<BrandId>, ISoftDeletable
         RaiseDomainEvent(new BrandCreatedEvent(id, name, slug, categoryId));
     }
 
-    public static Brand Create(
+    public static async Task<Brand> Create(
         BrandName name,
         BrandSlug slug,
         CategoryId categoryId,
         IBrandUniquenessChecker uniquenessChecker,
-        string? description = null,
-        string? logoPath = null)
+        string? description,
+        string? logoPath,
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(categoryId);
         ArgumentNullException.ThrowIfNull(uniquenessChecker);
 
-        if (!uniquenessChecker.IsUnique(name, slug, categoryId))
+        if (!await uniquenessChecker.IsUniqueAsync(name, slug, categoryId, null, ct))
             throw new BrandNameAlreadyExistsException(name);
 
         return new Brand(BrandId.NewId(), name, slug, categoryId, description, logoPath);
     }
 
-    public void UpdateDetails(
+    public async Task UpdateDetails(
         BrandName name,
         BrandSlug slug,
         IBrandUniquenessChecker uniquenessChecker,
         string? description,
-        string? logoPath)
+        string? logoPath,
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(uniquenessChecker);
 
-        if (!uniquenessChecker.IsUnique(name, slug, CategoryId, Id))
+        if (!await uniquenessChecker.IsUniqueAsync(name, slug, CategoryId, Id, ct))
             throw new BrandNameAlreadyExistsException(name);
 
         Name = name;
