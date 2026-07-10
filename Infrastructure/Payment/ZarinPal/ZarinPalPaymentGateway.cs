@@ -3,6 +3,7 @@ using Application.Payment.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Payment.ZarinPal.Options;
+using SharedKernel.Exceptions;
 
 namespace Infrastructure.Payment.ZarinPal;
 
@@ -15,7 +16,7 @@ public sealed class ZarinPalPaymentGateway(
 
     public string GatewayName => "Zarinpal";
 
-    public async Task<ServiceResult<PaymentInitiationResult>> InitiateAsync(
+    public async Task<PaymentInitiationResult> InitiateAsync(
         OrderId orderId,
         Money amount,
         string description,
@@ -24,6 +25,7 @@ public sealed class ZarinPalPaymentGateway(
         PhoneNumber? phoneNumber = null,
         CancellationToken ct = default)
     {
+        ZarinPalRequestResponse? result;
         try
         {
             var request = new
@@ -41,31 +43,31 @@ public sealed class ZarinPalPaymentGateway(
             };
 
             using var response = await httpClient.PostAsJsonAsync("request.json", request, ct);
-            var result = await response.Content.ReadFromJsonAsync<ZarinPalRequestResponse>(cancellationToken: ct);
-
-            if (result?.Data?.Code == 100 && !string.IsNullOrWhiteSpace(result.Data.Authority))
-            {
-                var paymentUrl = $"{_options.StartPayBaseUrl.TrimEnd('/')}/{result.Data.Authority}";
-                return ServiceResult<PaymentInitiationResult>.Success(
-                    new PaymentInitiationResult(result.Data.Authority, paymentUrl, Guid.Empty));
-            }
-
-            var code = result?.Errors?.Code ?? -1;
-            await auditService.LogErrorAsync($"[ZarinPal] Request failed code={code}", ct);
-            return ServiceResult<PaymentInitiationResult>.Failure(ZarinPalErrorMapper.GetMessage(code));
+            result = await response.Content.ReadFromJsonAsync<ZarinPalRequestResponse>(cancellationToken: ct);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not ExternalServiceException and not OperationCanceledException)
         {
             await auditService.LogErrorAsync($"[ZarinPal] Initiate exception: {ex.Message}", ct);
-            return ServiceResult<PaymentInitiationResult>.Failure("خطا در ارتباط با درگاه زرین‌پال.");
+            throw new ExternalServiceException(GatewayName, "خطا در ارتباط با درگاه زرین‌پال.", ex);
         }
+
+        if (result?.Data?.Code == 100 && !string.IsNullOrWhiteSpace(result.Data.Authority))
+        {
+            var paymentUrl = $"{_options.StartPayBaseUrl.TrimEnd('/')}/{result.Data.Authority}";
+            return new PaymentInitiationResult(result.Data.Authority, paymentUrl, Guid.Empty);
+        }
+
+        var code = result?.Errors?.Code ?? -1;
+        await auditService.LogErrorAsync($"[ZarinPal] Request failed code={code}", ct);
+        throw new ExternalServiceException(GatewayName, ZarinPalErrorMapper.GetMessage(code), code.ToString());
     }
 
-    public async Task<ServiceResult<PaymentVerificationResult>> VerifyAsync(
+    public async Task<PaymentVerificationResult> VerifyAsync(
         string authority,
         Money expectedAmount,
         CancellationToken ct = default)
     {
+        ZarinPalVerifyResponse? result;
         try
         {
             var request = new
@@ -76,22 +78,21 @@ public sealed class ZarinPalPaymentGateway(
             };
 
             using var response = await httpClient.PostAsJsonAsync("verify.json", request, ct);
-            var result = await response.Content.ReadFromJsonAsync<ZarinPalVerifyResponse>(cancellationToken: ct);
-
-            if (result?.Data?.Code is 100 or 101)
-            {
-                return ServiceResult<PaymentVerificationResult>.Success(
-                    new PaymentVerificationResult(null, true, result.Data.RefId, result.Data.CardPan, result.Data.Fee));
-            }
-
-            var code = result?.Errors?.Code ?? -1;
-            return ServiceResult<PaymentVerificationResult>.Failure(ZarinPalErrorMapper.GetMessage(code));
+            result = await response.Content.ReadFromJsonAsync<ZarinPalVerifyResponse>(cancellationToken: ct);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not ExternalServiceException and not OperationCanceledException)
         {
             await auditService.LogErrorAsync($"[ZarinPal] Verify exception: {ex.Message}", ct);
-            return ServiceResult<PaymentVerificationResult>.Failure("خطا در تأیید پرداخت زرین‌پال.");
+            throw new ExternalServiceException(GatewayName, "خطا در تأیید پرداخت زرین‌پال.", ex);
         }
+
+        if (result?.Data?.Code is 100 or 101)
+        {
+            return new PaymentVerificationResult(null, true, result.Data.RefId, result.Data.CardPan, result.Data.Fee);
+        }
+
+        var code = result?.Errors?.Code ?? -1;
+        throw new ExternalServiceException(GatewayName, ZarinPalErrorMapper.GetMessage(code), code.ToString());
     }
 
     private static long ToRial(Money amount)
@@ -105,36 +106,16 @@ public sealed class ZarinPalPaymentGateway(
 }
 
 internal sealed class ZarinPalRequestResponse
-{
-    public ZarinPalRequestData? Data { get; init; }
-    public ZarinPalError? Errors { get; init; }
-}
+{ public ZarinPalRequestData? Data { get; init; } public ZarinPalError? Errors { get; init; } }
 
 internal sealed class ZarinPalRequestData
-{
-    public int Code { get; init; }
-    public string? Authority { get; init; }
-    public string? Message { get; init; }
-}
+{ public int Code { get; init; } public string? Authority { get; init; } public string? Message { get; init; } }
 
 internal sealed class ZarinPalVerifyResponse
-{
-    public ZarinPalVerifyData? Data { get; init; }
-    public ZarinPalError? Errors { get; init; }
-}
+{ public ZarinPalVerifyData? Data { get; init; } public ZarinPalError? Errors { get; init; } }
 
 internal sealed class ZarinPalVerifyData
-{
-    public int Code { get; init; }
-    public long RefId { get; init; }
-    public string? CardPan { get; init; }
-    public string? CardHash { get; init; }
-    public decimal Fee { get; init; }
-    public string? Message { get; init; }
-}
+{ public int Code { get; init; } public long RefId { get; init; } public string? CardPan { get; init; } public decimal Fee { get; init; } public string? Message { get; init; } }
 
 internal sealed class ZarinPalError
-{
-    public int Code { get; init; }
-    public string? Message { get; init; }
-}
+{ public int Code { get; init; } public string? Message { get; init; } }

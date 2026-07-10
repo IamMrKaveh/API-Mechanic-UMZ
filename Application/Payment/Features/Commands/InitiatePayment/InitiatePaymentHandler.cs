@@ -1,4 +1,5 @@
 using Application.Payment.Features.Shared;
+using Domain.Order.Exceptions;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
@@ -32,6 +33,23 @@ public class InitiatePaymentHandler(
 
         var ipAddress = IpAddress.Create(currentUser.IpAddress ?? IpAddress.Unknown.Value);
 
-        return await paymentService.InitiatePaymentAsync(orderId, order.FinalAmount, ipAddress, userId, "", ct);
+        try
+        {
+            var result = await paymentService.InitiatePaymentAsync(
+                orderId, order.FinalAmount, ipAddress, userId, "", ct);
+            return ServiceResult<PaymentInitiationResult>.Success(result);
+        }
+        catch (OrderNotFoundException ex)
+        {
+            return ServiceResult<PaymentInitiationResult>.NotFound(ex.Message);
+        }
+        catch (OrderAlreadyPaidException ex)
+        {
+            return ServiceResult<PaymentInitiationResult>.Conflict(ex.Message);
+        }
+        catch (ExternalServiceException ex)
+        {
+            return ServiceResult<PaymentInitiationResult>.Failure(ex.Message);
+        }
     }
 }

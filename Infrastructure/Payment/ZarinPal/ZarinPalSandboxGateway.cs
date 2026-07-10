@@ -3,6 +3,7 @@ using Application.Payment.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Payment.ZarinPal.Options;
+using SharedKernel.Exceptions;
 using System.Text.Json.Serialization;
 
 namespace Infrastructure.Payment.ZarinPal;
@@ -20,7 +21,7 @@ public sealed class ZarinPalSandboxGateway(
 
     public string GatewayName => "ZarinpalSandbox";
 
-    public async Task<ServiceResult<PaymentInitiationResult>> InitiateAsync(
+    public async Task<PaymentInitiationResult> InitiateAsync(
         OrderId orderId,
         Money amount,
         string description,
@@ -46,33 +47,33 @@ public sealed class ZarinPalSandboxGateway(
             }
         };
 
+        ZarinPalResponseDto? parsed;
         try
         {
             var client = CreateClient();
             using var response = await client.PostAsJsonAsync(RequestPath, body, ct);
-            var parsed = await response.Content.ReadFromJsonAsync<ZarinPalResponseDto>(cancellationToken: ct);
-
-            var code = parsed?.Data?.Code ?? -1;
-            var authority = parsed?.Data?.Authority;
-
-            if (code != 100 || string.IsNullOrWhiteSpace(authority))
-            {
-                await auditService.LogErrorAsync($"[ZarinPalSandbox] Initiate failed code={code}", ct);
-                return ServiceResult<PaymentInitiationResult>.Failure(MapErrorCode(code));
-            }
-
-            var startPay = _options.SandboxStartPayBaseUrl.TrimEnd('/');
-            return ServiceResult<PaymentInitiationResult>.Success(
-                new PaymentInitiationResult(authority, $"{startPay}/{authority}", Guid.Empty));
+            parsed = await response.Content.ReadFromJsonAsync<ZarinPalResponseDto>(cancellationToken: ct);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not ExternalServiceException and not OperationCanceledException)
         {
             await auditService.LogErrorAsync($"[ZarinPalSandbox] Initiate exception: {ex.Message}", ct);
-            return ServiceResult<PaymentInitiationResult>.Failure("ارتباط با درگاه پرداخت سندباکس برقرار نشد.");
+            throw new ExternalServiceException(GatewayName, "ارتباط با درگاه پرداخت سندباکس برقرار نشد.", ex);
         }
+
+        var code = parsed?.Data?.Code ?? -1;
+        var authority = parsed?.Data?.Authority;
+
+        if (code == 100 && !string.IsNullOrWhiteSpace(authority))
+        {
+            var startPay = _options.SandboxStartPayBaseUrl.TrimEnd('/');
+            return new PaymentInitiationResult(authority, $"{startPay}/{authority}", Guid.Empty);
+        }
+
+        await auditService.LogErrorAsync($"[ZarinPalSandbox] Initiate failed code={code}", ct);
+        throw new ExternalServiceException(GatewayName, MapErrorCode(code), code.ToString());
     }
 
-    public async Task<ServiceResult<PaymentVerificationResult>> VerifyAsync(
+    public async Task<PaymentVerificationResult> VerifyAsync(
         string authority,
         Money expectedAmount,
         CancellationToken ct = default)
@@ -84,26 +85,26 @@ public sealed class ZarinPalSandboxGateway(
             Authority = authority
         };
 
+        ZarinPalVerifyResponseDto? parsed;
         try
         {
             var client = CreateClient();
             using var response = await client.PostAsJsonAsync(VerifyPath, body, ct);
-            var parsed = await response.Content.ReadFromJsonAsync<ZarinPalVerifyResponseDto>(cancellationToken: ct);
-
-            var code = parsed?.Data?.Code ?? -1;
-            if (code is 100 or 101)
-            {
-                return ServiceResult<PaymentVerificationResult>.Success(
-                    new PaymentVerificationResult(null, true, parsed!.Data!.RefId, parsed.Data.CardPan, parsed.Data.Fee));
-            }
-
-            return ServiceResult<PaymentVerificationResult>.Failure(MapErrorCode(code));
+            parsed = await response.Content.ReadFromJsonAsync<ZarinPalVerifyResponseDto>(cancellationToken: ct);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not ExternalServiceException and not OperationCanceledException)
         {
             await auditService.LogErrorAsync($"[ZarinPalSandbox] Verify exception: {ex.Message}", ct);
-            return ServiceResult<PaymentVerificationResult>.Failure("ارتباط با درگاه پرداخت سندباکس برقرار نشد.");
+            throw new ExternalServiceException(GatewayName, "ارتباط با درگاه پرداخت سندباکس برقرار نشد.", ex);
         }
+
+        var code = parsed?.Data?.Code ?? -1;
+        if (code is 100 or 101)
+        {
+            return new PaymentVerificationResult(null, true, parsed!.Data!.RefId, parsed.Data.CardPan, parsed.Data.Fee);
+        }
+
+        throw new ExternalServiceException(GatewayName, MapErrorCode(code), code.ToString());
     }
 
     private HttpClient CreateClient()

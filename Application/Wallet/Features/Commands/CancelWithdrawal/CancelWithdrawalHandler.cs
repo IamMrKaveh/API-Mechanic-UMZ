@@ -24,19 +24,27 @@ public sealed class CancelWithdrawalHandler(
             if (withdrawal is null)
                 return ServiceResult<Unit>.NotFound("درخواست برداشت یافت نشد.");
 
-            if (withdrawal.UserId != userId)
+            if (!withdrawal.UserId.Equals(userId))
                 return ServiceResult<Unit>.Failure("شما مجاز به لغو این درخواست نیستید.");
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)
-                return ServiceResult<Unit>.NotFound("کیف پول کاربر یافت نشد.");
+                return ServiceResult<Unit>.NotFound("کیف پول یافت نشد.");
 
             wallet.ReleaseReservation(withdrawal.ReservationId);
-            withdrawal.Cancel();
+
+            withdrawal.Cancel(userId);
 
             walletRepository.Update(wallet);
             withdrawalRepository.Update(withdrawal);
             await unitOfWork.SaveChangesAsync(ct);
+
+            await auditService.LogSecurityEventAsync(
+                "WithdrawalCancelled",
+                $"درخواست برداشت {withdrawalId.Value} توسط کاربر لغو شد.",
+                IpAddress.Unknown,
+                userId,
+                ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }

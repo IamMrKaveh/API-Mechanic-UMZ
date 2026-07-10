@@ -9,7 +9,7 @@ public sealed class MockPaymentGateway : IPaymentGateway
 {
     public string GatewayName => "MockGateway";
 
-    public Task<ServiceResult<PaymentInitiationResult>> InitiateAsync(
+    public Task<PaymentInitiationResult> InitiateAsync(
         OrderId orderId,
         Money amount,
         string description,
@@ -21,11 +21,10 @@ public sealed class MockPaymentGateway : IPaymentGateway
         var authority = Guid.NewGuid().ToString("N");
         var paymentUrl = $"/mock/pay?authority={authority}&amount={amount.Amount}";
 
-        var result = new PaymentInitiationResult(authority, paymentUrl, Guid.Empty);
-        return Task.FromResult(ServiceResult<PaymentInitiationResult>.Success(result));
+        return Task.FromResult(new PaymentInitiationResult(authority, paymentUrl, Guid.Empty));
     }
 
-    public Task<ServiceResult<PaymentVerificationResult>> VerifyAsync(
+    public Task<PaymentVerificationResult> VerifyAsync(
         string authority,
         Money expectedAmount,
         CancellationToken ct = default)
@@ -37,6 +36,6 @@ public sealed class MockPaymentGateway : IPaymentGateway
             CardPan: "6037********1234",
             Fee: 0);
 
-        return Task.FromResult(ServiceResult<PaymentVerificationResult>.Success(result));
+        return Task.FromResult(result);
     }
 }
