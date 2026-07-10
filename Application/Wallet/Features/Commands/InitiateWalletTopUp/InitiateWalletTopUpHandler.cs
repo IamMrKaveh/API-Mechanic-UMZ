@@ -54,13 +54,12 @@ public sealed class InitiateWalletTopUpHandler(
 
             try
             {
-                var initResult = await gateway.InitiateAsync(
+                initValue = await gateway.InitiateAsync(
                     syntheticOrderId, amount, description, callbackUrl, ct: ct);
-
-                if (initResult.IsFailed || initResult.Value is null)
-                    initError = initResult.Error ?? "خطا در ارتباط با درگاه.";
-                else
-                    initValue = initResult.Value;
+            }
+            catch (ExternalServiceException ex)
+            {
+                initError = ex.Message;
             }
             catch (Exception ex)
             {

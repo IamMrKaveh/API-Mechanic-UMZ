@@ -6,7 +6,7 @@ namespace Application.Payment.Contracts;
 
 public interface IPaymentService
 {
-    Task<ServiceResult<PaymentInitiationResult>> InitiatePaymentAsync(
+    Task<PaymentInitiationResult> InitiatePaymentAsync(
         OrderId orderId,
         Money amount,
         IpAddress ipAddress,
@@ -14,11 +14,11 @@ public interface IPaymentService
         string? gatewayName = null,
         CancellationToken ct = default);
 
-    Task<ServiceResult<PaymentVerificationResult>> VerifyPaymentAsync(
+    Task<PaymentVerificationResult> VerifyPaymentAsync(
         string authority,
         CancellationToken ct = default);
 
-    Task<ServiceResult> ProcessWebhookAsync(
+    Task ProcessWebhookAsync(
         string authority,
         string status,
         CancellationToken ct = default);

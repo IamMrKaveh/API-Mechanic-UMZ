@@ -8,7 +8,7 @@ public interface IPaymentGateway
 {
     string GatewayName { get; }
 
-    Task<ServiceResult<PaymentInitiationResult>> InitiateAsync(
+    Task<PaymentInitiationResult> InitiateAsync(
         OrderId orderId,
         Money amount,
         string description,
@@ -17,7 +17,7 @@ public interface IPaymentGateway
         PhoneNumber? phoneNumber = null,
         CancellationToken ct = default);
 
-    Task<ServiceResult<PaymentVerificationResult>> VerifyAsync(
+    Task<PaymentVerificationResult> VerifyAsync(
         string authority,
         Money expectedAmount,
         CancellationToken ct = default);

@@ -1,4 +1,5 @@
-﻿using Domain.Wallet.Enums;
+﻿using Application.Payment.Features.Shared;
+using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
 
 namespace Application.Wallet.Features.Commands.CompleteWalletTopUp;
@@ -56,11 +57,25 @@ public sealed class CompleteWalletTopUpHandler(
             }
 
             var gateway = gatewayFactory.GetGateway(topUp.Gateway);
-            var verifyResult = await gateway.VerifyAsync(request.Authority, topUp.Amount, ct);
 
-            if (verifyResult.IsFailed || verifyResult.Value is null || !verifyResult.Value.IsVerified)
+            PaymentVerificationResult verifyValue;
+            try
             {
-                var reason = verifyResult.Error ?? "تأیید تراکنش با شکست مواجه شد.";
+                verifyValue = await gateway.VerifyAsync(request.Authority, topUp.Amount, ct);
+            }
+            catch (ExternalServiceException ex)
+            {
+                topUp.MarkFailed(ex.Message);
+                topUpRepository.Update(topUp);
+                await unitOfWork.SaveChangesAsync(ct);
+                return ServiceResult<CompleteWalletTopUpResult>.Success(
+                    new CompleteWalletTopUpResult(topUp.Id.Value, false, "failed",
+                        ex.Message, topUp.Amount.Amount));
+            }
+
+            if (!verifyValue.IsVerified)
+            {
+                const string reason = "تأیید تراکنش با شکست مواجه شد.";
                 topUp.MarkFailed(reason);
                 topUpRepository.Update(topUp);
                 await unitOfWork.SaveChangesAsync(ct);
@@ -69,7 +84,7 @@ public sealed class CompleteWalletTopUpHandler(
                         reason, topUp.Amount.Amount));
             }
 
-            var refId = verifyResult.Value.RefId?.ToString() ?? request.Authority;
+            var refId = verifyValue.RefId?.ToString() ?? request.Authority;
             topUp.MarkSucceeded(refId);
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(topUp.UserId, ct);

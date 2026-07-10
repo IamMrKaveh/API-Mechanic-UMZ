@@ -1,4 +1,6 @@
 using Application.Payment.Contracts;
+using Application.Payment.Features.Shared;
+using SharedKernel.Exceptions;
 
 namespace Infrastructure.BackgroundJobs;
 
@@ -84,11 +86,22 @@ public sealed class PaymentReconciliationJob(
                 try
                 {
                     var gateway = gatewayFactory.GetGateway(tx.Gateway.Value);
-                    var verifyResult = await gateway.VerifyAsync(tx.Authority.Value, tx.Amount, ct);
 
-                    if (verifyResult.IsSuccess && verifyResult.Value.IsVerified)
+                    PaymentVerificationResult verifyValue;
+                    try
                     {
-                        tx.MarkAsSuccess(verifyResult.Value.RefId!.Value, dateTimeProvider.UtcNow, verifyResult.Value.Fee);
+                        verifyValue = await gateway.VerifyAsync(tx.Authority.Value, tx.Amount, ct);
+                    }
+                    catch (ExternalServiceException ex)
+                    {
+                        tx.MarkAsFailed(dateTimeProvider.UtcNow, $"Reconciliation: {ex.Message}");
+                        batchFailed++;
+                        continue;
+                    }
+
+                    if (verifyValue.IsVerified && verifyValue.RefId.HasValue && verifyValue.RefId.Value > 0)
+                    {
+                        tx.MarkAsSuccess(verifyValue.RefId.Value, dateTimeProvider.UtcNow, verifyValue.Fee);
                         batchReconciled++;
 
                         await auditService.LogWarningAsync(
