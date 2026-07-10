@@ -3,6 +3,7 @@ using Application.Analytics.Contracts;
 using Application.Attribute.Adapters;
 using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
+using Application.Brand.Adapters;
 using Application.Brand.Contracts;
 using Application.Cart.Contracts;
 using Application.Category.Contracts;
@@ -151,7 +152,10 @@ public static class InfrastructureServiceExtensions
 
     private static void AddCaching(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<CacheOptions>(configuration.GetSection(CacheOptions.SectionName));
+        services.AddOptions<CacheOptions>()
+            .Bind(configuration.GetSection(CacheOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         var cacheOptions = configuration.GetSection(CacheOptions.SectionName).Get<CacheOptions>()
             ?? new CacheOptions();
@@ -299,6 +303,7 @@ public static class InfrastructureServiceExtensions
     {
         services.AddScoped<IAuditMaskingService, AuditMaskingService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IBrandUniquenessChecker, BrandUniquenessCheckerAdapter>();
         services.AddScoped<ICheckoutOrchestrationService, CheckoutOrchestrationService>();
         services.AddScoped<ICheckoutAddressResolverService, CheckoutAddressResolverService>();
         services.AddScoped<ICheckoutCartItemBuilderService, CheckoutCartItemBuilderService>();
@@ -319,7 +324,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IFraudDetectionRule, MultipleFailedTopUpRule>();
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<INotificationService, NotificationService>();
-        services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IPurchaseVerificationService, PurchaseVerificationService>();
     }
 
@@ -349,7 +353,11 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IMediaService, MediaService>();
 
         var storageSection = configuration.GetSection(StorageOptions.SectionName);
-        services.Configure<StorageOptions>(storageSection);
+
+        services.AddOptions<StorageOptions>()
+            .Bind(storageSection)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         var storageOptions = storageSection.Get<StorageOptions>()
             ?? throw new InvalidOperationException(
@@ -410,7 +418,10 @@ public static class InfrastructureServiceExtensions
             MaxAutomaticRedirections = 5
         });
 
-        services.Configure<KavenegarOptions>(configuration.GetSection(KavenegarOptions.SectionName));
+        services.AddOptions<KavenegarOptions>()
+            .Bind(configuration.GetSection(KavenegarOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         services.AddHttpClient<ISmsService, SmsService>(client =>
         {
@@ -478,7 +489,11 @@ public static class InfrastructureServiceExtensions
     private static void AddSearchServices(this IServiceCollection services, IConfiguration configuration)
     {
         var elasticsearchSection = configuration.GetSection(ElasticsearchOptions.SectionName);
-        services.Configure<ElasticsearchOptions>(elasticsearchSection);
+
+        services.AddOptions<ElasticsearchOptions>()
+            .Bind(elasticsearchSection)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         var options = elasticsearchSection.Get<ElasticsearchOptions>();
 

@@ -1,4 +1,3 @@
-using Application.Brand.Adapters;
 using Application.Brand.Features.Shared;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
@@ -8,6 +7,7 @@ namespace Application.Brand.Features.Commands.UpdateBrand;
 public sealed class UpdateBrandHandler(
     IBrandRepository brandRepository,
     IBrandQueryService brandQueryService,
+    IBrandUniquenessChecker brandUniquenessChecker,
     IUnitOfWork unitOfWork,
     IStorageService storageService)
     : ICommandHandler<UpdateBrandCommand, BrandDetailDto>
@@ -52,13 +52,13 @@ public sealed class UpdateBrandHandler(
             ? BrandSlug.GenerateFrom(request.Name)
             : BrandSlug.FromString(request.Slug);
 
-        var uniquenessChecker = new BrandUniquenessCheckerAdapter(brandRepository);
-        brand.UpdateDetails(
+        await brand.UpdateDetails(
             brandName,
             slug,
-            uniquenessChecker,
+            brandUniquenessChecker,
             string.IsNullOrWhiteSpace(request.Description) ? null : request.Description,
-            logoPath);
+            logoPath,
+            ct);
 
         brandRepository.Update(brand);
         await unitOfWork.SaveChangesAsync(ct);

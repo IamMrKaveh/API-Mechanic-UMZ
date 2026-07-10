@@ -5,9 +5,10 @@ namespace Domain.Brand.Interfaces;
 
 public interface IBrandUniquenessChecker
 {
-    bool IsUnique(
+    Task<bool> IsUniqueAsync(
         BrandName name,
         BrandSlug slug,
         CategoryId categoryId,
-        BrandId? excludeId = null);
+        BrandId? excludeId,
+        CancellationToken ct);
 }

@@ -4,14 +4,20 @@ using Domain.Category.ValueObjects;
 
 namespace Application.Brand.Adapters;
 
-public sealed class BrandUniquenessCheckerAdapter(IBrandRepository repository) : IBrandUniquenessChecker
+public sealed class BrandUniquenessCheckerAdapter(IBrandRepository brandRepository) : IBrandUniquenessChecker
 {
-    private readonly IBrandRepository _repository = repository;
-
-    public bool IsUnique(BrandName name, BrandSlug slug, CategoryId categoryId, BrandId? excludeId = null)
+    public async Task<bool> IsUniqueAsync(
+        BrandName name,
+        BrandSlug slug,
+        CategoryId categoryId,
+        BrandId? excludeId,
+        CancellationToken ct)
     {
-        var nameExists = _repository.ExistsByNameInCategoryAsync(name, categoryId, excludeId).GetAwaiter().GetResult();
-        var slugExists = _repository.ExistsBySlugAsync(slug, excludeId).GetAwaiter().GetResult();
-        return !nameExists && !slugExists;
+        var nameExists = await brandRepository.ExistsByNameInCategoryAsync(name, categoryId, excludeId, ct);
+        if (nameExists)
+            return false;
+
+        var slugExists = await brandRepository.ExistsBySlugAsync(slug, excludeId, ct);
+        return !slugExists;
     }
 }

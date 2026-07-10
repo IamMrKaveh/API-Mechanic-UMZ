@@ -1,4 +1,3 @@
-using Application.Brand.Adapters;
 using Application.Brand.Features.Shared;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
@@ -10,6 +9,7 @@ namespace Application.Brand.Features.Commands.CreateBrand;
 public sealed class CreateBrandHandler(
     IBrandRepository brandRepository,
     ICategoryRepository categoryRepository,
+    IBrandUniquenessChecker brandUniquenessChecker,
     IUnitOfWork unitOfWork,
     IMapper mapper,
     IStorageService storageService,
@@ -57,15 +57,14 @@ public sealed class CreateBrandHandler(
             logoPath = await storageService.UploadAsync(request.LogoStream!, fileName, request.LogoContentType!, "brands", ct);
         }
 
-        var uniquenessChecker = new BrandUniquenessCheckerAdapter(brandRepository);
-
-        var brand = Domain.Brand.Aggregates.Brand.Create(
+        var brand = await Domain.Brand.Aggregates.Brand.Create(
             brandName,
             slug,
             categoryId,
-            uniquenessChecker,
+            brandUniquenessChecker,
             string.IsNullOrWhiteSpace(request.Description) ? null : request.Description,
-            logoPath);
+            logoPath,
+            ct);
 
         await brandRepository.AddAsync(brand, ct);
         await unitOfWork.SaveChangesAsync(ct);
