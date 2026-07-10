@@ -44,16 +44,13 @@ public class DebitWalletHandler(
         {
             await auditService.LogSystemEventAsync(
                 "WalletDebitConcurrencyConflict",
-                $"تعارض همزمانی در برداشت از کیف پول. IdempotencyKey: {request.IdempotencyKey}");
+                $"تعارض همزمانی در برداشت از کیف پول. IdempotencyKey: {request.IdempotencyKey}",
+                ct);
             return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
         {
             return ServiceResult<Unit>.Failure(ex.Message);
-        }
-        catch (Exception)
-        {
-            return ServiceResult<Unit>.Failure("خطا در برداشت از کیف پول.");
         }
     }
 }

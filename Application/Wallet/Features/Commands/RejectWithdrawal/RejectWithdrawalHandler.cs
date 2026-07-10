@@ -49,9 +49,5 @@ public sealed class RejectWithdrawalHandler(
         {
             return ServiceResult<Unit>.Failure(ex.Message);
         }
-        catch (Exception)
-        {
-            return ServiceResult<Unit>.Failure("خطا در رد درخواست برداشت.");
-        }
     }
 }

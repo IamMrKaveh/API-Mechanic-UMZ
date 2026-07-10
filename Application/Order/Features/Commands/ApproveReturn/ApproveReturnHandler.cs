@@ -32,35 +32,29 @@ public class ApproveReturnHandler(
             return ServiceResult.Forbidden(ex.Message);
         }
 
-        try
+        return await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
         {
-            return await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
-            {
-                orderRepository.Update(order);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+            orderRepository.Update(order);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
 
-                var result = await inventoryService.ReturnStockForOrderAsync(
-                    orderId,
-                    userId.Value,
-                    request.Reason,
-                    cancellationToken);
+            var result = await inventoryService.ReturnStockForOrderAsync(
+                orderId,
+                userId.Value,
+                request.Reason,
+                cancellationToken);
 
-                if (!result.IsSuccess)
-                    return ServiceResult.Failure($"خطا در بازگشت موجودی: {result.Error}");
+            if (!result.IsSuccess)
+                return ServiceResult.Failure($"خطا در بازگشت موجودی: {result.Error}");
 
-                await auditService.LogOrderEventAsync(
-                    order.Id,
-                    "ApproveReturn",
-                    IpAddress.Create(currentUserService.IpAddress ?? "0.0.0.0"),
-                    UserId.From(currentUserService.UserId.Value),
-                    $"مرجوعی سفارش تأیید شد. دلیل: {request.Reason}");
+            await auditService.LogOrderEventAsync(
+                order.Id,
+                "ApproveReturn",
+                IpAddress.Create(currentUserService.IpAddress ?? "0.0.0.0"),
+                UserId.From(currentUserService.UserId.Value),
+                $"مرجوعی سفارش تأیید شد. دلیل: {request.Reason}",
+                ct);
 
-                return ServiceResult.Success();
-            }, ct);
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult.Failure(ex.Message);
-        }
+            return ServiceResult.Success();
+        }, ct);
     }
 }

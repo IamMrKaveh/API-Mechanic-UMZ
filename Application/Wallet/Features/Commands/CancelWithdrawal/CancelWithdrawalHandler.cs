@@ -24,15 +24,15 @@ public sealed class CancelWithdrawalHandler(
             if (withdrawal is null)
                 return ServiceResult<Unit>.NotFound("درخواست برداشت یافت نشد.");
 
-            if (!withdrawal.UserId.Equals(userId))
-                return ServiceResult<Unit>.Forbidden("شما مجاز به لغو این درخواست نیستید.");
+            if (withdrawal.UserId != userId)
+                return ServiceResult<Unit>.Failure("شما مجاز به لغو این درخواست نیستید.");
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)
-                return ServiceResult<Unit>.NotFound("کیف پول یافت نشد.");
+                return ServiceResult<Unit>.NotFound("کیف پول کاربر یافت نشد.");
 
             wallet.ReleaseReservation(withdrawal.ReservationId);
-            withdrawal.Cancel(userId);
+            withdrawal.Cancel();
 
             walletRepository.Update(wallet);
             withdrawalRepository.Update(withdrawal);
@@ -51,10 +51,6 @@ public sealed class CancelWithdrawalHandler(
         catch (DomainException ex)
         {
             return ServiceResult<Unit>.Failure(ex.Message);
-        }
-        catch (Exception)
-        {
-            return ServiceResult<Unit>.Failure("خطا در لغو درخواست برداشت.");
         }
     }
 }

@@ -138,9 +138,5 @@ public class CreateOrderHandler(
         {
             return ServiceResult<Guid>.Failure(ex.Message);
         }
-        catch (Exception ex)
-        {
-            return ServiceResult<Guid>.Failure(ex.Message);
-        }
     }
 }

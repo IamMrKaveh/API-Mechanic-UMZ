@@ -8,7 +8,8 @@ namespace Infrastructure.BackgroundJobs;
 public sealed class InventoryReservationExpiryJob(
     IServiceScopeFactory scopeFactory,
     IDistributedLock distributedLock,
-    IOptions<ReservationExpiryOptions> options) : BackgroundService
+    IOptions<ReservationExpiryOptions> options,
+    IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
     private readonly ReservationExpiryOptions _options = options.Value;
@@ -100,7 +101,7 @@ public sealed class InventoryReservationExpiryJob(
        GetExpiredReservationGroupsAsync(IServiceScope scope, CancellationToken ct)
     {
         var context = scope.ServiceProvider.GetRequiredService<Persistence.Context.DBContext>();
-        var now = DateTime.UtcNow;
+        var now = dateTimeProvider.UtcNow;
         var cutoff = now.AddMinutes(-_options.ExpiryMinutes);
 
         var expiredEntries = await context.StockLedgerEntries

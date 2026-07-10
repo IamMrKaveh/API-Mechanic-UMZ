@@ -51,9 +51,5 @@ public sealed class FreezeWalletHandler(
         {
             return ServiceResult<Unit>.Failure(ex.Message);
         }
-        catch (Exception)
-        {
-            return ServiceResult<Unit>.Failure("خطا در مسدودسازی کیف پول.");
-        }
     }
 }

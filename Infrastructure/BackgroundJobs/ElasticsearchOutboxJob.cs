@@ -6,7 +6,8 @@ public sealed class ElasticsearchOutboxJob(
     IServiceScopeFactory scopeFactory,
     IAuditService auditService,
     IDistributedLock distributedLock,
-    IConfiguration configuration) : BackgroundService
+    IConfiguration configuration,
+    IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(5);
 
@@ -55,7 +56,7 @@ public sealed class ElasticsearchOutboxJob(
         var dbContext = scope.ServiceProvider.GetRequiredService<DBContext>();
         var indexer = scope.ServiceProvider.GetRequiredService<IElasticsearchIndexer>();
 
-        var now = DateTime.UtcNow;
+        var now = dateTimeProvider.UtcNow;
 
         var messages = await dbContext.ElasticsearchOutboxMessages
             .Where(m => m.ProcessedAt == null

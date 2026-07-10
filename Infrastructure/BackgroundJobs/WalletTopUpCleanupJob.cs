@@ -5,7 +5,8 @@ namespace Infrastructure.BackgroundJobs;
 public sealed class WalletTopUpCleanupJob(
     IServiceScopeFactory scopeFactory,
     IDistributedLock distributedLock,
-    ILogger<WalletTopUpCleanupJob> logger) : BackgroundService
+    ILogger<WalletTopUpCleanupJob> logger,
+    IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(4);
@@ -54,7 +55,7 @@ public sealed class WalletTopUpCleanupJob(
         var repository = scope.ServiceProvider.GetRequiredService<IWalletTopUpRepository>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-        var cutoff = DateTime.UtcNow - PendingCutoff;
+        var cutoff = dateTimeProvider.UtcNow - PendingCutoff;
         var staleTopUps = await repository.GetPendingOlderThanAsync(cutoff, BatchSize, ct);
 
         if (staleTopUps.Count == 0) return;

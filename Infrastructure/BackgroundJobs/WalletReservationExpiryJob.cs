@@ -4,7 +4,8 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class WalletReservationExpiryJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock) : BackgroundService
+    IDistributedLock distributedLock,
+    IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(10);
@@ -49,7 +50,7 @@ public sealed class WalletReservationExpiryJob(
         var context = scope.ServiceProvider.GetRequiredService<DBContext>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
-        var now = DateTime.UtcNow;
+        var now = dateTimeProvider.UtcNow;
 
         var expiredReservations = await context.WalletLedgerEntries
             .AsNoTracking()

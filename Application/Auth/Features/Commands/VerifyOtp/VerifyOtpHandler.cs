@@ -5,6 +5,7 @@ using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 using Microsoft.Extensions.Options;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Auth.Features.Commands.VerifyOtp;
 
@@ -15,6 +16,7 @@ public class VerifyOtpHandler(
     IJwtTokenGenerator jwtTokenGenerator,
     ICurrentUserService currentUser,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     IOptions<JwtOptions> jwtOptions)
     : ICommandHandler<VerifyOtpCommand, AuthResult>
 {
@@ -79,7 +81,7 @@ public class VerifyOtpHandler(
         {
             AccessToken = jwtAccessToken,
             RefreshToken = refreshSession.RefreshToken,
-            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes),
+            AccessTokenExpiresAt = dateTimeProvider.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes),
             RefreshTokenExpiresAt = refreshSession.ExpiresAt,
             User = userDto,
             IsNewUser = false

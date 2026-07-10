@@ -1,8 +1,10 @@
-﻿namespace Application.Wallet.Features.Commands.ReserveWallet;
+﻿using SharedKernel.Abstractions.Interfaces;
+
+namespace Application.Wallet.Features.Commands.ReserveWallet;
 
 public sealed class ReserveWalletValidator : AbstractValidator<ReserveWalletCommand>
 {
-    public ReserveWalletValidator()
+    public ReserveWalletValidator(IDateTimeProvider dateTimeProvider)
     {
         RuleFor(x => x.UserId)
             .NotEmpty().WithMessage("شناسه کاربر الزامی است.");
@@ -15,7 +17,7 @@ public sealed class ReserveWalletValidator : AbstractValidator<ReserveWalletComm
             .LessThanOrEqualTo(1_000_000_000m).WithMessage("مبلغ رزرو از سقف مجاز عبور کرده است.");
 
         RuleFor(x => x.ExpiresAt!.Value)
-            .GreaterThan(DateTime.UtcNow)
+            .GreaterThan(_ => dateTimeProvider.UtcNow)
             .When(x => x.ExpiresAt.HasValue)
             .WithMessage("زمان انقضای رزرو باید در آینده باشد.");
     }

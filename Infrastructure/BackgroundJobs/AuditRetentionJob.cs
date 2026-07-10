@@ -4,7 +4,8 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class AuditRetentionJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock) : BackgroundService
+    IDistributedLock distributedLock,
+    IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
     private static readonly TimeSpan InitialDelay = TimeSpan.FromMinutes(5);
@@ -70,17 +71,19 @@ public sealed class AuditRetentionJob(
         var context = scope.ServiceProvider.GetRequiredService<DBContext>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
         var archiveStorage = scope.ServiceProvider.GetRequiredService<IAuditArchiveStorage>();
-        var now = DateTime.UtcNow;
+        var now = dateTimeProvider.UtcNow;
 
         var defaultCutoff = now.AddDays(-DefaultRetentionDays);
         await ArchiveAndDeleteAsync(
             context, auditService, archiveStorage, defaultCutoff,
-            FinancialEventTypes.Union(SecurityEventTypes).ToHashSet(),
+            dateTimeProvider,
+            excludeEventTypes: FinancialEventTypes.Union(SecurityEventTypes).ToHashSet(StringComparer.OrdinalIgnoreCase),
             batchLabel: "default", ct: ct);
 
         var securityCutoff = now.AddDays(-SecurityRetentionDays);
         await ArchiveAndDeleteAsync(
             context, auditService, archiveStorage, securityCutoff,
+            dateTimeProvider,
             includeEventTypes: SecurityEventTypes,
             excludeEventTypes: FinancialEventTypes,
             batchLabel: "security", ct: ct);
@@ -88,6 +91,7 @@ public sealed class AuditRetentionJob(
         var financialCutoff = now.AddDays(-FinancialRetentionDays);
         await ArchiveOnlyAsync(
             context, auditService, archiveStorage, financialCutoff,
+            dateTimeProvider,
             includeEventTypes: FinancialEventTypes,
             batchLabel: "financial", ct: ct);
 
@@ -99,6 +103,7 @@ public sealed class AuditRetentionJob(
         IAuditService auditService,
         IAuditArchiveStorage archiveStorage,
         DateTime cutoff,
+        IDateTimeProvider dateTimeProvider,
         HashSet<string>? includeEventTypes = null,
         HashSet<string>? excludeEventTypes = null,
         string batchLabel = "",
@@ -119,7 +124,7 @@ public sealed class AuditRetentionJob(
 
         if (logsToArchive.Count == 0) return;
 
-        await archiveStorage.ArchiveAsync(logsToArchive, batchLabel, DateTime.UtcNow, ct);
+        await archiveStorage.ArchiveAsync(logsToArchive, batchLabel, dateTimeProvider.UtcNow, ct);
 
         context.AuditLogs.RemoveRange(logsToArchive);
         await context.SaveChangesAsync(ct);
@@ -135,6 +140,7 @@ public sealed class AuditRetentionJob(
         IAuditService auditService,
         IAuditArchiveStorage archiveStorage,
         DateTime cutoff,
+        IDateTimeProvider dateTimeProvider,
         HashSet<string>? includeEventTypes = null,
         string batchLabel = "",
         CancellationToken ct = default)
@@ -151,7 +157,7 @@ public sealed class AuditRetentionJob(
 
         if (logsToArchive.Count == 0) return;
 
-        await archiveStorage.ArchiveAsync(logsToArchive, batchLabel, DateTime.UtcNow, ct);
+        await archiveStorage.ArchiveAsync(logsToArchive, batchLabel, dateTimeProvider.UtcNow, ct);
 
         foreach (var log in logsToArchive)
             log.MarkAsArchived();

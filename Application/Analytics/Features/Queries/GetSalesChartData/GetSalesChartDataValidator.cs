@@ -1,10 +1,12 @@
+using SharedKernel.Abstractions.Interfaces;
+
 namespace Application.Analytics.Features.Queries.GetSalesChartData;
 
 public sealed class GetSalesChartDataValidator : AbstractValidator<GetSalesChartDataQuery>
 {
     private static readonly string[] AllowedGroupByValues = ["day", "week", "month"];
 
-    public GetSalesChartDataValidator()
+    public GetSalesChartDataValidator(IDateTimeProvider dateTimeProvider)
     {
         RuleFor(q => q.FromDate)
             .NotEmpty().WithMessage("تاریخ شروع الزامی است.")
@@ -12,7 +14,7 @@ public sealed class GetSalesChartDataValidator : AbstractValidator<GetSalesChart
 
         RuleFor(q => q.ToDate)
             .NotEmpty().WithMessage("تاریخ پایان الزامی است.")
-            .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1)).WithMessage("تاریخ پایان نمی‌تواند در آینده باشد.");
+            .LessThanOrEqualTo(_ => dateTimeProvider.UtcNow.AddDays(1)).WithMessage("تاریخ پایان نمی‌تواند در آینده باشد.");
 
         RuleFor(q => q.GroupBy)
             .Must(v => AllowedGroupByValues.Contains(v.ToLowerInvariant()))

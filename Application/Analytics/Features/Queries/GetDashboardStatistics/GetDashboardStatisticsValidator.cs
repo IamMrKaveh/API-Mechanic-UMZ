@@ -1,8 +1,10 @@
+using SharedKernel.Abstractions.Interfaces;
+
 namespace Application.Analytics.Features.Queries.GetDashboardStatistics;
 
 public sealed class GetDashboardStatisticsValidator : AbstractValidator<GetDashboardStatisticsQuery>
 {
-    public GetDashboardStatisticsValidator()
+    public GetDashboardStatisticsValidator(IDateTimeProvider dateTimeProvider)
     {
         When(q => q.FromDate.HasValue && q.ToDate.HasValue, () =>
         {
@@ -14,7 +16,7 @@ public sealed class GetDashboardStatisticsValidator : AbstractValidator<GetDashb
         When(q => q.FromDate.HasValue, () =>
         {
             RuleFor(q => q.FromDate)
-                .LessThanOrEqualTo(DateTime.UtcNow)
+                .LessThanOrEqualTo(_ => dateTimeProvider.UtcNow)
                 .WithMessage("تاریخ شروع نمی‌تواند در آینده باشد.");
         });
     }
