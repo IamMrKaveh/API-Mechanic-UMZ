@@ -1,7 +1,4 @@
-﻿using Application.Auth.Contracts;
-using Application.Common.Interfaces;
-using Application.Common.Results;
-using Application.Wallet.Features.Shared;
+﻿using Application.Wallet.Features.Shared;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -9,7 +6,7 @@ using Domain.Wallet.Enums;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
-using MediatR;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.ConfirmWalletTransfer;
 
@@ -19,7 +16,8 @@ public sealed class ConfirmWalletTransferHandler(
     IUserRepository userRepository,
     IOtpService otpService,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    IDateTimeProvider dateTimeProvider)
     : IRequestHandler<ConfirmWalletTransferCommand, ServiceResult<ConfirmWalletTransferResultDto>>
 {
     public async Task<ServiceResult<ConfirmWalletTransferResultDto>> Handle(
@@ -149,7 +147,7 @@ public sealed class ConfirmWalletTransferHandler(
                 Amount = transfer.Amount.Amount,
                 RecipientDisplayName = recipientName,
                 CorrelationId = transfer.CorrelationId,
-                CompletedAt = transfer.CompletedAt ?? DateTime.UtcNow
+                CompletedAt = transfer.CompletedAt ?? dateTimeProvider.UtcNow
             });
         }
         catch (ConcurrencyException)

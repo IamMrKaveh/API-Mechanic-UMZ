@@ -46,9 +46,5 @@ public sealed class UnfreezeWalletHandler(
         {
             return ServiceResult<Unit>.Failure(ex.Message);
         }
-        catch (Exception)
-        {
-            return ServiceResult<Unit>.Failure("خطا در رفع مسدودی کیف پول.");
-        }
     }
 }

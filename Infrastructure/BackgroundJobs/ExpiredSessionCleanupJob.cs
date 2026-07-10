@@ -4,7 +4,8 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class ExpiredSessionCleanupJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock) : BackgroundService
+    IDistributedLock distributedLock,
+    IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromHours(1);
     private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(30);
@@ -25,7 +26,7 @@ public sealed class ExpiredSessionCleanupJob(
                     var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                     var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
-                    var cutoff = DateTime.UtcNow;
+                    var cutoff = dateTimeProvider.UtcNow;
                     var expiredSessions = await sessionRepo.GetExpiredActiveSessionsAsync(cutoff, stoppingToken);
 
                     foreach (var session in expiredSessions)

@@ -59,9 +59,5 @@ public sealed class MarkWithdrawalPaidHandler(
         {
             return ServiceResult<Unit>.Failure(ex.Message);
         }
-        catch (Exception)
-        {
-            return ServiceResult<Unit>.Failure("خطا در ثبت پرداخت درخواست برداشت.");
-        }
     }
 }

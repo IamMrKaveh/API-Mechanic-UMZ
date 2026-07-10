@@ -37,9 +37,5 @@ public sealed class MarkFraudAlertReviewedHandler(
         {
             return ServiceResult<Unit>.Failure(ex.Message);
         }
-        catch (Exception)
-        {
-            return ServiceResult<Unit>.Failure("خطا در پردازش هشدار.");
-        }
     }
 }

@@ -1,6 +1,4 @@
-﻿using Domain.User.ValueObjects;
-using Domain.Wallet.Aggregates;
-using Domain.Wallet.Entities;
+﻿using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.FraudDetection;
 using Domain.Wallet.Interfaces;
@@ -10,7 +8,8 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class FraudDetectionJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock) : BackgroundService
+    IDistributedLock distributedLock,
+    IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan InitialDelay = TimeSpan.FromMinutes(2);
@@ -75,7 +74,7 @@ public sealed class FraudDetectionJob(
             return;
         }
 
-        var cutoff = DateTime.UtcNow.Subtract(EvaluationWindow);
+        var cutoff = dateTimeProvider.UtcNow.Subtract(EvaluationWindow);
 
         var activeWalletIds = await dbContext.WalletLedgerEntries
             .AsNoTracking()
@@ -98,6 +97,7 @@ public sealed class FraudDetectionJob(
                     alertRepository,
                     rules,
                     walletId,
+                    dateTimeProvider,
                     ct);
 
                 totalTriggered += evaluated;
@@ -125,9 +125,10 @@ public sealed class FraudDetectionJob(
         IWalletFraudAlertRepository alertRepository,
         IReadOnlyList<IFraudDetectionRule> rules,
         WalletId walletId,
+        IDateTimeProvider dateTimeProvider,
         CancellationToken ct)
     {
-        var evaluatedAt = DateTime.UtcNow;
+        var evaluatedAt = dateTimeProvider.UtcNow;
         var windowStart = evaluatedAt.Subtract(EvaluationWindow);
 
         var wallet = await dbContext.Wallets

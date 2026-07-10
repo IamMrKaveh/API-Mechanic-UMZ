@@ -1,11 +1,13 @@
 using Application.Auth.Features.Shared;
 using Microsoft.Extensions.Options;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Auth.Features.Commands.RefreshToken;
 
 public class RefreshTokenHandler(
     IAuthService authService,
     ICurrentUserService currentUser,
+    IDateTimeProvider dateTimeProvider,
     IOptions<JwtOptions> jwtOptions,
     IOptions<AuthOptions> authOptions)
     : ICommandHandler<RefreshTokenCommand, AuthResult>
@@ -31,7 +33,7 @@ public class RefreshTokenHandler(
 
         var (accessToken, refreshTokenInfo, userDto, isNewUser) = result.Value;
 
-        var now = DateTime.UtcNow;
+        var now = dateTimeProvider.UtcNow;
 
         return ServiceResult<AuthResult>.Success(new AuthResult
         {

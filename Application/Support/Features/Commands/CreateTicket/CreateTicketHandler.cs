@@ -4,6 +4,7 @@ using Domain.Support.Enums;
 using Domain.Support.Interfaces;
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Support.Features.Commands.CreateTicket;
 
@@ -11,6 +12,7 @@ public class CreateTicketHandler(
     ITicketRepository ticketRepository,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider,
     IMapper mapper)
     : ICommandHandler<CreateTicketCommand, TicketDto>
 {
@@ -23,7 +25,7 @@ public class CreateTicketHandler(
 
         var ticketId = TicketId.NewId();
         var customerId = UserId.From(currentUser.UserId!.Value);
-        var now = DateTime.UtcNow;
+        var now = dateTimeProvider.UtcNow;
 
         var ticket = Ticket.Open(ticketId, customerId, request.Subject, category, priority);
 

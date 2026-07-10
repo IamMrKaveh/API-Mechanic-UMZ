@@ -33,12 +33,13 @@ public class ReleaseWalletReservationHandler(
         {
             await auditService.LogSystemEventAsync(
                 "WalletReleaseConcurrencyConflict",
-                $"تعارض همزمانی در آزادسازی رزرو کیف پول {request.WalletReservationId}");
+                $"تعارض همزمانی در آزادسازی رزرو کیف پول {request.WalletReservationId}",
+                ct);
             return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
-        catch (Exception)
+        catch (DomainException ex)
         {
-            return ServiceResult<Unit>.Failure("خطا در آزادسازی رزرو کیف پول.");
+            return ServiceResult<Unit>.Failure(ex.Message);
         }
     }
 }

@@ -4,7 +4,8 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class PaymentReconciliationJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock) : BackgroundService
+    IDistributedLock distributedLock,
+    IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan ReconciliationInterval = TimeSpan.FromHours(6);
     private static readonly TimeSpan ReconciliationWindow = TimeSpan.FromHours(12);
@@ -58,7 +59,7 @@ public sealed class PaymentReconciliationJob(
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
-        var threshold = DateTime.UtcNow.Subtract(ReconciliationWindow);
+        var threshold = dateTimeProvider.UtcNow.Subtract(ReconciliationWindow);
         var totalReconciled = 0;
         var totalFailed = 0;
 
@@ -87,7 +88,7 @@ public sealed class PaymentReconciliationJob(
 
                     if (verifyResult.IsSuccess && verifyResult.Value.IsVerified)
                     {
-                        tx.MarkAsSuccess(verifyResult.Value.RefId!.Value, DateTime.UtcNow, verifyResult.Value.Fee);
+                        tx.MarkAsSuccess(verifyResult.Value.RefId!.Value, dateTimeProvider.UtcNow, verifyResult.Value.Fee);
                         batchReconciled++;
 
                         await auditService.LogWarningAsync(
@@ -95,7 +96,7 @@ public sealed class PaymentReconciliationJob(
                     }
                     else
                     {
-                        tx.MarkAsFailed(DateTime.UtcNow, "Reconciliation: پرداخت تأیید نشد.");
+                        tx.MarkAsFailed(dateTimeProvider.UtcNow, "Reconciliation: پرداخت تأیید نشد.");
                         batchFailed++;
                     }
                 }

@@ -1,7 +1,4 @@
-﻿using Application.Auth.Contracts;
-using Application.Common.Interfaces;
-using Application.Common.Results;
-using Application.Wallet.Features.Shared;
+﻿using Application.Wallet.Features.Shared;
 using Application.Wallet.Options;
 using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
@@ -10,8 +7,8 @@ using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
-using MediatR;
 using Microsoft.Extensions.Options;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.InitiateWalletTransfer;
 
@@ -22,6 +19,7 @@ public sealed class InitiateWalletTransferHandler(
     IOtpService otpService,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     IOptions<WalletTransferOptions> options)
     : IRequestHandler<InitiateWalletTransferCommand, ServiceResult<InitiateWalletTransferResultDto>>
 {
@@ -71,7 +69,7 @@ public sealed class InitiateWalletTransferHandler(
                 return ServiceResult<InitiateWalletTransferResultDto>.Failure(
                     "موجودی قابل برداشت کافی نیست.");
 
-            var today = DateTime.UtcNow.Date;
+            var today = dateTimeProvider.UtcNow.Date;
             var alreadyToday = await transferRepository.SumCompletedAmountForDayAsync(fromUserId, today, ct);
             if (alreadyToday + amount.Amount > _options.DailyLimit)
                 return ServiceResult<InitiateWalletTransferResultDto>.Failure(

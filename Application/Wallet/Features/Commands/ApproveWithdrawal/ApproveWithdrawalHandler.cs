@@ -33,16 +33,13 @@ public sealed class ApproveWithdrawalHandler(
         {
             await auditService.LogSystemEventAsync(
                 "WithdrawalApproveConcurrencyConflict",
-                $"تعارض همزمانی در تأیید درخواست برداشت {request.WithdrawalId}");
+                $"تعارض همزمانی در تأیید درخواست برداشت {request.WithdrawalId}",
+                ct);
             return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
         {
             return ServiceResult<Unit>.Failure(ex.Message);
-        }
-        catch (Exception)
-        {
-            return ServiceResult<Unit>.Failure("خطا در تأیید درخواست برداشت.");
         }
     }
 }

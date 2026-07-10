@@ -4,7 +4,8 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class PaymentCleanupJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock) : BackgroundService
+    IDistributedLock distributedLock,
+    IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(10);
@@ -50,7 +51,7 @@ public sealed class PaymentCleanupJob(
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
-        var cutoff = DateTime.UtcNow.AddMinutes(-20);
+        var cutoff = dateTimeProvider.UtcNow.AddMinutes(-20);
 
         var result = await mediator.Send(new ExpireStalePaymentsCommand(cutoff), ct);
 

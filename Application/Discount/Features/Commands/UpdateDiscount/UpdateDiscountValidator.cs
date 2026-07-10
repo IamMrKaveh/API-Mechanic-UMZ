@@ -1,10 +1,11 @@
 ﻿using Domain.Discount.Enums;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Discount.Features.Commands.UpdateDiscount;
 
 public class UpdateDiscountValidator : AbstractValidator<UpdateDiscountCommand>
 {
-    public UpdateDiscountValidator()
+    public UpdateDiscountValidator(IDateTimeProvider dateTimeProvider)
     {
         RuleFor(x => x.Id)
             .NotEmpty().WithMessage("شناسه کد تخفیف الزامی است.");
@@ -20,7 +21,7 @@ public class UpdateDiscountValidator : AbstractValidator<UpdateDiscountCommand>
             .WithMessage("درصد تخفیف نمی‌تواند بیش از ۱۰۰ باشد.");
 
         RuleFor(x => x.ExpiresAt)
-            .GreaterThan(x => x.StartsAt ?? DateTime.UtcNow)
+            .GreaterThan(x => x.StartsAt ?? dateTimeProvider.UtcNow)
             .When(x => x.ExpiresAt.HasValue)
             .WithMessage("تاریخ انقضا باید بعد از تاریخ شروع باشد.");
     }

@@ -1,16 +1,18 @@
 using Domain.Payment.Interfaces;
 using Domain.Payment.Services;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Payment.Features.Commands.ExpireStalePayments;
 
 public class ExpireStalePaymentsHandler(
     IPaymentTransactionRepository paymentRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ExpireStalePaymentsCommand, int>
 {
     public async Task<ServiceResult<int>> Handle(ExpireStalePaymentsCommand request, CancellationToken ct)
     {
-        var cutoff = DateTime.UtcNow;
+        var cutoff = dateTimeProvider.UtcNow;
         var expiredTransactions = await paymentRepository.GetPendingExpiredTransactionsAsync(cutoff, ct);
         var txList = expiredTransactions.ToList();
 

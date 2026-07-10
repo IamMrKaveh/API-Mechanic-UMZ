@@ -2,7 +2,8 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class OrphanedFileCleanupJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock) : BackgroundService
+    IDistributedLock distributedLock,
+    IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private const int BatchSize = 100;
     private static readonly TimeSpan LockExpiry = TimeSpan.FromHours(2);
@@ -54,7 +55,7 @@ public sealed class OrphanedFileCleanupJob(
         var context = scope.ServiceProvider.GetRequiredService<DBContext>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
-        var cutoffDate = DateTime.UtcNow.AddHours(-24);
+        var cutoffDate = dateTimeProvider.UtcNow.AddHours(-24);
 
         var deletedMedias = await context.Medias
             .IgnoreQueryFilters()

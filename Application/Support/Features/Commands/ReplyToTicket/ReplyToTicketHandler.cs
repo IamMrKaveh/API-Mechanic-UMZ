@@ -2,13 +2,15 @@ using Domain.Support.Enums;
 using Domain.Support.Interfaces;
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Support.Features.Commands.ReplyToTicket;
 
 public class ReplyToTicketHandler(
     ITicketRepository ticketRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ReplyToTicketCommand>
 {
     public async Task<ServiceResult> Handle(ReplyToTicketCommand request, CancellationToken ct)
@@ -30,7 +32,7 @@ public class ReplyToTicketHandler(
                 ? TicketMessageSenderType.Agent
                 : TicketMessageSenderType.Customer;
 
-            ticket.AddMessage(messageId, senderId, senderType, request.Content, DateTime.UtcNow);
+            ticket.AddMessage(messageId, senderId, senderType, request.Content, dateTimeProvider.UtcNow);
 
             ticketRepository.Update(ticket);
             await unitOfWork.SaveChangesAsync(ct);

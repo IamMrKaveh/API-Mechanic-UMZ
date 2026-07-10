@@ -1,8 +1,10 @@
+using SharedKernel.Abstractions.Interfaces;
+
 namespace Application.Analytics.Features.Queries.GetRevenueReport;
 
 public sealed class GetRevenueReportValidator : AbstractValidator<GetRevenueReportQuery>
 {
-    public GetRevenueReportValidator()
+    public GetRevenueReportValidator(IDateTimeProvider dateTimeProvider)
     {
         RuleFor(q => q.FromDate)
             .NotEmpty().WithMessage("تاریخ شروع الزامی است.")
@@ -10,6 +12,6 @@ public sealed class GetRevenueReportValidator : AbstractValidator<GetRevenueRepo
 
         RuleFor(q => q.ToDate)
             .NotEmpty().WithMessage("تاریخ پایان الزامی است.")
-            .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1)).WithMessage("تاریخ پایان نمی‌تواند در آینده باشد.");
+            .LessThanOrEqualTo(_ => dateTimeProvider.UtcNow.AddDays(1)).WithMessage("تاریخ پایان نمی‌تواند در آینده باشد.");
     }
 }
