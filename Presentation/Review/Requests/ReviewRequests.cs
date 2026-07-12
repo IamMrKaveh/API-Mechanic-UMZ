@@ -7,3 +7,9 @@ public record CreateReviewRequest(
     string? Title,
     string? Comment
 );
+
+public record UpdateOwnReviewRequest(
+    int Rating,
+    string? Title,
+    string? Comment
+);

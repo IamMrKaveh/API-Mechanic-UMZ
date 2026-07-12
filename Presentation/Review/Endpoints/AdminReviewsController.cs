@@ -3,6 +3,7 @@ using Application.Review.Features.Commands.DeleteReview;
 using Application.Review.Features.Commands.RejectReview;
 using Application.Review.Features.Commands.ReplyToReview;
 using Application.Review.Features.Commands.UpdateReviewStatus;
+using Application.Review.Features.Queries.GetReviewById;
 using Application.Review.Features.Queries.GetReviewsByStatus;
 using Application.Review.Features.Shared;
 using Presentation.Review.Mapping;
@@ -18,12 +19,22 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper) : BaseAp
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductReviewDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetReviewsByStatus(
-        [FromQuery] string status = "open",
+        [FromQuery] string status = "Pending",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
         return await Send(new GetReviewsByStatusQuery(status, page, pageSize), ct);
+    }
+
+    [HttpGet("{reviewId:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<ProductReviewDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById(
+        Guid reviewId,
+        CancellationToken ct)
+    {
+        return await Send(new GetReviewByIdQuery(reviewId), ct);
     }
 
     [HttpPost("{reviewId:guid}/reply")]

@@ -16,6 +16,9 @@ public class GetProductReviewsHandler(
             productId,
             request.Page,
             request.PageSize,
+            request.SortBy,
+            request.MinRating,
+            request.VerifiedOnly,
             ct);
 
         return ServiceResult<PaginatedResult<ProductReviewDto>>.Success(result);

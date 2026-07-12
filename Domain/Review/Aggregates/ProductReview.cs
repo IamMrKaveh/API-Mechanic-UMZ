@@ -75,6 +75,27 @@ public class ProductReview : AggregateRoot<ReviewId>, IAuditable
         return review;
     }
 
+    public void UpdateContent(Rating rating, string? title, string? comment)
+    {
+        Guard.Against.Null(rating, nameof(rating));
+
+        if (Status == ReviewStatus.Approved)
+            throw new DomainException("نظر تایید‌شده قابل ویرایش نیست.");
+
+        if (title != null && title.Trim().Length > 100)
+            throw new DomainException("عنوان نظر نمی‌تواند بیش از ۱۰۰ کاراکتر باشد.");
+
+        if (comment != null && comment.Trim().Length > 1000)
+            throw new DomainException("متن نظر نمی‌تواند بیش از ۱۰۰۰ کاراکتر باشد.");
+
+        Rating = rating;
+        Title = title?.Trim();
+        Comment = comment?.Trim();
+        Status = ReviewStatus.Pending;
+        RejectionReason = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void Approve()
     {
         if (Status == ReviewStatus.Approved) return;
