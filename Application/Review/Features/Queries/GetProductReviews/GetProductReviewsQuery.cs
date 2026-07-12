@@ -5,5 +5,8 @@ namespace Application.Review.Features.Queries.GetProductReviews;
 public record GetProductReviewsQuery(
     Guid ProductId,
     int Page = 1,
-    int PageSize = 10)
+    int PageSize = 10,
+    string SortBy = "Newest",
+    int? MinRating = null,
+    bool VerifiedOnly = false)
     : IPageQuery<ProductReviewDto>;

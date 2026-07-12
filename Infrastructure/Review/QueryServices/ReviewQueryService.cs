@@ -12,19 +12,34 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         ProductId productId,
         int page,
         int pageSize,
+        string sortBy,
+        int? minRating,
+        bool verifiedOnly,
         CancellationToken ct = default)
     {
         var query = context.ProductReviews
             .AsNoTracking()
             .Where(r =>
                 r.ProductId == productId &&
-                r.Status.Value == ReviewStatus.Approved.Value &&
+                r.Status == ReviewStatus.Approved &&
                 !r.IsDeleted);
+
+        if (minRating.HasValue && minRating.Value > 0)
+            query = query.Where(r => r.Rating >= minRating);
+
+        if (verifiedOnly)
+            query = query.Where(r => r.IsVerifiedPurchase);
+
+        query = sortBy switch
+        {
+            "HighestRated" => query.OrderByDescending(r => r.Rating).ThenByDescending(r => r.CreatedAt),
+            "LowestRated" => query.OrderBy(r => r.Rating).ThenByDescending(r => r.CreatedAt),
+            _ => query.OrderByDescending(r => r.CreatedAt)
+        };
 
         var total = await query.CountAsync(ct);
 
         var items = await query
-            .OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(r => new ProductReviewDto
@@ -36,9 +51,14 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
                 Title = r.Title,
                 Comment = r.Comment,
                 Status = r.Status.Value,
+                RejectionReason = r.RejectionReason,
                 AdminReply = r.AdminReply,
+                RepliedAt = r.RepliedAt,
                 IsVerifiedPurchase = r.IsVerifiedPurchase,
-                CreatedAt = r.CreatedAt
+                LikeCount = r.LikeCount,
+                DislikeCount = r.DislikeCount,
+                CreatedAt = r.CreatedAt,
+                OrderId = r.OrderId
             })
             .ToListAsync(ct);
 
@@ -76,8 +96,14 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
                 Title = r.Title,
                 Comment = r.Comment,
                 Status = r.Status.Value,
+                RejectionReason = r.RejectionReason,
+                AdminReply = r.AdminReply,
+                RepliedAt = r.RepliedAt,
                 IsVerifiedPurchase = r.IsVerifiedPurchase,
-                CreatedAt = r.CreatedAt
+                LikeCount = r.LikeCount,
+                DislikeCount = r.DislikeCount,
+                CreatedAt = r.CreatedAt,
+                OrderId = r.OrderId
             })
             .ToListAsync(ct);
 
@@ -96,7 +122,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             .AsNoTracking()
             .Where(r =>
                 r.ProductId == productId &&
-                r.Status.Value == ReviewStatus.Approved.Value &&
+                r.Status == ReviewStatus.Approved &&
                 !r.IsDeleted)
             .GroupBy(_ => 1)
             .Select(g => new
@@ -160,9 +186,10 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
     {
         var query = context.ProductReviews
             .AsNoTracking()
-            .Where(r =>
-                r.Status.Value == status &&
-                !r.IsDeleted);
+            .Where(r => !r.IsDeleted);
+
+        if (!string.Equals(status, "All", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(r => r.Status.Value == status);
 
         var total = await query.CountAsync(ct);
 
@@ -179,8 +206,14 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
                 Title = r.Title,
                 Comment = r.Comment,
                 Status = r.Status.Value,
+                RejectionReason = r.RejectionReason,
+                AdminReply = r.AdminReply,
+                RepliedAt = r.RepliedAt,
                 IsVerifiedPurchase = r.IsVerifiedPurchase,
-                CreatedAt = r.CreatedAt
+                LikeCount = r.LikeCount,
+                DislikeCount = r.DislikeCount,
+                CreatedAt = r.CreatedAt,
+                OrderId = r.OrderId
             })
             .ToListAsync(ct);
 
@@ -189,5 +222,33 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             total,
             page,
             pageSize);
+    }
+
+    public async Task<ProductReviewDto?> GetByIdAsync(
+        ReviewId id,
+        CancellationToken ct = default)
+    {
+        return await context.ProductReviews
+            .AsNoTracking()
+            .Where(r => r.Id == id && !r.IsDeleted)
+            .Select(r => new ProductReviewDto
+            {
+                Id = r.Id.Value,
+                ProductId = r.ProductId.Value,
+                UserId = r.UserId.Value,
+                Rating = r.Rating.Value,
+                Title = r.Title,
+                Comment = r.Comment,
+                Status = r.Status.Value,
+                RejectionReason = r.RejectionReason,
+                AdminReply = r.AdminReply,
+                RepliedAt = r.RepliedAt,
+                IsVerifiedPurchase = r.IsVerifiedPurchase,
+                LikeCount = r.LikeCount,
+                DislikeCount = r.DislikeCount,
+                CreatedAt = r.CreatedAt,
+                OrderId = r.OrderId
+            })
+            .FirstOrDefaultAsync(ct);
     }
 }
