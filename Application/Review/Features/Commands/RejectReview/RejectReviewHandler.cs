@@ -5,7 +5,8 @@ namespace Application.Review.Features.Commands.RejectReview;
 
 public class RejectReviewHandler(
     IReviewRepository reviewRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IAuditService auditService)
     : ICommandHandler<RejectReviewCommand>
 {
     public async Task<ServiceResult> Handle(RejectReviewCommand request, CancellationToken ct)
@@ -19,6 +20,11 @@ public class RejectReviewHandler(
         review.Reject(request.Reason);
         reviewRepository.Update(review);
         await unitOfWork.SaveChangesAsync(ct);
+
+        await auditService.LogSystemEventAsync(
+            "RejectReview",
+            $"نظر {request.ReviewId} با دلیل \"{request.Reason}\" رد شد.",
+            ct);
 
         return ServiceResult.Success();
     }
