@@ -4,7 +4,9 @@ namespace Domain.Audit.Interfaces;
 
 public interface IAuditArchiveStorage
 {
-    Task ArchiveAsync(IEnumerable<AuditLog> logs, CancellationToken ct = default);
-
-    Task<Stream?> ReadArchiveAsync(DateOnly date, CancellationToken ct = default);
+    Task ArchiveAsync(
+        IEnumerable<AuditLog> logs,
+        string label,
+        DateTime timestamp,
+        CancellationToken ct);
 }

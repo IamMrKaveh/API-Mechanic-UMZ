@@ -1,4 +1,4 @@
-using Infrastructure.BackgroundJobs.Abstractions;
+using Domain.Audit.Interfaces;
 
 namespace Infrastructure.BackgroundJobs;
 

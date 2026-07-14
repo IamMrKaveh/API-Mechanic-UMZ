@@ -1,5 +1,4 @@
 using Application.Audit.Features.Shared;
-using Domain.User.ValueObjects;
 
 namespace Application.Audit.Features.Queries.ExportAuditLogs;
 
@@ -11,8 +10,6 @@ public sealed class ExportAuditLogsHandler(
         ExportAuditLogsQuery request,
         CancellationToken ct)
     {
-        var userId = request.UserId.HasValue ? UserId.From(request.UserId.Value) : null;
-
         var exportRequest = new AuditExportRequest
         {
             UserId = request.UserId,
@@ -22,34 +19,19 @@ public sealed class ExportAuditLogsHandler(
             MaxRows = request.MaxRows
         };
 
-        var (contentType, extension) = request.Format.ToLowerInvariant() switch
-        {
-            "json" => ("application/json", "json"),
-            _ => ("text/csv", "csv")
-        };
+        var isJson = request.Format.Equals("json", StringComparison.OrdinalIgnoreCase);
 
-        byte[] content;
-        if (request.Format.Equals("json", StringComparison.OrdinalIgnoreCase))
-        {
-            var result = await auditQueryService.GetAuditLogsAsync(
-                userId,
-                request.EventType,
-                request.EntityType,
-                request.From,
-                request.To,
-                1,
-                request.MaxRows,
-                ct);
+        var (contentType, extension) = isJson
+            ? ("application/json", "json")
+            : ("text/csv", "csv");
 
-            content = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(result,
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-        }
-        else
-        {
-            content = await auditQueryService.ExportToCsvAsync(exportRequest, ct);
-        }
+        var content = isJson
+            ? await auditQueryService.ExportToJsonAsync(exportRequest, ct)
+            : await auditQueryService.ExportToCsvAsync(exportRequest, ct);
 
         var fileName = $"audit_logs_{DateTime.UtcNow:yyyyMMdd_HHmm}.{extension}";
-        return ServiceResult<ExportAuditLogsResult>.Success(new ExportAuditLogsResult(content, fileName, contentType));
+
+        return ServiceResult<ExportAuditLogsResult>.Success(
+            new ExportAuditLogsResult(content, fileName, contentType));
     }
 }

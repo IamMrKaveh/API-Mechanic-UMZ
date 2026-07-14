@@ -1,4 +1,5 @@
 ﻿using Application.Audit.Features.Shared;
+using Application.Common.Results;
 using Domain.User.ValueObjects;
 
 namespace Application.Audit.Contracts;
@@ -20,6 +21,10 @@ public interface IAuditQueryService
         CancellationToken ct = default);
 
     Task<byte[]> ExportToCsvAsync(
+        AuditExportRequest request,
+        CancellationToken ct = default);
+
+    Task<byte[]> ExportToJsonAsync(
         AuditExportRequest request,
         CancellationToken ct = default);
 
