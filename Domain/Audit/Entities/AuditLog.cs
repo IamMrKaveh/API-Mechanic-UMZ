@@ -70,6 +70,8 @@ public sealed class AuditLog : AggregateRoot<AuditLogId>
         return string.Equals(IntegrityHash, ComputeHash(), StringComparison.Ordinal);
     }
 
+    public string RecomputeIntegrityHash() => ComputeHash();
+
     private string ComputeHash()
     {
         var userIdString = UserId?.Value.ToString() ?? "null";
