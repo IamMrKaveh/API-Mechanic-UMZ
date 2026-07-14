@@ -6,8 +6,7 @@ namespace Application.Wallet.Features.Commands.FreezeWallet;
 
 public sealed class FreezeWalletHandler(
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<FreezeWalletCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -28,11 +27,6 @@ public sealed class FreezeWalletHandler(
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);
 
-            await auditService.LogSystemEventAsync(
-                "WalletFrozen",
-                $"کیف پول کاربر {request.UserId} توسط ادمین {request.AdminId} مسدود شد. دلیل: {request.Reason}",
-                ct);
-
             return ServiceResult<Unit>.Success(Unit.Value);
         }
         catch (WalletInactiveException)
@@ -41,10 +35,6 @@ public sealed class FreezeWalletHandler(
         }
         catch (ConcurrencyException)
         {
-            await auditService.LogSystemEventAsync(
-                "WalletFreezeConcurrencyConflict",
-                $"تعارض همزمانی در مسدودسازی کیف پول کاربر {request.UserId}",
-                ct);
             return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
