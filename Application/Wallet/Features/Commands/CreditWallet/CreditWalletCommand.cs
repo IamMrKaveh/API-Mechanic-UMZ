@@ -11,4 +11,13 @@ public record CreditWalletCommand(
     string IdempotencyKey,
     string? CorrelationId = null,
     string? Description = null)
-    : ICommand<Unit>;
+    : ICommand<Unit>, IAuditableCommand
+{
+    public string AuditEventType => "PaymentEvent";
+
+    public string AuditAction => "WalletCredited";
+
+    public string? AuditEntityType => "Wallet";
+
+    public string? AuditEntityId => UserId.ToString();
+}

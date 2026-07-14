@@ -18,7 +18,6 @@ public sealed class InitiateWalletTransferHandler(
     IWalletTransferRepository transferRepository,
     IOtpService otpService,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
     IOptions<WalletTransferOptions> options)
     : IRequestHandler<InitiateWalletTransferCommand, ServiceResult<InitiateWalletTransferResultDto>>
@@ -111,13 +110,6 @@ public sealed class InitiateWalletTransferHandler(
             }
 
             await unitOfWork.SaveChangesAsync(ct);
-
-            await auditService.LogSecurityEventAsync(
-                "WalletTransferInitiated",
-                $"انتقال جدید برای کاربر {fromUserId.Value} به {recipient.Id.Value} ثبت شد. TransferId={transfer.Id}",
-                IpAddress.Unknown,
-                fromUserId,
-                ct);
 
             return ServiceResult<InitiateWalletTransferResultDto>.Success(new InitiateWalletTransferResultDto
             {

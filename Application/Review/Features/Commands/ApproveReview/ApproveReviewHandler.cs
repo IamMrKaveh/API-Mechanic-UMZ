@@ -5,8 +5,7 @@ namespace Application.Review.Features.Commands.ApproveReview;
 
 public class ApproveReviewHandler(
     IReviewRepository reviewRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<ApproveReviewCommand>
 {
     public async Task<ServiceResult> Handle(ApproveReviewCommand request, CancellationToken ct)
@@ -20,11 +19,6 @@ public class ApproveReviewHandler(
         review.Approve();
         reviewRepository.Update(review);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogSystemEventAsync(
-            "ApproveReview",
-            $"نظر {request.ReviewId} تایید شد.",
-            ct);
 
         return ServiceResult.Success();
     }

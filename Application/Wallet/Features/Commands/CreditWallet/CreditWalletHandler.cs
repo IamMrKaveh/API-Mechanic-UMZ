@@ -1,13 +1,11 @@
 ﻿using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
-using Domain.Wallet.ValueObjects;
 
 namespace Application.Wallet.Features.Commands.CreditWallet;
 
 public class CreditWalletHandler(
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<CreditWalletCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -41,10 +39,6 @@ public class CreditWalletHandler(
         }
         catch (ConcurrencyException)
         {
-            await auditService.LogSystemEventAsync(
-                "WalletCreditConcurrencyConflict",
-                $"تعارض همزمانی در شارژ کیف پول. IdempotencyKey: {request.IdempotencyKey}",
-                ct);
             return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
