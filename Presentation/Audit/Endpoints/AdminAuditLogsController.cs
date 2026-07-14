@@ -1,6 +1,8 @@
 using Application.Audit.Features.Queries.ExportAuditLogs;
+using Application.Audit.Features.Queries.GetAuditLogById;
 using Application.Audit.Features.Queries.GetAuditLogs;
 using Application.Audit.Features.Queries.GetAuditStatistics;
+using Application.Audit.Features.Queries.VerifyAuditIntegrity;
 using Application.Audit.Features.Shared;
 using Presentation.Audit.Requests;
 
@@ -23,6 +25,18 @@ public sealed class AdminAuditLogsController(IMediator mediator, IMapper mapper)
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<AuditLogDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public Task<IActionResult> GetById(Guid id, CancellationToken ct)
+        => Send(new GetAuditLogByIdQuery(id), ct);
+
+    [HttpGet("{id:guid}/integrity")]
+    [ProducesResponseType(typeof(ApiResponse<AuditIntegrityResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public Task<IActionResult> VerifyIntegrity(Guid id, CancellationToken ct)
+        => Send(new VerifyAuditIntegrityQuery(id), ct);
 
     [HttpGet("statistics")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<AuditStatisticsDto>>), StatusCodes.Status200OK)]
