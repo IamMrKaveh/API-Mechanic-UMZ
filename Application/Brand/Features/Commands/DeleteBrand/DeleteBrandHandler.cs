@@ -5,8 +5,7 @@ namespace Application.Brand.Features.Commands.DeleteBrand;
 
 public class DeleteBrandHandler(
     IBrandRepository brandRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<DeleteBrandCommand>
 {
     public async Task<ServiceResult> Handle(DeleteBrandCommand request, CancellationToken ct)
@@ -20,14 +19,6 @@ public class DeleteBrandHandler(
         brand.Deactivate();
         brandRepository.Update(brand);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogAsync(
-            "Brand",
-            "DeleteBrand",
-            IpAddress.Unknown,
-            entityType: "Brand",
-            entityId: request.BrandId.ToString(),
-            ct: ct);
 
         return ServiceResult.Success();
     }

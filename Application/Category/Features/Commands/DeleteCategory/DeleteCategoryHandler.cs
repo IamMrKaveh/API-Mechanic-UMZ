@@ -5,8 +5,7 @@ namespace Application.Category.Features.Commands.DeleteCategory;
 
 public class DeleteCategoryHandler(
     ICategoryRepository categoryRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<DeleteCategoryCommand>
 {
     public async Task<ServiceResult> Handle(DeleteCategoryCommand request, CancellationToken ct)
@@ -24,14 +23,6 @@ public class DeleteCategoryHandler(
         category.Deactivate();
         categoryRepository.Update(category);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogAsync(
-            "Category",
-            "DeleteCategory",
-            IpAddress.Unknown,
-            entityType: "Category",
-            entityId: request.CategoryId.ToString(),
-            ct: ct);
 
         return ServiceResult.Success();
     }

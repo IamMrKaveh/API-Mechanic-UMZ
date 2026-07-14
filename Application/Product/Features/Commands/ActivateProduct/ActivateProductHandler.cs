@@ -1,14 +1,11 @@
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Application.Product.Features.Commands.ActivateProduct;
 
 public sealed class ActivateProductHandler(
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<ActivateProductCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -26,12 +23,6 @@ public sealed class ActivateProductHandler(
         product.Activate();
         productRepository.Update(product);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogProductEventAsync(
-            product.Id,
-            "ActivateProduct",
-            $"محصول '{product.Name}' فعال شد.",
-            UserId.From(currentUserService.UserId.Value));
 
         return ServiceResult.Success();
     }

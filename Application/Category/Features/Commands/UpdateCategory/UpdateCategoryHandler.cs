@@ -7,8 +7,7 @@ namespace Application.Category.Features.Commands.UpdateCategory;
 
 public class UpdateCategoryHandler(
     ICategoryRepository categoryRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<UpdateCategoryCommand, CategoryDto>
 {
     public async Task<ServiceResult<CategoryDto>> Handle(UpdateCategoryCommand request, CancellationToken ct)
@@ -40,14 +39,6 @@ public class UpdateCategoryHandler(
 
         categoryRepository.Update(category);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogAsync(
-            "Category",
-            "UpdateCategory",
-            IpAddress.Unknown,
-            entityType: "Category",
-            entityId: request.Id.ToString(),
-            ct: ct);
 
         var dto = category.Adapt<CategoryDto>();
         return ServiceResult<CategoryDto>.Success(dto);

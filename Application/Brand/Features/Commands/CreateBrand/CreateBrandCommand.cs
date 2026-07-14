@@ -10,4 +10,13 @@ public record CreateBrandCommand(
     Stream? LogoStream,
     string? LogoFileName,
     string? LogoContentType,
-    long? LogoFileSize) : ICommand<BrandDetailDto>;
+    long? LogoFileSize) : ICommand<BrandDetailDto>, IAuditableCommand
+{
+    public string AuditEventType => "Brand";
+
+    public string AuditAction => "CreateBrand";
+
+    public string? AuditEntityType => "Brand";
+
+    public string? AuditEntityId => null;
+}

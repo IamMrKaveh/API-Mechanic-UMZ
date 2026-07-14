@@ -6,4 +6,13 @@ public record CreateCategoryCommand(
     string CategoryName,
     string? Slug,
     string? Description,
-    int SortOrder = 0) : ICommand<CategoryDto>;
+    int SortOrder = 0) : ICommand<CategoryDto>, IAuditableCommand
+{
+    public string AuditEventType => "Category";
+
+    public string AuditAction => "CreateCategory";
+
+    public string? AuditEntityType => "Category";
+
+    public string? AuditEntityId => null;
+}

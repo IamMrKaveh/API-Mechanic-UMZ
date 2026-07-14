@@ -1,14 +1,11 @@
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Application.Product.Features.Commands.DeactivateProduct;
 
 public sealed class DeactivateProductHandler(
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<DeactivateProductCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -26,12 +23,6 @@ public sealed class DeactivateProductHandler(
         product.Deactivate();
         productRepository.Update(product);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogProductEventAsync(
-            product.Id,
-            "DeactivateProduct",
-            $"محصول '{product.Name}' غیرفعال شد.",
-            UserId.From(currentUserService.UserId.Value));
 
         return ServiceResult.Success();
     }

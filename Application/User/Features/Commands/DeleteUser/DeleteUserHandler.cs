@@ -6,16 +6,13 @@ namespace Application.User.Features.Commands.DeleteUser;
 public class DeleteUserHandler(
     IUserRepository userRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<DeleteUserCommand>
 {
     public async Task<ServiceResult> Handle(
         DeleteUserCommand request,
         CancellationToken ct)
     {
-        var adminId = UserId.From(currentUser.UserId!.Value);
-
         if (request.Id == currentUser.UserId!.Value)
             return ServiceResult.Forbidden("Admins cannot delete their own account this way.");
 
@@ -29,11 +26,6 @@ public class DeleteUserHandler(
 
         userRepository.Update(user);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogAdminEventAsync(
-            "DeleteUser",
-            adminId,
-            $"Soft-deleted user {request.Id}");
 
         return ServiceResult.Success();
     }

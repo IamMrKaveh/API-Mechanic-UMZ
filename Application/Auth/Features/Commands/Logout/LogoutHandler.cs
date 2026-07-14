@@ -7,8 +7,7 @@ namespace Application.Auth.Features.Commands.Logout;
 public class LogoutHandler(
     ISessionRepository sessionRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUserService currentUser,
-    IAuditService auditService)
+    ICurrentUserService currentUser)
     : ICommandHandler<LogoutCommand>
 {
     public async Task<ServiceResult> Handle(LogoutCommand request, CancellationToken ct)
@@ -32,13 +31,6 @@ public class LogoutHandler(
         session.Revoke(SessionRevocationReason.UserRequested);
         sessionRepository.Update(session);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogSecurityEventAsync(
-            "Logout",
-            $"کاربر {currentUser.UserId} از سیستم خارج شد.",
-            IpAddress.Unknown,
-            userId,
-            ct);
 
         return ServiceResult.Success();
     }

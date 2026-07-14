@@ -7,8 +7,7 @@ namespace Application.Auth.Features.Commands.RevokeSession;
 
 public class RevokeSessionHandler(
     ISessionRepository sessionRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<RevokeSessionCommand>
 {
     public async Task<ServiceResult> Handle(RevokeSessionCommand request, CancellationToken ct)
@@ -27,12 +26,6 @@ public class RevokeSessionHandler(
         session.Revoke(SessionRevocationReason.UserRequested);
         sessionRepository.Update(session);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogSecurityEventAsync(
-            "RevokeSession",
-            $"جلسه {request.SessionId} توسط کاربر {request.UserId} لغو شد.",
-            IpAddress.Unknown,
-            userId);
 
         return ServiceResult.Success();
     }

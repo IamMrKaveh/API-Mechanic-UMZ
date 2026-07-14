@@ -11,8 +11,7 @@ public class SendOtpHandler(
     IOtpService otpService,
     IOtpRepository otpRepository,
     IUserRepository userRepository,
-    IInitialAdminOptions initialAdminOptions,
-    IAuditService auditService)
+    IInitialAdminOptions initialAdminOptions)
     : ICommandHandler<SendOtpCommand>
 {
     public async Task<ServiceResult> Handle(SendOtpCommand request, CancellationToken ct)
@@ -41,16 +40,6 @@ public class SendOtpHandler(
         await otpRepository.AddAsync(otp, ct);
 
         await unitOfWork.SaveChangesAsync(ct);
-
-        //var sendResult = await otpService.SendOtpAsync(phoneNumber, otpCode, request.Purpose, ct);
-        //if (sendResult.IsFailed)
-        //    return ServiceResult.Failure(sendResult.Error);
-
-        await auditService.LogSecurityEventAsync(
-            "SendOtp",
-            $"OTP برای شماره {request.PhoneNumber} ارسال شد.",
-            IpAddress.Unknown,
-            ct: ct);
 
         return ServiceResult.Success();
     }

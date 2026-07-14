@@ -5,9 +5,7 @@ namespace Application.User.Features.Commands.UpdateUser;
 
 public class UpdateUserHandler(
     IUserRepository userRepository,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<UpdateUserCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -15,7 +13,6 @@ public class UpdateUserHandler(
         CancellationToken ct)
     {
         var userId = UserId.From(request.Id);
-        var adminId = UserId.From(currentUser.UserId!.Value);
 
         var user = await userRepository.GetByIdAsync(userId, ct);
         if (user is null)
@@ -40,10 +37,6 @@ public class UpdateUserHandler(
         try
         {
             await unitOfWork.SaveChangesAsync(ct);
-            await auditService.LogAdminEventAsync(
-                "UpdateUser",
-                adminId,
-                $"Updated profile for user {request.Id}");
             return ServiceResult.Success();
         }
         catch (ConcurrencyException)

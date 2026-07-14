@@ -8,8 +8,7 @@ namespace Application.Brand.Features.Commands.MoveBrand;
 public class MoveBrandHandler(
     IBrandRepository brandRepository,
     ICategoryRepository categoryRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<MoveBrandCommand>
 {
     public async Task<ServiceResult> Handle(MoveBrandCommand request, CancellationToken ct)
@@ -29,15 +28,6 @@ public class MoveBrandHandler(
         brand.ChangeCategory(targetCategoryId);
         brandRepository.Update(brand);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogAsync(
-            "Brand",
-            "MoveBrand",
-            IpAddress.Unknown,
-            entityType: "Brand",
-            entityId: request.BrandId.ToString(),
-            details: $"انتقال به دسته‌بندی {request.TargetCategoryId}",
-            ct: ct);
 
         return ServiceResult.Success();
     }

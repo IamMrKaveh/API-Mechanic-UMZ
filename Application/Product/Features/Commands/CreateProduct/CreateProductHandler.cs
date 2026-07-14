@@ -5,7 +5,6 @@ using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Application.Product.Features.Commands.CreateProduct;
 
@@ -14,9 +13,7 @@ public sealed class CreateProductHandler(
     ICategoryRepository categoryRepository,
     IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    IMapper mapper,
-    ICurrentUserService currentUserService)
+    IMapper mapper)
     : ICommandHandler<CreateProductCommand, ProductDetailDto>
 {
     public async Task<ServiceResult<ProductDetailDto>> Handle(
@@ -47,12 +44,6 @@ public sealed class CreateProductHandler(
 
         await productRepository.AddAsync(product, ct);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogProductEventAsync(
-            product.Id,
-            "CreateProduct",
-            $"محصول '{product.Name}' ایجاد شد.",
-            UserId.From(currentUserService.UserId.Value));
 
         var dto = mapper.Map<ProductDetailDto>(product) with
         {
