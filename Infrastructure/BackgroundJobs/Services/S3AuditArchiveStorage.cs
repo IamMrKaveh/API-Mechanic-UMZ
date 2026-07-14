@@ -17,8 +17,13 @@ public sealed class S3AuditArchiveStorage(
         DateTime timestamp,
         CancellationToken ct)
     {
-        var key = $"audit-archives/{timestamp.Year:D4}/{timestamp:yyyy-MM-dd}/{label}_{timestamp:yyyy-MM-dd_HH-mm}_{Guid.NewGuid():N}.json";
-        var json = JsonSerializer.Serialize(logs);
+        var materialized = logs as IReadOnlyCollection<AuditLog> ?? logs.ToList();
+        if (materialized.Count == 0) return;
+
+        var safeLabel = string.IsNullOrWhiteSpace(label) ? "batch" : label;
+
+        var key = $"audit-archives/{timestamp.Year:D4}/{timestamp:yyyy-MM-dd}/{safeLabel}_{timestamp:yyyy-MM-dd_HH-mm}_{Guid.NewGuid():N}.json";
+        var json = JsonSerializer.Serialize(materialized);
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
 
         var request = new PutObjectRequest

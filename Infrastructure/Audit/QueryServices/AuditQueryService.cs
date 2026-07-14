@@ -1,11 +1,23 @@
-﻿using Application.Audit.Features.Shared;
+﻿using System.Text;
+using System.Text.Json;
+using Application.Audit.Contracts;
+using Application.Audit.Features.Shared;
+using Application.Common.Results;
+using Domain.Audit.Entities;
 using Domain.Audit.ValueObjects;
 using Domain.User.ValueObjects;
+using Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Audit.QueryServices;
 
 public sealed class AuditQueryService(DBContext context) : IAuditQueryService
 {
+    private static readonly JsonSerializerOptions JsonExportOptions = new()
+    {
+        WriteIndented = true
+    };
+
     public async Task<PaginatedResult<AuditLogDto>> GetAuditLogsAsync(
         UserId? userId,
         string? eventType,
@@ -49,6 +61,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
                 IpAddress = l.IpAddress,
                 UserAgent = l.UserAgent,
                 EntityType = l.EntityType,
+                EntityId = l.EntityId,
                 CreatedAt = l.CreatedAt,
                 Timestamp = l.CreatedAt,
                 IsArchived = l.IsArchived
@@ -99,38 +112,10 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
     }
 
     public async Task<(IReadOnlyList<AuditLogDto> Logs, int Total)> SearchAsync(
-            AuditSearchRequest request,
-            CancellationToken ct = default)
+        AuditSearchRequest request,
+        CancellationToken ct = default)
     {
-        var query = context.AuditLogs.AsNoTracking().AsQueryable();
-
-        if (request.UserId.HasValue)
-            query = query.Where(l => l.UserId != null && l.UserId.Value == request.UserId.Value);
-
-        if (!string.IsNullOrEmpty(request.EventType))
-            query = query.Where(l => l.EventType == request.EventType);
-
-        if (!string.IsNullOrEmpty(request.Action))
-            query = query.Where(l => l.Action.Contains(request.Action));
-
-        if (!string.IsNullOrEmpty(request.EntityName))
-            query = query.Where(l => l.EntityType == request.EntityName);
-
-        if (!string.IsNullOrEmpty(request.Keyword))
-            query = query.Where(l => (l.Details != null && l.Details.Contains(request.Keyword))
-                                  || l.Action.Contains(request.Keyword));
-
-        if (!string.IsNullOrEmpty(request.IpAddress))
-            query = query.Where(l => l.IpAddress == request.IpAddress);
-
-        var fromDate = request.From ?? request.FromDate;
-        var toDate = request.To ?? request.ToDate;
-
-        if (fromDate.HasValue)
-            query = query.Where(l => l.CreatedAt >= fromDate.Value);
-
-        if (toDate.HasValue)
-            query = query.Where(l => l.CreatedAt <= toDate.Value);
+        var query = BuildSearchQuery(request);
 
         var total = await query.CountAsync(ct);
 
@@ -181,25 +166,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         AuditExportRequest request,
         CancellationToken ct = default)
     {
-        var query = context.AuditLogs.AsNoTracking().AsQueryable();
-
-        if (request.UserId.HasValue)
-            query = query.Where(l => l.UserId != null && l.UserId.Value == request.UserId.Value);
-
-        if (!string.IsNullOrEmpty(request.EventType))
-            query = query.Where(l => l.EventType == request.EventType);
-
-        if (!string.IsNullOrEmpty(request.Action))
-            query = query.Where(l => l.Action.Contains(request.Action));
-
-        var fromDate = request.From ?? request.FromDate;
-        var toDate = request.To ?? request.ToDate;
-
-        if (fromDate.HasValue)
-            query = query.Where(l => l.CreatedAt >= fromDate.Value);
-
-        if (toDate.HasValue)
-            query = query.Where(l => l.CreatedAt <= toDate.Value);
+        var query = BuildExportQuery(request);
 
         var maxRows = request.MaxRows > 0 ? request.MaxRows : 10000;
 
@@ -228,6 +195,37 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         }
 
         return Encoding.UTF8.GetBytes(sb.ToString());
+    }
+
+    public async Task<byte[]> ExportToJsonAsync(
+        AuditExportRequest request,
+        CancellationToken ct = default)
+    {
+        var query = BuildExportQuery(request);
+
+        var maxRows = request.MaxRows > 0 ? request.MaxRows : 5000;
+
+        var logs = await query
+            .OrderByDescending(l => l.CreatedAt)
+            .Take(maxRows)
+            .Select(l => new AuditLogDto
+            {
+                Id = l.Id.Value,
+                UserId = l.UserId == null ? null : l.UserId.Value,
+                EventType = l.EventType,
+                Action = l.Action,
+                Details = l.Details,
+                IpAddress = l.IpAddress,
+                UserAgent = l.UserAgent,
+                EntityType = l.EntityType,
+                EntityId = l.EntityId,
+                CreatedAt = l.CreatedAt,
+                Timestamp = l.CreatedAt,
+                IsArchived = l.IsArchived
+            })
+            .ToListAsync(ct);
+
+        return JsonSerializer.SerializeToUtf8Bytes(logs, JsonExportOptions);
     }
 
     public async Task<AuditStatisticsDto> GetStatisticsAsync(
@@ -261,6 +259,66 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
             ByEventType = byEventType,
             ByHour = byHour
         };
+    }
+
+    private IQueryable<AuditLog> BuildSearchQuery(AuditSearchRequest request)
+    {
+        var query = context.AuditLogs.AsNoTracking().AsQueryable();
+
+        if (request.UserId.HasValue)
+            query = query.Where(l => l.UserId != null && l.UserId.Value == request.UserId.Value);
+
+        if (!string.IsNullOrEmpty(request.EventType))
+            query = query.Where(l => l.EventType == request.EventType);
+
+        if (!string.IsNullOrEmpty(request.Action))
+            query = query.Where(l => l.Action.Contains(request.Action));
+
+        if (!string.IsNullOrEmpty(request.EntityName))
+            query = query.Where(l => l.EntityType == request.EntityName);
+
+        if (!string.IsNullOrEmpty(request.Keyword))
+            query = query.Where(l => (l.Details != null && l.Details.Contains(request.Keyword))
+                                  || l.Action.Contains(request.Keyword));
+
+        if (!string.IsNullOrEmpty(request.IpAddress))
+            query = query.Where(l => l.IpAddress == request.IpAddress);
+
+        var fromDate = request.From ?? request.FromDate;
+        var toDate = request.To ?? request.ToDate;
+
+        if (fromDate.HasValue)
+            query = query.Where(l => l.CreatedAt >= fromDate.Value);
+
+        if (toDate.HasValue)
+            query = query.Where(l => l.CreatedAt <= toDate.Value);
+
+        return query;
+    }
+
+    private IQueryable<AuditLog> BuildExportQuery(AuditExportRequest request)
+    {
+        var query = context.AuditLogs.AsNoTracking().AsQueryable();
+
+        if (request.UserId.HasValue)
+            query = query.Where(l => l.UserId != null && l.UserId.Value == request.UserId.Value);
+
+        if (!string.IsNullOrEmpty(request.EventType))
+            query = query.Where(l => l.EventType == request.EventType);
+
+        if (!string.IsNullOrEmpty(request.Action))
+            query = query.Where(l => l.Action.Contains(request.Action));
+
+        var fromDate = request.From ?? request.FromDate;
+        var toDate = request.To ?? request.ToDate;
+
+        if (fromDate.HasValue)
+            query = query.Where(l => l.CreatedAt >= fromDate.Value);
+
+        if (toDate.HasValue)
+            query = query.Where(l => l.CreatedAt <= toDate.Value);
+
+        return query;
     }
 
     private static string Escape(string? value)

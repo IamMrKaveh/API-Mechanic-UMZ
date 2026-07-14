@@ -46,6 +46,7 @@ using Infrastructure.Attribute.Repositories;
 using Infrastructure.Audit.QueryServices;
 using Infrastructure.Audit.Repositories;
 using Infrastructure.Audit.Services;
+using Infrastructure.Audit.Storage;
 using Infrastructure.Auth.Options;
 using Infrastructure.Auth.Repositories;
 using Infrastructure.Auth.Services;
@@ -301,6 +302,7 @@ public static class InfrastructureServiceExtensions
 
     private static void AddDomainServices(this IServiceCollection services)
     {
+        services.AddScoped<IAuditArchiveStorage, FileSystemAuditArchiveStorage>();
         services.AddScoped<IAuditMaskingService, AuditMaskingService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IBrandUniquenessChecker, BrandUniquenessCheckerAdapter>();
