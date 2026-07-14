@@ -1,15 +1,12 @@
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Application.Product.Features.Commands.RestoreProduct;
 
 public class RestoreProductHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICacheService cacheService,
-    ICurrentUserService currentUserService)
+    ICacheService cacheService)
     : ICommandHandler<RestoreProductCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -17,7 +14,6 @@ public class RestoreProductHandler(
         CancellationToken ct)
     {
         var productId = ProductId.From(request.ProductId);
-        var userId = UserId.From(currentUserService.UserId.Value);
 
         var product = await productRepository.GetByIdAsync(productId, ct);
         if (product is null)
@@ -27,11 +23,6 @@ public class RestoreProductHandler(
 
         productRepository.Update(product);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogProductEventAsync(
-            productId,
-            "RestoreProduct", $"Product '{product.Name}' restored.",
-            userId);
 
         await cacheService.RemoveAsync($"product:{request.ProductId}", ct);
         await cacheService.RemoveAsync($"brand:{product.BrandId}", ct);

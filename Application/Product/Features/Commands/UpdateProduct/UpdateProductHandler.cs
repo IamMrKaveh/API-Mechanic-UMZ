@@ -6,7 +6,6 @@ using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Application.Product.Features.Commands.UpdateProduct;
 
@@ -15,9 +14,7 @@ public sealed class UpdateProductHandler(
     ICategoryRepository categoryRepository,
     IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    IMapper mapper,
-    ICurrentUserService currentUserService)
+    IMapper mapper)
     : ICommandHandler<UpdateProductCommand, ProductDetailDto>
 {
     public async Task<ServiceResult<ProductDetailDto>> Handle(
@@ -63,12 +60,6 @@ public sealed class UpdateProductHandler(
 
         productRepository.Update(product);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogProductEventAsync(
-            product.Id,
-            "UpdateProduct",
-            $"محصول '{product.Name}' ویرایش شد. Slug='{product.Slug}', IsActive={product.IsActive}, IsFeatured={product.IsFeatured}.",
-            UserId.From(currentUserService.UserId.Value));
 
         var dto = mapper.Map<ProductDetailDto>(product) with
         {

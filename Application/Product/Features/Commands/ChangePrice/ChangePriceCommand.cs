@@ -6,4 +6,13 @@ public record ChangePriceCommand(
     Guid UserId,
     decimal SellingPrice,
     decimal OriginalPrice)
-    : ICommand;
+    : ICommand, IAuditableCommand
+{
+    public string AuditEventType => "Product";
+
+    public string AuditAction => "ChangePrice";
+
+    public string? AuditEntityType => "Variant";
+
+    public string? AuditEntityId => VariantId.ToString();
+}

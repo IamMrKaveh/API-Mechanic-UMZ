@@ -1,93 +1,44 @@
 ﻿using Amazon.Runtime;
-using Application.Analytics.Contracts;
 using Application.Attribute.Adapters;
 using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
 using Application.Brand.Adapters;
-using Application.Brand.Contracts;
-using Application.Cart.Contracts;
-using Application.Category.Contracts;
 using Application.Common.Options;
 using Application.Discount.Contracts;
 using Application.Location.Contracts;
 using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Payment.Contracts;
-using Application.Product.Contracts;
-using Application.Review.Contracts;
-using Application.Shipping.Contracts;
-using Application.Support.Contracts;
-using Application.User.Contracts;
-using Application.Variant.Contracts;
-using Application.Wishlist.Contracts;
 using Domain.Attribute.Interfaces;
-using Domain.Audit.Interfaces;
 using Domain.Brand.Interfaces;
-using Domain.Cart.Interfaces;
-using Domain.Category.Interfaces;
-using Domain.Discount.Interfaces;
-using Domain.Inventory.Interfaces;
-using Domain.Media.Interfaces;
-using Domain.Notification.Interfaces;
-using Domain.Order.Interfaces;
 using Domain.Payment.Interfaces;
-using Domain.Product.Interfaces;
 using Domain.Review.Interfaces;
-using Domain.Security.Interfaces;
-using Domain.Shipping.Interfaces;
-using Domain.Support.Interfaces;
-using Domain.User.Interfaces;
-using Domain.Variant.Interfaces;
 using Domain.Wallet.FraudDetection;
 using Domain.Wallet.FraudDetection.Rules;
-using Domain.Wallet.Interfaces;
-using Domain.Wishlist.Interfaces;
-using Infrastructure.Analytics.QueryServices;
-using Infrastructure.Attribute.Repositories;
-using Infrastructure.Audit.QueryServices;
-using Infrastructure.Audit.Repositories;
 using Infrastructure.Audit.Services;
 using Infrastructure.Audit.Storage;
 using Infrastructure.Auth.Options;
-using Infrastructure.Auth.Repositories;
 using Infrastructure.Auth.Services;
 using Infrastructure.BackgroundJobs;
 using Infrastructure.BackgroundJobs.Options;
 using Infrastructure.BackgroundJobs.Services;
-using Infrastructure.Brand.QueryServices;
-using Infrastructure.Brand.Repositories;
 using Infrastructure.Cache.Redis.Lock;
 using Infrastructure.Cache.Redis.Services;
 using Infrastructure.Cache.Services;
-using Infrastructure.Cart.QueryServices;
-using Infrastructure.Cart.Repositories;
-using Infrastructure.Category.QueryServices;
-using Infrastructure.Category.Repositories;
 using Infrastructure.Common.DependencyInjection;
 using Infrastructure.Common.Options;
 using Infrastructure.Common.Services;
 using Infrastructure.Communication.Options;
 using Infrastructure.Communication.Services;
 using Infrastructure.DataProtection.Repositories;
-using Infrastructure.Discount.QueryServices;
-using Infrastructure.Discount.Repositories;
 using Infrastructure.Discount.Services;
-using Infrastructure.Inventory.QueryServices;
-using Infrastructure.Inventory.Repositories;
 using Infrastructure.Inventory.Services;
 using Infrastructure.Location.Services;
-using Infrastructure.Media.QueryServices;
-using Infrastructure.Media.Repositories;
 using Infrastructure.Media.Services;
-using Infrastructure.Notification.QueryServices;
-using Infrastructure.Notification.Repositories;
 using Infrastructure.Notification.Services;
-using Infrastructure.Order.QueryServices;
-using Infrastructure.Order.Repositories;
 using Infrastructure.Order.Seeders;
 using Infrastructure.Order.Services;
 using Infrastructure.Order.Services.Strategies;
 using Infrastructure.Payment.Factory;
-using Infrastructure.Payment.QueryServices;
 using Infrastructure.Payment.Repositories;
 using Infrastructure.Payment.Seeders;
 using Infrastructure.Payment.Services;
@@ -98,28 +49,15 @@ using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
 using Infrastructure.Product.QueryServices;
 using Infrastructure.Product.Repositories;
-using Infrastructure.Review.QueryServices;
-using Infrastructure.Review.Repositories;
 using Infrastructure.Review.Services;
 using Infrastructure.Search;
 using Infrastructure.Search.Contracts;
 using Infrastructure.Search.Options;
 using Infrastructure.Search.Services;
 using Infrastructure.Security.Services;
-using Infrastructure.Shipping.QueryServices;
-using Infrastructure.Shipping.Repositories;
 using Infrastructure.Storage.Options;
 using Infrastructure.Storage.Services;
-using Infrastructure.Support.QueryServices;
-using Infrastructure.Support.Repositories;
-using Infrastructure.User.QueryServices;
-using Infrastructure.User.Repositories;
-using Infrastructure.Variant.QueryServices;
-using Infrastructure.Variant.Repositories;
-using Infrastructure.Wallet.QueryServices;
-using Infrastructure.Wallet.Repositories;
-using Infrastructure.Wishlist.QueryServices;
-using Infrastructure.Wishlist.Repositories;
+using Scrutor;
 using DateTimeProvider = Infrastructure.Common.Services.DateTimeProvider;
 using IAuditArchiveStorage = Domain.Audit.Interfaces.IAuditArchiveStorage;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
@@ -240,64 +178,29 @@ public static class InfrastructureServiceExtensions
 
     private static void AddRepositories(this IServiceCollection services)
     {
+        services.Scan(scan => scan
+            .FromAssemblyOf<ProductRepository>()
+            .AddClasses(classes => classes
+                .Where(type =>
+                    type.Name.EndsWith("Repository", StringComparison.Ordinal) &&
+                    type != typeof(PaymentRepository)))
+                .UsingRegistrationStrategy(RegistrationStrategy.Skip)
+                .AsMatchingInterface()
+                .WithScopedLifetime());
+
         services.AddScoped<IAttributeTypeUniquenessChecker, AttributeTypeUniquenessCheckerAdapter>();
-        services.AddScoped<IAttributeRepository, AttributeRepository>();
-        services.AddScoped<IAuditRepository, AuditRepository>();
-        services.AddScoped<IBrandRepository, BrandRepository>();
-        services.AddScoped<ICartRepository, CartRepository>();
-        services.AddScoped<ICategoryRepository, CategoryRepository>();
-        services.AddScoped<IDiscountRepository, DiscountRepository>();
-        services.AddScoped<IInventoryRepository, InventoryRepository>();
-        services.AddScoped<IMediaRepository, MediaRepository>();
-        services.AddScoped<INotificationRepository, NotificationRepository>();
-        services.AddScoped<IOrderRepository, OrderRepository>();
-        services.AddScoped<IOrderStatusRepository, OrderStatusRepository>();
-        services.AddScoped<IOrderProcessStateRepository, OrderProcessStateRepository>();
-        services.AddScoped<IOtpRepository, OtpRepository>();
         services.AddScoped<IPaymentTransactionRepository, PaymentRepository>();
-        services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
-        services.AddScoped<IProductRepository, ProductRepository>();
-        services.AddScoped<IReviewRepository, ReviewRepository>();
-        services.AddScoped<ISessionRepository, SessionRepository>();
-        services.AddScoped<IShippingRepository, ShippingRepository>();
-        services.AddScoped<ITicketRepository, TicketRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IVariantRepository, VariantRepository>();
-        services.AddScoped<IWalletRepository, WalletRepository>();
-        services.AddScoped<IWalletFraudAlertRepository, WalletFraudAlertRepository>();
-        services.AddScoped<IWalletTopUpRepository, WalletTopUpRepository>();
-        services.AddScoped<IWalletWithdrawalRepository, WalletWithdrawalRepository>();
-        services.AddScoped<IWalletTransferRepository, WalletTransferRepository>();
-        services.AddScoped<IWarehouseRepository, WarehouseRepository>();
-        services.AddScoped<IWishlistRepository, WishlistRepository>();
     }
 
     private static void AddQueryServices(this IServiceCollection services)
     {
-        services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
-        services.AddScoped<IAuditQueryService, AuditQueryService>();
-        services.AddScoped<IBrandQueryService, BrandQueryService>();
-        services.AddScoped<ICartQueryService, CartQueryService>();
-        services.AddScoped<ICategoryQueryService, CategoryQueryService>();
-        services.AddScoped<IDiscountQueryService, DiscountQueryService>();
-        services.AddScoped<IInventoryQueryService, InventoryQueryService>();
-        services.AddScoped<IMediaQueryService, MediaQueryService>();
-        services.AddScoped<INotificationQueryService, NotificationQueryService>();
-        services.AddScoped<IOrderQueryService, OrderQueryService>();
-        services.AddScoped<IOrderStatusQueryService, OrderStatusQueryService>();
-        services.AddScoped<IPaymentQueryService, PaymentQueryService>();
-        services.AddScoped<IPaymentMethodQueryService, PaymentMethodQueryService>();
-        services.AddScoped<IProductQueryService, ProductQueryService>();
-        services.AddScoped<IReviewQueryService, ReviewQueryService>();
-        services.AddScoped<IShippingQueryService, ShippingQueryService>();
-        services.AddScoped<IStockLedgerQueryService, StockLedgerQueryService>();
-        services.AddScoped<ITicketQueryService, TicketQueryService>();
-        services.AddScoped<IUserQueryService, UserQueryService>();
-        services.AddScoped<IVariantQueryService, VariantQueryService>();
-        services.AddScoped<IWalletQueryService, WalletQueryService>();
-        services.AddScoped<IWalletFraudAlertQueryService, WalletFraudAlertQueryService>();
-        services.AddScoped<IWalletWithdrawalQueryService, WalletWithdrawalQueryService>();
-        services.AddScoped<IWishlistQueryService, WishlistQueryService>();
+        services.Scan(scan => scan
+            .FromAssemblyOf<ProductQueryService>()
+            .AddClasses(classes => classes
+                .Where(type => type.Name.EndsWith("QueryService", StringComparison.Ordinal)))
+                .UsingRegistrationStrategy(RegistrationStrategy.Skip)
+                .AsMatchingInterface()
+                .WithScopedLifetime());
     }
 
     private static void AddDomainServices(this IServiceCollection services)

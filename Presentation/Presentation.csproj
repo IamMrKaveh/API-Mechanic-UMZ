@@ -30,11 +30,8 @@
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
 		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 
-		<PackageReference Include="Carter" Version="8.0.0" />
 		<PackageReference Include="Scalar.AspNetCore" Version="1.2.3" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
-		<PackageReference Include="Scrutor" Version="5.0.1" />
-		<PackageReference Include="Hellang.Middleware.ProblemDetails" Version="6.5.1" />
 
 		<PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
 

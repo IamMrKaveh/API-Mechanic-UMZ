@@ -15,7 +15,6 @@ public class VerifyOtpHandler(
     ISessionService sessionService,
     IJwtTokenGenerator jwtTokenGenerator,
     ICurrentUserService currentUser,
-    IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
     IOptions<JwtOptions> jwtOptions)
     : ICommandHandler<VerifyOtpCommand, AuthResult>
@@ -64,13 +63,6 @@ public class VerifyOtpHandler(
 
         if (sessionResult.IsSuccess is false)
             return ServiceResult<AuthResult>.Failure(sessionResult.Error);
-
-        await auditService.LogSecurityEventAsync(
-            "VerifyOtp",
-            $"OTP برای شماره {request.PhoneNumber} تأیید شد.",
-            ipAddress,
-            user.Id,
-            ct);
 
         var refreshSession = sessionResult.Value!;
         var newSessionId = SessionId.From(refreshSession.SessionId);

@@ -12,8 +12,7 @@ public sealed class CreateBrandHandler(
     IBrandUniquenessChecker brandUniquenessChecker,
     IUnitOfWork unitOfWork,
     IMapper mapper,
-    IStorageService storageService,
-    IAuditService auditService)
+    IStorageService storageService)
     : ICommandHandler<CreateBrandCommand, BrandDetailDto>
 {
     private const long MaxFileSizeBytes = 2 * 1024 * 1024;
@@ -68,14 +67,6 @@ public sealed class CreateBrandHandler(
 
         await brandRepository.AddAsync(brand, ct);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogAsync(
-            "Brand",
-            "CreateBrand",
-            IpAddress.Unknown,
-            entityType: "Brand",
-            entityId: brand.Id.Value.ToString(),
-            ct: ct);
 
         var dto = mapper.Map<BrandDetailDto>(brand);
         return ServiceResult<BrandDetailDto>.Success(dto);

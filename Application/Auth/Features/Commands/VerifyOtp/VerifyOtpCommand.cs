@@ -7,4 +7,13 @@ public record VerifyOtpCommand(
     string PhoneNumber,
     string Code,
     string? DeviceInfo = null,
-    OtpPurpose Purpose = OtpPurpose.Login) : ICommand<AuthResult>;
+    OtpPurpose Purpose = OtpPurpose.Login) : ICommand<AuthResult>, IAuditableCommand
+{
+    public string AuditEventType => "SecurityEvent";
+
+    public string AuditAction => "VerifyOtp";
+
+    public string? AuditEntityType => "Otp";
+
+    public string? AuditEntityId => PhoneNumber;
+}

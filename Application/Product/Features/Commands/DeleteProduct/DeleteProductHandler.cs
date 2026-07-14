@@ -1,14 +1,11 @@
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Application.Product.Features.Commands.DeleteProduct;
 
 public sealed class DeleteProductHandler(
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<DeleteProductCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -23,12 +20,6 @@ public sealed class DeleteProductHandler(
         product.Deactivate();
         productRepository.Update(product);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogProductEventAsync(
-            product.Id,
-            "DeleteProduct",
-            $"محصول '{product.Name}' (Id={product.Id.Value}) حذف نرم شد.",
-            UserId.From(currentUserService.UserId.Value));
 
         return ServiceResult.Success();
     }

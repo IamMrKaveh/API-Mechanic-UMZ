@@ -1,20 +1,16 @@
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
-using Domain.User.ValueObjects;
 
 namespace Application.Product.Features.Commands.UpdateProductDetails;
 
 public sealed class UpdateProductDetailsHandler(
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService,
-    ICurrentUserService currentUserService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<UpdateProductDetailsCommand>
 {
     public async Task<ServiceResult> Handle(UpdateProductDetailsCommand request, CancellationToken ct)
     {
         var productId = ProductId.From(request.ProductId);
-        var userId = UserId.From(currentUserService.UserId.Value);
 
         var product = await productRepository.GetByIdAsync(productId, ct);
         if (product is null)
@@ -42,11 +38,6 @@ public sealed class UpdateProductDetailsHandler(
         try
         {
             await unitOfWork.SaveChangesAsync(ct);
-            await auditService.LogProductEventAsync(
-                productId,
-                "UpdateProductDetails",
-                "جزئیات محصول ویرایش شد.",
-                userId);
             return ServiceResult.Success();
         }
         catch (ConcurrencyException)

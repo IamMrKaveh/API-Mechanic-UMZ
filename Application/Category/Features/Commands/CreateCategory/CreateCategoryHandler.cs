@@ -7,8 +7,7 @@ namespace Application.Category.Features.Commands.CreateCategory;
 
 public sealed class CreateCategoryHandler(
     ICategoryRepository categoryRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<CreateCategoryCommand, CategoryDto>
 {
     public async Task<ServiceResult<CategoryDto>> Handle(CreateCategoryCommand request, CancellationToken ct)
@@ -32,14 +31,6 @@ public sealed class CreateCategoryHandler(
 
         await categoryRepository.AddAsync(category, ct);
         await unitOfWork.SaveChangesAsync(ct);
-
-        await auditService.LogAsync(
-            "Category",
-            "CreateCategory",
-            IpAddress.Unknown,
-            entityType: "Category",
-            entityId: category.Id.Value.ToString(),
-            ct: ct);
 
         var dto = category.Adapt<CategoryDto>();
         return ServiceResult<CategoryDto>.Success(dto);

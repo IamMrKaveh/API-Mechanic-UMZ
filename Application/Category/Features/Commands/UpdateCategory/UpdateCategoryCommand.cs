@@ -9,4 +9,13 @@ public record UpdateCategoryCommand(
     string? Slug,
     string? Description,
     int SortOrder,
-    string? RowVersion) : ICommand<CategoryDto>;
+    string? RowVersion) : ICommand<CategoryDto>, IAuditableCommand
+{
+    public string AuditEventType => "Category";
+
+    public string AuditAction => "UpdateCategory";
+
+    public string? AuditEntityType => "Category";
+
+    public string? AuditEntityId => Id.ToString();
+}
