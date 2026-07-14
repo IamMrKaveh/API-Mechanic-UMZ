@@ -50,7 +50,6 @@ using Infrastructure.Auth.Options;
 using Infrastructure.Auth.Repositories;
 using Infrastructure.Auth.Services;
 using Infrastructure.BackgroundJobs;
-using Infrastructure.BackgroundJobs.Abstractions;
 using Infrastructure.BackgroundJobs.Options;
 using Infrastructure.BackgroundJobs.Services;
 using Infrastructure.Brand.QueryServices;
@@ -121,6 +120,7 @@ using Infrastructure.Wallet.Repositories;
 using Infrastructure.Wishlist.QueryServices;
 using Infrastructure.Wishlist.Repositories;
 using DateTimeProvider = Infrastructure.Common.Services.DateTimeProvider;
+using IAuditArchiveStorage = Domain.Audit.Interfaces.IAuditArchiveStorage;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace Infrastructure.Common.DependencyInjection;

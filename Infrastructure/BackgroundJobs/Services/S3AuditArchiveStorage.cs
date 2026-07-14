@@ -1,6 +1,6 @@
 ﻿using Amazon.S3.Model;
 using Domain.Audit.Entities;
-using Infrastructure.BackgroundJobs.Abstractions;
+using Domain.Audit.Interfaces;
 using Infrastructure.Storage.Options;
 
 namespace Infrastructure.BackgroundJobs.Services;

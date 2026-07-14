@@ -1,4 +1,5 @@
 ﻿using Application.Audit.Features.Shared;
+using Domain.Audit.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Infrastructure.Audit.QueryServices;
@@ -61,6 +62,40 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
             Page = page,
             PageSize = pageSize
         };
+    }
+
+    public async Task<AuditLogDetailDto?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        var logId = AuditLogId.From(id);
+
+        var detail = await (
+            from l in context.AuditLogs.AsNoTracking()
+            where l.Id == logId
+            join u in context.Users.AsNoTracking()
+                on l.UserId equals u.Id into userJoin
+            from u in userJoin.DefaultIfEmpty()
+            select new AuditLogDetailDto
+            {
+                Id = l.Id.Value,
+                UserId = l.UserId == null ? null : l.UserId.Value,
+                UserName = u == null
+                    ? null
+                    : $"{u.FullName.FirstName} {u.FullName.LastName}",
+                EventType = l.EventType,
+                Action = l.Action,
+                Details = l.Details,
+                IpAddress = l.IpAddress,
+                UserAgent = l.UserAgent,
+                EntityType = l.EntityType,
+                EntityId = l.EntityId,
+                CreatedAt = l.CreatedAt,
+                Timestamp = l.CreatedAt,
+                IsArchived = l.IsArchived,
+                ArchivedAt = l.ArchivedAt,
+                IntegrityHash = l.IntegrityHash
+            }).FirstOrDefaultAsync(ct);
+
+        return detail;
     }
 
     public async Task<(IReadOnlyList<AuditLogDto> Logs, int Total)> SearchAsync(
