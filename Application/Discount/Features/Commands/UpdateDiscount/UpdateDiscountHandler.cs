@@ -7,7 +7,6 @@ namespace Application.Discount.Features.Commands.UpdateDiscount;
 
 public class UpdateDiscountHandler(
     IDiscountRepository discountRepository,
-    IUnitOfWork unitOfWork,
     IMapper mapper)
     : ICommandHandler<UpdateDiscountCommand, DiscountDto>
 {
@@ -37,7 +36,6 @@ public class UpdateDiscountHandler(
             discount.Deactivate();
 
         discountRepository.Update(discount);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult<DiscountDto>.Success(mapper.Map<DiscountDto>(discount));
     }

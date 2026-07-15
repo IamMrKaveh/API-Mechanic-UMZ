@@ -6,8 +6,7 @@ using Domain.Category.ValueObjects;
 namespace Application.Category.Features.Commands.UpdateCategory;
 
 public class UpdateCategoryHandler(
-    ICategoryRepository categoryRepository,
-    IUnitOfWork unitOfWork)
+    ICategoryRepository categoryRepository)
     : ICommandHandler<UpdateCategoryCommand, CategoryDto>
 {
     public async Task<ServiceResult<CategoryDto>> Handle(UpdateCategoryCommand request, CancellationToken ct)
@@ -38,7 +37,6 @@ public class UpdateCategoryHandler(
             category.Deactivate();
 
         categoryRepository.Update(category);
-        await unitOfWork.SaveChangesAsync(ct);
 
         var dto = category.Adapt<CategoryDto>();
         return ServiceResult<CategoryDto>.Success(dto);

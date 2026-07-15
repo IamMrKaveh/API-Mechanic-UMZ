@@ -6,8 +6,7 @@ using Domain.User.ValueObjects;
 namespace Application.Auth.Features.Commands.RevokeSession;
 
 public class RevokeSessionHandler(
-    ISessionRepository sessionRepository,
-    IUnitOfWork unitOfWork)
+    ISessionRepository sessionRepository)
     : ICommandHandler<RevokeSessionCommand>
 {
     public async Task<ServiceResult> Handle(RevokeSessionCommand request, CancellationToken ct)
@@ -25,7 +24,6 @@ public class RevokeSessionHandler(
 
         session.Revoke(SessionRevocationReason.UserRequested);
         sessionRepository.Update(session);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

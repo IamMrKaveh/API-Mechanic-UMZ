@@ -5,8 +5,7 @@ namespace Application.User.Features.Commands.UpdateUserAddress;
 
 public class UpdateUserAddressHandler(
     IUserRepository userRepository,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    ICurrentUserService currentUser)
     : ICommandHandler<UpdateUserAddressCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -35,7 +34,6 @@ public class UpdateUserAddressHandler(
             request.Longitude);
 
         userRepository.Update(user);
-        await unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
     }
 }

@@ -6,7 +6,6 @@ namespace Application.Media.Features.Commands.CleanupOrphanedMedia;
 public class CleanupOrphanedMediaHandler(
     IMediaRepository mediaRepository,
     IStorageService storageService,
-    IUnitOfWork unitOfWork,
     IAuditService auditService)
     : ICommandHandler<CleanupOrphanedMediaCommand, int>
 {
@@ -35,7 +34,6 @@ public class CleanupOrphanedMediaHandler(
 
         if (deletedCount > 0)
         {
-            await unitOfWork.SaveChangesAsync(ct);
             await auditService.LogSystemEventAsync(
                 "OrphanedMediaCleanup",
                 $"{deletedCount} orphaned media record(s) marked for deletion.",

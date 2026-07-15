@@ -5,8 +5,7 @@ namespace Application.User.Features.Commands.DeleteUser;
 
 public class DeleteUserHandler(
     IUserRepository userRepository,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    ICurrentUserService currentUser)
     : ICommandHandler<DeleteUserCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -25,7 +24,6 @@ public class DeleteUserHandler(
         user.Deactivate();
 
         userRepository.Update(user);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

@@ -4,8 +4,7 @@ using Domain.User.ValueObjects;
 namespace Application.Auth.Features.Commands.LogoutAll;
 
 public class LogoutAllHandler(
-    ISessionRepository sessionRepository,
-    IUnitOfWork unitOfWork)
+    ISessionRepository sessionRepository)
     : ICommandHandler<LogoutAllCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -15,7 +14,6 @@ public class LogoutAllHandler(
         var userId = UserId.From(request.UserId);
 
         await sessionRepository.RevokeAllByUserIdAsync(userId, ct);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

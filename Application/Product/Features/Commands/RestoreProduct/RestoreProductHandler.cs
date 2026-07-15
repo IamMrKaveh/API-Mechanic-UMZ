@@ -5,7 +5,6 @@ namespace Application.Product.Features.Commands.RestoreProduct;
 
 public class RestoreProductHandler(
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork,
     ICacheService cacheService)
     : ICommandHandler<RestoreProductCommand>
 {
@@ -22,7 +21,6 @@ public class RestoreProductHandler(
         product.Restore();
 
         productRepository.Update(product);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await cacheService.RemoveAsync($"product:{request.ProductId}", ct);
         await cacheService.RemoveAsync($"brand:{product.BrandId}", ct);

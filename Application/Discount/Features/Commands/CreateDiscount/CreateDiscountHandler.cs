@@ -8,7 +8,6 @@ namespace Application.Discount.Features.Commands.CreateDiscount;
 
 public class CreateDiscountHandler(
     IDiscountRepository discountRepository,
-    IUnitOfWork unitOfWork,
     IMapper mapper)
     : ICommandHandler<CreateDiscountCommand, DiscountDto>
 {
@@ -36,7 +35,6 @@ public class CreateDiscountHandler(
             request.ExpiresAt);
 
         await discountRepository.AddAsync(discount, ct);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult<DiscountDto>.Success(mapper.Map<DiscountDto>(discount));
     }

@@ -4,8 +4,7 @@ using Domain.Product.ValueObjects;
 namespace Application.Product.Features.Commands.ActivateProduct;
 
 public sealed class ActivateProductHandler(
-    IProductRepository productRepository,
-    IUnitOfWork unitOfWork)
+    IProductRepository productRepository)
     : ICommandHandler<ActivateProductCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -22,7 +21,6 @@ public sealed class ActivateProductHandler(
 
         product.Activate();
         productRepository.Update(product);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

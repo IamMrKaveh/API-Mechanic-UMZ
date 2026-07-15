@@ -11,7 +11,6 @@ namespace Application.Support.Features.Commands.CreateTicket;
 public class CreateTicketHandler(
     ITicketRepository ticketRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider,
     IMapper mapper)
     : ICommandHandler<CreateTicketCommand, TicketDto>
@@ -33,7 +32,6 @@ public class CreateTicketHandler(
         ticket.AddMessage(messageId, customerId, TicketMessageSenderType.Customer, request.Message, now);
 
         await ticketRepository.AddAsync(ticket, ct);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult<TicketDto>.Success(mapper.Map<TicketDto>(ticket));
     }

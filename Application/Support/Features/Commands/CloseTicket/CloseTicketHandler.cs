@@ -6,8 +6,7 @@ namespace Application.Support.Features.Commands.CloseTicket;
 
 public class CloseTicketHandler(
     ITicketRepository ticketRepository,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    ICurrentUserService currentUser)
     : ICommandHandler<CloseTicketCommand>
 {
     public async Task<ServiceResult> Handle(CloseTicketCommand request, CancellationToken ct)
@@ -24,7 +23,6 @@ public class CloseTicketHandler(
 
         ticket.Close();
         ticketRepository.Update(ticket);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

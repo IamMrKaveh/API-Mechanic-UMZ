@@ -6,8 +6,7 @@ namespace Application.Order.Features.Commands.CancelOrder;
 
 public class CancelOrderHandler(
     IOrderRepository orderRepository,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    ICurrentUserService currentUser)
     : ICommandHandler<CancelOrderCommand>
 {
     public async Task<ServiceResult> Handle(CancelOrderCommand request, CancellationToken ct)
@@ -27,7 +26,6 @@ public class CancelOrderHandler(
         {
             order.Cancel(request.Reason);
             orderRepository.Update(order);
-            await unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }
         catch (DomainException ex)

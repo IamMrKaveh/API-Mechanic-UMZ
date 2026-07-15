@@ -10,7 +10,6 @@ public sealed class CreateBrandHandler(
     IBrandRepository brandRepository,
     ICategoryRepository categoryRepository,
     IBrandUniquenessChecker brandUniquenessChecker,
-    IUnitOfWork unitOfWork,
     IMapper mapper,
     IStorageService storageService)
     : ICommandHandler<CreateBrandCommand, BrandDetailDto>
@@ -66,7 +65,6 @@ public sealed class CreateBrandHandler(
             ct);
 
         await brandRepository.AddAsync(brand, ct);
-        await unitOfWork.SaveChangesAsync(ct);
 
         var dto = mapper.Map<BrandDetailDto>(brand);
         return ServiceResult<BrandDetailDto>.Success(dto);

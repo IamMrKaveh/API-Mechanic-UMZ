@@ -4,8 +4,7 @@ using Domain.Inventory.ValueObjects;
 namespace Application.Inventory.Features.Commands.DeleteWarehouse;
 
 public class DeleteWarehouseHandler(
-    IWarehouseRepository warehouseRepository,
-    IUnitOfWork unitOfWork)
+    IWarehouseRepository warehouseRepository)
     : ICommandHandler<DeleteWarehouseCommand>
 {
     public async Task<ServiceResult> Handle(DeleteWarehouseCommand request, CancellationToken ct)
@@ -20,7 +19,6 @@ public class DeleteWarehouseHandler(
             return ServiceResult.Failure("انبار پیش‌فرض را نمی‌توان حذف کرد.");
 
         warehouseRepository.Remove(warehouse);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

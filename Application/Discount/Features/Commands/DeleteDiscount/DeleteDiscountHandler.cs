@@ -4,8 +4,7 @@ using Domain.Discount.ValueObjects;
 namespace Application.Discount.Features.Commands.DeleteDiscount;
 
 public class DeleteDiscountHandler(
-    IDiscountRepository discountRepository,
-    IUnitOfWork unitOfWork)
+    IDiscountRepository discountRepository)
     : ICommandHandler<DeleteDiscountCommand>
 {
     public async Task<ServiceResult> Handle(DeleteDiscountCommand request, CancellationToken ct)
@@ -16,7 +15,6 @@ public class DeleteDiscountHandler(
 
         discount.Deactivate();
         discountRepository.Update(discount);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

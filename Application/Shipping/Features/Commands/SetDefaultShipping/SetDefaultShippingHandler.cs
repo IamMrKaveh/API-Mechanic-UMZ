@@ -4,8 +4,7 @@ using Domain.Shipping.ValueObjects;
 namespace Application.Shipping.Features.Commands.SetDefaultShipping;
 
 public class SetDefaultShippingHandler(
-    IShippingRepository shippingRepository,
-    IUnitOfWork unitOfWork)
+    IShippingRepository shippingRepository)
     : ICommandHandler<SetDefaultShippingCommand>
 {
     public async Task<ServiceResult> Handle(SetDefaultShippingCommand request, CancellationToken ct)
@@ -27,7 +26,6 @@ public class SetDefaultShippingHandler(
         {
             shipping.SetAsDefault();
             shippingRepository.Update(shipping);
-            await unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }
         catch (DomainException ex)

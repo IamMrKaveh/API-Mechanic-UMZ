@@ -6,7 +6,6 @@ namespace Application.Attribute.Features.Commands.DeleteAttributeValue;
 
 public class DeleteAttributeValueHandler(
     IAttributeRepository repository,
-    IUnitOfWork unitOfWork,
     ICacheService cacheService)
     : ICommandHandler<DeleteAttributeValueCommand>
 {
@@ -21,7 +20,6 @@ public class DeleteAttributeValueHandler(
             return ServiceResult.NotFound("Attribute value not found.");
 
         await repository.DeleteAttributeValueAsync(attributeValue.Id, null, ct);
-        await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult.Success();

@@ -4,8 +4,7 @@ using Domain.Product.ValueObjects;
 namespace Application.Product.Features.Commands.DeleteProduct;
 
 public sealed class DeleteProductHandler(
-    IProductRepository productRepository,
-    IUnitOfWork unitOfWork)
+    IProductRepository productRepository)
     : ICommandHandler<DeleteProductCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -19,7 +18,6 @@ public sealed class DeleteProductHandler(
 
         product.Deactivate();
         productRepository.Update(product);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

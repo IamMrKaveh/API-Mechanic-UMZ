@@ -6,7 +6,6 @@ namespace Application.Attribute.Features.Commands.DeleteAttributeType;
 
 public class DeleteAttributeTypeHandler(
     IAttributeRepository repository,
-    IUnitOfWork unitOfWork,
     ICacheService cacheService)
     : ICommandHandler<DeleteAttributeTypeCommand>
 {
@@ -21,7 +20,6 @@ public class DeleteAttributeTypeHandler(
             return ServiceResult.NotFound("Attribute type not found.");
 
         await repository.DeleteAttributeTypeAsync(attributeType.Id, null, ct);
-        await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult.Success();

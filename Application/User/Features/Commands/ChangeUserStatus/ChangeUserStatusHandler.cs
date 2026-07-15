@@ -4,8 +4,7 @@ using Domain.User.ValueObjects;
 namespace Application.User.Features.Commands.ChangeUserStatus;
 
 public class ChangeUserStatusHandler(
-    IUserRepository userRepository,
-    IUnitOfWork unitOfWork)
+    IUserRepository userRepository)
     : ICommandHandler<ChangeUserStatusCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -24,7 +23,6 @@ public class ChangeUserStatusHandler(
             user.Deactivate();
 
         userRepository.Update(user);
-        await unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
     }
 }

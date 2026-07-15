@@ -8,8 +8,7 @@ namespace Application.Payment.Features.Commands.AtomicRefundPayment;
 
 public class AtomicRefundPaymentHandler(
     IOrderRepository orderRepository,
-    IPaymentTransactionRepository paymentRepository,
-    IUnitOfWork unitOfWork)
+    IPaymentTransactionRepository paymentRepository)
     : ICommandHandler<AtomicRefundPaymentCommand>
 {
     public async Task<ServiceResult> Handle(AtomicRefundPaymentCommand request, CancellationToken ct)
@@ -40,7 +39,6 @@ public class AtomicRefundPaymentHandler(
 
         orderRepository.Update(order);
         paymentRepository.Update(payment);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

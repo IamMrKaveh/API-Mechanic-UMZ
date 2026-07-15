@@ -8,7 +8,6 @@ namespace Application.Inventory.Features.Commands.AddStock;
 
 public class AddStockHandler(
     IInventoryRepository inventoryRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService)
     : ICommandHandler<AddStockCommand>
@@ -33,7 +32,6 @@ public class AddStockHandler(
             return ServiceResult.Failure(result.Error.Message);
 
         inventoryRepository.Update(inventory);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogInventoryEventAsync(
             variantId,

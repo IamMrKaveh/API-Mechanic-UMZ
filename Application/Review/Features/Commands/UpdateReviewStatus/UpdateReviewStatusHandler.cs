@@ -5,7 +5,6 @@ namespace Application.Review.Features.Commands.UpdateReviewStatus;
 
 public sealed class UpdateReviewStatusHandler(
     IReviewRepository reviewRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService)
     : ICommandHandler<UpdateReviewStatusCommand>
 {
@@ -25,7 +24,6 @@ public sealed class UpdateReviewStatusHandler(
             review.Reject();
 
         reviewRepository.Update(review);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogSystemEventAsync(
             "UpdateReviewStatus",

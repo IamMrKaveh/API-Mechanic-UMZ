@@ -7,8 +7,7 @@ namespace Application.Brand.Features.Commands.MoveBrand;
 
 public class MoveBrandHandler(
     IBrandRepository brandRepository,
-    ICategoryRepository categoryRepository,
-    IUnitOfWork unitOfWork)
+    ICategoryRepository categoryRepository)
     : ICommandHandler<MoveBrandCommand>
 {
     public async Task<ServiceResult> Handle(MoveBrandCommand request, CancellationToken ct)
@@ -27,7 +26,6 @@ public class MoveBrandHandler(
 
         brand.ChangeCategory(targetCategoryId);
         brandRepository.Update(brand);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

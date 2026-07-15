@@ -6,7 +6,6 @@ namespace Application.Order.Features.Commands.DeleteOrder;
 
 public class DeleteOrderHandler(
     IOrderRepository orderRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService)
     : ICommandHandler<DeleteOrderCommand>
@@ -30,7 +29,6 @@ public class DeleteOrderHandler(
         }
 
         orderRepository.Update(order);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogOrderEventAsync(
             order.Id,

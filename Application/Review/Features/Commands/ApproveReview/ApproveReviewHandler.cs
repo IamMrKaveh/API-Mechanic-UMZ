@@ -4,8 +4,7 @@ using Domain.Review.ValueObjects;
 namespace Application.Review.Features.Commands.ApproveReview;
 
 public class ApproveReviewHandler(
-    IReviewRepository reviewRepository,
-    IUnitOfWork unitOfWork)
+    IReviewRepository reviewRepository)
     : ICommandHandler<ApproveReviewCommand>
 {
     public async Task<ServiceResult> Handle(ApproveReviewCommand request, CancellationToken ct)
@@ -18,7 +17,6 @@ public class ApproveReviewHandler(
 
         review.Approve();
         reviewRepository.Update(review);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

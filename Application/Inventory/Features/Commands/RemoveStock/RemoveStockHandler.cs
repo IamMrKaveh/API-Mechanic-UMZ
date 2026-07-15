@@ -11,7 +11,6 @@ public class RemoveStockHandler(
     IVariantRepository variantRepository,
     IInventoryRepository inventoryRepository,
     IAuditService auditService,
-    IUnitOfWork unitOfWork,
     ICacheService cacheService,
     ICurrentUserService currentUserService)
     : ICommandHandler<RemoveStockCommand>
@@ -36,7 +35,6 @@ public class RemoveStockHandler(
             return ServiceResult.Failure(result.Error.Message);
 
         inventoryRepository.Update(inventory);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogInventoryEventAsync(
             variantId,

@@ -6,8 +6,7 @@ namespace Application.User.Features.Commands.UpdateProfile;
 
 public class UpdateProfileHandler(
     IUserRepository userRepository,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    ICurrentUserService currentUser)
     : ICommandHandler<UpdateProfileCommand, UserProfileDto>
 {
     public async Task<ServiceResult<UserProfileDto>> Handle(UpdateProfileCommand request, CancellationToken ct)
@@ -25,7 +24,6 @@ public class UpdateProfileHandler(
         user.UpdateProfile(fullName, user.PhoneNumber);
 
         userRepository.Update(user);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult<UserProfileDto>.Success(user.Adapt<UserProfileDto>());
     }

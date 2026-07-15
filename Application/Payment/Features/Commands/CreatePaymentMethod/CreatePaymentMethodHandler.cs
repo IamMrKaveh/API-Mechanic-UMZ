@@ -7,7 +7,6 @@ namespace Application.Payment.Features.Commands.CreatePaymentMethod;
 
 public sealed class CreatePaymentMethodHandler(
     IPaymentMethodRepository repository,
-    IUnitOfWork unitOfWork,
     IMapper mapper)
     : ICommandHandler<CreatePaymentMethodCommand, PaymentMethodDto>
 {
@@ -36,7 +35,6 @@ public sealed class CreatePaymentMethodHandler(
                 request.SortOrder);
 
             await repository.AddAsync(method, ct);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<PaymentMethodDto>.Success(mapper.Map<PaymentMethodDto>(method));
         }

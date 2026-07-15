@@ -6,7 +6,6 @@ namespace Application.Inventory.Features.Commands.ReverseInventoryTransaction;
 
 public class ReverseInventoryHandler(
     IInventoryRepository inventoryRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService)
     : ICommandHandler<ReverseInventoryCommand>
@@ -26,7 +25,6 @@ public class ReverseInventoryHandler(
             return ServiceResult.Failure(result.Error.Message);
 
         inventoryRepository.Update(inventory);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogInventoryEventAsync(
             variantId,

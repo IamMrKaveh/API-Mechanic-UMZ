@@ -4,8 +4,7 @@ using Domain.Notification.ValueObjects;
 namespace Application.Notification.Features.Commands.AdminDeleteNotification;
 
 public class AdminDeleteNotificationHandler(
-    INotificationRepository notificationRepository,
-    IUnitOfWork unitOfWork)
+    INotificationRepository notificationRepository)
     : ICommandHandler<AdminDeleteNotificationCommand>
 {
     public async Task<ServiceResult> Handle(AdminDeleteNotificationCommand request, CancellationToken ct)
@@ -17,7 +16,6 @@ public class AdminDeleteNotificationHandler(
             return ServiceResult.NotFound("اعلان یافت نشد.");
 
         notificationRepository.Remove(notification);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

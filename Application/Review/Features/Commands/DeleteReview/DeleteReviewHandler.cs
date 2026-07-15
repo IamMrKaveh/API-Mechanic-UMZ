@@ -5,7 +5,6 @@ namespace Application.Review.Features.Commands.DeleteReview;
 
 public class DeleteReviewHandler(
     IReviewRepository reviewRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService)
     : ICommandHandler<DeleteReviewCommand>
 {
@@ -19,7 +18,6 @@ public class DeleteReviewHandler(
 
         review.MarkAsDeleted();
         reviewRepository.Update(review);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogSystemEventAsync(
             "DeleteReview",
