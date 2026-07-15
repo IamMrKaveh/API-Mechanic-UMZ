@@ -7,7 +7,6 @@ public class DeactivateAccountHandler(
     IUserRepository userRepository,
     ISessionService sessionService,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork,
     IAuditService auditService)
     : ICommandHandler<DeactivateAccountCommand>
 {
@@ -25,7 +24,6 @@ public class DeactivateAccountHandler(
             user.Deactivate();
 
             userRepository.Update(user);
-            await unitOfWork.SaveChangesAsync(ct);
 
             await sessionService.RevokeAllSessionsAsync(userId, ct);
 

@@ -5,7 +5,6 @@ namespace Application.Product.Features.Commands.BulkUpdatePrices;
 
 public sealed class BulkUpdatePricesHandler(
     IVariantRepository variantRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICacheService cacheService)
     : ICommandHandler<BulkUpdatePricesCommand>
@@ -43,8 +42,6 @@ public sealed class BulkUpdatePricesHandler(
                 }
             }
         }
-
-        await unitOfWork.SaveChangesAsync(ct);
 
         foreach (var productId in affectedProductIds)
         {

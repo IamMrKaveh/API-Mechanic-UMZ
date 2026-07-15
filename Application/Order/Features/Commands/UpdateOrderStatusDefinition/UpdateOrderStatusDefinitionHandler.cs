@@ -5,7 +5,6 @@ namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
 public class UpdateOrderStatusDefinitionHandler(
     IOrderStatusRepository orderStatusRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICacheService cacheService)
     : ICommandHandler<UpdateOrderStatusDefinitionCommand>
@@ -40,15 +39,6 @@ public class UpdateOrderStatusDefinitionHandler(
             request.AllowEdit);
 
         orderStatusRepository.Update(status);
-
-        try
-        {
-            await unitOfWork.SaveChangesAsync(ct);
-        }
-        catch (ConcurrencyException)
-        {
-            return ServiceResult.Conflict("این وضعیت توسط کاربر دیگری تغییر کرده است.");
-        }
 
         await cacheService.RemoveByPrefixAsync("order-status:", ct);
 

@@ -7,7 +7,6 @@ namespace Application.Wallet.Features.Commands.CancelWithdrawal;
 public sealed class CancelWithdrawalHandler(
     IWalletWithdrawalRepository withdrawalRepository,
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService)
     : ICommandHandler<CancelWithdrawalCommand, Unit>
 {
@@ -37,7 +36,6 @@ public sealed class CancelWithdrawalHandler(
 
             walletRepository.Update(wallet);
             withdrawalRepository.Update(withdrawal);
-            await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogSecurityEventAsync(
                 "WithdrawalCancelled",
@@ -47,14 +45,6 @@ public sealed class CancelWithdrawalHandler(
                 ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
-        }
-        catch (ConcurrencyException)
-        {
-            await auditService.LogSystemEventAsync(
-                "WithdrawalCancelConcurrencyConflict",
-                $"تعارض همزمانی در لغو درخواست برداشت {request.WithdrawalId}",
-                ct);
-            return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
         {

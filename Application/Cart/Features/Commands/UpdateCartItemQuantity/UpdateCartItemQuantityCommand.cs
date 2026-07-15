@@ -4,4 +4,4 @@ namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
 
 public record UpdateCartItemQuantityCommand(
     Guid VariantId,
-    int Quantity) : ICommand<CartDetailDto>;
+    int Quantity) : ICommand<CartDetailDto>, IManualTransactionRequest;

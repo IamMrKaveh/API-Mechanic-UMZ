@@ -6,7 +6,6 @@ namespace Application.Order.Features.Commands.RequestReturn;
 
 public class RequestReturnHandler(
     IOrderRepository orderRepository,
-    IUnitOfWork unitOfWork,
     INotificationService notificationService)
     : ICommandHandler<RequestReturnCommand>
 {
@@ -38,22 +37,13 @@ public class RequestReturnHandler(
 
         orderRepository.Update(order);
 
-        try
-        {
-            await unitOfWork.SaveChangesAsync(ct);
+        await notificationService.SendOrderStatusNotificationAsync(
+            order.UserId,
+            order.Id,
+            oldStatusName,
+            OrderStatusValue.Returned.DisplayName,
+            ct);
 
-            await notificationService.SendOrderStatusNotificationAsync(
-                order.UserId,
-                order.Id,
-                oldStatusName,
-                OrderStatusValue.Returned.DisplayName,
-                ct);
-
-            return ServiceResult.Success();
-        }
-        catch (ConcurrencyException)
-        {
-            return ServiceResult.Conflict("این سفارش توسط کاربر دیگری تغییر کرده است.");
-        }
+        return ServiceResult.Success();
     }
 }

@@ -5,7 +5,6 @@ namespace Application.Order.Features.Commands.UpdateOrderStatus;
 
 public class UpdateOrderStatusHandler(
     IOrderRepository orderRepository,
-    IUnitOfWork unitOfWork,
     INotificationService notificationService)
     : ICommandHandler<UpdateOrderStatusCommand>
 {
@@ -60,18 +59,9 @@ public class UpdateOrderStatusHandler(
 
         orderRepository.Update(order);
 
-        try
-        {
-            await unitOfWork.SaveChangesAsync(ct);
+        await notificationService.SendOrderStatusNotificationAsync(
+            order.UserId, order.Id, oldStatusName, newStatus.DisplayName, ct);
 
-            await notificationService.SendOrderStatusNotificationAsync(
-                order.UserId, order.Id, oldStatusName, newStatus.DisplayName, ct);
-
-            return ServiceResult.Success();
-        }
-        catch (ConcurrencyException)
-        {
-            return ServiceResult.Conflict("این سفارش توسط کاربر دیگری تغییر کرده است.");
-        }
+        return ServiceResult.Success();
     }
 }

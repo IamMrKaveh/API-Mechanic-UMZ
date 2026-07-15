@@ -4,8 +4,7 @@ using Domain.Product.ValueObjects;
 namespace Application.Product.Features.Commands.UpdateProductDetails;
 
 public sealed class UpdateProductDetailsHandler(
-    IProductRepository productRepository,
-    IUnitOfWork unitOfWork)
+    IProductRepository productRepository)
     : ICommandHandler<UpdateProductDetailsCommand>
 {
     public async Task<ServiceResult> Handle(UpdateProductDetailsCommand request, CancellationToken ct)
@@ -35,14 +34,6 @@ public sealed class UpdateProductDetailsHandler(
 
         productRepository.Update(product);
 
-        try
-        {
-            await unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult.Success();
-        }
-        catch (ConcurrencyException)
-        {
-            return ServiceResult.Conflict("این محصول توسط کاربر دیگری تغییر کرده است. لطفاً صفحه را رفرش کنید.");
-        }
+        return ServiceResult.Success();
     }
 }

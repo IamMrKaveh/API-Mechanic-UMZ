@@ -4,8 +4,7 @@ using Domain.User.ValueObjects;
 namespace Application.User.Features.Commands.UpdateUser;
 
 public class UpdateUserHandler(
-    IUserRepository userRepository,
-    IUnitOfWork unitOfWork)
+    IUserRepository userRepository)
     : ICommandHandler<UpdateUserCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -34,14 +33,6 @@ public class UpdateUserHandler(
 
         userRepository.Update(user);
 
-        try
-        {
-            await unitOfWork.SaveChangesAsync(ct);
-            return ServiceResult.Success();
-        }
-        catch (ConcurrencyException)
-        {
-            return ServiceResult.Conflict("اطلاعات کاربر توسط فرآیند دیگری تغییر کرده است.");
-        }
+        return ServiceResult.Success();
     }
 }

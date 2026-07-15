@@ -8,7 +8,6 @@ public sealed class CompleteWalletTopUpHandler(
     IWalletTopUpRepository topUpRepository,
     IWalletRepository walletRepository,
     IPaymentGatewayFactory gatewayFactory,
-    IUnitOfWork unitOfWork,
     IAuditService auditService)
     : IRequestHandler<CompleteWalletTopUpCommand, ServiceResult<CompleteWalletTopUpResult>>
 {
@@ -50,7 +49,6 @@ public sealed class CompleteWalletTopUpHandler(
             {
                 topUp.MarkCancelled("پرداخت توسط کاربر لغو شد.");
                 topUpRepository.Update(topUp);
-                await unitOfWork.SaveChangesAsync(ct);
                 return ServiceResult<CompleteWalletTopUpResult>.Success(
                     new CompleteWalletTopUpResult(topUp.Id.Value, false, "cancelled",
                         topUp.FailureReason, topUp.Amount.Amount));
@@ -67,7 +65,6 @@ public sealed class CompleteWalletTopUpHandler(
             {
                 topUp.MarkFailed(ex.Message);
                 topUpRepository.Update(topUp);
-                await unitOfWork.SaveChangesAsync(ct);
                 return ServiceResult<CompleteWalletTopUpResult>.Success(
                     new CompleteWalletTopUpResult(topUp.Id.Value, false, "failed",
                         ex.Message, topUp.Amount.Amount));
@@ -78,7 +75,6 @@ public sealed class CompleteWalletTopUpHandler(
                 const string reason = "تأیید تراکنش با شکست مواجه شد.";
                 topUp.MarkFailed(reason);
                 topUpRepository.Update(topUp);
-                await unitOfWork.SaveChangesAsync(ct);
                 return ServiceResult<CompleteWalletTopUpResult>.Success(
                     new CompleteWalletTopUpResult(topUp.Id.Value, false, "failed",
                         reason, topUp.Amount.Amount));
@@ -101,7 +97,6 @@ public sealed class CompleteWalletTopUpHandler(
 
             topUpRepository.Update(topUp);
             walletRepository.Update(wallet);
-            await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogSystemEventAsync(
                 "WalletTopUpSucceeded",
