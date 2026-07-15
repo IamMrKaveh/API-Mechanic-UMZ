@@ -6,7 +6,6 @@ namespace Application.Auth.Features.Commands.Logout;
 
 public class LogoutHandler(
     ISessionRepository sessionRepository,
-    IUnitOfWork unitOfWork,
     ICurrentUserService currentUser)
     : ICommandHandler<LogoutCommand>
 {
@@ -30,7 +29,6 @@ public class LogoutHandler(
 
         session.Revoke(SessionRevocationReason.UserRequested);
         sessionRepository.Update(session);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

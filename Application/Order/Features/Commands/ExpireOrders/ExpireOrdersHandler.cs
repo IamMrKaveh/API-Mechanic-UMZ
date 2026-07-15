@@ -3,8 +3,7 @@ using Domain.Order.Interfaces;
 namespace Application.Order.Features.Commands.ExpireOrders;
 
 public class ExpireOrdersHandler(
-    IOrderRepository orderRepository,
-    IUnitOfWork unitOfWork)
+    IOrderRepository orderRepository)
     : ICommandHandler<ExpireOrdersCommand, int>
 {
     public async Task<ServiceResult<int>> Handle(ExpireOrdersCommand request, CancellationToken ct)
@@ -24,9 +23,6 @@ public class ExpireOrdersHandler(
             {
             }
         }
-
-        if (expiredCount > 0)
-            await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult<int>.Success(expiredCount);
     }

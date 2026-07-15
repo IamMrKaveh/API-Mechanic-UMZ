@@ -6,7 +6,6 @@ namespace Application.Attribute.Features.Commands.UpdateAttributeValue;
 
 public class UpdateAttributeValueHandler(
     IAttributeRepository repository,
-    IUnitOfWork unitOfWork,
     ICacheService cacheService)
     : ICommandHandler<UpdateAttributeValueCommand>
 {
@@ -47,7 +46,6 @@ public class UpdateAttributeValueHandler(
             request.IsActive ?? attributeValue.IsActive);
 
         await repository.UpdateAttributeTypeAsync(type, ct);
-        await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult.Success();

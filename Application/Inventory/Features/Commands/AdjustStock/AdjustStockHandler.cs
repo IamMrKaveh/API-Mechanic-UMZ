@@ -6,7 +6,6 @@ namespace Application.Inventory.Features.Commands.AdjustStock;
 
 public class AdjustStockHandler(
     IInventoryRepository inventoryRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService)
     : ICommandHandler<AdjustStockCommand>
@@ -26,7 +25,6 @@ public class AdjustStockHandler(
             return ServiceResult.Failure(result.Error.Message);
 
         inventoryRepository.Update(inventory);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogInventoryEventAsync(
             variantId,

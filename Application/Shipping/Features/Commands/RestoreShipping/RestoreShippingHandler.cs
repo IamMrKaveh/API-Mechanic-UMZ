@@ -7,7 +7,6 @@ namespace Application.Shipping.Features.Commands.RestoreShipping;
 public class RestoreShippingHandler(
     IShippingRepository shippingMethodRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork,
     IAuditService auditService)
     : ICommandHandler<RestoreShippingCommand>
 {
@@ -25,7 +24,6 @@ public class RestoreShippingHandler(
         shipping.Restore();
 
         shippingMethodRepository.Update(shipping);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogAdminEventAsync(
             "RestoreShippingMethod",

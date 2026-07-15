@@ -12,7 +12,6 @@ public class AddItemToCartHandler(
     ICartRepository cartRepository,
     IVariantRepository variantRepository,
     IInventoryRepository inventoryRepository,
-    IUnitOfWork unitOfWork,
     ICurrentUserService currentUserService)
     : ICommandHandler<AddItemToCartCommand>
 {
@@ -68,8 +67,6 @@ public class AddItemToCartHandler(
 
         if (!isNewCart)
             cartRepository.Update(cart);
-
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

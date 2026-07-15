@@ -6,7 +6,6 @@ namespace Application.Payment.Features.Commands.ExpireStalePayments;
 
 public class ExpireStalePaymentsHandler(
     IPaymentTransactionRepository paymentRepository,
-    IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ExpireStalePaymentsCommand, int>
 {
@@ -20,9 +19,6 @@ public class ExpireStalePaymentsHandler(
 
         foreach (var tx in txList.Where(t => !t.IsPending()))
             paymentRepository.Update(tx);
-
-        if (count > 0)
-            await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult<int>.Success(count);
     }

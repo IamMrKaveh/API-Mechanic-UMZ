@@ -9,7 +9,6 @@ namespace Application.Support.Features.Commands.ReplyToTicket;
 public class ReplyToTicketHandler(
     ITicketRepository ticketRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ReplyToTicketCommand>
 {
@@ -35,7 +34,6 @@ public class ReplyToTicketHandler(
             ticket.AddMessage(messageId, senderId, senderType, request.Content, dateTimeProvider.UtcNow);
 
             ticketRepository.Update(ticket);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult.Success();
         }

@@ -6,7 +6,6 @@ namespace Application.Payment.Features.Commands.UpdatePaymentMethod;
 
 public sealed class UpdatePaymentMethodHandler(
     IPaymentMethodRepository repository,
-    IUnitOfWork unitOfWork,
     IMapper mapper)
     : ICommandHandler<UpdatePaymentMethodCommand, PaymentMethodDto>
 {
@@ -30,7 +29,6 @@ public sealed class UpdatePaymentMethodHandler(
             method.Update(name, fee, request.Description, request.IconUrl, request.SortOrder);
 
             repository.Update(method);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<PaymentMethodDto>.Success(mapper.Map<PaymentMethodDto>(method));
         }

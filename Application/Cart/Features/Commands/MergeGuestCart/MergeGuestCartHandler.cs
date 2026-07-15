@@ -6,7 +6,6 @@ namespace Application.Cart.Features.Commands.MergeGuestCart;
 
 public class MergeGuestCartHandler(
     ICartRepository cartRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService)
     : ICommandHandler<MergeGuestCartCommand>
@@ -33,8 +32,6 @@ public class MergeGuestCartHandler(
             cartRepository.Update(userCart);
             cartRepository.Remove(guestCart);
         }
-
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogAsync(
             "Cart",

@@ -5,8 +5,7 @@ namespace Application.User.Features.Commands.ChangeUserRole;
 
 public class ChangeUserRoleHandler(
     IUserRepository userRepository,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    ICurrentUserService currentUser)
     : ICommandHandler<ChangeUserRoleCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -30,7 +29,6 @@ public class ChangeUserRoleHandler(
             user.DemoteFromAdmin();
 
         userRepository.Update(user);
-        await unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
     }
 }

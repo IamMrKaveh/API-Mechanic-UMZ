@@ -6,7 +6,6 @@ namespace Application.Product.Features.Commands.ChangePrice;
 
 public sealed class ChangePriceHandler(
     IVariantRepository variantRepository,
-    IUnitOfWork unitOfWork,
     ICacheService cacheService)
     : ICommandHandler<ChangePriceCommand>
 {
@@ -36,7 +35,6 @@ public sealed class ChangePriceHandler(
         }
 
         variantRepository.Update(variant);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await cacheService.RemoveAsync($"product:{request.ProductId}", ct);
         await cacheService.RemoveAsync($"variant:{request.VariantId}", ct);

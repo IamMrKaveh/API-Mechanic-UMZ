@@ -10,7 +10,6 @@ public class ChangePhoneNumberHandler(
     IUserRepository userRepository,
     IOtpRepository otpRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork,
     IAuditService auditService)
     : ICommandHandler<ChangePhoneNumberCommand>
 {
@@ -56,7 +55,6 @@ public class ChangePhoneNumberHandler(
             user.ChangePhoneNumber(phoneNumber);
 
             userRepository.Update(user);
-            await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogSecurityEventAsync(
                 "PhoneNumberChanged",

@@ -4,8 +4,7 @@ using Domain.Inventory.ValueObjects;
 namespace Application.Inventory.Features.Commands.UpdateWarehouse;
 
 public class UpdateWarehouseHandler(
-    IWarehouseRepository warehouseRepository,
-    IUnitOfWork unitOfWork)
+    IWarehouseRepository warehouseRepository)
     : ICommandHandler<UpdateWarehouseCommand>
 {
     public async Task<ServiceResult> Handle(UpdateWarehouseCommand request, CancellationToken ct)
@@ -18,7 +17,6 @@ public class UpdateWarehouseHandler(
 
         warehouse.Update(request.Name, request.City, request.Address, request.Phone, request.Priority);
         warehouseRepository.Update(warehouse);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

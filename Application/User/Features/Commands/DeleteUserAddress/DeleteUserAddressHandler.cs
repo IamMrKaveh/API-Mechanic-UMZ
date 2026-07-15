@@ -5,8 +5,7 @@ namespace Application.User.Features.Commands.DeleteUserAddress;
 
 public class DeleteUserAddressHandler(
     IUserRepository userRepository,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    ICurrentUserService currentUser)
     : ICommandHandler<DeleteUserAddressCommand>
 {
     public async Task<ServiceResult> Handle(DeleteUserAddressCommand request, CancellationToken ct)
@@ -22,7 +21,6 @@ public class DeleteUserAddressHandler(
         {
             user.RemoveAddress(addressId);
             userRepository.Update(user);
-            await unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }
         catch (DomainException ex)

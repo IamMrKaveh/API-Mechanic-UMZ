@@ -6,7 +6,6 @@ namespace Application.Shipping.Features.Commands.CreateShipping;
 
 public class CreateShippingHandler(
     IShippingRepository shippingRepository,
-    IUnitOfWork unitOfWork,
     IMapper mapper)
     : ICommandHandler<CreateShippingCommand, ShippingDto>
 {
@@ -26,7 +25,6 @@ public class CreateShippingHandler(
             request.MaxDeliveryDays);
 
         await shippingRepository.AddAsync(shipping, ct);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult<ShippingDto>.Success(mapper.Map<ShippingDto>(shipping));
     }

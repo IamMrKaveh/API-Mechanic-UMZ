@@ -6,7 +6,6 @@ namespace Application.User.Features.Commands.CreateUser;
 
 public class CreateUserHandler(
     IUserRepository userRepository,
-    IUnitOfWork unitOfWork,
     IMapper mapper)
     : ICommandHandler<CreateUserCommand, UserProfileDto>
 {
@@ -27,7 +26,6 @@ public class CreateUserHandler(
             phoneNumber);
 
         await userRepository.AddAsync(user, ct);
-        await unitOfWork.SaveChangesAsync(ct);
 
         var dto = mapper.Map<UserProfileDto>(user);
         return ServiceResult<UserProfileDto>.Success(dto);

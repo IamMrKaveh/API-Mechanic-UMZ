@@ -4,8 +4,7 @@ using Domain.Inventory.ValueObjects;
 namespace Application.Inventory.Features.Commands.ToggleWarehouseActive;
 
 public class ToggleWarehouseActiveHandler(
-    IWarehouseRepository warehouseRepository,
-    IUnitOfWork unitOfWork)
+    IWarehouseRepository warehouseRepository)
     : ICommandHandler<ToggleWarehouseActiveCommand>
 {
     public async Task<ServiceResult> Handle(ToggleWarehouseActiveCommand request, CancellationToken ct)
@@ -22,7 +21,6 @@ public class ToggleWarehouseActiveHandler(
             warehouse.Deactivate();
 
         warehouseRepository.Update(warehouse);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

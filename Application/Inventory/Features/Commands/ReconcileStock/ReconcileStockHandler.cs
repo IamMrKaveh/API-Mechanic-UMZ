@@ -8,7 +8,6 @@ namespace Application.Inventory.Features.Commands.ReconcileStock;
 
 public class ReconcileStockHandler(
     IInventoryRepository inventoryRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService)
     : ICommandHandler<ReconcileStockCommand>
@@ -29,7 +28,6 @@ public class ReconcileStockHandler(
             return ServiceResult.Failure(result.Error.Message);
 
         inventoryRepository.Update(inventory);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogInventoryEventAsync(
             variantId,

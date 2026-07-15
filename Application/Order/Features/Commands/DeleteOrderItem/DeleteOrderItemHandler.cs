@@ -4,8 +4,7 @@ using Domain.Order.ValueObjects;
 namespace Application.Order.Features.Commands.DeleteOrderItem;
 
 public class DeleteOrderItemHandler(
-    IOrderRepository orderRepository,
-    IUnitOfWork unitOfWork)
+    IOrderRepository orderRepository)
     : ICommandHandler<DeleteOrderItemCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -23,7 +22,6 @@ public class DeleteOrderItemHandler(
                 .FirstOrDefault(i => i.Id == orderItemId);
 
             orderRepository.Update(order);
-            await unitOfWork.SaveChangesAsync(ct);
             return ServiceResult.Success();
         }
         catch (DomainException ex)

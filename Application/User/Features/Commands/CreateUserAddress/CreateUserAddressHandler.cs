@@ -7,7 +7,6 @@ namespace Application.User.Features.Commands.CreateUserAddress;
 public class CreateUserAddressHandler(
     IUserRepository userRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork,
     IMapper mapper)
     : ICommandHandler<CreateUserAddressCommand, UserAddressDto>
 {
@@ -39,7 +38,6 @@ public class CreateUserAddressHandler(
             user.SetDefaultAddress(addressId);
 
         userRepository.Update(user);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult<UserAddressDto>.Success(mapper.Map<UserAddressDto>(address));
     }

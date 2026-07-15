@@ -13,7 +13,6 @@ public sealed class UpdateProductHandler(
     IProductRepository productRepository,
     ICategoryRepository categoryRepository,
     IBrandRepository brandRepository,
-    IUnitOfWork unitOfWork,
     IMapper mapper)
     : ICommandHandler<UpdateProductCommand, ProductDetailDto>
 {
@@ -59,7 +58,6 @@ public sealed class UpdateProductHandler(
             product.UnmarkAsFeatured();
 
         productRepository.Update(product);
-        await unitOfWork.SaveChangesAsync(ct);
 
         var dto = mapper.Map<ProductDetailDto>(product) with
         {

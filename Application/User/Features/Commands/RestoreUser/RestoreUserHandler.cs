@@ -4,8 +4,7 @@ using Domain.User.ValueObjects;
 namespace Application.User.Features.Commands.RestoreUser;
 
 public class RestoreUserHandler(
-    IUserRepository userRepository,
-    IUnitOfWork unitOfWork)
+    IUserRepository userRepository)
     : ICommandHandler<RestoreUserCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -21,7 +20,6 @@ public class RestoreUserHandler(
         user.Activate();
 
         userRepository.Update(user);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

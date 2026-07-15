@@ -7,8 +7,7 @@ namespace Application.User.Features.Commands.ChangePassword;
 public class ChangePasswordHandler(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    ICurrentUserService currentUser)
     : ICommandHandler<ChangePasswordCommand>
 {
     public async Task<ServiceResult> Handle(ChangePasswordCommand request, CancellationToken ct)
@@ -26,7 +25,6 @@ public class ChangePasswordHandler(
         user.ChangePasswordHash(newHash);
 
         userRepository.Update(user);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

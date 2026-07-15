@@ -1,6 +1,3 @@
-using Application.Audit.Contracts;
-using Application.Cache.Contracts;
-using Application.Common.Exceptions;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 

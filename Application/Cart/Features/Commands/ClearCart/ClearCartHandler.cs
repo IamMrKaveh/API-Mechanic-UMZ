@@ -6,7 +6,6 @@ namespace Application.Cart.Features.Commands.ClearCart;
 
 public class ClearCartHandler(
     ICartRepository cartRepository,
-    IUnitOfWork unitOfWork,
     ICurrentUserService currentUserService)
     : ICommandHandler<ClearCartCommand>
 {
@@ -32,7 +31,6 @@ public class ClearCartHandler(
 
         cart.Clear();
         cartRepository.Update(cart);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

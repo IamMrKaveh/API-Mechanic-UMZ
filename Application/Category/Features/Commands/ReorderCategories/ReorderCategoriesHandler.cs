@@ -6,7 +6,6 @@ namespace Application.Category.Features.Commands.ReorderCategories;
 
 public class ReorderCategoriesHandler(
     ICategoryRepository categoryRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService)
     : ICommandHandler<ReorderCategoriesCommand>
 {
@@ -24,8 +23,6 @@ public class ReorderCategoriesHandler(
             await category.UpdateDetails(category.Name, category.Slug, uniquenessChecker, category.Description, SortOrder, ct);
             categoryRepository.Update(category);
         }
-
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogAsync(
             "Category",

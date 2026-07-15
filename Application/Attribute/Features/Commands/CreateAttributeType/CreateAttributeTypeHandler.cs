@@ -9,7 +9,6 @@ namespace Application.Attribute.Features.Commands.CreateAttributeType;
 public class CreateAttributeTypeHandler(
     IAttributeRepository repository,
     IMapper mapper,
-    IUnitOfWork unitOfWork,
     ICacheService cacheService)
     : ICommandHandler<CreateAttributeTypeCommand, AttributeTypeDto>
 {
@@ -27,7 +26,6 @@ public class CreateAttributeTypeHandler(
             ct);
 
         await repository.AddAttributeTypeAsync(attributeType, ct);
-        await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult<AttributeTypeDto>.Success(mapper.Map<AttributeTypeDto>(attributeType));

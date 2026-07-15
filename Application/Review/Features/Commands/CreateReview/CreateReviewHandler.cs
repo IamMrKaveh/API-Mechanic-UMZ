@@ -14,7 +14,6 @@ public sealed class CreateReviewHandler(
     IReviewRepository reviewRepository,
     IProductRepository productRepository,
     ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork,
     IMapper mapper)
     : ICommandHandler<CreateReviewCommand, ProductReviewDto>
 {
@@ -45,7 +44,6 @@ public sealed class CreateReviewHandler(
             return ServiceResult<ProductReviewDto>.Failure(result.Error.Message);
 
         await reviewRepository.AddAsync(result.Value, ct);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult<ProductReviewDto>.Success(mapper.Map<ProductReviewDto>(result.Value));
     }

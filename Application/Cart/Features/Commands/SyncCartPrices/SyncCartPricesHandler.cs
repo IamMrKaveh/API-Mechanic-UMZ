@@ -8,7 +8,6 @@ namespace Application.Cart.Features.Commands.SyncCartPrices;
 public class SyncCartPricesHandler(
     ICartRepository cartRepository,
     IVariantRepository variantRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService)
     : ICommandHandler<SyncCartPricesCommand>
@@ -43,7 +42,6 @@ public class SyncCartPricesHandler(
         }
 
         cartRepository.Update(cart);
-        await unitOfWork.SaveChangesAsync(ct);
 
         if (userId is not null)
         {

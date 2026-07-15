@@ -12,7 +12,6 @@ public sealed class CreateProductHandler(
     IProductRepository productRepository,
     ICategoryRepository categoryRepository,
     IBrandRepository brandRepository,
-    IUnitOfWork unitOfWork,
     IMapper mapper)
     : ICommandHandler<CreateProductCommand, ProductDetailDto>
 {
@@ -43,7 +42,6 @@ public sealed class CreateProductHandler(
             categoryId);
 
         await productRepository.AddAsync(product, ct);
-        await unitOfWork.SaveChangesAsync(ct);
 
         var dto = mapper.Map<ProductDetailDto>(product) with
         {

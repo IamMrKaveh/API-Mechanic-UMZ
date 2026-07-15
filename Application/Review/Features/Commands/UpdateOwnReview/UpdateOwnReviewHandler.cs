@@ -6,8 +6,7 @@ namespace Application.Review.Features.Commands.UpdateOwnReview;
 
 public sealed class UpdateOwnReviewHandler(
     IReviewRepository reviewRepository,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    ICurrentUserService currentUser)
     : ICommandHandler<UpdateOwnReviewCommand>
 {
     public async Task<ServiceResult> Handle(UpdateOwnReviewCommand request, CancellationToken ct)
@@ -31,7 +30,6 @@ public sealed class UpdateOwnReviewHandler(
             review.UpdateContent(rating, request.Title, request.Comment);
 
             reviewRepository.Update(review);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult.Success();
         }

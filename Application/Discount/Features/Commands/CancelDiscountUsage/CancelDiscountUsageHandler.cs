@@ -6,7 +6,6 @@ namespace Application.Discount.Features.Commands.CancelDiscountUsage;
 
 public class CancelDiscountUsageHandler(
     IDiscountRepository discountRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService)
     : ICommandHandler<CancelDiscountUsageCommand>
 {
@@ -24,7 +23,6 @@ public class CancelDiscountUsageHandler(
             return ServiceResult.NotFound("استفاده‌ای برای این سفارش یافت نشد.");
 
         discountRepository.Update(discount);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogAsync(
             "Discount",

@@ -5,7 +5,6 @@ namespace Application.Review.Features.Commands.RejectReview;
 
 public class RejectReviewHandler(
     IReviewRepository reviewRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService)
     : ICommandHandler<RejectReviewCommand>
 {
@@ -19,7 +18,6 @@ public class RejectReviewHandler(
 
         review.Reject(request.Reason);
         reviewRepository.Update(review);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogSystemEventAsync(
             "RejectReview",

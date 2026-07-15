@@ -8,7 +8,6 @@ namespace Application.Inventory.Features.Commands.RecordDamage;
 
 public class RecordDamageHandler(
     IInventoryRepository inventoryRepository,
-    IUnitOfWork unitOfWork,
     ICurrentUserService currentUserService)
     : ICommandHandler<RecordDamageCommand>
 {
@@ -28,7 +27,6 @@ public class RecordDamageHandler(
             return ServiceResult.Failure(result.Error.Message);
 
         inventoryRepository.Update(inventory);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

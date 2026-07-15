@@ -6,8 +6,7 @@ namespace Application.Review.Features.Commands.DeleteOwnReview;
 
 public sealed class DeleteOwnReviewHandler(
     IReviewRepository reviewRepository,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    ICurrentUserService currentUser)
     : ICommandHandler<DeleteOwnReviewCommand>
 {
     public async Task<ServiceResult> Handle(DeleteOwnReviewCommand request, CancellationToken ct)
@@ -27,7 +26,6 @@ public sealed class DeleteOwnReviewHandler(
 
         review.MarkAsDeleted();
         reviewRepository.Update(review);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }
