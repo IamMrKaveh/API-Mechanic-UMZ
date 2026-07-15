@@ -9,8 +9,7 @@ using MediatR;
 namespace Application.Wallet.Features.Commands.CancelWalletTransfer;
 
 public sealed class CancelWalletTransferHandler(
-    IWalletTransferRepository transferRepository,
-    IUnitOfWork unitOfWork)
+    IWalletTransferRepository transferRepository)
     : IRequestHandler<CancelWalletTransferCommand, ServiceResult<Unit>>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -31,7 +30,6 @@ public sealed class CancelWalletTransferHandler(
 
             transfer.Cancel(fromUserId);
             transferRepository.Update(transfer);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }

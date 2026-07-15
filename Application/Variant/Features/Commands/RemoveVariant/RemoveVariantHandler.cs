@@ -6,7 +6,6 @@ namespace Application.Variant.Features.Commands.RemoveVariant;
 
 public class RemoveVariantHandler(
     IVariantRepository variantRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService)
     : ICommandHandler<RemoveVariantCommand>
@@ -32,7 +31,6 @@ public class RemoveVariantHandler(
         }
 
         variantRepository.Update(variant);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogProductEventAsync(
             variant.ProductId,

@@ -5,9 +5,7 @@ using Domain.Wallet.ValueObjects;
 namespace Application.Wallet.Features.Commands.ApproveWithdrawal;
 
 public sealed class ApproveWithdrawalHandler(
-    IWalletWithdrawalRepository withdrawalRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IWalletWithdrawalRepository withdrawalRepository)
     : ICommandHandler<ApproveWithdrawalCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -25,17 +23,8 @@ public sealed class ApproveWithdrawalHandler(
 
             withdrawal.Approve(adminId);
             withdrawalRepository.Update(withdrawal);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
-        }
-        catch (ConcurrencyException)
-        {
-            await auditService.LogSystemEventAsync(
-                "WithdrawalApproveConcurrencyConflict",
-                $"تعارض همزمانی در تأیید درخواست برداشت {request.WithdrawalId}",
-                ct);
-            return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
         {

@@ -9,7 +9,6 @@ namespace Application.Variant.Features.Commands.UpdateProductVariantShipping;
 public class UpdateProductVariantShippingHandler(
     IVariantRepository variantRepository,
     IShippingRepository shippingRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService)
     : ICommandHandler<UpdateVariantShippingCommand>
@@ -55,7 +54,6 @@ public class UpdateProductVariantShippingHandler(
             assignments);
 
         variantRepository.Update(variant);
-        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogInventoryEventAsync(
             variantId,

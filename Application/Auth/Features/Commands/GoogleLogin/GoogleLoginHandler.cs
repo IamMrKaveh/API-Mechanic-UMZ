@@ -9,8 +9,7 @@ public class GoogleLoginHandler(
     IUserRepository userRepository,
     IJwtTokenGenerator jwtTokenGenerator,
     ISessionService sessionService,
-    ICurrentUserService currentUser,
-    IUnitOfWork unitOfWork)
+    ICurrentUserService currentUser)
     : ICommandHandler<GoogleLoginCommand, TokenResultDto>
 {
     public async Task<ServiceResult<TokenResultDto>> Handle(GoogleLoginCommand request, CancellationToken ct)
@@ -31,7 +30,6 @@ public class GoogleLoginHandler(
                 null);
 
             await userRepository.AddAsync(user, ct);
-            await unitOfWork.SaveChangesAsync(ct);
         }
 
         var ipAddress = IpAddress.Create(currentUser.IpAddress ?? IpAddress.Unknown.Value);

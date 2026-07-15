@@ -7,9 +7,7 @@ namespace Application.Wallet.Features.Commands.MarkWithdrawalPaid;
 
 public sealed class MarkWithdrawalPaidHandler(
     IWalletWithdrawalRepository withdrawalRepository,
-    IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IWalletRepository walletRepository)
     : ICommandHandler<MarkWithdrawalPaidCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -39,21 +37,12 @@ public sealed class MarkWithdrawalPaidHandler(
 
             walletRepository.Update(wallet);
             withdrawalRepository.Update(withdrawal);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }
         catch (InsufficientWalletBalanceException ex)
         {
             return ServiceResult<Unit>.Failure(ex.Message);
-        }
-        catch (ConcurrencyException)
-        {
-            await auditService.LogSystemEventAsync(
-                "WithdrawalMarkPaidConcurrencyConflict",
-                $"تعارض همزمانی در پرداخت درخواست برداشت {request.WithdrawalId}",
-                ct);
-            return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)
         {
