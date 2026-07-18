@@ -1,13 +1,7 @@
-﻿using System.Text;
-using System.Text.Json;
-using Application.Audit.Contracts;
-using Application.Audit.Features.Shared;
-using Application.Common.Results;
+﻿using Application.Audit.Features.Shared;
 using Domain.Audit.Entities;
 using Domain.Audit.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Audit.QueryServices;
 

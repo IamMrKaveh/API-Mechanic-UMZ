@@ -2,6 +2,4 @@
 
 namespace Application.Wallet.Features.Queries.GetWalletBalance;
 
-public record GetWalletBalanceQuery(
-    Guid UserId)
-    : IQuery<WalletDto>;
+public record GetWalletBalanceQuery(Guid? userId = null) : IQuery<WalletDto>;

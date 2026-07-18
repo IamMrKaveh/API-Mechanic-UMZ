@@ -4,14 +4,15 @@ using Domain.User.ValueObjects;
 namespace Application.Wishlist.Features.Queries.CheckWishlistStatus;
 
 public class CheckWishlistStatusHandler(
-    IWishlistQueryService wishlistQueryService)
+    IWishlistQueryService wishlistQueryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<CheckWishlistStatusQuery, bool>
 {
     public async Task<ServiceResult<bool>> Handle(
         CheckWishlistStatusQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
         var productId = ProductId.From(request.ProductId);
 
         var isInWishlist = await wishlistQueryService.IsInWishlistAsync(

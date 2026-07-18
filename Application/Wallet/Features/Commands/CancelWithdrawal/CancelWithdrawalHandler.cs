@@ -7,7 +7,8 @@ namespace Application.Wallet.Features.Commands.CancelWithdrawal;
 public sealed class CancelWithdrawalHandler(
     IWalletWithdrawalRepository withdrawalRepository,
     IWalletRepository walletRepository,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : ICommandHandler<CancelWithdrawalCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -17,7 +18,7 @@ public sealed class CancelWithdrawalHandler(
         try
         {
             var withdrawalId = WalletWithdrawalRequestId.From(request.WithdrawalId);
-            var userId = UserId.From(request.UserId);
+            var userId = UserId.From(currentUserService.UserId.Value);
 
             var withdrawal = await withdrawalRepository.GetByIdForUpdateAsync(withdrawalId, ct);
             if (withdrawal is null)

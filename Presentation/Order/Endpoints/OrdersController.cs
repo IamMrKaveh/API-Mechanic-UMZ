@@ -19,7 +19,6 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
         CancellationToken ct)
     {
         var query = new GetUserOrdersQuery(
-            RequestContext.UserId ?? Guid.Empty,
             request.Status,
             request.Page,
             request.PageSize);
@@ -32,7 +31,7 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderById(Guid id, CancellationToken ct)
     {
-        return await Send(new GetOrderDetailsQuery(id, RequestContext.UserId ?? Guid.Empty), ct);
+        return await Send(new GetOrderDetailsQuery(id), ct);
     }
 
     [HttpPost]
@@ -44,15 +43,12 @@ public class OrdersController(IMediator mediator, IMapper mapper) : BaseApiContr
         CancellationToken ct)
     {
         var command = new CheckoutFromCartCommand(
-            RequestContext.UserId ?? Guid.Empty,
             request.CartId,
             request.ShippingId,
             request.AddressId,
             request.DiscountCode,
             request.PaymentGateway,
             request.PaymentMethodId,
-            RequestContext.IpAddress ?? string.Empty,
-            RequestContext.UserAgent ?? string.Empty,
             Guid.NewGuid());
 
         var result = await Mediator.Send(command, ct);

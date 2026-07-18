@@ -11,10 +11,10 @@ public sealed class AdminWishlistController(IMediator mediator) : BaseApiControl
     [HttpGet("{userId:guid}/wishlist")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WishlistItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserWishlist(
-    Guid userId,
-    [FromQuery] int page = 1,
-    [FromQuery] int pageSize = 10,
-    CancellationToken ct = default)
+        Guid userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
         var query = new GetWishlistByIdQuery(userId, page, pageSize);
         var result = await Mediator.Send(query, ct);

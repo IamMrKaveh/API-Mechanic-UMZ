@@ -8,7 +8,8 @@ public sealed class RejectWithdrawalHandler(
     IWalletWithdrawalRepository withdrawalRepository,
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : ICommandHandler<RejectWithdrawalCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -18,7 +19,7 @@ public sealed class RejectWithdrawalHandler(
         try
         {
             var withdrawalId = WalletWithdrawalRequestId.From(request.WithdrawalId);
-            var adminId = UserId.From(request.AdminId);
+            var adminId = UserId.From(currentUserService.UserId.Value);
 
             var withdrawal = await withdrawalRepository.GetByIdForUpdateAsync(withdrawalId, ct);
             if (withdrawal is null)

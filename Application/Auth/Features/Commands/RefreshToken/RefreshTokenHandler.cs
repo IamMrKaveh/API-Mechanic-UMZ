@@ -1,47 +1,38 @@
 using Application.Auth.Features.Shared;
-using Microsoft.Extensions.Options;
-using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Auth.Features.Commands.RefreshToken;
 
 public class RefreshTokenHandler(
     IAuthService authService,
-    ICurrentUserService currentUser,
-    IDateTimeProvider dateTimeProvider,
-    IOptions<JwtOptions> jwtOptions,
-    IOptions<AuthOptions> authOptions)
+    ICurrentUserService currentUserService)
     : ICommandHandler<RefreshTokenCommand, AuthResult>
 {
-    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
-    private readonly AuthOptions _authOptions = authOptions.Value;
-
     public async Task<ServiceResult<AuthResult>> Handle(
         RefreshTokenCommand request,
         CancellationToken ct)
     {
-        var refreshToken = Domain.Security.ValueObjects.RefreshToken.Create(request.RefreshToken);
-        var ipAddress = IpAddress.Create(currentUser.IpAddress ?? IpAddress.Unknown.Value);
+        var ipAddress = string.IsNullOrWhiteSpace(currentUserService.IpAddress)
+            ? IpAddress.Unknown
+            : IpAddress.Create(currentUserService.IpAddress);
 
         var result = await authService.RefreshTokenAsync(
-            refreshToken,
+            Domain.Security.ValueObjects.RefreshToken.Create(request.RefreshToken),
             ipAddress,
-            currentUser.UserAgent,
+            currentUserService.UserAgent,
             ct);
 
-        if (result.IsFailed || result.Value == default)
-            return ServiceResult<AuthResult>.Failure(result.Error ?? "Refresh failed", result.Type);
+        if (result.IsFailure)
+            return ServiceResult<AuthResult>.Failure(result.Error);
 
-        var (accessToken, refreshTokenInfo, userDto, isNewUser) = result.Value;
-
-        var now = dateTimeProvider.UtcNow;
+        var (accessToken, refreshToken, user, isNewUser) = result.Value;
 
         return ServiceResult<AuthResult>.Success(new AuthResult
         {
             AccessToken = accessToken,
-            RefreshToken = refreshTokenInfo.RefreshToken,
-            AccessTokenExpiresAt = now.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes),
-            RefreshTokenExpiresAt = now.AddDays(_authOptions.SessionExpirationDays),
-            User = userDto,
+            RefreshToken = refreshToken.RefreshToken,
+            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(15),
+            RefreshTokenExpiresAt = refreshToken.ExpiresAt,
+            User = user,
             IsNewUser = isNewUser
         });
     }

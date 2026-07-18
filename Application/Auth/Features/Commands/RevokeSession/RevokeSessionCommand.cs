@@ -1,6 +1,6 @@
 namespace Application.Auth.Features.Commands.RevokeSession;
 
-public record RevokeSessionCommand(Guid UserId, Guid SessionId) : ICommand, IAuditableCommand
+public record RevokeSessionCommand(Guid SessionId) : ICommand, IAuditableCommand
 {
     public string AuditEventType => "SecurityEvent";
 

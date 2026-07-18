@@ -8,7 +8,8 @@ namespace Application.Support.Features.Queries.GetTicketDetails;
 
 public sealed class GetTicketDetailsHandler(
     ITicketRepository ticketRepository,
-    ITicketQueryService ticketQueryService)
+    ITicketQueryService ticketQueryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<GetTicketDetailsQuery, TicketDto>
 {
     public async Task<ServiceResult<TicketDto>> Handle(
@@ -16,7 +17,7 @@ public sealed class GetTicketDetailsHandler(
         CancellationToken ct)
     {
         var ticketId = TicketId.From(request.TicketId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
 
         var ticket = await ticketRepository.GetByIdWithMessagesAsync(ticketId, ct);
 

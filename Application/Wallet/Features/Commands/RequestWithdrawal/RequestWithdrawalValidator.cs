@@ -6,9 +6,6 @@ public sealed class RequestWithdrawalValidator : AbstractValidator<RequestWithdr
 {
     public RequestWithdrawalValidator()
     {
-        RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("شناسه کاربر الزامی است.");
-
         RuleFor(x => x.Amount)
             .GreaterThan(0).WithMessage("مبلغ باید بزرگتر از صفر باشد.")
             .GreaterThanOrEqualTo(50_000m).WithMessage("حداقل مبلغ برداشت ۵۰,۰۰۰ تومان است.")

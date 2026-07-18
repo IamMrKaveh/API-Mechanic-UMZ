@@ -6,7 +6,8 @@ using Domain.User.ValueObjects;
 namespace Application.Auth.Features.Commands.RevokeSession;
 
 public class RevokeSessionHandler(
-    ISessionRepository sessionRepository)
+    ISessionRepository sessionRepository,
+    ICurrentUserService currentUserService)
     : ICommandHandler<RevokeSessionCommand>
 {
     public async Task<ServiceResult> Handle(RevokeSessionCommand request, CancellationToken ct)
@@ -17,7 +18,7 @@ public class RevokeSessionHandler(
         if (session is null)
             return ServiceResult.NotFound("جلسه یافت نشد.");
 
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
 
         if (session.UserId != userId)
             return ServiceResult.Forbidden("دسترسی غیرمجاز.");

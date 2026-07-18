@@ -5,7 +5,8 @@ using Domain.User.ValueObjects;
 namespace Application.Support.Features.Queries.GetTickets;
 
 public class GetTicketsHandler(
-    ITicketQueryService supportQueryService)
+    ITicketQueryService supportQueryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<GetTicketsQuery, PaginatedResult<TicketListItemDto>>
 {
     public async Task<ServiceResult<PaginatedResult<TicketListItemDto>>> Handle(
@@ -20,7 +21,7 @@ public class GetTicketsHandler(
             ? null
             : TicketStatus.FromString(request.Status);
 
-        var userId = UserId.From(request.UserId!.Value);
+        var userId = UserId.From(currentUserService.UserId.Value);
 
         var result = await supportQueryService.GetTicketsPagedAsync(
             userId,

@@ -116,6 +116,6 @@ public class AuthController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> LogoutAll(CancellationToken ct)
     {
-        return await Send(new LogoutAllCommand(RequestContext.UserId!.Value), ct);
+        return await Send(new LogoutAllCommand(), ct);
     }
 }

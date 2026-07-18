@@ -5,7 +5,8 @@ using Domain.Wallet.ValueObjects;
 namespace Application.Wallet.Features.Commands.ApproveWithdrawal;
 
 public sealed class ApproveWithdrawalHandler(
-    IWalletWithdrawalRepository withdrawalRepository)
+    IWalletWithdrawalRepository withdrawalRepository,
+    ICurrentUserService currentUserService)
     : ICommandHandler<ApproveWithdrawalCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -15,7 +16,7 @@ public sealed class ApproveWithdrawalHandler(
         try
         {
             var withdrawalId = WalletWithdrawalRequestId.From(request.WithdrawalId);
-            var adminId = UserId.From(request.AdminId);
+            var adminId = UserId.From(currentUserService.UserId.Value);
 
             var withdrawal = await withdrawalRepository.GetByIdForUpdateAsync(withdrawalId, ct);
             if (withdrawal is null)

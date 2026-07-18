@@ -6,9 +6,6 @@ public sealed class PreviewWalletTransferValidator : AbstractValidator<PreviewWa
 {
     public PreviewWalletTransferValidator()
     {
-        RuleFor(x => x.FromUserId)
-            .NotEmpty().WithMessage("شناسه کاربر الزامی است.");
-
         RuleFor(x => x.RecipientPhoneNumber)
             .NotEmpty().WithMessage("شماره موبایل گیرنده الزامی است.")
             .MaximumLength(32);

@@ -7,12 +7,14 @@ namespace Application.Wishlist.Features.Commands.ToggleWishlist;
 public class ToggleWishlistHandler(
     IWishlistRepository wishlistRepository,
     IWishlistQueryService wishlistQueryService,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : ICommandHandler<ToggleWishlistCommand, bool>
 {
     public async Task<ServiceResult<bool>> Handle(ToggleWishlistCommand request, CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId); var productId = ProductId.From(request.ProductId);
+        var userId = UserId.From(currentUserService.UserId.Value);
+        var productId = ProductId.From(request.ProductId);
 
         var isInWishlist = await wishlistQueryService.IsInWishlistAsync(userId, productId, ct);
         bool added;

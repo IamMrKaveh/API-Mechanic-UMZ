@@ -6,7 +6,7 @@ namespace Domain.Inventory.Services;
 
 public sealed class InventoryDomainService
 {
-    public static Result Reserve(
+    public static ServiceResult Reserve(
         Aggregates.Inventory inventory,
         StockQuantity quantity,
         string referenceNumber,
@@ -17,7 +17,7 @@ public sealed class InventoryDomainService
         return inventory.ReserveStock(quantity, referenceNumber, orderItemId, userId, correlationId);
     }
 
-    public static Result ConfirmReservation(
+    public static ServiceResult ConfirmReservation(
         Aggregates.Inventory inventory,
         StockQuantity quantity,
         string referenceNumber,
@@ -26,7 +26,7 @@ public sealed class InventoryDomainService
         return inventory.ConfirmReservation(quantity, referenceNumber, orderItemId);
     }
 
-    public static Result RollbackReservation(
+    public static ServiceResult RollbackReservation(
         Aggregates.Inventory inventory,
         StockQuantity quantity,
         string referenceNumber,
@@ -35,7 +35,7 @@ public sealed class InventoryDomainService
         return inventory.ReleaseReservation(quantity, referenceNumber, reason);
     }
 
-    public static Result ReturnStock(
+    public static ServiceResult ReturnStock(
         Aggregates.Inventory inventory,
         StockQuantity quantity,
         string reason,
@@ -44,7 +44,7 @@ public sealed class InventoryDomainService
         return inventory.ReturnStock(quantity, reason, userId);
     }
 
-    public static Result AdjustStock(
+    public static ServiceResult AdjustStock(
         Aggregates.Inventory inventory,
         StockQuantity quantityChange,
         UserId userId,
@@ -53,7 +53,7 @@ public sealed class InventoryDomainService
         return inventory.AdjustStock(quantityChange, userId, reason);
     }
 
-    public static Result RecordDamage(
+    public static ServiceResult RecordDamage(
         Aggregates.Inventory inventory,
         StockQuantity quantity,
         UserId userId,
@@ -62,7 +62,7 @@ public sealed class InventoryDomainService
         return inventory.RecordDamage(quantity, userId, reason);
     }
 
-    public static Result Reconcile(
+    public static ServiceResult Reconcile(
         Aggregates.Inventory inventory,
         StockQuantity calculatedStockFromTransactions,
         UserId userId)
@@ -70,7 +70,7 @@ public sealed class InventoryDomainService
         return inventory.Reconcile(calculatedStockFromTransactions, userId);
     }
 
-    public static Result IncreaseStock(
+    public static ServiceResult IncreaseStock(
         Aggregates.Inventory inventory,
         StockQuantity quantity,
         string reason,
@@ -79,7 +79,7 @@ public sealed class InventoryDomainService
         return inventory.IncreaseStock(quantity, reason, userId);
     }
 
-    public static Result DecreaseStock(
+    public static ServiceResult DecreaseStock(
         Aggregates.Inventory inventory,
         StockQuantity quantity,
         string reason,

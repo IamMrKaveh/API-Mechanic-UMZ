@@ -1,4 +1,3 @@
-using Application.Common.Results;
 using Application.Shipping.Features.Queries.CalculateShippingCost;
 using Application.Shipping.Features.Queries.GetAvailableShippings;
 using Application.Shipping.Features.Queries.GetAvailableShippingsForVariants;

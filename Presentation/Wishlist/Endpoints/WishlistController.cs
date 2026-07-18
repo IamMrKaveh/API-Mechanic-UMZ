@@ -20,14 +20,14 @@ public sealed class WishlistController(IMediator mediator) : BaseApiController(m
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        return await Send(new GetWishlistByIdQuery(RequestContext.UserId ?? Guid.Empty, page, pageSize), ct);
+        return await Send(new GetWishlistByIdQuery(page, pageSize), ct);
     }
 
     [HttpGet("{productId:guid}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public async Task<IActionResult> IsInWishlist(Guid productId, CancellationToken ct)
     {
-        return await Send(new CheckWishlistStatusQuery(RequestContext.UserId ?? Guid.Empty, productId), ct);
+        return await Send(new CheckWishlistStatusQuery(productId), ct);
     }
 
     [HttpPost]
@@ -37,14 +37,14 @@ public sealed class WishlistController(IMediator mediator) : BaseApiController(m
         [FromBody] ToggleWishlistRequest request,
         CancellationToken ct)
     {
-        return await Send(new ToggleWishlistCommand(RequestContext.UserId ?? Guid.Empty, request.ProductId), ct);
+        return await Send(new ToggleWishlistCommand(request.ProductId), ct);
     }
 
     [HttpDelete("{productId:guid}")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemoveFromWishlist(Guid productId, CancellationToken ct)
     {
-        var command = new RemoveFromWishlistCommand(RequestContext.UserId ?? Guid.Empty, productId);
+        var command = new RemoveFromWishlistCommand(productId);
         await Mediator.Send(command, ct);
         return NoContent();
     }
@@ -53,7 +53,7 @@ public sealed class WishlistController(IMediator mediator) : BaseApiController(m
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ClearWishlist(CancellationToken ct)
     {
-        var command = new ClearWishlistCommand(RequestContext.UserId ?? Guid.Empty);
+        var command = new ClearWishlistCommand();
         await Mediator.Send(command, ct);
         return NoContent();
     }

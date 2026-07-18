@@ -2,5 +2,4 @@
 
 public sealed record RejectWithdrawalCommand(
     Guid WithdrawalId,
-    Guid AdminId,
     string Reason) : ICommand<Unit>;

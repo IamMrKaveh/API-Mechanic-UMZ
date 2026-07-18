@@ -5,15 +5,10 @@ namespace Application.Auth.Features.Shared;
 public record AuthResult
 {
     public string AccessToken { get; init; } = string.Empty;
-
     public string RefreshToken { get; init; } = string.Empty;
-
     public DateTime AccessTokenExpiresAt { get; init; }
-
     public DateTime RefreshTokenExpiresAt { get; init; }
-
     public UserProfileDto User { get; init; } = null!;
-
     public bool IsNewUser { get; init; }
 }
 
@@ -28,6 +23,16 @@ public record UserSessionDto
     public DateTime? LastActivityAt { get; init; }
     public DateTime ExpiresAt { get; init; }
     public bool IsCurrent { get; init; }
+}
+
+public record CurrentSessionDto
+{
+    public Guid? SessionId { get; init; }
+    public Guid? UserId { get; init; }
+    public string? IpAddress { get; init; }
+    public string? UserAgent { get; init; }
+    public bool IsAuthenticated { get; init; }
+    public bool IsAdmin { get; init; }
 }
 
 public record TokenResultDto(string AccessToken, string RefreshToken);

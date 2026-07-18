@@ -19,7 +19,7 @@ public sealed class ProfileController(IMediator mediator) : BaseApiController(me
     [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProfile(CancellationToken ct)
     {
-        return await Send(new GetCurrentUserQuery(RequestContext.UserId ?? Guid.Empty), ct);
+        return await Send(new GetCurrentUserQuery(), ct);
     }
 
     [HttpGet("reviews")]
@@ -29,7 +29,7 @@ public sealed class ProfileController(IMediator mediator) : BaseApiController(me
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        return await Send(new GetUserReviewsQuery(RequestContext.UserId ?? Guid.Empty, page, pageSize), ct);
+        return await Send(new GetUserReviewsQuery(page, pageSize), ct);
     }
 
     [HttpPut]

@@ -1,5 +1,4 @@
-﻿using Application.Common.Events;
-using Application.Wallet.Features.Commands.FreezeWallet;
+﻿using Application.Wallet.Features.Commands.FreezeWallet;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Events;
 
@@ -10,8 +9,6 @@ public sealed class FraudAlertCriticalFreezeHandler(
     IAuditService auditService)
     : INotificationHandler<DomainEventNotification<WalletFraudAlertRaisedEvent>>
 {
-    private static readonly Guid SystemAdminId = new("00000000-0000-0000-0000-000000000001");
-
     public async Task Handle(
         DomainEventNotification<WalletFraudAlertRaisedEvent> notification,
         CancellationToken ct)
@@ -25,8 +22,7 @@ public sealed class FraudAlertCriticalFreezeHandler(
         {
             var command = new FreezeWalletCommand(
                 UserId: evt.UserId.Value,
-                Reason: $"[Auto-Freeze] {evt.RuleName}: {evt.Description}",
-                AdminId: SystemAdminId);
+                Reason: $"[Auto-Freeze] {evt.RuleName}: {evt.Description}");
 
             var result = await mediator.Send(command, ct);
 
@@ -34,7 +30,7 @@ public sealed class FraudAlertCriticalFreezeHandler(
             {
                 await auditService.LogSystemEventAsync(
                     "FraudAutoFreezeFailed",
-                    $"خودکار فریز کیف پول {evt.WalletId.Value} بر اساس هشدار {evt.AlertId.Value} ناموفق بود: {result.Error}",
+                    $"خودکار فریز کیف پول {evt.WalletId.Value} بر اساس هشدار {evt.AlertId.Value} ناموفق بود: {result.Error?.Message}",
                     ct);
             }
             else

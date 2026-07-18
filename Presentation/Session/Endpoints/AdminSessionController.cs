@@ -14,7 +14,7 @@ public sealed class AdminSessionController(IMediator mediator) : BaseApiControll
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<UserSessionDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserSessions(Guid userId, CancellationToken ct)
     {
-        var query = new GetUserSessionsQuery(userId);
+        var query = new GetUserSessionsQuery(TargetUserId: userId);
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
     }
@@ -33,7 +33,7 @@ public sealed class AdminSessionController(IMediator mediator) : BaseApiControll
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> RevokeAllUserSessions(Guid userId, CancellationToken ct)
     {
-        var command = new LogoutAllCommand(userId);
+        var command = new LogoutAllCommand(TargetUserId: userId);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }

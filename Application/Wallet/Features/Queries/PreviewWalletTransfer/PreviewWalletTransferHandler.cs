@@ -1,11 +1,8 @@
-﻿using Application.Common.Interfaces;
-using Application.Common.Results;
-using Application.Wallet.Features.Shared;
+﻿using Application.Wallet.Features.Shared;
 using Application.Wallet.Options;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
-using MediatR;
 using Microsoft.Extensions.Options;
 
 namespace Application.Wallet.Features.Queries.PreviewWalletTransfer;
@@ -14,7 +11,8 @@ public sealed class PreviewWalletTransferHandler(
     IUserRepository userRepository,
     IWalletRepository walletRepository,
     IWalletTransferRepository transferRepository,
-    IOptions<WalletTransferOptions> options)
+    IOptions<WalletTransferOptions> options,
+    ICurrentUserService currentUserService)
     : IRequestHandler<PreviewWalletTransferQuery, ServiceResult<WalletTransferPreviewDto>>
 {
     private readonly WalletTransferOptions _options = options.Value;
@@ -23,7 +21,7 @@ public sealed class PreviewWalletTransferHandler(
         PreviewWalletTransferQuery request,
         CancellationToken ct)
     {
-        var fromUserId = UserId.From(request.FromUserId);
+        var fromUserId = UserId.From(currentUserService.UserId.Value);
 
         PhoneNumber recipientPhone;
         try

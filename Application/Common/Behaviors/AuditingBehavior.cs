@@ -49,10 +49,9 @@ public sealed class AuditingBehavior<TRequest, TResponse>(
                     userAgent,
                     ct);
             }
-            else if (response is ServiceResult failure && failure.IsFailed)
+            else if (response is ServiceResult failure && failure.IsFailure)
             {
-                var details = $"Command {requestName} failed: {failure.Error ?? "unknown error"}.";
-
+                var details = $"Command {requestName} failed: {failure.Error.Message}.";
                 await auditService.LogWarningAsync(details, ct);
             }
         }

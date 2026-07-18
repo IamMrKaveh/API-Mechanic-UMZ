@@ -7,7 +7,6 @@ public record DebitWalletCommand(
     decimal Amount,
     WalletTransactionType TransactionType,
     WalletReferenceType ReferenceType,
-    string ReferenceId,
     string IdempotencyKey,
     string? CorrelationId = null,
     string? Description = null)

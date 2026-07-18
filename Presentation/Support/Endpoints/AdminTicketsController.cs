@@ -29,7 +29,7 @@ public sealed class AdminTicketsController(IMediator mediator) : BaseApiControll
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTicketDetails(Guid id, CancellationToken ct)
     {
-        return await Send(new GetTicketDetailsQuery(id, RequestContext.UserId ?? Guid.Empty, true), ct);
+        return await Send(new GetTicketDetailsQuery(id, true), ct);
     }
 
     [HttpPost("{id:guid}/replies")]

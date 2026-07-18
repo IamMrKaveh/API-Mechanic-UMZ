@@ -9,9 +9,6 @@ public sealed class ConfirmWalletTransferValidator : AbstractValidator<ConfirmWa
         RuleFor(x => x.TransferId)
             .NotEmpty().WithMessage("شناسه انتقال الزامی است.");
 
-        RuleFor(x => x.FromUserId)
-            .NotEmpty().WithMessage("شناسه کاربر الزامی است.");
-
         RuleFor(x => x.OtpCode)
             .NotEmpty().WithMessage("کد تأیید الزامی است.")
             .Matches("^[0-9]+$").WithMessage("کد تأیید باید فقط شامل ارقام باشد.")

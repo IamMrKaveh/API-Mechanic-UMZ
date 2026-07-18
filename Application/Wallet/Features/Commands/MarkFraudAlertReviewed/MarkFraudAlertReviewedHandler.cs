@@ -7,7 +7,8 @@ namespace Application.Wallet.Features.Commands.MarkFraudAlertReviewed;
 public sealed class MarkFraudAlertReviewedHandler(
     IWalletFraudAlertRepository repository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : ICommandHandler<MarkFraudAlertReviewedCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(MarkFraudAlertReviewedCommand request, CancellationToken ct)
@@ -15,7 +16,7 @@ public sealed class MarkFraudAlertReviewedHandler(
         try
         {
             var alertId = WalletFraudAlertId.From(request.AlertId);
-            var adminId = UserId.From(request.AdminId);
+            var adminId = UserId.From(currentUserService.UserId.Value);
 
             var alert = await repository.GetByIdAsync(alertId, ct);
             if (alert is null)

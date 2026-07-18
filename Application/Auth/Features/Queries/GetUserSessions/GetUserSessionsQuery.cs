@@ -2,5 +2,5 @@
 
 namespace Application.Auth.Features.Queries.GetUserSessions;
 
-public record GetUserSessionsQuery(Guid UserId, Guid? CurrentSessionId = null)
+public record GetUserSessionsQuery(Guid? TargetUserId = null)
     : IQuery<PaginatedResult<UserSessionDto>>;

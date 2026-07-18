@@ -7,7 +7,8 @@ namespace Application.Wallet.Features.Commands.DismissFraudAlert;
 public sealed class DismissFraudAlertHandler(
     IWalletFraudAlertRepository repository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : ICommandHandler<DismissFraudAlertCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(DismissFraudAlertCommand request, CancellationToken ct)
@@ -15,7 +16,7 @@ public sealed class DismissFraudAlertHandler(
         try
         {
             var alertId = WalletFraudAlertId.From(request.AlertId);
-            var adminId = UserId.From(request.AdminId);
+            var adminId = UserId.From(currentUserService.UserId.Value);
 
             var alert = await repository.GetByIdAsync(alertId, ct);
             if (alert is null)

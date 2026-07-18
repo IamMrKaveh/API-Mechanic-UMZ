@@ -108,7 +108,6 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         [FromBody] AdminWalletAdjustmentRequest request,
         CancellationToken ct)
     {
-        var adminId = RequestContext.UserId!.Value;
         var command = new CreditWalletCommand(
             userId,
             request.Amount,
@@ -117,7 +116,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
             "0",
             $"admin-credit-{userId}-{HttpContext.TraceIdentifier}",
             HttpContext.TraceIdentifier,
-            BuildAuditDescription("CREDIT", adminId, request.Reason, request.Description));
+            BuildAuditDescription("CREDIT", request.Reason, request.Description));
 
         return await Send(command, ct);
     }
@@ -130,16 +129,14 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         [FromBody] AdminWalletAdjustmentRequest request,
         CancellationToken ct)
     {
-        var adminId = RequestContext.UserId!.Value;
         var command = new DebitWalletCommand(
             userId,
             request.Amount,
             WalletTransactionType.Debit,
             WalletReferenceType.Admin,
-            adminId.ToString(),
             $"admin-debit-{userId}-{HttpContext.TraceIdentifier}",
             HttpContext.TraceIdentifier,
-            BuildAuditDescription("DEBIT", adminId, request.Reason, request.Description));
+            BuildAuditDescription("DEBIT", request.Reason, request.Description));
 
         return await Send(command, ct);
     }
@@ -154,8 +151,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         [FromBody] FreezeWalletRequest request,
         CancellationToken ct)
     {
-        var adminId = RequestContext.UserId!.Value;
-        var command = new FreezeWalletCommand(userId, request.Reason, adminId);
+        var command = new FreezeWalletCommand(userId, request.Reason);
         return await Send(command, ct);
     }
 
@@ -167,8 +163,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         Guid userId,
         CancellationToken ct)
     {
-        var adminId = RequestContext.UserId!.Value;
-        var command = new UnfreezeWalletCommand(userId, adminId);
+        var command = new UnfreezeWalletCommand(userId);
         return await Send(command, ct);
     }
 
@@ -227,8 +222,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         [FromBody] FraudAlertReviewRequest request,
         CancellationToken ct)
     {
-        var adminId = RequestContext.UserId!.Value;
-        var command = new MarkFraudAlertReviewedCommand(id, adminId, request.Note);
+        var command = new MarkFraudAlertReviewedCommand(id, request.Note);
         return await Send(command, ct);
     }
 
@@ -240,19 +234,17 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         [FromBody] FraudAlertDismissRequest request,
         CancellationToken ct)
     {
-        var adminId = RequestContext.UserId!.Value;
-        var command = new DismissFraudAlertCommand(id, adminId, request.Note);
+        var command = new DismissFraudAlertCommand(id, request.Note);
         return await Send(command, ct);
     }
 
     private static string BuildAuditDescription(
         string operation,
-        Guid adminId,
         string reason,
         string? extraNote)
     {
         var sb = new StringBuilder();
-        sb.Append($"[ADMIN-{operation}] AdminId={adminId} | Reason={reason}");
+        sb.Append($"[ADMIN-{operation}] | Reason={reason}");
         if (!string.IsNullOrWhiteSpace(extraNote))
             sb.Append($" | Note={extraNote}");
         return sb.ToString();

@@ -7,9 +7,5 @@ public sealed class UnfreezeWalletValidator : AbstractValidator<UnfreezeWalletCo
         RuleFor(x => x.UserId)
             .NotEmpty()
             .WithMessage("شناسه کاربر الزامی است.");
-
-        RuleFor(x => x.AdminId)
-            .NotEmpty()
-            .WithMessage("شناسه ادمین الزامی است.");
     }
 }
