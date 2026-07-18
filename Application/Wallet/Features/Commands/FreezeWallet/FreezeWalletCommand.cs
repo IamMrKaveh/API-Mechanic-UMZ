@@ -2,8 +2,7 @@
 
 public sealed record FreezeWalletCommand(
     Guid UserId,
-    string Reason,
-    Guid AdminId)
+    string Reason)
     : ICommand<Unit>, IAuditableCommand
 {
     public string AuditEventType => "SecurityEvent";

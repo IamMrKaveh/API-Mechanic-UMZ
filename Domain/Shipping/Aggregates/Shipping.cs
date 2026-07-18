@@ -134,10 +134,10 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
         return OrderRange.IsInRange(orderTotal);
     }
 
-    public Result ValidateForOrder(Money orderTotal)
+    public ServiceResult ValidateForOrder(Money orderTotal)
     {
         if (!IsActive)
-            return Result.Failure(new Error(
+            return ServiceResult.Failure(new Error(
                 "400",
                 "روش ارسال غیرفعال است.",
                 ErrorType.Validation));

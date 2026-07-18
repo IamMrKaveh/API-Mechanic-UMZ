@@ -97,6 +97,6 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        return await Send(new GetUserReviewsQuery(RequestContext.UserId ?? Guid.Empty, page, pageSize), ct);
+        return await Send(new GetUserReviewsQuery(page, pageSize), ct);
     }
 }

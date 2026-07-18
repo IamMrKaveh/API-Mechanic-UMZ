@@ -308,9 +308,7 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
     private UserAddress GetAddress(UserAddressId addressId)
     {
         var address = _addresses.FirstOrDefault(a => a.Id == addressId);
-        if (address is null)
-            throw new UserAddressNotFoundException(addressId);
-        return address;
+        return address is null ? throw new UserAddressNotFoundException(addressId) : address;
     }
 
     private void EnsureActive()

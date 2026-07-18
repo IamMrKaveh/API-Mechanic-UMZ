@@ -11,7 +11,8 @@ public sealed class RequestWithdrawalHandler(
     IWalletRepository walletRepository,
     IWalletWithdrawalRepository withdrawalRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : ICommandHandler<RequestWithdrawalCommand, Guid>
 {
     private const int MaxPendingPerUser = 5;
@@ -26,7 +27,7 @@ public sealed class RequestWithdrawalHandler(
 
         try
         {
-            userId = UserId.From(request.UserId);
+            userId = UserId.From(currentUserService.UserId.Value);
         }
         catch (DomainException)
         {
@@ -113,7 +114,7 @@ public sealed class RequestWithdrawalHandler(
         {
             await auditService.LogSystemEventAsync(
                 "WithdrawalRequestConcurrencyConflict",
-                $"تعارض همزمانی در ثبت درخواست برداشت کاربر {request.UserId}",
+                $"تعارض همزمانی در ثبت درخواست برداشت کاربر {currentUserService.UserId.Value}",
                 ct);
             return ServiceResult<Guid>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
@@ -124,7 +125,7 @@ public sealed class RequestWithdrawalHandler(
         catch (Exception ex)
         {
             await auditService.LogErrorAsync(
-                $"[Withdrawal] Unexpected error for user {request.UserId}: {ex.Message}",
+                $"[Withdrawal] Unexpected error for user {currentUserService.UserId.Value}: {ex.Message}",
                 ct);
             return ServiceResult<Guid>.Failure("خطا در ثبت درخواست برداشت.");
         }

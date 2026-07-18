@@ -22,7 +22,7 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        return await Send(new GetTicketsQuery(RequestContext.UserId ?? Guid.Empty, status, priority, page, pageSize), ct);
+        return await Send(new GetTicketsQuery(status, priority, page, pageSize), ct);
     }
 
     [HttpGet("{id:guid}")]
@@ -30,7 +30,7 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTicketDetails(Guid id, CancellationToken ct)
     {
-        return await Send(new GetTicketDetailsQuery(id, RequestContext.UserId ?? Guid.Empty, false), ct);
+        return await Send(new GetTicketDetailsQuery(id, false), ct);
     }
 
     [HttpPost]

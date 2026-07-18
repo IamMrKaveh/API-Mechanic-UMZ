@@ -28,8 +28,8 @@ public sealed class AuthService(
         var userId = existingSession.UserId;
 
         var sessionResult = await sessionService.RefreshSessionAsync(refreshToken, ipAddress, ct);
-        if (!sessionResult.IsSuccess)
-            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Unauthorized(sessionResult.Error!);
+        if (sessionResult.IsFailure)
+            return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Failure(sessionResult.Error);
 
         var user = await userRepository.GetByIdAsync(userId, ct);
         if (user is null)

@@ -3,20 +3,21 @@
 namespace Application.Wallet.Features.Queries.GetWithdrawalById;
 
 public sealed class GetWithdrawalByIdHandler(
-    IWalletWithdrawalQueryService queryService)
+    IWalletWithdrawalQueryService queryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<GetWithdrawalByIdQuery, WalletWithdrawalRequestDto>
 {
     public async Task<ServiceResult<WalletWithdrawalRequestDto>> Handle(
         GetWithdrawalByIdQuery request,
         CancellationToken ct)
     {
-        var dto = await queryService.GetByIdAsync(request.WithdrawalId, ct);
+        var dto = await queryService.GetByIdAsync(request.Id, ct);
         if (dto is null)
             return ServiceResult<WalletWithdrawalRequestDto>.NotFound("درخواست برداشت یافت نشد.");
 
-        if (!request.IsAdmin)
+        if (currentUserService.IsAdmin is false)
         {
-            if (request.RequesterUserId is null || dto.UserId != request.RequesterUserId.Value)
+            if (currentUserService.UserId is null || dto.UserId != currentUserService.UserId.Value)
                 return ServiceResult<WalletWithdrawalRequestDto>.Forbidden(
                     "شما مجاز به مشاهده این درخواست نیستید.");
         }

@@ -7,7 +7,8 @@ namespace Application.Wallet.Features.Commands.DebitWallet;
 public class DebitWalletHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : ICommandHandler<DebitWalletCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -29,7 +30,7 @@ public class DebitWalletHandler(
             wallet.Debit(
                 Money.FromDecimal(request.Amount),
                 request.Description ?? request.TransactionType.ToString(),
-                request.ReferenceId);
+                currentUserService.UserId.Value.ToString());
 
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);

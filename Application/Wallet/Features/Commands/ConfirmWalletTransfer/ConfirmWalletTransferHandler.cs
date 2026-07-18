@@ -17,7 +17,8 @@ public sealed class ConfirmWalletTransferHandler(
     IOtpService otpService,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    ICurrentUserService currentUserService)
     : IRequestHandler<ConfirmWalletTransferCommand, ServiceResult<ConfirmWalletTransferResultDto>>
 {
     public async Task<ServiceResult<ConfirmWalletTransferResultDto>> Handle(
@@ -27,7 +28,7 @@ public sealed class ConfirmWalletTransferHandler(
         try
         {
             var transferId = WalletTransferId.From(request.TransferId);
-            var fromUserId = UserId.From(request.FromUserId);
+            var fromUserId = UserId.From(currentUserService.UserId.Value);
 
             var transfer = await transferRepository.GetByIdForUpdateAsync(transferId, ct);
             if (transfer is null)

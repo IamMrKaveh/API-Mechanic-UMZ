@@ -1,6 +1,6 @@
 using Application.Audit.Contracts;
 using Application.Common.Exceptions;
-using SharedKernel.Exceptions;
+using ValidationException = FluentValidation.ValidationException;
 
 namespace Presentation.Common.Middleware;
 
@@ -59,13 +59,11 @@ public class CustomExceptionHandlerMiddleware(
         };
 
     private static bool IsPgUniqueViolation(DbUpdateException ex)
-    => ex.InnerException is Npgsql.PostgresException pg && pg.SqlState == "23505";
+        => ex.InnerException is Npgsql.PostgresException pg && pg.SqlState == "23505";
 
     private void LogException(HttpContext context, Exception exception, int statusCode, bool isUnhandled)
     {
-        var level = isUnhandled
-            ? LogLevel.Error
-            : LogLevel.Warning;
+        var level = isUnhandled ? LogLevel.Error : LogLevel.Warning;
 
         logger.Log(level, exception,
             "Request {Method} {Path} failed with {StatusCode} ({ExceptionType}): {Message}",

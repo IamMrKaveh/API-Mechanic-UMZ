@@ -48,21 +48,21 @@ public sealed class StockQuantity : ValueObject, IComparable<StockQuantity>
         return new StockQuantity(Value - quantity);
     }
 
-    public Result<StockQuantity> TrySubtract(int quantity)
+    public ServiceResult<StockQuantity> TrySubtract(int quantity)
     {
         if (quantity < 0)
-            return Result<StockQuantity>.Failure(new Error(
+            return ServiceResult<StockQuantity>.Failure(new Error(
                 "400",
                 "مقدار کاهش نمی‌تواند منفی باشد.",
                 ErrorType.Validation));
 
         if (Value < quantity)
-            return Result<StockQuantity>.Failure(new Error(
+            return ServiceResult<StockQuantity>.Failure(new Error(
                 "400",
                 $"موجودی کافی نیست. موجودی فعلی: {Value}، کمبود: {quantity - Value}",
                 ErrorType.Validation));
 
-        return Result<StockQuantity>.Success(new StockQuantity(Value - quantity));
+        return ServiceResult<StockQuantity>.Success(new StockQuantity(Value - quantity));
     }
 
     public int CompareTo(StockQuantity? other) => other == null

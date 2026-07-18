@@ -16,7 +16,7 @@ namespace Presentation.Cart.Endpoints;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/cart")]
 [AllowAnonymous]
-public sealed class CartController(ISender mediator) : BaseApiController(mediator)
+public sealed class CartController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]

@@ -17,7 +17,7 @@ public sealed class ReviewDomainService
         _purchaseVerificationService = purchaseVerificationService;
     }
 
-    public async Task<Result<ProductReview>> SubmitReviewAsync(
+    public async Task<ServiceResult<ProductReview>> SubmitReviewAsync(
         ProductId productId,
         UserId userId,
         Rating rating,
@@ -34,7 +34,7 @@ public sealed class ReviewDomainService
 
         bool alreadyReviewed = await hasExistingReviewCheck(userId, productId, orderId, ct);
         if (alreadyReviewed)
-            return Result<ProductReview>.Failure(Error.Validation("Review.AlreadyExists", "کاربر قبلاً برای این محصول نظر ثبت کرده است."));
+            return ServiceResult<ProductReview>.Failure(Error.Validation("Review.AlreadyExists", "کاربر قبلاً برای این محصول نظر ثبت کرده است."));
 
         bool isVerifiedPurchase = false;
 
@@ -43,7 +43,7 @@ public sealed class ReviewDomainService
             isVerifiedPurchase = await _purchaseVerificationService.UserHasPurchasedProductAsync(userId, productId, ct);
 
             if (!isVerifiedPurchase)
-                return Result<ProductReview>.Failure(Error.Validation("Review.NotPurchased", "برای ثبت نظر باید محصول را خریداری کرده باشید."));
+                return ServiceResult<ProductReview>.Failure(Error.Validation("Review.NotPurchased", "برای ثبت نظر باید محصول را خریداری کرده باشید."));
         }
 
         var review = ProductReview.Create(
@@ -55,6 +55,6 @@ public sealed class ReviewDomainService
             isVerifiedPurchase,
             orderId);
 
-        return Result<ProductReview>.Success(review);
+        return ServiceResult<ProductReview>.Success(review);
     }
 }

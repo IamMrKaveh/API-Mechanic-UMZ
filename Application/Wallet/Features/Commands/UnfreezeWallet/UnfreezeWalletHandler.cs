@@ -6,7 +6,8 @@ namespace Application.Wallet.Features.Commands.UnfreezeWallet;
 public sealed class UnfreezeWalletHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    ICurrentUserService currentUserService)
     : ICommandHandler<UnfreezeWalletCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -16,7 +17,7 @@ public sealed class UnfreezeWalletHandler(
         try
         {
             var userId = UserId.From(request.UserId);
-            var adminId = UserId.From(request.AdminId);
+            var adminId = UserId.From(currentUserService.UserId.Value);
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)
@@ -29,7 +30,7 @@ public sealed class UnfreezeWalletHandler(
 
             await auditService.LogSystemEventAsync(
                 "WalletUnfrozen",
-                $"کیف پول کاربر {request.UserId} توسط ادمین {request.AdminId} رفع مسدودی شد.",
+                $"کیف پول کاربر {userId.Value} توسط ادمین {adminId.Value} رفع مسدودی شد.",
                 ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);

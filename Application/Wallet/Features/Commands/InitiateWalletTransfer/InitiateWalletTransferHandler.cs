@@ -19,7 +19,8 @@ public sealed class InitiateWalletTransferHandler(
     IOtpService otpService,
     IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider,
-    IOptions<WalletTransferOptions> options)
+    IOptions<WalletTransferOptions> options,
+    ICurrentUserService currentUserService)
     : IRequestHandler<InitiateWalletTransferCommand, ServiceResult<InitiateWalletTransferResultDto>>
 {
     private readonly WalletTransferOptions _options = options.Value;
@@ -30,7 +31,7 @@ public sealed class InitiateWalletTransferHandler(
     {
         try
         {
-            var fromUserId = UserId.From(request.FromUserId);
+            var fromUserId = UserId.From(currentUserService.UserId.Value);
             var recipientPhone = PhoneNumber.Create(request.RecipientPhoneNumber);
 
             var sender = await userRepository.GetByIdAsync(fromUserId, ct);
@@ -100,13 +101,13 @@ public sealed class InitiateWalletTransferHandler(
                 OtpPurpose.Login,
                 ct);
 
-            if (sendResult.IsFailed)
+            if (sendResult.IsFailure)
             {
-                transfer.MarkFailed(sendResult.Error ?? "ارسال کد تأیید ناموفق بود.");
+                var errorMessage = sendResult.Error?.Message ?? "ارسال کد تأیید ناموفق بود.";
+                transfer.MarkFailed(errorMessage);
                 transferRepository.Update(transfer);
                 await unitOfWork.SaveChangesAsync(ct);
-                return ServiceResult<InitiateWalletTransferResultDto>.Failure(
-                    sendResult.Error ?? "ارسال کد تأیید ناموفق بود.");
+                return ServiceResult<InitiateWalletTransferResultDto>.Failure(errorMessage);
             }
 
             await unitOfWork.SaveChangesAsync(ct);

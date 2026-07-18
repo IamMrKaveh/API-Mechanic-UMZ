@@ -1,5 +1,4 @@
 ﻿using Application.Audit.Features.Shared;
-using Application.Common.Results;
 using Domain.User.ValueObjects;
 
 namespace Application.Audit.Contracts;

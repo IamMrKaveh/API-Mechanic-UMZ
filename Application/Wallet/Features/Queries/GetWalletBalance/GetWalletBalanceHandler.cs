@@ -1,20 +1,20 @@
 ﻿using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
-using Domain.Wallet.Aggregates;
 using Domain.Wallet.Interfaces;
 
 namespace Application.Wallet.Features.Queries.GetWalletBalance;
 
 public sealed class GetWalletBalanceHandler(
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICurrentUserService currentUserService)
     : IQueryHandler<GetWalletBalanceQuery, WalletDto>
 {
     public async Task<ServiceResult<WalletDto>> Handle(
         GetWalletBalanceQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(request.userId ?? currentUserService.UserId.Value);
 
         var wallet = await walletRepository.GetByUserIdAsync(userId, ct);
 

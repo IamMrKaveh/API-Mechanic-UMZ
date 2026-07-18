@@ -16,7 +16,7 @@ public sealed class AddressController(IMediator mediator) : BaseApiController(me
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<UserAddressDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserAddresses(CancellationToken ct)
     {
-        return await Send(new GetUserAddressesQuery(RequestContext.UserId ?? Guid.Empty), ct);
+        return await Send(new GetUserAddressesQuery(), ct);
     }
 
     [HttpPost]

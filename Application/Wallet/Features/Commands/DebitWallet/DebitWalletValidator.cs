@@ -15,10 +15,6 @@ public sealed class DebitWalletValidator : AbstractValidator<DebitWalletCommand>
             .NotEmpty().WithMessage("کلید یکتای درخواست الزامی است.")
             .MaximumLength(128).WithMessage("طول کلید یکتا نباید بیش از ۱۲۸ کاراکتر باشد.");
 
-        RuleFor(x => x.ReferenceId)
-            .NotEmpty().WithMessage("شناسه مرجع الزامی است.")
-            .MaximumLength(256);
-
         RuleFor(x => x.TransactionType)
             .IsInEnum().WithMessage("نوع تراکنش نامعتبر است.");
 

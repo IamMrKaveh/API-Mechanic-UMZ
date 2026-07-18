@@ -5,15 +5,19 @@ using Domain.User.ValueObjects;
 namespace Application.Order.Features.Queries.GetOrderDetails;
 
 public class GetOrderDetailsHandler(
-    IOrderQueryService orderQueryService)
+    IOrderQueryService orderQueryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<GetOrderDetailsQuery, OrderDto>
 {
     public async Task<ServiceResult<OrderDto>> Handle(
         GetOrderDetailsQuery request,
         CancellationToken ct)
     {
+        if (!currentUserService.UserId.HasValue)
+            return ServiceResult<OrderDto>.Unauthorized("کاربر احراز هویت نشده است.");
+
         var orderId = OrderId.From(request.OrderId);
-        var userId = UserId.From(request.UserId);
+        var userId = UserId.From(currentUserService.UserId.Value);
 
         var order = await orderQueryService.GetOrderDetailsAsync(orderId, userId, ct);
 

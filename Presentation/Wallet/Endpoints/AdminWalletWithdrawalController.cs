@@ -36,7 +36,7 @@ public class AdminWalletWithdrawalController(IMediator mediator, IMapper mapper)
         Guid id,
         CancellationToken ct)
     {
-        var query = new GetWithdrawalByIdQuery(id, RequestContext.UserId, IsAdmin: true);
+        var query = new GetWithdrawalByIdQuery(id);
         return await Send(query, ct);
     }
 
@@ -48,7 +48,7 @@ public class AdminWalletWithdrawalController(IMediator mediator, IMapper mapper)
         Guid id,
         CancellationToken ct)
     {
-        var cmd = new ApproveWithdrawalCommand(id, RequestContext.UserId!.Value);
+        var cmd = new ApproveWithdrawalCommand(id);
         return await Send(cmd, ct);
     }
 
@@ -61,7 +61,7 @@ public class AdminWalletWithdrawalController(IMediator mediator, IMapper mapper)
         [FromBody] RejectWithdrawalRequest request,
         CancellationToken ct)
     {
-        var cmd = new RejectWithdrawalCommand(id, RequestContext.UserId!.Value, request.Reason);
+        var cmd = new RejectWithdrawalCommand(id, request.Reason);
         return await Send(cmd, ct);
     }
 
@@ -76,7 +76,6 @@ public class AdminWalletWithdrawalController(IMediator mediator, IMapper mapper)
     {
         var cmd = new MarkWithdrawalPaidCommand(
             id,
-            RequestContext.UserId!.Value,
             request.BankReferenceNumber);
         return await Send(cmd, ct);
     }

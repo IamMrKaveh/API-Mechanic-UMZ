@@ -1,5 +1,6 @@
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
+using Domain.Product.ValueObjects;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 using Domain.User.Interfaces;
@@ -53,8 +54,8 @@ public class CreateOrderHandler(
                 {
                     orderItemSnapshots.Add(OrderItemSnapshot.Create(
                         VariantId.From(item.VariantId),
-                        Domain.Product.ValueObjects.ProductId.NewId(),
-                        Domain.Product.ValueObjects.ProductName.Create("محصول"),
+                        ProductId.NewId(),
+                        ProductName.Create("محصول"),
                         Domain.Variant.ValueObjects.Sku.Create("SKU"),
                         Money.FromDecimal(item.SellingPrice, "IRT"),
                         item.Quantity));
@@ -66,13 +67,14 @@ public class CreateOrderHandler(
                 var discountAmountToApply = Money.Zero("IRT");
                 Domain.Discount.ValueObjects.DiscountCodeId? discountCodeIdToApply = null;
 
-                if (!string.IsNullOrEmpty(request.DiscountCode))
+                if (string.IsNullOrEmpty(request.DiscountCode) is false)
                 {
                     var discountServiceResult = await discountService.ApplyDiscountAsync(
                         request.DiscountCode, totalAmount, userId, orderId, cancellationToken);
 
                     if (!discountServiceResult.IsSuccess)
-                        return ServiceResult<Guid>.Validation(discountServiceResult.Error ?? "کد تخفیف نامعتبر است.");
+                        return ServiceResult<Guid>.Validation(
+                            discountServiceResult.Error?.Message ?? "کد تخفیف نامعتبر است.");
                 }
 
                 var receiverInfo = ReceiverInfo.Create(request.ReceiverName, userAddress.PhoneNumber.Value);

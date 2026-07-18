@@ -8,10 +8,6 @@ public sealed class FreezeWalletValidator : AbstractValidator<FreezeWalletComman
             .NotEmpty()
             .WithMessage("شناسه کاربر الزامی است.");
 
-        RuleFor(x => x.AdminId)
-            .NotEmpty()
-            .WithMessage("شناسه ادمین الزامی است.");
-
         RuleFor(x => x.Reason)
             .NotEmpty()
             .WithMessage("دلیل مسدودسازی الزامی است.")

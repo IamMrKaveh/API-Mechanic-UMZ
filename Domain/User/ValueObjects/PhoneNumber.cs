@@ -24,17 +24,17 @@ public sealed class PhoneNumber : ValueObject
         return new PhoneNumber(normalized);
     }
 
-    public static Result<PhoneNumber> TryCreate(string value)
+    public static ServiceResult<PhoneNumber> TryCreate(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Result<PhoneNumber>.Failure(new Error("PhoneNumber.Empty", "شماره تلفن الزامی است.", ErrorType.Validation));
+            return ServiceResult<PhoneNumber>.Failure(new Error("PhoneNumber.Empty", "شماره تلفن الزامی است.", ErrorType.Validation));
 
         var normalized = Normalize(value);
 
         if (!IsValid(normalized))
-            return Result<PhoneNumber>.Failure(new Error("PhoneNumber.InvalidFormat", "فرمت شماره تلفن نامعتبر است.", ErrorType.Validation));
+            return ServiceResult<PhoneNumber>.Failure(new Error("PhoneNumber.InvalidFormat", "فرمت شماره تلفن نامعتبر است.", ErrorType.Validation));
 
-        return Result<PhoneNumber>.Success(new PhoneNumber(normalized));
+        return ServiceResult<PhoneNumber>.Success(new PhoneNumber(normalized));
     }
 
     private static string Normalize(string value)

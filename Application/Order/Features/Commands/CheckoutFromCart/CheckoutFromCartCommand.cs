@@ -3,14 +3,16 @@ using Application.Order.Features.Shared;
 namespace Application.Order.Features.Commands.CheckoutFromCart;
 
 public record CheckoutFromCartCommand(
-    Guid UserId,
     Guid CartId,
     Guid ShippingId,
     Guid AddressId,
     string? DiscountCode,
     string? PaymentMethod,
     Guid? PaymentMethodId,
-    string IpAddress,
-    string? UserAgent,
     Guid IdempotencyKey)
-    : ICommand<CheckoutResultDto>, IIdempotentCommand;
+    : ICommand<CheckoutResultDto>, IIdempotentCommand
+{
+    public Guid UserId { get; init; }
+    public string IpAddress { get; init; } = string.Empty;
+    public string? UserAgent { get; init; }
+}

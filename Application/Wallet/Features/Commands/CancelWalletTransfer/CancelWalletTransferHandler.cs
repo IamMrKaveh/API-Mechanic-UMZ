@@ -1,15 +1,13 @@
-﻿using Application.Common.Interfaces;
-using Application.Common.Results;
-using Domain.User.ValueObjects;
+﻿using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
-using MediatR;
 
 namespace Application.Wallet.Features.Commands.CancelWalletTransfer;
 
 public sealed class CancelWalletTransferHandler(
-    IWalletTransferRepository transferRepository)
+    IWalletTransferRepository transferRepository,
+    ICurrentUserService currentUserService)
     : IRequestHandler<CancelWalletTransferCommand, ServiceResult<Unit>>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -19,7 +17,7 @@ public sealed class CancelWalletTransferHandler(
         try
         {
             var transferId = WalletTransferId.From(request.TransferId);
-            var fromUserId = UserId.From(request.FromUserId);
+            var fromUserId = UserId.From(currentUserService.UserId.Value);
 
             var transfer = await transferRepository.GetByIdForUpdateAsync(transferId, ct);
             if (transfer is null)

@@ -1,5 +1,4 @@
 ﻿namespace Application.Wishlist.Features.Commands.ClearWishlist;
 
-public record ClearWishlistCommand(
-    Guid UserId)
+public record ClearWishlistCommand()
     : ICommand;

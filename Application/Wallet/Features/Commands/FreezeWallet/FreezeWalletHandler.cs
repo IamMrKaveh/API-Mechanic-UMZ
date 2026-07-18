@@ -6,7 +6,8 @@ namespace Application.Wallet.Features.Commands.FreezeWallet;
 
 public sealed class FreezeWalletHandler(
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICurrentUserService currentUserService)
     : ICommandHandler<FreezeWalletCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -16,7 +17,7 @@ public sealed class FreezeWalletHandler(
         try
         {
             var userId = UserId.From(request.UserId);
-            var adminId = UserId.From(request.AdminId);
+            var adminId = UserId.From(currentUserService.UserId.Value);
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)

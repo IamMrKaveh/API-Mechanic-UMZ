@@ -10,7 +10,6 @@ global using Application.Common.Events;
 global using Application.Common.Exceptions;
 global using Application.Common.Interfaces;
 global using Application.Common.Mapping;
-global using Application.Common.Results;
 global using Application.Discount.Contracts;
 global using Application.Inventory.Contracts;
 global using Application.Media.Contracts;

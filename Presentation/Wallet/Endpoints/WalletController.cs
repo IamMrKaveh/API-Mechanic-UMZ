@@ -34,7 +34,7 @@ public class WalletController(
     [ProducesResponseType(typeof(ApiResponse<WalletDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBalance(CancellationToken ct)
     {
-        var query = new GetWalletBalanceQuery(RequestContext.UserId!.Value);
+        var query = new GetWalletBalanceQuery();
         return await Send(query, ct);
     }
 
@@ -45,7 +45,7 @@ public class WalletController(
         CancellationToken ct)
     {
         var query = new GetWalletLedgerQuery(
-            RequestContext.UserId!.Value,
+            request.userId,
             request.Page,
             request.PageSize);
 
@@ -130,7 +130,6 @@ public class WalletController(
         CancellationToken ct)
     {
         var cmd = new RequestWithdrawalCommand(
-            RequestContext.UserId!.Value,
             request.Amount,
             request.Iban,
             request.AccountHolder,
@@ -145,7 +144,6 @@ public class WalletController(
         CancellationToken ct)
     {
         var query = new GetMyWithdrawalsQuery(
-            RequestContext.UserId!.Value,
             request.Page,
             request.PageSize);
         return await Send(query, ct);
@@ -154,14 +152,9 @@ public class WalletController(
     [HttpGet("withdrawals/{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<WalletWithdrawalRequestDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetWithdrawalById(
-        Guid id,
-        CancellationToken ct)
+    public async Task<IActionResult> GetWithdrawalById(Guid id, CancellationToken ct)
     {
-        var query = new GetWithdrawalByIdQuery(
-            id,
-            RequestContext.UserId,
-            IsAdmin: false);
+        var query = new GetWithdrawalByIdQuery(id);
         return await Send(query, ct);
     }
 
@@ -173,7 +166,7 @@ public class WalletController(
         Guid id,
         CancellationToken ct)
     {
-        var cmd = new CancelWithdrawalCommand(id, RequestContext.UserId!.Value);
+        var cmd = new CancelWithdrawalCommand(id);
         return await Send(cmd, ct);
     }
 
@@ -185,7 +178,7 @@ public class WalletController(
         [FromBody] RejectWithdrawalRequest request,
         CancellationToken ct)
     {
-        var cmd = new RejectWithdrawalCommand(id, RequestContext.UserId!.Value, request.Reason);
+        var cmd = new RejectWithdrawalCommand(id, request.Reason);
         return await Send(cmd, ct);
     }
 
@@ -200,7 +193,6 @@ public class WalletController(
     {
         var cmd = new MarkWithdrawalPaidCommand(
             id,
-            RequestContext.UserId!.Value,
             request.BankReferenceNumber);
         return await Send(cmd, ct);
     }
@@ -214,7 +206,6 @@ public class WalletController(
         CancellationToken ct)
     {
         var query = new PreviewWalletTransferQuery(
-            RequestContext.UserId!.Value,
             request.RecipientPhoneNumber,
             request.Amount);
         return await Send(query, ct);
@@ -230,7 +221,6 @@ public class WalletController(
         CancellationToken ct)
     {
         var cmd = new InitiateWalletTransferCommand(
-            RequestContext.UserId!.Value,
             request.RecipientPhoneNumber,
             request.Amount,
             request.Description);
@@ -249,7 +239,6 @@ public class WalletController(
     {
         var cmd = new ConfirmWalletTransferCommand(
             request.TransferId,
-            RequestContext.UserId!.Value,
             request.OtpCode);
         return await Send(cmd, ct);
     }
@@ -262,7 +251,7 @@ public class WalletController(
         Guid id,
         CancellationToken ct)
     {
-        var cmd = new CancelWalletTransferCommand(id, RequestContext.UserId!.Value);
+        var cmd = new CancelWalletTransferCommand(id);
         return await Send(cmd, ct);
     }
 

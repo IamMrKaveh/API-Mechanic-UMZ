@@ -7,7 +7,8 @@ namespace Application.Wallet.Features.Commands.MarkWithdrawalPaid;
 
 public sealed class MarkWithdrawalPaidHandler(
     IWalletWithdrawalRepository withdrawalRepository,
-    IWalletRepository walletRepository)
+    IWalletRepository walletRepository,
+    ICurrentUserService currentUserService)
     : ICommandHandler<MarkWithdrawalPaidCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
@@ -17,7 +18,7 @@ public sealed class MarkWithdrawalPaidHandler(
         try
         {
             var withdrawalId = WalletWithdrawalRequestId.From(request.WithdrawalId);
-            var adminId = UserId.From(request.AdminId);
+            var adminId = UserId.From(currentUserService.UserId.Value);
 
             var withdrawal = await withdrawalRepository.GetByIdForUpdateAsync(withdrawalId, ct);
             if (withdrawal is null)

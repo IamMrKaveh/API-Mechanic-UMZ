@@ -10,7 +10,6 @@ public sealed class WishlistMappingConfig : IRegister
     {
         config.NewConfig<ToggleWishlistRequest, ToggleWishlistCommand>()
             .Map(dest => dest.ProductId, src => src.ProductId)
-            .Ignore(dest => dest.UserId)
             .IgnoreNonMapped(true);
     }
 }
