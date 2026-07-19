@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 
@@ -8,17 +8,28 @@ public class DebitWalletHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDistributedLock distributedLock)
     : ICommandHandler<DebitWalletCommand, Unit>
 {
+    private static readonly TimeSpan WalletLockExpiry = TimeSpan.FromSeconds(10);
+
     public async Task<ServiceResult<Unit>> Handle(
         DebitWalletCommand request,
         CancellationToken ct)
     {
+        var userId = UserId.From(request.UserId);
+
+        await using var lockHandle = await distributedLock.AcquireAsync(
+            $"wallet:{userId.Value:N}",
+            WalletLockExpiry,
+            ct);
+
+        if (lockHandle is null || !lockHandle.IsAcquired)
+            return ServiceResult<Unit>.Conflict("عملیات دیگری روی کیف پول در حال انجام است. لطفاً مجدداً تلاش کنید.");
+
         try
         {
-            var userId = UserId.From(request.UserId);
-
             var alreadyProcessed = await walletRepository.HasIdempotencyKeyAsync(userId, request.IdempotencyKey, ct);
             if (alreadyProcessed)
                 return ServiceResult<Unit>.Success(Unit.Value);

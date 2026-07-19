@@ -1,4 +1,4 @@
-﻿namespace Domain.Order.Enums;
+namespace Domain.Order.Enums;
 
 public enum ProcessStepEnum
 {
@@ -7,6 +7,10 @@ public enum ProcessStepEnum
     InventoryReserved,
     PaymentPending,
     PaymentSucceeded,
+    InventoryCommitting,
+    InventoryCommitFailed,
+    Refunded,
+    RequiresManualReconciliation,
     Completed,
     Compensating,
     Compensated,

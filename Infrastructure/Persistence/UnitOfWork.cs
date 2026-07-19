@@ -1,8 +1,9 @@
-﻿namespace Infrastructure.Persistence;
+namespace Infrastructure.Persistence;
 
 public sealed class UnitOfWork(
     DBContext context,
-    ILogger<UnitOfWork> logger) : IUnitOfWork
+    ILogger<UnitOfWork> logger,
+    IHostEnvironment environment) : IUnitOfWork
 {
     private bool disposed;
 
@@ -19,7 +20,18 @@ public sealed class UnitOfWork(
         ThrowIfDisposed();
 
         if (context.Database.CurrentTransaction is not null)
+        {
+            if (environment.IsDevelopment())
+                throw new InvalidOperationException(
+                    "ExecuteStrategyAsync was called while a transaction is already active. " +
+                    "Wrap the entire transactional block (including BeginTransaction) inside the strategy.");
+
+            logger.LogWarning(
+                "ExecuteStrategyAsync invoked while a transaction is already active. " +
+                "Operation is running without retry semantics inside the outer transaction.");
+
             return await operation(ct);
+        }
 
         var strategy = context.Database.CreateExecutionStrategy();
 
