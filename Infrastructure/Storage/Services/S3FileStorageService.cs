@@ -1,5 +1,4 @@
-﻿using Amazon.S3.Model;
-using Application.Media.Contracts;
+using Amazon.S3.Model;
 using Infrastructure.Storage.Options;
 
 namespace Infrastructure.Storage.Services;
@@ -7,8 +6,11 @@ namespace Infrastructure.Storage.Services;
 public sealed class S3FileStorageService(
     IAmazonS3 s3Client,
     IOptions<StorageOptions> options,
-    IAuditService auditService) : IStorageService
+    IAuditService auditService,
+    IFeatureManager featureManager) : IStorageService
 {
+    private const string PresignedUrlFeatureFlag = "Storage.PresignedUrl.Enabled";
+
     private readonly StorageOptions _options = options.Value;
 
     public async Task<string> UploadAsync(
@@ -24,6 +26,8 @@ public sealed class S3FileStorageService(
 
         await using var buffer = await BufferAsync(fileStream, ct);
 
+        var presignedEnabled = await featureManager.IsEnabledAsync(PresignedUrlFeatureFlag);
+
         var putRequest = new PutObjectRequest
         {
             BucketName = _options.BucketName,
@@ -34,7 +38,7 @@ public sealed class S3FileStorageService(
             UseChunkEncoding = false,
             DisablePayloadSigning = true,
             DisableDefaultChecksumValidation = true,
-            CannedACL = S3CannedACL.PublicRead
+            CannedACL = presignedEnabled ? S3CannedACL.Private : S3CannedACL.PublicRead
         };
 
         try
@@ -95,6 +99,25 @@ public sealed class S3FileStorageService(
     {
         if (string.IsNullOrWhiteSpace(filePath)) return string.Empty;
         return $"{_options.BaseUrl.TrimEnd('/')}/{filePath.TrimStart('/')}";
+    }
+
+    public Task<string> GetPresignedUrlAsync(string filePath, TimeSpan expiry, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            return Task.FromResult(string.Empty);
+
+        var effectiveExpiry = expiry <= TimeSpan.Zero ? TimeSpan.FromMinutes(15) : expiry;
+
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = _options.BucketName,
+            Key = filePath.TrimStart('/'),
+            Expires = DateTime.UtcNow.Add(effectiveExpiry),
+            Verb = HttpVerb.GET
+        };
+
+        var url = s3Client.GetPreSignedURL(request);
+        return Task.FromResult(url);
     }
 
     private static async Task<MemoryStream> BufferAsync(Stream source, CancellationToken ct)

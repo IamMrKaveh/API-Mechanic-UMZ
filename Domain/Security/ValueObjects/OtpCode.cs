@@ -1,4 +1,4 @@
-﻿namespace Domain.Security.ValueObjects;
+namespace Domain.Security.ValueObjects;
 
 public sealed class OtpCode : ValueObject
 {
@@ -48,7 +48,13 @@ public sealed class OtpCode : ValueObject
         if (string.IsNullOrWhiteSpace(providedCode))
             return false;
 
-        return string.Equals(Value, providedCode.Trim(), StringComparison.Ordinal);
+        var providedBytes = System.Text.Encoding.UTF8.GetBytes(providedCode.Trim());
+        var actualBytes = System.Text.Encoding.UTF8.GetBytes(Value);
+
+        if (providedBytes.Length != actualBytes.Length)
+            return false;
+
+        return CryptographicOperations.FixedTimeEquals(providedBytes, actualBytes);
     }
 
     public string ToHash()
@@ -62,7 +68,15 @@ public sealed class OtpCode : ValueObject
         if (string.IsNullOrWhiteSpace(storedHash))
             return false;
 
-        return string.Equals(ToHash(), storedHash, StringComparison.Ordinal);
+        var computed = ToHash();
+
+        var computedBytes = System.Text.Encoding.UTF8.GetBytes(computed);
+        var storedBytes = System.Text.Encoding.UTF8.GetBytes(storedHash);
+
+        if (computedBytes.Length != storedBytes.Length)
+            return false;
+
+        return CryptographicOperations.FixedTimeEquals(computedBytes, storedBytes);
     }
 
     public string GetMasked()
