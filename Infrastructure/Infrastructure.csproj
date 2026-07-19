@@ -8,6 +8,7 @@
 
 	<ItemGroup>
 		<!-- Security -->
+		<PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
 		<PackageReference Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
 		<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.36" />
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />

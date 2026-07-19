@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Persistence.Outbox;
+using System.Diagnostics;
+
+namespace Infrastructure.Persistence.Outbox;
 
 public sealed class OutboxProcessor(
     DBContext context,
@@ -39,57 +41,75 @@ public sealed class OutboxProcessor(
 
             foreach (var message in messages)
             {
-                try
-                {
-                    var type = typeRegistry.Resolve(message.Type);
-
-                    if (type is null)
-                    {
-                        await auditService.LogWarningAsync(
-                            $"Could not resolve type {message.Type} for outbox message {message.Id}",
-                            ct);
-
-                        message.MarkPoisoned($"Unresolvable event type: {message.Type}");
-                        continue;
-                    }
-
-                    var @event = JsonSerializer.Deserialize(
-                        message.Payload,
-                        type);
-
-                    if (@event is null)
-                    {
-                        message.MarkPoisoned("Deserialization returned null payload.");
-                        continue;
-                    }
-
-                    var notificationType =
-                        typeof(DomainEventNotification<>)
-                            .MakeGenericType(type);
-
-                    var notification =
-                        Activator.CreateInstance(notificationType, @event)!;
-
-                    await publisher.Publish(notification, ct);
-
-                    message.MarkProcessed(DateTime.UtcNow);
-                }
-                catch (Exception ex)
-                {
-                    await auditService.LogErrorAsync(
-                        $"Error processing outbox message {message.Id}: {ex.Message}",
-                        ct);
-
-                    message.MarkFailed(ex.Message);
-
-                    if (message.RetryCount >= MaxRetries)
-                        message.MarkPoisoned($"Exceeded max retries ({MaxRetries}): {ex.Message}");
-                }
+                await ProcessSingleAsync(message, ct);
             }
 
             await context.SaveChangesAsync(ct);
-
             await transaction.CommitAsync(ct);
         });
+    }
+
+    private async Task ProcessSingleAsync(OutboxMessage message, CancellationToken ct)
+    {
+        using var activity = ApplicationActivitySources.Outbox.StartActivity(
+            "outbox.process",
+            ActivityKind.Consumer,
+            parentId: message.TraceParent ?? string.Empty);
+
+        if (activity is not null && !string.IsNullOrWhiteSpace(message.TraceState))
+            activity.TraceStateString = message.TraceState;
+
+        activity?.SetTag("outbox.message_id", message.Id.Value);
+        activity?.SetTag("outbox.event_type", message.Type);
+        activity?.SetTag("outbox.retry_count", message.RetryCount);
+
+        try
+        {
+            var type = typeRegistry.Resolve(message.Type);
+
+            if (type is null)
+            {
+                await auditService.LogWarningAsync(
+                    $"Could not resolve type {message.Type} for outbox message {message.Id.Value}",
+                    ct);
+
+                message.MarkPoisoned($"Unresolvable event type: {message.Type}");
+                activity?.SetStatus(ActivityStatusCode.Error, "Unresolvable event type.");
+                return;
+            }
+
+            var @event = JsonSerializer.Deserialize(message.Payload, type);
+
+            if (@event is null)
+            {
+                message.MarkPoisoned("Deserialization returned null payload.");
+                activity?.SetStatus(ActivityStatusCode.Error, "Null payload after deserialization.");
+                return;
+            }
+
+            var notificationType =
+                typeof(DomainEventNotification<>).MakeGenericType(type);
+
+            var notification = Activator.CreateInstance(notificationType, @event)!;
+
+            await publisher.Publish(notification, ct);
+
+            message.MarkProcessed(DateTime.UtcNow);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+        }
+        catch (Exception ex)
+        {
+            await auditService.LogErrorAsync(
+                $"Error processing outbox message {message.Id.Value}: {ex.Message}",
+                ct);
+
+            message.MarkFailed(ex.Message);
+
+            if (message.RetryCount >= MaxRetries)
+                message.MarkPoisoned($"Exceeded max retries ({MaxRetries}): {ex.Message}");
+
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddException(ex);
+        }
     }
 }

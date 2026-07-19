@@ -1,7 +1,8 @@
-﻿using Domain.Common.Abstractions;
-using Infrastructure.Persistence.Outbox;
+using System.Diagnostics;
 using System.Text.Encodings.Web;
 using System.Text.Json.Serialization;
+using Domain.Common.Abstractions;
+using Infrastructure.Persistence.Outbox;
 
 namespace Infrastructure.Persistence.Interceptors;
 
@@ -43,18 +44,31 @@ public sealed class DomainEventInterceptor(
         foreach (var aggregate in aggregates)
             aggregate.ClearDomainEvents();
 
+        var currentActivity = Activity.Current;
+        var traceParent = currentActivity?.Id;
+        var traceState = currentActivity?.TraceStateString;
+
         var outboxMessages = new List<OutboxMessage>(domainEvents.Count);
         foreach (var domainEvent in domainEvents)
         {
+            string typeName;
+            string payload;
             try
             {
-                var typeName = typeRegistry.GetTypeName(domainEvent.GetType());
-                var payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), SerializerOptions);
-                outboxMessages.Add(OutboxMessage.Create(typeName, payload, DateTime.UtcNow));
+                typeName = typeRegistry.GetTypeName(domainEvent.GetType());
+                payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), SerializerOptions);
             }
             catch
             {
+                continue;
             }
+
+            outboxMessages.Add(OutboxMessage.Create(
+                typeName,
+                payload,
+                DateTime.UtcNow,
+                traceParent,
+                traceState));
         }
 
         if (outboxMessages.Count > 0)

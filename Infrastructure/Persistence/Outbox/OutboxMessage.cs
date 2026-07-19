@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Persistence.Outbox;
+namespace Infrastructure.Persistence.Outbox;
 
 public sealed class OutboxMessage
 {
@@ -10,18 +10,27 @@ public sealed class OutboxMessage
     public string? Error { get; private set; }
     public int RetryCount { get; private set; }
     public bool IsPoisoned { get; private set; }
+    public string? TraceParent { get; private set; }
+    public string? TraceState { get; private set; }
 
     private OutboxMessage()
     { }
 
-    public static OutboxMessage Create(string type, string payload, DateTime createdAt)
+    public static OutboxMessage Create(
+        string type,
+        string payload,
+        DateTime createdAt,
+        string? traceParent = null,
+        string? traceState = null)
     {
         return new OutboxMessage
         {
             Id = OutboxMessageId.NewId(),
             Type = type,
             Payload = payload,
-            CreatedAt = createdAt
+            CreatedAt = createdAt,
+            TraceParent = traceParent,
+            TraceState = traceState
         };
     }
 

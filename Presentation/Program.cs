@@ -72,7 +72,7 @@ try
 
     builder.AddApplicationAuthentication();
 
-    builder.Services.AddPresentation(builder.Configuration);
+    builder.Services.AddPresentation(builder.Configuration, builder.Environment);
     builder.Services.AddApplicationServices();
     builder.Services.AddWalletTransferOptions(builder.Configuration);
     builder.Services.AddInfrastructure(builder.Configuration);
@@ -106,5 +106,6 @@ static bool IsIgnoredPath(string? path)
 
     return path.Contains("/health", StringComparison.OrdinalIgnoreCase)
         || path.Contains("/swagger", StringComparison.OrdinalIgnoreCase)
-        || path.Contains("/favicon.ico", StringComparison.OrdinalIgnoreCase);
+        || path.Contains("/favicon.ico", StringComparison.OrdinalIgnoreCase)
+        || path.Contains("/metrics", StringComparison.OrdinalIgnoreCase);
 }

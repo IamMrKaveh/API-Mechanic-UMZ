@@ -1,4 +1,4 @@
-﻿using Amazon.Runtime;
+using Amazon.Runtime;
 using Application.Attribute.Adapters;
 using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
@@ -21,12 +21,14 @@ using Infrastructure.Auth.Services;
 using Infrastructure.BackgroundJobs;
 using Infrastructure.BackgroundJobs.Options;
 using Infrastructure.BackgroundJobs.Services;
+using Infrastructure.Cache.Health;
 using Infrastructure.Cache.Redis.Lock;
 using Infrastructure.Cache.Redis.Services;
 using Infrastructure.Cache.Services;
 using Infrastructure.Common.DependencyInjection;
 using Infrastructure.Common.Options;
 using Infrastructure.Common.Services;
+using Infrastructure.Communication.HealthChecks;
 using Infrastructure.Communication.Options;
 using Infrastructure.Communication.Services;
 using Infrastructure.DataProtection.Repositories;
@@ -43,6 +45,7 @@ using Infrastructure.Payment.Repositories;
 using Infrastructure.Payment.Seeders;
 using Infrastructure.Payment.Services;
 using Infrastructure.Payment.ZarinPal;
+using Infrastructure.Payment.ZarinPal.HealthChecks;
 using Infrastructure.Payment.ZarinPal.Options;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
@@ -52,6 +55,7 @@ using Infrastructure.Product.Repositories;
 using Infrastructure.Review.Services;
 using Infrastructure.Search;
 using Infrastructure.Search.Contracts;
+using Infrastructure.Search.HealthChecks;
 using Infrastructure.Search.Options;
 using Infrastructure.Search.Services;
 using Infrastructure.Security.Services;
@@ -59,6 +63,7 @@ using Infrastructure.Storage.Options;
 using Infrastructure.Storage.Services;
 using Scrutor;
 using DateTimeProvider = Infrastructure.Common.Services.DateTimeProvider;
+using HealthStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus;
 using IAuditArchiveStorage = Domain.Audit.Interfaces.IAuditArchiveStorage;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
@@ -471,17 +476,48 @@ public static class InfrastructureServiceExtensions
         var cacheOptions = configuration.GetSection(CacheOptions.SectionName).Get<CacheOptions>()
             ?? new CacheOptions();
 
+        var elasticsearchOptions = configuration.GetSection(ElasticsearchOptions.SectionName).Get<ElasticsearchOptions>()
+            ?? new ElasticsearchOptions();
+
         var builder = services.AddHealthChecks()
-            .AddCheck("postgresql", new NpgsqlHealthCheck(connectionString),
-                tags: ["db", "sql", "postgresql"]);
+            .AddNpgSql(
+                connectionString,
+                name: "postgresql",
+                tags: new[] { "db", "sql", "postgresql", "ready", "critical" });
 
         if (cacheOptions.UseRedis)
         {
-            builder.AddRedis(
-                configuration.GetConnectionString("Redis") ?? "localhost:6379",
+            builder.AddCheck<RedisCacheHealthCheck>(
                 name: "redis",
-                tags: ["cache", "redis"]);
+                tags: new[] { "cache", "redis", "ready" });
         }
+
+        if (elasticsearchOptions.IsEnabled)
+        {
+            builder.AddCheck<ElasticsearchHealthCheck>(
+                name: "elasticsearch",
+                tags: new[] { "search", "elasticsearch", "ready" });
+
+            builder.AddCheck<ElasticsearchIndexHealthCheck>(
+                name: "elasticsearch-index",
+                tags: new[] { "search", "elasticsearch" });
+
+            builder.AddCheck<ElasticsearchDLQHealthCheck>(
+                name: "elasticsearch-dlq",
+                tags: new[] { "search", "elasticsearch" });
+        }
+
+        builder.AddCheck<KavenegarHealthCheck>(
+            name: "kavenegar",
+            failureStatus: HealthStatus.Degraded,
+            tags: new[] { "sms", "external" });
+
+        builder.AddCheck<ZarinPalHealthCheck>(
+            name: "zarinpal",
+            failureStatus: HealthStatus.Degraded,
+            tags: new[] { "payment", "external" });
+
+        services.AddMemoryCache();
     }
 
     private static void AddDataProtectionLayer(
