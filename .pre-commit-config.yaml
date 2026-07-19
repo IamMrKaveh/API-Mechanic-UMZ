@@ -1,0 +1,25 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: gitleaks (staged)
+        args: ["protect", "--staged", "--redact", "--config", ".gitleaks.toml"]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+
+  - repo: local
+    hooks:
+      - id: dotnet-format
+        name: dotnet format
+        entry: dotnet format --verify-no-changes --severity warn
+        language: system
+        types_or: [c#]
+        pass_filenames: false
