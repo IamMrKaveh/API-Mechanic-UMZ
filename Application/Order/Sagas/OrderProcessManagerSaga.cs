@@ -1,6 +1,7 @@
-using Application.Order.Contracts;
+using Application.Inventory.Features.Commands.CommitStockForOrder;
 using Application.Order.Sagas.State;
 using Application.Payment.Features.Adapters;
+using Application.Payment.Features.Commands.AtomicRefundPayment;
 using Domain.Order.Enums;
 using Domain.Order.Events;
 using Domain.Order.Interfaces;
@@ -14,7 +15,10 @@ public sealed class OrderProcessManagerSaga(
     IOrderRepository orderRepository,
     IInventoryService inventoryService,
     IOrderProcessStateRepository processStateRepository,
-    IUnitOfWork unitOfWork) :
+    IUnitOfWork unitOfWork,
+    ISender mediator,
+    IFeatureManager featureManager,
+    IAuditService auditService) :
     INotificationHandler<DomainEventNotification<OrderCreatedEvent>>,
     INotificationHandler<DomainEventNotification<PaymentSucceededEvent>>,
     INotificationHandler<DomainEventNotification<PaymentFailedEvent>>,
@@ -104,8 +108,9 @@ public sealed class OrderProcessManagerSaga(
 
         orderRepository.Update(order);
         processState.TransitionTo(ProcessStepEnum.PaymentSucceeded);
-        processState.MarkCompleted();
         await unitOfWork.SaveChangesAsync(ct);
+
+        await CommitInventoryOrAutoRefundAsync(order, processState, ct);
     }
 
     public async Task Handle(DomainEventNotification<PaymentFailedEvent> notification, CancellationToken ct)
@@ -147,6 +152,95 @@ public sealed class OrderProcessManagerSaga(
         }
 
         await ReleaseInventoryForOrderAsync(domainEvent.OrderId, "انقضای سفارش", processState, ct);
+    }
+
+    private async Task CommitInventoryOrAutoRefundAsync(
+        Domain.Order.Aggregates.Order order,
+        OrderProcessState processState,
+        CancellationToken ct)
+    {
+        processState.TransitionTo(ProcessStepEnum.InventoryCommitting);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        var items = order.OrderItems
+            .Select(i => new OrderItemStockCommit(i.VariantId.Value, i.Quantity, i.Id.Value))
+            .ToList();
+
+        var orderNumber = order.OrderNumber?.Value ?? $"ORDER-{order.Id.Value}";
+
+        ServiceResult commitResult;
+        try
+        {
+            commitResult = await mediator.Send(
+                new CommitStockForOrderCommand(items, orderNumber),
+                ct);
+        }
+        catch (Exception ex)
+        {
+            commitResult = ServiceResult.Failure(ex.Message);
+        }
+
+        if (commitResult.IsSuccess)
+        {
+            processState.MarkCompleted();
+            await unitOfWork.SaveChangesAsync(ct);
+            return;
+        }
+
+        var failureReason = commitResult.Error?.Message ?? "Inventory commit failed after payment.";
+
+        processState.MarkInventoryCommitFailed(failureReason);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        await auditService.LogErrorAsync(
+            $"InventoryCommitFailed for Order {order.Id.Value}: {failureReason}",
+            ct);
+
+        var autoRefundEnabled = await featureManager.IsEnabledAsync(
+            FeatureManagementExtensions.Flags.SagaAutoRefundOnCommitFailure);
+
+        if (!autoRefundEnabled)
+        {
+            processState.MarkRequiresManualReconciliation(
+                $"Auto-refund disabled. Original failure: {failureReason}");
+            await unitOfWork.SaveChangesAsync(ct);
+            return;
+        }
+
+        ServiceResult refundResult;
+        try
+        {
+            refundResult = await mediator.Send(
+                new AtomicRefundPaymentCommand(order.Id.Value, $"جبران خودکار به دلیل عدم موفقیت در ثبت موجودی: {failureReason}"),
+                ct);
+        }
+        catch (Exception ex)
+        {
+            refundResult = ServiceResult.Failure(ex.Message);
+        }
+
+        if (refundResult.IsSuccess)
+        {
+            processState.MarkRefunded();
+            await unitOfWork.SaveChangesAsync(ct);
+
+            await ReleaseInventoryForOrderAsync(
+                order.Id,
+                "جبران خودکار پس از شکست ثبت موجودی",
+                null,
+                ct);
+            return;
+        }
+
+        var refundError = refundResult.Error?.Message ?? "Automatic refund failed.";
+
+        processState.MarkRequiresManualReconciliation(
+            $"Commit failure: {failureReason}. Refund failure: {refundError}");
+        await unitOfWork.SaveChangesAsync(ct);
+
+        await auditService.LogErrorAsync(
+            $"RequiresManualReconciliation for Order {order.Id.Value}: {refundError}",
+            ct);
     }
 
     private async Task CompensateOrderAsync(
