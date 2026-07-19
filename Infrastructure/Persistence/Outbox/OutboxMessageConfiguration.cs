@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Persistence.Outbox;
+namespace Infrastructure.Persistence.Outbox;
 
 public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage>
 {
@@ -40,6 +40,14 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
             .HasColumnName("is_poisoned")
             .HasDefaultValue(false)
             .IsRequired();
+
+        builder.Property(e => e.TraceParent)
+            .HasColumnName("trace_parent")
+            .HasMaxLength(55);
+
+        builder.Property(e => e.TraceState)
+            .HasColumnName("trace_state")
+            .HasMaxLength(256);
 
         builder.HasIndex(e => new { e.ProcessedAt, e.IsPoisoned, e.RetryCount, e.CreatedAt })
             .HasDatabaseName("IX_OutboxMessages_Dispatch");

@@ -9,7 +9,8 @@ public static class PresentationServiceExtensions
 {
     public static IServiceCollection AddPresentation(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         services.AddPresentationControllers();
         services.AddPresentationOptions(configuration);
@@ -17,6 +18,7 @@ public static class PresentationServiceExtensions
         services.AddCustomCors(configuration);
         services.AddTrustedForwardedHeaders(configuration);
         services.AddFeatureFlags(configuration);
+        services.AddApplicationObservability(configuration, environment);
 
         return services;
     }

@@ -1,4 +1,4 @@
-﻿using Presentation.Common.Middleware;
+using Presentation.Common.Middleware;
 
 namespace Presentation.Common.Extensions;
 
@@ -75,6 +75,10 @@ public static class MiddlewareExtensions
         app.UseAdminIpWhitelist();
 
         app.UseMiddleware<WebhookIpWhitelistMiddleware>();
+
+        app.MapPrometheusScrapingEndpoint("/metrics").AllowAnonymous();
+
+        app.MapApplicationHealthChecks();
 
         return app;
     }
