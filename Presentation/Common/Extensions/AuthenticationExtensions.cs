@@ -1,6 +1,7 @@
-﻿using Application.Auth.Features.Shared;
+using System.IdentityModel.Tokens.Jwt;
+using Application.Auth.Features.Shared;
 using Infrastructure.Security.Settings;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Presentation.Common.Extensions;
 
@@ -39,9 +40,28 @@ public static class AuthenticationExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(settings.Key)),
                     ValidateLifetime = true,
+                    RequireExpirationTime = true,
+                    RequireSignedTokens = true,
+                    ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256 },
                     ClockSkew = TimeSpan.FromSeconds(30),
                     NameClaimType = ClaimTypes.NameIdentifier,
                     RoleClaimType = ClaimTypes.Role,
+                };
+
+                bearerOptions.Events ??= new JwtBearerEvents();
+
+                var previousOnTokenValidated = bearerOptions.Events.OnTokenValidated;
+                bearerOptions.Events.OnTokenValidated = async context =>
+                {
+                    if (previousOnTokenValidated is not null)
+                        await previousOnTokenValidated(context);
+
+                    var alg = context.SecurityToken is JsonWebToken jwt
+                        ? jwt.Alg
+                        : (context.SecurityToken as JwtSecurityToken)?.Header?.Alg;
+
+                    if (!string.Equals(alg, SecurityAlgorithms.HmacSha256, StringComparison.Ordinal))
+                        context.Fail("Invalid token signing algorithm.");
                 };
             });
 

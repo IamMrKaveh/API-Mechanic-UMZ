@@ -9,4 +9,6 @@ public interface IStorageService
     Task<bool> ExistsAsync(string filePath, CancellationToken ct = default);
 
     string GetPublicUrl(string filePath);
+
+    Task<string> GetPresignedUrlAsync(string filePath, TimeSpan expiry, CancellationToken ct = default);
 }
