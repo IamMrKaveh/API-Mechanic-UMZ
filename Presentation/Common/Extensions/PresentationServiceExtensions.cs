@@ -1,4 +1,4 @@
-﻿using Application.Auth.Contracts;
+using Application.Auth.Contracts;
 using Application.Common.Interfaces;
 using Presentation.Auth.Services;
 using Presentation.Common.Services;
@@ -16,6 +16,7 @@ public static class PresentationServiceExtensions
         services.AddPresentationInternalServices();
         services.AddCustomCors(configuration);
         services.AddTrustedForwardedHeaders(configuration);
+        services.AddFeatureFlags(configuration);
 
         return services;
     }

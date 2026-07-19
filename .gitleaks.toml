@@ -1,0 +1,48 @@
+title = "Gitleaks configuration for Mechanic.Api"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "mechanic-hardcoded-jwt-key"
+description = "Hardcoded JWT signing key placeholder used in appsettings"
+regex = '''Breaking\d+Bad'''
+tags = ["key", "jwt", "mechanic"]
+
+[[rules]]
+id = "mechanic-arvancloud-accesskey-assignment"
+description = "ArvanCloud AccessKey/SecretKey assignment in code or configuration"
+regex = '''(?i)(access|secret)key\s*[:=]\s*["']?[0-9a-f]{8,}'''
+tags = ["key", "storage", "arvancloud"]
+
+[[rules]]
+id = "mechanic-kavenegar-api-key"
+description = "Kavenegar API key (hex encoded)"
+regex = '''(?i)kavenegar[^\n]{0,80}["'][0-9A-F]{32,}["']'''
+tags = ["key", "sms", "kavenegar"]
+
+[[rules]]
+id = "mechanic-zarinpal-merchant"
+description = "Zarinpal MerchantId in non-placeholder GUID form"
+regex = '''(?i)merchantid\s*[:=]\s*["'](?!00000000-0000-0000-0000-000000000000)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["']'''
+tags = ["key", "payment", "zarinpal"]
+
+[[rules]]
+id = "mechanic-postgres-connection-secret"
+description = "Postgres connection string containing password"
+regex = '''(?i)(User\s*Id|Username)=[^;]+;\s*Password=[^;\s]+'''
+tags = ["connection-string", "postgres"]
+
+[allowlist]
+description = "Local development placeholders and known-safe test values"
+regexes = [
+  '''MerchantId"\s*:\s*"00000000-0000-0000-0000-000000000000"''',
+  '''Password=1234;''',
+  '''YOUR_SMTP_[A-Z_]+''',
+]
+paths = [
+  '''(?i)^\.git/''',
+  '''(?i)^.*/bin/''',
+  '''(?i)^.*/obj/''',
+  '''(?i)^.*\.min\.(js|css)$''',
+]
