@@ -1,7 +1,6 @@
 using System.Buffers.Binary;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Order.Repositories;
 
@@ -54,9 +53,12 @@ public sealed class OrderRepository(DBContext context) : IOrderRepository
         context.Orders.Add(order);
     }
 
-    public void Update(Domain.Order.Aggregates.Order order)
+    public void Update(Domain.Order.Aggregates.Order order, byte[]? rowVersion = null)
     {
         context.Orders.Update(order);
+
+        if (rowVersion is not null && rowVersion.Length > 0)
+            SetOriginalRowVersion(order, rowVersion);
     }
 
     public void SetOriginalRowVersion(Domain.Order.Aggregates.Order entity, byte[] rowVersion)

@@ -1,4 +1,4 @@
-﻿using Domain.Order.Interfaces;
+using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -21,8 +21,9 @@ public class RequestReturnHandler(
         if (order.UserId != UserId.From(request.UserId))
             return ServiceResult.Unauthorized("شما مجاز به درخواست بازگشت این سفارش نیستید.");
 
-        if (!string.IsNullOrEmpty(request.RowVersion))
-            orderRepository.SetOriginalRowVersion(order, Convert.FromBase64String(request.RowVersion));
+        var rowVersion = !string.IsNullOrEmpty(request.RowVersion)
+            ? Convert.FromBase64String(request.RowVersion)
+            : null;
 
         var oldStatusName = order.Status.DisplayName;
 
@@ -35,7 +36,7 @@ public class RequestReturnHandler(
             return ServiceResult.Failure(ex.Message);
         }
 
-        orderRepository.Update(order);
+        orderRepository.Update(order, rowVersion);
 
         await notificationService.SendOrderStatusNotificationAsync(
             order.UserId,

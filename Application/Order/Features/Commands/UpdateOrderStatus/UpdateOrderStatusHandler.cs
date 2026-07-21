@@ -1,4 +1,4 @@
-﻿using Domain.Order.Interfaces;
+using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 
 namespace Application.Order.Features.Commands.UpdateOrderStatus;
@@ -17,8 +17,9 @@ public class UpdateOrderStatusHandler(
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
-        if (!string.IsNullOrEmpty(request.RowVersion))
-            orderRepository.SetOriginalRowVersion(order, Convert.FromBase64String(request.RowVersion));
+        var rowVersion = !string.IsNullOrEmpty(request.RowVersion)
+            ? Convert.FromBase64String(request.RowVersion)
+            : null;
 
         OrderStatusValue newStatus;
         try
@@ -57,7 +58,7 @@ public class UpdateOrderStatusHandler(
             return ServiceResult.Failure(ex.Message);
         }
 
-        orderRepository.Update(order);
+        orderRepository.Update(order, rowVersion);
 
         await notificationService.SendOrderStatusNotificationAsync(
             order.UserId, order.Id, oldStatusName, newStatus.DisplayName, ct);

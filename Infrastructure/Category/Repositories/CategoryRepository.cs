@@ -26,8 +26,13 @@ public sealed class CategoryRepository(DBContext context) : ICategoryRepository
         => await context.Categories
             .AddAsync(category, ct);
 
-    public void Update(Domain.Category.Aggregates.Category category)
-        => context.Categories.Update(category);
+    public void Update(Domain.Category.Aggregates.Category category, byte[]? rowVersion = null)
+    {
+        context.Categories.Update(category);
+
+        if (rowVersion is not null && rowVersion.Length > 0)
+            SetOriginalRowVersion(category, rowVersion);
+    }
 
     public void SetOriginalRowVersion(Domain.Category.Aggregates.Category entity, byte[] rowVersion)
         => context.Entry(entity).Property("RowVersion").OriginalValue = rowVersion;

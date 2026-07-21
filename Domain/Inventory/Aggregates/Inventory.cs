@@ -1,4 +1,4 @@
-﻿using Domain.Inventory.Entities;
+using Domain.Inventory.Entities;
 using Domain.Inventory.Events;
 using Domain.Inventory.ValueObjects;
 using Domain.Order.ValueObjects;
@@ -318,6 +318,30 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
         RaiseDomainEvent(new StockAdjustedEvent(Id, VariantId, StockQuantity, quantityChange, reason));
 
         return ServiceResult.Success();
+    }
+
+    public ServiceResult AdjustStockTo(
+    int targetQuantity,
+    string reason,
+    UserId? userId = null,
+    string? referenceNumber = null)
+    {
+        if (targetQuantity < 0)
+            return ServiceResult.Failure(new Error(
+                "Inventory.InvalidQuantity",
+                "موجودی هدف نمی‌تواند منفی باشد."));
+
+        if (IsUnlimited)
+            return ServiceResult.Success();
+
+        var diff = targetQuantity - StockQuantity.Value;
+
+        if (diff == 0)
+            return ServiceResult.Success();
+
+        return diff > 0
+            ? IncreaseStock(diff, reason, userId, referenceNumber)
+            : DecreaseStock(-diff, reason, userId, referenceNumber);
     }
 
     public ServiceResult RecordDamage(

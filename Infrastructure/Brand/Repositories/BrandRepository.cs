@@ -1,4 +1,4 @@
-﻿using Domain.Brand.Interfaces;
+using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 
@@ -43,8 +43,13 @@ public sealed class BrandRepository(DBContext context) : IBrandRepository
         CancellationToken ct = default)
         => await context.Brands.AddAsync(brand, ct);
 
-    public void Update(Domain.Brand.Aggregates.Brand brand)
-        => context.Brands.Update(brand);
+    public void Update(Domain.Brand.Aggregates.Brand brand, byte[]? rowVersion = null)
+    {
+        context.Brands.Update(brand);
+
+        if (rowVersion is not null && rowVersion.Length > 0)
+            SetOriginalRowVersion(brand, rowVersion);
+    }
 
     public void SetOriginalRowVersion(
         Domain.Brand.Aggregates.Brand entity,

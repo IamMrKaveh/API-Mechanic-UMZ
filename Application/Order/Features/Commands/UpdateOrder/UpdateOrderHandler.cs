@@ -17,9 +17,6 @@ public class UpdateOrderHandler(
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
-        if (!string.IsNullOrEmpty(request.Dto.RowVersion))
-            orderRepository.SetOriginalRowVersion(order, Convert.FromBase64String(request.Dto.RowVersion));
-
         if (!order.CanBeModified())
             return ServiceResult.Forbidden("این سفارش قابل ویرایش نیست.");
 
@@ -34,7 +31,11 @@ public class UpdateOrderHandler(
                     return ServiceResult.Failure("روش ارسال نامعتبر است.");
             }
 
-            orderRepository.Update(order);
+            var rowVersion = !string.IsNullOrEmpty(request.Dto.RowVersion)
+                ? Convert.FromBase64String(request.Dto.RowVersion)
+                : null;
+
+            orderRepository.Update(order, rowVersion);
 
             return ServiceResult.Success();
         }
