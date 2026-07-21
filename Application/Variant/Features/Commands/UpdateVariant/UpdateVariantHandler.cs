@@ -132,12 +132,13 @@ public class UpdateVariantHandler(
             }
             else
             {
-                var currentStock = (int)inventory.StockQuantity;
-                var stockDiff = request.Stock - currentStock;
-                if (stockDiff > 0)
-                    inventory.IncreaseStock(stockDiff, "به‌روزرسانی موجودی", userId);
-                else if (stockDiff < 0)
-                    inventory.DecreaseStock(Math.Abs(stockDiff), "به‌روزرسانی موجودی", userId);
+                var adjustResult = inventory.AdjustStockTo(
+                    request.Stock,
+                    "به‌روزرسانی موجودی",
+                    userId);
+
+                if (adjustResult.IsFailure)
+                    return ServiceResult.Validation(adjustResult.Error.Message);
             }
         }
 

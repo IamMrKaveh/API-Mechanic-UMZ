@@ -37,8 +37,6 @@ public sealed class UpdateProductHandler(
 
         var slug = ProductSlug.GenerateFrom(request.Slug);
 
-        productRepository.SetOriginalRowVersion(product, request.RowVersion.FromBase64RowVersion());
-
         product.UpdateDetails(
             ProductName.Create(request.Name),
             slug,
@@ -57,7 +55,7 @@ public sealed class UpdateProductHandler(
         else
             product.UnmarkAsFeatured();
 
-        productRepository.Update(product);
+        productRepository.Update(product, request.RowVersion.FromBase64RowVersion());
 
         var dto = mapper.Map<ProductDetailDto>(product) with
         {

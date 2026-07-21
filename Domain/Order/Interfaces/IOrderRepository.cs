@@ -1,4 +1,4 @@
-﻿using Domain.Order.ValueObjects;
+using Domain.Order.ValueObjects;
 
 namespace Domain.Order.Interfaces;
 
@@ -21,7 +21,7 @@ public interface IOrderRepository
 
     void Add(Aggregates.Order order);
 
-    void Update(Aggregates.Order order);
+    void Update(Aggregates.Order order, byte[]? rowVersion = null);
 
     void SetOriginalRowVersion(
         Aggregates.Order entity,

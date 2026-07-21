@@ -18,11 +18,12 @@ public class UpdateOrderStatusDefinitionHandler(
         if (status is null)
             return ServiceResult.NotFound("وضعیت یافت نشد.");
 
+        byte[]? rowVersion = null;
         if (!string.IsNullOrEmpty(request.RowVersion))
         {
             try
             {
-                orderStatusRepository.SetOriginalRowVersion(status, Convert.FromBase64String(request.RowVersion));
+                rowVersion = Convert.FromBase64String(request.RowVersion);
             }
             catch (FormatException)
             {
@@ -38,7 +39,7 @@ public class UpdateOrderStatusDefinitionHandler(
             request.AllowCancel,
             request.AllowEdit);
 
-        orderStatusRepository.Update(status);
+        orderStatusRepository.Update(status, rowVersion);
 
         await cacheService.RemoveByPrefixAsync("order-status:", ct);
 

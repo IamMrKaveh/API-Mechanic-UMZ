@@ -26,12 +26,6 @@ public sealed class UpdateBrandHandler(
         if (brand is null)
             return ServiceResult<BrandDetailDto>.NotFound("برند یافت نشد.");
 
-        if (!string.IsNullOrWhiteSpace(request.RowVersion))
-        {
-            var rowVersion = Convert.FromBase64String(request.RowVersion);
-            brandRepository.SetOriginalRowVersion(brand, rowVersion);
-        }
-
         string? logoPath = null;
 
         if (HasUploadedLogo(request))
@@ -60,7 +54,11 @@ public sealed class UpdateBrandHandler(
             logoPath,
             ct);
 
-        brandRepository.Update(brand);
+        var rowVersion = !string.IsNullOrWhiteSpace(request.RowVersion)
+            ? Convert.FromBase64String(request.RowVersion)
+            : null;
+
+        brandRepository.Update(brand, rowVersion);
         await unitOfWork.SaveChangesAsync(ct);
 
         var dto = await brandQueryService.GetBrandDetailAsync(brand.Id, ct);

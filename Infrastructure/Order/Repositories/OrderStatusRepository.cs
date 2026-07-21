@@ -1,7 +1,6 @@
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Order.Repositories;
 
@@ -55,8 +54,13 @@ public sealed class OrderStatusRepository(DBContext context) : IOrderStatusRepos
         CancellationToken ct = default)
         => await context.OrderStatuses.AddAsync(orderStatus, ct);
 
-    public void Update(OrderStatus orderStatus)
-        => context.OrderStatuses.Update(orderStatus);
+    public void Update(OrderStatus orderStatus, byte[]? rowVersion = null)
+    {
+        context.OrderStatuses.Update(orderStatus);
+
+        if (rowVersion is not null && rowVersion.Length > 0)
+            SetOriginalRowVersion(orderStatus, rowVersion);
+    }
 
     public void Remove(OrderStatus orderStatus)
         => context.OrderStatuses.Remove(orderStatus);

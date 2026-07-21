@@ -17,11 +17,9 @@ public class UpdateCategoryHandler(
         if (category is null)
             return ServiceResult<CategoryDto>.NotFound("دسته‌بندی یافت نشد.");
 
-        if (!string.IsNullOrWhiteSpace(request.RowVersion))
-        {
-            var rowVersion = Convert.FromBase64String(request.RowVersion);
-            categoryRepository.SetOriginalRowVersion(category, rowVersion);
-        }
+        var rowVersion = !string.IsNullOrWhiteSpace(request.RowVersion)
+            ? Convert.FromBase64String(request.RowVersion)
+            : null;
 
         var name = CategoryName.Create(request.Name);
         var slug = string.IsNullOrWhiteSpace(request.Slug)
@@ -36,7 +34,7 @@ public class UpdateCategoryHandler(
         else if (!request.IsActive && category.IsActive)
             category.Deactivate();
 
-        categoryRepository.Update(category);
+        categoryRepository.Update(category, rowVersion);
 
         var dto = category.Adapt<CategoryDto>();
         return ServiceResult<CategoryDto>.Success(dto);

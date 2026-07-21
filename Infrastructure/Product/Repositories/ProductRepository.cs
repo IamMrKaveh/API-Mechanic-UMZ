@@ -11,8 +11,13 @@ public sealed class ProductRepository(DBContext context) : IProductRepository
     public async Task AddAsync(Domain.Product.Aggregates.Product product, CancellationToken ct = default)
         => await context.Products.AddAsync(product, ct);
 
-    public void Update(Domain.Product.Aggregates.Product product)
-        => context.Products.Update(product);
+    public void Update(Domain.Product.Aggregates.Product product, byte[]? rowVersion = null)
+    {
+        context.Products.Update(product);
+
+        if (rowVersion is not null && rowVersion.Length > 0)
+            SetOriginalRowVersion(product, rowVersion);
+    }
 
     public void SetOriginalRowVersion(Domain.Product.Aggregates.Product entity, byte[] rowVersion)
     {

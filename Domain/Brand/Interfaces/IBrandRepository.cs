@@ -9,7 +9,7 @@ public interface IBrandRepository
         Aggregates.Brand brand,
         CancellationToken ct = default);
 
-    void Update(Aggregates.Brand brand);
+    void Update(Aggregates.Brand brand, byte[]? rowVersion = null);
 
     void SetOriginalRowVersion(
         Aggregates.Brand entity,

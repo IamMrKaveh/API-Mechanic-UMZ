@@ -8,7 +8,7 @@ public interface IProductRepository
         Aggregates.Product product,
         CancellationToken ct = default);
 
-    void Update(Aggregates.Product product);
+    void Update(Aggregates.Product product, byte[]? rowVersion = null);
 
     void SetOriginalRowVersion(
         Aggregates.Product entity,

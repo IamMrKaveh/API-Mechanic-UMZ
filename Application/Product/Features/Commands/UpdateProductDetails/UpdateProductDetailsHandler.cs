@@ -15,8 +15,6 @@ public sealed class UpdateProductDetailsHandler(
         if (product is null)
             return ServiceResult.NotFound("محصول یافت نشد.");
 
-        productRepository.SetOriginalRowVersion(product, Convert.FromBase64String(request.RowVersion));
-
         var slug = ProductSlug.GenerateFrom(request.Name);
 
         if (await productRepository.ExistsBySlugAsync(slug, productId, ct))
@@ -32,7 +30,7 @@ public sealed class UpdateProductDetailsHandler(
         else if (!request.IsActive && product.IsActive)
             product.Deactivate();
 
-        productRepository.Update(product);
+        productRepository.Update(product, Convert.FromBase64String(request.RowVersion));
 
         return ServiceResult.Success();
     }
