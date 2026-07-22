@@ -19,6 +19,7 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
 
         builder.Property(e => e.Payload)
             .HasColumnName("payload")
+            .HasColumnType("text")
             .IsRequired();
 
         builder.Property(e => e.CreatedAt)
@@ -30,6 +31,7 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
 
         builder.Property(e => e.Error)
             .HasColumnName("error")
+            .HasColumnType("text")
             .HasMaxLength(2000);
 
         builder.Property(e => e.RetryCount)
@@ -48,6 +50,10 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
         builder.Property(e => e.TraceState)
             .HasColumnName("trace_state")
             .HasMaxLength(256);
+
+        builder.HasIndex(e => e.CreatedAt)
+            .HasFilter("\"processed_at\" IS NULL AND \"is_poisoned\" = false AND \"retry_count\" < 5")
+            .HasDatabaseName("IX_OutboxMessages_Pending");
 
         builder.HasIndex(e => new { e.ProcessedAt, e.IsPoisoned, e.RetryCount, e.CreatedAt })
             .HasDatabaseName("IX_OutboxMessages_Dispatch");

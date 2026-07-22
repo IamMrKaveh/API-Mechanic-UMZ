@@ -9,10 +9,9 @@ public sealed class FileSize : ValueObject, IComparable<FileSize>
 
     private const long MaxSizeBytes = 100 * 1024 * 1024;
 
-    private FileSize(long bytes)
-    {
-        Bytes = bytes;
-    }
+    public static long AbsoluteMaxBytes => MaxSizeBytes;
+
+    private FileSize(long bytes) => Bytes = bytes;
 
     public static FileSize Create(long bytes)
     {
@@ -21,6 +20,22 @@ public sealed class FileSize : ValueObject, IComparable<FileSize>
 
         if (bytes > MaxSizeBytes)
             throw new DomainException($"حجم فایل نمی‌تواند بیش از {MaxSizeBytes / (1024 * 1024)} مگابایت باشد.");
+
+        return new FileSize(bytes);
+    }
+
+    public static FileSize From(long bytes, long maxAllowed)
+    {
+        if (bytes < 0)
+            throw new DomainException("حجم فایل نمی‌تواند منفی باشد.");
+
+        if (maxAllowed <= 0)
+            throw new DomainException("حداکثر اندازه مجاز باید بزرگ‌تر از صفر باشد.");
+
+        var effectiveMax = Math.Min(maxAllowed, MaxSizeBytes);
+
+        if (bytes > effectiveMax)
+            throw new DomainException($"حجم فایل نمی‌تواند بیش از {effectiveMax / (1024 * 1024)} مگابایت باشد.");
 
         return new FileSize(bytes);
     }

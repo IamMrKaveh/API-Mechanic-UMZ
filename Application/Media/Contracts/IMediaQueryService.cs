@@ -19,6 +19,11 @@ public interface IMediaQueryService
         Guid entityId,
         CancellationToken ct = default);
 
+    Task<IReadOnlyDictionary<Guid, MediaDto>> GetPrimaryByEntitiesAsync(
+        string entityType,
+        IEnumerable<Guid> entityIds,
+        CancellationToken ct = default);
+
     Task<PaginatedResult<MediaDto>> GetAllAsync(
         string? entityType,
         int page,

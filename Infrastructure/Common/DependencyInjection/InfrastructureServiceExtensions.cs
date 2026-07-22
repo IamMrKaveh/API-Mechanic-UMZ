@@ -5,6 +5,7 @@ using Application.Auth.Features.Shared;
 using Application.Brand.Adapters;
 using Application.Common.Options;
 using Application.Discount.Contracts;
+using Application.Localization.Contracts;
 using Application.Location.Contracts;
 using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Payment.Contracts;
@@ -34,6 +35,7 @@ using Infrastructure.Communication.Services;
 using Infrastructure.DataProtection.Repositories;
 using Infrastructure.Discount.Services;
 using Infrastructure.Inventory.Services;
+using Infrastructure.Localization.Services;
 using Infrastructure.Location.Services;
 using Infrastructure.Media.Services;
 using Infrastructure.Notification.Services;
@@ -90,6 +92,8 @@ public static class InfrastructureServiceExtensions
         services.AddHealthChecks(configuration);
         services.AddDataProtectionLayer(configuration);
         services.AddJwtAuthentication();
+        services.AddLocalizationServices();
+        services.AddCacheEncryption(configuration);
 
         return services;
     }
@@ -119,9 +123,22 @@ public static class InfrastructureServiceExtensions
                 options.InstanceName = cacheOptions.KeyPrefix;
             });
 
-            services.AddScoped<ICacheService, RedisCacheService>();
+            services.AddScoped<RedisCacheService>();
+            services.AddScoped<ICacheService>(sp =>
+            {
+                var inner = sp.GetRequiredService<RedisCacheService>();
+                var encryptionOptions = sp.GetRequiredService<IOptions<CacheEncryptionOptions>>();
+                if (!encryptionOptions.Value.IsEnabled)
+                    return inner;
+
+                var logger = sp.GetRequiredService<ILogger<EncryptedRedisCacheService>>();
+                return new EncryptedRedisCacheService(inner, encryptionOptions, logger);
+            });
+
             services.AddSingleton<IDistributedLock, DistributedLockService>();
-            services.AddScoped<IRateLimitService, RateLimitService>();
+            services.AddScoped<RateLimitService>();
+            services.AddScoped<InMemoryRateLimitService>();
+            services.AddScoped<ResilientRateLimitService>();
             services.AddScoped<IIdempotencyService, RedisIdempotencyService>();
         }
         else
@@ -135,6 +152,18 @@ public static class InfrastructureServiceExtensions
         }
 
         services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
+    }
+
+    private static void AddCacheEncryption(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<CacheEncryptionOptions>()
+            .Bind(configuration.GetSection(CacheEncryptionOptions.SectionName));
+    }
+
+    private static void AddLocalizationServices(this IServiceCollection services)
+    {
+        services.AddSingleton<ILocalizedErrorMessageProvider,
+            LocalizedErrorMessageProvider>();
     }
 
     private static void AddPersistence(
@@ -444,6 +473,7 @@ public static class InfrastructureServiceExtensions
         services.AddHostedService<InventoryReservationExpiryJob>();
         services.AddHostedService<OrderStatusSeeder>();
         services.AddHostedService<OrphanedFileCleanupJob>();
+        services.AddHostedService<OutboxArchiveJob>();
         services.AddHostedService<OutboxProcessingJob>();
         services.AddHostedService<PaymentCleanupJob>();
         services.AddHostedService<PaymentMethodSeeder>();

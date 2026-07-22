@@ -1,4 +1,6 @@
-namespace Presentation.Common.Diagnostics;
+using System.Diagnostics;
+
+namespace SharedContracts.Diagnostics;
 
 public static class ApplicationActivitySources
 {

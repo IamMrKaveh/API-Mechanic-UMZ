@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using SharedContracts.Diagnostics;
 
 namespace Infrastructure.Persistence.Outbox;
 

@@ -1,5 +1,6 @@
 namespace Application.Order.Features.Commands.MarkOrderAsShipped;
 
 public record MarkOrderAsShippedCommand(
-    Guid OrderId)
+    Guid OrderId,
+    string? RowVersion)
     : ICommand;

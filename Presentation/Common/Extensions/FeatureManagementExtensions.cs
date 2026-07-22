@@ -1,26 +1,11 @@
 using Microsoft.FeatureManagement;
+using SharedContracts.FeatureManagement;
 
 namespace Presentation.Common.Extensions;
 
 public static class FeatureManagementExtensions
 {
     public const string SectionName = "FeatureManagement";
-
-    public static class Flags
-    {
-        public const string PaymentCallbackSignatureRequired = "Payment.Callback.SignatureRequired";
-        public const string IdempotencyDistributedLockEnabled = "Idempotency.DistributedLock.Enabled";
-        public const string SagaAutoRefundOnCommitFailure = "Saga.AutoRefundOnCommitFailure";
-        public const string StoragePresignedUrlEnabled = "Storage.PresignedUrl.Enabled";
-
-        public static IReadOnlyList<string> All { get; } = new[]
-        {
-            PaymentCallbackSignatureRequired,
-            IdempotencyDistributedLockEnabled,
-            SagaAutoRefundOnCommitFailure,
-            StoragePresignedUrlEnabled
-        };
-    }
 
     public static IServiceCollection AddFeatureFlags(
         this IServiceCollection services,
@@ -39,7 +24,7 @@ public static class FeatureManagementExtensions
                 $"Configuration section '{SectionName}' is missing.");
 
         var missing = new List<string>();
-        foreach (var flag in Flags.All)
+        foreach (var flag in FeatureFlags.All)
         {
             var value = section[flag];
             if (value is null)

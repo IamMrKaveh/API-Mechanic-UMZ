@@ -60,9 +60,16 @@ public static class MiddlewareExtensions
 
         app.UseMiddleware<SecurityHeadersMiddleware>();
 
+        app.UseApplicationLocalization();
+
         app.UseRequestPerformanceMonitoring();
 
         app.UseCustomCors();
+
+        if (!app.Environment.IsProduction())
+        {
+            app.UseChaosEngineering();
+        }
 
         app.UseMiddleware<RateLimitMiddleware>();
 
@@ -70,13 +77,13 @@ public static class MiddlewareExtensions
 
         app.UseAuthorization();
 
+        app.UseApplicationAntiforgery();
+
         app.UseMiddleware<SessionActivityMiddleware>();
 
         app.UseAdminIpWhitelist();
 
         app.UseMiddleware<WebhookIpWhitelistMiddleware>();
-
-        app.MapPrometheusScrapingEndpoint("/metrics").AllowAnonymous();
 
         app.MapApplicationHealthChecks();
 

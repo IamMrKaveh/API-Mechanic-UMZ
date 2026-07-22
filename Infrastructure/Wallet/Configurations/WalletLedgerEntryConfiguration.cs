@@ -1,4 +1,4 @@
-﻿using Domain.Wallet.Entities;
+using Domain.Wallet.Entities;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
@@ -54,8 +54,14 @@ public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<Wa
             .HasForeignKey(e => e.OwnerId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(e => e.WalletId).HasDatabaseName("IX_WalletLedgerEntries_WalletId");
-        builder.HasIndex(e => e.OwnerId).HasDatabaseName("IX_WalletLedgerEntries_UserId");
+        builder.HasIndex(e => new { e.WalletId, e.OccurredAt })
+            .IsDescending(false, true)
+            .HasDatabaseName("IX_WalletLedgerEntries_WalletId_OccurredAt");
+
+        builder.HasIndex(e => new { e.OwnerId, e.OccurredAt })
+            .IsDescending(false, true)
+            .HasDatabaseName("IX_WalletLedgerEntries_UserId_OccurredAt");
+
         builder.HasIndex(e => e.IdempotencyKey)
             .IsUnique()
             .HasFilter("\"IdempotencyKey\" IS NOT NULL")

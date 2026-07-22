@@ -6,24 +6,39 @@ namespace Application.Order.Features.Commands.RequestReturn;
 
 public class RequestReturnHandler(
     IOrderRepository orderRepository,
-    INotificationService notificationService)
+    INotificationService notificationService,
+    ICurrentUserService currentUser)
     : ICommandHandler<RequestReturnCommand>
 {
     public async Task<ServiceResult> Handle(
         RequestReturnCommand request,
         CancellationToken ct)
     {
+        if (!currentUser.UserId.HasValue)
+            return ServiceResult.Unauthorized("کاربر احراز هویت نشده است.");
+
         var orderId = OrderId.From(request.OrderId);
         var order = await orderRepository.FindByIdAsync(orderId, ct);
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
-        if (order.UserId != UserId.From(request.UserId))
-            return ServiceResult.Unauthorized("شما مجاز به درخواست بازگشت این سفارش نیستید.");
+        var userId = UserId.From(currentUser.UserId.Value);
 
-        var rowVersion = !string.IsNullOrEmpty(request.RowVersion)
-            ? Convert.FromBase64String(request.RowVersion)
-            : null;
+        if (!currentUser.IsAdmin && order.UserId != userId)
+            return ServiceResult.Forbidden("دسترسی ممنوع.");
+
+        byte[]? rowVersion = null;
+        if (!string.IsNullOrEmpty(request.RowVersion))
+        {
+            try
+            {
+                rowVersion = Convert.FromBase64String(request.RowVersion);
+            }
+            catch (FormatException)
+            {
+                return ServiceResult.Validation("If-Match نامعتبر است.");
+            }
+        }
 
         var oldStatusName = order.Status.DisplayName;
 

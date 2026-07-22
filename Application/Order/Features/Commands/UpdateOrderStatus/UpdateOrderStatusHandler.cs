@@ -17,9 +17,18 @@ public class UpdateOrderStatusHandler(
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");
 
-        var rowVersion = !string.IsNullOrEmpty(request.RowVersion)
-            ? Convert.FromBase64String(request.RowVersion)
-            : null;
+        byte[]? rowVersion = null;
+        if (!string.IsNullOrEmpty(request.RowVersion))
+        {
+            try
+            {
+                rowVersion = Convert.FromBase64String(request.RowVersion);
+            }
+            catch (FormatException)
+            {
+                return ServiceResult.Validation("If-Match نامعتبر است.");
+            }
+        }
 
         OrderStatusValue newStatus;
         try

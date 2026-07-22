@@ -1,3 +1,6 @@
+using Microsoft.FeatureManagement;
+using SharedContracts.FeatureManagement;
+
 namespace Application.Common.Behaviors;
 
 public interface IIdempotentCommand
@@ -26,7 +29,7 @@ public sealed class IdempotencyBehavior<TRequest, TResponse>(
             return System.Text.Json.JsonSerializer.Deserialize<TResponse>(cached)!;
 
         var lockEnabled = await featureManager.IsEnabledAsync(
-            FeatureManagementExtensions.Flags.IdempotencyDistributedLockEnabled);
+            FeatureFlags.IdempotencyDistributedLockEnabled);
 
         if (!lockEnabled)
         {

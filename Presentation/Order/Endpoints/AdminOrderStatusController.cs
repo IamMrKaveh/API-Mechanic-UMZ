@@ -18,6 +18,8 @@ public class AdminOrderStatusController(
     IMediator mediator,
     IMapper mapper) : BaseApiController(mediator, mapper)
 {
+    private const string IfMatchHeader = "If-Match";
+
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<OrderStatusDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOrderStatuses(
@@ -62,9 +64,11 @@ public class AdminOrderStatusController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status412PreconditionFailed)]
     public async Task<IActionResult> UpdateOrderStatus(
         Guid id,
         [FromBody] UpdateOrderStatusRequest request,
+        [FromHeader(Name = IfMatchHeader)] string? ifMatch,
         CancellationToken ct)
     {
         var command = new UpdateOrderStatusDefinitionCommand(
@@ -75,7 +79,7 @@ public class AdminOrderStatusController(
             SortOrder: request.SortOrder,
             AllowCancel: request.AllowCancel,
             AllowEdit: request.AllowEdit,
-            RowVersion: request.RowVersion);
+            RowVersion: StripQuotes(ifMatch));
 
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
@@ -119,5 +123,14 @@ public class AdminOrderStatusController(
         var command = new SetDefaultOrderStatusCommand(id);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
+    }
+
+    private static string? StripQuotes(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var trimmed = value.Trim();
+        if (trimmed.Length >= 2 && trimmed[0] == '"' && trimmed[^1] == '"')
+            return trimmed[1..^1];
+        return trimmed;
     }
 }

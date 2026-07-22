@@ -1,5 +1,7 @@
 using Amazon.S3.Model;
 using Infrastructure.Storage.Options;
+using Microsoft.FeatureManagement;
+using SharedContracts.FeatureManagement;
 
 namespace Infrastructure.Storage.Services;
 
@@ -9,8 +11,6 @@ public sealed class S3FileStorageService(
     IAuditService auditService,
     IFeatureManager featureManager) : IStorageService
 {
-    private const string PresignedUrlFeatureFlag = "Storage.PresignedUrl.Enabled";
-
     private readonly StorageOptions _options = options.Value;
 
     public async Task<string> UploadAsync(
@@ -26,7 +26,7 @@ public sealed class S3FileStorageService(
 
         await using var buffer = await BufferAsync(fileStream, ct);
 
-        var presignedEnabled = await featureManager.IsEnabledAsync(PresignedUrlFeatureFlag);
+        var presignedEnabled = await featureManager.IsEnabledAsync(FeatureFlags.StoragePresignedUrlEnabled);
 
         var putRequest = new PutObjectRequest
         {

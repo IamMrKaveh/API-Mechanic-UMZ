@@ -1,5 +1,6 @@
 using Microsoft.FeatureManagement;
 using Presentation.Common.Options;
+using SharedContracts.FeatureManagement;
 
 namespace Presentation.Common.Middleware;
 
@@ -33,14 +34,15 @@ public class WebhookIpWhitelistMiddleware
         }
 
         var featureManager = context.RequestServices.GetRequiredService<IFeatureManager>();
+
         var signatureRequired = await featureManager.IsEnabledAsync(
-            FeatureManagementExtensions.Flags.PaymentCallbackSignatureRequired);
+            FeatureFlags.PaymentCallbackSignatureRequired);
 
         if (!signatureRequired)
         {
             _logger.LogWarning(
                 "Webhook request accepted without IP verification because feature flag '{Flag}' is disabled. RemoteIp: {RemoteIp}",
-                FeatureManagementExtensions.Flags.PaymentCallbackSignatureRequired,
+                FeatureFlags.PaymentCallbackSignatureRequired,
                 context.Connection.RemoteIpAddress);
             await _next(context);
             return;

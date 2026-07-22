@@ -87,6 +87,7 @@ public sealed class DBContext(
     public DbSet<OrderStatus> OrderStatuses => Set<OrderStatus>();
     public DbSet<OrderProcessState> OrderProcessStates => Set<OrderProcessState>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<OutboxArchiveMessage> OutboxArchiveMessages => Set<OutboxArchiveMessage>();
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
     public DbSet<PaymentMethod> PaymentMethods => Set<PaymentMethod>();
     public DbSet<Domain.Product.Aggregates.Product> Products => Set<Domain.Product.Aggregates.Product>();
@@ -109,7 +110,6 @@ public sealed class DBContext(
     public DbSet<WalletReservation> WalletReservations => Set<WalletReservation>();
     public DbSet<WalletTopUp> WalletTopUps => Set<WalletTopUp>();
     public DbSet<WalletWithdrawalRequest> WalletWithdrawalRequests => Set<WalletWithdrawalRequest>();
-
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<Domain.Wishlist.Aggregates.Wishlist> Wishlists => Set<Domain.Wishlist.Aggregates.Wishlist>();
 
@@ -151,6 +151,9 @@ public sealed class DBContext(
         ConfigureStronglyTypedId<WalletLedgerEntryId, WalletLedgerEntryIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<WalletReservationId, WalletReservationIdConverter>(configurationBuilder);
         ConfigureStronglyTypedId<WishlistId, WishlistIdConverter>(configurationBuilder);
+
+        configurationBuilder.Properties<decimal>()
+            .HavePrecision(18, 4);
 
         base.ConfigureConventions(configurationBuilder);
     }

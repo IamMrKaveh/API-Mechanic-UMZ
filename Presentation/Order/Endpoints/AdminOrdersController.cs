@@ -17,6 +17,8 @@ public class AdminOrdersController(
     IMediator mediator,
     IMapper mapper) : BaseApiController(mediator, mapper)
 {
+    private const string IfMatchHeader = "If-Match";
+
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<AdminOrderDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOrders(
@@ -62,16 +64,14 @@ public class AdminOrdersController(
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status412PreconditionFailed)]
     public async Task<IActionResult> UpdateOrderStatus(
         Guid id,
         [FromBody] UpdateOrderStatusByIdRequest request,
+        [FromHeader(Name = IfMatchHeader)] string? ifMatch,
         CancellationToken ct)
     {
-        var command = new UpdateOrderStatusCommand(
-            id,
-            request.NewStatus,
-            request.RowVersion);
-
+        var command = new UpdateOrderStatusCommand(id, request.NewStatus, StripQuotes(ifMatch) ?? string.Empty);
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
@@ -89,10 +89,24 @@ public class AdminOrdersController(
     [HttpPatch("{id:guid}/ship")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> MarkAsShipped(Guid id, CancellationToken ct)
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status412PreconditionFailed)]
+    public async Task<IActionResult> MarkAsShipped(
+        Guid id,
+        [FromHeader(Name = IfMatchHeader)] string? ifMatch,
+        CancellationToken ct)
     {
-        var command = new MarkOrderAsShippedCommand(id);
+        var command = new MarkOrderAsShippedCommand(id, StripQuotes(ifMatch));
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
+    }
+
+    private static string? StripQuotes(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var trimmed = value.Trim();
+        if (trimmed.Length >= 2 && trimmed[0] == '"' && trimmed[^1] == '"')
+            return trimmed[1..^1];
+        return trimmed;
     }
 }

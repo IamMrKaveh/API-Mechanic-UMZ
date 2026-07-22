@@ -31,8 +31,8 @@ public class UpdateOrderHandler(
                     return ServiceResult.Failure("روش ارسال نامعتبر است.");
             }
 
-            var rowVersion = !string.IsNullOrEmpty(request.Dto.RowVersion)
-                ? Convert.FromBase64String(request.Dto.RowVersion)
+            var rowVersion = !string.IsNullOrEmpty(request.RowVersion)
+                ? Convert.FromBase64String(request.RowVersion)
                 : null;
 
             orderRepository.Update(order, rowVersion);

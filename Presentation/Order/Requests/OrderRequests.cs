@@ -1,4 +1,4 @@
-﻿namespace Presentation.Order.Requests;
+namespace Presentation.Order.Requests;
 
 public record GetAdminOrdersRequest(
     Guid? UserId = null,
@@ -33,13 +33,9 @@ public record CancelOrderRequest(string Reason);
 
 public record RequestReturnRequest(string Reason);
 
-public record MarkAsShippedRequest(
-    string? TrackingNumber = null,
-    string? RowVersion = null);
+public record MarkAsShippedRequest(string? TrackingNumber = null);
 
-public record UpdateOrderStatusByIdRequest(
-    string NewStatus,
-    string RowVersion);
+public record UpdateOrderStatusByIdRequest(string NewStatus);
 
 public record AdminCreateOrderRequest(
     Guid UserId,
@@ -69,5 +65,4 @@ public record UpdateOrderStatusRequest(
     string? Color,
     int SortOrder,
     bool AllowCancel,
-    bool AllowEdit,
-    string? RowVersion = null);
+    bool AllowEdit);

@@ -1,6 +1,7 @@
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using Presentation.Common.Diagnostics;
+using SharedContracts.Diagnostics;
 
 namespace Presentation.Common.Extensions;
 
@@ -16,16 +17,6 @@ public static class OpenTelemetryExtensions
         var samplingRatio = environment.IsProduction() ? 0.1 : 1.0;
 
         var otlpEndpoint = configuration["OpenTelemetry:OtlpEndpoint"];
-
-        var resourceBuilder = ResourceBuilder.CreateDefault()
-            .AddService(
-                serviceName: "Mechanic.Api",
-                serviceVersion: typeof(OpenTelemetryExtensions).Assembly.GetName().Version?.ToString() ?? "1.0.0",
-                serviceInstanceId: Environment.MachineName)
-            .AddAttributes(new KeyValuePair<string, object>[]
-            {
-                new("deployment.environment", environment.EnvironmentName)
-            });
 
         services.AddOpenTelemetry()
             .ConfigureResource(r => r
@@ -56,10 +47,6 @@ public static class OpenTelemetryExtensions
                     .AddHttpClientInstrumentation(options =>
                     {
                         options.RecordException = true;
-                    })
-                    .AddEntityFrameworkCoreInstrumentation(options =>
-                    {
-                        options.SetDbStatementForText = !environment.IsProduction();
                     });
 
                 if (!string.IsNullOrWhiteSpace(otlpEndpoint))
@@ -73,10 +60,8 @@ public static class OpenTelemetryExtensions
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation()
-                    .AddProcessInstrumentation()
                     .AddMeter(BusinessMetrics.MeterName)
-                    .AddMeter("Elasticsearch")
-                    .AddPrometheusExporter();
+                    .AddMeter("Elasticsearch");
 
                 if (!string.IsNullOrWhiteSpace(otlpEndpoint))
                 {
