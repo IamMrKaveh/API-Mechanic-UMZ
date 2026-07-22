@@ -9,6 +9,7 @@ using Application.Localization.Contracts;
 using Application.Location.Contracts;
 using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Payment.Contracts;
+using Application.Storage.Contracts;
 using Domain.Attribute.Interfaces;
 using Domain.Brand.Interfaces;
 using Domain.Payment.Interfaces;
@@ -298,6 +299,19 @@ public static class InfrastructureServiceExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<AntivirusOptions>()
+            .Bind(configuration.GetSection(AntivirusOptions.SectionName));
+
+        services.AddSingleton<IFileMagicBytesValidator, FileMagicBytesValidator>();
+
+        var antivirusOptions = configuration.GetSection(AntivirusOptions.SectionName).Get<AntivirusOptions>()
+            ?? new AntivirusOptions();
+
+        if (antivirusOptions.IsEnabled)
+            services.AddScoped<IFileScanningService, ClamAvFileScanningService>();
+        else
+            services.AddSingleton<IFileScanningService, NullFileScanningService>();
+
         var storageOptions = storageSection.Get<StorageOptions>()
             ?? throw new InvalidOperationException(
                 $"Storage configuration section '{StorageOptions.SectionName}' is missing.");
@@ -390,6 +404,7 @@ public static class InfrastructureServiceExtensions
 
         services.AddScoped<IPaymentGatewayFactory, PaymentGatewayFactory>();
         services.AddScoped<IPaymentService, PaymentService>();
+        services.AddScoped<IPaymentCallbackNonceService, PaymentCallbackNonceService>();
 
         services.AddHttpClient<ZarinPalPaymentGateway>((sp, client) =>
         {

@@ -1,7 +1,9 @@
 using Amazon.S3.Model;
+using Application.Storage.Contracts;
 using Infrastructure.Storage.Options;
 using Microsoft.FeatureManagement;
 using SharedContracts.FeatureManagement;
+using SharedKernel.Exceptions;
 
 namespace Infrastructure.Storage.Services;
 
@@ -9,7 +11,9 @@ public sealed class S3FileStorageService(
     IAmazonS3 s3Client,
     IOptions<StorageOptions> options,
     IAuditService auditService,
-    IFeatureManager featureManager) : IStorageService
+    IFeatureManager featureManager,
+    IFileScanningService fileScanningService,
+    IFileMagicBytesValidator fileMagicBytesValidator) : IStorageService
 {
     private readonly StorageOptions _options = options.Value;
 
@@ -25,6 +29,32 @@ public sealed class S3FileStorageService(
             : $"{folder.Trim('/')}/{Guid.NewGuid()}/{fileName}";
 
         await using var buffer = await BufferAsync(fileStream, ct);
+
+        var magicBytesAllowed = await fileMagicBytesValidator.IsAllowedAsync(buffer, contentType, ct);
+        if (!magicBytesAllowed)
+        {
+            await auditService.LogSecurityEventAsync(
+                "MaliciousUploadDetected",
+                $"Rejected upload '{fileName}' (declared '{contentType}') due to magic-byte mismatch.",
+                IpAddress.Unknown,
+                null,
+                ct);
+            throw new DomainException("محتوای فایل با نوع اعلام‌شده مطابقت ندارد.");
+        }
+
+        var scan = await fileScanningService.ScanAsync(buffer, fileName, ct);
+        if (!scan.IsClean)
+        {
+            await auditService.LogSecurityEventAsync(
+                "MaliciousUploadDetected",
+                $"Rejected upload '{fileName}' due to antivirus detection: threat='{scan.ThreatName}', engine='{scan.EngineMessage}'.",
+                IpAddress.Unknown,
+                null,
+                ct);
+            throw new DomainException("فایل ارسال‌شده به دلیل ملاحظات امنیتی رد شد.");
+        }
+
+        if (buffer.CanSeek) buffer.Position = 0;
 
         var presignedEnabled = await featureManager.IsEnabledAsync(FeatureFlags.StoragePresignedUrlEnabled);
 

@@ -6,8 +6,11 @@ using Domain.Order.ValueObjects;
 using Domain.Payment.Aggregates;
 using Domain.Payment.Exceptions;
 using Domain.Payment.Interfaces;
+using Domain.Payment.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Payment.ZarinPal.Options;
+using Microsoft.FeatureManagement;
+using SharedContracts.FeatureManagement;
 using SharedKernel.Exceptions;
 
 namespace Infrastructure.Payment.Services;
@@ -20,8 +23,11 @@ public sealed class PaymentService(
     IDateTimeProvider dateTimeProvider,
     IAuditService auditService,
     IOptions<ZarinPalOptions> zarinPalOptions,
-    ICurrentUserService currentUserService) : IPaymentService
+    ICurrentUserService currentUserService,
+    IPaymentCallbackNonceService callbackNonceService,
+    IFeatureManager featureManager) : IPaymentService
 {
+    private static readonly TimeSpan NonceTtl = TimeSpan.FromMinutes(30);
     private readonly ZarinPalOptions _zarinPalOptions = zarinPalOptions.Value;
     private readonly ICurrentUserService _currentUserService = currentUserService;
 
@@ -59,7 +65,10 @@ public sealed class PaymentService(
             throw new ExternalServiceException("PaymentGatewayFactory", ex.Message, ex);
         }
 
-        var callbackUrl = $"{_currentUserService.FrontendBaseUrl}/payment/callback";
+        var paymentTransactionId = PaymentTransactionId.NewId();
+
+        var nonce = await callbackNonceService.IssueAsync(paymentTransactionId.Value, NonceTtl, ct);
+        var callbackUrl = BuildCallbackUrl(paymentTransactionId.Value, nonce);
 
         PaymentInitiationResult gatewayResult;
         try
@@ -78,9 +87,14 @@ public sealed class PaymentService(
             throw;
         }
 
-        var transaction = PaymentTransaction.Initiate(
-            orderId, userId, gatewayResult.Authority,
-            amount.Amount, gateway.GatewayName, dateTimeProvider.UtcNow);
+        var transaction = PaymentTransaction.InitiateWithId(
+            paymentTransactionId,
+            orderId,
+            userId,
+            gatewayResult.Authority,
+            amount.Amount,
+            gateway.GatewayName,
+            dateTimeProvider.UtcNow);
 
         await paymentRepository.AddAsync(transaction, ct);
 
@@ -162,12 +176,37 @@ public sealed class PaymentService(
     }
 
     public async Task ProcessWebhookAsync(
-        string authority, string status, CancellationToken ct = default)
+        string authority,
+        string status,
+        string? nonce = null,
+        CancellationToken ct = default)
     {
         var now = dateTimeProvider.UtcNow;
 
         var transaction = await paymentRepository.GetByAuthorityAsync(authority, ct)
             ?? throw new PaymentTransactionNotFoundException(authority);
+
+        var signatureRequired = await featureManager.IsEnabledAsync(
+            FeatureFlags.PaymentCallbackSignatureRequired);
+
+        if (signatureRequired)
+        {
+            var nonceValid = await callbackNonceService.ValidateAndConsumeAsync(
+                transaction.Id.Value, nonce ?? string.Empty, ct);
+
+            if (!nonceValid)
+            {
+                await auditService.LogSecurityEventAsync(
+                    "PaymentWebhookInvalidNonce",
+                    $"Rejected webhook for transaction {transaction.Id.Value} (authority '{authority}') due to invalid or missing nonce.",
+                    IpAddress.Unknown,
+                    null,
+                    ct);
+                throw new ExternalServiceException(
+                    transaction.Gateway.Value,
+                    "درخواست بازگشتی درگاه پرداخت معتبر نیست.");
+            }
+        }
 
         if (status.Equals("OK", StringComparison.OrdinalIgnoreCase))
         {
@@ -181,5 +220,11 @@ public sealed class PaymentService(
             paymentRepository.Update(transaction);
             await unitOfWork.SaveChangesAsync(ct);
         }
+    }
+
+    private string BuildCallbackUrl(Guid paymentTransactionId, string nonce)
+    {
+        var baseUrl = _currentUserService.FrontendBaseUrl?.TrimEnd('/') ?? string.Empty;
+        return $"{baseUrl}/payment/callback?paymentId={paymentTransactionId:N}&nonce={Uri.EscapeDataString(nonce)}";
     }
 }

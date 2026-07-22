@@ -10,7 +10,7 @@ public class ProcessWebhookHandler(
     {
         try
         {
-            await paymentService.ProcessWebhookAsync(request.Authority, request.Status, ct);
+            await paymentService.ProcessWebhookAsync(request.Authority, request.Status, request.Nonce, ct);
             return ServiceResult.Success();
         }
         catch (PaymentTransactionNotFoundException ex)
