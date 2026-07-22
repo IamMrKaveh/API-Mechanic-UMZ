@@ -1,5 +1,3 @@
-using Application.Common.Interfaces;
-using Application.Media.Contracts;
 using Application.Media.Features.Shared;
 using Domain.Media.ValueObjects;
 
@@ -49,6 +47,27 @@ public sealed class MediaQueryService(
             .FirstOrDefaultAsync(ct);
 
         return media is null ? null : MapToDto(media);
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, MediaDto>> GetPrimaryByEntitiesAsync(
+        string entityType,
+        IEnumerable<Guid> entityIds,
+        CancellationToken ct = default)
+    {
+        var ids = entityIds.Distinct().ToList();
+        if (ids.Count == 0)
+            return new Dictionary<Guid, MediaDto>();
+
+        var medias = await context.Medias
+            .AsNoTracking()
+            .Where(m => m.EntityType == entityType
+                        && ids.Contains(m.EntityId)
+                        && m.IsPrimary)
+            .ToListAsync(ct);
+
+        return medias
+            .GroupBy(m => m.EntityId)
+            .ToDictionary(g => g.Key, g => MapToDto(g.First()));
     }
 
     public async Task<PaginatedResult<MediaDto>> GetAllAsync(

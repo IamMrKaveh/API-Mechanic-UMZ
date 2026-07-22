@@ -8,5 +8,14 @@ public record UpdateOrderStatusDefinitionCommand(
     int SortOrder,
     bool AllowCancel,
     bool AllowEdit,
-    string? RowVersion = null)
-    : ICommand;
+    string? RowVersion)
+    : ICommand, IAuditableCommand
+{
+    public string AuditEventType => "OrderStatus";
+
+    public string AuditAction => "UpdateOrderStatusDefinition";
+
+    public string? AuditEntityType => "OrderStatus";
+
+    public string? AuditEntityId => Id.ToString();
+}

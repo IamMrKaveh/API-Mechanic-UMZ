@@ -1,5 +1,6 @@
 using Application.Cart.Contracts;
 using Application.Cart.Features.Shared;
+using Application.Media.Features.Shared;
 using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -9,6 +10,8 @@ public sealed class CartQueryService(
     DBContext context,
     IMediaQueryService mediaService) : ICartQueryService
 {
+    private const string ProductEntityType = "Product";
+
     public async Task<CartDetailDto?> GetCartDetailAsync(
         UserId? userId,
         GuestToken? guestToken,
@@ -38,13 +41,20 @@ public sealed class CartQueryService(
 
         if (cart is null) return null;
 
-        var items = new List<CartItemDetailDto>();
-        var priceChanges = new List<CartPriceChangeDto>();
+        var productIds = cart.Items
+            .Select(i => i.ProductId)
+            .Distinct()
+            .ToList();
 
+        var primaryMediaByProduct = productIds.Count == 0
+            ? new Dictionary<Guid, MediaDto>()
+            : (Dictionary<Guid, MediaDto>)await mediaService.GetPrimaryByEntitiesAsync(
+                ProductEntityType, productIds, ct);
+
+        var items = new List<CartItemDetailDto>(cart.Items.Count);
         foreach (var item in cart.Items)
         {
-            var primaryMedia = await mediaService.GetPrimaryByEntityAsync(
-                "Product", item.ProductId, ct);
+            primaryMediaByProduct.TryGetValue(item.ProductId, out var primaryMedia);
 
             items.Add(new CartItemDetailDto
             {
@@ -62,6 +72,8 @@ public sealed class CartQueryService(
                 IsAvailable = true
             });
         }
+
+        var priceChanges = new List<CartPriceChangeDto>();
 
         return new CartDetailDto
         {

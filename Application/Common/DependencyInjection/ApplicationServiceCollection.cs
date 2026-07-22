@@ -1,3 +1,4 @@
+using Application.Payment.Adapters;
 using Domain.Inventory.Services;
 using Domain.Media.Services;
 using Domain.Payment.Services;
@@ -52,6 +53,7 @@ public static class ApplicationServiceCollection
     {
         services.AddScoped<InventoryReservationService>();
         services.AddScoped<PaymentSettlementService>();
+        services.AddScoped<IPaymentInitiator, PaymentInitiator>();
 
         return services;
     }

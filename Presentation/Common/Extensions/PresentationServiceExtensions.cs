@@ -2,6 +2,7 @@ using Application.Auth.Contracts;
 using Application.Common.Interfaces;
 using Presentation.Auth.Services;
 using Presentation.Common.Services;
+using SharedKernel.Extensions;
 
 namespace Presentation.Common.Extensions;
 
@@ -19,6 +20,9 @@ public static class PresentationServiceExtensions
         services.AddTrustedForwardedHeaders(configuration);
         services.AddFeatureFlags(configuration);
         services.AddApplicationObservability(configuration, environment);
+        services.AddApplicationLocalization(configuration);
+        services.AddApplicationAntiforgery();
+        services.AddChaosEngineering(configuration, environment);
 
         return services;
     }
@@ -30,6 +34,7 @@ public static class PresentationServiceExtensions
         services.AddScoped<IGoogleAuthenticationService, HttpGoogleAuthenticationService>();
         services.AddScoped<OtpRateLimitFilter>();
         services.AddScoped<IMapper, ServiceMapper>();
+        services.AddSingleton<IPersianTextNormalizer, PersianTextNormalizerService>();
 
         return services;
     }

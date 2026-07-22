@@ -2,6 +2,8 @@ namespace Infrastructure.Persistence.Outbox;
 
 public sealed class OutboxMessage
 {
+    private const int MaxPayloadBytes = 64 * 1024;
+
     public OutboxMessageId Id { get; private set; } = OutboxMessageId.NewId();
     public string Type { get; private set; } = string.Empty;
     public string Payload { get; private set; } = string.Empty;
@@ -23,6 +25,17 @@ public sealed class OutboxMessage
         string? traceParent = null,
         string? traceState = null)
     {
+        if (string.IsNullOrWhiteSpace(type))
+            throw new ArgumentException("Outbox message type must be provided.", nameof(type));
+
+        if (payload is null)
+            throw new ArgumentNullException(nameof(payload));
+
+        var payloadBytes = Encoding.UTF8.GetByteCount(payload);
+        if (payloadBytes > MaxPayloadBytes)
+            throw new InvalidOperationException(
+                $"Outbox payload size ({payloadBytes} bytes) exceeds the maximum allowed size of {MaxPayloadBytes} bytes.");
+
         return new OutboxMessage
         {
             Id = OutboxMessageId.NewId(),

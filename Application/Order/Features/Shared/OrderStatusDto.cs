@@ -1,4 +1,4 @@
-﻿namespace Application.Order.Features.Shared;
+namespace Application.Order.Features.Shared;
 
 public sealed class OrderStatusDto
 {

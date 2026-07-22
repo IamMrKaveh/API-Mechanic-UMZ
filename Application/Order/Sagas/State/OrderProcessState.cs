@@ -1,4 +1,4 @@
-﻿using Domain.Order.Enums;
+using Domain.Order.Enums;
 using Domain.Order.ValueObjects;
 
 namespace Application.Order.Sagas.State;
@@ -65,6 +65,21 @@ public sealed class OrderProcessState
     {
         CurrentStep = ProcessStepEnum.Compensated;
         Status = ProcessStatusEnum.Compensated;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void MarkRefunded()
+    {
+        CurrentStep = ProcessStepEnum.Refunded;
+        Status = ProcessStatusEnum.Compensated;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void MarkRequiresManualReconciliation(string reason)
+    {
+        CurrentStep = ProcessStepEnum.RequiresManualReconciliation;
+        Status = ProcessStatusEnum.Failed;
+        FailureReason = reason;
         UpdatedAt = DateTime.UtcNow;
     }
 

@@ -1,18 +1,17 @@
-﻿using Application.Order.Contracts;
 using Application.Order.Features.Shared;
 using Domain.Order.ValueObjects;
+using Microsoft.Net.Http.Headers;
 
 namespace Infrastructure.Order.QueryServices;
 
-public sealed class OrderStatusQueryService(DBContext context) : IOrderStatusQueryService
+public sealed class OrderStatusQueryService(
+    DBContext context,
+    IHttpContextAccessor httpContextAccessor) : IOrderStatusQueryService
 {
-    public async Task<IReadOnlyList<OrderStatusDto>> GetAllAsync(
-        bool? onlyActive = null,
-        CancellationToken ct = default)
+    public async Task<IReadOnlyList<OrderStatusDto>> GetAllAsync(bool? onlyActive, CancellationToken ct)
     {
         var query = context.OrderStatuses.AsNoTracking();
-
-        if (onlyActive == true)
+        if (onlyActive.HasValue && onlyActive.Value)
             query = query.Where(s => s.IsActive);
 
         return await query
@@ -28,19 +27,15 @@ public sealed class OrderStatusQueryService(DBContext context) : IOrderStatusQue
                 IsActive = s.IsActive,
                 IsDefault = s.IsDefault,
                 AllowCancel = s.AllowCancel,
-                AllowEdit = s.AllowEdit,
-                RowVersion = s.RowVersion == null ? null : Convert.ToBase64String(s.RowVersion)
+                AllowEdit = s.AllowEdit
             })
             .ToListAsync(ct);
     }
 
-    public async Task<OrderStatusDto?> GetByIdAsync(
-        Guid id,
-        CancellationToken ct = default)
+    public async Task<OrderStatusDto?> GetByIdAsync(Guid id, CancellationToken ct)
     {
         var statusId = OrderStatusId.From(id);
-
-        return await context.OrderStatuses
+        var dto = await context.OrderStatuses
             .AsNoTracking()
             .Where(s => s.Id == statusId)
             .Select(s => new OrderStatusDto
@@ -54,9 +49,25 @@ public sealed class OrderStatusQueryService(DBContext context) : IOrderStatusQue
                 IsActive = s.IsActive,
                 IsDefault = s.IsDefault,
                 AllowCancel = s.AllowCancel,
-                AllowEdit = s.AllowEdit,
-                RowVersion = s.RowVersion == null ? null : Convert.ToBase64String(s.RowVersion)
+                AllowEdit = s.AllowEdit
             })
             .FirstOrDefaultAsync(ct);
+
+        if (dto is not null)
+        {
+            var entity = await context.OrderStatuses
+                .AsNoTracking()
+                .Where(s => s.Id == statusId)
+                .Select(s => new { s.RowVersion })
+                .FirstOrDefaultAsync(ct);
+
+            if (entity?.RowVersion is not null)
+            {
+                httpContextAccessor.HttpContext?.Response.Headers.Append(
+                    HeaderNames.ETag, $"\"{Convert.ToBase64String(entity.RowVersion)}\"");
+            }
+        }
+
+        return dto;
     }
 }

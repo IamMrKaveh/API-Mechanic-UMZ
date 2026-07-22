@@ -1,6 +1,6 @@
 using System.Diagnostics.Metrics;
 
-namespace Presentation.Common.Diagnostics;
+namespace SharedContracts.Diagnostics;
 
 public sealed class BusinessMetrics : IDisposable
 {

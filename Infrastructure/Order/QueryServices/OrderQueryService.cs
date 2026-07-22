@@ -1,13 +1,15 @@
+using System.Buffers.Binary;
 using Application.Order.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
-using System.Buffers.Binary;
+using Microsoft.Net.Http.Headers;
 
 namespace Infrastructure.Order.QueryServices;
 
 public sealed class OrderQueryService(
     DBContext context,
-    IUrlResolverService urlResolver) : IOrderQueryService
+    IUrlResolverService urlResolver,
+    IHttpContextAccessor httpContextAccessor) : IOrderQueryService
 {
     private const string ProductEntityType = "Product";
 
@@ -222,69 +224,61 @@ public sealed class OrderQueryService(
         OrderId orderId,
         CancellationToken ct = default)
     {
-        var dto = await context.Orders
+        var projection = await context.Orders
             .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(o => o.Id == orderId)
-            .Select(o => new AdminOrderDto
+            .Select(o => new
             {
-                Id = o.Id.Value,
-                UserId = o.UserId.Value,
-                OrderNumber = o.OrderNumber.Value,
-                ReceiverName = o.ReceiverInfo.FullName,
-                Status = o.Status.Value,
-                StatusDisplayName = o.Status.DisplayName,
-                TotalAmount = o.SubTotal.Amount,
-                ShippingCost = o.ShippingCost.Amount,
-                DiscountAmount = o.DiscountAmount.Amount,
-                FinalAmount = o.FinalAmount.Amount,
-                DiscountCodeId = o.AppliedDiscountCodeId != null ? o.AppliedDiscountCodeId.Value : null,
-                CancellationReason = o.CancellationReason,
-                IsPaid = o.IsPaid,
-                IsCancelled = o.IsCancelled,
-                IsDeleted = o.IsDeleted,
-                OrderItems = o.OrderItems.Select(i => new OrderItemDto
+                Dto = new AdminOrderDto
                 {
-                    Id = i.Id.Value,
-                    VariantId = i.VariantId.Value,
-                    ProductId = i.ProductId.Value,
-                    ProductName = i.ProductName,
-                    Sku = i.Sku,
-                    UnitPrice = i.UnitPrice.Amount,
-                    Quantity = i.Quantity,
-                    TotalPrice = i.TotalPrice.Amount
-                }).ToList(),
-                OrderItemsCount = o.OrderItems.Count,
-                CreatedAt = o.CreatedAt,
-                UpdatedAt = o.UpdatedAt
+                    Id = o.Id.Value,
+                    UserId = o.UserId.Value,
+                    OrderNumber = o.OrderNumber.Value,
+                    ReceiverName = o.ReceiverInfo.FullName,
+                    Status = o.Status.Value,
+                    StatusDisplayName = o.Status.DisplayName,
+                    TotalAmount = o.SubTotal.Amount,
+                    ShippingCost = o.ShippingCost.Amount,
+                    DiscountAmount = o.DiscountAmount.Amount,
+                    FinalAmount = o.FinalAmount.Amount,
+                    DiscountCodeId = o.AppliedDiscountCodeId != null ? o.AppliedDiscountCodeId.Value : null,
+                    CancellationReason = o.CancellationReason,
+                    IsPaid = o.IsPaid,
+                    IsCancelled = o.IsCancelled,
+                    IsDeleted = o.IsDeleted,
+                    OrderItems = o.OrderItems.Select(i => new OrderItemDto
+                    {
+                        Id = i.Id.Value,
+                        VariantId = i.VariantId.Value,
+                        ProductId = i.ProductId.Value,
+                        ProductName = i.ProductName,
+                        Sku = i.Sku,
+                        UnitPrice = i.UnitPrice.Amount,
+                        Quantity = i.Quantity,
+                        TotalPrice = i.TotalPrice.Amount
+                    }).ToList(),
+                    OrderItemsCount = o.OrderItems.Count,
+                    CreatedAt = o.CreatedAt,
+                    UpdatedAt = o.UpdatedAt
+                },
+                Xmin = EF.Property<uint>(o, "xmin")
             })
             .FirstOrDefaultAsync(ct);
 
-        if (dto is null)
-            return null;
-
-        var xmin = await context.Orders
-            .AsNoTracking()
-            .IgnoreQueryFilters()
-            .Where(o => o.Id == orderId)
-            .Select(o => EF.Property<uint>(o, "xmin"))
-            .FirstOrDefaultAsync(ct);
-
-        var statusValue = OrderStatusValue.From(dto.Status);
+        if (projection is null) return null;
 
         var rowVersionBytes = new byte[4];
-        BinaryPrimitives.WriteUInt32BigEndian(rowVersionBytes, xmin);
-        var rowVersion = Convert.ToBase64String(rowVersionBytes);
+        BinaryPrimitives.WriteUInt32BigEndian(rowVersionBytes, projection.Xmin);
+        var etag = Convert.ToBase64String(rowVersionBytes);
 
-        return dto with
-        {
-            IsCancellable = statusValue.CanBeCancelled(),
-            AllowedTransitions = ComputeAllowedTransitions(statusValue),
-            RowVersion = rowVersion
-        };
+        httpContextAccessor.HttpContext?.Response.Headers.Append(
+            HeaderNames.ETag, $"\"{etag}\"");
+
+        return projection.Dto;
     }
 
-    private static IReadOnlyList<string> ComputeAllowedTransitions(OrderStatusValue current)
+    private static List<string> ComputeAllowedTransitions(OrderStatusValue current)
     {
         var candidates = new[]
         {

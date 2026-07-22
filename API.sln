@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Presentation", "Presentatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{C06D2F34-BC76-4367-97E5-D7FD8F1C326E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedContracts", "SharedContracts\SharedContracts.csproj", "{3DE2B68F-8991-4E3F-9B25-9EE47EC76B34}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{C06D2F34-BC76-4367-97E5-D7FD8F1C326E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C06D2F34-BC76-4367-97E5-D7FD8F1C326E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C06D2F34-BC76-4367-97E5-D7FD8F1C326E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DE2B68F-8991-4E3F-9B25-9EE47EC76B34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DE2B68F-8991-4E3F-9B25-9EE47EC76B34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DE2B68F-8991-4E3F-9B25-9EE47EC76B34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DE2B68F-8991-4E3F-9B25-9EE47EC76B34}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
