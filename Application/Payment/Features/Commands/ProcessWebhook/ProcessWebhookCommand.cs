@@ -2,5 +2,6 @@ namespace Application.Payment.Features.Commands.ProcessWebhook;
 
 public record ProcessWebhookCommand(
     string Authority,
-    string Status)
+    string Status,
+    string? Nonce = null)
     : ICommand;

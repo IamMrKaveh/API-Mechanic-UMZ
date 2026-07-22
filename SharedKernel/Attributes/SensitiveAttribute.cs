@@ -1,10 +1,13 @@
 namespace SharedKernel.Attributes;
 
 [AttributeUsage(
-    AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Class | AttributeTargets.Struct,
-    Inherited = false,
+    AttributeTargets.Class
+    | AttributeTargets.Struct
+    | AttributeTargets.Property
+    | AttributeTargets.Field
+    | AttributeTargets.Interface,
+    Inherited = true,
     AllowMultiple = false)]
-public sealed class SensitiveAttribute(string category = "PII") : Attribute
+public sealed class SensitiveAttribute : Attribute
 {
-    public string Category { get; } = string.IsNullOrWhiteSpace(category) ? "PII" : category;
 }

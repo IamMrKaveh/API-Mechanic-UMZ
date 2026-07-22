@@ -21,5 +21,6 @@ public interface IPaymentService
     Task ProcessWebhookAsync(
         string authority,
         string status,
+        string? nonce = null,
         CancellationToken ct = default);
 }

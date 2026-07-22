@@ -1,4 +1,4 @@
-﻿using Application.Wallet.Features.Shared;
+using Application.Wallet.Features.Shared;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -18,9 +18,12 @@ public sealed class ConfirmWalletTransferHandler(
     IUnitOfWork unitOfWork,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDistributedLock distributedLock)
     : IRequestHandler<ConfirmWalletTransferCommand, ServiceResult<ConfirmWalletTransferResultDto>>
 {
+    private static readonly TimeSpan TransferLockExpiry = TimeSpan.FromSeconds(15);
+
     public async Task<ServiceResult<ConfirmWalletTransferResultDto>> Handle(
         ConfirmWalletTransferCommand request,
         CancellationToken ct)
@@ -29,6 +32,32 @@ public sealed class ConfirmWalletTransferHandler(
         {
             var transferId = WalletTransferId.From(request.TransferId);
             var fromUserId = UserId.From(currentUserService.UserId.Value);
+
+            var transferPeek = await transferRepository.GetByIdAsync(transferId, ct);
+            if (transferPeek is null)
+                return ServiceResult<ConfirmWalletTransferResultDto>.NotFound("درخواست انتقال یافت نشد.");
+
+            if (!transferPeek.FromUserId.Equals(fromUserId))
+                return ServiceResult<ConfirmWalletTransferResultDto>.Forbidden("دسترسی به این درخواست انتقال مجاز نیست.");
+
+            var firstUserId = transferPeek.FromUserId.Value.CompareTo(transferPeek.ToUserId.Value) < 0
+                ? transferPeek.FromUserId.Value
+                : transferPeek.ToUserId.Value;
+            var secondUserId = transferPeek.FromUserId.Value.CompareTo(transferPeek.ToUserId.Value) < 0
+                ? transferPeek.ToUserId.Value
+                : transferPeek.FromUserId.Value;
+
+            await using var firstLock = await distributedLock.AcquireAsync(
+                $"wallet:user:{firstUserId:N}", TransferLockExpiry, ct);
+            if (firstLock is null || !firstLock.IsAcquired)
+                return ServiceResult<ConfirmWalletTransferResultDto>.Conflict(
+                    "عملیات دیگری روی این کیف پول در حال انجام است. لطفاً چند لحظه بعد تلاش کنید.");
+
+            await using var secondLock = await distributedLock.AcquireAsync(
+                $"wallet:user:{secondUserId:N}", TransferLockExpiry, ct);
+            if (secondLock is null || !secondLock.IsAcquired)
+                return ServiceResult<ConfirmWalletTransferResultDto>.Conflict(
+                    "عملیات دیگری روی کیف پول گیرنده در حال انجام است. لطفاً چند لحظه بعد تلاش کنید.");
 
             var transfer = await transferRepository.GetByIdForUpdateAsync(transferId, ct);
             if (transfer is null)

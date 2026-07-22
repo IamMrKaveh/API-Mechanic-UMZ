@@ -60,7 +60,7 @@ namespace Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    DiscountValue = table.Column<decimal>(type: "numeric(18,4)", nullable: false),
+                    DiscountValue = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
                     DiscountType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     MaximumDiscountAmount = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
                     UsageLimit = table.Column<int>(type: "integer", nullable: true),
@@ -203,11 +203,34 @@ namespace Infrastructure.Persistence.Migrations
                     processed_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     error = table.Column<string>(type: "text", maxLength: 2000, nullable: true),
                     retry_count = table.Column<int>(type: "integer", nullable: false),
-                    is_poisoned = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
+                    is_poisoned = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    trace_parent = table.Column<string>(type: "character varying(55)", maxLength: 55, nullable: true),
+                    trace_state = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_OutboxMessages", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OutboxMessagesArchive",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    type = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    payload = table.Column<string>(type: "text", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    processed_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    error = table.Column<string>(type: "text", maxLength: 2000, nullable: true),
+                    retry_count = table.Column<int>(type: "integer", nullable: false),
+                    is_poisoned = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    trace_parent = table.Column<string>(type: "character varying(55)", maxLength: 55, nullable: true),
+                    trace_state = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    archived_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OutboxMessagesArchive", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -219,9 +242,9 @@ namespace Infrastructure.Persistence.Migrations
                     Code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IconUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    FeeAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    FeeAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     FeeCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    FeePercentage = table.Column<decimal>(type: "numeric(5,2)", nullable: false),
+                    FeePercentage = table.Column<decimal>(type: "numeric(5,2)", precision: 18, scale: 4, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     SortOrder = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -259,7 +282,7 @@ namespace Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    Cost = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Cost = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     CostCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     EstimatedDeliveryTime = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     MinDeliveryDays = table.Column<int>(type: "integer", nullable: false),
@@ -267,13 +290,13 @@ namespace Infrastructure.Persistence.Migrations
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     SortOrder = table.Column<int>(type: "integer", nullable: false),
                     IsDefault = table.Column<bool>(type: "boolean", nullable: false),
-                    MinOrderAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    MinOrderAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: true),
                     MinOrderAmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
-                    MaxOrderAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    MaxOrderAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: true),
                     MaxOrderAmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
-                    MaxWeight = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    MaxWeight = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: true),
                     FreeShippingEnabled = table.Column<bool>(type: "boolean", nullable: false),
-                    FreeShippingThreshold = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    FreeShippingThreshold = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: true),
                     FreeShippingThresholdCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -390,9 +413,9 @@ namespace Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     WalletId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    SnapshotBalance = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    LedgerBalance = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    Delta = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    SnapshotBalance = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    LedgerBalance = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    Delta = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     DetectedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Notes = table.Column<string>(type: "text", nullable: true)
                 },
@@ -407,7 +430,7 @@ namespace Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     Gateway = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     GatewayAuthority = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
@@ -430,7 +453,7 @@ namespace Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     FromUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ToUserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
@@ -456,7 +479,7 @@ namespace Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     Iban = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     AccountHolder = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
@@ -682,13 +705,13 @@ namespace Infrastructure.Persistence.Migrations
                     DeliveryCity = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     DeliveryStreet = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                     DeliveryPostalCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    SubTotalAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    SubTotalAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     SubTotalCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
-                    ShippingCostAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    ShippingCostAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     ShippingCostCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
-                    DiscountAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     DiscountCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
-                    FinalAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    FinalAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     FinalCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
                     IdempotencyKey = table.Column<Guid>(type: "uuid", nullable: false),
                     CancellationReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
@@ -766,8 +789,8 @@ namespace Infrastructure.Persistence.Migrations
                     City = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     PostalCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    Latitude = table.Column<decimal>(type: "numeric(9,6)", nullable: true),
-                    Longitude = table.Column<decimal>(type: "numeric(9,6)", nullable: true),
+                    Latitude = table.Column<decimal>(type: "numeric(9,6)", precision: 18, scale: 4, nullable: true),
+                    Longitude = table.Column<decimal>(type: "numeric(9,6)", precision: 18, scale: 4, nullable: true),
                     IsDefault = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
@@ -788,7 +811,7 @@ namespace Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    CurrentBalance = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    CurrentBalance = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     BalanceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -854,7 +877,7 @@ namespace Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    DiscountedAmount = table.Column<decimal>(type: "numeric(18,4)", nullable: false),
+                    DiscountedAmount = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
                     UsageCountAtTime = table.Column<int>(type: "integer", nullable: false),
                     UsedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DiscountCodeId = table.Column<Guid>(type: "uuid", nullable: false),
@@ -894,7 +917,7 @@ namespace Infrastructure.Persistence.Migrations
                     Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     RefId = table.Column<long>(type: "bigint", nullable: true),
-                    Fee = table.Column<decimal>(type: "numeric", nullable: false),
+                    Fee = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
                     ErrorMessage = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IsVerificationInProgress = table.Column<bool>(type: "boolean", nullable: false),
@@ -954,9 +977,9 @@ namespace Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     WalletId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    AmountDelta = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    AmountDelta = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    BalanceAfter = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    BalanceAfter = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     BalanceAfterCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     TransactionType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
@@ -987,7 +1010,7 @@ namespace Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     WalletId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     Purpose = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
@@ -1058,9 +1081,9 @@ namespace Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductId = table.Column<Guid>(type: "uuid", nullable: false),
                     Sku = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    OriginalPrice = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    OriginalPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     OriginalPriceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    SellingPrice = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    SellingPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     SellingPriceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -1124,7 +1147,6 @@ namespace Infrastructure.Persistence.Migrations
                     AddedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CartId = table.Column<Guid>(type: "uuid", nullable: false),
                     VariantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    VariantId1 = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -1143,17 +1165,11 @@ namespace Infrastructure.Persistence.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_CartItems_ProductVariants_VariantId1",
-                        column: x => x.VariantId1,
-                        principalTable: "ProductVariants",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
                         name: "FK_CartItems_Products_ProductId",
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1262,11 +1278,11 @@ namespace Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     VariantId = table.Column<Guid>(type: "uuid", nullable: false),
                     ShippingId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Weight = table.Column<decimal>(type: "numeric(10,3)", nullable: false),
-                    Width = table.Column<decimal>(type: "numeric(10,3)", nullable: false),
-                    Height = table.Column<decimal>(type: "numeric(10,3)", nullable: false),
-                    Length = table.Column<decimal>(type: "numeric(10,3)", nullable: false),
-                    ShippingMultiplier = table.Column<decimal>(type: "numeric(10,3)", nullable: false, defaultValue: 1m)
+                    Weight = table.Column<decimal>(type: "numeric(10,3)", precision: 18, scale: 4, nullable: false),
+                    Width = table.Column<decimal>(type: "numeric(10,3)", precision: 18, scale: 4, nullable: false),
+                    Height = table.Column<decimal>(type: "numeric(10,3)", precision: 18, scale: 4, nullable: false),
+                    Length = table.Column<decimal>(type: "numeric(10,3)", precision: 18, scale: 4, nullable: false),
+                    ShippingMultiplier = table.Column<decimal>(type: "numeric(10,3)", precision: 18, scale: 4, nullable: false, defaultValue: 1m)
                 },
                 constraints: table =>
                 {
@@ -1297,7 +1313,7 @@ namespace Infrastructure.Persistence.Migrations
                     EventType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     QuantityDelta = table.Column<int>(type: "integer", nullable: false),
                     BalanceAfter = table.Column<int>(type: "integer", nullable: false),
-                    UnitCost = table.Column<decimal>(type: "numeric(18,4)", nullable: false),
+                    UnitCost = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
                     ReferenceNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     CorrelationId = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     Note = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
@@ -1389,11 +1405,6 @@ namespace Infrastructure.Persistence.Migrations
                 name: "IX_CartItems_VariantId",
                 table: "CartItems",
                 column: "VariantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_CartItems_VariantId1",
-                table: "CartItems",
-                column: "VariantId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Carts_AppliedDiscountCodeId",
@@ -1580,9 +1591,25 @@ namespace Infrastructure.Persistence.Migrations
                 columns: new[] { "processed_at", "is_poisoned", "retry_count", "created_at" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_OutboxMessages_Pending",
+                table: "OutboxMessages",
+                column: "created_at",
+                filter: "\"processed_at\" IS NULL AND \"is_poisoned\" = false AND \"retry_count\" < 5");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OutboxMessages_processed_at",
                 table: "OutboxMessages",
                 column: "processed_at");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OutboxMessagesArchive_ArchivedAt",
+                table: "OutboxMessagesArchive",
+                column: "archived_at");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OutboxMessagesArchive_CreatedAt",
+                table: "OutboxMessagesArchive",
+                column: "created_at");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentMethods_Code",
@@ -1910,14 +1937,16 @@ namespace Infrastructure.Persistence.Migrations
                 filter: "\"IdempotencyKey\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WalletLedgerEntries_UserId",
+                name: "IX_WalletLedgerEntries_UserId_OccurredAt",
                 table: "WalletLedgerEntries",
-                column: "UserId");
+                columns: new[] { "UserId", "CreatedAt" },
+                descending: new[] { false, true });
 
             migrationBuilder.CreateIndex(
-                name: "IX_WalletLedgerEntries_WalletId",
+                name: "IX_WalletLedgerEntries_WalletId_OccurredAt",
                 table: "WalletLedgerEntries",
-                column: "WalletId");
+                columns: new[] { "WalletId", "CreatedAt" },
+                descending: new[] { false, true });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WalletReconciliationAudit_DetectedAt",
@@ -2077,6 +2106,9 @@ namespace Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "OutboxMessages");
+
+            migrationBuilder.DropTable(
+                name: "OutboxMessagesArchive");
 
             migrationBuilder.DropTable(
                 name: "PaymentTransactions");

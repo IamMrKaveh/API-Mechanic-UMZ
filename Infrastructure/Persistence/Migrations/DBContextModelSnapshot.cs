@@ -557,6 +557,7 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("DiscountedAmount")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<Guid>("OrderId")
@@ -729,6 +730,7 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<decimal>("UnitCost")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1137,7 +1139,8 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("Fee")
-                        .HasColumnType("numeric");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
 
                     b.Property<string>("Gateway")
                         .IsRequired()
@@ -1460,6 +1463,7 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<decimal?>("MaxWeight")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Name")
@@ -1655,9 +1659,11 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<decimal?>("Latitude")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(9,6)");
 
                     b.Property<decimal?>("Longitude")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(9,6)");
 
                     b.Property<string>("PostalCode")
@@ -1789,9 +1795,11 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Height")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(10,3)");
 
                     b.Property<decimal>("Length")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(10,3)");
 
                     b.Property<Guid>("ShippingId")
@@ -1799,6 +1807,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("ShippingMultiplier")
                         .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(10,3)")
                         .HasDefaultValue(1m);
 
@@ -1806,9 +1815,11 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Weight")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(10,3)");
 
                     b.Property<decimal>("Width")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(10,3)");
 
                     b.HasKey("Id");
@@ -2231,11 +2242,13 @@ namespace Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_WalletLedgerEntries_IdempotencyKey")
                         .HasFilter("\"IdempotencyKey\" IS NOT NULL");
 
-                    b.HasIndex("OwnerId")
-                        .HasDatabaseName("IX_WalletLedgerEntries_UserId");
+                    b.HasIndex("OwnerId", "OccurredAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_WalletLedgerEntries_UserId_OccurredAt");
 
-                    b.HasIndex("WalletId")
-                        .HasDatabaseName("IX_WalletLedgerEntries_WalletId");
+                    b.HasIndex("WalletId", "OccurredAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_WalletLedgerEntries_WalletId_OccurredAt");
 
                     b.ToTable("WalletLedgerEntries");
                 });
@@ -2311,6 +2324,71 @@ namespace Infrastructure.Persistence.Migrations
                     b.ToTable("Wishlists", (string)null);
                 });
 
+            modelBuilder.Entity("Infrastructure.Persistence.Outbox.OutboxArchiveMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(2000)
+                        .HasColumnType("text")
+                        .HasColumnName("error");
+
+                    b.Property<bool>("IsPoisoned")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_poisoned");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("payload");
+
+                    b.Property<DateTime>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processed_at");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("retry_count");
+
+                    b.Property<string>("TraceParent")
+                        .HasMaxLength(55)
+                        .HasColumnType("character varying(55)")
+                        .HasColumnName("trace_parent");
+
+                    b.Property<string>("TraceState")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("trace_state");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchivedAt")
+                        .HasDatabaseName("IX_OutboxMessagesArchive_ArchivedAt");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_OutboxMessagesArchive_CreatedAt");
+
+                    b.ToTable("OutboxMessagesArchive", (string)null);
+                });
+
             modelBuilder.Entity("Infrastructure.Persistence.Outbox.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2345,6 +2423,16 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("retry_count");
 
+                    b.Property<string>("TraceParent")
+                        .HasMaxLength(55)
+                        .HasColumnType("character varying(55)")
+                        .HasColumnName("trace_parent");
+
+                    b.Property<string>("TraceState")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("trace_state");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -2352,6 +2440,10 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnName("type");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_OutboxMessages_Pending")
+                        .HasFilter("\"processed_at\" IS NULL AND \"is_poisoned\" = false AND \"retry_count\" < 5");
 
                     b.HasIndex("ProcessedAt");
 
@@ -2460,18 +2552,21 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Delta")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("DetectedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("LedgerBalance")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Notes")
                         .HasColumnType("text");
 
                     b.Property<decimal>("SnapshotBalance")
+                        .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("UserId")
@@ -2726,6 +2821,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,4)")
                                 .HasColumnName("DiscountValue");
 
@@ -2961,6 +3057,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("DiscountAmount");
 
@@ -2984,6 +3081,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("FinalAmount");
 
@@ -3007,6 +3105,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("ShippingCostAmount");
 
@@ -3030,6 +3129,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("SubTotalAmount");
 
@@ -3196,6 +3296,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Percentage")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(5,2)")
                                 .HasColumnName("FeePercentage");
 
@@ -3212,6 +3313,7 @@ namespace Infrastructure.Persistence.Migrations
                                         .HasColumnType("uuid");
 
                                     b2.Property<decimal>("Amount")
+                                        .HasPrecision(18, 4)
                                         .HasColumnType("decimal(18,2)")
                                         .HasColumnName("FeeAmount");
 
@@ -3401,6 +3503,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("Cost");
 
@@ -3461,6 +3564,7 @@ namespace Infrastructure.Persistence.Migrations
                                         .HasColumnType("uuid");
 
                                     b2.Property<decimal>("Amount")
+                                        .HasPrecision(18, 4)
                                         .HasColumnType("decimal(18,2)")
                                         .HasColumnName("FreeShippingThreshold");
 
@@ -3499,6 +3603,7 @@ namespace Infrastructure.Persistence.Migrations
                                         .HasColumnType("uuid");
 
                                     b2.Property<decimal>("Amount")
+                                        .HasPrecision(18, 4)
                                         .HasColumnType("decimal(18,2)")
                                         .HasColumnName("MaxOrderAmount");
 
@@ -3522,6 +3627,7 @@ namespace Infrastructure.Persistence.Migrations
                                         .HasColumnType("uuid");
 
                                     b2.Property<decimal>("Amount")
+                                        .HasPrecision(18, 4)
                                         .HasColumnType("decimal(18,2)")
                                         .HasColumnName("MinOrderAmount");
 
@@ -3703,6 +3809,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("OriginalPrice");
 
@@ -3726,6 +3833,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("SellingPrice");
 
@@ -3812,6 +3920,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("CurrentBalance");
 
@@ -3843,6 +3952,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("Amount");
 
@@ -3872,6 +3982,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("Amount");
 
@@ -3901,6 +4012,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("Amount");
 
@@ -3942,6 +4054,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("AmountDelta");
 
@@ -3965,6 +4078,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("BalanceAfter");
 
@@ -4007,6 +4121,7 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("Amount");
 

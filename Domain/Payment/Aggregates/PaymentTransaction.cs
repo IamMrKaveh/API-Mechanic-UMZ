@@ -91,6 +91,43 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         return transaction;
     }
 
+    public static PaymentTransaction InitiateWithId(
+        PaymentTransactionId id,
+        OrderId orderId,
+        UserId userId,
+        string authority,
+        decimal amount,
+        string gateway,
+        DateTime now,
+        string? description = null,
+        int expiryMinutes = DefaultExpiryMinutes)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        ArgumentNullException.ThrowIfNull(orderId);
+        Guard.Against.Null(userId, nameof(userId));
+        ValidateAmount(amount);
+        ValidateDescription(description);
+        ValidateExpiryMinutes(expiryMinutes);
+
+        var authorityVo = PaymentAuthority.Create(authority);
+        var gatewayVo = PaymentGateway.FromString(gateway);
+
+        var transaction = new PaymentTransaction(
+            id,
+            orderId,
+            userId,
+            authorityVo,
+            Money.FromDecimal(amount),
+            gatewayVo,
+            description,
+            expiryMinutes,
+            now);
+
+        transaction.RaiseDomainEvent(new PaymentInitiatedEvent(transaction.Id, orderId, amount));
+
+        return transaction;
+    }
+
     public void MarkAsSuccess(long refId, DateTime now, decimal fee = 0)
     {
         EnsureCanSucceed(now);
