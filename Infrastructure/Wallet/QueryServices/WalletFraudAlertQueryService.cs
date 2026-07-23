@@ -1,4 +1,3 @@
-﻿using Application.Wallet.Contracts;
 using Application.Wallet.Features.Shared;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
@@ -31,8 +30,7 @@ public sealed class WalletFraudAlertQueryService(DBContext context) : IWalletFra
 
         if (userId.HasValue)
         {
-            var uid = userId.Value;
-            query = query.Where(a => a.UserId.Value == uid);
+            query = query.Where(a => a.UserId == userId);
         }
 
         if (fromDate.HasValue)
@@ -55,11 +53,11 @@ public sealed class WalletFraudAlertQueryService(DBContext context) : IWalletFra
             .Take(pageSize)
             .ToListAsync(ct);
 
-        var userIds = alerts.Select(a => a.UserId.Value).Distinct().ToList();
+        var userIds = alerts.Select(a => a.UserId).Distinct().ToList();
 
         var userNames = await context.Users
             .AsNoTracking()
-            .Where(u => userIds.Contains(u.Id.Value))
+            .Where(u => userIds.Contains(u.Id))
             .Select(u => new { u.Id, FullName = $"{u.FullName.FirstName} {u.FullName.LastName}" })
             .ToDictionaryAsync(x => x.Id.Value, x => x.FullName, ct);
 
