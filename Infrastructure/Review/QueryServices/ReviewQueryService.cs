@@ -8,6 +8,11 @@ namespace Infrastructure.Review.QueryServices;
 
 public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 {
+    private const string DeletedUserDisplayName = "کاربر حذف‌شده";
+
+    private static readonly HashSet<string> AllowedStatuses =
+        new(StringComparer.OrdinalIgnoreCase) { "Pending", "Approved", "Rejected", "All" };
+
     public async Task<PaginatedResult<ProductReviewDto>> GetApprovedProductReviewsAsync(
         ProductId productId,
         int page,
@@ -17,38 +22,46 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         bool verifiedOnly,
         CancellationToken ct = default)
     {
+        var safePage = page <= 0 ? 1 : page;
+        var safeSize = pageSize <= 0 ? 10 : pageSize;
+
         var query = context.ProductReviews
             .AsNoTracking()
+            .IgnoreQueryFilters()
             .Where(r =>
                 r.ProductId == productId &&
                 r.Status == ReviewStatus.Approved &&
-                r.User.IsActive &&
-                !r.IsDeleted);
+                !r.IsDeleted &&
+                r.User != null &&
+                r.User.IsActive);
 
         if (minRating.HasValue && minRating.Value > 0)
-            query = query.Where(r => r.Rating >= minRating);
+            query = query.Where(r => r.Rating.Value >= minRating.Value);
 
         if (verifiedOnly)
             query = query.Where(r => r.IsVerifiedPurchase);
 
         query = sortBy switch
         {
-            "HighestRated" => query.OrderByDescending(r => r.Rating).ThenByDescending(r => r.CreatedAt),
-            "LowestRated" => query.OrderBy(r => r.Rating).ThenByDescending(r => r.CreatedAt),
+            "HighestRated" => query.OrderByDescending(r => r.Rating.Value).ThenByDescending(r => r.CreatedAt),
+            "LowestRated" => query.OrderBy(r => r.Rating.Value).ThenByDescending(r => r.CreatedAt),
             _ => query.OrderByDescending(r => r.CreatedAt)
         };
 
         var total = await query.CountAsync(ct);
 
         var items = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Skip((safePage - 1) * safeSize)
+            .Take(safeSize)
             .Select(r => new ProductReviewDto
             {
                 Id = r.Id.Value,
                 ProductId = r.ProductId.Value,
                 UserId = r.UserId.Value,
-                UserFullName = r.User.FullName.FirstName + " " + r.User.FullName.LastName,
+                UserFullName =
+                    r.User != null && r.User.FullName != null
+                        ? ((r.User.FullName.FirstName ?? string.Empty) + " " + (r.User.FullName.LastName ?? string.Empty)).Trim()
+                        : DeletedUserDisplayName,
                 Rating = r.Rating.Value,
                 Title = r.Title,
                 Comment = r.Comment,
@@ -64,7 +77,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             })
             .ToListAsync(ct);
 
-        return new PaginatedResult<ProductReviewDto>(items, total, page, pageSize);
+        return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
 
     public async Task<PaginatedResult<ProductReviewDto>> GetUserReviewsAsync(
@@ -73,6 +86,9 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         int pageSize,
         CancellationToken ct = default)
     {
+        var safePage = page <= 0 ? 1 : page;
+        var safeSize = pageSize <= 0 ? 10 : pageSize;
+
         var query = context.ProductReviews
             .AsNoTracking()
             .IgnoreQueryFilters()
@@ -82,14 +98,17 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
         var items = await query
             .OrderByDescending(r => r.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Skip((safePage - 1) * safeSize)
+            .Take(safeSize)
             .Select(r => new ProductReviewDto
             {
                 Id = r.Id.Value,
                 ProductId = r.ProductId.Value,
                 UserId = r.UserId.Value,
-                UserFullName = r.User.FullName.FirstName + " " + r.User.FullName.LastName,
+                UserFullName =
+                    r.User != null && r.User.FullName != null
+                        ? ((r.User.FullName.FirstName ?? string.Empty) + " " + (r.User.FullName.LastName ?? string.Empty)).Trim()
+                        : DeletedUserDisplayName,
                 Rating = r.Rating.Value,
                 Title = r.Title,
                 Comment = r.Comment,
@@ -105,7 +124,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             })
             .ToListAsync(ct);
 
-        return new PaginatedResult<ProductReviewDto>(items, total, page, pageSize);
+        return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
 
     public async Task<ReviewSummaryDto> GetProductReviewSummaryAsync(
@@ -114,16 +133,18 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
     {
         var summary = await context.ProductReviews
             .AsNoTracking()
+            .IgnoreQueryFilters()
             .Where(r =>
                 r.ProductId == productId &&
                 r.Status == ReviewStatus.Approved &&
-                r.User.IsActive &&
-                !r.IsDeleted)
+                !r.IsDeleted &&
+                r.User != null &&
+                r.User.IsActive)
             .GroupBy(_ => 1)
             .Select(g => new
             {
                 Total = g.Count(),
-                AverageRating = g.Average(r => r.Rating.Value),
+                AverageRating = g.Average(r => (double)r.Rating.Value),
                 FiveStar = g.Count(r => r.Rating.Value == 5),
                 FourStar = g.Count(r => r.Rating.Value == 4),
                 ThreeStar = g.Count(r => r.Rating.Value == 3),
@@ -140,6 +161,11 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
                 TotalReviews = 0,
                 TotalCount = 0,
                 AverageRating = 0,
+                FiveStarCount = 0,
+                FourStarCount = 0,
+                ThreeStarCount = 0,
+                TwoStarCount = 0,
+                OneStarCount = 0,
                 RatingDistribution = new Dictionary<int, int>
                 {
                     [1] = 0,
@@ -156,7 +182,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             ProductId = productId.Value,
             TotalReviews = summary.Total,
             TotalCount = summary.Total,
-            AverageRating = summary.AverageRating,
+            AverageRating = Math.Round(summary.AverageRating, 2),
             FiveStarCount = summary.FiveStar,
             FourStarCount = summary.FourStar,
             ThreeStarCount = summary.ThreeStar,
@@ -179,31 +205,41 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         int pageSize,
         CancellationToken ct = default)
     {
+        var safePage = page <= 0 ? 1 : page;
+        var safeSize = pageSize <= 0 ? 10 : pageSize;
+
         var normalizedStatus = string.IsNullOrWhiteSpace(status) ? "Pending" : status.Trim();
+
+        if (!AllowedStatuses.Contains(normalizedStatus))
+            normalizedStatus = "Pending";
+
+        var canonicalStatus = AllowedStatuses.First(s => s.Equals(normalizedStatus, StringComparison.OrdinalIgnoreCase));
 
         var query = context.ProductReviews
             .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(r => !r.IsDeleted);
 
-        if (!string.Equals(normalizedStatus, "All", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(canonicalStatus, "All", StringComparison.OrdinalIgnoreCase))
         {
-            var lowered = normalizedStatus.ToLowerInvariant();
-            query = query.Where(r => r.Status.Value.ToLower() == lowered);
+            query = query.Where(r => r.Status.Value == canonicalStatus);
         }
 
         var total = await query.CountAsync(ct);
 
         var items = await query
             .OrderByDescending(r => r.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Skip((safePage - 1) * safeSize)
+            .Take(safeSize)
             .Select(r => new ProductReviewDto
             {
                 Id = r.Id.Value,
                 ProductId = r.ProductId.Value,
                 UserId = r.UserId.Value,
-                UserFullName = r.User.FullName.FirstName + " " + r.User.FullName.LastName,
+                UserFullName =
+                    r.User != null && r.User.FullName != null
+                        ? ((r.User.FullName.FirstName ?? string.Empty) + " " + (r.User.FullName.LastName ?? string.Empty)).Trim()
+                        : DeletedUserDisplayName,
                 Rating = r.Rating.Value,
                 Title = r.Title,
                 Comment = r.Comment,
@@ -219,7 +255,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             })
             .ToListAsync(ct);
 
-        return new PaginatedResult<ProductReviewDto>(items, total, page, pageSize);
+        return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
 
     public async Task<ProductReviewDto?> GetByIdAsync(
@@ -235,7 +271,10 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
                 Id = r.Id.Value,
                 ProductId = r.ProductId.Value,
                 UserId = r.UserId.Value,
-                UserFullName = r.User.FullName.FirstName + " " + r.User.FullName.LastName,
+                UserFullName =
+                    r.User != null && r.User.FullName != null
+                        ? ((r.User.FullName.FirstName ?? string.Empty) + " " + (r.User.FullName.LastName ?? string.Empty)).Trim()
+                        : DeletedUserDisplayName,
                 Rating = r.Rating.Value,
                 Title = r.Title,
                 Comment = r.Comment,
