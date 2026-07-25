@@ -13,16 +13,27 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.A
 
         builder.OwnsOne(e => e.FullName, fn =>
         {
-            fn.Property(f => f.FirstName).HasColumnName("FirstName").IsRequired().HasMaxLength(100);
-            fn.Property(f => f.LastName).HasColumnName("LastName").IsRequired().HasMaxLength(100);
-        });
+            fn.Property(f => f.FirstName)
+                .HasColumnName("FirstName")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasDefaultValue(string.Empty);
+
+            fn.Property(f => f.LastName)
+                .HasColumnName("LastName")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasDefaultValue(string.Empty);
+        })
+        .Navigation(e => e.FullName)
+        .IsRequired();
 
         builder.OwnsOne(e => e.Email, em =>
         {
             em.Property(e => e.Value)
-            .HasColumnName("Email")
-            .IsRequired()
-            .HasMaxLength(256);
+                .HasColumnName("Email")
+                .IsRequired()
+                .HasMaxLength(256);
 
             em.HasIndex(e => e.Value).IsUnique();
         });
@@ -49,9 +60,9 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.A
         builder.Property(e => e.UpdatedAt);
 
         builder.Property(e => e.DefaultAddressId)
-                    .HasConversion(
-                        id => id != null ? id.Value : (Guid?)null,
-                        value => value.HasValue ? UserAddressId.From(value.Value) : null);
+            .HasConversion(
+                id => id != null ? id.Value : (Guid?)null,
+                value => value.HasValue ? UserAddressId.From(value.Value) : null);
 
         builder.HasQueryFilter(e => e.IsActive);
     }
