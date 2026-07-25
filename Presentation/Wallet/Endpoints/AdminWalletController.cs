@@ -1,17 +1,22 @@
-﻿using Application.Wallet.Features.Commands.CreditWallet;
+using Application.Wallet.Features.Commands.ApproveWithdrawal;
+using Application.Wallet.Features.Commands.CreditWallet;
 using Application.Wallet.Features.Commands.DebitWallet;
 using Application.Wallet.Features.Commands.DismissFraudAlert;
 using Application.Wallet.Features.Commands.FreezeWallet;
 using Application.Wallet.Features.Commands.MarkFraudAlertReviewed;
+using Application.Wallet.Features.Commands.MarkWithdrawalPaid;
+using Application.Wallet.Features.Commands.RejectWithdrawal;
 using Application.Wallet.Features.Commands.UnfreezeWallet;
 using Application.Wallet.Features.Queries.ExportWalletLedger;
 using Application.Wallet.Features.Queries.GetFraudAlertById;
 using Application.Wallet.Features.Queries.GetFraudAlerts;
 using Application.Wallet.Features.Queries.GetOpenFraudAlertsCount;
+using Application.Wallet.Features.Queries.GetPendingWithdrawals;
 using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
 using Application.Wallet.Features.Queries.GetWalletsOverview;
 using Application.Wallet.Features.Queries.GetWalletStatistics;
+using Application.Wallet.Features.Queries.GetWithdrawalById;
 using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
 using Presentation.Wallet.Requests;
@@ -25,6 +30,7 @@ namespace Presentation.Wallet.Endpoints;
 public sealed class AdminWalletController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet("overview")]
+    [SwaggerOperation(OperationId = "AdminWallet_Overview")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletOverviewDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOverview(
         [FromQuery] GetWalletsOverviewRequest request,
@@ -45,6 +51,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpGet("statistics")]
+    [SwaggerOperation(OperationId = "AdminWallet_Statistics")]
     [ProducesResponseType(typeof(ApiResponse<WalletStatisticsDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStatistics(CancellationToken ct)
     {
@@ -52,6 +59,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpGet("{userId:guid}/balance")]
+    [SwaggerOperation(OperationId = "AdminWallet_Balance")]
     [ProducesResponseType(typeof(ApiResponse<WalletDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBalance(Guid userId, CancellationToken ct)
     {
@@ -59,6 +67,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpGet("{userId:guid}/ledger")]
+    [SwaggerOperation(OperationId = "AdminWallet_Ledger")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletLedgerEntryDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLedger(
         Guid userId,
@@ -80,6 +89,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpGet("{userId:guid}/ledger/export")]
+    [SwaggerOperation(OperationId = "AdminWallet_ExportLedger")]
     [ProducesResponseType(typeof(ApiResponse<ExportWalletLedgerResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportLedger(
         Guid userId,
@@ -101,6 +111,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpPost("{userId:guid}/credit")]
+    [SwaggerOperation(OperationId = "AdminWallet_Credit")]
     [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Credit(
@@ -122,6 +133,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpPost("{userId:guid}/debit")]
+    [SwaggerOperation(OperationId = "AdminWallet_Debit")]
     [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Debit(
@@ -142,6 +154,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpPost("{userId:guid}/freeze")]
+    [SwaggerOperation(OperationId = "AdminWallet_Freeze")]
     [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -156,6 +169,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpPost("{userId:guid}/unfreeze")]
+    [SwaggerOperation(OperationId = "AdminWallet_Unfreeze")]
     [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
@@ -167,7 +181,42 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         return await Send(command, ct);
     }
 
+    [HttpGet("withdrawals/pending")]
+    [SwaggerOperation(OperationId = "AdminWallet_PendingWithdrawals")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletWithdrawalRequestDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Pending(
+    [FromQuery] string? status = null,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 20,
+    [FromQuery] DateTime? fromDate = null,
+    [FromQuery] DateTime? toDate = null,
+    CancellationToken ct = default)
+    {
+        return await Send(new GetPendingWithdrawalsQuery(status, page, pageSize, fromDate, toDate), ct);
+    }
+
+    [HttpGet("withdrawals/{id:guid}")]
+    [SwaggerOperation(OperationId = "AdminWallet_GetWithdrawal")]
+    public async Task<IActionResult> GetWithdrawal(Guid id, CancellationToken ct)
+        => await Send(new GetWithdrawalByIdQuery(id), ct);
+
+    [HttpPost("withdrawals/{id:guid}/approve")]
+    [SwaggerOperation(OperationId = "AdminWallet_ApproveWithdrawal")]
+    public async Task<IActionResult> ApproveWithdrawal(Guid id, CancellationToken ct)
+        => await Send(new ApproveWithdrawalCommand(id), ct);
+
+    [HttpPost("withdrawals/{id:guid}/reject")]
+    [SwaggerOperation(OperationId = "AdminWallet_RejectWithdrawal")]
+    public async Task<IActionResult> RejectWithdrawal(Guid id, [FromBody] RejectWithdrawalRequest request, CancellationToken ct)
+        => await Send(new RejectWithdrawalCommand(id, request.Reason), ct);
+
+    [HttpPost("withdrawals/{id:guid}/mark-paid")]
+    [SwaggerOperation(OperationId = "AdminWallet_MarkWithdrawalPaid")]
+    public async Task<IActionResult> MarkPaid(Guid id, [FromBody] MarkWithdrawalPaidRequest request, CancellationToken ct)
+        => await Send(new MarkWithdrawalPaidCommand(id, request.BankReferenceNumber), ct);
+
     [HttpGet("fraud/alerts")]
+    [SwaggerOperation(OperationId = "AdminWallet_FraudAlerts")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletFraudAlertDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetFraudAlerts(
         [FromQuery] GetFraudAlertsRequest request,
@@ -200,6 +249,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpGet("fraud/alerts/count-open")]
+    [SwaggerOperation(OperationId = "AdminWallet_CountOpenFraudAlerts")]
     [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOpenFraudAlertsCount(CancellationToken ct)
     {
@@ -207,6 +257,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpGet("fraud/alerts/{id:guid}")]
+    [SwaggerOperation(OperationId = "AdminWallet_GetFraudAlert")]
     [ProducesResponseType(typeof(ApiResponse<WalletFraudAlertDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetFraudAlertById(Guid id, CancellationToken ct)
@@ -215,6 +266,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpPost("fraud/alerts/{id:guid}/mark-reviewed")]
+    [SwaggerOperation(OperationId = "AdminWallet_MarkFraudAlertReviewed")]
     [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkFraudAlertReviewed(
@@ -227,6 +279,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpPost("fraud/alerts/{id:guid}/dismiss")]
+    [SwaggerOperation(OperationId = "AdminWallet_DismissFraudAlert")]
     [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DismissFraudAlert(

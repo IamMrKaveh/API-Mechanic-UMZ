@@ -1,8 +1,8 @@
-﻿namespace Presentation.Discount.Requests;
+namespace Presentation.Discount.Requests;
 
 public record CreateDiscountRequest(
     string Code,
-    string DiscountType,
+    string? DiscountType,
     decimal DiscountValue,
     decimal? MaximumDiscountAmount,
     int? UsageLimit,

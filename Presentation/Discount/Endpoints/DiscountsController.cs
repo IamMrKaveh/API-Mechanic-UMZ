@@ -11,6 +11,7 @@ namespace Presentation.Discount.Endpoints;
 public sealed class DiscountsController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpPost("validation")]
+    [SwaggerOperation(OperationId = "Discounts_Validate")]
     [ProducesResponseType(typeof(ApiResponse<DiscountValidationResult>), StatusCodes.Status201Created)]
     public async Task<IActionResult> Validate([FromBody] ValidateDiscountRequest request)
     {
@@ -23,6 +24,7 @@ public sealed class DiscountsController(IMediator mediator) : BaseApiController(
     }
 
     [HttpPost("application")]
+    [SwaggerOperation(OperationId = "Discounts_Apply")]
     [ProducesResponseType(typeof(ApiResponse<DiscountApplicationResult>), StatusCodes.Status201Created)]
     public async Task<IActionResult> Apply([FromBody] ApplyDiscountRequest request)
     {

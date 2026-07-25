@@ -17,6 +17,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
 {
     [HttpGet("products/{productId:guid}")]
     [AllowAnonymous]
+    [SwaggerOperation(OperationId = "Reviews_GetForProduct")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductReviewDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetReviews(
         Guid productId,
@@ -34,6 +35,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
 
     [HttpGet("products/{productId:guid}/summary")]
     [AllowAnonymous]
+    [SwaggerOperation(OperationId = "Reviews_GetSummary")]
     [ProducesResponseType(typeof(ApiResponse<ReviewSummaryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSummary(
         Guid productId,
@@ -44,6 +46,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
 
     [HttpGet("products/{productId:guid}/can-review")]
     [Authorize]
+    [SwaggerOperation(OperationId = "Reviews_CanReview")]
     [ProducesResponseType(typeof(ApiResponse<CanReviewDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> CanReview(
         Guid productId,
@@ -54,6 +57,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
 
     [HttpPost]
     [Authorize]
+    [SwaggerOperation(OperationId = "Reviews_Create")]
     [ProducesResponseType(typeof(ApiResponse<ProductReviewDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CreateReview(
@@ -65,6 +69,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
 
     [HttpPut("{reviewId:guid}")]
     [Authorize]
+    [SwaggerOperation(OperationId = "Reviews_UpdateOwn")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -79,6 +84,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
 
     [HttpDelete("{reviewId:guid}/me")]
     [Authorize]
+    [SwaggerOperation(OperationId = "Reviews_DeleteOwn")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -91,6 +97,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
 
     [HttpGet("me")]
     [Authorize]
+    [SwaggerOperation(OperationId = "Reviews_GetMine")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductReviewDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyReviews(
         [FromQuery] int page = 1,

@@ -63,13 +63,17 @@ public record ProductCatalogItemDto
     public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
     public string Slug { get; init; } = string.Empty;
-    public Guid CategoryId { get; init; }
-    public string CategoryName { get; init; } = string.Empty;
     public Guid BrandId { get; init; }
     public string BrandName { get; init; } = string.Empty;
+    public Guid CategoryId { get; init; }
+    public string CategoryName { get; init; } = string.Empty;
     public bool IsFeatured { get; init; }
     public decimal? MinPrice { get; init; }
     public decimal? MaxPrice { get; init; }
+    public decimal? OriginalPrice { get; init; }
+    public bool HasDiscount { get; init; }
+    public int DiscountPercentage { get; init; }
+    public int TotalStock { get; init; }
     public bool HasStock { get; init; }
     public string? PrimaryImageUrl { get; init; }
 }
@@ -84,7 +88,8 @@ public sealed record ProductCatalogSearchParams(
     decimal? MaxPrice,
     bool InStockOnly,
     string? SortBy,
-    bool? IsFeatured = null);
+    bool? IsFeatured,
+    bool? HasDiscount = null);
 
 public record ProductListItemDto
 {

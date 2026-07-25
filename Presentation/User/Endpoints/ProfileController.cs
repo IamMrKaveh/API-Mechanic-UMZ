@@ -1,4 +1,3 @@
-using Application.Review.Features.Queries.GetUserReviews;
 using Application.Review.Features.Shared;
 using Application.User.Features.Commands.ChangePassword;
 using Application.User.Features.Commands.ChangePhoneNumber;
@@ -23,13 +22,14 @@ public sealed class ProfileController(IMediator mediator) : BaseApiController(me
     }
 
     [HttpGet("reviews")]
+    [Obsolete("Use GET /api/v1/reviews/me instead. This route will be removed in the next major version.")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductReviewDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyReviews(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        return await Send(new GetUserReviewsQuery(page, pageSize), ct);
+        return await Send(new Application.Review.Features.Queries.GetUserReviews.GetUserReviewsQuery(page, pageSize), ct);
     }
 
     [HttpPut]

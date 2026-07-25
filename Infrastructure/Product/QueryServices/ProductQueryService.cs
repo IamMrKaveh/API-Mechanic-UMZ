@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using Application.Attribute.Features.Shared;
 using Application.Product.Contracts;
 using Application.Product.Features.Shared;
@@ -5,7 +6,6 @@ using Application.Variant.Features.Shared;
 using Domain.Brand.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
-using System.Buffers.Binary;
 
 namespace Infrastructure.Product.QueryServices;
 
@@ -331,10 +331,14 @@ public sealed class ProductQueryService(
         }
 
         if (searchParams.MinPrice.HasValue)
-            query = query.Where(p => p.Variants.Any(v => v.IsActive && !v.IsDeleted && v.SellingPrice.Amount >= searchParams.MinPrice.Value));
+            query = query.Where(p => p.Variants.Any(v =>
+                v.IsActive && !v.IsDeleted &&
+                v.SellingPrice.Amount >= searchParams.MinPrice.Value));
 
         if (searchParams.MaxPrice.HasValue)
-            query = query.Where(p => p.Variants.Any(v => v.IsActive && !v.IsDeleted && v.SellingPrice.Amount <= searchParams.MaxPrice.Value));
+            query = query.Where(p => p.Variants.Any(v =>
+                v.IsActive && !v.IsDeleted &&
+                v.SellingPrice.Amount <= searchParams.MaxPrice.Value));
 
         if (searchParams.InStockOnly == true)
         {
@@ -343,6 +347,21 @@ public sealed class ProductQueryService(
                     .Where(v => v.IsActive && !v.IsDeleted)
                     .Select(v => v.Id)
                     .Contains(i.VariantId) && (i.IsUnlimited || i.StockQuantity.Value > 0)));
+        }
+
+        if (searchParams.HasDiscount == true)
+        {
+            query = query.Where(p => p.Variants.Any(v =>
+                v.IsActive && !v.IsDeleted &&
+                v.OriginalPrice.Amount > 0 &&
+                v.SellingPrice.Amount < v.OriginalPrice.Amount));
+        }
+        else if (searchParams.HasDiscount == false)
+        {
+            query = query.Where(p => !p.Variants.Any(v =>
+                v.IsActive && !v.IsDeleted &&
+                v.OriginalPrice.Amount > 0 &&
+                v.SellingPrice.Amount < v.OriginalPrice.Amount));
         }
 
         var ordered = searchParams.SortBy?.ToLowerInvariant() switch
@@ -380,10 +399,13 @@ public sealed class ProductQueryService(
                 MaxPrice = p.Variants
                     .Where(v => v.IsActive && !v.IsDeleted)
                     .Max(v => (decimal?)v.SellingPrice.Amount),
-                HasStock = context.Inventories.Any(i => p.Variants
+                OriginalMax = p.Variants
+                    .Where(v => v.IsActive && !v.IsDeleted)
+                    .Max(v => (decimal?)v.OriginalPrice.Amount),
+                VariantIds = p.Variants
                     .Where(v => v.IsActive && !v.IsDeleted)
                     .Select(v => v.Id)
-                    .Contains(i.VariantId) && (i.IsUnlimited || i.StockQuantity.Value > 0)),
+                    .ToList(),
                 PrimaryImagePath = context.Medias
                     .Where(m => m.EntityId == p.Id && m.IsPrimary)
                     .Select(m => m.FilePath)
@@ -391,8 +413,42 @@ public sealed class ProductQueryService(
             })
             .ToListAsync(ct);
 
-        var items = projected
-            .Select(p => new ProductCatalogItemDto
+        var allVariantIds = projected.SelectMany(p => p.VariantIds).Distinct().ToList();
+        var inventoryByVariant = new Dictionary<VariantId, (int Stock, bool IsUnlimited)>();
+
+        if (allVariantIds.Count > 0)
+        {
+            var inventoryRows = await context.Inventories
+                .AsNoTracking()
+                .Where(i => allVariantIds.Contains(i.VariantId))
+                .Select(i => new { i.VariantId, Stock = i.StockQuantity.Value, i.IsUnlimited })
+                .ToListAsync(ct);
+
+            foreach (var row in inventoryRows)
+                inventoryByVariant[row.VariantId] = (row.Stock, row.IsUnlimited);
+        }
+
+        var items = projected.Select(p =>
+        {
+            var totalStock = 0;
+            var hasUnlimited = false;
+            foreach (var vid in p.VariantIds)
+            {
+                if (inventoryByVariant.TryGetValue(vid, out var inv))
+                {
+                    totalStock += inv.Stock;
+                    if (inv.IsUnlimited) hasUnlimited = true;
+                }
+            }
+
+            var minPrice = p.MinPrice ?? 0m;
+            var originalMax = p.OriginalMax ?? 0m;
+            var hasDiscount = originalMax > 0 && minPrice > 0 && minPrice < originalMax;
+            var discountPercentage = hasDiscount
+                ? (int)Math.Round((originalMax - minPrice) / originalMax * 100m)
+                : 0;
+
+            return new ProductCatalogItemDto
             {
                 Id = p.Id,
                 Name = p.Name,
@@ -404,12 +460,16 @@ public sealed class ProductQueryService(
                 IsFeatured = p.IsFeatured,
                 MinPrice = p.MinPrice,
                 MaxPrice = p.MaxPrice,
-                HasStock = p.HasStock,
+                OriginalPrice = originalMax > 0 ? originalMax : null,
+                HasDiscount = hasDiscount,
+                DiscountPercentage = discountPercentage,
+                TotalStock = totalStock,
+                HasStock = hasUnlimited || totalStock > 0,
                 PrimaryImageUrl = p.PrimaryImagePath is not null
                     ? urlResolver.ResolveMediaUrl(p.PrimaryImagePath)
                     : null
-            })
-            .ToList();
+            };
+        }).ToList();
 
         return new PaginatedResult<ProductCatalogItemDto>(items, total, searchParams.Page, searchParams.PageSize);
     }

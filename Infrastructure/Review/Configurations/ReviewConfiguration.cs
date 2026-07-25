@@ -56,7 +56,8 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
         builder.HasIndex(e => e.ProductId);
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => e.CreatedAt);
-        builder.HasQueryFilter(e => e.User.IsActive && !e.IsDeleted);
+
+        builder.HasQueryFilter(e => !e.IsDeleted);
 
         builder.ToTable("ProductReviews");
     }
