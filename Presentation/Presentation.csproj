@@ -46,6 +46,8 @@
 		<PackageReference Include="HtmlSanitizer" Version="9.0.892" />
 
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.17" />
+
+		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.6" />
 	</ItemGroup>
 
 	<ItemGroup>

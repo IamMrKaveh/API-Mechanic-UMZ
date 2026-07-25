@@ -17,6 +17,7 @@ namespace Presentation.Discount.Endpoints;
 public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
 {
     [HttpGet]
+    [SwaggerOperation(OperationId = "AdminDiscounts_List")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<DiscountCodeDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] bool includeExpired = false,
@@ -30,6 +31,7 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("{id:guid}")]
+    [SwaggerOperation(OperationId = "AdminDiscounts_GetById")]
     [ProducesResponseType(typeof(ApiResponse<DiscountCodeDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id)
@@ -40,6 +42,7 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpGet("{id:guid}/usage-report")]
+    [SwaggerOperation(OperationId = "AdminDiscounts_GetUsageReport")]
     [ProducesResponseType(typeof(ApiResponse<DiscountUsageReportDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUsageReport(Guid id)
@@ -51,6 +54,7 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
 
     [HttpGet("codes/{code}")]
     [AllowAnonymous]
+    [SwaggerOperation(OperationId = "AdminDiscounts_GetByCode")]
     [ProducesResponseType(typeof(ApiResponse<DiscountInfoDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDiscountInfo(string code)
@@ -61,6 +65,7 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpPost]
+    [SwaggerOperation(OperationId = "AdminDiscounts_Create")]
     [ProducesResponseType(typeof(ApiResponse<DiscountDto>), StatusCodes.Status201Created)]
     public async Task<IActionResult> Create([FromBody] CreateDiscountRequest request)
     {
@@ -70,6 +75,7 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpPut("{id:guid}")]
+    [SwaggerOperation(OperationId = "AdminDiscounts_Update")]
     [ProducesResponseType(typeof(ApiResponse<DiscountDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<DiscountDto>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<DiscountDto>), StatusCodes.Status409Conflict)]
@@ -81,6 +87,7 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpDelete("{id:guid}")]
+    [SwaggerOperation(OperationId = "AdminDiscounts_Delete")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id)
@@ -91,6 +98,7 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
     }
 
     [HttpDelete("{id:guid}/usage")]
+    [SwaggerOperation(OperationId = "AdminDiscounts_CancelUsage")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> CancelDiscountUsage(Guid id, [FromBody] CancelDiscountUsageRequest request)
     {

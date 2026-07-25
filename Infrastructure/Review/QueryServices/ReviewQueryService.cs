@@ -22,6 +22,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             .Where(r =>
                 r.ProductId == productId &&
                 r.Status == ReviewStatus.Approved &&
+                r.User.IsActive &&
                 !r.IsDeleted);
 
         if (minRating.HasValue && minRating.Value > 0)
@@ -47,6 +48,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
                 Id = r.Id.Value,
                 ProductId = r.ProductId.Value,
                 UserId = r.UserId.Value,
+                UserFullName = r.User.FullName.FirstName + " " + r.User.FullName.LastName,
                 Rating = r.Rating.Value,
                 Title = r.Title,
                 Comment = r.Comment,
@@ -62,11 +64,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             })
             .ToListAsync(ct);
 
-        return new PaginatedResult<ProductReviewDto>(
-            items,
-            total,
-            page,
-            pageSize);
+        return new PaginatedResult<ProductReviewDto>(items, total, page, pageSize);
     }
 
     public async Task<PaginatedResult<ProductReviewDto>> GetUserReviewsAsync(
@@ -77,9 +75,8 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
     {
         var query = context.ProductReviews
             .AsNoTracking()
-            .Where(r =>
-                r.UserId == userId &&
-                !r.IsDeleted);
+            .IgnoreQueryFilters()
+            .Where(r => r.UserId == userId && !r.IsDeleted);
 
         var total = await query.CountAsync(ct);
 
@@ -92,6 +89,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
                 Id = r.Id.Value,
                 ProductId = r.ProductId.Value,
                 UserId = r.UserId.Value,
+                UserFullName = r.User.FullName.FirstName + " " + r.User.FullName.LastName,
                 Rating = r.Rating.Value,
                 Title = r.Title,
                 Comment = r.Comment,
@@ -107,11 +105,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             })
             .ToListAsync(ct);
 
-        return new PaginatedResult<ProductReviewDto>(
-            items,
-            total,
-            page,
-            pageSize);
+        return new PaginatedResult<ProductReviewDto>(items, total, page, pageSize);
     }
 
     public async Task<ReviewSummaryDto> GetProductReviewSummaryAsync(
@@ -123,6 +117,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             .Where(r =>
                 r.ProductId == productId &&
                 r.Status == ReviewStatus.Approved &&
+                r.User.IsActive &&
                 !r.IsDeleted)
             .GroupBy(_ => 1)
             .Select(g => new
@@ -184,12 +179,18 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         int pageSize,
         CancellationToken ct = default)
     {
+        var normalizedStatus = string.IsNullOrWhiteSpace(status) ? "Pending" : status.Trim();
+
         var query = context.ProductReviews
             .AsNoTracking()
+            .IgnoreQueryFilters()
             .Where(r => !r.IsDeleted);
 
-        if (!string.Equals(status, "All", StringComparison.OrdinalIgnoreCase))
-            query = query.Where(r => r.Status.Value == status);
+        if (!string.Equals(normalizedStatus, "All", StringComparison.OrdinalIgnoreCase))
+        {
+            var lowered = normalizedStatus.ToLowerInvariant();
+            query = query.Where(r => r.Status.Value.ToLower() == lowered);
+        }
 
         var total = await query.CountAsync(ct);
 
@@ -202,6 +203,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
                 Id = r.Id.Value,
                 ProductId = r.ProductId.Value,
                 UserId = r.UserId.Value,
+                UserFullName = r.User.FullName.FirstName + " " + r.User.FullName.LastName,
                 Rating = r.Rating.Value,
                 Title = r.Title,
                 Comment = r.Comment,
@@ -217,11 +219,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             })
             .ToListAsync(ct);
 
-        return new PaginatedResult<ProductReviewDto>(
-            items,
-            total,
-            page,
-            pageSize);
+        return new PaginatedResult<ProductReviewDto>(items, total, page, pageSize);
     }
 
     public async Task<ProductReviewDto?> GetByIdAsync(
@@ -230,12 +228,14 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
     {
         return await context.ProductReviews
             .AsNoTracking()
+            .IgnoreQueryFilters()
             .Where(r => r.Id == id && !r.IsDeleted)
             .Select(r => new ProductReviewDto
             {
                 Id = r.Id.Value,
                 ProductId = r.ProductId.Value,
                 UserId = r.UserId.Value,
+                UserFullName = r.User.FullName.FirstName + " " + r.User.FullName.LastName,
                 Rating = r.Rating.Value,
                 Title = r.Title,
                 Comment = r.Comment,

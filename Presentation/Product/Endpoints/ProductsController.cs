@@ -32,12 +32,41 @@ public class ProductsController(IMediator mediator, IMapper mapper) : BaseApiCon
     }
 
     [HttpGet("catalog")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductCatalogItemDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetProductCatalog([FromQuery] GetProductCatalogRequest request)
+    public async Task<IActionResult> GetCatalog(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null,
+        [FromQuery] Guid? categoryId = null,
+        [FromQuery] Guid? brandId = null,
+        [FromQuery] decimal? minPrice = null,
+        [FromQuery] decimal? maxPrice = null,
+        [FromQuery] bool inStockOnly = false,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] bool? isFeatured = null,
+        [FromQuery] bool? hasDiscount = null,
+        CancellationToken ct = default)
     {
-        var query = Mapper.Map<GetProductCatalogQuery>(request);
-        var result = await Mediator.Send(query);
-        return ToActionResult(result);
+        return await Send(new GetProductCatalogQuery(
+            page, pageSize, search, categoryId, brandId,
+            minPrice, maxPrice, inStockOnly, sortBy, isFeatured, hasDiscount), ct);
+    }
+
+    [HttpGet("discounted")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductCatalogItemDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDiscountedProducts(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 12,
+        [FromQuery] string? sortBy = null,
+        CancellationToken ct = default)
+    {
+        return await Send(new GetProductCatalogQuery(
+            Page: page,
+            PageSize: pageSize,
+            SortBy: sortBy,
+            HasDiscount: true), ct);
     }
 
     [HttpGet("{id:guid}/details")]

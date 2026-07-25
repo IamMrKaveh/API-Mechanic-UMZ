@@ -27,6 +27,24 @@ public sealed class AdminUserController(IMediator mediator) : BaseApiController(
         return await Send(new GetUsersQuery(includeDeleted, page, pageSize), ct);
     }
 
+    [HttpGet("rich")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<AdminUserListItemDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAdminUsers(
+        [FromQuery] string? search = null,
+        [FromQuery] string? role = null,
+        [FromQuery] bool? isActive = null,
+        [FromQuery] bool? isAdmin = null,
+        [FromQuery] decimal? minTotalSpent = null,
+        [FromQuery] DateTime? createdAfter = null,
+        [FromQuery] bool includeDeleted = false,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        return await Send(new Application.User.Features.Queries.GetAdminUsers.GetAdminUsersQuery(
+            search, role, isActive, isAdmin, minTotalSpent, createdAfter, includeDeleted, page, pageSize), ct);
+    }
+
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]

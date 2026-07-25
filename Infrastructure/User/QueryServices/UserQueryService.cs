@@ -130,6 +130,151 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
         return PaginatedResult<UserProfileDto>.Create(items, total, page, pageSize);
     }
 
+    public async Task<PaginatedResult<AdminUserListItemDto>> GetAdminUsersPagedAsync(
+        AdminUserFilterParams filter,
+        CancellationToken ct = default)
+    {
+        var query = context.Users.AsNoTracking();
+
+        if (!filter.IncludeDeleted)
+            query = query.Where(u => u.IsActive || u.IsAdmin || u.CreatedAt != DateTime.MinValue);
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var term = filter.Search.Trim().ToLower();
+            query = query.Where(u =>
+                u.Email.Value.ToLower().Contains(term) ||
+                u.FullName.FirstName.ToLower().Contains(term) ||
+                u.FullName.LastName.ToLower().Contains(term) ||
+                (u.PhoneNumber != null && u.PhoneNumber.Value.Contains(term)));
+        }
+
+        if (filter.IsActive.HasValue)
+            query = query.Where(u => u.IsActive == filter.IsActive.Value);
+
+        if (filter.IsAdmin.HasValue)
+            query = query.Where(u => u.IsAdmin == filter.IsAdmin.Value);
+
+        if (filter.CreatedAfter.HasValue)
+            query = query.Where(u => u.CreatedAt >= filter.CreatedAfter.Value);
+
+        if (!string.IsNullOrWhiteSpace(filter.Role))
+        {
+            var role = filter.Role.Trim();
+            if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+                query = query.Where(u => u.IsAdmin);
+            else if (string.Equals(role, "User", StringComparison.OrdinalIgnoreCase))
+                query = query.Where(u => !u.IsAdmin);
+        }
+
+        var total = await query.CountAsync(ct);
+
+        var projected = await query
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip((filter.Page - 1) * filter.PageSize)
+            .Take(filter.PageSize)
+            .Select(u => new
+            {
+                Id = u.Id,
+                IdValue = u.Id.Value,
+                FirstName = u.FullName.FirstName,
+                LastName = u.FullName.LastName,
+                Email = u.Email.Value,
+                PhoneNumber = u.PhoneNumber != null ? u.PhoneNumber.Value : "",
+                u.IsActive,
+                u.IsAdmin,
+                u.IsEmailVerified,
+                u.CreatedAt,
+                u.UpdatedAt,
+                u.LastLoginAt,
+                IsLockedOut = u.LockoutEnd.HasValue && u.LockoutEnd.Value > DateTime.UtcNow
+            })
+            .ToListAsync(ct);
+
+        var userIds = projected.Select(p => p.Id).ToList();
+
+        var orderStats = await context.Orders
+            .AsNoTracking()
+            .Where(o => userIds.Contains(o.UserId))
+            .GroupBy(o => o.UserId)
+            .Select(g => new
+            {
+                UserId = g.Key,
+                OrderCount = g.Count(),
+                CompletedOrderCount = g.Count(o => o.Status == Domain.Order.ValueObjects.OrderStatusValue.Delivered),
+                TotalSpent = g
+                    .Where(o => o.Status == Domain.Order.ValueObjects.OrderStatusValue.Delivered)
+                    .Sum(o => (decimal?)o.FinalAmount.Amount) ?? 0m
+            })
+            .ToDictionaryAsync(x => x.UserId, ct);
+
+        var walletBalances = await context.Wallets
+            .AsNoTracking()
+            .Where(w => userIds.Contains(w.OwnerId))
+            .Select(w => new { w.OwnerId, Balance = (decimal?)w.Balance.Amount ?? 0m })
+            .ToDictionaryAsync(x => x.OwnerId, x => x.Balance, ct);
+
+        var addressStats = await context.UserAddresses
+            .AsNoTracking()
+            .Where(a => userIds.Contains(a.UserId))
+            .GroupBy(a => a.UserId)
+            .Select(g => new
+            {
+                UserId = g.Key,
+                Count = g.Count(),
+                Default = g.Where(a => a.IsDefault)
+                    .Select(a => a.Province + " - " + a.City)
+                    .FirstOrDefault()
+            })
+            .ToDictionaryAsync(x => x.UserId, ct);
+
+        var openTickets = await context.Tickets
+            .AsNoTracking()
+            .Where(t => userIds.Contains(t.CustomerId))
+            .GroupBy(t => t.CustomerId)
+            .Select(g => new { UserId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.UserId, x => x.Count, ct);
+
+        var items = projected.Select(p =>
+        {
+            orderStats.TryGetValue(p.Id, out var ord);
+            walletBalances.TryGetValue(p.Id, out var wallet);
+            addressStats.TryGetValue(p.Id, out var addr);
+            openTickets.TryGetValue(p.Id, out var tk);
+
+            return new AdminUserListItemDto
+            {
+                Id = p.IdValue,
+                FullName = $"{p.FirstName} {p.LastName}".Trim(),
+                FirstName = p.FirstName,
+                LastName = p.LastName,
+                Email = p.Email,
+                PhoneNumber = p.PhoneNumber,
+                IsActive = p.IsActive,
+                IsAdmin = p.IsAdmin,
+                IsEmailVerified = p.IsEmailVerified,
+                IsLockedOut = p.IsLockedOut,
+                IsDeleted = false,
+                Roles = p.IsAdmin ? new List<string> { "Admin" } : new List<string> { "User" },
+                OrderCount = ord?.OrderCount ?? 0,
+                CompletedOrderCount = ord?.CompletedOrderCount ?? 0,
+                TotalSpent = ord?.TotalSpent ?? 0m,
+                DefaultAddressSummary = addr?.Default,
+                AddressCount = addr?.Count ?? 0,
+                WalletBalance = wallet,
+                OpenTicketsCount = tk,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt,
+                LastLoginAt = p.LastLoginAt
+            };
+        }).ToList();
+
+        if (filter.MinTotalSpent.HasValue)
+            items = items.Where(i => i.TotalSpent >= filter.MinTotalSpent.Value).ToList();
+
+        return PaginatedResult<AdminUserListItemDto>.Create(items, total, filter.Page, filter.PageSize);
+    }
+
     public async Task<IEnumerable<UserAddressDto>> GetUserAddressesAsync(UserId userId, CancellationToken ct)
     {
         return await context.UserAddresses

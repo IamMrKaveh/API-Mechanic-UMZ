@@ -12,5 +12,6 @@ public record GetProductCatalogQuery(
     decimal? MaxPrice = null,
     bool InStockOnly = false,
     string? SortBy = null,
-    bool? IsFeatured = null)
+    bool? IsFeatured = null,
+    bool? HasDiscount = null)
     : IPageQuery<ProductCatalogItemDto>;

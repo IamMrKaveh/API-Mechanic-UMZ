@@ -1,4 +1,4 @@
-﻿using Presentation.Common.Interfaces;
+using Presentation.Common.Interfaces;
 using Presentation.Common.Mappers;
 using Presentation.Common.Swagger;
 
@@ -11,11 +11,20 @@ public static class ControllersExtensions
     {
         services.AddCustomApiVersioning();
 
-        services.AddControllers(options =>
-        {
-            options.Filters.AddService<OtpRateLimitFilter>();
-            options.Filters.Add<ValidationFilter>();
-        });
+        services
+            .AddControllers(options =>
+            {
+                options.Filters.AddService<OtpRateLimitFilter>();
+                options.Filters.Add<ValidationFilter>();
+            })
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: true));
+            });
 
         services.Configure<ApiBehaviorOptions>(options =>
         {
@@ -38,8 +47,30 @@ public static class ControllersExtensions
 
         services.AddSwaggerGen(options =>
         {
+            options.EnableAnnotations();
+
+            options.CustomOperationIds(api =>
+            {
+                if (api.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor descriptor)
+                {
+                    var attr = descriptor.MethodInfo
+                        .GetCustomAttributes(typeof(Swashbuckle.AspNetCore.Annotations.SwaggerOperationAttribute), false)
+                        .Cast<Swashbuckle.AspNetCore.Annotations.SwaggerOperationAttribute>()
+                        .FirstOrDefault();
+
+                    if (attr is not null && !string.IsNullOrWhiteSpace(attr.OperationId))
+                        return attr.OperationId;
+
+                    var controller = descriptor.ControllerName.Replace("Controller", string.Empty, StringComparison.OrdinalIgnoreCase);
+                    return $"{controller}_{descriptor.ActionName}";
+                }
+
+                return api.RelativePath?.Replace("/", "_") ?? Guid.NewGuid().ToString("N");
+            });
+
             options.OperationFilter<RemoveVersionParameterOperationFilter>();
             options.OperationFilter<DefaultResponseOperationFilter>();
+            options.OperationFilter<CustomOperationIdOperationFilter>();
             options.SchemaFilter<NullableSchemaFilter>();
 
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
