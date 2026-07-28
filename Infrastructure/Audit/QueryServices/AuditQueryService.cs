@@ -1,4 +1,4 @@
-﻿using Application.Audit.Features.Shared;
+using Application.Audit.Features.Shared;
 using Domain.Audit.Entities;
 using Domain.Audit.ValueObjects;
 using Domain.User.ValueObjects;
@@ -260,7 +260,10 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         var query = context.AuditLogs.AsNoTracking().AsQueryable();
 
         if (request.UserId.HasValue)
-            query = query.Where(l => l.UserId != null && l.UserId.Value == request.UserId.Value);
+        {
+            var typedUserId = UserId.From(request.UserId.Value);
+            query = query.Where(l => l.UserId != null && l.UserId == typedUserId);
+        }
 
         if (!string.IsNullOrEmpty(request.EventType))
             query = query.Where(l => l.EventType == request.EventType);
@@ -295,7 +298,10 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         var query = context.AuditLogs.AsNoTracking().AsQueryable();
 
         if (request.UserId.HasValue)
-            query = query.Where(l => l.UserId != null && l.UserId.Value == request.UserId.Value);
+        {
+            var typedUserId = UserId.From(request.UserId.Value);
+            query = query.Where(l => l.UserId != null && l.UserId == typedUserId);
+        }
 
         if (!string.IsNullOrEmpty(request.EventType))
             query = query.Where(l => l.EventType == request.EventType);

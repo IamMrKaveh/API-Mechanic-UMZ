@@ -1,4 +1,4 @@
-﻿using Application.Review.Features.Shared;
+using Application.Review.Features.Shared;
 using Domain.Review.Aggregates;
 
 namespace Application.Review.Mapping;
@@ -11,6 +11,7 @@ public class ReviewMappingConfig : IRegister
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.ProductId, src => src.ProductId.Value)
             .Map(dest => dest.UserId, src => src.UserId.Value)
+            .Map(dest => dest.OrderId, src => src.OrderId != null ? (Guid?)src.OrderId.Value : null)
             .Map(dest => dest.Rating, src => src.Rating.Value)
             .Map(dest => dest.Title, src => src.Title)
             .Map(dest => dest.Comment, src => src.Comment)
@@ -21,6 +22,9 @@ public class ReviewMappingConfig : IRegister
             .Map(dest => dest.AdminReply, src => src.AdminReply)
             .Map(dest => dest.RepliedAt, src => src.RepliedAt)
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
-            .Ignore(dest => dest.UserFullName);
+            .Map(dest => dest.UserFullName,
+                 src => src.User != null && src.User.FullName != null
+                    ? ((src.User.FullName.FirstName ?? string.Empty) + " " + (src.User.FullName.LastName ?? string.Empty)).Trim()
+                    : "کاربر حذف‌شده");
     }
 }

@@ -1,9 +1,9 @@
-﻿using Application.Auth.Features.Shared;
+using Application.Auth.Features.Shared;
 using Domain.User.ValueObjects;
 
 namespace Application.Auth.Features.Queries.GetUserSessions;
 
-public class GetUserSessionsHandler(
+public sealed class GetUserSessionsHandler(
     IUserQueryService userQueryService,
     ICurrentUserService currentUserService)
     : IQueryHandler<GetUserSessionsQuery, PaginatedResult<UserSessionDto>>
@@ -12,16 +12,25 @@ public class GetUserSessionsHandler(
         GetUserSessionsQuery request,
         CancellationToken ct)
     {
-        var effectiveId = request.TargetUserId ?? currentUserService.UserId
-            ?? throw new InvalidOperationException("User context not resolved.");
+        var effectiveId = request.TargetUserId ?? currentUserService.UserId;
 
-        var userId = UserId.From(effectiveId);
-        var sessions = await userQueryService.GetActiveSessionsAsync(userId, currentUserService.SessionId, ct);
+        if (effectiveId is null || effectiveId == Guid.Empty)
+            return ServiceResult<PaginatedResult<UserSessionDto>>.Unauthorized(
+                "کاربر احراز هویت نشده است.");
+
+        var userId = UserId.From(effectiveId.Value);
+
+        var sessions = await userQueryService.GetActiveSessionsAsync(
+            userId,
+            currentUserService.SessionId,
+            ct);
 
         var list = sessions.ToList();
-        var paginatedResult = PaginatedResult<UserSessionDto>.Create(
-            list, list.Count, 1, int.MaxValue);
+        var count = list.Count;
+        var pageSize = count > 0 ? count : 1;
 
-        return ServiceResult<PaginatedResult<UserSessionDto>>.Success(paginatedResult);
+        var paginated = PaginatedResult<UserSessionDto>.Create(list, count, 1, pageSize);
+
+        return ServiceResult<PaginatedResult<UserSessionDto>>.Success(paginated);
     }
 }

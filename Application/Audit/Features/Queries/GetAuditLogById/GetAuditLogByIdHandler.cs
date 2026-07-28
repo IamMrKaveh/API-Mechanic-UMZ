@@ -1,4 +1,4 @@
-﻿using Application.Audit.Features.Shared;
+using Application.Audit.Features.Shared;
 
 namespace Application.Audit.Features.Queries.GetAuditLogById;
 
@@ -9,8 +9,10 @@ public sealed class GetAuditLogByIdHandler(IAuditQueryService auditQueryService)
         GetAuditLogByIdQuery request,
         CancellationToken ct)
     {
-        var detail = await auditQueryService.GetByIdAsync(request.Id, ct);
+        if (request.Id == Guid.Empty)
+            return ServiceResult<AuditLogDetailDto>.NotFound("لاگ درخواستی یافت نشد.");
 
+        var detail = await auditQueryService.GetByIdAsync(request.Id, ct);
         if (detail is null)
             return ServiceResult<AuditLogDetailDto>.NotFound("لاگ درخواستی یافت نشد.");
 

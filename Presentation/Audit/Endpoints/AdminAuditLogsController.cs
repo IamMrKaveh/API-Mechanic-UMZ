@@ -39,7 +39,7 @@ public sealed class AdminAuditLogsController(IMediator mediator, IMapper mapper)
         => Send(new VerifyAuditIntegrityQuery(id), ct);
 
     [HttpGet("statistics")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<AuditStatisticsDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuditStatisticsDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStatistics(
         [FromQuery] GetAuditStatisticsRequest request,
         CancellationToken ct)

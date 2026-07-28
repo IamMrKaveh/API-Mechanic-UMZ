@@ -1,4 +1,4 @@
-﻿namespace Application.Audit.Features.Queries.GetAuditLogById;
+namespace Application.Audit.Features.Queries.GetAuditLogById;
 
 public sealed class GetAuditLogByIdValidator : AbstractValidator<GetAuditLogByIdQuery>
 {

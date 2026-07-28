@@ -1,22 +1,17 @@
-using Application.Wallet.Features.Commands.ApproveWithdrawal;
 using Application.Wallet.Features.Commands.CreditWallet;
 using Application.Wallet.Features.Commands.DebitWallet;
 using Application.Wallet.Features.Commands.DismissFraudAlert;
 using Application.Wallet.Features.Commands.FreezeWallet;
 using Application.Wallet.Features.Commands.MarkFraudAlertReviewed;
-using Application.Wallet.Features.Commands.MarkWithdrawalPaid;
-using Application.Wallet.Features.Commands.RejectWithdrawal;
 using Application.Wallet.Features.Commands.UnfreezeWallet;
 using Application.Wallet.Features.Queries.ExportWalletLedger;
 using Application.Wallet.Features.Queries.GetFraudAlertById;
 using Application.Wallet.Features.Queries.GetFraudAlerts;
 using Application.Wallet.Features.Queries.GetOpenFraudAlertsCount;
-using Application.Wallet.Features.Queries.GetPendingWithdrawals;
 using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
 using Application.Wallet.Features.Queries.GetWalletsOverview;
 using Application.Wallet.Features.Queries.GetWalletStatistics;
-using Application.Wallet.Features.Queries.GetWithdrawalById;
 using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
 using Presentation.Wallet.Requests;
@@ -29,6 +24,9 @@ namespace Presentation.Wallet.Endpoints;
 [EnableRateLimiting("admin-wallet")]
 public sealed class AdminWalletController(IMediator mediator) : BaseApiController(mediator)
 {
+    private const string IdempotencyHeaderName = "Idempotency-Key";
+    private const int IdempotencyKeyMaxLength = 128;
+
     [HttpGet("overview")]
     [SwaggerOperation(OperationId = "AdminWallet_Overview")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletOverviewDto>>), StatusCodes.Status200OK)]
@@ -113,19 +111,23 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     [HttpPost("{userId:guid}/credit")]
     [SwaggerOperation(OperationId = "AdminWallet_Credit")]
     [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Credit(
         Guid userId,
         [FromBody] AdminWalletAdjustmentRequest request,
+        [FromHeader(Name = IdempotencyHeaderName)] string? idempotencyKey,
         CancellationToken ct)
     {
+        var effectiveKey = ResolveIdempotencyKey(idempotencyKey, "credit", userId);
+
         var command = new CreditWalletCommand(
             userId,
             request.Amount,
             WalletTransactionType.Credit,
             WalletReferenceType.Admin,
-            "0",
-            $"admin-credit-{userId}-{HttpContext.TraceIdentifier}",
+            HttpContext.TraceIdentifier,
+            effectiveKey,
             HttpContext.TraceIdentifier,
             BuildAuditDescription("CREDIT", request.Reason, request.Description));
 
@@ -135,18 +137,22 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     [HttpPost("{userId:guid}/debit")]
     [SwaggerOperation(OperationId = "AdminWallet_Debit")]
     [ProducesResponseType(typeof(ApiResponse<Unit>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Debit(
         Guid userId,
         [FromBody] AdminWalletAdjustmentRequest request,
+        [FromHeader(Name = IdempotencyHeaderName)] string? idempotencyKey,
         CancellationToken ct)
     {
+        var effectiveKey = ResolveIdempotencyKey(idempotencyKey, "debit", userId);
+
         var command = new DebitWalletCommand(
             userId,
             request.Amount,
             WalletTransactionType.Debit,
             WalletReferenceType.Admin,
-            $"admin-debit-{userId}-{HttpContext.TraceIdentifier}",
+            effectiveKey,
             HttpContext.TraceIdentifier,
             BuildAuditDescription("DEBIT", request.Reason, request.Description));
 
@@ -180,40 +186,6 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         var command = new UnfreezeWalletCommand(userId);
         return await Send(command, ct);
     }
-
-    [HttpGet("withdrawals/pending")]
-    [SwaggerOperation(OperationId = "AdminWallet_PendingWithdrawals")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletWithdrawalRequestDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Pending(
-    [FromQuery] string? status = null,
-    [FromQuery] int page = 1,
-    [FromQuery] int pageSize = 20,
-    [FromQuery] DateTime? fromDate = null,
-    [FromQuery] DateTime? toDate = null,
-    CancellationToken ct = default)
-    {
-        return await Send(new GetPendingWithdrawalsQuery(status, page, pageSize, fromDate, toDate), ct);
-    }
-
-    [HttpGet("withdrawals/{id:guid}")]
-    [SwaggerOperation(OperationId = "AdminWallet_GetWithdrawal")]
-    public async Task<IActionResult> GetWithdrawal(Guid id, CancellationToken ct)
-        => await Send(new GetWithdrawalByIdQuery(id), ct);
-
-    [HttpPost("withdrawals/{id:guid}/approve")]
-    [SwaggerOperation(OperationId = "AdminWallet_ApproveWithdrawal")]
-    public async Task<IActionResult> ApproveWithdrawal(Guid id, CancellationToken ct)
-        => await Send(new ApproveWithdrawalCommand(id), ct);
-
-    [HttpPost("withdrawals/{id:guid}/reject")]
-    [SwaggerOperation(OperationId = "AdminWallet_RejectWithdrawal")]
-    public async Task<IActionResult> RejectWithdrawal(Guid id, [FromBody] RejectWithdrawalRequest request, CancellationToken ct)
-        => await Send(new RejectWithdrawalCommand(id, request.Reason), ct);
-
-    [HttpPost("withdrawals/{id:guid}/mark-paid")]
-    [SwaggerOperation(OperationId = "AdminWallet_MarkWithdrawalPaid")]
-    public async Task<IActionResult> MarkPaid(Guid id, [FromBody] MarkWithdrawalPaidRequest request, CancellationToken ct)
-        => await Send(new MarkWithdrawalPaidCommand(id, request.BankReferenceNumber), ct);
 
     [HttpGet("fraud/alerts")]
     [SwaggerOperation(OperationId = "AdminWallet_FraudAlerts")]
@@ -289,6 +261,18 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     {
         var command = new DismissFraudAlertCommand(id, request.Note);
         return await Send(command, ct);
+    }
+
+    private string ResolveIdempotencyKey(string? headerValue, string operation, Guid userId)
+    {
+        if (!string.IsNullOrWhiteSpace(headerValue))
+        {
+            var trimmed = headerValue.Trim();
+            if (trimmed.Length <= IdempotencyKeyMaxLength)
+                return trimmed;
+        }
+
+        return $"admin-{operation}-{userId:N}-{HttpContext.TraceIdentifier}";
     }
 
     private static string BuildAuditDescription(

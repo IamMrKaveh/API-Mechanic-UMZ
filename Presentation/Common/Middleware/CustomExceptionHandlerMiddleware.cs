@@ -1,5 +1,6 @@
 using Application.Audit.Contracts;
 using Application.Common.Exceptions;
+using Presentation.Common.ProblemDetails;
 using ValidationException = FluentValidation.ValidationException;
 
 namespace Presentation.Common.Middleware;
@@ -9,9 +10,12 @@ public class CustomExceptionHandlerMiddleware(
     IServiceScopeFactory scopeFactory,
     ILogger<CustomExceptionHandlerMiddleware> logger)
 {
+    private const string ProblemJsonContentType = "application/problem+json";
+
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
     public async Task Invoke(HttpContext context)
@@ -28,7 +32,7 @@ public class CustomExceptionHandlerMiddleware(
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var (statusCode, body, isUnhandled) = MapException(exception);
+        var (statusCode, problem, isUnhandled) = MapException(context, exception);
 
         LogException(context, exception, (int)statusCode, isUnhandled);
 
@@ -36,27 +40,90 @@ public class CustomExceptionHandlerMiddleware(
             await LogAuditAsync(exception);
 
         if (context.Response.HasStarted)
+        {
+            logger.LogWarning(
+                "Cannot write ProblemDetails response for {Path} because response has already started.",
+                context.Request.Path);
             return;
+        }
 
-        context.Response.ContentType = "application/json";
+        context.Response.Clear();
+        context.Response.ContentType = ProblemJsonContentType;
         context.Response.StatusCode = (int)statusCode;
 
-        await context.Response.WriteAsync(JsonSerializer.Serialize(body, SerializerOptions));
+        await context.Response.WriteAsync(JsonSerializer.Serialize(problem, SerializerOptions));
     }
 
-    private static (HttpStatusCode StatusCode, ApiResponse Body, bool IsUnhandled) MapException(Exception exception)
-        => exception switch
+    private static (HttpStatusCode StatusCode, PersianProblemDetails Body, bool IsUnhandled) MapException(
+        HttpContext context,
+        Exception exception)
+    {
+        var instance = context.Request.Path.Value;
+        var traceId = context.TraceIdentifier;
+
+        return exception switch
         {
-            ValidationException ve => (HttpStatusCode.BadRequest, BuildValidation(ve), false),
-            DomainException de => (HttpStatusCode.BadRequest, new ApiResponse(false, de.Message), false),
-            KeyNotFoundException => (HttpStatusCode.NotFound, new ApiResponse(false, exception.Message), false),
-            UnauthorizedAccessException => (HttpStatusCode.Unauthorized, new ApiResponse(false, "دسترسی غیرمجاز."), false),
-            ConcurrencyException ce => (HttpStatusCode.Conflict, new ApiResponse(false, ce.Message), false),
-            DbUpdateConcurrencyException => (HttpStatusCode.Conflict, new ApiResponse(false, "تغییرات همزمان رخ داده است. لطفاً دوباره تلاش کنید."), false),
-            DbUpdateException dbEx when IsPgUniqueViolation(dbEx) => (HttpStatusCode.Conflict, new ApiResponse(false, "داده تکراری است."), false),
-            OperationCanceledException => ((HttpStatusCode)499, new ApiResponse(false, "درخواست لغو شد."), false),
-            _ => (HttpStatusCode.InternalServerError, new ApiResponse(false, "خطای غیرمنتظره‌ای رخ داده است."), true)
+            ValidationException ve => (
+                HttpStatusCode.BadRequest,
+                PersianProblemDetailsFactory.FromValidation(ve.Errors, instance, traceId),
+                false),
+
+            DomainException de => (
+                HttpStatusCode.BadRequest,
+                PersianProblemDetailsFactory.FromDomainException(de, HttpStatusCode.BadRequest, instance, traceId),
+                false),
+
+            KeyNotFoundException knf => (
+                HttpStatusCode.NotFound,
+                PersianProblemDetailsFactory.FromStatus(HttpStatusCode.NotFound, knf.Message, instance, traceId, "NOT_FOUND"),
+                false),
+
+            UnauthorizedAccessException => (
+                HttpStatusCode.Unauthorized,
+                PersianProblemDetailsFactory.FromStatus(HttpStatusCode.Unauthorized, null, instance, traceId, "UNAUTHORIZED"),
+                false),
+
+            ConcurrencyException ce => (
+                HttpStatusCode.Conflict,
+                PersianProblemDetailsFactory.FromStatus(HttpStatusCode.Conflict, ce.Message, instance, traceId, "CONCURRENCY_CONFLICT"),
+                false),
+
+            DbUpdateConcurrencyException => (
+                HttpStatusCode.Conflict,
+                PersianProblemDetailsFactory.FromStatus(
+                    HttpStatusCode.Conflict,
+                    "تغییرات همزمان رخ داده است. لطفاً دوباره تلاش کنید.",
+                    instance,
+                    traceId,
+                    "CONCURRENCY_CONFLICT"),
+                false),
+
+            DbUpdateException dbEx when IsPgUniqueViolation(dbEx) => (
+                HttpStatusCode.Conflict,
+                PersianProblemDetailsFactory.FromStatus(
+                    HttpStatusCode.Conflict,
+                    "داده تکراری است.",
+                    instance,
+                    traceId,
+                    "DUPLICATE_DATA"),
+                false),
+
+            OperationCanceledException => (
+                (HttpStatusCode)499,
+                PersianProblemDetailsFactory.FromStatus((HttpStatusCode)499, null, instance, traceId, "CLIENT_CLOSED_REQUEST"),
+                false),
+
+            _ => (
+                HttpStatusCode.InternalServerError,
+                PersianProblemDetailsFactory.FromStatus(
+                    HttpStatusCode.InternalServerError,
+                    null,
+                    instance,
+                    traceId,
+                    "INTERNAL_SERVER_ERROR"),
+                true)
         };
+    }
 
     private static bool IsPgUniqueViolation(DbUpdateException ex)
         => ex.InnerException is Npgsql.PostgresException pg && pg.SqlState == "23505";
@@ -66,21 +133,13 @@ public class CustomExceptionHandlerMiddleware(
         var level = isUnhandled ? LogLevel.Error : LogLevel.Warning;
 
         logger.Log(level, exception,
-            "Request {Method} {Path} failed with {StatusCode} ({ExceptionType}): {Message}",
+            "Request {Method} {Path} failed with {StatusCode} ({ExceptionType}): {Message} | TraceId={TraceId}",
             context.Request.Method,
             context.Request.Path,
             statusCode,
             exception.GetType().Name,
-            exception.Message);
-    }
-
-    private static ApiResponse BuildValidation(ValidationException exception)
-    {
-        var errors = exception.Errors
-            .GroupBy(e => e.PropertyName)
-            .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
-
-        return new ApiResponse(false, "اطلاعات ورودی نامعتبر است.", errors);
+            exception.Message,
+            context.TraceIdentifier);
     }
 
     private async Task LogAuditAsync(Exception exception)

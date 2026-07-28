@@ -8,7 +8,7 @@
   },
   "codeGenerators": {
     "openApiToTypeScriptClient": {
-      "className": "Client",
+      "className": "{controller}Client",
       "moduleName": "",
       "namespace": "",
       "typeScriptVersion": "5.8.3",
@@ -25,13 +25,13 @@
       "generateOptionalParameters": true,
       "generateResponseClasses": true,
       "generateDtoTypes": true,
-      "operationGenerationMode": "SingleClientFromOperationId",
+      "operationGenerationMode": "MultipleClientsFromPathSegments",
       "markOptionalProperties": true,
       "generateCloneMethod": false,
       "useLeafType": true,
       "provideIn": "root",
       "baseUrlTokenName": "API_BASE_URL",
-      "output": "../../FrontEnd/src/app/core/api/generated/api-client.ts"
+      "output": "C:\\ME\\Mechanic\\FrontEnd\\src\\app\\core\\api\\generated\\api-client.ts"
     }
   }
 }

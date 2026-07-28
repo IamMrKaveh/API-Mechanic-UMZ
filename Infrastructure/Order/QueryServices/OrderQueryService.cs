@@ -102,7 +102,7 @@ public sealed class OrderQueryService(
                 Id = o.Id.Value,
                 UserId = o.UserId.Value,
                 OrderNumber = o.OrderNumber.Value,
-                ReceiverName = o.ReceiverInfo.FullName,
+                ReceiverName = o.ReceiverInfo != null ? o.ReceiverInfo.FullName : string.Empty,
                 Status = o.Status.Value,
                 StatusDisplayName = o.Status.DisplayName,
                 TotalAmount = o.SubTotal.Amount,
@@ -114,18 +114,20 @@ public sealed class OrderQueryService(
                 IsPaid = o.IsPaid,
                 IsCancelled = o.IsCancelled,
                 IsDeleted = o.IsDeleted,
-                OrderItems = o.OrderItems.Select(i => new OrderItemDto
-                {
-                    Id = i.Id.Value,
-                    VariantId = i.VariantId.Value,
-                    ProductId = i.ProductId.Value,
-                    ProductName = i.ProductName,
-                    Sku = i.Sku,
-                    UnitPrice = i.UnitPrice.Amount,
-                    Quantity = i.Quantity,
-                    TotalPrice = i.TotalPrice.Amount
-                }).ToList(),
-                OrderItemsCount = o.OrderItems.Count,
+                OrderItems = o.OrderItems != null
+                    ? o.OrderItems.Select(i => new OrderItemDto
+                    {
+                        Id = i.Id.Value,
+                        VariantId = i.VariantId.Value,
+                        ProductId = i.ProductId.Value,
+                        ProductName = i.ProductName ?? string.Empty,
+                        Sku = i.Sku ?? string.Empty,
+                        UnitPrice = i.UnitPrice.Amount,
+                        Quantity = i.Quantity,
+                        TotalPrice = i.TotalPrice.Amount
+                    }).ToList()
+                    : new List<OrderItemDto>(),
+                OrderItemsCount = o.OrderItems != null ? o.OrderItems.Count : 0,
                 CreatedAt = o.CreatedAt,
                 UpdatedAt = o.UpdatedAt
             })
@@ -156,29 +158,35 @@ public sealed class OrderQueryService(
                 IsPaid = o.IsPaid,
                 IsCancelled = o.IsCancelled,
                 CancellationReason = o.CancellationReason,
-                ReceiverInfo = new ReceiverInfoDto
-                {
-                    FullName = o.ReceiverInfo.FullName,
-                    PhoneNumber = o.ReceiverInfo.PhoneNumber
-                },
-                DeliveryAddress = new DeliveryAddressDto
-                {
-                    Province = o.DeliveryAddress.Province,
-                    City = o.DeliveryAddress.City,
-                    AddressLine = o.DeliveryAddress.Street,
-                    PostalCode = o.DeliveryAddress.PostalCode
-                },
-                Items = o.OrderItems.Select(i => new OrderItemDto
-                {
-                    Id = i.Id.Value,
-                    VariantId = i.VariantId.Value,
-                    ProductId = i.ProductId.Value,
-                    ProductName = i.ProductName,
-                    Sku = i.Sku,
-                    UnitPrice = i.UnitPrice.Amount,
-                    Quantity = i.Quantity,
-                    TotalPrice = i.TotalPrice.Amount
-                }).ToList(),
+                ReceiverInfo = o.ReceiverInfo != null
+                    ? new ReceiverInfoDto
+                    {
+                        FullName = o.ReceiverInfo.FullName ?? string.Empty,
+                        PhoneNumber = o.ReceiverInfo.PhoneNumber ?? string.Empty
+                    }
+                    : new ReceiverInfoDto { FullName = string.Empty, PhoneNumber = string.Empty },
+                DeliveryAddress = o.DeliveryAddress != null
+                    ? new DeliveryAddressDto
+                    {
+                        Province = o.DeliveryAddress.Province ?? string.Empty,
+                        City = o.DeliveryAddress.City ?? string.Empty,
+                        AddressLine = o.DeliveryAddress.Street ?? string.Empty,
+                        PostalCode = o.DeliveryAddress.PostalCode ?? string.Empty
+                    }
+                    : new DeliveryAddressDto(),
+                Items = o.OrderItems != null
+                    ? o.OrderItems.Select(i => new OrderItemDto
+                    {
+                        Id = i.Id.Value,
+                        VariantId = i.VariantId.Value,
+                        ProductId = i.ProductId.Value,
+                        ProductName = i.ProductName ?? string.Empty,
+                        Sku = i.Sku ?? string.Empty,
+                        UnitPrice = i.UnitPrice.Amount,
+                        Quantity = i.Quantity,
+                        TotalPrice = i.TotalPrice.Amount
+                    }).ToList()
+                    : new List<OrderItemDto>(),
                 CreatedAt = o.CreatedAt,
                 UpdatedAt = o.UpdatedAt
             })
@@ -235,30 +243,38 @@ public sealed class OrderQueryService(
                     Id = o.Id.Value,
                     UserId = o.UserId.Value,
                     OrderNumber = o.OrderNumber.Value,
-                    ReceiverName = o.ReceiverInfo.FullName,
+                    ReceiverName = o.ReceiverInfo != null
+                        ? o.ReceiverInfo.FullName
+                        : string.Empty,
                     Status = o.Status.Value,
                     StatusDisplayName = o.Status.DisplayName,
                     TotalAmount = o.SubTotal.Amount,
                     ShippingCost = o.ShippingCost.Amount,
                     DiscountAmount = o.DiscountAmount.Amount,
                     FinalAmount = o.FinalAmount.Amount,
-                    DiscountCodeId = o.AppliedDiscountCodeId != null ? o.AppliedDiscountCodeId.Value : null,
+                    DiscountCodeId = o.AppliedDiscountCodeId != null
+                        ? o.AppliedDiscountCodeId.Value
+                        : null,
                     CancellationReason = o.CancellationReason,
                     IsPaid = o.IsPaid,
                     IsCancelled = o.IsCancelled,
                     IsDeleted = o.IsDeleted,
-                    OrderItems = o.OrderItems.Select(i => new OrderItemDto
-                    {
-                        Id = i.Id.Value,
-                        VariantId = i.VariantId.Value,
-                        ProductId = i.ProductId.Value,
-                        ProductName = i.ProductName,
-                        Sku = i.Sku,
-                        UnitPrice = i.UnitPrice.Amount,
-                        Quantity = i.Quantity,
-                        TotalPrice = i.TotalPrice.Amount
-                    }).ToList(),
-                    OrderItemsCount = o.OrderItems.Count,
+                    OrderItems = o.OrderItems != null
+                        ? o.OrderItems.Select(i => new OrderItemDto
+                        {
+                            Id = i.Id.Value,
+                            VariantId = i.VariantId.Value,
+                            ProductId = i.ProductId.Value,
+                            ProductName = i.ProductName ?? string.Empty,
+                            Sku = i.Sku ?? string.Empty,
+                            UnitPrice = i.UnitPrice.Amount,
+                            Quantity = i.Quantity,
+                            TotalPrice = i.TotalPrice.Amount
+                        }).ToList()
+                        : new List<OrderItemDto>(),
+                    OrderItemsCount = o.OrderItems != null
+                        ? o.OrderItems.Count
+                        : 0,
                     CreatedAt = o.CreatedAt,
                     UpdatedAt = o.UpdatedAt
                 },
@@ -266,14 +282,16 @@ public sealed class OrderQueryService(
             })
             .FirstOrDefaultAsync(ct);
 
-        if (projection is null) return null;
+        if (projection is null)
+            return null;
 
         var rowVersionBytes = new byte[4];
         BinaryPrimitives.WriteUInt32BigEndian(rowVersionBytes, projection.Xmin);
         var etag = Convert.ToBase64String(rowVersionBytes);
 
         httpContextAccessor.HttpContext?.Response.Headers.Append(
-            HeaderNames.ETag, $"\"{etag}\"");
+            HeaderNames.ETag,
+            $"\"{etag}\"");
 
         return projection.Dto;
     }

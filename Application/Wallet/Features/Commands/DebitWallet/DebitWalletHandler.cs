@@ -1,6 +1,7 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
+using SharedKernel.ValueObjects;
 
 namespace Application.Wallet.Features.Commands.DebitWallet;
 
@@ -12,6 +13,7 @@ public class DebitWalletHandler(
     IDistributedLock distributedLock)
     : ICommandHandler<DebitWalletCommand, Unit>
 {
+    private const string DefaultCurrency = "IRT";
     private static readonly TimeSpan WalletLockExpiry = TimeSpan.FromSeconds(10);
 
     public async Task<ServiceResult<Unit>> Handle(
@@ -38,8 +40,10 @@ public class DebitWalletHandler(
             if (wallet is null)
                 return ServiceResult<Unit>.NotFound("کیف پول یافت نشد.");
 
+            var amount = Money.Create(request.Amount, DefaultCurrency);
+
             wallet.Debit(
-                Money.FromDecimal(request.Amount),
+                amount,
                 request.Description ?? request.TransactionType.ToString(),
                 currentUserService.UserId.Value.ToString());
 

@@ -304,23 +304,42 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
     {
         var now = DateTime.UtcNow;
         var current = currentSessionId ?? Guid.Empty;
+        const long expiringThresholdSeconds = 24 * 60 * 60;
 
-        return await context.UserSessions
+        var raw = await context.UserSessions
             .AsNoTracking()
             .Where(s => s.UserId == userId && !s.IsRevoked && s.ExpiresAt > now)
             .OrderByDescending(s => s.CreatedAt)
-            .Select(s => new UserSessionDto
+            .Select(s => new
             {
                 Id = s.Id.Value,
-                SessionType = string.Empty,
-                CreatedByIp = s.IpAddress.Value,
-                DeviceInfo = s.DeviceInfo.Value,
-                CreatedAt = s.CreatedAt,
-                LastActivityAt = s.LastActivityAt,
-                ExpiresAt = s.ExpiresAt,
-                IsCurrent = current != Guid.Empty && s.Id.Value == current
+                Ip = s.IpAddress.Value,
+                Device = s.DeviceInfo.Value,
+                s.CreatedAt,
+                s.LastActivityAt,
+                s.ExpiresAt
             })
             .ToListAsync(ct);
+
+        return raw.Select(s =>
+        {
+            var totalSeconds = (long)Math.Max(0, (s.ExpiresAt - now).TotalSeconds);
+            return new UserSessionDto
+            {
+                Id = s.Id,
+                CreatedByIp = s.Ip,
+                DeviceInfo = ExtractDeviceLabel(s.Device),
+                BrowserInfo = ExtractBrowserLabel(s.Device),
+                PlatformInfo = ExtractPlatformLabel(s.Device),
+                SessionType = ExtractSessionType(s.Device),
+                CreatedAt = s.CreatedAt,
+                LastActivityAt = s.LastActivityAt ?? s.CreatedAt,
+                ExpiresAt = s.ExpiresAt,
+                IsCurrent = current != Guid.Empty && s.Id == current,
+                RemainingSeconds = totalSeconds,
+                IsExpiringSoon = totalSeconds > 0 && totalSeconds <= expiringThresholdSeconds
+            };
+        });
     }
 
     public async Task<PaginatedResult<ProductReviewDto>> GetUserReviewsPagedAsync(
@@ -329,37 +348,127 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
         int pageSize,
         CancellationToken ct = default)
     {
+        var safePage = page <= 0 ? 1 : page;
+        var safeSize = pageSize <= 0 ? 10 : pageSize;
+
         var query = context.ProductReviews
             .AsNoTracking()
+            .IgnoreQueryFilters()
             .Where(r => r.UserId == userId && !r.IsDeleted);
 
         var total = await query.CountAsync(ct);
 
-        var items = await query
+        var rows = await query
             .OrderByDescending(r => r.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(r => new ProductReviewDto
+            .Skip((safePage - 1) * safeSize)
+            .Take(safeSize)
+            .Select(r => new
             {
-                Id = r.Id.Value,
-                ProductId = r.ProductId.Value,
-                UserId = r.UserId.Value,
-                UserFullName = r.User.FullName.FirstName + " " + r.User.FullName.LastName,
+                r.Id,
+                r.ProductId,
+                r.UserId,
+                FirstName = r.User != null && r.User.FullName != null ? r.User.FullName.FirstName : null,
+                LastName = r.User != null && r.User.FullName != null ? r.User.FullName.LastName : null,
                 Rating = r.Rating.Value,
-                Title = r.Title,
-                Comment = r.Comment,
+                r.Title,
+                r.Comment,
                 Status = r.Status.Value,
-                RejectionReason = r.RejectionReason,
-                IsVerifiedPurchase = r.IsVerifiedPurchase,
-                LikeCount = r.LikeCount,
-                DislikeCount = r.DislikeCount,
-                AdminReply = r.AdminReply,
-                RepliedAt = r.RepliedAt,
-                CreatedAt = r.CreatedAt,
-                OrderId = r.OrderId
+                r.RejectionReason,
+                r.AdminReply,
+                r.RepliedAt,
+                r.IsVerifiedPurchase,
+                r.LikeCount,
+                r.DislikeCount,
+                r.CreatedAt,
+                r.OrderId
             })
             .ToListAsync(ct);
 
-        return PaginatedResult<ProductReviewDto>.Create(items, total, page, pageSize);
+        var items = rows.Select(r => new ProductReviewDto
+        {
+            Id = r.Id.Value,
+            ProductId = r.ProductId.Value,
+            UserId = r.UserId.Value,
+            UserFullName = BuildUserFullName(r.FirstName, r.LastName),
+            Rating = r.Rating,
+            Title = r.Title,
+            Comment = r.Comment,
+            Status = r.Status,
+            RejectionReason = r.RejectionReason,
+            IsVerifiedPurchase = r.IsVerifiedPurchase,
+            LikeCount = r.LikeCount,
+            DislikeCount = r.DislikeCount,
+            AdminReply = r.AdminReply,
+            RepliedAt = r.RepliedAt,
+            CreatedAt = r.CreatedAt,
+            OrderId = r.OrderId?.Value
+        }).ToList();
+
+        return PaginatedResult<ProductReviewDto>.Create(items, total, safePage, safeSize);
+    }
+
+    private static string BuildUserFullName(string? firstName, string? lastName)
+    {
+        var first = (firstName ?? string.Empty).Trim();
+        var last = (lastName ?? string.Empty).Trim();
+        var full = $"{first} {last}".Trim();
+        return string.IsNullOrWhiteSpace(full) ? "کاربر حذف‌شده" : full;
+    }
+
+    private static string ExtractDeviceLabel(string userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent) ||
+            userAgent.Equals("Unknown", StringComparison.OrdinalIgnoreCase))
+            return "دستگاه ناشناس";
+
+        var ua = userAgent.ToLowerInvariant();
+        if (ua.Contains("iphone")) return "iPhone";
+        if (ua.Contains("ipad")) return "iPad";
+        if (ua.Contains("android"))
+        {
+            var idx = ua.IndexOf("android", StringComparison.Ordinal);
+            var tail = userAgent[idx..];
+            var semi = tail.IndexOf(';');
+            return semi > 0 ? tail[..semi].Trim() : "Android";
+        }
+        if (ua.Contains("windows")) return "کامپیوتر ویندوز";
+        if (ua.Contains("macintosh") || ua.Contains("mac os x")) return "مک";
+        if (ua.Contains("linux")) return "کامپیوتر لینوکس";
+
+        return userAgent.Length > 60 ? userAgent[..60] : userAgent;
+    }
+
+    private static string ExtractBrowserLabel(string userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent)) return string.Empty;
+        var ua = userAgent.ToLowerInvariant();
+        if (ua.Contains("edg/")) return "Microsoft Edge";
+        if (ua.Contains("opr/") || ua.Contains("opera")) return "Opera";
+        if (ua.Contains("firefox")) return "Firefox";
+        if (ua.Contains("chrome") && !ua.Contains("edg") && !ua.Contains("opr")) return "Chrome";
+        if (ua.Contains("safari") && !ua.Contains("chrome")) return "Safari";
+        return "مرورگر ناشناس";
+    }
+
+    private static string ExtractPlatformLabel(string userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent)) return string.Empty;
+        var ua = userAgent.ToLowerInvariant();
+        if (ua.Contains("windows nt 10")) return "Windows 10/11";
+        if (ua.Contains("windows nt")) return "Windows";
+        if (ua.Contains("mac os x") || ua.Contains("macintosh")) return "macOS";
+        if (ua.Contains("android")) return "Android";
+        if (ua.Contains("iphone") || ua.Contains("ipad") || ua.Contains("ios")) return "iOS";
+        if (ua.Contains("linux")) return "Linux";
+        return string.Empty;
+    }
+
+    private static string ExtractSessionType(string userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent)) return "وب";
+        var ua = userAgent.ToLowerInvariant();
+        if (ua.Contains("mobile") || ua.Contains("iphone") || ua.Contains("android")) return "موبایل";
+        if (ua.Contains("ipad") || ua.Contains("tablet")) return "تبلت";
+        return "وب دسکتاپ";
     }
 }

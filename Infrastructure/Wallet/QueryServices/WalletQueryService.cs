@@ -1,4 +1,4 @@
-﻿using Application.Wallet.Features.Shared;
+using Application.Wallet.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
@@ -123,10 +123,16 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
         if (pageSize < 1) pageSize = 20;
         if (pageSize > 200) pageSize = 200;
 
-        var baseQuery = from w in context.Wallets.AsNoTracking()
-                        join u in context.Users.AsNoTracking().IgnoreQueryFilters()
-                            on w.OwnerId equals u.Id
-                        select new WalletOverviewRow(w, u);
+        var baseQuery =
+            from w in context.Wallets.AsNoTracking().IgnoreQueryFilters()
+            join u in context.Users.AsNoTracking().IgnoreQueryFilters()
+                on w.OwnerId equals u.Id into userJoin
+            from u in userJoin.DefaultIfEmpty()
+            select new WalletOverviewRow
+            {
+                Wallet = w,
+                User = u
+            };
 
         baseQuery = ApplyOverviewFilter(baseQuery, filter);
 
@@ -139,47 +145,55 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
             .Take(pageSize)
             .Select(x => new
             {
-                WalletId = x.Wallet.Id.Value,
-                UserId = x.Wallet.OwnerId.Value,
-                FirstName = x.User.FullName.FirstName,
-                LastName = x.User.FullName.LastName,
-                Email = x.User.Email.Value,
+                WalletId = x.Wallet.Id,
+                UserId = x.Wallet.OwnerId,
+                FirstName = x.User != null && x.User.FullName != null ? x.User.FullName.FirstName : null,
+                LastName = x.User != null && x.User.FullName != null ? x.User.FullName.LastName : null,
+                Email = x.User != null && x.User.Email != null ? x.User.Email.Value : null,
+                IsUserActive = x.User != null && x.User.IsActive,
                 Balance = x.Wallet.Balance.Amount,
-                IsActive = x.Wallet.IsActive,
-                FreezeReason = x.Wallet.FreezeReason,
-                CreatedAt = x.Wallet.CreatedAt,
+                x.Wallet.IsActive,
+                x.Wallet.FreezeReason,
+                x.Wallet.CreatedAt,
                 UpdatedAt = (DateTime?)x.Wallet.UpdatedAt
             })
             .ToListAsync(ct);
+
+        if (rows.Count == 0)
+            return PaginatedResult<WalletOverviewDto>.Create(
+                [], totalCount, page, pageSize);
 
         var walletIds = rows.Select(r => r.WalletId).ToList();
 
         var reservationTotals = await context.WalletReservations
             .AsNoTracking()
-            .Where(r => walletIds.Contains(r.WalletId.Value)
+            .Where(r => walletIds.Contains(r.WalletId)
                         && r.Status == WalletReservationStatus.Active)
-            .GroupBy(r => r.WalletId.Value)
+            .GroupBy(r => r.WalletId)
             .Select(g => new { WalletId = g.Key, Total = g.Sum(x => x.Amount.Amount) })
-            .ToDictionaryAsync(x => x.WalletId, x => x.Total, ct);
+            .ToDictionaryAsync(x => x.WalletId.Value, x => x.Total, ct);
 
         var lastActivityDates = await context.WalletLedgerEntries
             .AsNoTracking()
-            .Where(e => walletIds.Contains(e.WalletId.Value))
-            .GroupBy(e => e.WalletId.Value)
+            .Where(e => walletIds.Contains(e.WalletId))
+            .GroupBy(e => e.WalletId)
             .Select(g => new { WalletId = g.Key, LastAt = g.Max(x => x.OccurredAt) })
-            .ToDictionaryAsync(x => x.WalletId, x => (DateTime?)x.LastAt, ct);
+            .ToDictionaryAsync(x => x.WalletId.Value, x => (DateTime?)x.LastAt, ct);
 
         var items = rows.Select(r =>
         {
-            var reserved = reservationTotals.TryGetValue(r.WalletId, out var res) ? res : 0m;
+            var reserved = reservationTotals.TryGetValue(r.WalletId.Value, out var res) ? res : 0m;
             var available = r.Balance - reserved;
-            var fullName = $"{r.FirstName} {r.LastName}".Trim();
-            var lastActivity = lastActivityDates.TryGetValue(r.WalletId, out var la) ? la : r.UpdatedAt;
+            var first = r.FirstName ?? string.Empty;
+            var last = r.LastName ?? string.Empty;
+            var fullName = $"{first} {last}".Trim();
+            var displayName = string.IsNullOrWhiteSpace(fullName) ? "کاربر حذف‌شده" : fullName;
+            var lastActivity = lastActivityDates.TryGetValue(r.WalletId.Value, out var la) ? la : r.UpdatedAt;
 
             return new WalletOverviewDto(
-                r.WalletId,
-                r.UserId,
-                string.IsNullOrWhiteSpace(fullName) ? "-" : fullName,
+                r.WalletId.Value,
+                r.UserId.Value,
+                displayName,
                 r.Email ?? string.Empty,
                 r.Balance,
                 reserved,
@@ -314,23 +328,30 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
         return query;
     }
 
-    private static IQueryable<WalletOverviewRow> ApplyOverviewFilter(IQueryable<WalletOverviewRow> query, WalletOverviewFilter? filter)
+    private static IQueryable<WalletOverviewRow> ApplyOverviewFilter(
+        IQueryable<WalletOverviewRow> query,
+        WalletOverviewFilter? filter)
     {
         if (filter is null) return query;
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
-            var term = filter.Search.Trim();
+            var term = $"%{filter.Search.Trim()}%";
             query = query.Where(x =>
-                EF.Functions.ILike(x.User.FullName.FirstName, $"%{term}%")
-                || EF.Functions.ILike(x.User.FullName.LastName, $"%{term}%")
-                || EF.Functions.ILike(x.User.Email.Value, $"%{term}%"));
+                x.User != null && x.User.FullName != null &&
+                (
+                    EF.Functions.ILike(x.User.FullName.FirstName, term)
+                    || EF.Functions.ILike(x.User.FullName.LastName, term)
+                    || (x.User.Email != null && EF.Functions.ILike(x.User.Email.Value, term))
+                ));
         }
 
         if (filter.IsFrozen.HasValue)
         {
             var frozen = filter.IsFrozen.Value;
-            query = query.Where(x => x.Wallet.IsActive == !frozen);
+            query = frozen
+                ? query.Where(x => !x.Wallet.IsActive)
+                : query.Where(x => x.Wallet.IsActive);
         }
 
         if (filter.MinBalance.HasValue)
@@ -375,5 +396,9 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
         };
     }
 
-    private sealed record WalletOverviewRow(Domain.Wallet.Aggregates.Wallet Wallet, Domain.User.Aggregates.User User);
+    private sealed class WalletOverviewRow
+    {
+        public Domain.Wallet.Aggregates.Wallet Wallet { get; init; } = default!;
+        public Domain.User.Aggregates.User? User { get; init; }
+    }
 }
