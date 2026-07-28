@@ -1,4 +1,5 @@
-﻿using Domain.Product.ValueObjects;
+using Domain.Order.ValueObjects;
+using Domain.Product.ValueObjects;
 using Domain.Review.Interfaces;
 using Domain.User.ValueObjects;
 
@@ -14,5 +15,5 @@ public sealed class PurchaseVerificationService(DBContext context) : IPurchaseVe
             .AnyAsync(item =>
                 item.ProductId == productId &&
                 item.Order.UserId == userId &&
-                item.Order.IsDelivered, ct);
+                item.Order.Status == OrderStatusValue.Delivered, ct);
 }

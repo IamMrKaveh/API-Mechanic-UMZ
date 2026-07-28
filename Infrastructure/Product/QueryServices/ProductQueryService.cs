@@ -4,6 +4,7 @@ using Application.Product.Contracts;
 using Application.Product.Features.Shared;
 using Application.Variant.Features.Shared;
 using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
 
@@ -75,12 +76,27 @@ public sealed class ProductQueryService(
             .Include(p => p.Variants.Where(v => v.IsActive && !v.IsDeleted))
                 .ThenInclude(v => v.Attributes)
                     .ThenInclude(va => va.Value)
+            .Include(p => p.Variants.Where(v => v.IsActive && !v.IsDeleted))
+                .ThenInclude(v => v.Shippings)
             .AsSplitQuery()
             .FirstOrDefaultAsync(p => p.Id == productId && p.IsActive && !p.IsDeleted, ct);
 
         if (product is null) return null;
 
         var primaryImagePath = await GetPrimaryImagePathAsync(productId, ct);
+
+        var activeVariants = product.Variants
+            .Where(v => v.IsActive && !v.IsDeleted)
+            .ToList();
+
+        var variantIds = activeVariants.Select(v => v.Id).ToList();
+
+        var inventories = variantIds.Count == 0
+            ? new Dictionary<VariantId, Domain.Inventory.Aggregates.Inventory>()
+            : await context.Inventories
+                .AsNoTracking()
+                .Where(i => variantIds.Contains(i.VariantId))
+                .ToDictionaryAsync(i => i.VariantId, ct);
 
         return new PublicProductDetailDto
         {
@@ -96,9 +112,12 @@ public sealed class ProductQueryService(
             PrimaryImageUrl = primaryImagePath is not null
                 ? urlResolver.ResolveMediaUrl(primaryImagePath)
                 : null,
-            Variants = product.Variants
-                .Where(v => v.IsActive && !v.IsDeleted)
-                .Select(MapToVariantDto)
+            Variants = activeVariants
+                .Select(v =>
+                {
+                    inventories.TryGetValue(v.Id, out var inv);
+                    return MapToVariantDto(v, inv);
+                })
                 .ToList()
         };
     }
@@ -129,7 +148,8 @@ public sealed class ProductQueryService(
 
         if (categoryId.HasValue)
         {
-            query = query.Where(p => p.CategoryId == categoryId);
+            var categoryFilter = CategoryId.From(categoryId.Value);
+            query = query.Where(p => p.CategoryId == categoryFilter);
         }
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -501,14 +521,39 @@ public sealed class ProductQueryService(
         Domain.Variant.Aggregates.ProductVariant variant) => MapToVariantDto(variant, null);
 
     private static ProductVariantViewDto MapToVariantDto(
-            Domain.Variant.Aggregates.ProductVariant variant,
-            Domain.Inventory.Aggregates.Inventory? inventory)
+        Domain.Variant.Aggregates.ProductVariant variant,
+        Domain.Inventory.Aggregates.Inventory? inventory)
     {
         var stockQuantity = inventory?.StockQuantity.Value ?? 0;
         var reservedQuantity = inventory?.ReservedQuantity.Value ?? 0;
         var availableQuantity = inventory?.AvailableQuantity ?? 0;
         var isUnlimited = inventory?.IsUnlimited ?? false;
         var isInStock = isUnlimited || availableQuantity > 0;
+
+        var shippings = variant.Shippings ?? Array.Empty<Domain.Variant.Entities.VariantShipping>();
+        var shippingMultiplier = shippings.Count > 0
+            ? shippings.Min(s => s.ShippingMultiplier)
+            : 1m;
+        var enabledShippingIds = shippings.Select(s => s.ShippingId.Value).ToList();
+
+        var attributes = (variant.Attributes ?? Array.Empty<Domain.Variant.Entities.VariantAttribute>())
+            .GroupBy(a => a.AttributeType?.Name ?? a.AttributeTypeId.Value.ToString())
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var a = g.First();
+                    return new AttributeValueDto
+                    {
+                        Id = a.Value?.Id.Value ?? Guid.Empty,
+                        AttributeTypeId = a.AttributeTypeId.Value,
+                        Value = a.Value?.Value ?? a.DisplayValue,
+                        DisplayValue = a.DisplayValue,
+                        HexCode = a.Value?.HexCode,
+                        SortOrder = a.Value?.SortOrder ?? 0,
+                        IsActive = a.Value?.IsActive ?? true
+                    };
+                });
 
         return new ProductVariantViewDto
         {
@@ -525,23 +570,9 @@ public sealed class ProductQueryService(
             AvailableQuantity = availableQuantity,
             IsUnlimited = isUnlimited,
             IsInStock = isInStock,
-            ShippingMultiplier = variant.Shippings.Count > 0
-                ? variant.Shippings.Min(s => s.ShippingMultiplier)
-                : 1m,
-            EnabledShippingIds = variant.Shippings.Select(s => s.ShippingId.Value).ToList(),
-            Attributes = variant.Attributes
-                .ToDictionary(
-                    a => a.AttributeType?.Name ?? a.AttributeTypeId.Value.ToString(),
-                    a => new AttributeValueDto
-                    {
-                        Id = a.Value?.Id.Value ?? Guid.Empty,
-                        AttributeTypeId = a.AttributeTypeId.Value,
-                        Value = a.Value?.Value ?? a.DisplayValue,
-                        DisplayValue = a.DisplayValue,
-                        HexCode = a.Value?.HexCode,
-                        SortOrder = a.Value?.SortOrder ?? 0,
-                        IsActive = a.Value?.IsActive ?? true
-                    })
+            ShippingMultiplier = shippingMultiplier,
+            EnabledShippingIds = enabledShippingIds,
+            Attributes = attributes
         };
     }
 }

@@ -1,6 +1,8 @@
 using Application.Wallet.Features.Shared;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
+using Domain.Wallet.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Infrastructure.Wallet.QueryServices;
 
@@ -30,7 +32,8 @@ public sealed class WalletFraudAlertQueryService(DBContext context) : IWalletFra
 
         if (userId.HasValue)
         {
-            query = query.Where(a => a.UserId == userId);
+            var typedUserId = UserId.From(userId.Value);
+            query = query.Where(a => a.UserId == typedUserId);
         }
 
         if (fromDate.HasValue)
@@ -82,9 +85,11 @@ public sealed class WalletFraudAlertQueryService(DBContext context) : IWalletFra
 
     public async Task<WalletFraudAlertDto?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
+        var alertId = WalletFraudAlertId.From(id);
+
         var alert = await context.Set<WalletFraudAlert>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(a => a.Id.Value == id, ct);
+            .FirstOrDefaultAsync(a => a.Id == alertId, ct);
 
         if (alert is null) return null;
 

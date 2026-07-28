@@ -1,5 +1,6 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
+using SharedKernel.ValueObjects;
 
 namespace Application.Wallet.Features.Commands.CreditWallet;
 
@@ -9,6 +10,7 @@ public class CreditWalletHandler(
     IDistributedLock distributedLock)
     : ICommandHandler<CreditWalletCommand, Unit>
 {
+    private const string DefaultCurrency = "IRT";
     private static readonly TimeSpan WalletLockExpiry = TimeSpan.FromSeconds(10);
 
     public async Task<ServiceResult<Unit>> Handle(
@@ -38,8 +40,10 @@ public class CreditWalletHandler(
                 await walletRepository.AddAsync(wallet, ct);
             }
 
+            var amount = Money.Create(request.Amount, DefaultCurrency);
+
             wallet.Credit(
-                Money.FromDecimal(request.Amount),
+                amount,
                 request.Description ?? request.TransactionType.ToString(),
                 request.ReferenceId);
 

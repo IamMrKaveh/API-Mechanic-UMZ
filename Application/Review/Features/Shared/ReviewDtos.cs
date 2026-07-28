@@ -1,5 +1,3 @@
-using Domain.Order.ValueObjects;
-
 namespace Application.Review.Features.Shared;
 
 public record ProductReviewDto
@@ -19,7 +17,7 @@ public record ProductReviewDto
     public string? AdminReply { get; init; }
     public DateTime? RepliedAt { get; init; }
     public DateTime CreatedAt { get; init; }
-    public OrderId? OrderId { get; init; }
+    public Guid? OrderId { get; init; }
 }
 
 public record ReviewSummaryDto

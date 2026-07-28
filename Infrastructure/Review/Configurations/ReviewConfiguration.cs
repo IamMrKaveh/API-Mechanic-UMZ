@@ -10,6 +10,8 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
 {
     public void Configure(EntityTypeBuilder<ProductReview> builder)
     {
+        builder.ToTable("ProductReviews");
+
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
@@ -23,8 +25,13 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
             .HasConversion(v => v.Value, v => UserId.From(v))
             .IsRequired();
 
+        var orderIdConverter = new ValueConverter<OrderId?, Guid?>(
+            v => v == null ? null : v.Value,
+            v => v.HasValue ? OrderId.From(v.Value) : null);
+
         builder.Property(e => e.OrderId)
-            .HasConversion(v => v!.Value, v => OrderId.From(v));
+            .HasConversion(orderIdConverter)
+            .IsRequired(false);
 
         builder.OwnsOne(e => e.Rating, r =>
         {
@@ -53,12 +60,28 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
         builder.Property(e => e.DislikeCount).IsRequired();
         builder.Property(e => e.CreatedAt).IsRequired();
 
+        builder.HasOne(e => e.User)
+            .WithMany()
+            .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        builder.HasOne(e => e.Product)
+            .WithMany()
+            .HasForeignKey(e => e.ProductId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        builder.HasOne(e => e.Order)
+            .WithMany()
+            .HasForeignKey(e => e.OrderId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
+
         builder.HasIndex(e => e.ProductId);
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => e.CreatedAt);
 
         builder.HasQueryFilter(e => !e.IsDeleted);
-
-        builder.ToTable("ProductReviews");
     }
 }

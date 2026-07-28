@@ -1,4 +1,4 @@
-﻿using Domain.Security.Aggregates;
+using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
@@ -13,12 +13,9 @@ public sealed class SessionRepository(DBContext context) : ISessionRepository
         return await context.UserSessions.FirstOrDefaultAsync(s => s.Id == sessionId, ct);
     }
 
-    public async Task<UserSession?> GetByRefreshTokenAsync(
-        RefreshToken refreshToken,
-        CancellationToken ct = default)
+    public async Task<UserSession?> GetByRefreshTokenAsync(RefreshToken refreshToken, CancellationToken ct = default)
     {
-        return await context.UserSessions
-            .FirstOrDefaultAsync(s => s.RefreshToken == refreshToken, ct);
+        return await context.UserSessions.FirstOrDefaultAsync(s => s.RefreshToken == refreshToken, ct);
     }
 
     public async Task AddAsync(UserSession session, CancellationToken ct = default)
@@ -44,10 +41,28 @@ public sealed class SessionRepository(DBContext context) : ISessionRepository
             session.Revoke(reason);
     }
 
-    public async Task<UserSession?> GetActiveByUserAndDeviceAsync(
-        UserId userId,
-        DeviceInfo deviceInfo,
-        CancellationToken ct = default)
+    public async Task RevokeAllExceptAsync(UserId userId, SessionId exceptSessionId, SessionRevocationReason reason, CancellationToken ct = default)
+    {
+        var sessions = await context.UserSessions
+            .Where(s => s.UserId == userId && !s.IsRevoked && s.Id != exceptSessionId)
+            .ToListAsync(ct);
+
+        foreach (var session in sessions)
+            session.Revoke(reason);
+    }
+
+    public async Task<IReadOnlyList<UserSession>> GetActiveByUserIdAsync(UserId userId, CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var results = await context.UserSessions
+            .Where(s => s.UserId == userId && !s.IsRevoked && s.ExpiresAt > now)
+            .OrderByDescending(s => s.CreatedAt)
+            .ToListAsync(ct);
+
+        return results.AsReadOnly();
+    }
+
+    public async Task<UserSession?> GetActiveByUserAndDeviceAsync(UserId userId, DeviceInfo deviceInfo, CancellationToken ct = default)
     {
         return await context.UserSessions
             .FirstOrDefaultAsync(
@@ -57,9 +72,7 @@ public sealed class SessionRepository(DBContext context) : ISessionRepository
                 ct);
     }
 
-    public async Task<IReadOnlyList<UserSession>> GetExpiredActiveSessionsAsync(
-        DateTime cutoffTime,
-        CancellationToken ct = default)
+    public async Task<IReadOnlyList<UserSession>> GetExpiredActiveSessionsAsync(DateTime cutoffTime, CancellationToken ct = default)
     {
         var results = await context.UserSessions
             .Where(s => !s.IsRevoked && s.ExpiresAt < cutoffTime)

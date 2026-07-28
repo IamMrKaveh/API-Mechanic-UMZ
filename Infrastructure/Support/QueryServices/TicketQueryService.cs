@@ -1,4 +1,4 @@
-﻿using Application.Support.Contracts;
+using Application.Support.Contracts;
 using Application.Support.Features.Shared;
 using Domain.Support.Enums;
 using Domain.Support.ValueObjects;
@@ -8,6 +8,8 @@ namespace Infrastructure.Support.QueryServices;
 
 public sealed class TicketQueryService(DBContext context) : ITicketQueryService
 {
+    private const string EmptyString = "";
+
     public async Task<PaginatedResult<TicketDto>> GetAdminTicketsPagedAsync(
         TicketStatus ticketStatus,
         TicketPriority ticketPriority,
@@ -16,13 +18,18 @@ public sealed class TicketQueryService(DBContext context) : ITicketQueryService
         int pageSize,
         CancellationToken ct)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 200) pageSize = 200;
+
         var query = context.Tickets
             .AsNoTracking()
             .Where(t => t.Status == ticketStatus && t.Priority == ticketPriority);
 
         if (userId is not null)
         {
-            query = query.Where(t => t.CustomerId.Value == userId.Value);
+            var typedUserId = UserId.From(userId.Value);
+            query = query.Where(t => t.CustomerId == typedUserId);
         }
 
         query = query.OrderByDescending(t => t.CreatedAt);
@@ -37,13 +44,13 @@ public sealed class TicketQueryService(DBContext context) : ITicketQueryService
                 Id = t.Id.Value,
                 CustomerId = t.CustomerId.Value,
                 AssignedAgentId = t.AssignedAgentId != null ? t.AssignedAgentId.Value : null,
-                Subject = t.Subject,
-                Category = t.Category.Value,
-                Priority = t.Priority.Value,
-                PriorityDisplayName = t.Priority.DisplayName,
-                Status = t.Status.Value,
-                StatusDisplayName = t.Status.DisplayName,
-                MessageCount = t.Messages.Count(),
+                Subject = t.Subject ?? EmptyString,
+                Category = t.Category != null ? t.Category.Value : EmptyString,
+                Priority = t.Priority != null ? t.Priority.Value : EmptyString,
+                PriorityDisplayName = t.Priority != null ? t.Priority.DisplayName : EmptyString,
+                Status = t.Status != null ? t.Status.Value : EmptyString,
+                StatusDisplayName = t.Status != null ? t.Status.DisplayName : EmptyString,
+                MessageCount = t.Messages != null ? t.Messages.Count() : 0,
                 CreatedAt = t.CreatedAt,
                 UpdatedAt = t.UpdatedAt,
                 LastActivityAt = t.LastActivityAt,
@@ -66,32 +73,34 @@ public sealed class TicketQueryService(DBContext context) : ITicketQueryService
                 UserId = t.CustomerId.Value,
                 CustomerId = t.CustomerId.Value,
                 AssignedAgentId = t.AssignedAgentId != null ? t.AssignedAgentId.Value : null,
-                Subject = t.Subject,
-                Category = t.Category.Value,
-                Priority = t.Priority.Value,
-                PriorityDisplayName = t.Priority.DisplayName,
-                Status = t.Status.Value,
-                StatusDisplayName = t.Status.DisplayName,
-                MessageCount = t.Messages.Count(),
+                Subject = t.Subject ?? EmptyString,
+                Category = t.Category != null ? t.Category.Value : EmptyString,
+                Priority = t.Priority != null ? t.Priority.Value : EmptyString,
+                PriorityDisplayName = t.Priority != null ? t.Priority.DisplayName : EmptyString,
+                Status = t.Status != null ? t.Status.Value : EmptyString,
+                StatusDisplayName = t.Status != null ? t.Status.DisplayName : EmptyString,
+                MessageCount = t.Messages != null ? t.Messages.Count() : 0,
                 CreatedAt = t.CreatedAt,
                 UpdatedAt = t.UpdatedAt,
                 LastActivityAt = t.LastActivityAt,
                 ResolvedAt = t.ResolvedAt,
-                Messages = t.Messages
-                    .OrderBy(m => m.SentAt)
-                    .Select(m => new TicketMessageDto
-                    {
-                        Id = m.Id.Value,
-                        TicketId = m.TicketId.Value,
-                        SenderId = m.SenderId.Value,
-                        SenderType = m.SenderType.ToString(),
-                        Content = m.Content,
-                        IsAdminReply = m.SenderType == TicketMessageSenderType.Agent,
-                        IsEdited = m.IsEdited,
-                        EditedAt = m.EditedAt,
-                        SentAt = m.SentAt,
-                        CreatedAt = t.CreatedAt
-                    }).ToList()
+                Messages = t.Messages != null
+                    ? t.Messages
+                        .OrderBy(m => m.SentAt)
+                        .Select(m => new TicketMessageDto
+                        {
+                            Id = m.Id.Value,
+                            TicketId = m.TicketId.Value,
+                            SenderId = m.SenderId.Value,
+                            SenderType = m.SenderType.ToString(),
+                            Content = m.Content ?? EmptyString,
+                            IsAdminReply = m.SenderType == TicketMessageSenderType.Agent,
+                            IsEdited = m.IsEdited,
+                            EditedAt = m.EditedAt,
+                            SentAt = m.SentAt,
+                            CreatedAt = t.CreatedAt
+                        }).ToList()
+                    : new List<TicketMessageDto>()
             })
             .FirstOrDefaultAsync(ct);
 
@@ -106,10 +115,17 @@ public sealed class TicketQueryService(DBContext context) : ITicketQueryService
         int pageSize,
         CancellationToken ct = default)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 200) pageSize = 200;
+
         var query = context.Tickets.AsNoTracking().AsQueryable();
 
         if (userId is not null)
-            query = query.Where(t => t.CustomerId == userId);
+        {
+            var typedUserId = UserId.From(userId.Value);
+            query = query.Where(t => t.CustomerId == typedUserId);
+        }
 
         if (status is not null)
             query = query.Where(t => t.Status == status);
@@ -127,11 +143,11 @@ public sealed class TicketQueryService(DBContext context) : ITicketQueryService
             .Select(t => new TicketListItemDto
             {
                 Id = t.Id.Value,
-                Subject = t.Subject,
-                Category = t.Category.Value,
-                Priority = t.Priority.Value,
-                Status = t.Status.Value,
-                MessageCount = t.Messages.Count(),
+                Subject = t.Subject ?? EmptyString,
+                Category = t.Category != null ? t.Category.Value : EmptyString,
+                Priority = t.Priority != null ? t.Priority.Value : EmptyString,
+                Status = t.Status != null ? t.Status.Value : EmptyString,
+                MessageCount = t.Messages != null ? t.Messages.Count() : 0,
                 CreatedAt = t.CreatedAt,
                 LastReplyAt = t.LastActivityAt
             })

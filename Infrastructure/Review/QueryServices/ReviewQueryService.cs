@@ -9,6 +9,7 @@ namespace Infrastructure.Review.QueryServices;
 public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 {
     private const string DeletedUserDisplayName = "کاربر حذف‌شده";
+    private const string ApprovedStatus = "Approved";
 
     private static readonly HashSet<string> AllowedStatuses =
         new(StringComparer.OrdinalIgnoreCase) { "Pending", "Approved", "Rejected", "All" };
@@ -30,10 +31,8 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             .IgnoreQueryFilters()
             .Where(r =>
                 r.ProductId == productId &&
-                r.Status == ReviewStatus.Approved &&
-                !r.IsDeleted &&
-                r.User != null &&
-                r.User.IsActive);
+                r.Status.Value == ApprovedStatus &&
+                !r.IsDeleted);
 
         if (minRating.HasValue && minRating.Value > 0)
             query = query.Where(r => r.Rating.Value >= minRating.Value);
@@ -48,34 +47,55 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             _ => query.OrderByDescending(r => r.CreatedAt)
         };
 
-        var total = await query.CountAsync(ct);
+        var projected = query
+            .Where(r => r.User != null && r.User.IsActive)
+            .Select(r => new
+            {
+                r.Id,
+                r.ProductId,
+                r.UserId,
+                FirstName = r.User != null && r.User.FullName != null ? r.User.FullName.FirstName : null,
+                LastName = r.User != null && r.User.FullName != null ? r.User.FullName.LastName : null,
+                Rating = r.Rating.Value,
+                r.Title,
+                r.Comment,
+                Status = r.Status.Value,
+                r.RejectionReason,
+                r.AdminReply,
+                r.RepliedAt,
+                r.IsVerifiedPurchase,
+                r.LikeCount,
+                r.DislikeCount,
+                r.CreatedAt,
+                r.OrderId
+            });
 
-        var items = await query
+        var total = await projected.CountAsync(ct);
+
+        var rows = await projected
             .Skip((safePage - 1) * safeSize)
             .Take(safeSize)
-            .Select(r => new ProductReviewDto
-            {
-                Id = r.Id.Value,
-                ProductId = r.ProductId.Value,
-                UserId = r.UserId.Value,
-                UserFullName =
-                    r.User != null && r.User.FullName != null
-                        ? ((r.User.FullName.FirstName ?? string.Empty) + " " + (r.User.FullName.LastName ?? string.Empty)).Trim()
-                        : DeletedUserDisplayName,
-                Rating = r.Rating.Value,
-                Title = r.Title,
-                Comment = r.Comment,
-                Status = r.Status.Value,
-                RejectionReason = r.RejectionReason,
-                AdminReply = r.AdminReply,
-                RepliedAt = r.RepliedAt,
-                IsVerifiedPurchase = r.IsVerifiedPurchase,
-                LikeCount = r.LikeCount,
-                DislikeCount = r.DislikeCount,
-                CreatedAt = r.CreatedAt,
-                OrderId = r.OrderId
-            })
             .ToListAsync(ct);
+
+        var items = rows.Select(r => new ProductReviewDto
+        {
+            Id = r.Id.Value,
+            ProductId = r.ProductId.Value,
+            UserId = r.UserId.Value,
+            UserFullName = BuildFullName(r.FirstName, r.LastName),
+            Rating = r.Rating,
+            Title = r.Title,
+            Comment = r.Comment,
+            Status = r.Status,
+            RejectionReason = r.RejectionReason,
+            AdminReply = r.AdminReply,
+            RepliedAt = r.RepliedAt,
+            IsVerifiedPurchase = r.IsVerifiedPurchase,
+            LikeCount = r.LikeCount,
+            DislikeCount = r.DislikeCount,
+            CreatedAt = r.CreatedAt,
+            OrderId = r.OrderId?.Value
+        }).ToList();
 
         return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
@@ -96,33 +116,125 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
         var total = await query.CountAsync(ct);
 
-        var items = await query
+        var rows = await query
             .OrderByDescending(r => r.CreatedAt)
             .Skip((safePage - 1) * safeSize)
             .Take(safeSize)
-            .Select(r => new ProductReviewDto
+            .Select(r => new
             {
-                Id = r.Id.Value,
-                ProductId = r.ProductId.Value,
-                UserId = r.UserId.Value,
-                UserFullName =
-                    r.User != null && r.User.FullName != null
-                        ? ((r.User.FullName.FirstName ?? string.Empty) + " " + (r.User.FullName.LastName ?? string.Empty)).Trim()
-                        : DeletedUserDisplayName,
+                r.Id,
+                r.ProductId,
+                r.UserId,
+                FirstName = r.User != null && r.User.FullName != null ? r.User.FullName.FirstName : null,
+                LastName = r.User != null && r.User.FullName != null ? r.User.FullName.LastName : null,
                 Rating = r.Rating.Value,
-                Title = r.Title,
-                Comment = r.Comment,
+                r.Title,
+                r.Comment,
                 Status = r.Status.Value,
-                RejectionReason = r.RejectionReason,
-                AdminReply = r.AdminReply,
-                RepliedAt = r.RepliedAt,
-                IsVerifiedPurchase = r.IsVerifiedPurchase,
-                LikeCount = r.LikeCount,
-                DislikeCount = r.DislikeCount,
-                CreatedAt = r.CreatedAt,
-                OrderId = r.OrderId
+                r.RejectionReason,
+                r.AdminReply,
+                r.RepliedAt,
+                r.IsVerifiedPurchase,
+                r.LikeCount,
+                r.DislikeCount,
+                r.CreatedAt,
+                r.OrderId
             })
             .ToListAsync(ct);
+
+        var items = rows.Select(r => new ProductReviewDto
+        {
+            Id = r.Id.Value,
+            ProductId = r.ProductId.Value,
+            UserId = r.UserId.Value,
+            UserFullName = BuildFullName(r.FirstName, r.LastName),
+            Rating = r.Rating,
+            Title = r.Title,
+            Comment = r.Comment,
+            Status = r.Status,
+            RejectionReason = r.RejectionReason,
+            AdminReply = r.AdminReply,
+            RepliedAt = r.RepliedAt,
+            IsVerifiedPurchase = r.IsVerifiedPurchase,
+            LikeCount = r.LikeCount,
+            DislikeCount = r.DislikeCount,
+            CreatedAt = r.CreatedAt,
+            OrderId = r.OrderId?.Value
+        }).ToList();
+
+        return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
+    }
+
+    public async Task<PaginatedResult<ProductReviewDto>> GetReviewsByStatusAsync(
+        string status,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
+    {
+        var safePage = page <= 0 ? 1 : page;
+        var safeSize = pageSize <= 0 ? 10 : pageSize;
+
+        var normalizedStatus = string.IsNullOrWhiteSpace(status) ? "Pending" : status.Trim();
+        if (!AllowedStatuses.Contains(normalizedStatus))
+            normalizedStatus = "Pending";
+
+        var canonicalStatus = AllowedStatuses.First(s => s.Equals(normalizedStatus, StringComparison.OrdinalIgnoreCase));
+
+        var query = context.ProductReviews
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(r => !r.IsDeleted);
+
+        if (!string.Equals(canonicalStatus, "All", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(r => r.Status.Value == canonicalStatus);
+
+        var total = await query.CountAsync(ct);
+
+        var rows = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip((safePage - 1) * safeSize)
+            .Take(safeSize)
+            .Select(r => new
+            {
+                r.Id,
+                r.ProductId,
+                r.UserId,
+                FirstName = r.User != null && r.User.FullName != null ? r.User.FullName.FirstName : null,
+                LastName = r.User != null && r.User.FullName != null ? r.User.FullName.LastName : null,
+                Rating = r.Rating.Value,
+                r.Title,
+                r.Comment,
+                Status = r.Status.Value,
+                r.RejectionReason,
+                r.AdminReply,
+                r.RepliedAt,
+                r.IsVerifiedPurchase,
+                r.LikeCount,
+                r.DislikeCount,
+                r.CreatedAt,
+                r.OrderId
+            })
+            .ToListAsync(ct);
+
+        var items = rows.Select(r => new ProductReviewDto
+        {
+            Id = r.Id.Value,
+            ProductId = r.ProductId.Value,
+            UserId = r.UserId.Value,
+            UserFullName = BuildFullName(r.FirstName, r.LastName),
+            Rating = r.Rating,
+            Title = r.Title,
+            Comment = r.Comment,
+            Status = r.Status,
+            RejectionReason = r.RejectionReason,
+            AdminReply = r.AdminReply,
+            RepliedAt = r.RepliedAt,
+            IsVerifiedPurchase = r.IsVerifiedPurchase,
+            LikeCount = r.LikeCount,
+            DislikeCount = r.DislikeCount,
+            CreatedAt = r.CreatedAt,
+            OrderId = r.OrderId?.Value
+        }).ToList();
 
         return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
@@ -131,15 +243,17 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         ProductId productId,
         CancellationToken ct = default)
     {
-        var summary = await context.ProductReviews
+        var baseQuery = context.ProductReviews
             .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(r =>
                 r.ProductId == productId &&
-                r.Status == ReviewStatus.Approved &&
+                r.Status.Value == ApprovedStatus &&
                 !r.IsDeleted &&
                 r.User != null &&
-                r.User.IsActive)
+                r.User.IsActive);
+
+        var summary = await baseQuery
             .GroupBy(_ => 1)
             .Select(g => new
             {
@@ -199,95 +313,64 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         };
     }
 
-    public async Task<PaginatedResult<ProductReviewDto>> GetReviewsByStatusAsync(
-        string status,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
-    {
-        var safePage = page <= 0 ? 1 : page;
-        var safeSize = pageSize <= 0 ? 10 : pageSize;
-
-        var normalizedStatus = string.IsNullOrWhiteSpace(status) ? "Pending" : status.Trim();
-
-        if (!AllowedStatuses.Contains(normalizedStatus))
-            normalizedStatus = "Pending";
-
-        var canonicalStatus = AllowedStatuses.First(s => s.Equals(normalizedStatus, StringComparison.OrdinalIgnoreCase));
-
-        var query = context.ProductReviews
-            .AsNoTracking()
-            .IgnoreQueryFilters()
-            .Where(r => !r.IsDeleted);
-
-        if (!string.Equals(canonicalStatus, "All", StringComparison.OrdinalIgnoreCase))
-        {
-            query = query.Where(r => r.Status.Value == canonicalStatus);
-        }
-
-        var total = await query.CountAsync(ct);
-
-        var items = await query
-            .OrderByDescending(r => r.CreatedAt)
-            .Skip((safePage - 1) * safeSize)
-            .Take(safeSize)
-            .Select(r => new ProductReviewDto
-            {
-                Id = r.Id.Value,
-                ProductId = r.ProductId.Value,
-                UserId = r.UserId.Value,
-                UserFullName =
-                    r.User != null && r.User.FullName != null
-                        ? ((r.User.FullName.FirstName ?? string.Empty) + " " + (r.User.FullName.LastName ?? string.Empty)).Trim()
-                        : DeletedUserDisplayName,
-                Rating = r.Rating.Value,
-                Title = r.Title,
-                Comment = r.Comment,
-                Status = r.Status.Value,
-                RejectionReason = r.RejectionReason,
-                AdminReply = r.AdminReply,
-                RepliedAt = r.RepliedAt,
-                IsVerifiedPurchase = r.IsVerifiedPurchase,
-                LikeCount = r.LikeCount,
-                DislikeCount = r.DislikeCount,
-                CreatedAt = r.CreatedAt,
-                OrderId = r.OrderId
-            })
-            .ToListAsync(ct);
-
-        return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
-    }
-
     public async Task<ProductReviewDto?> GetByIdAsync(
         ReviewId id,
         CancellationToken ct = default)
     {
-        return await context.ProductReviews
+        var row = await context.ProductReviews
             .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(r => r.Id == id && !r.IsDeleted)
-            .Select(r => new ProductReviewDto
+            .Select(r => new
             {
-                Id = r.Id.Value,
-                ProductId = r.ProductId.Value,
-                UserId = r.UserId.Value,
-                UserFullName =
-                    r.User != null && r.User.FullName != null
-                        ? ((r.User.FullName.FirstName ?? string.Empty) + " " + (r.User.FullName.LastName ?? string.Empty)).Trim()
-                        : DeletedUserDisplayName,
+                r.Id,
+                r.ProductId,
+                r.UserId,
+                FirstName = r.User != null && r.User.FullName != null ? r.User.FullName.FirstName : null,
+                LastName = r.User != null && r.User.FullName != null ? r.User.FullName.LastName : null,
                 Rating = r.Rating.Value,
-                Title = r.Title,
-                Comment = r.Comment,
+                r.Title,
+                r.Comment,
                 Status = r.Status.Value,
-                RejectionReason = r.RejectionReason,
-                AdminReply = r.AdminReply,
-                RepliedAt = r.RepliedAt,
-                IsVerifiedPurchase = r.IsVerifiedPurchase,
-                LikeCount = r.LikeCount,
-                DislikeCount = r.DislikeCount,
-                CreatedAt = r.CreatedAt,
-                OrderId = r.OrderId
+                r.RejectionReason,
+                r.AdminReply,
+                r.RepliedAt,
+                r.IsVerifiedPurchase,
+                r.LikeCount,
+                r.DislikeCount,
+                r.CreatedAt,
+                r.OrderId
             })
             .FirstOrDefaultAsync(ct);
+
+        if (row is null) return null;
+
+        return new ProductReviewDto
+        {
+            Id = row.Id.Value,
+            ProductId = row.ProductId.Value,
+            UserId = row.UserId.Value,
+            UserFullName = BuildFullName(row.FirstName, row.LastName),
+            Rating = row.Rating,
+            Title = row.Title,
+            Comment = row.Comment,
+            Status = row.Status,
+            RejectionReason = row.RejectionReason,
+            AdminReply = row.AdminReply,
+            RepliedAt = row.RepliedAt,
+            IsVerifiedPurchase = row.IsVerifiedPurchase,
+            LikeCount = row.LikeCount,
+            DislikeCount = row.DislikeCount,
+            CreatedAt = row.CreatedAt,
+            OrderId = row.OrderId?.Value
+        };
+    }
+
+    private static string BuildFullName(string? firstName, string? lastName)
+    {
+        var first = (firstName ?? string.Empty).Trim();
+        var last = (lastName ?? string.Empty).Trim();
+        var full = $"{first} {last}".Trim();
+        return string.IsNullOrWhiteSpace(full) ? DeletedUserDisplayName : full;
     }
 }

@@ -3430,7 +3430,8 @@ namespace Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Domain.Order.Aggregates.Order", "Order")
                         .WithMany()
-                        .HasForeignKey("OrderId");
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Domain.Product.Aggregates.Product", "Product")
                         .WithMany()
@@ -3441,7 +3442,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasOne("Domain.User.Aggregates.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.OwnsOne("Domain.Review.ValueObjects.Rating", "Rating", b1 =>
@@ -3713,14 +3714,18 @@ namespace Infrastructure.Persistence.Migrations
 
                             b1.Property<string>("FirstName")
                                 .IsRequired()
+                                .ValueGeneratedOnAdd()
                                 .HasMaxLength(100)
                                 .HasColumnType("character varying(100)")
+                                .HasDefaultValue("")
                                 .HasColumnName("FirstName");
 
                             b1.Property<string>("LastName")
                                 .IsRequired()
+                                .ValueGeneratedOnAdd()
                                 .HasMaxLength(100)
                                 .HasColumnType("character varying(100)")
+                                .HasDefaultValue("")
                                 .HasColumnName("LastName");
 
                             b1.HasKey("UserId");
