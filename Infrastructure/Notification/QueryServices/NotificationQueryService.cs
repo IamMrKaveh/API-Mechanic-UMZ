@@ -1,4 +1,4 @@
-﻿using Application.Notification.Features.Shared;
+using Application.Notification.Features.Shared;
 using Domain.User.ValueObjects;
 
 namespace Infrastructure.Notification.QueryServices;
@@ -13,7 +13,7 @@ public sealed class NotificationQueryService(DBContext context) : INotificationQ
     {
         var query = context.Notifications
             .AsNoTracking()
-            .Where(n => n.UserId.Value == userId.Value);
+            .Where(n => n.UserId == userId);
 
         var totalItems = await query.CountAsync(ct);
 
