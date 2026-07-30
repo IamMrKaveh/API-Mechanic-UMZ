@@ -1,4 +1,4 @@
-﻿namespace Presentation.Wallet.Requests;
+namespace Presentation.Wallet.Requests;
 
 public record AdminWalletAdjustmentRequest(
     decimal Amount,
@@ -46,7 +46,7 @@ public sealed record GetPendingWithdrawalsListRequest(
     DateTime? FromDate = null,
     DateTime? ToDate = null);
 
-public sealed record GetWalletLedgerRequest(Guid userId, int Page = 1, int PageSize = 10);
+public sealed record GetWalletLedgerRequest(int Page = 1, int PageSize = 10);
 
 public sealed record FreezeWalletRequest(string Reason);
 

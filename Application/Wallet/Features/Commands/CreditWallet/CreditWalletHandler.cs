@@ -1,21 +1,19 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
-using SharedKernel.ValueObjects;
 
 namespace Application.Wallet.Features.Commands.CreditWallet;
 
 public class CreditWalletHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
-    IDistributedLock distributedLock)
+    IDistributedLock distributedLock,
+    ICurrentUserService currentUserService)
     : ICommandHandler<CreditWalletCommand, Unit>
 {
     private const string DefaultCurrency = "IRT";
     private static readonly TimeSpan WalletLockExpiry = TimeSpan.FromSeconds(10);
 
-    public async Task<ServiceResult<Unit>> Handle(
-        CreditWalletCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult<Unit>> Handle(CreditWalletCommand request, CancellationToken ct)
     {
         var userId = UserId.From(request.UserId);
 
@@ -38,6 +36,12 @@ public class CreditWalletHandler(
             {
                 wallet = Domain.Wallet.Aggregates.Wallet.Create(userId);
                 await walletRepository.AddAsync(wallet, ct);
+            }
+
+            if (wallet.IsActive is false && currentUserService.IsAdmin)
+            {
+                var adminId = UserId.From(currentUserService.UserId.Value);
+                wallet.Unfreeze(adminId);
             }
 
             var amount = Money.Create(request.Amount, DefaultCurrency);

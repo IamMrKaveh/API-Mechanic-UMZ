@@ -1,17 +1,28 @@
-﻿using Application.Wallet.Features.Shared;
+using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 
 namespace Application.Wallet.Features.Queries.GetWalletLedger;
 
 public class GetWalletLedgerHandler(
-    IWalletQueryService walletQueryService)
+    IWalletQueryService walletQueryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<GetWalletLedgerQuery, PaginatedResult<WalletLedgerEntryDto>>
 {
     public async Task<ServiceResult<PaginatedResult<WalletLedgerEntryDto>>> Handle(
         GetWalletLedgerQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var resolvedUserId = request.UserId.HasValue && request.UserId.Value != Guid.Empty
+            ? request.UserId.Value
+            : currentUserService.UserId ?? Guid.Empty;
+
+        if (resolvedUserId == Guid.Empty)
+        {
+            return ServiceResult<PaginatedResult<WalletLedgerEntryDto>>
+                .Unauthorized("کاربر احراز هویت نشده است.");
+        }
+
+        var userId = UserId.From(resolvedUserId);
 
         var filter = new WalletLedgerFilter
         {

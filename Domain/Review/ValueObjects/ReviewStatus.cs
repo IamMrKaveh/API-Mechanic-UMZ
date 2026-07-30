@@ -1,9 +1,12 @@
-﻿namespace Domain.Review.ValueObjects;
+namespace Domain.Review.ValueObjects;
 
 public sealed class ReviewStatus : ValueObject
 {
-    public string Value { get; }
-    public string DisplayName { get; }
+    public string Value { get; private set; } = default!;
+    public string DisplayName { get; private set; } = default!;
+
+    private ReviewStatus()
+    { }
 
     private ReviewStatus(string value, string displayName)
     {
@@ -14,10 +17,6 @@ public sealed class ReviewStatus : ValueObject
     public static readonly ReviewStatus Pending = new("Pending", "در انتظار تأیید");
     public static readonly ReviewStatus Approved = new("Approved", "تأیید شده");
     public static readonly ReviewStatus Rejected = new("Rejected", "رد شده");
-
-    public ReviewStatus()
-    {
-    }
 
     public static ReviewStatus From(string value)
     {

@@ -1,9 +1,9 @@
-﻿using Application.Wallet.Features.Shared;
+using Application.Wallet.Features.Shared;
 
 namespace Application.Wallet.Features.Queries.GetWalletLedger;
 
 public record GetWalletLedgerQuery(
-    Guid UserId,
+    Guid? UserId = null,
     int Page = 1,
     int PageSize = 10,
     DateTime? FromDate = null,

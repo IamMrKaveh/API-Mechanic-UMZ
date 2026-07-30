@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 
 namespace Application.Wallet.Features.Commands.UnfreezeWallet;
@@ -10,9 +10,7 @@ public sealed class UnfreezeWalletHandler(
     ICurrentUserService currentUserService)
     : ICommandHandler<UnfreezeWalletCommand, Unit>
 {
-    public async Task<ServiceResult<Unit>> Handle(
-        UnfreezeWalletCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult<Unit>> Handle(UnfreezeWalletCommand request, CancellationToken ct)
     {
         try
         {
@@ -21,10 +19,20 @@ public sealed class UnfreezeWalletHandler(
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)
-                return ServiceResult<Unit>.NotFound("کیف پول کاربر یافت نشد.");
+            {
+                wallet = Domain.Wallet.Aggregates.Wallet.Create(userId);
+                await walletRepository.AddAsync(wallet, ct);
+                await unitOfWork.SaveChangesAsync(ct);
+
+                await auditService.LogSystemEventAsync(
+                    "WalletAutoCreatedOnUnfreeze",
+                    $"کیف پول کاربر {userId.Value} به صورت خودکار در حین رفع مسدودی ایجاد شد.",
+                    ct);
+
+                return ServiceResult<Unit>.Success(Unit.Value);
+            }
 
             wallet.Unfreeze(adminId);
-
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);
 
@@ -37,10 +45,6 @@ public sealed class UnfreezeWalletHandler(
         }
         catch (ConcurrencyException)
         {
-            await auditService.LogSystemEventAsync(
-                "WalletUnfreezeConcurrencyConflict",
-                $"تعارض همزمانی در رفع مسدودی کیف پول کاربر {request.UserId}",
-                ct);
             return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)

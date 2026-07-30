@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Entities;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Events;
@@ -10,11 +10,10 @@ namespace Domain.Wallet.Aggregates;
 public sealed class Wallet : AggregateRoot<WalletId>
 {
     private Wallet()
-    {
-    }
+    { }
 
     public Money Balance { get; private set; } = default!;
-    public bool IsActive { get; private set; }
+    public bool IsActive { get; private set; } = true;
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
@@ -24,8 +23,12 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
     public User.Aggregates.User Owner { get; private set; } = default!;
     public UserId OwnerId { get; private set; } = default!;
+
     private readonly List<WalletReservation> _activeReservations = [];
     public IReadOnlyList<WalletReservation> ActiveReservations => _activeReservations.AsReadOnly();
+
+    private readonly List<WalletDebitRequest> _debitRequests = [];
+    public IReadOnlyList<WalletDebitRequest> DebitRequests => _debitRequests.AsReadOnly();
 
     public Money ReservedBalance => Money.Create(
         _activeReservations
@@ -56,7 +59,6 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
     public void Credit(Money amount, string description, string referenceId)
     {
-        EnsureActive();
         ValidateAmount(amount);
         Guard.Against.NullOrWhiteSpace(description, nameof(description));
         Guard.Against.NullOrWhiteSpace(referenceId, nameof(referenceId));
@@ -83,6 +85,127 @@ public sealed class Wallet : AggregateRoot<WalletId>
         RaiseDomainEvent(new WalletDebitedEvent(Id, OwnerId, amount, Balance, description, referenceId));
     }
 
+    public WalletDebitRequest CreateDebitRequest(
+        WalletDebitRequestId requestId,
+        Money amount,
+        string reason,
+        string? description,
+        UserId requestedBy,
+        TimeSpan expiryDuration)
+    {
+        EnsureActive();
+        Guard.Against.Null(requestId, nameof(requestId));
+        ValidateAmount(amount);
+        Guard.Against.NullOrWhiteSpace(reason, nameof(reason));
+        Guard.Against.Null(requestedBy, nameof(requestedBy));
+
+        if (AvailableBalance.IsLessThan(amount))
+            throw new InsufficientWalletBalanceException(Id, amount, AvailableBalance);
+
+        var reservation = WalletReservation.Create(
+            WalletReservationId.NewId(),
+            Id,
+            amount,
+            $"AdminDebitRequest:{requestId.Value}");
+        _activeReservations.Add(reservation);
+
+        var request = WalletDebitRequest.Create(
+            requestId,
+            Id,
+            OwnerId,
+            amount,
+            reason,
+            description,
+            requestedBy,
+            reservation.Id,
+            DateTime.UtcNow.Add(expiryDuration));
+        _debitRequests.Add(request);
+        UpdatedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new WalletDebitRequestCreatedEvent(
+            Id, OwnerId, requestId, amount, reason, requestedBy));
+
+        return request;
+    }
+
+    public void ApproveDebitRequest(WalletDebitRequestId requestId, UserId approvedBy)
+    {
+        Guard.Against.Null(requestId, nameof(requestId));
+        Guard.Against.Null(approvedBy, nameof(approvedBy));
+
+        var request = _debitRequests.FirstOrDefault(r => r.Id == requestId)
+            ?? throw new WalletDebitRequestNotFoundException(requestId);
+
+        if (!approvedBy.Equals(OwnerId))
+            throw new UnauthorizedWalletDebitApprovalException(requestId);
+
+        if (request.Status != WalletDebitRequestStatus.Pending)
+            throw new InvalidWalletDebitRequestStatusException(requestId, request.Status);
+
+        if (request.ExpiresAt <= DateTime.UtcNow)
+        {
+            request.MarkExpired();
+            ReleaseReservationInternal(request.ReservationId);
+            UpdatedAt = DateTime.UtcNow;
+            throw new WalletDebitRequestExpiredException(requestId);
+        }
+
+        ReleaseReservationInternal(request.ReservationId);
+
+        Balance = Balance.Subtract(request.Amount);
+        request.Approve(approvedBy);
+        UpdatedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new WalletDebitedEvent(
+            Id, OwnerId, request.Amount, Balance,
+            $"AdminDebit-Approved: {request.Reason}",
+            requestId.Value.ToString()));
+
+        RaiseDomainEvent(new WalletDebitRequestApprovedEvent(
+            Id, OwnerId, requestId, request.Amount, approvedBy));
+    }
+
+    public void RejectDebitRequest(WalletDebitRequestId requestId, UserId rejectedBy, string? rejectionReason)
+    {
+        Guard.Against.Null(requestId, nameof(requestId));
+        Guard.Against.Null(rejectedBy, nameof(rejectedBy));
+
+        var request = _debitRequests.FirstOrDefault(r => r.Id == requestId)
+            ?? throw new WalletDebitRequestNotFoundException(requestId);
+
+        if (!rejectedBy.Equals(OwnerId))
+            throw new UnauthorizedWalletDebitApprovalException(requestId);
+
+        if (request.Status != WalletDebitRequestStatus.Pending)
+            throw new InvalidWalletDebitRequestStatusException(requestId, request.Status);
+
+        ReleaseReservationInternal(request.ReservationId);
+        request.Reject(rejectedBy, rejectionReason);
+        UpdatedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new WalletDebitRequestRejectedEvent(
+            Id, OwnerId, requestId, request.Amount, rejectedBy, rejectionReason));
+    }
+
+    public void CancelDebitRequest(WalletDebitRequestId requestId, UserId cancelledBy)
+    {
+        Guard.Against.Null(requestId, nameof(requestId));
+        Guard.Against.Null(cancelledBy, nameof(cancelledBy));
+
+        var request = _debitRequests.FirstOrDefault(r => r.Id == requestId)
+            ?? throw new WalletDebitRequestNotFoundException(requestId);
+
+        if (request.Status != WalletDebitRequestStatus.Pending)
+            throw new InvalidWalletDebitRequestStatusException(requestId, request.Status);
+
+        ReleaseReservationInternal(request.ReservationId);
+        request.Cancel(cancelledBy);
+        UpdatedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new WalletDebitRequestCancelledEvent(
+            Id, OwnerId, requestId, request.Amount, cancelledBy));
+    }
+
     public WalletReservation CreateReservation(WalletReservationId reservationId, Money amount, string purpose)
     {
         EnsureActive();
@@ -104,12 +227,18 @@ public sealed class Wallet : AggregateRoot<WalletId>
     public void ReleaseReservation(WalletReservationId reservationId)
     {
         Guard.Against.Null(reservationId, nameof(reservationId));
+        ReleaseReservationInternal(reservationId);
+        UpdatedAt = DateTime.UtcNow;
+    }
 
-        var reservation = GetActiveReservation(reservationId);
+    private void ReleaseReservationInternal(WalletReservationId reservationId)
+    {
+        var reservation = _activeReservations.FirstOrDefault(r => r.Id == reservationId);
+        if (reservation is null)
+            return;
 
         reservation.Release();
         _activeReservations.Remove(reservation);
-        UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new WalletReservationReleasedEvent(Id, OwnerId, reservationId, reservation.Amount));
     }
@@ -120,7 +249,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
         Guard.Against.Null(adminId, nameof(adminId));
 
         if (!IsActive)
-            throw new WalletInactiveException(Id);
+            return;
 
         IsActive = false;
         FreezeReason = reason;
@@ -145,14 +274,6 @@ public sealed class Wallet : AggregateRoot<WalletId>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new WalletUnfrozenEvent(Id, OwnerId, adminId));
-    }
-
-    private WalletReservation GetActiveReservation(WalletReservationId reservationId)
-    {
-        var reservation = _activeReservations.FirstOrDefault(r => r.Id == reservationId);
-        if (reservation is null)
-            throw new WalletReservationNotFoundException(reservationId);
-        return reservation;
     }
 
     private void EnsureActive()

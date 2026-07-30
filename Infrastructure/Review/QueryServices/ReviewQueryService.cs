@@ -1,6 +1,7 @@
 using Application.Review.Contracts;
 using Application.Review.Features.Shared;
 using Domain.Product.ValueObjects;
+using Domain.Review.Aggregates;
 using Domain.Review.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -29,13 +30,20 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         var query = context.ProductReviews
             .AsNoTracking()
             .IgnoreQueryFilters()
+            .Include(r => r.User)
             .Where(r =>
                 r.ProductId == productId &&
-                r.Status.Value == ApprovedStatus &&
-                !r.IsDeleted);
+                !r.IsDeleted &&
+                r.User != null &&
+                r.User.IsActive);
+
+        query = query.Where(r => r.Status.Value == ApprovedStatus);
 
         if (minRating.HasValue && minRating.Value > 0)
-            query = query.Where(r => r.Rating.Value >= minRating.Value);
+        {
+            var min = minRating.Value;
+            query = query.Where(r => r.Rating.Value >= min);
+        }
 
         if (verifiedOnly)
             query = query.Where(r => r.IsVerifiedPurchase);
@@ -47,55 +55,14 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             _ => query.OrderByDescending(r => r.CreatedAt)
         };
 
-        var projected = query
-            .Where(r => r.User != null && r.User.IsActive)
-            .Select(r => new
-            {
-                r.Id,
-                r.ProductId,
-                r.UserId,
-                FirstName = r.User != null && r.User.FullName != null ? r.User.FullName.FirstName : null,
-                LastName = r.User != null && r.User.FullName != null ? r.User.FullName.LastName : null,
-                Rating = r.Rating.Value,
-                r.Title,
-                r.Comment,
-                Status = r.Status.Value,
-                r.RejectionReason,
-                r.AdminReply,
-                r.RepliedAt,
-                r.IsVerifiedPurchase,
-                r.LikeCount,
-                r.DislikeCount,
-                r.CreatedAt,
-                r.OrderId
-            });
+        var total = await query.CountAsync(ct);
 
-        var total = await projected.CountAsync(ct);
-
-        var rows = await projected
+        var entities = await query
             .Skip((safePage - 1) * safeSize)
             .Take(safeSize)
             .ToListAsync(ct);
 
-        var items = rows.Select(r => new ProductReviewDto
-        {
-            Id = r.Id.Value,
-            ProductId = r.ProductId.Value,
-            UserId = r.UserId.Value,
-            UserFullName = BuildFullName(r.FirstName, r.LastName),
-            Rating = r.Rating,
-            Title = r.Title,
-            Comment = r.Comment,
-            Status = r.Status,
-            RejectionReason = r.RejectionReason,
-            AdminReply = r.AdminReply,
-            RepliedAt = r.RepliedAt,
-            IsVerifiedPurchase = r.IsVerifiedPurchase,
-            LikeCount = r.LikeCount,
-            DislikeCount = r.DislikeCount,
-            CreatedAt = r.CreatedAt,
-            OrderId = r.OrderId?.Value
-        }).ToList();
+        var items = entities.Select(MapToDto).ToList();
 
         return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
@@ -112,55 +79,18 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         var query = context.ProductReviews
             .AsNoTracking()
             .IgnoreQueryFilters()
+            .Include(r => r.User)
             .Where(r => r.UserId == userId && !r.IsDeleted);
 
         var total = await query.CountAsync(ct);
 
-        var rows = await query
+        var entities = await query
             .OrderByDescending(r => r.CreatedAt)
             .Skip((safePage - 1) * safeSize)
             .Take(safeSize)
-            .Select(r => new
-            {
-                r.Id,
-                r.ProductId,
-                r.UserId,
-                FirstName = r.User != null && r.User.FullName != null ? r.User.FullName.FirstName : null,
-                LastName = r.User != null && r.User.FullName != null ? r.User.FullName.LastName : null,
-                Rating = r.Rating.Value,
-                r.Title,
-                r.Comment,
-                Status = r.Status.Value,
-                r.RejectionReason,
-                r.AdminReply,
-                r.RepliedAt,
-                r.IsVerifiedPurchase,
-                r.LikeCount,
-                r.DislikeCount,
-                r.CreatedAt,
-                r.OrderId
-            })
             .ToListAsync(ct);
 
-        var items = rows.Select(r => new ProductReviewDto
-        {
-            Id = r.Id.Value,
-            ProductId = r.ProductId.Value,
-            UserId = r.UserId.Value,
-            UserFullName = BuildFullName(r.FirstName, r.LastName),
-            Rating = r.Rating,
-            Title = r.Title,
-            Comment = r.Comment,
-            Status = r.Status,
-            RejectionReason = r.RejectionReason,
-            AdminReply = r.AdminReply,
-            RepliedAt = r.RepliedAt,
-            IsVerifiedPurchase = r.IsVerifiedPurchase,
-            LikeCount = r.LikeCount,
-            DislikeCount = r.DislikeCount,
-            CreatedAt = r.CreatedAt,
-            OrderId = r.OrderId?.Value
-        }).ToList();
+        var items = entities.Select(MapToDto).ToList();
 
         return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
@@ -183,6 +113,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         var query = context.ProductReviews
             .AsNoTracking()
             .IgnoreQueryFilters()
+            .Include(r => r.User)
             .Where(r => !r.IsDeleted);
 
         if (!string.Equals(canonicalStatus, "All", StringComparison.OrdinalIgnoreCase))
@@ -190,51 +121,13 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
         var total = await query.CountAsync(ct);
 
-        var rows = await query
+        var entities = await query
             .OrderByDescending(r => r.CreatedAt)
             .Skip((safePage - 1) * safeSize)
             .Take(safeSize)
-            .Select(r => new
-            {
-                r.Id,
-                r.ProductId,
-                r.UserId,
-                FirstName = r.User != null && r.User.FullName != null ? r.User.FullName.FirstName : null,
-                LastName = r.User != null && r.User.FullName != null ? r.User.FullName.LastName : null,
-                Rating = r.Rating.Value,
-                r.Title,
-                r.Comment,
-                Status = r.Status.Value,
-                r.RejectionReason,
-                r.AdminReply,
-                r.RepliedAt,
-                r.IsVerifiedPurchase,
-                r.LikeCount,
-                r.DislikeCount,
-                r.CreatedAt,
-                r.OrderId
-            })
             .ToListAsync(ct);
 
-        var items = rows.Select(r => new ProductReviewDto
-        {
-            Id = r.Id.Value,
-            ProductId = r.ProductId.Value,
-            UserId = r.UserId.Value,
-            UserFullName = BuildFullName(r.FirstName, r.LastName),
-            Rating = r.Rating,
-            Title = r.Title,
-            Comment = r.Comment,
-            Status = r.Status,
-            RejectionReason = r.RejectionReason,
-            AdminReply = r.AdminReply,
-            RepliedAt = r.RepliedAt,
-            IsVerifiedPurchase = r.IsVerifiedPurchase,
-            LikeCount = r.LikeCount,
-            DislikeCount = r.DislikeCount,
-            CreatedAt = r.CreatedAt,
-            OrderId = r.OrderId?.Value
-        }).ToList();
+        var items = entities.Select(MapToDto).ToList();
 
         return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
@@ -246,28 +139,19 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         var baseQuery = context.ProductReviews
             .AsNoTracking()
             .IgnoreQueryFilters()
+            .Include(r => r.User)
             .Where(r =>
                 r.ProductId == productId &&
-                r.Status.Value == ApprovedStatus &&
                 !r.IsDeleted &&
                 r.User != null &&
-                r.User.IsActive);
+                r.User.IsActive)
+            .Where(r => r.Status.Value == ApprovedStatus);
 
-        var summary = await baseQuery
-            .GroupBy(_ => 1)
-            .Select(g => new
-            {
-                Total = g.Count(),
-                AverageRating = g.Average(r => (double)r.Rating.Value),
-                FiveStar = g.Count(r => r.Rating.Value == 5),
-                FourStar = g.Count(r => r.Rating.Value == 4),
-                ThreeStar = g.Count(r => r.Rating.Value == 3),
-                TwoStar = g.Count(r => r.Rating.Value == 2),
-                OneStar = g.Count(r => r.Rating.Value == 1)
-            })
-            .FirstOrDefaultAsync(ct);
+        var ratings = await baseQuery
+            .Select(r => r.Rating.Value)
+            .ToListAsync(ct);
 
-        if (summary is null || summary.Total == 0)
+        if (ratings.Count == 0)
         {
             return new ReviewSummaryDto
             {
@@ -291,24 +175,31 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             };
         }
 
+        var five = ratings.Count(v => v == 5);
+        var four = ratings.Count(v => v == 4);
+        var three = ratings.Count(v => v == 3);
+        var two = ratings.Count(v => v == 2);
+        var one = ratings.Count(v => v == 1);
+        var avg = ratings.Average();
+
         return new ReviewSummaryDto
         {
             ProductId = productId.Value,
-            TotalReviews = summary.Total,
-            TotalCount = summary.Total,
-            AverageRating = Math.Round(summary.AverageRating, 2),
-            FiveStarCount = summary.FiveStar,
-            FourStarCount = summary.FourStar,
-            ThreeStarCount = summary.ThreeStar,
-            TwoStarCount = summary.TwoStar,
-            OneStarCount = summary.OneStar,
+            TotalReviews = ratings.Count,
+            TotalCount = ratings.Count,
+            AverageRating = Math.Round(avg, 2),
+            FiveStarCount = five,
+            FourStarCount = four,
+            ThreeStarCount = three,
+            TwoStarCount = two,
+            OneStarCount = one,
             RatingDistribution = new Dictionary<int, int>
             {
-                [5] = summary.FiveStar,
-                [4] = summary.FourStar,
-                [3] = summary.ThreeStar,
-                [2] = summary.TwoStar,
-                [1] = summary.OneStar
+                [5] = five,
+                [4] = four,
+                [3] = three,
+                [2] = two,
+                [1] = one
             }
         };
     }
@@ -317,52 +208,38 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         ReviewId id,
         CancellationToken ct = default)
     {
-        var row = await context.ProductReviews
+        var entity = await context.ProductReviews
             .AsNoTracking()
             .IgnoreQueryFilters()
-            .Where(r => r.Id == id && !r.IsDeleted)
-            .Select(r => new
-            {
-                r.Id,
-                r.ProductId,
-                r.UserId,
-                FirstName = r.User != null && r.User.FullName != null ? r.User.FullName.FirstName : null,
-                LastName = r.User != null && r.User.FullName != null ? r.User.FullName.LastName : null,
-                Rating = r.Rating.Value,
-                r.Title,
-                r.Comment,
-                Status = r.Status.Value,
-                r.RejectionReason,
-                r.AdminReply,
-                r.RepliedAt,
-                r.IsVerifiedPurchase,
-                r.LikeCount,
-                r.DislikeCount,
-                r.CreatedAt,
-                r.OrderId
-            })
-            .FirstOrDefaultAsync(ct);
+            .Include(r => r.User)
+            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, ct);
 
-        if (row is null) return null;
+        return entity is null ? null : MapToDto(entity);
+    }
+
+    private static ProductReviewDto MapToDto(ProductReview r)
+    {
+        var firstName = r.User?.FullName?.FirstName;
+        var lastName = r.User?.FullName?.LastName;
 
         return new ProductReviewDto
         {
-            Id = row.Id.Value,
-            ProductId = row.ProductId.Value,
-            UserId = row.UserId.Value,
-            UserFullName = BuildFullName(row.FirstName, row.LastName),
-            Rating = row.Rating,
-            Title = row.Title,
-            Comment = row.Comment,
-            Status = row.Status,
-            RejectionReason = row.RejectionReason,
-            AdminReply = row.AdminReply,
-            RepliedAt = row.RepliedAt,
-            IsVerifiedPurchase = row.IsVerifiedPurchase,
-            LikeCount = row.LikeCount,
-            DislikeCount = row.DislikeCount,
-            CreatedAt = row.CreatedAt,
-            OrderId = row.OrderId?.Value
+            Id = r.Id.Value,
+            ProductId = r.ProductId.Value,
+            UserId = r.UserId.Value,
+            UserFullName = BuildFullName(firstName, lastName),
+            Rating = r.Rating.Value,
+            Title = r.Title,
+            Comment = r.Comment,
+            Status = r.Status.Value,
+            RejectionReason = r.RejectionReason,
+            AdminReply = r.AdminReply,
+            RepliedAt = r.RepliedAt,
+            IsVerifiedPurchase = r.IsVerifiedPurchase,
+            LikeCount = r.LikeCount,
+            DislikeCount = r.DislikeCount,
+            CreatedAt = r.CreatedAt,
+            OrderId = r.OrderId?.Value
         };
     }
 
