@@ -2,12 +2,12 @@ namespace Domain.Review.ValueObjects;
 
 public sealed class Rating : ValueObject
 {
-    public int Value { get; }
+    public int Value { get; private set; }
 
-    private Rating(int value)
-    {
-        Value = value;
-    }
+    private Rating()
+    { }
+
+    private Rating(int value) => Value = value;
 
     public static Rating Create(int value)
     {

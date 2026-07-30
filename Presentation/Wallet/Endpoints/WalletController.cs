@@ -1,21 +1,25 @@
-﻿using Application.Wallet.Features.Commands.CancelWalletTransfer;
+using System.Web;
+using Application.Wallet.Features.Commands.ApproveWalletDebit;
+using Application.Wallet.Features.Commands.CancelWalletTransfer;
 using Application.Wallet.Features.Commands.CancelWithdrawal;
 using Application.Wallet.Features.Commands.CompleteWalletTopUp;
 using Application.Wallet.Features.Commands.ConfirmWalletTransfer;
 using Application.Wallet.Features.Commands.InitiateWalletTopUp;
 using Application.Wallet.Features.Commands.InitiateWalletTransfer;
 using Application.Wallet.Features.Commands.MarkWithdrawalPaid;
+using Application.Wallet.Features.Commands.RejectWalletDebit;
 using Application.Wallet.Features.Commands.RejectWithdrawal;
 using Application.Wallet.Features.Commands.RequestWithdrawal;
+using Application.Wallet.Features.Queries.GetMyWalletDebitRequests;
 using Application.Wallet.Features.Queries.GetMyWithdrawals;
 using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
 using Application.Wallet.Features.Queries.GetWithdrawalById;
 using Application.Wallet.Features.Queries.PreviewWalletTransfer;
 using Application.Wallet.Features.Shared;
+using Domain.Wallet.Enums;
 using Infrastructure.Common.Options;
 using Presentation.Wallet.Requests;
-using System.Web;
 
 namespace Presentation.Wallet.Endpoints;
 
@@ -45,9 +49,9 @@ public class WalletController(
         CancellationToken ct)
     {
         var query = new GetWalletLedgerQuery(
-            request.userId,
-            request.Page,
-            request.PageSize);
+            UserId: null,
+            Page: request.Page,
+            PageSize: request.PageSize);
 
         return await Send(query, ct);
     }
@@ -254,6 +258,30 @@ public class WalletController(
         var cmd = new CancelWalletTransferCommand(id);
         return await Send(cmd, ct);
     }
+
+    [HttpGet("debit-requests")]
+    public async Task<IActionResult> GetMyDebitRequests(
+    [FromQuery] string? status,
+    CancellationToken ct)
+    {
+        WalletDebitRequestStatus? statusFilter = null;
+        if (!string.IsNullOrWhiteSpace(status)
+            && Enum.TryParse<WalletDebitRequestStatus>(status, true, out var parsed))
+            statusFilter = parsed;
+
+        return await Send(new GetMyWalletDebitRequestsQuery(statusFilter), ct);
+    }
+
+    [HttpPost("debit-requests/{requestId:guid}/approve")]
+    public async Task<IActionResult> ApproveDebitRequest(Guid requestId, CancellationToken ct)
+        => await Send(new ApproveWalletDebitCommand(requestId), ct);
+
+    [HttpPost("debit-requests/{requestId:guid}/reject")]
+    public async Task<IActionResult> RejectDebitRequest(
+        Guid requestId,
+        [FromBody] RejectWalletDebitRequest body,
+        CancellationToken ct)
+        => await Send(new RejectWalletDebitCommand(requestId, body.RejectionReason), ct);
 
     private string ResolveFrontendBaseUrl()
     {

@@ -1,13 +1,9 @@
-﻿using FluentValidation;
-
 namespace Application.Wallet.Features.Queries.GetWalletLedger;
 
 public sealed class GetWalletLedgerValidator : AbstractValidator<GetWalletLedgerQuery>
 {
     public GetWalletLedgerValidator()
     {
-        RuleFor(x => x.UserId).NotEmpty();
-
         RuleFor(x => x.Page).GreaterThan(0);
         RuleFor(x => x.PageSize).InclusiveBetween(1, 200);
 

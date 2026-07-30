@@ -35,20 +35,33 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
 
         builder.OwnsOne(e => e.Rating, r =>
         {
+            r.WithOwner();
+
             r.Property(x => x.Value)
                 .HasColumnName("Rating")
                 .IsRequired();
         });
 
+        builder.Navigation(e => e.Rating).IsRequired();
+
         builder.OwnsOne(e => e.Status, s =>
         {
+            s.WithOwner();
+
             s.Property(x => x.Value)
                 .HasColumnName("Status")
                 .HasMaxLength(50)
                 .IsRequired();
 
+            s.Property(x => x.DisplayName)
+                .HasColumnName("StatusDisplayName")
+                .HasMaxLength(100)
+                .IsRequired();
+
             s.HasIndex(x => x.Value);
         });
+
+        builder.Navigation(e => e.Status).IsRequired();
 
         builder.Property(e => e.Title).HasMaxLength(100);
         builder.Property(e => e.Comment).HasColumnType("text");
