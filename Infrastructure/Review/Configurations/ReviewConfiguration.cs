@@ -17,6 +17,12 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
         builder.Property(e => e.Id)
             .HasConversion(v => v.Value, v => ReviewId.From(v));
 
+        builder.Property<uint>("xmin")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
+
         builder.Property(e => e.ProductId)
             .HasConversion(v => v.Value, v => ProductId.From(v))
             .IsRequired();
@@ -82,7 +88,7 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
         builder.HasOne(e => e.Product)
             .WithMany()
             .HasForeignKey(e => e.ProductId)
-            .OnDelete(DeleteBehavior.Cascade)
+            .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
 
         builder.HasOne(e => e.Order)
@@ -95,6 +101,9 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => e.CreatedAt);
 
-        builder.HasQueryFilter(e => !e.IsDeleted);
+        builder.HasIndex(e => new { e.UserId, e.ProductId, e.OrderId })
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false")
+            .HasDatabaseName("IX_ProductReviews_UserId_ProductId_OrderId_Unique");
     }
 }

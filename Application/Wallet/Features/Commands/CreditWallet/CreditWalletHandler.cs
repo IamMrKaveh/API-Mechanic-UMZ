@@ -49,7 +49,8 @@ public class CreditWalletHandler(
             wallet.Credit(
                 amount,
                 request.Description ?? request.TransactionType.ToString(),
-                request.ReferenceId);
+                request.ReferenceId,
+                request.IdempotencyKey);
 
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);

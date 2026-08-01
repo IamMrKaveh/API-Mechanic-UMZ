@@ -57,7 +57,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
         return wallet;
     }
 
-    public void Credit(Money amount, string description, string referenceId)
+    public void Credit(Money amount, string description, string referenceId, string? idempotencyKey = null)
     {
         ValidateAmount(amount);
         Guard.Against.NullOrWhiteSpace(description, nameof(description));
@@ -66,10 +66,11 @@ public sealed class Wallet : AggregateRoot<WalletId>
         Balance = Balance.Add(amount);
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new WalletCreditedEvent(Id, OwnerId, amount, Balance, description, referenceId));
+        RaiseDomainEvent(new WalletCreditedEvent(
+            Id, OwnerId, amount, Balance, description, referenceId, idempotencyKey));
     }
 
-    public void Debit(Money amount, string description, string referenceId)
+    public void Debit(Money amount, string description, string referenceId, string? idempotencyKey = null)
     {
         EnsureActive();
         ValidateAmount(amount);
@@ -82,7 +83,8 @@ public sealed class Wallet : AggregateRoot<WalletId>
         Balance = Balance.Subtract(amount);
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new WalletDebitedEvent(Id, OwnerId, amount, Balance, description, referenceId));
+        RaiseDomainEvent(new WalletDebitedEvent(
+            Id, OwnerId, amount, Balance, description, referenceId, idempotencyKey));
     }
 
     public WalletDebitRequest CreateDebitRequest(
@@ -156,10 +158,16 @@ public sealed class Wallet : AggregateRoot<WalletId>
         request.Approve(approvedBy);
         UpdatedAt = DateTime.UtcNow;
 
+        var deterministicIdempotencyKey = $"debit-req-approve:{requestId.Value:N}";
+
         RaiseDomainEvent(new WalletDebitedEvent(
-            Id, OwnerId, request.Amount, Balance,
+            Id,
+            OwnerId,
+            request.Amount,
+            Balance,
             $"AdminDebit-Approved: {request.Reason}",
-            requestId.Value.ToString()));
+            requestId.Value.ToString(),
+            deterministicIdempotencyKey));
 
         RaiseDomainEvent(new WalletDebitRequestApprovedEvent(
             Id, OwnerId, requestId, request.Amount, approvedBy));

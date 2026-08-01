@@ -21,6 +21,7 @@ public sealed class ReviewRepository(DBContext context) : IReviewRepository
         OrderId? orderId,
         CancellationToken ct)
         => await context.ProductReviews
+            .AsNoTracking()
             .AnyAsync(r =>
                 r.UserId == userId &&
                 r.ProductId == productId &&
@@ -29,5 +30,7 @@ public sealed class ReviewRepository(DBContext context) : IReviewRepository
 
     public async Task<ProductReview?> GetByIdAsync(ReviewId id, CancellationToken ct = default)
         => await context.ProductReviews
+            .Include(r => r.User)
+            .Include(r => r.Product)
             .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, ct);
 }

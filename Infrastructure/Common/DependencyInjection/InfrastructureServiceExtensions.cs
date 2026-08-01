@@ -240,9 +240,9 @@ public static class InfrastructureServiceExtensions
 
     private static void AddDomainServices(this IServiceCollection services)
     {
-        services.AddScoped<IAuditArchiveStorage, FileSystemAuditArchiveStorage>();
         services.AddScoped<IAuditMaskingService, AuditMaskingService>();
         services.AddScoped<IAuditService, AuditService>();
+
         services.AddScoped<IBrandUniquenessChecker, BrandUniquenessCheckerAdapter>();
         services.AddScoped<ICheckoutOrchestrationService, CheckoutOrchestrationService>();
         services.AddScoped<ICheckoutAddressResolverService, CheckoutAddressResolverService>();
@@ -479,7 +479,16 @@ public static class InfrastructureServiceExtensions
 
     private static void AddBackgroundServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddScoped<IAuditArchiveStorage, S3AuditArchiveStorage>();
+        var archiveProvider = configuration["Storage:AuditArchive:Provider"];
+
+        if (string.Equals(archiveProvider, "S3", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IAuditArchiveStorage, S3AuditArchiveStorage>();
+        }
+        else
+        {
+            services.AddScoped<IAuditArchiveStorage, FileSystemAuditArchiveStorage>();
+        }
 
         services.AddHostedService<AuditRetentionJob>();
         services.AddHostedService<ExpiredOrderCleanupJob>();

@@ -29,15 +29,13 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
         var query = context.ProductReviews
             .AsNoTracking()
-            .IgnoreQueryFilters()
             .Include(r => r.User)
             .Where(r =>
                 r.ProductId == productId &&
                 !r.IsDeleted &&
                 r.User != null &&
-                r.User.IsActive);
-
-        query = query.Where(r => r.Status.Value == ApprovedStatus);
+                r.User.IsActive &&
+                r.Status.Value == ApprovedStatus);
 
         if (minRating.HasValue && minRating.Value > 0)
         {
@@ -78,7 +76,6 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
         var query = context.ProductReviews
             .AsNoTracking()
-            .IgnoreQueryFilters()
             .Include(r => r.User)
             .Where(r => r.UserId == userId && !r.IsDeleted);
 
@@ -112,7 +109,6 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
         var query = context.ProductReviews
             .AsNoTracking()
-            .IgnoreQueryFilters()
             .Include(r => r.User)
             .Where(r => !r.IsDeleted);
 
@@ -138,20 +134,28 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
     {
         var baseQuery = context.ProductReviews
             .AsNoTracking()
-            .IgnoreQueryFilters()
-            .Include(r => r.User)
             .Where(r =>
                 r.ProductId == productId &&
                 !r.IsDeleted &&
                 r.User != null &&
-                r.User.IsActive)
-            .Where(r => r.Status.Value == ApprovedStatus);
+                r.User.IsActive &&
+                r.Status.Value == ApprovedStatus);
 
-        var ratings = await baseQuery
-            .Select(r => r.Rating.Value)
-            .ToListAsync(ct);
+        var stats = await baseQuery
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(),
+                Avg = g.Average(r => (double)r.Rating.Value),
+                Five = g.Count(r => r.Rating.Value == 5),
+                Four = g.Count(r => r.Rating.Value == 4),
+                Three = g.Count(r => r.Rating.Value == 3),
+                Two = g.Count(r => r.Rating.Value == 2),
+                One = g.Count(r => r.Rating.Value == 1)
+            })
+            .FirstOrDefaultAsync(ct);
 
-        if (ratings.Count == 0)
+        if (stats is null)
         {
             return new ReviewSummaryDto
             {
@@ -175,31 +179,24 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             };
         }
 
-        var five = ratings.Count(v => v == 5);
-        var four = ratings.Count(v => v == 4);
-        var three = ratings.Count(v => v == 3);
-        var two = ratings.Count(v => v == 2);
-        var one = ratings.Count(v => v == 1);
-        var avg = ratings.Average();
-
         return new ReviewSummaryDto
         {
             ProductId = productId.Value,
-            TotalReviews = ratings.Count,
-            TotalCount = ratings.Count,
-            AverageRating = Math.Round(avg, 2),
-            FiveStarCount = five,
-            FourStarCount = four,
-            ThreeStarCount = three,
-            TwoStarCount = two,
-            OneStarCount = one,
+            TotalReviews = stats.Total,
+            TotalCount = stats.Total,
+            AverageRating = Math.Round(stats.Avg, 2),
+            FiveStarCount = stats.Five,
+            FourStarCount = stats.Four,
+            ThreeStarCount = stats.Three,
+            TwoStarCount = stats.Two,
+            OneStarCount = stats.One,
             RatingDistribution = new Dictionary<int, int>
             {
-                [5] = five,
-                [4] = four,
-                [3] = three,
-                [2] = two,
-                [1] = one
+                [5] = stats.Five,
+                [4] = stats.Four,
+                [3] = stats.Three,
+                [2] = stats.Two,
+                [1] = stats.One
             }
         };
     }
@@ -210,7 +207,6 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
     {
         var entity = await context.ProductReviews
             .AsNoTracking()
-            .IgnoreQueryFilters()
             .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, ct);
 

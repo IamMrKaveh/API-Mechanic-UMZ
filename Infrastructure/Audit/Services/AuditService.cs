@@ -12,7 +12,8 @@ public sealed class AuditService(
     IAuditRepository auditRepository,
     IAuditMaskingService maskingService,
     IHttpContextAccessor httpContextAccessor,
-    IUnitOfWork unitOfWork) : IAuditService
+    IUnitOfWork unitOfWork,
+    ILogger<AuditService> logger) : IAuditService
 {
     public async Task LogAsync(
         string eventType,
@@ -42,26 +43,34 @@ public sealed class AuditService(
             await auditRepository.AddAuditLogAsync(log, ct);
             await unitOfWork.SaveChangesAsync(ct);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            logger.LogError(
+                ex,
+                "Audit LogAsync failed for EventType={EventType} Action={Action} UserId={UserId} EntityType={EntityType} EntityId={EntityId}",
+                eventType,
+                action,
+                userId?.Value,
+                entityType,
+                entityId);
         }
     }
 
     public async Task LogInformationAsync(
-    string details,
-    CancellationToken ct = default) => await LogAsync("Information", "", IpAddress.System, null, null, null, details, null, ct);
+        string details,
+        CancellationToken ct = default) => await LogAsync("Information", "", IpAddress.System, null, null, null, details, null, ct);
 
     public async Task LogDebugAsync(
-    string details,
-    CancellationToken ct = default) => await LogAsync("Debug", "", IpAddress.System, null, null, null, details, null, ct);
+        string details,
+        CancellationToken ct = default) => await LogAsync("Debug", "", IpAddress.System, null, null, null, details, null, ct);
 
     public async Task LogWarningAsync(
-    string details,
-    CancellationToken ct = default) => await LogAsync("Warning", "", IpAddress.System, null, null, null, details, null, ct);
+        string details,
+        CancellationToken ct = default) => await LogAsync("Warning", "", IpAddress.System, null, null, null, details, null, ct);
 
     public async Task LogErrorAsync(
-    string details,
-    CancellationToken ct = default) => await LogAsync("Error", "", IpAddress.System, null, null, null, details, null, ct);
+        string details,
+        CancellationToken ct = default) => await LogAsync("Error", "", IpAddress.System, null, null, null, details, null, ct);
 
     public async Task LogSecurityEventAsync(
         string action,
