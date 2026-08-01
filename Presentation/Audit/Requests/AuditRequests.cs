@@ -1,8 +1,9 @@
-﻿namespace Presentation.Audit.Requests;
+namespace Presentation.Audit.Requests;
 
 public record GetAuditLogsRequest(
     Guid? UserId = null,
     string? EventType = null,
+    string? EntityType = null,
     string? Action = null,
     string? Keyword = null,
     string? IpAddress = null,

@@ -1,4 +1,4 @@
-﻿using Application.Review.Features.Shared;
+using Application.Review.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
@@ -36,8 +36,6 @@ public sealed class CreateReviewHandler(
             request.Comment,
             orderId,
             requirePurchaseVerification: false,
-            hasExistingReviewCheck: async (uid, pid, oid, c) =>
-                await reviewRepository.UserHasReviewedProductAsync(uid, pid, oid, c),
             ct);
 
         if (result.IsFailure)

@@ -268,9 +268,10 @@ public sealed class Wallet : AggregateRoot<WalletId>
         RaiseDomainEvent(new WalletFrozenEvent(Id, OwnerId, reason, adminId));
     }
 
-    public void Unfreeze(UserId adminId)
+    public void Unfreeze(UserId adminId, string reason)
     {
         Guard.Against.Null(adminId, nameof(adminId));
+        Guard.Against.NullOrWhiteSpace(reason, nameof(reason));
 
         if (IsActive)
             return;
@@ -281,7 +282,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
         FrozenBy = null;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new WalletUnfrozenEvent(Id, OwnerId, adminId));
+        RaiseDomainEvent(new WalletUnfrozenEvent(Id, OwnerId, adminId, reason));
     }
 
     private void EnsureActive()

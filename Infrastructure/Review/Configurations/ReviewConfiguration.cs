@@ -97,6 +97,15 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
             .OnDelete(DeleteBehavior.SetNull)
             .IsRequired(false);
 
+        builder.HasMany(e => e.Votes)
+            .WithOne()
+            .HasForeignKey("ReviewId")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Metadata
+            .FindNavigation(nameof(ProductReview.Votes))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
         builder.HasIndex(e => e.ProductId);
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => e.CreatedAt);

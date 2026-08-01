@@ -268,11 +268,11 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         if (!string.IsNullOrEmpty(request.EventType))
             query = query.Where(l => l.EventType == request.EventType);
 
+        if (!string.IsNullOrEmpty(request.EntityType))
+            query = query.Where(l => l.EntityType == request.EntityType);
+
         if (!string.IsNullOrEmpty(request.Action))
             query = query.Where(l => l.Action.Contains(request.Action));
-
-        if (!string.IsNullOrEmpty(request.EntityName))
-            query = query.Where(l => l.EntityType == request.EntityName);
 
         if (!string.IsNullOrEmpty(request.Keyword))
             query = query.Where(l => (l.Details != null && l.Details.Contains(request.Keyword))
@@ -305,6 +305,9 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
 
         if (!string.IsNullOrEmpty(request.EventType))
             query = query.Where(l => l.EventType == request.EventType);
+
+        if (!string.IsNullOrEmpty(request.EntityType))
+            query = query.Where(l => l.EntityType == request.EntityType);
 
         if (!string.IsNullOrEmpty(request.Action))
             query = query.Where(l => l.Action.Contains(request.Action));

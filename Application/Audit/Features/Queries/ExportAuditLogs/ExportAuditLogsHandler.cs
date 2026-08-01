@@ -14,6 +14,7 @@ public sealed class ExportAuditLogsHandler(
         {
             UserId = request.UserId,
             EventType = request.EventType,
+            EntityType = request.EntityType,
             From = request.From,
             To = request.To,
             MaxRows = request.MaxRows
