@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.ValueObjects;
 
 namespace Domain.Wallet.Events;
@@ -9,7 +9,8 @@ public sealed class WalletDebitedEvent(
     Money amount,
     Money newBalance,
     string description,
-    string referenceId) : DomainEvent
+    string referenceId,
+    string? idempotencyKey = null) : DomainEvent
 {
     public WalletId WalletId { get; } = walletId;
     public UserId OwnerId { get; } = ownerId;
@@ -17,4 +18,5 @@ public sealed class WalletDebitedEvent(
     public Money NewBalance { get; } = newBalance;
     public string Description { get; } = description;
     public string ReferenceId { get; } = referenceId;
+    public string? IdempotencyKey { get; } = idempotencyKey;
 }

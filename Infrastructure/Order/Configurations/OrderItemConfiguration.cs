@@ -60,6 +60,7 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.HasIndex(x => x.OrderId);
         builder.HasIndex(x => x.VariantId);
         builder.HasIndex(x => x.ProductId);
+        builder.HasIndex(x => new { x.OrderId, x.ProductId });
 
         builder.HasQueryFilter(oi => !oi.Order.IsDeleted);
     }

@@ -1,7 +1,6 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
-using SharedKernel.ValueObjects;
 
 namespace Application.Wallet.Features.Commands.DebitWallet;
 
@@ -45,7 +44,8 @@ public class DebitWalletHandler(
             wallet.Debit(
                 amount,
                 request.Description ?? request.TransactionType.ToString(),
-                currentUserService.UserId.Value.ToString());
+                currentUserService.UserId.Value.ToString(),
+                request.IdempotencyKey);
 
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);
