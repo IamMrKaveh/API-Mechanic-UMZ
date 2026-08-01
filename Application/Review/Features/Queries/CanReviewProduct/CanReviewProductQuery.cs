@@ -1,7 +1,8 @@
-﻿namespace Application.Review.Features.Queries.CanReviewProduct;
+namespace Application.Review.Features.Queries.CanReviewProduct;
 
 public sealed record CanReviewProductQuery(
-    Guid ProductId)
+    Guid ProductId,
+    Guid? OrderId = null)
     : IQuery<CanReviewDto>;
 
 public sealed record CanReviewDto(

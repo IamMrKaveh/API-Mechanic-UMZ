@@ -13,6 +13,7 @@ using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
 using Application.Wallet.Features.Queries.GetWalletsOverview;
 using Application.Wallet.Features.Queries.GetWalletStatistics;
+using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
 using Presentation.Wallet.Requests;
 
@@ -28,7 +29,14 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     private const int IdempotencyKeyMaxLength = 128;
 
     [HttpGet("overview")]
-    public async Task<IActionResult> GetOverview([FromQuery] GetWalletsOverviewRequest request, CancellationToken ct)
+    [SwaggerOperation(OperationId = "AdminWallet_GetOverview")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletOverviewDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetOverview(
+        [FromQuery] GetWalletsOverviewRequest request,
+        CancellationToken ct)
     {
         var query = new GetWalletsOverviewQuery(
             request.Search, request.IsFrozen, request.MinBalance, request.MaxBalance,
@@ -37,14 +45,29 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpGet("statistics")]
+    [SwaggerOperation(OperationId = "AdminWallet_GetStatistics")]
+    [ProducesResponseType(typeof(ApiResponse<WalletStatisticsDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetStatistics(CancellationToken ct)
         => await Send(new GetWalletStatisticsQuery(), ct);
 
     [HttpGet("{userId:guid}/balance")]
+    [SwaggerOperation(OperationId = "AdminWallet_GetBalance")]
+    [ProducesResponseType(typeof(ApiResponse<WalletDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBalance(Guid userId, CancellationToken ct)
         => await Send(new GetWalletBalanceQuery(userId), ct);
 
     [HttpGet("{userId:guid}/ledger")]
+    [SwaggerOperation(OperationId = "AdminWallet_GetLedger")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletLedgerEntryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetLedger(
         Guid userId,
         [FromQuery] GetAdminWalletLedgerRequest request,
@@ -57,6 +80,12 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpGet("{userId:guid}/ledger/export")]
+    [SwaggerOperation(OperationId = "AdminWallet_ExportLedger")]
+    [ProducesResponseType(typeof(ApiResponse<ExportWalletLedgerResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ExportLedger(
         Guid userId,
         [FromQuery] ExportAdminWalletLedgerRequest request,
@@ -69,6 +98,13 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpPost("{userId:guid}/credit")]
+    [SwaggerOperation(OperationId = "AdminWallet_Credit")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Credit(
         Guid userId,
         [FromBody] AdminWalletAdjustmentRequest request,
@@ -87,9 +123,13 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpPost("{userId:guid}/debit-requests")]
-    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status201Created)]
+    [SwaggerOperation(OperationId = "AdminWallet_RequestDebit")]
+    [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> RequestDebit(
         Guid userId,
         [FromBody] AdminWalletDebitRequestPayload request,
@@ -110,20 +150,44 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpGet("{userId:guid}/debit-requests/pending")]
+    [SwaggerOperation(OperationId = "AdminWallet_GetPendingDebitRequests")]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<WalletDebitRequestDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPendingDebitRequests(Guid userId, CancellationToken ct)
         => await Send(new GetPendingDebitRequestsByUserQuery(userId), ct);
 
     [HttpPost("{userId:guid}/freeze")]
+    [SwaggerOperation(OperationId = "AdminWallet_Freeze")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Freeze(
         Guid userId, [FromBody] FreezeWalletRequest request, CancellationToken ct)
         => await Send(new FreezeWalletCommand(userId, request.Reason), ct);
 
     [HttpPost("{userId:guid}/unfreeze")]
+    [SwaggerOperation(OperationId = "AdminWallet_Unfreeze")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Unfreeze(Guid userId, CancellationToken ct)
         => await Send(new UnfreezeWalletCommand(userId), ct);
 
     [HttpGet("fraud/alerts")]
-    public async Task<IActionResult> GetFraudAlerts([FromQuery] GetFraudAlertsRequest request, CancellationToken ct)
+    [SwaggerOperation(OperationId = "AdminWallet_GetFraudAlerts")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletFraudAlertDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetFraudAlerts(
+        [FromQuery] GetFraudAlertsRequest request, CancellationToken ct)
     {
         FraudAlertStatus? status = null;
         if (!string.IsNullOrWhiteSpace(request.Status)
@@ -142,19 +206,42 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     }
 
     [HttpGet("fraud/alerts/count-open")]
+    [SwaggerOperation(OperationId = "AdminWallet_GetOpenFraudAlertsCount")]
+    [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetOpenFraudAlertsCount(CancellationToken ct)
         => await Send(new GetOpenFraudAlertsCountQuery(), ct);
 
     [HttpGet("fraud/alerts/{id:guid}")]
+    [SwaggerOperation(OperationId = "AdminWallet_GetFraudAlertById")]
+    [ProducesResponseType(typeof(ApiResponse<WalletFraudAlertDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetFraudAlertById(Guid id, CancellationToken ct)
         => await Send(new GetFraudAlertByIdQuery(id), ct);
 
     [HttpPost("fraud/alerts/{id:guid}/mark-reviewed")]
+    [SwaggerOperation(OperationId = "AdminWallet_MarkFraudAlertReviewed")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> MarkFraudAlertReviewed(
         Guid id, [FromBody] FraudAlertReviewRequest request, CancellationToken ct)
         => await Send(new MarkFraudAlertReviewedCommand(id, request.Note), ct);
 
     [HttpPost("fraud/alerts/{id:guid}/dismiss")]
+    [SwaggerOperation(OperationId = "AdminWallet_DismissFraudAlert")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DismissFraudAlert(
         Guid id, [FromBody] FraudAlertDismissRequest request, CancellationToken ct)
         => await Send(new DismissFraudAlertCommand(id, request.Note), ct);

@@ -24,11 +24,6 @@ public sealed class GetProductReviewSummaryHandler(
                 ? ServiceResult<ReviewSummaryDto>.NotFound("خلاصه نظرات یافت نشد.")
                 : ServiceResult<ReviewSummaryDto>.Success(summary);
         }
-        catch (NullReferenceException ex)
-        {
-            logger.LogError(ex, "Null projection error while loading review summary for product {ProductId}", request.ProductId);
-            return ServiceResult<ReviewSummaryDto>.Unexpected("خطا در بارگذاری خلاصه نظرات.");
-        }
         catch (DbException ex)
         {
             logger.LogError(ex, "Database error while loading review summary for product {ProductId}", request.ProductId);

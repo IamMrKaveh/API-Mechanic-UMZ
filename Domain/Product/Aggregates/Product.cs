@@ -22,6 +22,9 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
     public DateTime? DeletedAt { get; private set; }
     public Guid? DeletedBy { get; private set; }
 
+    public double AverageRating { get; private set; }
+    public int ReviewCount { get; private set; }
+
     public Brand.Aggregates.Brand Brand { get; private set; } = default!;
     public BrandId BrandId { get; private set; } = default!;
 
@@ -48,6 +51,8 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
             CategoryId = categoryId,
             IsActive = true,
             IsFeatured = false,
+            AverageRating = 0d,
+            ReviewCount = 0,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -120,6 +125,24 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
         DeletedAt = null;
         DeletedBy = null;
         IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void RecalculateReviewStats(double averageRating, int reviewCount)
+    {
+        if (reviewCount < 0)
+            throw new DomainException("تعداد نظرات نمی‌تواند منفی باشد.");
+
+        if (averageRating < 0d || averageRating > 5d)
+            throw new DomainException("میانگین امتیاز باید بین ۰ تا ۵ باشد.");
+
+        var normalizedAvg = reviewCount == 0 ? 0d : Math.Round(averageRating, 2);
+
+        if (Math.Abs(AverageRating - normalizedAvg) < 0.001 && ReviewCount == reviewCount)
+            return;
+
+        AverageRating = normalizedAvg;
+        ReviewCount = reviewCount;
         UpdatedAt = DateTime.UtcNow;
     }
 }

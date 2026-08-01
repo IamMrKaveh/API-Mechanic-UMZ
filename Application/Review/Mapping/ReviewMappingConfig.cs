@@ -1,3 +1,4 @@
+using Application.Common.Formatting;
 using Application.Review.Features.Shared;
 using Domain.Review.Aggregates;
 
@@ -16,6 +17,7 @@ public class ReviewMappingConfig : IRegister
             .Map(dest => dest.Title, src => src.Title)
             .Map(dest => dest.Comment, src => src.Comment)
             .Map(dest => dest.Status, src => src.Status.Value)
+            .Map(dest => dest.RejectionReason, src => src.RejectionReason)
             .Map(dest => dest.IsVerifiedPurchase, src => src.IsVerifiedPurchase)
             .Map(dest => dest.LikeCount, src => src.LikeCount)
             .Map(dest => dest.DislikeCount, src => src.DislikeCount)
@@ -23,8 +25,6 @@ public class ReviewMappingConfig : IRegister
             .Map(dest => dest.RepliedAt, src => src.RepliedAt)
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .Map(dest => dest.UserFullName,
-                 src => src.User != null && src.User.FullName != null
-                    ? ((src.User.FullName.FirstName ?? string.Empty) + " " + (src.User.FullName.LastName ?? string.Empty)).Trim()
-                    : "کاربر حذف‌شده");
+                 src => UserFullNameFormatter.Format(src.User));
     }
 }

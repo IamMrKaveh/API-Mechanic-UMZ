@@ -1,4 +1,5 @@
 using SharedKernel.Results;
+using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.SharedKernel.Results;
 

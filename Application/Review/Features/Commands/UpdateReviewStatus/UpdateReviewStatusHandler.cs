@@ -4,8 +4,7 @@ using Domain.Review.ValueObjects;
 namespace Application.Review.Features.Commands.UpdateReviewStatus;
 
 public sealed class UpdateReviewStatusHandler(
-    IReviewRepository reviewRepository,
-    IAuditService auditService)
+    IReviewRepository reviewRepository)
     : ICommandHandler<UpdateReviewStatusCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -18,18 +17,21 @@ public sealed class UpdateReviewStatusHandler(
         if (review is null)
             return ServiceResult.NotFound("نظر یافت نشد.");
 
-        if (request.Status == "Approved")
+        if (string.Equals(request.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+        {
             review.Approve();
-        else if (request.Status == "Rejected")
-            review.Reject();
+        }
+        else if (string.Equals(request.Status, "Rejected", StringComparison.OrdinalIgnoreCase))
+        {
+            review.Reject(request.Reason!);
+        }
+        else
+        {
+            return ServiceResult.Validation(
+                $"وضعیت '{request.Status}' نامعتبر است. مقادیر مجاز: Approved، Rejected.");
+        }
 
         reviewRepository.Update(review);
-
-        await auditService.LogSystemEventAsync(
-            "UpdateReviewStatus",
-            $"وضعیت نظر {request.ReviewId} به '{request.Status}' تغییر کرد.",
-            ct);
-
         return ServiceResult.Success();
     }
 }

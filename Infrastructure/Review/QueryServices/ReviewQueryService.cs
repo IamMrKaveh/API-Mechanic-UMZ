@@ -1,3 +1,4 @@
+using Application.Common.Formatting;
 using Application.Review.Contracts;
 using Application.Review.Features.Shared;
 using Domain.Product.ValueObjects;
@@ -9,7 +10,6 @@ namespace Infrastructure.Review.QueryServices;
 
 public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 {
-    private const string DeletedUserDisplayName = "کاربر حذف‌شده";
     private const string ApprovedStatus = "Approved";
 
     private static readonly HashSet<string> AllowedStatuses =
@@ -128,9 +128,9 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
 
-    public async Task<ReviewSummaryDto> GetProductReviewSummaryAsync(
-        ProductId productId,
-        CancellationToken ct = default)
+    public async Task<ReviewSummaryDto?> GetProductReviewSummaryAsync(
+    ProductId productId,
+    CancellationToken ct = default)
     {
         var baseQuery = context.ProductReviews
             .AsNoTracking()
@@ -156,28 +156,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             .FirstOrDefaultAsync(ct);
 
         if (stats is null)
-        {
-            return new ReviewSummaryDto
-            {
-                ProductId = productId.Value,
-                TotalReviews = 0,
-                TotalCount = 0,
-                AverageRating = 0,
-                FiveStarCount = 0,
-                FourStarCount = 0,
-                ThreeStarCount = 0,
-                TwoStarCount = 0,
-                OneStarCount = 0,
-                RatingDistribution = new Dictionary<int, int>
-                {
-                    [1] = 0,
-                    [2] = 0,
-                    [3] = 0,
-                    [4] = 0,
-                    [5] = 0
-                }
-            };
-        }
+            return null;
 
         return new ReviewSummaryDto
         {
@@ -215,15 +194,12 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
     private static ProductReviewDto MapToDto(ProductReview r)
     {
-        var firstName = r.User?.FullName?.FirstName;
-        var lastName = r.User?.FullName?.LastName;
-
         return new ProductReviewDto
         {
             Id = r.Id.Value,
             ProductId = r.ProductId.Value,
             UserId = r.UserId.Value,
-            UserFullName = BuildFullName(firstName, lastName),
+            UserFullName = UserFullNameFormatter.Format(r.User),
             Rating = r.Rating.Value,
             Title = r.Title,
             Comment = r.Comment,
@@ -237,13 +213,5 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             CreatedAt = r.CreatedAt,
             OrderId = r.OrderId?.Value
         };
-    }
-
-    private static string BuildFullName(string? firstName, string? lastName)
-    {
-        var first = (firstName ?? string.Empty).Trim();
-        var last = (lastName ?? string.Empty).Trim();
-        var full = $"{first} {last}".Trim();
-        return string.IsNullOrWhiteSpace(full) ? DeletedUserDisplayName : full;
     }
 }

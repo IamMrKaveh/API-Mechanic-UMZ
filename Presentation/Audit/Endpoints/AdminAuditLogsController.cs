@@ -16,7 +16,7 @@ public sealed class AdminAuditLogsController(IMediator mediator, IMapper mapper)
     : BaseApiController(mediator, mapper)
 {
     [HttpGet]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<GetAuditLogsResult>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAuditLogs(
         [FromQuery] GetAuditLogsRequest request,
         CancellationToken ct)

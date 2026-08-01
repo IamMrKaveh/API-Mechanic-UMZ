@@ -13,5 +13,5 @@ public sealed record GetAuditLogsQuery(
     DateTime? To,
     int Page = 1,
     int PageSize = 50,
-    string SortBy = "Timestamp",
+    string SortBy = "CreatedAt",
     bool SortDesc = true) : IPageQuery<AuditLogDto>;

@@ -1,3 +1,4 @@
+using Application.Review.Configuration;
 using Application.Review.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.Product.Interfaces;
@@ -6,6 +7,7 @@ using Domain.Review.Interfaces;
 using Domain.Review.Services;
 using Domain.Review.ValueObjects;
 using Domain.User.ValueObjects;
+using Microsoft.Extensions.Options;
 
 namespace Application.Review.Features.Commands.CreateReview;
 
@@ -14,11 +16,15 @@ public sealed class CreateReviewHandler(
     IReviewRepository reviewRepository,
     IProductRepository productRepository,
     ICurrentUserService currentUser,
+    IOptions<ReviewSettings> reviewSettings,
     IMapper mapper)
     : ICommandHandler<CreateReviewCommand, ProductReviewDto>
 {
     public async Task<ServiceResult<ProductReviewDto>> Handle(CreateReviewCommand request, CancellationToken ct)
     {
+        if (currentUser.UserId is null)
+            return ServiceResult<ProductReviewDto>.Unauthorized("برای ثبت نظر ابتدا وارد شوید.");
+
         var productId = ProductId.From(request.ProductId);
         var product = await productRepository.GetByIdAsync(productId, ct);
         if (product is null)
@@ -35,11 +41,11 @@ public sealed class CreateReviewHandler(
             request.Title,
             request.Comment,
             orderId,
-            requirePurchaseVerification: false,
+            requirePurchaseVerification: reviewSettings.Value.RequirePurchaseVerification,
             ct);
 
         if (result.IsFailure)
-            return ServiceResult<ProductReviewDto>.Failure(result.Error.Message);
+            return ServiceResult<ProductReviewDto>.Failure(result.Error);
 
         await reviewRepository.AddAsync(result.Value, ct);
 

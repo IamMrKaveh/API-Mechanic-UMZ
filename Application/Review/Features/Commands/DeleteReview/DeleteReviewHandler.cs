@@ -3,9 +3,8 @@ using Domain.Review.ValueObjects;
 
 namespace Application.Review.Features.Commands.DeleteReview;
 
-public class DeleteReviewHandler(
-    IReviewRepository reviewRepository,
-    IAuditService auditService)
+public sealed class DeleteReviewHandler(
+    IReviewRepository reviewRepository)
     : ICommandHandler<DeleteReviewCommand>
 {
     public async Task<ServiceResult> Handle(DeleteReviewCommand request, CancellationToken ct)
@@ -18,11 +17,6 @@ public class DeleteReviewHandler(
 
         review.MarkAsDeleted();
         reviewRepository.Update(review);
-
-        await auditService.LogSystemEventAsync(
-            "DeleteReview",
-            $"نظر {request.ReviewId} توسط ادمین حذف شد.",
-            ct);
 
         return ServiceResult.Success();
     }
