@@ -57,7 +57,6 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
                 EntityType = l.EntityType,
                 EntityId = l.EntityId,
                 CreatedAt = l.CreatedAt,
-                Timestamp = l.CreatedAt,
                 IsArchived = l.IsArchived
             })
             .ToListAsync(ct);
@@ -96,7 +95,6 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
                 EntityType = l.EntityType,
                 EntityId = l.EntityId,
                 CreatedAt = l.CreatedAt,
-                Timestamp = l.CreatedAt,
                 IsArchived = l.IsArchived,
                 ArchivedAt = l.ArchivedAt,
                 IntegrityHash = l.IntegrityHash
@@ -113,9 +111,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
 
         var total = await query.CountAsync(ct);
 
-        var ordered = request.SortDesc
-            ? query.OrderByDescending(l => l.CreatedAt)
-            : query.OrderBy(l => l.CreatedAt);
+        var ordered = ApplySorting(query, request.SortBy, request.SortDesc);
 
         var pagedIds = await ordered
             .Skip((request.Page - 1) * request.PageSize)
@@ -126,9 +122,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         var pageQuery = context.AuditLogs.AsNoTracking()
             .Where(l => pagedIds.Contains(l.Id));
 
-        var pageQueryOrdered = request.SortDesc
-            ? pageQuery.OrderByDescending(l => l.CreatedAt)
-            : pageQuery.OrderBy(l => l.CreatedAt);
+        var pageQueryOrdered = ApplySorting(pageQuery, request.SortBy, request.SortDesc);
 
         var logs = await (
             from l in pageQueryOrdered
@@ -149,7 +143,6 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
                 UserAgent = l.UserAgent,
                 EntityType = l.EntityType,
                 CreatedAt = l.CreatedAt,
-                Timestamp = l.CreatedAt,
                 IsArchived = l.IsArchived
             }).ToListAsync(ct);
 
@@ -214,7 +207,6 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
                 EntityType = l.EntityType,
                 EntityId = l.EntityId,
                 CreatedAt = l.CreatedAt,
-                Timestamp = l.CreatedAt,
                 IsArchived = l.IsArchived
             })
             .ToListAsync(ct);
@@ -281,14 +273,11 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         if (!string.IsNullOrEmpty(request.IpAddress))
             query = query.Where(l => l.IpAddress == request.IpAddress);
 
-        var fromDate = request.From ?? request.FromDate;
-        var toDate = request.To ?? request.ToDate;
+        if (request.From.HasValue)
+            query = query.Where(l => l.CreatedAt >= request.From.Value);
 
-        if (fromDate.HasValue)
-            query = query.Where(l => l.CreatedAt >= fromDate.Value);
-
-        if (toDate.HasValue)
-            query = query.Where(l => l.CreatedAt <= toDate.Value);
+        if (request.To.HasValue)
+            query = query.Where(l => l.CreatedAt <= request.To.Value);
 
         return query;
     }
@@ -312,16 +301,26 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         if (!string.IsNullOrEmpty(request.Action))
             query = query.Where(l => l.Action.Contains(request.Action));
 
-        var fromDate = request.From ?? request.FromDate;
-        var toDate = request.To ?? request.ToDate;
+        if (request.From.HasValue)
+            query = query.Where(l => l.CreatedAt >= request.From.Value);
 
-        if (fromDate.HasValue)
-            query = query.Where(l => l.CreatedAt >= fromDate.Value);
-
-        if (toDate.HasValue)
-            query = query.Where(l => l.CreatedAt <= toDate.Value);
+        if (request.To.HasValue)
+            query = query.Where(l => l.CreatedAt <= request.To.Value);
 
         return query;
+    }
+
+    private static IQueryable<AuditLog> ApplySorting(IQueryable<AuditLog> query, string? sortBy, bool desc)
+    {
+        return (sortBy?.ToLowerInvariant(), desc) switch
+        {
+            ("eventtype", true) => query.OrderByDescending(l => l.EventType).ThenByDescending(l => l.CreatedAt),
+            ("eventtype", false) => query.OrderBy(l => l.EventType).ThenBy(l => l.CreatedAt),
+            ("action", true) => query.OrderByDescending(l => l.Action).ThenByDescending(l => l.CreatedAt),
+            ("action", false) => query.OrderBy(l => l.Action).ThenBy(l => l.CreatedAt),
+            (_, true) => query.OrderByDescending(l => l.CreatedAt),
+            (_, false) => query.OrderBy(l => l.CreatedAt),
+        };
     }
 
     private static string Escape(string? value)

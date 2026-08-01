@@ -22,7 +22,7 @@ public interface IReviewQueryService
         int pageSize,
         CancellationToken ct = default);
 
-    Task<ReviewSummaryDto> GetProductReviewSummaryAsync(
+    Task<ReviewSummaryDto?> GetProductReviewSummaryAsync(
         ProductId productId,
         CancellationToken ct = default);
 

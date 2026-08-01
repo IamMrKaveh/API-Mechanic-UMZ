@@ -3,9 +3,8 @@ using Domain.Review.ValueObjects;
 
 namespace Application.Review.Features.Commands.RejectReview;
 
-public class RejectReviewHandler(
-    IReviewRepository reviewRepository,
-    IAuditService auditService)
+public sealed class RejectReviewHandler(
+    IReviewRepository reviewRepository)
     : ICommandHandler<RejectReviewCommand>
 {
     public async Task<ServiceResult> Handle(RejectReviewCommand request, CancellationToken ct)
@@ -18,11 +17,6 @@ public class RejectReviewHandler(
 
         review.Reject(request.Reason);
         reviewRepository.Update(review);
-
-        await auditService.LogSystemEventAsync(
-            "RejectReview",
-            $"نظر {request.ReviewId} با دلیل \"{request.Reason}\" رد شد.",
-            ct);
 
         return ServiceResult.Success();
     }

@@ -1,4 +1,4 @@
-﻿using Domain.Review.Interfaces;
+using Domain.Review.Interfaces;
 using Domain.Review.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -24,18 +24,10 @@ public sealed class UpdateOwnReviewHandler(
         if (review.UserId != userId)
             return ServiceResult.Forbidden("امکان ویرایش نظر دیگران وجود ندارد.");
 
-        try
-        {
-            var rating = Rating.Create(request.Rating);
-            review.UpdateContent(rating, request.Title, request.Comment);
+        var rating = Rating.Create(request.Rating);
+        review.UpdateContent(rating, request.Title, request.Comment);
 
-            reviewRepository.Update(review);
-
-            return ServiceResult.Success();
-        }
-        catch (DomainException ex)
-        {
-            return ServiceResult.Failure(ex.Message);
-        }
+        reviewRepository.Update(review);
+        return ServiceResult.Success();
     }
 }

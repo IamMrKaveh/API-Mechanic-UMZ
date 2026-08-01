@@ -21,6 +21,7 @@ public sealed class GetAuditLogsHandler(IAuditQueryService auditQueryService)
             To = request.To,
             Page = request.Page,
             PageSize = request.PageSize,
+            SortBy = request.SortBy,
             SortDesc = request.SortDesc
         };
 

@@ -13,7 +13,6 @@ public sealed record AuditLogDto
     public string? EntityType { get; init; }
     public string? EntityId { get; init; }
     public DateTime CreatedAt { get; init; }
-    public DateTime Timestamp { get; init; }
     public bool IsArchived { get; init; }
 }
 
@@ -36,8 +35,6 @@ public sealed record HourlyCountDto(
 
 public sealed record AuditExportRequest
 {
-    public DateTime? FromDate { get; init; }
-    public DateTime? ToDate { get; init; }
     public Guid? UserId { get; init; }
     public string? Action { get; init; }
     public string? EntityType { get; init; }
@@ -49,8 +46,6 @@ public sealed record AuditExportRequest
 
 public sealed record AuditSearchRequest
 {
-    public DateTime? FromDate { get; init; }
-    public DateTime? ToDate { get; init; }
     public Guid? UserId { get; init; }
     public string? Action { get; init; }
     public string? EntityType { get; init; }
@@ -61,5 +56,6 @@ public sealed record AuditSearchRequest
     public string? IpAddress { get; init; }
     public DateTime? From { get; init; }
     public DateTime? To { get; init; }
+    public string? SortBy { get; init; }
     public bool SortDesc { get; init; }
 }
