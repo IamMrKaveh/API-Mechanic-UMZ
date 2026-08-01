@@ -4,7 +4,12 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Review.Events;
 
-public sealed class ReviewSubmittedEvent(ReviewId reviewId, ProductId productId, UserId userId, Rating rating) : DomainEvent
+public sealed class ReviewSubmittedEvent(
+    ReviewId reviewId,
+    ProductId productId,
+    UserId userId,
+    Rating rating)
+    : DomainEvent
 {
     public ReviewId ReviewId { get; } = reviewId;
     public ProductId ProductId { get; } = productId;

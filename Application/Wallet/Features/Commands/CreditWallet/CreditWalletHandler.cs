@@ -7,10 +7,12 @@ public class CreditWalletHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
+    IAuditService auditService,
     ICurrentUserService currentUserService)
     : ICommandHandler<CreditWalletCommand, Unit>
 {
     private const string DefaultCurrency = "IRT";
+    private const string AutoUnfreezeReason = "[ADMIN-CREDIT-AUTO-UNFREEZE]";
     private static readonly TimeSpan WalletLockExpiry = TimeSpan.FromSeconds(10);
 
     public async Task<ServiceResult<Unit>> Handle(CreditWalletCommand request, CancellationToken ct)
@@ -38,10 +40,14 @@ public class CreditWalletHandler(
                 await walletRepository.AddAsync(wallet, ct);
             }
 
+            var autoUnfrozen = false;
+            UserId? adminIdForUnfreeze = null;
+
             if (wallet.IsActive is false && currentUserService.IsAdmin)
             {
-                var adminId = UserId.From(currentUserService.UserId.Value);
-                wallet.Unfreeze(adminId);
+                adminIdForUnfreeze = UserId.From(currentUserService.UserId.Value);
+                wallet.Unfreeze(adminIdForUnfreeze, AutoUnfreezeReason);
+                autoUnfrozen = true;
             }
 
             var amount = Money.Create(request.Amount, DefaultCurrency);
@@ -55,10 +61,22 @@ public class CreditWalletHandler(
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);
 
+            if (autoUnfrozen && adminIdForUnfreeze is not null)
+            {
+                await auditService.LogSystemEventAsync(
+                    "WalletAutoUnfrozenOnAdminCredit",
+                    $"کیف پول کاربر {userId.Value} در حین شارژ ادمینی به‌صورت خودکار رفع مسدودی شد. ادمین: {adminIdForUnfreeze.Value}. علت: {AutoUnfreezeReason}.",
+                    ct);
+            }
+
             return ServiceResult<Unit>.Success(Unit.Value);
         }
         catch (ConcurrencyException)
         {
+            await auditService.LogSystemEventAsync(
+                "WalletCreditConcurrencyConflict",
+                $"تعارض همزمانی در شارژ کیف پول کاربر {userId.Value}. IdempotencyKey: {request.IdempotencyKey}.",
+                ct);
             return ServiceResult<Unit>.Conflict("تعارض همزمانی رخ داد. لطفاً مجدداً تلاش کنید.");
         }
         catch (DomainException ex)

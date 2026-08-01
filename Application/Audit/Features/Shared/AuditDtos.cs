@@ -40,7 +40,7 @@ public sealed record AuditExportRequest
     public DateTime? ToDate { get; init; }
     public Guid? UserId { get; init; }
     public string? Action { get; init; }
-    public string? EntityName { get; init; }
+    public string? EntityType { get; init; }
     public string? EventType { get; init; }
     public DateTime? From { get; init; }
     public DateTime? To { get; init; }
@@ -53,7 +53,7 @@ public sealed record AuditSearchRequest
     public DateTime? ToDate { get; init; }
     public Guid? UserId { get; init; }
     public string? Action { get; init; }
-    public string? EntityName { get; init; }
+    public string? EntityType { get; init; }
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 10;
     public string? EventType { get; init; }

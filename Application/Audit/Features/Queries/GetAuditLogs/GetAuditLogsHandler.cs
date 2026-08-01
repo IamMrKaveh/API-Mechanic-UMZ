@@ -13,6 +13,7 @@ public sealed class GetAuditLogsHandler(IAuditQueryService auditQueryService)
         {
             UserId = request.UserId,
             EventType = request.EventType,
+            EntityType = request.EntityType,
             Action = request.Action,
             Keyword = request.Keyword,
             IpAddress = request.IpAddress,

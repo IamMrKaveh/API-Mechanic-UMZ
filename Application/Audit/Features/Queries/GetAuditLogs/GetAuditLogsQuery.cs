@@ -5,6 +5,7 @@ namespace Application.Audit.Features.Queries.GetAuditLogs;
 public sealed record GetAuditLogsQuery(
     Guid? UserId,
     string? EventType,
+    string? EntityType,
     string? Action,
     string? Keyword,
     string? IpAddress,
