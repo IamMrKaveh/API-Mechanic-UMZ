@@ -27,12 +27,12 @@ public static class PresentationServiceExtensions
         return services;
     }
 
-    private static IServiceCollection AddPresentationInternalServices(
-        this IServiceCollection services)
+    private static IServiceCollection AddPresentationInternalServices(this IServiceCollection services)
     {
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IGoogleAuthenticationService, HttpGoogleAuthenticationService>();
         services.AddScoped<OtpRateLimitFilter>();
+        services.AddScoped<ReviewRateLimitFilter>();
         services.AddScoped<IMapper, ServiceMapper>();
         services.AddSingleton<IPersianTextNormalizer, PersianTextNormalizerService>();
 

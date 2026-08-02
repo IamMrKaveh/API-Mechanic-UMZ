@@ -1,4 +1,4 @@
-﻿using Domain.Wallet.Enums;
+using Domain.Wallet.Enums;
 
 namespace Application.Wallet.Features.Commands.CreditWallet;
 
@@ -10,7 +10,8 @@ public record CreditWalletCommand(
     string ReferenceId,
     string IdempotencyKey,
     string? CorrelationId = null,
-    string? Description = null)
+    string? Description = null,
+    AdminWalletAdjustmentType? AdjustmentType = null)
     : ICommand<Unit>, IAuditableCommand
 {
     public string AuditEventType => "PaymentEvent";

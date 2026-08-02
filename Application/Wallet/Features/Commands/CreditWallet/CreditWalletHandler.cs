@@ -52,9 +52,11 @@ public class CreditWalletHandler(
 
             var amount = Money.Create(request.Amount, DefaultCurrency);
 
+            var effectiveDescription = BuildEffectiveDescription(request);
+
             wallet.Credit(
                 amount,
-                request.Description ?? request.TransactionType.ToString(),
+                effectiveDescription,
                 request.ReferenceId,
                 request.IdempotencyKey);
 
@@ -83,5 +85,19 @@ public class CreditWalletHandler(
         {
             return ServiceResult<Unit>.Failure(ex.Message);
         }
+    }
+
+    private static string BuildEffectiveDescription(CreditWalletCommand request)
+    {
+        var baseDescription = string.IsNullOrWhiteSpace(request.Description)
+            ? request.TransactionType.ToString()
+            : request.Description!;
+
+        if (request.AdjustmentType is null)
+            return baseDescription;
+
+        return baseDescription.Contains("[ADJUSTMENT-TYPE:", StringComparison.Ordinal)
+            ? baseDescription
+            : $"{baseDescription} | [ADJUSTMENT-TYPE:{request.AdjustmentType.Value}]";
     }
 }

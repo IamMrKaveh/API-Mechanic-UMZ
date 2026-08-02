@@ -27,8 +27,16 @@ public sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.Property(e => e.EntityId).HasMaxLength(100);
         builder.Property(e => e.IntegrityHash).IsRequired().HasMaxLength(200);
 
+        builder.Property(e => e.HashVersion)
+            .IsRequired()
+            .HasDefaultValue(1);
+
+        builder.Property(e => e.CreatedAt)
+            .HasColumnType("timestamp(6) with time zone");
+
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => e.CreatedAt);
         builder.HasIndex(e => e.EventType);
+        builder.HasIndex(e => e.HashVersion);
     }
 }

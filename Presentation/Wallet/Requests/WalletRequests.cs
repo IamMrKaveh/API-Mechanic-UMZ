@@ -1,9 +1,12 @@
+using Domain.Wallet.Enums;
+
 namespace Presentation.Wallet.Requests;
 
 public record AdminWalletAdjustmentRequest(
     decimal Amount,
     string Reason,
-    string? Description = null
+    string? Description = null,
+    AdminWalletAdjustmentType TransactionType = AdminWalletAdjustmentType.AdminAdjustment
 );
 
 public record CreditWalletRequest(

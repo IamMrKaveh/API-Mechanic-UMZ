@@ -1,12 +1,11 @@
-namespace Application.Review.Features.Commands.DeleteReview;
+namespace Application.Review.Features.Commands.RemoveAdminReply;
 
-public record DeleteReviewCommand(
-    Guid ReviewId,
-    string? Reason = null)
+public record RemoveAdminReplyCommand(
+    Guid ReviewId)
     : ICommand, IAuditableCommand
 {
     public string AuditEventType => "AdminEvent";
-    public string AuditAction => "ReviewDeleted";
+    public string AuditAction => "ReviewAdminReplyRemoved";
     public string? AuditEntityType => "Review";
     public string? AuditEntityId => ReviewId.ToString();
 }
