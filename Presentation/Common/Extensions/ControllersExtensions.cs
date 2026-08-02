@@ -15,6 +15,7 @@ public static class ControllersExtensions
             .AddControllers(options =>
             {
                 options.Filters.AddService<OtpRateLimitFilter>();
+                options.Filters.AddService<ReviewRateLimitFilter>();
                 options.Filters.Add<ValidationFilter>();
             })
             .AddJsonOptions(options =>
@@ -51,11 +52,11 @@ public static class ControllersExtensions
 
             options.CustomOperationIds(api =>
             {
-                if (api.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor descriptor)
+                if (api.ActionDescriptor is ControllerActionDescriptor descriptor)
                 {
                     var attr = descriptor.MethodInfo
-                        .GetCustomAttributes(typeof(Swashbuckle.AspNetCore.Annotations.SwaggerOperationAttribute), false)
-                        .Cast<Swashbuckle.AspNetCore.Annotations.SwaggerOperationAttribute>()
+                        .GetCustomAttributes(typeof(SwaggerOperationAttribute), false)
+                        .Cast<SwaggerOperationAttribute>()
                         .FirstOrDefault();
 
                     if (attr is not null && !string.IsNullOrWhiteSpace(attr.OperationId))

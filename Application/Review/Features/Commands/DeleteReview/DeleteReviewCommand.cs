@@ -1,7 +1,8 @@
 namespace Application.Review.Features.Commands.DeleteReview;
 
 public record DeleteReviewCommand(
-    Guid ReviewId)
+    Guid ReviewId,
+    string? Reason = null)
     : ICommand, IAuditableCommand
 {
     public string AuditEventType => "AdminEvent";

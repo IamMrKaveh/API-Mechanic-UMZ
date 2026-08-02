@@ -1,4 +1,4 @@
-﻿namespace Application.Common.Interfaces;
+namespace Application.Common.Interfaces;
 
 public interface IAuditableCommand
 {
@@ -9,4 +9,6 @@ public interface IAuditableCommand
     string? AuditEntityType => null;
 
     string? AuditEntityId => null;
+
+    string? BuildAuditDetails() => null;
 }

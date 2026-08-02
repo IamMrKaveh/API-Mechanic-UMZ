@@ -114,10 +114,15 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         var effectiveKey = ResolveIdempotencyKey(idempotencyKey, "credit", userId);
 
         var command = new CreditWalletCommand(
-            userId, request.Amount,
-            WalletTransactionType.Credit, WalletReferenceType.Admin,
-            HttpContext.TraceIdentifier, effectiveKey, HttpContext.TraceIdentifier,
-            BuildAuditDescription("CREDIT", request.Reason, request.Description));
+            UserId: userId,
+            Amount: request.Amount,
+            TransactionType: WalletTransactionType.Credit,
+            ReferenceType: WalletReferenceType.Admin,
+            ReferenceId: HttpContext.TraceIdentifier,
+            IdempotencyKey: effectiveKey,
+            CorrelationId: HttpContext.TraceIdentifier,
+            Description: BuildAuditDescription("CREDIT", request.Reason, request.Description, request.TransactionType),
+            AdjustmentType: request.TransactionType);
 
         return await Send(command, ct);
     }
@@ -255,6 +260,19 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
                 return trimmed;
         }
         return $"admin-{operation}-{userId:N}-{HttpContext.TraceIdentifier}";
+    }
+
+    private static string BuildAuditDescription(
+        string operation,
+        string reason,
+        string? extraNote,
+        AdminWalletAdjustmentType adjustmentType)
+    {
+        var sb = new StringBuilder();
+        sb.Append($"[ADMIN-{operation}|{adjustmentType}] | Reason={reason}");
+        if (!string.IsNullOrWhiteSpace(extraNote))
+            sb.Append($" | Note={extraNote}");
+        return sb.ToString();
     }
 
     private static string BuildAuditDescription(string operation, string reason, string? extraNote)

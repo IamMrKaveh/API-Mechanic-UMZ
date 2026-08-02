@@ -491,6 +491,7 @@ public static class InfrastructureServiceExtensions
         }
 
         services.AddHostedService<AuditRetentionJob>();
+        services.AddHostedService<AuditHashUpgradeJob>();
         services.AddHostedService<ExpiredOrderCleanupJob>();
         services.AddHostedService<ExpiredSessionCleanupJob>();
         services.AddHostedService<FraudDetectionJob>();

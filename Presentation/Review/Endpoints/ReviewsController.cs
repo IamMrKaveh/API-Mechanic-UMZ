@@ -4,6 +4,7 @@ using Application.Review.Features.Commands.UpdateOwnReview;
 using Application.Review.Features.Queries.CanReviewProduct;
 using Application.Review.Features.Queries.GetProductReviews;
 using Application.Review.Features.Queries.GetProductReviewSummary;
+using Application.Review.Features.Queries.GetReviewById;
 using Application.Review.Features.Queries.GetUserReviews;
 using Application.Review.Features.Shared;
 using Presentation.Review.Mapping;
@@ -13,12 +14,15 @@ namespace Presentation.Review.Endpoints;
 
 [Route("api/v{version:apiVersion}/reviews")]
 [ApiController]
-public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiController(mediator, mapper)
+public class ReviewsController(IMediator mediator, IMapper mapper)
+    : BaseApiController(mediator, mapper)
 {
     [HttpGet("products/{productId:guid}")]
     [AllowAnonymous]
+    [ReviewRateLimit(ReviewRateLimitPolicy.PublicRead)]
     [SwaggerOperation(OperationId = "Reviews_GetForProduct")]
     [ProducesResponseType(typeof(ApiResponse<PaginatedResult<ProductReviewDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> GetReviews(
         Guid productId,
         [FromQuery] int page = 1,
@@ -35,6 +39,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
 
     [HttpGet("products/{productId:guid}/summary")]
     [AllowAnonymous]
+    [ReviewRateLimit(ReviewRateLimitPolicy.PublicRead)]
     [SwaggerOperation(OperationId = "Reviews_GetSummary")]
     [ProducesResponseType(typeof(ApiResponse<ReviewSummaryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSummary(
@@ -50,25 +55,41 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
     [ProducesResponseType(typeof(ApiResponse<CanReviewDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> CanReview(
         Guid productId,
+        [FromQuery] Guid? orderId,
         CancellationToken ct)
     {
-        return await Send(new CanReviewProductQuery(productId), ct);
+        return await Send(new CanReviewProductQuery(productId, orderId), ct);
     }
 
     [HttpPost]
     [Authorize]
+    [ReviewRateLimit(ReviewRateLimitPolicy.CreateReview)]
     [SwaggerOperation(OperationId = "Reviews_Create")]
     [ProducesResponseType(typeof(ApiResponse<ProductReviewDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> CreateReview(
         [FromBody] CreateReviewRequest request,
         CancellationToken ct)
     {
-        return await Send(Mapper.Map<CreateReviewCommand>(request), ct);
+        var command = Mapper.Map<CreateReviewCommand>(request);
+        return await SendCreated(command, ct);
+    }
+
+    [HttpGet("{reviewId:guid}")]
+    [AllowAnonymous]
+    [SwaggerOperation(OperationId = "Reviews_GetById")]
+    [ProducesResponseType(typeof(ApiResponse<ProductReviewDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById(Guid reviewId, CancellationToken ct)
+    {
+        return await Send(new GetReviewByIdQuery(reviewId), ct);
     }
 
     [HttpPut("{reviewId:guid}")]
     [Authorize]
+    [ReviewRateLimit(ReviewRateLimitPolicy.CreateReview)]
     [SwaggerOperation(OperationId = "Reviews_UpdateOwn")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
@@ -82,7 +103,7 @@ public class ReviewsController(IMediator mediator, IMapper mapper) : BaseApiCont
         return await Send(command, ct);
     }
 
-    [HttpDelete("{reviewId:guid}/me")]
+    [HttpDelete("me/{reviewId:guid}")]
     [Authorize]
     [SwaggerOperation(OperationId = "Reviews_DeleteOwn")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]

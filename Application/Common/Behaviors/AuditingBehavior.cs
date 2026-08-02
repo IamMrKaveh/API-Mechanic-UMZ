@@ -1,4 +1,5 @@
-﻿using Domain.User.ValueObjects;
+using System.Runtime.ExceptionServices;
+using Domain.User.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Common.Behaviors;
@@ -15,10 +16,20 @@ public sealed class AuditingBehavior<TRequest, TResponse>(
         RequestHandlerDelegate<TResponse> next,
         CancellationToken ct)
     {
-        var response = await next(ct);
-
         if (request is not IAuditableCommand auditable)
-            return response;
+            return await next(ct);
+
+        TResponse response = default!;
+        Exception? thrown = null;
+
+        try
+        {
+            response = await next(ct);
+        }
+        catch (Exception ex)
+        {
+            thrown = ex;
+        }
 
         try
         {
@@ -33,10 +44,31 @@ public sealed class AuditingBehavior<TRequest, TResponse>(
 
             var userAgent = currentUserService.UserAgent;
             var requestName = typeof(TRequest).Name;
+            var enrichedDetails = auditable.BuildAuditDetails();
 
-            if (response is ServiceResult result && result.IsSuccess)
+            if (thrown is not null)
             {
-                var details = $"Command {requestName} executed successfully.";
+                var reason = $"{thrown.GetType().Name}: {thrown.Message}";
+                var details = string.IsNullOrWhiteSpace(enrichedDetails)
+                    ? $"Command {requestName} threw exception. {reason}"
+                    : $"Command {requestName} threw exception. {reason} | {enrichedDetails}";
+
+                await auditService.LogAsync(
+                    auditable.AuditEventType,
+                    $"{auditable.AuditAction}.Exception",
+                    ipAddress,
+                    userId,
+                    auditable.AuditEntityType,
+                    auditable.AuditEntityId,
+                    details,
+                    userAgent,
+                    ct);
+            }
+            else if (response is ServiceResult result && result.IsSuccess)
+            {
+                var details = string.IsNullOrWhiteSpace(enrichedDetails)
+                    ? $"Command {requestName} executed successfully."
+                    : $"Command {requestName} executed successfully. | {enrichedDetails}";
 
                 await auditService.LogAsync(
                     auditable.AuditEventType,
@@ -51,18 +83,34 @@ public sealed class AuditingBehavior<TRequest, TResponse>(
             }
             else if (response is ServiceResult failure && failure.IsFailure)
             {
-                var details = $"Command {requestName} failed: {failure.Error.Message}.";
-                await auditService.LogWarningAsync(details, ct);
+                var reason = failure.Error.Message;
+                var details = string.IsNullOrWhiteSpace(enrichedDetails)
+                    ? $"Command {requestName} failed. {reason}"
+                    : $"Command {requestName} failed. {reason} | {enrichedDetails}";
+
+                await auditService.LogAsync(
+                    auditable.AuditEventType,
+                    $"{auditable.AuditAction}.Failed",
+                    ipAddress,
+                    userId,
+                    auditable.AuditEntityType,
+                    auditable.AuditEntityId,
+                    details,
+                    userAgent,
+                    ct);
             }
         }
-        catch (Exception ex)
+        catch (Exception auditEx)
         {
             logger.LogError(
-                ex,
+                auditEx,
                 "AuditingBehavior failed to record audit for {RequestName}: {Message}",
                 typeof(TRequest).Name,
-                ex.Message);
+                auditEx.Message);
         }
+
+        if (thrown is not null)
+            ExceptionDispatchInfo.Capture(thrown).Throw();
 
         return response;
     }
