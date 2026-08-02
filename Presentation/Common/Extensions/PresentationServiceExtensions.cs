@@ -22,6 +22,7 @@ public static class PresentationServiceExtensions
         services.AddApplicationObservability(configuration, environment);
         services.AddApplicationLocalization(configuration);
         services.AddApplicationAntiforgery();
+        services.AddApplicationRateLimiting();
         services.AddChaosEngineering(configuration, environment);
 
         return services;

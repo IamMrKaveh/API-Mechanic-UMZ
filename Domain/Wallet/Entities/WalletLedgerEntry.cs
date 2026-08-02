@@ -18,6 +18,7 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
     public string? Description { get; private set; }
     public string ReferenceId { get; private set; } = default!;
     public string? IdempotencyKey { get; private set; }
+    public string? CorrelationId { get; private set; }
     public DateTime OccurredAt { get; private set; }
 
     public Aggregates.Wallet Wallet { get; private set; } = default!;
@@ -33,6 +34,7 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
         string? description,
         string referenceId,
         string? idempotencyKey,
+        string? correlationId,
         DateTime occurredAt)
     {
         Id = id;
@@ -44,6 +46,7 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
         Description = description?.Length > 500 ? description[..500] : description;
         ReferenceId = referenceId;
         IdempotencyKey = idempotencyKey?.Length > 200 ? idempotencyKey[..200] : idempotencyKey;
+        CorrelationId = correlationId?.Length > 128 ? correlationId[..128] : correlationId;
         OccurredAt = occurredAt;
     }
 
@@ -54,7 +57,8 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
         Money balanceAfter,
         string? description,
         string referenceId,
-        string? idempotencyKey)
+        string? idempotencyKey,
+        string? correlationId = null)
     {
         ValidateInputs(walletId, ownerId, amount, balanceAfter, referenceId);
         return new WalletLedgerEntry(
@@ -67,6 +71,7 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             description,
             referenceId,
             idempotencyKey,
+            correlationId,
             DateTime.UtcNow);
     }
 
@@ -77,7 +82,8 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
         Money balanceAfter,
         string? description,
         string referenceId,
-        string? idempotencyKey)
+        string? idempotencyKey,
+        string? correlationId = null)
     {
         ValidateInputs(walletId, ownerId, amount, balanceAfter, referenceId);
         return new WalletLedgerEntry(
@@ -90,6 +96,7 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             description,
             referenceId,
             idempotencyKey,
+            correlationId,
             DateTime.UtcNow);
     }
 
@@ -103,7 +110,8 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             evt.NewBalance,
             evt.Description,
             evt.ReferenceId,
-            evt.IdempotencyKey);
+            evt.IdempotencyKey,
+            evt.CorrelationId);
     }
 
     public static WalletLedgerEntry FromDebitEvent(WalletDebitedEvent evt)
@@ -116,7 +124,8 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             evt.NewBalance,
             evt.Description,
             evt.ReferenceId,
-            evt.IdempotencyKey);
+            evt.IdempotencyKey,
+            evt.CorrelationId);
     }
 
     private static void ValidateInputs(

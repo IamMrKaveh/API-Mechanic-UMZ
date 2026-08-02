@@ -51,14 +51,14 @@ public class CreditWalletHandler(
             }
 
             var amount = Money.Create(request.Amount, DefaultCurrency);
-
             var effectiveDescription = BuildEffectiveDescription(request);
 
             wallet.Credit(
                 amount,
                 effectiveDescription,
                 request.ReferenceId,
-                request.IdempotencyKey);
+                request.IdempotencyKey,
+                request.CorrelationId);
 
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);

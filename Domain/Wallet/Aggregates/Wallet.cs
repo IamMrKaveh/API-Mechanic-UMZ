@@ -57,7 +57,12 @@ public sealed class Wallet : AggregateRoot<WalletId>
         return wallet;
     }
 
-    public void Credit(Money amount, string description, string referenceId, string? idempotencyKey = null)
+    public void Credit(
+        Money amount,
+        string description,
+        string referenceId,
+        string? idempotencyKey = null,
+        string? correlationId = null)
     {
         ValidateAmount(amount);
         Guard.Against.NullOrWhiteSpace(description, nameof(description));
@@ -67,10 +72,15 @@ public sealed class Wallet : AggregateRoot<WalletId>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new WalletCreditedEvent(
-            Id, OwnerId, amount, Balance, description, referenceId, idempotencyKey));
+            Id, OwnerId, amount, Balance, description, referenceId, idempotencyKey, correlationId));
     }
 
-    public void Debit(Money amount, string description, string referenceId, string? idempotencyKey = null)
+    public void Debit(
+        Money amount,
+        string description,
+        string referenceId,
+        string? idempotencyKey = null,
+        string? correlationId = null)
     {
         EnsureActive();
         ValidateAmount(amount);
@@ -84,7 +94,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new WalletDebitedEvent(
-            Id, OwnerId, amount, Balance, description, referenceId, idempotencyKey));
+            Id, OwnerId, amount, Balance, description, referenceId, idempotencyKey, correlationId));
     }
 
     public WalletDebitRequest CreateDebitRequest(

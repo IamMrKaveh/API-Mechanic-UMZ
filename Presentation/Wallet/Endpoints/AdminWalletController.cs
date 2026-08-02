@@ -1,3 +1,4 @@
+using System.Globalization;
 using Application.Wallet.Features.Commands.CreditWallet;
 using Application.Wallet.Features.Commands.DismissFraudAlert;
 using Application.Wallet.Features.Commands.FreezeWallet;
@@ -26,7 +27,10 @@ namespace Presentation.Wallet.Endpoints;
 public sealed class AdminWalletController(IMediator mediator) : BaseApiController(mediator)
 {
     private const string IdempotencyHeaderName = "Idempotency-Key";
+    private const string EffectiveIdempotencyHeaderName = "X-Idempotency-Key-Effective";
+    private const string CorrelationHeaderName = "X-Correlation-ID";
     private const int IdempotencyKeyMaxLength = 128;
+    private const int ReferenceIdMaxLength = 200;
 
     [HttpGet("overview")]
     [SwaggerOperation(OperationId = "AdminWallet_GetOverview")]
@@ -112,15 +116,20 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         CancellationToken ct)
     {
         var effectiveKey = ResolveIdempotencyKey(idempotencyKey, "credit", userId);
+        var referenceId = ResolveReferenceId(request.ReferenceId, "adjustment");
+        var correlationId = ResolveCorrelationId();
+
+        WriteResponseHeader(EffectiveIdempotencyHeaderName, effectiveKey);
+        WriteResponseHeader(CorrelationHeaderName, correlationId);
 
         var command = new CreditWalletCommand(
             UserId: userId,
             Amount: request.Amount,
             TransactionType: WalletTransactionType.Credit,
             ReferenceType: WalletReferenceType.Admin,
-            ReferenceId: HttpContext.TraceIdentifier,
+            ReferenceId: referenceId,
             IdempotencyKey: effectiveKey,
-            CorrelationId: HttpContext.TraceIdentifier,
+            CorrelationId: correlationId,
             Description: BuildAuditDescription("CREDIT", request.Reason, request.Description, request.TransactionType),
             AdjustmentType: request.TransactionType);
 
@@ -142,6 +151,10 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         CancellationToken ct)
     {
         var effectiveKey = ResolveIdempotencyKey(idempotencyKey, "debit-request", userId);
+        var correlationId = ResolveCorrelationId();
+
+        WriteResponseHeader(EffectiveIdempotencyHeaderName, effectiveKey);
+        WriteResponseHeader(CorrelationHeaderName, correlationId);
 
         var command = new RequestWalletDebitCommand(
             userId,
@@ -259,7 +272,41 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
             if (trimmed.Length <= IdempotencyKeyMaxLength)
                 return trimmed;
         }
-        return $"admin-{operation}-{userId:N}-{HttpContext.TraceIdentifier}";
+
+        var minuteBucket = DateTime.UtcNow.ToString("yyyyMMddHHmm", CultureInfo.InvariantCulture);
+        var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown-admin";
+        var candidate = $"admin-{operation}-{userId:N}-{adminId}-{minuteBucket}";
+        return candidate.Length <= IdempotencyKeyMaxLength
+            ? candidate
+            : candidate[..IdempotencyKeyMaxLength];
+    }
+
+    private static string ResolveReferenceId(string? incoming, string prefix)
+    {
+        if (!string.IsNullOrWhiteSpace(incoming))
+        {
+            var trimmed = incoming.Trim();
+            return trimmed.Length <= ReferenceIdMaxLength
+                ? trimmed
+                : trimmed[..ReferenceIdMaxLength];
+        }
+        return $"{prefix}-{Guid.NewGuid():N}";
+    }
+
+    private string ResolveCorrelationId()
+    {
+        var fromHeader = HttpContext.Request.Headers[CorrelationHeaderName].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(fromHeader))
+            return fromHeader.Trim();
+        return HttpContext.TraceIdentifier;
+    }
+
+    private void WriteResponseHeader(string name, string value)
+    {
+        if (!HttpContext.Response.HasStarted)
+        {
+            HttpContext.Response.Headers[name] = value;
+        }
     }
 
     private static string BuildAuditDescription(

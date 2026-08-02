@@ -6,7 +6,8 @@ public record AdminWalletAdjustmentRequest(
     decimal Amount,
     string Reason,
     string? Description = null,
-    AdminWalletAdjustmentType TransactionType = AdminWalletAdjustmentType.AdminAdjustment
+    AdminWalletAdjustmentType TransactionType = AdminWalletAdjustmentType.AdminAdjustment,
+    string? ReferenceId = null
 );
 
 public record CreditWalletRequest(

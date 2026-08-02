@@ -7,15 +7,12 @@ public static class MiddlewareExtensions
     public static WebApplication UseApplication(this WebApplication app)
     {
         app.UseForwardedHeaders();
-
         app.UseHttpsRedirection();
-
         app.UseStaticFiles();
 
         if (app.Configuration.GetValue<bool>("Swagger:Enabled"))
         {
             app.UseSwagger();
-
             app.UseSwaggerUI(options =>
             {
                 var provider = app.Services
@@ -27,13 +24,11 @@ public static class MiddlewareExtensions
                         $"/swagger/{description.GroupName}/swagger.json",
                         $"Ledka {description.GroupName.ToUpperInvariant()}");
                 }
-
                 options.RoutePrefix = "swagger";
             });
         }
 
         app.UseMiddleware<CorrelationIdMiddleware>();
-
         app.UseMiddleware<RequestLoggingMiddleware>();
 
         app.UseSerilogRequestLogging(options =>
@@ -57,13 +52,9 @@ public static class MiddlewareExtensions
         });
 
         app.UseCustomExceptionHandler();
-
         app.UseMiddleware<SecurityHeadersMiddleware>();
-
         app.UseApplicationLocalization();
-
         app.UseRequestPerformanceMonitoring();
-
         app.UseCustomCors();
 
         if (!app.Environment.IsProduction())
@@ -72,19 +63,13 @@ public static class MiddlewareExtensions
         }
 
         app.UseMiddleware<RateLimitMiddleware>();
-
         app.UseAuthentication();
-
         app.UseAuthorization();
-
+        app.UseApplicationRateLimiter();
         app.UseApplicationAntiforgery();
-
         app.UseMiddleware<SessionActivityMiddleware>();
-
         app.UseAdminIpWhitelist();
-
         app.UseMiddleware<WebhookIpWhitelistMiddleware>();
-
         app.MapApplicationHealthChecks();
 
         return app;

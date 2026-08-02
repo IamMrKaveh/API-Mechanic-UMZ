@@ -42,6 +42,7 @@ public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<Wa
         builder.Property(e => e.Description).HasMaxLength(500);
         builder.Property(e => e.ReferenceId).IsRequired().HasMaxLength(200);
         builder.Property(e => e.IdempotencyKey).HasMaxLength(200);
+        builder.Property(e => e.CorrelationId).HasMaxLength(128);
         builder.Property(e => e.OccurredAt).HasColumnName("CreatedAt").IsRequired();
 
         builder.HasOne(e => e.Wallet)
@@ -66,6 +67,10 @@ public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<Wa
             .IsUnique()
             .HasFilter("\"IdempotencyKey\" IS NOT NULL")
             .HasDatabaseName("IX_WalletLedgerEntries_IdempotencyKey");
+
+        builder.HasIndex(e => e.CorrelationId)
+            .HasFilter("\"CorrelationId\" IS NOT NULL")
+            .HasDatabaseName("IX_WalletLedgerEntries_CorrelationId");
 
         builder.HasQueryFilter(e => e.Owner.IsActive);
     }
