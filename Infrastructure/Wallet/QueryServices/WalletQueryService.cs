@@ -14,16 +14,19 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
         int page,
         int pageSize,
         WalletLedgerFilter? filter = null,
+        bool includeInactiveUsers = false,
         CancellationToken ct = default)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
         if (pageSize > 200) pageSize = 200;
 
-        var query = context.WalletLedgerEntries
-            .AsNoTracking()
-            .Where(e => e.OwnerId == userId);
+        var query = context.WalletLedgerEntries.AsNoTracking();
 
+        if (includeInactiveUsers)
+            query = query.IgnoreQueryFilters();
+
+        query = query.Where(e => e.OwnerId == userId);
         query = ApplyFilter(query, filter);
 
         var totalCount = await query.CountAsync(ct);
@@ -50,53 +53,22 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
         return PaginatedResult<WalletLedgerEntryDto>.Create(dtos, totalCount, page, pageSize);
     }
 
-    public async Task<WalletLedgerEntryDto?> GetOrderPaymentLedgerEntryAsync(
-        UserId userId,
-        OrderId orderId,
-        CancellationToken ct = default)
-    {
-        var orderIdString = orderId.Value.ToString();
-
-        return await context.WalletLedgerEntries
-            .AsNoTracking()
-            .Where(e => e.OwnerId == userId
-                        && e.ReferenceId == orderIdString
-                        && (e.TransactionType == WalletTransactionType.Debit
-                            || e.TransactionType == WalletTransactionType.ReservationConfirmed))
-            .Select(e => new WalletLedgerEntryDto(
-                e.Id.Value,
-                e.WalletId.Value,
-                e.OwnerId.Value,
-                e.Amount.Amount,
-                e.BalanceAfter.Amount,
-                e.TransactionType.ToString(),
-                string.Empty,
-                Guid.Empty,
-                e.Description,
-                e.OccurredAt,
-                e.Description != null && e.Description.StartsWith(AdminAdjustmentDescriptionPrefix)
-            ))
-            .FirstOrDefaultAsync(ct);
-    }
-
     public async Task<IReadOnlyList<WalletLedgerEntryDto>> ExportLedgerAsync(
         UserId userId,
         WalletLedgerFilter filter,
+        bool includeInactiveUsers = false,
         CancellationToken ct = default)
     {
-        ArgumentNullException.ThrowIfNull(filter);
+        var query = context.WalletLedgerEntries.AsNoTracking();
 
-        var maxRows = filter.MaxRows > 0 ? filter.MaxRows : 10_000;
+        if (includeInactiveUsers)
+            query = query.IgnoreQueryFilters();
 
-        var query = context.WalletLedgerEntries
-            .AsNoTracking()
-            .Where(e => e.OwnerId == userId);
-
+        query = query.Where(e => e.OwnerId == userId);
         query = ApplyFilter(query, filter);
 
         return await query
             .OrderByDescending(e => e.OccurredAt)
-            .Take(maxRows)
             .Select(e => new WalletLedgerEntryDto(
                 e.Id.Value,
                 e.WalletId.Value,
@@ -117,16 +89,25 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
         int page,
         int pageSize,
         WalletOverviewFilter? filter = null,
+        bool includeInactiveUsers = false,
         CancellationToken ct = default)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
         if (pageSize > 200) pageSize = 200;
 
+        var walletsBase = context.Wallets.AsNoTracking();
+        var usersBase = context.Users.AsNoTracking();
+
+        if (includeInactiveUsers)
+        {
+            walletsBase = walletsBase.IgnoreQueryFilters();
+            usersBase = usersBase.IgnoreQueryFilters();
+        }
+
         var baseQuery =
-            from w in context.Wallets.AsNoTracking().IgnoreQueryFilters()
-            join u in context.Users.AsNoTracking().IgnoreQueryFilters()
-                on w.OwnerId equals u.Id into userJoin
+            from w in walletsBase
+            join u in usersBase on w.OwnerId equals u.Id into userJoin
             from u in userJoin.DefaultIfEmpty()
             select new WalletOverviewRow
             {
@@ -160,15 +141,13 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
             .ToListAsync(ct);
 
         if (rows.Count == 0)
-            return PaginatedResult<WalletOverviewDto>.Create(
-                [], totalCount, page, pageSize);
+            return PaginatedResult<WalletOverviewDto>.Create([], totalCount, page, pageSize);
 
         var walletIds = rows.Select(r => r.WalletId).ToList();
 
         var reservationTotals = await context.WalletReservations
             .AsNoTracking()
-            .Where(r => walletIds.Contains(r.WalletId)
-                        && r.Status == WalletReservationStatus.Active)
+            .Where(r => walletIds.Contains(r.WalletId) && r.Status == WalletReservationStatus.Active)
             .GroupBy(r => r.WalletId)
             .Select(g => new { WalletId = g.Key, Total = g.Sum(x => x.Amount.Amount) })
             .ToDictionaryAsync(x => x.WalletId.Value, x => x.Total, ct);
@@ -207,78 +186,68 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
         return PaginatedResult<WalletOverviewDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<WalletStatisticsDto> GetStatisticsAsync(CancellationToken ct = default)
+    public async Task<WalletLedgerEntryDto?> GetOrderPaymentLedgerEntryAsync(
+        UserId userId,
+        OrderId orderId,
+        CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
-        var todayStart = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc);
-        var todayEnd = todayStart.AddDays(1);
-        var sevenDaysAgo = todayStart.AddDays(-7);
-
-        var walletAggregates = await context.Wallets
+        var orderRef = orderId.Value.ToString();
+        var entry = await context.WalletLedgerEntries
             .AsNoTracking()
-            .GroupBy(_ => 1)
-            .Select(g => new
-            {
-                TotalBalance = g.Sum(w => w.Balance.Amount),
-                TotalCount = g.Count(),
-                ActiveCount = g.Count(w => w.IsActive),
-                FrozenCount = g.Count(w => !w.IsActive)
-            })
+            .Where(e => e.OwnerId == userId && e.Description != null && e.Description.Contains(orderRef))
+            .OrderByDescending(e => e.OccurredAt)
             .FirstOrDefaultAsync(ct);
 
-        var totalReserved = await context.WalletReservations
-            .AsNoTracking()
+        if (entry is null) return null;
+
+        return new WalletLedgerEntryDto(
+            entry.Id.Value, entry.WalletId.Value, entry.OwnerId.Value,
+            entry.Amount.Amount, entry.BalanceAfter.Amount,
+            entry.TransactionType.ToString(), string.Empty, Guid.Empty,
+            entry.Description, entry.OccurredAt,
+            entry.Description != null && entry.Description.StartsWith(AdminAdjustmentDescriptionPrefix));
+    }
+
+    public async Task<WalletStatisticsDto> GetStatisticsAsync(CancellationToken ct = default)
+    {
+        var today = DateTime.UtcNow.Date;
+        var last7 = DateTime.UtcNow.AddDays(-7);
+
+        var wallets = await context.Wallets.AsNoTracking().IgnoreQueryFilters()
+            .Select(w => new { w.Balance.Amount, w.IsActive })
+            .ToListAsync(ct);
+
+        var totalBalance = wallets.Sum(x => x.Amount);
+        var activeCount = wallets.Count(x => x.IsActive);
+        var frozenCount = wallets.Count(x => !x.IsActive);
+        var totalCount = wallets.Count;
+
+        var totalReserved = await context.WalletReservations.AsNoTracking()
             .Where(r => r.Status == WalletReservationStatus.Active)
             .SumAsync(r => (decimal?)r.Amount.Amount, ct) ?? 0m;
 
-        var todayCredit = await context.WalletLedgerEntries
-            .AsNoTracking()
-            .Where(e => e.OccurredAt >= todayStart
-                        && e.OccurredAt < todayEnd
-                        && (e.TransactionType == WalletTransactionType.Credit
-                            || e.TransactionType == WalletTransactionType.Refund
-                            || e.TransactionType == WalletTransactionType.TransferIn))
+        var todayCredit = await context.WalletLedgerEntries.AsNoTracking().IgnoreQueryFilters()
+            .Where(e => e.OccurredAt >= today && e.TransactionType == WalletTransactionType.Credit)
             .SumAsync(e => (decimal?)e.Amount.Amount, ct) ?? 0m;
 
-        var todayDebit = await context.WalletLedgerEntries
-            .AsNoTracking()
-            .Where(e => e.OccurredAt >= todayStart
-                        && e.OccurredAt < todayEnd
-                        && (e.TransactionType == WalletTransactionType.Debit
-                            || e.TransactionType == WalletTransactionType.TransferOut
-                            || e.TransactionType == WalletTransactionType.ReservationConfirmed))
+        var todayDebit = await context.WalletLedgerEntries.AsNoTracking().IgnoreQueryFilters()
+            .Where(e => e.OccurredAt >= today && e.TransactionType == WalletTransactionType.Debit)
             .SumAsync(e => (decimal?)e.Amount.Amount, ct) ?? 0m;
 
-        var last7DaysCount = await context.WalletLedgerEntries
-            .AsNoTracking()
-            .CountAsync(e => e.OccurredAt >= sevenDaysAgo, ct);
+        var last7Count = await context.WalletLedgerEntries.AsNoTracking().IgnoreQueryFilters()
+            .CountAsync(e => e.OccurredAt >= last7, ct);
 
-        var pendingWithdrawals = await context.WalletWithdrawalRequests
-            .AsNoTracking()
+        var pendingWithdrawals = await context.WalletWithdrawalRequests.AsNoTracking()
             .CountAsync(w => w.Status == WithdrawalStatus.Pending, ct);
 
-        var openFraudAlerts = await context.WalletFraudAlerts
-            .AsNoTracking()
+        var openAlerts = await context.Set<Domain.Wallet.Aggregates.WalletFraudAlert>().AsNoTracking()
             .CountAsync(a => a.Status == FraudAlertStatus.Open, ct);
 
-        var totalBalance = walletAggregates?.TotalBalance ?? 0m;
-        var totalCount = walletAggregates?.TotalCount ?? 0;
-        var activeCount = walletAggregates?.ActiveCount ?? 0;
-        var frozenCount = walletAggregates?.FrozenCount ?? 0;
-
         return new WalletStatisticsDto(
-            totalBalance,
-            totalReserved,
-            totalBalance - totalReserved,
-            activeCount,
-            frozenCount,
-            totalCount,
-            todayCredit,
-            todayDebit,
-            last7DaysCount,
-            pendingWithdrawals,
-            openFraudAlerts,
-            now);
+            totalBalance, totalReserved, totalBalance - totalReserved,
+            activeCount, frozenCount, totalCount,
+            todayCredit, todayDebit, last7Count,
+            pendingWithdrawals, openAlerts, DateTime.UtcNow);
     }
 
     private static IQueryable<Domain.Wallet.Entities.WalletLedgerEntry> ApplyFilter(
@@ -288,43 +257,21 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
         if (filter is null) return query;
 
         if (filter.FromDate.HasValue)
-        {
-            var from = DateTime.SpecifyKind(filter.FromDate.Value, DateTimeKind.Utc);
-            query = query.Where(e => e.OccurredAt >= from);
-        }
-
+            query = query.Where(e => e.OccurredAt >= filter.FromDate.Value);
         if (filter.ToDate.HasValue)
-        {
-            var to = DateTime.SpecifyKind(filter.ToDate.Value, DateTimeKind.Utc);
-            query = query.Where(e => e.OccurredAt <= to);
-        }
-
+            query = query.Where(e => e.OccurredAt <= filter.ToDate.Value);
         if (!string.IsNullOrWhiteSpace(filter.TransactionType)
-            && Enum.TryParse<WalletTransactionType>(filter.TransactionType, ignoreCase: true, out var parsedType))
-        {
-            query = query.Where(e => e.TransactionType == parsedType);
-        }
-
+            && Enum.TryParse<WalletTransactionType>(filter.TransactionType, true, out var tt))
+            query = query.Where(e => e.TransactionType == tt);
         if (filter.MinAmount.HasValue)
-        {
-            var min = filter.MinAmount.Value;
-            query = query.Where(e => e.Amount.Amount >= min);
-        }
-
+            query = query.Where(e => e.Amount.Amount >= filter.MinAmount.Value);
         if (filter.MaxAmount.HasValue)
-        {
-            var max = filter.MaxAmount.Value;
-            query = query.Where(e => e.Amount.Amount <= max);
-        }
-
+            query = query.Where(e => e.Amount.Amount <= filter.MaxAmount.Value);
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
         {
             var term = filter.SearchTerm.Trim();
-            query = query.Where(e =>
-                (e.Description != null && EF.Functions.ILike(e.Description, $"%{term}%"))
-                || (e.ReferenceId != null && EF.Functions.ILike(e.ReferenceId, $"%{term}%")));
+            query = query.Where(e => e.Description != null && e.Description.Contains(term));
         }
-
         return query;
     }
 
@@ -336,47 +283,22 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
-            var term = $"%{filter.Search.Trim()}%";
+            var s = filter.Search.Trim();
             query = query.Where(x =>
-                x.User != null && x.User.FullName != null &&
-                (
-                    EF.Functions.ILike(x.User.FullName.FirstName, term)
-                    || EF.Functions.ILike(x.User.FullName.LastName, term)
-                    || (x.User.Email != null && EF.Functions.ILike(x.User.Email.Value, term))
-                ));
+                (x.User != null && x.User.FullName != null && x.User.FullName.FirstName.Contains(s))
+                || (x.User != null && x.User.FullName != null && x.User.FullName.LastName.Contains(s))
+                || (x.User != null && x.User.Email != null && x.User.Email.Value.Contains(s)));
         }
-
         if (filter.IsFrozen.HasValue)
-        {
-            var frozen = filter.IsFrozen.Value;
-            query = frozen
-                ? query.Where(x => !x.Wallet.IsActive)
-                : query.Where(x => x.Wallet.IsActive);
-        }
-
+            query = query.Where(x => x.Wallet.IsActive == !filter.IsFrozen.Value);
         if (filter.MinBalance.HasValue)
-        {
-            var min = filter.MinBalance.Value;
-            query = query.Where(x => x.Wallet.Balance.Amount >= min);
-        }
-
+            query = query.Where(x => x.Wallet.Balance.Amount >= filter.MinBalance.Value);
         if (filter.MaxBalance.HasValue)
-        {
-            var max = filter.MaxBalance.Value;
-            query = query.Where(x => x.Wallet.Balance.Amount <= max);
-        }
-
+            query = query.Where(x => x.Wallet.Balance.Amount <= filter.MaxBalance.Value);
         if (filter.CreatedFrom.HasValue)
-        {
-            var from = DateTime.SpecifyKind(filter.CreatedFrom.Value, DateTimeKind.Utc);
-            query = query.Where(x => x.Wallet.CreatedAt >= from);
-        }
-
+            query = query.Where(x => x.Wallet.CreatedAt >= filter.CreatedFrom.Value);
         if (filter.CreatedTo.HasValue)
-        {
-            var to = DateTime.SpecifyKind(filter.CreatedTo.Value, DateTimeKind.Utc);
-            query = query.Where(x => x.Wallet.CreatedAt <= to);
-        }
+            query = query.Where(x => x.Wallet.CreatedAt <= filter.CreatedTo.Value);
 
         return query;
     }
@@ -384,7 +306,6 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
     private static IQueryable<WalletOverviewRow> ApplyOverviewSort(IQueryable<WalletOverviewRow> query, string? sortBy)
     {
         var normalized = string.IsNullOrWhiteSpace(sortBy) ? "created_desc" : sortBy.Trim().ToLowerInvariant();
-
         return normalized switch
         {
             "balance_desc" => query.OrderByDescending(x => x.Wallet.Balance.Amount),

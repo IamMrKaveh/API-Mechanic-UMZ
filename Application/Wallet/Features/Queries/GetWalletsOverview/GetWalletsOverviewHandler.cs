@@ -1,4 +1,3 @@
-﻿using Application.Wallet.Contracts;
 using Application.Wallet.Features.Shared;
 
 namespace Application.Wallet.Features.Queries.GetWalletsOverview;
@@ -25,6 +24,7 @@ public sealed class GetWalletsOverviewHandler(IWalletQueryService walletQuerySer
             request.Page,
             request.PageSize,
             filter,
+            includeInactiveUsers: true,
             ct);
 
         return ServiceResult<PaginatedResult<WalletOverviewDto>>.Success(result);

@@ -27,7 +27,7 @@ public class IranianIbanTests
     [Fact]
     public void Normalize_StripsWhitespaceAndDashesAndUnderscores()
     {
-        IranianIban.Normalize("IR 49-0000_0000000000 0000000000").ShouldBe(ValidIbanAllZeros);
+        IranianIban.Normalize("IR 49-0000_0000000000 00000000").ShouldBe(ValidIbanAllZeros);
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public class IranianIbanTests
     [Fact]
     public void Normalize_MapsPersianDigitsToAsciiDigits()
     {
-        var persian = "IR۴۹۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰";
+        var persian = "IR۴۹۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰";
 
         IranianIban.Normalize(persian).ShouldBe(ValidIbanAllZeros);
     }
@@ -47,7 +47,7 @@ public class IranianIbanTests
     [Fact]
     public void Normalize_MapsArabicIndicDigitsToAsciiDigits()
     {
-        var arabic = "IR٤٩٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠";
+        var arabic = "IR٤٩٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠٠";
 
         IranianIban.Normalize(arabic).ShouldBe(ValidIbanAllZeros);
     }
@@ -134,7 +134,7 @@ public class IranianIbanTests
     [Fact]
     public void TryParse_ForKnownValidInputInPersianDigits_ReturnsTrue()
     {
-        var input = "IR۴۹۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰";
+        var input = "IR۴۹۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰";
 
         var ok = IranianIban.TryParse(input, out var normalized);
 

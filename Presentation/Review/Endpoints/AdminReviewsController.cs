@@ -7,6 +7,7 @@ using Application.Review.Features.Commands.ReplyToReview;
 using Application.Review.Features.Commands.RestoreReview;
 using Application.Review.Features.Commands.UpdateAdminReply;
 using Application.Review.Features.Commands.UpdateReviewStatus;
+using Application.Review.Features.Queries.AdminReviewStats;
 using Application.Review.Features.Queries.GetReviewById;
 using Application.Review.Features.Queries.GetReviewsByStatus;
 using Application.Review.Features.Shared;
@@ -31,10 +32,24 @@ public class AdminReviewsController(IMediator mediator, IMapper mapper)
         [FromQuery] string status = "Pending",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
+        [FromQuery] string? searchText = null,
+        [FromQuery] int? minRating = null,
+        [FromQuery] Guid? productId = null,
+        [FromQuery] DateTime? dateFrom = null,
+        [FromQuery] DateTime? dateTo = null,
         CancellationToken ct = default)
     {
-        return await Send(new GetReviewsByStatusQuery(status, page, pageSize), ct);
+        return await Send(new GetReviewsByStatusQuery(
+            status, page, pageSize, searchText, minRating, productId, dateFrom, dateTo), ct);
     }
+
+    [HttpGet("stats")]
+    [ReviewRateLimit(ReviewRateLimitPolicy.AdminAction)]
+    [SwaggerOperation(OperationId = "AdminReviews_GetStats")]
+    [ProducesResponseType(typeof(ApiResponse<AdminReviewStatsDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> GetStats(CancellationToken ct)
+        => await Send(new GetAdminReviewStatsQuery(), ct);
 
     [HttpGet("{reviewId:guid}")]
     [SwaggerOperation(OperationId = "AdminReviews_GetById")]

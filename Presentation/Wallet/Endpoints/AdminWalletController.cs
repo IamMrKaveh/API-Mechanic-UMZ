@@ -1,11 +1,14 @@
 using System.Globalization;
 using Application.Wallet.Features.Commands.CreditWallet;
+using Application.Wallet.Features.Commands.DebitWallet;
 using Application.Wallet.Features.Commands.DismissFraudAlert;
+using Application.Wallet.Features.Commands.ForceFreezeFromFraudAlert;
 using Application.Wallet.Features.Commands.FreezeWallet;
 using Application.Wallet.Features.Commands.MarkFraudAlertReviewed;
 using Application.Wallet.Features.Commands.RequestWalletDebit;
 using Application.Wallet.Features.Commands.UnfreezeWallet;
 using Application.Wallet.Features.Queries.ExportWalletLedger;
+using Application.Wallet.Features.Queries.GetAdminDebitRequests;
 using Application.Wallet.Features.Queries.GetFraudAlertById;
 using Application.Wallet.Features.Queries.GetFraudAlerts;
 using Application.Wallet.Features.Queries.GetOpenFraudAlertsCount;
@@ -14,6 +17,8 @@ using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Queries.GetWalletLedger;
 using Application.Wallet.Features.Queries.GetWalletsOverview;
 using Application.Wallet.Features.Queries.GetWalletStatistics;
+using Application.Wallet.Features.Queries.GetWalletTransferById;
+using Application.Wallet.Features.Queries.GetWalletTransfers;
 using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
 using Presentation.Wallet.Requests;
@@ -29,6 +34,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     private const string IdempotencyHeaderName = "Idempotency-Key";
     private const string EffectiveIdempotencyHeaderName = "X-Idempotency-Key-Effective";
     private const string CorrelationHeaderName = "X-Correlation-ID";
+    private const string ForceConfirmationHeaderName = "X-Force-Confirmation";
     private const int IdempotencyKeyMaxLength = 128;
     private const int ReferenceIdMaxLength = 200;
 
@@ -79,7 +85,8 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     {
         var query = new GetWalletLedgerQuery(
             userId, request.Page, request.PageSize, request.FromDate, request.ToDate,
-            request.TransactionType, request.MinAmount, request.MaxAmount, request.SearchTerm);
+            request.TransactionType, request.MinAmount, request.MaxAmount, request.SearchTerm,
+            IncludeInactiveUsers: true);
         return await Send(query, ct);
     }
 
@@ -136,6 +143,51 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         return await Send(command, ct);
     }
 
+    [HttpPost("{userId:guid}/debit-immediate")]
+    [SwaggerOperation(OperationId = "AdminWallet_DebitImmediate")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DebitImmediate(
+        Guid userId,
+        [FromBody] AdminImmediateDebitRequest request,
+        [FromHeader(Name = IdempotencyHeaderName)] string? idempotencyKey,
+        [FromHeader(Name = ForceConfirmationHeaderName)] string? forceConfirmation,
+        CancellationToken ct)
+    {
+        if (!request.ConfirmForceDebit
+            || !string.Equals(forceConfirmation, "yes", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new ApiResponse(
+                false,
+                "برای اجرای برداشت فوری اجباری باید هدر X-Force-Confirmation: yes و پرچم ConfirmForceDebit=true ارسال شود."));
+        }
+
+        var effectiveKey = ResolveIdempotencyKey(idempotencyKey, "debit-immediate", userId);
+        var referenceId = ResolveReferenceId(request.ReferenceId, "force-debit");
+        var correlationId = ResolveCorrelationId();
+
+        WriteResponseHeader(EffectiveIdempotencyHeaderName, effectiveKey);
+        WriteResponseHeader(CorrelationHeaderName, correlationId);
+
+        var description = BuildAuditDescription("FORCE-DEBIT", request.Reason, request.Description);
+
+        var command = new DebitWalletCommand(
+            UserId: userId,
+            Amount: request.Amount,
+            TransactionType: WalletTransactionType.Debit,
+            ReferenceType: WalletReferenceType.Admin,
+            IdempotencyKey: effectiveKey,
+            CorrelationId: correlationId,
+            Description: description,
+            ReferenceId: referenceId);
+
+        return await Send(command, ct);
+    }
+
     [HttpPost("{userId:guid}/debit-requests")]
     [SwaggerOperation(OperationId = "AdminWallet_RequestDebit")]
     [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status200OK)]
@@ -175,6 +227,47 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPendingDebitRequests(Guid userId, CancellationToken ct)
         => await Send(new GetPendingDebitRequestsByUserQuery(userId), ct);
+
+    [HttpGet("debit-requests")]
+    [SwaggerOperation(OperationId = "AdminWallet_GetAdminDebitRequests")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<AdminDebitRequestListItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetAdminDebitRequests(
+        [FromQuery] GetAdminDebitRequestsListRequest request,
+        CancellationToken ct)
+    {
+        var query = new GetAdminDebitRequestsQuery(
+            request.OwnerId, request.RequestedBy, request.Status,
+            request.FromDate, request.ToDate, request.Page, request.PageSize);
+        return await Send(query, ct);
+    }
+
+    [HttpGet("transfers")]
+    [SwaggerOperation(OperationId = "AdminWallet_GetTransfers")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResult<WalletTransferDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetTransfers(
+        [FromQuery] GetAdminTransfersRequest request,
+        CancellationToken ct)
+    {
+        var query = new GetWalletTransfersQuery(
+            request.UserId, request.Status, request.FromDate, request.ToDate,
+            request.Page, request.PageSize);
+        return await Send(query, ct);
+    }
+
+    [HttpGet("transfers/{id:guid}")]
+    [SwaggerOperation(OperationId = "AdminWallet_GetTransferById")]
+    [ProducesResponseType(typeof(ApiResponse<WalletTransferDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetTransferById(Guid id, CancellationToken ct)
+        => await Send(new GetWalletTransferByIdQuery(id), ct);
 
     [HttpPost("{userId:guid}/freeze")]
     [SwaggerOperation(OperationId = "AdminWallet_Freeze")]
@@ -264,6 +357,20 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         Guid id, [FromBody] FraudAlertDismissRequest request, CancellationToken ct)
         => await Send(new DismissFraudAlertCommand(id, request.Note), ct);
 
+    [HttpPost("fraud/alerts/{id:guid}/force-freeze")]
+    [SwaggerOperation(OperationId = "AdminWallet_ForceFreezeFromFraudAlert")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ForceFreezeFromFraudAlert(
+        Guid id,
+        [FromBody] ForceFreezeFromFraudAlertRequest request,
+        CancellationToken ct)
+        => await Send(new ForceFreezeFromFraudAlertCommand(id, request.AdditionalNote), ct);
+
     private string ResolveIdempotencyKey(string? headerValue, string operation, Guid userId)
     {
         if (!string.IsNullOrWhiteSpace(headerValue))
@@ -304,9 +411,7 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
     private void WriteResponseHeader(string name, string value)
     {
         if (!HttpContext.Response.HasStarted)
-        {
             HttpContext.Response.Headers[name] = value;
-        }
     }
 
     private static string BuildAuditDescription(

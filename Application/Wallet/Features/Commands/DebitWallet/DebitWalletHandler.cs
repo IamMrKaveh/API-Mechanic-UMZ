@@ -15,16 +15,12 @@ public class DebitWalletHandler(
     private const string DefaultCurrency = "IRT";
     private static readonly TimeSpan WalletLockExpiry = TimeSpan.FromSeconds(10);
 
-    public async Task<ServiceResult<Unit>> Handle(
-        DebitWalletCommand request,
-        CancellationToken ct)
+    public async Task<ServiceResult<Unit>> Handle(DebitWalletCommand request, CancellationToken ct)
     {
         var userId = UserId.From(request.UserId);
 
         await using var lockHandle = await distributedLock.AcquireAsync(
-            $"wallet:{userId.Value:N}",
-            WalletLockExpiry,
-            ct);
+            $"wallet:{userId.Value:N}", WalletLockExpiry, ct);
 
         if (lockHandle is null || !lockHandle.IsAcquired)
             return ServiceResult<Unit>.Conflict("عملیات دیگری روی کیف پول در حال انجام است. لطفاً مجدداً تلاش کنید.");
@@ -40,11 +36,14 @@ public class DebitWalletHandler(
                 return ServiceResult<Unit>.NotFound("کیف پول یافت نشد.");
 
             var amount = Money.Create(request.Amount, DefaultCurrency);
+            var referenceId = string.IsNullOrWhiteSpace(request.ReferenceId)
+                ? currentUserService.UserId.Value.ToString()
+                : request.ReferenceId!;
 
             wallet.Debit(
                 amount,
                 request.Description ?? request.TransactionType.ToString(),
-                currentUserService.UserId.Value.ToString(),
+                referenceId,
                 request.IdempotencyKey);
 
             walletRepository.Update(wallet);

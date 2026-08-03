@@ -1,4 +1,4 @@
-﻿using Application.Wallet.Features.Shared;
+using Application.Wallet.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -11,6 +11,7 @@ public interface IWalletQueryService
         int page,
         int pageSize,
         WalletLedgerFilter? filter = null,
+        bool includeInactiveUsers = false,
         CancellationToken ct = default);
 
     Task<WalletLedgerEntryDto?> GetOrderPaymentLedgerEntryAsync(
@@ -21,12 +22,14 @@ public interface IWalletQueryService
     Task<IReadOnlyList<WalletLedgerEntryDto>> ExportLedgerAsync(
         UserId userId,
         WalletLedgerFilter filter,
+        bool includeInactiveUsers = false,
         CancellationToken ct = default);
 
     Task<PaginatedResult<WalletOverviewDto>> GetOverviewPageAsync(
         int page,
         int pageSize,
         WalletOverviewFilter? filter = null,
+        bool includeInactiveUsers = false,
         CancellationToken ct = default);
 
     Task<WalletStatisticsDto> GetStatisticsAsync(CancellationToken ct = default);

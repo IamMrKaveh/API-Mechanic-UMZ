@@ -35,9 +35,10 @@ public sealed class ExportAuditLogsValidator : AbstractValidator<ExportAuditLogs
             .Must(format => AllowedFormats.Contains(format))
             .WithMessage("فرمت خروجی نامعتبر است. مقادیر مجاز: csv, json.");
 
-        RuleFor(x => x.MaxRows)
+        RuleFor(x => x.MaxRows!.Value)
             .InclusiveBetween(MinMaxRows, MaxMaxRows)
-            .WithMessage($"MaxRows باید بین {MinMaxRows} و {MaxMaxRows:N0} باشد.");
+            .WithMessage($"MaxRows باید بین {MinMaxRows} و {MaxMaxRows:N0} باشد.")
+            .When(x => x.MaxRows.HasValue);
 
         RuleFor(x => x.EventType)
             .MaximumLength(MaxEventTypeLength)

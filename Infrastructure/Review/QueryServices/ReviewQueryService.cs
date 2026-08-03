@@ -1,5 +1,6 @@
 using Application.Common.Formatting;
 using Application.Review.Contracts;
+using Application.Review.Features.Queries.AdminReviewStats;
 using Application.Review.Features.Shared;
 using Domain.Product.ValueObjects;
 using Domain.Review.Aggregates;
@@ -65,69 +66,6 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
 
-    public async Task<PaginatedResult<ProductReviewDto>> GetUserReviewsAsync(
-        UserId userId,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
-    {
-        var safePage = page <= 0 ? 1 : page;
-        var safeSize = pageSize <= 0 ? 10 : pageSize;
-
-        var query = context.ProductReviews
-            .AsNoTracking()
-            .Include(r => r.User)
-            .Where(r => r.UserId == userId && !r.IsDeleted);
-
-        var total = await query.CountAsync(ct);
-
-        var entities = await query
-            .OrderByDescending(r => r.CreatedAt)
-            .Skip((safePage - 1) * safeSize)
-            .Take(safeSize)
-            .ToListAsync(ct);
-
-        var items = entities.Select(MapToDto).ToList();
-
-        return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
-    }
-
-    public async Task<PaginatedResult<ProductReviewDto>> GetReviewsByStatusAsync(
-        string status,
-        int page,
-        int pageSize,
-        CancellationToken ct = default)
-    {
-        var safePage = page <= 0 ? 1 : page;
-        var safeSize = pageSize <= 0 ? 10 : pageSize;
-
-        var normalizedStatus = string.IsNullOrWhiteSpace(status) ? "Pending" : status.Trim();
-        if (!AllowedStatuses.Contains(normalizedStatus))
-            normalizedStatus = "Pending";
-
-        var canonicalStatus = AllowedStatuses.First(s => s.Equals(normalizedStatus, StringComparison.OrdinalIgnoreCase));
-
-        var query = context.ProductReviews
-            .AsNoTracking()
-            .Include(r => r.User)
-            .Where(r => !r.IsDeleted);
-
-        if (!string.Equals(canonicalStatus, "All", StringComparison.OrdinalIgnoreCase))
-            query = query.Where(r => r.Status.Value == canonicalStatus);
-
-        var total = await query.CountAsync(ct);
-
-        var entities = await query
-            .OrderByDescending(r => r.CreatedAt)
-            .Skip((safePage - 1) * safeSize)
-            .Take(safeSize)
-            .ToListAsync(ct);
-
-        var items = entities.Select(MapToDto).ToList();
-
-        return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
-    }
-
     public async Task<ReviewSummaryDto?> GetProductReviewSummaryAsync(
     ProductId productId,
     CancellationToken ct = default)
@@ -180,16 +118,121 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         };
     }
 
-    public async Task<ProductReviewDto?> GetByIdAsync(
-        ReviewId id,
-        CancellationToken ct = default)
+    public async Task<PaginatedResult<ProductReviewDto>> GetReviewsByStatusAsync(
+        AdminReviewFilter filter,
+        CancellationToken cancellationToken)
     {
-        var entity = await context.ProductReviews
+        var query = context.ProductReviews
+            .AsNoTracking()
+            .Include(r => r.Product)
+            .Include(r => r.User)
+            .Where(r => !r.IsDeleted);
+
+        if (!string.Equals(filter.Status, "All", StringComparison.OrdinalIgnoreCase))
+        {
+            var statusValue = ReviewStatus.From(filter.Status);
+            query = query.Where(r => r.Status == statusValue);
+        }
+
+        if (filter.ProductId.HasValue && filter.ProductId.Value != Guid.Empty)
+        {
+            var pid = filter.ProductId;
+            query = query.Where(r => r.ProductId == pid);
+        }
+
+        if (filter.MinRating.HasValue)
+        {
+            var min = filter.MinRating;
+            query = query.Where(r => r.Rating >= min);
+        }
+
+        if (filter.DateFrom.HasValue)
+        {
+            var from = filter.DateFrom.Value.ToUniversalTime();
+            query = query.Where(r => r.CreatedAt >= from);
+        }
+
+        if (filter.DateTo.HasValue)
+        {
+            var to = filter.DateTo.Value.ToUniversalTime();
+            query = query.Where(r => r.CreatedAt <= to);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.SearchText))
+        {
+            var q = filter.SearchText.Trim().ToLower();
+            query = query.Where(r =>
+                (r.Title != null && r.Title.Contains(q, StringComparison.CurrentCultureIgnoreCase)) ||
+                r.Comment.ToLower().Contains(q) ||
+                (r.User != null &&
+                    ((r.User.FullName.FirstName != null && r.User.FullName.FirstName.Contains(q, StringComparison.CurrentCultureIgnoreCase)) ||
+                     (r.User.FullName.LastName != null && r.User.FullName.LastName.Contains(q, StringComparison.CurrentCultureIgnoreCase)))));
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip((filter.Page - 1) * filter.PageSize)
+            .Take(filter.PageSize)
+            .Select(r => MapToDto(r))
+            .ToListAsync(cancellationToken);
+
+        return new PaginatedResult<ProductReviewDto>(items, total, filter.Page, filter.PageSize);
+    }
+
+    public async Task<AdminReviewStatsDto> GetAdminReviewStatsAsync(CancellationToken cancellationToken)
+    {
+        var grouped = await context.ProductReviews
+            .AsNoTracking()
+            .Where(r => !r.IsDeleted)
+            .GroupBy(r => r.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        var pending = grouped.FirstOrDefault(g => g.Status == ReviewStatus.Pending)?.Count ?? 0;
+        var approved = grouped.FirstOrDefault(g => g.Status == ReviewStatus.Approved)?.Count ?? 0;
+        var rejected = grouped.FirstOrDefault(g => g.Status == ReviewStatus.Rejected)?.Count ?? 0;
+
+        return new AdminReviewStatsDto(pending, approved, rejected, pending + approved + rejected);
+    }
+
+    public async Task<ProductReviewDto?> GetByIdAsync(
+        ReviewId reviewId,
+        CancellationToken cancellationToken)
+    {
+        var review = await context.ProductReviews
             .AsNoTracking()
             .Include(r => r.User)
-            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, ct);
+            .FirstOrDefaultAsync(r => r.Id == reviewId && !r.IsDeleted, cancellationToken);
 
-        return entity is null ? null : MapToDto(entity);
+        return review is null ? null : MapToDto(review);
+    }
+
+    public async Task<PaginatedResult<ProductReviewDto>> GetUserReviewsAsync(
+        UserId userId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var safePage = page <= 0 ? 1 : page;
+        var safeSize = pageSize <= 0 ? 10 : pageSize;
+
+        var query = context.ProductReviews
+            .AsNoTracking()
+            .Include(r => r.User)
+            .Where(r => r.UserId == userId && !r.IsDeleted)
+            .OrderByDescending(r => r.CreatedAt);
+
+        var total = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .Skip((safePage - 1) * safeSize)
+            .Take(safeSize)
+            .Select(r => MapToDto(r))
+            .ToListAsync(cancellationToken);
+
+        return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
 
     private static ProductReviewDto MapToDto(ProductReview r)

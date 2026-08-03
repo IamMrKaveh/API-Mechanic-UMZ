@@ -13,6 +13,8 @@ public sealed class AuditRetentionJob(
     private static readonly int FinancialRetentionDays = 7 * 365;
     private static readonly int SecurityRetentionDays = 2 * 365;
     private static readonly int DefaultRetentionDays = 90;
+    private const int DeleteBatchSize = 1000;
+    private const int ArchiveBatchSize = 500;
 
     private static readonly HashSet<string> FinancialEventTypes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -68,21 +70,22 @@ public sealed class AuditRetentionJob(
     private async Task RunRetentionAsync(CancellationToken ct)
     {
         using var scope = scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<DBContext>();
+        var repository = scope.ServiceProvider.GetRequiredService<IAuditRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
         var archiveStorage = scope.ServiceProvider.GetRequiredService<IAuditArchiveStorage>();
         var now = dateTimeProvider.UtcNow;
 
         var defaultCutoff = now.AddDays(-DefaultRetentionDays);
         await ArchiveAndDeleteAsync(
-            context, auditService, archiveStorage, defaultCutoff,
+            repository, unitOfWork, auditService, archiveStorage, defaultCutoff,
             dateTimeProvider,
             excludeEventTypes: FinancialEventTypes.Union(SecurityEventTypes).ToHashSet(StringComparer.OrdinalIgnoreCase),
             batchLabel: "default", ct: ct);
 
         var securityCutoff = now.AddDays(-SecurityRetentionDays);
         await ArchiveAndDeleteAsync(
-            context, auditService, archiveStorage, securityCutoff,
+            repository, unitOfWork, auditService, archiveStorage, securityCutoff,
             dateTimeProvider,
             includeEventTypes: SecurityEventTypes,
             excludeEventTypes: FinancialEventTypes,
@@ -90,7 +93,7 @@ public sealed class AuditRetentionJob(
 
         var financialCutoff = now.AddDays(-FinancialRetentionDays);
         await ArchiveOnlyAsync(
-            context, auditService, archiveStorage, financialCutoff,
+            repository, unitOfWork, auditService, archiveStorage, financialCutoff,
             dateTimeProvider,
             includeEventTypes: FinancialEventTypes,
             batchLabel: "financial", ct: ct);
@@ -99,7 +102,8 @@ public sealed class AuditRetentionJob(
     }
 
     private static async Task ArchiveAndDeleteAsync(
-        DBContext context,
+        IAuditRepository repository,
+        IUnitOfWork unitOfWork,
         IAuditService auditService,
         IAuditArchiveStorage archiveStorage,
         DateTime cutoff,
@@ -109,25 +113,20 @@ public sealed class AuditRetentionJob(
         string batchLabel = "",
         CancellationToken ct = default)
     {
-        var query = context.AuditLogs.Where(a => a.CreatedAt < cutoff);
-
-        if (includeEventTypes?.Count != 0)
-            query = query.Where(a => includeEventTypes!.Contains(a.EventType));
-
-        if (excludeEventTypes?.Count != 0)
-            query = query.Where(a => !excludeEventTypes!.Contains(a.EventType));
-
-        var logsToArchive = await query
-            .OrderBy(a => a.CreatedAt)
-            .Take(1000)
-            .ToListAsync(ct);
+        var logsToArchive = await repository.GetForArchiveAsync(
+            cutoff,
+            includeEventTypes,
+            excludeEventTypes,
+            onlyNonArchived: false,
+            batchSize: DeleteBatchSize,
+            ct: ct);
 
         if (logsToArchive.Count == 0) return;
 
         await archiveStorage.ArchiveAsync(logsToArchive, batchLabel, dateTimeProvider.UtcNow, ct);
 
-        context.AuditLogs.RemoveRange(logsToArchive);
-        await context.SaveChangesAsync(ct);
+        await repository.RemoveRangeAsync(logsToArchive, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogSystemEventAsync(
             "AuditRetention",
@@ -136,7 +135,8 @@ public sealed class AuditRetentionJob(
     }
 
     private static async Task ArchiveOnlyAsync(
-        DBContext context,
+        IAuditRepository repository,
+        IUnitOfWork unitOfWork,
         IAuditService auditService,
         IAuditArchiveStorage archiveStorage,
         DateTime cutoff,
@@ -145,15 +145,13 @@ public sealed class AuditRetentionJob(
         string batchLabel = "",
         CancellationToken ct = default)
     {
-        var query = context.AuditLogs.Where(a => a.CreatedAt < cutoff && !a.IsArchived);
-
-        if (includeEventTypes?.Any() == true)
-            query = query.Where(a => includeEventTypes.Contains(a.EventType));
-
-        var logsToArchive = await query
-            .OrderBy(a => a.CreatedAt)
-            .Take(500)
-            .ToListAsync(ct);
+        var logsToArchive = await repository.GetForArchiveAsync(
+            cutoff,
+            includeEventTypes,
+            excludeEventTypes: null,
+            onlyNonArchived: true,
+            batchSize: ArchiveBatchSize,
+            ct: ct);
 
         if (logsToArchive.Count == 0) return;
 
@@ -162,7 +160,7 @@ public sealed class AuditRetentionJob(
         foreach (var log in logsToArchive)
             log.MarkAsArchived();
 
-        await context.SaveChangesAsync(ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         await auditService.LogSystemEventAsync(
             "AuditRetention",

@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Wallet.Configurations;
+namespace Infrastructure.Wallet.Configurations;
 
 public sealed class WalletReconciliationAuditConfiguration
     : IEntityTypeConfiguration<WalletReconciliationAudit>

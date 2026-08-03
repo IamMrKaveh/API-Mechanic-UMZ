@@ -64,3 +64,29 @@ public sealed record GetWalletsOverviewRequest(
     string? SortBy = null,
     int Page = 1,
     int PageSize = 20);
+
+public sealed record AdminImmediateDebitRequest(
+    decimal Amount,
+    string Reason,
+    string? Description = null,
+    string? ReferenceId = null,
+    bool ConfirmForceDebit = false);
+
+public sealed record GetAdminTransfersRequest(
+    Guid? UserId = null,
+    string? Status = null,
+    DateTime? FromDate = null,
+    DateTime? ToDate = null,
+    int Page = 1,
+    int PageSize = 20);
+
+public sealed record GetAdminDebitRequestsListRequest(
+    Guid? OwnerId = null,
+    Guid? RequestedBy = null,
+    string? Status = null,
+    DateTime? FromDate = null,
+    DateTime? ToDate = null,
+    int Page = 1,
+    int PageSize = 20);
+
+public sealed record ForceFreezeFromFraudAlertRequest(string? AdditionalNote = null);
