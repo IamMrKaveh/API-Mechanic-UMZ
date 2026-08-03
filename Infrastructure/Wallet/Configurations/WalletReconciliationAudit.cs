@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Wallet;
+namespace Infrastructure.Wallet.Configurations;
 
 public sealed class WalletReconciliationAudit
 {

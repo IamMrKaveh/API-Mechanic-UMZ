@@ -62,7 +62,7 @@ public sealed class AdminAuditLogsController(IMediator mediator, IMapper mapper)
             request.From,
             request.To,
             "csv",
-            request.MaxRows ?? 10_000);
+            request.MaxRows);
 
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);
@@ -81,7 +81,7 @@ public sealed class AdminAuditLogsController(IMediator mediator, IMapper mapper)
             request.From,
             request.To,
             "json",
-            request.MaxRows ?? 5_000);
+            request.MaxRows);
 
         var result = await Mediator.Send(query, ct);
         return ToActionResult(result);

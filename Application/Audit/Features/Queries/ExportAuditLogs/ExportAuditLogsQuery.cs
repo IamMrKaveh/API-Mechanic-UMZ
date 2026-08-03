@@ -8,5 +8,5 @@ public sealed record ExportAuditLogsQuery(
     string? EntityType,
     DateTime? From,
     DateTime? To,
-    string Format = "csv",
-    int MaxRows = 10_000) : IQuery<ExportAuditLogsResult>;
+    string Format,
+    int? MaxRows) : IQuery<ExportAuditLogsResult>;

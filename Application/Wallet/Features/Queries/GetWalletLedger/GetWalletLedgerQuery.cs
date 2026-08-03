@@ -11,5 +11,6 @@ public record GetWalletLedgerQuery(
     string? TransactionType = null,
     decimal? MinAmount = null,
     decimal? MaxAmount = null,
-    string? SearchTerm = null)
+    string? SearchTerm = null,
+    bool IncludeInactiveUsers = false)
     : IPageQuery<WalletLedgerEntryDto>;

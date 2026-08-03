@@ -17,10 +17,8 @@ public class GetWalletLedgerHandler(
             : currentUserService.UserId ?? Guid.Empty;
 
         if (resolvedUserId == Guid.Empty)
-        {
             return ServiceResult<PaginatedResult<WalletLedgerEntryDto>>
                 .Unauthorized("کاربر احراز هویت نشده است.");
-        }
 
         var userId = UserId.From(resolvedUserId);
 
@@ -39,6 +37,7 @@ public class GetWalletLedgerHandler(
             request.Page,
             request.PageSize,
             filter,
+            includeInactiveUsers: request.IncludeInactiveUsers,
             ct);
 
         return ServiceResult<PaginatedResult<WalletLedgerEntryDto>>.Success(result);

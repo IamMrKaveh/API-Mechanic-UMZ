@@ -1,3 +1,4 @@
+using Application.Review.Features.Queries.AdminReviewStats;
 using Application.Review.Features.Shared;
 using Domain.Product.ValueObjects;
 using Domain.Review.ValueObjects;
@@ -14,25 +15,25 @@ public interface IReviewQueryService
         string sortBy,
         int? minRating,
         bool verifiedOnly,
-        CancellationToken ct = default);
+        CancellationToken cancellationToken);
+
+    Task<PaginatedResult<ProductReviewDto>> GetReviewsByStatusAsync(
+        AdminReviewFilter filter,
+        CancellationToken cancellationToken);
+
+    Task<ReviewSummaryDto?> GetProductReviewSummaryAsync(
+        ProductId productId,
+        CancellationToken cancellationToken);
+
+    Task<AdminReviewStatsDto> GetAdminReviewStatsAsync(CancellationToken cancellationToken);
+
+    Task<ProductReviewDto?> GetByIdAsync(
+        ReviewId reviewId,
+        CancellationToken cancellationToken);
 
     Task<PaginatedResult<ProductReviewDto>> GetUserReviewsAsync(
         UserId userId,
         int page,
         int pageSize,
-        CancellationToken ct = default);
-
-    Task<ReviewSummaryDto?> GetProductReviewSummaryAsync(
-        ProductId productId,
-        CancellationToken ct = default);
-
-    Task<PaginatedResult<ProductReviewDto>> GetReviewsByStatusAsync(
-        string status,
-        int page,
-        int pageSize,
-        CancellationToken ct = default);
-
-    Task<ProductReviewDto?> GetByIdAsync(
-        ReviewId id,
-        CancellationToken ct = default);
+        CancellationToken cancellationToken);
 }

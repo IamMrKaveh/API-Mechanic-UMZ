@@ -24,14 +24,19 @@ public sealed class GetReviewsByStatusHandler(
 
         var canonical = AllowedStatuses.First(s => s.Equals(normalized, StringComparison.OrdinalIgnoreCase));
 
+        var filter = new AdminReviewFilter(
+            canonical,
+            request.Page,
+            request.PageSize,
+            NormalizeSearch(request.SearchText),
+            request.MinRating,
+            request.ProductId,
+            request.DateFrom,
+            request.DateTo);
+
         try
         {
-            var result = await reviewQueryService.GetReviewsByStatusAsync(
-                canonical,
-                request.Page,
-                request.PageSize,
-                cancellationToken);
-
+            var result = await reviewQueryService.GetReviewsByStatusAsync(filter, cancellationToken);
             return ServiceResult<PaginatedResult<ProductReviewDto>>.Success(result);
         }
         catch (NullReferenceException ex)
@@ -45,5 +50,12 @@ public sealed class GetReviewsByStatusHandler(
             return ServiceResult<PaginatedResult<ProductReviewDto>>.Failure(
                 Error.Infrastructure("خطا در ارتباط با پایگاه داده هنگام دریافت نظرات."));
         }
+    }
+
+    private static string? NormalizeSearch(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var trimmed = value.Trim();
+        return trimmed.Length == 0 ? null : trimmed;
     }
 }

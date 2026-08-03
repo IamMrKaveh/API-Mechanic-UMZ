@@ -1,6 +1,5 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
-using Application.Wallet.Contracts;
 using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 
@@ -27,7 +26,7 @@ public sealed class ExportWalletLedgerHandler(
             MaxRows = request.MaxRows
         };
 
-        var entries = await walletQueryService.ExportLedgerAsync(userId, filter, ct);
+        var entries = await walletQueryService.ExportLedgerAsync(userId, filter, false, ct);
 
         var isJson = string.Equals(request.Format, "json", StringComparison.OrdinalIgnoreCase);
         var extension = isJson ? "json" : "csv";

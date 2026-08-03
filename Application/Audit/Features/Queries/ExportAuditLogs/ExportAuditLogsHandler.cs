@@ -6,10 +6,18 @@ public sealed class ExportAuditLogsHandler(
     IAuditQueryService auditQueryService)
     : IQueryHandler<ExportAuditLogsQuery, ExportAuditLogsResult>
 {
+    private const int DefaultCsvMaxRows = 10_000;
+    private const int DefaultJsonMaxRows = 5_000;
+
     public async Task<ServiceResult<ExportAuditLogsResult>> Handle(
         ExportAuditLogsQuery request,
         CancellationToken ct)
     {
+        var isJson = request.Format.Equals("json", StringComparison.OrdinalIgnoreCase);
+
+        var effectiveMaxRows = request.MaxRows
+            ?? (isJson ? DefaultJsonMaxRows : DefaultCsvMaxRows);
+
         var exportRequest = new AuditExportRequest
         {
             UserId = request.UserId,
@@ -17,10 +25,8 @@ public sealed class ExportAuditLogsHandler(
             EntityType = request.EntityType,
             From = request.From,
             To = request.To,
-            MaxRows = request.MaxRows
+            MaxRows = effectiveMaxRows
         };
-
-        var isJson = request.Format.Equals("json", StringComparison.OrdinalIgnoreCase);
 
         var (contentType, extension) = isJson
             ? ("application/json", "json")

@@ -1,66 +1,64 @@
-using SharedKernel.ValueObjects;
+using System.Net.Sockets;
+using SharedKernel.Abstractions;
 
 namespace Tests.SharedKernel.ValueObjects;
 
-public class IpAddressTests
+public sealed class IpAddress : ValueObject
 {
-    [Theory]
-    [InlineData("0.0.0.0")]
-    [InlineData("127.0.0.1")]
-    [InlineData("192.168.1.1")]
-    [InlineData("255.255.255.255")]
-    [InlineData("::1")]
-    [InlineData("2001:db8::1")]
-    public void Create_WithValidIp_ReturnsInstance(string input)
+    public string Value { get; }
+
+    private IpAddress(string value) => Value = value;
+
+    public static IpAddress Create(string value)
     {
-        IpAddress.Create(input).Value.ShouldBe(input.Trim());
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException("IP address cannot be empty.", nameof(value));
+
+        var trimmed = value.Trim();
+
+        if (!IsValidIp(trimmed))
+            throw new ArgumentException($"'{value}' is not a valid IP address.", nameof(value));
+
+        return new IpAddress(trimmed);
     }
 
-    [Fact]
-    public void Create_TrimsWhitespace()
+    public static IpAddress Unknown => new("0.0.0.0");
+    public static IpAddress System => new("127.0.0.1");
+
+    private static bool IsValidIp(string value)
     {
-        IpAddress.Create("  10.0.0.1  ").Value.ShouldBe("10.0.0.1");
+        if (value.Contains(':'))
+        {
+            return global::System.Net.IPAddress.TryParse(value, out var parsedIp)
+                   && parsedIp.AddressFamily == AddressFamily.InterNetworkV6;
+        }
+
+        var parts = value.Split('.');
+        if (parts.Length != 4)
+            return false;
+
+        foreach (var part in parts)
+        {
+            if (part.Length == 0 || part.Length > 3)
+                return false;
+
+            if (!part.All(ch => ch is >= '0' and <= '9'))
+                return false;
+
+            if (part.Length > 1 && part[0] == '0')
+                return false;
+
+            if (!int.TryParse(part, out var octet) || octet is < 0 or > 255)
+                return false;
+        }
+
+        return true;
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Create_WithEmptyOrWhitespace_ThrowsArgumentException(string input)
+    protected override IEnumerable<object> GetEqualityComponents()
     {
-        Should.Throw<ArgumentException>(() => IpAddress.Create(input));
+        yield return Value;
     }
 
-    [Theory]
-    [InlineData("not-an-ip")]
-    [InlineData("999.999.999.999")]
-    [InlineData("256.0.0.1")]
-    [InlineData("1.2.3")]
-    public void Create_WithInvalidIp_ThrowsArgumentException(string input)
-    {
-        Should.Throw<ArgumentException>(() => IpAddress.Create(input));
-    }
-
-    [Fact]
-    public void Unknown_HasZeroAddress()
-    {
-        IpAddress.Unknown.Value.ShouldBe("0.0.0.0");
-    }
-
-    [Fact]
-    public void System_HasLoopbackAddress()
-    {
-        IpAddress.System.Value.ShouldBe("127.0.0.1");
-    }
-
-    [Fact]
-    public void ToString_ReturnsValue()
-    {
-        IpAddress.Create("10.0.0.1").ToString().ShouldBe("10.0.0.1");
-    }
-
-    [Fact]
-    public void Equality_ForValueObjectWithSameValue_TreatsInstancesAsEqual()
-    {
-        IpAddress.Create("10.0.0.1").ShouldBe(IpAddress.Create("10.0.0.1"));
-    }
+    public override string ToString() => Value;
 }

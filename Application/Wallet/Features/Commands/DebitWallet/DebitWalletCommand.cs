@@ -1,4 +1,4 @@
-﻿using Domain.Wallet.Enums;
+using Domain.Wallet.Enums;
 
 namespace Application.Wallet.Features.Commands.DebitWallet;
 
@@ -9,5 +9,6 @@ public record DebitWalletCommand(
     WalletReferenceType ReferenceType,
     string IdempotencyKey,
     string? CorrelationId = null,
-    string? Description = null)
+    string? Description = null,
+    string? ReferenceId = null)
     : ICommand<Unit>;

@@ -1,4 +1,4 @@
-﻿namespace Application.Wallet.Features.Shared;
+namespace Application.Wallet.Features.Shared;
 
 public sealed record WalletDto
 {
@@ -95,3 +95,54 @@ public sealed record WalletStatisticsDto(
     int PendingWithdrawalsCount,
     int OpenFraudAlertsCount,
     DateTime GeneratedAt);
+
+public sealed record WalletTransferDto(
+    Guid Id,
+    Guid FromUserId,
+    string? FromUserFullName,
+    Guid ToUserId,
+    string? ToUserFullName,
+    decimal Amount,
+    string Currency,
+    string? Description,
+    string Status,
+    int OtpAttempts,
+    DateTime OtpExpiresAt,
+    string CorrelationId,
+    DateTime CreatedAt,
+    DateTime? CompletedAt,
+    DateTime? CancelledAt,
+    string? FailureReason);
+
+public sealed record AdminDebitRequestListItemDto(
+    Guid Id,
+    Guid WalletId,
+    Guid OwnerId,
+    string? OwnerFullName,
+    decimal Amount,
+    string Reason,
+    string? Description,
+    Guid RequestedBy,
+    string? RequestedByFullName,
+    string Status,
+    string? RejectionReason,
+    DateTime CreatedAt,
+    DateTime ExpiresAt,
+    DateTime? RespondedAt);
+
+public sealed class WalletTransferFilter
+{
+    public Guid? UserId { get; init; }
+    public string? Status { get; init; }
+    public DateTime? FromDate { get; init; }
+    public DateTime? ToDate { get; init; }
+}
+
+public sealed class WalletDebitRequestFilter
+{
+    public Guid? OwnerId { get; init; }
+    public Guid? RequestedBy { get; init; }
+    public string? Status { get; init; }
+    public DateTime? FromDate { get; init; }
+    public DateTime? ToDate { get; init; }
+}

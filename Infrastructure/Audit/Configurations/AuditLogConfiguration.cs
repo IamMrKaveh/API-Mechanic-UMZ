@@ -38,5 +38,17 @@ public sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.HasIndex(e => e.CreatedAt);
         builder.HasIndex(e => e.EventType);
         builder.HasIndex(e => e.HashVersion);
+
+        builder.HasIndex(e => e.EntityType)
+            .HasDatabaseName("IX_AuditLogs_EntityType");
+
+        builder.HasIndex(e => e.IsArchived)
+            .HasDatabaseName("IX_AuditLogs_IsArchived");
+
+        builder.HasIndex(e => new { e.CreatedAt, e.IsArchived, e.EventType })
+            .HasDatabaseName("IX_AuditLogs_CreatedAt_IsArchived_EventType");
+
+        builder.HasIndex(e => new { e.EntityType, e.EntityId })
+            .HasDatabaseName("IX_AuditLogs_EntityType_EntityId");
     }
 }

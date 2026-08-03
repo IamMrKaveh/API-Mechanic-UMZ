@@ -1,18 +1,15 @@
-﻿using Application.Audit.Features.Shared;
+using Application.Audit.Features.Shared;
 
 namespace Application.Audit.Features.Queries.GetAuditStatistics;
 
 public sealed class GetAuditStatisticsHandler(IAuditQueryService auditQueryService)
-    : IQueryHandler<GetAuditStatisticsQuery, PaginatedResult<AuditStatisticsDto>>
+    : IQueryHandler<GetAuditStatisticsQuery, AuditStatisticsDto>
 {
-    public async Task<ServiceResult<PaginatedResult<AuditStatisticsDto>>> Handle(
+    public async Task<ServiceResult<AuditStatisticsDto>> Handle(
         GetAuditStatisticsQuery request,
         CancellationToken ct)
     {
         var statistics = await auditQueryService.GetStatisticsAsync(request.From, request.To, ct);
-
-        var paginated = PaginatedResult<AuditStatisticsDto>.Create([statistics], 1, 1, 1);
-
-        return ServiceResult<PaginatedResult<AuditStatisticsDto>>.Success(paginated);
+        return ServiceResult<AuditStatisticsDto>.Success(statistics);
     }
 }

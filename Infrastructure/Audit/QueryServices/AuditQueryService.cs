@@ -155,7 +155,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
     {
         var query = BuildExportQuery(request);
 
-        var maxRows = request.MaxRows > 0 ? request.MaxRows : 10000;
+        var maxRows = Math.Max(1, request.MaxRows);
 
         var logs = await query
             .OrderByDescending(l => l.CreatedAt)
@@ -190,7 +190,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
     {
         var query = BuildExportQuery(request);
 
-        var maxRows = request.MaxRows > 0 ? request.MaxRows : 5000;
+        var maxRows = Math.Max(1, request.MaxRows);
 
         var logs = await query
             .OrderByDescending(l => l.CreatedAt)
@@ -264,7 +264,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
             query = query.Where(l => l.EntityType == request.EntityType);
 
         if (!string.IsNullOrEmpty(request.Action))
-            query = query.Where(l => l.Action.Contains(request.Action));
+            query = query.Where(l => l.Action == request.Action);
 
         if (!string.IsNullOrEmpty(request.Keyword))
             query = query.Where(l => (l.Details != null && l.Details.Contains(request.Keyword))
@@ -299,7 +299,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
             query = query.Where(l => l.EntityType == request.EntityType);
 
         if (!string.IsNullOrEmpty(request.Action))
-            query = query.Where(l => l.Action.Contains(request.Action));
+            query = query.Where(l => l.Action == request.Action);
 
         if (request.From.HasValue)
             query = query.Where(l => l.CreatedAt >= request.From.Value);

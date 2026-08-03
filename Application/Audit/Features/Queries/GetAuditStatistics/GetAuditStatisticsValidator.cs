@@ -2,19 +2,10 @@ namespace Application.Audit.Features.Queries.GetAuditStatistics;
 
 public sealed class GetAuditStatisticsValidator : AbstractValidator<GetAuditStatisticsQuery>
 {
-    private const int MaxPageSize = 200;
     private const int MaxRangeDays = 366;
 
     public GetAuditStatisticsValidator()
     {
-        RuleFor(x => x.Page)
-            .GreaterThan(0).WithMessage("شماره صفحه باید بزرگتر از صفر باشد.");
-
-        RuleFor(x => x.PageSize)
-            .GreaterThan(0).WithMessage("اندازه صفحه باید بزرگتر از صفر باشد.")
-            .LessThanOrEqualTo(MaxPageSize)
-                .WithMessage($"اندازه صفحه نمی‌تواند بیش از {MaxPageSize} باشد.");
-
         RuleFor(x => x)
             .Must(x => x.From is null || x.To is null || x.From <= x.To)
             .WithMessage("تاریخ شروع باید کوچکتر یا مساوی تاریخ پایان باشد.")
