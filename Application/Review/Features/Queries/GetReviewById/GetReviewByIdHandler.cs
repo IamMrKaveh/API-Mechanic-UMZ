@@ -1,12 +1,12 @@
-using System.Data.Common;
 using Application.Review.Features.Shared;
 using Domain.Review.ValueObjects;
-using Microsoft.Extensions.Logging;
+using Domain.User.ValueObjects;
 
 namespace Application.Review.Features.Queries.GetReviewById;
 
 public sealed class GetReviewByIdHandler(
     IReviewQueryService reviewQueryService,
+    ICurrentUserService currentUserService,
     ILogger<GetReviewByIdHandler> logger)
     : IQueryHandler<GetReviewByIdQuery, ProductReviewDto>
 {
@@ -17,7 +17,15 @@ public sealed class GetReviewByIdHandler(
         {
             var reviewId = ReviewId.From(request.ReviewId);
 
-            var dto = await reviewQueryService.GetByIdAsync(reviewId, ct);
+            UserId? currentUserId = null;
+            if (currentUserService.IsAuthenticated
+                && currentUserService.UserId is { } uid
+                && uid != Guid.Empty)
+            {
+                currentUserId = UserId.From(uid);
+            }
+
+            var dto = await reviewQueryService.GetByIdAsync(reviewId, currentUserId, ct);
 
             return dto is null
                 ? ServiceResult<ProductReviewDto>.NotFound("نظر یافت نشد.")

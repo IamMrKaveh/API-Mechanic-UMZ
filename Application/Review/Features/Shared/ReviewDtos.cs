@@ -14,6 +14,7 @@ public record ProductReviewDto
     public bool IsVerifiedPurchase { get; init; }
     public int LikeCount { get; init; }
     public int DislikeCount { get; init; }
+    public string? UserVote { get; init; }
     public string? AdminReply { get; init; }
     public DateTime? RepliedAt { get; init; }
     public DateTime CreatedAt { get; init; }

@@ -1,5 +1,8 @@
 using Application.Review.Features.Commands.CreateReview;
 using Application.Review.Features.Commands.DeleteOwnReview;
+using Application.Review.Features.Commands.DislikeReview;
+using Application.Review.Features.Commands.LikeReview;
+using Application.Review.Features.Commands.RemoveReviewVote;
 using Application.Review.Features.Commands.UpdateOwnReview;
 using Application.Review.Features.Queries.CanReviewProduct;
 using Application.Review.Features.Queries.GetProductReviews;
@@ -127,4 +130,46 @@ public class ReviewsController(IMediator mediator, IMapper mapper)
     {
         return await Send(new GetUserReviewsQuery(page, pageSize), ct);
     }
+
+    [HttpPost("{reviewId:guid}/like")]
+    [Authorize]
+    [ReviewRateLimit(ReviewRateLimitPolicy.Vote)]
+    [SwaggerOperation(OperationId = "Reviews_Like")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> LikeReview(
+        Guid reviewId,
+        CancellationToken ct)
+        => await Send(new LikeReviewCommand(reviewId), ct);
+
+    [HttpPost("{reviewId:guid}/dislike")]
+    [Authorize]
+    [ReviewRateLimit(ReviewRateLimitPolicy.Vote)]
+    [SwaggerOperation(OperationId = "Reviews_Dislike")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> DislikeReview(
+        Guid reviewId,
+        CancellationToken ct)
+        => await Send(new DislikeReviewCommand(reviewId), ct);
+
+    [HttpDelete("{reviewId:guid}/vote")]
+    [Authorize]
+    [ReviewRateLimit(ReviewRateLimitPolicy.Vote)]
+    [SwaggerOperation(OperationId = "Reviews_RemoveVote")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> RemoveReviewVote(
+        Guid reviewId,
+        CancellationToken ct)
+        => await Send(new RemoveReviewVoteCommand(reviewId), ct);
 }
