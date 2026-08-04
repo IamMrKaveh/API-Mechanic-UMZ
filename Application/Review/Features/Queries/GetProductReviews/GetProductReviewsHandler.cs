@@ -1,12 +1,12 @@
-using System.Data.Common;
 using Application.Review.Features.Shared;
 using Domain.Product.ValueObjects;
-using Microsoft.Extensions.Logging;
+using Domain.User.ValueObjects;
 
 namespace Application.Review.Features.Queries.GetProductReviews;
 
 public class GetProductReviewsHandler(
     IReviewQueryService reviewQueryService,
+    ICurrentUserService currentUserService,
     ILogger<GetProductReviewsHandler> logger)
     : IQueryHandler<GetProductReviewsQuery, PaginatedResult<ProductReviewDto>>
 {
@@ -17,6 +17,14 @@ public class GetProductReviewsHandler(
         {
             var productId = ProductId.From(request.ProductId);
 
+            UserId? currentUserId = null;
+            if (currentUserService.IsAuthenticated
+                && currentUserService.UserId is { } uid
+                && uid != Guid.Empty)
+            {
+                currentUserId = UserId.From(uid);
+            }
+
             var result = await reviewQueryService.GetApprovedProductReviewsAsync(
                 productId,
                 request.Page,
@@ -24,6 +32,7 @@ public class GetProductReviewsHandler(
                 request.SortBy,
                 request.MinRating,
                 request.VerifiedOnly,
+                currentUserId,
                 ct);
 
             return ServiceResult<PaginatedResult<ProductReviewDto>>.Success(result);

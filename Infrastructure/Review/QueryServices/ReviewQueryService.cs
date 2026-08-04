@@ -23,6 +23,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         string sortBy,
         int? minRating,
         bool verifiedOnly,
+        UserId? currentUserId,
         CancellationToken ct = default)
     {
         var safePage = page <= 0 ? 1 : page;
@@ -61,14 +62,15 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             .Take(safeSize)
             .ToListAsync(ct);
 
-        var items = entities.Select(MapToDto).ToList();
+        var votes = await LoadUserVotesAsync(entities, currentUserId, ct);
+        var items = entities.Select(r => MapToDto(r, votes)).ToList();
 
         return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
 
     public async Task<ReviewSummaryDto?> GetProductReviewSummaryAsync(
-    ProductId productId,
-    CancellationToken ct = default)
+        ProductId productId,
+        CancellationToken ct = default)
     {
         var baseQuery = context.ProductReviews
             .AsNoTracking()
@@ -171,12 +173,13 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
         var total = await query.CountAsync(cancellationToken);
 
-        var items = await query
+        var entities = await query
             .OrderByDescending(r => r.CreatedAt)
             .Skip((filter.Page - 1) * filter.PageSize)
             .Take(filter.PageSize)
-            .Select(r => MapToDto(r))
             .ToListAsync(cancellationToken);
+
+        var items = entities.Select(r => MapToDto(r, null)).ToList();
 
         return new PaginatedResult<ProductReviewDto>(items, total, filter.Page, filter.PageSize);
     }
@@ -199,6 +202,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
     public async Task<ProductReviewDto?> GetByIdAsync(
         ReviewId reviewId,
+        UserId? currentUserId,
         CancellationToken cancellationToken)
     {
         var review = await context.ProductReviews
@@ -206,7 +210,27 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Id == reviewId && !r.IsDeleted, cancellationToken);
 
-        return review is null ? null : MapToDto(review);
+        if (review is null) return null;
+
+        Dictionary<Guid, string>? votes = null;
+        if (currentUserId is not null)
+        {
+            var vote = await context.Set<Domain.Review.Entities.ReviewVote>()
+                .AsNoTracking()
+                .Where(v => v.ReviewId == reviewId && v.UserId == currentUserId)
+                .Select(v => v.Type)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (vote != default)
+            {
+                votes = new Dictionary<Guid, string>
+                {
+                    [review.Id.Value] = vote.ToString()
+                };
+            }
+        }
+
+        return MapToDto(review, votes);
     }
 
     public async Task<PaginatedResult<ProductReviewDto>> GetUserReviewsAsync(
@@ -226,17 +250,43 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
         var total = await query.CountAsync(cancellationToken);
 
-        var items = await query
+        var entities = await query
             .Skip((safePage - 1) * safeSize)
             .Take(safeSize)
-            .Select(r => MapToDto(r))
             .ToListAsync(cancellationToken);
+
+        var items = entities.Select(r => MapToDto(r, null)).ToList();
 
         return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
 
-    private static ProductReviewDto MapToDto(ProductReview r)
+    private async Task<Dictionary<Guid, string>?> LoadUserVotesAsync(
+        IReadOnlyCollection<ProductReview> entities,
+        UserId? currentUserId,
+        CancellationToken ct)
     {
+        if (currentUserId is null || entities.Count == 0)
+            return null;
+
+        var reviewIds = entities.Select(r => r.Id).ToList();
+
+        var votes = await context.Set<Domain.Review.Entities.ReviewVote>()
+            .AsNoTracking()
+            .Where(v => reviewIds.Contains(v.ReviewId) && v.UserId == currentUserId)
+            .Select(v => new { ReviewId = v.ReviewId.Value, Type = v.Type })
+            .ToListAsync(ct);
+
+        if (votes.Count == 0) return null;
+
+        return votes.ToDictionary(v => v.ReviewId, v => v.Type.ToString());
+    }
+
+    private static ProductReviewDto MapToDto(ProductReview r, IReadOnlyDictionary<Guid, string>? votes)
+    {
+        string? userVote = null;
+        if (votes is not null && votes.TryGetValue(r.Id.Value, out var voteValue))
+            userVote = voteValue;
+
         return new ProductReviewDto
         {
             Id = r.Id.Value,
@@ -253,6 +303,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             IsVerifiedPurchase = r.IsVerifiedPurchase,
             LikeCount = r.LikeCount,
             DislikeCount = r.DislikeCount,
+            UserVote = userVote,
             CreatedAt = r.CreatedAt,
             OrderId = r.OrderId?.Value
         };

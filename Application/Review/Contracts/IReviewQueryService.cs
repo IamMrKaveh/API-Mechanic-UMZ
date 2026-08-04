@@ -15,6 +15,7 @@ public interface IReviewQueryService
         string sortBy,
         int? minRating,
         bool verifiedOnly,
+        UserId? currentUserId,
         CancellationToken cancellationToken);
 
     Task<PaginatedResult<ProductReviewDto>> GetReviewsByStatusAsync(
@@ -29,6 +30,7 @@ public interface IReviewQueryService
 
     Task<ProductReviewDto?> GetByIdAsync(
         ReviewId reviewId,
+        UserId? currentUserId,
         CancellationToken cancellationToken);
 
     Task<PaginatedResult<ProductReviewDto>> GetUserReviewsAsync(
