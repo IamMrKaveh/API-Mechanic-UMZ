@@ -1,14 +1,14 @@
-﻿namespace Domain.Wallet.Exceptions;
+using SharedKernel.Localization;
 
-public sealed class InvalidTopUpAmountException : DomainException
+namespace Domain.Wallet.Exceptions;
+
+public sealed class InvalidTopUpAmountException(decimal providedAmount, decimal min) : DomainException(
+        DomainErrorCodes.Wallet.InvalidTopUpAmount,
+        $"Top-up amount ({providedAmount:N0}) is less than the minimum allowed ({min:N0}).",
+        new Dictionary<string, object?>
 {
-    public decimal ProvidedAmount { get; }
-    public decimal Min { get; }
-
-    public InvalidTopUpAmountException(decimal providedAmount, decimal min)
-        : base($"مبلغ شارژ ({providedAmount:N0}) کمتر از حداقل مجاز ({min:N0} تومان) است.")
-    {
-        ProvidedAmount = providedAmount;
-        Min = min;
-    }
+["providedAmount"] = providedAmount,
+["minimumAmount"] = min
+})
+{
 }

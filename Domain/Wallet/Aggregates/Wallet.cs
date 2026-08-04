@@ -149,17 +149,17 @@ public sealed class Wallet : AggregateRoot<WalletId>
             ?? throw new WalletDebitRequestNotFoundException(requestId);
 
         if (!approvedBy.Equals(OwnerId))
-            throw new UnauthorizedWalletDebitApprovalException(requestId);
+            throw new UnauthorizedWalletDebitApprovalException();
 
         if (request.Status != WalletDebitRequestStatus.Pending)
-            throw new InvalidWalletDebitRequestStatusException(requestId, request.Status);
+            throw new InvalidWalletDebitRequestStatusException(request.Status.ToString());
 
         if (request.ExpiresAt <= DateTime.UtcNow)
         {
             request.MarkExpired();
             ReleaseReservationInternal(request.ReservationId);
             UpdatedAt = DateTime.UtcNow;
-            throw new WalletDebitRequestExpiredException(requestId);
+            throw new WalletDebitRequestExpiredException();
         }
 
         ReleaseReservationInternal(request.ReservationId);
@@ -192,10 +192,10 @@ public sealed class Wallet : AggregateRoot<WalletId>
             ?? throw new WalletDebitRequestNotFoundException(requestId);
 
         if (!rejectedBy.Equals(OwnerId))
-            throw new UnauthorizedWalletDebitApprovalException(requestId);
+            throw new UnauthorizedWalletDebitApprovalException();
 
         if (request.Status != WalletDebitRequestStatus.Pending)
-            throw new InvalidWalletDebitRequestStatusException(requestId, request.Status);
+            throw new InvalidWalletDebitRequestStatusException(request.Status.ToString());
 
         ReleaseReservationInternal(request.ReservationId);
         request.Reject(rejectedBy, rejectionReason);
@@ -214,7 +214,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
             ?? throw new WalletDebitRequestNotFoundException(requestId);
 
         if (request.Status != WalletDebitRequestStatus.Pending)
-            throw new InvalidWalletDebitRequestStatusException(requestId, request.Status);
+            throw new InvalidWalletDebitRequestStatusException(request.Status.ToString());
 
         ReleaseReservationInternal(request.ReservationId);
         request.Cancel(cancelledBy);

@@ -1,10 +1,8 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Wallet.Repositories;
 
@@ -46,7 +44,7 @@ public sealed class WalletWithdrawalRepository(DBContext context) : IWalletWithd
 
     public async Task<int> CountByUserAndStatusAsync(
         UserId userId,
-        WithdrawalStatus status,
+        WalletWithdrawalStatus status,
         CancellationToken ct = default)
         => await context.Set<WalletWithdrawalRequest>()
             .CountAsync(x => x.UserId == userId && x.Status == status, ct);

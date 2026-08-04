@@ -1,9 +1,14 @@
-﻿namespace Domain.Wallet.Exceptions;
+using SharedKernel.Localization;
 
-public sealed class WalletTransferLimitExceededException(decimal dailyLimit, decimal alreadyTransferredToday) : DomainException($"سقف انتقال روزانه ({dailyLimit:N0} تومان) پر شده است. مجموع انتقال‌های امروز: {alreadyTransferredToday:N0} تومان.")
+namespace Domain.Wallet.Exceptions;
+
+public sealed class WalletTransferLimitExceededException(decimal dailyLimit, decimal alreadyTransferredToday) : DomainException(
+        DomainErrorCodes.Wallet.TransferLimitExceeded,
+        $"Daily transfer limit ({dailyLimit:N0}) has been reached. Total transferred today: {alreadyTransferredToday:N0}.",
+        new Dictionary<string, object?>
 {
-    public override string ErrorCode => "WALLET_TRANSFER_LIMIT_EXCEEDED";
-
-    public decimal DailyLimit { get; } = dailyLimit;
-    public decimal AlreadyTransferredToday { get; } = alreadyTransferredToday;
+["dailyLimit"] = dailyLimit,
+["alreadyTransferredToday"] = alreadyTransferredToday
+})
+{
 }

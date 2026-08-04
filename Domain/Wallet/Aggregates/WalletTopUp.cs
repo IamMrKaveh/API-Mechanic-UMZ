@@ -1,14 +1,16 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Events;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Localization;
 
 namespace Domain.Wallet.Aggregates;
 
 public sealed class WalletTopUp : AggregateRoot<WalletTopUpId>
 {
     private const decimal MinimumAmount = 10_000m;
+    private const string DefaultFailureMarker = "[UNSPECIFIED]";
 
     public UserId UserId { get; private set; } = default!;
     public Money Amount { get; private set; } = default!;
@@ -69,29 +71,33 @@ public sealed class WalletTopUp : AggregateRoot<WalletTopUpId>
 
     public void MarkFailed(string reason)
     {
-        if (string.IsNullOrWhiteSpace(reason)) reason = "خطای نامشخص در پرداخت.";
         EnsurePending();
 
+        var effectiveReason = string.IsNullOrWhiteSpace(reason) ? DefaultFailureMarker : reason;
+
         Status = WalletTopUpStatus.Failed;
-        FailureReason = reason;
+        FailureReason = effectiveReason;
         CompletedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new WalletTopUpFailedEvent(Id, UserId, reason));
+        RaiseDomainEvent(new WalletTopUpFailedEvent(Id, UserId, effectiveReason));
     }
 
     public void MarkCancelled(string reason)
     {
         EnsurePending();
         Status = WalletTopUpStatus.Cancelled;
-        FailureReason = reason;
+        FailureReason = string.IsNullOrWhiteSpace(reason) ? DefaultFailureMarker : reason;
         CompletedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(new WalletTopUpFailedEvent(Id, UserId, reason));
+        RaiseDomainEvent(new WalletTopUpFailedEvent(Id, UserId, FailureReason!));
     }
 
     private void EnsurePending()
     {
         if (Status != WalletTopUpStatus.Pending)
-            throw new DomainException($"TopUp در وضعیت '{Status}' قابل تغییر نیست.");
+            throw new DomainException(
+                DomainErrorCodes.Wallet.TopUpInvalidState,
+                $"TopUp is not modifiable in status '{Status}'.",
+                new Dictionary<string, object?> { ["status"] = Status.ToString() });
     }
 }

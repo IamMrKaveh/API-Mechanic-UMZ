@@ -1,9 +1,7 @@
-﻿namespace SharedKernel.Results;
+namespace SharedKernel.Results;
 
 public static class ErrorCode
 {
-    public const string None = "";
-    public const string Unexpected = "GEN_UNEXPECTED";
     public const string Validation = "GEN_VALIDATION";
     public const string NotFound = "GEN_NOT_FOUND";
     public const string Conflict = "GEN_CONFLICT";
@@ -13,5 +11,10 @@ public static class ErrorCode
     public const string BusinessRule = "GEN_BUSINESS_RULE";
     public const string Infrastructure = "GEN_INFRASTRUCTURE";
     public const string ExternalService = "GEN_EXTERNAL_SERVICE";
+    public const string Unexpected = "GEN_UNEXPECTED";
     public const string Failure = "GEN_FAILURE";
+
+    public const string ConcurrencyConflict = "GEN_CONCURRENCY_CONFLICT";
+    public const string UniqueViolation = "GEN_UNIQUE_VIOLATION";
+    public const string ForeignKeyViolation = "GEN_FOREIGN_KEY_VIOLATION";
 }

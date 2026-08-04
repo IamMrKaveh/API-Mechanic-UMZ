@@ -1,12 +1,18 @@
-﻿using Domain.Wallet.ValueObjects;
+using Domain.Wallet.ValueObjects;
+using SharedKernel.Localization;
 
 namespace Domain.Wallet.Exceptions;
 
-public sealed class InsufficientWalletBalanceException(WalletId walletId, Money requested, Money available) : DomainException($"کیف پول '{walletId}' موجودی کافی ندارد. درخواستی: {requested.Amount:N0} {requested.Currency}، موجود: {available.Amount:N0} {available.Currency}.")
+public sealed class InsufficientWalletBalanceException(WalletId walletId, Money requested, Money available) : DomainException(
+        DomainErrorCodes.Wallet.InsufficientBalance,
+        $"Wallet '{walletId}' has insufficient balance. Requested: {requested.Amount:N0} {requested.Currency}, Available: {available.Amount:N0} {available.Currency}.",
+        new Dictionary<string, object?>
 {
-    public WalletId WalletId { get; } = walletId;
-    public Money Requested { get; } = requested;
-    public Money Available { get; } = available;
-
-    public override string ErrorCode => "INSUFFICIENT_WALLET_BALANCE";
+["walletId"] = walletId.Value,
+["requestedAmount"] = requested.Amount,
+["requestedCurrency"] = requested.Currency,
+["availableAmount"] = available.Amount,
+["availableCurrency"] = available.Currency
+})
+{
 }

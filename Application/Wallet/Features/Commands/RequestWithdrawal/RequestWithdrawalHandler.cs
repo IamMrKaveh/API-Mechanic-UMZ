@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Exceptions;
@@ -65,7 +65,7 @@ public sealed class RequestWithdrawalHandler(
         try
         {
             var pendingCount = await withdrawalRepository
-                .CountByUserAndStatusAsync(userId, WithdrawalStatus.Pending, ct);
+                .CountByUserAndStatusAsync(userId, WalletWithdrawalStatus.Pending, ct);
 
             if (pendingCount >= MaxPendingPerUser)
                 return ServiceResult<Guid>.Conflict(

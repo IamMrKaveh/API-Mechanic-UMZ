@@ -1,10 +1,14 @@
-﻿using Domain.Wallet.ValueObjects;
+using Domain.Wallet.ValueObjects;
+using SharedKernel.Localization;
 
 namespace Domain.Wallet.Exceptions;
 
-public sealed class WalletInactiveException(WalletId walletId) : DomainException($"کیف پول '{walletId}' غیرفعال است و قادر به پردازش تراکنش نیست.")
+public sealed class WalletInactiveException(WalletId walletId) : DomainException(
+        DomainErrorCodes.Wallet.Inactive,
+        $"Wallet '{walletId}' is inactive and cannot process transactions.",
+        new Dictionary<string, object?>
 {
-    public WalletId WalletId { get; } = walletId;
-
-    public override string ErrorCode => "WALLET_INACTIVE";
+["walletId"] = walletId.Value
+})
+{
 }

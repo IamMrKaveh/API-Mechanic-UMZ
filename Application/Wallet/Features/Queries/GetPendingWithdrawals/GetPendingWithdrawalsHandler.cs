@@ -1,4 +1,4 @@
-﻿using Application.Wallet.Contracts;
+using Application.Wallet.Contracts;
 using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
 
@@ -12,15 +12,15 @@ public sealed class GetPendingWithdrawalsHandler(
         GetPendingWithdrawalsQuery request,
         CancellationToken ct)
     {
-        WithdrawalStatus? statusFilter = null;
+        WalletWithdrawalStatus? statusFilter = null;
         if (!string.IsNullOrWhiteSpace(request.Status) &&
-            Enum.TryParse<WithdrawalStatus>(request.Status, ignoreCase: true, out var parsed))
+            Enum.TryParse<WalletWithdrawalStatus>(request.Status, ignoreCase: true, out var parsed))
         {
             statusFilter = parsed;
         }
         else if (string.IsNullOrWhiteSpace(request.Status))
         {
-            statusFilter = WithdrawalStatus.Pending;
+            statusFilter = WalletWithdrawalStatus.Pending;
         }
 
         var result = await queryService.GetByStatusAsync(

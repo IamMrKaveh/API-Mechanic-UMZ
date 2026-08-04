@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
@@ -21,6 +21,6 @@ public interface IWalletWithdrawalRepository
 
     Task<int> CountByUserAndStatusAsync(
         UserId userId,
-        WithdrawalStatus status,
+        WalletWithdrawalStatus status,
         CancellationToken ct = default);
 }
