@@ -1,4 +1,4 @@
-﻿using Application.Wallet.Contracts;
+using Application.Wallet.Contracts;
 using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
@@ -35,7 +35,7 @@ public sealed class WalletWithdrawalQueryService(DBContext context) : IWalletWit
     }
 
     public async Task<PaginatedResult<WalletWithdrawalRequestDto>> GetByStatusAsync(
-        WithdrawalStatus? status,
+        WalletWithdrawalStatus? status,
         int page,
         int pageSize,
         DateTime? fromDate = null,
@@ -94,7 +94,7 @@ public sealed class WalletWithdrawalQueryService(DBContext context) : IWalletWit
     {
         return await context.Set<WalletWithdrawalRequest>()
             .AsNoTracking()
-            .CountAsync(w => w.Status == WithdrawalStatus.Pending, ct);
+            .CountAsync(w => w.Status == WalletWithdrawalStatus.Pending, ct);
     }
 
     private async Task<List<WalletWithdrawalRequestDto>> MapToDtosAsync(

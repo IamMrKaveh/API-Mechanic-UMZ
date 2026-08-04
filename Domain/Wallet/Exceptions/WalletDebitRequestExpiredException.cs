@@ -1,6 +1,13 @@
-using Domain.Wallet.ValueObjects;
+using SharedKernel.Localization;
 
 namespace Domain.Wallet.Exceptions;
 
-public sealed class WalletDebitRequestExpiredException(WalletDebitRequestId requestId)
-    : DomainException("مهلت پاسخ به این درخواست به پایان رسیده است.");
+public sealed class WalletDebitRequestExpiredException : DomainException
+{
+    public WalletDebitRequestExpiredException()
+        : base(
+            DomainErrorCodes.Wallet.DebitRequestExpired,
+            "The response window for this request has expired.")
+    {
+    }
+}

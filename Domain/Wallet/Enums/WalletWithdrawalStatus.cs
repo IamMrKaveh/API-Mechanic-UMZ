@@ -1,6 +1,6 @@
-﻿namespace Domain.Wallet.Enums;
+namespace Domain.Wallet.Enums;
 
-public enum WithdrawalStatus
+public enum WalletWithdrawalStatus
 {
     Pending = 1,
     Approved = 2,

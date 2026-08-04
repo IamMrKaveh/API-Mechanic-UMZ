@@ -1,9 +1,6 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
-using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Wallet.Configurations;
 
@@ -65,24 +62,6 @@ public sealed class WalletWithdrawalRequestConfiguration
         builder.Property(e => e.RejectedAt);
         builder.Property(e => e.PaidAt);
         builder.Property(e => e.CancelledAt);
-
-        builder.Property(e => e.ApprovedBy)
-            .HasConversion(
-                id => id!.Value,
-                value => UserId.From(value))
-            .HasColumnName("ApprovedBy");
-
-        builder.Property(e => e.RejectedBy)
-            .HasConversion(
-                id => id!.Value,
-                value => UserId.From(value))
-            .HasColumnName("RejectedBy");
-
-        builder.Property(e => e.PaidBy)
-            .HasConversion(
-                id => id!.Value,
-                value => UserId.From(value))
-            .HasColumnName("PaidBy");
 
         builder.Property(e => e.RejectionReason).HasMaxLength(500);
         builder.Property(e => e.BankReferenceNumber).HasMaxLength(64);

@@ -1,4 +1,4 @@
-﻿using Application.Wallet.Features.Shared;
+using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
 
@@ -13,7 +13,7 @@ public interface IWalletWithdrawalQueryService
         CancellationToken ct = default);
 
     Task<PaginatedResult<WalletWithdrawalRequestDto>> GetByStatusAsync(
-        WithdrawalStatus? status,
+        WalletWithdrawalStatus? status,
         int page,
         int pageSize,
         DateTime? fromDate = null,

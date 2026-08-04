@@ -1,3 +1,4 @@
+using Application.Common.Services;
 using Application.Payment.Adapters;
 using Domain.Inventory.Services;
 using Domain.Media.Services;
@@ -54,6 +55,7 @@ public static class ApplicationServiceCollection
 
     private static IServiceCollection RegisterApplicationServices(this IServiceCollection services)
     {
+        services.AddScoped<IAuditContextEnricher, AuditContextEnricher>();
         services.AddScoped<InventoryReservationService>();
         services.AddScoped<PaymentSettlementService>();
         services.AddScoped<IPaymentInitiator, PaymentInitiator>();

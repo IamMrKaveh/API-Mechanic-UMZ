@@ -1,7 +1,8 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Events;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Localization;
 
 namespace Domain.Wallet.Aggregates;
 
@@ -64,7 +65,10 @@ public sealed class WalletFraudAlert : AggregateRoot<WalletFraudAlertId>
         Guard.Against.Null(reviewedBy, nameof(reviewedBy));
 
         if (Status != FraudAlertStatus.Open)
-            throw new DomainException($"Fraud alert در وضعیت '{Status}' قابل بررسی نیست.");
+            throw new DomainException(
+                DomainErrorCodes.Wallet.FraudAlertInvalidStateForReview,
+                $"Fraud alert in status '{Status}' cannot be reviewed.",
+                new Dictionary<string, object?> { ["status"] = Status.ToString() });
 
         var now = DateTime.UtcNow;
         Status = FraudAlertStatus.Reviewed;
@@ -81,7 +85,10 @@ public sealed class WalletFraudAlert : AggregateRoot<WalletFraudAlertId>
         Guard.Against.Null(dismissedBy, nameof(dismissedBy));
 
         if (Status != FraudAlertStatus.Open)
-            throw new DomainException($"Fraud alert در وضعیت '{Status}' قابل رد کردن نیست.");
+            throw new DomainException(
+                DomainErrorCodes.Wallet.FraudAlertInvalidStateForDismiss,
+                $"Fraud alert in status '{Status}' cannot be dismissed.",
+                new Dictionary<string, object?> { ["status"] = Status.ToString() });
 
         var now = DateTime.UtcNow;
         Status = FraudAlertStatus.Dismissed;

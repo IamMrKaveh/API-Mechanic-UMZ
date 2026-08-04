@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DBContext))]
-    [Migration("20260728081329_1")]
+    [Migration("20260804084023_1")]
     partial class _1
     {
         /// <inheritdoc />
@@ -237,7 +237,7 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp(6) with time zone");
 
                     b.Property<string>("Details")
                         .HasColumnType("text");
@@ -254,6 +254,11 @@ namespace Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<int>("HashVersion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("IntegrityHash")
                         .IsRequired()
@@ -282,9 +287,23 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CreatedAt");
 
+                    b.HasIndex("EntityType")
+                        .HasDatabaseName("IX_AuditLogs_EntityType");
+
                     b.HasIndex("EventType");
 
+                    b.HasIndex("HashVersion");
+
+                    b.HasIndex("IsArchived")
+                        .HasDatabaseName("IX_AuditLogs_IsArchived");
+
                     b.HasIndex("UserId");
+
+                    b.HasIndex("EntityType", "EntityId")
+                        .HasDatabaseName("IX_AuditLogs_EntityType_EntityId");
+
+                    b.HasIndex("CreatedAt", "IsArchived", "EventType")
+                        .HasDatabaseName("IX_AuditLogs_CreatedAt_IsArchived_EventType");
 
                     b.ToTable("AuditLogs");
                 });
@@ -951,6 +970,8 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Status", "CreatedAt");
 
+                    b.HasIndex("UserId", "Status");
+
                     b.ToTable("Orders");
                 });
 
@@ -988,6 +1009,8 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("ProductId");
 
                     b.HasIndex("VariantId");
+
+                    b.HasIndex("OrderId", "ProductId");
 
                     b.ToTable("OrderItems", (string)null);
                 });
@@ -1196,6 +1219,9 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<double>("AverageRating")
+                        .HasColumnType("double precision");
+
                     b.Property<Guid>("BrandId")
                         .HasColumnType("uuid");
 
@@ -1223,6 +1249,9 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("ReviewCount")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1301,6 +1330,12 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<int>("Version")
                         .HasColumnType("integer");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt");
@@ -1311,7 +1346,45 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("UserId", "ProductId", "OrderId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ProductReviews_UserId_ProductId_OrderId_Unique")
+                        .HasFilter("\"IsDeleted\" = false");
+
                     b.ToTable("ProductReviews", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Review.Entities.ReviewVote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ReviewId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewId");
+
+                    b.HasIndex("ReviewId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ReviewVotes_ReviewId_UserId_Unique");
+
+                    b.ToTable("ReviewVotes", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Security.Aggregates.UserOtp", b =>
@@ -1854,7 +1927,9 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnName("FrozenBy");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid")
@@ -1881,7 +1956,7 @@ namespace Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_Wallets_UserId");
 
-                    b.ToTable("Wallets");
+                    b.ToTable("Wallets", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Wallet.Aggregates.WalletFraudAlert", b =>
@@ -2120,10 +2195,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("ApprovedBy");
-
                     b.Property<string>("BankReferenceNumber")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
@@ -2147,16 +2218,11 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("PaidBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("PaidBy");
+                    b.Property<Guid?>("ProcessedBy")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("RejectedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("RejectedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("RejectedBy");
 
                     b.Property<string>("RejectionReason")
                         .HasMaxLength(500)
@@ -2202,13 +2268,78 @@ namespace Infrastructure.Persistence.Migrations
                     b.ToTable("WalletWithdrawalRequests", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Wallet.Entities.WalletDebitRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("RequestedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ReservationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RespondedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_WalletDebitRequests_ExpiresAt");
+
+                    b.HasIndex("WalletId");
+
+                    b.HasIndex("OwnerId", "Status")
+                        .HasDatabaseName("IX_WalletDebitRequests_Owner_Status");
+
+                    b.ToTable("WalletDebitRequests", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Wallet.Entities.WalletLedgerEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid?>("DebitRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("DebitRequestId");
+
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
@@ -2229,21 +2360,53 @@ namespace Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid?>("TopUpId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TopUpId");
+
                     b.Property<string>("TransactionType")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<Guid?>("TransferId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TransferId");
+
                     b.Property<Guid>("WalletId")
                         .HasColumnType("uuid")
                         .HasColumnName("WalletId");
 
+                    b.Property<Guid?>("WithdrawalRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("WithdrawalRequestId");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CorrelationId")
+                        .HasDatabaseName("IX_WalletLedgerEntries_CorrelationId")
+                        .HasFilter("\"CorrelationId\" IS NOT NULL");
+
+                    b.HasIndex("DebitRequestId")
+                        .HasDatabaseName("IX_WalletLedgerEntries_DebitRequestId")
+                        .HasFilter("\"DebitRequestId\" IS NOT NULL");
 
                     b.HasIndex("IdempotencyKey")
                         .IsUnique()
                         .HasDatabaseName("IX_WalletLedgerEntries_IdempotencyKey")
                         .HasFilter("\"IdempotencyKey\" IS NOT NULL");
+
+                    b.HasIndex("TopUpId")
+                        .HasDatabaseName("IX_WalletLedgerEntries_TopUpId")
+                        .HasFilter("\"TopUpId\" IS NOT NULL");
+
+                    b.HasIndex("TransferId")
+                        .HasDatabaseName("IX_WalletLedgerEntries_TransferId")
+                        .HasFilter("\"TransferId\" IS NOT NULL");
+
+                    b.HasIndex("WithdrawalRequestId")
+                        .HasDatabaseName("IX_WalletLedgerEntries_WithdrawalRequestId")
+                        .HasFilter("\"WithdrawalRequestId\" IS NOT NULL");
 
                     b.HasIndex("OwnerId", "OccurredAt")
                         .IsDescending(false, true)
@@ -2548,7 +2711,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.ToTable("RateLimitEntries");
                 });
 
-            modelBuilder.Entity("Infrastructure.Wallet.WalletReconciliationAudit", b =>
+            modelBuilder.Entity("Infrastructure.Wallet.Configurations.WalletReconciliationAudit", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -3439,7 +3602,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasOne("Domain.Product.Aggregates.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.User.Aggregates.User", "User")
@@ -3470,6 +3633,12 @@ namespace Infrastructure.Persistence.Migrations
                             b1.Property<Guid>("ProductReviewId")
                                 .HasColumnType("uuid");
 
+                            b1.Property<string>("DisplayName")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("StatusDisplayName");
+
                             b1.Property<string>("Value")
                                 .IsRequired()
                                 .HasMaxLength(50)
@@ -3497,6 +3666,15 @@ namespace Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Review.Entities.ReviewVote", b =>
+                {
+                    b.HasOne("Domain.Review.Aggregates.ProductReview", null)
+                        .WithMany("Votes")
+                        .HasForeignKey("ReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Shipping.Aggregates.Shipping", b =>
@@ -3928,14 +4106,18 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<decimal>("Amount")
+                                .ValueGeneratedOnAdd()
                                 .HasPrecision(18, 4)
                                 .HasColumnType("decimal(18,2)")
+                                .HasDefaultValue(0m)
                                 .HasColumnName("CurrentBalance");
 
                             b1.Property<string>("Currency")
                                 .IsRequired()
+                                .ValueGeneratedOnAdd()
                                 .HasMaxLength(10)
                                 .HasColumnType("character varying(10)")
+                                .HasDefaultValue("IRT")
                                 .HasColumnName("BalanceCurrency");
 
                             b1.HasKey("WalletId");
@@ -4042,19 +4224,75 @@ namespace Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Domain.Wallet.Entities.WalletDebitRequest", b =>
+                {
+                    b.HasOne("Domain.Wallet.Aggregates.Wallet", null)
+                        .WithMany("DebitRequests")
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("SharedKernel.ValueObjects.Money", "Amount", b1 =>
+                        {
+                            b1.Property<Guid>("WalletDebitRequestId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 4)
+                                .HasColumnType("decimal(18,2)")
+                                .HasColumnName("Amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(10)
+                                .HasColumnType("character varying(10)")
+                                .HasColumnName("Currency");
+
+                            b1.HasKey("WalletDebitRequestId");
+
+                            b1.ToTable("WalletDebitRequests");
+
+                            b1.WithOwner()
+                                .HasForeignKey("WalletDebitRequestId");
+                        });
+
+                    b.Navigation("Amount")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Domain.Wallet.Entities.WalletLedgerEntry", b =>
                 {
+                    b.HasOne("Domain.Wallet.Entities.WalletDebitRequest", null)
+                        .WithMany()
+                        .HasForeignKey("DebitRequestId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Domain.User.Aggregates.User", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Domain.Wallet.Aggregates.WalletTopUp", null)
+                        .WithMany()
+                        .HasForeignKey("TopUpId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Domain.Wallet.Aggregates.WalletTransfer", null)
+                        .WithMany()
+                        .HasForeignKey("TransferId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Domain.Wallet.Aggregates.Wallet", "Wallet")
                         .WithMany()
                         .HasForeignKey("WalletId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Domain.Wallet.Aggregates.WalletWithdrawalRequest", null)
+                        .WithMany()
+                        .HasForeignKey("WithdrawalRequestId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.OwnsOne("SharedKernel.ValueObjects.Money", "Amount", b1 =>
                         {
@@ -4206,6 +4444,11 @@ namespace Infrastructure.Persistence.Migrations
                     b.Navigation("Variants");
                 });
 
+            modelBuilder.Entity("Domain.Review.Aggregates.ProductReview", b =>
+                {
+                    b.Navigation("Votes");
+                });
+
             modelBuilder.Entity("Domain.Support.Aggregates.Ticket", b =>
                 {
                     b.Navigation("Messages");
@@ -4226,6 +4469,8 @@ namespace Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Domain.Wallet.Aggregates.Wallet", b =>
                 {
                     b.Navigation("ActiveReservations");
+
+                    b.Navigation("DebitRequests");
                 });
 #pragma warning restore 612, 618
         }

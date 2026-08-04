@@ -238,7 +238,7 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
             .CountAsync(e => e.OccurredAt >= last7, ct);
 
         var pendingWithdrawals = await context.WalletWithdrawalRequests.AsNoTracking()
-            .CountAsync(w => w.Status == WithdrawalStatus.Pending, ct);
+            .CountAsync(w => w.Status == WalletWithdrawalStatus.Pending, ct);
 
         var openAlerts = await context.Set<Domain.Wallet.Aggregates.WalletFraudAlert>().AsNoTracking()
             .CountAsync(a => a.Status == FraudAlertStatus.Open, ct);

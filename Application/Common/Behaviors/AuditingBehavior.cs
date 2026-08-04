@@ -1,12 +1,12 @@
 using System.Runtime.ExceptionServices;
 using Domain.User.ValueObjects;
-using Microsoft.Extensions.Logging;
 
 namespace Application.Common.Behaviors;
 
 public sealed class AuditingBehavior<TRequest, TResponse>(
     IAuditService auditService,
     ICurrentUserService currentUserService,
+    IAuditContextEnricher auditContextEnricher,
     ILogger<AuditingBehavior<TRequest, TResponse>> logger)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
@@ -44,7 +44,13 @@ public sealed class AuditingBehavior<TRequest, TResponse>(
 
             var userAgent = currentUserService.UserAgent;
             var requestName = typeof(TRequest).Name;
-            var enrichedDetails = auditable.BuildAuditDetails();
+
+            auditContextEnricher.Set("actorId", currentUserService.UserId?.ToString() ?? "system");
+            auditContextEnricher.Set("actorIp", ipRaw ?? "system");
+            auditContextEnricher.Set("actorIsAdmin", currentUserService.IsAdmin.ToString());
+            auditContextEnricher.Set("sessionId", currentUserService.SessionId?.ToString());
+
+            var enrichedDetails = auditable.BuildAuditDetails(auditContextEnricher);
 
             if (thrown is not null)
             {
@@ -107,6 +113,10 @@ public sealed class AuditingBehavior<TRequest, TResponse>(
                 "AuditingBehavior failed to record audit for {RequestName}: {Message}",
                 typeof(TRequest).Name,
                 auditEx.Message);
+        }
+        finally
+        {
+            auditContextEnricher.Clear();
         }
 
         if (thrown is not null)

@@ -1,6 +1,13 @@
-using Domain.Wallet.ValueObjects;
+using SharedKernel.Localization;
 
 namespace Domain.Wallet.Exceptions;
 
-public sealed class UnauthorizedWalletDebitApprovalException(WalletDebitRequestId requestId)
-    : DomainException("فقط صاحب کیف پول می‌تواند این درخواست را تایید یا رد کند.");
+public sealed class UnauthorizedWalletDebitApprovalException : DomainException
+{
+    public UnauthorizedWalletDebitApprovalException()
+        : base(
+            DomainErrorCodes.Wallet.DebitApprovalUnauthorized,
+            "Only the wallet owner can approve or reject this request.")
+    {
+    }
+}

@@ -1,8 +1,13 @@
-﻿namespace Domain.Wallet.Exceptions;
+using SharedKernel.Localization;
 
-public sealed class InvalidWalletAmountException(decimal amount) : DomainException($"مبلغ تراکنش کیف پول '{amount}' نامعتبر است. مبلغ باید بزرگ‌تر از صفر باشد.")
+namespace Domain.Wallet.Exceptions;
+
+public sealed class InvalidWalletAmountException(decimal amount) : DomainException(
+        DomainErrorCodes.Wallet.InvalidAmount,
+        $"Wallet transaction amount '{amount}' is invalid. Amount must be greater than zero.",
+        new Dictionary<string, object?>
 {
-    public decimal Amount { get; } = amount;
-
-    public override string ErrorCode => "INVALID_WALLET_AMOUNT";
+["amount"] = amount
+})
+{
 }

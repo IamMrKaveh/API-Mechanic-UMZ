@@ -1,7 +1,8 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Events;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Localization;
 
 namespace Domain.Wallet.Aggregates;
 
@@ -15,21 +16,18 @@ public sealed class WalletWithdrawalRequest : AggregateRoot<WalletWithdrawalRequ
     public string AccountHolder { get; private set; } = default!;
     public string? Description { get; private set; }
     public WalletReservationId ReservationId { get; private set; } = default!;
-    public WithdrawalStatus Status { get; private set; }
+    public WalletWithdrawalStatus Status { get; private set; }
+    public string? RejectionReason { get; private set; }
+    public string? BankReferenceNumber { get; private set; }
+    public UserId? ProcessedBy { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? ApprovedAt { get; private set; }
     public DateTime? RejectedAt { get; private set; }
     public DateTime? PaidAt { get; private set; }
     public DateTime? CancelledAt { get; private set; }
-    public UserId? ApprovedBy { get; private set; }
-    public UserId? RejectedBy { get; private set; }
-    public UserId? PaidBy { get; private set; }
-    public string? RejectionReason { get; private set; }
-    public string? BankReferenceNumber { get; private set; }
 
     private WalletWithdrawalRequest()
-    {
-    }
+    { }
 
     public static WalletWithdrawalRequest Create(
         UserId userId,
@@ -39,17 +37,21 @@ public sealed class WalletWithdrawalRequest : AggregateRoot<WalletWithdrawalRequ
         WalletReservationId reservationId,
         string? description = null)
     {
-        if (userId is null) throw new DomainException("شناسه کاربر الزامی است.");
-        if (amount is null) throw new DomainException("مبلغ الزامی است.");
-        if (iban is null) throw new DomainException("شماره شبا الزامی است.");
+        if (userId is null) throw new DomainException(DomainErrorCodes.Wallet.WithdrawalUserIdRequired, "UserId is required.");
+        if (amount is null) throw new DomainException(DomainErrorCodes.Wallet.WithdrawalAmountRequired, "Amount is required.");
+        if (iban is null) throw new DomainException(DomainErrorCodes.Wallet.WithdrawalIbanRequired, "IBAN is required.");
         if (string.IsNullOrWhiteSpace(accountHolder))
-            throw new DomainException("نام صاحب حساب الزامی است.");
-        if (reservationId is null) throw new DomainException("شناسه رزرو الزامی است.");
+            throw new DomainException(DomainErrorCodes.Wallet.WithdrawalAccountHolderRequired, "Account holder is required.");
+        if (reservationId is null)
+            throw new DomainException(DomainErrorCodes.Wallet.WithdrawalReservationIdRequired, "Reservation id is required.");
 
         if (amount.Amount < MinimumAmount)
-            throw new DomainException($"حداقل مبلغ برداشت {MinimumAmount:N0} تومان است.");
+            throw new DomainException(
+                DomainErrorCodes.Wallet.WithdrawalMinimumAmount,
+                $"Minimum withdrawal amount is {MinimumAmount:N0}.",
+                new Dictionary<string, object?> { ["minimum"] = MinimumAmount });
 
-        var withdrawal = new WalletWithdrawalRequest
+        var request = new WalletWithdrawalRequest
         {
             Id = WalletWithdrawalRequestId.NewId(),
             UserId = userId,
@@ -58,74 +60,81 @@ public sealed class WalletWithdrawalRequest : AggregateRoot<WalletWithdrawalRequ
             AccountHolder = accountHolder.Trim(),
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
             ReservationId = reservationId,
-            Status = WithdrawalStatus.Pending,
+            Status = WalletWithdrawalStatus.Pending,
             CreatedAt = DateTime.UtcNow
         };
 
-        withdrawal.RaiseDomainEvent(new WithdrawalRequestedEvent(
-            withdrawal.Id, userId, amount, reservationId));
-
-        return withdrawal;
+        request.RaiseDomainEvent(new WithdrawalRequestedEvent(request.Id, userId, amount, reservationId));
+        return request;
     }
 
     public void Approve(UserId adminId)
     {
-        EnsurePending("تأیید");
-        Status = WithdrawalStatus.Approved;
+        EnsureCanTransition("approve");
+        Status = WalletWithdrawalStatus.Approved;
+        ProcessedBy = adminId;
         ApprovedAt = DateTime.UtcNow;
-        ApprovedBy = adminId;
         RaiseDomainEvent(new WithdrawalApprovedEvent(Id, UserId, adminId));
     }
 
     public void Reject(UserId adminId, string reason)
     {
-        EnsurePending("رد");
         if (string.IsNullOrWhiteSpace(reason))
-            throw new DomainException("دلیل رد درخواست الزامی است.");
+            throw new DomainException(
+                DomainErrorCodes.Wallet.WithdrawalRejectionReasonRequired,
+                "Rejection reason is required.");
 
-        Status = WithdrawalStatus.Rejected;
-        RejectedAt = DateTime.UtcNow;
-        RejectedBy = adminId;
+        EnsureCanTransition("reject");
+        Status = WalletWithdrawalStatus.Rejected;
         RejectionReason = reason.Trim();
+        ProcessedBy = adminId;
+        RejectedAt = DateTime.UtcNow;
         RaiseDomainEvent(new WithdrawalRejectedEvent(Id, UserId, adminId, RejectionReason));
     }
 
     public void MarkPaid(UserId adminId, string bankReferenceNumber)
     {
-        if (Status is not WithdrawalStatus.Pending and not WithdrawalStatus.Approved)
-            throw new DomainException($"درخواست برداشت در وضعیت '{Status}' قابل پرداخت نیست.");
+        if (Status != WalletWithdrawalStatus.Approved && Status != WalletWithdrawalStatus.Pending)
+            throw new DomainException(
+                DomainErrorCodes.Wallet.WithdrawalInvalidStateForPay,
+                $"Withdrawal in status '{Status}' cannot be marked paid.",
+                new Dictionary<string, object?> { ["status"] = Status.ToString() });
 
         if (string.IsNullOrWhiteSpace(bankReferenceNumber))
-            throw new DomainException("شماره پیگیری بانکی الزامی است.");
+            throw new DomainException(
+                DomainErrorCodes.Wallet.WithdrawalBankReferenceRequired,
+                "Bank reference number is required.");
 
-        Status = WithdrawalStatus.Paid;
-        PaidAt = DateTime.UtcNow;
-        PaidBy = adminId;
+        Status = WalletWithdrawalStatus.Paid;
+        ProcessedBy = adminId;
         BankReferenceNumber = bankReferenceNumber.Trim();
-
-        if (ApprovedAt is null)
-        {
-            ApprovedAt = PaidAt;
-            ApprovedBy = adminId;
-        }
-
+        PaidAt = DateTime.UtcNow;
         RaiseDomainEvent(new WithdrawalPaidEvent(Id, UserId, Amount, adminId, BankReferenceNumber));
     }
 
     public void Cancel(UserId requester)
     {
         if (!UserId.Equals(requester))
-            throw new DomainException("فقط صاحب درخواست می‌تواند آن را لغو کند.");
+            throw new DomainException(
+                DomainErrorCodes.Wallet.WithdrawalOnlyOwnerCanCancel,
+                "Only the request owner can cancel it.");
 
-        EnsurePending("لغو");
-        Status = WithdrawalStatus.Cancelled;
+        EnsureCanTransition("cancel");
+        Status = WalletWithdrawalStatus.Cancelled;
         CancelledAt = DateTime.UtcNow;
         RaiseDomainEvent(new WithdrawalCancelledEvent(Id, UserId));
     }
 
-    private void EnsurePending(string action)
+    private void EnsureCanTransition(string action)
     {
-        if (Status != WithdrawalStatus.Pending)
-            throw new DomainException($"درخواست در وضعیت '{Status}' قابل {action} نیست.");
+        if (Status != WalletWithdrawalStatus.Pending)
+            throw new DomainException(
+                DomainErrorCodes.Wallet.WithdrawalInvalidStateForAction,
+                $"Request in status '{Status}' cannot perform action '{action}'.",
+                new Dictionary<string, object?>
+                {
+                    ["status"] = Status.ToString(),
+                    ["action"] = action
+                });
     }
 }

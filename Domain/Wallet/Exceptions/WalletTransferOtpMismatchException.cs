@@ -1,10 +1,17 @@
-﻿namespace Domain.Wallet.Exceptions;
+using SharedKernel.Localization;
 
-public sealed class WalletTransferOtpMismatchException(int remainingAttempts) : DomainException(remainingAttempts > 0
-            ? $"کد تأیید نادرست است. {remainingAttempts} تلاش دیگر باقی مانده است."
-            : "تعداد تلاش‌های مجاز به پایان رسیده است.")
+namespace Domain.Wallet.Exceptions;
+
+public sealed class WalletTransferOtpMismatchException(int remainingAttempts) : DomainException(
+        remainingAttempts > 0
+                ? DomainErrorCodes.Wallet.TransferOtpMismatch
+                : DomainErrorCodes.Wallet.TransferOtpAttemptsUsed,
+        remainingAttempts > 0
+                ? $"OTP code is incorrect. {remainingAttempts} attempts remaining."
+                : "Maximum OTP attempts exceeded.",
+        new Dictionary<string, object?>
 {
-    public override string ErrorCode => "WALLET_TRANSFER_OTP_MISMATCH";
-
-    public int RemainingAttempts { get; } = remainingAttempts;
+["remainingAttempts"] = remainingAttempts
+})
+{
 }

@@ -11,4 +11,21 @@ public interface IAuditableCommand
     string? AuditEntityId => null;
 
     string? BuildAuditDetails() => null;
+
+    string? BuildAuditDetails(IAuditContextEnricher enricher)
+    {
+        var baseDetails = BuildAuditDetails();
+        var snapshot = enricher.Snapshot();
+
+        if (snapshot.Count == 0)
+            return baseDetails;
+
+        var enriched = string.Join(
+            "; ",
+            snapshot.Select(kv => $"{kv.Key}={kv.Value}"));
+
+        return string.IsNullOrWhiteSpace(baseDetails)
+            ? enriched
+            : $"{baseDetails} | {enriched}";
+    }
 }

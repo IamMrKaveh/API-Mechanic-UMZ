@@ -1,27 +1,18 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.ValueObjects;
 
 namespace Domain.Wallet.Events;
 
-public sealed class WithdrawalPaidEvent : DomainEvent
+public sealed class WithdrawalPaidEvent(
+    WalletWithdrawalRequestId withdrawalId,
+    UserId userId,
+    Money amount,
+    UserId paidBy,
+    string bankReferenceNumber) : DomainEvent
 {
-    public WalletWithdrawalRequestId WithdrawalId { get; }
-    public UserId UserId { get; }
-    public Money Amount { get; }
-    public UserId PaidBy { get; }
-    public string BankReferenceNumber { get; }
-
-    public WithdrawalPaidEvent(
-        WalletWithdrawalRequestId withdrawalId,
-        UserId userId,
-        Money amount,
-        UserId paidBy,
-        string bankReferenceNumber)
-    {
-        WithdrawalId = withdrawalId;
-        UserId = userId;
-        Amount = amount;
-        PaidBy = paidBy;
-        BankReferenceNumber = bankReferenceNumber;
-    }
+    public WalletWithdrawalRequestId WithdrawalId { get; } = withdrawalId;
+    public UserId UserId { get; } = userId;
+    public Money Amount { get; } = amount;
+    public UserId PaidBy { get; } = paidBy;
+    public string BankReferenceNumber { get; } = bankReferenceNumber;
 }

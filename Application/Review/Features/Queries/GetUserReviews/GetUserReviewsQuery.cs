@@ -4,5 +4,6 @@ namespace Application.Review.Features.Queries.GetUserReviews;
 
 public record GetUserReviewsQuery(
     int Page = 1,
-    int PageSize = 10)
+    int PageSize = 10,
+    Guid? UserId = null)
     : IPageQuery<ProductReviewDto>;

@@ -11,7 +11,11 @@ public sealed class WalletDebitedEvent(
     string description,
     string referenceId,
     string? idempotencyKey = null,
-    string? correlationId = null) : DomainEvent
+    string? correlationId = null,
+    WalletDebitRequestId? debitRequestId = null,
+    WalletWithdrawalRequestId? withdrawalRequestId = null,
+    WalletTransferId? transferId = null,
+    WalletTopUpId? topUpId = null) : DomainEvent
 {
     public WalletId WalletId { get; } = walletId;
     public UserId UserId { get; } = userId;
@@ -22,4 +26,8 @@ public sealed class WalletDebitedEvent(
     public string ReferenceId { get; } = referenceId;
     public string? IdempotencyKey { get; } = idempotencyKey;
     public string? CorrelationId { get; } = correlationId;
+    public WalletDebitRequestId? DebitRequestId { get; } = debitRequestId;
+    public WalletWithdrawalRequestId? WithdrawalRequestId { get; } = withdrawalRequestId;
+    public WalletTransferId? TransferId { get; } = transferId;
+    public WalletTopUpId? TopUpId { get; } = topUpId;
 }

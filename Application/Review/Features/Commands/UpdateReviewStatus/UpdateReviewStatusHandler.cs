@@ -4,7 +4,8 @@ using Domain.Review.ValueObjects;
 namespace Application.Review.Features.Commands.UpdateReviewStatus;
 
 public sealed class UpdateReviewStatusHandler(
-    IReviewRepository reviewRepository)
+    IReviewRepository reviewRepository,
+    IAuditContextEnricher auditContextEnricher)
     : ICommandHandler<UpdateReviewStatusCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -16,6 +17,8 @@ public sealed class UpdateReviewStatusHandler(
         var review = await reviewRepository.GetByIdAsync(reviewId, ct);
         if (review is null)
             return ServiceResult.NotFound("نظر یافت نشد.");
+
+        var previousStatus = review.Status.ToString();
 
         if (string.Equals(request.Status, "Approved", StringComparison.OrdinalIgnoreCase))
         {
@@ -32,6 +35,19 @@ public sealed class UpdateReviewStatusHandler(
         }
 
         reviewRepository.Update(review);
+
+        auditContextEnricher.Set("previousStatus", previousStatus);
+        auditContextEnricher.Set("newStatus", review.Status.ToString());
+        auditContextEnricher.Set("requestedStatus", request.Status);
+        auditContextEnricher.Set("reviewId", review.Id.Value.ToString());
+        auditContextEnricher.Set("productId", review.ProductId.Value.ToString());
+
+        if (!string.IsNullOrWhiteSpace(request.Reason))
+            auditContextEnricher.Set("reason", TruncateReason(request.Reason!));
+
         return ServiceResult.Success();
     }
+
+    private static string TruncateReason(string reason)
+        => reason.Length <= 200 ? reason : reason[..200] + "…";
 }

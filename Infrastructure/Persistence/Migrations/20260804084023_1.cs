@@ -486,16 +486,14 @@ namespace Infrastructure.Persistence.Migrations
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     ReservationId = table.Column<Guid>(type: "uuid", nullable: false),
                     Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    RejectionReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    BankReferenceNumber = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    ProcessedBy = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RejectedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     PaidAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CancelledAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ApprovedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    RejectedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    PaidBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    RejectionReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    BankReferenceNumber = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -619,8 +617,9 @@ namespace Infrastructure.Persistence.Migrations
                     UserAgent = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     EntityType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     EntityId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp(6) with time zone", nullable: false),
                     IntegrityHash = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    HashVersion = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
                     IsArchived = table.Column<bool>(type: "boolean", nullable: false),
                     ArchivedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Version = table.Column<int>(type: "integer", nullable: false)
@@ -811,9 +810,9 @@ namespace Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    CurrentBalance = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
-                    BalanceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CurrentBalance = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false, defaultValue: 0m),
+                    BalanceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false, defaultValue: "IRT"),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     FreezeReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
@@ -849,6 +848,8 @@ namespace Infrastructure.Persistence.Migrations
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    AverageRating = table.Column<double>(type: "double precision", nullable: false),
+                    ReviewCount = table.Column<int>(type: "integer", nullable: false),
                     BrandId = table.Column<Guid>(type: "uuid", nullable: false),
                     CategoryId = table.Column<Guid>(type: "uuid", nullable: false),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
@@ -971,37 +972,34 @@ namespace Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "WalletLedgerEntries",
+                name: "WalletDebitRequests",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     WalletId = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    AmountDelta = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
-                    AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    BalanceAfter = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
-                    BalanceAfterCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    TransactionType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    ReferenceId = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    IdempotencyKey = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    OwnerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    Currency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    Reason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    RequestedBy = table.Column<Guid>(type: "uuid", nullable: false),
+                    ReservationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    RespondedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    RespondedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    RejectionReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WalletLedgerEntries", x => x.Id);
+                    table.PrimaryKey("PK_WalletDebitRequests", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_WalletLedgerEntries_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_WalletLedgerEntries_Wallets_WalletId",
+                        name: "FK_WalletDebitRequests_Wallets_WalletId",
                         column: x => x.WalletId,
                         principalTable: "Wallets",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1041,6 +1039,7 @@ namespace Infrastructure.Persistence.Migrations
                     Title = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     Comment = table.Column<string>(type: "text", nullable: true),
                     Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    StatusDisplayName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     IsVerifiedPurchase = table.Column<bool>(type: "boolean", nullable: false),
                     LikeCount = table.Column<int>(type: "integer", nullable: false),
                     DislikeCount = table.Column<int>(type: "integer", nullable: false),
@@ -1050,6 +1049,7 @@ namespace Infrastructure.Persistence.Migrations
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -1066,7 +1066,7 @@ namespace Infrastructure.Persistence.Migrations
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ProductReviews_Users_UserId",
                         column: x => x.UserId,
@@ -1129,6 +1129,91 @@ namespace Infrastructure.Persistence.Migrations
                         name: "FK_Wishlists_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WalletLedgerEntries",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    WalletId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AmountDelta = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    BalanceAfter = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    BalanceAfterCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    TransactionType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    ReferenceId = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    IdempotencyKey = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    CorrelationId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DebitRequestId = table.Column<Guid>(type: "uuid", nullable: true),
+                    WithdrawalRequestId = table.Column<Guid>(type: "uuid", nullable: true),
+                    TransferId = table.Column<Guid>(type: "uuid", nullable: true),
+                    TopUpId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WalletLedgerEntries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_WalletDebitRequests_DebitRequestId",
+                        column: x => x.DebitRequestId,
+                        principalTable: "WalletDebitRequests",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_WalletTopUps_TopUpId",
+                        column: x => x.TopUpId,
+                        principalTable: "WalletTopUps",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_WalletTransfers_TransferId",
+                        column: x => x.TransferId,
+                        principalTable: "WalletTransfers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_WalletWithdrawalRequests_WithdrawalRequ~",
+                        column: x => x.WithdrawalRequestId,
+                        principalTable: "WalletWithdrawalRequests",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_Wallets_WalletId",
+                        column: x => x.WalletId,
+                        principalTable: "Wallets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ReviewVotes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ReviewId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Type = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReviewVotes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ReviewVotes_ProductReviews_ReviewId",
+                        column: x => x.ReviewId,
+                        principalTable: "ProductReviews",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1367,9 +1452,34 @@ namespace Infrastructure.Persistence.Migrations
                 column: "CreatedAt");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_CreatedAt_IsArchived_EventType",
+                table: "AuditLogs",
+                columns: new[] { "CreatedAt", "IsArchived", "EventType" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_EntityType",
+                table: "AuditLogs",
+                column: "EntityType");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_EntityType_EntityId",
+                table: "AuditLogs",
+                columns: new[] { "EntityType", "EntityId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_EventType",
                 table: "AuditLogs",
                 column: "EventType");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_HashVersion",
+                table: "AuditLogs",
+                column: "HashVersion");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_IsArchived",
+                table: "AuditLogs",
+                column: "IsArchived");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_UserId",
@@ -1518,6 +1628,11 @@ namespace Infrastructure.Persistence.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderItems_OrderId_ProductId",
+                table: "OrderItems",
+                columns: new[] { "OrderId", "ProductId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_ProductId",
                 table: "OrderItems",
                 column: "ProductId");
@@ -1564,6 +1679,11 @@ namespace Infrastructure.Persistence.Migrations
                 name: "IX_Orders_UserId",
                 table: "Orders",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_UserId_Status",
+                table: "Orders",
+                columns: new[] { "UserId", "Status" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderStatuses_IsActive",
@@ -1682,6 +1802,13 @@ namespace Infrastructure.Persistence.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProductReviews_UserId_ProductId_OrderId_Unique",
+                table: "ProductReviews",
+                columns: new[] { "UserId", "ProductId", "OrderId" },
+                unique: true,
+                filter: "\"IsDeleted\" = false");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Products_BrandId",
                 table: "Products",
                 column: "BrandId");
@@ -1759,6 +1886,17 @@ namespace Infrastructure.Persistence.Migrations
                 name: "IX_RateLimitEntries_Key_WindowKey",
                 table: "RateLimitEntries",
                 columns: new[] { "Key", "WindowKey" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReviewVotes_ReviewId",
+                table: "ReviewVotes",
+                column: "ReviewId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReviewVotes_ReviewId_UserId_Unique",
+                table: "ReviewVotes",
+                columns: new[] { "ReviewId", "UserId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1901,6 +2039,21 @@ namespace Infrastructure.Persistence.Migrations
                 column: "VariantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WalletDebitRequests_ExpiresAt",
+                table: "WalletDebitRequests",
+                column: "ExpiresAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletDebitRequests_Owner_Status",
+                table: "WalletDebitRequests",
+                columns: new[] { "OwnerId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletDebitRequests_WalletId",
+                table: "WalletDebitRequests",
+                column: "WalletId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WalletFraudAlerts_Severity",
                 table: "WalletFraudAlerts",
                 column: "Severity");
@@ -1931,11 +2084,35 @@ namespace Infrastructure.Persistence.Migrations
                 column: "WalletId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WalletLedgerEntries_CorrelationId",
+                table: "WalletLedgerEntries",
+                column: "CorrelationId",
+                filter: "\"CorrelationId\" IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletLedgerEntries_DebitRequestId",
+                table: "WalletLedgerEntries",
+                column: "DebitRequestId",
+                filter: "\"DebitRequestId\" IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WalletLedgerEntries_IdempotencyKey",
                 table: "WalletLedgerEntries",
                 column: "IdempotencyKey",
                 unique: true,
                 filter: "\"IdempotencyKey\" IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletLedgerEntries_TopUpId",
+                table: "WalletLedgerEntries",
+                column: "TopUpId",
+                filter: "\"TopUpId\" IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletLedgerEntries_TransferId",
+                table: "WalletLedgerEntries",
+                column: "TransferId",
+                filter: "\"TransferId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WalletLedgerEntries_UserId_OccurredAt",
@@ -1948,6 +2125,12 @@ namespace Infrastructure.Persistence.Migrations
                 table: "WalletLedgerEntries",
                 columns: new[] { "WalletId", "CreatedAt" },
                 descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletLedgerEntries_WithdrawalRequestId",
+                table: "WalletLedgerEntries",
+                column: "WithdrawalRequestId",
+                filter: "\"WithdrawalRequestId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WalletReconciliationAudit_DetectedAt",
@@ -2115,13 +2298,13 @@ namespace Infrastructure.Persistence.Migrations
                 name: "PaymentTransactions");
 
             migrationBuilder.DropTable(
-                name: "ProductReviews");
-
-            migrationBuilder.DropTable(
                 name: "ProductVariantAttributes");
 
             migrationBuilder.DropTable(
                 name: "RateLimitEntries");
+
+            migrationBuilder.DropTable(
+                name: "ReviewVotes");
 
             migrationBuilder.DropTable(
                 name: "StockLedgerEntries");
@@ -2154,15 +2337,6 @@ namespace Infrastructure.Persistence.Migrations
                 name: "WalletReservations");
 
             migrationBuilder.DropTable(
-                name: "WalletTopUps");
-
-            migrationBuilder.DropTable(
-                name: "WalletTransfers");
-
-            migrationBuilder.DropTable(
-                name: "WalletWithdrawalRequests");
-
-            migrationBuilder.DropTable(
                 name: "Wishlists");
 
             migrationBuilder.DropTable(
@@ -2170,6 +2344,9 @@ namespace Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "AttributeValues");
+
+            migrationBuilder.DropTable(
+                name: "ProductReviews");
 
             migrationBuilder.DropTable(
                 name: "Inventories");
@@ -2187,7 +2364,16 @@ namespace Infrastructure.Persistence.Migrations
                 name: "Shippings");
 
             migrationBuilder.DropTable(
-                name: "Wallets");
+                name: "WalletDebitRequests");
+
+            migrationBuilder.DropTable(
+                name: "WalletTopUps");
+
+            migrationBuilder.DropTable(
+                name: "WalletTransfers");
+
+            migrationBuilder.DropTable(
+                name: "WalletWithdrawalRequests");
 
             migrationBuilder.DropTable(
                 name: "AttributeTypes");
@@ -2199,16 +2385,19 @@ namespace Infrastructure.Persistence.Migrations
                 name: "ProductVariants");
 
             migrationBuilder.DropTable(
+                name: "Wallets");
+
+            migrationBuilder.DropTable(
                 name: "DiscountCodes");
 
             migrationBuilder.DropTable(
                 name: "PaymentMethods");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "Products");
 
             migrationBuilder.DropTable(
-                name: "Products");
+                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "Brands");

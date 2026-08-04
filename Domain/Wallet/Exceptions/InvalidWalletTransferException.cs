@@ -1,6 +1,19 @@
-﻿namespace Domain.Wallet.Exceptions;
+namespace Domain.Wallet.Exceptions;
 
-public sealed class InvalidWalletTransferException(string message) : DomainException(message)
+public sealed class InvalidWalletTransferException : DomainException
 {
-    public override string ErrorCode => "WALLET_TRANSFER_INVALID";
+    public InvalidWalletTransferException(string message)
+        : base("WALLET.TRANSFER.INVALID", message)
+    {
+    }
+
+    public InvalidWalletTransferException(string errorCode, string message)
+        : base(errorCode, message)
+    {
+    }
+
+    public InvalidWalletTransferException(string errorCode, string message, IReadOnlyDictionary<string, object?> args)
+        : base(errorCode, message, args)
+    {
+    }
 }

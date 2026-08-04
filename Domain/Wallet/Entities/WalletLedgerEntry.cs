@@ -21,6 +21,11 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
     public string? CorrelationId { get; private set; }
     public DateTime OccurredAt { get; private set; }
 
+    public WalletDebitRequestId? DebitRequestId { get; private set; }
+    public WalletWithdrawalRequestId? WithdrawalRequestId { get; private set; }
+    public WalletTransferId? TransferId { get; private set; }
+    public WalletTopUpId? TopUpId { get; private set; }
+
     public Aggregates.Wallet Wallet { get; private set; } = default!;
     public User.Aggregates.User Owner { get; private set; } = default!;
 
@@ -35,7 +40,11 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
         string referenceId,
         string? idempotencyKey,
         string? correlationId,
-        DateTime occurredAt)
+        DateTime occurredAt,
+        WalletDebitRequestId? debitRequestId,
+        WalletWithdrawalRequestId? withdrawalRequestId,
+        WalletTransferId? transferId,
+        WalletTopUpId? topUpId)
     {
         Id = id;
         WalletId = walletId;
@@ -48,6 +57,10 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
         IdempotencyKey = idempotencyKey?.Length > 200 ? idempotencyKey[..200] : idempotencyKey;
         CorrelationId = correlationId?.Length > 128 ? correlationId[..128] : correlationId;
         OccurredAt = occurredAt;
+        DebitRequestId = debitRequestId;
+        WithdrawalRequestId = withdrawalRequestId;
+        TransferId = transferId;
+        TopUpId = topUpId;
     }
 
     public static WalletLedgerEntry NewCredit(
@@ -58,7 +71,11 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
         string? description,
         string referenceId,
         string? idempotencyKey,
-        string? correlationId = null)
+        string? correlationId = null,
+        WalletDebitRequestId? debitRequestId = null,
+        WalletWithdrawalRequestId? withdrawalRequestId = null,
+        WalletTransferId? transferId = null,
+        WalletTopUpId? topUpId = null)
     {
         ValidateInputs(walletId, ownerId, amount, balanceAfter, referenceId);
         return new WalletLedgerEntry(
@@ -72,7 +89,11 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             referenceId,
             idempotencyKey,
             correlationId,
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            debitRequestId,
+            withdrawalRequestId,
+            transferId,
+            topUpId);
     }
 
     public static WalletLedgerEntry NewDebit(
@@ -83,7 +104,11 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
         string? description,
         string referenceId,
         string? idempotencyKey,
-        string? correlationId = null)
+        string? correlationId = null,
+        WalletDebitRequestId? debitRequestId = null,
+        WalletWithdrawalRequestId? withdrawalRequestId = null,
+        WalletTransferId? transferId = null,
+        WalletTopUpId? topUpId = null)
     {
         ValidateInputs(walletId, ownerId, amount, balanceAfter, referenceId);
         return new WalletLedgerEntry(
@@ -97,7 +122,11 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             referenceId,
             idempotencyKey,
             correlationId,
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            debitRequestId,
+            withdrawalRequestId,
+            transferId,
+            topUpId);
     }
 
     public static WalletLedgerEntry FromCreditEvent(WalletCreditedEvent evt)
@@ -111,7 +140,11 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             evt.Description,
             evt.ReferenceId,
             evt.IdempotencyKey,
-            evt.CorrelationId);
+            evt.CorrelationId,
+            evt.DebitRequestId,
+            evt.WithdrawalRequestId,
+            evt.TransferId,
+            evt.TopUpId);
     }
 
     public static WalletLedgerEntry FromDebitEvent(WalletDebitedEvent evt)
@@ -125,7 +158,11 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             evt.Description,
             evt.ReferenceId,
             evt.IdempotencyKey,
-            evt.CorrelationId);
+            evt.CorrelationId,
+            evt.DebitRequestId,
+            evt.WithdrawalRequestId,
+            evt.TransferId,
+            evt.TopUpId);
     }
 
     private static void ValidateInputs(

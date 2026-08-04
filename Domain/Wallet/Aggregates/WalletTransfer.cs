@@ -1,8 +1,9 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Events;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Localization;
 
 namespace Domain.Wallet.Aggregates;
 
@@ -43,13 +44,20 @@ public sealed class WalletTransfer : AggregateRoot<WalletTransferId>
         Guard.Against.NullOrWhiteSpace(otpHash, nameof(otpHash));
 
         if (fromUserId.Equals(toUserId))
-            throw new InvalidWalletTransferException("انتقال به کیف پول خود مجاز نیست.");
+            throw new InvalidWalletTransferException(
+                DomainErrorCodes.Wallet.TransferSelfNotAllowed,
+                "Transfer to own wallet is not allowed.");
 
         if (amount.Amount < MinimumAmount)
-            throw new InvalidWalletTransferException($"حداقل مبلغ انتقال {MinimumAmount:N0} تومان است.");
+            throw new InvalidWalletTransferException(
+                DomainErrorCodes.Wallet.TransferMinimumAmount,
+                $"Minimum transfer amount is {MinimumAmount:N0}.",
+                new Dictionary<string, object?> { ["minimum"] = MinimumAmount });
 
         if (otpTtl <= TimeSpan.Zero)
-            throw new InvalidWalletTransferException("مدت اعتبار کد تأیید نامعتبر است.");
+            throw new InvalidWalletTransferException(
+                DomainErrorCodes.Wallet.TransferInvalidOtpTtl,
+                "OTP validity period is invalid.");
 
         var id = WalletTransferId.NewId();
 
@@ -83,9 +91,11 @@ public sealed class WalletTransfer : AggregateRoot<WalletTransferId>
         if (DateTime.UtcNow > OtpExpiresAt)
         {
             Status = WalletTransferStatus.Expired;
-            FailureReason = "مهلت وارد کردن کد تأیید به پایان رسیده است.";
+            FailureReason = DomainErrorCodes.Wallet.TransferOtpExpired;
             RaiseDomainEvent(new WalletTransferFailedEvent(Id, FromUserId, ToUserId, FailureReason));
-            throw new InvalidWalletTransferException(FailureReason);
+            throw new InvalidWalletTransferException(
+                DomainErrorCodes.Wallet.TransferOtpExpired,
+                "OTP entry deadline has expired.");
         }
 
         if (!string.Equals(OtpHash, otpHash, StringComparison.Ordinal))
@@ -96,7 +106,7 @@ public sealed class WalletTransfer : AggregateRoot<WalletTransferId>
             if (OtpAttempts >= MaxOtpAttempts)
             {
                 Status = WalletTransferStatus.Failed;
-                FailureReason = "تعداد تلاش‌های نامعتبر برای وارد کردن کد تأیید بیش از حد مجاز است.";
+                FailureReason = DomainErrorCodes.Wallet.TransferOtpAttemptsExceeded;
                 RaiseDomainEvent(new WalletTransferFailedEvent(Id, FromUserId, ToUserId, FailureReason));
             }
 
@@ -120,10 +130,15 @@ public sealed class WalletTransfer : AggregateRoot<WalletTransferId>
         Guard.Against.Null(requester, nameof(requester));
 
         if (!FromUserId.Equals(requester))
-            throw new InvalidWalletTransferException("فقط ایجادکننده انتقال می‌تواند آن را لغو کند.");
+            throw new InvalidWalletTransferException(
+                DomainErrorCodes.Wallet.TransferOnlyCreatorCanCancel,
+                "Only the transfer creator can cancel it.");
 
         if (Status != WalletTransferStatus.PendingOtp)
-            throw new InvalidWalletTransferException($"انتقال در وضعیت '{Status}' قابل لغو نیست.");
+            throw new InvalidWalletTransferException(
+                DomainErrorCodes.Wallet.TransferInvalidStateForCancel,
+                $"Transfer in status '{Status}' cannot be cancelled.",
+                new Dictionary<string, object?> { ["status"] = Status.ToString() });
 
         Status = WalletTransferStatus.Cancelled;
         CancelledAt = DateTime.UtcNow;
@@ -148,6 +163,9 @@ public sealed class WalletTransfer : AggregateRoot<WalletTransferId>
     private void EnsurePendingOtp()
     {
         if (Status != WalletTransferStatus.PendingOtp)
-            throw new InvalidWalletTransferException($"انتقال در وضعیت '{Status}' قابل تغییر نیست.");
+            throw new InvalidWalletTransferException(
+                DomainErrorCodes.Wallet.TransferInvalidState,
+                $"Transfer in status '{Status}' is not modifiable.",
+                new Dictionary<string, object?> { ["status"] = Status.ToString() });
     }
 }
