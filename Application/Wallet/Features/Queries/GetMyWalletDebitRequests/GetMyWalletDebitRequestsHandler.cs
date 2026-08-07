@@ -17,7 +17,7 @@ public sealed class GetMyWalletDebitRequestsHandler(
         GetMyWalletDebitRequestsQuery request,
         CancellationToken ct)
     {
-        var ownerId = UserId.From(currentUserService.UserId.Value);
+        var ownerId = UserId.From(currentUserService.UserId!.Value);
 
         var items = request.Status.HasValue
             ? await debitRequestRepository.GetByOwnerAsync(ownerId, request.Status.Value, ct)

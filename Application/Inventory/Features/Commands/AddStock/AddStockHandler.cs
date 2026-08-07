@@ -15,7 +15,7 @@ public class AddStockHandler(
     public async Task<ServiceResult> Handle(AddStockCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
         var stockQuantity = StockQuantity.Create(request.Quantity);
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);

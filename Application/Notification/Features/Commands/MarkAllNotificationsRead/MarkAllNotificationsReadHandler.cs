@@ -9,7 +9,7 @@ public class MarkAllNotificationsReadHandler(
 {
     public async Task<ServiceResult> Handle(MarkAllNotificationsReadCommand request, CancellationToken ct)
     {
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
         await notificationService.MarkAllAsReadAsync(userId, ct);
         return ServiceResult.Success();
     }

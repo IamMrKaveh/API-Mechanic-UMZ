@@ -12,7 +12,7 @@ public class GetUserDashboardHandler(
         GetUserDashboardQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
 
         var dashboard = await userQueryService.GetUserDashboardAsync(userId, ct);
 

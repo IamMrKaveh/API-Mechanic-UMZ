@@ -1,4 +1,5 @@
-﻿using Infrastructure.Security.Settings;
+using Application.Review.Configuration;
+using Infrastructure.Security.Settings;
 using Presentation.Common.Options;
 
 namespace Presentation.Common.Extensions;
@@ -19,6 +20,8 @@ public static class OptionsExtensions
 
         services.Configure<SecuritySettings>(
             configuration.GetSection(SecuritySettings.SectionName));
+
+        services.Configure<ReviewSettings>(configuration.GetSection(ReviewSettings.SectionName));
 
         return services;
     }

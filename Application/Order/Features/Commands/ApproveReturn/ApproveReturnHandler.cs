@@ -1,4 +1,4 @@
-﻿using Domain.Order.Interfaces;
+using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -17,7 +17,7 @@ public class ApproveReturnHandler(
     {
         var orderId = OrderId.From(request.OrderId);
         var order = await orderRepository.FindByIdAsync(orderId, ct);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
 
         if (order is null)
             return ServiceResult.NotFound("سفارش یافت نشد.");

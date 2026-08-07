@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 namespace Application.Common.Behaviors;
 
 public sealed class DomainExceptionBehavior<TRequest, TResponse>(
@@ -21,8 +19,7 @@ public sealed class DomainExceptionBehavior<TRequest, TResponse>(
             logger.LogWarning(
                 "Domain rule violated in {RequestName}: {Message}",
                 typeof(TRequest).Name,
-                ex.Message,
-                ct);
+                ex.Message);
 
             var error = Error.BusinessRule("Domain.Rule", ex.Message);
             var responseType = typeof(TResponse);

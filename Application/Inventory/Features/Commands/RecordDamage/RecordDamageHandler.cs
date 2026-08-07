@@ -14,7 +14,7 @@ public class RecordDamageHandler(
     public async Task<ServiceResult> Handle(RecordDamageCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
         var stock = StockQuantity.Create(request.Quantity);
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);

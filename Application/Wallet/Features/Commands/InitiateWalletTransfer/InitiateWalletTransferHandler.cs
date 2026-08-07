@@ -1,4 +1,4 @@
-﻿using Application.Wallet.Features.Shared;
+using Application.Wallet.Features.Shared;
 using Application.Wallet.Options;
 using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
@@ -31,7 +31,7 @@ public sealed class InitiateWalletTransferHandler(
     {
         try
         {
-            var fromUserId = UserId.From(currentUserService.UserId.Value);
+            var fromUserId = UserId.From(currentUserService.UserId!.Value);
             var recipientPhone = PhoneNumber.Create(request.RecipientPhoneNumber);
 
             var sender = await userRepository.GetByIdAsync(fromUserId, ct);

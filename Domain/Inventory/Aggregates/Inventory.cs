@@ -12,9 +12,9 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
     private Inventory()
     { }
 
-    public StockQuantity StockQuantity { get; private set; }
+    public StockQuantity StockQuantity { get; private set; } = default!;
     public bool IsUnlimited { get; private set; }
-    public StockQuantity ReservedQuantity { get; private set; }
+    public StockQuantity ReservedQuantity { get; private set; } = default!;
     public int LowStockThreshold { get; private set; } = 5;
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }

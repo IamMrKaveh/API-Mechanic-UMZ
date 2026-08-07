@@ -37,7 +37,7 @@ public class DebitWalletHandler(
 
             var amount = Money.Create(request.Amount, DefaultCurrency);
             var referenceId = string.IsNullOrWhiteSpace(request.ReferenceId)
-                ? currentUserService.UserId.Value.ToString()
+                ? currentUserService.UserId!.Value.ToString()
                 : request.ReferenceId!;
 
             wallet.Debit(

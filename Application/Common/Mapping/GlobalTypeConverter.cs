@@ -9,12 +9,14 @@ public class GlobalTypeConverter : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<Guid, string>().MapWith(src => src.ToString());
+        config.NewConfig<Guid, string>()
+            .MapWith(src => src.ToString());
 
         config.NewConfig<string, Guid>()
             .MapWith(src => Guid.Parse(src));
 
-        config.NewConfig<DateTime, string>().MapWith(src => src.ToString("yyyy-MM-ddTHH:mm:ssZ"));
+        config.NewConfig<DateTime, string>()
+            .MapWith(src => src.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
 
         config.NewConfig<Percentage, PercentageDto>()
             .MapWith(src => new PercentageDto(src.Value));

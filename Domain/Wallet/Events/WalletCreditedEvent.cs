@@ -25,7 +25,7 @@ public sealed class WalletCreditedEvent(
     public string Description { get; } = description;
     public string ReferenceId { get; } = referenceId;
     public string? IdempotencyKey { get; } = idempotencyKey;
-    public string? CorrelationId { get; } = correlationId;
+    public new string? CorrelationId { get; } = correlationId;
     public WalletDebitRequestId? DebitRequestId { get; } = debitRequestId;
     public WalletWithdrawalRequestId? WithdrawalRequestId { get; } = withdrawalRequestId;
     public WalletTransferId? TransferId { get; } = transferId;

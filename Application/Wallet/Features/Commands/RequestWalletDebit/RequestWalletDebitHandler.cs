@@ -18,7 +18,7 @@ public sealed class RequestWalletDebitHandler(
     public async Task<ServiceResult<Guid>> Handle(RequestWalletDebitCommand request, CancellationToken ct)
     {
         var userId = UserId.From(request.UserId);
-        var adminId = UserId.From(currentUserService.UserId.Value);
+        var adminId = UserId.From(currentUserService.UserId!.Value);
 
         await using var lockHandle = await distributedLock.AcquireAsync(
             $"wallet:{userId.Value:N}",

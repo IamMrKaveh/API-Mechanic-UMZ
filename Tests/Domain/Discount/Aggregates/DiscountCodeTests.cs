@@ -259,7 +259,7 @@ public class DiscountCodeTests
         var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"));
 
         validation.IsValid.ShouldBeFalse();
-        validation.FailureReason.ShouldContain("فعال");
+        validation.FailureReason!.ShouldContain("فعال");
     }
 
     [Fact]
@@ -270,7 +270,7 @@ public class DiscountCodeTests
         var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"));
 
         validation.IsValid.ShouldBeFalse();
-        validation.FailureReason.ShouldContain("منقضی");
+        validation.FailureReason!.ShouldContain("منقضی");
     }
 
     [Fact]
@@ -282,7 +282,7 @@ public class DiscountCodeTests
         var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"));
 
         validation.IsValid.ShouldBeFalse();
-        validation.FailureReason.ShouldContain("غیرفعال");
+        validation.FailureReason!.ShouldContain("غیرفعال");
     }
 
     [Fact]
@@ -294,7 +294,7 @@ public class DiscountCodeTests
         var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"));
 
         validation.IsValid.ShouldBeFalse();
-        validation.FailureReason.ShouldContain("سقف");
+        validation.FailureReason!.ShouldContain("سقف");
     }
 
     [Fact]

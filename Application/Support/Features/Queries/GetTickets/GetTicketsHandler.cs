@@ -21,7 +21,7 @@ public class GetTicketsHandler(
             ? null
             : TicketStatus.FromString(request.Status);
 
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
 
         var result = await supportQueryService.GetTicketsPagedAsync(
             userId,

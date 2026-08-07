@@ -12,7 +12,7 @@ public class GetCurrentUserHandler(
         GetCurrentUserQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
 
         var profile = await userQueryService.GetUserProfileAsync(userId, ct);
         if (profile is null)

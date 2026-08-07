@@ -1,4 +1,4 @@
-﻿using Application.Wallet.Features.Shared;
+using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 
@@ -14,7 +14,7 @@ public sealed class GetWalletBalanceHandler(
         GetWalletBalanceQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.userId ?? currentUserService.UserId.Value);
+        var userId = UserId.From(request.userId ?? currentUserService.UserId!.Value);
 
         var wallet = await walletRepository.GetByUserIdAsync(userId, ct);
 

@@ -30,5 +30,5 @@ public sealed record Rating
 
     public static explicit operator Rating(int value) => Create(value);
 
-    public override string ToString() => Value.ToString();
+    public override string ToString() => Value.ToString(CultureInfo.InvariantCulture);
 }

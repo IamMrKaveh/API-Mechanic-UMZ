@@ -13,7 +13,7 @@ public class AdjustStockHandler(
     public async Task<ServiceResult> Handle(AdjustStockCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
         if (inventory is null)

@@ -15,15 +15,17 @@ public class SyncCartPricesHandler(
     public async Task<ServiceResult> Handle(SyncCartPricesCommand request, CancellationToken ct)
     {
         Domain.Cart.Aggregates.Cart? cart;
-        var userId = UserId.From(currentUserService.UserId.Value);
-        var guestToken = GuestToken.Create(currentUserService.GuestToken);
+        UserId? userId = currentUserService.UserId.HasValue
+            ? UserId.From(currentUserService.UserId.Value)
+            : null;
 
-        if (currentUserService.UserId.HasValue)
+        if (userId is not null)
         {
             cart = await cartRepository.FindByUserIdAsync(userId, ct);
         }
         else if (!string.IsNullOrWhiteSpace(currentUserService.GuestToken))
         {
+            var guestToken = GuestToken.Create(currentUserService.GuestToken);
             cart = await cartRepository.FindByGuestTokenAsync(guestToken, ct);
         }
         else

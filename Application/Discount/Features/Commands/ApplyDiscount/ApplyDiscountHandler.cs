@@ -30,7 +30,7 @@ public class ApplyDiscountHandler(
 
                 var discountAmount = discount.CalculateDiscount(orderAmount);
                 var finalAmount = orderAmount.Subtract(discountAmount);
-                var userId = UserId.From(currentUserService.UserId.Value);
+                var userId = UserId.From(currentUserService.UserId!.Value);
                 var orderId = OrderId.From(request.OrderId);
 
                 discount.RecordUsage(userId, orderId, discountAmount);

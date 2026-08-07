@@ -9,10 +9,7 @@ public sealed class StockQuantity : ValueObject, IComparable<StockQuantity>
     private StockQuantity()
     { }
 
-    private StockQuantity(int value)
-    {
-        Value = value;
-    }
+    private StockQuantity(int value) => Value = value;
 
     public static StockQuantity Create(int value)
     {
@@ -74,7 +71,7 @@ public sealed class StockQuantity : ValueObject, IComparable<StockQuantity>
         yield return Value;
     }
 
-    public override string ToString() => Value.ToString("N0");
+    public override string ToString() => Value.ToString("N0", CultureInfo.InvariantCulture);
 
     public static implicit operator int(StockQuantity quantity) => quantity.Value;
 

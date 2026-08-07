@@ -15,7 +15,7 @@ public class RemoveVariantHandler(
         CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
 
         var variant = await variantRepository.GetByIdAsync(variantId, ct);
         if (variant is null)

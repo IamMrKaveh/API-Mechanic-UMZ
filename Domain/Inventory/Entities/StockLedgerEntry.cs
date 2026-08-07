@@ -8,12 +8,15 @@ namespace Domain.Inventory.Entities;
 
 public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
 {
-    public Variant.Aggregates.ProductVariant ProductVariant { get; private set; }
+    public Variant.Aggregates.ProductVariant ProductVariant { get; private set; } = default!;
     public VariantId VariantId { get; private set; } = default!;
-    public Aggregates.Warehouse Warehouse { get; private set; }
+
+    public Aggregates.Warehouse Warehouse { get; private set; } = default!;
     public WarehouseId? WarehouseId { get; private set; }
+
     public Order.Entities.OrderItem? OrderItem { get; private set; }
     public OrderItemId? OrderItemId { get; private set; }
+
     public User.Aggregates.User? User { get; private set; }
     public UserId? UserId { get; private set; }
 

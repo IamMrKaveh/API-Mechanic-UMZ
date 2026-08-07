@@ -24,7 +24,7 @@ public sealed class ForceFreezeFromFraudAlertHandler(
         try
         {
             var alertId = WalletFraudAlertId.From(request.AlertId);
-            var adminId = UserId.From(currentUserService.UserId.Value);
+            var adminId = UserId.From(currentUserService.UserId!.Value);
 
             var alert = await alertRepository.GetByIdAsync(alertId, ct);
             if (alert is null)

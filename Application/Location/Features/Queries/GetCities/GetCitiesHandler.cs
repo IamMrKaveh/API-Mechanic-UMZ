@@ -1,4 +1,4 @@
-﻿using Application.Location.Contracts;
+using Application.Location.Contracts;
 using Application.Location.Features.Shared;
 
 namespace Application.Location.Features.Queries.GetCities;
@@ -10,7 +10,9 @@ public class GetCitiesHandler(ILocationService locationService)
         GetCitiesQuery request,
         CancellationToken ct)
     {
-        var cities = await locationService.GetCitiesByProvinceAsync(request.StateId.ToString(), ct);
+        var cities = await locationService.GetCitiesByProvinceAsync(
+            request.StateId.ToString(CultureInfo.InvariantCulture),
+            ct);
         return ServiceResult<IEnumerable<CityDto>>.Success(cities);
     }
 }

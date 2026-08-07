@@ -1,4 +1,4 @@
-﻿using Application.Support.Features.Shared;
+using Application.Support.Features.Shared;
 using Domain.Support.Aggregates;
 using Domain.Support.Entities;
 
@@ -24,9 +24,9 @@ public class SupportMappingConfig : IRegister
             .Map(dest => dest.UpdatedAt, src => src.UpdatedAt)
             .Map(dest => dest.LastActivityAt, src => src.LastActivityAt)
             .Map(dest => dest.ResolvedAt, src => src.ResolvedAt)
-            .Ignore(dest => dest.UserFullName)
+            .Ignore(dest => dest.UserFullName!)
             .Ignore(dest => dest.Messages)
-            .Ignore(dest => dest.ClosedAt);
+            .Ignore(dest => dest.ClosedAt!);
 
         config.NewConfig<Ticket, TicketListItemDto>()
             .Map(dest => dest.Id, src => src.Id.Value)
@@ -49,6 +49,6 @@ public class SupportMappingConfig : IRegister
             .Map(dest => dest.EditedAt, src => src.EditedAt)
             .Map(dest => dest.SentAt, src => src.SentAt)
             .Map(dest => dest.CreatedAt, src => src.SentAt)
-            .Ignore(dest => dest.SenderName);
+            .Ignore(dest => dest.SenderName!);
     }
 }

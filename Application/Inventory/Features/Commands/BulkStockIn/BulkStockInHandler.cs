@@ -34,6 +34,9 @@ public class BulkStockInHandler(
                         $"موجودی برای واریانت {item.VariantId} یافت نشد.");
                 var stockQuantity = StockQuantity.Create(item.Quantity);
 
+                if (userId is null)
+                    return 0;
+
                 var result = InventoryDomainService.IncreaseStock(
                     inventory,
                     stockQuantity,

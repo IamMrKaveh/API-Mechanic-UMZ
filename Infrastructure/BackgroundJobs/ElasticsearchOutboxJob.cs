@@ -152,7 +152,7 @@ public sealed class ElasticsearchOutboxJob(
                 }
 
                 var success = await indexer.IndexDocumentAsync(
-                    op.EntityType,
+                    op.EntityType!,
                     entityId,
                     op.Document,
                     op.EntityType ?? "Update",

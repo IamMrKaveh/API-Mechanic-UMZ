@@ -1,4 +1,4 @@
-﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
 using Domain.Order.ValueObjects;
@@ -17,7 +17,7 @@ public sealed class CheckoutCartItemBuilderService(ICartRepository cartRepositor
         if (cart is null)
             return ServiceResult<CheckoutCartItemsResult>.NotFound("سبد خرید یافت نشد.");
 
-        if (cart.UserId.Value != userId)
+        if (cart.UserId!.Value != userId)
             return ServiceResult<CheckoutCartItemsResult>.Forbidden("دسترسی ممنوع.");
 
         if (cart.IsEmpty)

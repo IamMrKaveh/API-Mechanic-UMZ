@@ -15,7 +15,7 @@ public class CreateUserHandler(
     {
         var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
         var fullName = FullName.Create(request.FirstName, request.LastName);
-        var email = Email.Create(request.Email);
+        var email = Email.Create(request.Email!);
 
         if (await userRepository.ExistsByPhoneNumberAsync(phoneNumber, null, ct))
             return ServiceResult<UserProfileDto>.Conflict("User with this phone number already exists.");

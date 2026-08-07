@@ -27,7 +27,7 @@ public sealed class RequestWithdrawalHandler(
 
         try
         {
-            userId = UserId.From(currentUserService.UserId.Value);
+            userId = UserId.From(currentUserService.UserId!.Value);
         }
         catch (DomainException)
         {

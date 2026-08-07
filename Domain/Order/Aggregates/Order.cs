@@ -25,6 +25,7 @@ public sealed class Order : AggregateRoot<OrderId>
     public bool IsDeleted { get; private set; }
     public DateTime CreatedAt { get; private init; }
     public DateTime? UpdatedAt { get; private set; }
+    public DateTime? DeliveredAt { get; private set; }
 
     public UserId UserId { get; private init; } = default!;
     public User.Aggregates.User User { get; private init; } = default!;
@@ -142,7 +143,11 @@ public sealed class Order : AggregateRoot<OrderId>
 
     public void MarkAsShipped() => TransitionTo(OrderStatusValue.Shipped);
 
-    public void MarkAsDelivered() => TransitionTo(OrderStatusValue.Delivered);
+    public void MarkAsDelivered()
+    {
+        TransitionTo(OrderStatusValue.Delivered);
+        DeliveredAt = DateTime.UtcNow;
+    }
 
     public void Cancel(string reason)
     {

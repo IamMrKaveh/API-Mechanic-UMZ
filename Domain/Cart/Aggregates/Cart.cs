@@ -159,10 +159,11 @@ public sealed class Cart : AggregateRoot<CartId>
     {
         EnsureNotCheckedOut();
 
-        if (UserId is null)
-            throw new InvalidOperationException(string.Empty);
+        if (sourceCart is null)
+            throw new InvalidOperationException("Source cart cannot be null.");
 
-        ArgumentNullException.ThrowIfNull(sourceCart);
+        if (UserId is null)
+            throw new InvalidOperationException("Target cart must belong to a registered user.");
 
         switch (strategy)
         {

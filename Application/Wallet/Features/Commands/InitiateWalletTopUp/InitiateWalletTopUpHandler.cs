@@ -1,4 +1,4 @@
-﻿using Application.Common.Options;
+using Application.Common.Options;
 using Application.Payment.Features.Shared;
 using Application.Wallet.Features.Shared;
 using Domain.Order.ValueObjects;
@@ -36,7 +36,7 @@ public sealed class InitiateWalletTopUpHandler(
 
         try
         {
-            var userId = UserId.From(currentUserService.UserId.Value);
+            var userId = UserId.From(currentUserService.UserId!.Value);
             var amount = Money.Create(request.Amount);
             var gatewayName = string.IsNullOrWhiteSpace(request.Gateway) ? "zarinpal" : request.Gateway;
 

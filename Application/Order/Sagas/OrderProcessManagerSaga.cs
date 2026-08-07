@@ -19,7 +19,6 @@ public sealed class OrderProcessManagerSaga(
     IUnitOfWork unitOfWork,
     ISender mediator,
     IFeatureManager featureManager,
-    IAuditService auditService,
     IPaymentInitiator paymentInitiator) :
     INotificationHandler<DomainEventNotification<OrderCreatedEvent>>,
     INotificationHandler<DomainEventNotification<PaymentSucceededEvent>>,

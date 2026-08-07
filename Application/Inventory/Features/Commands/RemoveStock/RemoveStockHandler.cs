@@ -18,7 +18,7 @@ public class RemoveStockHandler(
     public async Task<ServiceResult> Handle(RemoveStockCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
         var stock = StockQuantity.Create(request.Quantity);
 
         var variant = await variantRepository.GetByIdAsync(variantId, ct);

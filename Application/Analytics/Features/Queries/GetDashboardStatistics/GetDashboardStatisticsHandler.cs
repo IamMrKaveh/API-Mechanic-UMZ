@@ -11,7 +11,7 @@ public sealed class GetDashboardStatisticsHandler(
         GetDashboardStatisticsQuery request,
         CancellationToken ct)
     {
-        var cacheKey = $"analytics:dashboard:{request.FromDate?.ToString("yyyyMMdd")}:{request.ToDate?.ToString("yyyyMMdd")}";
+        var cacheKey = $"analytics:dashboard:{request.FromDate?.ToString("yyyyMMdd", CultureInfo.InvariantCulture)}:{request.ToDate?.ToString("yyyyMMdd", CultureInfo.InvariantCulture)}";
 
         var cached = await cache.GetAsync<DashboardStatisticsDto>(cacheKey, ct);
         if (cached is not null)
