@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
@@ -17,7 +17,7 @@ public sealed class CancelWalletTransferHandler(
         try
         {
             var transferId = WalletTransferId.From(request.TransferId);
-            var fromUserId = UserId.From(currentUserService.UserId.Value);
+            var fromUserId = UserId.From(currentUserService.UserId!.Value);
 
             var transfer = await transferRepository.GetByIdForUpdateAsync(transferId, ct);
             if (transfer is null)

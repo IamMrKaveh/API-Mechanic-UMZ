@@ -31,9 +31,9 @@ public static class DomainErrorCodes
         public const string WithdrawalOnlyOwnerCanCancel = "WALLET.WITHDRAWAL.ONLY_OWNER_CAN_CANCEL";
         public const string WithdrawalInvalidStateForAction = "WALLET.WITHDRAWAL.INVALID_STATE_FOR_ACTION";
 
-        public const string InsufficientBalance = "WALLET.INSUFFICIENT_BALANCE";
-        public const string Inactive = "WALLET.INACTIVE";
-        public const string InvalidAmount = "WALLET.INVALID_AMOUNT";
+        public const string InsufficientBalance = "INSUFFICIENT_WALLET_BALANCE";
+        public const string Inactive = "WALLET_INACTIVE";
+        public const string InvalidAmount = "INVALID_WALLET_AMOUNT";
         public const string TransferLimitExceeded = "WALLET.TRANSFER_LIMIT_EXCEEDED";
         public const string TransferOtpMismatch = "WALLET.TRANSFER_OTP_MISMATCH";
         public const string TransferOtpAttemptsUsed = "WALLET.TRANSFER_OTP_ATTEMPTS_USED";

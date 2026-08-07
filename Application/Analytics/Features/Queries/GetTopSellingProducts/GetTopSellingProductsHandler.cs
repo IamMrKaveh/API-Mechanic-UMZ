@@ -11,9 +11,9 @@ public sealed class GetTopSellingProductsHandler(
         GetTopSellingProductsQuery request,
         CancellationToken ct)
     {
-        var cacheKey = $"analytics:top-products:{request.Count}:{request.FromDate?.ToString("yyyyMMdd")}:{request.ToDate?.ToString("yyyyMMdd")}";
+        var cacheKey = $"analytics:top-products:{request.Count}:{request.FromDate?.ToString("yyyyMMdd", CultureInfo.InvariantCulture)}:{request.ToDate?.ToString("yyyyMMdd", CultureInfo.InvariantCulture)}";
 
-        var cached = await cache.GetAsync<PaginatedResult<TopSellingProductDto>>(cacheKey);
+        var cached = await cache.GetAsync<PaginatedResult<TopSellingProductDto>>(cacheKey, ct);
         if (cached is not null)
             return ServiceResult<PaginatedResult<TopSellingProductDto>>.Success(cached);
 

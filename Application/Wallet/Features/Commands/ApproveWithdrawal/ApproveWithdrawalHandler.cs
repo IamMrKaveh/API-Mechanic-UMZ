@@ -19,7 +19,7 @@ public sealed class ApproveWithdrawalHandler(
         CancellationToken ct)
     {
         var withdrawalId = WalletWithdrawalRequestId.From(request.WithdrawalId);
-        var adminId = UserId.From(currentUserService.UserId.Value);
+        var adminId = UserId.From(currentUserService.UserId!.Value);
 
         await using var lockHandle = await distributedLock.AcquireAsync(
             $"withdrawal:{withdrawalId.Value:N}",

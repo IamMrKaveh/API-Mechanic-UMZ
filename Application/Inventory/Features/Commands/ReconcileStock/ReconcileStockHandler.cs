@@ -15,7 +15,7 @@ public class ReconcileStockHandler(
     public async Task<ServiceResult> Handle(ReconcileStockCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
         var stock = StockQuantity.Create(request.CalculatedStock);
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);

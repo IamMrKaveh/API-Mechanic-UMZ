@@ -17,7 +17,7 @@ public sealed class ApproveWalletDebitHandler(
 
     public async Task<ServiceResult<Unit>> Handle(ApproveWalletDebitCommand request, CancellationToken ct)
     {
-        var currentUserId = UserId.From(currentUserService.UserId.Value);
+        var currentUserId = UserId.From(currentUserService.UserId!.Value);
         var requestId = WalletDebitRequestId.From(request.RequestId);
 
         var debitRequest = await debitRequestRepository.GetByIdAsync(requestId, ct);

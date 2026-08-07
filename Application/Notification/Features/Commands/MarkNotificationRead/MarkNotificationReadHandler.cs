@@ -11,7 +11,7 @@ public class MarkNotificationReadHandler(
     public async Task<ServiceResult> Handle(MarkNotificationReadCommand request, CancellationToken ct)
     {
         var notificationId = NotificationId.From(request.NotificationId);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
         await notificationService.MarkAsReadAsync(notificationId, userId, ct);
         return ServiceResult.Success();
     }

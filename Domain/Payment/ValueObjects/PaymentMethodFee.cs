@@ -1,11 +1,11 @@
-﻿namespace Domain.Payment.ValueObjects;
+namespace Domain.Payment.ValueObjects;
 
 public sealed class PaymentMethodFee : ValueObject
 {
-    public Money Amount { get; }
+    public Money Amount { get; private set; } = Money.Zero();
     public decimal Percentage { get; }
 
-    public PaymentMethodFee()
+    private PaymentMethodFee()
     { }
 
     private PaymentMethodFee(Money amount, decimal percentage)

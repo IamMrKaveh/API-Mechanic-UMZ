@@ -5,23 +5,22 @@ namespace SharedKernel.ValueObjects;
 
 public sealed class FilePath : ValueObject
 {
-    public string Value { get; }
-    public string FileName { get; }
-    public string Extension { get; }
-    public string Directory { get; }
+    public string Value { get; private set; } = string.Empty;
+    public string Directory { get; private set; } = string.Empty;
+    public string FileName { get; private set; } = string.Empty;
+    public string Extension { get; private set; } = string.Empty;
 
     private const int MaxPathLength = 500;
 
-    public FilePath()
-    {
-    }
+    private FilePath()
+    { }
 
     private FilePath(string value, string fileName, string extension, string directory)
     {
         Value = value;
+        Directory = directory;
         FileName = fileName;
         Extension = extension;
-        Directory = directory;
     }
 
     public static FilePath Create(string path)

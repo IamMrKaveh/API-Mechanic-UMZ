@@ -1,4 +1,4 @@
-﻿using Application.Product.Features.Shared;
+using Application.Product.Features.Shared;
 using DomainProduct = Domain.Product.Aggregates.Product;
 
 namespace Application.Product.Mapping;
@@ -20,8 +20,8 @@ public sealed class ProductMappingConfig : IRegister
             .Map(dest => dest.UpdatedAt, src => src.UpdatedAt)
             .Ignore(dest => dest.CategoryName)
             .Ignore(dest => dest.BrandName)
-            .Ignore(dest => dest.RowVersion)
-            .Ignore(dest => dest.PrimaryImageUrl)
+            .Ignore(dest => dest.RowVersion!)
+            .Ignore(dest => dest.PrimaryImageUrl!)
             .Ignore(dest => dest.Variants)
             .IgnoreNonMapped(true);
 
@@ -36,10 +36,10 @@ public sealed class ProductMappingConfig : IRegister
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .Ignore(dest => dest.CategoryName)
             .Ignore(dest => dest.BrandName)
-            .Ignore(dest => dest.MinPrice)
+            .Ignore(dest => dest.MinPrice!)
             .Ignore(dest => dest.HasStock)
-            .Ignore(dest => dest.PrimaryImageUrl)
-            .Ignore(dest => dest.RowVersion)
+            .Ignore(dest => dest.PrimaryImageUrl!)
+            .Ignore(dest => dest.RowVersion!)
             .IgnoreNonMapped(true);
     }
 }

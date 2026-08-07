@@ -17,7 +17,7 @@ public sealed class UnfreezeWalletHandler(
         try
         {
             var userId = UserId.From(request.UserId);
-            var adminId = UserId.From(currentUserService.UserId.Value);
+            var adminId = UserId.From(currentUserService.UserId!.Value);
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)

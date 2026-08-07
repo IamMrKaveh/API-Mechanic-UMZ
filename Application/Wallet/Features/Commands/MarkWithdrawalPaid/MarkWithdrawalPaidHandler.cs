@@ -21,7 +21,7 @@ public sealed class MarkWithdrawalPaidHandler(
         CancellationToken ct)
     {
         var withdrawalId = WalletWithdrawalRequestId.From(request.WithdrawalId);
-        var adminId = UserId.From(currentUserService.UserId.Value);
+        var adminId = UserId.From(currentUserService.UserId!.Value);
 
         var withdrawalForLookup = await withdrawalRepository.GetByIdForUpdateAsync(withdrawalId, ct);
         if (withdrawalForLookup is null)

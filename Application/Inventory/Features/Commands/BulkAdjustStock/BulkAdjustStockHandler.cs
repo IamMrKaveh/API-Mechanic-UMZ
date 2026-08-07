@@ -16,7 +16,7 @@ public class BulkAdjustStockHandler(
         if (request.Items.Count == 0)
             return ServiceResult.Failure("لیست اقلام برای تعدیل خالی است.");
 
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
 
         await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
         {

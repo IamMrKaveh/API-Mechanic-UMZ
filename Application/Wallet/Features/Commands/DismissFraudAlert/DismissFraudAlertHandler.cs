@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
 
@@ -16,7 +16,7 @@ public sealed class DismissFraudAlertHandler(
         try
         {
             var alertId = WalletFraudAlertId.From(request.AlertId);
-            var adminId = UserId.From(currentUserService.UserId.Value);
+            var adminId = UserId.From(currentUserService.UserId!.Value);
 
             var alert = await repository.GetByIdAsync(alertId, ct);
             if (alert is null)

@@ -1,4 +1,4 @@
-﻿using Domain.Inventory.Interfaces;
+using Domain.Inventory.Interfaces;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 
@@ -13,7 +13,7 @@ public class ReverseInventoryHandler(
     public async Task<ServiceResult> Handle(ReverseInventoryCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
 
         var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
         if (inventory is null)

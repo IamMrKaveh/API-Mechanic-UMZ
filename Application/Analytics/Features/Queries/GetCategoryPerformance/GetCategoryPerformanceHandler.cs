@@ -11,7 +11,7 @@ public sealed class GetCategoryPerformanceHandler(
         GetCategoryPerformanceQuery request,
         CancellationToken ct)
     {
-        var cacheKey = $"analytics:category-perf:{request.FromDate?.ToString("yyyyMMdd")}:{request.ToDate?.ToString("yyyyMMdd")}";
+        var cacheKey = $"analytics:category-perf:{request.FromDate?.ToString("yyyyMMdd", CultureInfo.InvariantCulture)}:{request.ToDate?.ToString("yyyyMMdd", CultureInfo.InvariantCulture)}";
 
         var cached = await cache.GetAsync<PaginatedResult<CategoryPerformanceDto>>(cacheKey, ct);
         if (cached is not null)

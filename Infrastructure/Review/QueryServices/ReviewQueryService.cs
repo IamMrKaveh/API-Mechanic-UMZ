@@ -165,7 +165,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             var q = filter.SearchText.Trim().ToLower();
             query = query.Where(r =>
                 (r.Title != null && r.Title.Contains(q, StringComparison.CurrentCultureIgnoreCase)) ||
-                r.Comment.ToLower().Contains(q) ||
+                r.Comment!.Contains(q, StringComparison.CurrentCultureIgnoreCase) ||
                 (r.User != null &&
                     ((r.User.FullName.FirstName != null && r.User.FullName.FirstName.Contains(q, StringComparison.CurrentCultureIgnoreCase)) ||
                      (r.User.FullName.LastName != null && r.User.FullName.LastName.Contains(q, StringComparison.CurrentCultureIgnoreCase)))));

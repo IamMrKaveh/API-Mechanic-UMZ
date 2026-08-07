@@ -11,7 +11,7 @@ public class DeleteNotificationHandler(
     public async Task<ServiceResult> Handle(DeleteNotificationCommand request, CancellationToken ct)
     {
         var notificationId = NotificationId.From(request.NotificationId);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
         await notificationService.DeleteAsync(notificationId, userId, ct);
         return ServiceResult.Success();
     }

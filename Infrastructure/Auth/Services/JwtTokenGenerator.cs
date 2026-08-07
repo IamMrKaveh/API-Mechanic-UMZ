@@ -1,12 +1,7 @@
-﻿using Application.Auth.Contracts;
+using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
 using Domain.Security.ValueObjects;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using SharedKernel.Constants;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace Infrastructure.Auth.Services;
 
@@ -31,7 +26,7 @@ public sealed class JwtTokenGenerator(IOptions<JwtOptions> jwtOptions) : IJwtTok
             new(JwtRegisteredClaimNames.Sid, sessionId.Value.ToString()),
             new("sid", sessionId.Value.ToString()),
             new("nameid", userId),
-            new(ClaimTypes.MobilePhone, user.PhoneNumber.Value),
+            new(ClaimTypes.MobilePhone, user.PhoneNumber!.Value),
             new(ClaimTypes.Role, AppRoles.User),
         };
 

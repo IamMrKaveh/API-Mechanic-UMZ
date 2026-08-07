@@ -11,7 +11,7 @@ public class GetUserAddressesHandler(
     public async Task<ServiceResult<IEnumerable<UserAddressDto>>> Handle(
         GetUserAddressesQuery request, CancellationToken ct)
     {
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
 
         var addresses = await userQueryService.GetUserAddressesAsync(userId, ct);
         return ServiceResult<IEnumerable<UserAddressDto>>.Success(addresses);

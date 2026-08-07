@@ -45,7 +45,7 @@ public class CreditWalletHandler(
 
             if (wallet.IsActive is false && currentUserService.IsAdmin)
             {
-                adminIdForUnfreeze = UserId.From(currentUserService.UserId.Value);
+                adminIdForUnfreeze = UserId.From(currentUserService.UserId!.Value);
                 wallet.Unfreeze(adminIdForUnfreeze, AutoUnfreezeReason);
                 autoUnfrozen = true;
             }

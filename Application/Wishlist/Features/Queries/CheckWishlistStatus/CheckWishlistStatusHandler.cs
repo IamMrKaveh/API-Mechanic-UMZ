@@ -12,7 +12,7 @@ public class CheckWishlistStatusHandler(
         CheckWishlistStatusQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
         var productId = ProductId.From(request.ProductId);
 
         var isInWishlist = await wishlistQueryService.IsInWishlistAsync(

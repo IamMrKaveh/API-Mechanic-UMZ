@@ -34,8 +34,9 @@ public class DeleteOrderHandler(
             order.Id,
             "DeleteOrder",
             IpAddress.Unknown,
-            UserId.From(currentUserService.UserId.Value),
-            $"سفارش {order.Id.Value} حذف شد.");
+            UserId.From(currentUserService.UserId!.Value),
+            $"سفارش {order.Id.Value} حذف شد.",
+            ct);
 
         return ServiceResult.Success();
     }

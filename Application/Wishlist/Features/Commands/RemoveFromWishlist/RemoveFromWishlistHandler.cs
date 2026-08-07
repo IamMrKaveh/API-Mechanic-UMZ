@@ -1,4 +1,4 @@
-﻿using Domain.Product.ValueObjects;
+using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Wishlist.Interfaces;
 
@@ -14,7 +14,7 @@ public class RemoveFromWishlistHandler(
         RemoveFromWishlistCommand request,
         CancellationToken ct)
     {
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
         var productId = ProductId.From(request.ProductId);
 
         var item = await wishlistRepository.GetByUserAndProductAsync(userId, productId, ct);

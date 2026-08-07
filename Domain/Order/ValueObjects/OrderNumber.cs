@@ -8,7 +8,7 @@ public sealed record OrderNumber
 
     public static OrderNumber Generate(DateOnly date)
     {
-        var datePart = date.ToString("yyyyMMdd");
+        var datePart = date.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         var uniquePart = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
         return new OrderNumber($"ORD-{datePart}-{uniquePart}");
     }

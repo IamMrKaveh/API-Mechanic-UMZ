@@ -30,7 +30,7 @@ public sealed class FreezeWalletHandler(
 
         try
         {
-            var adminId = UserId.From(currentUserService.UserId.Value);
+            var adminId = UserId.From(currentUserService.UserId!.Value);
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)

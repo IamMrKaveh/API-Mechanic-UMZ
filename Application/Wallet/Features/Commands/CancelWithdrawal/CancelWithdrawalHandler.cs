@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
 
@@ -18,7 +18,7 @@ public sealed class CancelWithdrawalHandler(
         try
         {
             var withdrawalId = WalletWithdrawalRequestId.From(request.WithdrawalId);
-            var userId = UserId.From(currentUserService.UserId.Value);
+            var userId = UserId.From(currentUserService.UserId!.Value);
 
             var withdrawal = await withdrawalRepository.GetByIdForUpdateAsync(withdrawalId, ct);
             if (withdrawal is null)

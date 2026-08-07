@@ -1,4 +1,4 @@
-﻿using Application.Wallet.Features.Shared;
+using Application.Wallet.Features.Shared;
 using Application.Wallet.Options;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -21,7 +21,7 @@ public sealed class PreviewWalletTransferHandler(
         PreviewWalletTransferQuery request,
         CancellationToken ct)
     {
-        var fromUserId = UserId.From(currentUserService.UserId.Value);
+        var fromUserId = UserId.From(currentUserService.UserId!.Value);
 
         PhoneNumber recipientPhone;
         try

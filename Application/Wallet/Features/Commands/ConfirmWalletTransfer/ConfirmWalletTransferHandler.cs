@@ -31,7 +31,7 @@ public sealed class ConfirmWalletTransferHandler(
         try
         {
             var transferId = WalletTransferId.From(request.TransferId);
-            var fromUserId = UserId.From(currentUserService.UserId.Value);
+            var fromUserId = UserId.From(currentUserService.UserId!.Value);
 
             var transferPeek = await transferRepository.GetByIdAsync(transferId, ct);
             if (transferPeek is null)

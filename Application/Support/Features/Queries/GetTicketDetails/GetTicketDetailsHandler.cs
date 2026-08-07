@@ -17,7 +17,7 @@ public sealed class GetTicketDetailsHandler(
         CancellationToken ct)
     {
         var ticketId = TicketId.From(request.TicketId);
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
 
         var ticket = await ticketRepository.GetByIdWithMessagesAsync(ticketId, ct);
 

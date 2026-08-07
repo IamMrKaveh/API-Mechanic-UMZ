@@ -1,4 +1,4 @@
-﻿using Application.Auth.Features.Shared;
+using Application.Auth.Features.Shared;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -22,8 +22,8 @@ public class GoogleLoginHandler(
             user = Domain.User.Aggregates.User.Create(
                 FullName.Create(request.FirstName, request.LastName),
                 email,
-                null,
-                null);
+                passwordHash: string.Empty,
+                phoneNumber: null);
 
             user.UpdateProfile(
                 FullName.Create(request.FirstName, request.LastName),

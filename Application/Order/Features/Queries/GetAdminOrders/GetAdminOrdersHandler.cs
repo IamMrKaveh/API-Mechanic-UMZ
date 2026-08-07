@@ -12,7 +12,7 @@ public class GetAdminOrdersHandler(
         GetAdminOrdersQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(currentUserService.UserId.Value);
+        var userId = UserId.From(currentUserService.UserId!.Value);
         var result = await orderQueryService.GetAdminOrdersAsync(
             userId,
             request.Status,

@@ -1,4 +1,3 @@
-using System.Text;
 using Domain.Audit.Events;
 using Domain.Audit.ValueObjects;
 using Domain.User.ValueObjects;
@@ -96,7 +95,8 @@ public sealed class AuditLog : AggregateRoot<AuditLogId>
 
         var data = version switch
         {
-            1 => $"{userIdString}|{EventType}|{Action}|{Details}|{IpAddress}|{CreatedAt:O}",
+            1 => string.Create(CultureInfo.InvariantCulture,
+                $"{userIdString}|{EventType}|{Action}|{Details}|{IpAddress}|{CreatedAt:O}"),
             _ => string.Join('|',
                 userIdString,
                 EventType,
@@ -106,7 +106,7 @@ public sealed class AuditLog : AggregateRoot<AuditLogId>
                 Details ?? "null",
                 IpAddress,
                 UserAgent ?? "null",
-                CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ"))
+                CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ", CultureInfo.InvariantCulture))
         };
 
         var bytes = Encoding.UTF8.GetBytes(data);

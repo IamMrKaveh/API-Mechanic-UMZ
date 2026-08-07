@@ -15,7 +15,7 @@ public class ValidateDiscountHandler(
         var result = await discountQueryService.ValidateDiscountAsync(
             request.Code,
             orderAmount,
-            currentUserService.UserId.Value,
+            currentUserService.UserId!.Value,
             ct);
 
         return result.IsValid

@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
 
@@ -19,7 +19,7 @@ public sealed class RejectWithdrawalHandler(
         try
         {
             var withdrawalId = WalletWithdrawalRequestId.From(request.WithdrawalId);
-            var adminId = UserId.From(currentUserService.UserId.Value);
+            var adminId = UserId.From(currentUserService.UserId!.Value);
 
             var withdrawal = await withdrawalRepository.GetByIdForUpdateAsync(withdrawalId, ct);
             if (withdrawal is null)

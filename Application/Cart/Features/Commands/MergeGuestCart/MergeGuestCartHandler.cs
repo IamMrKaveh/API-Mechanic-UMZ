@@ -13,6 +13,9 @@ public class MergeGuestCartHandler(
     public async Task<ServiceResult> Handle(MergeGuestCartCommand request, CancellationToken ct)
     {
         var userId = UserId.From(currentUserService.UserId!.Value);
+        if (string.IsNullOrWhiteSpace(currentUserService.GuestToken))
+            return ServiceResult.Success();
+
         var guestToken = GuestToken.Create(currentUserService.GuestToken);
 
         var guestCart = await cartRepository.FindByGuestTokenAsync(guestToken, ct);

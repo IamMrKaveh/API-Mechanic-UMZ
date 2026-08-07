@@ -34,6 +34,9 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
                .IsRequired()
                .HasMaxLength(50);
 
+        builder.Property(e => e.UpdatedAt);
+        builder.Property(e => e.DeliveredAt);
+
         builder.OwnsOne(e => e.ReceiverInfo, rb =>
         {
             rb.Property(r => r.FullName)

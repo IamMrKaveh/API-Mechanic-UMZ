@@ -1,4 +1,4 @@
-﻿using Application.Auth.Features.Shared;
+using Application.Auth.Features.Shared;
 using Application.User.Features.Shared;
 using Domain.Security.Aggregates;
 using Domain.User.Entities;
@@ -41,8 +41,8 @@ public class UserMappingConfig : IRegister
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .Map(dest => dest.LastActivityAt, src => src.LastActivityAt)
             .Map(dest => dest.ExpiresAt, src => src.ExpiresAt)
-            .Ignore(dest => dest.SessionType)
-            .Ignore(dest => dest.BrowserInfo)
+            .Ignore(dest => dest.SessionType!)
+            .Ignore(dest => dest.BrowserInfo!)
             .Ignore(dest => dest.IsCurrent);
     }
 }

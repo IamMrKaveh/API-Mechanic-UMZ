@@ -1,4 +1,4 @@
-﻿using Application.Cart.Features.Shared;
+using Application.Cart.Features.Shared;
 using Domain.Cart.Entities;
 
 namespace Application.Cart.Mapping;
@@ -29,7 +29,7 @@ public class CartMappingConfig : IRegister
             .Map(dest => dest.Quantity, src => src.Quantity)
             .Map(dest => dest.TotalPrice, src => src.TotalPrice.Amount)
             .Map(dest => dest.AddedAt, src => src.AddedAt)
-            .Ignore(dest => dest.ProductIcon)
-            .Ignore(dest => dest.Attributes);
+            .Ignore(dest => dest.ProductIcon!)
+            .Ignore(dest => dest.Attributes!);
     }
 }

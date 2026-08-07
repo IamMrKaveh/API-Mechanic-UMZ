@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.ValueObjects;
 
 namespace Domain.Wallet.Events;
@@ -14,5 +14,5 @@ public sealed class WalletTransferCompletedEvent(
     public UserId FromUserId { get; } = FromUserId;
     public UserId ToUserId { get; } = ToUserId;
     public Money Amount { get; } = Amount;
-    public string CorrelationId { get; } = CorrelationId;
+    public new string CorrelationId { get; } = CorrelationId;
 }

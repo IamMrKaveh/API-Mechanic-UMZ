@@ -1,5 +1,6 @@
 global using System.Data;
 global using System.Data.Common;
+global using System.Globalization;
 global using System.Reflection;
 global using Application.Analytics.Contracts;
 global using Application.Audit.Contracts;
