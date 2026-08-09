@@ -1,3 +1,4 @@
+using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Events;
 using Domain.Security.Exceptions;
@@ -178,6 +179,7 @@ public class UserOtpTests
         ex.OtpId.ShouldBe(sut.Id);
         ex.MaxAttempts.ShouldBe(5);
     }
+
     [Fact]
     public void Verify_WhenAlreadyVerified_ThrowsOtpAlreadyVerifiedException()
     {
