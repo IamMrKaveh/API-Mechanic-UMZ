@@ -1,0 +1,147 @@
+Application
+
+    Analytics
+    Attribute
+    Audit
+    Auth
+    Brand
+    Cache
+    Cart
+    Category
+    Common
+    Communication
+    Discount
+    Inventory
+    Localization
+    Location
+    Media
+    Notification
+    Order
+    Payment
+    Product
+    Review
+    Search
+    Security
+    Shipping
+    Storage
+    Support
+    User
+    Variant
+    Wallet
+    Wishlist
+    
+
+Domain
+
+    Attribute
+    Audit
+    Brand
+    Cart
+    Category
+    Common
+    Discount
+    Inventory
+    Media
+    Notification
+    Order
+    Payment
+    Product
+    Review
+    Security
+    Shipping
+    Support
+    User
+    Variant
+    Wallet
+    Wishlist
+
+Infrastructure
+
+    Analytics
+    Attribute
+    Audit
+    Auth
+    BackgroundJobs
+    Brand
+    Cache
+    Cart
+    Category
+    Chaos
+    Common
+    Communication
+    DataProtection
+    Discount
+    Inventory
+    Localization
+    Location
+    Media
+    Notification
+    Order
+    Payment
+    Persistence
+    Product
+    Review
+    Search
+    Security
+    Shipping
+    Storage
+    Support
+    User
+    Variant
+    Wallet
+    Wishlist
+
+Presentation
+
+    Analytics
+    Attribute
+    Audit
+    Auth
+    Base
+    Brand
+    Cache
+    Cart
+    Category
+    Common
+    Discount
+    Inventory
+    Localization
+    Location
+    Media
+    Notification
+    Order
+    Payment
+    Product
+    Review
+    Search
+    Session
+    Shipping
+    Support
+    User
+    Variant
+    Wallet
+    Wishlist
+
+SharedContracts
+
+    Diagnostics
+    FeatureManagement
+
+SharedKernel
+
+    Abstractions
+    Attributes
+    Constants
+    Contracts
+    Enums
+    Exceptions
+    Extensions
+    Guard
+    Localization
+    Models
+    Results
+    Specifications
+    Validation
+    ValueObjects
+
+Tests

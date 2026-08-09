@@ -1,6 +1,5 @@
 using Domain.Product.Interfaces;
 using Domain.Review.Events;
-using Microsoft.Extensions.Logging;
 
 namespace Application.Review.EventHandlers;
 
