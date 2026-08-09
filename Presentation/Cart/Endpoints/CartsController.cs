@@ -15,10 +15,11 @@ namespace Presentation.Cart.Endpoints;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/cart")]
-[AllowAnonymous]
+[Authorize]
 public sealed class CartController(IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCart(CancellationToken ct)
     {
@@ -28,6 +29,7 @@ public sealed class CartController(IMediator mediator) : BaseApiController(media
     }
 
     [HttpGet("summary")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CartSummaryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCartSummary(CancellationToken ct)
     {
@@ -37,7 +39,6 @@ public sealed class CartController(IMediator mediator) : BaseApiController(media
     }
 
     [HttpGet("checkout/validation")]
-    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<CartCheckoutValidationDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ValidateCartForCheckout(CancellationToken ct)
     {
@@ -47,6 +48,7 @@ public sealed class CartController(IMediator mediator) : BaseApiController(media
     }
 
     [HttpPost("items")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AddItem(
@@ -61,6 +63,7 @@ public sealed class CartController(IMediator mediator) : BaseApiController(media
     }
 
     [HttpPut("items/{variantId:guid}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateQuantity(
@@ -76,6 +79,7 @@ public sealed class CartController(IMediator mediator) : BaseApiController(media
     }
 
     [HttpDelete("items/{variantId:guid}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveItem(
@@ -88,6 +92,7 @@ public sealed class CartController(IMediator mediator) : BaseApiController(media
     }
 
     [HttpDelete]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ClearCart(CancellationToken ct)
     {
@@ -97,7 +102,6 @@ public sealed class CartController(IMediator mediator) : BaseApiController(media
     }
 
     [HttpPost("merge")]
-    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> MergeCart(CancellationToken ct)
     {
@@ -107,7 +111,6 @@ public sealed class CartController(IMediator mediator) : BaseApiController(media
     }
 
     [HttpPut("prices")]
-    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<CartDetailDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> SyncCartPrices(CancellationToken ct)
     {
