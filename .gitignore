@@ -68,3 +68,5 @@ nunit-*.xml
 .vs/API/config/applicationhost.config
 
 **/logs/
+extract.txt
+extract.py
