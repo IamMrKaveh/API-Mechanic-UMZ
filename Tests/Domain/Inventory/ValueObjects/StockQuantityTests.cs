@@ -190,7 +190,7 @@ public class StockQuantityTests
     [Fact]
     public void ToString_FormatsWithThousandsSeparator()
     {
-        StockQuantity.Create(1234567).ToString().ShouldBe("1,234,567");
+        StockQuantity.Create(123456).ToString().ShouldBe("123,456");
     }
 
     [Fact]

@@ -1,4 +1,4 @@
-﻿using Domain.Security.Enums;
+using Domain.Security.Enums;
 using Domain.Security.Events;
 using Domain.Security.Exceptions;
 using Domain.Security.ValueObjects;
@@ -91,7 +91,7 @@ public sealed class UserOtp : AggregateRoot<OtpId>
 
     public void MarkExpired()
     {
-        if (IsVerified || IsExpired)
+        if (IsVerified || IsExpired is false)
             return;
 
         RaiseDomainEvent(new OtpExpiredEvent(Id, UserId, Purpose));
