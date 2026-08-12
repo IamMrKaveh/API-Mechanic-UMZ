@@ -64,4 +64,3 @@ public class ProductReviewSoftDeleteTests
         review.DomainEvents.ShouldBeEmpty();
     }
 }
-

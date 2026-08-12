@@ -1,4 +1,9 @@
+global using System.Text.Json;
 global using Bogus;
+global using MapsterMapper;
+global using MediatR;
 global using Microsoft.Extensions.Logging;
+global using Microsoft.FeatureManagement;
 global using NSubstitute;
 global using Shouldly;
+global using ValidationResult = FluentValidation.Results.ValidationResult;

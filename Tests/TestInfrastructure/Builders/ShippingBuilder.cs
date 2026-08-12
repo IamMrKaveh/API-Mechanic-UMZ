@@ -1,4 +1,3 @@
-using Bogus;
 using Domain.Shipping.Aggregates;
 using Domain.Shipping.ValueObjects;
 using Domain.User.ValueObjects;
@@ -110,4 +109,3 @@ public sealed class ShippingBuilder
         return shipping;
     }
 }
-

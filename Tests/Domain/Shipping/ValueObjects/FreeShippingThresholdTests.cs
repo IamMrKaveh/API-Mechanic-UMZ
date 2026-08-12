@@ -118,4 +118,3 @@ public class FreeShippingThresholdTests
             .ShouldNotBe(FreeShippingThreshold.Enabled(Money.FromDecimal(500_000m)));
     }
 }
-

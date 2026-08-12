@@ -126,4 +126,3 @@ public class ProductReviewModerationTests
         review.DomainEvents.ShouldContain(e => e is ReviewRejectedEvent);
     }
 }
-

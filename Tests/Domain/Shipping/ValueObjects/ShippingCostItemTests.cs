@@ -65,4 +65,3 @@ public class ShippingCostItemTests
         modified.Quantity.ShouldBe(10);
     }
 }
-

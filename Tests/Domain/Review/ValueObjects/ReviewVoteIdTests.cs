@@ -69,4 +69,3 @@ public class ReviewVoteIdTests
         (a == b).ShouldBeTrue();
     }
 }
-

@@ -107,4 +107,3 @@ public class DeliveryTimeRangeTests
         sut.ToString().ShouldBe(sut.ToDisplayString());
     }
 }
-

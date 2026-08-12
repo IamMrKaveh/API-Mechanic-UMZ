@@ -69,4 +69,3 @@ public class ShippingIdTests
         ShippingId.From(guid).ToString().ShouldBe(guid.ToString());
     }
 }
-

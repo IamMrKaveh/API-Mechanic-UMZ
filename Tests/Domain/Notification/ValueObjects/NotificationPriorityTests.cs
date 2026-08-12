@@ -1,4 +1,3 @@
-
 using Domain.Notification.ValueObjects;
 
 namespace Tests.Domain.Notification.ValueObjects;
@@ -54,4 +53,3 @@ public class NotificationPriorityTests
         asString.ShouldBe("Urgent");
     }
 }
-

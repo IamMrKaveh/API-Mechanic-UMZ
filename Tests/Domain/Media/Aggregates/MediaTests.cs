@@ -1,4 +1,3 @@
-using Domain.Media.Aggregates;
 using Domain.Media.Events;
 using Domain.User.ValueObjects;
 using SharedKernel.Abstractions.Interfaces;
@@ -474,4 +473,3 @@ public class MediaTests
         media.DomainEvents.ShouldBeEmpty();
     }
 }
-

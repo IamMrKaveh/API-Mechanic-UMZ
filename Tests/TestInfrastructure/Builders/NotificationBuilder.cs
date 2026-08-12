@@ -1,5 +1,3 @@
-
-using Bogus;
 using Domain.Notification.Aggregates;
 using Domain.Notification.ValueObjects;
 using Domain.User.ValueObjects;
@@ -73,4 +71,3 @@ public sealed class NotificationBuilder
             _relatedEntityType,
             _relatedEntityId);
 }
-

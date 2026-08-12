@@ -1,4 +1,3 @@
-
 using Domain.Notification.Enums;
 using Domain.Notification.ValueObjects;
 using SharedKernel.Exceptions;
@@ -177,4 +176,3 @@ public class NotificationTypeTests
         asString.ShouldBe("OrderCreated");
     }
 }
-

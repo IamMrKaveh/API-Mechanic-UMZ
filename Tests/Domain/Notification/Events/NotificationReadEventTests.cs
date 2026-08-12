@@ -1,4 +1,3 @@
-
 using Domain.Notification.Events;
 using Domain.Notification.ValueObjects;
 
@@ -38,4 +37,3 @@ public class NotificationReadEventTests
         a.EventId.ShouldNotBe(b.EventId);
     }
 }
-
