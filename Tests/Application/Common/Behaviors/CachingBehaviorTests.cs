@@ -1,7 +1,6 @@
 using Application.Audit.Contracts;
 using Application.Cache.Contracts;
 using Application.Common.Behaviors;
-using MediatR;
 
 namespace Tests.Application.Common.Behaviors;
 

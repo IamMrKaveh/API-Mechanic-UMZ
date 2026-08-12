@@ -2,7 +2,6 @@ using Application.Audit.Contracts;
 using Application.Common.Behaviors;
 using Application.Common.Interfaces;
 using Domain.User.ValueObjects;
-using MediatR;
 using SharedKernel.Results;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Assertions;

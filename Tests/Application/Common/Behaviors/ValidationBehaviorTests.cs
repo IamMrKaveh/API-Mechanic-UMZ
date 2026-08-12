@@ -1,7 +1,6 @@
 using Application.Common.Behaviors;
 using FluentValidation;
 using FluentValidation.Results;
-using MediatR;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using ValidationException = FluentValidation.ValidationException;
