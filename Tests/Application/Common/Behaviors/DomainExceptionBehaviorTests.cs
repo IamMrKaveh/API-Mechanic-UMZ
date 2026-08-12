@@ -1,5 +1,4 @@
 using Application.Common.Behaviors;
-using MediatR;
 using SharedKernel.Exceptions;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;

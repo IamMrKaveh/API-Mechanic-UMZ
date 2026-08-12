@@ -5,5 +5,6 @@ global using MediatR;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.FeatureManagement;
 global using NSubstitute;
+global using NSubstitute.ExceptionExtensions;
 global using Shouldly;
 global using ValidationResult = FluentValidation.Results.ValidationResult;

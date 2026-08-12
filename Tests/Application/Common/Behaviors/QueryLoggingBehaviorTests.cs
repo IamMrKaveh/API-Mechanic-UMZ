@@ -1,6 +1,5 @@
 using Application.Common.Behaviors;
 using Application.Common.Interfaces;
-using MediatR;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 
