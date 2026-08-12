@@ -97,4 +97,3 @@ public sealed class MediaBuilder
         return media;
     }
 }
-

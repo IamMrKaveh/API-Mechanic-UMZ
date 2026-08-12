@@ -80,4 +80,3 @@ public class ShippingNameTests
         ShippingName.Create("Tipax").ToString().ShouldBe("Tipax");
     }
 }
-

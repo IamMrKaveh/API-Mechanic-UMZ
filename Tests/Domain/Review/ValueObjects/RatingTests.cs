@@ -104,4 +104,3 @@ public class RatingTests
         (a == b).ShouldBeFalse();
     }
 }
-

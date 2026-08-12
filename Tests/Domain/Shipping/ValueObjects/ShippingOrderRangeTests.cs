@@ -1,5 +1,4 @@
 using Domain.Shipping.ValueObjects;
-using SharedKernel.Results;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Assertions;
 
@@ -43,4 +42,3 @@ public class ShippingOrderRangeTests
         ShippingOrderRange.Unlimited().ShouldBe(ShippingOrderRange.Unlimited());
     }
 }
-

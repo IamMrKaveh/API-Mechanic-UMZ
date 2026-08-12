@@ -70,4 +70,3 @@ public class MediaIdTests
         MediaId.NewId().ShouldNotBe(MediaId.NewId());
     }
 }
-

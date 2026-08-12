@@ -1,4 +1,3 @@
-using Bogus;
 using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.ValueObjects;

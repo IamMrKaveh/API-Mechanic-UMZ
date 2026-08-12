@@ -1,4 +1,3 @@
-
 using Domain.Notification.ValueObjects;
 using SharedKernel.Exceptions;
 
@@ -66,4 +65,3 @@ public class NotificationIdTests
         NotificationId.From(Guid.NewGuid()).ShouldNotBe(NotificationId.From(Guid.NewGuid()));
     }
 }
-

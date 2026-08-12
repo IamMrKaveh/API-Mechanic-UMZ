@@ -68,4 +68,3 @@ public class ShippingAssignmentTests
         modified.ShippingId.ShouldBe(original.ShippingId);
     }
 }
-
