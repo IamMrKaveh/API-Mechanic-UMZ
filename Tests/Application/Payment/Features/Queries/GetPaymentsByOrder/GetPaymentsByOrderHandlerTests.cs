@@ -55,7 +55,7 @@ public class GetPaymentsByOrderHandlerTests
         _currentUser.UserId.Returns(callerId);
         _currentUser.IsAdmin.Returns(false);
         _orderRepository
-            .FindByIdAsync(Arg.Is<OrderId>(x => x.Value == order.Id.Value), Arg.Any<CancellationToken>())
+            .FindByIdAsync(Arg.Is<OrderId>(x => x == order.Id), Arg.Any<CancellationToken>())
             .Returns(order);
 
         var result = await _sut.Handle(new GetPaymentsByOrderQuery(order.Id.Value), CancellationToken.None);
@@ -81,7 +81,7 @@ public class GetPaymentsByOrderHandlerTests
         new() { Id = Guid.NewGuid(), OrderId = order.Id.Value, UserId = callerId }
     };
         _paymentQueryService
-            .GetByOrderIdAsync(Arg.Is<OrderId>(x => x.Value == order.Id.Value), Arg.Any<CancellationToken>())
+            .GetByOrderIdAsync(Arg.Is<OrderId>(x => x == order.Id), Arg.Any<CancellationToken>())
             .Returns(dtos);
 
         var result = await _sut.Handle(new GetPaymentsByOrderQuery(order.Id.Value), CancellationToken.None);

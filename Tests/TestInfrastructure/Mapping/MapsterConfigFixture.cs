@@ -5,8 +5,12 @@ namespace Tests.TestInfrastructure.Mapping;
 
 public sealed class MapsterConfigFixture
 {
+    public IMapper Mapper { get; }
+
     public MapsterConfigFixture()
     {
-        new CategoryMappingConfig().Register(TypeAdapterConfig.GlobalSettings);
+        var config = new TypeAdapterConfig();
+        config.Scan(typeof(CategoryMappingConfig).Assembly);
+        Mapper = new Mapper(config);
     }
 }

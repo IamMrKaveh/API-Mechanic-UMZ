@@ -91,7 +91,7 @@ public class DeleteCategoryHandlerTests
         await _sut.Handle(new DeleteCategoryCommand(category.Id.Value), CancellationToken.None);
 
         _repository.Received(1).Update(
-            Arg.Is<Categories>(c => c.Id == category.Id),
+            Arg.Is<Categories>(c => c!.Id == category.Id),
             Arg.Any<byte[]?>());
     }
 }
