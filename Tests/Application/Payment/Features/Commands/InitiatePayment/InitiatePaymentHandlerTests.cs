@@ -86,10 +86,10 @@ public class InitiatePaymentHandlerTests
         var expected = new PaymentInitiationResult("A123", "https://gateway/redirect/A123", Guid.NewGuid());
         _paymentService
             .InitiatePaymentAsync(
-                Arg.Is<OrderId>(x => x.Value == order.Id.Value),
+                Arg.Is<OrderId>(x => x == order.Id),
                 order.FinalAmount,
                 Arg.Any<IpAddress>(),
-                Arg.Is<UserId>(x => x.Value == callerId),
+                Arg.Is<UserId>(x => x == UserId.From(callerId)),
                 Arg.Any<string?>(),
                 Arg.Any<CancellationToken>())
             .Returns(expected);
@@ -124,7 +124,7 @@ public class InitiatePaymentHandlerTests
         await _paymentService.Received(1).InitiatePaymentAsync(
             Arg.Any<OrderId>(),
             Arg.Any<Money>(),
-            Arg.Is<IpAddress>(x => x.Value == IpAddress.Unknown.Value),
+            Arg.Is<IpAddress>(x => x == IpAddress.Unknown),
             Arg.Any<UserId>(),
             Arg.Any<string?>(),
             Arg.Any<CancellationToken>());

@@ -62,7 +62,7 @@ public class IdempotencyBehaviorTests
         result.Value.ShouldBe("fresh");
         await _idempotency.Received(1).MarkAsProcessedAsync(
             key,
-            Arg.Is<string>(s => s.Contains("fresh")),
+            Arg.Is<string>(s => s!.Contains("fresh")),
             Arg.Any<CancellationToken>());
         await _lock.DidNotReceiveWithAnyArgs().AcquireAsync(default!, default, default);
     }
@@ -83,7 +83,7 @@ public class IdempotencyBehaviorTests
         handle.IsAcquired.Returns(true);
 
         _lock.AcquireAsync(
-                Arg.Is<string>(k => k.Contains(key.ToString("N"))),
+                Arg.Is<string>(k => k!.Contains(key.ToString("N"))),
                 Arg.Any<TimeSpan>(),
                 Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<ILockHandle?>(handle));
@@ -99,7 +99,7 @@ public class IdempotencyBehaviorTests
         result.Value.ShouldBe("fresh-locked");
         await _idempotency.Received(1).MarkAsProcessedAsync(
             key,
-            Arg.Is<string>(s => s.Contains("fresh-locked")),
+            Arg.Is<string>(s => s!.Contains("fresh-locked")),
             Arg.Any<CancellationToken>());
     }
 

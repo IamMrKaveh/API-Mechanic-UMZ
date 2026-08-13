@@ -65,7 +65,7 @@ public class GetProductCatalogHandlerTests
         result.ShouldBeSuccess();
         await _productQueryService.Received(1).GetProductCatalogAsync(
             Arg.Is<ProductCatalogSearchParams>(p =>
-                p.Page == 2 &&
+                p!.Page == 2 &&
                 p.PageSize == 25 &&
                 p.Search == "phone" &&
                 p.CategoryId == categoryId &&
