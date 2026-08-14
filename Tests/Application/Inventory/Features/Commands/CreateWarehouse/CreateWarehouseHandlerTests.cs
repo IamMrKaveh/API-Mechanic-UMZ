@@ -45,7 +45,7 @@ public class CreateWarehouseHandlerTests
 
         result.ShouldBeSuccess();
         await _warehouseRepository.Received(1).AddAsync(
-            Arg.Is<Wh>(w => w.Code.Value == "WH-02" && w.Name == "Second" && !w.IsDefault),
+            Arg.Is<Wh>(w => w!.Code == WarehouseCode.Create("WH-02") && w.Name == "Second" && !w.IsDefault),
             Arg.Any<CancellationToken>());
     }
 
@@ -69,7 +69,7 @@ public class CreateWarehouseHandlerTests
         currentDefault.IsDefault.ShouldBeFalse();
         _warehouseRepository.Received(1).Update(currentDefault);
         await _warehouseRepository.Received(1).AddAsync(
-            Arg.Is<Wh>(w => w.IsDefault && w.Code.Value == "WH-NEW"),
+            Arg.Is<Wh>(w => w!.IsDefault && w.Code == WarehouseCode.Create("WH-NEW")),
             Arg.Any<CancellationToken>());
     }
 }

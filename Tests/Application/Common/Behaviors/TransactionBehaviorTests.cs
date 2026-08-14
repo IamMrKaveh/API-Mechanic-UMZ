@@ -21,7 +21,7 @@ public class TransactionBehaviorTests
             {
                 var op = ci.Arg<Func<CancellationToken, Task<TResp>>>();
                 var ct = ci.Arg<CancellationToken>();
-                return await op(ct);
+                return await op!(ct);
             });
     }
 

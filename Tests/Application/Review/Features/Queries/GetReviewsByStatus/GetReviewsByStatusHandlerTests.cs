@@ -49,7 +49,7 @@ public class GetReviewsByStatusHandlerTests
         result.ShouldBeSuccess();
         await _reviewQueryService.Received(1)
             .GetReviewsByStatusAsync(
-                Arg.Is<AdminReviewFilter>(f => f.Status == "Pending"),
+                Arg.Is<AdminReviewFilter>(f => f!.Status == "Pending"),
                 Arg.Any<CancellationToken>());
     }
 
@@ -72,7 +72,7 @@ public class GetReviewsByStatusHandlerTests
         result.ShouldBeSuccess();
         await _reviewQueryService.Received(1)
             .GetReviewsByStatusAsync(
-                Arg.Is<AdminReviewFilter>(f => f.Status == canonical),
+                Arg.Is<AdminReviewFilter>(f => f!.Status == canonical),
                 Arg.Any<CancellationToken>());
     }
 
@@ -90,14 +90,14 @@ public class GetReviewsByStatusHandlerTests
 
         await _reviewQueryService.Received(1)
             .GetReviewsByStatusAsync(
-                Arg.Is<AdminReviewFilter>(f => f.SearchText == null),
+                Arg.Is<AdminReviewFilter>(f => f!.SearchText == null),
                 Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_ForwardsAllFilterParametersToQueryService()
     {
-        var expected = new PaginatedResult<ProductReviewDto>(Array.Empty<ProductReviewDto>(), 0, 2, 25);
+        var expected = new PaginatedResult<ProductReviewDto>([], 0, 2, 25);
         _reviewQueryService
             .GetReviewsByStatusAsync(Arg.Any<AdminReviewFilter>(), Arg.Any<CancellationToken>())
             .Returns(expected);
@@ -116,7 +116,7 @@ public class GetReviewsByStatusHandlerTests
         await _reviewQueryService.Received(1)
             .GetReviewsByStatusAsync(
                 Arg.Is<AdminReviewFilter>(f =>
-                    f.Status == "Approved" &&
+                    f!.Status == "Approved" &&
                     f.Page == 2 &&
                     f.PageSize == 25 &&
                     f.SearchText == "keyword" &&

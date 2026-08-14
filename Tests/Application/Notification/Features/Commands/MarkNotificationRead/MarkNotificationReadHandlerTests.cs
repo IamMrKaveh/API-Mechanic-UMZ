@@ -41,8 +41,8 @@ public class MarkNotificationReadHandlerTests
             CancellationToken.None);
 
         await _notificationService.Received(1).MarkAsReadAsync(
-            Arg.Is<NotificationId>(n => n.Value == notificationId),
-            Arg.Is<UserId>(u => u.Value == currentUserId),
+            Arg.Is<NotificationId>(n => n == NotificationId.From(notificationId)),
+            Arg.Is<UserId>(u => u == UserId.From(currentUserId)),
             Arg.Any<CancellationToken>());
     }
 

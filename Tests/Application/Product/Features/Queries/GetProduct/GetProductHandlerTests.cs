@@ -35,7 +35,7 @@ public class GetProductHandlerTests
         var dto = new ProductDetailDto { Id = productId, Name = "Sample" };
 
         _productQueryService
-            .GetProductDetailAsync(Arg.Is<ProductId>(x => x.Value == productId), Arg.Any<CancellationToken>())
+            .GetProductDetailAsync(Arg.Is<ProductId>(x => x == ProductId.From(productId)), Arg.Any<CancellationToken>())
             .Returns(dto);
 
         var result = await _sut.Handle(new GetProductQuery(productId), CancellationToken.None);

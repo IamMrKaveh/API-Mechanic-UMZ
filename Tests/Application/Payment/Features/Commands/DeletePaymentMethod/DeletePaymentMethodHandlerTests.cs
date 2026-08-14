@@ -37,7 +37,7 @@ public class DeletePaymentMethodHandlerTests
         var method = new PaymentMethodBuilder().Build();
         _currentUser.UserId.Returns((Guid?)null);
         _repository
-            .GetByIdAsync(Arg.Is<PaymentMethodId>(x => x.Value == method.Id.Value), Arg.Any<CancellationToken>())
+            .GetByIdAsync(Arg.Is<PaymentMethodId>(x => x == method.Id), Arg.Any<CancellationToken>())
             .Returns(method);
 
         var result = await _sut.Handle(new DeletePaymentMethodCommand(method.Id.Value), CancellationToken.None);
@@ -55,7 +55,7 @@ public class DeletePaymentMethodHandlerTests
         var userId = Guid.NewGuid();
         _currentUser.UserId.Returns(userId);
         _repository
-            .GetByIdAsync(Arg.Is<PaymentMethodId>(x => x.Value == method.Id.Value), Arg.Any<CancellationToken>())
+            .GetByIdAsync(Arg.Is<PaymentMethodId>(x => x == method.Id), Arg.Any<CancellationToken>())
             .Returns(method);
 
         var result = await _sut.Handle(new DeletePaymentMethodCommand(method.Id.Value), CancellationToken.None);

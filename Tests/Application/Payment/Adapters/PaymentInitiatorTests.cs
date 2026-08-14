@@ -28,7 +28,7 @@ public class PaymentInitiatorTests
 
         result.ShouldBeSuccess();
         await _mediator.Received(1).Send(
-            Arg.Is<AtomicRefundPaymentCommand>(c => c.OrderId == orderId && c.Reason == reason),
+            Arg.Is<AtomicRefundPaymentCommand>(c => c == new AtomicRefundPaymentCommand(orderId, reason)),
             Arg.Any<CancellationToken>());
     }
 

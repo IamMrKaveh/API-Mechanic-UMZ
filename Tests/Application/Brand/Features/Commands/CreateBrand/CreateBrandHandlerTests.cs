@@ -177,12 +177,12 @@ public class CreateBrandHandlerTests
         result.ShouldBeSuccess();
         await _storageService.Received(1).UploadAsync(
             stream,
-            Arg.Is<string>(f => f.StartsWith("brands/") && f.EndsWith(extension)),
+            Arg.Is<string>(f => f!.StartsWith("brands/") && f.EndsWith(extension)),
             contentType,
             "brands",
             Arg.Any<CancellationToken>());
         await _brandRepository.Received(1).AddAsync(
-            Arg.Is<Brands>(b => b.LogoPath == uploadedPath),
+            Arg.Is<Brands>(b => b!.LogoPath == uploadedPath),
             Arg.Any<CancellationToken>());
     }
 
@@ -201,7 +201,7 @@ public class CreateBrandHandlerTests
         result.ShouldBeSuccess();
         await _storageService.DidNotReceiveWithAnyArgs().UploadAsync(default!, default!, default!, default, default);
         await _brandRepository.Received(1).AddAsync(
-            Arg.Is<Brands>(b => b.LogoPath == null),
+            Arg.Is<Brands>(b => b!.LogoPath == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -220,7 +220,7 @@ public class CreateBrandHandlerTests
 
         result.ShouldBeSuccess();
         await _brandRepository.Received(1).AddAsync(
-            Arg.Is<Brands>(b => b.Slug.Value == "home-appliances"),
+            Arg.Is<Brands>(b => b!.Slug == BrandSlug.Create("home-appliances")),
             Arg.Any<CancellationToken>());
     }
 
@@ -236,7 +236,7 @@ public class CreateBrandHandlerTests
 
         result.ShouldBeSuccess();
         await _brandRepository.Received(1).AddAsync(
-            Arg.Is<Brands>(b => b.Slug.Value == "my-sony"),
+            Arg.Is<Brands>(b => b!.Slug == BrandSlug.Create("my-sony")),
             Arg.Any<CancellationToken>());
     }
 
@@ -252,7 +252,7 @@ public class CreateBrandHandlerTests
 
         result.ShouldBeSuccess();
         await _brandRepository.Received(1).AddAsync(
-            Arg.Is<Brands>(b => b.Description == null),
+            Arg.Is<Brands>(b => b!.Description == null),
             Arg.Any<CancellationToken>());
     }
 

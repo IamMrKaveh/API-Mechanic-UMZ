@@ -35,7 +35,7 @@ public class GetAdminProductHandlerTests
         var dto = new AdminProductDetailDto { Id = productId, Name = "Admin Product" };
 
         _productQueryService
-            .GetAdminProductDetailAsync(Arg.Is<ProductId>(x => x.Value == productId), Arg.Any<CancellationToken>())
+            .GetAdminProductDetailAsync(Arg.Is<ProductId>(x => x == ProductId.From(productId)), Arg.Any<CancellationToken>())
             .Returns(dto);
 
         var result = await _sut.Handle(new GetAdminProductQuery(productId), CancellationToken.None);

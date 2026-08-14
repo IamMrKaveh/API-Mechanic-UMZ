@@ -90,7 +90,7 @@ public class AdminSendNotificationHandlerTests
         await _sut.Handle(command, CancellationToken.None);
 
         await _notificationService.Received(1).CreateNotificationAsync(
-            Arg.Is<UserId>(u => u.Value == userId),
+            Arg.Is<UserId>(u => u == UserId.From(userId)),
             "عنوان-همگانی",
             "متن-همگانی",
             "OrderCreated",
@@ -145,7 +145,7 @@ public class AdminSendNotificationHandlerTests
 
         result.ShouldBeSuccess();
         await _notificationService.Received(1).CreateNotificationAsync(
-            Arg.Is<UserId>(u => u.Value == targetUserId),
+            Arg.Is<UserId>(u => u == UserId.From(targetUserId)),
             "عنوان",
             "متن",
             "SystemAlert",

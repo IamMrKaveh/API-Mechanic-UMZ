@@ -114,7 +114,7 @@ public class VerifyPaymentHandlerTests
 
         result.ShouldBeSuccess();
         await _auditService.Received(1).LogPaymentEventAsync(
-            Arg.Is<PaymentTransactionId>(x => x.Value == transactionId),
+            Arg.Is<PaymentTransactionId>(x => x == PaymentTransactionId.From(transactionId)),
             "VerifyPayment",
             Arg.Any<IpAddress>(),
             Arg.Any<UserId?>(),

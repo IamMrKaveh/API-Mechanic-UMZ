@@ -35,7 +35,7 @@ public class MarkAllNotificationsReadHandlerTests
         await _sut.Handle(new MarkAllNotificationsReadCommand(), CancellationToken.None);
 
         await _notificationService.Received(1).MarkAllAsReadAsync(
-            Arg.Is<UserId>(u => u.Value == currentUserId),
+            Arg.Is<UserId>(u => u == UserId.From(currentUserId)),
             Arg.Any<CancellationToken>());
     }
 

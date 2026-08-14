@@ -26,7 +26,7 @@ public class BulkAdjustStockHandlerTests
             .Returns(async ci =>
             {
                 var op = ci.Arg<Func<CancellationToken, Task<int>>>();
-                return await op(ci.Arg<CancellationToken>());
+                return await op!(ci.Arg<CancellationToken>());
             });
 
         _sut = new BulkAdjustStockHandler(

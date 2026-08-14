@@ -37,7 +37,7 @@ public class DeactivatePaymentMethodHandlerTests
         method.IsActive.ShouldBeTrue();
 
         _repository
-            .GetByIdAsync(Arg.Is<PaymentMethodId>(x => x.Value == method.Id.Value), Arg.Any<CancellationToken>())
+            .GetByIdAsync(Arg.Is<PaymentMethodId>(x => x == method.Id), Arg.Any<CancellationToken>())
             .Returns(method);
 
         var result = await _sut.Handle(new DeactivatePaymentMethodCommand(method.Id.Value), CancellationToken.None);
