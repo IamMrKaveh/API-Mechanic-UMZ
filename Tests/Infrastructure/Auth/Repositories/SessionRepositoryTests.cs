@@ -3,8 +3,8 @@ using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Auth.Repositories;
 using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
 using SharedKernel.ValueObjects;
+using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
 using Tests.TestInfrastructure.Database;
 
@@ -35,7 +35,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         await _fixture.ResetAsync();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_ThenGetByIdAsync_RoundTripsAggregateFromDatabase()
     {
         var userId = UserId.NewId();
@@ -66,7 +66,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         loaded.IsRevoked.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByRefreshTokenAsync_WhenExists_ReturnsMatchingSession()
     {
         var refreshToken = RefreshToken.Generate();
@@ -84,7 +84,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         loaded!.Id.ShouldBe(session.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByRefreshTokenAsync_WhenNotExists_ReturnsNull()
     {
         var loaded = await _sut.GetByRefreshTokenAsync(RefreshToken.Generate());
@@ -92,7 +92,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetActiveByUserIdAsync_ReturnsOnlyNonRevokedNonExpiredSessions()
     {
         var userId = UserId.NewId();
@@ -130,7 +130,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         actives.Select(s => s.Id).ShouldContain(active2.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetActiveByUserIdAsync_OrdersByCreatedAtDescending()
     {
         var userId = UserId.NewId();
@@ -163,7 +163,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         actives[1].Id.ShouldBe(first.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetActiveByUserAndDeviceAsync_WhenActiveMatchExists_ReturnsIt()
     {
         var userId = UserId.NewId();
@@ -185,7 +185,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         loaded!.Id.ShouldBe(session.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetActiveByUserAndDeviceAsync_WhenOnlyRevokedMatchExists_ReturnsNull()
     {
         var userId = UserId.NewId();
@@ -207,7 +207,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetExpiredActiveSessionsAsync_ReturnsSessionsWhoseExpiresAtIsBeforeCutoff()
     {
         var soonExpiring = new UserSessionBuilder()
@@ -232,7 +232,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         expired[0].Id.ShouldBe(soonExpiring.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetExpiredActiveSessionsAsync_ExcludesAlreadyRevokedSessions()
     {
         var revoked = new UserSessionBuilder()
@@ -250,7 +250,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         expired.ShouldBeEmpty();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task RevokeAllByUserIdAsync_MarksAllActiveSessionsForUserAsRevoked()
     {
         var userId = UserId.NewId();
@@ -281,7 +281,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         reloadedUntouched!.IsRevoked.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task RevokeAllByUserIdAsync_WithReason_UsesProvidedReason()
     {
         var userId = UserId.NewId();
@@ -301,7 +301,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         reloaded.RevocationReason.ShouldBe(SessionRevocationReason.PasswordChanged);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task RevokeAllExceptAsync_LeavesSpecifiedSessionActiveAndRevokesTheRest()
     {
         var userId = UserId.NewId();
@@ -330,7 +330,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         reloadedRevoke2.RevocationReason.ShouldBe(SessionRevocationReason.SecurityConcern);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task RefreshTokenColumn_IsUnique_ThrowsWhenAttemptingDuplicateValue()
     {
         var duplicateToken = RefreshToken.Generate();
@@ -354,7 +354,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         await Should.ThrowAsync<DbUpdateException>(() => _context.SaveChangesAsync());
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task RevocationReason_IsStoredAsString_RoundTripPreservesEnumValue()
     {
         var session = new UserSessionBuilder().WithDeviceInfo("d1").Build();

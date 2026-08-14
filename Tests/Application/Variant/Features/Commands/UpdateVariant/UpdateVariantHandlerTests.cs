@@ -172,7 +172,7 @@ public class UpdateVariantHandlerTests
             .Returns(variant);
         _attributeRepository
             .GetAttributeValuesByIdsAsync(Arg.Any<IEnumerable<AttributeValueId>>(), Arg.Any<CancellationToken>())
-            .Returns(Array.Empty<Attributes>());
+            .Returns([]);
 
         var command = ValidCommand(
             productId.Value,

@@ -3,6 +3,7 @@ using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Auth.Repositories;
 using Infrastructure.Persistence.Context;
+using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
 using Tests.TestInfrastructure.Database;
 
@@ -33,7 +34,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         await _fixture.ResetAsync();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_ThenGetByIdAsync_RoundTripsAggregateFromDatabase()
     {
         var userId = UserId.NewId();
@@ -59,7 +60,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         loaded.CodeHash.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_WhenNotExists_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(OtpId.NewId());
@@ -67,7 +68,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetLatestActiveByUserIdAsync_WhenMultipleActive_ReturnsMostRecentByCreatedAt()
     {
         var userId = UserId.NewId();
@@ -99,7 +100,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         latest!.Id.ShouldBe(newer.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetLatestActiveByUserIdAsync_WhenLatestIsVerified_ReturnsNull()
     {
         var userId = UserId.NewId();
@@ -122,7 +123,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         latest.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetLatestActiveByUserIdAsync_WhenLatestIsExpired_ReturnsNull()
     {
         var userId = UserId.NewId();
@@ -144,7 +145,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         latest.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetLatestActiveByUserIdAsync_FiltersByPurpose()
     {
         var userId = UserId.NewId();
@@ -175,7 +176,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         latestReset!.Id.ShouldBe(passwordResetOtp.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetLatestActiveByUserIdAsync_FiltersByUserId()
     {
         var userA = UserId.NewId();
@@ -205,7 +206,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         latestA.UserId.ShouldBe(userA);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task CountRecentByUserIdAsync_CountsOnlyEntriesWithinWindow()
     {
         var userId = UserId.NewId();
@@ -229,7 +230,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         count.ShouldBe(3);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task CountRecentByUserIdAsync_FiltersByPurpose()
     {
         var userId = UserId.NewId();
@@ -249,7 +250,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         resetCount.ShouldBe(1);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task CountRecentByUserIdAsync_WhenNoRecentEntries_ReturnsZero()
     {
         var userId = UserId.NewId();
@@ -259,7 +260,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         count.ShouldBe(0);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_AfterVerifyingOtp_PersistsVerifiedStateAndAttempts()
     {
         var userId = UserId.NewId();
@@ -290,7 +291,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         reloaded.VerificationAttempts.ShouldBe(1);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task PurposeIsStoredAsString_RoundTripPreservesEnumValue()
     {
         var userId = UserId.NewId();

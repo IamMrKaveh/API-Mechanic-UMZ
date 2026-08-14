@@ -4,6 +4,7 @@ using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Domain.Product.ValueObjects;
+using Domain.User.ValueObjects;
 
 namespace Domain.Brand.Aggregates;
 
@@ -127,5 +128,21 @@ public sealed class Brand : AggregateRoot<BrandId>, ISoftDeletable
         IncrementVersion();
 
         RaiseDomainEvent(new BrandDeactivatedEvent(Id, Name, CategoryId));
+    }
+
+    public void RequestDeletion(UserId? deletedBy = null)
+    {
+        if (IsDeleted) return;
+
+        var now = DateTime.UtcNow;
+
+        IsActive = false;
+        IsDeleted = true;
+        DeletedAt = now;
+        DeletedBy = deletedBy?.Value;
+        UpdatedAt = now;
+        IncrementVersion();
+
+        RaiseDomainEvent(new BrandDeletedEvent(Id, Name, CategoryId, deletedBy));
     }
 }

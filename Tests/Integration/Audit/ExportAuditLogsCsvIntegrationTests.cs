@@ -1,8 +1,8 @@
-using System.Text;
 using Application.Audit.Features.Queries.ExportAuditLogs;
 using Infrastructure.Audit.QueryServices;
 using Infrastructure.Persistence.Context;
 using Tests.TestInfrastructure.Assertions;
+using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
 using Tests.TestInfrastructure.Database;
 
@@ -36,7 +36,7 @@ public class ExportAuditLogsCsvIntegrationTests(PostgresContainerFixture fixture
         await _fixture.ResetAsync();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Handle_CsvExportWithEntityTypeOrder_ReturnsOnlyOrderRows()
     {
         var query = new ExportAuditLogsQuery(
@@ -73,7 +73,7 @@ public class ExportAuditLogsCsvIntegrationTests(PostgresContainerFixture fixture
         csv.ShouldNotContain(",Product,");
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Handle_CsvExportWithoutFilters_UsesDefaultMaxRowsCap()
     {
         var query = new ExportAuditLogsQuery(
@@ -88,7 +88,7 @@ public class ExportAuditLogsCsvIntegrationTests(PostgresContainerFixture fixture
         result.Value.FileContent.Length.ShouldBeGreaterThan(0);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Handle_JsonExport_ReturnsValidJsonContentType()
     {
         var query = new ExportAuditLogsQuery(

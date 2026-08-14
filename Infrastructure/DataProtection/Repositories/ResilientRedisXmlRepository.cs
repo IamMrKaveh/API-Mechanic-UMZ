@@ -1,3 +1,5 @@
+using CommandFlags = StackExchange.Redis.CommandFlags;
+
 namespace Infrastructure.DataProtection.Repositories;
 
 public sealed class ResilientRedisXmlRepository(
@@ -62,7 +64,12 @@ public sealed class ResilientRedisXmlRepository(
 
             var db = redis.GetDatabase();
             var key = $"{keyPrefix}:{friendlyName}";
-            db.StringSet(key, element.ToString(), keyExpiration);
+            db.StringSet(
+                (RedisKey)key,
+                (RedisValue)element.ToString(),
+                keyExpiration,
+                When.Always,
+                CommandFlags.None);
         }
         catch (Exception ex)
         {

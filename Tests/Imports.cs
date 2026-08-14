@@ -1,4 +1,8 @@
+global using System.Net;
+global using System.Text;
 global using System.Text.Json;
+global using Amazon.S3;
+global using Amazon.S3.Model;
 global using Bogus;
 global using MapsterMapper;
 global using MediatR;

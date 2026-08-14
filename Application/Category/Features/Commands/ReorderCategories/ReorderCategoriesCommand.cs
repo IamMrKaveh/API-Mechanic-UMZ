@@ -1,3 +1,5 @@
 namespace Application.Category.Features.Commands.ReorderCategories;
 
-public record ReorderCategoriesCommand(ICollection<(Guid Id, int SortOrder)> Items) : ICommand;
+public sealed record CategoryOrderItem(Guid Id, int SortOrder);
+
+public record ReorderCategoriesCommand(ICollection<CategoryOrderItem> Items) : ICommand;

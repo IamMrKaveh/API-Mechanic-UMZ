@@ -4,7 +4,9 @@ public class ReorderCategoriesValidator : AbstractValidator<ReorderCategoriesCom
 {
     public ReorderCategoriesValidator()
     {
-        RuleFor(x => x.Items).NotEmpty().WithMessage("لیست دسته‌بندی‌ها نمی‌تواند خالی باشد.");
+        RuleFor(x => x.Items)
+            .NotEmpty().WithMessage("لیست دسته‌بندی‌ها نمی‌تواند خالی باشد.");
+
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(x => x.Id).NotEmpty();
