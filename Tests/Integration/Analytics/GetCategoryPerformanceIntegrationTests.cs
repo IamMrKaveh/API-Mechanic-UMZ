@@ -1,5 +1,6 @@
 using Infrastructure.Analytics.QueryServices;
 using Infrastructure.Persistence.Context;
+using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Database;
 
 namespace Tests.Integration.Analytics;
@@ -29,7 +30,7 @@ public class GetCategoryPerformanceIntegrationTests(PostgresContainerFixture fix
         await _fixture.ResetAsync();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetCategoryPerformanceAsync_EmptyDatabase_ReturnsEmptyPaginatedResult()
     {
         var from = DateTime.UtcNow.AddDays(-30);
@@ -44,7 +45,7 @@ public class GetCategoryPerformanceIntegrationTests(PostgresContainerFixture fix
         result.Page.ShouldBe(1);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetCategoryPerformanceAsync_NullDateRangeOnEmptyDatabase_ReturnsEmptyPaginatedResult()
     {
         var result = await _sut.GetCategoryPerformanceAsync(null, null, CancellationToken.None);

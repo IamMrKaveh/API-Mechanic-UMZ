@@ -4,17 +4,19 @@ using Domain.Shipping.ValueObjects;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
+using Tests.TestInfrastructure.Fixtures;
 using DomainShipping = Domain.Shipping.Aggregates.Shipping;
 
 namespace Tests.Application.Shipping.Features.Commands.UpdateShipping;
 
-public class UpdateShippingHandlerTests : IClassFixture<IMapper>
+public class UpdateShippingHandlerTests : IClassFixture<AutoMapperFixture>
 {
-    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly UpdateShippingHandler _sut;
+    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>();
+    private readonly UpdateShippingHandler _sut;
 
-    public UpdateShippingHandlerTests(IMapper _)
+    public UpdateShippingHandlerTests(AutoMapperFixture fixture)
     {
-        _sut = new UpdateShippingHandler(_shippingRepository, _);
+        _sut = new UpdateShippingHandler(_shippingRepository, fixture.Mapper);
     }
 
     [Fact]

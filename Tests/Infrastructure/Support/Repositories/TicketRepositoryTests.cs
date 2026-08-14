@@ -3,7 +3,7 @@ using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
 using Infrastructure.Support.Repositories;
-using Microsoft.EntityFrameworkCore;
+using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
 using Tests.TestInfrastructure.Database;
 using TicketAggregate = Domain.Support.Aggregates.Ticket;
@@ -62,7 +62,7 @@ public class TicketRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         return ticket;
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_WithValidTicket_PersistsToDatabase()
     {
         var customerId = UserId.NewId();
@@ -88,7 +88,7 @@ public class TicketRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         persisted.Status.ShouldBe(TicketStatus.Open);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_WhenTicketExists_ReturnsTicketWithoutMessages()
     {
         var persisted = await PersistTicketAsync();
@@ -104,7 +104,7 @@ public class TicketRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         result.Messages.ShouldBeEmpty();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_WhenTicketDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetByIdAsync(TicketId.NewId());
@@ -112,7 +112,7 @@ public class TicketRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         result.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdWithMessagesAsync_WhenTicketExists_ReturnsTicketWithMessages()
     {
         var persisted = await PersistTicketAsync();
@@ -135,7 +135,7 @@ public class TicketRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         result.Messages.Single().Content.ShouldBe("Initial message");
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdWithMessagesAsync_WhenTicketDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetByIdWithMessagesAsync(TicketId.NewId());
@@ -143,7 +143,7 @@ public class TicketRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         result.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_WithClosedTicket_PersistsStatusChange()
     {
         var persisted = await PersistTicketAsync();
@@ -160,7 +160,7 @@ public class TicketRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         reloaded.Status.ShouldBe(TicketStatus.Closed);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_WithAddedMessage_PersistsMessageAndActivity()
     {
         var persisted = await PersistTicketAsync();

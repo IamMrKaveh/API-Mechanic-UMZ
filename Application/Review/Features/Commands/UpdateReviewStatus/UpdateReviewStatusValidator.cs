@@ -15,10 +15,14 @@ public sealed class UpdateReviewStatusValidator : AbstractValidator<UpdateReview
 
         RuleFor(x => x.Reason)
             .NotEmpty()
-                .WithMessage("در صورت رد نظر، ذکر دلیل الزامی است.")
-                .When(x => string.Equals(x.Status, "Rejected", StringComparison.OrdinalIgnoreCase))
+            .WithMessage("در صورت رد نظر، ذکر دلیل الزامی است.")
+            .When(x => string.Equals(x.Status, "Rejected", StringComparison.OrdinalIgnoreCase),
+                  ApplyConditionTo.CurrentValidator);
+
+        RuleFor(x => x.Reason)
             .MaximumLength(500)
-                .WithMessage("دلیل رد نمی‌تواند بیش از ۵۰۰ کاراکتر باشد.")
-                .When(x => !string.IsNullOrWhiteSpace(x.Reason));
+            .WithMessage("دلیل رد نمی‌تواند بیش از ۵۰۰ کاراکتر باشد.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Reason),
+                  ApplyConditionTo.CurrentValidator);
     }
 }

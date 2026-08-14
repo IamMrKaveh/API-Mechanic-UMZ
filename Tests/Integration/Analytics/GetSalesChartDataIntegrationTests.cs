@@ -1,43 +1,50 @@
-using Application.Analytics.Features.Shared; using Infrastructure.Analytics.QueryServices; using Infrastructure.Persistence.Context; using SharedKernel.Models; using Tests.TestInfrastructure.Database;
+using Infrastructure.Analytics.QueryServices;
+using Infrastructure.Persistence.Context;
+using Tests.TestInfrastructure.Attributes;
+using Tests.TestInfrastructure.Database;
 
 namespace Tests.Integration.Analytics;
 
-[Collection(nameof(DatabaseCollection))] [Trait("Category", "Integration")] public class GetSalesChartDataIntegrationTests(PostgresContainerFixture fixture) : IAsyncLifetime { private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private AnalyticsQueryService _sut = null!;
-
-public Task InitializeAsync()
+[Collection(nameof(DatabaseCollection))]
+[Trait("Category", "Integration")]
+public class GetSalesChartDataIntegrationTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
+    private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private AnalyticsQueryService _sut = null!;
 
-    _context = _fixture.CreateContext();
-    _sut = new AnalyticsQueryService(_context);
+    public Task InitializeAsync()
+    {
+        Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
 
-    return Task.CompletedTask;
-}
+        _context = _fixture.CreateContext();
+        _sut = new AnalyticsQueryService(_context);
 
-public async Task DisposeAsync()
-{
-    if (!_fixture.IsDockerAvailable)
-        return;
+        return Task.CompletedTask;
+    }
 
-    await _context.DisposeAsync();
-    await _fixture.ResetAsync();
-}
+    public async Task DisposeAsync()
+    {
+        if (!_fixture.IsDockerAvailable)
+            return;
 
-[SkippableTheory]
-[InlineData("day")]
-[InlineData("week")]
-[InlineData("month")]
-public async Task GetSalesChartDataAsync_EmptyDatabase_ReturnsEmptyPaginatedResult(string groupBy)
-{
-    var from = DateTime.UtcNow.AddDays(-30);
-    var to = DateTime.UtcNow;
+        await _context.DisposeAsync();
+        await _fixture.ResetAsync();
+    }
 
-    var result = await _sut.GetSalesChartDataAsync(from, to, groupBy, CancellationToken.None);
+    [RequiresDockerTheoryAttribute]
+    [InlineData("day")]
+    [InlineData("week")]
+    [InlineData("month")]
+    public async Task GetSalesChartDataAsync_EmptyDatabase_ReturnsEmptyPaginatedResult(string groupBy)
+    {
+        var from = DateTime.UtcNow.AddDays(-30);
+        var to = DateTime.UtcNow;
 
-    result.ShouldNotBeNull();
-    result.Items.ShouldNotBeNull();
-    result.Items.ShouldBeEmpty();
-    result.TotalCount.ShouldBe(0);
-    result.Page.ShouldBe(1);
-}
+        var result = await _sut.GetSalesChartDataAsync(from, to, groupBy, CancellationToken.None);
+
+        result.ShouldNotBeNull();
+        result.Items.ShouldNotBeNull();
+        result.Items.ShouldBeEmpty();
+        result.TotalCount.ShouldBe(0);
+        result.Page.ShouldBe(1);
+    }
 }

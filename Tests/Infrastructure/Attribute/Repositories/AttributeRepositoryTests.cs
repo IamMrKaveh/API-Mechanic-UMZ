@@ -4,7 +4,7 @@ using Domain.Attribute.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Attribute.Repositories;
 using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
+using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
 using Tests.TestInfrastructure.Database;
 
@@ -60,7 +60,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         return type;
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAttributeTypeByIdAsync_WhenTypeExists_ReturnsType()
     {
         var persisted = await PersistTypeAsync("color", "Color");
@@ -76,7 +76,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.DisplayName.ShouldBe("Color");
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAttributeTypeByIdAsync_WhenTypeDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetAttributeTypeByIdAsync(AttributeTypeId.NewId());
@@ -84,7 +84,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAttributeTypeByIdAsync_WhenTypeIsSoftDeleted_ReturnsNull()
     {
         var persisted = await PersistTypeAsync("size", "Size");
@@ -101,7 +101,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAttributeTypeWithValuesAsync_WhenTypeHasValues_IncludesValuesCollection()
     {
         var type = await BuildTypeAsync("color", "Color");
@@ -121,7 +121,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.Values.Select(v => v.Value).ShouldContain("blue");
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAttributeTypeWithValuesAsync_WhenTypeDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetAttributeTypeWithValuesAsync(AttributeTypeId.NewId());
@@ -129,7 +129,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAttributeValueByIdAsync_WhenValueExists_ReturnsValueWithAttributeType()
     {
         var type = await BuildTypeAsync("color", "Color");
@@ -152,7 +152,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.AttributeType.Name.ShouldBe("color");
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAttributeValueByIdAsync_WhenValueDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetAttributeValueByIdAsync(AttributeValueId.NewId());
@@ -160,7 +160,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAttributeValuesByIdsAsync_WithMatchingIds_ReturnsMatchingValues()
     {
         var type = await BuildTypeAsync("color", "Color");
@@ -182,7 +182,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         list.Select(v => v.Id).ShouldNotContain(blue.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAttributeValuesByIdsAsync_WithEmptyIdList_ReturnsEmpty()
     {
         var type = await BuildTypeAsync("color", "Color");
@@ -195,7 +195,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeEmpty();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAllAttributeTypesAsync_WithMultipleTypes_ReturnsOrderedBySortOrder()
     {
         await PersistTypeAsync("color", "Color", sortOrder: 30);
@@ -211,7 +211,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.Select(t => t.Name).ToList().ShouldBe(new[] { "size", "material", "color" });
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAllAttributeTypesAsync_WithSoftDeletedType_ExcludesDeletedType()
     {
         var alive = await PersistTypeAsync("color", "Color", sortOrder: 1);
@@ -230,7 +230,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result[0].Id.ShouldBe(alive.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAllAttributeTypesAsync_IncludesValuesForEachType()
     {
         var color = await BuildTypeAsync("color", "Color", sortOrder: 1);
@@ -254,7 +254,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.Single(t => t.Name == "size").Values.Count.ShouldBe(1);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AttributeTypeExistsAsync_WhenNameExists_ReturnsTrue()
     {
         await PersistTypeAsync("color", "Color");
@@ -267,7 +267,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeTrue();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AttributeTypeExistsAsync_WhenNameDoesNotExist_ReturnsFalse()
     {
         await PersistTypeAsync("color", "Color");
@@ -280,7 +280,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AttributeTypeExistsAsync_WhenNameMatchesExcludedId_ReturnsFalse()
     {
         var persisted = await PersistTypeAsync("color", "Color");
@@ -293,7 +293,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AttributeValueExistsAsync_WhenValueExistsForType_ReturnsTrue()
     {
         var type = await BuildTypeAsync("color", "Color");
@@ -309,7 +309,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeTrue();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AttributeValueExistsAsync_WhenValueDoesNotExistForType_ReturnsFalse()
     {
         var type = await BuildTypeAsync("color", "Color");
@@ -325,7 +325,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AttributeValueExistsAsync_WhenValueExistsForDifferentType_ReturnsFalse()
     {
         var color = await BuildTypeAsync("color", "Color");
@@ -345,7 +345,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AttributeValueExistsAsync_WhenValueMatchesExcludedId_ReturnsFalse()
     {
         var type = await BuildTypeAsync("color", "Color");
@@ -361,7 +361,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAttributeTypeAsync_WithValidType_PersistsToDatabase()
     {
         var type = await BuildTypeAsync("color", "Color", sortOrder: 5, isActive: true);
@@ -380,7 +380,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         persisted.IsDeleted.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAttributeTypeAsync_WithValues_PersistsValuesCascade()
     {
         var type = await BuildTypeAsync("color", "Color");
@@ -404,7 +404,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         red.SortOrder.ShouldBe(1);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task UpdateAttributeTypeAsync_WithModifiedType_PersistsChanges()
     {
         var persisted = await PersistTypeAsync("color", "Color", sortOrder: 1);
@@ -428,7 +428,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         updated.IsActive.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task DeleteAttributeTypeAsync_WithExistingType_MarksAsSoftDeleted()
     {
         var persisted = await PersistTypeAsync("color", "Color");
@@ -454,7 +454,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         raw.DeletedBy!.Value.ShouldBe(deletedBy.Value);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task DeleteAttributeTypeAsync_WhenTypeNotFound_DoesNothing()
     {
         await Should.NotThrowAsync(async () =>
@@ -464,7 +464,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         });
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task DeleteAttributeValueAsync_WithExistingValue_DeactivatesValue()
     {
         var type = await BuildTypeAsync("color", "Color");
@@ -483,7 +483,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         reloaded.IsDeleted.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task DeleteAttributeValueAsync_WhenValueNotFound_DoesNothing()
     {
         await Should.NotThrowAsync(async () =>

@@ -1,1 +1,1 @@
-[assembly: TestFramework("Xunit.SkippableFact.SkippableTestFramework", "Xunit.SkippableFact")]
+[assembly: TestFramework("Xunit.RequiresDockerFact.SkippableTestFramework", "Xunit.RequiresDockerFact")]

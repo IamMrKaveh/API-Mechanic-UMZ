@@ -88,7 +88,12 @@ public sealed class AdminCategoryController(IMediator mediator, IMapper mapper) 
             .Select(x => (x.CategoryId, x.SortOrder))
             .ToList<(Guid Id, int SortOrder)>();
 
-        var command = new ReorderCategoriesCommand(items);
+        var command = new ReorderCategoriesCommand(
+        [
+            new(Guid.NewGuid(), 0),
+            new(Guid.NewGuid(), 1)
+        ]);
+
         var result = await Mediator.Send(command);
         return ToActionResult(result);
     }

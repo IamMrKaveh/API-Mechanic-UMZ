@@ -9,11 +9,11 @@ public class ReorderCategoriesValidatorTests
     [Fact]
     public void Validate_WithNonEmptyValidItems_HasNoErrors()
     {
-        var command = new ReorderCategoriesCommand(new List<(Guid Id, int SortOrder)>
-    {
-        (Guid.NewGuid(), 0),
-        (Guid.NewGuid(), 1)
-    });
+        var command = new ReorderCategoriesCommand(
+        [
+            new(Guid.NewGuid(), 0),
+            new(Guid.NewGuid(), 1)
+        ]);
 
         var result = _sut.Validate(command);
 
@@ -23,7 +23,7 @@ public class ReorderCategoriesValidatorTests
     [Fact]
     public void Validate_WithEmptyItems_HasErrorForItems()
     {
-        var command = new ReorderCategoriesCommand(new List<(Guid Id, int SortOrder)>());
+        var command = new ReorderCategoriesCommand([]);
 
         var result = _sut.Validate(command);
 
@@ -35,10 +35,10 @@ public class ReorderCategoriesValidatorTests
     [Fact]
     public void Validate_WithItemContainingEmptyId_HasError()
     {
-        var command = new ReorderCategoriesCommand(new List<(Guid Id, int SortOrder)>
-    {
-        (Guid.Empty, 0)
-    });
+        var command = new ReorderCategoriesCommand(
+        [
+            new(Guid.Empty, 0),
+        ]);
 
         var result = _sut.Validate(command);
 
@@ -49,10 +49,10 @@ public class ReorderCategoriesValidatorTests
     [Fact]
     public void Validate_WithItemContainingNegativeSortOrder_HasError()
     {
-        var command = new ReorderCategoriesCommand(new List<(Guid Id, int SortOrder)>
-    {
-        (Guid.NewGuid(), -1)
-    });
+        var command = new ReorderCategoriesCommand(
+        [
+            new(Guid.NewGuid(), -1),
+        ]);
 
         var result = _sut.Validate(command);
 

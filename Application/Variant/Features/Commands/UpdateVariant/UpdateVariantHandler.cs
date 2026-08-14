@@ -173,7 +173,8 @@ public class UpdateVariantHandler(
             .Except(attributeValues.Select(av => av.Id.Value))
             .ToList();
         if (missingIds.Count != 0)
-            return AttributeAssignmentBuildResult.Failure($"شناسه‌های ویژگی نامعتبر: {string.Join(", ", missingIds)}");
+            return AttributeAssignmentBuildResult.ValidationFailure(
+                $"شناسه‌های ویژگی نامعتبر: {string.Join(", ", missingIds)}");
 
         var duplicateTypes = attributeValues
             .GroupBy(av => av.AttributeTypeId)

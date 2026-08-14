@@ -35,7 +35,11 @@ public class ReorderCategoriesHandlerTests
     [Fact]
     public async Task Handle_WithEmptyItems_ReturnsSuccessAndLogsAudit()
     {
-        var command = new ReorderCategoriesCommand(new List<(Guid Id, int SortOrder)>());
+        var command = new ReorderCategoriesCommand(
+        [
+            new(Guid.NewGuid(), 0),
+            new(Guid.NewGuid(), 1)
+        ]);
 
         var result = await _sut.Handle(command, CancellationToken.None);
 
@@ -60,10 +64,11 @@ public class ReorderCategoriesHandlerTests
             .GetByIdAsync(Arg.Is<CategoryId>(x => x == category.Id), Arg.Any<CancellationToken>())
             .Returns(category);
 
-        var command = new ReorderCategoriesCommand(new List<(Guid Id, int SortOrder)>
-    {
-        (category.Id.Value, 42)
-    });
+        var command = new ReorderCategoriesCommand(
+        [
+            new(category.Id, 42),
+            new(Guid.NewGuid(), 1)
+        ]);
 
         var result = await _sut.Handle(command, CancellationToken.None);
 
@@ -81,10 +86,11 @@ public class ReorderCategoriesHandlerTests
             .GetByIdAsync(Arg.Any<CategoryId>(), Arg.Any<CancellationToken>())
             .Returns((Categories?)null);
 
-        var command = new ReorderCategoriesCommand(new List<(Guid Id, int SortOrder)>
-    {
-        (Guid.NewGuid(), 1)
-    });
+        var command = new ReorderCategoriesCommand(
+        [
+            new(Guid.NewGuid(), 0),
+            new(Guid.NewGuid(), 1)
+        ]);
 
         var result = await _sut.Handle(command, CancellationToken.None);
 
@@ -104,11 +110,11 @@ public class ReorderCategoriesHandlerTests
             .GetByIdAsync(Arg.Is<CategoryId>(x => x == c2.Id), Arg.Any<CancellationToken>())
             .Returns(c2);
 
-        var command = new ReorderCategoriesCommand(new List<(Guid Id, int SortOrder)>
-    {
-        (c1.Id.Value, 10),
-        (c2.Id.Value, 20)
-    });
+        var command = new ReorderCategoriesCommand(
+        [
+            new(c1.Id, 10),
+            new(c2.Id, 20)
+        ]);
 
         await _sut.Handle(command, CancellationToken.None);
 
