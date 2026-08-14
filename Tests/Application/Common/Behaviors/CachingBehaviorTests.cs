@@ -54,7 +54,7 @@ public class CachingBehaviorTests
         result.ShouldBe("cached");
         await _audit.Received(1).LogSystemEventAsync(
             "Cache hit",
-            Arg.Is<string>(s => s.Contains("k:hit")),
+            Arg.Is<string>(s => s!.Contains("k:hit")),
             Arg.Any<CancellationToken>());
     }
 

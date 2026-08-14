@@ -31,7 +31,7 @@ public class GetStockLedgerByVariantHandlerTests
 
         _ledgerQueryService
             .GetByVariantIdAsync(
-                Arg.Is<VariantId>(v => v.Value == variantId),
+                Arg.Is<VariantId>(v => v == VariantId.From(variantId)),
                 1,
                 20,
                 Arg.Any<CancellationToken>())

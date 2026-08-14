@@ -72,7 +72,7 @@ public class GetUnreadNotificationCountHandlerTests
         await _sut.Handle(new GetUnreadNotificationCountQuery(), CancellationToken.None);
 
         await _notificationQueryService.Received(1).GetUnreadCountAsync(
-            Arg.Is<UserId>(u => u.Value == currentUserId),
+            Arg.Is<UserId>(u => u == UserId.From(currentUserId)),
             Arg.Any<CancellationToken>());
     }
 

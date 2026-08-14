@@ -35,7 +35,7 @@ public class GetProductInventoryStatusesHandlerTests
         result.ShouldBeSuccess();
         result.Value.ShouldBeSameAs(statuses);
         await _inventoryQueryService.Received(1).GetInventoryStatusesByProductAsync(
-            Arg.Is<ProductId>(p => p.Value == productId),
+            Arg.Is<ProductId>(p => p == ProductId.From(productId)),
             Arg.Any<CancellationToken>());
     }
 }

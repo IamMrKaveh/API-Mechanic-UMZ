@@ -58,7 +58,7 @@ public class SendOtpHandlerTests
 
         result.ShouldBeSuccess();
         await _userRepository.Received(1).AddAsync(
-            Arg.Is<Users>(u => u.IsAdmin),
+            Arg.Is<Users>(u => u!.IsAdmin),
             Arg.Any<CancellationToken>());
     }
 
@@ -118,7 +118,7 @@ public class SendOtpHandlerTests
 
         result.ShouldBeSuccess();
         await _otpRepository.Received(1).AddAsync(
-            Arg.Is<UserOtp>(o => o.UserId == existingUser.Id && o.Purpose == OtpPurpose.Login),
+            Arg.Is<UserOtp>(o => o!.UserId == existingUser.Id && o!.Purpose == OtpPurpose.Login),
             Arg.Any<CancellationToken>());
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }

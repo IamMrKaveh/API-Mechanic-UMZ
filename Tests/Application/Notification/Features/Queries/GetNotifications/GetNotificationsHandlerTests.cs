@@ -55,7 +55,7 @@ public class GetNotificationsHandlerTests
         await _sut.Handle(new GetNotificationsQuery(), CancellationToken.None);
 
         await _notificationQueryService.Received(1).GetByUserIdAsync(
-            Arg.Is<UserId>(u => u.Value == currentUserId),
+            Arg.Is<UserId>(u => u == UserId.From(currentUserId)),
             Arg.Any<int>(),
             Arg.Any<int>(),
             Arg.Any<CancellationToken>());

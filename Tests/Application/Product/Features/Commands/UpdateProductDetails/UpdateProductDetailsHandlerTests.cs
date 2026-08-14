@@ -95,7 +95,7 @@ public class UpdateProductDetailsHandlerTests
         result.ShouldBeSuccess();
         product.Name.Value.ShouldBe("New Product Name");
         product.Description.ShouldBe("new description");
-        _productRepository.Received(1).Update(product, Arg.Is<byte[]>(rv => rv.SequenceEqual(RowVersionBytes)));
+        _productRepository.Received(1).Update(product, Arg.Is<byte[]>(rv => rv!.SequenceEqual(RowVersionBytes)));
     }
 
     [Fact]

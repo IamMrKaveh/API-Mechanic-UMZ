@@ -54,7 +54,7 @@ public class GetUserSessionsHandlerTests
     };
         _userQueryService
             .GetActiveSessionsAsync(
-                Arg.Is<UserId>(x => x.Value == targetGuid),
+                Arg.Is<UserId>(x => x == UserId.From(targetGuid)),
                 currentSessionGuid,
                 Arg.Any<CancellationToken>())
             .Returns(sessions);
@@ -84,7 +84,7 @@ public class GetUserSessionsHandlerTests
 
         result.ShouldBeSuccess();
         await _userQueryService.Received(1).GetActiveSessionsAsync(
-            Arg.Is<UserId>(x => x.Value == callerGuid),
+            Arg.Is<UserId>(x => x == UserId.From(callerGuid)),
             Arg.Any<Guid?>(),
             Arg.Any<CancellationToken>());
     }

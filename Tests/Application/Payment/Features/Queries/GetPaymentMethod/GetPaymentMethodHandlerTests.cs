@@ -35,7 +35,7 @@ public class GetPaymentMethodHandlerTests
         var dto = new PaymentMethodDto { Id = id, Name = "Zarinpal", Code = "zarinpal" };
 
         _queryService
-            .GetByIdAsync(Arg.Is<PaymentMethodId>(x => x.Value == id), Arg.Any<CancellationToken>())
+            .GetByIdAsync(Arg.Is<PaymentMethodId>(x => x == PaymentMethodId.From(id)), Arg.Any<CancellationToken>())
             .Returns(dto);
 
         var result = await _sut.Handle(new GetPaymentMethodQuery(id), CancellationToken.None);

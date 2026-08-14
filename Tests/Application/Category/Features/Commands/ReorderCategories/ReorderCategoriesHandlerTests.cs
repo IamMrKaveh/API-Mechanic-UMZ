@@ -70,7 +70,7 @@ public class ReorderCategoriesHandlerTests
         result.ShouldBeSuccess();
         category.SortOrder.ShouldBe(42);
         _repository.Received(1).Update(
-            Arg.Is<Categories>(c => c.Id == category.Id),
+            Arg.Is<Categories>(c => c!.Id == category.Id),
             Arg.Any<byte[]?>());
     }
 
@@ -98,10 +98,10 @@ public class ReorderCategoriesHandlerTests
         var c1 = await BuildCategoryAsync();
         var c2 = await BuildCategoryAsync();
         _repository
-            .GetByIdAsync(Arg.Is<CategoryId>(x => x.Value == c1.Id.Value), Arg.Any<CancellationToken>())
+            .GetByIdAsync(Arg.Is<CategoryId>(x => x == c1.Id), Arg.Any<CancellationToken>())
             .Returns(c1);
         _repository
-            .GetByIdAsync(Arg.Is<CategoryId>(x => x.Value == c2.Id.Value), Arg.Any<CancellationToken>())
+            .GetByIdAsync(Arg.Is<CategoryId>(x => x == c2.Id), Arg.Any<CancellationToken>())
             .Returns(c2);
 
         var command = new ReorderCategoriesCommand(new List<(Guid Id, int SortOrder)>

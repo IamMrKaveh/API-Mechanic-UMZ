@@ -143,7 +143,9 @@ public class ErrorTests
     [Fact]
     public void Equality_ForErrorNone_TreatsSingletonInstanceAsEqualToItself()
     {
-        Error.None.ShouldBe(Error.None);
-        (Error.None == Error.None).ShouldBeTrue();
+        var copy = Error.None with { };
+
+        Error.None.ShouldBe(copy);
+        (Error.None == copy).ShouldBeTrue();
     }
 }

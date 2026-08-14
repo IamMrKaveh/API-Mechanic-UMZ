@@ -135,7 +135,7 @@ public class UpdateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
         await _sut.Handle(command, CancellationToken.None);
 
         _repository.Received(1).Update(
-            Arg.Is<Categories>(c => c.Id == category.Id),
+            Arg.Is<Categories>(c => c!.Id == category.Id),
             Arg.Is<byte[]>(rv => rv != null && rv.SequenceEqual(expected)));
     }
 
@@ -153,7 +153,7 @@ public class UpdateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
         await _sut.Handle(command, CancellationToken.None);
 
         _repository.Received(1).Update(
-            Arg.Is<Categories>(c => c.Id == category.Id),
+            Arg.Is<Categories>(c => c!.Id == category.Id),
             Arg.Is<byte[]?>(rv => rv == null));
     }
 }
