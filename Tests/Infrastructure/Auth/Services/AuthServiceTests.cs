@@ -4,7 +4,6 @@ using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
-using Domain.User.Aggregates;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 using Infrastructure.Auth.Services;
@@ -12,6 +11,7 @@ using SharedKernel.Results;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
+using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Infrastructure.Auth.Services;
 
@@ -111,7 +111,7 @@ public class AuthServiceTests
 
         _userRepository
             .GetByIdAsync(userId, Arg.Any<CancellationToken>())
-            .Returns((User?)null);
+            .Returns((Users?)null);
 
         var result = await _sut.RefreshTokenAsync(refreshToken, ip, "agent");
 

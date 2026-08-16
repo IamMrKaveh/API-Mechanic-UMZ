@@ -2,13 +2,13 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Application.Auth.Features.Shared;
 using Domain.Security.ValueObjects;
-using Domain.User.Aggregates;
 using Domain.User.ValueObjects;
 using Infrastructure.Auth.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SharedKernel.Constants;
 using Tests.TestInfrastructure.Builders;
+using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Infrastructure.Auth.Services;
 
@@ -166,7 +166,7 @@ public class JwtTokenGeneratorTests
         jwt.Claims.ShouldContain(c => c.Type == "nameid" && c.Value == user.Id.Value.ToString());
     }
 
-    private static User BuildUser(bool isAdmin, PhoneNumber? phoneNumber = null)
+    private static Users BuildUser(bool isAdmin, PhoneNumber? phoneNumber = null)
     {
         var phone = phoneNumber ?? new PhoneNumberBuilder().Build();
         var user = new UserBuilder()
