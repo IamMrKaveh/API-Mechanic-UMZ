@@ -33,7 +33,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         await _fixture.ResetAsync();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_ThenGetByIdAsync_RoundTripsAggregateFromDatabase()
     {
         var alert = new WalletFraudAlertBuilder()
@@ -60,7 +60,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         loaded.TriggeredAt.ShouldNotBe(default);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_WhenAlertDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(WalletFraudAlertId.NewId());
@@ -68,7 +68,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_AfterMarkAsReviewed_PersistsReviewedStateReviewerAndNote()
     {
         var alert = new WalletFraudAlertBuilder().Build();
@@ -94,7 +94,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         reloaded.ReviewedAt.ShouldNotBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_AfterDismiss_PersistsDismissedStateAndReviewNote()
     {
         var alert = new WalletFraudAlertBuilder().Build();
@@ -119,7 +119,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         reloaded.ReviewNote.ShouldBe("false positive");
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasRecentAlertAsync_WhenOpenAlertForSameWalletAndRuleExistsWithinCooldown_ReturnsTrue()
     {
         var walletId = WalletId.NewId();
@@ -138,7 +138,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         exists.ShouldBeTrue();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasRecentAlertAsync_WhenOnlyOlderThanCooldown_ReturnsFalse()
     {
         var walletId = WalletId.NewId();
@@ -162,7 +162,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         exists.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasRecentAlertAsync_WhenAlertIsNotOpen_ReturnsFalse()
     {
         var walletId = WalletId.NewId();
@@ -182,7 +182,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         exists.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasRecentAlertAsync_WhenRuleNameDiffers_ReturnsFalse()
     {
         var walletId = WalletId.NewId();
@@ -201,7 +201,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         exists.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasRecentAlertAsync_WhenWalletIdDiffers_ReturnsFalse()
     {
         var stored = new WalletFraudAlertBuilder()
@@ -218,7 +218,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         exists.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_PersistsSeverityAsIntegerAndRoundTripsEnum()
     {
         var alert = new WalletFraudAlertBuilder()

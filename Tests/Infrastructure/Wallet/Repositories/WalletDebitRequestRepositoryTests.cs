@@ -36,7 +36,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
         await _fixture.ResetAsync();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_WhenRequestExists_ReturnsRequestWithExpectedProperties()
     {
         var (_, wallet, request) = await SeedWalletAndDebitRequestAsync(amount: 100_000m, reason: "test-reason");
@@ -53,7 +53,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
         loaded.Status.ShouldBe(WalletDebitRequestStatus.Pending);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_WhenRequestDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(WalletDebitRequestId.NewId());
@@ -61,7 +61,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByOwnerAsync_WithoutStatusFilter_ReturnsAllRequestsForOwnerOrderedByCreatedAtDescending()
     {
         var (owner, wallet, first) = await SeedWalletAndDebitRequestAsync(amount: 20_000m);
@@ -91,7 +91,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
         results[2].Id.ShouldBe(first.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByOwnerAsync_WithStatusFilter_ReturnsOnlyMatchingStatus()
     {
         var (owner, wallet, pending) = await SeedWalletAndDebitRequestAsync(amount: 20_000m);
@@ -112,7 +112,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
         approvedResults[0].Id.ShouldBe(toApprove.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByOwnerAsync_WhenOwnerHasNoRequests_ReturnsEmptyList()
     {
         var results = await _sut.GetByOwnerAsync(UserId.NewId());
@@ -120,7 +120,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
         results.ShouldBeEmpty();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetPendingByOwnerAsync_ReturnsOnlyPendingRequestsOrderedByCreatedAtDescending()
     {
         var (owner, wallet, oldPending) = await SeedWalletAndDebitRequestAsync(amount: 20_000m);
@@ -148,7 +148,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
         results[1].Id.ShouldBe(oldPending.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetPendingByOwnerAsync_WhenOnlyNonPendingExist_ReturnsEmpty()
     {
         var (owner, wallet, request) = await SeedWalletAndDebitRequestAsync(amount: 20_000m);
@@ -162,7 +162,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
         results.ShouldBeEmpty();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByOwnerAsync_DoesNotReturnRequestsBelongingToOtherOwners()
     {
         var (_, _, requestA) = await SeedWalletAndDebitRequestAsync(amount: 10_000m);

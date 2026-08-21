@@ -13,4 +13,6 @@ global using Microsoft.FeatureManagement;
 global using NSubstitute;
 global using NSubstitute.ExceptionExtensions;
 global using Shouldly;
+global using Tests.TestInfrastructure.Attributes;
+global using Tests.TestInfrastructure.Database;
 global using ValidationResult = FluentValidation.Results.ValidationResult;

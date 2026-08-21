@@ -37,7 +37,16 @@ public sealed class ZarinPalHealthCheck(
             using var request = new HttpRequestMessage(HttpMethod.Head, baseUrl);
             using var response = await client.SendAsync(request, cancellationToken);
 
-            result = HealthCheckResult.Healthy($"ZarinPal endpoint reachable (HTTP {(int)response.StatusCode}).");
+            var statusCode = (int)response.StatusCode;
+
+            if (response.IsSuccessStatusCode)
+            {
+                result = HealthCheckResult.Healthy($"ZarinPal endpoint reachable (HTTP {statusCode}).");
+            }
+            else
+            {
+                result = HealthCheckResult.Degraded($"ZarinPal returned HTTP {statusCode}.");
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

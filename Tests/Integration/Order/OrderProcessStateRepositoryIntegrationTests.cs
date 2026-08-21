@@ -19,7 +19,7 @@ public async Task DisposeAsync()
     await _fixture.ResetAsync();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task GetByOrderIdAsync_ReturnsState_WhenExists()
 {
     var orderId = OrderId.NewId();
@@ -36,14 +36,14 @@ public async Task GetByOrderIdAsync_ReturnsState_WhenExists()
     result.Status.ShouldBe(ProcessStatusEnum.InProgress);
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task GetByOrderIdAsync_ReturnsNull_WhenNotExists()
 {
     var result = await _sut.GetByOrderIdAsync(OrderId.NewId(), CancellationToken.None);
     result.ShouldBeNull();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task AddAsync_PersistsState_AfterSave()
 {
     var orderId = OrderId.NewId();
@@ -57,7 +57,7 @@ public async Task AddAsync_PersistsState_AfterSave()
     loaded!.Id.ShouldBe(state.Id);
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task OrderProcessState_EnforcesUniqueOrderIdIndex()
 {
     var orderId = OrderId.NewId();
@@ -69,7 +69,7 @@ public async Task OrderProcessState_EnforcesUniqueOrderIdIndex()
     await Should.ThrowAsync<DbUpdateException>(async () => await second.SaveChangesAsync());
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task OrderProcessState_StoresEnumsAsStrings()
 {
     var orderId = OrderId.NewId();

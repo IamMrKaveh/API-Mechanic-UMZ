@@ -2,7 +2,6 @@ using Domain.Payment.ValueObjects;
 using Infrastructure.Payment.Seeders;
 using Infrastructure.Persistence.Context;
 using Microsoft.Extensions.DependencyInjection;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Payment.Seeders;
 
@@ -42,7 +41,7 @@ public class PaymentMethodSeederTests(PostgresContainerFixture fixture) : IAsync
         return (new PaymentMethodSeeder(scopeFactory, logger), logger);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task StartAsync_EmptyDatabase_SeedsAllFourDefaultPaymentMethods()
     {
         var (seeder, _) = BuildSeeder();
@@ -62,7 +61,7 @@ public class PaymentMethodSeederTests(PostgresContainerFixture fixture) : IAsync
         codes.ShouldContain(PaymentMethodCode.Wallet);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task StartAsync_CalledTwice_DoesNotCreateDuplicateMethods()
     {
         var (seederFirst, _) = BuildSeeder();
@@ -83,7 +82,7 @@ public class PaymentMethodSeederTests(PostgresContainerFixture fixture) : IAsync
         count.ShouldBe(4);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task StopAsync_CompletesWithoutError()
     {
         var (seeder, _) = BuildSeeder();

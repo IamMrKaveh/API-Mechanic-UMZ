@@ -4,7 +4,6 @@ using Infrastructure.Persistence.Context;
 using Infrastructure.Wallet.Repositories;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 using Users = Domain.User.Aggregates.User;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
@@ -34,7 +33,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         await _fixture.ResetAsync();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_ThenGetByUserIdAsync_RoundTripsAggregateFromDatabase()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
@@ -51,7 +50,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         loaded.IsActive.ShouldBeTrue();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByUserIdAsync_WhenNoWalletForUser_ReturnsNull()
     {
         var loaded = await _sut.GetByUserIdAsync(UserId.NewId());
@@ -59,7 +58,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByUserIdAsync_WhenOwnerIsInactive_ReturnsNullBecauseOfQueryFilter()
     {
         var (owner, _) = await SeedActiveUserAndWalletAsync();
@@ -73,7 +72,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByUserIdAsync_IncludesActiveReservationsCollection()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
@@ -92,7 +91,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         loaded.ActiveReservations[0].Purpose.ShouldBe("test-reservation");
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByUserIdForUpdateAsync_WhenWalletExists_ReturnsWalletAndSuppressesXminModification()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
@@ -107,7 +106,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         entry.Property("xmin").IsModified.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByUserIdForUpdateAsync_WhenNoWallet_ReturnsNull()
     {
         var loaded = await _sut.GetByUserIdForUpdateAsync(UserId.NewId());
@@ -115,7 +114,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasIdempotencyKeyAsync_WhenLedgerEntryWithKeyExistsForUser_ReturnsTrue()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
@@ -140,7 +139,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         exists.ShouldBeTrue();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasIdempotencyKeyAsync_WhenKeyBelongsToDifferentUser_ReturnsFalse()
     {
         var (ownerA, walletA) = await SeedActiveUserAndWalletAsync();
@@ -163,7 +162,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         exists.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasIdempotencyKeyAsync_WhenKeyDoesNotExist_ReturnsFalse()
     {
         var (owner, _) = await SeedActiveUserAndWalletAsync();
@@ -173,7 +172,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         exists.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_AfterCreditingWallet_PersistsNewBalance()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
@@ -193,7 +192,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         reloaded!.Balance.Amount.ShouldBe(75_000m);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_AfterFreezingWallet_PersistsFreezeStateAndMakesWalletInvisibleWhenOwnerAlsoInactive()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
@@ -216,7 +215,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         reloaded.FrozenBy.ShouldBe(admin);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_ForActiveUser_EnforcesUniqueOwnerIndexInDatabase()
     {
         var (owner, _) = await SeedActiveUserAndWalletAsync();
@@ -230,7 +229,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Theory]
+    [RequiresDockerTheory]
     [InlineData(10_000)]
     [InlineData(50_000)]
     [InlineData(1_000_000)]

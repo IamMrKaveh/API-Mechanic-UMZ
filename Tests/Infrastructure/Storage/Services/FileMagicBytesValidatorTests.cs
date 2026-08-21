@@ -18,7 +18,7 @@ public class FileMagicBytesValidatorTests
     [InlineData("   ")]
     public async Task IsAllowedAsync_WhenDeclaredContentTypeIsBlank_ReturnsFalse(string declared)
     {
-        using var stream = new MemoryStream(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A });
+        using var stream = new MemoryStream([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
         var allowed = await _sut.IsAllowedAsync(stream, declared);
 
@@ -28,7 +28,7 @@ public class FileMagicBytesValidatorTests
     [Fact]
     public async Task IsAllowedAsync_WhenDeclaredContentTypeIsNull_ReturnsFalse()
     {
-        using var stream = new MemoryStream(new byte[] { 0x89, 0x50, 0x4E, 0x47 });
+        using var stream = new MemoryStream([0x89, 0x50, 0x4E, 0x47]);
 
         var allowed = await _sut.IsAllowedAsync(stream, null!);
 
@@ -42,7 +42,7 @@ public class FileMagicBytesValidatorTests
     [InlineData("image/tiff")]
     public async Task IsAllowedAsync_WhenContentTypeIsNotWhitelisted_ReturnsFalse(string declared)
     {
-        using var stream = new MemoryStream(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A });
+        using var stream = new MemoryStream([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
         var allowed = await _sut.IsAllowedAsync(stream, declared);
 
@@ -52,7 +52,7 @@ public class FileMagicBytesValidatorTests
     [Fact]
     public async Task IsAllowedAsync_WhenStreamIsNotSeekable_ReturnsFalse()
     {
-        using var nonSeekable = new NonSeekableStream(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A });
+        using var nonSeekable = new NonSeekableStream([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
         var allowed = await _sut.IsAllowedAsync(nonSeekable, "image/png");
 
@@ -66,7 +66,7 @@ public class FileMagicBytesValidatorTests
     [InlineData((byte)0xEE)]
     public async Task IsAllowedAsync_ForJpegDeclaredWithMatchingSignature_ReturnsTrue(byte fourthByte)
     {
-        using var stream = new MemoryStream(new byte[] { 0xFF, 0xD8, 0xFF, fourthByte });
+        using var stream = new MemoryStream([0xFF, 0xD8, 0xFF, fourthByte]);
 
         var allowed = await _sut.IsAllowedAsync(stream, "image/jpeg");
 
@@ -76,7 +76,7 @@ public class FileMagicBytesValidatorTests
     [Fact]
     public async Task IsAllowedAsync_ForJpegDeclaredWithForeignSignature_ReturnsFalse()
     {
-        using var stream = new MemoryStream(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A });
+        using var stream = new MemoryStream([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
         var allowed = await _sut.IsAllowedAsync(stream, "image/jpeg");
 
@@ -86,7 +86,7 @@ public class FileMagicBytesValidatorTests
     [Fact]
     public async Task IsAllowedAsync_ForPngDeclaredWithMatchingSignature_ReturnsTrue()
     {
-        using var stream = new MemoryStream(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D });
+        using var stream = new MemoryStream([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D]);
 
         var allowed = await _sut.IsAllowedAsync(stream, "image/png");
 
@@ -96,7 +96,7 @@ public class FileMagicBytesValidatorTests
     [Fact]
     public async Task IsAllowedAsync_ForPngDeclaredWithForeignSignature_ReturnsFalse()
     {
-        using var stream = new MemoryStream(new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x00, 0x00, 0x00 });
+        using var stream = new MemoryStream([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x00, 0x00, 0x00]);
 
         var allowed = await _sut.IsAllowedAsync(stream, "image/png");
 
@@ -116,7 +116,7 @@ public class FileMagicBytesValidatorTests
     [Fact]
     public async Task IsAllowedAsync_ForGif89aDeclaredWithMatchingSignature_ReturnsTrue()
     {
-        using var stream = new MemoryStream(new byte[] { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x00, 0x00 });
+        using var stream = new MemoryStream([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x00, 0x00]);
 
         var allowed = await _sut.IsAllowedAsync(stream, "image/gif");
 
@@ -126,7 +126,7 @@ public class FileMagicBytesValidatorTests
     [Fact]
     public async Task IsAllowedAsync_ForGifDeclaredWithForeignSignature_ReturnsFalse()
     {
-        using var stream = new MemoryStream(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A });
+        using var stream = new MemoryStream([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
         var allowed = await _sut.IsAllowedAsync(stream, "image/gif");
 
@@ -136,12 +136,12 @@ public class FileMagicBytesValidatorTests
     [Fact]
     public async Task IsAllowedAsync_ForWebPDeclaredWithMatchingRiffAndWebpMarker_ReturnsTrue()
     {
-        using var stream = new MemoryStream(new byte[]
-        {
+        using var stream = new MemoryStream(
+        [
         0x52, 0x49, 0x46, 0x46,
         0x00, 0x00, 0x00, 0x00,
         0x57, 0x45, 0x42, 0x50
-        });
+        ]);
 
         var allowed = await _sut.IsAllowedAsync(stream, "image/webp");
 
