@@ -58,7 +58,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         _context.ChangeTracker.Clear();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetShippingDetailAsync_WhenExists_MapsAggregateToDto()
     {
         var shipping = CreateShipping(
@@ -90,7 +90,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.MaxWeight.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetShippingDetailAsync_WhenNotExists_ReturnsNull()
     {
         var result = await _sut.GetShippingDetailAsync(ShippingId.NewId());
@@ -98,7 +98,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAllShippingsAsync_WhenIncludeInactiveFalse_ReturnsOnlyActive()
     {
         var active = CreateShipping("Active Alpha", 500m);
@@ -114,7 +114,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldNotContain(dto => dto.Id == inactive.Id.Value);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAllShippingsAsync_WhenIncludeInactiveTrue_ReturnsAllShippings()
     {
         var active = CreateShipping("Active Alpha", 500m);
@@ -130,7 +130,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldContain(dto => dto.Id == inactive.Id.Value);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAllShippingsAsync_MapsCoreListItemFields()
     {
         var shipping = CreateShipping("Listing Sample", 1500m, minDays: 2, maxDays: 4);
@@ -148,7 +148,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         item.DeliveryTimeDisplay.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task CalculateShippingCostAsync_WhenActiveShippingExists_ReturnsCostDto()
     {
         var shipping = CreateShipping("Priced Method", 1200m, minDays: 2, maxDays: 5);
@@ -165,7 +165,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.MaxDeliveryDays.ShouldBe(5);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task CalculateShippingCostAsync_WhenShippingIsInactive_ReturnsEmptyDto()
     {
         var shipping = CreateShipping("Inactive Priced", 1200m);
@@ -180,7 +180,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.IsFree.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task CalculateShippingCostAsync_WhenShippingNotFound_ReturnsEmptyDto()
     {
         var result = await _sut.CalculateShippingCostAsync(ShippingId.NewId(), Money.Create(5000m));
@@ -191,7 +191,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.IsFree.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAvailableShippingsAsync_ReturnsOnlyActiveShippings()
     {
         var active = CreateShipping("Available Alpha", 800m);
@@ -212,7 +212,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         dto.DeliveryTimeDisplay.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAvailableShippingsAsync_WhenNoActiveShippings_ReturnsEmpty()
     {
         var inactive = CreateShipping("Unavailable Only", 500m);
@@ -225,7 +225,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeEmpty();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAvailableShippingsForVariantsAsync_WhenVariantIdsEmpty_ReturnsEmpty()
     {
         var shipping = CreateShipping("Any Available", 500m);
@@ -236,7 +236,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeEmpty();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAvailableShippingsForVariantsAsync_WhenNoVariantShippingMappingExists_ReturnsEmpty()
     {
         var shipping = CreateShipping("Unlinked Method", 500m);
@@ -247,7 +247,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeEmpty();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetShippingQuotesAsync_WhenItemsCollectionIsEmpty_FallsBackToGetAvailableShippings()
     {
         var active = CreateShipping("Fallback Method", 600m);
@@ -265,7 +265,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldNotContain(dto => dto.Id == inactive.Id.Value);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetShippingQuotesAsync_WhenAllItemsHaveNonPositiveQuantity_FallsBackToGetAvailableShippings()
     {
         var active = CreateShipping("Non Positive Fallback", 600m);
@@ -283,7 +283,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Single().Id.ShouldBe(active.Id.Value);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetShippingQuotesAsync_WhenNoVariantShippingRowsMatchGivenVariants_ReturnsEmpty()
     {
         var active = CreateShipping("No Mapping Method", 600m);

@@ -2,6 +2,7 @@ using Domain.Media.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Media.Repositories;
 using Infrastructure.Persistence.Context;
+using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
 using Tests.TestInfrastructure.Database;
 using Medias = Domain.Media.Aggregates.Media;
@@ -50,7 +51,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         await deletionContext.DisposeAsync();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_ThenGetByIdAsync_RoundTripsAggregateWithOwnedValueObjects()
     {
         var entityId = Guid.NewGuid();
@@ -87,7 +88,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.Size.Bytes.ShouldBe(2048);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_WhenMediaDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(MediaId.NewId());
@@ -95,7 +96,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_WhenMediaIsSoftDeleted_ReturnsNullBecauseOfQueryFilter()
     {
         var media = new MediaBuilder().WithEntityType("Product").Build();
@@ -111,7 +112,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_AfterSetAsPrimary_PersistsPrimaryFlag()
     {
         var media = new MediaBuilder().WithIsPrimary(false).Build();
@@ -134,7 +135,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded!.IsPrimary.ShouldBeTrue();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByEntityAsync_WithMultipleMediasForSameEntity_ReturnsOrderedBySortOrder()
     {
         var entityId = Guid.NewGuid();
@@ -152,7 +153,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         result.Select(m => m.SortOrder).ToList().ShouldBe(new[] { 0, 1, 2 });
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByEntityAsync_FiltersByEntityTypeAndEntityId()
     {
         var productId = Guid.NewGuid();
@@ -174,7 +175,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         brandMedias.Single().EntityId.ShouldBe(brandId);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByEntityAsync_ExcludesSoftDeletedMedia()
     {
         var entityId = Guid.NewGuid();
@@ -194,7 +195,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         result.Single().Id.ShouldBe(alive.Id);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetPrimaryByEntityAsync_WhenPrimaryExists_ReturnsPrimary()
     {
         var entityId = Guid.NewGuid();
@@ -214,7 +215,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         result.IsPrimary.ShouldBeTrue();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetPrimaryByEntityAsync_WhenNoPrimaryExists_ReturnsNull()
     {
         var entityId = Guid.NewGuid();
@@ -229,7 +230,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         result.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByPathAsync_MatchesMediaByOwnedFilePathValue()
     {
         var uniquePath = $"uploads/products/{Guid.NewGuid():N}.png";
@@ -252,7 +253,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         result.Single().Path.Value.ShouldBe(uniquePath);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByPathAsync_WhenNoMatch_ReturnsEmpty()
     {
         await PersistAsync(new MediaBuilder().WithEntityType("Product").Build());
@@ -262,7 +263,7 @@ public class MediaRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         result.ShouldBeEmpty();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAllFilePathsAsync_IncludesSoftDeletedMediaPathsViaIgnoreQueryFilters()
     {
         var aliveFileName = $"{Guid.NewGuid():N}.png";

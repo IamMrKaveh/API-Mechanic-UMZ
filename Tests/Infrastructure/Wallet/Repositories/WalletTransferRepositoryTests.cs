@@ -32,7 +32,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         await _fixture.ResetAsync();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_ThenGetByIdAsync_RoundTripsAggregateFromDatabase()
     {
         var from = UserId.NewId();
@@ -63,7 +63,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         loaded.Status.ShouldBe(WalletTransferStatus.PendingOtp);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_WhenTransferDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(WalletTransferId.NewId());
@@ -71,7 +71,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdForUpdateAsync_WhenTransferExists_ReturnsTransferAndSuppressesXminModification()
     {
         var transfer = new WalletTransferBuilder().Build();
@@ -87,7 +87,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         _context.Entry(loaded).Property("xmin").IsModified.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdForUpdateAsync_WhenTransferDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdForUpdateAsync(WalletTransferId.NewId());
@@ -95,7 +95,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_AfterMarkingCompleted_PersistsStatusAndCompletedAt()
     {
         var transfer = new WalletTransferBuilder().Build();
@@ -118,7 +118,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         reloaded.CompletedAt.ShouldNotBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_TwoTransfersWithSameCorrelationId_ViolatesUniqueIndex()
     {
         var first = new WalletTransferBuilder().Build();
@@ -137,7 +137,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task SumCompletedAmountForDayAsync_SumsOnlyCompletedTransfersOfDayForGivenFromUser()
     {
         var target = UserId.NewId();
@@ -181,7 +181,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         sum.ShouldBe(55_000m);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task SumCompletedAmountForDayAsync_WhenNoCompletedTransfers_ReturnsZero()
     {
         var target = UserId.NewId();
@@ -191,7 +191,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         sum.ShouldBe(0m);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task CountRecentPendingByUserAsync_CountsOnlyPendingOtpTransfersWithinWindow()
     {
         var target = UserId.NewId();
@@ -215,7 +215,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         count.ShouldBe(2);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task CountRecentPendingByUserAsync_ExcludesEntriesOutsideWindow()
     {
         var target = UserId.NewId();
@@ -236,7 +236,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         count.ShouldBe(0);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task CountRecentPendingByUserAsync_ExcludesOtherUsers()
     {
         var target = UserId.NewId();

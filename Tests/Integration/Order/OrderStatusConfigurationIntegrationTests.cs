@@ -18,7 +18,7 @@ public async Task DisposeAsync()
     await _fixture.ResetAsync();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task OrderStatusConfiguration_EnforcesUniqueName()
 {
     _context.OrderStatuses.Add(OrderStatus.Create("Paid", "پرداخت شده", null, null, 4, false, false));
@@ -29,7 +29,7 @@ public async Task OrderStatusConfiguration_EnforcesUniqueName()
     await Should.ThrowAsync<DbUpdateException>(async () => await second.SaveChangesAsync());
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task OrderStatusConfiguration_PersistsAllScalarProperties()
 {
     var s = OrderStatus.Create("Shipped", "ارسال شده", "truck", "#6610f2", 6, true, false);
@@ -51,7 +51,7 @@ public async Task OrderStatusConfiguration_PersistsAllScalarProperties()
     loaded.RowVersion.Length.ShouldBeGreaterThan(0);
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task OrderStatusConfiguration_IgnoresDomainEvents()
 {
     var s = OrderStatus.Create("Delivered", "تحویل شده", null, null, 7, false, false);

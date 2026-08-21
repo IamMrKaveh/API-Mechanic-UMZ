@@ -29,7 +29,7 @@ public async Task DisposeAsync()
     await _fixture.ResetAsync();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task StartAsync_InsertsAllTwelveStatuses_WhenDatabaseEmpty()
 {
     await _sut.StartAsync(CancellationToken.None);
@@ -52,7 +52,7 @@ public async Task StartAsync_InsertsAllTwelveStatuses_WhenDatabaseEmpty()
     names.ShouldContain("Expired");
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task StartAsync_MarksCreatedAsDefaultAndActive()
 {
     await _sut.StartAsync(CancellationToken.None);
@@ -63,7 +63,7 @@ public async Task StartAsync_MarksCreatedAsDefaultAndActive()
     created.IsActive.ShouldBeTrue();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task StartAsync_MarksNonDefaultsAsActiveAndNotDefault()
 {
     await _sut.StartAsync(CancellationToken.None);
@@ -74,7 +74,7 @@ public async Task StartAsync_MarksNonDefaultsAsActiveAndNotDefault()
     reserved.IsDefault.ShouldBeFalse();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task StartAsync_IsIdempotent_DoesNotDuplicateExistingStatuses()
 {
     await _sut.StartAsync(CancellationToken.None);

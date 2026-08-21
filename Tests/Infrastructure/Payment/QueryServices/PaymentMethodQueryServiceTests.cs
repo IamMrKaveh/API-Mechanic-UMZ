@@ -2,6 +2,7 @@ using Domain.Payment.Aggregates;
 using Domain.Payment.ValueObjects;
 using Infrastructure.Payment.QueryServices;
 using Infrastructure.Persistence.Context;
+using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
 using Tests.TestInfrastructure.Database;
 
@@ -39,7 +40,7 @@ public class PaymentMethodQueryServiceTests(PostgresContainerFixture fixture) : 
         return method;
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_ExistingMethod_ReturnsMappedDto()
     {
         var method = new PaymentMethodBuilder()
@@ -66,7 +67,7 @@ public class PaymentMethodQueryServiceTests(PostgresContainerFixture fixture) : 
         dto.SortOrder.ShouldBe(5);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_SoftDeletedMethod_ReturnsDtoBecauseFiltersIgnored()
     {
         var method = new PaymentMethodBuilder()
@@ -86,7 +87,7 @@ public class PaymentMethodQueryServiceTests(PostgresContainerFixture fixture) : 
         dto!.Id.ShouldBe(method.Id.Value);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_NonExistentMethod_ReturnsNull()
     {
         var dto = await _sut.GetByIdAsync(PaymentMethodId.NewId(), CancellationToken.None);
@@ -94,7 +95,7 @@ public class PaymentMethodQueryServiceTests(PostgresContainerFixture fixture) : 
         dto.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAllAsync_DefaultParameters_ReturnsActiveOnlyOrderedBySortAndName()
     {
         var active1 = new PaymentMethodBuilder().WithName("Alpha Active").WithCode("q-all-alpha").WithSortOrder(10).Build();
@@ -113,7 +114,7 @@ public class PaymentMethodQueryServiceTests(PostgresContainerFixture fixture) : 
         result[1].Id.ShouldBe(active2.Id.Value);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAllAsync_WithIncludeInactive_IncludesInactiveButNotDeleted()
     {
         var active = new PaymentMethodBuilder().WithName("Active Incl").WithCode("q-all-active-incl").WithSortOrder(10).Build();
@@ -134,7 +135,7 @@ public class PaymentMethodQueryServiceTests(PostgresContainerFixture fixture) : 
         result.Any(r => r.Id == deleted.Id.Value).ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetAllAsync_WithIncludeDeleted_IncludesSoftDeletedMethods()
     {
         var active = new PaymentMethodBuilder().WithName("Active Del Incl").WithCode("q-all-active-del").WithSortOrder(10).Build();
@@ -150,7 +151,7 @@ public class PaymentMethodQueryServiceTests(PostgresContainerFixture fixture) : 
         result.Any(r => r.IsDeleted && r.Id == deleted.Id.Value).ShouldBeTrue();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetActiveAsync_ComputesFeePerOrderAmount()
     {
         var fixedOnly = new PaymentMethodBuilder()

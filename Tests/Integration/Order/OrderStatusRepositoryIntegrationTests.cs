@@ -19,7 +19,7 @@ public async Task DisposeAsync()
     await _fixture.ResetAsync();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task GetByIdAsync_ReturnsStatus_WhenExists()
 {
     var status = OrderStatus.Create("Created", "ایجاد شده", "icon", "#000", 0, true, true);
@@ -33,14 +33,14 @@ public async Task GetByIdAsync_ReturnsStatus_WhenExists()
     result.Name.ShouldBe("Created");
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task GetByIdAsync_ReturnsNull_WhenNotExists()
 {
     var result = await _sut.GetByIdAsync(OrderStatusId.NewId(), CancellationToken.None);
     result.ShouldBeNull();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task GetDefaultAsync_ReturnsDefaultStatus()
 {
     var normal = OrderStatus.Create("Reserved", "رزرو", null, null, 1, true, false);
@@ -57,7 +57,7 @@ public async Task GetDefaultAsync_ReturnsDefaultStatus()
     result.IsDefault.ShouldBeTrue();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task GetDefaultAsync_ReturnsNull_WhenNoDefaultExists()
 {
     var s = OrderStatus.Create("Reserved", "رزرو", null, null, 1, true, false);
@@ -68,7 +68,7 @@ public async Task GetDefaultAsync_ReturnsNull_WhenNoDefaultExists()
     result.ShouldBeNull();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task ExistsByNameAsync_ReturnsTrue_ForExistingName_TrimmedAndCaseSensitive()
 {
     var s = OrderStatus.Create("Reserved", "رزرو", null, null, 1, true, false);
@@ -78,13 +78,13 @@ public async Task ExistsByNameAsync_ReturnsTrue_ForExistingName_TrimmedAndCaseSe
     (await _sut.ExistsByNameAsync("  Reserved  ", null, CancellationToken.None)).ShouldBeTrue();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task ExistsByNameAsync_ReturnsFalse_ForNonExistingName()
 {
     (await _sut.ExistsByNameAsync("Nonexistent", null, CancellationToken.None)).ShouldBeFalse();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task ExistsByNameAsync_ExcludesGivenId()
 {
     var s = OrderStatus.Create("Reserved", "رزرو", null, null, 1, true, false);
@@ -94,7 +94,7 @@ public async Task ExistsByNameAsync_ExcludesGivenId()
     (await _sut.ExistsByNameAsync("Reserved", s.Id, CancellationToken.None)).ShouldBeFalse();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task AddAsync_PersistsStatus_AfterSave()
 {
     var s = OrderStatus.Create("Pending", "در انتظار", null, null, 2, true, false);
@@ -107,7 +107,7 @@ public async Task AddAsync_PersistsStatus_AfterSave()
     loaded!.Name.ShouldBe("Pending");
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task Update_PersistsMutations()
 {
     var s = OrderStatus.Create("Pending", "در انتظار", null, null, 2, true, false);
@@ -128,7 +128,7 @@ public async Task Update_PersistsMutations()
     loaded.AllowEdit.ShouldBeTrue();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task Remove_DeletesStatus()
 {
     var s = OrderStatus.Create("Failed", "ناموفق", null, null, 3, false, false);
@@ -142,7 +142,7 @@ public async Task Remove_DeletesStatus()
     (await verify.OrderStatuses.AnyAsync(x => x.Id == s.Id)).ShouldBeFalse();
 }
 
-[SkippableFact]
+[RequiresDockerFact]
 public async Task SetOriginalRowVersion_WithStaleValue_ThrowsConcurrencyOnSave()
 {
     var s = OrderStatus.Create("Paid", "پرداخت شده", null, null, 4, false, false);

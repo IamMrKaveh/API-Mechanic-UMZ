@@ -1,4 +1,6 @@
-﻿namespace Infrastructure.Security.Services;
+using BCrypt.Net;
+
+namespace Infrastructure.Security.Services;
 
 public sealed class PasswordHasher : IPasswordHasher
 {
@@ -14,6 +16,26 @@ public sealed class PasswordHasher : IPasswordHasher
     {
         if (string.IsNullOrWhiteSpace(password)) return false;
         if (string.IsNullOrWhiteSpace(hash)) return false;
-        return BCrypt.Net.BCrypt.Verify(password, hash);
+
+        try
+        {
+            return BCrypt.Net.BCrypt.Verify(password, hash);
+        }
+        catch (SaltParseException)
+        {
+            return false;
+        }
+        catch (HashInformationException)
+        {
+            return false;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 }

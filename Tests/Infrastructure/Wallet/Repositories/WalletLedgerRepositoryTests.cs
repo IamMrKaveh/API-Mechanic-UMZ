@@ -3,7 +3,6 @@ using Domain.Wallet.Enums;
 using Infrastructure.Persistence.Context;
 using Infrastructure.Wallet.Repositories;
 using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 using Users = Domain.User.Aggregates.User;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
@@ -33,7 +32,7 @@ public class WalletLedgerRepositoryTests(PostgresContainerFixture fixture) : IAs
         await _fixture.ResetAsync();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_PersistsEntryAndItCanBeQueriedBack()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
@@ -61,13 +60,13 @@ public class WalletLedgerRepositoryTests(PostgresContainerFixture fixture) : IAs
         reloaded.ReferenceId.ShouldBe("ref-persist-1");
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_WithNullEntry_Throws()
     {
         await Should.ThrowAsync<ArgumentNullException>(async () => await _sut.AddAsync(null!));
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasIdempotencyKeyAsync_WithGlobalOverload_WhenKeyExists_ReturnsTrue()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
@@ -89,7 +88,7 @@ public class WalletLedgerRepositoryTests(PostgresContainerFixture fixture) : IAs
         exists.ShouldBeTrue();
     }
 
-    [Theory]
+    [RequiresDockerTheory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
@@ -100,7 +99,7 @@ public class WalletLedgerRepositoryTests(PostgresContainerFixture fixture) : IAs
         exists.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasIdempotencyKeyAsync_WithGlobalOverload_WhenKeyDoesNotExist_ReturnsFalse()
     {
         var exists = await _sut.HasIdempotencyKeyAsync("never-seen-global-key");
@@ -108,7 +107,7 @@ public class WalletLedgerRepositoryTests(PostgresContainerFixture fixture) : IAs
         exists.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasIdempotencyKeyAsync_WithOwnerOverload_WhenKeyExistsForOwner_ReturnsTrue()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
@@ -130,7 +129,7 @@ public class WalletLedgerRepositoryTests(PostgresContainerFixture fixture) : IAs
         exists.ShouldBeTrue();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasIdempotencyKeyAsync_WithOwnerOverload_WhenKeyBelongsToDifferentOwner_ReturnsFalse()
     {
         var (ownerA, walletA) = await SeedActiveUserAndWalletAsync();
@@ -153,7 +152,7 @@ public class WalletLedgerRepositoryTests(PostgresContainerFixture fixture) : IAs
         exists.ShouldBeFalse();
     }
 
-    [Theory]
+    [RequiresDockerTheory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
@@ -164,7 +163,7 @@ public class WalletLedgerRepositoryTests(PostgresContainerFixture fixture) : IAs
         exists.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task HasIdempotencyKeyAsync_WithGlobalOverload_IgnoresQueryFiltersAndFindsEntryWhenOwnerIsInactive()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
@@ -188,7 +187,7 @@ public class WalletLedgerRepositoryTests(PostgresContainerFixture fixture) : IAs
         exists.ShouldBeTrue();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_TwoEntriesWithSameIdempotencyKey_ViolatesUniqueIndex()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
@@ -214,7 +213,7 @@ public class WalletLedgerRepositoryTests(PostgresContainerFixture fixture) : IAs
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_PersistsTransactionTypeAsStringInDatabase()
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();

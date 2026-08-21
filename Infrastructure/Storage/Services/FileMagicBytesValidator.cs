@@ -4,29 +4,31 @@ namespace Infrastructure.Storage.Services;
 
 public sealed class FileMagicBytesValidator : IFileMagicBytesValidator
 {
+    private const int WebPHeaderSize = 12;
+
     private static readonly IReadOnlyDictionary<string, byte[][]> Signatures =
         new Dictionary<string, byte[][]>(StringComparer.OrdinalIgnoreCase)
         {
-            ["image/jpeg"] = new[]
-            {
-                new byte[] { 0xFF, 0xD8, 0xFF, 0xDB },
-                new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 },
-                new byte[] { 0xFF, 0xD8, 0xFF, 0xE1 },
-                new byte[] { 0xFF, 0xD8, 0xFF, 0xEE }
-            },
-            ["image/png"] = new[]
-            {
-                new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }
-            },
-            ["image/gif"] = new[]
-            {
-                new byte[] { 0x47, 0x49, 0x46, 0x38, 0x37, 0x61 },
-                new byte[] { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61 }
-            },
-            ["image/webp"] = new[]
-            {
-                new byte[] { 0x52, 0x49, 0x46, 0x46 }
-            }
+            ["image/jpeg"] =
+            [
+                [0xFF, 0xD8, 0xFF, 0xDB],
+                [0xFF, 0xD8, 0xFF, 0xE0],
+                [0xFF, 0xD8, 0xFF, 0xE1],
+                [0xFF, 0xD8, 0xFF, 0xEE]
+            ],
+            ["image/png"] =
+            [
+                [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+            ],
+            ["image/gif"] =
+            [
+                [0x47, 0x49, 0x46, 0x38, 0x37, 0x61 ],
+                [0x47, 0x49, 0x46, 0x38, 0x39, 0x61 ]
+            ],
+            ["image/webp"] =
+            [
+                [0x52, 0x49, 0x46, 0x46]
+            ]
         };
 
     public async Task<bool> IsAllowedAsync(Stream stream, string declaredContentType, CancellationToken ct = default)
@@ -37,11 +39,14 @@ public sealed class FileMagicBytesValidator : IFileMagicBytesValidator
 
         if (!stream.CanSeek) return false;
 
-        var maxLength = candidates.Max(c => c.Length);
-        var header = new byte[maxLength];
+        var isWebP = declaredContentType.Equals("image/webp", StringComparison.OrdinalIgnoreCase);
+        var bufferSize = candidates.Max(c => c.Length);
+        if (isWebP && bufferSize < WebPHeaderSize) bufferSize = WebPHeaderSize;
+
+        var header = new byte[bufferSize];
 
         stream.Position = 0;
-        var read = await stream.ReadAsync(header.AsMemory(0, maxLength), ct);
+        var read = await stream.ReadAsync(header.AsMemory(0, bufferSize), ct);
         stream.Position = 0;
 
         if (read < candidates.Min(c => c.Length)) return false;
@@ -56,9 +61,9 @@ public sealed class FileMagicBytesValidator : IFileMagicBytesValidator
             }
             if (match)
             {
-                if (declaredContentType.Equals("image/webp", StringComparison.OrdinalIgnoreCase))
+                if (isWebP)
                 {
-                    if (read < 12) return false;
+                    if (read < WebPHeaderSize) return false;
                     if (header[8] != 0x57 || header[9] != 0x45 || header[10] != 0x42 || header[11] != 0x50)
                         return false;
                 }

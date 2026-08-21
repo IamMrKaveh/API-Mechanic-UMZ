@@ -63,7 +63,7 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
     private static OutboxMessage BuildMessage(string type, string payload)
         => OutboxMessage.Create(type, payload, DateTime.UtcNow);
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task ProcessAsync_WithNoPendingMessages_DoesNotInvokePublisher()
     {
         await _sut.ProcessAsync();
@@ -71,7 +71,7 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         await _publisher.DidNotReceiveWithAnyArgs().Publish(default!, Arg.Any<CancellationToken>());
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task ProcessAsync_WithPendingMessageForKnownType_PublishesNotificationAndMarksProcessed()
     {
         var domainEvent = new OrderExpiredEvent(OrderId.NewId());
@@ -96,7 +96,7 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         persisted.Error.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task ProcessAsync_WithUnresolvableTypeName_MarksMessageAsPoisoned()
     {
         var message = BuildMessage("Totally.Unknown.Type.Name, Missing.Assembly", "{}");
@@ -113,7 +113,7 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         await _auditService.Received().LogWarningAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task ProcessAsync_WhenPublisherThrows_IncrementsRetryCountAndRecordsError()
     {
         var domainEvent = new OrderExpiredEvent(OrderId.NewId());
@@ -139,7 +139,7 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         await _auditService.Received().LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task ProcessAsync_WhenPublisherFailsAndRetryCountReachesMax_MarksMessageAsPoisoned()
     {
         var domainEvent = new OrderExpiredEvent(OrderId.NewId());
@@ -167,7 +167,7 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         persisted.Error.ShouldNotBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task ProcessAsync_SkipsAlreadyProcessedMessages()
     {
         var domainEvent = new OrderExpiredEvent(OrderId.NewId());
@@ -184,7 +184,7 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         await _publisher.DidNotReceiveWithAnyArgs().Publish(default!, Arg.Any<CancellationToken>());
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task ProcessAsync_SkipsPoisonedMessages()
     {
         var domainEvent = new OrderExpiredEvent(OrderId.NewId());
@@ -201,7 +201,7 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         await _publisher.DidNotReceiveWithAnyArgs().Publish(default!, Arg.Any<CancellationToken>());
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task ProcessAsync_HonorsBatchSize()
     {
         var domainEvent = new OrderExpiredEvent(OrderId.NewId());

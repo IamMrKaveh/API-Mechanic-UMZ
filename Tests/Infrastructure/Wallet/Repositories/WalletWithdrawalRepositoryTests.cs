@@ -4,7 +4,6 @@ using Domain.Wallet.ValueObjects;
 using Infrastructure.Persistence.Context;
 using Infrastructure.Wallet.Repositories;
 using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Wallet.Repositories;
 
@@ -32,7 +31,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         await _fixture.ResetAsync();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_ThenGetByIdAsync_RoundTripsAggregateFromDatabase()
     {
         var userId = UserId.NewId();
@@ -64,7 +63,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         loaded.Iban.Value.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdAsync_WhenWithdrawalDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(WalletWithdrawalRequestId.NewId());
@@ -72,7 +71,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdForUpdateAsync_WhenWithdrawalExists_ReturnsAndSuppressesXminModification()
     {
         var withdrawal = new WalletWithdrawalRequestBuilder().Build();
@@ -88,7 +87,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         _context.Entry(loaded).Property("xmin").IsModified.ShouldBeFalse();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task GetByIdForUpdateAsync_WhenWithdrawalDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdForUpdateAsync(WalletWithdrawalRequestId.NewId());
@@ -96,7 +95,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         loaded.ShouldBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task AddAsync_TwoWithdrawalsWithSameReservationId_ViolatesUniqueIndex()
     {
         var reservationId = WalletReservationId.NewId();
@@ -112,7 +111,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_AfterApprovingWithdrawal_PersistsStatusApprovedAtAndProcessedBy()
     {
         var withdrawal = new WalletWithdrawalRequestBuilder().Build();
@@ -136,7 +135,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         reloaded.ApprovedAt.ShouldNotBeNull();
     }
 
-    [Theory]
+    [RequiresDockerTheory]
     [InlineData(WalletWithdrawalStatus.Pending, 2)]
     [InlineData(WalletWithdrawalStatus.Approved, 1)]
     [InlineData(WalletWithdrawalStatus.Rejected, 0)]
@@ -169,7 +168,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         count.ShouldBe(expected);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task CountByUserAndStatusAsync_WhenNoMatchingEntries_ReturnsZero()
     {
         var count = await _sut.CountByUserAndStatusAsync(UserId.NewId(), WalletWithdrawalStatus.Pending);
@@ -177,7 +176,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         count.ShouldBe(0);
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_AfterRejectingWithdrawal_PersistsStatusAndRejectionReason()
     {
         var withdrawal = new WalletWithdrawalRequestBuilder().Build();
@@ -202,7 +201,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         reloaded.RejectedAt.ShouldNotBeNull();
     }
 
-    [SkippableFact]
+    [RequiresDockerFact]
     public async Task Update_AfterMarkingPaid_PersistsBankReferenceNumberAndPaidAt()
     {
         var withdrawal = new WalletWithdrawalRequestBuilder().Build();
