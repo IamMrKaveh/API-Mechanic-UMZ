@@ -35,6 +35,7 @@ public sealed record AdminOrderDto
     public int OrderItemsCount { get; init; }
     public DateTime? UpdatedAt { get; init; }
     public bool IsDeleted { get; init; }
+    public string RowVersion { get; init; } = string.Empty;
 }
 
 public sealed record UserSummaryDto

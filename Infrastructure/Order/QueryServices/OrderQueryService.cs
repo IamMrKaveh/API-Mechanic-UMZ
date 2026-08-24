@@ -93,45 +93,56 @@ public sealed class OrderQueryService(
 
         var totalItems = await query.CountAsync(ct);
 
-        var dtos = await query
+        var projections = await query
             .OrderByDescending(o => o.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(o => new AdminOrderDto
+            .Select(o => new
             {
-                Id = o.Id.Value,
-                UserId = o.UserId.Value,
-                OrderNumber = o.OrderNumber.Value,
-                ReceiverName = o.ReceiverInfo != null ? o.ReceiverInfo.FullName : string.Empty,
-                Status = o.Status.Value,
-                StatusDisplayName = o.Status.DisplayName,
-                TotalAmount = o.SubTotal.Amount,
-                ShippingCost = o.ShippingCost.Amount,
-                DiscountAmount = o.DiscountAmount.Amount,
-                FinalAmount = o.FinalAmount.Amount,
-                DiscountCodeId = o.AppliedDiscountCodeId != null ? o.AppliedDiscountCodeId.Value : null,
-                CancellationReason = o.CancellationReason,
-                IsPaid = o.IsPaid,
-                IsCancelled = o.IsCancelled,
-                IsDeleted = o.IsDeleted,
-                OrderItems = o.OrderItems != null
-                    ? o.OrderItems.Select(i => new OrderItemDto
-                    {
-                        Id = i.Id.Value,
-                        VariantId = i.VariantId.Value,
-                        ProductId = i.ProductId.Value,
-                        ProductName = i.ProductName ?? string.Empty,
-                        Sku = i.Sku ?? string.Empty,
-                        UnitPrice = i.UnitPrice.Amount,
-                        Quantity = i.Quantity,
-                        TotalPrice = i.TotalPrice.Amount
-                    }).ToList()
-                    : new List<OrderItemDto>(),
-                OrderItemsCount = o.OrderItems != null ? o.OrderItems.Count : 0,
-                CreatedAt = o.CreatedAt,
-                UpdatedAt = o.UpdatedAt
+                Dto = new AdminOrderDto
+                {
+                    Id = o.Id.Value,
+                    UserId = o.UserId.Value,
+                    OrderNumber = o.OrderNumber.Value,
+                    ReceiverName = o.ReceiverInfo != null ? o.ReceiverInfo.FullName : string.Empty,
+                    Status = o.Status.Value,
+                    StatusDisplayName = o.Status.DisplayName,
+                    TotalAmount = o.SubTotal.Amount,
+                    ShippingCost = o.ShippingCost.Amount,
+                    DiscountAmount = o.DiscountAmount.Amount,
+                    FinalAmount = o.FinalAmount.Amount,
+                    DiscountCodeId = o.AppliedDiscountCodeId != null ? o.AppliedDiscountCodeId.Value : null,
+                    CancellationReason = o.CancellationReason,
+                    IsPaid = o.IsPaid,
+                    IsCancelled = o.IsCancelled,
+                    IsDeleted = o.IsDeleted,
+                    OrderItems = o.OrderItems != null
+                        ? o.OrderItems.Select(i => new OrderItemDto
+                        {
+                            Id = i.Id.Value,
+                            VariantId = i.VariantId.Value,
+                            ProductId = i.ProductId.Value,
+                            ProductName = i.ProductName ?? string.Empty,
+                            Sku = i.Sku ?? string.Empty,
+                            UnitPrice = i.UnitPrice.Amount,
+                            Quantity = i.Quantity,
+                            TotalPrice = i.TotalPrice.Amount
+                        }).ToList()
+                        : new List<OrderItemDto>(),
+                    OrderItemsCount = o.OrderItems != null ? o.OrderItems.Count : 0,
+                    CreatedAt = o.CreatedAt,
+                    UpdatedAt = o.UpdatedAt
+                },
+                Xmin = EF.Property<uint>(o, "xmin")
             })
             .ToListAsync(ct);
+
+        var dtos = projections.Select(p =>
+        {
+            var rowVersionBytes = new byte[4];
+            BinaryPrimitives.WriteUInt32BigEndian(rowVersionBytes, p.Xmin);
+            return p.Dto with { RowVersion = Convert.ToBase64String(rowVersionBytes) };
+        }).ToList();
 
         return PaginatedResult<AdminOrderDto>.Create(dtos, totalItems, page, pageSize);
     }
@@ -293,7 +304,7 @@ public sealed class OrderQueryService(
             HeaderNames.ETag,
             $"\"{etag}\"");
 
-        return projection.Dto;
+        return projection.Dto with { RowVersion = etag };
     }
 
     private static List<string> ComputeAllowedTransitions(OrderStatusValue current)
