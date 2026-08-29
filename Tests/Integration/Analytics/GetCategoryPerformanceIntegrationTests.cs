@@ -1,12 +1,10 @@
 using Infrastructure.Analytics.QueryServices;
 using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Attributes;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Integration.Analytics;
 
-[Collection(nameof(DatabaseCollection))]
 [Trait("Category", "Integration")]
+[Collection(nameof(DatabaseCollection))]
 public class GetCategoryPerformanceIntegrationTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
     private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private AnalyticsQueryService _sut = null!;
@@ -30,7 +28,7 @@ public class GetCategoryPerformanceIntegrationTests(PostgresContainerFixture fix
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetCategoryPerformanceAsync_EmptyDatabase_ReturnsEmptyPaginatedResult()
     {
         var from = DateTime.UtcNow.AddDays(-30);
@@ -45,7 +43,7 @@ public class GetCategoryPerformanceIntegrationTests(PostgresContainerFixture fix
         result.Page.ShouldBe(1);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetCategoryPerformanceAsync_NullDateRangeOnEmptyDatabase_ReturnsEmptyPaginatedResult()
     {
         var result = await _sut.GetCategoryPerformanceAsync(null, null, CancellationToken.None);

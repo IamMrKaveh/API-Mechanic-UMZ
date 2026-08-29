@@ -1,9 +1,7 @@
 using Domain.Category.ValueObjects;
 using Infrastructure.Category.Repositories;
 using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 using Tests.TestInfrastructure.Stubs;
 
 namespace Tests.Infrastructure.Category.Repositories;
@@ -32,7 +30,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByIdAsync_ExistingCategory_ReturnsAggregate()
     {
         var category = await new CategoryBuilder()
@@ -57,7 +55,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.IsActive.ShouldBeTrue();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByIdAsync_NonExistentCategory_ReturnsNull()
     {
         var result = await _sut.GetByIdAsync(CategoryId.NewId());
@@ -65,7 +63,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExistsByNameAsync_NameExists_ReturnsTrue()
     {
         var category = await new CategoryBuilder()
@@ -82,7 +80,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeTrue();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExistsByNameAsync_NameDoesNotExist_ReturnsFalse()
     {
         var exists = await _sut.ExistsByNameAsync(CategoryName.Create("Absent Category"));
@@ -90,7 +88,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeFalse();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExistsByNameAsync_NameExistsButExcluded_ReturnsFalse()
     {
         var category = await new CategoryBuilder()
@@ -107,7 +105,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeFalse();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExistsBySlugAsync_SlugExists_ReturnsTrue()
     {
         var category = await new CategoryBuilder()
@@ -124,7 +122,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeTrue();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExistsBySlugAsync_SlugDoesNotExist_ReturnsFalse()
     {
         var exists = await _sut.ExistsBySlugAsync(CategorySlug.Create("absent-slug-xyz"));
@@ -132,7 +130,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeFalse();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExistsBySlugAsync_SlugExistsButExcluded_ReturnsFalse()
     {
         var category = await new CategoryBuilder()
@@ -149,7 +147,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeFalse();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task AddAsync_PersistsCategoryAndAllowsRetrievalByRepository()
     {
         var category = await new CategoryBuilder()
@@ -169,7 +167,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         reloaded.Slug.Value.ShouldBe("transmission-add");
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Update_WithStaleRowVersion_ThrowsDbUpdateConcurrencyException()
     {
         var category = await new CategoryBuilder()
@@ -214,7 +212,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         await Should.ThrowAsync<DbUpdateConcurrencyException>(() => _context.SaveChangesAsync());
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Update_WithCurrentRowVersion_PersistsChanges()
     {
         var category = await new CategoryBuilder()

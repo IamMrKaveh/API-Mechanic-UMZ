@@ -3,9 +3,8 @@ using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
 using Infrastructure.Wishlist.QueryServices;
-using Tests.TestInfrastructure.Attributes;
+
 using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 using WishlistAggregate = Domain.Wishlist.Aggregates.Wishlist;
 
 namespace Tests.Infrastructure.Wishlist.QueryServices;
@@ -95,7 +94,7 @@ public class WishlistQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         return wishlist;
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetPagedAsync_EmptyWishlist_ReturnsEmptyPaginatedResult()
     {
         var result = await _sut.GetPagedAsync(UserId.NewId(), page: 1, pageSize: 10, CancellationToken.None);
@@ -107,7 +106,7 @@ public class WishlistQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.PageSize.ShouldBe(10);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetPagedAsync_WithItems_ReturnsPagedDtosWithProductName()
     {
         var (userId, productId, productName) = await SeedUserAndProductAsync(productName: "Brake Pad");
@@ -126,7 +125,7 @@ public class WishlistQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         dto.IconUrl.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetPagedAsync_WithPrimaryActiveMedia_ResolvesIconUrl()
     {
         var (userId, productId, _) = await SeedUserAndProductAsync();
@@ -147,7 +146,7 @@ public class WishlistQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         dto.IconUrl.ShouldBe("https://cdn.test/uploads/products/icon.png");
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetPagedAsync_WithNoPrimaryMedia_ReturnsNullIconUrl()
     {
         var (userId, productId, _) = await SeedUserAndProductAsync();
@@ -168,7 +167,7 @@ public class WishlistQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Items.Single().IconUrl.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetPagedAsync_OrderedByCreatedAtDescending()
     {
         var (userId, productId1, _) = await SeedUserAndProductAsync();
@@ -190,7 +189,7 @@ public class WishlistQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         ids[2].ShouldBe(w1.Id.Value);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetPagedAsync_WithPaging_ReturnsCorrectPage()
     {
         var (userId, productId1, _) = await SeedUserAndProductAsync();
@@ -211,7 +210,7 @@ public class WishlistQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         page2.Items.Count.ShouldBe(1);
     }
 
-    [RequiresDockerTheoryAttribute]
+    [Theory]
     [InlineData(0, 0)]
     [InlineData(-1, -5)]
     public async Task GetPagedAsync_WithInvalidPaging_UsesDefaults(int page, int pageSize)
@@ -226,7 +225,7 @@ public class WishlistQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.TotalCount.ShouldBe(1);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetPagedAsync_ReturnsOnlyRequestedUserItems()
     {
         var (userId, productId, _) = await SeedUserAndProductAsync();
@@ -241,7 +240,7 @@ public class WishlistQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Items.Single().ProductId.ShouldBe(productId.Value);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task IsInWishlistAsync_WhenExists_ReturnsTrue()
     {
         var (userId, productId, _) = await SeedUserAndProductAsync();
@@ -252,7 +251,7 @@ public class WishlistQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeTrue();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task IsInWishlistAsync_WhenNotExists_ReturnsFalse()
     {
         var (userId, _, _) = await SeedUserAndProductAsync();

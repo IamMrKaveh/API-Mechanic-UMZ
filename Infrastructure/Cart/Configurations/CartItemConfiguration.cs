@@ -1,4 +1,5 @@
 using Domain.Cart.Entities;
+using Domain.Cart.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
 
@@ -10,6 +11,18 @@ public sealed class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
     {
         builder.ToTable("CartItems");
         builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Id)
+            .HasConversion(v => v.Value, v => CartItemId.From(v))
+            .ValueGeneratedNever();
+
+        builder.Property(x => x.VariantId)
+            .HasConversion(v => v.Value, v => VariantId.From(v))
+            .IsRequired();
+
+        builder.Property(x => x.ProductId)
+            .HasConversion(v => v.Value, v => ProductId.From(v))
+            .IsRequired();
 
         builder.Property(x => x.ProductName)
             .HasConversion(v => v.Value, v => ProductName.Create(v))
@@ -58,16 +71,8 @@ public sealed class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
         builder.Navigation(x => x.OriginalPrice).IsRequired();
 
         builder.Ignore(x => x.TotalPrice);
-
-        builder.HasOne(x => x.Variant)
-            .WithMany()
-            .HasForeignKey(x => x.VariantId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Product)
-            .WithMany()
-            .HasForeignKey(x => x.ProductId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.Ignore(x => x.Variant);
+        builder.Ignore(x => x.Product);
 
         builder.HasIndex(x => x.CartId);
         builder.HasIndex(x => x.VariantId);

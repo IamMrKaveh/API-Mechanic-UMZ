@@ -5,9 +5,7 @@ using Domain.User.ValueObjects;
 using Infrastructure.Cart.QueryServices;
 using Infrastructure.Cart.Repositories;
 using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 using Carts = Domain.Cart.Aggregates.Cart;
 
 namespace Tests.Infrastructure.Cart.QueryServices;
@@ -41,7 +39,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetCartDetailAsync_WithUserId_WhenCartHasItems_ReturnsDetailWithAggregatedTotals()
     {
         var userId = UserId.NewId();
@@ -87,7 +85,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         detailA.ProductImage.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetCartDetailAsync_WithGuestToken_WhenCartHasItems_ReturnsDetail()
     {
         var guestToken = GuestToken.Generate();
@@ -113,7 +111,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         result.TotalPrice.ShouldBe(80m);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetCartDetailAsync_WhenNeitherUserIdNorGuestTokenProvided_ReturnsNull()
     {
         var result = await _sut.GetCartDetailAsync(null, null, CancellationToken.None);
@@ -121,7 +119,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         result.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetCartDetailAsync_WithUnknownUserId_ReturnsNull()
     {
         var result = await _sut.GetCartDetailAsync(UserId.NewId(), null, CancellationToken.None);
@@ -129,7 +127,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         result.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetCartDetailAsync_WhenCartIsCheckedOut_ReturnsNull()
     {
         var userId = UserId.NewId();
@@ -144,7 +142,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         result.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetCartDetailAsync_PopulatesProductImageFromMediaQueryService()
     {
         var userId = UserId.NewId();
@@ -189,7 +187,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
             Arg.Any<CancellationToken>());
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetCartSummaryAsync_WhenCartHasItems_ReturnsAggregatedCountsAndTotal()
     {
         var userId = UserId.NewId();
@@ -219,7 +217,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         summary.TotalPrice.ShouldBe(2 * 60m + 5 * 40m);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetCartSummaryAsync_WhenNoCartExists_ReturnsZeroSummary()
     {
         var summary = await _sut.GetCartSummaryAsync(UserId.NewId(), null, CancellationToken.None);
@@ -230,7 +228,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         summary.TotalPrice.ShouldBe(0);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetCartSummaryAsync_WithGuestToken_ReturnsSummary()
     {
         var guestToken = GuestToken.Generate();
@@ -250,7 +248,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         summary.TotalPrice.ShouldBe(120m);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ValidateCartForCheckoutAsync_WhenCartHasItems_ReturnsValid()
     {
         var userId = UserId.NewId();
@@ -266,7 +264,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         validation.Errors.ShouldBeEmpty();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ValidateCartForCheckoutAsync_WhenCartIsEmpty_ReturnsInvalidWithEmptyCartError()
     {
         var userId = UserId.NewId();
@@ -281,7 +279,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         validation.Errors.ShouldContain("سبد خرید خالی است.");
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ValidateCartForCheckoutAsync_WhenCartDoesNotExist_ReturnsInvalidWithNotFoundError()
     {
         var validation = await _sut.ValidateCartForCheckoutAsync(UserId.NewId(), null, CancellationToken.None);
@@ -291,7 +289,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         validation.Errors.ShouldContain("سبد خرید یافت نشد.");
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ValidateCartForCheckoutAsync_WhenNeitherUserIdNorGuestTokenProvided_ReturnsInvalidWithNotFoundError()
     {
         var validation = await _sut.ValidateCartForCheckoutAsync(null, null, CancellationToken.None);

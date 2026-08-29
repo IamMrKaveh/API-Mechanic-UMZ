@@ -1,12 +1,10 @@
 using Infrastructure.Analytics.QueryServices;
 using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Attributes;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Integration.Analytics;
 
-[Collection(nameof(DatabaseCollection))]
 [Trait("Category", "Integration")]
+[Collection(nameof(DatabaseCollection))]
 public class GetTopSellingProductsIntegrationTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
     private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private AnalyticsQueryService _sut = null!;
@@ -30,7 +28,7 @@ public class GetTopSellingProductsIntegrationTests(PostgresContainerFixture fixt
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetTopSellingProductsAsync_EmptyDatabase_ReturnsEmptyPaginatedResult()
     {
         var from = DateTime.UtcNow.AddDays(-30);
@@ -46,7 +44,7 @@ public class GetTopSellingProductsIntegrationTests(PostgresContainerFixture fixt
         result.PageSize.ShouldBe(10);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetTopSellingProductsAsync_NullDateRangeOnEmptyDatabase_ReturnsEmptyPaginatedResult()
     {
         var result = await _sut.GetTopSellingProductsAsync(5, fromDate: null, toDate: null, CancellationToken.None);

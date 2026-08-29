@@ -1,12 +1,10 @@
 using Infrastructure.Analytics.QueryServices;
 using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Attributes;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Integration.Analytics;
 
-[Collection(nameof(DatabaseCollection))]
 [Trait("Category", "Integration")]
+[Collection(nameof(DatabaseCollection))]
 public class GetRevenueReportIntegrationTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
     private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private AnalyticsQueryService _sut = null!;
@@ -30,7 +28,7 @@ public class GetRevenueReportIntegrationTests(PostgresContainerFixture fixture) 
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetRevenueReportAsync_EmptyDatabase_ReturnsZeroTotalsAndEmptyByStatus()
     {
         var from = DateTime.UtcNow.AddDays(-30);

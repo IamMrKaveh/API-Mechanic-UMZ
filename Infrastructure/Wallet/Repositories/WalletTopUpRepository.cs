@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
@@ -18,17 +18,16 @@ public sealed class WalletTopUpRepository(DBContext context) : IWalletTopUpRepos
         switch (entry.State)
         {
             case EntityState.Detached:
-                context.Set<WalletTopUp>().Attach(topUp);
-                context.Entry(topUp).State = EntityState.Modified;
+                context.Set<WalletTopUp>().Update(topUp);
+                break;
+
+            case EntityState.Unchanged:
+                entry.State = EntityState.Modified;
                 break;
 
             case EntityState.Added:
             case EntityState.Modified:
             case EntityState.Deleted:
-                break;
-
-            case EntityState.Unchanged:
-                entry.State = EntityState.Modified;
                 break;
         }
     }

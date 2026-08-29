@@ -122,21 +122,26 @@ public sealed class ShippingQueryService(DBContext context) : IShippingQueryServ
     public async Task<IReadOnlyList<AvailableShippingDto>> GetAvailableShippingsForVariantsAsync(
         IEnumerable<Guid> variantIds, CancellationToken ct = default)
     {
-        var variantIdList = variantIds.ToList();
+        var variantIdList = variantIds?.Where(id => id != Guid.Empty).ToList() ?? new List<Guid>();
 
         if (variantIdList.Count == 0)
             return Array.Empty<AvailableShippingDto>();
 
+        var typedVariantIds = variantIdList.Select(VariantId.From).ToList();
+
         var enabledShippingIds = await context.VariantShippings
             .AsNoTracking()
-            .Where(pvs => variantIdList.Contains(pvs.VariantId.Value))
-            .Select(pvs => pvs.ShippingId.Value)
+            .Where(pvs => typedVariantIds.Contains(pvs.VariantId))
+            .Select(pvs => pvs.ShippingId)
             .Distinct()
             .ToListAsync(ct);
 
+        if (enabledShippingIds.Count == 0)
+            return Array.Empty<AvailableShippingDto>();
+
         var shippings = await context.Shippings
             .AsNoTracking()
-            .Where(s => s.IsActive && enabledShippingIds.Contains(s.Id.Value))
+            .Where(s => s.IsActive && enabledShippingIds.Contains(s.Id))
             .OrderBy(s => s.SortOrder)
             .ToListAsync(ct);
 
@@ -157,20 +162,21 @@ public sealed class ShippingQueryService(DBContext context) : IShippingQueryServ
         CancellationToken ct = default)
     {
         var itemList = items?.Where(i => i.Quantity > 0).ToList()
-            ?? [];
+            ?? new List<ShippingQuoteItemDto>();
 
         if (itemList.Count == 0)
             return await GetAvailableShippingsAsync(orderAmount, ct);
 
         var variantIdList = itemList.Select(i => i.VariantId).Distinct().ToList();
+        var typedVariantIds = variantIdList.Select(VariantId.From).ToList();
 
         var variantShippingRows = await context.VariantShippings
             .AsNoTracking()
-            .Where(pvs => variantIdList.Contains(pvs.VariantId))
+            .Where(pvs => typedVariantIds.Contains(pvs.VariantId))
             .Select(pvs => new
             {
-                VariantId = pvs.VariantId.Value,
-                ShippingId = pvs.ShippingId.Value,
+                VariantId = pvs.VariantId,
+                ShippingId = pvs.ShippingId,
                 pvs.ShippingMultiplier
             })
             .ToListAsync(ct);
@@ -181,7 +187,7 @@ public sealed class ShippingQueryService(DBContext context) : IShippingQueryServ
             .ToList();
 
         if (enabledShippingIds.Count == 0)
-            return [];
+            return Array.Empty<AvailableShippingDto>();
 
         var activeShippings = await context.Shippings
             .AsNoTracking()
@@ -193,7 +199,7 @@ public sealed class ShippingQueryService(DBContext context) : IShippingQueryServ
             .GroupBy(r => r.ShippingId)
             .ToDictionary(
                 g => g.Key,
-                g => g.ToDictionary(r => r.VariantId, r => r.ShippingMultiplier));
+                g => g.ToDictionary(r => r.VariantId.Value, r => r.ShippingMultiplier));
 
         var result = new List<AvailableShippingDto>(activeShippings.Count);
 

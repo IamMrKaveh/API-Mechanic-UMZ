@@ -5,6 +5,8 @@ namespace Infrastructure.Analytics.QueryServices;
 
 public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQueryService
 {
+    private const int LowStockDefaultThreshold = 5;
+
     public async Task<DashboardStatisticsDto> GetDashboardStatisticsAsync(
         DateTime? from,
         DateTime? to,
@@ -86,25 +88,31 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
 
     public async Task<InventoryReportDto> GetInventoryReportAsync(CancellationToken ct = default)
     {
-        var stats = await context.Inventories
+        var totalVariants = await context.Inventories.AsNoTracking().CountAsync(ct);
+
+        var inStockVariants = await context.Inventories
             .AsNoTracking()
-            .GroupBy(_ => 1)
-            .Select(g => new
-            {
-                TotalVariants = g.Count(),
-                InStockVariants = g.Count(i => i.AvailableQuantity > 0),
-                OutOfStockVariants = g.Count(i => i.AvailableQuantity <= 0),
-                LowStockVariants = g.Count(i => i.AvailableQuantity > 0 && i.AvailableQuantity <= 5)
-            })
-            .FirstOrDefaultAsync(ct);
+            .CountAsync(i => i.IsUnlimited || (i.StockQuantity.Value - i.ReservedQuantity.Value) > 0, ct);
+
+        var outOfStockVariants = await context.Inventories
+            .AsNoTracking()
+            .CountAsync(i => !i.IsUnlimited && (i.StockQuantity.Value - i.ReservedQuantity.Value) <= 0, ct);
+
+        var lowStockVariants = await context.Inventories
+            .AsNoTracking()
+            .CountAsync(i =>
+                !i.IsUnlimited &&
+                (i.StockQuantity.Value - i.ReservedQuantity.Value) > 0 &&
+                (i.StockQuantity.Value - i.ReservedQuantity.Value) <= LowStockDefaultThreshold,
+                ct);
 
         return new InventoryReportDto
         {
-            TotalVariants = stats?.TotalVariants ?? 0,
-            ActiveVariants = stats?.InStockVariants ?? 0,
-            InStockVariants = stats?.InStockVariants ?? 0,
-            OutOfStockVariants = stats?.OutOfStockVariants ?? 0,
-            LowStockVariants = stats?.LowStockVariants ?? 0
+            TotalVariants = totalVariants,
+            ActiveVariants = inStockVariants,
+            InStockVariants = inStockVariants,
+            OutOfStockVariants = outOfStockVariants,
+            LowStockVariants = lowStockVariants
         };
     }
 

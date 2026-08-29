@@ -2,9 +2,8 @@ using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
 using Infrastructure.Wishlist.Repositories;
-using Tests.TestInfrastructure.Attributes;
+
 using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 using WishlistAggregate = Domain.Wishlist.Aggregates.Wishlist;
 
 namespace Tests.Infrastructure.Wishlist.Repositories;
@@ -99,7 +98,7 @@ public class WishlistRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         return wishlist;
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task AddAsync_WithValidWishlist_PersistsToDatabase()
     {
         var (userId, productId) = await SeedUserAndProductAsync();
@@ -120,7 +119,7 @@ public class WishlistRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         persisted.ProductId.ShouldBe(productId);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByUserAndProductAsync_WhenExists_ReturnsMatchingWishlist()
     {
         var (userId, productId) = await SeedUserAndProductAsync();
@@ -137,7 +136,7 @@ public class WishlistRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ProductId.ShouldBe(productId);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByUserAndProductAsync_WhenDoesNotExist_ReturnsNull()
     {
         var (userId, _) = await SeedUserAndProductAsync();
@@ -147,7 +146,7 @@ public class WishlistRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByUserAndProductAsync_WhenDifferentUser_ReturnsNull()
     {
         var (_, productId) = await SeedUserAndProductAsync();
@@ -158,7 +157,7 @@ public class WishlistRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExistsAsync_WhenExists_ReturnsTrue()
     {
         var (userId, productId) = await SeedUserAndProductAsync();
@@ -172,7 +171,7 @@ public class WishlistRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeTrue();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExistsAsync_WhenDoesNotExist_ReturnsFalse()
     {
         var (userId, _) = await SeedUserAndProductAsync();
@@ -182,7 +181,7 @@ public class WishlistRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeFalse();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task RemoveAsync_WithExistingWishlist_RemovesFromDatabase()
     {
         var (userId, productId) = await SeedUserAndProductAsync();
@@ -198,7 +197,7 @@ public class WishlistRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         persisted.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task RemoveAsync_WhenNotExists_DoesNotThrow()
     {
         var (userId, _) = await SeedUserAndProductAsync();
@@ -210,7 +209,7 @@ public class WishlistRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         });
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ClearAsync_RemovesAllUserWishlistItems()
     {
         var (userId, productId1) = await SeedUserAndProductAsync();
@@ -229,7 +228,7 @@ public class WishlistRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         remaining.ShouldBeEmpty();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ClearAsync_DoesNotRemoveOtherUsersItems()
     {
         var (userId, productId) = await SeedUserAndProductAsync();
@@ -249,7 +248,7 @@ public class WishlistRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         otherRemaining.Count.ShouldBe(1);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Update_WithModifiedWishlist_PersistsChanges()
     {
         var (userId, productId) = await SeedUserAndProductAsync();

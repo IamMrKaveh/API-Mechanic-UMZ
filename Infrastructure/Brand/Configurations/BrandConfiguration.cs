@@ -61,8 +61,16 @@ public sealed class BrandConfiguration : IEntityTypeConfiguration<Domain.Brand.A
 
         builder.Property(e => e.UpdatedAt);
 
+        builder.Property(e => e.IsDeleted)
+            .HasDefaultValue(false)
+            .IsRequired();
+
+        builder.Property(e => e.DeletedAt);
+        builder.Property(e => e.DeletedBy);
+
         builder.HasIndex(e => e.CategoryId);
 
+        builder.Ignore(e => e.Category);
         builder.Ignore(e => e.Products);
     }
 }

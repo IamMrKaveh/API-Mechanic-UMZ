@@ -1,7 +1,6 @@
 using Application.Common.Contracts;
 using Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
-using Npgsql;
 
 namespace Tests.Infrastructure.Persistence;
 
@@ -25,7 +24,7 @@ public class SqlConnectionFactoryTests(PostgresContainerFixture fixture) : IAsyn
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public void Ctor_WithoutDefaultConnectionString_ThrowsInvalidOperationException()
     {
         var configuration = new ConfigurationBuilder()
@@ -35,7 +34,7 @@ public class SqlConnectionFactoryTests(PostgresContainerFixture fixture) : IAsyn
         Should.Throw<InvalidOperationException>(() => new SqlConnectionFactory(configuration));
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public void Ctor_WithEmptyDefaultConnectionString_ThrowsInvalidOperationException()
     {
         var configuration = new ConfigurationBuilder()
@@ -48,7 +47,7 @@ public class SqlConnectionFactoryTests(PostgresContainerFixture fixture) : IAsyn
         Should.Throw<InvalidOperationException>(() => new SqlConnectionFactory(configuration));
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public void ImplementsISqlConnectionFactory()
     {
         var configuration = new ConfigurationBuilder()
@@ -61,7 +60,7 @@ public class SqlConnectionFactoryTests(PostgresContainerFixture fixture) : IAsyn
         new SqlConnectionFactory(configuration).ShouldBeAssignableTo<ISqlConnectionFactory>();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task CreateConnectionAsync_WithValidConnectionString_ReturnsOpenNpgsqlConnection()
     {
         var configuration = new ConfigurationBuilder()

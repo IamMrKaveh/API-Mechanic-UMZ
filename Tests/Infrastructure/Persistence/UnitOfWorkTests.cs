@@ -4,7 +4,6 @@ using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
 using Microsoft.Extensions.Hosting;
 using SharedKernel.Abstractions.Interfaces;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Persistence;
 
@@ -45,7 +44,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
             new DomainEventInterceptor(Substitute.For<IOutboxEventTypeRegistry>()));
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task SaveChangesAsync_WithPendingInsert_PersistsChangesToDatabase()
     {
         var message = OutboxMessage.Create("SampleEvent", "{}", DateTime.UtcNow);
@@ -61,7 +60,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
         persisted.Type.ShouldBe("SampleEvent");
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExecuteStrategyAsync_WhenOperationSucceeds_CommitsChanges()
     {
         var sut = new UnitOfWork(_context, _logger, _environment);
@@ -81,7 +80,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
         persisted.ShouldNotBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExecuteStrategyAsync_WhenOperationThrows_RollsBackChangesAndRethrows()
     {
         var sut = new UnitOfWork(_context, _logger, _environment);
@@ -100,7 +99,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
         persisted.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExecuteStrategyAsync_WithActiveTransactionInDevelopment_ThrowsInvalidOperationException()
     {
         _environment.EnvironmentName = Environments.Development;
@@ -114,7 +113,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
         await outer.RollbackAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExecuteStrategyAsync_WithActiveTransactionInProduction_ExecutesOperationWithoutRetryWrapper()
     {
         _environment.EnvironmentName = Environments.Production;
@@ -136,7 +135,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
         await outer.RollbackAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task SaveChangesAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         var sut = new UnitOfWork(_context, _logger, _environment);
@@ -145,7 +144,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
         await Should.ThrowAsync<ObjectDisposedException>(async () => await sut.SaveChangesAsync());
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExecuteStrategyAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         var sut = new UnitOfWork(_context, _logger, _environment);
@@ -155,7 +154,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
             await sut.ExecuteStrategyAsync(_ => Task.FromResult(0)));
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task DisposeAsync_IsIdempotent()
     {
         var sut = new UnitOfWork(_context, _logger, _environment);

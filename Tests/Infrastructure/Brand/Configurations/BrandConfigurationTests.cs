@@ -1,8 +1,6 @@
 using Infrastructure.Brand.Repositories;
 using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Brand.Configurations;
 
@@ -28,7 +26,7 @@ public class BrandConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Persist_DuplicateSlug_ThrowsDbUpdateException()
     {
         var sharedSlug = "shared-brand-slug";
@@ -54,7 +52,7 @@ public class BrandConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
             await _context.SaveChangesAsync());
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Persist_Brand_StoresOwnedNameAndSlugAsColumnsAndCanBeQueriedByThem()
     {
         var brand = await new BrandBuilder()
@@ -81,7 +79,7 @@ public class BrandConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         bySlug!.Id.ShouldBe(brand.Id);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Persist_Brand_XminConcurrencyTokenIsRefreshedOnInsertAndUpdate()
     {
         var brand = await new BrandBuilder().BuildAsync();
