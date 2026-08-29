@@ -15,7 +15,10 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Domain.Cate
             .ValueGeneratedNever();
 
         builder.Property<byte[]>("RowVersion")
-            .IsRowVersion();
+            .HasColumnName("RowVersion")
+            .HasColumnType("bytea")
+            .IsRequired()
+            .IsConcurrencyToken();
 
         builder.OwnsOne(e => e.Name, nb =>
         {

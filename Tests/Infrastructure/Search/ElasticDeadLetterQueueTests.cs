@@ -28,7 +28,7 @@ public class ElasticDeadLetterQueueTests(PostgresContainerFixture fixture) : IAs
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task DequeueAsync_WhenNoRowsExist_ReturnsEmpty()
     {
         var result = (await _sut.DequeueAsync(10, CancellationToken.None)).ToList();
@@ -36,7 +36,7 @@ public class ElasticDeadLetterQueueTests(PostgresContainerFixture fixture) : IAs
         result.ShouldBeEmpty();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task DequeueAsync_WhenNoPendingRowsExist_ReturnsEmpty()
     {
         var now = DateTime.UtcNow;
@@ -49,7 +49,7 @@ public class ElasticDeadLetterQueueTests(PostgresContainerFixture fixture) : IAs
         result.ShouldBeEmpty();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task DequeueAsync_WithMixedStatuses_ReturnsOnlyPendingRows()
     {
         var now = DateTime.UtcNow;
@@ -66,7 +66,7 @@ public class ElasticDeadLetterQueueTests(PostgresContainerFixture fixture) : IAs
         result[0].Status.ShouldBe("Pending");
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task DequeueAsync_WithMultiplePendingRows_ReturnsUpToCountOrderedByCreatedAtAscending()
     {
         var now = DateTime.UtcNow;
@@ -85,7 +85,7 @@ public class ElasticDeadLetterQueueTests(PostgresContainerFixture fixture) : IAs
         result[2].EntityId.ShouldBe("middle");
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task DequeueAsync_WhenPendingCountLessThanRequested_ReturnsAllPending()
     {
         var now = DateTime.UtcNow;
@@ -101,7 +101,7 @@ public class ElasticDeadLetterQueueTests(PostgresContainerFixture fixture) : IAs
         result[1].EntityId.ShouldBe("b");
     }
 
-    [RequiresDockerTheory]
+    [Theory]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(5)]

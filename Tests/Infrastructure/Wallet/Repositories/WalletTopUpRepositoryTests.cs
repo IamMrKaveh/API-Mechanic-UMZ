@@ -31,7 +31,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task AddAsync_ThenGetByIdAsync_RoundTripsAggregateFromDatabase()
     {
         var userId = UserId.NewId();
@@ -57,7 +57,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         loaded.Status.ShouldBe(WalletTopUpStatus.Pending);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByIdAsync_WhenTopUpDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(WalletTopUpId.NewId());
@@ -65,7 +65,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         loaded.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByAuthorityAsync_WhenAuthorityIsSet_ReturnsMatchingTopUp()
     {
         var topUp = new WalletTopUpBuilder().Build();
@@ -83,7 +83,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         loaded.GatewayAuthority.ShouldBe("AUTH-XYZ-1");
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByAuthorityAsync_WhenAuthorityDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByAuthorityAsync("MISSING-AUTH");
@@ -91,7 +91,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         loaded.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task AddAsync_TwoTopUpsWithSameAuthority_ViolatesUniqueFilteredIndex()
     {
         const string authority = "AUTH-DUP-1";
@@ -110,7 +110,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetPendingOlderThanAsync_ReturnsOnlyPendingEntriesCreatedBeforeCutoff()
     {
         var older = new WalletTopUpBuilder().Build();
@@ -137,7 +137,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         results[0].Id.ShouldBe(older.Id);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetPendingOlderThanAsync_ExcludesNonPendingStates()
     {
         var pending = new WalletTopUpBuilder().Build();
@@ -169,7 +169,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         results[0].Id.ShouldBe(pending.Id);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetPendingOlderThanAsync_RespectsBatchSize()
     {
         for (var i = 0; i < 5; i++)
@@ -192,7 +192,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         results.Count.ShouldBe(2);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByUserIdAsync_ReturnsOnlyEntriesForThatUserOrderedByCreatedAtDescending()
     {
         var target = UserId.NewId();
@@ -226,7 +226,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         results[1].Id.ShouldBe(t1.Id);
     }
 
-    [RequiresDockerTheory]
+    [Theory]
     [InlineData(0, 5, 5)]
     [InlineData(-1, 5, 5)]
     [InlineData(1, 0, 20)]
@@ -249,7 +249,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         results.Count.ShouldBeLessThanOrEqualTo(expectedMaxItems);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Update_AfterMarkingSucceeded_PersistsStatusAndGatewayRefId()
     {
         var topUp = new WalletTopUpBuilder().Build();
@@ -273,7 +273,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         reloaded.CompletedAt.ShouldNotBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Update_ForDetachedTopUp_AttachesAndPersistsChanges()
     {
         var topUp = new WalletTopUpBuilder().Build();

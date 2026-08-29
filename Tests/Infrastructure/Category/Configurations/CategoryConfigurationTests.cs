@@ -1,7 +1,5 @@
 using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Category.Configurations;
 
@@ -28,7 +26,7 @@ public class CategoryConfigurationTests(PostgresContainerFixture fixture) : IAsy
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task SaveChanges_DuplicateCategoryName_ThrowsDbUpdateException()
     {
         var first = await new CategoryBuilder()
@@ -49,7 +47,7 @@ public class CategoryConfigurationTests(PostgresContainerFixture fixture) : IAsy
         await Should.ThrowAsync<DbUpdateException>(() => _context.SaveChangesAsync());
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task SaveChanges_DuplicateCategorySlug_ThrowsDbUpdateException()
     {
         var first = await new CategoryBuilder()
@@ -70,7 +68,7 @@ public class CategoryConfigurationTests(PostgresContainerFixture fixture) : IAsy
         await Should.ThrowAsync<DbUpdateException>(() => _context.SaveChangesAsync());
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task SaveChanges_PersistsAllScalarPropertiesAndRoundTripsCategoryId()
     {
         var category = await new CategoryBuilder()
@@ -101,7 +99,7 @@ public class CategoryConfigurationTests(PostgresContainerFixture fixture) : IAsy
         rowVersion.Length.ShouldBeGreaterThan(0);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task SaveChanges_UpdatingCategory_ChangesRowVersion()
     {
         var category = await new CategoryBuilder()

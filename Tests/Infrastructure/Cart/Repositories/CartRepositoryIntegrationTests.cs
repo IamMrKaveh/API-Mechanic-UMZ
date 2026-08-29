@@ -3,9 +3,7 @@ using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 using Infrastructure.Cart.Repositories;
 using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Cart.Repositories;
 
@@ -33,7 +31,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Add_AndFindByIdAsync_PersistsCartAndReturnsItWithCartItems()
     {
         var userId = UserId.NewId();
@@ -74,7 +72,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         reloadedItem.OriginalPrice.Currency.ShouldBe("IRT");
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task FindByIdAsync_WhenCartDoesNotExist_ReturnsNull()
     {
         var result = await _sut.FindByIdAsync(CartId.NewId());
@@ -82,7 +80,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         result.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task FindByUserIdAsync_WhenActiveUserCartExists_ReturnsCartWithItems()
     {
         var userId = UserId.NewId();
@@ -103,7 +101,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         reloaded.CartItems.Single().Quantity.ShouldBe(3);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task FindByUserIdAsync_WhenCartIsCheckedOut_ReturnsNull()
     {
         var userId = UserId.NewId();
@@ -122,7 +120,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         reloaded.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task FindByUserIdAsync_WhenNoCartForUser_ReturnsNull()
     {
         var result = await _sut.FindByUserIdAsync(UserId.NewId());
@@ -130,7 +128,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         result.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task FindByGuestTokenAsync_WhenActiveGuestCartExists_ReturnsCartWithItems()
     {
         var guestToken = GuestToken.Generate();
@@ -153,7 +151,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         reloaded.CartItems.Single().Quantity.ShouldBe(4);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task FindByGuestTokenAsync_WhenGuestCartIsCheckedOut_ReturnsNull()
     {
         var guestToken = GuestToken.Generate();
@@ -172,7 +170,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         reloaded.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task FindByGuestTokenAsync_WhenNoCartForToken_ReturnsNull()
     {
         var result = await _sut.FindByGuestTokenAsync(GuestToken.Generate());
@@ -180,7 +178,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         result.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Update_AfterAddingAnotherItem_PersistsAdditionalCartItem()
     {
         var userId = UserId.NewId();
@@ -211,7 +209,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         reloaded.CartItems.Select(i => i.Sku.Value).ShouldContain("SKU-2");
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Remove_DeletesCartAndCascadesToCartItems()
     {
         var userId = UserId.NewId();

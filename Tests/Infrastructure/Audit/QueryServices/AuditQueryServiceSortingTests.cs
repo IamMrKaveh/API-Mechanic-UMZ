@@ -1,9 +1,7 @@
 using Application.Audit.Features.Shared;
 using Infrastructure.Audit.QueryServices;
 using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Attributes;
 using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Audit.QueryServices;
 
@@ -34,7 +32,7 @@ public class AuditQueryServiceSortingTests(PostgresContainerFixture fixture) : I
         await _fixture.ResetAsync();
     }
 
-    [RequiresDockerTheory]
+    [Theory]
     [InlineData("CreatedAt", true)]
     [InlineData("CreatedAt", false)]
     [InlineData("EventType", true)]
@@ -74,7 +72,7 @@ public class AuditQueryServiceSortingTests(PostgresContainerFixture fixture) : I
         }
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task SearchAsync_WithEntityTypeFilter_ReturnsOnlyMatchingRows()
     {
         var request = new AuditSearchRequest

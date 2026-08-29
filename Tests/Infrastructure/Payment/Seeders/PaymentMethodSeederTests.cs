@@ -41,7 +41,7 @@ public class PaymentMethodSeederTests(PostgresContainerFixture fixture) : IAsync
         return (new PaymentMethodSeeder(scopeFactory, logger), logger);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task StartAsync_EmptyDatabase_SeedsAllFourDefaultPaymentMethods()
     {
         var (seeder, _) = BuildSeeder();
@@ -61,7 +61,7 @@ public class PaymentMethodSeederTests(PostgresContainerFixture fixture) : IAsync
         codes.ShouldContain(PaymentMethodCode.Wallet);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task StartAsync_CalledTwice_DoesNotCreateDuplicateMethods()
     {
         var (seederFirst, _) = BuildSeeder();
@@ -82,7 +82,7 @@ public class PaymentMethodSeederTests(PostgresContainerFixture fixture) : IAsync
         count.ShouldBe(4);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task StopAsync_CompletesWithoutError()
     {
         var (seeder, _) = BuildSeeder();

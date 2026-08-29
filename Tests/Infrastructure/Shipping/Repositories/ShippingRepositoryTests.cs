@@ -3,7 +3,6 @@ using Domain.User.ValueObjects;
 using Infrastructure.Persistence.Context;
 using Infrastructure.Shipping.Repositories;
 using SharedKernel.ValueObjects;
-using Tests.TestInfrastructure.Database;
 using Shippings = Domain.Shipping.Aggregates.Shipping;
 
 namespace Tests.Infrastructure.Shipping.Repositories;
@@ -50,7 +49,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
             maxDays);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task AddAsync_ThenGetByIdAsync_RoundTripsAggregateFromDatabase()
     {
         var shipping = CreateShipping();
@@ -81,7 +80,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.IsDeleted.ShouldBeFalse();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByIdAsync_WhenNotExists_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(ShippingId.NewId());
@@ -89,7 +88,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetAllAsync_WhenIncludeInactiveFalse_ReturnsOnlyActive()
     {
         var active = CreateShipping("Active Method", 500m);
@@ -108,7 +107,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldNotContain(s => s.Id == inactive.Id);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetAllAsync_WhenIncludeInactiveTrue_ReturnsAllShippings()
     {
         var active = CreateShipping("Active Method", 500m);
@@ -127,7 +126,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldContain(s => s.Id == inactive.Id);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByIdsAsync_ReturnsOnlyRequestedShippings()
     {
         var first = CreateShipping("First Method", 400m);
@@ -148,7 +147,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldNotContain(s => s.Id == second.Id);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetByIdsAsync_WhenNoMatch_ReturnsEmptyCollection()
     {
         var seeded = CreateShipping("Seeded Method", 500m);
@@ -161,7 +160,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeEmpty();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetDefaultAsync_WhenActiveDefaultExists_ReturnsIt()
     {
         var defaultShipping = CreateShipping("Default Method", 900m);
@@ -182,7 +181,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.IsActive.ShouldBeTrue();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task GetDefaultAsync_WhenNoDefaultExists_ReturnsNull()
     {
         var shipping = CreateShipping("Non Default Method", 500m);
@@ -195,7 +194,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExistsByNameAsync_WhenNameExists_ReturnsTrue()
     {
         var name = ShippingName.Create("Unique Shipping Name");
@@ -212,7 +211,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeTrue();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExistsByNameAsync_WhenNameDoesNotExist_ReturnsFalse()
     {
         var seeded = CreateShipping("Seeded Method", 500m);
@@ -225,7 +224,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeFalse();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task ExistsByNameAsync_WithExcludeId_ExcludesThatShipping()
     {
         var name = ShippingName.Create("Reusable Shipping Name");
@@ -242,7 +241,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         existsWithoutExclusion.ShouldBeTrue();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Update_AfterMutatingAggregate_PersistsChangesToDatabase()
     {
         var shipping = CreateShipping("Original Name", 500m, "Original description", "Original ETA", 2, 4);
@@ -277,7 +276,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         reloaded.UpdatedAt.ShouldNotBeNull();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task Update_AfterSetAsDefault_PersistsIsDefaultFlag()
     {
         var shipping = CreateShipping("Default Candidate", 500m);
@@ -299,7 +298,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         reloaded!.IsDefault.ShouldBeTrue();
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task AddAsync_WhenNameIsDuplicate_ThrowsDbUpdateExceptionDueToUniqueIndex()
     {
         var firstName = ShippingName.Create("Duplicated Name");
@@ -316,7 +315,7 @@ public class ShippingRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [RequiresDockerFact]
+    [Fact]
     public async Task RequestDeletion_ThenPersist_MarksAggregateInactive()
     {
         var shipping = CreateShipping("To Be Deactivated", 500m);
