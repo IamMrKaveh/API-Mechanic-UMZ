@@ -2,8 +2,6 @@ using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
-using Tests.TestInfrastructure.Assertions;
-using Tests.TestInfrastructure.Builders;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Queries.GetWalletBalance;
@@ -29,7 +27,7 @@ public class GetWalletBalanceHandlerTests
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(currentUserId)).Build();
 
         _walletRepository
-            .GetByUserIdAsync(Arg.Is<UserId>(x => x.Value == currentUserId), Arg.Any<CancellationToken>())
+            .GetByUserIdAsync(Arg.Is<UserId>(x => x!.Value == currentUserId), Arg.Any<CancellationToken>())
             .Returns(wallet);
 
         var result = await _sut.Handle(new GetWalletBalanceQuery(), CancellationToken.None);
@@ -55,7 +53,7 @@ public class GetWalletBalanceHandlerTests
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(requestedUserId)).Build();
 
         _walletRepository
-            .GetByUserIdAsync(Arg.Is<UserId>(x => x.Value == requestedUserId), Arg.Any<CancellationToken>())
+            .GetByUserIdAsync(Arg.Is<UserId>(x => x!.Value == requestedUserId), Arg.Any<CancellationToken>())
             .Returns(wallet);
 
         var result = await _sut.Handle(new GetWalletBalanceQuery(requestedUserId), CancellationToken.None);
@@ -64,9 +62,9 @@ public class GetWalletBalanceHandlerTests
         result.Value.UserId.ShouldBe(requestedUserId);
 
         await _walletRepository.Received(1)
-            .GetByUserIdAsync(Arg.Is<UserId>(x => x.Value == requestedUserId), Arg.Any<CancellationToken>());
+            .GetByUserIdAsync(Arg.Is<UserId>(x => x!.Value == requestedUserId), Arg.Any<CancellationToken>());
         await _walletRepository.DidNotReceive()
-            .GetByUserIdAsync(Arg.Is<UserId>(x => x.Value == currentUserId), Arg.Any<CancellationToken>());
+            .GetByUserIdAsync(Arg.Is<UserId>(x => x!.Value == currentUserId), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -110,7 +108,7 @@ public class GetWalletBalanceHandlerTests
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(currentUserId)).Build();
 
         _walletRepository
-            .GetByUserIdAsync(Arg.Is<UserId>(x => x.Value == currentUserId), Arg.Any<CancellationToken>())
+            .GetByUserIdAsync(Arg.Is<UserId>(x => x!.Value == currentUserId), Arg.Any<CancellationToken>())
             .Returns(wallet);
 
         var query = new GetWalletBalanceQuery(userId: null);

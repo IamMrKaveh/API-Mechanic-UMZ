@@ -233,12 +233,12 @@ public class PreviewWalletTransferHandlerTests
 
         _walletRepository
             .GetByUserIdAsync(
-                Arg.Is<UserId>(x => x.Value == senderId),
+                Arg.Is<UserId>(x => x!.Value == senderId),
                 Arg.Any<CancellationToken>())
             .Returns(senderWallet);
         _walletRepository
             .GetByUserIdAsync(
-                Arg.Is<UserId>(x => x.Value == recipient.Id.Value),
+                Arg.Is<UserId>(x => x == recipient.Id),
                 Arg.Any<CancellationToken>())
             .Returns((Wallets?)null);
 

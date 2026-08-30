@@ -114,7 +114,7 @@ public class UserCreatedEventHandlerTests
 
         await _auditService.Received(1).LogSystemEventAsync(
             exception.Message,
-            Arg.Is<string>(s => s.Contains(userId.Value.ToString())),
+            Arg.Is<string>(s => s!.Contains(userId.Value.ToString())),
             Arg.Any<CancellationToken>());
     }
 

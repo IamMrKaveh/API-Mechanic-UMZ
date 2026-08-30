@@ -2,7 +2,6 @@ using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Entities;
 using Domain.Wallet.ValueObjects;
-using SharedKernel.ValueObjects;
 
 namespace Tests.TestInfrastructure.Builders;
 
@@ -14,7 +13,7 @@ public sealed class WalletDebitRequestBuilder
     private decimal _initialBalance = 500_000m;
     private decimal _amount = 100_000m;
     private string _reason = Faker.Lorem.Sentence(3);
-    private string? _description;
+    private readonly string? _description;
     private UserId _requestedBy = UserId.NewId();
     private TimeSpan _expiry = TimeSpan.FromHours(72);
     private WalletDebitRequestId _requestId = WalletDebitRequestId.NewId();
@@ -70,4 +69,3 @@ public sealed class WalletDebitRequestBuilder
         return (wallet, request);
     }
 }
-
