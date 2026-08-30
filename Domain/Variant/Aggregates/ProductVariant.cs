@@ -6,7 +6,6 @@ using Domain.Variant.Entities;
 using Domain.Variant.Events;
 using Domain.Variant.Exceptions;
 using Domain.Variant.ValueObjects;
-using System.Linq;
 
 namespace Domain.Variant.Aggregates;
 
@@ -208,6 +207,18 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
 
         UpdatedAt = DateTime.UtcNow;
         RaiseDomainEvent(new VariantShippingSetEvent(Id, ProductId));
+    }
+
+    public void Deactivate()
+    {
+        IsActive = false;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Activate()
+    {
+        IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Remove(Guid? deletedBy = null)

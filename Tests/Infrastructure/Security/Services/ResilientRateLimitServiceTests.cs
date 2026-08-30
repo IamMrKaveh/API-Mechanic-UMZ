@@ -16,7 +16,7 @@ public class ResilientRateLimitServiceTests : IDisposable
 
         _meterFactory
             .Create(Arg.Any<MeterOptions>())
-            .Returns(ci => new Meter(ci.Arg<MeterOptions>()));
+            .Returns(ci => new Meter(ci.Arg<MeterOptions>()!));
 
         _metrics = new BusinessMetrics(_meterFactory);
         _primary = new RateLimitService(_redis);

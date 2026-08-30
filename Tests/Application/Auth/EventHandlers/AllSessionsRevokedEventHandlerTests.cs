@@ -52,7 +52,7 @@ public class AllSessionsRevokedEventHandlerTests
 
         await _auditService.Received(1).LogSystemEventAsync(
             Arg.Any<string>(),
-            Arg.Is<string>(s => s.Contains(reason.ToString()) && s.Contains(count.ToString())),
+            Arg.Is<string>(s => s!.Contains(reason.ToString()) && s.Contains(count.ToString())),
             Arg.Any<CancellationToken>());
     }
 

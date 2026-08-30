@@ -1,7 +1,6 @@
 using Domain.Order.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Variant.ValueObjects;
-using SharedKernel.ValueObjects;
 
 namespace Tests.TestInfrastructure.Builders;
 

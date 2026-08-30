@@ -1,14 +1,9 @@
-using Application.Common.Interfaces;
 using Application.Wallet.Contracts;
 using Application.Wallet.Features.Queries.GetMyWithdrawals;
 using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
-using NSubstitute;
-using Shouldly;
 using SharedKernel.Exceptions;
 using SharedKernel.Models;
-using Tests.TestInfrastructure.Assertions;
-using Xunit;
 
 namespace Tests.Application.Wallet.Features.Queries.GetMyWithdrawals;
 
@@ -74,7 +69,7 @@ public sealed class GetMyWithdrawalsHandlerTests
 
         result.ShouldBeSuccess();
         await _queryService.Received(1).GetByUserAsync(
-            Arg.Is<UserId>(u => u.Value == userId.Value),
+            Arg.Is<UserId>(u => u == userId),
             1,
             10,
             Arg.Any<CancellationToken>());

@@ -56,7 +56,7 @@ public class ElasticsearchCircuitBreakerTests
         sut.RecordFailure();
 
         auditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("Circuit breaker opened for Elasticsearch")),
+            Arg.Is<string>(s => s!.Contains("Circuit breaker opened for Elasticsearch")),
             Arg.Any<CancellationToken>());
     }
 
@@ -72,7 +72,7 @@ public class ElasticsearchCircuitBreakerTests
 
         allowed.ShouldBeFalse();
         auditService.DidNotReceive().LogWarningAsync(
-            Arg.Is<string>(s => s.Contains("half-open")),
+            Arg.Is<string>(s => s!.Contains("half-open")),
             Arg.Any<CancellationToken>());
     }
 
@@ -88,7 +88,7 @@ public class ElasticsearchCircuitBreakerTests
 
         allowed.ShouldBeTrue();
         auditService.Received(1).LogWarningAsync(
-            Arg.Is<string>(s => s.Contains("Circuit breaker half-open for Elasticsearch")),
+            Arg.Is<string>(s => s!.Contains("Circuit breaker half-open for Elasticsearch")),
             Arg.Any<CancellationToken>());
     }
 
@@ -105,7 +105,7 @@ public class ElasticsearchCircuitBreakerTests
 
         sut.IsAllowed().ShouldBeTrue();
         auditService.DidNotReceive().LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("Circuit breaker opened for Elasticsearch")),
+            Arg.Is<string>(s => s!.Contains("Circuit breaker opened for Elasticsearch")),
             Arg.Any<CancellationToken>());
     }
 
