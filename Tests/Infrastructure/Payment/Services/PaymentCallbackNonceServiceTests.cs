@@ -1,7 +1,4 @@
-using Application.Audit.Contracts;
-using Application.Cache.Contracts;
 using Infrastructure.Payment.Services;
-using SharedKernel.ValueObjects;
 
 namespace Tests.Infrastructure.Payment.Services;
 
@@ -37,7 +34,7 @@ public class PaymentCallbackNonceServiceTests
 
         nonce.ShouldNotBeNullOrWhiteSpace();
         await ctx.CacheService.Received(1).SetAsync<string>(
-            Arg.Is<string>(k => k.Contains(transactionId.ToString("N"))),
+            Arg.Is<string>(k => k!.Contains(transactionId.ToString("N"))),
             nonce,
             TimeSpan.FromMinutes(5),
             Arg.Any<CancellationToken>());
@@ -131,7 +128,7 @@ public class PaymentCallbackNonceServiceTests
 
         result.ShouldBeTrue();
         await ctx.CacheService.Received(1).RemoveAsync(
-            Arg.Is<string>(k => k.Contains(transactionId.ToString("N"))),
+            Arg.Is<string>(k => k!.Contains(transactionId.ToString("N"))),
             Arg.Any<CancellationToken>());
         await ctx.AuditService.DidNotReceiveWithAnyArgs().LogSecurityEventAsync(
             default!, default!, default!, default, default);

@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.ValueObjects;
 
@@ -27,15 +27,9 @@ public sealed class WalletTopUpConfiguration : IEntityTypeConfiguration<WalletTo
             m.Property(x => x.Currency).HasColumnName("AmountCurrency").HasMaxLength(10).IsRequired();
         });
 
-        builder.Property(e => e.Gateway)
-            .HasMaxLength(64)
-            .IsRequired();
-
-        builder.Property(e => e.GatewayAuthority)
-            .HasMaxLength(200);
-
-        builder.Property(e => e.GatewayRefId)
-            .HasMaxLength(200);
+        builder.Property(e => e.Gateway).HasMaxLength(64).IsRequired();
+        builder.Property(e => e.GatewayAuthority).HasMaxLength(200);
+        builder.Property(e => e.GatewayRefId).HasMaxLength(200);
 
         builder.Property(e => e.Status)
             .HasConversion<string>()
@@ -46,7 +40,10 @@ public sealed class WalletTopUpConfiguration : IEntityTypeConfiguration<WalletTo
         builder.Property(e => e.CompletedAt);
         builder.Property(e => e.FailureReason).HasMaxLength(500);
 
-        builder.Property(e => e.Version)
+        builder.Property<uint>("xmin")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
             .IsConcurrencyToken();
 
         builder.HasIndex(e => e.GatewayAuthority)

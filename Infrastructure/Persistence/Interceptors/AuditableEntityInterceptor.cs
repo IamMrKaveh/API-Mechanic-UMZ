@@ -31,13 +31,19 @@ public sealed class AuditableEntityInterceptor(IDateTimeProvider dateTimeProvide
         {
             if (entry.State == EntityState.Added)
             {
-                var current = (DateTime?)entry.Property(nameof(IAuditable.CreatedAt)).CurrentValue;
-                if (!current.HasValue || current.Value == default)
-                    entry.Property(nameof(IAuditable.CreatedAt)).CurrentValue = now;
+                entry.Property(nameof(IAuditable.CreatedAt)).CurrentValue = now;
+                entry.Property(nameof(IAuditable.UpdatedAt)).CurrentValue = now;
+                continue;
             }
 
-            if (entry.State is EntityState.Added or EntityState.Modified)
+            if (entry.State == EntityState.Modified)
+            {
+                var createdAtProperty = entry.Property(nameof(IAuditable.CreatedAt));
+                createdAtProperty.IsModified = false;
+                createdAtProperty.CurrentValue = createdAtProperty.OriginalValue;
+
                 entry.Property(nameof(IAuditable.UpdatedAt)).CurrentValue = now;
+            }
         }
 
         foreach (var entry in context.ChangeTracker.Entries())

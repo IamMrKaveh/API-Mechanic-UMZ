@@ -1,6 +1,4 @@
-using Application.Audit.Contracts;
 using Infrastructure.Search;
-using Microsoft.Extensions.Configuration;
 
 namespace Tests.Infrastructure.Search;
 
@@ -42,7 +40,7 @@ public class ElasticsearchCircuitBreakerTests
 
         sut.IsAllowed().ShouldBeFalse();
         auditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("Circuit breaker opened for Elasticsearch")),
+            Arg.Is<string>(s => s!.Contains("Circuit breaker opened for Elasticsearch")),
             Arg.Any<CancellationToken>());
     }
 
