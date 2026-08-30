@@ -1,4 +1,6 @@
+using System.Reflection;
 using Domain.User.ValueObjects;
+using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 using Infrastructure.Persistence.Context;
@@ -11,7 +13,9 @@ namespace Tests.Infrastructure.Wallet.Repositories;
 [Collection(nameof(DatabaseCollection))]
 public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private WalletTransferRepository _sut = null!;
+    private readonly PostgresContainerFixture _fixture = fixture;
+    private DBContext _context = null!;
+    private WalletTransferRepository _sut = null!;
 
     public Task InitializeAsync()
     {
@@ -128,10 +132,14 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
 
         var second = new WalletTransferBuilder().Build();
         second.ClearDomainEvents();
+
+        var correlationIdProperty = typeof(WalletTransfer).GetProperty(
+            nameof(WalletTransfer.CorrelationId),
+            BindingFlags.Instance | BindingFlags.Public);
+        correlationIdProperty.ShouldNotBeNull();
+        correlationIdProperty!.SetValue(second, first.CorrelationId);
+
         await _sut.AddAsync(second);
-        await _context.Database.ExecuteSqlRawAsync(
-            "UPDATE \"WalletTransfers\" SET \"CorrelationId\" = {0} WHERE \"Id\" = {1}",
-            first.CorrelationId, second.Id.Value);
 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }

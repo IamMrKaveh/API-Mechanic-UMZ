@@ -15,28 +15,31 @@ public sealed class WalletTopUpRepository(DBContext context) : IWalletTopUpRepos
     {
         var entry = context.Entry(topUp);
 
-        switch (entry.State)
+        if (entry.State == EntityState.Detached)
         {
-            case EntityState.Detached:
-                context.Set<WalletTopUp>().Update(topUp);
-                break;
+            var local = context.Set<WalletTopUp>().Local.FirstOrDefault(e => e.Id == topUp.Id);
+            if (local is not null && !ReferenceEquals(local, topUp))
+            {
+                context.Entry(local).CurrentValues.SetValues(topUp);
+                context.Entry(local).State = EntityState.Modified;
+                return;
+            }
 
-            case EntityState.Unchanged:
-                entry.State = EntityState.Modified;
-                break;
-
-            case EntityState.Added:
-            case EntityState.Modified:
-            case EntityState.Deleted:
-                break;
+            context.Set<WalletTopUp>().Attach(topUp);
+            entry.State = EntityState.Modified;
+            return;
         }
+
+        if (entry.State == EntityState.Unchanged)
+            entry.State = EntityState.Modified;
     }
 
     public async Task<WalletTopUp?> GetByIdAsync(WalletTopUpId id, CancellationToken ct = default)
         => await context.Set<WalletTopUp>().FirstOrDefaultAsync(x => x.Id == id, ct);
 
     public async Task<WalletTopUp?> GetByAuthorityAsync(string authority, CancellationToken ct = default)
-        => await context.Set<WalletTopUp>().FirstOrDefaultAsync(x => x.GatewayAuthority == authority, ct);
+        => await context.Set<WalletTopUp>()
+            .FirstOrDefaultAsync(x => x.GatewayAuthority == authority, ct);
 
     public async Task<IReadOnlyList<WalletTopUp>> GetPendingOlderThanAsync(
         DateTime cutoffUtc,
@@ -54,11 +57,10 @@ public sealed class WalletTopUpRepository(DBContext context) : IWalletTopUpRepos
         int pageSize,
         CancellationToken ct = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
         return await context.Set<WalletTopUp>()
-            .AsNoTracking()
             .Where(x => x.UserId == userId)
             .OrderByDescending(x => x.CreatedAt)
             .Skip((page - 1) * pageSize)

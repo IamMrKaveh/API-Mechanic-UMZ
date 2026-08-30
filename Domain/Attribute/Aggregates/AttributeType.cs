@@ -138,6 +138,5 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         IsActive = false;
         DeletedAt = DateTime.UtcNow;
         DeletedBy = deletedBy;
-        UpdatedAt = DateTime.UtcNow;
     }
 }

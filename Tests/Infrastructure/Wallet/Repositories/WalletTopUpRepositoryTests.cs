@@ -1,4 +1,6 @@
+using System.Reflection;
 using Domain.User.ValueObjects;
+using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 using Infrastructure.Persistence.Context;
@@ -11,7 +13,9 @@ namespace Tests.Infrastructure.Wallet.Repositories;
 [Collection(nameof(DatabaseCollection))]
 public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private WalletTopUpRepository _sut = null!;
+    private readonly PostgresContainerFixture _fixture = fixture;
+    private DBContext _context = null!;
+    private WalletTopUpRepository _sut = null!;
 
     public Task InitializeAsync()
     {
@@ -99,12 +103,13 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         var first = new WalletTopUpBuilder().Build();
         first.MarkAuthorityIssued(authority);
         first.ClearDomainEvents();
+        await _sut.AddAsync(first);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
 
         var second = new WalletTopUpBuilder().Build();
         second.MarkAuthorityIssued(authority);
         second.ClearDomainEvents();
-
-        await _sut.AddAsync(first);
         await _sut.AddAsync(second);
 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
@@ -122,15 +127,18 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         await _sut.AddAsync(newer);
         await _context.SaveChangesAsync();
 
-        var olderCreatedAt = older.CreatedAt;
-        var cutoff = olderCreatedAt.AddMilliseconds(1);
+        var referenceTime = DateTime.UtcNow;
 
         await _context.Database.ExecuteSqlRawAsync(
             "UPDATE \"WalletTopUps\" SET \"CreatedAt\" = {0} WHERE \"Id\" = {1}",
-            olderCreatedAt.AddHours(-2), older.Id.Value);
+            referenceTime.AddHours(-2), older.Id.Value);
+        await _context.Database.ExecuteSqlRawAsync(
+            "UPDATE \"WalletTopUps\" SET \"CreatedAt\" = {0} WHERE \"Id\" = {1}",
+            referenceTime.AddMinutes(-1), newer.Id.Value);
 
         _context.ChangeTracker.Clear();
 
+        var cutoff = referenceTime.AddHours(-1);
         var results = await _sut.GetPendingOlderThanAsync(cutoff, batchSize: 50);
 
         results.Count.ShouldBe(1);
