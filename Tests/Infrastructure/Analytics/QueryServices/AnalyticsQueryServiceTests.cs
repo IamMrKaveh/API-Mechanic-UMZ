@@ -1,5 +1,4 @@
 using Application.Analytics.Contracts;
-using Domain.Variant.ValueObjects;
 using Infrastructure.Analytics.QueryServices;
 using Tests.TestInfrastructure.Base;
 using Inventories = Domain.Inventory.Aggregates.Inventory;
@@ -69,10 +68,26 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
     [Fact]
     public async Task GetInventoryReportAsync_MixedInventories_CountsEachStateCorrectly()
     {
-        var inStock = Inventories.Create(VariantId.NewId(), initialStock: 50);
-        var outOfStock = Inventories.Create(VariantId.NewId(), initialStock: 0);
-        var lowStock = Inventories.Create(VariantId.NewId(), initialStock: 3);
-        var unlimited = Inventories.Create(VariantId.NewId(), initialStock: 0, isUnlimited: true);
+        var (brand, category) = await SeedBrandWithCategoryAsync();
+
+        var product = new ProductBuilder()
+            .WithBrandId(brand.Id)
+            .WithCategoryId(category.Id)
+            .Build();
+
+        var v1 = new ProductVariantBuilder().WithProductId(product.Id).WithSku("SKU-1").Build();
+        var v2 = new ProductVariantBuilder().WithProductId(product.Id).WithSku("SKU-2").Build();
+        var v3 = new ProductVariantBuilder().WithProductId(product.Id).WithSku("SKU-3").Build();
+        var v4 = new ProductVariantBuilder().WithProductId(product.Id).WithSku("SKU-4").Build();
+
+        Context.Products.Add(product);
+        Context.ProductVariants.AddRange(v1, v2, v3, v4);
+        await Context.SaveChangesAsync();
+
+        var inStock = Inventories.Create(v1.Id, initialStock: 50);
+        var outOfStock = Inventories.Create(v2.Id, initialStock: 0);
+        var lowStock = Inventories.Create(v3.Id, initialStock: 3);
+        var unlimited = Inventories.Create(v4.Id, initialStock: 0, isUnlimited: true);
 
         Context.Inventories.AddRange(inStock, outOfStock, lowStock, unlimited);
         await Context.SaveChangesAsync();

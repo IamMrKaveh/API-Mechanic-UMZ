@@ -1,6 +1,5 @@
 using Domain.User.Aggregates;
 using Domain.User.ValueObjects;
-using SharedKernel.ValueObjects;
 
 namespace Tests.TestInfrastructure.Builders;
 

@@ -136,7 +136,15 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
             Note = note,
             IdempotencyKey =
                 $"{variantId}:{eventType}:{referenceNumber ?? Guid.NewGuid().ToString("N")}",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = TruncateToMicroseconds(DateTime.UtcNow)
         };
+    }
+
+    private static DateTime TruncateToMicroseconds(DateTime value)
+    {
+        var kind = value.Kind == DateTimeKind.Unspecified ? DateTimeKind.Utc : value.Kind;
+        var utc = kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
+        var truncatedTicks = utc.Ticks - (utc.Ticks % 10L);
+        return new DateTime(truncatedTicks, DateTimeKind.Utc);
     }
 }

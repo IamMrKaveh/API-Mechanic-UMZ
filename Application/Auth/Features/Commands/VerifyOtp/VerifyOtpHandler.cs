@@ -26,7 +26,12 @@ public class VerifyOtpHandler(
         CancellationToken ct)
     {
         var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
-        var ipAddress = IpAddress.Create(currentUser.IpAddress ?? IpAddress.Unknown.Value);
+
+        var rawIp = currentUser.IpAddress;
+        var ipAddress = string.IsNullOrWhiteSpace(rawIp)
+            ? IpAddress.Unknown
+            : IpAddress.Create(rawIp);
+
         var otpCode = OtpCode.Create(request.Code);
 
         var user = await userRepository.GetByPhoneNumberAsync(phoneNumber, ct);

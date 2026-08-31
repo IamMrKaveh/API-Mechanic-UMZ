@@ -5,7 +5,6 @@ using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 using Infrastructure.Cart.QueryServices;
-using Infrastructure.Persistence.Context;
 using Carts = Domain.Cart.Aggregates.Cart;
 
 namespace Tests.Infrastructure.Cart.QueryServices;

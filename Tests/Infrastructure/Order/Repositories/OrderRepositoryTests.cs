@@ -1,9 +1,10 @@
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.Payment.ValueObjects;
+using Domain.Variant.Aggregates;
 using Infrastructure.Order.Repositories;
-using Infrastructure.Persistence.Context;
 using Orders = Domain.Order.Aggregates.Order;
+using Products = Domain.Product.Aggregates.Product;
 using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Infrastructure.Order.Repositories;
@@ -44,11 +45,54 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         return user;
     }
 
-    private static Orders BuildOrderFor(Users user, Guid? idempotencyKey = null)
+    private async Task<(Products product, ProductVariant variant)> PersistProductAndVariantAsync()
     {
+        var category = await new CategoryBuilder().BuildAsync();
+        category.ClearDomainEvents();
+        _context.Categories.Add(category);
+        await _context.SaveChangesAsync();
+
+        var brand = await new BrandBuilder()
+            .WithCategoryId(category.Id)
+            .BuildAsync();
+        brand.ClearDomainEvents();
+        _context.Brands.Add(brand);
+        await _context.SaveChangesAsync();
+
+        var product = new ProductBuilder()
+            .WithBrandId(brand.Id)
+            .WithCategoryId(category.Id)
+            .Build();
+        _context.Products.Add(product);
+
+        var variant = new ProductVariantBuilder()
+            .WithProductId(product.Id)
+            .WithSellingPrice(100_000m)
+            .Build();
+        _context.ProductVariants.Add(variant);
+
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+        return (product, variant);
+    }
+
+    private async Task<Orders> BuildOrderForAsync(Users user, Guid? idempotencyKey = null)
+    {
+        var (product, variant) = await PersistProductAndVariantAsync();
+
+        var snapshot = new OrderItemSnapshotBuilder()
+            .WithVariantId(variant.Id)
+            .WithProductId(product.Id)
+            .WithProductName(product.Name)
+            .WithSku(variant.Sku)
+            .WithUnitPrice(100_000m)
+            .WithQuantity(1)
+            .Build();
+
         return new OrderBuilder()
             .WithUserId(user.Id)
             .WithIdempotencyKey(idempotencyKey ?? Guid.NewGuid())
+            .WithItemSnapshots(snapshot)
             .Build();
     }
 
@@ -56,7 +100,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
     public async Task Add_ValidOrder_PersistsAcrossContexts()
     {
         var user = await PersistUserAsync();
-        var order = BuildOrderFor(user);
+        var order = await BuildOrderForAsync(user);
         order.ClearDomainEvents();
 
         _sut.Add(order);
@@ -85,7 +129,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
     public async Task FindByIdAsync_WhenOrderIsSoftDeleted_ReturnsNullDueToQueryFilter()
     {
         var user = await PersistUserAsync();
-        var order = BuildOrderFor(user);
+        var order = await BuildOrderForAsync(user);
         order.Cancel("customer request");
         order.ClearDomainEvents();
 
@@ -110,7 +154,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
     {
         var user = await PersistUserAsync();
         var idempotencyKey = Guid.NewGuid();
-        var order = BuildOrderFor(user, idempotencyKey);
+        var order = await BuildOrderForAsync(user, idempotencyKey);
         order.ClearDomainEvents();
 
         _sut.Add(order);
@@ -134,7 +178,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
     public async Task FindPendingExpiredAsync_ReturnsOrdersInExpirableStatusesOlderThanThirtyMinutes()
     {
         var user = await PersistUserAsync();
-        var oldOrder = BuildOrderFor(user);
+        var oldOrder = await BuildOrderForAsync(user);
         oldOrder.ClearDomainEvents();
 
         _sut.Add(oldOrder);
@@ -148,7 +192,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
 
-        var freshOrder = BuildOrderFor(user);
+        var freshOrder = await BuildOrderForAsync(user);
         freshOrder.ClearDomainEvents();
         _sut.Add(freshOrder);
         await _context.SaveChangesAsync();
@@ -164,7 +208,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
     public async Task FindByOrderItemIdAsync_WhenItemExists_ReturnsParentOrder()
     {
         var user = await PersistUserAsync();
-        var order = BuildOrderFor(user);
+        var order = await BuildOrderForAsync(user);
         order.ClearDomainEvents();
 
         _sut.Add(order);
@@ -192,7 +236,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
     public async Task Update_AfterStatusTransition_PersistsNewStatus()
     {
         var user = await PersistUserAsync();
-        var order = BuildOrderFor(user);
+        var order = await BuildOrderForAsync(user);
         order.MarkAsPaid(PaymentTransactionId.NewId());
         order.ClearDomainEvents();
 
@@ -222,8 +266,8 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         var user = await PersistUserAsync();
         var idempotencyKey = Guid.NewGuid();
 
-        var first = BuildOrderFor(user, idempotencyKey);
-        var second = BuildOrderFor(user, idempotencyKey);
+        var first = await BuildOrderForAsync(user, idempotencyKey);
+        var second = await BuildOrderForAsync(user, idempotencyKey);
         first.ClearDomainEvents();
         second.ClearDomainEvents();
 

@@ -4,7 +4,6 @@ using Domain.Payment.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.Aggregates;
 using Infrastructure.Order.QueryServices;
-using Infrastructure.Persistence.Context;
 using Microsoft.AspNetCore.Http;
 using Orders = Domain.Order.Aggregates.Order;
 using Products = Domain.Product.Aggregates.Product;
@@ -60,7 +59,22 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
 
     private async Task<(Products product, ProductVariant variant)> SeedProductAndVariantAsync()
     {
-        var product = new ProductBuilder().Build();
+        var category = await new CategoryBuilder().BuildAsync();
+        category.ClearDomainEvents();
+        _context.Categories.Add(category);
+        await _context.SaveChangesAsync();
+
+        var brand = await new BrandBuilder()
+            .WithCategoryId(category.Id)
+            .BuildAsync();
+        brand.ClearDomainEvents();
+        _context.Brands.Add(brand);
+        await _context.SaveChangesAsync();
+
+        var product = new ProductBuilder()
+            .WithBrandId(brand.Id)
+            .WithCategoryId(category.Id)
+            .Build();
         _context.Products.Add(product);
 
         var variant = new ProductVariantBuilder()

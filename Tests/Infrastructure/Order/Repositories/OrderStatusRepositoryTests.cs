@@ -2,9 +2,6 @@ using Domain.Order.Entities;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Infrastructure.Order.Repositories;
-using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Order.Repositories;
 
@@ -153,41 +150,73 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
     [Fact]
     public async Task IsInUseAsync_WhenNoOrderReferencesStatus_ReturnsFalse()
     {
-        var status = OrderStatus.Create("UnusedStatus", "استفاده نشده");
-        status.ClearDomainEvents();
-
-        await _sut.AddAsync(status);
+        var status = OrderStatus.Create("Reserved", "رزرو", null, null, 1, true, false);
+        _context.OrderStatuses.Add(status);
         await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
 
-        var inUse = await _sut.IsInUseAsync(status.Id);
+        var result = await _sut.IsInUseAsync(status.Id, CancellationToken.None);
 
-        inUse.ShouldBeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
     public async Task IsInUseAsync_WhenAnOrderHasMatchingStatusValue_ReturnsTrue()
     {
-        var status = OrderStatus.Create("Created", "ایجاد شده");
-        status.ClearDomainEvents();
-
-        await _sut.AddAsync(status);
+        var status = OrderStatus.Create("Pending", "در انتظار", null, null, 2, true, false);
+        _context.OrderStatuses.Add(status);
         await _context.SaveChangesAsync();
 
         var user = new UserBuilder().Build();
         user.ClearDomainEvents();
-        await _context.Users.AddAsync(user);
-
-        var order = new OrderBuilder().WithUserId(user.Id).Build();
-        order.ClearDomainEvents();
-        await _context.Orders.AddAsync(order);
-
+        _context.Users.Add(user);
         await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
 
-        var inUse = await _sut.IsInUseAsync(status.Id);
+        var category = await new CategoryBuilder().BuildAsync();
+        category.ClearDomainEvents();
+        _context.Categories.Add(category);
+        await _context.SaveChangesAsync();
 
-        inUse.ShouldBeTrue();
+        var brand = await new BrandBuilder()
+            .WithCategoryId(category.Id)
+            .BuildAsync();
+        brand.ClearDomainEvents();
+        _context.Brands.Add(brand);
+        await _context.SaveChangesAsync();
+
+        var product = new ProductBuilder()
+            .WithBrandId(brand.Id)
+            .WithCategoryId(category.Id)
+            .Build();
+        _context.Products.Add(product);
+
+        var variant = new ProductVariantBuilder()
+            .WithProductId(product.Id)
+            .WithSellingPrice(100_000m)
+            .Build();
+        _context.ProductVariants.Add(variant);
+        await _context.SaveChangesAsync();
+
+        var snapshot = new OrderItemSnapshotBuilder()
+            .WithVariantId(variant.Id)
+            .WithProductId(product.Id)
+            .WithProductName(product.Name)
+            .WithSku(variant.Sku)
+            .WithUnitPrice(100_000m)
+            .WithQuantity(1)
+            .Build();
+
+        var order = new OrderBuilder()
+            .WithUserId(user.Id)
+            .WithItemSnapshots(snapshot)
+            .Build();
+        order.MoveToPending();
+        order.ClearDomainEvents();
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        var result = await _sut.IsInUseAsync(status.Id, CancellationToken.None);
+
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -263,4 +292,3 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 }
-
