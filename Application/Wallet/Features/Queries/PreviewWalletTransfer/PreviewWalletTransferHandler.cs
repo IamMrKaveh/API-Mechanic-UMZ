@@ -60,10 +60,10 @@ public sealed class PreviewWalletTransferHandler(
         string? warning = null;
         if (request.Amount < _options.MinimumAmount)
             warning = $"حداقل مبلغ انتقال {_options.MinimumAmount:N0} تومان است.";
-        else if (request.Amount > senderAvailable)
-            warning = "موجودی قابل برداشت کافی نیست.";
         else if (request.Amount > remaining)
             warning = "مبلغ درخواستی از سقف روزانه انتقال بیشتر است.";
+        else if (request.Amount > senderAvailable)
+            warning = "موجودی قابل برداشت کافی نیست.";
 
         var displayName = BuildDisplayName(recipient);
         var maskedPhone = MaskPhone(recipient.PhoneNumber?.Value ?? recipientPhone.Value);

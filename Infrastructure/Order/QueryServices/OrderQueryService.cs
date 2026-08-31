@@ -13,6 +13,14 @@ public sealed class OrderQueryService(
 {
     private const string ProductEntityType = "Product";
 
+    private static readonly OrderStatusValue[] PaidStatuses =
+    {
+        OrderStatusValue.Paid,
+        OrderStatusValue.Processing,
+        OrderStatusValue.Shipped,
+        OrderStatusValue.Delivered
+    };
+
     public async Task<PaginatedResult<OrderListItemDto>> GetUserOrdersAsync(
         UserId userId,
         int page,
@@ -33,7 +41,7 @@ public sealed class OrderQueryService(
             {
                 Id = o.Id.Value,
                 OrderNumber = o.OrderNumber.Value,
-                StatusValue = o.Status.Value,
+                Status = o.Status,
                 FinalAmount = o.FinalAmount.Amount,
                 ItemCount = o.OrderItems.Count,
                 CreatedAt = o.CreatedAt
@@ -45,8 +53,8 @@ public sealed class OrderQueryService(
             {
                 Id = o.Id,
                 OrderNumber = o.OrderNumber,
-                Status = o.StatusValue,
-                StatusDisplayName = OrderStatusValue.From(o.StatusValue).DisplayName,
+                Status = o.Status.Value,
+                StatusDisplayName = o.Status.DisplayName,
                 FinalAmount = o.FinalAmount,
                 ItemCount = o.ItemCount,
                 CreatedAt = o.CreatedAt
@@ -75,7 +83,10 @@ public sealed class OrderQueryService(
             query = query.Where(o => o.UserId == userId);
 
         if (!string.IsNullOrWhiteSpace(status))
-            query = query.Where(o => o.Status == status);
+        {
+            var statusVo = OrderStatusValue.From(status);
+            query = query.Where(o => o.Status == statusVo);
+        }
 
         if (from.HasValue)
             query = query.Where(o => o.CreatedAt >= from);
@@ -85,10 +96,9 @@ public sealed class OrderQueryService(
 
         if (isPaid.HasValue)
         {
-            var paidStatuses = new[] { "Paid", "Processing", "Shipped", "Delivered" };
             query = isPaid.Value
-                ? query.Where(o => paidStatuses.Contains(o.Status))
-                : query.Where(o => !paidStatuses.Contains(o.Status));
+                ? query.Where(o => PaidStatuses.Contains(o.Status))
+                : query.Where(o => !PaidStatuses.Contains(o.Status));
         }
 
         var totalItems = await query.CountAsync(ct);
@@ -334,39 +344,42 @@ public sealed class OrderQueryService(
     public async Task<OrderStatisticsDto> GetOrderStatisticsAsync(
         CancellationToken ct = default)
     {
-        var paidStatuses = new[] { "Paid", "Processing", "Shipped", "Delivered" };
+        var totalOrders = await context.Orders.AsNoTracking().CountAsync(ct);
 
-        var stats = await context.Orders
-            .AsNoTracking()
-            .GroupBy(_ => 1)
-            .Select(g => new
-            {
-                TotalOrders = g.Count(),
-                PendingOrders = g.Count(o => o.Status.Value == "Pending"),
-                ProcessingOrders = g.Count(o => o.Status.Value == "Processing"),
-                CompletedOrders = g.Count(o => o.Status.Value == "Delivered"),
-                CancelledOrders = g.Count(o => o.Status.Value == "Cancelled"),
-                TotalRevenue = g
-                    .Where(o => paidStatuses.Contains(o.Status.Value))
-                    .Sum(o => o.FinalAmount.Amount),
-                PaidCount = g.Count(o => paidStatuses.Contains(o.Status.Value))
-            })
-            .FirstOrDefaultAsync(ct);
-
-        if (stats is null)
+        if (totalOrders == 0)
             return new OrderStatisticsDto();
+
+        var pendingOrders = await context.Orders.AsNoTracking()
+            .CountAsync(o => o.Status == OrderStatusValue.Pending, ct);
+
+        var processingOrders = await context.Orders.AsNoTracking()
+            .CountAsync(o => o.Status == OrderStatusValue.Processing, ct);
+
+        var completedOrders = await context.Orders.AsNoTracking()
+            .CountAsync(o => o.Status == OrderStatusValue.Delivered, ct);
+
+        var cancelledOrders = await context.Orders.AsNoTracking()
+            .CountAsync(o => o.Status == OrderStatusValue.Cancelled, ct);
+
+        var paidQuery = context.Orders.AsNoTracking()
+            .Where(o => PaidStatuses.Contains(o.Status));
+
+        var paidCount = await paidQuery.CountAsync(ct);
+        var totalRevenue = paidCount > 0
+            ? await paidQuery.SumAsync(o => o.FinalAmount.Amount, ct)
+            : 0m;
 
         return new OrderStatisticsDto
         {
-            TotalOrders = stats.TotalOrders,
-            PendingOrders = stats.PendingOrders,
-            ProcessingOrders = stats.ProcessingOrders,
-            CompletedOrders = stats.CompletedOrders,
-            CancelledOrders = stats.CancelledOrders,
-            TotalRevenue = stats.TotalRevenue,
-            AverageOrderValue = stats.PaidCount > 0
-                ? Math.Round(stats.TotalRevenue / stats.PaidCount, 2)
-                : 0
+            TotalOrders = totalOrders,
+            PendingOrders = pendingOrders,
+            ProcessingOrders = processingOrders,
+            CompletedOrders = completedOrders,
+            CancelledOrders = cancelledOrders,
+            TotalRevenue = totalRevenue,
+            AverageOrderValue = paidCount > 0
+                ? Math.Round(totalRevenue / paidCount, 2)
+                : 0m
         };
     }
 }

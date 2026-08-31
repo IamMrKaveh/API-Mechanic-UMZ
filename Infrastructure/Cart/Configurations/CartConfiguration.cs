@@ -8,6 +8,8 @@ public sealed class CartConfiguration : IEntityTypeConfiguration<Domain.Cart.Agg
 {
     public void Configure(EntityTypeBuilder<Domain.Cart.Aggregates.Cart> builder)
     {
+        builder.ToTable("Carts");
+
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
@@ -16,10 +18,14 @@ public sealed class CartConfiguration : IEntityTypeConfiguration<Domain.Cart.Agg
         builder.Property<byte[]>("RowVersion").IsRowVersion();
 
         builder.Property(e => e.UserId)
-            .HasConversion(v => v == null ? (Guid?)null : v.Value, v => v.HasValue ? UserId.From(v.Value) : null);
+            .HasConversion(
+                v => v == null ? (Guid?)null : v.Value,
+                v => v.HasValue ? UserId.From(v.Value) : null);
 
         builder.Property(e => e.GuestToken)
-            .HasConversion(v => v == null ? null : v.Value, v => v == null ? null : GuestToken.Create(v))
+            .HasConversion(
+                v => v == null ? null : v.Value,
+                v => v == null ? null : GuestToken.Create(v))
             .HasMaxLength(256);
 
         builder.Property(e => e.AppliedDiscountCodeId)
@@ -33,6 +39,12 @@ public sealed class CartConfiguration : IEntityTypeConfiguration<Domain.Cart.Agg
 
         builder.HasIndex(e => new { e.UserId, e.IsCheckedOut });
         builder.HasIndex(e => new { e.GuestToken, e.IsCheckedOut });
+
+        builder.HasOne<Domain.User.Aggregates.User>()
+            .WithMany()
+            .HasForeignKey(e => e.UserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasMany(e => e.CartItems)
             .WithOne(ci => ci.Cart)

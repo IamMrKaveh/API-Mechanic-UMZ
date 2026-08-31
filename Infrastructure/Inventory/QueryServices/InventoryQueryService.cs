@@ -87,19 +87,30 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
     {
         var result = await context.Inventories
             .AsNoTracking()
-            .Where(i => !i.IsUnlimited
-                        && (i.StockQuantity.Value - i.ReservedQuantity.Value) > 0
-                        && (i.StockQuantity.Value - i.ReservedQuantity.Value) <= threshold)
-            .Select(i => new LowStockItemDto
+            .Select(i => new
             {
-                ProductId = i.Variant.ProductId.Value,
-                VariantId = i.VariantId.Value,
+                ProductId = i.Variant.ProductId,
+                VariantId = i.VariantId,
                 ProductName = i.Variant.Product.Name.Value,
                 Sku = i.Variant.Sku.Value,
-                StockQuantity = i.StockQuantity.Value,
-                LowStockThreshold = i.LowStockThreshold
+                Stock = i.StockQuantity.Value,
+                Reserved = i.ReservedQuantity.Value,
+                i.IsUnlimited,
+                i.LowStockThreshold
             })
-            .OrderBy(i => i.StockQuantity)
+            .Where(x => !x.IsUnlimited
+                        && (x.Stock - x.Reserved) > 0
+                        && (x.Stock - x.Reserved) <= threshold)
+            .OrderBy(x => x.Stock)
+            .Select(x => new LowStockItemDto
+            {
+                ProductId = x.ProductId.Value,
+                VariantId = x.VariantId.Value,
+                ProductName = x.ProductName,
+                Sku = x.Sku,
+                StockQuantity = x.Stock,
+                LowStockThreshold = x.LowStockThreshold
+            })
             .ToListAsync(ct);
         return result;
     }
@@ -108,13 +119,21 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
     {
         var result = await context.Inventories
             .AsNoTracking()
-            .Where(i => !i.IsUnlimited
-                        && (i.StockQuantity.Value - i.ReservedQuantity.Value) <= 0)
-            .Select(i => new OutOfStockItemDto
+            .Select(i => new
             {
-                VariantId = i.VariantId.Value,
+                VariantId = i.VariantId,
                 ProductName = i.Variant.Product.Name.Value,
-                Sku = i.Variant.Sku.Value
+                Sku = i.Variant.Sku.Value,
+                Stock = i.StockQuantity.Value,
+                Reserved = i.ReservedQuantity.Value,
+                i.IsUnlimited
+            })
+            .Where(x => !x.IsUnlimited && (x.Stock - x.Reserved) <= 0)
+            .Select(x => new OutOfStockItemDto
+            {
+                VariantId = x.VariantId.Value,
+                ProductName = x.ProductName,
+                Sku = x.Sku
             })
             .ToListAsync(ct);
         return result;
@@ -122,35 +141,35 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
 
     public async Task<InventoryStatisticsDto?> GetStatisticsAsync(CancellationToken ct = default)
     {
-        var stats = await context.Inventories
+        var flat = await context.Inventories
             .AsNoTracking()
-            .GroupBy(_ => 1)
-            .Select(g => new
+            .Select(i => new
             {
-                TotalVariants = g.Count(),
-                UnlimitedVariants = g.Count(i => i.IsUnlimited),
-                InStockVariants = g.Count(i =>
-                    i.IsUnlimited
-                    || (i.StockQuantity.Value - i.ReservedQuantity.Value) > 0),
-                OutOfStockVariants = g.Count(i =>
-                    !i.IsUnlimited
-                    && (i.StockQuantity.Value - i.ReservedQuantity.Value) <= 0),
-                LowStockVariants = g.Count(i =>
-                    !i.IsUnlimited
-                    && (i.StockQuantity.Value - i.ReservedQuantity.Value) > 0
-                    && (i.StockQuantity.Value - i.ReservedQuantity.Value) <= i.LowStockThreshold)
+                Stock = i.StockQuantity.Value,
+                Reserved = i.ReservedQuantity.Value,
+                i.IsUnlimited,
+                i.LowStockThreshold
             })
-            .FirstOrDefaultAsync(ct);
+            .ToListAsync(ct);
 
-        if (stats is null || stats.TotalVariants == 0) return null;
+        if (flat.Count == 0)
+            return null;
+
+        var total = flat.Count;
+        var unlimited = flat.Count(x => x.IsUnlimited);
+        var inStock = flat.Count(x => x.IsUnlimited || (x.Stock - x.Reserved) > 0);
+        var outOfStock = flat.Count(x => !x.IsUnlimited && (x.Stock - x.Reserved) <= 0);
+        var lowStock = flat.Count(x => !x.IsUnlimited
+                                        && (x.Stock - x.Reserved) > 0
+                                        && (x.Stock - x.Reserved) <= x.LowStockThreshold);
 
         return new InventoryStatisticsDto
         {
-            TotalVariants = stats.TotalVariants,
-            UnlimitedVariants = stats.UnlimitedVariants,
-            InStockVariants = stats.InStockVariants,
-            OutOfStockVariants = stats.OutOfStockVariants,
-            LowStockVariants = stats.LowStockVariants
+            TotalVariants = total,
+            UnlimitedVariants = unlimited,
+            InStockVariants = inStock,
+            OutOfStockVariants = outOfStock,
+            LowStockVariants = lowStock
         };
     }
 

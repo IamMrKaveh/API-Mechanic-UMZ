@@ -1,6 +1,5 @@
 using Application.Category.Contracts;
 using Application.Category.Features.Shared;
-using Application.Common.Interfaces;
 using Domain.Category.ValueObjects;
 
 namespace Infrastructure.Category.QueryServices;
@@ -13,38 +12,53 @@ public sealed class CategoryQueryService(
     private const string BrandEntityType = "Brand";
 
     public async Task<CategoryDetailDto?> GetCategoryDetailAsync(
-           CategoryId categoryId,
-           CancellationToken ct = default)
+        CategoryId categoryId,
+        CancellationToken ct = default)
     {
-        var category = await context.Categories
+        var raw = await context.Categories
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == categoryId, ct);
-
-        if (category is null) return null;
-
-        var media = await context.Medias
-            .AsNoTracking()
-            .Where(m => m.EntityType == CategoryEntityType && m.EntityId == category.Id.Value && m.IsPrimary)
+            .Where(c => c.Id == categoryId)
+            .Select(c => new
+            {
+                Id = c.Id.Value,
+                Name = c.Name.Value,
+                Slug = c.Slug.Value,
+                c.Description,
+                c.IsActive,
+                c.SortOrder,
+                c.CreatedAt,
+                c.UpdatedAt,
+                RowVersion = EF.Property<byte[]>(c, "RowVersion")
+            })
             .FirstOrDefaultAsync(ct);
 
-        var brandCount = await context.Brands
-            .CountAsync(b => b.CategoryId == categoryId, ct);
+        if (raw is null) return null;
 
-        var rowVersionBytes = context.Entry(category).Property<byte[]>("RowVersion").CurrentValue;
+        var brandCount = await context.Brands
+            .AsNoTracking()
+            .CountAsync(b => b.CategoryId == categoryId && !b.IsDeleted, ct);
+
+        var primaryIcon = await context.Medias
+            .AsNoTracking()
+            .Where(m => m.EntityType == CategoryEntityType
+                        && m.EntityId == raw.Id
+                        && m.IsPrimary)
+            .Select(m => m.FilePath)
+            .FirstOrDefaultAsync(ct);
 
         return new CategoryDetailDto
         {
-            Id = category.Id.Value,
-            Name = category.Name.Value,
-            Slug = category.Slug?.Value,
-            Description = category.Description,
-            IsActive = category.IsActive,
-            SortOrder = category.SortOrder,
-            IconUrl = media is not null ? urlResolver.ResolveMediaUrl(media.Path.Value) : null,
+            Id = raw.Id,
+            Name = raw.Name,
+            Slug = raw.Slug,
+            Description = raw.Description,
+            IsActive = raw.IsActive,
+            SortOrder = raw.SortOrder,
+            CreatedAt = raw.CreatedAt,
+            UpdatedAt = raw.UpdatedAt,
             BrandCount = brandCount,
-            CreatedAt = category.CreatedAt,
-            UpdatedAt = category.UpdatedAt,
-            RowVersion = rowVersionBytes is not null ? Convert.ToBase64String(rowVersionBytes) : null,
+            IconUrl = primaryIcon is null ? null : urlResolver.ResolveMediaUrl(primaryIcon),
+            RowVersion = raw.RowVersion is not null ? Convert.ToBase64String(raw.RowVersion) : null
         };
     }
 

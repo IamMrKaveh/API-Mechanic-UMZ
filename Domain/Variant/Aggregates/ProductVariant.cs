@@ -81,7 +81,8 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
         Money sellingPrice,
         Money? originalPrice = null)
     {
-        Guard.Against.Null(sellingPrice, nameof(sellingPrice));
+        if (sellingPrice is null)
+            throw new InvalidPriceException("قیمت فروش الزامی است.");
 
         var currency = sellingPrice.Currency;
         var originalAmount = originalPrice is { Amount: > 0 } ? originalPrice.Amount : (decimal?)null;
@@ -131,7 +132,8 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
 
     public void ChangePrice(Money sellingPrice, Money? originalPrice = null)
     {
-        Guard.Against.Null(sellingPrice, nameof(sellingPrice));
+        if (sellingPrice is null)
+            throw new InvalidPriceException("قیمت فروش الزامی است.");
 
         var currency = sellingPrice.Currency;
         var originalAmount = originalPrice is { Amount: > 0 } ? originalPrice.Amount : (decimal?)null;

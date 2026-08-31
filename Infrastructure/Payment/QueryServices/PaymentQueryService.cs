@@ -1,6 +1,8 @@
-﻿using Application.Payment.Contracts;
+using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
 using Domain.Order.ValueObjects;
+using Domain.Payment.Aggregates;
+using Domain.Payment.ValueObjects;
 
 namespace Infrastructure.Payment.QueryServices;
 
@@ -8,11 +10,14 @@ public sealed class PaymentQueryService(DBContext context) : IPaymentQueryServic
 {
     public async Task<PaymentTransactionDto?> GetByAuthorityAsync(
         string authority, CancellationToken ct = default)
-        => await context.PaymentTransactions
+    {
+        var authorityVo = PaymentAuthority.Create(authority);
+        return await context.PaymentTransactions
             .AsNoTracking()
-            .Where(t => t.Authority.Value == authority)
+            .Where(t => t.Authority == authorityVo)
             .Select(MapToDto())
             .FirstOrDefaultAsync(ct);
+    }
 
     public async Task<PaginatedResult<PaymentTransactionDto>> GetPagedAsync(
         Guid? orderId, Guid? userId, string? status, string? gateway,
@@ -22,15 +27,32 @@ public sealed class PaymentQueryService(DBContext context) : IPaymentQueryServic
         var query = context.PaymentTransactions.AsNoTracking().AsQueryable();
 
         if (orderId.HasValue)
-            query = query.Where(t => t.OrderId.Value == orderId.Value);
+        {
+            var orderIdVo = OrderId.From(orderId.Value);
+            query = query.Where(t => t.OrderId == orderIdVo);
+        }
+
         if (userId.HasValue)
-            query = query.Where(t => t.UserId.Value == userId.Value);
+        {
+            var userIdVo = Domain.User.ValueObjects.UserId.From(userId.Value);
+            query = query.Where(t => t.UserId == userIdVo);
+        }
+
         if (!string.IsNullOrWhiteSpace(status))
-            query = query.Where(t => t.Status.Value == status);
+        {
+            var statusVo = PaymentStatus.FromString(status);
+            query = query.Where(t => t.Status == statusVo);
+        }
+
         if (!string.IsNullOrWhiteSpace(gateway))
-            query = query.Where(t => t.Gateway.Value == gateway);
+        {
+            var gatewayVo = PaymentGateway.FromString(gateway);
+            query = query.Where(t => t.Gateway == gatewayVo);
+        }
+
         if (fromDate.HasValue)
             query = query.Where(t => t.CreatedAt >= fromDate.Value);
+
         if (toDate.HasValue)
             query = query.Where(t => t.CreatedAt <= toDate.Value);
 
@@ -60,9 +82,10 @@ public sealed class PaymentQueryService(DBContext context) : IPaymentQueryServic
     public async Task<PaymentStatusDto?> GetStatusByAuthorityAsync(
         string authority, CancellationToken ct = default)
     {
+        var authorityVo = PaymentAuthority.Create(authority);
         var tx = await context.PaymentTransactions
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Authority.Value == authority, ct);
+            .FirstOrDefaultAsync(t => t.Authority == authorityVo, ct);
 
         if (tx is null) return null;
 
@@ -76,7 +99,7 @@ public sealed class PaymentQueryService(DBContext context) : IPaymentQueryServic
         };
     }
 
-    private static System.Linq.Expressions.Expression<Func<Domain.Payment.Aggregates.PaymentTransaction, PaymentTransactionDto>>
+    private static System.Linq.Expressions.Expression<Func<PaymentTransaction, PaymentTransactionDto>>
         MapToDto()
         => t => new PaymentTransactionDto
         {

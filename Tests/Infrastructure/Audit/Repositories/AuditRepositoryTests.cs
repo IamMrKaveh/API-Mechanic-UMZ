@@ -1,10 +1,6 @@
-using Domain.Audit.Entities;
 using Domain.Audit.Interfaces;
 using Domain.Audit.ValueObjects;
 using Infrastructure.Audit.Repositories;
-using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Audit.Repositories;
 
@@ -98,9 +94,7 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
     public async Task GetForArchiveAsync_ReturnsOnlyLogsBeforeCutoff()
     {
         var oldLog = new AuditLogBuilder().WithEventType("Order").WithAction("Old").Build();
-        var newLog = new AuditLogBuilder().WithEventType("Order").WithAction("New").Build();
         oldLog.ClearDomainEvents();
-        newLog.ClearDomainEvents();
 
         await _sut.AddAuditLogAsync(oldLog);
         await _context.SaveChangesAsync();
@@ -108,6 +102,9 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         await Task.Delay(50);
         var cutoff = DateTime.UtcNow;
         await Task.Delay(50);
+
+        var newLog = new AuditLogBuilder().WithEventType("Order").WithAction("New").Build();
+        newLog.ClearDomainEvents();
 
         await _sut.AddAuditLogAsync(newLog);
         await _context.SaveChangesAsync();
@@ -253,4 +250,3 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         (await _sut.GetByIdAsync(log2.Id)).ShouldBeNull();
     }
 }
-

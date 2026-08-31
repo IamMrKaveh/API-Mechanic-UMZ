@@ -7,6 +7,10 @@ public sealed class FullName : ValueObject
 
     private const int MaxNameLength = 50;
 
+    private static readonly System.Text.RegularExpressions.Regex NameRegex =
+        new(@"^[\u0600-\u06FF\u200C\u200Fa-zA-Z\s\-'.]+$",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
     private FullName(string firstName, string lastName)
     {
         FirstName = firstName;
@@ -17,11 +21,11 @@ public sealed class FullName : ValueObject
     {
         var normalizedFirst = string.IsNullOrWhiteSpace(firstName)
             ? string.Empty
-            : (firstName);
+            : firstName.Trim();
 
         var normalizedLast = string.IsNullOrWhiteSpace(lastName)
             ? string.Empty
-            : (lastName);
+            : lastName.Trim();
 
         ValidateName(normalizedFirst, "نام");
         ValidateName(normalizedLast, "نام خانوادگی");
@@ -39,13 +43,8 @@ public sealed class FullName : ValueObject
         if (name.Length > MaxNameLength)
             throw new DomainException($"{fieldName} نباید بیش از {MaxNameLength} کاراکتر باشد.");
 
-        if (!IsPersianOrEnglish(name))
+        if (!NameRegex.IsMatch(name))
             throw new DomainException($"{fieldName} فقط می‌تواند شامل حروف فارسی یا انگلیسی باشد.");
-    }
-
-    private static bool IsPersianOrEnglish(string text)
-    {
-        return System.Text.RegularExpressions.Regex.IsMatch(text, @"^[\u0600-\u06FFa-zA-Z\s]+$");
     }
 
     protected override IEnumerable<object> GetEqualityComponents()
