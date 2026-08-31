@@ -1,38 +1,21 @@
-using System.Text;
-using System.Text.Json;
-using Application.Audit.Contracts;
 using Application.Audit.Features.Shared;
 using Domain.Audit.Entities;
 using Domain.User.ValueObjects;
 using Infrastructure.Audit.QueryServices;
-using Infrastructure.Persistence.Context;
+using Tests.TestInfrastructure.Base;
 
 namespace Tests.Infrastructure.Audit.QueryServices;
 
 [Trait("Category", "Integration")]
 [Collection(nameof(DatabaseCollection))]
-public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLifetime
+public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
-    private readonly PostgresContainerFixture _fixture = fixture;
-    private DBContext _context = null!;
     private AuditQueryService _sut = null!;
 
-    public Task InitializeAsync()
+    protected override Task OnInitializeAsync()
     {
-        Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
-
-        _context = _fixture.CreateContext();
-        _sut = new AuditQueryService(_context);
+        _sut = new AuditQueryService(Context);
         return Task.CompletedTask;
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (!_fixture.IsDockerAvailable)
-            return;
-
-        await _context.DisposeAsync();
-        await _fixture.ResetAsync();
     }
 
     private static AuditLog CreateLog(
@@ -66,12 +49,12 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task SearchAsync_MultipleLogs_ReturnsAllWithTotal()
     {
-        _context.AuditLogs.AddRange(
+        Context.AuditLogs.AddRange(
             CreateLog(),
             CreateLog(),
             CreateLog());
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var (logs, total) = await _sut.SearchAsync(new AuditSearchRequest { Page = 1, PageSize = 10 });
 
@@ -82,33 +65,35 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task SearchAsync_FilteredByUserId_ReturnsMatchingOnly()
     {
-        var user = UserId.NewId();
-        _context.AuditLogs.Add(CreateLog(userId: user, eventType: "UserLogin"));
-        _context.AuditLogs.Add(CreateLog(userId: UserId.NewId(), eventType: "UserLogin"));
-        _context.AuditLogs.Add(CreateLog(userId: null, eventType: "AnonymousLogin"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        var targetUser = await SeedUserAsync();
+        var otherUser = await SeedUserAsync();
+
+        Context.AuditLogs.Add(CreateLog(userId: targetUser.Id, eventType: "UserLogin"));
+        Context.AuditLogs.Add(CreateLog(userId: otherUser.Id, eventType: "UserLogin"));
+        Context.AuditLogs.Add(CreateLog(userId: null, eventType: "AnonymousLogin"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var (logs, total) = await _sut.SearchAsync(new AuditSearchRequest
         {
-            UserId = user.Value,
+            UserId = targetUser.Id.Value,
             Page = 1,
             PageSize = 10
         });
 
         total.ShouldBe(1);
         logs.Count.ShouldBe(1);
-        logs[0].UserId.ShouldBe(user.Value);
+        logs[0].UserId.ShouldBe(targetUser.Id.Value);
     }
 
     [Fact]
     public async Task SearchAsync_FilteredByEventType_ReturnsMatchingOnly()
     {
-        _context.AuditLogs.Add(CreateLog(eventType: "UserLogin"));
-        _context.AuditLogs.Add(CreateLog(eventType: "UserLogout"));
-        _context.AuditLogs.Add(CreateLog(eventType: "OrderPlaced"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(eventType: "UserLogin"));
+        Context.AuditLogs.Add(CreateLog(eventType: "UserLogout"));
+        Context.AuditLogs.Add(CreateLog(eventType: "OrderPlaced"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var (logs, total) = await _sut.SearchAsync(new AuditSearchRequest
         {
@@ -124,11 +109,11 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task SearchAsync_FilteredByEntityType_ReturnsMatchingOnly()
     {
-        _context.AuditLogs.Add(CreateLog(entityType: "Order"));
-        _context.AuditLogs.Add(CreateLog(entityType: "Product"));
-        _context.AuditLogs.Add(CreateLog(entityType: "User"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(entityType: "Order"));
+        Context.AuditLogs.Add(CreateLog(entityType: "Product"));
+        Context.AuditLogs.Add(CreateLog(entityType: "User"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var (logs, total) = await _sut.SearchAsync(new AuditSearchRequest
         {
@@ -144,11 +129,11 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task SearchAsync_FilteredByAction_ReturnsMatchingOnly()
     {
-        _context.AuditLogs.Add(CreateLog(action: "Create"));
-        _context.AuditLogs.Add(CreateLog(action: "Delete"));
-        _context.AuditLogs.Add(CreateLog(action: "Update"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(action: "Create"));
+        Context.AuditLogs.Add(CreateLog(action: "Delete"));
+        Context.AuditLogs.Add(CreateLog(action: "Update"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var (logs, total) = await _sut.SearchAsync(new AuditSearchRequest
         {
@@ -164,11 +149,11 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task SearchAsync_FilteredByKeywordInDetails_ReturnsMatching()
     {
-        _context.AuditLogs.Add(CreateLog(details: "user reset password successfully"));
-        _context.AuditLogs.Add(CreateLog(details: "user updated profile"));
-        _context.AuditLogs.Add(CreateLog(details: "unrelated activity"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(details: "user reset password successfully"));
+        Context.AuditLogs.Add(CreateLog(details: "user updated profile"));
+        Context.AuditLogs.Add(CreateLog(details: "unrelated activity"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var (logs, total) = await _sut.SearchAsync(new AuditSearchRequest
         {
@@ -184,11 +169,11 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task SearchAsync_FilteredByIpAddress_ReturnsMatchingOnly()
     {
-        _context.AuditLogs.Add(CreateLog(ipAddress: "10.0.0.1"));
-        _context.AuditLogs.Add(CreateLog(ipAddress: "10.0.0.2"));
-        _context.AuditLogs.Add(CreateLog(ipAddress: "10.0.0.3"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(ipAddress: "10.0.0.1"));
+        Context.AuditLogs.Add(CreateLog(ipAddress: "10.0.0.2"));
+        Context.AuditLogs.Add(CreateLog(ipAddress: "10.0.0.3"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var (logs, total) = await _sut.SearchAsync(new AuditSearchRequest
         {
@@ -204,11 +189,11 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task SearchAsync_SortByEventTypeDesc_ReturnsAlphabeticallyDescending()
     {
-        _context.AuditLogs.Add(CreateLog(eventType: "Bravo"));
-        _context.AuditLogs.Add(CreateLog(eventType: "Alpha"));
-        _context.AuditLogs.Add(CreateLog(eventType: "Charlie"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(eventType: "Bravo"));
+        Context.AuditLogs.Add(CreateLog(eventType: "Alpha"));
+        Context.AuditLogs.Add(CreateLog(eventType: "Charlie"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var (logs, _) = await _sut.SearchAsync(new AuditSearchRequest
         {
@@ -224,11 +209,11 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task SearchAsync_SortByActionAsc_ReturnsAlphabeticallyAscending()
     {
-        _context.AuditLogs.Add(CreateLog(action: "Zeta"));
-        _context.AuditLogs.Add(CreateLog(action: "Alpha"));
-        _context.AuditLogs.Add(CreateLog(action: "Mike"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(action: "Zeta"));
+        Context.AuditLogs.Add(CreateLog(action: "Alpha"));
+        Context.AuditLogs.Add(CreateLog(action: "Mike"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var (logs, _) = await _sut.SearchAsync(new AuditSearchRequest
         {
@@ -244,15 +229,15 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task SearchAsync_DefaultSort_OrdersByCreatedAtDescending()
     {
-        _context.AuditLogs.Add(CreateLog(eventType: "First"));
-        await _context.SaveChangesAsync();
+        Context.AuditLogs.Add(CreateLog(eventType: "First"));
+        await Context.SaveChangesAsync();
         await Task.Delay(30);
-        _context.AuditLogs.Add(CreateLog(eventType: "Second"));
-        await _context.SaveChangesAsync();
+        Context.AuditLogs.Add(CreateLog(eventType: "Second"));
+        await Context.SaveChangesAsync();
         await Task.Delay(30);
-        _context.AuditLogs.Add(CreateLog(eventType: "Third"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(eventType: "Third"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var (logs, _) = await _sut.SearchAsync(new AuditSearchRequest
         {
@@ -271,10 +256,10 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     {
         for (var i = 0; i < 5; i++)
         {
-            _context.AuditLogs.Add(CreateLog(eventType: $"Evt{i}"));
+            Context.AuditLogs.Add(CreateLog(eventType: $"Evt{i}"));
         }
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var (logs, total) = await _sut.SearchAsync(new AuditSearchRequest
         {
@@ -300,10 +285,10 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task ExportToCsvAsync_WithLogs_ReturnsHeaderPlusRows()
     {
-        _context.AuditLogs.Add(CreateLog(eventType: "Login"));
-        _context.AuditLogs.Add(CreateLog(eventType: "Logout"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(eventType: "Login"));
+        Context.AuditLogs.Add(CreateLog(eventType: "Logout"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var bytes = await _sut.ExportToCsvAsync(new AuditExportRequest { MaxRows = 100 });
 
@@ -319,10 +304,10 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     {
         for (var i = 0; i < 5; i++)
         {
-            _context.AuditLogs.Add(CreateLog(eventType: $"Ev{i}"));
+            Context.AuditLogs.Add(CreateLog(eventType: $"Ev{i}"));
         }
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var bytes = await _sut.ExportToCsvAsync(new AuditExportRequest { MaxRows = 2 });
 
@@ -334,9 +319,9 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task ExportToCsvAsync_ValuesWithCommas_ArePropertyEscaped()
     {
-        _context.AuditLogs.Add(CreateLog(eventType: "Login,With,Comma", action: "OK"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(eventType: "Login,With,Comma", action: "OK"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var bytes = await _sut.ExportToCsvAsync(new AuditExportRequest { MaxRows = 10 });
 
@@ -357,10 +342,10 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task ExportToJsonAsync_WithLogs_ReturnsSerializedList()
     {
-        _context.AuditLogs.Add(CreateLog(eventType: "Login"));
-        _context.AuditLogs.Add(CreateLog(eventType: "Logout"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(eventType: "Login"));
+        Context.AuditLogs.Add(CreateLog(eventType: "Logout"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var bytes = await _sut.ExportToJsonAsync(new AuditExportRequest { MaxRows = 100 });
 
@@ -376,10 +361,10 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     {
         for (var i = 0; i < 6; i++)
         {
-            _context.AuditLogs.Add(CreateLog(eventType: $"E{i}"));
+            Context.AuditLogs.Add(CreateLog(eventType: $"E{i}"));
         }
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var bytes = await _sut.ExportToJsonAsync(new AuditExportRequest { MaxRows = 3 });
 
@@ -401,11 +386,11 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task GetStatisticsAsync_MultipleLogs_GroupsByEventType()
     {
-        _context.AuditLogs.Add(CreateLog(eventType: "Login"));
-        _context.AuditLogs.Add(CreateLog(eventType: "Login"));
-        _context.AuditLogs.Add(CreateLog(eventType: "Logout"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(eventType: "Login"));
+        Context.AuditLogs.Add(CreateLog(eventType: "Login"));
+        Context.AuditLogs.Add(CreateLog(eventType: "Logout"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var stats = await _sut.GetStatisticsAsync(from: null, to: null);
 
@@ -417,9 +402,9 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     [Fact]
     public async Task GetStatisticsAsync_DateRange_FiltersLogsCorrectly()
     {
-        _context.AuditLogs.Add(CreateLog(eventType: "InRange"));
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.AuditLogs.Add(CreateLog(eventType: "InRange"));
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var stats = await _sut.GetStatisticsAsync(
             from: DateTime.UtcNow.AddMinutes(-5),

@@ -1,57 +1,48 @@
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
-using Domain.Product.Aggregates;
 using Domain.Variant.Aggregates;
 using Domain.Variant.ValueObjects;
 using Infrastructure.Inventory.Repositories;
-using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
-using Inv = Domain.Inventory.Aggregates.Inventory;
+using Tests.TestInfrastructure.Base;
 
 namespace Tests.Infrastructure.Inventory.Repositories;
 
 [Trait("Category", "Integration")]
 [Collection(nameof(DatabaseCollection))]
-public class InventoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifetime
+public class InventoryRepositoryTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
-    private readonly PostgresContainerFixture _fixture = fixture;
-    private DBContext _context = null!;
     private IInventoryRepository _sut = null!;
+    private BrandId _brandId = null!;
+    private CategoryId _categoryId = null!;
 
-    public Task InitializeAsync()
+    protected override async Task OnInitializeAsync()
     {
-        Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
-
-        _context = _fixture.CreateContext();
-        _sut = new InventoryRepository(_context);
-        return Task.CompletedTask;
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (!_fixture.IsDockerAvailable)
-            return;
-
-        await _context.DisposeAsync();
-        await _fixture.ResetAsync();
+        _sut = new InventoryRepository(Context);
+        var (brand, category) = await SeedBrandWithCategoryAsync();
+        _brandId = brand.Id;
+        _categoryId = category.Id;
     }
 
     private async Task<ProductVariant> PersistVariantAsync(string skuValue)
     {
-        var product = new ProductBuilder().Build();
+        var product = new ProductBuilder()
+            .WithBrandId(_brandId)
+            .WithCategoryId(_categoryId)
+            .Build();
         product.ClearDomainEvents();
-        await _context.Products.AddAsync(product);
+        await Context.Products.AddAsync(product);
 
         var variant = new ProductVariantBuilder()
             .WithProductId(product.Id)
             .WithSku(skuValue)
             .Build();
         variant.ClearDomainEvents();
-        await _context.ProductVariants.AddAsync(variant);
+        await Context.ProductVariants.AddAsync(variant);
 
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
         return variant;
     }
 
@@ -67,9 +58,9 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : IAsync
         inventory.ClearDomainEvents();
 
         await _sut.AddAsync(inventory);
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
 
-        await using var freshContext = _fixture.CreateContext();
+        await using var freshContext = Fixture.CreateContext();
         var freshRepo = new InventoryRepository(freshContext);
         var loaded = await freshRepo.GetByIdAsync(inventory.Id);
 
@@ -101,8 +92,8 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : IAsync
         inventory.ClearDomainEvents();
 
         await _sut.AddAsync(inventory);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var loaded = await _sut.GetByVariantIdAsync(variant.Id);
 
@@ -130,8 +121,8 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : IAsync
         inventory.ClearDomainEvents();
 
         await _sut.AddAsync(inventory);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var loaded = await _sut.GetByVariantIdWithLedgerAsync(variant.Id);
 
@@ -157,8 +148,8 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : IAsync
         await _sut.AddAsync(invA);
         await _sut.AddAsync(invB);
         await _sut.AddAsync(invC);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var results = await _sut.GetByVariantIdsAsync(new[] { variantA.Id, variantB.Id });
 
@@ -179,8 +170,8 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : IAsync
         inventory.ClearDomainEvents();
 
         await _sut.AddAsync(inventory);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var reloaded = await _sut.GetByVariantIdWithLedgerAsync(variant.Id);
         reloaded.ShouldNotBeNull();
@@ -189,10 +180,10 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : IAsync
         reloaded.ClearDomainEvents();
 
         _sut.Update(reloaded);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
-        await using var freshContext = _fixture.CreateContext();
+        await using var freshContext = Fixture.CreateContext();
         var freshRepo = new InventoryRepository(freshContext);
         var final = await freshRepo.GetByVariantIdAsync(variant.Id);
 
@@ -211,13 +202,11 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : IAsync
         second.ClearDomainEvents();
 
         await _sut.AddAsync(first);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         await _sut.AddAsync(second);
 
-        await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
+        await Should.ThrowAsync<DbUpdateException>(async () => await Context.SaveChangesAsync());
     }
 }
-
-

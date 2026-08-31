@@ -1,35 +1,21 @@
 using Application.Analytics.Contracts;
 using Domain.Variant.ValueObjects;
 using Infrastructure.Analytics.QueryServices;
-using Infrastructure.Persistence.Context;
+using Tests.TestInfrastructure.Base;
 using Inventories = Domain.Inventory.Aggregates.Inventory;
 
 namespace Tests.Infrastructure.Analytics.QueryServices;
 
 [Trait("Category", "Integration")]
 [Collection(nameof(DatabaseCollection))]
-public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLifetime
+public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
-    private readonly PostgresContainerFixture _fixture = fixture;
-    private DBContext _context = null!;
     private IAnalyticsQueryService _sut = null!;
 
-    public Task InitializeAsync()
+    protected override Task OnInitializeAsync()
     {
-        Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
-
-        _context = _fixture.CreateContext();
-        _sut = new AnalyticsQueryService(_context);
+        _sut = new AnalyticsQueryService(Context);
         return Task.CompletedTask;
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (!_fixture.IsDockerAvailable)
-            return;
-
-        await _context.DisposeAsync();
-        await _fixture.ResetAsync();
     }
 
     [Fact]
@@ -48,11 +34,20 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : IAsy
     [Fact]
     public async Task GetDashboardStatisticsAsync_WithProductsInDatabase_CountsAllProducts()
     {
-        var product1 = new ProductBuilder().Build();
-        var product2 = new ProductBuilder().Build();
-        _context.Products.AddRange(product1, product2);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        var (brand, category) = await SeedBrandWithCategoryAsync();
+
+        var product1 = new ProductBuilder()
+            .WithBrandId(brand.Id)
+            .WithCategoryId(category.Id)
+            .Build();
+        var product2 = new ProductBuilder()
+            .WithBrandId(brand.Id)
+            .WithCategoryId(category.Id)
+            .Build();
+
+        Context.Products.AddRange(product1, product2);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var result = await _sut.GetDashboardStatisticsAsync(null, null);
 
@@ -79,9 +74,9 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : IAsy
         var lowStock = Inventories.Create(VariantId.NewId(), initialStock: 3);
         var unlimited = Inventories.Create(VariantId.NewId(), initialStock: 0, isUnlimited: true);
 
-        _context.Inventories.AddRange(inStock, outOfStock, lowStock, unlimited);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.Inventories.AddRange(inStock, outOfStock, lowStock, unlimited);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var result = await _sut.GetInventoryReportAsync();
 

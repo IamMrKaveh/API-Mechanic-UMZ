@@ -179,7 +179,7 @@ public sealed class Cart : AggregateRoot<CartId>
                         sourceItem.VariantId,
                         sourceItem.ProductId,
                         sourceItem.ProductName,
-                        sourceItem.Sku,
+                        sourceItem.VariantSku,
                         sourceItem.SellingPrice,
                         sourceItem.OriginalPrice,
                         sourceItem.Quantity));
@@ -202,7 +202,7 @@ public sealed class Cart : AggregateRoot<CartId>
                             sourceItem.VariantId,
                             sourceItem.ProductId,
                             sourceItem.ProductName,
-                            sourceItem.Sku,
+                            sourceItem.VariantSku,
                             sourceItem.SellingPrice,
                             sourceItem.OriginalPrice,
                             sourceItem.Quantity));
@@ -218,7 +218,7 @@ public sealed class Cart : AggregateRoot<CartId>
                         sourceItem.VariantId,
                         sourceItem.ProductId,
                         sourceItem.ProductName,
-                        sourceItem.Sku,
+                        sourceItem.VariantSku,
                         sourceItem.SellingPrice,
                         sourceItem.OriginalPrice,
                         sourceItem.Quantity);

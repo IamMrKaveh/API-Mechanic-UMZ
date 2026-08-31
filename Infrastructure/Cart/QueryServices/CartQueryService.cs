@@ -31,7 +31,7 @@ public sealed class CartQueryService(
                     VariantId = ci.VariantId.Value,
                     ProductId = ci.ProductId.Value,
                     ProductName = ci.ProductName.Value,
-                    VariantSku = ci.Sku.Value,
+                    VariantSku = ci.VariantSku.Value,
                     ci.Quantity,
                     UnitPrice = ci.SellingPrice.Amount,
                     Currency = ci.SellingPrice.Currency

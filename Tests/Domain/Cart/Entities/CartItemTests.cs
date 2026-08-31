@@ -30,7 +30,7 @@ public class CartItemTests
         sut.VariantId.ShouldBe(parameters.VariantId);
         sut.ProductId.ShouldBe(parameters.ProductId);
         sut.ProductName.ShouldBe(parameters.ProductName);
-        sut.Sku.ShouldBe(parameters.Sku);
+        sut.VariantSku.ShouldBe(parameters.Sku);
         sut.Quantity.ShouldBe(3);
     }
 

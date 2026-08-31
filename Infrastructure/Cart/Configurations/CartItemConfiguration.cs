@@ -29,7 +29,7 @@ public sealed class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
             .HasMaxLength(ProductName.MaxLength)
             .IsRequired();
 
-        builder.Property(x => x.Sku)
+        builder.Property(x => x.VariantSku)
             .HasConversion(v => v.Value, v => Sku.Create(v))
             .HasMaxLength(100)
             .IsRequired();

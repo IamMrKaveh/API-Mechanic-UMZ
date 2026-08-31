@@ -4,46 +4,34 @@ using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Cart.QueryServices;
 using Infrastructure.Cart.Repositories;
-using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Builders;
+using Tests.TestInfrastructure.Base;
 using Carts = Domain.Cart.Aggregates.Cart;
 
 namespace Tests.Infrastructure.Cart.QueryServices;
 
 [Trait("Category", "Integration")]
 [Collection(nameof(DatabaseCollection))]
-public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) : IAsyncLifetime
+public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
-    private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private IMediaQueryService _mediaQueryService = null!; private CartQueryService _sut = null!;
+    private IMediaQueryService _mediaQueryService = null!;
+    private CartQueryService _sut = null!;
 
-    public Task InitializeAsync()
+    protected override Task OnInitializeAsync()
     {
-        Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
-
-        _context = _fixture.CreateContext();
         _mediaQueryService = Substitute.For<IMediaQueryService>();
         _mediaQueryService
             .GetPrimaryByEntitiesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<Guid>>(), Arg.Any<CancellationToken>())
             .Returns(new Dictionary<Guid, MediaDto>());
 
-        _sut = new CartQueryService(_context, _mediaQueryService);
+        _sut = new CartQueryService(Context, _mediaQueryService);
         return Task.CompletedTask;
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (!_fixture.IsDockerAvailable)
-            return;
-
-        await _context.DisposeAsync();
-        await _fixture.ResetAsync();
     }
 
     [Fact]
     public async Task GetCartDetailAsync_WithUserId_WhenCartHasItems_ReturnsDetailWithAggregatedTotals()
     {
-        var userId = UserId.NewId();
-        var cart = new CartBuilder().ForUser(userId).Build();
+        var user = await SeedUserAsync();
+        var cart = new CartBuilder().ForUser(user.Id).Build();
 
         var item1 = new CartItemParametersBuilder()
             .WithProductName("Product A")
@@ -63,11 +51,11 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
 
         await SeedCartAsync(cart);
 
-        var result = await _sut.GetCartDetailAsync(userId, null, CancellationToken.None);
+        var result = await _sut.GetCartDetailAsync(user.Id, null, CancellationToken.None);
 
         result.ShouldNotBeNull();
         result!.Id.ShouldBe(cart.Id.Value);
-        result.UserId.ShouldBe(userId.Value);
+        result.UserId.ShouldBe(user.Id.Value);
         result.GuestToken.ShouldBeNull();
         result.Items.Count.ShouldBe(2);
         result.TotalItems.ShouldBe(5);
@@ -130,14 +118,14 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
     [Fact]
     public async Task GetCartDetailAsync_WhenCartIsCheckedOut_ReturnsNull()
     {
-        var userId = UserId.NewId();
-        var cart = new CartBuilder().ForUser(userId).Build();
+        var user = await SeedUserAsync();
+        var cart = new CartBuilder().ForUser(user.Id).Build();
         new CartItemParametersBuilder().AddTo(cart);
         cart.Checkout();
 
         await SeedCartAsync(cart);
 
-        var result = await _sut.GetCartDetailAsync(userId, null, CancellationToken.None);
+        var result = await _sut.GetCartDetailAsync(user.Id, null, CancellationToken.None);
 
         result.ShouldBeNull();
     }
@@ -145,8 +133,8 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
     [Fact]
     public async Task GetCartDetailAsync_PopulatesProductImageFromMediaQueryService()
     {
-        var userId = UserId.NewId();
-        var cart = new CartBuilder().ForUser(userId).Build();
+        var user = await SeedUserAsync();
+        var cart = new CartBuilder().ForUser(user.Id).Build();
 
         var itemParams = new CartItemParametersBuilder()
             .WithProductName("Imaged Product")
@@ -175,7 +163,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
             .GetPrimaryByEntitiesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<Guid>>(), Arg.Any<CancellationToken>())
             .Returns(mediaByProduct);
 
-        var result = await _sut.GetCartDetailAsync(userId, null, CancellationToken.None);
+        var result = await _sut.GetCartDetailAsync(user.Id, null, CancellationToken.None);
 
         result.ShouldNotBeNull();
         var item = result!.Items.Single();
@@ -190,8 +178,8 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
     [Fact]
     public async Task GetCartSummaryAsync_WhenCartHasItems_ReturnsAggregatedCountsAndTotal()
     {
-        var userId = UserId.NewId();
-        var cart = new CartBuilder().ForUser(userId).Build();
+        var user = await SeedUserAsync();
+        var cart = new CartBuilder().ForUser(user.Id).Build();
 
         new CartItemParametersBuilder()
             .WithSku("SKU-S1")
@@ -209,7 +197,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
 
         await SeedCartAsync(cart);
 
-        var summary = await _sut.GetCartSummaryAsync(userId, null, CancellationToken.None);
+        var summary = await _sut.GetCartSummaryAsync(user.Id, null, CancellationToken.None);
 
         summary.ShouldNotBeNull();
         summary.ItemCount.ShouldBe(2);
@@ -251,13 +239,13 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
     [Fact]
     public async Task ValidateCartForCheckoutAsync_WhenCartHasItems_ReturnsValid()
     {
-        var userId = UserId.NewId();
-        var cart = new CartBuilder().ForUser(userId).Build();
+        var user = await SeedUserAsync();
+        var cart = new CartBuilder().ForUser(user.Id).Build();
         new CartItemParametersBuilder().AddTo(cart);
 
         await SeedCartAsync(cart);
 
-        var validation = await _sut.ValidateCartForCheckoutAsync(userId, null, CancellationToken.None);
+        var validation = await _sut.ValidateCartForCheckoutAsync(user.Id, null, CancellationToken.None);
 
         validation.ShouldNotBeNull();
         validation.IsValid.ShouldBeTrue();
@@ -267,12 +255,12 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
     [Fact]
     public async Task ValidateCartForCheckoutAsync_WhenCartIsEmpty_ReturnsInvalidWithEmptyCartError()
     {
-        var userId = UserId.NewId();
-        var cart = new CartBuilder().ForUser(userId).Build();
+        var user = await SeedUserAsync();
+        var cart = new CartBuilder().ForUser(user.Id).Build();
 
         await SeedCartAsync(cart);
 
-        var validation = await _sut.ValidateCartForCheckoutAsync(userId, null, CancellationToken.None);
+        var validation = await _sut.ValidateCartForCheckoutAsync(user.Id, null, CancellationToken.None);
 
         validation.ShouldNotBeNull();
         validation.IsValid.ShouldBeFalse();
@@ -301,8 +289,8 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
 
     private async Task SeedCartAsync(Carts cart)
     {
-        var seedRepo = new CartRepository(_context);
+        var seedRepo = new CartRepository(Context);
         seedRepo.Add(cart);
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
     }
 }
