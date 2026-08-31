@@ -1,4 +1,4 @@
-﻿using SharedKernel.Abstractions.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.ReserveWallet;
 
@@ -19,6 +19,7 @@ public sealed class ReserveWalletValidator : AbstractValidator<ReserveWalletComm
         RuleFor(x => x.ExpiresAt!.Value)
             .GreaterThan(_ => dateTimeProvider.UtcNow)
             .When(x => x.ExpiresAt.HasValue)
+            .WithName(nameof(ReserveWalletCommand.ExpiresAt))
             .WithMessage("زمان انقضای رزرو باید در آینده باشد.");
     }
 }

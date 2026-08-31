@@ -1,7 +1,6 @@
 using Domain.Product.ValueObjects;
 using Domain.Variant.Aggregates;
 using Domain.Variant.ValueObjects;
-using SharedKernel.ValueObjects;
 
 namespace Tests.TestInfrastructure.Builders;
 
@@ -9,9 +8,13 @@ public sealed class ProductVariantBuilder
 {
     private VariantId _id = VariantId.NewId();
     private ProductId _productId = ProductId.NewId();
-    private Sku _sku = new SkuBuilder().Build();
-    private Money _sellingPrice = Money.Create(100_000m, "IRT");
-    private Money? _originalPrice;
+    private Sku _sku = Sku.Create("DEFAULT-SKU");
+    private decimal _sellingAmount = 100_000m;
+    private decimal? _originalAmount;
+    private string _currency = "IRT";
+    private bool _useMoneyOverload;
+    private Money? _sellingMoney;
+    private Money? _originalMoney;
 
     public ProductVariantBuilder WithId(VariantId id)
     {
@@ -25,42 +28,62 @@ public sealed class ProductVariantBuilder
         return this;
     }
 
+    public ProductVariantBuilder WithSku(string sku)
+    {
+        _sku = Sku.Create(sku);
+        return this;
+    }
+
     public ProductVariantBuilder WithSku(Sku sku)
     {
         _sku = sku;
         return this;
     }
 
-    public ProductVariantBuilder WithSku(string value)
+    public ProductVariantBuilder WithSellingPrice(decimal amount, string currency = "IRT")
     {
-        _sku = Sku.Create(value);
+        _sellingAmount = amount;
+        _currency = currency;
+        _useMoneyOverload = false;
+        _sellingMoney = null;
         return this;
     }
 
     public ProductVariantBuilder WithSellingPrice(Money price)
     {
-        _sellingPrice = price;
-        return this;
-    }
-
-    public ProductVariantBuilder WithSellingPrice(decimal amount, string currency = "IRT")
-    {
-        _sellingPrice = Money.Create(amount, currency);
-        return this;
-    }
-
-    public ProductVariantBuilder WithOriginalPrice(Money? price)
-    {
-        _originalPrice = price;
+        _sellingMoney = price;
+        _useMoneyOverload = true;
+        if (price is not null)
+        {
+            _sellingAmount = price.Amount;
+            _currency = price.Currency;
+        }
         return this;
     }
 
     public ProductVariantBuilder WithOriginalPrice(decimal amount, string currency = "IRT")
     {
-        _originalPrice = Money.Create(amount, currency);
+        _originalAmount = amount;
+        _currency = currency;
+        _originalMoney = null;
         return this;
     }
 
-    public ProductVariant Build() =>
-        ProductVariant.Create(_id, _productId, _sku, _sellingPrice, _originalPrice);
+    public ProductVariantBuilder WithOriginalPrice(Money? price)
+    {
+        _originalMoney = price;
+        _useMoneyOverload = true;
+        _originalAmount = price?.Amount;
+        if (price is not null)
+            _currency = price.Currency;
+        return this;
+    }
+
+    public ProductVariant Build()
+    {
+        if (_useMoneyOverload)
+            return ProductVariant.Create(_id, _productId, _sku, _sellingMoney!, _originalMoney);
+
+        return ProductVariant.Create(_id, _productId, _sku, _sellingAmount, _originalAmount, _currency);
+    }
 }

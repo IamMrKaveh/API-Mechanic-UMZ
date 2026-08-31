@@ -11,7 +11,9 @@ public sealed class RejectWalletDebitValidator : AbstractValidator<RejectWalletD
             .WithMessage("شناسه درخواست الزامی است.");
 
         RuleFor(x => x.RejectionReason)
+            .NotEmpty()
+                .WithMessage("دلیل رد درخواست الزامی است.")
             .MaximumLength(RejectionReasonMaxLength)
-            .When(x => !string.IsNullOrWhiteSpace(x.RejectionReason));
+                .WithMessage($"دلیل رد درخواست نمی‌تواند بیش از {RejectionReasonMaxLength} کاراکتر باشد.");
     }
 }

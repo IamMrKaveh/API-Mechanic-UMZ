@@ -1,8 +1,5 @@
-using Application.Audit.Contracts;
 using Application.Audit.Features.Queries.GetAuditLogById;
 using Application.Audit.Features.Shared;
-using SharedKernel.Results;
-using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Audit.Features.Queries.GetAuditLogById;
 
@@ -24,7 +21,7 @@ public class GetAuditLogByIdHandlerTests
         var result = await _sut.Handle(query, CancellationToken.None);
 
         result.ShouldFailWithType(ErrorType.NotFound);
-        result.Error.Code.ShouldBe("Error.NotFound");
+        result.Error.Code.ShouldBe(ErrorCode.NotFound);
     }
 
     [Fact]
@@ -50,7 +47,7 @@ public class GetAuditLogByIdHandlerTests
         var result = await _sut.Handle(query, CancellationToken.None);
 
         result.ShouldFailWithType(ErrorType.NotFound);
-        result.Error.Code.ShouldBe("Error.NotFound");
+        result.Error.Code.ShouldBe(ErrorCode.NotFound);
         result.Error.Message.ShouldNotBeNullOrWhiteSpace();
     }
 

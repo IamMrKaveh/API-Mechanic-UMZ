@@ -35,12 +35,12 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
     }
 
     public static async Task<AttributeType> Create(
-    string name,
-    string displayName,
-    int sortOrder,
-    bool isActive,
-    IAttributeTypeUniquenessChecker uniquenessChecker,
-    CancellationToken ct = default)
+        string name,
+        string displayName,
+        int sortOrder,
+        bool isActive,
+        IAttributeTypeUniquenessChecker uniquenessChecker,
+        CancellationToken ct = default)
     {
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
         Guard.Against.Null(uniquenessChecker, nameof(uniquenessChecker));
@@ -138,5 +138,6 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         IsActive = false;
         DeletedAt = DateTime.UtcNow;
         DeletedBy = deletedBy;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

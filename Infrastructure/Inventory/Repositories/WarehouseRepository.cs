@@ -1,4 +1,4 @@
-﻿using Domain.Inventory.Aggregates;
+using Domain.Inventory.Aggregates;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
 
@@ -28,24 +28,21 @@ public sealed class WarehouseRepository(DBContext context) : IWarehouseRepositor
 
     public async Task<bool> ExistsByCodeAsync(string code, WarehouseId? excludeId = null, CancellationToken ct = default)
     {
-        var query = context.Warehouses.Where(w => w.Code.Value == code);
+        if (string.IsNullOrWhiteSpace(code))
+            return false;
+
+        var codeVo = WarehouseCode.Create(code);
+
+        var query = context.Warehouses.Where(w => w.Code == codeVo);
         if (excludeId is not null)
             query = query.Where(w => w.Id != excludeId);
+
         return await query.AnyAsync(ct);
     }
 
-    public async Task AddAsync(Warehouse warehouse, CancellationToken ct = default)
-    {
-        await context.Warehouses.AddAsync(warehouse, ct);
-    }
+    public async Task AddAsync(Warehouse warehouse, CancellationToken ct = default) => await context.Warehouses.AddAsync(warehouse, ct);
 
-    public void Update(Warehouse warehouse)
-    {
-        context.Warehouses.Update(warehouse);
-    }
+    public void Update(Warehouse warehouse) => context.Warehouses.Update(warehouse);
 
-    public void Remove(Warehouse warehouse)
-    {
-        context.Warehouses.Remove(warehouse);
-    }
+    public void Remove(Warehouse warehouse) => context.Warehouses.Remove(warehouse);
 }

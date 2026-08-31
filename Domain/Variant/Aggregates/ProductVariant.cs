@@ -11,6 +11,8 @@ namespace Domain.Variant.Aggregates;
 
 public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
 {
+    private const string DefaultCurrency = "IRT";
+
     private readonly List<VariantAttribute> _attributes = new();
     private readonly List<VariantShipping> _shippings = new();
 
@@ -38,21 +40,21 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
         VariantId id,
         ProductId productId,
         Sku sku,
-        Money sellingPrice,
-        Money? originalPrice = null)
+        decimal sellingAmount,
+        decimal? originalAmount = null,
+        string currency = DefaultCurrency)
     {
         Guard.Against.Null(id, nameof(id));
         Guard.Against.Null(productId, nameof(productId));
         Guard.Against.Null(sku, nameof(sku));
-        Guard.Against.Null(sellingPrice, nameof(sellingPrice));
 
-        if (sellingPrice.Amount <= 0)
+        if (sellingAmount <= 0)
             throw new InvalidPriceException("قیمت واریانت باید بزرگتر از صفر باشد.");
 
-        var resolvedSellingPrice = Money.FromDecimal(sellingPrice.Amount, sellingPrice.Currency);
-        var resolvedOriginalPrice = originalPrice is not null && originalPrice.Amount > 0
-            ? Money.FromDecimal(originalPrice.Amount, originalPrice.Currency)
-            : Money.FromDecimal(sellingPrice.Amount, sellingPrice.Currency);
+        var resolvedSellingPrice = CreateMoneyOrThrowInvalidPrice(sellingAmount, currency);
+
+        var effectiveOriginalAmount = originalAmount is > 0 ? originalAmount.Value : sellingAmount;
+        var resolvedOriginalPrice = CreateMoneyOrThrowInvalidPrice(effectiveOriginalAmount, currency);
 
         if (resolvedOriginalPrice.Amount < resolvedSellingPrice.Amount)
             throw new InvalidPriceException("قیمت اصلی نمی‌تواند کمتر از قیمت فروش باشد.");
@@ -72,25 +74,52 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
         return variant;
     }
 
-    public void ChangePrice(Money sellingPrice, Money? originalPrice = null)
+    public static ProductVariant Create(
+        VariantId id,
+        ProductId productId,
+        Sku sku,
+        Money sellingPrice,
+        Money? originalPrice = null)
     {
-        EnsureActive();
         Guard.Against.Null(sellingPrice, nameof(sellingPrice));
 
-        if (sellingPrice.Amount <= 0)
+        var currency = sellingPrice.Currency;
+        var originalAmount = originalPrice is { Amount: > 0 } ? originalPrice.Amount : (decimal?)null;
+
+        if (originalPrice is not null
+            && !string.Equals(originalPrice.Currency, currency, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidPriceException("ارز قیمت اصلی و قیمت فروش باید یکسان باشد.");
+        }
+
+        return Create(id, productId, sku, sellingPrice.Amount, originalAmount, currency);
+    }
+
+    public void ChangePrice(
+        decimal sellingAmount,
+        decimal? originalAmount = null,
+        string currency = DefaultCurrency)
+    {
+        EnsureActive();
+
+        if (sellingAmount <= 0)
             throw new InvalidPriceException("قیمت واریانت باید بزرگتر از صفر باشد.");
 
-        var resolvedSellingPrice = Money.FromDecimal(sellingPrice.Amount, sellingPrice.Currency);
-        var resolvedOriginalPrice = originalPrice is not null && originalPrice.Amount > 0
-            ? Money.FromDecimal(originalPrice.Amount, originalPrice.Currency)
-            : Money.FromDecimal(sellingPrice.Amount, sellingPrice.Currency);
+        var resolvedSellingPrice = CreateMoneyOrThrowInvalidPrice(sellingAmount, currency);
+
+        var effectiveOriginalAmount = originalAmount is > 0 ? originalAmount.Value : sellingAmount;
+        var resolvedOriginalPrice = CreateMoneyOrThrowInvalidPrice(effectiveOriginalAmount, currency);
 
         if (resolvedOriginalPrice.Amount < resolvedSellingPrice.Amount)
             throw new InvalidPriceException("قیمت اصلی نمی‌تواند کمتر از قیمت فروش باشد.");
 
         var previousPrice = SellingPrice;
-        var sameSelling = SellingPrice is not null && SellingPrice.Amount == resolvedSellingPrice.Amount && SellingPrice.Currency == resolvedSellingPrice.Currency;
-        var sameOriginal = OriginalPrice is not null && OriginalPrice.Amount == resolvedOriginalPrice.Amount && OriginalPrice.Currency == resolvedOriginalPrice.Currency;
+        var sameSelling = SellingPrice is not null
+            && SellingPrice.Amount == resolvedSellingPrice.Amount
+            && SellingPrice.Currency == resolvedSellingPrice.Currency;
+        var sameOriginal = OriginalPrice is not null
+            && OriginalPrice.Amount == resolvedOriginalPrice.Amount
+            && OriginalPrice.Currency == resolvedOriginalPrice.Currency;
 
         SellingPrice = resolvedSellingPrice;
         OriginalPrice = resolvedOriginalPrice;
@@ -98,6 +127,22 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
 
         if (!sameSelling || !sameOriginal)
             RaiseDomainEvent(new ProductVariantPriceChangedEvent(Id, ProductId, previousPrice, SellingPrice));
+    }
+
+    public void ChangePrice(Money sellingPrice, Money? originalPrice = null)
+    {
+        Guard.Against.Null(sellingPrice, nameof(sellingPrice));
+
+        var currency = sellingPrice.Currency;
+        var originalAmount = originalPrice is { Amount: > 0 } ? originalPrice.Amount : (decimal?)null;
+
+        if (originalPrice is not null
+            && !string.Equals(originalPrice.Currency, currency, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidPriceException("ارز قیمت اصلی و قیمت فروش باید یکسان باشد.");
+        }
+
+        ChangePrice(sellingPrice.Amount, originalAmount, currency);
     }
 
     public void ChangeSku(Sku newSku)
@@ -242,6 +287,18 @@ public sealed class ProductVariant : AggregateRoot<VariantId>, ISoftDeletable
                 return null;
             return Math.Round(
                 (OriginalPrice.Amount - SellingPrice.Amount) / OriginalPrice.Amount * 100, 2);
+        }
+    }
+
+    private static Money CreateMoneyOrThrowInvalidPrice(decimal amount, string currency)
+    {
+        try
+        {
+            return Money.FromDecimal(amount, currency);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new InvalidPriceException(ex.Message);
         }
     }
 

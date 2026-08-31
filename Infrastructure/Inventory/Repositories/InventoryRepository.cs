@@ -22,9 +22,12 @@ public sealed class InventoryRepository(DBContext context) : IInventoryRepositor
     public async Task<IReadOnlyList<Domain.Inventory.Aggregates.Inventory>> GetByVariantIdsAsync(
         IEnumerable<VariantId> variantIds, CancellationToken ct = default)
     {
-        var ids = variantIds.Select(v => v.Value).ToList();
+        var idList = variantIds?.ToList() ?? new List<VariantId>();
+        if (idList.Count == 0)
+            return [];
+
         var results = await context.Inventories
-            .Where(i => ids.Contains(i.VariantId.Value))
+            .Where(i => idList.Contains(i.VariantId))
             .ToListAsync(ct);
         return results.AsReadOnly();
     }
