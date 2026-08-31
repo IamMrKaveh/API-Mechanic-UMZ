@@ -17,6 +17,7 @@ public sealed class WalletDebitRequestBuilder
     private UserId _requestedBy = UserId.NewId();
     private TimeSpan _expiry = TimeSpan.FromHours(72);
     private WalletDebitRequestId _requestId = WalletDebitRequestId.NewId();
+    private Wallet? _existingWallet;
 
     public WalletDebitRequestBuilder WithOwner(UserId ownerId)
     {
@@ -54,10 +55,34 @@ public sealed class WalletDebitRequestBuilder
         return this;
     }
 
+    public WalletDebitRequestBuilder WithExistingWallet(Wallet wallet)
+    {
+        _existingWallet = wallet;
+        _ownerId = wallet.OwnerId;
+        return this;
+    }
+
     public (Wallet wallet, WalletDebitRequest request) Build()
     {
-        var wallet = new WalletBuilder().WithOwnerId(_ownerId).Build();
-        wallet.Credit(Money.Create(_initialBalance), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        var wallet = _existingWallet ?? new WalletBuilder().WithOwnerId(_ownerId).Build();
+
+        if (_existingWallet is null)
+        {
+            wallet.Credit(
+                Money.Create(_initialBalance),
+                "seed",
+                Guid.NewGuid().ToString(),
+                Guid.NewGuid().ToString("N"));
+        }
+        else if (wallet.AvailableBalance.IsLessThan(Money.Create(_amount)))
+        {
+            wallet.Credit(
+                Money.Create(_amount),
+                "seed-topup",
+                Guid.NewGuid().ToString(),
+                Guid.NewGuid().ToString("N"));
+        }
+
         wallet.CreateDebitRequest(
             _requestId,
             Money.Create(_amount),
@@ -65,6 +90,7 @@ public sealed class WalletDebitRequestBuilder
             _description,
             _requestedBy,
             _expiry);
+
         var request = wallet.DebitRequests.Single(r => r.Id == _requestId);
         return (wallet, request);
     }

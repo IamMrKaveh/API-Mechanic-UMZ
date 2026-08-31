@@ -4,6 +4,7 @@ using Domain.Wallet.Enums;
 using Infrastructure.Persistence.Context;
 using Infrastructure.Wallet.QueryServices;
 using Users = Domain.User.Aggregates.User;
+using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Infrastructure.Wallet.QueryServices;
 
@@ -12,6 +13,7 @@ namespace Tests.Infrastructure.Wallet.QueryServices;
 public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
     private readonly PostgresContainerFixture _fixture = fixture;
+    private readonly Dictionary<UserId, Wallets> _seededWallets = new();
     private DBContext _context = null!;
     private WalletDebitRequestQueryService _sut = null!;
 
@@ -27,6 +29,7 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
     public async Task DisposeAsync()
     {
         if (!_fixture.IsDockerAvailable) return;
+        _seededWallets.Clear();
         await _context.DisposeAsync();
         await _fixture.ResetAsync();
     }
@@ -46,14 +49,28 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
 
     private async Task SeedDebitRequestAsync(UserId ownerId, UserId requestedBy, decimal amount = 100_000m)
     {
+        if (_seededWallets.TryGetValue(ownerId, out var existingWallet))
+        {
+            new WalletDebitRequestBuilder()
+                .WithExistingWallet(existingWallet)
+                .WithRequestedBy(requestedBy)
+                .WithAmount(amount)
+                .Build();
+            existingWallet.ClearDomainEvents();
+            await _context.SaveChangesAsync();
+            return;
+        }
+
         var (wallet, _) = new WalletDebitRequestBuilder()
             .WithOwner(ownerId)
+            .WithInitialBalance(10_000_000m)
             .WithRequestedBy(requestedBy)
             .WithAmount(amount)
             .Build();
         wallet.ClearDomainEvents();
         _context.Wallets.Add(wallet);
         await _context.SaveChangesAsync();
+        _seededWallets[ownerId] = wallet;
     }
 
     [Fact]

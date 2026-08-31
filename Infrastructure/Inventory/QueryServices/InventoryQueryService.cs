@@ -21,10 +21,14 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
         ICollection<VariantId> variantIds,
         CancellationToken ct = default)
     {
-        var ids = variantIds.Select(v => v.Value).ToList();
+        if (variantIds is null || variantIds.Count == 0)
+            return Array.Empty<VariantAvailabilityDto>();
+
+        var idList = variantIds.ToList();
+
         var inventories = await context.Inventories
             .AsNoTracking()
-            .Where(i => ids.Contains(i.VariantId.Value))
+            .Where(i => idList.Contains(i.VariantId))
             .ToListAsync(ct);
 
         return inventories.Select(i => new VariantAvailabilityDto
@@ -83,7 +87,9 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
     {
         var result = await context.Inventories
             .AsNoTracking()
-            .Where(i => !i.IsUnlimited && i.AvailableQuantity > 0 && i.AvailableQuantity <= threshold)
+            .Where(i => !i.IsUnlimited
+                        && (i.StockQuantity.Value - i.ReservedQuantity.Value) > 0
+                        && (i.StockQuantity.Value - i.ReservedQuantity.Value) <= threshold)
             .Select(i => new LowStockItemDto
             {
                 ProductId = i.Variant.ProductId.Value,
@@ -102,7 +108,8 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
     {
         var result = await context.Inventories
             .AsNoTracking()
-            .Where(i => !i.IsUnlimited && i.AvailableQuantity <= 0)
+            .Where(i => !i.IsUnlimited
+                        && (i.StockQuantity.Value - i.ReservedQuantity.Value) <= 0)
             .Select(i => new OutOfStockItemDto
             {
                 VariantId = i.VariantId.Value,
@@ -122,9 +129,16 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
             {
                 TotalVariants = g.Count(),
                 UnlimitedVariants = g.Count(i => i.IsUnlimited),
-                InStockVariants = g.Count(i => i.IsInStock),
-                OutOfStockVariants = g.Count(i => i.IsOutOfStock),
-                LowStockVariants = g.Count(i => i.IsLowStock)
+                InStockVariants = g.Count(i =>
+                    i.IsUnlimited
+                    || (i.StockQuantity.Value - i.ReservedQuantity.Value) > 0),
+                OutOfStockVariants = g.Count(i =>
+                    !i.IsUnlimited
+                    && (i.StockQuantity.Value - i.ReservedQuantity.Value) <= 0),
+                LowStockVariants = g.Count(i =>
+                    !i.IsUnlimited
+                    && (i.StockQuantity.Value - i.ReservedQuantity.Value) > 0
+                    && (i.StockQuantity.Value - i.ReservedQuantity.Value) <= i.LowStockThreshold)
             })
             .FirstOrDefaultAsync(ct);
 
@@ -232,24 +246,24 @@ public sealed class InventoryQueryService(DBContext context) : IInventoryQuerySe
 
             return
             [
-            new WarehouseStockDto
-            {
-                WarehouseId = defaultWarehouse?.Id.Value ?? Guid.Empty,
-                WarehouseName = defaultWarehouse?.Name,
-                VariantId = inventory.VariantId.Value,
-                Quantity = inventory.StockQuantity.Value,
-                ReservedQuantity = inventory.ReservedQuantity.Value
-            }
-        ];
+                new WarehouseStockDto
+                {
+                    WarehouseId = defaultWarehouse?.Id.Value ?? Guid.Empty,
+                    WarehouseName = defaultWarehouse?.Name,
+                    VariantId = inventory.VariantId.Value,
+                    Quantity = inventory.StockQuantity.Value,
+                    ReservedQuantity = inventory.ReservedQuantity.Value
+                }
+            ];
         }
 
-        var warehouseGuids = ledgerByWarehouse
-            .Select(x => x.WarehouseId!.Value)
+        var warehouseIds = ledgerByWarehouse
+            .Select(x => x.WarehouseId!)
             .ToList();
 
         var warehouses = await context.Warehouses
             .AsNoTracking()
-            .Where(w => warehouseGuids.Contains(w.Id.Value))
+            .Where(w => warehouseIds.Contains(w.Id))
             .ToDictionaryAsync(w => w.Id.Value, w => w.Name, ct);
 
         var totalNet = ledgerByWarehouse.Sum(x => x.NetQuantity);

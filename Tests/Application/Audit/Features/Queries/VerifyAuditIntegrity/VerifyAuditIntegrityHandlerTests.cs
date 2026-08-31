@@ -38,7 +38,7 @@ public class VerifyAuditIntegrityHandlerTests
         var result = await _sut.Handle(query, CancellationToken.None);
 
         result.ShouldFailWithType(ErrorType.NotFound);
-        result.Error.Code.ShouldBe("Error.NotFound");
+        result.Error.Code.ShouldBe(ErrorCode.NotFound);
         result.Error.Message.ShouldNotBeNullOrWhiteSpace();
     }
 

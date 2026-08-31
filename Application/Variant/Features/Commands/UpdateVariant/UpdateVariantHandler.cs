@@ -50,14 +50,13 @@ public class UpdateVariantHandler(
             }
         }
 
-        var price = Money.FromDecimal(request.SellingPrice);
-        var compareAtPrice = request.OriginalPrice > request.SellingPrice
-            ? Money.FromDecimal(request.OriginalPrice)
+        var originalAmount = request.OriginalPrice > request.SellingPrice
+            ? (decimal?)request.OriginalPrice
             : null;
 
         try
         {
-            variant.ChangePrice(price, compareAtPrice);
+            variant.ChangePrice(request.SellingPrice, originalAmount);
         }
         catch (DomainException ex)
         {

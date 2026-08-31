@@ -10,7 +10,6 @@ using Domain.User.ValueObjects;
 using Domain.Variant.Aggregates;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace Application.Variant.Features.Commands.AddVariant;
@@ -110,12 +109,11 @@ public sealed class AddVariantHandler(
         ProductVariant variant;
         try
         {
-            var sellingPrice = Money.FromDecimal(request.SellingPrice);
-            var originalPrice = request.OriginalPrice > request.SellingPrice
-                ? Money.FromDecimal(request.OriginalPrice)
+            var originalAmount = request.OriginalPrice > request.SellingPrice
+                ? (decimal?)request.OriginalPrice
                 : null;
 
-            variant = ProductVariant.Create(variantId, productId, sku, sellingPrice, originalPrice);
+            variant = ProductVariant.Create(variantId, productId, sku, request.SellingPrice, originalAmount);
 
             if (attributeValues.Count > 0)
             {

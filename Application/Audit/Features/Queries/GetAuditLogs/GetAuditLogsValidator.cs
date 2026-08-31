@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 
 namespace Application.Audit.Features.Queries.GetAuditLogs;
 
@@ -94,5 +95,22 @@ public sealed class GetAuditLogsValidator : AbstractValidator<GetAuditLogsQuery>
             .When(x => x.To.HasValue);
     }
 
-    private static bool BeValidIpAddress(string? value) => !string.IsNullOrWhiteSpace(value) && IPAddress.TryParse(value, out _);
+    private static bool BeValidIpAddress(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        var trimmed = value.Trim();
+
+        if (!IPAddress.TryParse(trimmed, out var parsed))
+            return false;
+
+        if (parsed.AddressFamily == AddressFamily.InterNetworkV6)
+            return true;
+
+        if (parsed.AddressFamily == AddressFamily.InterNetwork)
+            return trimmed.Split('.').Length == 4;
+
+        return false;
+    }
 }

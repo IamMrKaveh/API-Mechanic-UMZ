@@ -3,6 +3,7 @@ namespace Application.Audit.Features.Queries.GetAuditStatistics;
 public sealed class GetAuditStatisticsValidator : AbstractValidator<GetAuditStatisticsQuery>
 {
     private const int MaxRangeDays = 366;
+    private const double RangeToleranceDays = 0.01;
 
     public GetAuditStatisticsValidator()
     {
@@ -13,7 +14,7 @@ public sealed class GetAuditStatisticsValidator : AbstractValidator<GetAuditStat
 
         RuleFor(x => x)
             .Must(x => !x.From.HasValue || !x.To.HasValue
-                       || (x.To.Value - x.From.Value).TotalDays <= MaxRangeDays)
+                       || (x.To.Value - x.From.Value).TotalDays <= MaxRangeDays + RangeToleranceDays)
             .WithMessage($"بازه زمانی نمی‌تواند از {MaxRangeDays} روز بیشتر باشد.")
             .WithName("DateRangeSpan");
 

@@ -53,17 +53,17 @@ public sealed class PreviewWalletTransferHandler(
         var today = DateTime.UtcNow.Date;
         var alreadyToday = await transferRepository.SumCompletedAmountForDayAsync(fromUserId, today, ct);
         var remaining = Math.Max(0m, _options.DailyLimit - alreadyToday);
-        var canProceed = request.Amount <= senderAvailable
-                         && request.Amount <= remaining
-                         && request.Amount >= _options.MinimumAmount;
+        var canProceed = request.Amount >= _options.MinimumAmount
+                         && request.Amount <= senderAvailable
+                         && request.Amount <= remaining;
 
         string? warning = null;
-        if (request.Amount > senderAvailable)
+        if (request.Amount < _options.MinimumAmount)
+            warning = $"حداقل مبلغ انتقال {_options.MinimumAmount:N0} تومان است.";
+        else if (request.Amount > senderAvailable)
             warning = "موجودی قابل برداشت کافی نیست.";
         else if (request.Amount > remaining)
             warning = "مبلغ درخواستی از سقف روزانه انتقال بیشتر است.";
-        else if (request.Amount < _options.MinimumAmount)
-            warning = $"حداقل مبلغ انتقال {_options.MinimumAmount:N0} تومان است.";
 
         var displayName = BuildDisplayName(recipient);
         var maskedPhone = MaskPhone(recipient.PhoneNumber?.Value ?? recipientPhone.Value);
