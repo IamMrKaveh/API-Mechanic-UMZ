@@ -8,7 +8,7 @@ public sealed class ProductVariantBuilder
 {
     private VariantId _id = VariantId.NewId();
     private ProductId _productId = ProductId.NewId();
-    private Sku _sku = Sku.Create("DEFAULT-SKU");
+    private Sku _sku = Sku.Create($"SKU-{Guid.NewGuid():N}"[..20]);
     private decimal _sellingAmount = 100_000m;
     private decimal? _originalAmount;
     private string _currency = "IRT";

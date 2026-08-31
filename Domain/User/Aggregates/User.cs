@@ -64,6 +64,33 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
         return user;
     }
 
+    public static User CreateExternal(
+        FullName fullName,
+        Email email,
+        PhoneNumber? phoneNumber = null)
+    {
+        Guard.Against.Null(fullName, nameof(fullName));
+        Guard.Against.Null(email, nameof(email));
+
+        var user = new User
+        {
+            Id = UserId.NewId(),
+            FullName = fullName,
+            Email = email,
+            PasswordHash = string.Empty,
+            PhoneNumber = phoneNumber,
+            IsActive = true,
+            IsAdmin = false,
+            IsEmailVerified = true,
+            FailedLoginAttempts = 0,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        user.RaiseDomainEvent(new UserRegisteredEvent(user.Id, email, fullName.FirstName, fullName.LastName));
+        return user;
+    }
+
     public static User RegisterByPhone(PhoneNumber phoneNumber)
     {
         Guard.Against.Null(phoneNumber, nameof(phoneNumber));
@@ -313,8 +340,8 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
 
     private void EnsureActive()
     {
-        if (!IsActive)
-            throw new DomainException("حساب کاربری غیرفعال است.");
+        if (IsActive is false)
+            throw new UserInactiveException(Id);
     }
 
     public void ChangePhoneNumber(PhoneNumber phoneNumber)
