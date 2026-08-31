@@ -50,24 +50,25 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
 
         builder.Navigation(e => e.Rating).IsRequired();
 
-        builder.OwnsOne(e => e.Status, s =>
-        {
-            s.WithOwner();
+        var reviewStatusConverter = new ValueConverter<ReviewStatus, string>(
+            v => v.Value,
+            v => ReviewStatus.From(v));
 
-            s.Property(x => x.Value)
-                .HasColumnName("Status")
-                .HasMaxLength(50)
-                .IsRequired();
+        var reviewStatusComparer = new ValueComparer<ReviewStatus>(
+            (l, r) => (l == null && r == null) || (l != null && r != null && l.Value == r.Value),
+            v => v == null ? 0 : v.Value.GetHashCode(),
+            v => v == null ? null! : ReviewStatus.From(v.Value));
 
-            s.Property(x => x.DisplayName)
-                .HasColumnName("StatusDisplayName")
-                .HasMaxLength(100)
-                .IsRequired();
+        builder.Property(e => e.Status)
+            .HasConversion(reviewStatusConverter)
+            .Metadata.SetValueComparer(reviewStatusComparer);
 
-            s.HasIndex(x => x.Value);
-        });
+        builder.Property(e => e.Status)
+            .HasColumnName("Status")
+            .HasMaxLength(50)
+            .IsRequired();
 
-        builder.Navigation(e => e.Status).IsRequired();
+        builder.HasIndex(e => e.Status).HasDatabaseName("IX_ProductReviews_Status");
 
         builder.Property(e => e.Title).HasMaxLength(100);
         builder.Property(e => e.Comment).HasColumnType("text");

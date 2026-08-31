@@ -19,20 +19,18 @@ public class GoogleLoginHandler(
 
         if (user is null)
         {
-            user = Domain.User.Aggregates.User.Create(
+            user = Domain.User.Aggregates.User.CreateExternal(
                 FullName.Create(request.FirstName, request.LastName),
                 email,
-                passwordHash: string.Empty,
                 phoneNumber: null);
-
-            user.UpdateProfile(
-                FullName.Create(request.FirstName, request.LastName),
-                null);
 
             await userRepository.AddAsync(user, ct);
         }
 
-        var ipAddress = IpAddress.Create(currentUser.IpAddress ?? IpAddress.Unknown.Value);
+        var rawIp = currentUser.IpAddress;
+        var ipAddress = string.IsNullOrWhiteSpace(rawIp)
+            ? IpAddress.Unknown
+            : IpAddress.Create(rawIp);
 
         var sessionResult = await sessionService.CreateSessionAsync(
             user.Id,
