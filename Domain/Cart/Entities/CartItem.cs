@@ -8,7 +8,7 @@ namespace Domain.Cart.Entities;
 public sealed class CartItem : Entity<CartItemId>
 {
     public ProductName ProductName { get; private init; } = null!;
-    public Sku Sku { get; private init; } = null!;
+    public Sku VariantSku { get; private init; } = null!;
     public Money SellingPrice { get; private set; } = null!;
     public Money OriginalPrice { get; private set; } = null!;
     public int Quantity { get; private set; }
@@ -41,7 +41,7 @@ public sealed class CartItem : Entity<CartItemId>
         VariantId = variantId;
         ProductId = productId;
         ProductName = productName;
-        Sku = sku;
+        VariantSku = sku;
         SellingPrice = unitPrice;
         OriginalPrice = originalPrice;
         Quantity = quantity;

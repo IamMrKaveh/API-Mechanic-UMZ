@@ -2,35 +2,20 @@ using Application.Notification.Contracts;
 using Domain.Notification.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Notification.QueryServices;
-using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Builders;
+using Tests.TestInfrastructure.Base;
 
 namespace Tests.Infrastructure.Notification.QueryServices;
 
 [Trait("Category", "Integration")]
 [Collection(nameof(DatabaseCollection))]
-public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLifetime
+public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
-    private readonly PostgresContainerFixture _fixture = fixture;
-    private DBContext _context = null!;
     private INotificationQueryService _sut = null!;
 
-    public Task InitializeAsync()
+    protected override Task OnInitializeAsync()
     {
-        Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
-
-        _context = _fixture.CreateContext();
-        _sut = new NotificationQueryService(_context);
+        _sut = new NotificationQueryService(Context);
         return Task.CompletedTask;
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (!_fixture.IsDockerAvailable)
-            return;
-
-        await _context.DisposeAsync();
-        await _fixture.ResetAsync();
     }
 
     [Fact]
@@ -48,58 +33,58 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
     [Fact]
     public async Task GetByUserIdAsync_UserWithNotifications_ReturnsOnlyForThatUser()
     {
-        var targetUserId = UserId.NewId();
-        var otherUserId = UserId.NewId();
+        var targetUser = await SeedUserAsync();
+        var otherUser = await SeedUserAsync();
 
         var forTarget1 = new NotificationBuilder()
-            .WithUserId(targetUserId)
+            .WithUserId(targetUser.Id)
             .WithTitle("Target Order")
             .WithMessage("Your order was placed")
             .Build();
         var forTarget2 = new NotificationBuilder()
-            .WithUserId(targetUserId)
+            .WithUserId(targetUser.Id)
             .WithTitle("Target Shipping")
             .WithMessage("Your order was shipped")
             .WithType(NotificationType.OrderShipped)
             .Build();
         var forOther = new NotificationBuilder()
-            .WithUserId(otherUserId)
+            .WithUserId(otherUser.Id)
             .WithTitle("Other")
             .WithMessage("Other user message")
             .Build();
 
-        _context.Notifications.AddRange(forTarget1, forTarget2, forOther);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.Notifications.AddRange(forTarget1, forTarget2, forOther);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
-        var result = await _sut.GetByUserIdAsync(targetUserId, 1, 10);
+        var result = await _sut.GetByUserIdAsync(targetUser.Id, 1, 10);
 
         result.TotalCount.ShouldBe(2);
         result.Items.Count.ShouldBe(2);
-        result.Items.ShouldAllBe(n => n.UserId == targetUserId.Value);
+        result.Items.ShouldAllBe(n => n.UserId == targetUser.Id.Value);
     }
 
     [Fact]
     public async Task GetByUserIdAsync_MappedFields_MatchAggregate()
     {
-        var userId = UserId.NewId();
+        var user = await SeedUserAsync();
         var notification = new NotificationBuilder()
-            .WithUserId(userId)
+            .WithUserId(user.Id)
             .WithTitle("Custom Title")
             .WithMessage("Custom Message")
             .WithType(NotificationType.OrderPaid)
             .WithActionUrl("/orders/123")
             .Build();
 
-        _context.Notifications.Add(notification);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.Notifications.Add(notification);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
-        var result = await _sut.GetByUserIdAsync(userId, 1, 10);
+        var result = await _sut.GetByUserIdAsync(user.Id, 1, 10);
 
         result.Items.Count.ShouldBe(1);
         var dto = result.Items[0];
-        dto.UserId.ShouldBe(userId.Value);
+        dto.UserId.ShouldBe(user.Id.Value);
         dto.Title.ShouldBe("Custom Title");
         dto.Message.ShouldBe("Custom Message");
         dto.Type.ShouldBe("OrderPaid");
@@ -111,18 +96,18 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
     [Fact]
     public async Task GetByUserIdAsync_MultipleNotifications_ReturnsOrderedByCreatedAtDescending()
     {
-        var userId = UserId.NewId();
-        var first = new NotificationBuilder().WithUserId(userId).WithTitle("First").Build();
+        var user = await SeedUserAsync();
+        var first = new NotificationBuilder().WithUserId(user.Id).WithTitle("First").Build();
         await Task.Delay(20);
-        var second = new NotificationBuilder().WithUserId(userId).WithTitle("Second").Build();
+        var second = new NotificationBuilder().WithUserId(user.Id).WithTitle("Second").Build();
         await Task.Delay(20);
-        var third = new NotificationBuilder().WithUserId(userId).WithTitle("Third").Build();
+        var third = new NotificationBuilder().WithUserId(user.Id).WithTitle("Third").Build();
 
-        _context.Notifications.AddRange(first, second, third);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.Notifications.AddRange(first, second, third);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
-        var result = await _sut.GetByUserIdAsync(userId, 1, 10);
+        var result = await _sut.GetByUserIdAsync(user.Id, 1, 10);
 
         result.Items.Count.ShouldBe(3);
         result.Items[0].CreatedAt.ShouldBeGreaterThanOrEqualTo(result.Items[1].CreatedAt);
@@ -136,20 +121,20 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
     public async Task GetByUserIdAsync_Pagination_ReturnsExpectedPageAndTotal(
         int page, int pageSize, int expectedItems, int expectedTotal)
     {
-        var userId = UserId.NewId();
+        var user = await SeedUserAsync();
         for (var i = 0; i < 4; i++)
         {
-            _context.Notifications.Add(
+            Context.Notifications.Add(
                 new NotificationBuilder()
-                    .WithUserId(userId)
+                    .WithUserId(user.Id)
                     .WithTitle($"Title {i}")
                     .Build());
             await Task.Delay(10);
         }
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
-        var result = await _sut.GetByUserIdAsync(userId, page, pageSize);
+        var result = await _sut.GetByUserIdAsync(user.Id, page, pageSize);
 
         result.TotalCount.ShouldBe(expectedTotal);
         result.Items.Count.ShouldBe(expectedItems);
@@ -168,20 +153,20 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
     [Fact]
     public async Task GetUnreadCountAsync_MixOfReadAndUnread_CountsOnlyUnread()
     {
-        var userId = UserId.NewId();
-        var read1 = new NotificationBuilder().WithUserId(userId).WithTitle("Read1").Build();
+        var user = await SeedUserAsync();
+        var read1 = new NotificationBuilder().WithUserId(user.Id).WithTitle("Read1").Build();
         read1.MarkAsRead();
-        var read2 = new NotificationBuilder().WithUserId(userId).WithTitle("Read2").Build();
+        var read2 = new NotificationBuilder().WithUserId(user.Id).WithTitle("Read2").Build();
         read2.MarkAsRead();
-        var unread1 = new NotificationBuilder().WithUserId(userId).WithTitle("Unread1").Build();
-        var unread2 = new NotificationBuilder().WithUserId(userId).WithTitle("Unread2").Build();
-        var unread3 = new NotificationBuilder().WithUserId(userId).WithTitle("Unread3").Build();
+        var unread1 = new NotificationBuilder().WithUserId(user.Id).WithTitle("Unread1").Build();
+        var unread2 = new NotificationBuilder().WithUserId(user.Id).WithTitle("Unread2").Build();
+        var unread3 = new NotificationBuilder().WithUserId(user.Id).WithTitle("Unread3").Build();
 
-        _context.Notifications.AddRange(read1, read2, unread1, unread2, unread3);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.Notifications.AddRange(read1, read2, unread1, unread2, unread3);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
-        var result = await _sut.GetUnreadCountAsync(userId);
+        var result = await _sut.GetUnreadCountAsync(user.Id);
 
         result.ShouldBe(3);
     }
@@ -189,15 +174,15 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
     [Fact]
     public async Task GetUnreadCountAsync_OtherUsersUnread_NotCounted()
     {
-        var userId = UserId.NewId();
-        var otherUserId = UserId.NewId();
-        _context.Notifications.Add(new NotificationBuilder().WithUserId(userId).Build());
-        _context.Notifications.Add(new NotificationBuilder().WithUserId(otherUserId).Build());
-        _context.Notifications.Add(new NotificationBuilder().WithUserId(otherUserId).Build());
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        var user = await SeedUserAsync();
+        var otherUser = await SeedUserAsync();
+        Context.Notifications.Add(new NotificationBuilder().WithUserId(user.Id).Build());
+        Context.Notifications.Add(new NotificationBuilder().WithUserId(otherUser.Id).Build());
+        Context.Notifications.Add(new NotificationBuilder().WithUserId(otherUser.Id).Build());
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
-        var result = await _sut.GetUnreadCountAsync(userId);
+        var result = await _sut.GetUnreadCountAsync(user.Id);
 
         result.ShouldBe(1);
     }
@@ -214,13 +199,13 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
     [Fact]
     public async Task GetAllAsync_MultipleUsers_ReturnsAllNotifications()
     {
-        var user1 = UserId.NewId();
-        var user2 = UserId.NewId();
-        _context.Notifications.Add(new NotificationBuilder().WithUserId(user1).Build());
-        _context.Notifications.Add(new NotificationBuilder().WithUserId(user2).Build());
-        _context.Notifications.Add(new NotificationBuilder().WithUserId(user2).Build());
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        var user1 = await SeedUserAsync();
+        var user2 = await SeedUserAsync();
+        Context.Notifications.Add(new NotificationBuilder().WithUserId(user1.Id).Build());
+        Context.Notifications.Add(new NotificationBuilder().WithUserId(user2.Id).Build());
+        Context.Notifications.Add(new NotificationBuilder().WithUserId(user2.Id).Build());
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var result = await _sut.GetAllAsync(1, 10);
 
@@ -231,14 +216,14 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
     [Fact]
     public async Task GetAllAsync_Ordering_ReturnsNewestFirst()
     {
-        var user = UserId.NewId();
-        var older = new NotificationBuilder().WithUserId(user).WithTitle("older").Build();
+        var user = await SeedUserAsync();
+        var older = new NotificationBuilder().WithUserId(user.Id).WithTitle("older").Build();
         await Task.Delay(20);
-        var newer = new NotificationBuilder().WithUserId(user).WithTitle("newer").Build();
+        var newer = new NotificationBuilder().WithUserId(user.Id).WithTitle("newer").Build();
 
-        _context.Notifications.AddRange(older, newer);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.Notifications.AddRange(older, newer);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var result = await _sut.GetAllAsync(1, 10);
 

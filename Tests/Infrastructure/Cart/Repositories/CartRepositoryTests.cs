@@ -186,7 +186,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded!.CartItems.Count.ShouldBe(1);
         var item = loaded.CartItems.Single();
         item.ProductName.Value.ShouldBe("Product X");
-        item.Sku.Value.ShouldBe("SKU-CART-1");
+        item.VariantSku.Value.ShouldBe("SKU-CART-1");
         item.Quantity.ShouldBe(2);
         item.SellingPrice.Amount.ShouldBe(150m);
         item.OriginalPrice.Amount.ShouldBe(200m);

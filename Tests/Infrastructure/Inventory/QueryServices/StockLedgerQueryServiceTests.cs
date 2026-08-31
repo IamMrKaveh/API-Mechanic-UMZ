@@ -1,49 +1,42 @@
-using Application.Inventory.Features.Shared;
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
 using Domain.Inventory.Entities;
 using Domain.Variant.ValueObjects;
 using Infrastructure.Inventory.QueryServices;
-using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Builders;
+using Tests.TestInfrastructure.Base;
 
 namespace Tests.Infrastructure.Inventory.QueryServices;
 
 [Trait("Category", "Integration")]
 [Collection(nameof(DatabaseCollection))]
-public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLifetime
+public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
-    private readonly PostgresContainerFixture _fixture = fixture;
-    private DBContext _context = null!;
     private StockLedgerQueryService _sut = null!;
+    private BrandId _brandId = null!;
+    private CategoryId _categoryId = null!;
 
-    public Task InitializeAsync()
+    protected override async Task OnInitializeAsync()
     {
-        Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
-
-        _context = _fixture.CreateContext();
-        _sut = new StockLedgerQueryService(_context);
-        return Task.CompletedTask;
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (!_fixture.IsDockerAvailable)
-            return;
-
-        await _context.DisposeAsync();
-        await _fixture.ResetAsync();
+        _sut = new StockLedgerQueryService(Context);
+        var (brand, category) = await SeedBrandWithCategoryAsync();
+        _brandId = brand.Id;
+        _categoryId = category.Id;
     }
 
     private async Task<VariantId> SeedVariantAsync()
     {
-        var product = new ProductBuilder().Build();
-        _context.Products.Add(product);
+        var product = new ProductBuilder()
+            .WithBrandId(_brandId)
+            .WithCategoryId(_categoryId)
+            .Build();
+        Context.Products.Add(product);
 
         var variant = new ProductVariantBuilder()
             .WithProductId(product.Id)
             .Build();
-        _context.ProductVariants.Add(variant);
+        Context.ProductVariants.Add(variant);
 
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
         return variant.Id;
     }
 
@@ -61,8 +54,8 @@ public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : IA
                 .WithReferenceNumber($"REF-{i:D3}")
                 .BuildStockIn();
             entries.Add(entry);
-            _context.StockLedgerEntries.Add(entry);
-            await _context.SaveChangesAsync();
+            Context.StockLedgerEntries.Add(entry);
+            await Context.SaveChangesAsync();
         }
         return entries;
     }
@@ -143,8 +136,8 @@ public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : IA
             .WithReferenceNumber("REF-XYZ")
             .WithNote("stock replenishment")
             .BuildStockIn();
-        _context.StockLedgerEntries.Add(entry);
-        await _context.SaveChangesAsync();
+        Context.StockLedgerEntries.Add(entry);
+        await Context.SaveChangesAsync();
 
         var result = await _sut.GetByVariantIdAsync(variantId, page: 1, pageSize: 10);
 

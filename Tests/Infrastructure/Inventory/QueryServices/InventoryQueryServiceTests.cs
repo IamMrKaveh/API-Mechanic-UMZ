@@ -1,10 +1,12 @@
 using Application.Inventory.Contracts;
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
 using Domain.Inventory.Aggregates;
 using Domain.Product.ValueObjects;
 using Domain.Variant.Aggregates;
 using Domain.Variant.ValueObjects;
 using Infrastructure.Inventory.QueryServices;
-using Infrastructure.Persistence.Context;
+using Tests.TestInfrastructure.Base;
 using Inventories = Domain.Inventory.Aggregates.Inventory;
 using Products = Domain.Product.Aggregates.Product;
 
@@ -12,48 +14,42 @@ namespace Tests.Infrastructure.Inventory.QueryServices;
 
 [Trait("Category", "Integration")]
 [Collection(nameof(DatabaseCollection))]
-public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLifetime
+public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
-    private readonly PostgresContainerFixture _fixture = fixture;
-    private DBContext _context = null!;
     private IInventoryQueryService _sut = null!;
+    private BrandId _brandId = null!;
+    private CategoryId _categoryId = null!;
 
-    public Task InitializeAsync()
+    protected override async Task OnInitializeAsync()
     {
-        Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
+        _sut = new InventoryQueryService(Context);
 
-        _context = _fixture.CreateContext();
-        _sut = new InventoryQueryService(_context);
-        return Task.CompletedTask;
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (!_fixture.IsDockerAvailable)
-            return;
-
-        await _context.DisposeAsync();
-        await _fixture.ResetAsync();
+        var (brand, category) = await SeedBrandWithCategoryAsync();
+        _brandId = brand.Id;
+        _categoryId = category.Id;
     }
 
     private async Task<(Products product, ProductVariant variant, Inventories inventory)>
         SeedProductVariantAndInventoryAsync(int stock, bool isUnlimited = false, int threshold = 5, string sku = "SKU-DEFAULT")
     {
-        var product = new ProductBuilder().Build();
-        _context.Products.Add(product);
+        var product = new ProductBuilder()
+            .WithBrandId(_brandId)
+            .WithCategoryId(_categoryId)
+            .Build();
+        Context.Products.Add(product);
 
         var variant = new ProductVariantBuilder()
             .WithProductId(product.Id)
             .WithSku(sku)
             .Build();
-        _context.ProductVariants.Add(variant);
+        Context.ProductVariants.Add(variant);
 
         var inventory = Inventories.Create(
             variant.Id, initialStock: stock, isUnlimited: isUnlimited, lowStockThreshold: threshold);
-        _context.Inventories.Add(inventory);
+        Context.Inventories.Add(inventory);
 
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
         return (product, variant, inventory);
     }
 
@@ -141,9 +137,9 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : IAsy
             .WithReferenceNumber("REF-B")
             .BuildStockIn();
 
-        _context.StockLedgerEntries.AddRange(entry1, entry2);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.StockLedgerEntries.AddRange(entry1, entry2);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var result = await _sut.GetTransactionsPagedAsync(
             variantId: v1.Id, transactionType: null,
@@ -158,7 +154,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : IAsy
         var (_, variant, _) = await SeedProductVariantAndInventoryAsync(stock: 100, sku: "SKU-PG");
         for (var i = 0; i < 5; i++)
         {
-            _context.StockLedgerEntries.Add(
+            Context.StockLedgerEntries.Add(
                 new StockLedgerEntryBuilder()
                     .WithVariantId(variant.Id)
                     .WithQuantity(1)
@@ -166,8 +162,8 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : IAsy
                     .WithReferenceNumber($"REF-{i}")
                     .BuildStockIn());
         }
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var result = await _sut.GetTransactionsPagedAsync(
             variantId: variant.Id, transactionType: null,
@@ -323,19 +319,22 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : IAsy
     [Fact]
     public async Task GetInventoryStatusesByProductAsync_MultipleVariants_ReturnsForEachVariant()
     {
-        var product = new ProductBuilder().Build();
-        _context.Products.Add(product);
+        var product = new ProductBuilder()
+            .WithBrandId(_brandId)
+            .WithCategoryId(_categoryId)
+            .Build();
+        Context.Products.Add(product);
 
         var v1 = new ProductVariantBuilder().WithProductId(product.Id).WithSku("SKU-X1").Build();
         var v2 = new ProductVariantBuilder().WithProductId(product.Id).WithSku("SKU-X2").Build();
-        _context.ProductVariants.AddRange(v1, v2);
+        Context.ProductVariants.AddRange(v1, v2);
 
         var inv1 = Inventories.Create(v1.Id, initialStock: 10);
         var inv2 = Inventories.Create(v2.Id, initialStock: 0);
-        _context.Inventories.AddRange(inv1, inv2);
+        Context.Inventories.AddRange(inv1, inv2);
 
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var result = await _sut.GetInventoryStatusesByProductAsync(product.Id);
 
@@ -366,9 +365,9 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : IAsy
             phone: null,
             priority: 1,
             isDefault: true);
-        _context.Warehouses.Add(defaultWarehouse);
-        await _context.SaveChangesAsync();
-        _context.ChangeTracker.Clear();
+        Context.Warehouses.Add(defaultWarehouse);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var result = (await _sut.GetWarehouseStockByVariantAsync(variant.Id)).ToList();
 

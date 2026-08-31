@@ -23,7 +23,7 @@ public class CartMappingConfig : IRegister
             .Map(dest => dest.VariantId, src => src.VariantId.Value)
             .Map(dest => dest.ProductId, src => src.ProductId.Value)
             .Map(dest => dest.ProductName, src => src.ProductName.Value)
-            .Map(dest => dest.Sku, src => src.Sku.Value)
+            .Map(dest => dest.Sku, src => src.VariantSku.Value)
             .Map(dest => dest.UnitPrice, src => src.SellingPrice.Amount)
             .Map(dest => dest.OriginalPrice, src => src.OriginalPrice.Amount)
             .Map(dest => dest.Quantity, src => src.Quantity)

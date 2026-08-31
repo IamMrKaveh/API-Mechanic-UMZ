@@ -27,7 +27,7 @@ public sealed class CheckoutCartItemBuilderService(ICartRepository cartRepositor
             item.VariantId,
             item.ProductId,
             item.ProductName,
-            item.Sku,
+            item.VariantSku,
             item.SellingPrice,
             item.Quantity)).ToList();
 
