@@ -11,6 +11,8 @@ namespace Tests.Infrastructure.Inventory.QueryServices;
 [Collection(nameof(DatabaseCollection))]
 public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
+    private static readonly TimeSpan PgTimestampTolerance = TimeSpan.FromTicks(10);
+
     private StockLedgerQueryService _sut = null!;
     private BrandId _brandId = null!;
     private CategoryId _categoryId = null!;
@@ -149,7 +151,7 @@ public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : In
         dto.BalanceAfter.ShouldBe(entry.BalanceAfter);
         dto.Note.ShouldBe(entry.Note);
         dto.ReferenceNumber.ShouldBe(entry.ReferenceNumber);
-        dto.CreatedAt.ShouldBe(entry.CreatedAt);
+        dto.CreatedAt.ShouldBe(entry.CreatedAt, PgTimestampTolerance);
     }
 
     [Fact]

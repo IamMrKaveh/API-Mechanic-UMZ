@@ -1,6 +1,7 @@
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
+using SharedKernel.Exceptions;
 
 namespace Infrastructure.Order.Repositories;
 
@@ -19,18 +20,28 @@ public sealed class OrderStatusRepository(DBContext context) : IOrderStatusRepos
         OrderStatusId id,
         CancellationToken ct = default)
     {
-        var status = await context.OrderStatuses
+        var name = await context.OrderStatuses
             .AsNoTracking()
             .Where(s => s.Id == id)
             .Select(s => s.Name)
             .FirstOrDefaultAsync(ct);
 
-        if (string.IsNullOrWhiteSpace(status))
+        if (string.IsNullOrWhiteSpace(name))
             return false;
+
+        OrderStatusValue statusValue;
+        try
+        {
+            statusValue = OrderStatusValue.From(name);
+        }
+        catch (DomainException)
+        {
+            return false;
+        }
 
         return await context.Orders
             .AsNoTracking()
-            .AnyAsync(o => o.Status.Value == status, ct);
+            .AnyAsync(o => o.Status == statusValue, ct);
     }
 
     public async Task<bool> ExistsByNameAsync(

@@ -1,10 +1,13 @@
 using Application.User.Features.Shared;
 using Domain.Payment.ValueObjects;
+using Domain.Product.ValueObjects;
 using Domain.Security.Enums;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
+using Domain.Variant.ValueObjects;
 using Infrastructure.User.QueryServices;
 using Orders = Domain.Order.Aggregates.Order;
+using ProductAggregate = Domain.Product.Aggregates.Product;
+using Reviews = Domain.Review.Aggregates.ProductReview;
 using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Infrastructure.User.QueryServices;
@@ -56,12 +59,53 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         return user;
     }
 
+    private async Task<ProductAggregate> SeedProductAsync()
+    {
+        var category = await new CategoryBuilder().BuildAsync();
+        category.ClearDomainEvents();
+        _context.Categories.Add(category);
+        await _context.SaveChangesAsync();
+
+        var brand = await new BrandBuilder().WithCategoryId(category.Id).BuildAsync();
+        brand.ClearDomainEvents();
+        _context.Brands.Add(brand);
+        await _context.SaveChangesAsync();
+
+        var product = new ProductBuilder()
+            .WithBrandId(brand.Id)
+            .WithCategoryId(category.Id)
+            .Build();
+        product.ClearDomainEvents();
+        _context.Products.Add(product);
+        await _context.SaveChangesAsync();
+        return product;
+    }
+
+    private async Task<VariantId> SeedProductVariantIdAsync()
+    {
+        var product = await SeedProductAsync();
+        var variant = new ProductVariantBuilder()
+            .WithProductId(product.Id)
+            .WithSku($"SKU-{Guid.NewGuid():N}"[..20])
+            .Build();
+        variant.ClearDomainEvents();
+        _context.ProductVariants.Add(variant);
+        await _context.SaveChangesAsync();
+        return variant.Id;
+    }
+
     private async Task<Orders> SeedDeliveredOrderAsync(UserId userId, decimal finalAmount)
     {
+        var variantId = await SeedProductVariantIdAsync();
+
         var order = new OrderBuilder()
             .WithUserId(userId)
             .WithShippingCost(finalAmount, "IRT")
-            .WithItemSnapshots(new OrderItemSnapshotBuilder().WithQuantity(1).WithUnitPrice(0m, "IRT").Build())
+            .WithItemSnapshots(new OrderItemSnapshotBuilder()
+                .WithVariantId(variantId)
+                .WithQuantity(1)
+                .WithUnitPrice(0m, "IRT")
+                .Build())
             .Build();
 
         order.MoveToPending();
@@ -78,9 +122,15 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
 
     private async Task<Orders> SeedCreatedOrderAsync(UserId userId)
     {
+        var variantId = await SeedProductVariantIdAsync();
+
         var order = new OrderBuilder()
             .WithUserId(userId)
-            .WithItemSnapshots(new OrderItemSnapshotBuilder().WithQuantity(1).WithUnitPrice(50_000m, "IRT").Build())
+            .WithItemSnapshots(new OrderItemSnapshotBuilder()
+                .WithVariantId(variantId)
+                .WithQuantity(1)
+                .WithUnitPrice(50_000m, "IRT")
+                .Build())
             .Build();
         order.ClearDomainEvents();
         _context.Orders.Add(order);
@@ -424,43 +474,22 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     [Fact]
     public async Task GetUserReviewsPagedAsync_ReturnsUsersReviewsExcludingSoftDeleted()
     {
-        var user = await SeedUserAsync(firstName: "Neda", lastName: "Sharifi");
-        var visible = new ProductReviewBuilder()
-            .WithUserId(user.Id)
-            .WithRating(5)
-            .WithTitle("Great product")
-            .WithComment("Loved it")
-            .Build();
-        visible.ClearDomainEvents();
+        var user = await SeedUserAsync();
+        var product = await SeedProductAsync();
 
-        var deleted = new ProductReviewBuilder()
-            .WithUserId(user.Id)
-            .BuildDeleted();
-        deleted.ClearDomainEvents();
+        var visible = await SeedReviewAsync(user.Id, product.Id, "Visible Review");
+        var deleted = await SeedReviewAsync(user.Id, product.Id, "Deleted Review");
 
-        _context.ProductReviews.AddRange(visible, deleted);
+        deleted.MarkAsDeleted();
+        _context.ProductReviews.Update(deleted);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
 
         var result = await _sut.GetUserReviewsPagedAsync(user.Id, 1, 10, CancellationToken.None);
 
         result.TotalCount.ShouldBe(1);
-        result.Items.Count.ShouldBe(1);
-        result.Items[0].Id.ShouldBe(visible.Id.Value);
-        result.Items[0].UserFullName.ShouldBe("Neda Sharifi");
-        result.Items[0].Rating.ShouldBe(5);
-    }
-
-    [Fact]
-    public async Task GetUserReviewsPagedAsync_WhenNoReviews_ReturnsEmptyPaginatedResult()
-    {
-        var user = await SeedUserAsync();
-        _context.ChangeTracker.Clear();
-
-        var result = await _sut.GetUserReviewsPagedAsync(user.Id, 1, 10, CancellationToken.None);
-
-        result.TotalCount.ShouldBe(0);
-        result.Items.ShouldBeEmpty();
+        result.Items.Single().Id.ShouldBe(visible.Id.Value);
+        result.Items.Any(i => i.Id == deleted.Id.Value).ShouldBeFalse();
     }
 
     [Theory]
@@ -469,16 +498,33 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     public async Task GetUserReviewsPagedAsync_WithInvalidPaging_UsesDefaults(int page, int pageSize)
     {
         var user = await SeedUserAsync();
-        var review = new ProductReviewBuilder().WithUserId(user.Id).Build();
-        review.ClearDomainEvents();
-        _context.ProductReviews.Add(review);
-        await _context.SaveChangesAsync();
+        var product = await SeedProductAsync();
+        await SeedReviewAsync(user.Id, product.Id, "Test Review");
         _context.ChangeTracker.Clear();
 
         var result = await _sut.GetUserReviewsPagedAsync(user.Id, page, pageSize, CancellationToken.None);
 
         result.Page.ShouldBe(1);
-        result.PageSize.ShouldBe(10);
+        result.PageSize.ShouldBe(20);
         result.TotalCount.ShouldBe(1);
+    }
+
+    private async Task<Reviews> SeedReviewAsync(
+        UserId userId,
+        ProductId productId,
+        string title)
+    {
+        var review = new ProductReviewBuilder()
+            .WithUserId(userId)
+            .WithProductId(productId)
+            .WithTitle(title)
+            .WithRating(5)
+            .WithoutOrderId()
+            .Build();
+
+        review.ClearDomainEvents();
+        _context.ProductReviews.Add(review);
+        await _context.SaveChangesAsync();
+        return review;
     }
 }

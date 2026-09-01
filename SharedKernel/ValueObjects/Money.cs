@@ -15,8 +15,6 @@ public sealed class Money : ValueObject
 
     public static Money Create(decimal amount, string currency = "IRT")
     {
-        if (amount < 0)
-            throw new ArgumentException("Money amount cannot be negative.", nameof(amount));
         if (string.IsNullOrWhiteSpace(currency))
             throw new ArgumentException("Currency cannot be empty.", nameof(currency));
         return new Money(amount, currency.ToUpperInvariant().Trim());

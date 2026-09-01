@@ -4,7 +4,6 @@ using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
 using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Exceptions;
-using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Domain.Support.Aggregates;
 
@@ -48,12 +47,10 @@ public class TicketTests
         var after = DateTime.UtcNow.AddSeconds(1);
         ticket.CreatedAt.ShouldBeGreaterThanOrEqualTo(before);
         ticket.CreatedAt.ShouldBeLessThanOrEqualTo(after);
-        ticket.LastActivityAt.ShouldNotBeNull();
-        ticket.LastActivityAt!.Value.ShouldBeGreaterThanOrEqualTo(before);
-        ticket.LastActivityAt.Value.ShouldBeLessThanOrEqualTo(after);
-        ticket.UpdatedAt.ShouldNotBeNull();
-        ticket.UpdatedAt!.Value.ShouldBeGreaterThanOrEqualTo(before);
-        ticket.UpdatedAt.Value.ShouldBeLessThanOrEqualTo(after);
+        ticket.LastActivityAt!.ShouldBeGreaterThanOrEqualTo(before);
+        ticket.LastActivityAt.ShouldBeLessThanOrEqualTo(after);
+        ticket.UpdatedAt.ShouldBeGreaterThanOrEqualTo(before);
+        ticket.UpdatedAt.ShouldBeLessThanOrEqualTo(after);
     }
 
     [Fact]
@@ -294,8 +291,7 @@ public class TicketTests
 
         ticket.Status.ShouldBe(TicketStatus.Closed);
         ticket.IsClosed.ShouldBeTrue();
-        ticket.UpdatedAt.ShouldNotBeNull();
-        ticket.UpdatedAt!.Value.ShouldBeGreaterThanOrEqualTo(updatedAtBefore!.Value);
+        ticket.UpdatedAt.ShouldBeGreaterThanOrEqualTo(updatedAtBefore);
     }
 
     [Fact]

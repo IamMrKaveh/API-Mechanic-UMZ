@@ -1,9 +1,7 @@
 using Domain.Support.Enums;
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
 using Infrastructure.Support.Repositories;
-using Tests.TestInfrastructure.Builders;
 using TicketAggregate = Domain.Support.Aggregates.Ticket;
 
 namespace Tests.Infrastructure.Support.Repositories;
@@ -180,7 +178,7 @@ public class TicketRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
 
         reloaded.ShouldNotBeNull();
         reloaded.Status.ShouldBe(TicketStatus.AwaitingReply);
-        reloaded.LastActivityAt.ShouldBe(now);
+        reloaded.LastActivityAt.ShouldBe(now, TimeSpan.FromMicroseconds(1));
         reloaded.Messages.Count.ShouldBe(1);
         reloaded.Messages.Single().Content.ShouldBe("Agent reply");
         reloaded.Messages.Single().SenderType.ShouldBe(TicketMessageSenderType.Agent);

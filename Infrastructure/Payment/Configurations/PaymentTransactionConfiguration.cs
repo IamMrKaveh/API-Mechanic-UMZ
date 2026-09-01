@@ -42,13 +42,13 @@ public sealed class PaymentTransactionConfiguration : IEntityTypeConfiguration<P
         builder.Property(e => e.Description).HasMaxLength(500);
 
         builder.HasOne(e => e.Order)
-            .WithOne(e => e.PaymentTransaction)
-            .HasForeignKey<PaymentTransaction>(e => e.OrderId)
+            .WithMany()
+            .HasForeignKey(e => e.OrderId)
             .IsRequired(true)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => e.Authority).IsUnique();
-        builder.HasIndex(e => e.OrderId).IsUnique();
+        builder.HasIndex(e => e.OrderId);
         builder.HasIndex(e => new { e.Status, e.CreatedAt });
         builder.HasIndex(e => e.UserId);
 

@@ -123,7 +123,20 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
                .IsRequired(false)
                .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Property(e => e.PaymentTransactionId)
+               .HasConversion(
+                   v => v == null ? (Guid?)null : v.Value,
+                   v => v == null ? null : PaymentTransactionId.From(v.Value))
+               .HasColumnName("PaymentTransactionId");
+
+        builder.HasOne(e => e.PaymentTransaction)
+               .WithMany()
+               .HasForeignKey(nameof(Domain.Order.Aggregates.Order.PaymentTransactionId))
+               .IsRequired(false)
+               .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(e => e.PaymentMethodId);
+        builder.HasIndex(e => e.PaymentTransactionId);
         builder.HasIndex(e => e.IdempotencyKey).IsUnique();
         builder.HasIndex(e => e.OrderNumber).IsUnique();
         builder.HasIndex(e => e.UserId);

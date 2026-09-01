@@ -1,6 +1,5 @@
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
-using Infrastructure.Persistence.Context;
 using Infrastructure.Variant.Repositories;
 using Products = Domain.Product.Aggregates.Product;
 
@@ -34,7 +33,20 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
 
     private async Task<Products> PersistProductAsync()
     {
-        var product = new ProductBuilder().Build();
+        var category = await new CategoryBuilder().BuildAsync();
+        category.ClearDomainEvents();
+        await _context.Categories.AddAsync(category);
+        await _context.SaveChangesAsync();
+
+        var brand = await new BrandBuilder().WithCategoryId(category.Id).BuildAsync();
+        brand.ClearDomainEvents();
+        await _context.Brands.AddAsync(brand);
+        await _context.SaveChangesAsync();
+
+        var product = new ProductBuilder()
+            .WithBrandId(brand.Id)
+            .WithCategoryId(category.Id)
+            .Build();
         product.ClearDomainEvents();
         await _context.Products.AddAsync(product);
         await _context.SaveChangesAsync();

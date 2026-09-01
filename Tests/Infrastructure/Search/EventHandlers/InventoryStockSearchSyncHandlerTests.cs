@@ -1,6 +1,7 @@
 using Application.Common.Events;
 using Domain.Inventory.Events;
 using Domain.Inventory.ValueObjects;
+using Domain.Variant.Aggregates;
 using Domain.Variant.ValueObjects;
 using Infrastructure.Search.EventHandlers;
 
@@ -35,24 +36,45 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
     private static DomainEventNotification<StockReservationReleasedEvent> ReleaseNotification(VariantId variantId) =>
         new(new StockReservationReleasedEvent(InventoryId.NewId(), variantId, 2, 0));
 
-    private async Task<VariantId> SeedProductVariantAsync()
+    private async Task<ProductVariant> SeedProductVariantAsync()
     {
         await using var context = _fixture.CreateContext();
-        var variant = new ProductVariantBuilder().Build();
+
+        var category = await new CategoryBuilder().BuildAsync();
+        category.ClearDomainEvents();
+        context.Categories.Add(category);
+        await context.SaveChangesAsync();
+
+        var brand = await new BrandBuilder().WithCategoryId(category.Id).BuildAsync();
+        brand.ClearDomainEvents();
+        context.Brands.Add(brand);
+        await context.SaveChangesAsync();
+
+        var product = new ProductBuilder()
+            .WithBrandId(brand.Id)
+            .WithCategoryId(category.Id)
+            .Build();
+        product.ClearDomainEvents();
+        context.Products.Add(product);
+        await context.SaveChangesAsync();
+
+        var variant = new ProductVariantBuilder().WithProductId(product.Id).Build();
+        variant.ClearDomainEvents();
         context.ProductVariants.Add(variant);
         await context.SaveChangesAsync();
-        return variant.Id;
+
+        return variant;
     }
 
     [Fact]
     public async Task Handle_StockIncreased_EnqueuesProductOutboxMessageForKnownVariant()
     {
-        var variantId = await SeedProductVariantAsync();
+        var variant = await SeedProductVariantAsync();
 
         await using var context = _fixture.CreateContext();
         var sut = new InventoryStockSearchSyncHandler(context);
 
-        await sut.Handle(IncreaseNotification(variantId), CancellationToken.None);
+        await sut.Handle(IncreaseNotification(variant.Id), CancellationToken.None);
         await context.SaveChangesAsync();
 
         await using var verify = _fixture.CreateContext();
@@ -65,12 +87,12 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
     [Fact]
     public async Task Handle_StockReserved_EnqueuesProductOutboxMessageForKnownVariant()
     {
-        var variantId = await SeedProductVariantAsync();
+        var variant = await SeedProductVariantAsync();
 
         await using var context = _fixture.CreateContext();
         var sut = new InventoryStockSearchSyncHandler(context);
 
-        await sut.Handle(ReserveNotification(variantId), CancellationToken.None);
+        await sut.Handle(ReserveNotification(variant.Id), CancellationToken.None);
         await context.SaveChangesAsync();
 
         await using var verify = _fixture.CreateContext();
@@ -83,12 +105,12 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
     [Fact]
     public async Task Handle_StockReservationReleased_EnqueuesProductOutboxMessageForKnownVariant()
     {
-        var variantId = await SeedProductVariantAsync();
+        var variant = await SeedProductVariantAsync();
 
         await using var context = _fixture.CreateContext();
         var sut = new InventoryStockSearchSyncHandler(context);
 
-        await sut.Handle(ReleaseNotification(variantId), CancellationToken.None);
+        await sut.Handle(ReleaseNotification(variant.Id), CancellationToken.None);
         await context.SaveChangesAsync();
 
         await using var verify = _fixture.CreateContext();
@@ -101,10 +123,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
     [Fact]
     public async Task Handle_OutboxEntityId_MatchesProductIdOfPersistedVariant()
     {
-        await using var seed = _fixture.CreateContext();
-        var variant = new ProductVariantBuilder().Build();
-        seed.ProductVariants.Add(variant);
-        await seed.SaveChangesAsync();
+        var variant = await SeedProductVariantAsync();
 
         await using var context = _fixture.CreateContext();
         var sut = new InventoryStockSearchSyncHandler(context);
@@ -120,10 +139,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
     [Fact]
     public async Task Handle_SerializedDocument_ContainsProductIdOfVariant()
     {
-        await using var seed = _fixture.CreateContext();
-        var variant = new ProductVariantBuilder().Build();
-        seed.ProductVariants.Add(variant);
-        await seed.SaveChangesAsync();
+        var variant = await SeedProductVariantAsync();
 
         await using var context = _fixture.CreateContext();
         var sut = new InventoryStockSearchSyncHandler(context);
@@ -178,14 +194,14 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
     [Fact]
     public async Task Handle_MultipleStockEventsForSameVariant_EnqueuesOneMessagePerEvent()
     {
-        var variantId = await SeedProductVariantAsync();
+        var variant = await SeedProductVariantAsync();
 
         await using var context = _fixture.CreateContext();
         var sut = new InventoryStockSearchSyncHandler(context);
 
-        await sut.Handle(IncreaseNotification(variantId), CancellationToken.None);
-        await sut.Handle(ReserveNotification(variantId), CancellationToken.None);
-        await sut.Handle(ReleaseNotification(variantId), CancellationToken.None);
+        await sut.Handle(IncreaseNotification(variant.Id), CancellationToken.None);
+        await sut.Handle(ReserveNotification(variant.Id), CancellationToken.None);
+        await sut.Handle(ReleaseNotification(variant.Id), CancellationToken.None);
         await context.SaveChangesAsync();
 
         await using var verify = _fixture.CreateContext();
@@ -196,9 +212,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
     [Fact]
     public async Task Handle_PropagatesCancellationTokenToDbQuery()
     {
-        // A canceled token before invocation should surface as an OperationCanceledException
-        // from the underlying EF Core query.
-        var variantId = await SeedProductVariantAsync();
+        var variant = await SeedProductVariantAsync();
 
         await using var context = _fixture.CreateContext();
         var sut = new InventoryStockSearchSyncHandler(context);
@@ -207,7 +221,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         cts.Cancel();
 
         await Should.ThrowAsync<OperationCanceledException>(() =>
-            sut.Handle(IncreaseNotification(variantId), cts.Token));
+            sut.Handle(IncreaseNotification(variant.Id), cts.Token));
     }
 
     [Fact]
