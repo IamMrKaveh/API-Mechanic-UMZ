@@ -18,14 +18,29 @@ public sealed class WalletTopUpRepository(DBContext context) : IWalletTopUpRepos
         if (entry.State == EntityState.Detached)
         {
             var local = context.Set<WalletTopUp>().Local.FirstOrDefault(e => e.Id == topUp.Id);
-            if (local is not null && !ReferenceEquals(local, topUp))
+            if (local is not null)
             {
-                context.Entry(local).CurrentValues.SetValues(topUp);
-                context.Entry(local).State = EntityState.Modified;
+                if (!ReferenceEquals(local, topUp))
+                {
+                    context.Entry(local).CurrentValues.SetValues(topUp);
+                    context.Entry(local).State = EntityState.Modified;
+                }
+                else
+                {
+                    context.Entry(local).State = EntityState.Modified;
+                }
                 return;
             }
 
+            var currentXmin = context.Set<WalletTopUp>()
+                .AsNoTracking()
+                .Where(x => x.Id == topUp.Id)
+                .Select(x => EF.Property<uint>(x, "xmin"))
+                .FirstOrDefault();
+
             context.Set<WalletTopUp>().Attach(topUp);
+            entry = context.Entry(topUp);
+            entry.Property("xmin").OriginalValue = currentXmin;
             entry.State = EntityState.Modified;
             return;
         }
