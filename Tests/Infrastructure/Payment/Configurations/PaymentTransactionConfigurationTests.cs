@@ -1,15 +1,9 @@
-using Domain.Order.Aggregates;
 using Domain.Payment.Aggregates;
-using Domain.Payment.ValueObjects;
 using Infrastructure.Common.Services;
-using Infrastructure.Persistence.Context;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using SharedKernel.Abstractions.Interfaces;
-using Shouldly;
-using Xunit;
+using Orders = Domain.Order.Aggregates.Order;
 
 namespace Tests.Infrastructure.Payment.Configurations;
 
@@ -109,7 +103,7 @@ public sealed class PaymentTransactionConfigurationTests : IDisposable
 
         var foreignKey = entityType
             .GetForeignKeys()
-            .SingleOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(Order));
+            .SingleOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(Orders));
 
         foreignKey.ShouldNotBeNull();
         foreignKey!.IsRequired.ShouldBeTrue();
@@ -170,10 +164,7 @@ public sealed class PaymentTransactionConfigurationTests : IDisposable
     [Fact]
     public void Configure_QueryFilter_IsConfigured()
     {
-#pragma warning disable CS0618
         var queryFilter = EntityType().GetQueryFilter();
-#pragma warning restore CS0618
-
         queryFilter.ShouldNotBeNull();
     }
 }

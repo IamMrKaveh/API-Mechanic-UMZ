@@ -1,6 +1,6 @@
 using Domain.Cart.ValueObjects;
-using Infrastructure.Persistence.Context;
 using Tests.TestInfrastructure.Base;
+using Carts = Domain.Cart.Aggregates.Cart;
 
 namespace Tests.Infrastructure.Cart.Configurations;
 
@@ -76,7 +76,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
     {
         Skip.IfNot(Fixture.IsDockerAvailable, Fixture.UnavailabilityReason ?? "Docker engine not available.");
 
-        var entityType = Context.Model.FindEntityType(typeof(Domain.Cart.Aggregates.Cart));
+        var entityType = Context.Model.FindEntityType(typeof(Carts));
         entityType.ShouldNotBeNull();
         entityType!.GetTableName().ShouldBe("Carts");
     }
@@ -84,22 +84,22 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
     [Fact]
     public void Model_PrimaryKey_IsIdProperty()
     {
-        var entityType = Context.Model.FindEntityType(typeof(Domain.Cart.Aggregates.Cart));
+        var entityType = Context.Model.FindEntityType(typeof(Carts));
         entityType.ShouldNotBeNull();
 
         var primaryKey = entityType!.FindPrimaryKey();
         primaryKey.ShouldNotBeNull();
         primaryKey!.Properties.Count.ShouldBe(1);
-        primaryKey.Properties[0].Name.ShouldBe(nameof(Domain.Cart.Aggregates.Cart.Id));
+        primaryKey.Properties[0].Name.ShouldBe(nameof(Carts.Id));
     }
 
     [Fact]
     public void Model_GuestToken_HasMaxLength256AndIsNullable()
     {
-        var entityType = Context.Model.FindEntityType(typeof(Domain.Cart.Aggregates.Cart));
+        var entityType = Context.Model.FindEntityType(typeof(Carts));
         entityType.ShouldNotBeNull();
 
-        var property = entityType!.FindProperty(nameof(Domain.Cart.Aggregates.Cart.GuestToken));
+        var property = entityType!.FindProperty(nameof(Carts.GuestToken));
         property.ShouldNotBeNull();
         property!.IsNullable.ShouldBeTrue();
         property.GetMaxLength().ShouldBe(256);
@@ -108,10 +108,10 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
     [Fact]
     public void Model_UserId_IsNullable()
     {
-        var entityType = Context.Model.FindEntityType(typeof(Domain.Cart.Aggregates.Cart));
+        var entityType = Context.Model.FindEntityType(typeof(Carts));
         entityType.ShouldNotBeNull();
 
-        var property = entityType!.FindProperty(nameof(Domain.Cart.Aggregates.Cart.UserId));
+        var property = entityType!.FindProperty(nameof(Carts.UserId));
         property.ShouldNotBeNull();
         property!.IsNullable.ShouldBeTrue();
     }
@@ -119,10 +119,10 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
     [Fact]
     public void Model_AppliedDiscountCodeId_IsNullable()
     {
-        var entityType = Context.Model.FindEntityType(typeof(Domain.Cart.Aggregates.Cart));
+        var entityType = Context.Model.FindEntityType(typeof(Carts));
         entityType.ShouldNotBeNull();
 
-        var property = entityType!.FindProperty(nameof(Domain.Cart.Aggregates.Cart.AppliedDiscountCodeId));
+        var property = entityType!.FindProperty(nameof(Carts.AppliedDiscountCodeId));
         property.ShouldNotBeNull();
         property!.IsNullable.ShouldBeTrue();
     }
@@ -130,7 +130,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
     [Fact]
     public void Model_HasRowVersionShadowProperty()
     {
-        var entityType = Context.Model.FindEntityType(typeof(Domain.Cart.Aggregates.Cart));
+        var entityType = Context.Model.FindEntityType(typeof(Carts));
         entityType.ShouldNotBeNull();
 
         var rowVersion = entityType!.FindProperty("RowVersion");
@@ -142,13 +142,13 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
     [Fact]
     public void Model_HasCompositeIndexOnUserIdAndIsCheckedOut()
     {
-        var entityType = Context.Model.FindEntityType(typeof(Domain.Cart.Aggregates.Cart));
+        var entityType = Context.Model.FindEntityType(typeof(Carts));
         entityType.ShouldNotBeNull();
 
         var index = entityType!.GetIndexes()
             .SingleOrDefault(i => i.Properties.Count == 2
-                && i.Properties.Any(p => p.Name == nameof(Domain.Cart.Aggregates.Cart.UserId))
-                && i.Properties.Any(p => p.Name == nameof(Domain.Cart.Aggregates.Cart.IsCheckedOut)));
+                && i.Properties.Any(p => p.Name == nameof(Carts.UserId))
+                && i.Properties.Any(p => p.Name == nameof(Carts.IsCheckedOut)));
 
         index.ShouldNotBeNull();
     }
@@ -156,13 +156,13 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
     [Fact]
     public void Model_HasCompositeIndexOnGuestTokenAndIsCheckedOut()
     {
-        var entityType = Context.Model.FindEntityType(typeof(Domain.Cart.Aggregates.Cart));
+        var entityType = Context.Model.FindEntityType(typeof(Carts));
         entityType.ShouldNotBeNull();
 
         var index = entityType!.GetIndexes()
             .SingleOrDefault(i => i.Properties.Count == 2
-                && i.Properties.Any(p => p.Name == nameof(Domain.Cart.Aggregates.Cart.GuestToken))
-                && i.Properties.Any(p => p.Name == nameof(Domain.Cart.Aggregates.Cart.IsCheckedOut)));
+                && i.Properties.Any(p => p.Name == nameof(Carts.GuestToken))
+                && i.Properties.Any(p => p.Name == nameof(Carts.IsCheckedOut)));
 
         index.ShouldNotBeNull();
     }
@@ -170,12 +170,12 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
     [Fact]
     public void Model_HasSetNullDeleteBehaviorOnUserId()
     {
-        var entityType = Context.Model.FindEntityType(typeof(Domain.Cart.Aggregates.Cart));
+        var entityType = Context.Model.FindEntityType(typeof(Carts));
         entityType.ShouldNotBeNull();
 
         var foreignKey = entityType!.GetForeignKeys()
             .SingleOrDefault(fk => fk.Properties.Count == 1
-                && fk.Properties[0].Name == nameof(Domain.Cart.Aggregates.Cart.UserId));
+                && fk.Properties[0].Name == nameof(Carts.UserId));
 
         foreignKey.ShouldNotBeNull();
         foreignKey!.DeleteBehavior.ShouldBe(DeleteBehavior.SetNull);
@@ -185,10 +185,10 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
     [Fact]
     public void Model_HasCascadeDeleteFromCartToCartItems()
     {
-        var entityType = Context.Model.FindEntityType(typeof(Domain.Cart.Aggregates.Cart));
+        var entityType = Context.Model.FindEntityType(typeof(Carts));
         entityType.ShouldNotBeNull();
 
-        var navigation = entityType!.FindNavigation(nameof(Domain.Cart.Aggregates.Cart.CartItems));
+        var navigation = entityType!.FindNavigation(nameof(Carts.CartItems));
         navigation.ShouldNotBeNull();
 
         navigation!.ForeignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
