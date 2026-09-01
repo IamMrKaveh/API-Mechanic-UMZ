@@ -27,34 +27,8 @@ Infrastructure — Query Service ها (19)
 
 
 Infrastructure — EF Core Configuration ها (49)
-Tests/Infrastructure/Persistence/Configurations/OutboxMessageConfigurationTests.cs
-Tests/Infrastructure/Persistence/Outbox/OutboxArchiveMessageConfigurationTests.cs
-Tests/Infrastructure/Persistence/Outbox/OutboxMessageConfigurationTests.cs
-Tests/Infrastructure/Auth/Configurations/OtpConfigurationTests.cs
-Tests/Infrastructure/Auth/Configurations/SessionConfigurationTests.cs
-Tests/Infrastructure/Payment/Configurations/PaymentTransactionConfigurationTests.cs
-Tests/Infrastructure/Notification/Configurations/NotificationConfigurationTests.cs
-Tests/Infrastructure/Search/Configurations/AnalyzerConfigurationTests.cs
-Tests/Infrastructure/Search/Configurations/ElasticsearchOutboxMessageConfigurationTests.cs
-Tests/Infrastructure/Search/Configurations/FailedElasticOperationConfigurationTests.cs
-Tests/Infrastructure/Search/Configurations/IndexConfigurationTests.cs
-Tests/Infrastructure/Search/Configurations/SearchConfigurationTests.cs
-Tests/Infrastructure/Audit/Configurations/AuditLogConfigurationTests.cs
-Tests/Infrastructure/Attribute/Configurations/AttributeTypeConfigurationTests.cs
-Tests/Infrastructure/Attribute/Configurations/AttributeValueConfigurationTests.cs
-Tests/Infrastructure/Cart/Configurations/CartConfigurationTests.cs
-Tests/Infrastructure/Cart/Configurations/CartItemConfigurationTests.cs
-Tests/Infrastructure/Discount/Configurations/DiscountCodeConfigurationTests.cs
-Tests/Infrastructure/Discount/Configurations/DiscountRestrictionConfigurationTests.cs
-Tests/Infrastructure/Discount/Configurations/DiscountUsageConfigurationTests.cs
-Tests/Infrastructure/Inventory/Configurations/InventoryConfigurationTests.cs
-Tests/Infrastructure/Inventory/Configurations/StockLedgerEntryConfigurationTests.cs
-Tests/Infrastructure/Inventory/Configurations/WarehouseConfigurationTests.cs
-Tests/Infrastructure/Media/Configurations/MediaConfigurationTests.cs
-Tests/Infrastructure/Order/Configurations/OrderConfigurationTests.cs
-Tests/Infrastructure/Order/Configurations/OrderItemConfigurationTests.cs
-Tests/Infrastructure/Order/Configurations/OrderProcessStateConfigurationTests.cs
-Tests/Infrastructure/Order/Configurations/OrderStatusConfigurationTests.cs
+
+
 Tests/Infrastructure/Product/Configurations/ProductConfigurationTests.cs
 Tests/Infrastructure/Review/Configurations/ReviewConfigurationTests.cs
 Tests/Infrastructure/Review/Configurations/ReviewVoteConfigurationTests.cs
@@ -66,15 +40,6 @@ Tests/Infrastructure/User/Configurations/UserConfigurationTests.cs
 Tests/Infrastructure/Variant/Configurations/VariantAttributeConfigurationTests.cs
 Tests/Infrastructure/Variant/Configurations/VariantConfigurationTests.cs
 Tests/Infrastructure/Variant/Configurations/VariantShippingConfigurationTests.cs
-Tests/Infrastructure/Wallet/Configurations/WalletConfigurationTests.cs
-Tests/Infrastructure/Wallet/Configurations/WalletDebitRequestConfigurationTests.cs
-Tests/Infrastructure/Wallet/Configurations/WalletFraudAlertConfigurationTests.cs
-Tests/Infrastructure/Wallet/Configurations/WalletLedgerEntryConfigurationTests.cs
-Tests/Infrastructure/Wallet/Configurations/WalletReconciliationAuditConfigurationTests.cs
-Tests/Infrastructure/Wallet/Configurations/WalletReservationConfigurationTests.cs
-Tests/Infrastructure/Wallet/Configurations/WalletTopUpConfigurationTests.cs
-Tests/Infrastructure/Wallet/Configurations/WalletTransferConfigurationTests.cs
-Tests/Infrastructure/Wallet/Configurations/WalletWithdrawalRequestConfigurationTests.cs
 Tests/Infrastructure/Wishlist/Configurations/WishlistConfigurationTests.cs
 Infrastructure — Event Handler ها (4)
 
