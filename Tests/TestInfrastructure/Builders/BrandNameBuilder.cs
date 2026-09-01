@@ -4,9 +4,7 @@ namespace Tests.TestInfrastructure.Builders;
 
 public sealed class BrandNameBuilder
 {
-    private static readonly Faker Faker = new();
-
-    private string _value = Faker.Company.CompanyName();
+    private string _value = $"Brand-{Guid.NewGuid():N}"[..20];
 
     public BrandNameBuilder WithValue(string value)
     {

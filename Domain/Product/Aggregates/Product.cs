@@ -118,6 +118,20 @@ public sealed class Product : AggregateRoot<ProductId>, ISoftDeletable
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void MarkAsDeleted(Guid? deletedBy = null)
+    {
+        if (IsDeleted) return;
+
+        var now = DateTime.UtcNow;
+        IsActive = false;
+        IsDeleted = true;
+        DeletedAt = now;
+        DeletedBy = deletedBy;
+        UpdatedAt = now;
+
+        RaiseDomainEvent(new ProductDeactivatedEvent(Id));
+    }
+
     public void Restore()
     {
         if (!IsDeleted) return;

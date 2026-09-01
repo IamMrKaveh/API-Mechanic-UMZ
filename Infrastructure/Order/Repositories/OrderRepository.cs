@@ -6,6 +6,13 @@ namespace Infrastructure.Order.Repositories;
 
 public sealed class OrderRepository(DBContext context) : IOrderRepository
 {
+    private static readonly OrderStatusValue[] ExpirableStatuses =
+    {
+        OrderStatusValue.Created,
+        OrderStatusValue.Reserved,
+        OrderStatusValue.Pending
+    };
+
     public async Task<Domain.Order.Aggregates.Order?> FindByIdAsync(
         OrderId orderId,
         CancellationToken ct = default)
@@ -27,11 +34,10 @@ public sealed class OrderRepository(DBContext context) : IOrderRepository
         CancellationToken ct = default)
     {
         var expiredBefore = DateTime.UtcNow.AddMinutes(-30);
-        var expirableStatuses = new[] { "Created", "Reserved", "Pending" };
 
         var results = await context.Orders
             .AsNoTracking()
-            .Where(o => expirableStatuses.Contains(o.Status.Value)
+            .Where(o => ExpirableStatuses.Contains(o.Status)
                         && o.CreatedAt < expiredBefore)
             .ToListAsync(ct);
 

@@ -1,9 +1,7 @@
 using Domain.Support.Enums;
 using Domain.Support.ValueObjects;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
 using Infrastructure.Support.QueryServices;
-using Tests.TestInfrastructure.Builders;
 using TicketAggregate = Domain.Support.Aggregates.Ticket;
 
 namespace Tests.Infrastructure.Support.QueryServices;
@@ -108,9 +106,10 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         dto.Status.ShouldBe(TicketStatus.Open.Value);
         dto.StatusDisplayName.ShouldBe(TicketStatus.Open.DisplayName);
         dto.MessageCount.ShouldBe(0);
-        dto.CreatedAt.ShouldBe(matching.CreatedAt);
-        dto.UpdatedAt.ShouldBe(matching.UpdatedAt);
-        dto.LastActivityAt.ShouldBe(matching.LastActivityAt);
+
+        dto.CreatedAt.ShouldBe(matching.CreatedAt, TimeSpan.FromMicroseconds(1));
+        dto.UpdatedAt.ShouldBe(matching.UpdatedAt, TimeSpan.FromMicroseconds(1));
+        dto.LastActivityAt.ShouldBe(matching.LastActivityAt, TimeSpan.FromMicroseconds(1));
         dto.ResolvedAt.ShouldBeNull();
     }
 
@@ -280,8 +279,9 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         dto.Priority.ShouldBe(TicketPriority.Low.Value);
         dto.Status.ShouldBe(TicketStatus.Open.Value);
         dto.MessageCount.ShouldBe(0);
-        dto.CreatedAt.ShouldBe(ticket.CreatedAt);
-        dto.LastReplyAt.ShouldBe(ticket.LastActivityAt);
+
+        dto.CreatedAt.ShouldBe(ticket.CreatedAt, TimeSpan.FromMicroseconds(1));
+        dto.LastReplyAt.ShouldBe(ticket.LastActivityAt, TimeSpan.FromMicroseconds(1));
     }
 
     [Fact]

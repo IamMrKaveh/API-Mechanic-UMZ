@@ -15,6 +15,8 @@ namespace Tests.Infrastructure.Order.QueryServices;
 [Collection(nameof(DatabaseCollection))]
 public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
+    private static readonly TimeSpan PgTimestampTolerance = TimeSpan.FromTicks(10);
+
     private readonly PostgresContainerFixture _fixture = fixture;
     private DBContext _context = null!;
     private IUrlResolverService _urlResolver = null!;
@@ -59,13 +61,20 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
 
     private async Task<(Products product, ProductVariant variant)> SeedProductAndVariantAsync()
     {
-        var category = await new CategoryBuilder().BuildAsync();
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+
+        var category = await new CategoryBuilder()
+            .WithName($"Category-{suffix}")
+            .WithSlug($"category-{suffix}")
+            .BuildAsync();
         category.ClearDomainEvents();
         _context.Categories.Add(category);
         await _context.SaveChangesAsync();
 
         var brand = await new BrandBuilder()
             .WithCategoryId(category.Id)
+            .WithName($"Brand-{suffix}")
+            .WithSlug($"brand-{suffix}")
             .BuildAsync();
         brand.ClearDomainEvents();
         _context.Brands.Add(brand);
@@ -136,6 +145,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     {
         var transaction = new PaymentTransactionBuilder()
             .WithOrderId(order.Id)
+            .WithUserId(order.UserId)
             .WithAmount(order.FinalAmount.Amount)
             .Build();
         _context.PaymentTransactions.Add(transaction);
@@ -210,7 +220,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto.StatusDisplayName.ShouldBe(order.Status.DisplayName);
         dto.FinalAmount.ShouldBe(order.FinalAmount.Amount);
         dto.ItemCount.ShouldBe(2);
-        dto.CreatedAt.ShouldBe(order.CreatedAt);
+        dto.CreatedAt.ShouldBe(order.CreatedAt, PgTimestampTolerance);
     }
 
     [Theory]
@@ -220,9 +230,12 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     public async Task GetUserOrdersAsync_PaginatesResultsCorrectly(int page, int pageSize, int expected, int total)
     {
         var user = await SeedUserAsync();
+        var (product, variant) = await SeedProductAndVariantAsync();
+
         for (var i = 0; i < total; i++)
         {
-            await SeedOrderAsync(user.Id);
+            var snapshot = BuildSnapshot(variant, product);
+            await SeedOrderAsync(user.Id, null, snapshot);
             await Task.Delay(10);
         }
 

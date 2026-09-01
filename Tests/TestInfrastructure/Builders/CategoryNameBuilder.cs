@@ -4,9 +4,7 @@ namespace Tests.TestInfrastructure.Builders;
 
 public sealed class CategoryNameBuilder
 {
-    private static readonly Faker Faker = new();
-
-    private string _value = Faker.Commerce.Categories(1)[0];
+    private string _value = $"Cat-{Guid.NewGuid():N}"[..20];
 
     public CategoryNameBuilder WithValue(string value)
     {

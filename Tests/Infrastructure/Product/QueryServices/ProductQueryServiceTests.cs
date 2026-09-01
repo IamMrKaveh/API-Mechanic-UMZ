@@ -4,9 +4,7 @@ using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Variant.Aggregates;
-using Infrastructure.Persistence.Context;
 using Infrastructure.Product.QueryServices;
-using Tests.TestInfrastructure.Stubs;
 using Brands = Domain.Brand.Aggregates.Brand;
 using Categories = Domain.Category.Aggregates.Category;
 using Products = Domain.Product.Aggregates.Product;
@@ -106,7 +104,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
 
         if (isDeleted)
         {
-            product.Deactivate();
+            product.MarkAsDeleted();
             await _context.SaveChangesAsync();
         }
 
@@ -116,16 +114,19 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
     private async Task<ProductVariant> SeedVariantAsync(
         Products product,
         decimal sellingPrice = 100_000m,
-        decimal originalPrice = 100_000m,
+        decimal originalPrice = 0m,
         int stock = 10,
         bool isUnlimited = false,
         bool activate = true)
     {
-        var variant = new ProductVariantBuilder()
+        var variantBuilder = new ProductVariantBuilder()
             .WithProductId(product.Id)
-            .WithSellingPrice(sellingPrice)
-            .WithOriginalPrice(originalPrice)
-            .Build();
+            .WithSellingPrice(sellingPrice);
+
+        if (originalPrice > 0m)
+            variantBuilder = variantBuilder.WithOriginalPrice(originalPrice);
+
+        var variant = variantBuilder.Build();
 
         if (!activate)
             variant.Deactivate();
@@ -149,9 +150,11 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
 
     private async Task SeedPrimaryImageAsync(Products product, string filePath = "uploads/prod/test.png")
     {
+        var fileName = System.IO.Path.GetFileName(filePath);
+
         var media = new MediaBuilder()
             .WithFilePath(filePath)
-            .WithFileName("test.png")
+            .WithFileName(fileName)
             .WithEntityType("Product")
             .WithEntityId(product.Id.Value)
             .WithIsPrimary(false)

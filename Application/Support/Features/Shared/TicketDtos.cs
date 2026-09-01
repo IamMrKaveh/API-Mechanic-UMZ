@@ -15,9 +15,9 @@ public sealed record TicketDto
     public string? UserFullName { get; init; }
     public int MessageCount { get; init; }
     public DateTime CreatedAt { get; init; }
-    public DateTime? UpdatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
     public DateTime? ClosedAt { get; init; }
-    public DateTime? LastActivityAt { get; init; }
+    public DateTime LastActivityAt { get; init; }
     public DateTime? ResolvedAt { get; init; }
     public List<TicketMessageDto> Messages { get; init; } = [];
 }
@@ -31,7 +31,7 @@ public sealed record TicketListItemDto
     public string Status { get; init; } = string.Empty;
     public int MessageCount { get; init; }
     public DateTime CreatedAt { get; init; }
-    public DateTime? LastReplyAt { get; init; }
+    public DateTime LastReplyAt { get; init; }
 }
 
 public sealed record TicketMessageDto

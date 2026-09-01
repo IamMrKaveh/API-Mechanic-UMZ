@@ -1,7 +1,6 @@
 using Domain.Payment.Interfaces;
 using Domain.Payment.ValueObjects;
 using Infrastructure.Payment.Repositories;
-using Infrastructure.Persistence.Context;
 using Orders = Domain.Order.Aggregates.Order;
 using Users = Domain.User.Aggregates.User;
 
@@ -35,11 +34,48 @@ public class PaymentTransactionRepositoryTests(PostgresContainerFixture fixture)
 
     private async Task<(Users user, Orders order)> PersistUserAndOrderAsync()
     {
+        var category = await new CategoryBuilder().BuildAsync();
+        category.ClearDomainEvents();
+        await _context.Categories.AddAsync(category);
+        await _context.SaveChangesAsync();
+
+        var brand = await new BrandBuilder()
+            .WithCategoryId(category.Id)
+            .BuildAsync();
+        brand.ClearDomainEvents();
+        await _context.Brands.AddAsync(brand);
+        await _context.SaveChangesAsync();
+
+        var product = new ProductBuilder()
+            .WithBrandId(brand.Id)
+            .WithCategoryId(category.Id)
+            .Build();
+        await _context.Products.AddAsync(product);
+
+        var variant = new ProductVariantBuilder()
+            .WithProductId(product.Id)
+            .WithSellingPrice(100_000m)
+            .Build();
+        await _context.ProductVariants.AddAsync(variant);
+
         var user = new UserBuilder().Build();
         user.ClearDomainEvents();
         await _context.Users.AddAsync(user);
+        await _context.SaveChangesAsync();
 
-        var order = new OrderBuilder().WithUserId(user.Id).Build();
+        var snapshot = new OrderItemSnapshotBuilder()
+            .WithVariantId(variant.Id)
+            .WithProductId(product.Id)
+            .WithProductName(product.Name)
+            .WithSku(variant.Sku)
+            .WithUnitPrice(100_000m)
+            .WithQuantity(1)
+            .Build();
+
+        var order = new OrderBuilder()
+            .WithUserId(user.Id)
+            .WithItemSnapshots(snapshot)
+            .Build();
         order.ClearDomainEvents();
         await _context.Orders.AddAsync(order);
 

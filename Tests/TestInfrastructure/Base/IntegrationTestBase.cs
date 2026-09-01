@@ -3,7 +3,6 @@ using Domain.Category.Aggregates;
 using Domain.Category.ValueObjects;
 using Domain.User.Aggregates;
 using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
 
 namespace Tests.TestInfrastructure.Base;
 
@@ -86,10 +85,13 @@ public abstract class IntegrationTestBase(PostgresContainerFixture fixture) : IA
         string? phone = null,
         CancellationToken ct = default)
     {
-        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var rawHex = Guid.NewGuid().ToString("N");
+        var lettersOnly = new string(rawHex.Where(char.IsLetter).ToArray());
+        var suffix = lettersOnly.Length >= 8 ? lettersOnly[..8] : lettersOnly.PadRight(8, 'a');
+
         var builder = new UserBuilder()
             .WithFullName(FullName.Create(firstName ?? $"First{suffix}", lastName ?? $"Last{suffix}"))
-            .WithEmail(email ?? $"user-{suffix}@example.com");
+            .WithEmail(email ?? $"user-{rawHex[..8]}@example.com");
 
         if (!string.IsNullOrWhiteSpace(phone))
             builder = builder.WithPhoneNumber(PhoneNumber.Create(phone));

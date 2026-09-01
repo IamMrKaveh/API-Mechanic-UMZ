@@ -30,6 +30,7 @@
 		<Folder Include="Common\Features\Shared\" />
 		<Folder Include="Common\Utilities\" />
 		<Folder Include="Product\EventHandlers\" />
+		<Folder Include="Support\Features\Shared\NewFolder\" />
 		<Folder Include="Variant\EventHandlers\" />
 	</ItemGroup>
 

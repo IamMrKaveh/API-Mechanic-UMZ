@@ -12,7 +12,7 @@ public sealed class ProductVariantBuilder
     private decimal _sellingAmount = 100_000m;
     private decimal? _originalAmount;
     private string _currency = "IRT";
-    private bool _useMoneyOverload;
+    private bool _sellingPriceIsMoney;
     private Money? _sellingMoney;
     private Money? _originalMoney;
 
@@ -44,7 +44,7 @@ public sealed class ProductVariantBuilder
     {
         _sellingAmount = amount;
         _currency = currency;
-        _useMoneyOverload = false;
+        _sellingPriceIsMoney = false;
         _sellingMoney = null;
         return this;
     }
@@ -52,7 +52,7 @@ public sealed class ProductVariantBuilder
     public ProductVariantBuilder WithSellingPrice(Money price)
     {
         _sellingMoney = price;
-        _useMoneyOverload = true;
+        _sellingPriceIsMoney = true;
         if (price is not null)
         {
             _sellingAmount = price.Amount;
@@ -72,7 +72,6 @@ public sealed class ProductVariantBuilder
     public ProductVariantBuilder WithOriginalPrice(Money? price)
     {
         _originalMoney = price;
-        _useMoneyOverload = true;
         _originalAmount = price?.Amount;
         if (price is not null)
             _currency = price.Currency;
@@ -81,7 +80,7 @@ public sealed class ProductVariantBuilder
 
     public ProductVariant Build()
     {
-        if (_useMoneyOverload)
+        if (_sellingPriceIsMoney)
             return ProductVariant.Create(_id, _productId, _sku, _sellingMoney!, _originalMoney);
 
         return ProductVariant.Create(_id, _productId, _sku, _sellingAmount, _originalAmount, _currency);

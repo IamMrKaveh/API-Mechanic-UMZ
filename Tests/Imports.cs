@@ -14,6 +14,7 @@ global using Infrastructure.Persistence.Context;
 global using MapsterMapper;
 global using MediatR;
 global using Microsoft.EntityFrameworkCore;
+global using Microsoft.EntityFrameworkCore.Metadata;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.FeatureManagement;

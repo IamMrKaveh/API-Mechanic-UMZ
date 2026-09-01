@@ -8,7 +8,7 @@ public sealed class FullName : ValueObject
     private const int MaxNameLength = 50;
 
     private static readonly System.Text.RegularExpressions.Regex NameRegex =
-        new(@"^[\u0600-\u06FF\u200C\u200Fa-zA-Z\s\-'.]+$",
+        new(@"^[\u0600-\u06FF\u200C\u200Fa-zA-Z\s]+$",
             System.Text.RegularExpressions.RegexOptions.Compiled);
 
     private FullName(string firstName, string lastName)
@@ -19,13 +19,8 @@ public sealed class FullName : ValueObject
 
     public static FullName Create(string? firstName, string? lastName)
     {
-        var normalizedFirst = string.IsNullOrWhiteSpace(firstName)
-            ? string.Empty
-            : firstName.Trim();
-
-        var normalizedLast = string.IsNullOrWhiteSpace(lastName)
-            ? string.Empty
-            : lastName.Trim();
+        var normalizedFirst = firstName ?? string.Empty;
+        var normalizedLast = lastName ?? string.Empty;
 
         ValidateName(normalizedFirst, "نام");
         ValidateName(normalizedLast, "نام خانوادگی");

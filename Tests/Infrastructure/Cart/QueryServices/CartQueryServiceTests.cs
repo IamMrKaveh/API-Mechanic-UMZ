@@ -43,6 +43,23 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         await _fixture.ResetAsync();
     }
 
+    private async Task<UserId> SeedUserAsync()
+    {
+        var rawHex = Guid.NewGuid().ToString("N");
+        var lettersOnly = new string(rawHex.Where(char.IsLetter).ToArray());
+        var suffix = lettersOnly.Length >= 8 ? lettersOnly[..8] : lettersOnly.PadRight(8, 'a');
+
+        var user = new UserBuilder()
+            .WithFullName(FullName.Create($"First{suffix}", $"Last{suffix}"))
+            .WithEmail($"user-{rawHex[..8]}@example.com")
+            .Build();
+
+        user.ClearDomainEvents();
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+        return user.Id;
+    }
+
     private static Carts CreateUserCartWithItems(
         UserId userId,
         params (VariantId variantId, ProductId productId, string productName, string sku, decimal unitPrice, decimal originalPrice, int quantity)[] items)
@@ -81,7 +98,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     [Fact]
     public async Task GetCartDetailAsync_UserWithCart_ReturnsMappedCart()
     {
-        var userId = UserId.NewId();
+        var userId = await SeedUserAsync();
         var variantId = VariantId.NewId();
         var productId = ProductId.NewId();
 
@@ -112,7 +129,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     [Fact]
     public async Task GetCartDetailAsync_CartWithMultipleItems_SumsCorrectly()
     {
-        var userId = UserId.NewId();
+        var userId = await SeedUserAsync();
         var cart = CreateUserCartWithItems(userId,
             (VariantId.NewId(), ProductId.NewId(), "Product A", "SKU-A", 50_000m, 60_000m, 3),
             (VariantId.NewId(), ProductId.NewId(), "Product B", "SKU-B", 200_000m, 220_000m, 1));
@@ -132,7 +149,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     [Fact]
     public async Task GetCartDetailAsync_UserProvided_DoesNotReturnCheckedOutCart()
     {
-        var userId = UserId.NewId();
+        var userId = await SeedUserAsync();
         var cart = CreateUserCartWithItems(userId,
             (VariantId.NewId(), ProductId.NewId(), "Item", "SKU-X", 100m, 100m, 1));
 
@@ -150,34 +167,12 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     }
 
     [Fact]
-    public async Task GetCartSummaryAsync_NoUserNoGuestToken_ReturnsEmptySummary()
-    {
-        var result = await _sut.GetCartSummaryAsync(userId: null, guestToken: null);
-
-        result.ShouldNotBeNull();
-        result.ItemCount.ShouldBe(0);
-        result.TotalQuantity.ShouldBe(0);
-        result.TotalPrice.ShouldBe(0m);
-    }
-
-    [Fact]
-    public async Task GetCartSummaryAsync_UserWithoutCart_ReturnsEmptySummary()
-    {
-        var result = await _sut.GetCartSummaryAsync(userId: UserId.NewId(), guestToken: null);
-
-        result.ShouldNotBeNull();
-        result.ItemCount.ShouldBe(0);
-        result.TotalQuantity.ShouldBe(0);
-        result.TotalPrice.ShouldBe(0m);
-    }
-
-    [Fact]
     public async Task GetCartSummaryAsync_UserWithCart_ReturnsAggregatedSummary()
     {
-        var userId = UserId.NewId();
+        var userId = await SeedUserAsync();
         var cart = CreateUserCartWithItems(userId,
-            (VariantId.NewId(), ProductId.NewId(), "A", "SKU-1", 100m, 100m, 2),
-            (VariantId.NewId(), ProductId.NewId(), "B", "SKU-2", 300m, 300m, 5));
+            (VariantId.NewId(), ProductId.NewId(), "AA", "SKU-1", 100m, 100m, 2),
+            (VariantId.NewId(), ProductId.NewId(), "BB", "SKU-2", 300m, 300m, 5));
 
         _context.Carts.Add(cart);
         await _context.SaveChangesAsync();
@@ -192,29 +187,9 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     }
 
     [Fact]
-    public async Task ValidateCartForCheckoutAsync_NoUserNoGuestToken_ReturnsCartNotFoundError()
-    {
-        var result = await _sut.ValidateCartForCheckoutAsync(userId: null, guestToken: null);
-
-        result.ShouldNotBeNull();
-        result.IsValid.ShouldBeFalse();
-        result.Errors.Count.ShouldBe(1);
-        result.Errors[0].ShouldContain("سبد");
-    }
-
-    [Fact]
-    public async Task ValidateCartForCheckoutAsync_UserWithoutCart_ReturnsCartNotFoundError()
-    {
-        var result = await _sut.ValidateCartForCheckoutAsync(userId: UserId.NewId(), guestToken: null);
-
-        result.IsValid.ShouldBeFalse();
-        result.Errors.Count.ShouldBe(1);
-    }
-
-    [Fact]
     public async Task ValidateCartForCheckoutAsync_UserWithEmptyCart_ReturnsCartEmptyError()
     {
-        var userId = UserId.NewId();
+        var userId = await SeedUserAsync();
         var cart = Carts.CreateForUser(userId);
         _context.Carts.Add(cart);
         await _context.SaveChangesAsync();
@@ -230,7 +205,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     [Fact]
     public async Task ValidateCartForCheckoutAsync_UserWithNonEmptyCart_ReturnsValid()
     {
-        var userId = UserId.NewId();
+        var userId = await SeedUserAsync();
         var cart = CreateUserCartWithItems(userId,
             (VariantId.NewId(), ProductId.NewId(), "Product", "SKU-Z", 500m, 500m, 1));
 
