@@ -1,4 +1,3 @@
-using Application.Common.Formatting;
 using Application.Review.Contracts;
 using Application.Review.Features.Queries.AdminReviewStats;
 using Application.Review.Features.Shared;
@@ -11,8 +10,6 @@ namespace Infrastructure.Review.QueryServices;
 
 public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 {
-    private const string ApprovedStatus = "Approved";
-
     private static readonly HashSet<string> AllowedStatuses =
         new(StringComparer.OrdinalIgnoreCase) { "Pending", "Approved", "Rejected", "All" };
 
@@ -37,7 +34,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
                 !r.IsDeleted &&
                 r.User != null &&
                 r.User.IsActive &&
-                r.Status.Value == ApprovedStatus);
+                r.Status == ReviewStatus.Approved);
 
         if (minRating.HasValue && minRating.Value > 0)
         {
@@ -79,7 +76,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
                 !r.IsDeleted &&
                 r.User != null &&
                 r.User.IsActive &&
-                r.Status.Value == ApprovedStatus);
+                r.Status == ReviewStatus.Approved);
 
         var stats = await baseQuery
             .GroupBy(_ => 1)
@@ -138,14 +135,14 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
         if (filter.ProductId.HasValue && filter.ProductId.Value != Guid.Empty)
         {
-            var pid = filter.ProductId;
+            var pid = ProductId.From(filter.ProductId.Value);
             query = query.Where(r => r.ProductId == pid);
         }
 
         if (filter.MinRating.HasValue)
         {
-            var min = filter.MinRating;
-            query = query.Where(r => r.Rating >= min);
+            var min = filter.MinRating.Value;
+            query = query.Where(r => r.Rating.Value >= min);
         }
 
         if (filter.DateFrom.HasValue)
@@ -162,26 +159,29 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
 
         if (!string.IsNullOrWhiteSpace(filter.SearchText))
         {
-            var q = filter.SearchText.Trim().ToLower();
+            var pattern = $"%{filter.SearchText.Trim()}%";
             query = query.Where(r =>
-                (r.Title != null && r.Title.Contains(q, StringComparison.CurrentCultureIgnoreCase)) ||
-                r.Comment!.Contains(q, StringComparison.CurrentCultureIgnoreCase) ||
+                (r.Title != null && EF.Functions.ILike(r.Title, pattern)) ||
+                (r.Comment != null && EF.Functions.ILike(r.Comment, pattern)) ||
                 (r.User != null &&
-                    ((r.User.FullName.FirstName != null && r.User.FullName.FirstName.Contains(q, StringComparison.CurrentCultureIgnoreCase)) ||
-                     (r.User.FullName.LastName != null && r.User.FullName.LastName.Contains(q, StringComparison.CurrentCultureIgnoreCase)))));
+                    ((r.User.FullName.FirstName != null && EF.Functions.ILike(r.User.FullName.FirstName, pattern)) ||
+                     (r.User.FullName.LastName != null && EF.Functions.ILike(r.User.FullName.LastName, pattern)))));
         }
 
         var total = await query.CountAsync(cancellationToken);
 
+        var safePage = filter.Page <= 0 ? 1 : filter.Page;
+        var safeSize = filter.PageSize <= 0 ? 10 : filter.PageSize;
+
         var entities = await query
             .OrderByDescending(r => r.CreatedAt)
-            .Skip((filter.Page - 1) * filter.PageSize)
-            .Take(filter.PageSize)
+            .Skip((safePage - 1) * safeSize)
+            .Take(safeSize)
             .ToListAsync(cancellationToken);
 
         var items = entities.Select(r => MapToDto(r, null)).ToList();
 
-        return new PaginatedResult<ProductReviewDto>(items, total, filter.Page, filter.PageSize);
+        return new PaginatedResult<ProductReviewDto>(items, total, safePage, safeSize);
     }
 
     public async Task<AdminReviewStatsDto> GetAdminReviewStatsAsync(CancellationToken cancellationToken)
@@ -292,20 +292,17 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
             Id = r.Id.Value,
             ProductId = r.ProductId.Value,
             UserId = r.UserId.Value,
-            UserFullName = UserFullNameFormatter.Format(r.User),
+            UserFullName = r.User?.FullName?.ToString() ?? "کاربر مهمان",
             Rating = r.Rating.Value,
             Title = r.Title,
             Comment = r.Comment,
-            Status = r.Status.Value,
-            RejectionReason = r.RejectionReason,
             AdminReply = r.AdminReply,
-            RepliedAt = r.RepliedAt,
+            Status = r.Status.Value,
             IsVerifiedPurchase = r.IsVerifiedPurchase,
             LikeCount = r.LikeCount,
             DislikeCount = r.DislikeCount,
             UserVote = userVote,
-            CreatedAt = r.CreatedAt,
-            OrderId = r.OrderId?.Value
+            CreatedAt = r.CreatedAt
         };
     }
 }

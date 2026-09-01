@@ -1,7 +1,10 @@
+using Domain.Brand.ValueObjects;
+using Domain.Category.ValueObjects;
 using Domain.Review.Interfaces;
 using Domain.Review.ValueObjects;
-using Infrastructure.Persistence.Context;
 using Infrastructure.Review.Repositories;
+using Brands = Domain.Brand.Aggregates.Brand;
+using Categories = Domain.Category.Aggregates.Category;
 using Products = Domain.Product.Aggregates.Product;
 using Users = Domain.User.Aggregates.User;
 
@@ -33,17 +36,71 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         await _fixture.ResetAsync();
     }
 
-    private async Task<(Users user, Products product)> PersistUserAndProductAsync()
+    private async Task<Categories> PersistCategoryAsync()
+    {
+        var catName = $"Cat-{Guid.NewGuid():N}"[..20];
+        var category = await Categories.Create(
+            CategoryId.NewId(),
+            CategoryName.Create(catName),
+            CategorySlug.GenerateFrom(catName),
+            new StubCategoryUniquenessChecker(),
+            null,
+            0,
+            CancellationToken.None);
+
+        category.ClearDomainEvents();
+        await _context.Categories.AddAsync(category);
+        await _context.SaveChangesAsync();
+        return category;
+    }
+
+    private async Task<Brands> PersistBrandAsync(CategoryId categoryId)
+    {
+        var brandName = $"Brand-{Guid.NewGuid():N}"[..20];
+        var brand = await Brands.Create(
+            BrandName.Create(brandName),
+            BrandSlug.GenerateFrom(brandName),
+            categoryId,
+            new StubBrandUniquenessChecker(),
+            null,
+            null,
+            CancellationToken.None);
+
+        brand.ClearDomainEvents();
+        await _context.Brands.AddAsync(brand);
+        await _context.SaveChangesAsync();
+        return brand;
+    }
+
+    private async Task<Products> PersistProductAsync()
+    {
+        var category = await PersistCategoryAsync();
+        var brand = await PersistBrandAsync(category.Id);
+
+        var product = new ProductBuilder()
+            .WithBrandId(brand.Id)
+            .WithCategoryId(category.Id)
+            .Build();
+
+        product.ClearDomainEvents();
+        await _context.Products.AddAsync(product);
+        await _context.SaveChangesAsync();
+        return product;
+    }
+
+    private async Task<Users> PersistUserAsync()
     {
         var user = new UserBuilder().Build();
         user.ClearDomainEvents();
         await _context.Users.AddAsync(user);
-
-        var product = new ProductBuilder().Build();
-        product.ClearDomainEvents();
-        await _context.Products.AddAsync(product);
-
         await _context.SaveChangesAsync();
+        return user;
+    }
+
+    private async Task<(Users user, Products product)> PersistUserAndProductAsync()
+    {
+        var user = await PersistUserAsync();
+        var product = await PersistProductAsync();
         _context.ChangeTracker.Clear();
         return (user, product);
     }
@@ -262,10 +319,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
     public async Task ListByProductAsync_ReturnsOnlyNonDeletedReviewsForThatProduct()
     {
         var (userA, product) = await PersistUserAndProductAsync();
-        var userB = new UserBuilder().Build();
-        userB.ClearDomainEvents();
-        await _context.Users.AddAsync(userB);
-        await _context.SaveChangesAsync();
+        var userB = await PersistUserAsync();
         _context.ChangeTracker.Clear();
 
         var visible = new ProductReviewBuilder()
