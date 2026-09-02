@@ -1,4 +1,5 @@
 using Domain.Discount.Entities;
+using Domain.Discount.Enums;
 using Domain.Discount.ValueObjects;
 
 namespace Infrastructure.Discount.Configurations;
@@ -17,7 +18,7 @@ public sealed class DiscountRestrictionConfiguration : IEntityTypeConfiguration<
             .IsRequired();
 
         builder.Property(e => e.RestrictionType)
-            .HasConversion<string>()
+            .HasConversion(new EnumToStringConverter<DiscountRestrictionType>())
             .HasMaxLength(50)
             .IsRequired();
 

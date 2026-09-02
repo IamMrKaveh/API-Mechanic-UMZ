@@ -1,7 +1,6 @@
 using Domain.Notification.Events;
 using Domain.Notification.ValueObjects;
 using Domain.User.ValueObjects;
-using SharedKernel.Exceptions;
 
 namespace Domain.Notification.Aggregates;
 
@@ -39,6 +38,9 @@ public sealed class Notification : AggregateRoot<NotificationId>, IAuditable
         if (string.IsNullOrWhiteSpace(message))
             throw new DomainException("متن اعلان الزامی است.");
 
+        var now = DateTime.UtcNow;
+        var createdAt = new DateTime(now.Ticks - (now.Ticks % TimeSpan.TicksPerMicrosecond), now.Kind);
+
         var notification = new Notification
         {
             Id = id,
@@ -50,7 +52,7 @@ public sealed class Notification : AggregateRoot<NotificationId>, IAuditable
             RelatedEntityType = relatedEntityType,
             RelatedEntityId = relatedEntityId,
             IsRead = false,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = createdAt
         };
 
         notification.RaiseDomainEvent(new NotificationCreatedEvent(id, userId, notificationType));
@@ -58,18 +60,19 @@ public sealed class Notification : AggregateRoot<NotificationId>, IAuditable
         return notification;
     }
 
-    public void EnsureUserAccess(UserId userId)
-    {
-        if (UserId.Value != userId.Value)
-            throw new DomainException("شما دسترسی به این اعلان را ندارید.");
-    }
-
     public void MarkAsRead()
     {
         if (IsRead) return;
 
         IsRead = true;
-        UpdatedAt = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+        UpdatedAt = new DateTime(now.Ticks - (now.Ticks % TimeSpan.TicksPerMicrosecond), now.Kind);
         RaiseDomainEvent(new NotificationReadEvent(Id));
+    }
+
+    public void EnsureUserAccess(UserId userId)
+    {
+        if (UserId.Value != userId.Value)
+            throw new DomainException("شما دسترسی به این اعلان را ندارید.");
     }
 }

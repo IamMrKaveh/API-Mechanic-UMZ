@@ -1,19 +1,19 @@
 namespace Infrastructure.Search;
 
-public sealed class ElasticsearchOutboxMessage
+public class ElasticsearchOutboxMessage
 {
     public Guid Id { get; private set; }
-    public string EntityType { get; private set; } = string.Empty;
+    public string EntityType { get; private set; } = null!;
     public Guid EntityId { get; private set; }
-    public string Document { get; private set; } = string.Empty;
-    public string ChangeType { get; private set; } = string.Empty;
-    public string IdempotencyKey { get; private set; } = string.Empty;
-    public DateTime CreatedAt { get; private set; }
+    public string Document { get; private set; } = null!;
+    public string ChangeType { get; private set; } = null!;
+    public string IdempotencyKey { get; private set; } = null!;
     public int RetryCount { get; private set; }
     public DateTime? ProcessedAt { get; private set; }
-    public DateTime? NextAttemptAt { get; private set; }
     public string? Error { get; private set; }
     public bool IsPoisoned { get; private set; }
+    public DateTime CreatedAt { get; private set; }
+    public DateTime? NextAttemptAt { get; private set; }
 
     private ElasticsearchOutboxMessage()
     { }
@@ -23,18 +23,34 @@ public sealed class ElasticsearchOutboxMessage
         Guid entityId,
         string document,
         string changeType)
-        => new()
+        => Create(entityType, entityId, document, changeType, discriminator: null);
+
+    public static ElasticsearchOutboxMessage Create(
+        string entityType,
+        Guid entityId,
+        string document,
+        string changeType,
+        string? discriminator)
+    {
+        var now = DateTime.UtcNow;
+        var idempotencyKey = string.IsNullOrWhiteSpace(discriminator)
+            ? $"{entityType}:{entityId}:{changeType}"
+            : $"{entityType}:{entityId}:{changeType}:{discriminator}";
+
+        return new ElasticsearchOutboxMessage
         {
             Id = Guid.NewGuid(),
             EntityType = entityType,
             EntityId = entityId,
             Document = document,
             ChangeType = changeType,
-            IdempotencyKey = BuildIdempotencyKey(entityType, entityId, changeType),
-            CreatedAt = DateTime.UtcNow,
+            IdempotencyKey = idempotencyKey,
             RetryCount = 0,
-            NextAttemptAt = DateTime.UtcNow
+            CreatedAt = now,
+            NextAttemptAt = now,
+            IsPoisoned = false
         };
+    }
 
     public void MarkProcessed()
     {
@@ -43,11 +59,11 @@ public sealed class ElasticsearchOutboxMessage
         NextAttemptAt = null;
     }
 
-    public void MarkFailed(string error, TimeSpan retryDelay)
+    public void MarkFailed(string error, TimeSpan nextAttemptDelay)
     {
         RetryCount++;
         Error = error;
-        NextAttemptAt = DateTime.UtcNow.Add(retryDelay);
+        NextAttemptAt = DateTime.UtcNow.Add(nextAttemptDelay);
     }
 
     public void MarkPoisoned(string error)
@@ -62,7 +78,4 @@ public sealed class ElasticsearchOutboxMessage
         RetryCount++;
         Error = error;
     }
-
-    private static string BuildIdempotencyKey(string entityType, Guid entityId, string changeType)
-        => $"{entityType}:{entityId}:{changeType}";
 }

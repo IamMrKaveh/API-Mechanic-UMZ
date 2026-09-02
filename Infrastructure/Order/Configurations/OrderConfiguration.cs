@@ -124,10 +124,12 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
                .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(e => e.PaymentTransactionId)
-               .HasConversion(
-                   v => v == null ? (Guid?)null : v.Value,
-                   v => v == null ? null : PaymentTransactionId.From(v.Value))
-               .HasColumnName("PaymentTransactionId");
+            .HasConversion(
+                v => v == null ? (Guid?)null : v.Value,
+                v => v.HasValue ? PaymentTransactionId.From(v.Value) : null)
+            .IsRequired(false);
+
+        builder.Ignore(e => e.PaymentTransaction);
 
         builder.HasOne(e => e.PaymentTransaction)
                .WithMany()

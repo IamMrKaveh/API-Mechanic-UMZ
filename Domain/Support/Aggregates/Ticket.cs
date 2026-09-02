@@ -47,6 +47,8 @@ public sealed class Ticket : AggregateRoot<TicketId>
         Guard.Against.NullOrWhiteSpace(subject, nameof(subject));
         Guard.Against.Null(category, nameof(category));
 
+        var now = DateTime.UtcNow;
+
         var ticket = new Ticket
         {
             Id = id,
@@ -55,9 +57,9 @@ public sealed class Ticket : AggregateRoot<TicketId>
             Category = category,
             Priority = priority ?? TicketPriority.Normal,
             Status = TicketStatus.Open,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            LastActivityAt = DateTime.UtcNow
+            CreatedAt = now,
+            UpdatedAt = now,
+            LastActivityAt = now
         };
 
         ticket.RaiseDomainEvent(new TicketCreatedEvent(id, customerId, subject.Trim(), category.Value, priority ?? TicketPriority.Normal));

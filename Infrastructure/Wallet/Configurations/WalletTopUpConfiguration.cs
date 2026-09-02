@@ -1,5 +1,6 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
+using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
@@ -32,7 +33,8 @@ public sealed class WalletTopUpConfiguration : IEntityTypeConfiguration<WalletTo
         builder.Property(e => e.GatewayRefId).HasMaxLength(200);
 
         builder.Property(e => e.Status)
-            .HasConversion<string>()
+            .HasConversion(new EnumToStringConverter<WalletTopUpStatus>())
+            .HasColumnType("varchar(32)")
             .HasMaxLength(32)
             .IsRequired();
 
@@ -41,14 +43,11 @@ public sealed class WalletTopUpConfiguration : IEntityTypeConfiguration<WalletTo
         builder.Property(e => e.FailureReason).HasMaxLength(500);
 
         builder.Property<uint>("xmin")
-            .HasColumnName("xmin")
-            .HasColumnType("xid")
-            .ValueGeneratedOnAddOrUpdate()
-            .IsConcurrencyToken();
+            .HasColumnName("xmin").HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();
 
         builder.HasIndex(e => e.GatewayAuthority)
-            .IsUnique()
-            .HasFilter("\"GatewayAuthority\" IS NOT NULL")
+            .IsUnique().HasFilter("\"GatewayAuthority\" IS NOT NULL")
             .HasDatabaseName("IX_WalletTopUps_GatewayAuthority");
 
         builder.HasIndex(e => e.UserId).HasDatabaseName("IX_WalletTopUps_UserId");

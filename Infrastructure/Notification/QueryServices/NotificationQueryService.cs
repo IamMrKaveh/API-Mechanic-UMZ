@@ -19,6 +19,7 @@ public sealed class NotificationQueryService(DBContext context) : INotificationQ
 
         var dtos = await query
             .OrderByDescending(n => n.CreatedAt)
+            .ThenByDescending(n => n.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(n => new NotificationDto
@@ -54,6 +55,7 @@ public sealed class NotificationQueryService(DBContext context) : INotificationQ
 
         var dtos = await query
             .OrderByDescending(n => n.CreatedAt)
+            .ThenByDescending(n => n.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(n => new NotificationDto

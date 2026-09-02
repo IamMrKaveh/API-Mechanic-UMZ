@@ -171,22 +171,28 @@ public class OutboxMessageConfigurationTests(PostgresContainerFixture fixture) :
 
         await _context.OutboxMessages.AddAsync(first);
         await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
 
         await using var secondContext = _fixture.CreateContext();
-        var duplicateSql =
-            "INSERT INTO \"OutboxMessages\" (id, type, payload, created_at, retry_count, is_poisoned) " +
-            "VALUES ({0}, {1}, {2}, {3}, {4}, {5})";
+        var duplicate = NewPendingMessageWithId(first.Id, DateTime.UtcNow, "Duplicate");
 
         await Should.ThrowAsync<DbUpdateException>(async () =>
         {
-            await secondContext.Database.ExecuteSqlRawAsync(
-                duplicateSql,
-                first.Id.Value,
-                "Duplicate",
-                "{}",
-                DateTime.UtcNow,
-                0,
-                false);
+            await secondContext.OutboxMessages.AddAsync(duplicate);
+            await secondContext.SaveChangesAsync();
         });
     }
+
+    private static OutboxMessage NewPendingMessageWithId(OutboxMessageId id, DateTime createdAt, string type) =>
+        OutboxMessage.Rehydrate(
+            id,
+            type,
+            "{}",
+            createdAt,
+            processedAt: null,
+            error: null,
+            retryCount: 0,
+            isPoisoned: false,
+            traceParent: null,
+            traceState: null);
 }

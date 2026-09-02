@@ -256,7 +256,6 @@ public sealed class Wallet : AggregateRoot<WalletId>
             return;
 
         reservation.Release();
-        _activeReservations.Remove(reservation);
 
         RaiseDomainEvent(new WalletReservationReleasedEvent(Id, OwnerId, reservationId, reservation.Amount));
     }

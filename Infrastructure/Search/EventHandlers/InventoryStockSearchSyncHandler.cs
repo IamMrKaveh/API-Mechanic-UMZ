@@ -8,31 +8,57 @@ public sealed class InventoryStockSearchSyncHandler(DBContext context) :
     INotificationHandler<DomainEventNotification<StockReservedEvent>>,
     INotificationHandler<DomainEventNotification<StockReservationReleasedEvent>>
 {
-    public async Task Handle(DomainEventNotification<StockIncreasedEvent> notification, CancellationToken ct)
-        => await EnqueueProductUpdate(notification.DomainEvent.VariantId, ct);
+    public Task Handle(
+        DomainEventNotification<StockIncreasedEvent> notification,
+        CancellationToken cancellationToken)
+        => EnqueueAsync(
+            notification.DomainEvent.VariantId,
+            notification.DomainEvent.InventoryId.Value,
+            $"increased:{notification.DomainEvent.NewStockQuantity}",
+            cancellationToken);
 
-    public async Task Handle(DomainEventNotification<StockReservedEvent> notification, CancellationToken ct)
-        => await EnqueueProductUpdate(notification.DomainEvent.VariantId, ct);
+    public Task Handle(
+        DomainEventNotification<StockReservedEvent> notification,
+        CancellationToken cancellationToken)
+        => EnqueueAsync(
+            notification.DomainEvent.VariantId,
+            notification.DomainEvent.InventoryId.Value,
+            $"reserved:{notification.DomainEvent.TotalReservedQuantity}",
+            cancellationToken);
 
-    public async Task Handle(DomainEventNotification<StockReservationReleasedEvent> notification, CancellationToken ct)
-        => await EnqueueProductUpdate(notification.DomainEvent.VariantId, ct);
+    public Task Handle(
+        DomainEventNotification<StockReservationReleasedEvent> notification,
+        CancellationToken cancellationToken)
+        => EnqueueAsync(
+            notification.DomainEvent.VariantId,
+            notification.DomainEvent.InventoryId.Value,
+            $"released:{notification.DomainEvent.TotalReservedQuantity}",
+            cancellationToken);
 
-    private async Task EnqueueProductUpdate(VariantId variantId, CancellationToken ct)
+    private async Task EnqueueAsync(
+        VariantId variantId,
+        Guid inventoryId,
+        string operationTag,
+        CancellationToken cancellationToken)
     {
-        var variant = await context.ProductVariants
+        var productId = await context.ProductVariants
             .AsNoTracking()
             .Where(v => v.Id == variantId)
-            .Select(v => new { v.ProductId })
-            .FirstOrDefaultAsync(ct);
+            .Select(v => v.ProductId)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (variant is null) return;
+        if (productId is null)
+            return;
+
+        var discriminator = $"{inventoryId:N}:{operationTag}:{Guid.NewGuid():N}";
 
         var message = ElasticsearchOutboxMessage.Create(
-            "Product",
-            variant.ProductId.Value,
-            JsonSerializer.Serialize(new { ProductId = variant.ProductId.Value }),
-            "StockChanged");
+            entityType: "Product",
+            entityId: productId.Value,
+            document: string.Empty,
+            changeType: "StockChanged",
+            discriminator: discriminator);
 
-        await context.ElasticsearchOutboxMessages.AddAsync(message, ct);
+        await context.ElasticsearchOutboxMessages.AddAsync(message, cancellationToken);
     }
 }

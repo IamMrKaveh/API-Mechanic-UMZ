@@ -1,4 +1,5 @@
-﻿using Domain.Wallet.Entities;
+using Domain.Wallet.Entities;
+using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
@@ -7,6 +8,8 @@ public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<Wa
 {
     public void Configure(EntityTypeBuilder<WalletReservation> builder)
     {
+        builder.ToTable("WalletReservations");
+
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
@@ -23,8 +26,10 @@ public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<Wa
         });
 
         builder.Property(e => e.Purpose).IsRequired().HasMaxLength(200);
+
         builder.Property(e => e.Status)
-            .HasConversion<string>()
+            .HasConversion(new EnumToStringConverter<WalletReservationStatus>())
+            .HasColumnType("varchar(20)")
             .HasMaxLength(20)
             .IsRequired();
 
@@ -38,8 +43,7 @@ public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<Wa
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex("WalletId").HasDatabaseName("IX_WalletReservations_WalletId");
-        builder.HasIndex(new[] { "WalletId", "Status" })
-            .HasDatabaseName("IX_WalletReservations_WalletId_Status");
+        builder.HasIndex(new[] { "WalletId", "Status" }).HasDatabaseName("IX_WalletReservations_WalletId_Status");
 
         builder.HasQueryFilter(e => e.Wallet.Owner.IsActive);
     }

@@ -68,7 +68,7 @@ public sealed class Order : AggregateRoot<OrderId>
         AppliedDiscountCodeId = appliedDiscountCodeId;
         IdempotencyKey = idempotencyKey;
         Status = OrderStatusValue.Created;
-        CreatedAt = DateTime.UtcNow;
+        CreatedAt = TruncateToMicroseconds(DateTime.UtcNow);
 
         foreach (var snapshot in itemSnapshots)
             _orderItems.Add(OrderItem.FromSnapshot(id, snapshot));
@@ -118,7 +118,7 @@ public sealed class Order : AggregateRoot<OrderId>
         if (IsPaid)
             throw new DomainException("امکان تغییر روش پرداخت سفارش پرداخت‌شده وجود ندارد.");
         PaymentMethodId = paymentMethodId;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = TruncateToMicroseconds(DateTime.UtcNow);
     }
 
     public void MoveToPending()
@@ -132,7 +132,7 @@ public sealed class Order : AggregateRoot<OrderId>
         ArgumentNullException.ThrowIfNull(paymentTransactionId);
         TransitionTo(OrderStatusValue.Paid);
         PaymentTransactionId = paymentTransactionId;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = TruncateToMicroseconds(DateTime.UtcNow);
 
         RaiseDomainEvent(new OrderPaidEvent(
             Id, OrderNumber, UserId, paymentTransactionId,
@@ -146,7 +146,7 @@ public sealed class Order : AggregateRoot<OrderId>
     public void MarkAsDelivered()
     {
         TransitionTo(OrderStatusValue.Delivered);
-        DeliveredAt = DateTime.UtcNow;
+        DeliveredAt = TruncateToMicroseconds(DateTime.UtcNow);
     }
 
     public void Cancel(string reason)
@@ -181,7 +181,7 @@ public sealed class Order : AggregateRoot<OrderId>
 
         var previous = Status;
         Status = next;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = TruncateToMicroseconds(DateTime.UtcNow);
 
         RaiseDomainEvent(new OrderStatusChangedEvent(Id, OrderNumber, UserId, previous, next));
     }
@@ -202,6 +202,9 @@ public sealed class Order : AggregateRoot<OrderId>
     public void MarkAsDeleted()
     {
         IsDeleted = true;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = TruncateToMicroseconds(DateTime.UtcNow);
     }
+
+    private static DateTime TruncateToMicroseconds(DateTime value)
+        => new(value.Ticks - (value.Ticks % TimeSpan.TicksPerMicrosecond), value.Kind);
 }
