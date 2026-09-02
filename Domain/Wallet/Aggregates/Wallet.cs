@@ -24,14 +24,20 @@ public sealed class Wallet : AggregateRoot<WalletId>
     public User.Aggregates.User Owner { get; private set; } = default!;
     public UserId OwnerId { get; private set; } = default!;
 
-    private readonly List<WalletReservation> _activeReservations = [];
-    public IReadOnlyList<WalletReservation> ActiveReservations => _activeReservations.AsReadOnly();
+    private readonly List<WalletReservation> _reservations = [];
+    public IReadOnlyList<WalletReservation> Reservations => _reservations.AsReadOnly();
+
+    public IReadOnlyList<WalletReservation> ActiveReservations =>
+        _reservations
+            .Where(r => r.Status == WalletReservationStatus.Active)
+            .ToList()
+            .AsReadOnly();
 
     private readonly List<WalletDebitRequest> _debitRequests = [];
     public IReadOnlyList<WalletDebitRequest> DebitRequests => _debitRequests.AsReadOnly();
 
     public Money ReservedBalance => Money.Create(
-        _activeReservations
+        _reservations
             .Where(r => r.Status == WalletReservationStatus.Active)
             .Sum(r => r.Amount.Amount),
         Balance.Currency);
@@ -119,7 +125,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
             Id,
             amount,
             $"AdminDebitRequest:{requestId.Value}");
-        _activeReservations.Add(reservation);
+        _reservations.Add(reservation);
 
         var request = WalletDebitRequest.Create(
             requestId,
@@ -235,7 +241,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
             throw new InsufficientWalletBalanceException(Id, amount, AvailableBalance);
 
         var reservation = WalletReservation.Create(reservationId, Id, amount, purpose);
-        _activeReservations.Add(reservation);
+        _reservations.Add(reservation);
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new WalletReservationCreatedEvent(Id, OwnerId, reservationId, amount, purpose));
@@ -251,12 +257,12 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
     private void ReleaseReservationInternal(WalletReservationId reservationId)
     {
-        var reservation = _activeReservations.FirstOrDefault(r => r.Id == reservationId);
+        var reservation = _reservations.FirstOrDefault(r =>
+            r.Id == reservationId && r.Status == WalletReservationStatus.Active);
         if (reservation is null)
             return;
 
         reservation.Release();
-        _activeReservations.Remove(reservation);
 
         RaiseDomainEvent(new WalletReservationReleasedEvent(Id, OwnerId, reservationId, reservation.Amount));
     }

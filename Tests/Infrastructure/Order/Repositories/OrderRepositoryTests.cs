@@ -1,6 +1,6 @@
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
-using Domain.Payment.ValueObjects;
+using Domain.Payment.Aggregates;
 using Domain.Variant.Aggregates;
 using Infrastructure.Order.Repositories;
 using Orders = Domain.Order.Aggregates.Order;
@@ -94,6 +94,20 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
             .WithIdempotencyKey(idempotencyKey ?? Guid.NewGuid())
             .WithItemSnapshots(snapshot)
             .Build();
+    }
+
+    private async Task<PaymentTransaction> PersistPaymentTransactionAsync(Users user, OrderId orderId)
+    {
+        var transaction = new PaymentTransactionBuilder()
+            .WithOrderId(orderId)
+            .WithUserId(user.Id)
+            .Build();
+        transaction.ClearDomainEvents();
+
+        _context.PaymentTransactions.Add(transaction);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+        return transaction;
     }
 
     [Fact]
@@ -237,10 +251,18 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
     {
         var user = await PersistUserAsync();
         var order = await BuildOrderForAsync(user);
-        order.MarkAsPaid(PaymentTransactionId.NewId());
         order.ClearDomainEvents();
 
         _sut.Add(order);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var payment = await PersistPaymentTransactionAsync(user, order.Id);
+
+        var toMarkAsPaid = await _sut.FindByIdAsync(order.Id);
+        toMarkAsPaid!.MarkAsPaid(payment.Id);
+        toMarkAsPaid.ClearDomainEvents();
+        _sut.Update(toMarkAsPaid);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
 

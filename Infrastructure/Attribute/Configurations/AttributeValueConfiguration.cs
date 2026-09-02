@@ -1,5 +1,6 @@
 using Domain.Attribute.Entities;
 using Domain.Attribute.ValueObjects;
+using Infrastructure.Common.Extensions;
 
 namespace Infrastructure.Attribute.Configurations;
 
@@ -16,7 +17,7 @@ public sealed class AttributeValueConfiguration : IEntityTypeConfiguration<Attri
             .HasConversion(v => v.Value, v => AttributeTypeId.From(v))
             .IsRequired();
 
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.AddInterceptorRowVersion();
 
         builder.Property(e => e.Value).IsRequired().HasMaxLength(100);
         builder.Property(e => e.DisplayValue).IsRequired().HasMaxLength(100);

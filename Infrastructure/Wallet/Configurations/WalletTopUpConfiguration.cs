@@ -1,6 +1,5 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
-using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
@@ -33,7 +32,7 @@ public sealed class WalletTopUpConfiguration : IEntityTypeConfiguration<WalletTo
         builder.Property(e => e.GatewayRefId).HasMaxLength(200);
 
         builder.Property(e => e.Status)
-            .HasConversion(new EnumToStringConverter<WalletTopUpStatus>())
+            .HasConversion<string>()
             .HasColumnType("varchar(32)")
             .HasMaxLength(32)
             .IsRequired();

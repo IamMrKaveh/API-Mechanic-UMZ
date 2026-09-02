@@ -1,6 +1,5 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
-using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
@@ -29,9 +28,9 @@ public sealed class WalletWithdrawalRequestConfiguration
         });
 
         builder.Property(e => e.Iban)
-            .HasConversion(new ValueConverter<IbanNumber, string>(
+            .HasConversion(
                 iban => iban.Value,
-                value => IbanNumber.Create(value)))
+                value => IbanNumber.Create(value))
             .HasColumnName("Iban")
             .HasColumnType("varchar(32)")
             .HasMaxLength(32)
@@ -45,7 +44,7 @@ public sealed class WalletWithdrawalRequestConfiguration
             .HasColumnName("ReservationId").IsRequired();
 
         builder.Property(e => e.Status)
-            .HasConversion(new EnumToStringConverter<WalletWithdrawalStatus>())
+            .HasConversion<string>()
             .HasColumnType("varchar(32)")
             .HasMaxLength(32)
             .IsRequired();

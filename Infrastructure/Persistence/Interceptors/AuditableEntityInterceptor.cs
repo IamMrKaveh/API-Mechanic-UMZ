@@ -32,7 +32,6 @@ public sealed class AuditableEntityInterceptor(IDateTimeProvider dateTimeProvide
             if (entry.State == EntityState.Added)
             {
                 entry.Property(nameof(IAuditable.CreatedAt)).CurrentValue = now;
-                entry.Property(nameof(IAuditable.UpdatedAt)).CurrentValue = now;
                 continue;
             }
 

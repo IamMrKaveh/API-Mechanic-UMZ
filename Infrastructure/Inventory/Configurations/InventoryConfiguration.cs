@@ -1,5 +1,6 @@
-﻿using Domain.Inventory.ValueObjects;
+using Domain.Inventory.ValueObjects;
 using Domain.Variant.ValueObjects;
+using Infrastructure.Common.Extensions;
 
 namespace Infrastructure.Inventory.Configurations;
 
@@ -35,7 +36,7 @@ internal sealed class InventoryConfiguration : IEntityTypeConfiguration<Domain.I
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.UpdatedAt);
 
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.AddInterceptorRowVersion();
 
         builder.HasIndex(e => e.VariantId).IsUnique();
 

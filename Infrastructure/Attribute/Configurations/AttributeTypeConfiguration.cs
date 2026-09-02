@@ -1,5 +1,6 @@
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.ValueObjects;
+using Infrastructure.Common.Extensions;
 
 namespace Infrastructure.Attribute.Configurations;
 
@@ -12,7 +13,7 @@ public sealed class AttributeTypeConfiguration : IEntityTypeConfiguration<Attrib
         builder.Property(e => e.Id)
             .HasConversion(v => v.Value, v => AttributeTypeId.From(v));
 
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.AddInterceptorRowVersion();
 
         builder.Property(e => e.Name).IsRequired().HasMaxLength(100);
         builder.Property(e => e.DisplayName).IsRequired().HasMaxLength(100);

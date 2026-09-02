@@ -1,6 +1,5 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
-using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
@@ -34,7 +33,7 @@ public sealed class WalletTransferConfiguration : IEntityTypeConfiguration<Walle
         builder.Property(e => e.Description).HasMaxLength(500);
 
         builder.Property(e => e.Status)
-            .HasConversion(new EnumToStringConverter<WalletTransferStatus>())
+            .HasConversion<string>()
             .HasColumnType("varchar(32)")
             .HasMaxLength(32)
             .IsRequired();
