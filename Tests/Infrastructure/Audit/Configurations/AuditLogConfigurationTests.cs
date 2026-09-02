@@ -1,8 +1,4 @@
 using Domain.Audit.Entities;
-using Domain.Audit.ValueObjects;
-using Domain.User.ValueObjects;
-using Infrastructure.Persistence.Context;
-using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Infrastructure.Audit.Configurations;
 
@@ -88,9 +84,14 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
     [Fact]
     public async Task SaveChanges_WithUserId_RoundTripsStronglyTypedUserId()
     {
-        var userId = UserId.NewId();
+        var user = new UserBuilder().Build();
+        user.ClearDomainEvents();
+        await _context.Users.AddAsync(user);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
         var auditLog = new AuditLogBuilder()
-            .WithUserId(userId)
+            .WithUserId(user.Id)
             .WithEventType("Security")
             .WithAction("Login")
             .WithIpAddress("10.0.0.2")
@@ -104,7 +105,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         var reloaded = await _context.AuditLogs.FirstAsync(a => a.Id == auditLog.Id);
 
         reloaded.UserId.ShouldNotBeNull();
-        reloaded.UserId!.Value.ShouldBe(userId.Value);
+        reloaded.UserId!.Value.ShouldBe(user.Id.Value);
     }
 
     [Fact]

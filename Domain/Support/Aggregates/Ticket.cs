@@ -6,7 +6,7 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Support.Aggregates;
 
-public sealed class Ticket : AggregateRoot<TicketId>
+public sealed class Ticket : AggregateRoot<TicketId>, IAuditable
 {
     private Ticket()
     { }
@@ -24,6 +24,7 @@ public sealed class Ticket : AggregateRoot<TicketId>
     public DateTime LastActivityAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
+    DateTime? IAuditable.UpdatedAt => UpdatedAt;
 
     public int MessageCount => _messages.Count;
 
