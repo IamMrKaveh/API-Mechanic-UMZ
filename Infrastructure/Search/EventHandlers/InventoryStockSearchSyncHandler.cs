@@ -52,10 +52,18 @@ public sealed class InventoryStockSearchSyncHandler(DBContext context) :
 
         var discriminator = $"{inventoryId:N}:{operationTag}:{Guid.NewGuid():N}";
 
+        var document = JsonSerializer.Serialize(new
+        {
+            productId = productId.Value,
+            variantId = variantId.Value,
+            inventoryId,
+            operation = operationTag
+        });
+
         var message = ElasticsearchOutboxMessage.Create(
             entityType: "Product",
             entityId: productId.Value,
-            document: string.Empty,
+            document: document,
             changeType: "StockChanged",
             discriminator: discriminator);
 
