@@ -15,12 +15,18 @@ public sealed class Money : ValueObject
 
     public static Money Create(decimal amount, string currency = "IRT")
     {
+        if (amount < 0)
+            throw new ArgumentException("Amount cannot be negative.", nameof(amount));
+
         if (string.IsNullOrWhiteSpace(currency))
             throw new ArgumentException("Currency cannot be empty.", nameof(currency));
-        return new Money(amount, currency.ToUpperInvariant().Trim());
+
+        return new Money(amount, currency.Trim().ToUpperInvariant());
     }
 
-    public static Money FromDecimal(decimal amount, string currency = "IRT") => Create(amount, currency);
+    public static Money FromDecimal(decimal amount, string currency) => Create(amount, currency);
+
+    public static Money FromDecimal(decimal amount) => Create(amount, "IRT");
 
     public static Money Zero(string currency = "IRT") => new(0, currency);
 

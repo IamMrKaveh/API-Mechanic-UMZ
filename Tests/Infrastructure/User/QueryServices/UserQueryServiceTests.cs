@@ -1,5 +1,4 @@
 using Application.User.Features.Shared;
-using Domain.Payment.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Security.Enums;
 using Domain.User.ValueObjects;
@@ -108,8 +107,18 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
                 .Build())
             .Build();
 
+        var transaction = new PaymentTransactionBuilder()
+            .WithOrderId(order.Id)
+            .WithUserId(userId)
+            .WithAmount(finalAmount == 0 ? 1m : finalAmount)
+            .Build();
+        transaction.ClearDomainEvents();
+
+        _context.PaymentTransactions.Add(transaction);
+        await _context.SaveChangesAsync();
+
         order.MoveToPending();
-        order.MarkAsPaid(PaymentTransactionId.NewId());
+        order.MarkAsPaid(transaction.Id);
         order.StartProcessing();
         order.MarkAsShipped();
         order.MarkAsDelivered();

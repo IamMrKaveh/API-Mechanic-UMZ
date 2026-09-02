@@ -349,7 +349,7 @@ public sealed class UserQueryService(DBContext context) : IUserQueryService
         CancellationToken ct = default)
     {
         var safePage = page <= 0 ? 1 : page;
-        var safeSize = pageSize <= 0 ? 10 : pageSize;
+        var safeSize = pageSize <= 0 ? 20 : pageSize;
 
         var query = context.ProductReviews
             .AsNoTracking()

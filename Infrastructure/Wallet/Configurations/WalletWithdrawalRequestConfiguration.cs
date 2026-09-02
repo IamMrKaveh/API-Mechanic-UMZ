@@ -1,5 +1,6 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
+using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
@@ -14,15 +15,12 @@ public sealed class WalletWithdrawalRequestConfiguration
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(
-                id => id.Value,
-                value => WalletWithdrawalRequestId.From(value))
+            .HasConversion(id => id.Value, value => WalletWithdrawalRequestId.From(value))
             .ValueGeneratedNever();
 
         builder.Property(e => e.UserId)
             .HasConversion(id => id.Value, value => UserId.From(value))
-            .HasColumnName("UserId")
-            .IsRequired();
+            .HasColumnName("UserId").IsRequired();
 
         builder.OwnsOne(e => e.Amount, m =>
         {
@@ -31,29 +29,24 @@ public sealed class WalletWithdrawalRequestConfiguration
         });
 
         builder.Property(e => e.Iban)
-            .HasConversion(
+            .HasConversion(new ValueConverter<IbanNumber, string>(
                 iban => iban.Value,
-                value => IbanNumber.Create(value))
+                value => IbanNumber.Create(value)))
             .HasColumnName("Iban")
+            .HasColumnType("varchar(32)")
             .HasMaxLength(32)
             .IsRequired();
 
-        builder.Property(e => e.AccountHolder)
-            .HasMaxLength(150)
-            .IsRequired();
-
-        builder.Property(e => e.Description)
-            .HasMaxLength(500);
+        builder.Property(e => e.AccountHolder).HasMaxLength(150).IsRequired();
+        builder.Property(e => e.Description).HasMaxLength(500);
 
         builder.Property(e => e.ReservationId)
-            .HasConversion(
-                id => id.Value,
-                value => WalletReservationId.From(value))
-            .HasColumnName("ReservationId")
-            .IsRequired();
+            .HasConversion(id => id.Value, value => WalletReservationId.From(value))
+            .HasColumnName("ReservationId").IsRequired();
 
         builder.Property(e => e.Status)
-            .HasConversion<string>()
+            .HasConversion(new EnumToStringConverter<WalletWithdrawalStatus>())
+            .HasColumnType("varchar(32)")
             .HasMaxLength(32)
             .IsRequired();
 
@@ -62,22 +55,17 @@ public sealed class WalletWithdrawalRequestConfiguration
         builder.Property(e => e.RejectedAt);
         builder.Property(e => e.PaidAt);
         builder.Property(e => e.CancelledAt);
-
         builder.Property(e => e.RejectionReason).HasMaxLength(500);
         builder.Property(e => e.BankReferenceNumber).HasMaxLength(64);
 
         builder.Property<uint>("xmin")
-            .HasColumnName("xmin")
-            .HasColumnType("xid")
-            .ValueGeneratedOnAddOrUpdate()
-            .IsConcurrencyToken();
+            .HasColumnName("xmin").HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();
 
         builder.HasIndex(e => e.UserId).HasDatabaseName("IX_WalletWithdrawalRequests_UserId");
         builder.HasIndex(e => e.Status).HasDatabaseName("IX_WalletWithdrawalRequests_Status");
         builder.HasIndex(e => e.CreatedAt).HasDatabaseName("IX_WalletWithdrawalRequests_CreatedAt");
-        builder.HasIndex(e => e.ReservationId)
-            .IsUnique()
-            .HasDatabaseName("IX_WalletWithdrawalRequests_ReservationId");
+        builder.HasIndex(e => e.ReservationId).IsUnique().HasDatabaseName("IX_WalletWithdrawalRequests_ReservationId");
 
         builder.Ignore(e => e.DomainEvents);
     }

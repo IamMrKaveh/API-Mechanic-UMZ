@@ -69,50 +69,46 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         ProductId productId,
         CancellationToken ct = default)
     {
-        var baseQuery = context.ProductReviews
+        var ratings = await context.ProductReviews
             .AsNoTracking()
             .Where(r =>
                 r.ProductId == productId &&
                 !r.IsDeleted &&
                 r.User != null &&
                 r.User.IsActive &&
-                r.Status == ReviewStatus.Approved);
+                r.Status == ReviewStatus.Approved)
+            .Select(r => r.Rating.Value)
+            .ToListAsync(ct);
 
-        var stats = await baseQuery
-            .GroupBy(_ => 1)
-            .Select(g => new
-            {
-                Total = g.Count(),
-                Avg = g.Average(r => (double)r.Rating.Value),
-                Five = g.Count(r => r.Rating.Value == 5),
-                Four = g.Count(r => r.Rating.Value == 4),
-                Three = g.Count(r => r.Rating.Value == 3),
-                Two = g.Count(r => r.Rating.Value == 2),
-                One = g.Count(r => r.Rating.Value == 1)
-            })
-            .FirstOrDefaultAsync(ct);
-
-        if (stats is null)
+        if (ratings.Count == 0)
             return null;
+
+        var total = ratings.Count;
+        var avg = ratings.Average();
+        var five = ratings.Count(v => v == 5);
+        var four = ratings.Count(v => v == 4);
+        var three = ratings.Count(v => v == 3);
+        var two = ratings.Count(v => v == 2);
+        var one = ratings.Count(v => v == 1);
 
         return new ReviewSummaryDto
         {
             ProductId = productId.Value,
-            TotalReviews = stats.Total,
-            TotalCount = stats.Total,
-            AverageRating = Math.Round(stats.Avg, 2),
-            FiveStarCount = stats.Five,
-            FourStarCount = stats.Four,
-            ThreeStarCount = stats.Three,
-            TwoStarCount = stats.Two,
-            OneStarCount = stats.One,
+            TotalReviews = total,
+            TotalCount = total,
+            AverageRating = Math.Round(avg, 2),
+            FiveStarCount = five,
+            FourStarCount = four,
+            ThreeStarCount = three,
+            TwoStarCount = two,
+            OneStarCount = one,
             RatingDistribution = new Dictionary<int, int>
             {
-                [5] = stats.Five,
-                [4] = stats.Four,
-                [3] = stats.Three,
-                [2] = stats.Two,
-                [1] = stats.One
+                [5] = five,
+                [4] = four,
+                [3] = three,
+                [2] = two,
+                [1] = one
             }
         };
     }

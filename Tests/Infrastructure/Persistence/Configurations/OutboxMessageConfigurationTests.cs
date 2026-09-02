@@ -1,12 +1,7 @@
 using Infrastructure.Common.Services;
-using Infrastructure.Persistence.Context;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using SharedKernel.Abstractions.Interfaces;
-using Shouldly;
-using Xunit;
 
 namespace Tests.Infrastructure.Persistence.Configurations;
 

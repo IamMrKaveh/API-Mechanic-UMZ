@@ -1,4 +1,5 @@
 using Domain.Wallet.Entities;
+using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
@@ -7,6 +8,8 @@ public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<Wa
 {
     public void Configure(EntityTypeBuilder<WalletLedgerEntry> builder)
     {
+        builder.ToTable("WalletLedgerEntries");
+
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
@@ -47,7 +50,8 @@ public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<Wa
         });
 
         builder.Property(e => e.TransactionType)
-            .HasConversion<string>()
+            .HasConversion(new EnumToStringConverter<WalletTransactionType>())
+            .HasColumnType("varchar(50)")
             .HasMaxLength(50)
             .IsRequired();
 
@@ -81,68 +85,21 @@ public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<Wa
                 value => value.HasValue ? WalletTopUpId.From(value.Value) : null)
             .HasColumnName("TopUpId");
 
-        builder.HasOne(e => e.Wallet)
-            .WithMany()
-            .HasForeignKey(e => e.WalletId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.Wallet).WithMany().HasForeignKey(e => e.WalletId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.Owner).WithMany().HasForeignKey(e => e.OwnerId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<WalletDebitRequest>().WithMany().HasForeignKey(e => e.DebitRequestId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne<Domain.Wallet.Aggregates.WalletWithdrawalRequest>().WithMany().HasForeignKey(e => e.WithdrawalRequestId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne<Domain.Wallet.Aggregates.WalletTransfer>().WithMany().HasForeignKey(e => e.TransferId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne<Domain.Wallet.Aggregates.WalletTopUp>().WithMany().HasForeignKey(e => e.TopUpId).OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasOne(e => e.Owner)
-            .WithMany()
-            .HasForeignKey(e => e.OwnerId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne<WalletDebitRequest>()
-            .WithMany()
-            .HasForeignKey(e => e.DebitRequestId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne<Domain.Wallet.Aggregates.WalletWithdrawalRequest>()
-            .WithMany()
-            .HasForeignKey(e => e.WithdrawalRequestId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne<Domain.Wallet.Aggregates.WalletTransfer>()
-            .WithMany()
-            .HasForeignKey(e => e.TransferId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne<Domain.Wallet.Aggregates.WalletTopUp>()
-            .WithMany()
-            .HasForeignKey(e => e.TopUpId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasIndex(e => new { e.WalletId, e.OccurredAt })
-            .IsDescending(false, true)
-            .HasDatabaseName("IX_WalletLedgerEntries_WalletId_OccurredAt");
-
-        builder.HasIndex(e => new { e.OwnerId, e.OccurredAt })
-            .IsDescending(false, true)
-            .HasDatabaseName("IX_WalletLedgerEntries_UserId_OccurredAt");
-
-        builder.HasIndex(e => e.IdempotencyKey)
-            .IsUnique()
-            .HasFilter("\"IdempotencyKey\" IS NOT NULL")
-            .HasDatabaseName("IX_WalletLedgerEntries_IdempotencyKey");
-
-        builder.HasIndex(e => e.CorrelationId)
-            .HasFilter("\"CorrelationId\" IS NOT NULL")
-            .HasDatabaseName("IX_WalletLedgerEntries_CorrelationId");
-
-        builder.HasIndex(e => e.DebitRequestId)
-            .HasFilter("\"DebitRequestId\" IS NOT NULL")
-            .HasDatabaseName("IX_WalletLedgerEntries_DebitRequestId");
-
-        builder.HasIndex(e => e.WithdrawalRequestId)
-            .HasFilter("\"WithdrawalRequestId\" IS NOT NULL")
-            .HasDatabaseName("IX_WalletLedgerEntries_WithdrawalRequestId");
-
-        builder.HasIndex(e => e.TransferId)
-            .HasFilter("\"TransferId\" IS NOT NULL")
-            .HasDatabaseName("IX_WalletLedgerEntries_TransferId");
-
-        builder.HasIndex(e => e.TopUpId)
-            .HasFilter("\"TopUpId\" IS NOT NULL")
-            .HasDatabaseName("IX_WalletLedgerEntries_TopUpId");
+        builder.HasIndex(e => new { e.WalletId, e.OccurredAt }).IsDescending(false, true).HasDatabaseName("IX_WalletLedgerEntries_WalletId_OccurredAt");
+        builder.HasIndex(e => new { e.OwnerId, e.OccurredAt }).IsDescending(false, true).HasDatabaseName("IX_WalletLedgerEntries_UserId_OccurredAt");
+        builder.HasIndex(e => e.IdempotencyKey).IsUnique().HasFilter("\"IdempotencyKey\" IS NOT NULL").HasDatabaseName("IX_WalletLedgerEntries_IdempotencyKey");
+        builder.HasIndex(e => e.CorrelationId).HasFilter("\"CorrelationId\" IS NOT NULL").HasDatabaseName("IX_WalletLedgerEntries_CorrelationId");
+        builder.HasIndex(e => e.DebitRequestId).HasFilter("\"DebitRequestId\" IS NOT NULL").HasDatabaseName("IX_WalletLedgerEntries_DebitRequestId");
+        builder.HasIndex(e => e.WithdrawalRequestId).HasFilter("\"WithdrawalRequestId\" IS NOT NULL").HasDatabaseName("IX_WalletLedgerEntries_WithdrawalRequestId");
+        builder.HasIndex(e => e.TransferId).HasFilter("\"TransferId\" IS NOT NULL").HasDatabaseName("IX_WalletLedgerEntries_TransferId");
+        builder.HasIndex(e => e.TopUpId).HasFilter("\"TopUpId\" IS NOT NULL").HasDatabaseName("IX_WalletLedgerEntries_TopUpId");
 
         builder.HasQueryFilter(e => e.Owner.IsActive);
     }

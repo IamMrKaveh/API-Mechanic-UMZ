@@ -47,6 +47,33 @@ public sealed class OutboxMessage
         };
     }
 
+    public static OutboxMessage Rehydrate(
+        OutboxMessageId id,
+        string type,
+        string payload,
+        DateTime createdAt,
+        DateTime? processedAt,
+        string? error,
+        int retryCount,
+        bool isPoisoned,
+        string? traceParent,
+        string? traceState)
+    {
+        return new OutboxMessage
+        {
+            Id = id,
+            Type = type,
+            Payload = payload,
+            CreatedAt = createdAt,
+            ProcessedAt = processedAt,
+            Error = error,
+            RetryCount = retryCount,
+            IsPoisoned = isPoisoned,
+            TraceParent = traceParent,
+            TraceState = traceState
+        };
+    }
+
     public void MarkProcessed(DateTime processedAt)
     {
         ProcessedAt = processedAt;
