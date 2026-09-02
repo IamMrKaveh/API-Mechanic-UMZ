@@ -83,6 +83,10 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         return (order.Id, user.Id);
     }
 
+    private async Task SetCreatedAtAsync(Guid transactionId, DateTime createdAt)
+        => await _context.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE \"PaymentTransactions\" SET \"CreatedAt\" = {createdAt} WHERE \"Id\" = {transactionId}");
+
     private async Task<PaymentTransactionBuilder> NewTransactionBuilderAsync(
         OrderId? orderId = null,
         UserId? userId = null)
@@ -205,6 +209,9 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
 
         _context.PaymentTransactions.AddRange(oldTx, newTx, unrelatedTx);
         await _context.SaveChangesAsync();
+
+        await SetCreatedAtAsync(oldTx.Id.Value, new DateTime(2026, 5, 1, 8, 0, 0, DateTimeKind.Utc));
+        await SetCreatedAtAsync(newTx.Id.Value, new DateTime(2026, 5, 2, 8, 0, 0, DateTimeKind.Utc));
         _context.ChangeTracker.Clear();
 
         var result = await _sut.GetByOrderIdAsync(orderId);
@@ -238,6 +245,10 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
 
         _context.PaymentTransactions.AddRange(tx1, tx2, tx3);
         await _context.SaveChangesAsync();
+
+        await SetCreatedAtAsync(tx1.Id.Value, new DateTime(2026, 4, 1, 0, 0, 0, DateTimeKind.Utc));
+        await SetCreatedAtAsync(tx2.Id.Value, new DateTime(2026, 4, 3, 0, 0, 0, DateTimeKind.Utc));
+        await SetCreatedAtAsync(tx3.Id.Value, new DateTime(2026, 4, 2, 0, 0, 0, DateTimeKind.Utc));
         _context.ChangeTracker.Clear();
 
         var result = await _sut.GetPagedAsync(
@@ -382,6 +393,10 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
 
         _context.PaymentTransactions.AddRange(inside, before, after);
         await _context.SaveChangesAsync();
+
+        await SetCreatedAtAsync(inside.Id.Value, new DateTime(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc));
+        await SetCreatedAtAsync(before.Id.Value, new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc));
+        await SetCreatedAtAsync(after.Id.Value, new DateTime(2026, 6, 30, 12, 0, 0, DateTimeKind.Utc));
         _context.ChangeTracker.Clear();
 
         var result = await _sut.GetPagedAsync(

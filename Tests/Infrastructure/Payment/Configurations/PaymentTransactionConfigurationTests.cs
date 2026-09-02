@@ -70,7 +70,7 @@ public sealed class PaymentTransactionConfigurationTests : IDisposable
         var property = EntityType().FindProperty(nameof(PaymentTransaction.Amount));
 
         property.ShouldNotBeNull();
-        property!.GetColumnType().ShouldBe("decimal(18,2)");
+        property!.GetColumnType().ShouldBe("numeric(18,2)");
         property.GetValueConverter().ShouldNotBeNull();
     }
 
@@ -110,7 +110,7 @@ public sealed class PaymentTransactionConfigurationTests : IDisposable
         foreignKey.IsUnique.ShouldBeTrue();
         foreignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Restrict);
         foreignKey.Properties.Select(p => p.Name)
-            .ShouldBe(new[] { nameof(PaymentTransaction.OrderId) });
+            .ShouldBe([nameof(PaymentTransaction.OrderId)]);
     }
 
     [Fact]

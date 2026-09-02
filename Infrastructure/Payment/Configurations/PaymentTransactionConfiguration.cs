@@ -60,13 +60,13 @@ public sealed class PaymentTransactionConfiguration : IEntityTypeConfiguration<P
         builder.Property(e => e.VerifiedAt);
 
         builder.HasOne(e => e.Order)
-            .WithOne()
-            .HasForeignKey<PaymentTransaction>(e => e.OrderId)
+            .WithMany()
+            .HasForeignKey(e => e.OrderId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => e.Authority).IsUnique();
-        builder.HasIndex(e => e.OrderId).IsUnique();
+        builder.HasIndex(e => e.OrderId);
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => new { e.Status, e.CreatedAt });
 
