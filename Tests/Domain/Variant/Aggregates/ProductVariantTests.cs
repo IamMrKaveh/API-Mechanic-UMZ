@@ -2,13 +2,10 @@ using Domain.Attribute.ValueObjects;
 using Domain.Product.Exceptions;
 using Domain.Product.ValueObjects;
 using Domain.Shipping.ValueObjects;
-using Domain.Variant.Aggregates;
 using Domain.Variant.Events;
 using Domain.Variant.Exceptions;
 using Domain.Variant.ValueObjects;
 using SharedKernel.Exceptions;
-using SharedKernel.ValueObjects;
-using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Domain.Variant.Aggregates;
 
@@ -59,7 +56,7 @@ public class ProductVariantTests
     {
         var sut = new ProductVariantBuilder()
             .WithSellingPrice(120m)
-            .WithOriginalPrice((Money?)null)
+            .WithOriginalPrice(null)
             .Build();
 
         sut.OriginalPrice.Amount.ShouldBe(120m);
@@ -187,7 +184,7 @@ public class ProductVariantTests
         var sut = new ProductVariantBuilder().Build();
 
         Should.Throw<InvalidPriceException>(
-            () => sut.ChangePrice(Money.Create(amount, "IRT")));
+            () => sut.ChangePrice(amount));
     }
 
     [Fact]
