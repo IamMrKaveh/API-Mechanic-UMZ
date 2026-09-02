@@ -1,10 +1,6 @@
 using Domain.Discount.Aggregates;
-using Domain.Discount.Entities;
 using Domain.Discount.Enums;
 using Domain.Discount.ValueObjects;
-using Infrastructure.Persistence.Context;
-using SharedKernel.ValueObjects;
-using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Infrastructure.Discount.Configurations;
 
@@ -70,7 +66,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
     {
         var discount = new DiscountCodeBuilder()
             .WithCode("NOCAP")
-            .WithMaximumDiscountAmount((Money?)null)
+            .WithMaximumDiscountAmount(null)
             .Build();
         discount.ClearDomainEvents();
 
@@ -159,7 +155,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         var amount = ownedType.FindProperty(nameof(DiscountValue.Amount));
         amount.ShouldNotBeNull();
         amount!.GetColumnName().ShouldBe("DiscountValue");
-        amount.GetColumnType().ShouldBe("decimal(18,4)");
+        amount.GetColumnType().ShouldBe("numeric(18,4)");
         amount.IsNullable.ShouldBeFalse();
 
         var type = ownedType.FindProperty(nameof(DiscountValue.Type));
@@ -178,7 +174,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         var property = entityType!.FindProperty(nameof(DiscountCode.MaximumDiscountAmount));
         property.ShouldNotBeNull();
         property!.GetColumnName().ShouldBe("MaximumDiscountAmount");
-        property.GetColumnType().ShouldBe("decimal(18,4)");
+        property.GetColumnType().ShouldBe("numeric(18,4)");
     }
 
     [Fact]

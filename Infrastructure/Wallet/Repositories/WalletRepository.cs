@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 
 namespace Infrastructure.Wallet.Repositories;
@@ -8,14 +8,14 @@ public sealed class WalletRepository(DBContext context) : IWalletRepository
     public async Task<Domain.Wallet.Aggregates.Wallet?> GetByUserIdAsync(
         UserId userId, CancellationToken ct = default)
         => await context.Wallets
-            .Include(w => w.ActiveReservations)
+            .Include(w => w.Reservations)
             .FirstOrDefaultAsync(w => w.OwnerId == userId, ct);
 
     public async Task<Domain.Wallet.Aggregates.Wallet?> GetByUserIdForUpdateAsync(
         UserId userId, CancellationToken ct = default)
     {
         var wallet = await context.Wallets
-            .Include(w => w.ActiveReservations)
+            .Include(w => w.Reservations)
             .FirstOrDefaultAsync(w => w.OwnerId == userId, ct);
 
         if (wallet is not null)

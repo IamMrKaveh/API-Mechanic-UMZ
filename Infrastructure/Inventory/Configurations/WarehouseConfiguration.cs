@@ -1,5 +1,6 @@
 using Domain.Inventory.Aggregates;
 using Domain.Inventory.ValueObjects;
+using Infrastructure.Common.Extensions;
 
 namespace Infrastructure.Inventory.Configurations;
 
@@ -27,7 +28,7 @@ public sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.UpdatedAt);
 
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.AddInterceptorRowVersion();
 
         builder.HasIndex(e => e.Code).IsUnique();
 

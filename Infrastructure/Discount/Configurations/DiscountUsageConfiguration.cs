@@ -31,7 +31,6 @@ public sealed class DiscountUsageConfiguration : IEntityTypeConfiguration<Discou
             .HasMaxLength(50);
 
         builder.Property(e => e.DiscountedAmount)
-            .HasConversion(new ValueConverter<decimal, decimal>(v => v, v => v))
             .HasColumnType("decimal(18,4)")
             .IsRequired();
 

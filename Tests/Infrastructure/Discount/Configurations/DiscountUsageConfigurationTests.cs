@@ -1,5 +1,4 @@
 using Domain.Discount.Entities;
-using Infrastructure.Persistence.Context;
 
 namespace Tests.Infrastructure.Discount.Configurations;
 
@@ -103,7 +102,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         var property = entityType!.FindProperty(nameof(DiscountUsageRecord.DiscountedAmount));
         property.ShouldNotBeNull();
         property!.IsNullable.ShouldBeFalse();
-        property.GetColumnType().ShouldBe("decimal(18,4)");
+        property.GetColumnType().ShouldBe("numeric(18,4)");
     }
 
     [Fact]

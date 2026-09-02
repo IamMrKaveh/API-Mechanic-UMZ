@@ -1,6 +1,7 @@
 using Domain.Security.Aggregates;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
+using Infrastructure.Common.Extensions;
 
 namespace Infrastructure.Auth.Configurations;
 
@@ -13,7 +14,7 @@ public sealed class OtpConfiguration : IEntityTypeConfiguration<UserOtp>
         builder.Property(e => e.Id)
             .HasConversion(v => v.Value, v => OtpId.From(v));
 
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.AddInterceptorRowVersion();
 
         builder.Property(e => e.UserId)
             .HasConversion(v => v.Value, v => UserId.From(v))

@@ -1,6 +1,7 @@
 using Domain.Discount.Aggregates;
 using Domain.Discount.Entities;
 using Domain.Discount.ValueObjects;
+using Infrastructure.Common.Extensions;
 
 namespace Infrastructure.Discount.Configurations;
 
@@ -49,7 +50,7 @@ public sealed class DiscountCodeConfiguration : IEntityTypeConfiguration<Discoun
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.UpdatedAt).IsRequired();
 
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.AddInterceptorRowVersion();
 
         builder.HasMany(e => e.Restrictions)
             .WithOne(r => r.DiscountCode)

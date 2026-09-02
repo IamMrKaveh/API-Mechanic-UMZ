@@ -28,7 +28,7 @@ public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<Wa
         builder.Property(e => e.Purpose).IsRequired().HasMaxLength(200);
 
         builder.Property(e => e.Status)
-            .HasConversion(new EnumToStringConverter<WalletReservationStatus>())
+            .HasConversion<string>()
             .HasColumnType("varchar(20)")
             .HasMaxLength(20)
             .IsRequired();
@@ -38,7 +38,7 @@ public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<Wa
         builder.Property(e => e.ResolvedAt);
 
         builder.HasOne(e => e.Wallet)
-            .WithMany(w => w.ActiveReservations)
+            .WithMany(w => w.Reservations)
             .HasForeignKey("WalletId")
             .OnDelete(DeleteBehavior.Cascade);
 

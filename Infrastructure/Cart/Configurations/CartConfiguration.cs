@@ -1,6 +1,7 @@
 using Domain.Cart.ValueObjects;
 using Domain.Discount.ValueObjects;
 using Domain.User.ValueObjects;
+using Infrastructure.Common.Extensions;
 
 namespace Infrastructure.Cart.Configurations;
 
@@ -15,7 +16,7 @@ public sealed class CartConfiguration : IEntityTypeConfiguration<Domain.Cart.Agg
         builder.Property(e => e.Id)
             .HasConversion(v => v.Value, v => CartId.From(v));
 
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.AddInterceptorRowVersion();
 
         builder.Property(e => e.UserId)
             .HasConversion(
