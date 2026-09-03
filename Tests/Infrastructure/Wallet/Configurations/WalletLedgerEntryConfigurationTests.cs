@@ -104,9 +104,9 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         var entry = await SeedCreditEntryAsync(wallet, owner);
         _context.ChangeTracker.Clear();
 
-        var raw = await _context.WalletLedgerEntries
-            .Where(e => e.Id == entry.Id)
-            .Select(e => EF.Property<string>(e, nameof(WalletLedgerEntry.TransactionType)))
+        var entryId = entry.Id.Value;
+        var raw = await _context.Database
+            .SqlQuery<string>($"SELECT \"TransactionType\" AS \"Value\" FROM \"WalletLedgerEntries\" WHERE \"Id\" = {entryId}")
             .FirstOrDefaultAsync();
 
         raw.ShouldBe(WalletTransactionType.Credit.ToString());

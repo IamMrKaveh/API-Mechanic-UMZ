@@ -1,10 +1,5 @@
-using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
-using Infrastructure.Persistence.Context;
-using SharedKernel.ValueObjects;
-using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Wallet.Configurations;
 
@@ -80,9 +75,9 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         var transfer = await SeedTransferAsync();
         _context.ChangeTracker.Clear();
 
-        var raw = await _context.Set<WalletTransfer>()
-            .Where(t => t.Id == transfer.Id)
-            .Select(t => EF.Property<string>(t, nameof(WalletTransfer.Status)))
+        var transferId = transfer.Id.Value;
+        var raw = await _context.Database
+            .SqlQuery<string>($"SELECT \"Status\" AS \"Value\" FROM \"WalletTransfers\" WHERE \"Id\" = {transferId}")
             .FirstOrDefaultAsync();
 
         raw.ShouldBe(WalletTransferStatus.PendingOtp.ToString());
