@@ -1,37 +1,5 @@
 لیست ماژول‌های بدون پوشش تست — Mechanic API
 
-
-Application — Handler ها (Command/Query Handlers) (58)
-
-
-
-
-Application — Validator ها (FluentValidation) (47)
-
-
-
-
-Application — Domain Event Handler ها (31)
-
-
-
-
-Domain — Value Object ها (9)
-
-Domain — Aggregate / Entity ها (18)
-
-Infrastructure — Repository ها (11)
-
-Infrastructure — Query Service ها (19)
-
-
-
-Infrastructure — EF Core Configuration ها (49)
-
-
-
-Infrastructure — Event Handler ها (4)
-
 Infrastructure — Service های دیگر (29)
 Tests/Infrastructure/Cache/Redis/Services/RedisCacheServiceTests.cs
 Tests/Infrastructure/Cache/Redis/Services/RedisIdempotencyServiceTests.cs
@@ -39,26 +7,7 @@ Tests/Infrastructure/Cache/Services/DistributedLockServiceTests.cs
 Tests/Infrastructure/Payment/Services/PaymentServiceTests.cs
 Tests/Infrastructure/Security/Services/RateLimitServiceTests.cs
 Tests/Infrastructure/Notification/Services/NotificationServiceTests.cs
-Tests/Infrastructure/Search/Services/ElasticBulkServiceTests.cs
-Tests/Infrastructure/Search/Services/ElasticsearchDatabaseSyncServiceTests.cs
-Tests/Infrastructure/Search/Services/ElasticsearchInitialSyncServiceTests.cs
-Tests/Infrastructure/Search/Services/ElasticsearchServiceTests.cs
-Tests/Infrastructure/Search/Services/ElasticsearchStatsServiceTests.cs
-Tests/Infrastructure/Search/Services/NoOpElasticBulkServiceTests.cs
-Tests/Infrastructure/Search/Services/NoOpSearchDatabaseSyncServiceTests.cs
-Tests/Infrastructure/Search/Services/NoOpSearchServiceTests.cs
-Tests/Infrastructure/Search/Services/NoOpSearchStatsServiceTests.cs
-Tests/Infrastructure/Search/Services/ResilientElasticSearchServiceTests.cs
 Tests/Infrastructure/Audit/Services/AuditMaskingServiceTests.cs
 Tests/Infrastructure/Audit/Services/AuditServiceTests.cs
 Tests/Infrastructure/Inventory/Services/InventoryServiceTests.cs
-Tests/Infrastructure/Order/Services/CheckoutAddressResolverServiceTests.cs
-Tests/Infrastructure/Order/Services/CheckoutCartItemBuilderServiceTests.cs
-Tests/Infrastructure/Order/Services/CheckoutDiscountApplicatorServiceTests.cs
-Tests/Infrastructure/Order/Services/CheckoutOrchestrationServiceTests.cs
-Tests/Infrastructure/Order/Services/CheckoutOrderCreationServiceTests.cs
-Tests/Infrastructure/Order/Services/CheckoutPaymentProcessorServiceTests.cs
-Tests/Infrastructure/Order/Services/CheckoutPriceValidatorServiceTests.cs
-Tests/Infrastructure/Order/Services/CheckoutShippingValidatorServiceTests.cs
-Tests/Infrastructure/Order/Services/CheckoutStockValidatorServiceTests.cs
 Tests/Infrastructure/Review/Services/PurchaseVerificationServiceTests.cs
