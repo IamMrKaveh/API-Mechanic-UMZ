@@ -29,18 +29,7 @@ Infrastructure — Query Service ها (19)
 Infrastructure — EF Core Configuration ها (49)
 
 
-Tests/Infrastructure/Product/Configurations/ProductConfigurationTests.cs
-Tests/Infrastructure/Review/Configurations/ReviewConfigurationTests.cs
-Tests/Infrastructure/Review/Configurations/ReviewVoteConfigurationTests.cs
-Tests/Infrastructure/Shipping/Configurations/ShippingConfigurationTests.cs
-Tests/Infrastructure/Support/Configurations/TicketConfigurationTests.cs
-Tests/Infrastructure/Support/Configurations/TicketMessageConfigurationTests.cs
-Tests/Infrastructure/User/Configurations/UserAddressConfigurationTests.cs
-Tests/Infrastructure/User/Configurations/UserConfigurationTests.cs
-Tests/Infrastructure/Variant/Configurations/VariantAttributeConfigurationTests.cs
-Tests/Infrastructure/Variant/Configurations/VariantConfigurationTests.cs
-Tests/Infrastructure/Variant/Configurations/VariantShippingConfigurationTests.cs
-Tests/Infrastructure/Wishlist/Configurations/WishlistConfigurationTests.cs
+
 Infrastructure — Event Handler ها (4)
 
 Infrastructure — Service های دیگر (29)
