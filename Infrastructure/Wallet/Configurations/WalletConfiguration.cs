@@ -61,6 +61,14 @@ public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet
             .HasForeignKey("WalletId")
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Ignore(w => w.ActiveReservations);
+
+        builder.Metadata.FindNavigation(nameof(Domain.Wallet.Aggregates.Wallet.DebitRequests))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.Metadata.FindNavigation(nameof(Domain.Wallet.Aggregates.Wallet.Reservations))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
         builder.HasQueryFilter(e => e.Owner.IsActive);
     }
 }

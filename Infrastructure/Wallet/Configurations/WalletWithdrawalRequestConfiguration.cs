@@ -1,16 +1,22 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
+using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
 
-public sealed class WalletWithdrawalRequestConfiguration
-    : IEntityTypeConfiguration<WalletWithdrawalRequest>
+public sealed class WalletWithdrawalRequestConfiguration : IEntityTypeConfiguration<WalletWithdrawalRequest>
 {
+    private static readonly ValueConverter<WalletWithdrawalStatus, string> StatusConverter =
+        new(v => v.ToString(),
+            v => (WalletWithdrawalStatus)Enum.Parse(typeof(WalletWithdrawalStatus), v));
+
+    private static readonly ValueConverter<IbanNumber, string> IbanConverter =
+        new(v => v.Value, v => IbanNumber.Create(v));
+
     public void Configure(EntityTypeBuilder<WalletWithdrawalRequest> builder)
     {
         builder.ToTable("WalletWithdrawalRequests");
-
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
@@ -27,14 +33,13 @@ public sealed class WalletWithdrawalRequestConfiguration
             m.Property(x => x.Currency).HasColumnName("AmountCurrency").HasMaxLength(10).IsRequired();
         });
 
-        builder.Property(e => e.Iban)
-            .HasConversion(
-                iban => iban.Value,
-                value => IbanNumber.Create(value))
+        var ibanProp = builder.Property(e => e.Iban)
+            .HasConversion(IbanConverter)
             .HasColumnName("Iban")
             .HasColumnType("varchar(32)")
             .HasMaxLength(32)
             .IsRequired();
+        ibanProp.Metadata.SetProviderClrType(typeof(string));
 
         builder.Property(e => e.AccountHolder).HasMaxLength(150).IsRequired();
         builder.Property(e => e.Description).HasMaxLength(500);
@@ -43,11 +48,12 @@ public sealed class WalletWithdrawalRequestConfiguration
             .HasConversion(id => id.Value, value => WalletReservationId.From(value))
             .HasColumnName("ReservationId").IsRequired();
 
-        builder.Property(e => e.Status)
-            .HasConversion<string>()
+        var statusProp = builder.Property(e => e.Status)
+            .HasConversion(StatusConverter)
             .HasColumnType("varchar(32)")
             .HasMaxLength(32)
             .IsRequired();
+        statusProp.Metadata.SetProviderClrType(typeof(string));
 
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.ApprovedAt);
@@ -56,6 +62,11 @@ public sealed class WalletWithdrawalRequestConfiguration
         builder.Property(e => e.CancelledAt);
         builder.Property(e => e.RejectionReason).HasMaxLength(500);
         builder.Property(e => e.BankReferenceNumber).HasMaxLength(64);
+
+        builder.Property(e => e.ProcessedBy)
+            .HasConversion(
+                id => id == null ? (Guid?)null : id.Value,
+                value => value.HasValue ? UserId.From(value.Value) : null);
 
         builder.Property<uint>("xmin")
             .HasColumnName("xmin").HasColumnType("xid")

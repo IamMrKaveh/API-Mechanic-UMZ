@@ -25,16 +25,15 @@ public sealed class Wallet : AggregateRoot<WalletId>
     public UserId OwnerId { get; private set; } = default!;
 
     private readonly List<WalletReservation> _reservations = [];
-    public IReadOnlyList<WalletReservation> Reservations => _reservations.AsReadOnly();
+    public IReadOnlyList<WalletReservation> Reservations => _reservations;
 
     public IReadOnlyList<WalletReservation> ActiveReservations =>
         _reservations
             .Where(r => r.Status == WalletReservationStatus.Active)
-            .ToList()
-            .AsReadOnly();
+            .ToList();
 
     private readonly List<WalletDebitRequest> _debitRequests = [];
-    public IReadOnlyList<WalletDebitRequest> DebitRequests => _debitRequests.AsReadOnly();
+    public IReadOnlyList<WalletDebitRequest> DebitRequests => _debitRequests;
 
     public Money ReservedBalance => Money.Create(
         _reservations
@@ -63,12 +62,8 @@ public sealed class Wallet : AggregateRoot<WalletId>
         return wallet;
     }
 
-    public void Credit(
-        Money amount,
-        string description,
-        string referenceId,
-        string? idempotencyKey = null,
-        string? correlationId = null)
+    public void Credit(Money amount, string description, string referenceId,
+        string? idempotencyKey = null, string? correlationId = null)
     {
         ValidateAmount(amount);
         Guard.Against.NullOrWhiteSpace(description, nameof(description));
@@ -81,12 +76,8 @@ public sealed class Wallet : AggregateRoot<WalletId>
             Id, OwnerId, amount, Balance, description, referenceId, idempotencyKey, correlationId));
     }
 
-    public void Debit(
-        Money amount,
-        string description,
-        string referenceId,
-        string? idempotencyKey = null,
-        string? correlationId = null)
+    public void Debit(Money amount, string description, string referenceId,
+        string? idempotencyKey = null, string? correlationId = null)
     {
         EnsureActive();
         ValidateAmount(amount);
@@ -103,13 +94,8 @@ public sealed class Wallet : AggregateRoot<WalletId>
             Id, OwnerId, amount, Balance, description, referenceId, idempotencyKey, correlationId));
     }
 
-    public WalletDebitRequest CreateDebitRequest(
-        WalletDebitRequestId requestId,
-        Money amount,
-        string reason,
-        string? description,
-        UserId requestedBy,
-        TimeSpan expiryDuration)
+    public WalletDebitRequest CreateDebitRequest(WalletDebitRequestId requestId, Money amount,
+        string reason, string? description, UserId requestedBy, TimeSpan expiryDuration)
     {
         EnsureActive();
         Guard.Against.Null(requestId, nameof(requestId));
@@ -128,15 +114,8 @@ public sealed class Wallet : AggregateRoot<WalletId>
         _reservations.Add(reservation);
 
         var request = WalletDebitRequest.Create(
-            requestId,
-            Id,
-            OwnerId,
-            amount,
-            reason,
-            description,
-            requestedBy,
-            reservation.Id,
-            DateTime.UtcNow.Add(expiryDuration));
+            requestId, Id, OwnerId, amount, reason, description,
+            requestedBy, reservation.Id, DateTime.UtcNow.Add(expiryDuration));
         _debitRequests.Add(request);
         UpdatedAt = DateTime.UtcNow;
 
@@ -177,10 +156,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
         var deterministicIdempotencyKey = $"debit-req-approve:{requestId.Value:N}";
 
         RaiseDomainEvent(new WalletDebitedEvent(
-            Id,
-            OwnerId,
-            request.Amount,
-            Balance,
+            Id, OwnerId, request.Amount, Balance,
             $"AdminDebit-Approved: {request.Reason}",
             requestId.Value.ToString(),
             deterministicIdempotencyKey));
@@ -272,8 +248,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
         Guard.Against.NullOrWhiteSpace(reason, nameof(reason));
         Guard.Against.Null(adminId, nameof(adminId));
 
-        if (!IsActive)
-            return;
+        if (!IsActive) return;
 
         IsActive = false;
         FreezeReason = reason;
@@ -289,8 +264,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
         Guard.Against.Null(adminId, nameof(adminId));
         Guard.Against.NullOrWhiteSpace(reason, nameof(reason));
 
-        if (IsActive)
-            return;
+        if (IsActive) return;
 
         IsActive = true;
         FreezeReason = null;

@@ -1,15 +1,19 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
+using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Configurations;
 
 public sealed class WalletTopUpConfiguration : IEntityTypeConfiguration<WalletTopUp>
 {
+    private static readonly ValueConverter<WalletTopUpStatus, string> StatusConverter =
+        new(v => v.ToString(),
+            v => (WalletTopUpStatus)Enum.Parse(typeof(WalletTopUpStatus), v));
+
     public void Configure(EntityTypeBuilder<WalletTopUp> builder)
     {
         builder.ToTable("WalletTopUps");
-
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
@@ -31,11 +35,12 @@ public sealed class WalletTopUpConfiguration : IEntityTypeConfiguration<WalletTo
         builder.Property(e => e.GatewayAuthority).HasMaxLength(200);
         builder.Property(e => e.GatewayRefId).HasMaxLength(200);
 
-        builder.Property(e => e.Status)
-            .HasConversion<string>()
+        var statusProp = builder.Property(e => e.Status)
+            .HasConversion(StatusConverter)
             .HasColumnType("varchar(32)")
             .HasMaxLength(32)
             .IsRequired();
+        statusProp.Metadata.SetProviderClrType(typeof(string));
 
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.CompletedAt);

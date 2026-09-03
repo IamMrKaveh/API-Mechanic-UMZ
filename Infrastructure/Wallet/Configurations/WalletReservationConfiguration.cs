@@ -6,6 +6,10 @@ namespace Infrastructure.Wallet.Configurations;
 
 public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<WalletReservation>
 {
+    private static readonly ValueConverter<WalletReservationStatus, string> StatusConverter =
+        new(v => v.ToString(),
+            v => (WalletReservationStatus)Enum.Parse(typeof(WalletReservationStatus), v));
+
     public void Configure(EntityTypeBuilder<WalletReservation> builder)
     {
         builder.ToTable("WalletReservations");
@@ -27,11 +31,12 @@ public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<Wa
 
         builder.Property(e => e.Purpose).IsRequired().HasMaxLength(200);
 
-        builder.Property(e => e.Status)
-            .HasConversion<string>()
+        var statusProp = builder.Property(e => e.Status)
+            .HasConversion(StatusConverter)
             .HasColumnType("varchar(20)")
             .HasMaxLength(20)
             .IsRequired();
+        statusProp.Metadata.SetProviderClrType(typeof(string));
 
         builder.Property(e => e.ExpiresAt);
         builder.Property(e => e.CreatedAt).IsRequired();
