@@ -218,11 +218,17 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
     {
         var user = await SeedUserAsync();
         var older = new NotificationBuilder().WithUserId(user.Id).WithTitle("older").Build();
-        await Task.Delay(20);
         var newer = new NotificationBuilder().WithUserId(user.Id).WithTitle("newer").Build();
 
         Context.Notifications.AddRange(older, newer);
         await Context.SaveChangesAsync();
+
+        var olderDate = new DateTime(2026, 5, 1, 8, 0, 0, DateTimeKind.Utc);
+        var newerDate = new DateTime(2026, 5, 2, 8, 0, 0, DateTimeKind.Utc);
+        await Context.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE \"Notifications\" SET \"CreatedAt\" = {olderDate} WHERE \"Id\" = {older.Id.Value}");
+        await Context.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE \"Notifications\" SET \"CreatedAt\" = {newerDate} WHERE \"Id\" = {newer.Id.Value}");
         Context.ChangeTracker.Clear();
 
         var result = await _sut.GetAllAsync(1, 10);
