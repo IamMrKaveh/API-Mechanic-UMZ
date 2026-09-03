@@ -6,6 +6,10 @@ namespace Infrastructure.Wallet.Configurations;
 
 public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<WalletLedgerEntry>
 {
+    private static readonly ValueConverter<WalletTransactionType, string> TransactionTypeConverter =
+        new(v => v.ToString(),
+            v => (WalletTransactionType)Enum.Parse(typeof(WalletTransactionType), v));
+
     public void Configure(EntityTypeBuilder<WalletLedgerEntry> builder)
     {
         builder.ToTable("WalletLedgerEntries");
@@ -49,11 +53,12 @@ public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<Wa
                 .IsRequired();
         });
 
-        builder.Property(e => e.TransactionType)
-            .HasConversion(new EnumToStringConverter<WalletTransactionType>())
+        var txProp = builder.Property(e => e.TransactionType)
+            .HasConversion(TransactionTypeConverter)
             .HasColumnType("varchar(50)")
             .HasMaxLength(50)
             .IsRequired();
+        txProp.Metadata.SetProviderClrType(typeof(string));
 
         builder.Property(e => e.Description).HasMaxLength(500);
         builder.Property(e => e.ReferenceId).IsRequired().HasMaxLength(200);
