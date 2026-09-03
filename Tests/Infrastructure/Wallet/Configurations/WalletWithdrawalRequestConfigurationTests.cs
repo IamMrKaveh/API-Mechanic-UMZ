@@ -1,11 +1,6 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
-using Domain.Wallet.ValueObjects;
-using Infrastructure.Persistence.Context;
-using SharedKernel.ValueObjects;
-using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Wallet.Configurations;
 
@@ -86,9 +81,9 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         var request = await SeedWithdrawalAsync();
         _context.ChangeTracker.Clear();
 
-        var raw = await _context.WalletWithdrawalRequests
-            .Where(w => w.Id == request.Id)
-            .Select(w => EF.Property<string>(w, nameof(WalletWithdrawalRequest.Status)))
+        var requestId = request.Id.Value;
+        var raw = await _context.Database
+            .SqlQuery<string>($"SELECT \"Status\" AS \"Value\" FROM \"WalletWithdrawalRequests\" WHERE \"Id\" = {requestId}")
             .FirstOrDefaultAsync();
 
         raw.ShouldBe(WalletWithdrawalStatus.Pending.ToString());
@@ -262,9 +257,9 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         var request = await SeedWithdrawalAsync();
         _context.ChangeTracker.Clear();
 
-        var raw = await _context.WalletWithdrawalRequests
-            .Where(w => w.Id == request.Id)
-            .Select(w => EF.Property<string>(w, nameof(WalletWithdrawalRequest.Iban)))
+        var requestId = request.Id.Value;
+        var raw = await _context.Database
+            .SqlQuery<string>($"SELECT \"Iban\" AS \"Value\" FROM \"WalletWithdrawalRequests\" WHERE \"Id\" = {requestId}")
             .FirstOrDefaultAsync();
 
         raw.ShouldBe(request.Iban.Value);

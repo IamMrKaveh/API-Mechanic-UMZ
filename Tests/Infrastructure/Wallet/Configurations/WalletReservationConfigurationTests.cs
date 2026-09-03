@@ -1,10 +1,6 @@
 using Domain.Wallet.Entities;
 using Domain.Wallet.Enums;
 using Domain.Wallet.ValueObjects;
-using Infrastructure.Persistence.Context;
-using SharedKernel.ValueObjects;
-using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 using Users = Domain.User.Aggregates.User;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
@@ -91,9 +87,9 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         var (_, reservation) = await SeedActiveReservationAsync();
         _context.ChangeTracker.Clear();
 
-        var raw = await _context.WalletReservations
-            .Where(r => r.Id == reservation.Id)
-            .Select(r => EF.Property<string>(r, nameof(WalletReservation.Status)))
+        var reservationId = reservation.Id.Value;
+        var raw = await _context.Database
+            .SqlQuery<string>($"SELECT \"Status\" AS \"Value\" FROM \"WalletReservations\" WHERE \"Id\" = {reservationId}")
             .FirstOrDefaultAsync();
 
         raw.ShouldBe(WalletReservationStatus.Active.ToString());

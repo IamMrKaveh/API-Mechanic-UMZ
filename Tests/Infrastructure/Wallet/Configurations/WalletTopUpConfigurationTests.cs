@@ -1,10 +1,5 @@
-using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
-using Infrastructure.Persistence.Context;
-using SharedKernel.ValueObjects;
-using Tests.TestInfrastructure.Builders;
-using Tests.TestInfrastructure.Database;
 
 namespace Tests.Infrastructure.Wallet.Configurations;
 
@@ -75,9 +70,9 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         var topUp = await SeedTopUpAsync();
         _context.ChangeTracker.Clear();
 
-        var raw = await _context.WalletTopUps
-            .Where(t => t.Id == topUp.Id)
-            .Select(t => EF.Property<string>(t, nameof(WalletTopUp.Status)))
+        var topUpId = topUp.Id.Value;
+        var raw = await _context.Database
+            .SqlQuery<string>($"SELECT \"Status\" AS \"Value\" FROM \"WalletTopUps\" WHERE \"Id\" = {topUpId}")
             .FirstOrDefaultAsync();
 
         raw.ShouldBe(WalletTopUpStatus.Pending.ToString());
