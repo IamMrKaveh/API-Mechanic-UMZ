@@ -1,9 +1,7 @@
 using Domain.Attribute.Aggregates;
-using Infrastructure.Persistence.Context;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
 using SharedKernel.Abstractions.Interfaces;
-using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Infrastructure.Persistence.Interceptors;
 
@@ -40,7 +38,7 @@ public class AuditableEntityInterceptorTests(PostgresContainerFixture fixture) :
     }
 
     [Fact]
-    public async Task SavingChanges_WithAddedAuditableEntity_SetsCreatedAtAndUpdatedAtToProviderUtcNow()
+    public async Task SavingChanges_WithAddedAuditableEntity_SetsCreatedAtToProviderUtcNowAndLeavesUpdatedAtNull()
     {
         var fixedNow = new DateTime(2026, 3, 15, 10, 0, 0, DateTimeKind.Utc);
         var provider = Substitute.For<IDateTimeProvider>();
@@ -59,7 +57,7 @@ public class AuditableEntityInterceptorTests(PostgresContainerFixture fixture) :
         var persisted = await verifyContext.AttributeTypes.FirstOrDefaultAsync(a => a.Id == type.Id);
         persisted.ShouldNotBeNull();
         persisted.CreatedAt.ShouldBe(fixedNow);
-        persisted.UpdatedAt.ShouldBe(fixedNow);
+        persisted.UpdatedAt.ShouldBeNull();
     }
 
     [Fact]

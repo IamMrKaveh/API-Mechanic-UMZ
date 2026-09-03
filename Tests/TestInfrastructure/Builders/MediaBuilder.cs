@@ -7,15 +7,24 @@ public sealed class MediaBuilder
 {
     private static readonly Faker Faker = new();
 
-    private string _filePath = $"uploads/{Faker.Random.AlphaNumeric(6).ToLowerInvariant()}/{Faker.System.FileName("png")}";
-    private string _fileName = Faker.System.FileName("png");
+    private string _filePath;
+    private string _fileName;
     private string _fileType = "image/png";
-    private long _fileSize = Faker.Random.Long(1, 5 * 1024 * 1024);
+    private long _fileSize;
     private string _entityType = "Product";
     private Guid _entityId = Guid.NewGuid();
     private int _sortOrder = 0;
     private bool _isPrimary = false;
     private string? _altText = null;
+
+    public MediaBuilder()
+    {
+        var directorySegment = Faker.Random.AlphaNumeric(6).ToLowerInvariant();
+        var baseName = Faker.Random.AlphaNumeric(10).ToLowerInvariant();
+        _fileName = $"{baseName}.png";
+        _filePath = $"uploads/{directorySegment}/{_fileName}";
+        _fileSize = Faker.Random.Long(1, 5 * 1024 * 1024);
+    }
 
     public MediaBuilder WithFilePath(string filePath)
     {
