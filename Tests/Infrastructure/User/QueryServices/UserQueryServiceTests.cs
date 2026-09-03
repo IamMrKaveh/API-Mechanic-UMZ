@@ -80,7 +80,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         return product;
     }
 
-    private async Task<VariantId> SeedProductVariantIdAsync()
+    private async Task<(ProductAggregate product, global::Domain.Variant.Aggregates.ProductVariant variant)> SeedProductAndVariantAsync()
     {
         var product = await SeedProductAsync();
         var variant = new ProductVariantBuilder()
@@ -90,22 +90,35 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         variant.ClearDomainEvents();
         _context.ProductVariants.Add(variant);
         await _context.SaveChangesAsync();
+        return (product, variant);
+    }
+
+    private async Task<VariantId> SeedProductVariantIdAsync()
+    {
+        var (_, variant) = await SeedProductAndVariantAsync();
         return variant.Id;
     }
 
     private async Task<Orders> SeedDeliveredOrderAsync(UserId userId, decimal finalAmount)
     {
-        var variantId = await SeedProductVariantIdAsync();
+        var (product, variant) = await SeedProductAndVariantAsync();
 
         var order = new OrderBuilder()
             .WithUserId(userId)
             .WithShippingCost(finalAmount, "IRT")
             .WithItemSnapshots(new OrderItemSnapshotBuilder()
-                .WithVariantId(variantId)
+                .WithVariantId(variant.Id)
+                .WithProductId(product.Id)
+                .WithProductName(product.Name)
+                .WithSku(variant.Sku)
                 .WithQuantity(1)
                 .WithUnitPrice(0m, "IRT")
                 .Build())
             .Build();
+        order.ClearDomainEvents();
+
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
 
         var transaction = new PaymentTransactionBuilder()
             .WithOrderId(order.Id)
@@ -124,19 +137,22 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         order.MarkAsDelivered();
         order.ClearDomainEvents();
 
-        _context.Orders.Add(order);
+        _context.Orders.Update(order);
         await _context.SaveChangesAsync();
         return order;
     }
 
     private async Task<Orders> SeedCreatedOrderAsync(UserId userId)
     {
-        var variantId = await SeedProductVariantIdAsync();
+        var (product, variant) = await SeedProductAndVariantAsync();
 
         var order = new OrderBuilder()
             .WithUserId(userId)
             .WithItemSnapshots(new OrderItemSnapshotBuilder()
-                .WithVariantId(variantId)
+                .WithVariantId(variant.Id)
+                .WithProductId(product.Id)
+                .WithProductName(product.Name)
+                .WithSku(variant.Sku)
                 .WithQuantity(1)
                 .WithUnitPrice(50_000m, "IRT")
                 .Build())
