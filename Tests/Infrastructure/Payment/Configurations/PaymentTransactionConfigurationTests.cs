@@ -97,7 +97,7 @@ public sealed class PaymentTransactionConfigurationTests : IDisposable
     }
 
     [Fact]
-    public void Configure_OrderRelationship_IsOneToOneRequiredWithRestrictDeleteBehavior()
+    public void Configure_OrderRelationship_IsManyToOneRequiredWithRestrictDeleteBehavior()
     {
         var entityType = EntityType();
 
@@ -107,7 +107,7 @@ public sealed class PaymentTransactionConfigurationTests : IDisposable
 
         foreignKey.ShouldNotBeNull();
         foreignKey!.IsRequired.ShouldBeTrue();
-        foreignKey.IsUnique.ShouldBeTrue();
+        foreignKey.IsUnique.ShouldBeFalse();
         foreignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Restrict);
         foreignKey.Properties.Select(p => p.Name)
             .ShouldBe([nameof(PaymentTransaction.OrderId)]);
@@ -126,7 +126,7 @@ public sealed class PaymentTransactionConfigurationTests : IDisposable
     }
 
     [Fact]
-    public void Configure_OrderIdIndex_IsUnique()
+    public void Configure_OrderIdIndex_ExistsAndIsNotUnique()
     {
         var orderIndex = EntityType()
             .GetIndexes()
@@ -134,7 +134,7 @@ public sealed class PaymentTransactionConfigurationTests : IDisposable
                                  i.Properties[0].Name == nameof(PaymentTransaction.OrderId));
 
         orderIndex.ShouldNotBeNull();
-        orderIndex!.IsUnique.ShouldBeTrue();
+        orderIndex!.IsUnique.ShouldBeFalse();
     }
 
     [Fact]
