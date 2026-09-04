@@ -1,5 +1,6 @@
 using Application.Brand.Features.Commands.CreateBrand;
 using Application.Brand.Features.Shared;
+using Application.Cache.Contracts;
 using Application.Media.Contracts;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
@@ -15,7 +16,7 @@ namespace Tests.Application.Brand.Features.Commands.CreateBrand;
 
 public class CreateBrandHandlerTests
 {
-    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly ICategoryRepository _categoryRepository = Substitute.For<ICategoryRepository>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly CreateBrandHandler _sut;
+    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly ICategoryRepository _categoryRepository = Substitute.For<ICategoryRepository>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateBrandHandler _sut;
 
     public CreateBrandHandlerTests()
     {
@@ -38,7 +39,8 @@ public class CreateBrandHandlerTests
             _categoryRepository,
             _uniquenessChecker,
             _mapper,
-            _storageService);
+            _storageService,
+            _cacheService);
     }
 
     private async Task<Categories> ConfigureExistingCategoryAsync()
@@ -64,6 +66,7 @@ public class CreateBrandHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         await _brandRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
+        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -153,6 +156,7 @@ public class CreateBrandHandlerTests
         result.Value.ShouldBe(expected);
         await _brandRepository.Received(1).AddAsync(Arg.Any<Brands>(), Arg.Any<CancellationToken>());
         await _storageService.DidNotReceiveWithAnyArgs().UploadAsync(default!, default!, default!, default, default);
+        await _cacheService.Received(1).RemoveByPrefixAsync("brands:", Arg.Any<CancellationToken>());
     }
 
     [Theory]

@@ -6,7 +6,8 @@ using Domain.Category.ValueObjects;
 namespace Application.Category.Features.Commands.CreateCategory;
 
 public sealed class CreateCategoryHandler(
-    ICategoryRepository categoryRepository)
+    ICategoryRepository categoryRepository,
+    ICacheService cacheService)
     : ICommandHandler<CreateCategoryCommand, CategoryDto>
 {
     public async Task<ServiceResult<CategoryDto>> Handle(CreateCategoryCommand request, CancellationToken ct)
@@ -29,6 +30,7 @@ public sealed class CreateCategoryHandler(
             ct);
 
         await categoryRepository.AddAsync(category, ct);
+        await cacheService.RemoveByPrefixAsync("categories:", ct);
 
         var dto = category.Adapt<CategoryDto>();
         return ServiceResult<CategoryDto>.Success(dto);

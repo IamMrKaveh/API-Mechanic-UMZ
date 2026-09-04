@@ -1,3 +1,4 @@
+using Application.Cache.Contracts;
 using Application.Category.Features.Commands.UpdateCategory;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
@@ -12,7 +13,7 @@ namespace Tests.Application.Category.Features.Commands.UpdateCategory;
 
 public class UpdateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
 {
-    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly UpdateCategoryHandler _sut;
+    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateCategoryHandler _sut;
 
     public UpdateCategoryHandlerTests(MapsterConfigFixture _)
     {
@@ -23,7 +24,7 @@ public class UpdateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
             .ExistsBySlugAsync(Arg.Any<CategorySlug>(), Arg.Any<CategoryId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new UpdateCategoryHandler(_repository);
+        _sut = new UpdateCategoryHandler(_repository, _cacheService);
     }
 
     private async Task<Categories> BuildActiveCategoryAsync() =>
@@ -46,6 +47,7 @@ public class UpdateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.ShouldFailWithType(ErrorType.NotFound);
+        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -65,6 +67,7 @@ public class UpdateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
         result.Value.Name.ShouldBe("Renamed");
         result.Value.Slug.ShouldBe("renamed");
         result.Value.Description.ShouldBe("new desc");
+        await _cacheService.Received(1).RemoveByPrefixAsync("categories:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

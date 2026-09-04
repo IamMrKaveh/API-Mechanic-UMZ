@@ -1,4 +1,5 @@
 using Application.Audit.Contracts;
+using Application.Cache.Contracts;
 using Application.Common.Interfaces;
 using Application.Shipping.Features.Commands.RestoreShipping;
 using Domain.Shipping.Interfaces;
@@ -13,12 +14,12 @@ namespace Tests.Application.Shipping.Features.Commands.RestoreShipping;
 
 public class RestoreShippingHandlerTests
 {
-    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly RestoreShippingHandler _sut;
+    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly RestoreShippingHandler _sut;
 
     public RestoreShippingHandlerTests()
     {
         _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new RestoreShippingHandler(_shippingRepository, _currentUser, _auditService);
+        _sut = new RestoreShippingHandler(_shippingRepository, _currentUser, _auditService, _cacheService);
     }
 
     [Fact]
@@ -33,6 +34,7 @@ public class RestoreShippingHandlerTests
         result.ShouldFailWith(ErrorCode.NotFound);
         _shippingRepository.DidNotReceiveWithAnyArgs().Update(default!);
         await _auditService.DidNotReceiveWithAnyArgs().LogAdminEventAsync(default!, default!, default!);
+        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -50,6 +52,7 @@ public class RestoreShippingHandlerTests
         result.ShouldBeSuccess();
         shipping.IsActive.ShouldBeTrue();
         _shippingRepository.Received(1).Update(shipping);
+        await _cacheService.Received(1).RemoveByPrefixAsync("shippings:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using Application.Cache.Contracts;
 using Application.Common.Interfaces;
 using Application.Shipping.Features.Commands.DeleteShipping;
 using Domain.Shipping.Interfaces;
@@ -11,11 +12,11 @@ namespace Tests.Application.Shipping.Features.Commands.DeleteShipping;
 
 public class DeleteShippingHandlerTests
 {
-    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly DeleteShippingHandler _sut;
+    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteShippingHandler _sut;
 
     public DeleteShippingHandlerTests()
     {
-        _sut = new DeleteShippingHandler(_shippingRepository, _currentUser);
+        _sut = new DeleteShippingHandler(_shippingRepository, _currentUser, _cacheService);
     }
 
     [Fact]
@@ -29,6 +30,7 @@ public class DeleteShippingHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _shippingRepository.DidNotReceiveWithAnyArgs().Update(default!);
+        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -47,6 +49,7 @@ public class DeleteShippingHandlerTests
         result.ShouldBeSuccess();
         shipping.IsActive.ShouldBeFalse();
         _shippingRepository.Received(1).Update(shipping);
+        await _cacheService.Received(1).RemoveByPrefixAsync("shippings:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

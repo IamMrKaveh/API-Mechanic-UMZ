@@ -1,3 +1,4 @@
+using Application.Cache.Contracts;
 using Application.Shipping.Features.Commands.UpdateShipping;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
@@ -12,11 +13,12 @@ namespace Tests.Application.Shipping.Features.Commands.UpdateShipping;
 public class UpdateShippingHandlerTests : IClassFixture<AutoMapperFixture>
 {
     private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>();
+    private readonly ICacheService _cacheService = Substitute.For<ICacheService>();
     private readonly UpdateShippingHandler _sut;
 
     public UpdateShippingHandlerTests(AutoMapperFixture fixture)
     {
-        _sut = new UpdateShippingHandler(_shippingRepository, fixture.Mapper);
+        _sut = new UpdateShippingHandler(_shippingRepository, fixture.Mapper, _cacheService);
     }
 
     [Fact]
@@ -33,6 +35,7 @@ public class UpdateShippingHandlerTests : IClassFixture<AutoMapperFixture>
         result.ShouldFailWith(ErrorCode.NotFound);
         await _shippingRepository.DidNotReceiveWithAnyArgs().ExistsByNameAsync(default!, default, default);
         _shippingRepository.DidNotReceiveWithAnyArgs().Update(default!);
+        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -113,5 +116,6 @@ public class UpdateShippingHandlerTests : IClassFixture<AutoMapperFixture>
         result.Value.MaxDeliveryDays.ShouldBe(2);
 
         _shippingRepository.Received(1).Update(shipping);
+        await _cacheService.Received(1).RemoveByPrefixAsync("shippings:", Arg.Any<CancellationToken>());
     }
 }

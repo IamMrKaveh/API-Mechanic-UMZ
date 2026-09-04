@@ -6,7 +6,8 @@ namespace Application.Payment.Features.Commands.DeletePaymentMethod;
 
 public sealed class DeletePaymentMethodHandler(
     IPaymentMethodRepository repository,
-    ICurrentUserService currentUser)
+    ICurrentUserService currentUser,
+    ICacheService cacheService)
     : ICommandHandler<DeletePaymentMethodCommand>
 {
     public async Task<ServiceResult> Handle(DeletePaymentMethodCommand request, CancellationToken ct)
@@ -24,6 +25,7 @@ public sealed class DeletePaymentMethodHandler(
 
             method.RequestDeletion(deletedBy);
             repository.Update(method);
+            await cacheService.RemoveByPrefixAsync("payment-methods:", ct);
 
             return ServiceResult.Success();
         }

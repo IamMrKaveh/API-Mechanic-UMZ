@@ -1,3 +1,4 @@
+using Application.Cache.Contracts;
 using Application.Category.Features.Commands.DeleteCategory;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
@@ -11,11 +12,11 @@ namespace Tests.Application.Category.Features.Commands.DeleteCategory;
 
 public class DeleteCategoryHandlerTests
 {
-    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly DeleteCategoryHandler _sut;
+    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteCategoryHandler _sut;
 
     public DeleteCategoryHandlerTests()
     {
-        _sut = new DeleteCategoryHandler(_repository);
+        _sut = new DeleteCategoryHandler(_repository, _cacheService);
     }
 
     private static Task<Categories> BuildCategoryAsync() =>
@@ -36,6 +37,7 @@ public class DeleteCategoryHandlerTests
 
         result.ShouldFailWithType(ErrorType.NotFound);
         _repository.DidNotReceive().Update(Arg.Any<Categories>(), Arg.Any<byte[]?>());
+        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -75,6 +77,7 @@ public class DeleteCategoryHandlerTests
 
         result.ShouldBeSuccess();
         category.IsActive.ShouldBeFalse();
+        await _cacheService.Received(1).RemoveByPrefixAsync("categories:", Arg.Any<CancellationToken>());
     }
 
     [Fact]
