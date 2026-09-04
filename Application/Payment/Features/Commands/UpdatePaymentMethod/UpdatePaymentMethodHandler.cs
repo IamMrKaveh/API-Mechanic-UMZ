@@ -6,7 +6,8 @@ namespace Application.Payment.Features.Commands.UpdatePaymentMethod;
 
 public sealed class UpdatePaymentMethodHandler(
     IPaymentMethodRepository repository,
-    IMapper mapper)
+    IMapper mapper,
+    ICacheService cacheService)
     : ICommandHandler<UpdatePaymentMethodCommand, PaymentMethodDto>
 {
     public async Task<ServiceResult<PaymentMethodDto>> Handle(
@@ -29,6 +30,7 @@ public sealed class UpdatePaymentMethodHandler(
             method.Update(name, fee, request.Description, request.IconUrl, request.SortOrder);
 
             repository.Update(method);
+            await cacheService.RemoveByPrefixAsync("payment-methods:", ct);
 
             return ServiceResult<PaymentMethodDto>.Success(mapper.Map<PaymentMethodDto>(method));
         }

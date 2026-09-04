@@ -11,7 +11,8 @@ public sealed class CreateBrandHandler(
     ICategoryRepository categoryRepository,
     IBrandUniquenessChecker brandUniquenessChecker,
     IMapper mapper,
-    IStorageService storageService)
+    IStorageService storageService,
+    ICacheService cacheService)
     : ICommandHandler<CreateBrandCommand, BrandDetailDto>
 {
     private const long MaxFileSizeBytes = 2 * 1024 * 1024;
@@ -65,6 +66,7 @@ public sealed class CreateBrandHandler(
             ct);
 
         await brandRepository.AddAsync(brand, ct);
+        await cacheService.RemoveByPrefixAsync("brands:", ct);
 
         var dto = mapper.Map<BrandDetailDto>(brand);
         return ServiceResult<BrandDetailDto>.Success(dto);

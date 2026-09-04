@@ -1,3 +1,4 @@
+using Application.Cache.Contracts;
 using Application.Inventory.Features.Commands.SetDefaultWarehouse;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
@@ -10,11 +11,11 @@ namespace Tests.Application.Inventory.Features.Commands.SetDefaultWarehouse;
 
 public class SetDefaultWarehouseHandlerTests
 {
-    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly SetDefaultWarehouseHandler _sut;
+    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly SetDefaultWarehouseHandler _sut;
 
     public SetDefaultWarehouseHandlerTests()
     {
-        _sut = new SetDefaultWarehouseHandler(_warehouseRepository);
+        _sut = new SetDefaultWarehouseHandler(_warehouseRepository, _cacheService);
     }
 
     [Fact]
@@ -29,6 +30,7 @@ public class SetDefaultWarehouseHandlerTests
             CancellationToken.None);
 
         result.ShouldFailWith(ErrorCode.NotFound);
+        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -53,6 +55,7 @@ public class SetDefaultWarehouseHandlerTests
         target.IsDefault.ShouldBeTrue();
         _warehouseRepository.Received(1).Update(currentDefault);
         _warehouseRepository.Received(1).Update(target);
+        await _cacheService.Received(1).RemoveByPrefixAsync("warehouses:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

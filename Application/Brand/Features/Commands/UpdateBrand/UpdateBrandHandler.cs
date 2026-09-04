@@ -9,7 +9,8 @@ public sealed class UpdateBrandHandler(
     IBrandQueryService brandQueryService,
     IBrandUniquenessChecker brandUniquenessChecker,
     IUnitOfWork unitOfWork,
-    IStorageService storageService)
+    IStorageService storageService,
+    ICacheService cacheService)
     : ICommandHandler<UpdateBrandCommand, BrandDetailDto>
 {
     private const long MaxFileSizeBytes = 2 * 1024 * 1024;
@@ -60,6 +61,7 @@ public sealed class UpdateBrandHandler(
 
         brandRepository.Update(brand, rowVersion);
         await unitOfWork.SaveChangesAsync(ct);
+        await cacheService.RemoveByPrefixAsync("brands:", ct);
 
         var dto = await brandQueryService.GetBrandDetailAsync(brand.Id, ct);
         if (dto is null)

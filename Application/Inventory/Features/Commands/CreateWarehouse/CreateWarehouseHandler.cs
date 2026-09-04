@@ -4,7 +4,8 @@ using Domain.Inventory.Interfaces;
 namespace Application.Inventory.Features.Commands.CreateWarehouse;
 
 public class CreateWarehouseHandler(
-    IWarehouseRepository warehouseRepository)
+    IWarehouseRepository warehouseRepository,
+    ICacheService cacheService)
     : ICommandHandler<CreateWarehouseCommand>
 {
     public async Task<ServiceResult> Handle(CreateWarehouseCommand request, CancellationToken ct)
@@ -33,6 +34,7 @@ public class CreateWarehouseHandler(
             request.IsDefault);
 
         await warehouseRepository.AddAsync(warehouse, ct);
+        await cacheService.RemoveByPrefixAsync("warehouses:", ct);
 
         return ServiceResult.Success();
     }

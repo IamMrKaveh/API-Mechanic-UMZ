@@ -1,3 +1,4 @@
+using Application.Cache.Contracts;
 using Application.Payment.Features.Commands.UpdatePaymentMethod;
 using Application.Payment.Features.Shared;
 using Domain.Payment.Interfaces;
@@ -11,11 +12,11 @@ namespace Tests.Application.Payment.Features.Commands.UpdatePaymentMethod;
 
 public class UpdatePaymentMethodHandlerTests
 {
-    private readonly IPaymentMethodRepository _repository = Substitute.For<IPaymentMethodRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly UpdatePaymentMethodHandler _sut;
+    private readonly IPaymentMethodRepository _repository = Substitute.For<IPaymentMethodRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdatePaymentMethodHandler _sut;
 
     public UpdatePaymentMethodHandlerTests()
     {
-        _sut = new UpdatePaymentMethodHandler(_repository, _mapper);
+        _sut = new UpdatePaymentMethodHandler(_repository, _mapper, _cacheService);
     }
 
     private static UpdatePaymentMethodCommand CommandFor(Guid id) =>
@@ -32,6 +33,7 @@ public class UpdatePaymentMethodHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _repository.DidNotReceive().Update(Arg.Any<PaymentMethods>());
+        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -72,6 +74,7 @@ public class UpdatePaymentMethodHandlerTests
         result.ShouldBeSuccess();
         result.Value.ShouldBe(expected);
         _repository.Received(1).Update(method);
+        await _cacheService.Received(1).RemoveByPrefixAsync("payment-methods:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using Application.Cache.Contracts;
 using Application.Category.Features.Commands.CreateCategory;
 using Domain.Category.Exceptions;
 using Domain.Category.Interfaces;
@@ -11,7 +12,7 @@ namespace Tests.Application.Category.Features.Commands.CreateCategory;
 
 public class CreateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
 {
-    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly CreateCategoryHandler _sut;
+    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateCategoryHandler _sut;
 
     public CreateCategoryHandlerTests(MapsterConfigFixture _)
     {
@@ -22,7 +23,7 @@ public class CreateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
             .ExistsBySlugAsync(Arg.Any<CategorySlug>(), Arg.Any<CategoryId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new CreateCategoryHandler(_repository);
+        _sut = new CreateCategoryHandler(_repository, _cacheService);
     }
 
     [Fact]
@@ -49,6 +50,7 @@ public class CreateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
 
         await _repository.Received(1)
             .AddAsync(Arg.Any<Categories>(), Arg.Any<CancellationToken>());
+        await _cacheService.Received(1).RemoveByPrefixAsync("categories:", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -86,6 +88,7 @@ public class CreateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
 
         await _repository.DidNotReceive()
             .AddAsync(Arg.Any<Categories>(), Arg.Any<CancellationToken>());
+        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]

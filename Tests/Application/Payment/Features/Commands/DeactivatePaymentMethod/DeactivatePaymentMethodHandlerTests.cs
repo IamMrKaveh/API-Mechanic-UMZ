@@ -1,3 +1,4 @@
+using Application.Cache.Contracts;
 using Application.Payment.Features.Commands.DeactivatePaymentMethod;
 using Domain.Payment.Interfaces;
 using Domain.Payment.ValueObjects;
@@ -10,11 +11,11 @@ namespace Tests.Application.Payment.Features.Commands.DeactivatePaymentMethod;
 
 public class DeactivatePaymentMethodHandlerTests
 {
-    private readonly IPaymentMethodRepository _repository = Substitute.For<IPaymentMethodRepository>(); private readonly DeactivatePaymentMethodHandler _sut;
+    private readonly IPaymentMethodRepository _repository = Substitute.For<IPaymentMethodRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeactivatePaymentMethodHandler _sut;
 
     public DeactivatePaymentMethodHandlerTests()
     {
-        _sut = new DeactivatePaymentMethodHandler(_repository);
+        _sut = new DeactivatePaymentMethodHandler(_repository, _cacheService);
     }
 
     [Fact]
@@ -28,6 +29,7 @@ public class DeactivatePaymentMethodHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _repository.DidNotReceive().Update(Arg.Any<PaymentMethods>());
+        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -45,5 +47,6 @@ public class DeactivatePaymentMethodHandlerTests
         result.ShouldBeSuccess();
         method.IsActive.ShouldBeFalse();
         _repository.Received(1).Update(method);
+        await _cacheService.Received(1).RemoveByPrefixAsync("payment-methods:", Arg.Any<CancellationToken>());
     }
 }

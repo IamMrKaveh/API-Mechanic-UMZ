@@ -4,7 +4,8 @@ using Domain.Inventory.ValueObjects;
 namespace Application.Inventory.Features.Commands.SetDefaultWarehouse;
 
 public class SetDefaultWarehouseHandler(
-    IWarehouseRepository warehouseRepository)
+    IWarehouseRepository warehouseRepository,
+    ICacheService cacheService)
     : ICommandHandler<SetDefaultWarehouseCommand>
 {
     public async Task<ServiceResult> Handle(SetDefaultWarehouseCommand request, CancellationToken ct)
@@ -24,6 +25,7 @@ public class SetDefaultWarehouseHandler(
 
         warehouse.SetAsDefault();
         warehouseRepository.Update(warehouse);
+        await cacheService.RemoveByPrefixAsync("warehouses:", ct);
 
         return ServiceResult.Success();
     }

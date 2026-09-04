@@ -1,3 +1,4 @@
+using Application.Cache.Contracts;
 using Application.Inventory.Features.Commands.ToggleWarehouseActive;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
@@ -10,11 +11,11 @@ namespace Tests.Application.Inventory.Features.Commands.ToggleWarehouseActive;
 
 public class ToggleWarehouseActiveHandlerTests
 {
-    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ToggleWarehouseActiveHandler _sut;
+    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly ToggleWarehouseActiveHandler _sut;
 
     public ToggleWarehouseActiveHandlerTests()
     {
-        _sut = new ToggleWarehouseActiveHandler(_warehouseRepository);
+        _sut = new ToggleWarehouseActiveHandler(_warehouseRepository, _cacheService);
     }
 
     [Fact]
@@ -29,6 +30,7 @@ public class ToggleWarehouseActiveHandlerTests
             CancellationToken.None);
 
         result.ShouldFailWith(ErrorCode.NotFound);
+        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -46,6 +48,7 @@ public class ToggleWarehouseActiveHandlerTests
         result.ShouldBeSuccess();
         warehouse.IsActive.ShouldBeFalse();
         _warehouseRepository.Received(1).Update(warehouse);
+        await _cacheService.Received(1).RemoveByPrefixAsync("warehouses:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

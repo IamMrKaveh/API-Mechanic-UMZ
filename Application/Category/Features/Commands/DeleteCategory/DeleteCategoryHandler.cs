@@ -4,7 +4,8 @@ using Domain.Category.ValueObjects;
 namespace Application.Category.Features.Commands.DeleteCategory;
 
 public class DeleteCategoryHandler(
-    ICategoryRepository categoryRepository)
+    ICategoryRepository categoryRepository,
+    ICacheService cacheService)
     : ICommandHandler<DeleteCategoryCommand>
 {
     public async Task<ServiceResult> Handle(DeleteCategoryCommand request, CancellationToken ct)
@@ -21,6 +22,7 @@ public class DeleteCategoryHandler(
 
         category.Deactivate();
         categoryRepository.Update(category);
+        await cacheService.RemoveByPrefixAsync("categories:", ct);
 
         return ServiceResult.Success();
     }

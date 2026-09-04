@@ -6,7 +6,8 @@ namespace Application.Shipping.Features.Commands.DeleteShipping;
 
 public class DeleteShippingHandler(
     IShippingRepository shippingRepository,
-    ICurrentUserService currentUser)
+    ICurrentUserService currentUser,
+    ICacheService cacheService)
     : ICommandHandler<DeleteShippingCommand>
 {
     public async Task<ServiceResult> Handle(DeleteShippingCommand request, CancellationToken ct)
@@ -25,6 +26,7 @@ public class DeleteShippingHandler(
 
             shipping.RequestDeletion(deletedBy);
             shippingRepository.Update(shipping);
+            await cacheService.RemoveByPrefixAsync("shippings:", ct);
 
             return ServiceResult.Success();
         }

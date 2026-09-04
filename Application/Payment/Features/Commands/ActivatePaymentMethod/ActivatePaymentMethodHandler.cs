@@ -4,7 +4,8 @@ using Domain.Payment.ValueObjects;
 namespace Application.Payment.Features.Commands.ActivatePaymentMethod;
 
 public sealed class ActivatePaymentMethodHandler(
-    IPaymentMethodRepository repository)
+    IPaymentMethodRepository repository,
+    ICacheService cacheService)
     : ICommandHandler<ActivatePaymentMethodCommand>
 {
     public async Task<ServiceResult> Handle(ActivatePaymentMethodCommand request, CancellationToken ct)
@@ -16,6 +17,7 @@ public sealed class ActivatePaymentMethodHandler(
 
         method.Activate();
         repository.Update(method);
+        await cacheService.RemoveByPrefixAsync("payment-methods:", ct);
 
         return ServiceResult.Success();
     }

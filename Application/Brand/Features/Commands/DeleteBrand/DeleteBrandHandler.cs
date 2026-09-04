@@ -4,7 +4,8 @@ using Domain.Brand.ValueObjects;
 namespace Application.Brand.Features.Commands.DeleteBrand;
 
 public class DeleteBrandHandler(
-    IBrandRepository brandRepository)
+    IBrandRepository brandRepository,
+    ICacheService cacheService)
     : ICommandHandler<DeleteBrandCommand>
 {
     public async Task<ServiceResult> Handle(DeleteBrandCommand request, CancellationToken ct)
@@ -17,6 +18,7 @@ public class DeleteBrandHandler(
 
         brand.Deactivate();
         brandRepository.Update(brand);
+        await cacheService.RemoveByPrefixAsync("brands:", ct);
 
         return ServiceResult.Success();
     }
