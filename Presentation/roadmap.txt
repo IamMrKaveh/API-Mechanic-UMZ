@@ -2,76 +2,7 @@
 
 مجموع: 399 فایل (بعد از حذف Command/Query/DTO/Interface های بدون منطق قابل تست)
 
-Domain Layer (55)
-AssemblyInfo.cs (1)
- Domain/AssemblyInfo.cs
-Audit (1)
- Domain/Audit/Events/AuditLogCreatedEvent.cs
-Brand (7)
- Domain/Brand/Events/BrandActivatedEvent.cs
- Domain/Brand/Events/BrandCategoryChangedEvent.cs
- Domain/Brand/Events/BrandCreatedEvent.cs
- Domain/Brand/Events/BrandDeactivatedEvent.cs
- Domain/Brand/Events/BrandDeletedEvent.cs
- Domain/Brand/Events/BrandUpdatedEvent.cs
- Domain/Brand/Exceptions/BrandDomainException.cs
-Common (2)
- Domain/Common/Abstractions/AggregateRoot.cs
- Domain/Common/Events/DomainEvent.cs
-Discount (1)
- Domain/Discount/Results/DiscountValidation.cs
-Inventory (1)
- Domain/Inventory/Services/Results/BatchReservationValidation.cs
-Media (4)
- Domain/Media/Events/MediaCreatedEvent.cs
- Domain/Media/Events/MediaDeletedEvent.cs
- Domain/Media/Events/MediaSetAsPrimaryEvent.cs
- Domain/Media/Exceptions/InvalidFileTypeException.cs
-Review (8)
- Domain/Review/Events/ReviewAdminRepliedEvent.cs
- Domain/Review/Events/ReviewApprovedEvent.cs
- Domain/Review/Events/ReviewContentUpdatedEvent.cs
- Domain/Review/Events/ReviewDeletedEvent.cs
- Domain/Review/Events/ReviewRejectedEvent.cs
- Domain/Review/Events/ReviewRestoredEvent.cs
- Domain/Review/Events/ReviewSubmittedEvent.cs
- Domain/Review/Events/ReviewVoteChangedEvent.cs
-Security (5)
- Domain/Security/Exceptions/InvalidOtpCodeException.cs
- Domain/Security/Exceptions/OtpAlreadyVerifiedException.cs
- Domain/Security/Exceptions/OtpExpiredException.cs
- Domain/Security/Exceptions/OtpMaxAttemptsExceededException.cs
- Domain/Security/Exceptions/SessionExpiredException.cs
-Shipping (7)
- Domain/Shipping/Events/ShippingCostChangedEvent.cs
- Domain/Shipping/Events/ShippingCreatedEvent.cs
- Domain/Shipping/Events/ShippingDeletedEvent.cs
- Domain/Shipping/Events/ShippingSetAsDefaultEvent.cs
- Domain/Shipping/Events/ShippingUpdatedEvent.cs
- Domain/Shipping/Exceptions/DefaultShippingCannotBeDeletedException.cs
- Domain/Shipping/Services/ShippingDomainService.cs
-Support (6)
- Domain/Support/Events/TicketAnsweredEvent.cs
- Domain/Support/Events/TicketClosedEvent.cs
- Domain/Support/Events/TicketCreatedEvent.cs
- Domain/Support/Events/TicketMessageAddedEvent.cs
- Domain/Support/Events/TicketStatusChangedEvent.cs
- Domain/Support/Services/TicketDomainService.cs
-Variant (6)
- Domain/Variant/Events/VariantAttributeSetEvent.cs
- Domain/Variant/Events/VariantCreatedEvent.cs
- Domain/Variant/Events/VariantPriceChangedEvent.cs
- Domain/Variant/Events/VariantRemovedEvent.cs
- Domain/Variant/Events/VariantShippingSetEvent.cs
- Domain/Variant/Exceptions/InvalidVariantOperationException.cs
-Wallet (5)
- Domain/Wallet/FraudDetection/FraudEvaluationContext.cs
- Domain/Wallet/FraudDetection/Rules/HighVelocityRule.cs
- Domain/Wallet/FraudDetection/Rules/MultipleFailedTopUpRule.cs
- Domain/Wallet/FraudDetection/Rules/RapidTopUpWithdrawRule.cs
- Domain/Wallet/FraudDetection/Rules/UnusualAmountRule.cs
-Wishlist (1)
- Domain/Wishlist/Events/WishlistItemAddedEvent.cs
+
 Application Layer (84)
 Analytics (1)
  Application/Analytics/Features/Shared/AnalyticsDtos.cs
@@ -183,34 +114,6 @@ Wishlist (2)
  Application/Wishlist/Features/Shared/WishlistDtos.cs
  Application/Wishlist/Mapping/WishlistMappingConfig.cs
 Infrastructure Layer (91)
-Attribute (2)
- Infrastructure/Attribute/Converters/AttributeTypeIdConverter.cs
- Infrastructure/Attribute/Converters/AttributeValueIdConverter.cs
-Audit (2)
- Infrastructure/Audit/Converters/AuditLogIdConverter.cs
- Infrastructure/Audit/Storage/FileSystemAuditArchiveStorage.cs
-BackgroundJobs (15)
- Infrastructure/BackgroundJobs/AuditHashUpgradeJob.cs
- Infrastructure/BackgroundJobs/AuditRetentionJob.cs
- Infrastructure/BackgroundJobs/ElasticsearchOutboxJob.cs
- Infrastructure/BackgroundJobs/ElasticsearchSyncJob.cs
- Infrastructure/BackgroundJobs/ExpiredOrderCleanupJob.cs
- Infrastructure/BackgroundJobs/ExpiredSessionCleanupJob.cs
- Infrastructure/BackgroundJobs/FraudDetectionJob.cs
- Infrastructure/BackgroundJobs/InventoryReservationExpiryJob.cs
- Infrastructure/BackgroundJobs/OrphanedFileCleanupJob.cs
- Infrastructure/BackgroundJobs/OutboxArchiveJob.cs
- Infrastructure/BackgroundJobs/PaymentCleanupJob.cs
- Infrastructure/BackgroundJobs/PaymentReconciliationJob.cs
- Infrastructure/BackgroundJobs/WalletReconciliationJob.cs
- Infrastructure/BackgroundJobs/WalletReservationExpiryJob.cs
- Infrastructure/BackgroundJobs/WalletTopUpCleanupJob.cs
-Brand (1)
- Infrastructure/Brand/Converters/BrandIdConverter.cs
-Cache (3)
- Infrastructure/Cache/Health/RedisCacheHealthCheck.cs
- Infrastructure/Cache/Redis/Lock/DistributedLockException.cs
- Infrastructure/Cache/Redis/Lock/RedisLockHandle.cs
 Cart (2)
  Infrastructure/Cart/Converters/CartIdConverter.cs
  Infrastructure/Cart/Converters/CartItemIdConverter.cs
