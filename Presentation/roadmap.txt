@@ -113,10 +113,13 @@ Wallet (7)
 Wishlist (2)
  Application/Wishlist/Features/Shared/WishlistDtos.cs
  Application/Wishlist/Mapping/WishlistMappingConfig.cs
+
+
+
+
+
+
 Infrastructure Layer (91)
-Cart (2)
- Infrastructure/Cart/Converters/CartIdConverter.cs
- Infrastructure/Cart/Converters/CartItemIdConverter.cs
 Category (1)
  Infrastructure/Category/Converters/CategoryIdConverter.cs
 Common (2)
@@ -204,6 +207,8 @@ Wallet (5)
  Infrastructure/Wallet/Converters/WalletReservationIdConverter.cs
 Wishlist (1)
  Infrastructure/Wishlist/Converters/WishlistIdConverter.cs
+
+
 Presentation Layer (152)
 Analytic (3)
  Presentation/Analytic/Endpoints/AdminAnalyticsController.cs
@@ -384,6 +389,9 @@ Wishlist (4)
  Presentation/Wishlist/Endpoints/WishlistController.cs
  Presentation/Wishlist/Mapping/WishlistMappingConfig.cs
  Presentation/Wishlist/Requests/WishlistRequests.cs
+
+
+
 SharedKernel (14)
 Abstractions (1)
  SharedKernel/Abstractions/Entity.cs
@@ -406,6 +414,9 @@ Results (3)
  SharedKernel/Results/ErrorCode.cs
  SharedKernel/Results/ErrorType.cs
  SharedKernel/Results/ResultType.cs
+
+
+
 SharedContracts (3)
 Diagnostics (2)
  SharedContracts/Diagnostics/ApplicationActivitySources.cs
