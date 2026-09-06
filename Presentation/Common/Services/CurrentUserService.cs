@@ -40,7 +40,7 @@ public class CurrentUserService(
     }
 
     public bool IsAdmin =>
-        User?.IsInRole(AppRoles.Admin) ?? false
+        (User?.IsInRole(AppRoles.Admin) ?? false)
         || (User?.FindFirst(ClaimTypes.Role)?.Value == AppRoles.Admin)
         || (User?.FindFirst("role")?.Value == AppRoles.Admin)
         || (User?.Claims
