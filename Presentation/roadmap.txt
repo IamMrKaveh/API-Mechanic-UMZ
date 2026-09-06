@@ -115,100 +115,6 @@ Wishlist (2)
  Application/Wishlist/Mapping/WishlistMappingConfig.cs
 
 
-
-
-
-
-Infrastructure Layer (91)
-Category (1)
- Infrastructure/Category/Converters/CategoryIdConverter.cs
-Common (2)
- Infrastructure/Common/DependencyInjection/InfrastructureServiceExtensions.cs
- Infrastructure/Common/Extensions/RowVersionConfigurationExtensions.cs
-Discount (3)
- Infrastructure/Discount/Converters/DiscountCodeIdConverter.cs
- Infrastructure/Discount/Converters/DiscountRestrictionIdConverter.cs
- Infrastructure/Discount/Converters/DiscountUsageIdConverter.cs
-Inventory (6)
- Infrastructure/Inventory/Configurations/InventoryConfiguration.cs
- Infrastructure/Inventory/Configurations/StockLedgerEntryConfiguration.cs
- Infrastructure/Inventory/Configurations/WarehouseConfiguration.cs
- Infrastructure/Inventory/Converters/InventoryIdConverter.cs
- Infrastructure/Inventory/Converters/StockLedgerEntryIdConverter.cs
- Infrastructure/Inventory/Converters/WarehouseIdConverter.cs
-Localization (2)
- Infrastructure/Localization/Resources/ErrorMessages.cs
- Infrastructure/Localization/Services/LocalizedErrorMessageProvider.cs
-Location (1)
- Infrastructure/Location/Models/ExternalLocationApiDtos.cs
-Media (1)
- Infrastructure/Media/Converters/MediaIdConverter.cs
-Notification (1)
- Infrastructure/Notification/Converters/NotificationIdConverter.cs
-Order (8)
- Infrastructure/Order/Converters/OrderIdConverter.cs
- Infrastructure/Order/Converters/OrderItemIdConverter.cs
- Infrastructure/Order/Converters/OrderStatusIdConverter.cs
- Infrastructure/Order/Seeders/OrderStatusSeeder.cs
- Infrastructure/Order/Services/CheckoutPaymentStrategyResolver.cs
- Infrastructure/Order/Services/Strategies/CashOnDeliveryCheckoutPaymentStrategy.cs
- Infrastructure/Order/Services/Strategies/WalletCheckoutPaymentStrategy.cs
- Infrastructure/Order/Services/Strategies/ZarinPalCheckoutPaymentStrategy.cs
-Payment (7)
- Infrastructure/Payment/Converters/PaymentMethodIdConverter.cs
- Infrastructure/Payment/Converters/PaymentTransactionIdConverter.cs
- Infrastructure/Payment/ZarinPal/ZarinPalErrorCode.cs
- Infrastructure/Payment/ZarinPal/ZarinPalErrorMapper.cs
- Infrastructure/Payment/ZarinPal/ZarinPalPaymentGateway.cs
- Infrastructure/Payment/ZarinPal/ZarinPalSandboxGateway.cs
- Infrastructure/Payment/ZarinPal/ZarinPalValidator.cs
-Persistence (5)
- Infrastructure/Persistence/Context/DBContext.cs
- Infrastructure/Persistence/Context/DBContextFactory.cs
- Infrastructure/Persistence/Converters/StronglyTypedIdConverter.cs
- Infrastructure/Persistence/EfCoreTransaction.cs
- Infrastructure/Persistence/Interceptors/DomainEventInterceptor.cs
-Product (1)
- Infrastructure/Product/Converters/ProductIdConverter.cs
-Review (1)
- Infrastructure/Review/Converters/ReviewIdConverter.cs
-Search (10)
- Infrastructure/Search/ElasticClientFactory.cs
- Infrastructure/Search/ElasticIndexManager.cs
- Infrastructure/Search/ElasticsearchMetrics.cs
- Infrastructure/Search/FailedIndexOperation.cs
- Infrastructure/Search/HealthChecks/ElasticsearchDLQHealthCheck.cs
- Infrastructure/Search/HealthChecks/ElasticsearchHealthCheck.cs
- Infrastructure/Search/HealthChecks/ElasticsearchIndexHealthCheck.cs
- Infrastructure/Search/Services/ElasticsearchIndexer.cs
- Infrastructure/Search/Services/NoOpElasticIndexManager.cs
- Infrastructure/Search/Services/NoOpElasticsearchIndexer.cs
-Security (3)
- Infrastructure/Security/Converters/OtpIdConverter.cs
- Infrastructure/Security/Converters/SessionIdConverter.cs
- Infrastructure/Security/Models/RateLimitEntry.cs
-Shipping (1)
- Infrastructure/Shipping/Converters/ShippingIdConverter.cs
-Support (2)
- Infrastructure/Support/Converters/TicketIdConverter.cs
- Infrastructure/Support/Converters/TicketMessageIdConverter.cs
-User (2)
- Infrastructure/User/Converters/UserAddressIdConverter.cs
- Infrastructure/User/Converters/UserIdConverter.cs
-Variant (3)
- Infrastructure/Variant/Converters/VariantAttributeIdConverter.cs
- Infrastructure/Variant/Converters/VariantIdConverter.cs
- Infrastructure/Variant/Converters/VariantShippingIdConverter.cs
-Wallet (5)
- Infrastructure/Wallet/Configurations/WalletReconciliationAudit.cs
- Infrastructure/Wallet/Converters/WalletFraudAlertIdConverter.cs
- Infrastructure/Wallet/Converters/WalletIdConverter.cs
- Infrastructure/Wallet/Converters/WalletLedgerEntryIdConverter.cs
- Infrastructure/Wallet/Converters/WalletReservationIdConverter.cs
-Wishlist (1)
- Infrastructure/Wishlist/Converters/WishlistIdConverter.cs
-
-
 Presentation Layer (152)
 Analytic (3)
  Presentation/Analytic/Endpoints/AdminAnalyticsController.cs
@@ -239,49 +145,6 @@ Category (3)
  Presentation/Category/Endpoints/AdminCategoryController.cs
  Presentation/Category/Endpoints/CategoryController.cs
  Presentation/Category/Requests/CategoryRequests.cs
-Common (42)
- Presentation/Common/Endpoints/ConfigController.cs
- Presentation/Common/Extensions/AntiforgeryExtensions.cs
- Presentation/Common/Extensions/AuthenticationExtensions.cs
- Presentation/Common/Extensions/ChaosExtensions.cs
- Presentation/Common/Extensions/ConfigurationValidationExtension.cs
- Presentation/Common/Extensions/ControllersExtensions.cs
- Presentation/Common/Extensions/CorsExtensions.cs
- Presentation/Common/Extensions/DependencyInjectionExtensions.cs
- Presentation/Common/Extensions/FeatureManagementExtensions.cs
- Presentation/Common/Extensions/ForwardedHeadersExtensions.cs
- Presentation/Common/Extensions/HealthCheckExtensions.cs
- Presentation/Common/Extensions/LocalizationExtensions.cs
- Presentation/Common/Extensions/MiddlewareExtensions.cs
- Presentation/Common/Extensions/OpenTelemetryExtensions.cs
- Presentation/Common/Extensions/OptionsExtensions.cs
- Presentation/Common/Extensions/PresentationServiceExtensions.cs
- Presentation/Common/Extensions/RateLimitingExtensions.cs
- Presentation/Common/Extensions/ResultActionResultExtensions.cs
- Presentation/Common/Extensions/SecurityExtensions.cs
- Presentation/Common/Filters/OtpRateLimitFilter.cs
- Presentation/Common/Filters/PaymentRateLimitFilter.cs
- Presentation/Common/Filters/ReviewRateLimitFilter.cs
- Presentation/Common/Filters/ValidationFilter.cs
- Presentation/Common/Logging/Notimestampcompactjsonformatter.cs
- Presentation/Common/Mappers/HttpResultMapper.cs
- Presentation/Common/Middleware/ChaosEngineeringMiddleware.cs
- Presentation/Common/Middleware/CorrelationIdMiddleware.cs
- Presentation/Common/Middleware/CustomExceptionHandlerMiddleware.cs
- Presentation/Common/Middleware/DomainExceptionTranslationMiddleware.cs
- Presentation/Common/Middleware/RateLimitMiddleware.cs
- Presentation/Common/Middleware/RequestLoggingMiddleware.cs
- Presentation/Common/Middleware/SecurityHeadersMiddleware.cs
- Presentation/Common/Middleware/SecurityMiddleware.cs
- Presentation/Common/Middleware/SessionActivityMiddleware.cs
- Presentation/Common/Middleware/WebhookIpWhitelistMiddleware.cs
- Presentation/Common/ProblemDetails/PersianProblemDetails.cs
- Presentation/Common/ProblemDetails/PersianProblemDetailsFactory.cs
- Presentation/Common/Services/CurrentUserService.cs
- Presentation/Common/Swagger/CustomOperationIdOperationFilter.cs
- Presentation/Common/Swagger/DefaultResponseOperationFilter.cs
- Presentation/Common/Swagger/NullableSchemaFilter.cs
- Presentation/Common/Swagger/RemoveVersionParameterOperationFilter.cs
 Discount (4)
  Presentation/Discount/Endpoints/AdminDiscountsController.cs
  Presentation/Discount/Endpoints/DiscountsController.cs
@@ -391,29 +254,6 @@ Wishlist (4)
  Presentation/Wishlist/Requests/WishlistRequests.cs
 
 
-
-SharedKernel (14)
-Abstractions (1)
- SharedKernel/Abstractions/Entity.cs
-Exceptions (4)
- SharedKernel/Exceptions/BusinessRuleViolationException.cs
- SharedKernel/Exceptions/DomainException.cs
- SharedKernel/Exceptions/ExternalServiceException.cs
- SharedKernel/Exceptions/InvalidEntityStateException.cs
-Extensions (1)
- SharedKernel/Extensions/PersianTextNormalizer.cs
-Guard (3)
- SharedKernel/Guard/ContractGuard.cs
- SharedKernel/Guard/DomainGuard.cs
- SharedKernel/Guard/Guard.cs
-Localization (1)
- SharedKernel/Localization/DomainErrorCodes.cs
-Models (1)
- SharedKernel/Models/CurrentUser.cs
-Results (3)
- SharedKernel/Results/ErrorCode.cs
- SharedKernel/Results/ErrorType.cs
- SharedKernel/Results/ResultType.cs
 
 
 

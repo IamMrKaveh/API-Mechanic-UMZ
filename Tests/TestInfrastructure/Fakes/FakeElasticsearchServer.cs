@@ -38,7 +38,9 @@ public sealed class FakeElasticsearchServer : IAsyncDisposable
             {
                 client = await _listener.AcceptTcpClientAsync(_cts.Token);
             }
-            catch (OperationCanceledException)
+            catch (Exception ex) when (ex is OperationCanceledException
+                || ex is SocketException
+                || ex is ObjectDisposedException)
             {
                 break;
             }
